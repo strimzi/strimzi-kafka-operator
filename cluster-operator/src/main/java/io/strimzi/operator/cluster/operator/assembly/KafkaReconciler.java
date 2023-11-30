@@ -200,24 +200,7 @@ public class KafkaReconciler {
         // We prepare the KafkaPool models and create the KafkaCluster model
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(reconciliation, kafkaCr, nodePools, oldStorage, currentPods, isKRaftEnabled, supplier.sharedEnvironmentProvider);
         String clusterId = isKRaftEnabled ? NodePoolUtils.getOrGenerateKRaftClusterId(kafkaCr, nodePools) : NodePoolUtils.getClusterIdIfSet(kafkaCr, nodePools);
-        this.kafka = KafkaCluster.fromCrd(reconciliation, kafkaCr, pools, config.versions(), isKRaftEnabled, clusterId, supplier.sharedEnvironmentProvider);
-
-        // We set the user-configured inter.broker.protocol.version if needed (when not set by the user)
-        // It is set only in ZooKeeper-mode since in Kraft mode it is ignored and throws warnings
-        if (!isKRaftEnabled && versionChange.interBrokerProtocolVersion() != null) {
-            this.kafka.setInterBrokerProtocolVersion(versionChange.interBrokerProtocolVersion());
-        }
-
-        // We set the user-configured log.message.format.version if needed (when not set by the user)
-        // It is set only in ZooKeeper-mode since in Kraft mode it is ignored and throws warnings
-        if (!isKRaftEnabled && versionChange.logMessageFormatVersion() != null) {
-            this.kafka.setLogMessageFormatVersion(versionChange.logMessageFormatVersion());
-        }
-
-        // Sets the metadata version used in KRaft
-        if (isKRaftEnabled && versionChange.metadataVersion() != null) {
-            this.kafka.setMetadataVersion(versionChange.metadataVersion());
-        }
+        this.kafka = KafkaCluster.fromCrd(reconciliation, kafkaCr, pools, config.versions(), versionChange, isKRaftEnabled, clusterId, supplier.sharedEnvironmentProvider);
 
         this.clusterCa = clusterCa;
         this.clientsCa = clientsCa;

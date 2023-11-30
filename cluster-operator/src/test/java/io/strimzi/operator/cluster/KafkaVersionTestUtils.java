@@ -5,6 +5,7 @@
 package io.strimzi.operator.cluster;
 
 import io.strimzi.operator.cluster.model.KafkaVersion;
+import io.strimzi.operator.cluster.model.KafkaVersionChange;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -48,6 +49,9 @@ public class KafkaVersionTestUtils {
     public static final String DEFAULT_KAFKA_IMAGE = LATEST_KAFKA_IMAGE;
     public static final String DEFAULT_KAFKA_CONNECT_IMAGE = LATEST_KAFKA_CONNECT_IMAGE;
     public static final String DEFAULT_KAFKA_MIRROR_MAKER_IMAGE = LATEST_KAFKA_MIRROR_MAKER_IMAGE;
+
+    public static final KafkaVersionChange DEFAULT_ZOOKEEPER_VERSION_CHANGE = new KafkaVersionChange(getKafkaVersionLookup().defaultVersion(), getKafkaVersionLookup().defaultVersion(), getKafkaVersionLookup().defaultVersion().protocolVersion(), getKafkaVersionLookup().defaultVersion().messageVersion(), null);
+    public static final KafkaVersionChange DEFAULT_KRAFT_VERSION_CHANGE = new KafkaVersionChange(getKafkaVersionLookup().defaultVersion(), getKafkaVersionLookup().defaultVersion(), null, null, getKafkaVersionLookup().defaultVersion().metadataVersion());
 
     private static Map<String, String> getKafkaImageMap() {
         return getImageMap(KAFKA_IMAGE_STR);

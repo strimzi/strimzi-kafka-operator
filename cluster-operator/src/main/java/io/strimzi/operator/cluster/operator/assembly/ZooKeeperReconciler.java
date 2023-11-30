@@ -319,18 +319,20 @@ public class ZooKeeperReconciler {
      * @return  Completes when the upgrade / downgrade information is logged
      */
     private Future<Void> logVersionChange() {
-        if (versionChange.isNoop()) {
+        int versionCompare = versionChange.from().compareTo(versionChange.to());
+
+        if (versionCompare == 0) {
             LOGGER.debugCr(reconciliation, "Kafka.spec.kafka.version is unchanged therefore no change to Zookeeper is required");
         } else {
             String versionChangeType;
 
-            if (versionChange.isDowngrade()) {
+            if (versionCompare > 0) {
                 versionChangeType = "downgrade";
             } else {
                 versionChangeType = "upgrade";
             }
 
-            if (versionChange.requiresZookeeperChange()) {
+            if (versionChange.from().zookeeperVersion().equals(versionChange.to().zookeeperVersion())) {
                 LOGGER.infoCr(reconciliation, "Kafka {} from {} to {} requires Zookeeper {} from {} to {}",
                         versionChangeType,
                         versionChange.from().version(),
@@ -343,7 +345,6 @@ public class ZooKeeperReconciler {
                         versionChangeType,
                         versionChange.from().version(),
                         versionChange.to().version());
-
             }
         }
 

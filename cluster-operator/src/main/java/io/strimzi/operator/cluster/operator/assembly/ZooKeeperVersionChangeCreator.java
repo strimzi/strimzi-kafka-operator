@@ -47,6 +47,7 @@ public class ZooKeeperVersionChangeCreator implements VersionChangeCreator {
 
     // Information about Kafka version from the Kafka custom resource
     private final KafkaVersion versionFromCr;
+    private final String metadataVersionFromCr;
     private final String interBrokerProtocolVersionFromCr;
     private final String logMessageFormatVersionFromCr;
 
@@ -82,6 +83,7 @@ public class ZooKeeperVersionChangeCreator implements VersionChangeCreator {
 
         // Collect information from the Kafka CR
         this.versionFromCr = config.versions().supportedVersion(kafkaCr.getSpec().getKafka().getVersion());
+        this.metadataVersionFromCr = kafkaCr.getSpec().getKafka().getMetadataVersion();
         KafkaConfiguration configuration = new KafkaConfiguration(reconciliation, kafkaCr.getSpec().getKafka().getConfig().entrySet());
         this.interBrokerProtocolVersionFromCr = configuration.getConfigOption(KafkaConfiguration.INTERBROKER_PROTOCOL_VERSION);
         this.logMessageFormatVersionFromCr = configuration.getConfigOption(KafkaConfiguration.LOG_MESSAGE_FORMAT_VERSION);
@@ -360,6 +362,10 @@ public class ZooKeeperVersionChangeCreator implements VersionChangeCreator {
             }
         }
 
-        return Future.succeededFuture(new KafkaVersionChange(versionFrom, versionTo, interBrokerProtocolVersion, logMessageFormatVersion, null));
+        // For migration from ZooKeeper to KRaft, we need to configure the metadata version on the new controller nodes.
+        // For that, we need to set the metadata version even in the ZooKeeperVersionChangeCreator class even through it
+        // is not used in KRaft mode. As the controllers will be new, we set it based on the Kafka CR or based on the
+        // Kafka version used (which will be always the versionTo on the newly deployed controllers).
+        return Future.succeededFuture(new KafkaVersionChange(versionFrom, versionTo, interBrokerProtocolVersion, logMessageFormatVersion, metadataVersionFromCr != null ? metadataVersionFromCr : versionTo.metadataVersion()));
     }
 }

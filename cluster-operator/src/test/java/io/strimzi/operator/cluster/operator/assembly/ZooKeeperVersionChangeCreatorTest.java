@@ -65,14 +65,11 @@ public class ZooKeeperVersionChangeCreatorTest {
 
         Checkpoint async = context.checkpoint();
         vcc.reconcile().onComplete(context.succeeding(c -> context.verify(() -> {
-            assertThat(c.isNoop(), is(true));
-            assertThat(c.isDowngrade(), is(false));
-            assertThat(c.isUpgrade(), is(false));
-            assertThat(c.requiresZookeeperChange(), is(false));
             assertThat(c.from(), is(VERSIONS.defaultVersion()));
             assertThat(c.to(), is(VERSIONS.defaultVersion()));
             assertThat(c.interBrokerProtocolVersion(), nullValue());
             assertThat(c.logMessageFormatVersion(), nullValue());
+            assertThat(c.metadataVersion(), is(VERSIONS.defaultVersion().metadataVersion()));
 
             async.flag();
         })));
@@ -87,14 +84,11 @@ public class ZooKeeperVersionChangeCreatorTest {
 
         Checkpoint async = context.checkpoint();
         vcc.reconcile().onComplete(context.succeeding(c -> context.verify(() -> {
-            assertThat(c.isNoop(), is(true));
-            assertThat(c.isDowngrade(), is(false));
-            assertThat(c.isUpgrade(), is(false));
-            assertThat(c.requiresZookeeperChange(), is(false));
             assertThat(c.from(), is(VERSIONS.defaultVersion()));
             assertThat(c.to(), is(VERSIONS.defaultVersion()));
             assertThat(c.interBrokerProtocolVersion(), is(VERSIONS.defaultVersion().protocolVersion()));
             assertThat(c.logMessageFormatVersion(), is(VERSIONS.defaultVersion().messageVersion()));
+            assertThat(c.metadataVersion(), is(VERSIONS.defaultVersion().metadataVersion()));
 
             async.flag();
         })));
@@ -109,14 +103,11 @@ public class ZooKeeperVersionChangeCreatorTest {
 
         Checkpoint async = context.checkpoint();
         vcc.reconcile().onComplete(context.succeeding(c -> context.verify(() -> {
-            assertThat(c.isNoop(), is(true));
-            assertThat(c.isDowngrade(), is(false));
-            assertThat(c.isUpgrade(), is(false));
-            assertThat(c.requiresZookeeperChange(), is(false));
             assertThat(c.from(), is(VERSIONS.defaultVersion()));
             assertThat(c.to(), is(VERSIONS.defaultVersion()));
             assertThat(c.interBrokerProtocolVersion(), is(VERSIONS.defaultVersion().protocolVersion()));
             assertThat(c.logMessageFormatVersion(), is(VERSIONS.defaultVersion().messageVersion()));
+            assertThat(c.metadataVersion(), is(VERSIONS.defaultVersion().metadataVersion()));
 
             async.flag();
         })));
@@ -131,14 +122,11 @@ public class ZooKeeperVersionChangeCreatorTest {
 
         Checkpoint async = context.checkpoint();
         vcc.reconcile().onComplete(context.succeeding(c -> context.verify(() -> {
-            assertThat(c.isNoop(), is(true));
-            assertThat(c.isDowngrade(), is(false));
-            assertThat(c.isUpgrade(), is(false));
-            assertThat(c.requiresZookeeperChange(), is(false));
             assertThat(c.from(), is(VERSIONS.defaultVersion()));
             assertThat(c.to(), is(VERSIONS.defaultVersion()));
             assertThat(c.interBrokerProtocolVersion(), nullValue());
             assertThat(c.logMessageFormatVersion(), nullValue());
+            assertThat(c.metadataVersion(), is(VERSIONS.defaultVersion().metadataVersion()));
 
             async.flag();
         })));
@@ -153,14 +141,11 @@ public class ZooKeeperVersionChangeCreatorTest {
 
         Checkpoint async = context.checkpoint();
         vcc.reconcile().onComplete(context.succeeding(c -> context.verify(() -> {
-            assertThat(c.isNoop(), is(true));
-            assertThat(c.isDowngrade(), is(false));
-            assertThat(c.isUpgrade(), is(false));
-            assertThat(c.requiresZookeeperChange(), is(false));
             assertThat(c.from(), is(VERSIONS.defaultVersion()));
             assertThat(c.to(), is(VERSIONS.defaultVersion()));
             assertThat(c.interBrokerProtocolVersion(), nullValue());
             assertThat(c.logMessageFormatVersion(), nullValue());
+            assertThat(c.metadataVersion(), is(VERSIONS.defaultVersion().metadataVersion()));
 
             async.flag();
         })));
@@ -187,14 +172,11 @@ public class ZooKeeperVersionChangeCreatorTest {
 
         Checkpoint async = context.checkpoint();
         vcc.reconcile().onComplete(context.succeeding(c -> context.verify(() -> {
-            assertThat(c.isNoop(), is(true));
-            assertThat(c.isDowngrade(), is(false));
-            assertThat(c.isUpgrade(), is(false));
-            assertThat(c.requiresZookeeperChange(), is(false));
             assertThat(c.from(), is(VERSIONS.defaultVersion()));
             assertThat(c.to(), is(VERSIONS.defaultVersion()));
             assertThat(c.interBrokerProtocolVersion(), nullValue());
             assertThat(c.logMessageFormatVersion(), nullValue());
+            assertThat(c.metadataVersion(), is(VERSIONS.defaultVersion().metadataVersion()));
 
             async.flag();
         })));
@@ -217,14 +199,11 @@ public class ZooKeeperVersionChangeCreatorTest {
 
         Checkpoint async = context.checkpoint();
         vcc.reconcile().onComplete(context.succeeding(c -> context.verify(() -> {
-            assertThat(c.isNoop(), is(true));
-            assertThat(c.isDowngrade(), is(false));
-            assertThat(c.isUpgrade(), is(false));
-            assertThat(c.requiresZookeeperChange(), is(false));
             assertThat(c.from(), is(VERSIONS.defaultVersion()));
             assertThat(c.to(), is(VERSIONS.defaultVersion()));
             assertThat(c.interBrokerProtocolVersion(), is(VERSIONS.defaultVersion().protocolVersion()));
             assertThat(c.logMessageFormatVersion(), is(VERSIONS.defaultVersion().messageVersion()));
+            assertThat(c.metadataVersion(), is(VERSIONS.defaultVersion().metadataVersion()));
 
             async.flag();
         })));
@@ -247,14 +226,11 @@ public class ZooKeeperVersionChangeCreatorTest {
 
         Checkpoint async = context.checkpoint();
         vcc.reconcile().onComplete(context.succeeding(c -> context.verify(() -> {
-            assertThat(c.isNoop(), is(true));
-            assertThat(c.isDowngrade(), is(false));
-            assertThat(c.isUpgrade(), is(false));
-            assertThat(c.requiresZookeeperChange(), is(false));
             assertThat(c.from(), is(VERSIONS.defaultVersion()));
             assertThat(c.to(), is(VERSIONS.defaultVersion()));
             assertThat(c.interBrokerProtocolVersion(), is(VERSIONS.defaultVersion().protocolVersion()));
             assertThat(c.logMessageFormatVersion(), is(VERSIONS.defaultVersion().messageVersion()));
+            assertThat(c.metadataVersion(), is(VERSIONS.defaultVersion().metadataVersion()));
 
             async.flag();
         })));
@@ -277,14 +253,11 @@ public class ZooKeeperVersionChangeCreatorTest {
 
         Checkpoint async = context.checkpoint();
         vcc.reconcile().onComplete(context.succeeding(c -> context.verify(() -> {
-            assertThat(c.isNoop(), is(true));
-            assertThat(c.isDowngrade(), is(false));
-            assertThat(c.isUpgrade(), is(false));
-            assertThat(c.requiresZookeeperChange(), is(false));
             assertThat(c.from(), is(VERSIONS.defaultVersion()));
             assertThat(c.to(), is(VERSIONS.defaultVersion()));
             assertThat(c.interBrokerProtocolVersion(), nullValue());
             assertThat(c.logMessageFormatVersion(), nullValue());
+            assertThat(c.metadataVersion(), is(VERSIONS.defaultVersion().metadataVersion()));
 
             async.flag();
         })));
@@ -307,14 +280,11 @@ public class ZooKeeperVersionChangeCreatorTest {
 
         Checkpoint async = context.checkpoint();
         vcc.reconcile().onComplete(context.succeeding(c -> context.verify(() -> {
-            assertThat(c.isNoop(), is(true));
-            assertThat(c.isDowngrade(), is(false));
-            assertThat(c.isUpgrade(), is(false));
-            assertThat(c.requiresZookeeperChange(), is(false));
             assertThat(c.from(), is(VERSIONS.defaultVersion()));
             assertThat(c.to(), is(VERSIONS.defaultVersion()));
             assertThat(c.interBrokerProtocolVersion(), nullValue());
             assertThat(c.logMessageFormatVersion(), nullValue());
+            assertThat(c.metadataVersion(), is(VERSIONS.defaultVersion().metadataVersion()));
 
             async.flag();
         })));
@@ -337,14 +307,11 @@ public class ZooKeeperVersionChangeCreatorTest {
 
         Checkpoint async = context.checkpoint();
         vcc.reconcile().onComplete(context.succeeding(c -> context.verify(() -> {
-            assertThat(c.isNoop(), is(true));
-            assertThat(c.isDowngrade(), is(false));
-            assertThat(c.isUpgrade(), is(false));
-            assertThat(c.requiresZookeeperChange(), is(false));
             assertThat(c.from(), is(VERSIONS.defaultVersion()));
             assertThat(c.to(), is(VERSIONS.defaultVersion()));
             assertThat(c.interBrokerProtocolVersion(), nullValue());
             assertThat(c.logMessageFormatVersion(), nullValue());
+            assertThat(c.metadataVersion(), is(VERSIONS.defaultVersion().metadataVersion()));
 
             async.flag();
         })));
@@ -367,14 +334,11 @@ public class ZooKeeperVersionChangeCreatorTest {
 
         Checkpoint async = context.checkpoint();
         vcc.reconcile().onComplete(context.succeeding(c -> context.verify(() -> {
-            assertThat(c.isNoop(), is(true));
-            assertThat(c.isDowngrade(), is(false));
-            assertThat(c.isUpgrade(), is(false));
-            assertThat(c.requiresZookeeperChange(), is(false));
             assertThat(c.from(), is(VERSIONS.defaultVersion()));
             assertThat(c.to(), is(VERSIONS.defaultVersion()));
             assertThat(c.interBrokerProtocolVersion(), is(VERSIONS.defaultVersion().protocolVersion()));
             assertThat(c.logMessageFormatVersion(), is(VERSIONS.defaultVersion().messageVersion()));
+            assertThat(c.metadataVersion(), is(VERSIONS.defaultVersion().metadataVersion()));
 
             async.flag();
         })));
@@ -397,14 +361,11 @@ public class ZooKeeperVersionChangeCreatorTest {
 
         Checkpoint async = context.checkpoint();
         vcc.reconcile().onComplete(context.succeeding(c -> context.verify(() -> {
-            assertThat(c.isNoop(), is(true));
-            assertThat(c.isDowngrade(), is(false));
-            assertThat(c.isUpgrade(), is(false));
-            assertThat(c.requiresZookeeperChange(), is(false));
             assertThat(c.from(), is(VERSIONS.defaultVersion()));
             assertThat(c.to(), is(VERSIONS.defaultVersion()));
             assertThat(c.interBrokerProtocolVersion(), nullValue());
             assertThat(c.logMessageFormatVersion(), nullValue());
+            assertThat(c.metadataVersion(), is(VERSIONS.defaultVersion().metadataVersion()));
 
             async.flag();
         })));
@@ -427,14 +388,46 @@ public class ZooKeeperVersionChangeCreatorTest {
 
         Checkpoint async = context.checkpoint();
         vcc.reconcile().onComplete(context.succeeding(c -> context.verify(() -> {
-            assertThat(c.isNoop(), is(true));
-            assertThat(c.isDowngrade(), is(false));
-            assertThat(c.isUpgrade(), is(false));
-            assertThat(c.requiresZookeeperChange(), is(false));
             assertThat(c.from(), is(VERSIONS.defaultVersion()));
             assertThat(c.to(), is(VERSIONS.defaultVersion()));
             assertThat(c.interBrokerProtocolVersion(), nullValue());
             assertThat(c.logMessageFormatVersion(), nullValue());
+            assertThat(c.metadataVersion(), is(VERSIONS.defaultVersion().metadataVersion()));
+
+            async.flag();
+        })));
+    }
+
+    @Test
+    public void testNoopWithCustomMetadataVersion(VertxTestContext context) {
+        String kafkaVersion = VERSIONS.defaultVersion().version();
+        String interBrokerProtocolVersion = VERSIONS.defaultVersion().protocolVersion();
+        String logMessageFormatVersion = VERSIONS.defaultVersion().messageVersion();
+
+        Kafka kafka  = new KafkaBuilder(mockKafka(kafkaVersion, interBrokerProtocolVersion, logMessageFormatVersion))
+                .editSpec()
+                    .editKafka()
+                        .withMetadataVersion("3.5-IV2")
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        VersionChangeCreator vcc = mockVersionChangeCreator(
+                kafka,
+                mockNewCluster(
+                        null,
+                        mockSps(kafkaVersion),
+                        mockUniformPods(kafkaVersion, interBrokerProtocolVersion, logMessageFormatVersion)
+                )
+        );
+
+        Checkpoint async = context.checkpoint();
+        vcc.reconcile().onComplete(context.succeeding(c -> context.verify(() -> {
+            assertThat(c.from(), is(VERSIONS.defaultVersion()));
+            assertThat(c.to(), is(VERSIONS.defaultVersion()));
+            assertThat(c.interBrokerProtocolVersion(), nullValue());
+            assertThat(c.logMessageFormatVersion(), nullValue());
+            assertThat(c.metadataVersion(), is("3.5-IV2"));
 
             async.flag();
         })));
@@ -465,9 +458,6 @@ public class ZooKeeperVersionChangeCreatorTest {
 
         Checkpoint async = context.checkpoint();
         vcc.reconcile().onComplete(context.succeeding(c -> context.verify(() -> {
-            assertThat(c.isNoop(), is(false));
-            assertThat(c.isDowngrade(), is(false));
-            assertThat(c.isUpgrade(), is(true));
             assertThat(c.from(), is(VERSIONS.version(oldKafkaVersion)));
             assertThat(c.to(), is(VERSIONS.defaultVersion()));
             assertThat(c.interBrokerProtocolVersion(), is(oldInterBrokerProtocolVersion));
@@ -496,9 +486,6 @@ public class ZooKeeperVersionChangeCreatorTest {
 
         Checkpoint async = context.checkpoint();
         vcc.reconcile().onComplete(context.succeeding(c -> context.verify(() -> {
-            assertThat(c.isNoop(), is(false));
-            assertThat(c.isDowngrade(), is(false));
-            assertThat(c.isUpgrade(), is(true));
             assertThat(c.from(), is(VERSIONS.version(oldKafkaVersion)));
             assertThat(c.to(), is(VERSIONS.defaultVersion()));
             assertThat(c.interBrokerProtocolVersion(), is(oldInterBrokerProtocolVersion));
@@ -525,9 +512,6 @@ public class ZooKeeperVersionChangeCreatorTest {
 
         Checkpoint async = context.checkpoint();
         vcc.reconcile().onComplete(context.succeeding(c -> context.verify(() -> {
-            assertThat(c.isNoop(), is(false));
-            assertThat(c.isDowngrade(), is(false));
-            assertThat(c.isUpgrade(), is(true));
             assertThat(c.from(), is(VERSIONS.version(oldKafkaVersion)));
             assertThat(c.to(), is(VERSIONS.defaultVersion()));
             assertThat(c.interBrokerProtocolVersion(), is(oldInterBrokerProtocolVersion));
@@ -556,9 +540,6 @@ public class ZooKeeperVersionChangeCreatorTest {
 
         Checkpoint async = context.checkpoint();
         vcc.reconcile().onComplete(context.succeeding(c -> context.verify(() -> {
-            assertThat(c.isNoop(), is(false));
-            assertThat(c.isDowngrade(), is(false));
-            assertThat(c.isUpgrade(), is(true));
             assertThat(c.from(), is(VERSIONS.version(oldKafkaVersion)));
             assertThat(c.to(), is(VERSIONS.defaultVersion()));
             assertThat(c.interBrokerProtocolVersion(), nullValue());
@@ -587,9 +568,6 @@ public class ZooKeeperVersionChangeCreatorTest {
 
         Checkpoint async = context.checkpoint();
         vcc.reconcile().onComplete(context.succeeding(c -> context.verify(() -> {
-            assertThat(c.isNoop(), is(false));
-            assertThat(c.isDowngrade(), is(false));
-            assertThat(c.isUpgrade(), is(true));
             assertThat(c.from(), is(VERSIONS.version(oldKafkaVersion)));
             assertThat(c.to(), is(VERSIONS.defaultVersion()));
             assertThat(c.interBrokerProtocolVersion(), nullValue());
@@ -620,9 +598,6 @@ public class ZooKeeperVersionChangeCreatorTest {
 
         Checkpoint async = context.checkpoint();
         vcc.reconcile().onComplete(context.succeeding(c -> context.verify(() -> {
-            assertThat(c.isNoop(), is(false));
-            assertThat(c.isDowngrade(), is(false));
-            assertThat(c.isUpgrade(), is(true));
             assertThat(c.from(), is(VERSIONS.version(oldKafkaVersion)));
             assertThat(c.to(), is(VERSIONS.defaultVersion()));
             assertThat(c.interBrokerProtocolVersion(), is(oldInterBrokerProtocolVersion));
@@ -653,9 +628,6 @@ public class ZooKeeperVersionChangeCreatorTest {
 
         Checkpoint async = context.checkpoint();
         vcc.reconcile().onComplete(context.succeeding(c -> context.verify(() -> {
-            assertThat(c.isNoop(), is(false));
-            assertThat(c.isDowngrade(), is(false));
-            assertThat(c.isUpgrade(), is(true));
             assertThat(c.from(), is(VERSIONS.version(oldKafkaVersion)));
             assertThat(c.to(), is(VERSIONS.defaultVersion()));
             assertThat(c.interBrokerProtocolVersion(), is(oldInterBrokerProtocolVersion));
@@ -686,9 +658,6 @@ public class ZooKeeperVersionChangeCreatorTest {
         Checkpoint async = context.checkpoint();
         vcc.reconcile().onComplete(context.succeeding(c -> context.verify(() -> {
             // Upgrade is finished, only the protocol versions should be rolled
-            assertThat(c.isNoop(), is(true));
-            assertThat(c.isDowngrade(), is(false));
-            assertThat(c.isUpgrade(), is(false));
             assertThat(c.from(), is(VERSIONS.defaultVersion()));
             assertThat(c.to(), is(VERSIONS.defaultVersion()));
             assertThat(c.interBrokerProtocolVersion(), nullValue());
@@ -715,9 +684,6 @@ public class ZooKeeperVersionChangeCreatorTest {
 
         Checkpoint async = context.checkpoint();
         vcc.reconcile().onComplete(context.succeeding(c -> context.verify(() -> {
-            assertThat(c.isNoop(), is(true));
-            assertThat(c.isDowngrade(), is(false));
-            assertThat(c.isUpgrade(), is(false));
             assertThat(c.from(), is(VERSIONS.defaultVersion()));
             assertThat(c.to(), is(VERSIONS.defaultVersion()));
             assertThat(c.interBrokerProtocolVersion(), is(nullValue())); // Is null because it is set in the Kafka CR
@@ -748,9 +714,6 @@ public class ZooKeeperVersionChangeCreatorTest {
 
         Checkpoint async = context.checkpoint();
         vcc.reconcile().onComplete(context.succeeding(c -> context.verify(() -> {
-            assertThat(c.isNoop(), is(false));
-            assertThat(c.isDowngrade(), is(false));
-            assertThat(c.isUpgrade(), is(true));
             assertThat(c.from(), is(VERSIONS.version(oldKafkaVersion)));
             assertThat(c.to(), is(VERSIONS.defaultVersion()));
             assertThat(c.interBrokerProtocolVersion(), nullValue());
@@ -779,9 +742,6 @@ public class ZooKeeperVersionChangeCreatorTest {
 
         Checkpoint async = context.checkpoint();
         vcc.reconcile().onComplete(context.succeeding(c -> context.verify(() -> {
-            assertThat(c.isNoop(), is(false));
-            assertThat(c.isDowngrade(), is(false));
-            assertThat(c.isUpgrade(), is(true));
             assertThat(c.from(), is(VERSIONS.version(oldKafkaVersion)));
             assertThat(c.to(), is(VERSIONS.defaultVersion()));
             assertThat(c.interBrokerProtocolVersion(), is(oldInterBrokerProtocolVersion));
@@ -812,9 +772,6 @@ public class ZooKeeperVersionChangeCreatorTest {
 
         Checkpoint async = context.checkpoint();
         vcc.reconcile().onComplete(context.succeeding(c -> context.verify(() -> {
-            assertThat(c.isNoop(), is(false));
-            assertThat(c.isDowngrade(), is(false));
-            assertThat(c.isUpgrade(), is(true));
             assertThat(c.from(), is(VERSIONS.version(oldKafkaVersion)));
             assertThat(c.to(), is(VERSIONS.defaultVersion()));
             assertThat(c.interBrokerProtocolVersion(), is(oldInterBrokerProtocolVersion));
@@ -869,9 +826,6 @@ public class ZooKeeperVersionChangeCreatorTest {
 
         Checkpoint async = context.checkpoint();
         vcc.reconcile().onComplete(context.succeeding(c -> context.verify(() -> {
-            assertThat(c.isNoop(), is(false));
-            assertThat(c.isDowngrade(), is(false));
-            assertThat(c.isUpgrade(), is(true));
             assertThat(c.from(), is(VERSIONS.version(oldKafkaVersion)));
             assertThat(c.to(), is(VERSIONS.defaultVersion()));
             assertThat(c.interBrokerProtocolVersion(), is(oldInterBrokerProtocolVersion));
@@ -906,9 +860,6 @@ public class ZooKeeperVersionChangeCreatorTest {
 
         Checkpoint async = context.checkpoint();
         vcc.reconcile().onComplete(context.succeeding(c -> context.verify(() -> {
-            assertThat(c.isNoop(), is(false));
-            assertThat(c.isDowngrade(), is(true));
-            assertThat(c.isUpgrade(), is(false));
             assertThat(c.from(), is(VERSIONS.version(oldKafkaVersion)));
             assertThat(c.to(), is(VERSIONS.version(kafkaVersion)));
             assertThat(c.interBrokerProtocolVersion(), nullValue());
@@ -937,9 +888,6 @@ public class ZooKeeperVersionChangeCreatorTest {
 
         Checkpoint async = context.checkpoint();
         vcc.reconcile().onComplete(context.succeeding(c -> context.verify(() -> {
-            assertThat(c.isNoop(), is(false));
-            assertThat(c.isDowngrade(), is(true));
-            assertThat(c.isUpgrade(), is(false));
             assertThat(c.from(), is(VERSIONS.version(oldKafkaVersion)));
             assertThat(c.to(), is(VERSIONS.version(kafkaVersion)));
             assertThat(c.interBrokerProtocolVersion(), is(oldInterBrokerProtocolVersion));
@@ -970,9 +918,6 @@ public class ZooKeeperVersionChangeCreatorTest {
 
         Checkpoint async = context.checkpoint();
         vcc.reconcile().onComplete(context.succeeding(c -> context.verify(() -> {
-            assertThat(c.isNoop(), is(false));
-            assertThat(c.isDowngrade(), is(true));
-            assertThat(c.isUpgrade(), is(false));
             assertThat(c.from(), is(VERSIONS.version(oldKafkaVersion)));
             assertThat(c.to(), is(VERSIONS.version(kafkaVersion)));
             assertThat(c.interBrokerProtocolVersion(), nullValue());
@@ -1003,9 +948,6 @@ public class ZooKeeperVersionChangeCreatorTest {
 
         Checkpoint async = context.checkpoint();
         vcc.reconcile().onComplete(context.succeeding(c -> context.verify(() -> {
-            assertThat(c.isNoop(), is(false));
-            assertThat(c.isDowngrade(), is(true));
-            assertThat(c.isUpgrade(), is(false));
             assertThat(c.from(), is(VERSIONS.version(oldKafkaVersion)));
             assertThat(c.to(), is(VERSIONS.version(kafkaVersion)));
             assertThat(c.interBrokerProtocolVersion(), nullValue());

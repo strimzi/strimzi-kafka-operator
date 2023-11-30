@@ -265,12 +265,15 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      * @param kafka                         Kafka custom resource
      * @param pools                         Set of node pools used by this cluster
      * @param versions                      Supported Kafka versions
+     * @param versionChange                 KafkaVersionChange instance describing how the Kafka versions (and the
+     *                                      various protocol and metadata versions) to be used in this reconciliation
      * @param useKRaft                      Flag indicating if KRaft is enabled
      * @param clusterId                     Kafka cluster Id (or null if it is not known yet)
      * @param sharedEnvironmentProvider     Shared environment provider
+     *
      * @return Kafka cluster instance
      */
-    public static KafkaCluster fromCrd(Reconciliation reconciliation, Kafka kafka, List<KafkaPool> pools, KafkaVersion.Lookup versions, boolean useKRaft, String clusterId, SharedEnvironmentProvider sharedEnvironmentProvider) {
+    public static KafkaCluster fromCrd(Reconciliation reconciliation, Kafka kafka, List<KafkaPool> pools, KafkaVersion.Lookup versions, KafkaVersionChange versionChange, boolean useKRaft, String clusterId, SharedEnvironmentProvider sharedEnvironmentProvider) {
         KafkaSpec kafkaSpec = kafka.getSpec();
         KafkaClusterSpec kafkaClusterSpec = kafkaSpec.getKafka();
 
@@ -282,6 +285,12 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
 
         // This also validates that the Kafka version is supported
         result.kafkaVersion = versions.supportedVersion(kafkaClusterSpec.getVersion());
+
+        // Validates and sets the metadata version used in KRaft
+        if (versionChange.metadataVersion() != null) {
+            KRaftUtils.validateMetadataVersion(versionChange.metadataVersion());
+            result.metadataVersion = versionChange.metadataVersion();
+        }
 
         // Number of broker nodes => used later in various validation methods
         long numberOfBrokers = result.brokerNodes().size();
@@ -318,6 +327,18 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         KafkaConfiguration configuration = new KafkaConfiguration(reconciliation, kafkaClusterSpec.getConfig().entrySet());
         validateConfiguration(reconciliation, kafka, result.kafkaVersion, configuration);
         result.configuration = configuration;
+
+        // We set the user-configured inter.broker.protocol.version if needed (when not set by the user)
+        // In KRaft mode, it should be always null
+        if (versionChange.interBrokerProtocolVersion() != null) {
+            result.configuration.setConfigOption(KafkaConfiguration.INTERBROKER_PROTOCOL_VERSION, versionChange.interBrokerProtocolVersion());
+        }
+
+        // We set the user-configured log.message.format.version if needed (when not set by the user)
+        // In KRaft mode, it should be always null.
+        if (versionChange.logMessageFormatVersion() != null) {
+            result.configuration.setConfigOption(KafkaConfiguration.LOG_MESSAGE_FORMAT_VERSION, versionChange.logMessageFormatVersion());
+        }
 
         result.ccMetricsReporter = CruiseControlMetricsReporter.fromCrd(kafka, configuration, numberOfBrokers);
 
@@ -1723,15 +1744,6 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     }
 
     /**
-     * Sets the log message format version
-     *
-     * @param logMessageFormatVersion       Log message format version
-     */
-    public void setLogMessageFormatVersion(String logMessageFormatVersion) {
-        configuration.setConfigOption(KafkaConfiguration.LOG_MESSAGE_FORMAT_VERSION, logMessageFormatVersion);
-    }
-
-    /**
      * @return  Kafka's inter-broker protocol configuration
      */
     public String getInterBrokerProtocolVersion() {
@@ -1739,29 +1751,10 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     }
 
     /**
-     * Sets the inter-broker protocol version
-     *
-     * @param interBrokerProtocolVersion    Inter-broker protocol version
-     */
-    public void setInterBrokerProtocolVersion(String interBrokerProtocolVersion) {
-        configuration.setConfigOption(KafkaConfiguration.INTERBROKER_PROTOCOL_VERSION, interBrokerProtocolVersion);
-    }
-
-    /**
      * @return  Kafka's desired metadata version
      */
     public String getMetadataVersion() {
         return metadataVersion;
-    }
-
-    /**
-     * Sets the KRaft metadata version
-     *
-     * @param metadataVersion   KRaft metadata version
-     */
-    public void setMetadataVersion(String metadataVersion)   {
-        KRaftUtils.validateMetadataVersion(metadataVersion);
-        this.metadataVersion = metadataVersion;
     }
 
     /**
