@@ -9,10 +9,7 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
-import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolBuilder;
-import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
 import io.strimzi.operator.common.Annotations;
-import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
@@ -80,31 +77,23 @@ public class FeatureGatesST extends AbstractST {
         final TestStorage testStorage = new TestStorage(extensionContext);
         final int kafkaReplicas = 3;
 
+        // as kraft is included in CO Feature gates, kafka broker can take both roles (Controller and Broker)
         setupClusterOperatorWithFeatureGate(extensionContext, "+UseKRaft");
 
-        final Kafka kafka = KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), kafkaReplicas)
+        final Kafka kafkaCr = KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), kafkaReplicas)
             .editOrNewMetadata()
                 .addToAnnotations(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled")
                 .addToAnnotations(Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled")
                 .withNamespace(testStorage.getNamespaceName())
             .endMetadata()
             .build();
-        kafka.getSpec().getEntityOperator().setTopicOperator(null); // The builder cannot disable the EO. It has to be done this way.
+        kafkaCr.getSpec().getEntityOperator().setTopicOperator(null); // The builder cannot disable the EO. It has to be done this way.
 
-        KafkaNodePool kafkaNodePool = KafkaNodePoolResource.convertKafkaResourceToKafkaNodePool(kafka);
-        kafkaNodePool = new KafkaNodePoolBuilder(kafkaNodePool)
-            .editOrNewMetadata()
-                .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, testStorage.getClusterName())
-                .withNamespace(testStorage.getNamespaceName())
-            .endMetadata()
-            .editOrNewSpec()
-                .addToRoles(ProcessRoles.BROKER, ProcessRoles.CONTROLLER)
-            .endSpec()
-            .build();
+        final KafkaNodePool kafkaNodePoolCr = KafkaNodePoolTemplates.kafkaBasedNodePoolWithDualRole(testStorage.getKafkaNodePoolName(), kafkaCr, kafkaReplicas).build();
 
         resourceManager.createResourceWithWait(extensionContext,
-            kafkaNodePool,
-            kafka
+            kafkaNodePoolCr,
+            kafkaCr
         );
 
         // Check that there is no ZooKeeper
@@ -135,6 +124,7 @@ public class FeatureGatesST extends AbstractST {
         final TestStorage testStorage = new TestStorage(extensionContext);
         final int kafkaReplicas = 3;
 
+        // as the only FG set in the CO is 'KafkaNodePools' (kraft not included) Broker role is the only one that kafka broker can take
         setupClusterOperatorWithFeatureGate(extensionContext, "+KafkaNodePools");
 
         LOGGER.info("Deploying Kafka Cluster: {}/{} controlled by KafkaNodePool: {}", testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getKafkaNodePoolName());
@@ -145,17 +135,7 @@ public class FeatureGatesST extends AbstractST {
             .endMetadata()
             .build();
 
-        final KafkaNodePool kafkaNodePoolCr =  KafkaNodePoolTemplates.defaultKafkaNodePool(testStorage.getNamespaceName(), testStorage.getKafkaNodePoolName(), testStorage.getClusterName(), 3)
-            .editOrNewMetadata()
-                .withNamespace(testStorage.getNamespaceName())
-            .endMetadata()
-            .editOrNewSpec()
-                .addToRoles(ProcessRoles.BROKER)
-                .withStorage(kafkaCr.getSpec().getKafka().getStorage())
-                .withJvmOptions(kafkaCr.getSpec().getKafka().getJvmOptions())
-                .withResources(kafkaCr.getSpec().getKafka().getResources())
-            .endSpec()
-            .build();
+        final KafkaNodePool kafkaNodePoolCr = KafkaNodePoolTemplates.kafkaBasedNodePoolWithBrokerRole(testStorage.getKafkaNodePoolName(), kafkaCr, kafkaReplicas).build();
 
         resourceManager.createResourceWithWait(extensionContext, kafkaNodePoolCr, kafkaCr);
 
@@ -195,6 +175,7 @@ public class FeatureGatesST extends AbstractST {
         final int nodePoolIncreasedKafkaReplicaCount = 5;
         final String kafkaNodePoolName = "kafka";
 
+        // as the only FG set in the CO is 'KafkaNodePools' (kraft not included) Broker role is the only one that kafka broker can take
         setupClusterOperatorWithFeatureGate(extensionContext, "+KafkaNodePools");
 
         // setup clients
@@ -219,17 +200,8 @@ public class FeatureGatesST extends AbstractST {
             .endMetadata()
             .build();
 
-        final KafkaNodePool kafkaNodePoolCr =  KafkaNodePoolTemplates.defaultKafkaNodePool(testStorage.getNamespaceName(), kafkaNodePoolName, testStorage.getClusterName(), 3)
-            .editOrNewMetadata()
-                .withNamespace(testStorage.getNamespaceName())
-            .endMetadata()
-            .editOrNewSpec()
-                .addToRoles(ProcessRoles.BROKER)
-                .withStorage(kafkaCr.getSpec().getKafka().getStorage())
-                .withJvmOptions(kafkaCr.getSpec().getKafka().getJvmOptions())
-                .withResources(kafkaCr.getSpec().getKafka().getResources())
-            .endSpec()
-            .build();
+        // as the only FG set in the CO is 'KafkaNodePools' (kraft is never included) Broker role is the only one that can be taken
+        final KafkaNodePool kafkaNodePoolCr = KafkaNodePoolTemplates.kafkaBasedNodePoolWithBrokerRole(kafkaNodePoolName, kafkaCr, 3).build();
 
         resourceManager.createResourceWithWait(extensionContext,
             kafkaNodePoolCr,
