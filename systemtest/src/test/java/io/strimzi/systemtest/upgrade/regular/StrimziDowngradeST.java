@@ -2,11 +2,15 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.systemtest.upgrade;
+package io.strimzi.systemtest.upgrade.regular;
 
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.storage.TestStorage;
+import io.strimzi.systemtest.upgrade.AbstractUpgradeST;
+import io.strimzi.systemtest.upgrade.BundleVersionModificationData;
+import io.strimzi.systemtest.upgrade.UpgradeKafkaVersion;
+import io.strimzi.systemtest.upgrade.VersionModificationDataLoader;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.NamespaceUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
@@ -71,12 +75,12 @@ public class StrimziDowngradeST extends AbstractUpgradeST {
         // We support downgrade only when you didn't upgrade to new inter.broker.protocol.version and log.message.format.version
         // https://strimzi.io/docs/operators/latest/full/deploying.html#con-target-downgrade-version-str
         setupEnvAndUpgradeClusterOperator(extensionContext, downgradeData, testStorage, testUpgradeKafkaVersion, TestConstants.CO_NAMESPACE);
-        logPodImages(clusterName);
+        logPodImages(TestConstants.CO_NAMESPACE);
         // Downgrade CO
         changeClusterOperator(downgradeData, TestConstants.CO_NAMESPACE, extensionContext);
         // Wait for Kafka cluster rolling update
         waitForKafkaClusterRollingUpdate();
-        logPodImages(clusterName);
+        logPodImages(TestConstants.CO_NAMESPACE);
         // Verify that pods are stable
         PodUtils.verifyThatRunningPodsAreStable(TestConstants.CO_NAMESPACE, clusterName);
         checkAllImages(downgradeData, TestConstants.CO_NAMESPACE);

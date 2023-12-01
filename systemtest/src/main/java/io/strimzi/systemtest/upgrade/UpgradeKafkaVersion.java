@@ -15,12 +15,18 @@ public class UpgradeKafkaVersion {
     private String version;
     private String logMessageVersion;
     private String interBrokerVersion;
+    private String metadataVersion;
 
-    UpgradeKafkaVersion(TestKafkaVersion testKafkaVersion) {
+    public UpgradeKafkaVersion(TestKafkaVersion testKafkaVersion) {
         this(testKafkaVersion.version(), testKafkaVersion.messageVersion(), testKafkaVersion.protocolVersion());
     }
 
-    UpgradeKafkaVersion(String version) {
+    public UpgradeKafkaVersion(String version, String desiredMetadataVersion) {
+        this.version = version;
+        this.metadataVersion = desiredMetadataVersion;
+    }
+
+    public UpgradeKafkaVersion(String version) {
         String shortVersion = version;
 
         if (version != null && !version.equals("")) {
@@ -31,17 +37,18 @@ public class UpgradeKafkaVersion {
         this.version = version;
         this.logMessageVersion = shortVersion;
         this.interBrokerVersion = shortVersion;
+        this.metadataVersion = shortVersion;
     }
 
     /**
      * Leaving empty, so original Kafka version in `kafka-persistent.yaml` will be used
      * LMFV and IBPV should be null, so the test steps will for updating the config will be skipped
      */
-    UpgradeKafkaVersion() {
+    public UpgradeKafkaVersion() {
         this("", null, null);
     }
 
-    UpgradeKafkaVersion(String version, String logMessageVersion, String interBrokerVersion) {
+    public UpgradeKafkaVersion(String version, String logMessageVersion, String interBrokerVersion) {
         this.version = version;
         this.logMessageVersion = logMessageVersion;
         this.interBrokerVersion = interBrokerVersion;
@@ -61,6 +68,10 @@ public class UpgradeKafkaVersion {
 
     public String getInterBrokerVersion() {
         return this.interBrokerVersion;
+    }
+
+    public String getMetadataVersion() {
+        return this.metadataVersion;
     }
 
     public static UpgradeKafkaVersion getKafkaWithVersionFromUrl(String kafkaVersionsUrl, String kafkaVersion) {

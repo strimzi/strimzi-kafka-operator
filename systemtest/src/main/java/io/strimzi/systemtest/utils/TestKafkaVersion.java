@@ -56,6 +56,9 @@ public class TestKafkaVersion implements Comparable<TestKafkaVersion> {
     @JsonProperty("format")
     String messageVersion;
 
+    @JsonProperty("metadata")
+    String metadataVersion;
+
     @JsonProperty("zookeeper")
     String zookeeperVersion;
 
@@ -87,6 +90,10 @@ public class TestKafkaVersion implements Comparable<TestKafkaVersion> {
 
     public String messageVersion() {
         return messageVersion;
+    }
+
+    public String metadataVersion() {
+        return metadataVersion;
     }
 
     public String zookeeperVersion() {

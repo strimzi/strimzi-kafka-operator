@@ -355,6 +355,14 @@
         </profile>
 
         <profile>
+            <id>kraft_upgrade</id>
+            <properties>
+                <skipTests>false</skipTests>
+                <groups>kraftupgrade</groups>
+            </properties>
+        </profile>
+
+        <profile>
             <id>operators</id>
             <properties>
                 <skipTests>false</skipTests>
@@ -527,12 +535,24 @@
         </profile>
 
         <profile>
+            <id>azp_kraft_upgrade</id>
+            <properties>
+                <skipTests>false</skipTests>
+                <groups>kraftupgrade</groups>
+                <it.test>
+                    !KRaftKafkaUpgradeDowngradeST
+                </it.test>
+            </properties>
+        </profile>
+
+        <profile>
             <id>azp_kafka_upgrade</id>
             <properties>
                 <skipTests>false</skipTests>
-                <groups>upgrade</groups>
+                <groups>upgrade,kraftupgrade</groups>
                 <it.test>
-                    KafkaUpgradeDowngradeST
+                    KafkaUpgradeDowngradeST,
+                    KRaftKafkaUpgradeDowngradeST
                 </it.test>
             </properties>
         </profile>

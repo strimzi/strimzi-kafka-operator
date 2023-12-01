@@ -4,6 +4,8 @@
  */
 package io.strimzi.systemtest.resources.crd;
 
+import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
@@ -21,7 +23,9 @@ import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PersistentVolumeClaimUtils;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
 import static io.strimzi.operator.common.Util.hashStub;
@@ -110,5 +114,22 @@ public class KafkaNodePoolResource implements ResourceType<KafkaNodePool> {
         }
 
         return builder.build();
+    }
+
+    public static LabelSelector getLabelSelector(String clusterName, String poolName, ProcessRoles processRole) {
+        Map<String, String> matchLabels = new HashMap<>();
+        matchLabels.put(Labels.STRIMZI_CLUSTER_LABEL, clusterName);
+        matchLabels.put(Labels.STRIMZI_KIND_LABEL, Kafka.RESOURCE_KIND);
+        matchLabels.put(Labels.STRIMZI_POOL_NAME_LABEL, poolName);
+
+        switch (processRole) {
+            case BROKER -> matchLabels.put(Labels.STRIMZI_BROKER_ROLE_LABEL, "true");
+            case CONTROLLER -> matchLabels.put(Labels.STRIMZI_CONTROLLER_ROLE_LABEL, "true");
+            default -> throw new RuntimeException("No role for KafkaNodePool specified");
+        }
+
+        return new LabelSelectorBuilder()
+            .withMatchLabels(matchLabels)
+            .build();
     }
 }
