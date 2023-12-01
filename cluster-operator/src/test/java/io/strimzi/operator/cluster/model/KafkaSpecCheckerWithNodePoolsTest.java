@@ -218,7 +218,7 @@ public class KafkaSpecCheckerWithNodePoolsTest {
     }
 
     @Test
-    public void testOldMetadataVersion() {
+    public void testMetadataVersionIsOlderThanKafkaVersion() {
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .editKafka()
@@ -240,7 +240,7 @@ public class KafkaSpecCheckerWithNodePoolsTest {
     }
 
     @Test
-    public void testSameMetadataVersion() {
+    public void testMetadataVersionMatchesKafkaVersion() {
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .editKafka()
@@ -260,7 +260,7 @@ public class KafkaSpecCheckerWithNodePoolsTest {
     }
 
     @Test
-    public void testZooKeeperBasedVersionsInKRaft() {
+    public void testUnusedConfigInKRaftBasedClusters() {
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .editKafka()
