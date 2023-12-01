@@ -1255,6 +1255,11 @@
                         <recipe>org.openrewrite.java.format.AutoFormat</recipe>
                     </activeRecipes>
                     <checkstyleConfigFile>.checkstyle/checkstyle.xml</checkstyleConfigFile>
+                    <exclusions>
+                        <exclusion>.git/**</exclusion>
+                        <exclusion>*.yaml</exclusion>
+                        <exclusion>*.yml</exclusion>
+                    </exclusions>
                 </configuration>
             </plugin>
         </plugins>
