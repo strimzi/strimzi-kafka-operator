@@ -1246,6 +1246,17 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.openrewrite.maven</groupId>
+                <artifactId>rewrite-maven-plugin</artifactId>
+                <version>5.14.1</version>
+                <configuration>
+                    <activeRecipes>
+                        <recipe>org.openrewrite.java.format.AutoFormat</recipe>
+                    </activeRecipes>
+                    <checkstyleConfigFile>.checkstyle/checkstyle.xml</checkstyleConfigFile>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
     <profiles>
