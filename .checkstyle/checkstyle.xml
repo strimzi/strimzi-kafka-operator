@@ -66,7 +66,7 @@
 
         <!-- dependencies and import control -->
         <module name="ImportControl">
-            <property name="file" value="${importControlFile}"/>
+            <property name="file" value=".checkstyle/import-control.xml"/>
             <!-- we do not want to validate test classes -->
             <property name="path" value="^.*[\\/]src[\\/]main[\\/].*$"/>
         </module>
@@ -133,7 +133,7 @@
     </module>
 
     <module name="SuppressionFilter">
-        <property name="file" value="${checkstyle.suppressions.file}"/>
+        <property name="file" value=".checkstyle/suppressions.xml}"/>
     </module>
 
     <!-- Filter out Checkstyle warnings that have been suppressed with the @SuppressWarnings annotation -->
