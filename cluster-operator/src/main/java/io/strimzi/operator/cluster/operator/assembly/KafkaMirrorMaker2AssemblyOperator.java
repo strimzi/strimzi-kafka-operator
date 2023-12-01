@@ -350,6 +350,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                                 .withClassName(className)
                                 .withConfig(mm2ConnectorSpec.getConfig())
                                 .withPause(mm2ConnectorSpec.getPause())
+                                .withState(mm2ConnectorSpec.getState())
                                 .withTasksMax(mm2ConnectorSpec.getTasksMax())
                                 .build();
 
