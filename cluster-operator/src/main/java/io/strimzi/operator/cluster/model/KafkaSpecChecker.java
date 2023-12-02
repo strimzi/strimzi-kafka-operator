@@ -55,15 +55,20 @@ public class KafkaSpecChecker {
     List<Condition> run(boolean useKRaft) {
         List<Condition> warnings = new ArrayList<>();
 
-        checkKafkaLogMessageFormatVersion(warnings);
-        checkKafkaInterBrokerProtocolVersion(warnings);
         checkKafkaReplicationConfig(warnings);
         checkKafkaBrokersStorage(warnings);
 
-        // Additional checks done for KRaft clusters
         if (useKRaft)   {
+            // Additional checks done for KRaft clusters
             checkKRaftControllerStorage(warnings);
             checkKRaftControllerCount(warnings);
+            checkKafkaMetadataVersion(warnings);
+            checkInterBrokerProtocolVersionInKRaft(warnings);
+            checkLogMessageFormatVersionInKRaft(warnings);
+        } else {
+            // Additional checks done for ZooKeeper-based clusters
+            checkKafkaLogMessageFormatVersion(warnings);
+            checkKafkaInterBrokerProtocolVersion(warnings);
         }
 
         return warnings;
@@ -180,6 +185,55 @@ public class KafkaSpecChecker {
         } else if (controllerCount % 2 == 0) {
             warnings.add(StatusUtils.buildWarningCondition("KafkaKRaftControllerNodeCount",
                     "Running KRaft controller quorum with an odd number of nodes is recommended."));
+        }
+    }
+
+    /**
+     * Checks if the version of the Kafka brokers matches any custom metadata version config. Updating this is the final
+     * step in upgrading Kafka version in KRaft, so if this doesn't match it is possibly an indication that a user has
+     * updated their Kafka cluster and is unaware that they also should update their metadata version to match.
+     *
+     * @param warnings List to add a warning to, if appropriate.
+     */
+    private void checkKafkaMetadataVersion(List<Condition> warnings) {
+        String metadataVersion = kafkaCluster.getMetadataVersion();
+
+        if (metadataVersion != null) {
+            Matcher m = MAJOR_MINOR_REGEX.matcher(metadataVersion);
+            if (m.matches() && !kafkaBrokerVersion.startsWith(m.group(1))) {
+                warnings.add(StatusUtils.buildWarningCondition("KafkaMetadataVersion",
+                        "Metadata version is older than the Kafka version used by the cluster, which suggests that an upgrade is incomplete."));
+            }
+        }
+    }
+
+    /**
+     * inter.broker.protocol.version should not be used in KRaft. This method checks if it is set and in case it is, it
+     * raises the warning.
+     *
+     * @param warnings List to add a warning to, if appropriate.
+     */
+    private void checkInterBrokerProtocolVersionInKRaft(List<Condition> warnings) {
+        String interBrokerProtocolVersion = kafkaCluster.getConfiguration().getConfigOption(KafkaConfiguration.INTERBROKER_PROTOCOL_VERSION);
+
+        if (interBrokerProtocolVersion != null) {
+            warnings.add(StatusUtils.buildWarningCondition("KafkaInterBrokerProtocolVersionInKRaft",
+                    "inter.broker.protocol.version is not used in KRaft-based Kafka clusters and should be removed from the Kafka custom resource."));
+        }
+    }
+
+    /**
+     * log.message.format.version should not be used in KRaft. This method checks if it is set and in case it is, it
+     * raises the warning.
+     *
+     * @param warnings List to add a warning to, if appropriate.
+     */
+    private void checkLogMessageFormatVersionInKRaft(List<Condition> warnings) {
+        String interBrokerProtocolVersion = kafkaCluster.getConfiguration().getConfigOption(KafkaConfiguration.LOG_MESSAGE_FORMAT_VERSION);
+
+        if (interBrokerProtocolVersion != null) {
+            warnings.add(StatusUtils.buildWarningCondition("KafkaLogMessageFormatVersionInKRaft",
+                    "log.message.format.version is not used in KRaft-based Kafka clusters and should be removed from the Kafka custom resource."));
         }
     }
 }
