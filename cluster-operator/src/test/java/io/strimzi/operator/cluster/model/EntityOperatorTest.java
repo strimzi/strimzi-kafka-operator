@@ -1038,8 +1038,18 @@ public class EntityOperatorTest {
 
         List<PolicyRule> rules = new ArrayList<>();
         rules.add(new PolicyRuleBuilder()
-                .addToResources("kafkatopics", "kafkatopics/status", "kafkausers", "kafkausers/status")
+                .addToResources("kafkatopics")
                 .addToVerbs("get", "list", "watch", "create", "patch", "update", "delete")
+                .addToApiGroups(Constants.RESOURCE_GROUP_NAME)
+                .build());
+        rules.add(new PolicyRuleBuilder()
+                .addToResources("kafkausers")
+                .addToVerbs("get", "list", "watch", "create", "patch", "update")
+                .addToApiGroups(Constants.RESOURCE_GROUP_NAME)
+                .build());
+        rules.add(new PolicyRuleBuilder()
+                .addToResources("kafkatopics/status", "kafkausers/status")
+                .addToVerbs("get", "patch", "update")
                 .addToApiGroups(Constants.RESOURCE_GROUP_NAME)
                 .build());
         rules.add(new PolicyRuleBuilder()

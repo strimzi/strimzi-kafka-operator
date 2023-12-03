@@ -13,19 +13,13 @@ rules:
   resources:
   - kafkas
   - kafkanodepools
-  - kafkanodepools/scale
   - kafkaconnects
-  - kafkaconnects/scale
   - kafkamirrormakers
-  - kafkamirrormakers/scale
   - kafkausers
   - kafkatopics
   - kafkabridges
-  - kafkabridges/scale
   - kafkaconnectors
-  - kafkaconnectors/scale
   - kafkamirrormaker2s
-  - kafkamirrormaker2s/scale
   - kafkarebalances
   verbs:
   - get
@@ -33,6 +27,19 @@ rules:
   - watch
   - create
   - delete
+  - patch
+  - update
+- apiGroups:
+  - "kafka.strimzi.io"
+  resources:
+  - kafkanodepools/scale
+  - kafkaconnects/scale
+  - kafkamirrormakers/scale
+  - kafkabridges/scale
+  - kafkaconnectors/scale
+  - kafkamirrormaker2s/scale
+  verbs:
+  - get
   - patch
   - update
 - apiGroups:

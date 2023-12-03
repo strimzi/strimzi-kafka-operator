@@ -25,30 +25,43 @@ rules:
 - apiGroups:
   - "kafka.strimzi.io"
   resources:
-  # The cluster operator runs the KafkaAssemblyOperator, which needs to access and manage Kafka resources
+  # The Cluster Operator operates the Strimzi custom resources
   - kafkas
-  - kafkas/status
-    # The cluster operator runs the KafkaAssemblyOperator, which needs to access and manage KafkaNodePool resources
   - kafkanodepools
-  - kafkanodepools/status
-  # The cluster operator runs the KafkaConnectAssemblyOperator, which needs to access and manage KafkaConnect resources
   - kafkaconnects
-  - kafkaconnects/status
-  # The cluster operator runs the KafkaConnectorAssemblyOperator, which needs to access and manage KafkaConnector resources
   - kafkaconnectors
-  - kafkaconnectors/status
-  # The cluster operator runs the KafkaMirrorMakerAssemblyOperator, which needs to access and manage KafkaMirrorMaker resources
   - kafkamirrormakers
-  - kafkamirrormakers/status
-  # The cluster operator runs the KafkaBridgeAssemblyOperator, which needs to access and manage BridgeMaker resources
   - kafkabridges
-  - kafkabridges/status
-  # The cluster operator runs the KafkaMirrorMaker2AssemblyOperator, which needs to access and manage KafkaMirrorMaker2 resources
   - kafkamirrormaker2s
-  - kafkamirrormaker2s/status
-  # The cluster operator runs the KafkaRebalanceAssemblyOperator, which needs to access and manage KafkaRebalance resources
   - kafkarebalances
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - patch
+  - update
+- apiGroups:
+  - "kafka.strimzi.io"
+  resources:
+  # The Cluster Operator needs to manage the status of the Strimzi custom resources
+  - kafkas/status
+  - kafkanodepools/status
+  - kafkaconnects/status
+  - kafkaconnectors/status
+  - kafkamirrormakers/status
+  - kafkabridges/status
+  - kafkamirrormaker2s/status
   - kafkarebalances/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - "core.strimzi.io"
+  resources:
+  # The cluster operator uses StrimziPodSets to manage the Kafka and ZooKeeper pods
+  - strimzipodsets
   verbs:
   - get
   - list
@@ -60,15 +73,10 @@ rules:
 - apiGroups:
   - "core.strimzi.io"
   resources:
-  # The cluster operator uses StrimziPodSets to manage the Kafka and ZooKeeper pods
-  - strimzipodsets
+  # The Cluster Operator needs to manage the status of the StrimziPodSet custom resource
   - strimzipodsets/status
   verbs:
   - get
-  - list
-  - watch
-  - create
-  - delete
   - patch
   - update
 {{- end -}}
