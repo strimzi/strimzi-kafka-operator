@@ -1252,15 +1252,21 @@
                 <version>5.14.1</version>
                 <configuration>
                     <activeRecipes>
-                        <recipe>org.openrewrite.java.format.AutoFormat</recipe>
+                        <recipe>org.openrewrite.staticanalysis.CodeCleanup</recipe>
                     </activeRecipes>
-                    <checkstyleConfigFile>.checkstyle/checkstyle.xml</checkstyleConfigFile>
                     <exclusions>
                         <exclusion>.git/**</exclusion>
                         <exclusion>*.yaml</exclusion>
                         <exclusion>*.yml</exclusion>
                     </exclusions>
                 </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.openrewrite.recipe</groupId>
+                        <artifactId>rewrite-static-analysis</artifactId>
+                        <version>1.1.1</version>
+                    </dependency>
+                </dependencies>
             </plugin>
         </plugins>
     </build>
