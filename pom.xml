@@ -1251,6 +1251,7 @@
                 <artifactId>rewrite-maven-plugin</artifactId>
                 <version>5.14.1</version>
                 <configuration>
+                    <checkstyleConfigFile>.checkstyle/checkstyle.xml</checkstyleConfigFile>
                     <activeRecipes>
                         <recipe>org.openrewrite.staticanalysis.CodeCleanup</recipe>
                     </activeRecipes>
