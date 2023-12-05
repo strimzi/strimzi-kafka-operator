@@ -1,13 +1,16 @@
 // This module is included in the following assemblies:
 //
-// assembly-downgrading-kafka-versions.adoc
+// assembly-downgrading-zookeeper.adoc
 
-[id='proc-downgrading-brokers-older-kafka-{context}']
-
-= Downgrading Kafka brokers and client applications
+[id='proc-downgrade-kafka-zookeeper-{context}']
+= Downgrading ZooKeeper-based Kafka clusters and client applications
 
 [role="_abstract"]
-Downgrade a Strimzi Kafka cluster to a lower (previous) version of Kafka, such as downgrading from {KafkaVersionHigher} to {KafkaVersionLower}.
+Downgrade a ZooKeeper-based Strimzi Kafka cluster to an earlier version.
+When downgrading a ZooKeeper-based Strimzi Kafka cluster to a lower version, like moving from {KafkaVersionHigher} to {KafkaVersionLower}, ensure that the `inter.broker.protocol.version` property in the Kafka configuration aligns with a version supported by the specified Kafka version (`spec.kafka.version`). 
+The inter-broker protocol version for the Kafka version you are downgrading from must not be higher than the version you are downgrading to.
+
+NOTE: Consult the Apache Kafka documentation for information regarding the support and limitations associated with ZooKeeper-based downgrades.
 
 .Prerequisites
 
@@ -25,7 +28,7 @@ From Kafka 3.0.0, when the `inter.broker.protocol.version` is set to `3.0` or hi
 . Update the Kafka cluster configuration.
 +
 [source,shell,subs=+quotes]
-kubectl edit kafka _KAFKA-CONFIGURATION-FILE_
+kubectl edit kafka <kafka_configuration_file>
 
 . Change the `Kafka.spec.kafka.version` to specify the previous version.
 +

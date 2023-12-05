@@ -1,13 +1,12 @@
 // This module is included in the following assemblies:
 //
-// upgrading/assembly_upgrade-kafka-versions.adoc
+// assembly-upgrade-zookeeper.adoc
 
-[id='proc-upgrading-brokers-newer-kafka-{context}']
-
-= Upgrading Kafka brokers and client applications
+[id='proc-upgrade-kafka-zookeeper-{context}']
+= Upgrading ZooKeeper-based Kafka clusters and client applications
 
 [role="_abstract"]
-Upgrade a Strimzi Kafka cluster to the latest supported Kafka version and _inter-broker protocol version_.
+Upgrade a ZooKeeper-based Strimzi Kafka cluster to the latest supported Kafka version and inter-broker protocol version.
 
 You should also choose a xref:con-strategies-for-upgrading-clients-{context}[strategy for upgrading clients].
 Kafka clients are upgraded in step 6 of this procedure.
@@ -23,7 +22,7 @@ Kafka clients are upgraded in step 6 of this procedure.
 +
 [source,shell,subs=+quotes]
 ----
-kubectl edit kafka _<my_cluster>_
+kubectl edit kafka <kafka_configuration_file>
 ----
 
 . If configured, check that the `inter.broker.protocol.version` and `log.message.format.version` properties are set to the _current_ version.

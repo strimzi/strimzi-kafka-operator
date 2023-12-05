@@ -1,26 +1,22 @@
 // Module included in the following assemblies:
 //
-// assembly-upgrade.adoc
+// assembly-upgrade-zookeeper.adoc
 
 [id='ref-kafka-versions-{context}']
-= Kafka versions
+= Updating Kafka versions
 
-Kafka's log message format version and inter-broker protocol version specify, respectively, the log format version appended to messages and the version of the Kafka protocol used in a cluster.
-To ensure the correct versions are used, the upgrade process involves making configuration changes to existing Kafka brokers and code changes to client applications (consumers and producers).
+[role="_abstract"]
+Upgrading Kafka when using ZooKeeper for cluster management requires updates to the Kafka version (`Kafka.spec.kafka.version`) and its inter-broker protocol version (`inter.broker.protocol.version`) in the configuration of the `Kafka` resource.
+Each version of Kafka has a compatible version of the inter-broker protocol.
+The inter-broker protocol is used for inter-broker communication.
+The minor version of the protocol typically increases to match the minor version of Kafka, as shown in the preceding table.
+The inter-broker protocol version is set cluster wide in the `Kafka` resource.
+To change it, you edit the `inter.broker.protocol.version` property in `Kafka.spec.kafka.config`.
 
 The following table shows the differences between Kafka versions:
 
 .Kafka version differences
 include::../snip-kafka-versions.adoc[leveloffset=+1]
-
-.Inter-broker protocol version
-
-In Kafka, the network protocol used for inter-broker communication is called the _inter-broker protocol_.
-Each version of Kafka has a compatible version of the inter-broker protocol.
-The minor version of the protocol typically increases to match the minor version of Kafka, as shown in the preceding table.
-
-The inter-broker protocol version is set cluster wide in the `Kafka` resource.
-To change it, you edit the `inter.broker.protocol.version` property in `Kafka.spec.kafka.config`.
 
 .Log message format version
 
@@ -36,7 +32,38 @@ From Kafka 3.0.0, the message format version values are assumed to match the `in
 The values reflect the Kafka version used.
 
 When upgrading to Kafka 3.0.0 or higher, you can remove these settings when you update the `inter.broker.protocol.version`.
-Otherwise, set the message format version based on the Kafka version you are upgrading to.
+Otherwise, you can set the message format version based on the Kafka version you are upgrading to.
 
 The default value of `message.format.version` for a topic is defined by the `log.message.format.version` that is set on the Kafka broker.
 You can manually set the `message.format.version` of a topic by modifying its topic configuration.
+
+.Rolling updates from Kafka version changes
+
+The Cluster Operator initiates rolling updates to Kafka brokers when the Kafka version is updated.
+Further rolling updates depend on the configuration for `inter.broker.protocol.version` and `log.message.format.version`.
+
+[cols="2*",options="header",stripes="none",separator=¦]
+|===
+
+¦If `Kafka.spec.kafka.config` contains...
+¦The Cluster Operator initiates...
+
+¦Both the `inter.broker.protocol.version` and the `log.message.format.version`.
+¦A single rolling update. After the update, the `inter.broker.protocol.version` must be updated manually, followed by `log.message.format.version`.
+Changing each will trigger a further rolling update.
+
+¦Either the `inter.broker.protocol.version` or the `log.message.format.version`.
+¦Two rolling updates.
+
+¦No configuration for the `inter.broker.protocol.version` or the `log.message.format.version`.
+¦Two rolling updates.
+
+|===
+
+IMPORTANT: From Kafka 3.0.0, when the `inter.broker.protocol.version` is set to `3.0` or higher, the `log.message.format.version` option is ignored and doesn't need to be set.
+The `log.message.format.version` property for brokers and the `message.format.version` property for topics are deprecated and will be removed in a future release of Kafka.
+
+As part of the Kafka upgrade, the Cluster Operator initiates rolling updates for ZooKeeper.
+
+* A single rolling update occurs even if the ZooKeeper version is unchanged.
+* Additional rolling updates occur if the new version of Kafka requires a new ZooKeeper version.

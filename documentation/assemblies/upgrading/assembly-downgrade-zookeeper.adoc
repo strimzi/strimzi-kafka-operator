@@ -1,0 +1,13 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-downgrade.adoc
+
+[id='assembly-downgrade-kafka-versions-{context}']
+= Downgrading Kafka when using ZooKeeper
+
+If you are using Kafka in ZooKeeper mode, the downgrade process involves changing the Kafka version and the related `log.message.format.version` and `inter.broker.protocol.version` properties.
+
+//Version constraints on the downgrade
+include::../../modules/upgrading/con-downgrade-target-version.adoc[leveloffset=+1]
+//procedure to downgrade Kafka
+include::../../modules/upgrading/proc-downgrade-kafka-zookeeper.adoc[leveloffset=+1]

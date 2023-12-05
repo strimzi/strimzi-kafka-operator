@@ -9,13 +9,9 @@
 If you are encountering issues with the version of Strimzi you upgraded to,
 you can revert your installation to the previous version.
 
-If you used the YAML installation files to install Strimzi, you can use the YAML installation files from the previous release to perform the following downgrade procedures:
-
-. xref:proc-downgrade-cluster-operator-{context}[]
-. xref:assembly-downgrade-kafka-versions-{context}[]
-
-If the previous version of Strimzi does not support the version of Kafka you are using,
-you can also downgrade Kafka as long as the log message format versions appended to messages match.
+If you used the YAML installation files to install Strimzi, you can use the YAML installation files from the previous release to perform the downgrade procedures.
+You can downgrade Strimzi by updating the Cluster Operator and the version of Kafka you are using.
+Kafka version downgrades are performed by the Cluster Operator.
 
 WARNING: The following downgrade instructions are only suitable if you installed Strimzi using the installation files. 
 If you installed Strimzi using another method, like {OperatorHub}, downgrade may not be supported by that method unless specified in their documentation. 
@@ -24,5 +20,8 @@ To ensure a successful downgrade process, it is essential to use a supported app
 //steps to downgrade the operators
 include::../../modules/upgrading/proc-downgrade-cluster-operator.adoc[leveloffset=+1]
 
-//steps to downgrade Kafka
-include::assembly-downgrade-kafka-versions.adoc[leveloffset=+1]
+//steps to downgrade KRaft-based Kafka
+include::../../modules/upgrading/proc-downgrade-kafka-kraft.adoc[leveloffset=+1]
+
+//steps to downgrade ZooKeeper-based Kafka
+include::assembly-downgrade-zookeeper.adoc[leveloffset=+1]

@@ -8,25 +8,27 @@
 [role="_abstract"]
 Use the same method to upgrade the Cluster Operator as the initial method of deployment.
 
-Using installation files:: If you deployed the Cluster Operator using the installation YAML files, perform your upgrade by modifying the Operator installation files, as described in xref:proc-upgrading-the-co-{context}[Upgrading the Cluster Operator].
+include::../../modules/upgrading/proc-upgrade-cluster-operator.adoc[leveloffset=+1]
 
-Using the OperatorHub.io:: If you deployed Strimzi from {OperatorHub}, use the Operator Lifecycle Manager (OLM) to change the update channel for the Strimzi operators to a new Strimzi version.
-+
+== Upgrading the Cluster Operator using the OperatorHub
+
+If you deployed Strimzi from {OperatorHub}, use the Operator Lifecycle Manager (OLM) to change the update channel for the Strimzi operators to a new Strimzi version.
+
 Updating the channel starts one of the following types of upgrade, depending on your chosen upgrade strategy:
-+
---
+
 * An automatic upgrade is initiated
 * A manual upgrade that requires approval before installation begins
---
-+
+
 NOTE: If you subscribe to the _stable_ channel, you can get automatic updates without changing channels.
 However, enabling automatic updates is not recommended because of the potential for missing any pre-installation upgrade steps.
 Use automatic upgrades only on version-specific channels.
-+
-For more information on using OperatorHub.io to upgrade Operators, see the {OLMOperatorDocs}.
 
-Using a Helm chart:: If you deployed the Cluster Operator using a Helm chart, use `helm upgrade`.
-+
+For more information on using OperatorHub to upgrade Operators, see the {OLMOperatorDocs}.
+
+== Upgrading the Cluster Operator using a Helm chart
+
+If you deployed the Cluster Operator using a Helm chart, use `helm upgrade`.
+
 The `helm upgrade` command does not upgrade the {HelmCustomResourceDefinitions}.
 Install the new CRDs manually after upgrading the Cluster Operator.
 You can access the CRDs from the {ReleaseDownload} or find them in the `crd` subdirectory inside the Helm Chart.
@@ -48,4 +50,4 @@ kubectl get kafka <kafka_cluster_name> -n <namespace> -o jsonpath='{.status.cond
 
 Replace <kafka_cluster_name> with the name of your Kafka cluster and <namespace> with the Kubernetes namespace where the pod is running.
 
-include::../../modules/upgrading/proc-upgrade-cluster-operator.adoc[leveloffset=+1]
+
