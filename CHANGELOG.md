@@ -11,6 +11,7 @@
 * Improved Kafka Connect metrics and dashboard example files
 * Allow specifying and managing KRaft metadata version
 * Add support for KRaft to KRaft upgrades (Apache Kafka upgrades for the KRaft based clusters)
+* Improved Kafka Mirror Maker 2 dashboard example file
 
 ### Changes, deprecations and removals
 
