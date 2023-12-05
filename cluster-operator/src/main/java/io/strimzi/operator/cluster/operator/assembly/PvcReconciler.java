@@ -182,7 +182,8 @@ public class PvcReconciler {
     private Future<Void> considerPersistentClaimDeletion(String pvcName)   {
         return pvcOperator.getAsync(reconciliation.namespace(), pvcName)
                 .compose(pvc -> {
-                    if (Annotations.booleanAnnotation(pvc, Annotations.ANNO_STRIMZI_IO_DELETE_CLAIM, false)) {
+                    // The PVC might be null in case it was deleted in the mean time by something else such as garbage collection
+                    if (pvc != null && Annotations.booleanAnnotation(pvc, Annotations.ANNO_STRIMZI_IO_DELETE_CLAIM, false)) {
                         LOGGER.infoCr(reconciliation, "Deleting PVC {}", pvcName);
                         return pvcOperator.reconcile(reconciliation, reconciliation.namespace(), pvcName, null)
                                 .map((Void) null);
