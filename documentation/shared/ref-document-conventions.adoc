@@ -15,5 +15,5 @@ For example, the following code shows that `_<my_namespace>_` must be replaced b
 
 [source, subs="+quotes"]
 ----
-sed -i 's/namespace: .\*/namespace: <my_namespace>' install/cluster-operator/*RoleBinding*.yaml
+sed -i 's/namespace: .\*/namespace: <my_namespace>/' install/cluster-operator/*RoleBinding*.yaml
 ----
