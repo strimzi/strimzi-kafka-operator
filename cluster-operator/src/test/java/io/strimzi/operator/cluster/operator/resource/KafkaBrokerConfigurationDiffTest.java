@@ -32,10 +32,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.junit.jupiter.api.Assertions.fail;
 
 public class KafkaBrokerConfigurationDiffTest {
-
-    private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
-    private static final String KAFKA_VERSION = "3.6.0";
-    KafkaVersion kafkaVersion = VERSIONS.supportedVersion(KAFKA_VERSION);
+    KafkaVersion kafkaVersion = KafkaVersionTestUtils.getKafkaVersionLookup().defaultVersion();
     private final NodeRef nodeRef = new NodeRef("broker-0", 0, "broker", false, true);
 
     private ConfigEntry instantiateConfigEntry(String name, String val) {

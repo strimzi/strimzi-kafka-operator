@@ -31,8 +31,8 @@
   fromKafkaVersionsUrl: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/0.38.0/kafka-versions.yaml
   additionalTopics: 2
   imagesAfterOperations:
-    zookeeper: strimzi/kafka:latest-kafka-3.6.0
-    kafka: strimzi/kafka:latest-kafka-3.6.0
+    zookeeper: strimzi/kafka:latest-kafka-3.6.1
+    kafka: strimzi/kafka:latest-kafka-3.6.1
     topicOperator: strimzi/operator:latest
     userOperator: strimzi/operator:latest
   client:
@@ -51,8 +51,8 @@
   fromKafkaVersionsUrl: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/0.38.0/kafka-versions.yaml
   additionalTopics: 2
   imagesAfterOperations:
-    zookeeper: strimzi/kafka:latest-kafka-3.6.0
-    kafka: strimzi/kafka:latest-kafka-3.6.0
+    zookeeper: strimzi/kafka:latest-kafka-3.6.1
+    kafka: strimzi/kafka:latest-kafka-3.6.1
     topicOperator: strimzi/operator:latest
     userOperator: strimzi/operator:latest
   client:
