@@ -2546,7 +2546,7 @@ Used in: xref:type-KafkaUserAuthorizationSimple-{context}[`KafkaUserAuthorizatio
 
 xref:type-AclRule-schema-{context}[Full list of `AclRule` schema properties]
 
-include::../api/io.strimzi.api.kafka.model.acl.AclRule.adoc[leveloffset=+1]
+include::../api/io.strimzi.api.kafka.model.user.acl.AclRule.adoc[leveloffset=+1]
 
 [id='type-AclRule-schema-{context}']
 == `AclRule` schema properties

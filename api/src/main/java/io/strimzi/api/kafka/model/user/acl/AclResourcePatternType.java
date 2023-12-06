@@ -2,22 +2,22 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.api.kafka.model.acl;
+package io.strimzi.api.kafka.model.user.acl;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
-public enum AclRuleType {
-    ALLOW,
-    DENY;
+public enum AclResourcePatternType {
+    LITERAL,
+    PREFIX;
 
     @JsonCreator
-    public static AclRuleType forValue(String value) {
+    public static AclResourcePatternType forValue(String value) {
         switch (value) {
-            case "allow":
-                return ALLOW;
-            case "deny":
-                return DENY;
+            case "literal":
+                return LITERAL;
+            case "prefix":
+                return PREFIX;
             default:
                 return null;
         }
@@ -26,10 +26,10 @@ public enum AclRuleType {
     @JsonValue
     public String toValue() {
         switch (this) {
-            case ALLOW:
-                return "allow";
-            case DENY:
-                return "deny";
+            case LITERAL:
+                return "literal";
+            case PREFIX:
+                return "prefix";
             default:
                 return null;
         }

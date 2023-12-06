@@ -4,13 +4,13 @@
  */
 package io.strimzi.operator.user.model.acl;
 
-import io.strimzi.api.kafka.model.acl.AclOperation;
-import io.strimzi.api.kafka.model.acl.AclResourcePatternType;
-import io.strimzi.api.kafka.model.acl.AclRule;
-import io.strimzi.api.kafka.model.acl.AclRuleBuilder;
-import io.strimzi.api.kafka.model.acl.AclRuleResource;
-import io.strimzi.api.kafka.model.acl.AclRuleTopicResourceBuilder;
-import io.strimzi.api.kafka.model.acl.AclRuleType;
+import io.strimzi.api.kafka.model.user.acl.AclOperation;
+import io.strimzi.api.kafka.model.user.acl.AclResourcePatternType;
+import io.strimzi.api.kafka.model.user.acl.AclRule;
+import io.strimzi.api.kafka.model.user.acl.AclRuleBuilder;
+import io.strimzi.api.kafka.model.user.acl.AclRuleResource;
+import io.strimzi.api.kafka.model.user.acl.AclRuleTopicResourceBuilder;
+import io.strimzi.api.kafka.model.user.acl.AclRuleType;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import org.apache.kafka.common.acl.AccessControlEntry;
 import org.apache.kafka.common.acl.AclBinding;

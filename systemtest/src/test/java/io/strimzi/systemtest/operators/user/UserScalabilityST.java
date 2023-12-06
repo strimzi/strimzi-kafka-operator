@@ -6,7 +6,6 @@ package io.strimzi.systemtest.operators.user;
 
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
-import io.strimzi.api.kafka.model.acl.AclOperation;
 import io.strimzi.api.kafka.model.user.KafkaUser;
 import io.strimzi.api.kafka.model.user.KafkaUserAuthorizationSimple;
 import io.strimzi.api.kafka.model.user.KafkaUserAuthorizationSimpleBuilder;
@@ -14,6 +13,7 @@ import io.strimzi.api.kafka.model.user.KafkaUserBuilder;
 import io.strimzi.api.kafka.model.user.KafkaUserQuotas;
 import io.strimzi.api.kafka.model.user.KafkaUserQuotasBuilder;
 import io.strimzi.api.kafka.model.user.KafkaUserSpec;
+import io.strimzi.api.kafka.model.user.acl.AclOperation;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedTest;
