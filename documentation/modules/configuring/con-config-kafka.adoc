@@ -24,9 +24,12 @@ Configuration options that are particularly important include the following:
 * Metadata version for KRaft-based Kafka clusters
 * Inter-broker protocol version for ZooKeeper-based Kafka clusters
 
-The `metadataVersion` or `inter.broker.protocol.version` property for the Kafka `config` must be a version supported by the specified Kafka version (`spec.kafka.version`).
+The `.spec.kafka.metadataVersion` property or the `inter.broker.protocol.version` property in `config` must be a version supported by the specified Kafka version (`spec.kafka.version`).
 The property represents the Kafka metadata or inter-broker protocol version used in a Kafka cluster.
 If either of these properties is not set in the configuration, the Cluster Operator updates the version to the default for the Kafka version used.  
+
+NOTE: The oldest supported metadata version is 3.3. 
+Using a metadata version that is older than the Kafka version might cause some features to be disabled.
 
 For a deeper understanding of the Kafka cluster configuration options, refer to the link:{BookURLConfiguring}[Strimzi Custom Resource API Reference^].
 

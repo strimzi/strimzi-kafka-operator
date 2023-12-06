@@ -6,7 +6,7 @@
 = Checking the status of an upgrade
 
 [role="_abstract"]
-When performing an upgrade, you can check it completed successfully in the status of the `Kafka` custom resource.
+When performing an upgrade (or downgrade), you can check it completed successfully in the status of the `Kafka` custom resource.
 The status provides information on the Strimzi and Kafka versions being used.
 
 To ensure that you have the correct versions after completing an upgrade, verify the `kafkaVersion` and `operatorLastSuccessfulVersion` values in the Kafka status.  

@@ -6,9 +6,9 @@
 = Upgrading clients with older message formats
 
 [role="_abstract"]
-Before Kafka 3.0, you would configure a specific message format for brokers using the `log.message.format.version` property (or the `message.format.version` property at the topic level). 
-This allowed brokers to support older Kafka clients that were using an outdated message format. 
-Otherwise, the brokers would need to convert the messages from the older clients, which came with a significant performance cost.
+Before Kafka 3.0, you could configure a specific message format for brokers using the `log.message.format.version` property (or the `message.format.version` property at the topic level). 
+This allowed brokers to accommodate older Kafka clients that were using an outdated message format. 
+Though Kafka inherently supports older clients without explicitly setting this property, brokers would then need to convert the messages from the older clients, which came with a significant performance cost.
 
 Apache Kafka Java clients have supported the latest message format version since version 0.11. 
 If all of your clients are using the latest message version, you can remove the `log.message.format.version` or `message.format.version` overrides when upgrading your brokers.
