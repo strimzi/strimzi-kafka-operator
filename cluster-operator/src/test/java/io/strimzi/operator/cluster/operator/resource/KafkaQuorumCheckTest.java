@@ -218,4 +218,49 @@ class KafkaQuorumCheckTest {
         }));
     }
 
+    @Test
+    public void shouldHandlePartiallyIncompleteQuorumData(VertxTestContext context) {
+        Map<Integer, OptionalLong> controllers = new HashMap<>();
+        controllers.put(1, OptionalLong.of(10000L));
+        controllers.put(2, OptionalLong.empty()); // Simulating incomplete data
+        controllers.put(3, OptionalLong.of(9500L));
+        Admin admin = setUpMocks(1, controllers);
+        KafkaQuorumCheck quorumCheck = new KafkaQuorumCheck(Reconciliation.DUMMY_RECONCILIATION, admin, vertx, CONTROLLER_QUORUM_FETCH_TIMEOUT_MS);
+        quorumCheck.canRollController(1).onComplete(context.succeeding(result -> {
+            context.verify(() -> assertFalse(result));
+            context.completeNow();
+        }));
+    }
+
+    @Test
+    public void shouldHandleNoLeaderQuorumScenario(VertxTestContext context) {
+        // Simulate a valid controller list
+        Map<Integer, OptionalLong> controllers = new HashMap<>();
+        controllers.put(1, OptionalLong.of(10000L));
+        controllers.put(2, OptionalLong.of(12000L));
+        controllers.put(3, OptionalLong.of(11000L));
+
+        // Simulate no leader by passing a negative leader ID
+        Admin admin = setUpMocks(-1, controllers);
+        KafkaQuorumCheck quorumCheck = new KafkaQuorumCheck(Reconciliation.DUMMY_RECONCILIATION, admin, vertx, CONTROLLER_QUORUM_FETCH_TIMEOUT_MS);
+
+        quorumCheck.canRollController(1).onComplete(context.succeeding(result -> {
+            context.verify(() -> assertFalse(result));
+            context.completeNow();
+        }));
+    }
+
+    @Test
+    public void shouldTestDynamicTimeoutValue(VertxTestContext context) {
+        Map<Integer, OptionalLong> controllers = new HashMap<>();
+        controllers.put(1, OptionalLong.of(10000L));
+        controllers.put(2, OptionalLong.of(9950L)); // Edge case close to the timeout
+        Admin admin = setUpMocks(1, controllers);
+        long dynamicTimeout = 100L; // Dynamic timeout value
+        KafkaQuorumCheck quorumCheck = new KafkaQuorumCheck(Reconciliation.DUMMY_RECONCILIATION, admin, vertx, dynamicTimeout);
+        quorumCheck.canRollController(1).onComplete(context.succeeding(result -> {
+            context.verify(() -> assertTrue(result));
+            context.completeNow();
+        }));
+    }
 }
