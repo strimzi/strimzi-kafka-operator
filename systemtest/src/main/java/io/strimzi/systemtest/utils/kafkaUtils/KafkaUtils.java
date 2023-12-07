@@ -516,14 +516,21 @@ public class KafkaUtils {
             ObjectNode entity = (ObjectNode) kafkaResourceNode.at("/spec/entityOperator");
             entity.set("topicOperator", mapper.createObjectNode());
 
+            // workaround for current Strimzi upgrade (before we will have release containing metadataVersion in examples + CRDs)
+            boolean metadataVersionFieldSupported = !cmdKubeClient().exec(false, "explain", "kafka.spec.kafka.metadataVersion").err().contains("does not exist");
+
             if (version == null) {
                 kafkaNode.remove("version");
                 kafkaNode.remove("metadataVersion");
             } else if (!version.equals("")) {
                 kafkaNode.put("version", version);
-                kafkaNode.put("metadataVersion", TestKafkaVersion.getSpecificVersion(version).messageVersion());
+
+                if (metadataVersionFieldSupported) {
+                    kafkaNode.put("metadataVersion", TestKafkaVersion.getSpecificVersion(version).messageVersion());
+                }
             }
-            if (metadataVersion != null) {
+
+            if (metadataVersion != null && metadataVersionFieldSupported) {
                 kafkaNode.put("metadataVersion", metadataVersion);
             }
 

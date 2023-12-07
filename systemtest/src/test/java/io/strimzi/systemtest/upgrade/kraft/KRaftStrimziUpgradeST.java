@@ -196,7 +196,7 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
         logPodImages(TestConstants.CO_NAMESPACE);
 
         // Upgrade kafka
-        changeKafkaAndMetadataVersion(upgradeData, extensionContext);
+        changeKafkaAndMetadataVersion(upgradeData, true, extensionContext);
 
         logPodImages(TestConstants.CO_NAMESPACE);
 

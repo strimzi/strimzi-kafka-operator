@@ -71,7 +71,10 @@ public class RollingUpdateUtils {
      * @return The snapshot of the  component (StrimziPodSet, Deployment) after rolling update with Uid for every pod
      */
     public static Map<String, String> waitTillComponentHasRolled(String namespaceName, LabelSelector selector, Map<String, String> snapshot) {
+        String clusterName = selector.getMatchLabels().get(Labels.STRIMZI_CLUSTER_LABEL);
         String componentName = selector.getMatchLabels().get(Labels.STRIMZI_NAME_LABEL);
+
+        componentName = componentName == null ? clusterName + "-" + selector.getMatchLabels().get(Labels.STRIMZI_POOL_NAME_LABEL) : componentName;
 
         LOGGER.info("Waiting for component matching {} -> {}/{} rolling update", selector, namespaceName, componentName);
         TestUtils.waitFor("rolling update of component: " + namespaceName + "/" + componentName,
@@ -91,6 +94,8 @@ public class RollingUpdateUtils {
     public static Map<String, String> waitTillComponentHasRolledAndPodsReady(String namespaceName, LabelSelector selector, int expectedPods, Map<String, String> snapshot) {
         String clusterName = selector.getMatchLabels().get(Labels.STRIMZI_CLUSTER_LABEL);
         String componentName = selector.getMatchLabels().get(Labels.STRIMZI_NAME_LABEL);
+
+        componentName = componentName == null ? clusterName + "-" + selector.getMatchLabels().get(Labels.STRIMZI_POOL_NAME_LABEL) : componentName;
 
         waitTillComponentHasRolled(namespaceName, selector, snapshot);
 
@@ -116,8 +121,10 @@ public class RollingUpdateUtils {
      * @return The new Snapshot of actually present Pods after the first successful roll
      */
     public static Map<String, String> waitTillComponentHasStartedRolling(String namespaceName, LabelSelector selector, Map<String, String> snapshot) {
+        String clusterName = selector.getMatchLabels().get(Labels.STRIMZI_CLUSTER_LABEL);
+        String componentName = selector.getMatchLabels().get(Labels.STRIMZI_CONTROLLER_NAME_LABEL);
 
-        String componentName = selector.getMatchLabels().get(Labels.STRIMZI_NAME_LABEL);
+        componentName = componentName == null ? clusterName + "-" + selector.getMatchLabels().get(Labels.STRIMZI_POOL_NAME_LABEL) : componentName;
 
         LOGGER.info("Waiting for component matching {} -> {}/{} first rolled Pod", selector, namespaceName, componentName);
         TestUtils.waitFor("first pod's roll : " + namespaceName + "/" + componentName,
@@ -156,7 +163,9 @@ public class RollingUpdateUtils {
 
     public static void waitForComponentAndPodsReady(String namespaceName, LabelSelector selector, int expectedPods) {
         final String clusterName = selector.getMatchLabels().get(Labels.STRIMZI_CLUSTER_LABEL);
-        final String componentName = selector.getMatchLabels().get(Labels.STRIMZI_NAME_LABEL);
+        String componentName = selector.getMatchLabels().get(Labels.STRIMZI_NAME_LABEL);
+
+        componentName = componentName == null ? clusterName + "-" + selector.getMatchLabels().get(Labels.STRIMZI_POOL_NAME_LABEL) : componentName;
 
         LOGGER.info("Waiting for {} Pod(s) of {}/{} to be ready", expectedPods, namespaceName, componentName);
 
