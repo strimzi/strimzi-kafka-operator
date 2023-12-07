@@ -527,12 +527,13 @@ public class KafkaUtils {
                 kafkaNode.put("metadataVersion", metadataVersion);
             }
 
-            String output = "";
+            StringBuilder output = new StringBuilder();
+
             for (ObjectNode objectNode : objects) {
-                output += yamlMapper.writeValueAsString(objectNode);
+                output.append(yamlMapper.writeValueAsString(objectNode));
             }
 
-            return output;
+            return output.toString();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
