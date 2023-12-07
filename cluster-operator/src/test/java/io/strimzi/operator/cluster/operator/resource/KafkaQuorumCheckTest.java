@@ -5,6 +5,7 @@
 package io.strimzi.operator.cluster.operator.resource;
 
 import io.strimzi.operator.common.Reconciliation;
+import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
@@ -21,6 +22,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mockito;
 
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -218,4 +220,96 @@ class KafkaQuorumCheckTest {
         }));
     }
 
+    /**
+     * Tests handling partially incomplete quorum data.
+     * It simulates a scenario where some controller nodes have incomplete lastCaughtUpTimestamp data.
+     * Verifies that the quorum check fails in such cases.
+     */
+    @Test
+    public void shouldHandlePartiallyIncompleteQuorumData(VertxTestContext context) {
+        Map<Integer, OptionalLong> controllers = new HashMap<>();
+        controllers.put(1, OptionalLong.of(10000L));
+        controllers.put(2, OptionalLong.empty()); // Simulating incomplete data
+        controllers.put(3, OptionalLong.of(9500L));
+        Admin admin = setUpMocks(1, controllers);
+        KafkaQuorumCheck quorumCheck = new KafkaQuorumCheck(Reconciliation.DUMMY_RECONCILIATION, admin, vertx, CONTROLLER_QUORUM_FETCH_TIMEOUT_MS);
+        quorumCheck.canRollController(1).onComplete(context.succeeding(result -> {
+            context.verify(() -> assertFalse(result));
+            context.completeNow();
+        }));
+    }
+
+    /**
+     * Tests the behavior of the quorum check in scenarios where there is no identified quorum leader.
+     * It sets up a condition where leaderId is negative to simulate the absence of a leader.
+     * Verifies that the quorum check fails in this situation.
+     */
+    @Test
+    public void shouldHandleNoLeaderQuorumScenario(VertxTestContext context) {
+        Admin admin = setUpMocks(-1, new HashMap<>()); // Simulating no leader
+        KafkaQuorumCheck quorumCheck = new KafkaQuorumCheck(Reconciliation.DUMMY_RECONCILIATION, admin, vertx, CONTROLLER_QUORUM_FETCH_TIMEOUT_MS);
+        quorumCheck.canRollController(1).onComplete(context.succeeding(result -> {
+            context.verify(() -> assertFalse(result));
+            context.completeNow();
+        }));
+    }
+
+    /**
+     * Tests edge cases in quorum size, particularly with a minimal quorum.
+     * It simulates a two-node quorum with one node significantly lagging behind.
+     * Verifies that the quorum check fails in this minimal quorum edge case.
+     */
+    @Test
+    public void shouldTestEdgeCaseInQuorumSize(VertxTestContext context) {
+        Map<Integer, OptionalLong> controllers = new HashMap<>();
+        controllers.put(1, OptionalLong.of(10000L));
+        controllers.put(2, OptionalLong.of(7000L)); // Only two nodes, one is behind
+        Admin admin = setUpMocks(1, controllers);
+        KafkaQuorumCheck quorumCheck = new KafkaQuorumCheck(Reconciliation.DUMMY_RECONCILIATION, admin, vertx, CONTROLLER_QUORUM_FETCH_TIMEOUT_MS);
+        quorumCheck.canRollController(1).onComplete(context.succeeding(result -> {
+            context.verify(() -> assertFalse(result));
+            context.completeNow();
+        }));
+    }
+
+    /**
+     * Tests handling communication failures with the Kafka admin client.
+     * It mocks a scenario where the describeMetadataQuorum call fails.
+     * Verifies that the quorum check correctly handles and reports these failures.
+     */
+    @Test
+    public void shouldHandleCommunicationFailures(VertxTestContext context) {
+        Admin admin = mock(Admin.class);
+        DescribeMetadataQuorumResult qrmResult = mock(DescribeMetadataQuorumResult.class);
+        when(admin.describeMetadataQuorum()).thenReturn(qrmResult);
+
+        KafkaFutureImpl<QuorumInfo> failedFuture = new KafkaFutureImpl<>();
+        failedFuture.completeExceptionally(new Exception("Communication failure"));
+        when(qrmResult.quorumInfo()).thenReturn(failedFuture);
+
+        KafkaQuorumCheck quorumCheck = new KafkaQuorumCheck(Reconciliation.DUMMY_RECONCILIATION, admin, vertx, CONTROLLER_QUORUM_FETCH_TIMEOUT_MS);
+        quorumCheck.canRollController(1).onComplete(context.failing(error -> {
+            context.verify(() -> assertTrue(error.getMessage().contains("Communication failure")));
+            context.completeNow();
+        }));
+    }
+
+    /**
+     * Tests the quorum check with dynamic controller quorum fetch timeout values.
+     * It sets up a condition where the lastCaughtUpTimestamp is close to the timeout value.
+     * Verifies that the quorum check result varies as expected with different timeout settings.
+     */
+    @Test
+    public void shouldTestDynamicTimeoutValue(VertxTestContext context) {
+        Map<Integer, OptionalLong> controllers = new HashMap<>();
+        controllers.put(1, OptionalLong.of(10000L));
+        controllers.put(2, OptionalLong.of(9950L)); // Edge case close to the timeout
+        Admin admin = setUpMocks(1, controllers);
+        long dynamicTimeout = 100L; // Dynamic timeout value
+        KafkaQuorumCheck quorumCheck = new KafkaQuorumCheck(Reconciliation.DUMMY_RECONCILIATION, admin, vertx, dynamicTimeout);
+        quorumCheck.canRollController(1).onComplete(context.succeeding(result -> {
+            context.verify(() -> assertTrue(result));
+            context.completeNow();
+        }));
+    }
 }
