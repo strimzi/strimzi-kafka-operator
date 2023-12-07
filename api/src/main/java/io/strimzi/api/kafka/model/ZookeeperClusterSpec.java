@@ -101,9 +101,9 @@ public class ZookeeperClusterSpec implements HasConfigurableMetrics, HasConfigur
         this.replicas = replicas;
     }
 
-    @Description("The Docker image used for generating ZooKeeper pods. "
+    @Description("The container image used for ZooKeeper pods. "
         + "If no image name is explicitly specified, it is determined based on the Kafka version set in `spec.kafka.version`. "
-        + "If a version is not configured, the image name corresponds to the default version specified in the Cluster Operator configuration.")
+        + "The image names are specifically mapped to corresponding versions in the Cluster Operator configuration.")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public String getImage() {
         return image;

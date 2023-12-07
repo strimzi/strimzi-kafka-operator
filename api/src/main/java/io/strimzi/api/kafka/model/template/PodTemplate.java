@@ -140,8 +140,7 @@ public class PodTemplate implements HasMetadataTemplate, Serializable, UnknownPr
         this.topologySpreadConstraints = topologySpreadConstraints;
     }
 
-    @Description("The name of the priority class used to assign priority to the pods. " +
-            "For more information about priority classes, see {K8sPriorityClass}.")
+    @Description("The name of the priority class used to assign priority to the pods. ")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public String getPriorityClassName() {
         return priorityClassName;

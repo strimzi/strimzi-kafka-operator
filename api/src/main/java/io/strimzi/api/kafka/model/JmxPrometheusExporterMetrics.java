@@ -31,8 +31,7 @@ public class JmxPrometheusExporterMetrics extends MetricsConfig {
     private ExternalConfigurationReference valueFrom;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
-    @Description("ConfigMap entry where the Prometheus JMX Exporter configuration is stored. " +
-            "For details of the structure of this configuration, see the {JMXExporter}.")
+    @Description("ConfigMap entry where the Prometheus JMX Exporter configuration is stored. ")
     @JsonProperty(required = true)
     public ExternalConfigurationReference getValueFrom() {
         return valueFrom;

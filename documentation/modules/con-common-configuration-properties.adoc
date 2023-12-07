@@ -264,6 +264,7 @@ You can specify which container image to use for a component using the `image` p
 * `KafkaBridge.spec`
 
 NOTE: Changing the Kafka image version does not automatically update the image versions for other Kafka components, such as Kafka Exporter.
+These components are not version dependent, so no additional configuration is necessary when updating the Kafka image version.
 
 *Configuring the `image` property for Kafka, Kafka Connect, and Kafka MirrorMaker*
 

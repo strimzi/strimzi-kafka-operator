@@ -12,7 +12,7 @@ You can use the following environment variables to configure the Cluster Operato
 If you are running Cluster Operator replicas in standby mode, there are additional xref:con-configuring-cluster-operator-leader-election-{context}[environment variables for enabling leader election].  
 
 Kafka, Kafka Connect, and Kafka MirrorMaker support multiple versions.
-Use their `STRIMZI_<COMPONENT_NAME>_IMAGES` environment variables to configure the default Docker images used for each version.
+Use their `STRIMZI_<COMPONENT_NAME>_IMAGES` environment variables to configure the default container images used for each version.
 The configuration provides a mapping between a version and an image.
 The required syntax is whitespace or comma-separated `<version> = <image>` pairs, which determine the image to use for a given version. 
 For example, {DefaultKafkaVersion}={DockerKafkaImageCurrent}.
@@ -40,7 +40,7 @@ env:
 The interval between xref:ref-operator-cluster-periodic-reconciliation-{context}[periodic reconciliations], in milliseconds.
 
 `STRIMZI_OPERATION_TIMEOUT_MS`:: Optional, default 300000 ms.
-The timeout for internal operations, in milliseconds. Increase this value when using Strimzi on clusters where regular Kubernetes operations take longer than usual (because of slow downloading of Docker images, for example).
+The timeout for internal operations, in milliseconds. Increase this value when using Strimzi on clusters where regular Kubernetes operations take longer than usual (due to factors such as prolonged download times for container images, for example).
 
 `STRIMZI_ZOOKEEPER_ADMIN_SESSION_TIMEOUT_MS`:: Optional, default 10000 ms.
 The session timeout for the Cluster Operator's ZooKeeper admin client, in milliseconds.

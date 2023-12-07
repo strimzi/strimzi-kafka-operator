@@ -64,7 +64,7 @@ public class KafkaMirrorMakerSpec extends Spec implements HasConfigurableMetrics
         this.replicas = replicas;
     }
 
-    @Description("The Kafka MirrorMaker version. Defaults to {DefaultKafkaVersion}. " +
+    @Description("The Kafka MirrorMaker version. Defaults to the latest version. " +
             "Consult the documentation to understand the process required to upgrade or downgrade the version.")
     public String getVersion() {
         return version;
@@ -74,9 +74,9 @@ public class KafkaMirrorMakerSpec extends Spec implements HasConfigurableMetrics
         this.version = version;
     }
 
-    @Description("The Docker image used for generating Kafka MirrorMaker pods. "
-        + "If no image name is explicitly specified, it is determined based on the `version` configuration. "
-        + "If a version is not configured, the image name corresponds to the default version specified in the Cluster Operator configuration.")
+    @Description("The container image used for Kafka MirrorMaker pods. "
+        + "If no image name is explicitly specified, it is determined based on the `spec.version` configuration. "
+        + "The image names are specifically mapped to corresponding versions in the Cluster Operator configuration.")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public String getImage() {
         return image;
