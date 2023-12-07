@@ -50,16 +50,7 @@ spec:
 +
 NOTE: The value of `metadataVersion` must be a string to prevent it from being interpreted as a floating point number.
 
-. Save the change, then wait for rolling updates to complete.
-+
-Check the progress of the rolling updates by watching the pod state transitions:
-+
-[source,shell,subs=+quotes]
-----
-kubectl get pods my-cluster-kafka-0 -o jsonpath='{.spec.containers[0].image}'
-----
-+
-The rolling updates ensure that each pod is using the specified Kafka metadata version.
+. Save the change, and wait for Cluster Operator to update `.status.kafkaMetadataVersion` for the `Kafka` resource. 
 
 . Change the `Kafka.spec.kafka.version` to the previous version.
 +
