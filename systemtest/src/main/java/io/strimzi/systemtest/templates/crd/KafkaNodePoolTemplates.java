@@ -4,10 +4,14 @@
  */
 package io.strimzi.systemtest.templates.crd;
 
+import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolBuilder;
 import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.systemtest.Environment;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 public class KafkaNodePoolTemplates {
@@ -47,6 +51,19 @@ public class KafkaNodePoolTemplates {
         return defaultKafkaNodePool(namespaceName, nodePoolName, kafkaClusterName, kafkaReplicas)
             .editOrNewSpec()
                 .addToRoles(ProcessRoles.BROKER)
+            .endSpec();
+    }
+
+    public static KafkaNodePoolBuilder kafkaNodePoolWithBrokerRoleAndPersistentStorage(String namespaceName, String nodePoolName, String kafkaClusterName, int kafkaReplicas) {
+        return kafkaNodePoolWithBrokerRole(namespaceName, nodePoolName, kafkaClusterName, kafkaReplicas)
+            .editOrNewSpec()
+                .withNewPersistentClaimStorage()
+                    .withSize("1Gi")
+                    .withDeleteClaim(true)
+                .endPersistentClaimStorage()
+            .endSpec();
+    }
+
     /**
      * Creates a KafkaNodePoolBuilder for a Kafka instance (mirroring its mandatory specification) with roles based
      * on the environment setting (TestConstants.USE_KRAFT_MODE) having BROKER role in Zookeeper and Kraft mode alike
@@ -126,16 +143,6 @@ public class KafkaNodePoolTemplates {
                 .withStorage(kafka.getSpec().getKafka().getStorage())
                 .withJvmOptions(kafka.getSpec().getKafka().getJvmOptions())
                 .withResources(kafka.getSpec().getKafka().getResources())
-            .endSpec();
-    }
-
-    public static KafkaNodePoolBuilder kafkaNodePoolWithBrokerRoleAndPersistentStorage(String namespaceName, String nodePoolName, String kafkaClusterName, int kafkaReplicas) {
-        return kafkaNodePoolWithBrokerRole(namespaceName, nodePoolName, kafkaClusterName, kafkaReplicas)
-            .editOrNewSpec()
-                .withNewPersistentClaimStorage()
-                    .withSize("1Gi")
-                    .withDeleteClaim(true)
-                .endPersistentClaimStorage()
             .endSpec();
     }
 }
