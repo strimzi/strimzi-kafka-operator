@@ -8,11 +8,18 @@
 [role="_abstract"]
 Use environment variables to configure the Cluster Operator.
 Specify the environment variables for the container image of the Cluster Operator in its `Deployment` configuration file.
-
-NOTE: The `Deployment` configuration file provided with the Strimzi release artifacts is `install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml`.
-
 You can use the following environment variables to configure the Cluster Operator.
 If you are running Cluster Operator replicas in standby mode, there are additional xref:con-configuring-cluster-operator-leader-election-{context}[environment variables for enabling leader election].  
+
+Kafka, Kafka Connect, and Kafka MirrorMaker support multiple versions.
+Use their `STRIMZI_<COMPONENT_NAME>_IMAGES` environment variables to configure the default container images used for each version.
+The configuration provides a mapping between a version and an image.
+The required syntax is whitespace or comma-separated `<version> = <image>` pairs, which determine the image to use for a given version. 
+For example, {DefaultKafkaVersion}={DockerKafkaImageCurrent}.
+Theses default images are overridden if `image` property values are specified in the configuration of a component.
+For more information on `image` configuration of components, see the link:{BookURLConfiguring}#con-common-configuration-images-reference[Strimzi Custom Resource API Reference^].
+
+NOTE: The `Deployment` configuration file provided with the Strimzi release artifacts is `install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml`.
 
 `STRIMZI_NAMESPACE`:: A comma-separated list of namespaces that the operator operates in.
 When not set, set to empty string, or set to `*`, the Cluster Operator operates in all namespaces.
@@ -33,7 +40,7 @@ env:
 The interval between xref:ref-operator-cluster-periodic-reconciliation-{context}[periodic reconciliations], in milliseconds.
 
 `STRIMZI_OPERATION_TIMEOUT_MS`:: Optional, default 300000 ms.
-The timeout for internal operations, in milliseconds. Increase this value when using Strimzi on clusters where regular Kubernetes operations take longer than usual (because of slow downloading of Docker images, for example).
+The timeout for internal operations, in milliseconds. Increase this value when using Strimzi on clusters where regular Kubernetes operations take longer than usual (due to factors such as prolonged download times for container images, for example).
 
 `STRIMZI_ZOOKEEPER_ADMIN_SESSION_TIMEOUT_MS`:: Optional, default 10000 ms.
 The session timeout for the Cluster Operator's ZooKeeper admin client, in milliseconds.
@@ -84,7 +91,7 @@ env:
     value: "^key1.*"
 ----
 
-`STRIMZI_CUSTOM_{COMPONENT_NAME}_LABELS`:: Optional.
+`STRIMZI_CUSTOM_<COMPONENT_NAME>_LABELS`:: Optional.
 One or more custom labels to apply to all the pods created by the `{COMPONENT_NAME}` custom resource.
 The Cluster Operator labels the pods when the custom resource is created or is next reconciled.
 +
@@ -116,39 +123,52 @@ env:
 ----
 
 `STRIMZI_KAFKA_IMAGES`:: Required.
-The mapping from the Kafka version to the corresponding Docker image containing a Kafka broker for that version.
-The required syntax is whitespace or comma-separated `_<version>_=_<image>_` pairs.
+The mapping from the Kafka version to the corresponding image containing a Kafka broker for that version.
 For example `{KafkaVersionLower}={DockerKafkaImagePrevious}, {KafkaVersionHigher}={DockerKafkaImageCurrent}`.
-This is used when a `Kafka.spec.kafka.version` property is specified but not the `Kafka.spec.kafka.image` in the `Kafka` resource.
-
-`STRIMZI_DEFAULT_KAFKA_INIT_IMAGE`:: Optional, default `{DockerKafkaInit}`.
-The image name to use as default for the init container if no image is specified as the `kafka-init-image` in the `Kafka` resource.
-The init container is started before the broker for initial configuration work, such as rack support. 
 
 `STRIMZI_KAFKA_CONNECT_IMAGES`:: Required.
-The mapping from the Kafka version to the corresponding Docker image of Kafka Connect for that version.
-The required syntax is whitespace or comma-separated `_<version>_=_<image>_` pairs.
+The mapping from the Kafka version to the corresponding image of Kafka Connect for that version.
 For example `{KafkaVersionLower}={DockerKafkaImagePrevious}, {KafkaVersionHigher}={DockerKafkaImageCurrent}`.
-This is used when a `KafkaConnect.spec.version` property is specified but not the `KafkaConnect.spec.image`.
 
-`STRIMZI_KAFKA_MIRROR_MAKER_IMAGES`:: Required.
-The mapping from the Kafka version to the corresponding Docker image of MirrorMaker for that version.
-The required syntax is whitespace or comma-separated `_<version>_=_<image>_` pairs.
+`STRIMZI_KAFKA_MIRROR_MAKER2_IMAGES`:: Required.
+The mapping from the Kafka version to the corresponding image of MirrorMaker 2 for that version.
 For example `{KafkaVersionLower}={DockerKafkaImagePrevious}, {KafkaVersionHigher}={DockerKafkaImageCurrent}`.
-This is used when a `KafkaMirrorMaker.spec.version` property is specified but not the `KafkaMirrorMaker.spec.image`.
 
-`STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE`:: Optional, default `{DockerTopicOperator}`.
+(Deprecated) `STRIMZI_KAFKA_MIRROR_MAKER_IMAGES`:: Required.
+The mapping from the Kafka version to the corresponding image of MirrorMaker for that version.
+For example `{KafkaVersionLower}={DockerKafkaImagePrevious}, {KafkaVersionHigher}={DockerKafkaImageCurrent}`.
+
+`STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE`:: Optional.
+The default is `{DockerTopicOperator}`.
 The image name to use as the default when deploying the Topic Operator
 if no image is specified as the `Kafka.spec.entityOperator.topicOperator.image` in the `Kafka` resource.
 
-`STRIMZI_DEFAULT_USER_OPERATOR_IMAGE`:: Optional, default `{DockerUserOperator}`.
+`STRIMZI_DEFAULT_USER_OPERATOR_IMAGE`:: Optional.
+The default is `{DockerUserOperator}`.
 The image name to use as the default when deploying the User Operator
 if no image is specified as the `Kafka.spec.entityOperator.userOperator.image` in the `Kafka` resource.
 
-`STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE`:: Optional, default `{DockerEntityOperatorStunnel}`.
-The image name to use as the default when deploying the sidecar container for the Entity Operator if
-no image is specified as the `Kafka.spec.entityOperator.tlsSidecar.image` in the `Kafka` resource.
+`STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE`:: Optional.
+The default is `{DockerEntityOperatorStunnel}`.
+The image name to use as the default when deploying the sidecar container for the Entity Operator if no image is specified as the `Kafka.spec.entityOperator.tlsSidecar.image` in the `Kafka` resource.
 The sidecar provides TLS support. 
+
+`STRIMZI_DEFAULT_KAFKA_EXPORTER_IMAGE`:: Optional.
+The default is `{DockerKafka}`.
+The image name to use as the default when deploying the Kafka Exporter if no image is specified as the `Kafka.spec.kafkaExporter.image` in the `Kafka` resource.
+
+`STRIMZI_DEFAULT_CRUISE_CONTROL_IMAGE`:: Optional.
+The default is `{DockerKafka}`.
+The image name to use as the default when deploying Cruise Control if no image is specified as the `Kafka.spec.cruiseControl.image` in the `Kafka` resource.
+
+`STRIMZI_DEFAULT_KAFKA_BRIDGE_IMAGE`:: Optional.
+The default is `{DockerKafkaBridge}`.
+The image name to use as the default when deploying the Kafka Bridge if no image is specified as the `Kafka.spec.kafkaBridge.image` in the `Kafka` resource.
+
+`STRIMZI_DEFAULT_KAFKA_INIT_IMAGE`:: Optional.
+The default is `{DockerKafkaInit}`.
+The image name to use as the default for the Kafka initializer container if no image is specified in the `brokerRackInitImage` of the `Kafka` resource or the `clientRackInitImage` of the Kafka Connect resource.
+The init container is started before the Kafka cluster for initial configuration work, such as rack support. 
 
 `STRIMZI_IMAGE_PULL_POLICY`:: Optional.
 The `ImagePullPolicy` that is applied to containers in all pods managed by the Cluster Operator.

@@ -74,7 +74,7 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, HasConfigurable
     private KafkaClusterTemplate template;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
-    @Description("The Kafka broker version. Defaults to {DefaultKafkaVersion}. " +
+    @Description("The Kafka broker version. Defaults to the latest version. " +
             "Consult the user documentation to understand the process required to upgrade or downgrade the version.")
     public String getVersion() {
         return version;
@@ -84,9 +84,9 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, HasConfigurable
         this.version = version;
     }
 
-    @Description("The KRaft metadata.version that should be used by this Kafka cluster. " +
-            "This field will be ignored when running in ZooKeeper mode. " +
-            "Defaults to {DefaultKafkaMetadataVersion}.")
+    @Description("The KRaft metadata version used by the Kafka cluster. " +
+            "This property is ignored when running in ZooKeeper mode. " +
+            "If the property is not set, it defaults to the metadata version that corresponds to the `version` property.")
     public String getMetadataVersion() {
         return metadataVersion;
     }
@@ -159,7 +159,10 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, HasConfigurable
         this.replicas = replicas;
     }
 
-    @Description("The docker image for the pods. The default value depends on the configured `Kafka.spec.kafka.version`.")
+    @Description("The container image used for Kafka pods. "
+        + "If the property is not set, the default Kafka image version is determined based on the `version` configuration. "  
+        + "The image names are specifically mapped to corresponding versions in the Cluster Operator configuration. "
+        + "Changing the Kafka image version does not automatically update the image versions for other components, such as Kafka Exporter. ")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public String getImage() {
         return image;

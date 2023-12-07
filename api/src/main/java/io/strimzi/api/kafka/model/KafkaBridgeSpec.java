@@ -180,7 +180,9 @@ public class KafkaBridgeSpec extends Spec implements HasConfigurableLogging, Has
         this.http = http;
     }
 
-    @Description("The docker image for the pods.")
+    @Description("The container image used for Kafka Bridge pods. "
+        + "If no image name is explicitly specified, the image name corresponds to the image specified in the Cluster Operator configuration. "
+        + "If an image name is not defined in the Cluster Operator configuration, a default value is used.")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public String getImage() {
         return image;

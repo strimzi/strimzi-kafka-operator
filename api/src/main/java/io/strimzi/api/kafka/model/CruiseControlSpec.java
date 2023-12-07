@@ -53,7 +53,9 @@ public class CruiseControlSpec implements HasConfigurableMetrics, HasConfigurabl
     private MetricsConfig metricsConfig;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
-    @Description("The docker image for the pods.")
+    @Description("The container image used for Cruise Control pods. "
+        + "If no image name is explicitly specified, the image name corresponds to the name specified in the Cluster Operator configuration. "
+        + "If an image name is not defined in the Cluster Operator configuration, a default value is used.")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public String getImage() {
         return image;

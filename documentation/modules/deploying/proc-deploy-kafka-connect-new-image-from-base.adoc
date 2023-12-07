@@ -98,7 +98,7 @@ spec: <1>
     #...
 ----
 <1> link:{BookURLConfiguring}#type-KafkaConnectSpec-reference[The specification for the Kafka Connect cluster^].
-<2> The docker image for the pods.
+<2> The docker image for Kafka Connect pods.
 <3> Configuration of the Kafka Connect _workers_ (not connectors).
 +
 * Edit the `STRIMZI_KAFKA_CONNECT_IMAGES` environment variable in the `install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml` file to point to the new container image, and then reinstall the Cluster Operator.

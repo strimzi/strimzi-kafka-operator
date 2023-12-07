@@ -68,7 +68,7 @@ public abstract class AbstractKafkaConnectSpec extends Spec implements HasConfig
         this.logging = logging;
     }
 
-    @Description("The Kafka Connect version. Defaults to {DefaultKafkaVersion}. " +
+    @Description("The Kafka Connect version. Defaults to the latest version. " +
             "Consult the user documentation to understand the process required to upgrade or downgrade the version.")
     public String getVersion() {
         return version;
@@ -78,7 +78,9 @@ public abstract class AbstractKafkaConnectSpec extends Spec implements HasConfig
         this.version = version;
     }
 
-    @Description("The docker image for the pods.")
+    @Description("The container image used for Kafka Connect pods. "
+        + "If no image name is explicitly specified, it is determined based on the `spec.version` configuration. "
+        + "The image names are specifically mapped to corresponding versions in the Cluster Operator configuration.")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public String getImage() {
         return image;

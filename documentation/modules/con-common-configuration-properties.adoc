@@ -255,10 +255,16 @@ You can specify which container image to use for a component using the `image` p
 * `Kafka.spec.entityOperator.topicOperator`
 * `Kafka.spec.entityOperator.userOperator`
 * `Kafka.spec.entityOperator.tlsSidecar`
+* `Kafka.spec.cruiseControl`
+* `Kafka.spec.kafkaExporter`
+* `Kafka.spec.kafkaBridge`
 * `KafkaConnect.spec`
 * `KafkaMirrorMaker.spec`
 * `KafkaMirrorMaker2.spec`
 * `KafkaBridge.spec`
+
+NOTE: Changing the Kafka image version does not automatically update the image versions for other Kafka components, such as Kafka Exporter.
+These components are not version dependent, so no additional configuration is necessary when updating the Kafka image version.
 
 *Configuring the `image` property for Kafka, Kafka Connect, and Kafka MirrorMaker*
 
@@ -268,12 +274,13 @@ The default images for the different Kafka versions are configured in the follow
 
 * `STRIMZI_KAFKA_IMAGES`
 * `STRIMZI_KAFKA_CONNECT_IMAGES`
-* `STRIMZI_KAFKA_MIRROR_MAKER_IMAGES`
+* `STRIMZI_KAFKA_MIRROR_MAKER2_IMAGES`
+* (Deprecated) `STRIMZI_KAFKA_MIRROR_MAKER_IMAGES`
 
-These environment variables contain mappings between the Kafka versions and their corresponding images.
-The mappings are used together with the `image` and `version` properties:
+These environment variables contain mappings between Kafka versions and corresponding images.
+The mappings are used together with the `image` and `version` properties to determine the image used:
 
-* If neither `image` nor `version` are given in the custom resource then the `version` will default to the Cluster Operator's default Kafka version, and the image will be the one corresponding to this version in the environment variable.
+* If neither `image` nor `version` are given in the custom resource, the `version` defaults to the Cluster Operator's default Kafka version, and the image used is the one corresponding to this version in the environment variable.
 
 * If `image` is given but `version` is not, then the given image is used and the `version` is assumed to be the Cluster Operator's default Kafka version.
 
@@ -281,7 +288,7 @@ The mappings are used together with the `image` and `version` properties:
 
 * If both `version` and `image` are given, then the given image is used. The image is assumed to contain a Kafka image with the given version.
 
-The `image` and `version` for the different components can be configured in the following properties:
+The `image` and `version` for the components can be configured in the following properties:
 
 * For Kafka in `spec.kafka.image` and `spec.kafka.version`.
 * For Kafka Connect and Kafka MirrorMaker in `spec.image` and `spec.version`.
@@ -292,28 +299,49 @@ If you need to change the images used for different versions of Kafka, it is pre
 
 *Configuring the `image` property in other resources*
 
-For the `image` property in the other custom resources, the given value will be used during deployment.
-If the `image` property is missing, the `image` specified in the Cluster Operator configuration will be used.
-If the `image` name is not defined in the Cluster Operator configuration, then the default value will be used.
+For the `image` property in the custom resources for other components, the given value is used during deployment.
+If the `image` property is not set, the container `image` specified as an environment variable in the Cluster Operator configuration is used.
+If an `image` name is not defined in the Cluster Operator configuration, then a default value is used.
 
-* For Topic Operator:
-. Container image specified in the `STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE` environment variable from the Cluster Operator configuration.
-. `{DockerTopicOperator}` container image.
-* For User Operator:
-. Container image specified in the `STRIMZI_DEFAULT_USER_OPERATOR_IMAGE` environment variable from the Cluster Operator configuration.
-. `{DockerUserOperator}` container image.
-* For Entity Operator TLS sidecar:
-. Container image specified in the `STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE` environment variable from the Cluster Operator configuration.
-. `{DockerEntityOperatorStunnel}` container image.
-* For Kafka Exporter:
-. Container image specified in the `STRIMZI_DEFAULT_KAFKA_EXPORTER_IMAGE` environment variable from the Cluster Operator configuration.
-. `{DockerKafka}` container image.
-* For Kafka Bridge:
-. Container image specified in the `STRIMZI_DEFAULT_KAFKA_BRIDGE_IMAGE` environment variable from the Cluster Operator configuration.
-. `{DockerKafkaBridge}` container image.
-* For Kafka broker initializer:
-. Container image specified in the `STRIMZI_DEFAULT_KAFKA_INIT_IMAGE` environment variable from the Cluster Operator configuration.
-. `{DockerKafkaInit}` container image.
+For more information on image environment variables, see link:{BookURLDeploying}#con-common-configuration-images-reference[Configuring the Cluster Operator^]. 
+
+.Image environment variables and defaults
+[cols="2,4m,4m",options="header"]
+|===
+
+| Component              
+| Environment variable                                                                            
+| Default image
+
+| Topic Operator      
+| STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE                                                 
+| {DockerTopicOperator}
+
+| User Operator
+| STRIMZI_DEFAULT_USER_OPERATOR_IMAGE
+| {DockerUserOperator}
+
+| Entity Operator TLS sidecar
+| STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE
+| {DockerEntityOperatorStunnel}
+
+| Kafka Exporter
+| STRIMZI_DEFAULT_KAFKA_EXPORTER_IMAGE
+| {DockerKafka}
+
+| Cruise Control
+| STRIMZI_DEFAULT_CRUISE_CONTROL_IMAGE
+| {DockerKafka}
+
+| Kafka Bridge
+| STRIMZI_DEFAULT_KAFKA_BRIDGE_IMAGE
+| {DockerKafkaBridge}
+
+| Kafka initializer
+| STRIMZI_DEFAULT_KAFKA_INIT_IMAGE
+| {DockerKafkaInit}
+
+|===
 
 .Example container image configuration
 [source,yaml,subs=attributes+]

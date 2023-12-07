@@ -59,13 +59,13 @@ include::../api/io.strimzi.api.kafka.model.KafkaClusterSpec.adoc[leveloffset=+1]
 [options="header"]
 |====
 |Property                    |Description
-|version              1.2+<.<a|The Kafka broker version. Defaults to {DefaultKafkaVersion}. Consult the user documentation to understand the process required to upgrade or downgrade the version.
+|version              1.2+<.<a|The Kafka broker version. Defaults to the latest version. Consult the user documentation to understand the process required to upgrade or downgrade the version.
 |string
-|metadataVersion      1.2+<.<a|The KRaft metadata.version that should be used by this Kafka cluster. This field will be ignored when running in ZooKeeper mode. Defaults to {DefaultKafkaMetadataVersion}.
+|metadataVersion      1.2+<.<a|The KRaft metadata version used by the Kafka cluster. This property is ignored when running in ZooKeeper mode. If the property is not set, it defaults to the metadata version that corresponds to the `version` property.
 |string
 |replicas             1.2+<.<a|The number of pods in the cluster.
 |integer
-|image                1.2+<.<a|The docker image for the pods. The default value depends on the configured `Kafka.spec.kafka.version`.
+|image                1.2+<.<a|The container image used for Kafka pods. If the property is not set, the default Kafka image version is determined based on the `version` configuration. The image names are specifically mapped to corresponding versions in the Cluster Operator configuration. Changing the Kafka image version does not automatically update the image versions for other components, such as Kafka Exporter. 
 |string
 |listeners            1.2+<.<a|Configures listeners of Kafka brokers.
 |xref:type-GenericKafkaListener-{context}[`GenericKafkaListener`] array
@@ -793,7 +793,7 @@ It must have the value `jmxPrometheusExporter` for the type `JmxPrometheusExport
 |Property          |Description
 |type       1.2+<.<a|Must be `jmxPrometheusExporter`.
 |string
-|valueFrom  1.2+<.<a|ConfigMap entry where the Prometheus JMX Exporter configuration is stored. For details of the structure of this configuration, see the {JMXExporter}.
+|valueFrom  1.2+<.<a|ConfigMap entry where the Prometheus JMX Exporter configuration is stored. 
 |xref:type-ExternalConfigurationReference-{context}[`ExternalConfigurationReference`]
 |====
 
@@ -968,7 +968,7 @@ include::../api/io.strimzi.api.kafka.model.template.PodTemplate.adoc[leveloffset
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#toleration-v1-core[Toleration] array
-|priorityClassName              1.2+<.<a|The name of the priority class used to assign priority to the pods. For more information about priority classes, see {K8sPriorityClass}.
+|priorityClassName              1.2+<.<a|The name of the priority class used to assign priority to the pods. 
 |string
 |schedulerName                  1.2+<.<a|The name of the scheduler used to dispatch this `Pod`. If not specified, the default scheduler will be used.
 |string
@@ -1095,7 +1095,7 @@ include::../api/io.strimzi.api.kafka.model.ZookeeperClusterSpec.adoc[leveloffset
 |Property               |Description
 |replicas        1.2+<.<a|The number of pods in the cluster.
 |integer
-|image           1.2+<.<a|The docker image for the pods.
+|image           1.2+<.<a|The container image used for ZooKeeper pods. If no image name is explicitly specified, it is determined based on the Kafka version set in `spec.kafka.version`. The image names are specifically mapped to corresponding versions in the Cluster Operator configuration.
 |string
 |storage         1.2+<.<a|Storage configuration (disk). Cannot be updated. The type depends on the value of the `storage.type` property within the given object, which must be one of [ephemeral, persistent-claim].
 |xref:type-EphemeralStorage-{context}[`EphemeralStorage`], xref:type-PersistentClaimStorage-{context}[`PersistentClaimStorage`]
@@ -1372,7 +1372,7 @@ include::../api/io.strimzi.api.kafka.model.CruiseControlSpec.adoc[leveloffset=+1
 [options="header"]
 |====
 |Property               |Description
-|image           1.2+<.<a|The docker image for the pods.
+|image           1.2+<.<a|The container image used for Cruise Control pods. If no image name is explicitly specified, the image name corresponds to the name specified in the Cluster Operator configuration. If an image name is not defined in the Cluster Operator configuration, a default value is used.
 |string
 |tlsSidecar      1.2+<.<a|**The `tlsSidecar` property has been deprecated.** TLS sidecar configuration.
 |xref:type-TlsSidecar-{context}[`TlsSidecar`]
@@ -1560,7 +1560,7 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 [options="header"]
 |====
 |Property                    |Description
-|image                1.2+<.<a|The docker image for the pods.
+|image                1.2+<.<a|The container image used for the Kafka Exporter pods. If no image name is explicitly specified, the image name corresponds to the version specified in the Cluster Operator configuration. If an image name is not defined in the Cluster Operator configuration, a default value is used.
 |string
 |groupRegex           1.2+<.<a|Regular expression to specify which consumer groups to collect. Default value is `.*`.
 |string
@@ -1733,11 +1733,11 @@ include::../api/io.strimzi.api.kafka.model.KafkaConnectSpec.adoc[leveloffset=+1]
 [options="header"]
 |====
 |Property                      |Description
-|version                1.2+<.<a|The Kafka Connect version. Defaults to {DefaultKafkaVersion}. Consult the user documentation to understand the process required to upgrade or downgrade the version.
+|version                1.2+<.<a|The Kafka Connect version. Defaults to the latest version. Consult the user documentation to understand the process required to upgrade or downgrade the version.
 |string
 |replicas               1.2+<.<a|The number of pods in the Kafka Connect group. Defaults to `3`.
 |integer
-|image                  1.2+<.<a|The docker image for the pods.
+|image                  1.2+<.<a|The container image used for Kafka Connect pods. If no image name is explicitly specified, it is determined based on the `spec.version` configuration. The image names are specifically mapped to corresponding versions in the Cluster Operator configuration.
 |string
 |bootstrapServers       1.2+<.<a|Bootstrap servers to connect to. This should be given as a comma separated list of _<hostname>_:_<port>_ pairs.
 |string
@@ -2734,11 +2734,11 @@ include::../api/io.strimzi.api.kafka.model.KafkaMirrorMakerSpec.adoc[leveloffset
 [options="header"]
 |====
 |Property               |Description
-|version         1.2+<.<a|The Kafka MirrorMaker version. Defaults to {DefaultKafkaVersion}. Consult the documentation to understand the process required to upgrade or downgrade the version.
+|version         1.2+<.<a|The Kafka MirrorMaker version. Defaults to the latest version. Consult the documentation to understand the process required to upgrade or downgrade the version.
 |string
 |replicas        1.2+<.<a|The number of pods in the `Deployment`.
 |integer
-|image           1.2+<.<a|The docker image for the pods.
+|image           1.2+<.<a|The container image used for Kafka MirrorMaker pods. If no image name is explicitly specified, it is determined based on the `spec.version` configuration. The image names are specifically mapped to corresponding versions in the Cluster Operator configuration.
 |string
 |consumer        1.2+<.<a|Configuration of source cluster.
 |xref:type-KafkaMirrorMakerConsumerSpec-{context}[`KafkaMirrorMakerConsumerSpec`]
@@ -2899,7 +2899,7 @@ include::../api/io.strimzi.api.kafka.model.KafkaBridgeSpec.adoc[leveloffset=+1]
 |Property                    |Description
 |replicas             1.2+<.<a|The number of pods in the `Deployment`.  Defaults to `1`.
 |integer
-|image                1.2+<.<a|The docker image for the pods.
+|image                1.2+<.<a|The container image used for Kafka Bridge pods. If no image name is explicitly specified, the image name corresponds to the image specified in the Cluster Operator configuration. If an image name is not defined in the Cluster Operator configuration, a default value is used.
 |string
 |bootstrapServers     1.2+<.<a|A list of host:port pairs for establishing the initial connection to the Kafka cluster.
 |string
@@ -3197,11 +3197,11 @@ Used in: xref:type-KafkaMirrorMaker2-{context}[`KafkaMirrorMaker2`]
 [options="header"]
 |====
 |Property                      |Description
-|version                1.2+<.<a|The Kafka Connect version. Defaults to {DefaultKafkaVersion}. Consult the user documentation to understand the process required to upgrade or downgrade the version.
+|version                1.2+<.<a|The Kafka Connect version. Defaults to the latest version. Consult the user documentation to understand the process required to upgrade or downgrade the version.
 |string
 |replicas               1.2+<.<a|The number of pods in the Kafka Connect group. Defaults to `3`.
 |integer
-|image                  1.2+<.<a|The docker image for the pods.
+|image                  1.2+<.<a|The container image used for Kafka Connect pods. If no image name is explicitly specified, it is determined based on the `spec.version` configuration. The image names are specifically mapped to corresponding versions in the Cluster Operator configuration.
 |string
 |connectCluster         1.2+<.<a|The cluster alias used for Kafka Connect. The value must match the alias of the *target* Kafka cluster as specified in the `spec.clusters` configuration. The target Kafka cluster is used by the underlying Kafka Connect framework for its internal topics.
 |string

@@ -57,14 +57,14 @@ spec:
             properties:
               version:
                 type: string
-                description: "The Kafka MirrorMaker version. Defaults to {DefaultKafkaVersion}. Consult the documentation to understand the process required to upgrade or downgrade the version."
+                description: The Kafka MirrorMaker version. Defaults to the latest version. Consult the documentation to understand the process required to upgrade or downgrade the version.
               replicas:
                 type: integer
                 minimum: 0
                 description: The number of pods in the `Deployment`.
               image:
                 type: string
-                description: The docker image for the pods.
+                description: "The container image used for Kafka MirrorMaker pods. If no image name is explicitly specified, it is determined based on the `spec.version` configuration. The image names are specifically mapped to corresponding versions in the Cluster Operator configuration."
               consumer:
                 type: object
                 properties:
@@ -530,7 +530,7 @@ spec:
                           optional:
                             type: boolean
                         description: Reference to the key in the ConfigMap containing the configuration.
-                    description: "ConfigMap entry where the Prometheus JMX Exporter configuration is stored. For details of the structure of this configuration, see the {JMXExporter}."
+                    description: 'ConfigMap entry where the Prometheus JMX Exporter configuration is stored. '
                 required:
                 - type
                 - valueFrom
@@ -962,7 +962,7 @@ spec:
                         description: The pod's tolerations.
                       priorityClassName:
                         type: string
-                        description: "The name of the priority class used to assign priority to the pods. For more information about priority classes, see {K8sPriorityClass}."
+                        description: 'The name of the priority class used to assign priority to the pods. '
                       schedulerName:
                         type: string
                         description: "The name of the scheduler used to dispatch this `Pod`. If not specified, the default scheduler will be used."

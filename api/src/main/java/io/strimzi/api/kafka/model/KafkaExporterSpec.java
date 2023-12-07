@@ -48,7 +48,9 @@ public class KafkaExporterSpec implements HasLivenessProbe, HasReadinessProbe, U
     private KafkaExporterTemplate template;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
-    @Description("The docker image for the pods.")
+    @Description("The container image used for the Kafka Exporter pods. "
+        + "If no image name is explicitly specified, the image name corresponds to the version specified in the Cluster Operator configuration. "
+        + "If an image name is not defined in the Cluster Operator configuration, a default value is used.")       
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public String getImage() {
         return image;
