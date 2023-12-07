@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.topic;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Watch;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
@@ -25,7 +26,6 @@ import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.common.config.SslConfigs;
 import org.apache.kafka.common.config.SaslConfigs;
-import org.apache.kafka.common.errors.TimeoutException;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -39,6 +39,7 @@ import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 
 import static io.strimzi.operator.topic.Config.ZOOKEEPER_CONNECT;
@@ -133,72 +134,134 @@ public class Session extends AbstractVerticle {
      * Stop the operator.
      */
     @Override
-    @SuppressWarnings("deprecation") // Uses a deprecated executeBlocking call that should be addressed later. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/9233
     public void stop(Promise<Void> stop) throws Exception {
+        LOGGER.info("Stopping");
         this.stopped = true;
-        Long timerId = this.timerId;
-        if (timerId != null) {
-            vertx.cancelTimer(timerId);
+        if (this.timerId != null) {
+            vertx.cancelTimer(this.timerId);
         }
-        vertx.executeBlocking(blockingResult -> {
-            long timeout = 120_000L;
-            long deadline = System.currentTimeMillis() + timeout;
-            LOGGER.info("Stopping");
-            LOGGER.debug("Stopping kube watch");
-            topicWatch.close();
-            LOGGER.debug("Stopping zk watches");
-            topicsWatcher.stop();
-
-            Promise<Void> promise = Promise.promise();
-            Handler<Long> longHandler = new Handler<>() {
-                @Override
-                public void handle(Long inflightTimerId) {
-                    if (!topicOperator.isWorkInflight()) {
-                        LOGGER.debug("Inflight work has finished");
-                        promise.complete();
-                    } else if (System.currentTimeMillis() > deadline) {
-                        LOGGER.error("Timeout waiting for inflight work to finish");
-                        promise.complete();
-                    } else {
-                        LOGGER.debug("Waiting for inflight work to finish");
-                        vertx.setTimer(1_000, this);
-                    }
-                }
-            };
-            longHandler.handle(null);
-
-            promise.future().compose(ignored -> {
-                if (service != null) {
-                    service.stop();
-                }
-                return Future.succeededFuture();
+        closeKubernetesWatch()
+                .onSuccess(ignored -> LOGGER.debug("Kubernetes watch closed"))
+                .onFailure(cause -> LOGGER.error("Failed to close Kubernetes watch", cause))
+            .compose(ignored -> stopZooKeeperWatcher())
+                .onSuccess(ignored -> LOGGER.debug("ZooKeeper topics watcher stopped"))
+                .onFailure(cause -> LOGGER.error("Failed to stop ZooKeeper topics watcher", cause))
+            .compose(ignored -> stopTopicStoreService())
+                .onSuccess(ignored -> LOGGER.debug("Topic store service stopped"))
+                .onFailure(cause -> LOGGER.error("Failed to stop topic store service", cause))
+            .compose(ignored -> disconnectFromZk())
+                .onSuccess(ignored -> LOGGER.debug("ZooKeeper disconnected"))
+                .onFailure(cause -> LOGGER.error("Failed to disconnect from ZooKeeper", cause))
+            .compose(ignored -> closeKafkaAdminClient())
+                .onSuccess(ignored -> LOGGER.debug("Kafka admin client closed"))
+                .onFailure(cause -> LOGGER.error("Failed to close Kafka admin client", cause))
+            .compose(ignored -> closeHttpHealthServer())
+                .onSuccess(ignored -> LOGGER.debug("HTTP health server closed"))
+                .onFailure(cause -> LOGGER.error("Failed to close HTTP health server", cause))
+            .compose(ignored -> {
+                LOGGER.info("Stopped");
+                return Future.future(handle -> stop.complete());
             });
+    }
 
-            promise.future().compose(ignored -> {
+    private Future<Void> closeKubernetesWatch() {
+        LOGGER.debug("Closing Kubernetes watch");
+        Promise<Void> promise = Promise.promise();
+        if (topicWatch == null) {
+            promise.complete();
+        } else {
+            vertx.<Void>executeBlocking(() -> {
+                try {
+                    topicWatch.close();
+                } finally {
+                    promise.complete();
+                    return null;
+                }
+            });
+        }
+        return promise.future();
+    }
 
-                LOGGER.debug("Disconnecting from zookeeper {}", zk);
-                zk.disconnect(zkResult -> {
-                    if (zkResult.failed()) {
-                        LOGGER.warn("Error disconnecting from zookeeper: {}", String.valueOf(zkResult.cause()));
+    private Future<Void> stopZooKeeperWatcher() {
+        LOGGER.debug("Stopping ZooKeeper watcher");
+        Promise<Void> promise = Promise.promise();
+        if (topicsWatcher == null) {
+            promise.complete();
+        } else {
+            vertx.<Void>executeBlocking(() -> {
+                try {
+                    topicsWatcher.stop();
+                } finally {
+                    promise.complete();
+                    return null;
+                }
+            });
+        }
+        return promise.future();
+    }
+
+    private Future<Void> stopTopicStoreService() {
+        LOGGER.debug("Stopping topic store service");
+        if (topicOperator != null && service != null) {
+            int timeoutSec = 5;
+            while (topicOperator.isWorkInflight() && timeoutSec-- > 0) {
+                try {
+                    LOGGER.debug("Waiting for inflight operations to complete");
+                    TimeUnit.SECONDS.sleep(1);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            service.stop();
+        }
+        return Future.succeededFuture();
+    }
+
+    @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
+    private Future<Void> disconnectFromZk() {
+        LOGGER.debug("Disconnecting from ZooKeeper");
+        Promise<Void> promise = Promise.promise();
+        if (zk != null) {
+            promise.complete();
+        } else {
+            vertx.<Void>executeBlocking(() -> {
+                zk.disconnect(result -> {
+                    if (result.failed()) {
+                        LOGGER.warn("Error disconnecting from ZooKeeper: {}", String.valueOf(result.cause()));
                     }
-                    long timeoutMs = Math.max(1, deadline - System.currentTimeMillis());
-                    LOGGER.debug("Closing AdminClient {} with timeout {}ms", adminClient, timeoutMs);
-                    try {
-                        adminClient.close(Duration.ofMillis(timeoutMs));
-                        HttpServer healthServer = this.healthServer;
-                        if (healthServer != null) {
-                            healthServer.close();
-                        }
-                    } catch (TimeoutException e) {
-                        LOGGER.warn("Timeout while closing AdminClient with timeout {}ms", timeoutMs, e);
-                    } finally {
-                        LOGGER.info("Stopped");
-                        blockingResult.complete();
-                    }
+                    promise.complete();
                 });
-                return Future.succeededFuture();
+                return null;
             });
-        }, stop);
+        }
+        return promise.future();
+    }
+
+    @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
+    private Future<Void> closeKafkaAdminClient() {
+        LOGGER.debug("Closing Kafka admin client");
+        Promise<Void> promise = Promise.promise();
+        if (adminClient == null) {
+            promise.complete();
+        } else {
+            vertx.<Void>executeBlocking(() -> {
+                try {
+                    adminClient.close(Duration.ofSeconds(2));
+                } finally {
+                    promise.complete();
+                    return null;
+                }
+            });
+        }
+        return promise.future();
+    }
+
+    private Future<Void> closeHttpHealthServer() {
+        LOGGER.debug("Closing HTTP health server");
+        if (healthServer != null) {
+            healthServer.close();
+        }
+        return Future.succeededFuture();
     }
 
     /**
@@ -247,15 +310,17 @@ public class Session extends AbstractVerticle {
                     LOGGER.error("Topic operator start up failed, cause was", cause);
                 });
     }
-
-    @SuppressWarnings("deprecation") // Uses a deprecated executeBlocking call that should be addressed later. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/9233
+    
     private Future<Promise<Void>> createK8sWatcher(TopicOperator topicOperator) {
-        return executor.executeBlocking(blockingPromise -> {
+        Promise<Promise<Void>> blockingResult = Promise.promise();
+        executor.executeBlocking(() -> {
             Promise<Void> initReconcilePromise = Promise.promise();
             watcher = new K8sTopicWatcher(topicOperator, initReconcilePromise.future(), this::startWatcher);
             LOGGER.debug("Starting watcher");
-            startWatcher().onSuccess(v -> blockingPromise.complete(initReconcilePromise));
+            startWatcher().onSuccess(v -> blockingResult.complete(initReconcilePromise));
+            return null;
         });
+        return blockingResult.future();
     }
 
     private Future<TopicStore> createTopicStoreAsync(Zk zk, Config config) {

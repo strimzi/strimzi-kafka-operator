@@ -26,15 +26,9 @@ import java.util.concurrent.ConcurrentHashMap;
  * Implementation of {@link Zk}
  */
 public class ZkImpl implements Zk {
-
     private final static Logger LOGGER = LogManager.getLogger(ZkImpl.class);
     private final WorkerExecutor workerExecutor;
-
-    private static final <T> Handler<AsyncResult<T>> log(String msg) {
-        return ignored -> {
-            LOGGER.trace("{} returned {}", msg, ignored);
-        };
-    }
+    
     private final Vertx vertx;
     private final ZkClient zookeeper;
 
@@ -48,69 +42,41 @@ public class ZkImpl implements Zk {
         this.workerExecutor = vertx.createSharedWorkerExecutor(getClass().getName(), 4);
         this.zookeeper = zkClient;
     }
-
-
+    
     @Override
-    @SuppressWarnings("deprecation") // Uses a deprecated executeBlocking call that should be addressed later. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/9233
     public Zk create(String path, byte[] data, List<ACL> acls, CreateMode createMode, Handler<AsyncResult<Void>> handler) {
-        workerExecutor.executeBlocking(
-            future -> {
-                try {
-                    zookeeper.create(path, data == null ? new byte[0] : data, acls, createMode);
-                    future.complete();
-                } catch (Throwable t) {
-                    future.fail(t);
-                }
-            },
-            handler);
+        workerExecutor.<Void>executeBlocking(
+            () -> {
+                zookeeper.create(path, data == null ? new byte[0] : data, acls, createMode);
+                return null;
+            }).onComplete(handler);
         return this;
     }
 
     @Override
-    @SuppressWarnings("deprecation") // Uses a deprecated executeBlocking call that should be addressed later. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/9233
     public Zk setData(String path, byte[] data, int version, Handler<AsyncResult<Void>> handler) {
-        workerExecutor.executeBlocking(
-            future -> {
-                try {
-                    zookeeper.writeData(path, data, version);
-                    future.complete();
-                } catch (Throwable t) {
-                    future.fail(t);
-                }
-            },
-            handler);
+        workerExecutor.<Void>executeBlocking(
+            () -> {
+                zookeeper.writeData(path, data, version);
+                return null;
+            }).onComplete(handler);
         return this;
     }
 
     @Override
-    @SuppressWarnings("deprecation") // Uses a deprecated executeBlocking call that should be addressed later. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/9233
     public Zk disconnect(Handler<AsyncResult<Void>> handler) {
-
-        workerExecutor.executeBlocking(
-            future -> {
-                try {
-                    zookeeper.close();
-                    future.complete();
-                } catch (Throwable t) {
-                    future.fail(t);
-                }
-            },
-            handler);
+        workerExecutor.<Void>executeBlocking(
+            () -> {
+                zookeeper.close();
+                return null;
+            }).onComplete(handler);
         return this;
     }
 
     @Override
-    @SuppressWarnings("deprecation") // Uses a deprecated executeBlocking call that should be addressed later. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/9233
     public Zk getData(String path, Handler<AsyncResult<byte[]>> handler) {
         workerExecutor.executeBlocking(
-            future -> {
-                try {
-                    future.complete(zookeeper.readData(path));
-                } catch (Throwable t) {
-                    future.fail(t);
-                }
-            },
-            handler);
+            () -> (byte[]) zookeeper.readData(path)).onComplete(handler);
         return this;
     }
 
@@ -134,22 +100,16 @@ public class ZkImpl implements Zk {
     }
 
     @Override
-    @SuppressWarnings("deprecation") // Uses a deprecated executeBlocking call that should be addressed later. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/9233
     public Future<Zk> watchData(String path, Handler<AsyncResult<byte[]>> watcher) {
         Promise<Zk> result = Promise.promise();
         workerExecutor.executeBlocking(
-            future -> {
-                try {
-                    IZkDataListener listener = new DataWatchAdapter(watcher);
-                    dataWatches.put(path, listener);
-                    zookeeper.subscribeDataChanges(path, listener);
-                    future.complete();
-                } catch (Throwable t) {
-                    future.fail(t);
-                }
-            },
-            ar -> {
-                log("watchData").handle(ar);
+            () -> {
+                IZkDataListener listener = new DataWatchAdapter(watcher);
+                dataWatches.put(path, listener);
+                zookeeper.subscribeDataChanges(path, listener);
+                return null;
+            }).onComplete(ar -> {
+                LOGGER.trace("watchData");
                 if (ar.succeeded()) {
                     result.complete(this);
                 } else {
@@ -160,75 +120,55 @@ public class ZkImpl implements Zk {
     }
 
     @Override
-    @SuppressWarnings("deprecation") // Uses a deprecated executeBlocking call that should be addressed later. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/9233
     public Zk unwatchData(String path) {
         workerExecutor.executeBlocking(
-            future -> {
-                try {
-                    IZkDataListener listener = dataWatches.remove(path);
-                    if (listener != null) {
-                        zookeeper.unsubscribeDataChanges(path, listener);
-                    }
-                    future.complete();
-                } catch (Throwable t) {
-                    future.fail(t);
+            () -> {
+                IZkDataListener listener = dataWatches.remove(path);
+                if (listener != null) {
+                    zookeeper.unsubscribeDataChanges(path, listener);
                 }
-            },
-            log("unwatchData"));
+                return null;
+            }).onComplete(ignored -> LOGGER.trace("unwatchData"));
         return this;
     }
 
     @Override
-    @SuppressWarnings("deprecation") // Uses a deprecated executeBlocking call that should be addressed later. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/9233
     public Zk delete(String path, int version, Handler<AsyncResult<Void>> handler) {
+        Promise<Void> result = Promise.promise();
         workerExecutor.executeBlocking(
-            future -> {
+            () -> {
                 try {
                     if (zookeeper.delete(path, version)) {
-                        future.complete();
+                        result.complete();
                     } else {
-                        future.fail(new ZkNoNodeException());
+                        result.fail(new ZkNoNodeException());
                     }
                 } catch (Throwable t) {
-                    future.fail(t);
+                    result.fail(t);
                 }
-            },
-            handler);
+                return null;
+            }).onComplete(ar -> handler.handle(result.future()));
         return this;
     }
 
     @Override
-    @SuppressWarnings("deprecation") // Uses a deprecated executeBlocking call that should be addressed later. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/9233
     public Zk children(String path, Handler<AsyncResult<List<String>>> handler) {
         workerExecutor.executeBlocking(
-            future -> {
-                try {
-                    future.complete(zookeeper.getChildren(path));
-                } catch (Throwable t) {
-                    future.fail(t);
-                }
-            },
-            handler);
+            () -> zookeeper.getChildren(path))
+            .onComplete(handler);
         return this;
     }
 
     @Override
-    @SuppressWarnings("deprecation") // Uses a deprecated executeBlocking call that should be addressed later. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/9233
     public Future<Zk> watchChildren(String path, Handler<AsyncResult<List<String>>> watcher) {
         Promise<Zk> result = Promise.promise();
         workerExecutor.executeBlocking(
-            future -> {
-                try {
-                    IZkChildListener listener = (parentPath, currentChilds) -> watcher.handle(Future.succeededFuture(currentChilds));
-                    childWatches.put(path, listener);
-                    zookeeper.subscribeChildChanges(path, listener);
-                    future.complete();
-                } catch (Throwable t) {
-                    future.fail(t);
-                }
-            },
-            ar -> {
-                log("watchChildren").handle(ar);
+            () -> {
+                IZkChildListener listener = (parentPath, currentChilds) -> watcher.handle(Future.succeededFuture(currentChilds));
+                childWatches.put(path, listener);
+                return zookeeper.subscribeChildChanges(path, listener);
+            }).onComplete(ar -> {
+                LOGGER.trace("watchChildren");
                 if (ar.succeeded()) {
                     result.complete(this);
                 } else {
@@ -239,41 +179,22 @@ public class ZkImpl implements Zk {
     }
 
     @Override
-    @SuppressWarnings("deprecation") // Uses a deprecated executeBlocking call that should be addressed later. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/9233
     public Zk unwatchChildren(String path) {
         workerExecutor.executeBlocking(
-            future -> {
-                try {
-                    IZkChildListener listener = childWatches.remove(path);
-                    if (listener != null) {
-                        zookeeper.unsubscribeChildChanges(path, listener);
-                    }
-                    future.complete();
-                } catch (Throwable t) {
-                    future.fail(t);
+            () -> {
+                IZkChildListener listener = childWatches.remove(path);
+                if (listener != null) {
+                    zookeeper.unsubscribeChildChanges(path, listener);
                 }
-            },
-            log("unwatchChildren"));
+                return null;
+            }).onComplete(ignored -> LOGGER.trace("unwatchChildren"));
         return this;
     }
 
     @Override
-    @SuppressWarnings("deprecation") // Uses a deprecated executeBlocking call that should be addressed later. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/9233
     public Future<Boolean> pathExists(String path) {
-        Promise<Boolean> promise = Promise.promise();
-        workerExecutor.<Boolean>executeBlocking(
-            p -> {
-                p.future().onComplete(promise);
-                try {
-                    p.complete(getPathExists(path));
-                } catch (Throwable t) {
-                    p.fail(t);
-                }
-            }, ar -> {
-                // Never executed because of self deadlock (julien_viet)
-            }
-        );
-        return promise.future();
+        return workerExecutor.executeBlocking(
+            () -> getPathExists(path));
     }
 
     @Override

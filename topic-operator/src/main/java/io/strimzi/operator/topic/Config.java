@@ -132,6 +132,7 @@ public class Config {
     protected static final String TC_STALE_RESULT_TIMEOUT_MS = "STRIMZI_STALE_RESULT_TIMEOUT_MS";
 
     protected static final String TC_USE_ZOOKEEPER_TOPIC_STORE = "STRIMZI_USE_ZOOKEEPER_TOPIC_STORE";
+    protected static final String TC_SHUTDOWN_TIMEOUT_MS = "STRIMZI_SHUTDOWN_TIMEOUT_MS";
 
     private static final Map<String, Value<?>> CONFIG_VALUES = new HashMap<>();
 
@@ -211,6 +212,9 @@ public class Config {
     /** Do we use old ZooKeeper based TopicStore */
     public static final Value<Boolean> USE_ZOOKEEPER_TOPIC_STORE = new Value<>(TC_USE_ZOOKEEPER_TOPIC_STORE, BOOLEAN, "false");
 
+    /** Fixed timeout to run the clean shutdown procedure */
+    public static final Value<Long> SHUTDOWN_TIMEOUT_MS = new Value<>(TC_SHUTDOWN_TIMEOUT_MS, DURATION, "10000");
+
     static {
         Map<String, Value<?>> configValues = CONFIG_VALUES;
         addConfigValue(configValues, LABELS);
@@ -241,6 +245,7 @@ public class Config {
         addConfigValue(configValues, APPLICATION_ID);
         addConfigValue(configValues, STALE_RESULT_TIMEOUT_MS);
         addConfigValue(configValues, USE_ZOOKEEPER_TOPIC_STORE);
+        addConfigValue(configValues, SHUTDOWN_TIMEOUT_MS);
     }
 
     static void addConfigValue(Map<String, Value<?>> configValues, Value<?> cv) {
