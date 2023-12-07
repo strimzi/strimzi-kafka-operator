@@ -218,11 +218,20 @@ class KafkaQuorumCheckTest {
         }));
     }
 
-    /**
-     * Tests the behavior of the Kafka quorum check when there is no identified leader but with a valid controller list.
-     * This simulates the scenario of leader absence with an otherwise healthy controller state.
-     * The test verifies that the quorum check fails due to the lack of a leader.
-     */
+    @Test
+    public void shouldHandlePartiallyIncompleteQuorumData(VertxTestContext context) {
+        Map<Integer, OptionalLong> controllers = new HashMap<>();
+        controllers.put(1, OptionalLong.of(10000L));
+        controllers.put(2, OptionalLong.empty()); // Simulating incomplete data
+        controllers.put(3, OptionalLong.of(9500L));
+        Admin admin = setUpMocks(1, controllers);
+        KafkaQuorumCheck quorumCheck = new KafkaQuorumCheck(Reconciliation.DUMMY_RECONCILIATION, admin, vertx, CONTROLLER_QUORUM_FETCH_TIMEOUT_MS);
+        quorumCheck.canRollController(1).onComplete(context.succeeding(result -> {
+            context.verify(() -> assertFalse(result));
+            context.completeNow();
+        }));
+    }
+
     @Test
     public void shouldHandleNoLeaderQuorumScenario(VertxTestContext context) {
         // Simulate a valid controller list
@@ -241,29 +250,6 @@ class KafkaQuorumCheckTest {
         }));
     }
 
-    /**
-     * Tests edge cases in quorum size, particularly with a minimal quorum.
-     * It simulates a two-node quorum with one node significantly lagging behind.
-     * Verifies that the quorum check fails in this minimal quorum edge case.
-     */
-    @Test
-    public void shouldTestEdgeCaseInQuorumSize(VertxTestContext context) {
-        Map<Integer, OptionalLong> controllers = new HashMap<>();
-        controllers.put(1, OptionalLong.of(10000L));
-        controllers.put(2, OptionalLong.of(7000L)); // Only two nodes, one is behind
-        Admin admin = setUpMocks(1, controllers);
-        KafkaQuorumCheck quorumCheck = new KafkaQuorumCheck(Reconciliation.DUMMY_RECONCILIATION, admin, vertx, CONTROLLER_QUORUM_FETCH_TIMEOUT_MS);
-        quorumCheck.canRollController(1).onComplete(context.succeeding(result -> {
-            context.verify(() -> assertFalse(result));
-            context.completeNow();
-        }));
-    }
-
-    /**
-     * Tests the quorum check with dynamic controller quorum fetch timeout values.
-     * It sets up a condition where the lastCaughtUpTimestamp is close to the timeout value.
-     * Verifies that the quorum check result varies as expected with different timeout settings.
-     */
     @Test
     public void shouldTestDynamicTimeoutValue(VertxTestContext context) {
         Map<Integer, OptionalLong> controllers = new HashMap<>();
