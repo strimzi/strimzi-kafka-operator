@@ -1,0 +1,23 @@
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: io.strimzi.strimzi-kafka-operator
+displayName: Strimzi Kafka Operator Checkstyle
+description: Applies the Strimzi Kafka Operator Checkstyle rules
+recipeList:
+  - org.openrewrite.java.RemoveUnusedImports
+  - org.openrewrite.java.AddLicenseHeader:
+      licenseText: |-
+        Copyright Strimzi authors.
+        License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
+  - org.openrewrite.java.OrderImports
+  - org.openrewrite.java.format.NoWhitespaceAfter
+  - org.openrewrite.java.format.NoWhitespaceBefore
+  - org.openrewrite.java.format.MethodParamPad
+  - org.openrewrite.java.format.TypecastParenPad
+  - org.openrewrite.staticanalysis.DefaultComesLast
+  - org.openrewrite.java.OrderImports
+  - org.openrewrite.java.format.TabsAndIndents
+  - org.openrewrite.java.format.WrappingAndBraces
+  - org.openrewrite.java.ShortenFullyQualifiedTypeReferences
+  - org.openrewrite.java.format.PadEmptyForLoopComponents
+  - org.openrewrite.java.format.AutoFormat

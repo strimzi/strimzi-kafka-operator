@@ -1253,7 +1253,7 @@
                 <configuration>
                     <checkstyleConfigFile>.checkstyle/checkstyle.xml</checkstyleConfigFile>
                     <activeRecipes>
-                        <recipe>org.openrewrite.staticanalysis.CodeCleanup</recipe>
+                        <recipe>io.strimzi.strimzi-kafka-operator</recipe>
                     </activeRecipes>
                     <exclusions>
                         <exclusion>.git/**</exclusion>
