@@ -6,6 +6,7 @@ package io.strimzi.systemtest.utils.kafkaUtils;
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
+import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
@@ -46,7 +47,7 @@ public class KafkaNodePoolUtils {
         KafkaNodePoolResource.kafkaNodePoolClient().inNamespace(namespaceName).withName(kafkaNodePoolName).scale(scaleToReplicas);
     }
 
-    public static void waitForKafkaNodePoolDeletion(String namespaceName, String kafkaClusterName, String kafkaNodePoolName) {
+    public static void deleteKafkaNodePoolWithPodSetAndWait(String namespaceName, String kafkaClusterName, String kafkaNodePoolName) {
         LOGGER.info("Waiting for deletion of KafkaNodePool: {}/{}", namespaceName, kafkaNodePoolName);
         TestUtils.waitFor("deletion of KafkaNodePool: " + namespaceName + "/" + kafkaNodePoolName, TestConstants.POLL_INTERVAL_FOR_RESOURCE_READINESS, DELETION_TIMEOUT,
             () -> {
@@ -62,34 +63,29 @@ public class KafkaNodePoolUtils {
             () -> LOGGER.info(KafkaNodePoolResource.kafkaNodePoolClient().inNamespace(namespaceName).withName(kafkaNodePoolName).get()));
     }
 
-    public static void waitForKafkaNodePoolPodsReady(TestStorage testStorage, String kafkaNodePoolName) {
+    public static void waitForKafkaNodePoolPodsReady(TestStorage testStorage, String kafkaNodePoolName, ProcessRoles nodePoolRole, int replicaCount) {
         waitForKafkaNodePoolPodsReady(
             testStorage.getNamespaceName(),
             testStorage.getClusterName(),
             kafkaNodePoolName,
-            getKafkaNodePoolReplicaCount(testStorage.getNamespaceName(), kafkaNodePoolName));
+            replicaCount,
+            nodePoolRole
+        );
     }
 
-    public static void waitForKafkaNodePoolPodsReady(String namespaceName, String kafkaClusterName, String kafkaNodePoolName) {
+    public static void waitForKafkaNodePoolPodsReady(String namespaceName, String kafkaClusterName, ProcessRoles nodePoolRole, String kafkaNodePoolName, int replicaCount) {
         waitForKafkaNodePoolPodsReady(
             namespaceName,
             kafkaClusterName,
             kafkaNodePoolName,
-            getKafkaNodePoolReplicaCount(namespaceName, kafkaNodePoolName));
+            replicaCount,
+            nodePoolRole
+        );
     }
 
-    public static void waitForKafkaNodePoolPodsReady(String namespaceName, String kafkaClusterName, String kafkaNodePoolName, int podReplicaCount) {
+    public static void waitForKafkaNodePoolPodsReady(String namespaceName, String kafkaClusterName, String kafkaNodePoolName, int podReplicaCount, ProcessRoles processRoles) {
         LOGGER.info("Waiting for pods and SPS of KafkaNodePool: {}/{} to be ready", namespaceName, kafkaNodePoolName);
-        final LabelSelector kNPPodslabelSelector = KafkaNodePoolResource.getKafkaNodePoolLabelSelector(kafkaClusterName, kafkaNodePoolName);
+        final LabelSelector kNPPodslabelSelector = KafkaNodePoolResource.getLabelSelector(kafkaClusterName, kafkaNodePoolName, processRoles);
         PodUtils.waitForPodsReady(namespaceName, kNPPodslabelSelector, podReplicaCount, false);
-    }
-
-    private static int getKafkaNodePoolReplicaCount(String namespaceName, String kafkaNodePoolName) {
-        final KafkaNodePool knp = KafkaNodePoolResource.kafkaNodePoolClient().inNamespace(namespaceName).withName(kafkaNodePoolName).get();
-        return knp.getSpec().getReplicas();
-    }
-
-    public static Map<String, String> getKafkaNodePoolPods(String namespaceName, String kafkaClusterName, String kafkaNodePoolName) {
-        return PodUtils.podSnapshot(namespaceName, KafkaNodePoolResource.getKafkaNodePoolLabelSelector(kafkaClusterName, kafkaNodePoolName));
     }
 }

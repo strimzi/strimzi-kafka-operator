@@ -7,12 +7,12 @@ package io.strimzi.systemtest.kafka;
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
+import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
-import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -152,58 +152,59 @@ public class KafkaNodePoolST extends AbstractST {
      *     - transition of messages is finished successfully, KafkaTopic created and cleaned as expected.
      *  5. - Remove one of kafka broker with broker role.
      *     - KafkaNodePool is removed, Pods are deleted, but other pods in Kafka are stable and ready.
-     *  6. - Create KafkaTopic with replica number requiring all of the remaining Kafka Brokers to be present, Deploy clients and transmit messages and remove KafkaTopic.
+     *  6. - Create KafkaTopic with replica number requiring all the remaining Kafka Brokers to be present, Deploy clients and transmit messages and remove KafkaTopic.
      *     - transition of messages is finished successfully, KafkaTopic created and cleaned as expected.
      *
      * @usecase
      *  - kafka-node-pool
      */
     @ParallelNamespaceTest
-    void testNodePoolsAndNodePoolRolesManipulation(ExtensionContext extensionContext) {
+    void testNodePoolsAdditionAndRemoval(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext);
+        // node pools name convention is 'A' for all roles (: if possible i.e. based on feature gate) 'B' for broker roles.
         final String poolAName = testStorage.getKafkaNodePoolName() + "-a";
         final String poolB1Name = testStorage.getKafkaNodePoolName() + "-b1";
         final String poolB2NameAdded = testStorage.getKafkaNodePoolName() + "-b2-added";
+        final int brokerNodePoolReplicaCount = 2;
 
-        LOGGER.info("Deploy 3 KafkaNodePools {}, {}, in {}", poolAName, poolB1Name, testStorage.getNamespaceName());
-        final Kafka kafka = KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 1, 1)
+        LOGGER.info("Deploy 2 KafkaNodePools {}, {}, in {}", poolAName, poolB1Name, testStorage.getNamespaceName());
+        final Kafka kafka = KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 1, 3)
             .editOrNewSpec()
                 .editKafka()
-                    .addToConfig("auto.create.topics.enable", "false")
+                    .addToConfig("auto.create.topics.enable", "false")  // topics replica count helps ensure there are enough brokers
+                    .addToConfig("offsets.topic.replication.factor", "3") // as some brokers (2) will be removed, this topic should have more than '1' default replica
                 .endKafka()
             .endSpec()
             .build();
         final KafkaNodePool poolA = KafkaNodePoolTemplates.kafkaBasedNodePoolWithFgBasedRole(poolAName, kafka, 1).build();
-        final KafkaNodePool poolB = KafkaNodePoolTemplates.kafkaBasedNodePoolWithBrokerRole(poolB1Name, kafka, 2).build();
+        final KafkaNodePool poolB = KafkaNodePoolTemplates.kafkaBasedNodePoolWithBrokerRole(poolB1Name, kafka, brokerNodePoolReplicaCount).build();
         resourceManager.createResourceWithWait(extensionContext, poolA, poolB, kafka);
 
         transmitMessagesWithNewTopicAndClean(testStorage, 3);
 
         LOGGER.info("Add additional KafkaNodePool:  {}/{}", testStorage.getNamespaceName(), poolB2NameAdded);
-        final KafkaNodePool poolB2Added = KafkaNodePoolTemplates.kafkaBasedNodePoolWithBrokerRole(poolB2NameAdded, kafka, 2).build();
+        final KafkaNodePool poolB2Added = KafkaNodePoolTemplates.kafkaBasedNodePoolWithBrokerRole(poolB2NameAdded, kafka, brokerNodePoolReplicaCount).build();
         resourceManager.createResourceWithWait(extensionContext, poolB2Added);
-        KafkaNodePoolUtils.waitForKafkaNodePoolPodsReady(testStorage, poolB2NameAdded);
+        KafkaNodePoolUtils.waitForKafkaNodePoolPodsReady(testStorage, poolB2NameAdded, ProcessRoles.BROKER, brokerNodePoolReplicaCount);
 
         // replica count of this KafkaTopic will require that new brokers were correctly added into Kafka Cluster
         transmitMessagesWithNewTopicAndClean(testStorage, 5);
 
         LOGGER.info("Delete KafkaNodePool: {}/{} and wait for Kafka pods stability", testStorage.getNamespaceName(), poolB1Name);
-        KafkaNodePoolResource.kafkaNodePoolClient().inNamespace(testStorage.getNamespaceName()).withName(poolB1Name).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
-        KafkaNodePoolUtils.waitForKafkaNodePoolDeletion(testStorage.getNamespaceName(), testStorage.getClusterName(), poolB1Name);
-        PodUtils.waitUntilPodStabilityReplicasCount(testStorage.getNamespaceName(), KafkaResource.getStrimziPodSetName(testStorage.getClusterName(), poolB2NameAdded), 2);
+        KafkaNodePoolUtils.deleteKafkaNodePoolWithPodSetAndWait(testStorage.getNamespaceName(), testStorage.getClusterName(), poolB1Name);
+        PodUtils.waitUntilPodStabilityReplicasCount(testStorage.getNamespaceName(), KafkaResource.getStrimziPodSetName(testStorage.getClusterName(), poolB2NameAdded), brokerNodePoolReplicaCount);
         PodUtils.waitUntilPodStabilityReplicasCount(testStorage.getNamespaceName(), KafkaResource.getStrimziPodSetName(testStorage.getClusterName(), poolAName), 1);
 
-        transmitMessagesWithNewTopicAndClean(testStorage, 3);
+        transmitMessagesWithNewTopicAndClean(testStorage, 2);
     }
 
     private void transmitMessagesWithNewTopicAndClean(TestStorage testStorage, int topicReplicas) {
         final String topicName = testStorage.getTopicName() + "-replicas-" + topicReplicas + hashStub(String.valueOf(new Random().nextInt(Integer.MAX_VALUE)));
 
-        LOGGER.info("Creating KafkaTopic {}/{}", testStorage.getNamespaceName(), topicName);
         resourceManager.createResourceWithWait(testStorage.getExtensionContext(),
             KafkaTopicTemplates.topic(testStorage.getClusterName(), topicName, 1, topicReplicas, testStorage.getNamespaceName()).build());
 
-        LOGGER.info("transmit messages with Kafka {}/{} using given topic", testStorage.getNamespaceName(), testStorage.getClusterName());
+        LOGGER.info("Transmit messages with Kafka {}/{} using topic {}", testStorage.getNamespaceName(), testStorage.getClusterName(), topicName);
         KafkaClients kafkaClients = ClientUtils.getDefaultClientBuilder(testStorage)
             .withTopicName(topicName)
             .build();
