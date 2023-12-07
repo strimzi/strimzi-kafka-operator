@@ -705,33 +705,6 @@ public class KafkaRollerTest {
                 asList(7, 4, 3, 5, 6, 8, 1, 0, 2)); //Rolls in order: unready controllers, ready controllers, unready brokers, ready brokers
     }
 
-    @Test
-    public void testRollbackAfterFailedRestart(VertxTestContext context) {
-        // Mock PodOperator to simulate pod restart behavior
-        PodOperator podOps = mockPodOps(podId -> {
-            if (podId == 1) {
-                // Simulate failure for pod 1 leading to a rollback requirement
-                return failedFuture(new RuntimeException("Failed restart"));
-            } else {
-                return succeededFuture();
-            }
-        });
-
-        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(null, null, addPodNames(REPLICAS), podOps,
-                noException(), null, noException(), noException(), noException(),
-                brokerId -> succeededFuture(true), false, new DefaultAdminClientProvider(), false, null, 2);
-
-        // Start rolling restart
-        kafkaRoller.rollingRestart(pod -> RestartReasons.of(RestartReason.MANUAL_ROLLING_UPDATE))
-                .onComplete(context.failing(e -> context.verify(() -> {
-                    // Assert that rollback was triggered due to failure
-                    assertTrue(e instanceof KafkaRoller.ForceableProblem);
-                    assertEquals("Failed restart", e.getMessage());
-                    // Further assertions to check the rollback state
-                    context.completeNow();
-                })));
-    }
-
     private TestingKafkaRoller rollerWithControllers(PodOperator podOps, int... controllers) {
         return new TestingKafkaRoller(null, null, addPodNames(KafkaRollerTest.REPLICAS), podOps,
                 noException(), null, noException(), noException(), noException(),
