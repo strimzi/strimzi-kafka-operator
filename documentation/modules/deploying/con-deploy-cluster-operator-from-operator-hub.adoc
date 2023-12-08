@@ -19,7 +19,7 @@ For example, you can deploy the `Kafka` custom resource, and the installed Clust
 Upgrades between versions might include manual steps.
 Always read the release notes before upgrading.
 
-For information on upgrades, see xref:assembly-upgrade-cluster-operator-{context}[Cluster Operator upgrade options].
+For information on upgrades, see xref:assembly-upgrade-{context}[].
 
 WARNING: Make sure you use the appropriate update channel.
 Installing Strimzi from the default _stable_ channel is generally safe.

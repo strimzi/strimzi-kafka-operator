@@ -1,0 +1,86 @@
+// This module is included in the following assemblies:
+//
+// assembly-downgrade.adoc
+
+[id='proc-downgrade-kafka-kraft-{context}']
+= Downgrading KRaft-based Kafka clusters and client applications
+
+[role="_abstract"]
+Downgrade a KRaft-based Strimzi Kafka cluster to an earlier version.
+When downgrading a KRaft-based Strimzi Kafka cluster to a lower version, like moving from {KafkaVersionHigher} to {KafkaVersionLower}, ensure that the metadata version used by the Kafka cluster is a version supported by the Kafka version you want to downgrade to. 
+The metadata version for the Kafka version you are downgrading from must not be higher than the version you are downgrading to.
+
+NOTE: Consult the Apache Kafka documentation for information regarding the support and limitations associated with KRaft-based downgrades.
+
+.Prerequisites
+
+* The Cluster Operator is up and running.
+* Before you downgrade the Strimzi Kafka cluster, check the following for the `Kafka` resource:
+
+** The `Kafka` custom resource does not contain options that are not supported by the Kafka version being downgraded to.
+** `spec.kafka.metadataVersion` is set to a version that is supported by the Kafka version being downgraded to.   
+
+.Procedure
+
+. Update the Kafka cluster configuration.
++
+[source,shell,subs=+quotes]
+kubectl edit kafka <kafka_configuration_file>
+
+. Change the `metadataVersion` version to a version supported by the Kafka version you are downgrading to; leave the `Kafka.spec.kafka.version` unchanged at the _current_ Kafka version.
++
+For example, if downgrading from Kafka {KafkaVersionHigher} to {KafkaVersionLower}:
++
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    replicas: 3
+    metadataVersion: {KafkaMetadataVersionLower} # <1>
+    version: {KafkaVersionHigher} # <2>
+    # ...
+----
++
+<1> Metadata version is changed to a version supported by the earlier Kafka version.
+<2> Kafka version is unchanged.
++
+NOTE: The value of `metadataVersion` must be a string to prevent it from being interpreted as a floating point number.
+
+. Save the change, and wait for Cluster Operator to update `.status.kafkaMetadataVersion` for the `Kafka` resource. 
+
+. Change the `Kafka.spec.kafka.version` to the previous version.
++
+For example, if downgrading from Kafka {KafkaVersionHigher} to {KafkaVersionLower}:
++
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    replicas: 3
+    metadataVersion: {KafkaMetadataVersionLower} # <1>
+    version: {KafkaVersionLower} # <2>
+    # ...
+----
++
+<1> Metadata version is supported by the Kafka version.
+<2> Kafka version is changed to the new version.
+
+. If the image for the Kafka version is different from the image defined in `STRIMZI_KAFKA_IMAGES` for the Cluster Operator, update `Kafka.spec.kafka.image`.
++
+See xref:con-versions-and-images-str[].
+
+. Wait for the Cluster Operator to update the cluster.
++
+You can xref:con-upgrade-status-{context}[check the downgrade has completed successfully from the status of the `Kafka` resource].
+
+. Downgrade all client applications (consumers) to use the previous version of the client binaries.
++
+The Kafka cluster and clients are now using the previous Kafka version.

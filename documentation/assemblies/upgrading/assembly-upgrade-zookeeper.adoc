@@ -1,0 +1,14 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-upgrade.adoc
+
+[id='assembly-upgrade-zookeeper-{context}']
+= Upgrading Kafka when using ZooKeeper
+
+[role="_abstract"]
+If you are using a ZooKeeper-based Kafka cluster, an upgrade requires an update to the Kafka version and the inter-broker protocol version.
+
+include::../../modules/upgrading/ref-upgrade-kafka-versions.adoc[leveloffset=+1]
+include::../../modules/upgrading/con-upgrade-older-clients.adoc[leveloffset=+1]
+
+include::../../modules/upgrading/proc-upgrade-kafka-zookeeper.adoc[leveloffset=+1]

@@ -10,7 +10,7 @@ This procedure shows how to deploy a Kafka cluster to your Kubernetes cluster us
 
 The deployment uses a YAML file to provide the specification to create a `Kafka` resource.
 
-Strimzi provides the following xref:config-examples-{context}[example files] you can use to create a Kafka cluster:
+Strimzi provides the following xref:config-examples-{context}[example files] to create a Kafka cluster that uses ZooKeeper for cluster management:
 
 `kafka-persistent.yaml`:: Deploys a persistent cluster with three ZooKeeper and three Kafka nodes.
 `kafka-jbod.yaml`:: Deploys a persistent cluster with three ZooKeeper and three Kafka nodes (each using multiple persistent volumes).
@@ -36,8 +36,6 @@ The `inter.broker.protocol.version` property for the Kafka `config` must be the 
 The property represents the version of Kafka protocol used in a Kafka cluster.
 
 From Kafka 3.0.0, when the `inter.broker.protocol.version` is set to `3.0` or higher, the `log.message.format.version` option is ignored and doesn't need to be set.
-
-An update to the `inter.broker.protocol.version` is required when xref:assembly-upgrading-kafka-versions-str[upgrading Kafka].
 
 The example clusters are named `my-cluster` by default.
 The cluster name is defined by the name of the resource and cannot be changed after the cluster has been deployed.

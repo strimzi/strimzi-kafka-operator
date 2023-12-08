@@ -9,6 +9,11 @@
 Upgrade your Strimzi installation to version {ProductVersion} and benefit from new features, performance improvements, and enhanced security options.
 During the upgrade, Kafka is also be updated to the latest supported version, introducing additional features and bug fixes to your Strimzi deployment.
 
+Use the same method to upgrade the Cluster Operator as the initial method of deployment.
+For example, if you used the Strimzi installation files, modify those files to perform the upgrade.
+After you have upgraded your Cluster Operator to {ProductVersion}, the next step is to upgrade all Kafka nodes to the latest supported version of Kafka. 
+Kafka upgrades are performed by the Cluster Operator through rolling updates of the Kafka nodes.
+
 If you encounter any issues with the new version, Strimzi can be xref:assembly-downgrade-{context}[downgraded] to the previous version.
 
 Released Strimzi versions can be found at {ReleaseDownload}.
@@ -20,17 +25,29 @@ For topics configured with high availability (replication factor of at least 3 a
 The upgrade triggers rolling updates, where brokers are restarted one by one at different stages of the process. 
 During this time, overall cluster availability is temporarily reduced, which may increase the risk of message loss in the event of a broker failure.
 
-include::../../modules/upgrading/con-upgrade-paths.adoc[leveloffset=+1]
-
+//sequence
 include::../../modules/upgrading/con-upgrade-sequence.adoc[leveloffset=+1]
 
+//kafka upgrade concepts
+include::../../modules/upgrading/con-upgrade-paths.adoc[leveloffset=+1]
+include::../../modules/upgrading/con-upgrade-versions-and-images.adoc[leveloffset=+2]
+
+//client upgrade concepts
+include::../../modules/upgrading/con-upgrade-strategies-for-upgrading-clients.adoc[leveloffset=+1]
+
+//upgrading kubernetes
 include::../../modules/upgrading/con-upgrade-cluster.adoc[leveloffset=+1]
 
+//upgrading cluster operator
 include::assembly-upgrade-cluster-operator.adoc[leveloffset=+1]
 
-include::assembly-upgrade-kafka-versions.adoc[leveloffset=+1]
+//upgrading kafka: KRaft-based
+include::../../modules/upgrading/proc-upgrade-kafka-kraft.adoc[leveloffset=+1]
+
+//upgrading Kafka: ZooKeeper-based
+include::assembly-upgrade-zookeeper.adoc[leveloffset=+1]
 
 //checking the status of an upgrade
 include::../../modules/upgrading/con-upgrade-status.adoc[leveloffset=+1]
-
+//Using FIPS
 include::../../modules/upgrading/proc-switching-to-FIPS-mode-when-upgrading-Strimzi.adoc[leveloffset=+1]

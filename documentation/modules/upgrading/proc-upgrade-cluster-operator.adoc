@@ -73,4 +73,3 @@ The image tag shows the new Strimzi version followed by the Kafka version:
 You can also xref:con-upgrade-status-{context}[check the upgrade has completed successfully from the status of the `Kafka` resource].
 
 The Cluster Operator is upgraded to version {ProductVersion}, but the version of Kafka running in the cluster it manages is unchanged.
-Following a Cluster Operator upgrade, you must perform a xref:assembly-upgrading-kafka-versions-str[Kafka upgrade].

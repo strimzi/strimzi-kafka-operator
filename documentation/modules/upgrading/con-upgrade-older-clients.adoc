@@ -1,0 +1,30 @@
+// Module included in the following assemblies:
+//
+// assembly-upgrade-zookeeper.adoc
+
+[id='con-upgrade-older-clients-{context}']
+= Upgrading clients with older message formats
+
+[role="_abstract"]
+Before Kafka 3.0, you could configure a specific message format for brokers using the `log.message.format.version` property (or the `message.format.version` property at the topic level). 
+This allowed brokers to accommodate older Kafka clients that were using an outdated message format. 
+Though Kafka inherently supports older clients without explicitly setting this property, brokers would then need to convert the messages from the older clients, which came with a significant performance cost.
+
+Apache Kafka Java clients have supported the latest message format version since version 0.11. 
+If all of your clients are using the latest message version, you can remove the `log.message.format.version` or `message.format.version` overrides when upgrading your brokers.
+
+However, if you still have clients that are using an older message format version, we recommend upgrading your clients first. 
+Start with the consumers, then upgrade the producers before removing the `log.message.format.version` or  `message.format.version` overrides when upgrading your brokers. 
+This will ensure that all of your clients can support the latest message format version and that the upgrade process goes smoothly.
+
+You can track Kafka client names and versions using this metric:
+
+* `kafka.server:type=socket-server-metrics,clientSoftwareName=<name>,clientSoftwareVersion=<version>,listener=<listener>,networkProcessor=<processor>`  
+
+[TIP]
+====
+The following Kafka broker metrics help monitor the performance of message down-conversion:
+
+* `kafka.network:type=RequestMetrics,name=MessageConversionsTimeMs,request={Produce|Fetch}` provides metrics on the time taken to perform message conversion. 
+* `kafka.server:type=BrokerTopicMetrics,name={Produce|Fetch}MessageConversionsPerSec,topic=([-.\w]+)` provides metrics on the number of messages converted over a period of time.  
+====

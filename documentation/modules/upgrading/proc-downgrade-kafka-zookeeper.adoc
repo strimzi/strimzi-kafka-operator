@@ -1,0 +1,108 @@
+// This module is included in the following assemblies:
+//
+// assembly-downgrading-zookeeper.adoc
+
+[id='proc-downgrade-kafka-zookeeper-{context}']
+= Downgrading ZooKeeper-based Kafka clusters and client applications
+
+[role="_abstract"]
+Downgrade a ZooKeeper-based Strimzi Kafka cluster to an earlier version.
+When downgrading a ZooKeeper-based Strimzi Kafka cluster to a lower version, like moving from {KafkaVersionHigher} to {KafkaVersionLower}, ensure that the inter-broker protocol version used by the Kafka cluster is a version supported by the Kafka version you want to downgrade to.  
+The inter-broker protocol version for the Kafka version you are downgrading from must not be higher than the version you are downgrading to.
+
+NOTE: Consult the Apache Kafka documentation for information regarding the support and limitations associated with ZooKeeper-based downgrades.
+
+.Prerequisites
+
+* The Cluster Operator is up and running.
+* Before you downgrade the Strimzi Kafka cluster, check the following for the `Kafka` resource:
+
+** IMPORTANT: xref:con-target-downgrade-version-{context}[Compatibility of Kafka versions].
+** The `Kafka` custom resource does not contain options that are not supported by the Kafka version being downgraded to.
+** `Kafka.spec.kafka.config` has a `log.message.format.version` and `inter.broker.protocol.version` that is supported by the Kafka version being downgraded to.
++
+From Kafka 3.0.0, when the `inter.broker.protocol.version` is set to `3.0` or higher, the `log.message.format.version` option is ignored and doesn't need to be set.
+
+.Procedure
+
+. Update the Kafka cluster configuration.
++
+[source,shell,subs=+quotes]
+kubectl edit kafka <kafka_configuration_file>
+
+. Change the `inter.broker.protocol.version` version (and `log.message.format.version`, if applicable) to a version supported by the Kafka version you are downgrading to; leave the `Kafka.spec.kafka.version` unchanged at the _current_ Kafka version.
++
+For example, if downgrading from Kafka {KafkaVersionHigher} to {KafkaVersionLower}:
++
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  # ...
+  kafka:
+    version: {KafkaVersionHigher} <1>
+    config:
+      inter.broker.protocol.version: "{InterBrokerVersionLower}" <2>
+      log.message.format.version: "{InterBrokerVersionLower}"
+      # ...
+----
++
+<1> Kafka version is unchanged.
+<2> Inter-broker protocol version is changed to a version supported by the earlier Kafka version.
++
+NOTE: The value of `log.message.format.version` and `inter.broker.protocol.version` must be strings to prevent them from being interpreted as floating point numbers.
+
+. Save and exit the editor, then wait for rolling updates to complete.
++
+Check the progress of the rolling updates by watching the pod state transitions:
++
+[source,shell,subs=+quotes]
+----
+kubectl get pods my-cluster-kafka-0 -o jsonpath='{.spec.containers[0].image}'
+----
++
+The rolling updates ensure that each pod is using the specified Kafka inter-broker protocol version.
+
+. Change the `Kafka.spec.kafka.version` to the previous version.
++
+For example, if downgrading from Kafka {KafkaVersionHigher} to {KafkaVersionLower}:
++
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  # ...
+  kafka:
+    version: {KafkaVersionLower} <1>
+    config:
+      inter.broker.protocol.version: "{InterBrokerVersionLower}" <2>
+      log.message.format.version: "{InterBrokerVersionLower}"
+      # ...
+----
+<1> Kafka version is changed to the new version.
+<2> Inter-broker protocol version is supported by the Kafka version.
+
+. If the image for the Kafka version is different from the image defined in `STRIMZI_KAFKA_IMAGES` for the Cluster Operator, update `Kafka.spec.kafka.image`.
++
+See xref:con-versions-and-images-str[].
+
+. Wait for the Cluster Operator to update the cluster.
++
+You can xref:con-upgrade-status-{context}[check the downgrade has completed successfully from the status of the `Kafka` resource].
+
+. Downgrade all client applications (consumers) to use the previous version of the client binaries.
++
+The Kafka cluster and clients are now using the previous Kafka version.
+
+. If you are reverting back to a version of Strimzi earlier than {ConvertAfterProductVersion}, which uses ZooKeeper for the storage of topic metadata, delete the internal topic store topics from the Kafka cluster.
++
+[source,shell,subs=attributes+]
+----
+kubectl run kafka-admin -ti --image={DockerKafkaImageCurrent} --rm=true --restart=Never -- ./bin/kafka-topics.sh --bootstrap-server localhost:9092 --topic __strimzi-topic-operator-kstreams-topic-store-changelog --delete && ./bin/kafka-topics.sh --bootstrap-server localhost:9092 --topic __strimzi_store_topic --delete
+----
