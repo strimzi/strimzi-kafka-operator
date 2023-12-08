@@ -28,6 +28,7 @@
         <jsonevent-layout.version>1.7</jsonevent-layout.version>
         <opentelemetry.version>1.19.0</opentelemetry.version>
         <opentelemetry.alpha-version>1.19.0-alpha</opentelemetry.alpha-version>
+        <guava.version>32.1.3-jre</guava.version>
     </properties>
 
     <repositories>
@@ -53,6 +54,14 @@
                         <artifactId>asm</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+            <!--
+            Override guava version coming from org.openpolicyagent.kafka:opa-authorizer
+            -->
+            <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>${guava.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
