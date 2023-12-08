@@ -150,7 +150,7 @@ public class KafkaNodePoolST extends AbstractST {
      *     - KafkaNodePool is deployed and ready.
      *  4. - Create KafkaTopic with replica number requiring all Kafka Brokers to be present, Deploy clients and transmit messages and remove KafkaTopic.
      *     - transition of messages is finished successfully, KafkaTopic created and cleaned as expected.
-     *  5. - Remove one of kafka broker with broker role.
+     *  5. - Remove one of kafkaNodePool with broker role.
      *     - KafkaNodePool is removed, Pods are deleted, but other pods in Kafka are stable and ready.
      *  6. - Create KafkaTopic with replica number requiring all the remaining Kafka Brokers to be present, Deploy clients and transmit messages and remove KafkaTopic.
      *     - transition of messages is finished successfully, KafkaTopic created and cleaned as expected.
