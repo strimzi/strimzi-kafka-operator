@@ -30,6 +30,40 @@ public class KafkaNodePoolTemplates {
             .endSpec();
     }
 
+    public static KafkaNodePoolBuilder kafkaNodePoolWithControllerRole(String namespaceName, String nodePoolName, String kafkaClusterName, int kafkaReplicas) {
+        return defaultKafkaNodePool(namespaceName, nodePoolName, kafkaClusterName, kafkaReplicas)
+            .editOrNewSpec()
+                .addToRoles(ProcessRoles.CONTROLLER)
+            .endSpec();
+    }
+
+    public static KafkaNodePoolBuilder kafkaNodePoolWithControllerRoleAndPersistentStorage(String namespaceName, String nodePoolName, String kafkaClusterName, int kafkaReplicas) {
+        return kafkaNodePoolWithControllerRole(namespaceName, nodePoolName, kafkaClusterName, kafkaReplicas)
+            .editOrNewSpec()
+                .withNewPersistentClaimStorage()
+                    .withSize("1Gi")
+                    .withDeleteClaim(true)
+                .endPersistentClaimStorage()
+            .endSpec();
+    }
+
+    public static KafkaNodePoolBuilder kafkaNodePoolWithBrokerRole(String namespaceName, String nodePoolName, String kafkaClusterName, int kafkaReplicas) {
+        return defaultKafkaNodePool(namespaceName, nodePoolName, kafkaClusterName, kafkaReplicas)
+            .editOrNewSpec()
+                .addToRoles(ProcessRoles.BROKER)
+            .endSpec();
+    }
+
+    public static KafkaNodePoolBuilder kafkaNodePoolWithBrokerRoleAndPersistentStorage(String namespaceName, String nodePoolName, String kafkaClusterName, int kafkaReplicas) {
+        return kafkaNodePoolWithBrokerRole(namespaceName, nodePoolName, kafkaClusterName, kafkaReplicas)
+            .editOrNewSpec()
+                .withNewPersistentClaimStorage()
+                    .withSize("1Gi")
+                    .withDeleteClaim(true)
+                .endPersistentClaimStorage()
+            .endSpec();
+    }
+
     /**
      * Creates a KafkaNodePoolBuilder for a Kafka instance (mirroring its mandatory specification) with roles based
      * on the environment setting (TestConstants.USE_KRAFT_MODE) having BROKER role in Zookeeper and Kraft mode alike

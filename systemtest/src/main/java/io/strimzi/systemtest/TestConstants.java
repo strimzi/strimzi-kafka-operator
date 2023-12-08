@@ -201,7 +201,10 @@ public interface TestConstants {
      */
     String USE_KRAFT_MODE = "+UseKRaft";
     String DONT_USE_KAFKA_NODE_POOLS = "-KafkaNodePools";
+    // kept for upgrade/downgrade tests in KRaft
+    String USE_KAFKA_NODE_POOLS = "+KafkaNodePools";
     String DONT_USE_UNIDIRECTIONAL_TOPIC_OPERATOR = "-UnidirectionalTopicOperator";
+    String USE_UNIDIRECTIONAL_TOPIC_OPERATOR = "+UnidirectionalTopicOperator";
 
     /**
      * Default value which allows execution of tests with any tags
@@ -222,6 +225,11 @@ public interface TestConstants {
      * Tag for upgrade tests.
      */
     String UPGRADE = "upgrade";
+
+    /**
+     * Tag for KRaft to KRaft tests.
+     */
+    String KRAFT_UPGRADE = "kraftupgrade";
 
     /**
      * Tag for olm upgrade tests

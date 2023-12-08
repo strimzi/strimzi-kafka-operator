@@ -4,10 +4,13 @@
  */
 package io.strimzi.systemtest.utils.kafkaUtils;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLParser;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.strimzi.api.kafka.model.Kafka;
@@ -489,6 +492,55 @@ public class KafkaUtils {
                 ((ObjectNode) kafkaNode.get("config")).put("inter.broker.protocol.version", interBrokerProtocol);
             }
             return mapper.writeValueAsString(node);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static String changeOrRemoveKafkaInKRaft(File file, String version) {
+        return changeOrRemoveKafkaConfigurationInKRaft(file, version, null);
+    }
+
+    public static String changeOrRemoveKafkaConfigurationInKRaft(File file, String version, String metadataVersion) {
+        YAMLFactory yamlFactory = new YAMLFactory();
+        ObjectMapper mapper = new ObjectMapper();
+        YAMLMapper yamlMapper = new YAMLMapper();
+
+        try {
+            YAMLParser yamlParser = yamlFactory.createParser(file);
+            List<ObjectNode> objects = mapper.readValues(yamlParser, new TypeReference<ObjectNode>() { }).readAll();
+
+            ObjectNode kafkaResourceNode = objects.get(2);
+            ObjectNode kafkaNode = (ObjectNode) kafkaResourceNode.at("/spec/kafka");
+
+            ObjectNode entity = (ObjectNode) kafkaResourceNode.at("/spec/entityOperator");
+            entity.set("topicOperator", mapper.createObjectNode());
+
+            // workaround for current Strimzi upgrade (before we will have release containing metadataVersion in examples + CRDs)
+            boolean metadataVersionFieldSupported = !cmdKubeClient().exec(false, "explain", "kafka.spec.kafka.metadataVersion").err().contains("does not exist");
+
+            if (version == null) {
+                kafkaNode.remove("version");
+                kafkaNode.remove("metadataVersion");
+            } else if (!version.equals("")) {
+                kafkaNode.put("version", version);
+
+                if (metadataVersionFieldSupported) {
+                    kafkaNode.put("metadataVersion", TestKafkaVersion.getSpecificVersion(version).messageVersion());
+                }
+            }
+
+            if (metadataVersion != null && metadataVersionFieldSupported) {
+                kafkaNode.put("metadataVersion", metadataVersion);
+            }
+
+            StringBuilder output = new StringBuilder();
+
+            for (ObjectNode objectNode : objects) {
+                output.append(yamlMapper.writeValueAsString(objectNode));
+            }
+
+            return output.toString();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

@@ -2,7 +2,7 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.systemtest.upgrade;
+package io.strimzi.systemtest.upgrade.regular;
 
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.strimzi.api.kafka.model.KafkaResources;
@@ -17,6 +17,9 @@ import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.operator.configuration.OlmConfiguration;
 import io.strimzi.systemtest.resources.operator.configuration.OlmConfigurationBuilder;
 import io.strimzi.systemtest.storage.TestStorage;
+import io.strimzi.systemtest.upgrade.AbstractUpgradeST;
+import io.strimzi.systemtest.upgrade.OlmVersionModificationData;
+import io.strimzi.systemtest.upgrade.VersionModificationDataLoader;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.FileUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
@@ -139,9 +142,9 @@ public class OlmUpgradeST extends AbstractUpgradeST {
         // ======== Cluster Operator upgrade ends ========
 
         // ======== Kafka upgrade starts ========
-        logPodImages(clusterName);
+        logPodImages(TestConstants.CO_NAMESPACE);
         changeKafkaAndLogFormatVersion(olmUpgradeData, extensionContext);
-        logPodImages(clusterName);
+        logPodImages(TestConstants.CO_NAMESPACE);
         // ======== Kafka upgrade ends ========
 
         // Wait for messages of previously created clients
