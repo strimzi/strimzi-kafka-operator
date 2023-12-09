@@ -3,7 +3,7 @@
 // assembly-using-the-topic-operator.adoc
 
 [id='con-deleting-managed-topics-{context}']
-= (Preview) Deleting managed topics
+= Deleting managed topics
 
 [role="_abstract"]
 Unidirectional topic management supports the deletion of topics managed through the `KafkaTopic` resource with or without Kubernetes finalizers.

@@ -3,7 +3,7 @@
 // assembly-using-the-topic-operator.adoc
 
 [id='proc-converting-managed-topics-{context}']
-= (Preview) Managing KafkaTopic resources without impacting Kafka topics
+= Managing KafkaTopic resources without impacting Kafka topics
 
 [role="_abstract"]
 This procedure describes how to convert Kafka topics that are currently managed through the `KafkaTopic` resource into non-managed topics.

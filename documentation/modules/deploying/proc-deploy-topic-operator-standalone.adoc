@@ -6,10 +6,11 @@
 = Deploying the standalone Topic Operator
 
 [role="_abstract"]
-This procedure shows how to deploy the Topic Operator as a standalone component for topic management.
+This procedure shows how to deploy the Topic Operator in unidirectional mode as a standalone component for topic management.
 You can use a standalone Topic Operator with a Kafka cluster that is not managed by the Cluster Operator.
-
-A standalone deployment can operate with any Kafka cluster.
+Unidirectional topic management maintains topics solely through `KafkaTopic` resources.
+For more information on unidirectional topic management, see xref:ref-operator-topic-{context}[].
+Alternate configuration is also shown for deploying the Topic Operator in bidirectional mode.
 
 Standalone deployment files are provided with Strimzi.
 Use the `05-Deployment-strimzi-topic-operator.yaml` deployment file to deploy the Topic Operator.
@@ -60,36 +61,32 @@ spec:
               value: my-kafka-bootstrap-address:9092
             - name: STRIMZI_RESOURCE_LABELS # <3>
               value: "strimzi.io/cluster=my-cluster"
-            - name: STRIMZI_ZOOKEEPER_CONNECT # <4>
-              value: my-cluster-zookeeper-client:2181
-            - name: STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS # <5>
-              value: "18000"
-            - name: STRIMZI_FULL_RECONCILIATION_INTERVAL_MS # <6>
+            - name: STRIMZI_FULL_RECONCILIATION_INTERVAL_MS # <4>
               value: "120000"
-            - name: STRIMZI_TOPIC_METADATA_MAX_ATTEMPTS # <7>
-              value: "6"
-            - name: STRIMZI_LOG_LEVEL # <8>
+            - name: STRIMZI_LOG_LEVEL # <5>
               value: INFO
-            - name: STRIMZI_TLS_ENABLED # <9>
+            - name: STRIMZI_TLS_ENABLED # <6>
               value: "false"
-            - name: STRIMZI_JAVA_OPTS # <10>
+            - name: STRIMZI_JAVA_OPTS # <7>
               value: "-Xmx=512M -Xms=256M"
-            - name: STRIMZI_JAVA_SYSTEM_PROPERTIES # <11>
+            - name: STRIMZI_JAVA_SYSTEM_PROPERTIES # <8>
               value: "-Djavax.net.debug=verbose -DpropertyName=value"
-            - name: STRIMZI_PUBLIC_CA # <12>
+            - name: STRIMZI_PUBLIC_CA # <9>
               value: "false"
-            - name: STRIMZI_TLS_AUTH_ENABLED # <13>
+            - name: STRIMZI_TLS_AUTH_ENABLED # <10>
               value: "false"
-            - name: STRIMZI_SASL_ENABLED # <14>
+            - name: STRIMZI_SASL_ENABLED # <11>
               value: "false"
-            - name: STRIMZI_SASL_USERNAME # <15>
+            - name: STRIMZI_SASL_USERNAME # <12>
               value: "admin"
-            - name: STRIMZI_SASL_PASSWORD # <16>
+            - name: STRIMZI_SASL_PASSWORD # <13>
               value: "password"
-            - name: STRIMZI_SASL_MECHANISM # <17>
+            - name: STRIMZI_SASL_MECHANISM # <14>
               value: "scram-sha-512"
-            - name: STRIMZI_SECURITY_PROTOCOL # <18>
+            - name: STRIMZI_SECURITY_PROTOCOL # <15>
               value: "SSL"
+            - name: STRIMZI_USE_FINALIZERS
+              value: "false" # <16>
 ----
 <1> The Kubernetes namespace for the Topic Operator to watch for `KafkaTopic` resources. Specify the namespace of the Kafka cluster.
 <2> The host and port pair of the bootstrap broker address to discover and connect to all brokers in the Kafka cluster.
@@ -99,37 +96,30 @@ This does not have to be the name of the Kafka cluster.
 It can be the label assigned to the `KafkaTopic` resource.
 If you deploy more than one Topic Operator, the labels must be unique for each.
 That is, the operators cannot manage the same resources.
-<4> (ZooKeeper) The host and port pair of the address to connect to the ZooKeeper cluster.
-This must be the same ZooKeeper cluster that your Kafka cluster is using.
-<5> (ZooKeeper) The ZooKeeper session timeout, in milliseconds.
-The default is `18000` (18 seconds).
-<6> The interval between periodic reconciliations, in milliseconds.
+<4> The interval between periodic reconciliations, in milliseconds.
 The default is `120000` (2 minutes).
-<7> The number of attempts at getting topic metadata from Kafka.
-The time between each attempt is defined as an exponential backoff.
-Consider increasing this value when topic creation takes more time due to the number of partitions or replicas.
-The default is `6` attempts.
-<8> The level for printing logging messages.
+<5> The level for printing logging messages.
 You can set the level to `ERROR`, `WARNING`, `INFO`, `DEBUG`, or `TRACE`.
-<9> Enables TLS support for encrypted communication with the Kafka brokers.
-<10> (Optional) The Java options used by the JVM running the Topic Operator.
-<11> (Optional) The debugging (`-D`) options set for the Topic Operator.
-<12> (Optional) Skips the generation of trust store certificates if TLS is enabled through `STRIMZI_TLS_ENABLED`. If this environment variable is enabled, the brokers must use a public trusted certificate authority for their TLS certificates.
+<6> Enables TLS support for encrypted communication with the Kafka brokers.
+<7> (Optional) The Java options used by the JVM running the Topic Operator.
+<8> (Optional) The debugging (`-D`) options set for the Topic Operator.
+<9> (Optional) Skips the generation of trust store certificates if TLS is enabled through `STRIMZI_TLS_ENABLED`. If this environment variable is enabled, the brokers must use a public trusted certificate authority for their TLS certificates.
 The default is `false`.
-<13> (Optional) Generates key store certificates for mTLS authentication. Setting this to `false` disables client authentication with mTLS to the Kafka brokers.
+<10> (Optional) Generates key store certificates for mTLS authentication. Setting this to `false` disables client authentication with mTLS to the Kafka brokers.
 The default is `true`.
-<14> (Optional) Enables SASL support for client authentication when connecting to Kafka brokers.
+<11> (Optional) Enables SASL support for client authentication when connecting to Kafka brokers.
 The default is `false`.
-<15> (Optional) The SASL username for client authentication.
+<12> (Optional) The SASL username for client authentication.
 Mandatory only if SASL is enabled through `STRIMZI_SASL_ENABLED`.
-<16> (Optional) The SASL password for client authentication.
+<13> (Optional) The SASL password for client authentication.
 Mandatory only if SASL is enabled through `STRIMZI_SASL_ENABLED`.
-<17> (Optional) The SASL mechanism for client authentication.
+<14> (Optional) The SASL mechanism for client authentication.
 Mandatory only if SASL is enabled through `STRIMZI_SASL_ENABLED`.
 You can set the value to `plain`, `scram-sha-256`, or `scram-sha-512`.
-<18> (Optional) The security protocol used for communication with Kafka brokers.
+<15> (Optional) The security protocol used for communication with Kafka brokers.
 The default value is "PLAINTEXT".
 You can set the value to `PLAINTEXT`, `SSL`, `SASL_PLAINTEXT`, or `SASL_SSL`.
+<16> Set `STRIMZI_USE_FINALIZERS` to `false` if you do not want to use finalizers to control xref:con-deleting-managed-topics-{context}[topic deletion].
 
 . If you want to connect to Kafka brokers that are using certificates from a public certificate authority, set `STRIMZI_PUBLIC_CA` to `true`. Set this property to `true`, for example, if you are using Amazon AWS MSK service.
 . If you enabled mTLS with the `STRIMZI_TLS_ENABLED` environment variable, specify the keystore and truststore used to authenticate connection to the Kafka cluster.
@@ -154,10 +144,7 @@ env:
 <3> The keystore contains the private key for mTLS authentication.
 <4> The password for accessing the keystore.
 
-. Deploy the Topic Operator.
-+
-[source,shell,subs=+quotes]
-kubectl create -f install/topic-operator
+. Apply the changes to the `Deployment` configuration to deploy the Topic Operator.
 
 . Check the status of the deployment:
 +
@@ -176,32 +163,30 @@ strimzi-topic-operator  1/1    1           1
 `READY` shows the number of replicas that are ready/expected.
 The deployment is successful when the `AVAILABLE` output shows `1`.
 
-== (Preview) Deploying the standalone Topic Operator for unidirectional topic management
+== Deploying the standalone Topic Operator for bidirectional topic management
 
-Unidirectional topic management maintains topics solely through `KafkaTopic` resources.
-For more information on unidirectional topic management, see xref:ref-operator-topic-{context}[].
+Bidirectional topic management requires ZooKeeper for cluster management, and maintains topics through `KafkaTopic` resources and within the Kafka cluster. 
+If you want to switch to using the Topic Operator in this mode, follow these steps to deploy the standalone Topic Operator.
 
-If you want to try the preview of unidirectional topic management, follow these steps to deploy the standalone Topic Operator.
-
-.Procedure
+NOTE: As the feature gate enabling the Topic Operator to run in unidirectional mode progresses to General Availability, bidirectional mode will be phased out. This transition is aimed at enhancing the user experience, particularly in supporting Kafka in KRaft mode. 
 
 . Undeploy the current standalone Topic Operator.
 +
 Retain the `KafkaTopic` resources, which are picked up by the Topic Operator when it is deployed again.
 
-. Edit the `Deployment` configuration for the standalone Topic Operator to remove any ZooKeeper-related environment variables:
+. Edit the `Deployment` configuration for the standalone Topic Operator to include ZooKeeper-related environment variables:
 +
 * `STRIMZI_ZOOKEEPER_CONNECT`
 * `STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS`
 * `TC_ZK_CONNECTION_TIMEOUT_MS`
 * `STRIMZI_USE_ZOOKEEPER_TOPIC_STORE`
 +
-It is the presence or absence of the ZooKeeper variables that defines whether the unidirectional Topic Operator is used.
+It is the presence or absence of the ZooKeeper variables that defines whether the bidirectional Topic Operator is used.
 Unidirectional topic management does not use ZooKeeper.
 If ZooKeeper environment variables are not present, the unidirectional Topic Operator is used.
 Otherwise, the bidirectional Topic Operator is used. 
 +
-Other unused environment variables that can be removed if present:
+Other environment variables that are not used in unidirectional mode can be added if required:
 +
 * `STRIMZI_REASSIGN_THROTTLE`
 * `STRIMZI_REASSIGN_VERIFY_INTERVAL_MS`
@@ -211,21 +196,8 @@ Other unused environment variables that can be removed if present:
 * `STRIMZI_STORE_NAME`
 * `STRIMZI_APPLICATION_ID`
 * `STRIMZI_STALE_RESULT_TIMEOUT_MS`
-
-. (Optional) Set the `STRIMZI_USE_FINALIZERS` environment variable to `false`:
 +
-.Additional configuration for unidirectional topic management
-[source,shell,subs=+quotes]
-----
-# ...
-env:
-  - name: STRIMZI_USE_FINALIZERS
-    value: "false"
-----
-+
-Set this environment variable to `false` if you do not want to use finalizers to control xref:con-deleting-managed-topics-{context}[topic deletion].
-+
-.Example standalone Topic Operator deployment configuration for unidirectional topic management
+.Example standalone Topic Operator deployment configuration for bidirectional topic management
 [source,shell,subs=+quotes]
 ----
 apiVersion: apps/v1
@@ -252,6 +224,12 @@ spec:
               value: my-kafka-bootstrap-address:9092
             - name: STRIMZI_RESOURCE_LABELS
               value: "strimzi.io/cluster=my-cluster"
+            - name: STRIMZI_ZOOKEEPER_CONNECT # <1>
+              value: my-cluster-zookeeper-client:2181
+            - name: STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS # <2>
+              value: "18000"
+            - name: STRIMZI_TOPIC_METADATA_MAX_ATTEMPTS # <3>
+              value: "6"
             - name: STRIMZI_FULL_RECONCILIATION_INTERVAL_MS
               value: "120000"
             - name: STRIMZI_LOG_LEVEL
@@ -276,8 +254,14 @@ spec:
               value: "scram-sha-512"
             - name: STRIMZI_SECURITY_PROTOCOL
               value: "SSL"
-            - name: STRIMZI_USE_FINALIZERS
-              value: "true"  
 ----
+<1> (ZooKeeper) The host and port pair of the address to connect to the ZooKeeper cluster.
+This must be the same ZooKeeper cluster that your Kafka cluster is using.
+<2> (ZooKeeper) The ZooKeeper session timeout, in milliseconds.
+The default is `18000` (18 seconds).
+<3> The number of attempts at getting topic metadata from Kafka.
+The time between each attempt is defined as an exponential backoff.
+Consider increasing this value when topic creation takes more time due to the number of partitions or replicas.
+The default is `6` attempts.
 
-. Deploy the standalone Topic Operator in the standard way.
+. Apply the changes to the `Deployment` configuration to deploy the Topic Operator.

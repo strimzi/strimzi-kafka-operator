@@ -8,8 +8,8 @@
 [role="_abstract"]
 How the Topic Operator handles changes to topics depends on the xref:ref-operator-topic-{context}[mode of topic management].
 
-* For bidirectional topic management, configuration changes are synchronized between the Kafka topic and the `KafkaTopic` resource in both directions. Incompatible changes prioritize the Kafka configuration, and the `KafkaTopic` resource is adjusted accordingly.
-* For unidirectional topic management (currently in preview), configuration changes only go in one direction: from the `KafkaTopic` resource to the Kafka topic. Any changes to a Kafka topic managed outside the `KafkaTopic` resource are reverted. 
+* For unidirectional topic management, configuration changes only go in one direction: from the `KafkaTopic` resource to the Kafka topic. Any changes to a Kafka topic managed outside the `KafkaTopic` resource are reverted.
+* For bidirectional topic management, configuration changes are synchronized between the Kafka topic and the `KafkaTopic` resource in both directions. Incompatible changes prioritize the Kafka configuration, and the `KafkaTopic` resource is adjusted accordingly. 
 
 == Topic store for bidirectional topic management
 
@@ -75,7 +75,7 @@ When an application is deployed along with its `KafkaTopic` resources, it is pos
 
 For bidirectional topic management, the Topic Operator synchronizes the changes between the topics and `KafkaTopic` resources.
 
-If you are trying the unidirectional topic management preview, this can mean that the topics created for an application deployment are initially created with default topic configuration.
+If you are using unidirectional topic management, this can mean that the topics created for an application deployment are initially created with default topic configuration.
 If the Topic Operator attempts to reconfigure the topics based on `KafkaTopic` resource specifications included with the application deployment, the operation might fail because the required change to the configuration is not allowed.
 For example, if the change means lowering the number of topic partitions.
 For this reason, it is recommended to disable `auto.create.topics.enable` in the Kafka cluster configuration when using unidirectional topic management.
