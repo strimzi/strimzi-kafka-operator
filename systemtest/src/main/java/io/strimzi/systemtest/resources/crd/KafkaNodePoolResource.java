@@ -6,11 +6,13 @@ package io.strimzi.systemtest.resources.crd;
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
+import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaNodePoolList;
 import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolBuilder;
 import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
@@ -20,7 +22,9 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceType;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PersistentVolumeClaimUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -70,7 +74,26 @@ public class KafkaNodePoolResource implements ResourceType<KafkaNodePool> {
 
     @Override
     public boolean waitForReadiness(KafkaNodePool resource) {
-        return resource != null;
+        final LabelSelector kafkaNodePoolSelector = new LabelSelectorBuilder()
+            .withMatchLabels(parseLabelSelector(resource.getStatus().getLabelSelector()))
+            .build();
+
+        // here we wait for readiness of the Kafka pods related to KafkaNodePools
+        PodUtils.waitForPodsReady(resource.getMetadata().getNamespace(), kafkaNodePoolSelector, resource.getSpec().getReplicas(), true);
+
+        return true;
+    }
+
+    private Map<String, String> parseLabelSelector(final String labelSelectorString) {
+        final Map<String, String> labels = new HashMap<>();
+        final String[] labelPairs = labelSelectorString.split(",");
+
+        for (final String label : labelPairs) {
+            String[] keyValue = label.split("=");
+            labels.put(keyValue[0], keyValue[1]);
+        }
+
+        return labels;
     }
 
     public static MixedOperation<KafkaNodePool, KafkaNodePoolList, Resource<KafkaNodePool>> kafkaNodePoolClient() {
