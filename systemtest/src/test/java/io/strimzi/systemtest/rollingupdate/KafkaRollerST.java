@@ -18,8 +18,6 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.StrimziPodSet;
-import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
-import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolTemplate;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolTemplateBuilder;
@@ -47,7 +45,6 @@ import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.StUtils;
-import io.strimzi.systemtest.utils.kafkaUtils.KafkaNodePoolUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StrimziPodSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
@@ -73,7 +70,6 @@ import static io.strimzi.systemtest.k8s.Events.Started;
 import static io.strimzi.systemtest.matchers.Matchers.hasAllOfReasons;
 import static io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils.waitForPodsReady;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
-import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -334,6 +330,7 @@ public class KafkaRollerST extends AbstractST {
     }
 
     @ParallelNamespaceTest
+    @SuppressWarnings({"checkstyle:MethodLength"})
     void testKafkaRollerBehaviorUnderVariousScenarios(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext);
         final String nodePoolNameA = testStorage.getKafkaNodePoolName() + "-a";
@@ -349,34 +346,72 @@ public class KafkaRollerST extends AbstractST {
 
         resourceManager.createResourceWithWait(extensionContext, mixedPoolA, kafka);
 
-        final LabelSelector kafkaPoolASelector = KafkaNodePoolResource.getLabelSelector(testStorage.getClusterName(), nodePoolNameA, ProcessRoles.CONTROLLER);
-        Map<String, String> kafkaPoolAPodsSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), kafkaPoolASelector);
-
         final KafkaNodePool brokerPoolB1 = KafkaNodePoolTemplates.kafkaBasedNodePoolWithBrokerRole(nodePoolNameB1, kafka, brokerPoolB1Replicas).build();
         final KafkaNodePool brokerPoolB2 = KafkaNodePoolTemplates.kafkaBasedNodePoolWithBrokerRole(nodePoolNameB2, kafka, brokerPoolB2Replicas).build();
 
-        // TODO: I pod has old revision need to roll make this track D:
+        // for KNP A Controller/Broker role it does not matter in this case
+        final LabelSelector kafkaPoolASelector = KafkaNodePoolResource.getLabelSelector(testStorage.getClusterName(), nodePoolNameA, ProcessRoles.CONTROLLER);
+        final LabelSelector kafkaPoolB1Selector = KafkaNodePoolResource.getLabelSelector(testStorage.getClusterName(), nodePoolNameB1, ProcessRoles.BROKER);
+        final LabelSelector kafkaPoolB2Selector = KafkaNodePoolResource.getLabelSelector(testStorage.getClusterName(), nodePoolNameB2, ProcessRoles.BROKER);
+        final LabelSelector kafkaPoolC1Selector = KafkaNodePoolResource.getLabelSelector(testStorage.getClusterName(), nodePoolNameC1, ProcessRoles.CONTROLLER);
+
+        Map<String, String> kafkaPoolAPodsSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), kafkaPoolASelector);
+        Map<String, String> kafkaPoolB2PodsSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), kafkaPoolB2Selector);
+        Map<String, String> kafkaPoolC1PodsSnapshot = null;
 
         resourceManager.createResourceWithWait(extensionContext, brokerPoolB1);
+
+        // the creation of additional broker nodes should not trigger RollingUpdate
+        RollingUpdateUtils.waitForNoRollingUpdate(testStorage.getNamespaceName(), kafkaPoolASelector, kafkaPoolAPodsSnapshot);
+
+        Map<String, String> kafkaPoolB1PodsSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), kafkaPoolB1Selector);
+
         resourceManager.createResourceWithWait(extensionContext, brokerPoolB2);
+
+        // the creation of additional broker nodes should not trigger RollingUpdate
+        RollingUpdateUtils.waitForNoRollingUpdate(testStorage.getNamespaceName(), kafkaPoolASelector, kafkaPoolAPodsSnapshot);
+        RollingUpdateUtils.waitForNoRollingUpdate(testStorage.getNamespaceName(), kafkaPoolB1Selector, kafkaPoolB1PodsSnapshot);
 
         if (Environment.isKRaftModeEnabled()) {
             final KafkaNodePool controllerPoolC1 = KafkaNodePoolTemplates.kafkaBasedNodePoolWithControllerRole(nodePoolNameC1, kafka, controllerPoolC1Replicas).build();
             final KafkaNodePool controllerPoolC2 = KafkaNodePoolTemplates.kafkaBasedNodePoolWithControllerRole(nodePoolNameC2, kafka, controllerPoolC2Replicas).build();
 
             resourceManager.createResourceWithWait(extensionContext, controllerPoolC1);
+
+            // the creation of additional controller nodes should trigger RollingUpdate (`Pod has old revision`)
+
+            // only mixed-role and broker-role nodes rolls
+            kafkaPoolAPodsSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(),
+                    kafkaPoolASelector, mixedPoolAReplicas, kafkaPoolAPodsSnapshot);
+
+            // then broker-role
+            kafkaPoolB1PodsSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(),
+                    kafkaPoolB1Selector, brokerPoolB1Replicas, kafkaPoolB1PodsSnapshot);
+            kafkaPoolB2PodsSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(),
+                    kafkaPoolB2Selector, brokerPoolB2Replicas, kafkaPoolB2PodsSnapshot);
+
+            kafkaPoolC1PodsSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), kafkaPoolC1Selector);
+
             resourceManager.createResourceWithWait(extensionContext, controllerPoolC2);
+
+            // TODO: create helper method to remove redundancy - AGAIN: the creation of additional controller nodes should trigger RollingUpdate (`Pod has old revision`)
+            // only mixed-role and broker-role nodes rolls
+            kafkaPoolAPodsSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(),
+                    kafkaPoolASelector, mixedPoolAReplicas, kafkaPoolAPodsSnapshot);
+
+            // then first already created controller nodes [4-5]
+            kafkaPoolC1PodsSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(),
+                    kafkaPoolC1Selector, controllerPoolC1Replicas, kafkaPoolC1PodsSnapshot);
+
+            // then broker-role
+            kafkaPoolB1PodsSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(),
+                    kafkaPoolB1Selector, brokerPoolB1Replicas, kafkaPoolB1PodsSnapshot);
+            kafkaPoolB2PodsSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(),
+                    kafkaPoolB2Selector, brokerPoolB2Replicas, kafkaPoolB2PodsSnapshot);
         }
 
-        // for KNP A Controller/Broker role it does not matter in this case
-        final LabelSelector kafkaPoolB1Selector = KafkaNodePoolResource.getLabelSelector(testStorage.getClusterName(), nodePoolNameB1, ProcessRoles.BROKER);
-        final LabelSelector kafkaPoolB2Selector = KafkaNodePoolResource.getLabelSelector(testStorage.getClusterName(), nodePoolNameB2, ProcessRoles.BROKER);
-        final LabelSelector kafkaPoolC1Selector = KafkaNodePoolResource.getLabelSelector(testStorage.getClusterName(), nodePoolNameC1, ProcessRoles.CONTROLLER);
         final LabelSelector kafkaPoolC2Selector = KafkaNodePoolResource.getLabelSelector(testStorage.getClusterName(), nodePoolNameC2, ProcessRoles.CONTROLLER);
 
-        Map<String, String> kafkaPoolB1PodsSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), kafkaPoolB1Selector);
-        Map<String, String> kafkaPoolB2PodsSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), kafkaPoolB2Selector);
-        Map<String, String> kafkaPoolC1PodsSnapshot  = PodUtils.podSnapshot(testStorage.getNamespaceName(), kafkaPoolC1Selector);
         Map<String, String> kafkaPoolC2PodsSnapshot  = PodUtils.podSnapshot(testStorage.getNamespaceName(), kafkaPoolC2Selector);
 
         // 1 Test Scenario, where we change configuration only when +UseKRaft
@@ -411,9 +446,9 @@ public class KafkaRollerST extends AbstractST {
 
         // then broker-role
         kafkaPoolB1PodsSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(),
-                kafkaPoolB1Selector, controllerPoolC1Replicas, kafkaPoolB1PodsSnapshot);
+                kafkaPoolB1Selector, brokerPoolB1Replicas, kafkaPoolB1PodsSnapshot);
         kafkaPoolB2PodsSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(),
-                kafkaPoolB2Selector, controllerPoolC2Replicas, kafkaPoolB2PodsSnapshot);
+                kafkaPoolB2Selector, brokerPoolB2Replicas, kafkaPoolB2PodsSnapshot);
 
         if (Environment.isKRaftModeEnabled()) {
             // controller-role nodes does not roll
@@ -423,34 +458,47 @@ public class KafkaRollerST extends AbstractST {
 
         // ######################################################################################################################################################
 
-        // 2 Test Scenario, where we move a controllers pods to pending
-        NodeSelectorRequirement nsr = new NodeSelectorRequirementBuilder()
-            .withKey("dedicated_test")
-            .withOperator("In")
-            .withValues("Kafka")
-            .build();
+        // TODO: 2 Test Scenario, where we move a controllers pods to pending (probably we could create separate test case for this?)
 
-        KafkaNodePoolTemplate kafkaNodePoolTemplate = new KafkaNodePoolTemplateBuilder()
-            .withPod(new PodTemplateBuilder().withAffinity(new AffinityBuilder()
-                        .withNewNodeAffinity()
-                            .withNewRequiredDuringSchedulingIgnoredDuringExecution()
-                            .withNodeSelectorTerms(
-                                new NodeSelectorTermBuilder()
-                                    .withMatchExpressions(nsr)
-                                    .build())
-                            .endRequiredDuringSchedulingIgnoredDuringExecution()
-                        .endNodeAffinity()
+        if (Environment.isKRaftModeEnabled()) {
+            final NodeSelectorRequirement nsr = new NodeSelectorRequirementBuilder()
+                .withKey("dedicated_test")
+                .withOperator("In")
+                .withValues("Kafka")
+                .build();
+
+            final KafkaNodePoolTemplate kafkaNodePoolTemplate = new KafkaNodePoolTemplateBuilder()
+                .withPod(new PodTemplateBuilder().withAffinity(new AffinityBuilder()
+                            .withNewNodeAffinity()
+                                .withNewRequiredDuringSchedulingIgnoredDuringExecution()
+                                .withNodeSelectorTerms(
+                                    new NodeSelectorTermBuilder()
+                                        .withMatchExpressions(nsr)
+                                        .build())
+                                .endRequiredDuringSchedulingIgnoredDuringExecution()
+                            .endNodeAffinity()
+                            .build())
                         .build())
-                    .build())
-            .build();
+                .build();
 
-        KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(nodePoolNameC1, knp -> knp.getSpec().setTemplate(kafkaNodePoolTemplate), testStorage.getNamespaceName());
+            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(nodePoolNameC1, knp -> knp.getSpec().setTemplate(kafkaNodePoolTemplate), testStorage.getNamespaceName());
 
-        // pods are stable in the Pending state
-        PodUtils.waitUntilPodStabilityReplicasCount(testStorage.getNamespaceName(), KafkaNodePoolUtils.getKafkaNodePool(testStorage.getNamespaceName(), testStorage.getClusterName()).getMetadata().getName(), 3);
+            // pods are stable in the Pending state
+            PodUtils.waitUntilPodStabilityReplicasCount(testStorage.getNamespaceName(), nodePoolNameC1, 1);
 
-        // TODO: make other thigs....
+            LOGGER.info("Removing requirement for the affinity");
+            if (Environment.isKafkaNodePoolsEnabled()) {
+                KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(nodePoolNameC1, k ->
+                        k.getSpec().getTemplate().getPod().setAffinity(null), testStorage.getNamespaceName());
+            } else {
+                KafkaResource.replaceKafkaResourceInSpecificNamespace(nodePoolNameC1, k ->
+                        k.getSpec().getKafka().getTemplate().getPod().setAffinity(null), testStorage.getNamespaceName());
+            }
+
+            PodUtils.waitForPodsReady(testStorage.getNamespaceName(), kafkaPoolC1Selector, controllerPoolC1Replicas, true);
+        }
     }
+    // TODO:
 
     // TODO: make a test case where KafkaCR configuration is propagated to the KafkaNodePools (which does not have that specific conf:
     //          i) for NodePools which has identical as KafkaCR - do nothing

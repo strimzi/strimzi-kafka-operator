@@ -6,13 +6,11 @@ package io.strimzi.systemtest.resources.crd;
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
-import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaNodePoolList;
 import io.strimzi.api.kafka.model.Kafka;
-import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolBuilder;
 import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
@@ -22,7 +20,6 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceType;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
-import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PersistentVolumeClaimUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 
@@ -74,26 +71,12 @@ public class KafkaNodePoolResource implements ResourceType<KafkaNodePool> {
 
     @Override
     public boolean waitForReadiness(KafkaNodePool resource) {
-        final LabelSelector kafkaNodePoolSelector = new LabelSelectorBuilder()
-            .withMatchLabels(parseLabelSelector(resource.getStatus().getLabelSelector()))
-            .build();
+        final LabelSelector kafkaNodePoolSelector = KafkaNodePoolResource.getLabelSelector(resource.getMetadata().getName(), resource.getSpec().getRoles().get(0));
 
         // here we wait for readiness of the Kafka pods related to KafkaNodePools
         PodUtils.waitForPodsReady(resource.getMetadata().getNamespace(), kafkaNodePoolSelector, resource.getSpec().getReplicas(), true);
 
         return true;
-    }
-
-    private Map<String, String> parseLabelSelector(final String labelSelectorString) {
-        final Map<String, String> labels = new HashMap<>();
-        final String[] labelPairs = labelSelectorString.split(",");
-
-        for (final String label : labelPairs) {
-            String[] keyValue = label.split("=");
-            labels.put(keyValue[0], keyValue[1]);
-        }
-
-        return labels;
     }
 
     public static MixedOperation<KafkaNodePool, KafkaNodePoolList, Resource<KafkaNodePool>> kafkaNodePoolClient() {
@@ -141,7 +124,9 @@ public class KafkaNodePoolResource implements ResourceType<KafkaNodePool> {
 
     public static LabelSelector getLabelSelector(String clusterName, String poolName, ProcessRoles processRole) {
         Map<String, String> matchLabels = new HashMap<>();
-        matchLabels.put(Labels.STRIMZI_CLUSTER_LABEL, clusterName);
+        if (clusterName != null) {
+            matchLabels.put(Labels.STRIMZI_CLUSTER_LABEL, clusterName);
+        }
         matchLabels.put(Labels.STRIMZI_KIND_LABEL, Kafka.RESOURCE_KIND);
         matchLabels.put(Labels.STRIMZI_POOL_NAME_LABEL, poolName);
 
@@ -154,6 +139,10 @@ public class KafkaNodePoolResource implements ResourceType<KafkaNodePool> {
         return new LabelSelectorBuilder()
             .withMatchLabels(matchLabels)
             .build();
+    }
+
+    public static LabelSelector getLabelSelector(final String poolName, final ProcessRoles processRoles) {
+        return getLabelSelector(null, poolName, processRoles);
     }
 
     public static String getStrimziPodSetName(String kafkaClusterName, String kafkaNodePoolName) {
