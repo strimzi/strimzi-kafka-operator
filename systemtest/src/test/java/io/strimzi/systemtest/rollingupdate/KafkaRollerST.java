@@ -326,8 +326,27 @@ public class KafkaRollerST extends AbstractST {
         KafkaUtils.waitForKafkaDeletion(namespaceName, clusterName);
     }
 
+    /**
+     * @description This test case examines the behavior of Kafka rollers under various node pool configurations, focusing on how rolling updates are triggered or prevented in different scenarios.
+     *
+     * @steps
+     *  1. - Initialize test environment and create node pools with different roles (mixed, broker, controller) and varying replica counts.
+     *     - Create Kafka instance with a single replica and deploy mixed node pool 'A' with 1 replica.
+     *  2. - Deploy two additional broker node pools 'B1' and 'B2' with 1 and 2 replicas, respectively.
+     *     - Verify that the creation of these broker nodes does not trigger a rolling update in the existing node pool 'A'.
+     *  3. - In KRaft mode, deploy two controller node pools 'C1' and 'C2' with 2 and 1 replicas, respectively.
+     *     - Expect a rolling update for mixed-role and broker-role nodes, but not for the controller nodes initially.
+     *  4. - After creating controller node pools, verify rolling updates across different node pools as they adjust to the new configuration.
+     *     - Check that the controller nodes roll only when their specific pool is modified.
+     *  5. - Change controller-only configuration and verify that only mixed and controller node pools are affected, while broker nodes remain unchanged.
+     *  6. - Modify broker-only configuration and observe that only mixed-role and broker-role node pools roll, leaving controller-role nodes unaffected.
+     *
+     * @usecase
+     *  - kafka-node-pool-rolling-update
+     *  - kafka-roller
+     *  - kafka-configuration-management
+     */
     @ParallelNamespaceTest
-    @SuppressWarnings({"checkstyle:MethodLength"})
     void testKafkaRollerBehaviorUnderVariousScenarios(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext);
         final String nodePoolNameA = testStorage.getKafkaNodePoolName() + "-a";
