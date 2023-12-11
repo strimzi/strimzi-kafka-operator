@@ -4,8 +4,8 @@
  */
 package io.strimzi.systemtest.kafka;
 
-import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
 import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
 import io.strimzi.operator.common.Annotations;
@@ -14,7 +14,6 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
@@ -177,8 +176,8 @@ public class KafkaNodePoolST extends AbstractST {
             .endSpec()
             .build();
         final KafkaNodePool poolA = KafkaNodePoolTemplates.kafkaBasedNodePoolWithFgBasedRole(poolAName, kafka, 1).build();
-        final KafkaNodePool poolB = KafkaNodePoolTemplates.kafkaBasedNodePoolWithBrokerRole(poolB1Name, kafka, brokerNodePoolReplicaCount).build();
-        resourceManager.createResourceWithWait(extensionContext, poolA, poolB, kafka);
+        final KafkaNodePool poolB1 = KafkaNodePoolTemplates.kafkaBasedNodePoolWithBrokerRole(poolB1Name, kafka, brokerNodePoolReplicaCount).build();
+        resourceManager.createResourceWithWait(extensionContext, poolA, poolB1, kafka);
 
         transmitMessagesWithNewTopicAndClean(testStorage, 3);
 
@@ -199,10 +198,9 @@ public class KafkaNodePoolST extends AbstractST {
     }
 
     private void transmitMessagesWithNewTopicAndClean(TestStorage testStorage, int topicReplicas) {
-        final String topicName = testStorage.getTopicName() + "-replicas-" + topicReplicas + hashStub(String.valueOf(new Random().nextInt(Integer.MAX_VALUE)));
-
-        resourceManager.createResourceWithWait(testStorage.getExtensionContext(),
-            KafkaTopicTemplates.topic(testStorage.getClusterName(), topicName, 1, topicReplicas, testStorage.getNamespaceName()).build());
+        final String topicName = testStorage.getTopicName() + "-replicas-" + topicReplicas + "-" + hashStub(String.valueOf(new Random().nextInt(Integer.MAX_VALUE)));
+        final KafkaTopic kafkaTopic = KafkaTopicTemplates.topic(testStorage.getClusterName(), topicName, 1, topicReplicas, testStorage.getNamespaceName()).build();
+        resourceManager.createResourceWithWait(testStorage.getExtensionContext(), kafkaTopic);
 
         LOGGER.info("Transmit messages with Kafka {}/{} using topic {}", testStorage.getNamespaceName(), testStorage.getClusterName(), topicName);
         KafkaClients kafkaClients = ClientUtils.getDefaultClientBuilder(testStorage)
@@ -214,8 +212,7 @@ public class KafkaNodePoolST extends AbstractST {
         );
         ClientUtils.waitForClientsSuccess(testStorage);
 
-        // clean kafkaTopic
-        KafkaTopicResource.kafkaTopicClient().inNamespace(testStorage.getNamespaceName()).withName(topicName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
+        resourceManager.deleteResource(kafkaTopic);
         KafkaTopicUtils.waitForKafkaTopicDeletion(testStorage.getNamespaceName(), topicName);
     }
 
