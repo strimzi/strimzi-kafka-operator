@@ -453,7 +453,7 @@ public class KafkaRollerST extends AbstractST {
         // ######################################################################################################################################################
 
         // ii. change broker-only configuration so broker/mixed nodes will roll but controllers nodes will not!
-        KafkaUtils.updateSpecificConfiguration(testStorage.getNamespaceName(), testStorage.getClusterName(), "jakub.is.best", "true");
+        KafkaUtils.updateSpecificConfiguration(testStorage.getNamespaceName(), testStorage.getClusterName(), "broker.only.configuration", "true");
 
         // only mixed-role and broker-role nodes rolls
         kafkaPoolAPodsSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(),
