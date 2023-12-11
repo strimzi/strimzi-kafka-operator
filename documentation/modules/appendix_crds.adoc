@@ -2932,6 +2932,32 @@ Used in: xref:type-KafkaTopic-{context}[`KafkaTopic`]
 |topicId
 |string
 |The topic's id. For a KafkaTopic with the ready condition, this will change only if the topic gets deleted and recreated with the same name.
+|replicasChange
+|xref:type-ReplicasChangeStatus-{context}[`ReplicasChangeStatus`]
+|Replicas change status.
+|====
+
+[id='type-ReplicasChangeStatus-{context}']
+= `ReplicasChangeStatus` schema reference
+
+Used in: xref:type-KafkaTopicStatus-{context}[`KafkaTopicStatus`]
+
+
+[cols="2,2,3a",options="header"]
+|====
+|Property |Property type |Description
+|targetReplicas
+|integer
+|The target replicas value requested by the user. This may be different from .spec.replicas when the state is ongoing.
+|state
+|string
+|Current state of the replicas change operation. This can be pending, when the change has been requested, and ongoing, when the change has been successfully submitted to Cruise control.
+|message
+|string
+|Message for the user related to the replicas change request.This may contain transient error messages that would disappear on periodic reconciliations.
+|sessionId
+|string
+|The session identifier for replicas change requests pertaining to this KafkaTopic resource. This is used by the Topic Operator to track the status of ongoing replicas change operations.
 |====
 
 [id='type-KafkaUser-{context}']

@@ -98,13 +98,13 @@ class BatchingTopicControllerTest {
     }
 
     @BeforeAll
-    public static void setupKubeCluster() {
-        TopicOperatorTestUtil.setupKubeCluster(NAMESPACE);
+    public static void setupKubeCluster(TestInfo testInfo) {
+        TopicOperatorTestUtil.setupKubeCluster(testInfo, NAMESPACE);
     }
 
     @AfterAll
     public static void teardownKubeCluster() {
-        TopicOperatorTestUtil.teardownKubeCluster2(NAMESPACE);
+        TopicOperatorTestUtil.teardownKubeCluster(NAMESPACE);
     }
 
     @BeforeEach
@@ -128,12 +128,16 @@ class BatchingTopicControllerTest {
         LOGGER.debug("Cleaned up after test {}", TopicOperatorTestUtil.testName(testInfo));
     }
 
-    private void assertOnUpdateThrowsInterruptedException(KubernetesClient client, Admin admin, KafkaTopic kt) throws ExecutionException, InterruptedException {
-        controller = new BatchingTopicController(Map.of("key", "VALUE"), admin, client, true, metrics, NAMESPACE, false);
+    private void assertOnUpdateThrowsInterruptedException(KubernetesClient client, Admin admin, KafkaTopic kt) {
+        var config = Mockito.mock(TopicOperatorConfig.class);
+        Mockito.doReturn(NAMESPACE).when(config).namespace();
+        Mockito.doReturn(true).when(config).useFinalizer();
+        Mockito.doReturn(false).when(config).enableAdditionalMetrics();
+        
+        controller = new BatchingTopicController(config, Map.of("key", "VALUE"), admin, client, metrics);
         List<ReconcilableTopic> batch = List.of(new ReconcilableTopic(new Reconciliation("test", "KafkaTopic", NAMESPACE, NAME), kt, topicName(kt)));
         assertThrows(InterruptedException.class, () -> controller.onUpdate(batch));
     }
-
 
     @Test
     public void shouldHandleInterruptedExceptionFromDescribeTopics(KafkaCluster cluster) throws ExecutionException, InterruptedException {
@@ -240,6 +244,4 @@ class BatchingTopicControllerTest {
     }
 
     // TODO kube client interrupted exceptions
-
-
 }

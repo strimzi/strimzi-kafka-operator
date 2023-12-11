@@ -5,6 +5,7 @@
 package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
+import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.strimzi.api.kafka.model.kafka.Kafka;
@@ -56,8 +57,11 @@ public class EntityOperatorReconciler {
     private final ConfigMapOperator configMapOperator;
     private final NetworkPolicyOperator networkPolicyOperator;
     private final boolean unidirectionalTopicOperator;
+    private final boolean cruiseControlEnabled;
+    
     private boolean existingEntityTopicOperatorCertsChanged = false;
     private boolean existingEntityUserOperatorCertsChanged = false;
+    private String ccApiSecretHash = "";
 
     /**
      * Constructs the Entity Operator reconciler
@@ -85,7 +89,8 @@ public class EntityOperatorReconciler {
         this.maintenanceWindows = kafkaAssembly.getSpec().getMaintenanceTimeWindows();
         this.isNetworkPolicyGeneration = config.isNetworkPolicyGeneration();
         this.unidirectionalTopicOperator = config.featureGates().unidirectionalTopicOperatorEnabled();
-
+        this.cruiseControlEnabled = kafkaAssembly.getSpec().getCruiseControl() != null;
+        
         this.deploymentOperator = supplier.deploymentOperations;
         this.secretOperator = supplier.secretOperations;
         this.serviceAccountOperator = supplier.serviceAccountOperations;
@@ -117,11 +122,45 @@ public class EntityOperatorReconciler {
                 .compose(i -> userOperatorRoleBindings())
                 .compose(i -> topicOperatorConfigMap())
                 .compose(i -> userOperatorConfigMap())
+                .compose(i -> topicOperatorCruiseControlApiSecret())
                 .compose(i -> deleteOldEntityOperatorSecret())
                 .compose(i -> topicOperatorSecret(clock))
                 .compose(i -> userOperatorSecret(clock))
                 .compose(i -> deployment(isOpenShift, imagePullPolicy, imagePullSecrets))
                 .compose(i -> waitForDeploymentReadiness());
+    }
+
+    /**
+     * Manages the Cruise Control API keys secret used by the Topic Operator.
+     *
+     * @return Future which completes when the reconciliation is done.
+     */
+    protected Future<Void> topicOperatorCruiseControlApiSecret() {
+        if (cruiseControlEnabled) {
+            String ccApiSecretName = KafkaResources.entityTopicOperatorCcApiSecretName(reconciliation.name());
+            if (entityOperator != null && entityOperator.topicOperator() != null) {
+                return secretOperator.getAsync(reconciliation.namespace(), ccApiSecretName)
+                    .compose(oldSecret -> {
+                        Secret newSecret = entityOperator.topicOperator().generateCruiseControlApiSecret();
+
+                        if (oldSecret != null) {
+                            // The credentials should not change with every release
+                            // So if the secret with credentials already exists, we re-use the values
+                            // But we use the new secret to update labels etc. if needed
+                            newSecret.setData(oldSecret.getData());
+                        }
+
+                        this.ccApiSecretHash = ReconcilerUtils.hashSecretContent(newSecret);
+
+                        return secretOperator.reconcile(reconciliation, reconciliation.namespace(), ccApiSecretName, newSecret)
+                            .map((Void) null);
+                    });
+            } else {
+                return secretOperator.reconcile(reconciliation, reconciliation.namespace(), ccApiSecretName, null)
+                    .map((Void) null);
+            }
+        }
+        return Future.succeededFuture();
     }
 
     /**
@@ -427,6 +466,10 @@ public class EntityOperatorReconciler {
             Annotations.annotations(deployment.getSpec().getTemplate()).put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(caCertGeneration));
             int caKeyGeneration = clusterCa.caKeyGeneration();
             Annotations.annotations(deployment.getSpec().getTemplate()).put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, String.valueOf(caKeyGeneration));
+            
+            if (entityOperator.topicOperator() != null && cruiseControlEnabled) {
+                Annotations.annotations(deployment.getSpec().getTemplate()).put(Annotations.ANNO_STRIMZI_AUTH_HASH, ccApiSecretHash);
+            }
 
             return deploymentOperator
                     .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.entityOperatorDeploymentName(reconciliation.name()), deployment)

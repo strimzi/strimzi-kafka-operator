@@ -14,8 +14,7 @@ import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
-import io.strimzi.test.k8s.cluster.KubeCluster;
-import io.strimzi.test.k8s.exceptions.NoClusterException;
+import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.TestInfo;
@@ -28,7 +27,6 @@ import java.util.function.UnaryOperator;
 
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static org.junit.jupiter.api.Assertions.fail;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 class TopicOperatorTestUtil {
 
@@ -49,23 +47,27 @@ class TopicOperatorTestUtil {
         return testInfo.getTestMethod().map(m -> m.getName() + "() " + testInfo.getDisplayName().replaceAll("[\r\n]+", " ")).orElse("");
     }
 
-    static void setupKubeCluster(String namespace) {
-        try {
-            KubeCluster.bootstrap();
-        } catch (NoClusterException e) {
-            assumeTrue(false, e.getMessage());
-        }
+    static void setupKubeCluster(TestInfo testInfo, String namespace) {
         KubeClusterResource.getInstance();
-        cmdKubeClient().createNamespace(namespace);
-        LOGGER.info("#### Creating " + "../packaging/install/topic-operator/02-Role-strimzi-topic-operator.yaml");
+        try {
+            cmdKubeClient().createNamespace(namespace);
+        } catch (KubeClusterException.AlreadyExists e) {
+            LOGGER.info("Namespace {} already exists, recreating", namespace);
+            try (var tmpClient = TopicOperatorMain.kubeClient()) {
+                cleanupNamespace(tmpClient, testInfo, namespace);
+            }
+            cmdKubeClient().deleteNamespace(namespace);
+            cmdKubeClient().createNamespace(namespace);
+        }
+        LOGGER.info("Creating " + "../packaging/install/topic-operator/02-Role-strimzi-topic-operator.yaml");
         cmdKubeClient().create(TestUtils.USER_PATH + "/../packaging/install/topic-operator/02-Role-strimzi-topic-operator.yaml");
-        LOGGER.info("#### Creating " + TestUtils.CRD_TOPIC);
+        LOGGER.info("Creating " + TestUtils.CRD_TOPIC);
         cmdKubeClient().create(TestUtils.CRD_TOPIC);
-        LOGGER.info("#### Creating " + TestUtils.USER_PATH + "/src/test/resources/TopicOperatorIT-rbac.yaml");
+        LOGGER.info("Creating " + TestUtils.USER_PATH + "/src/test/resources/TopicOperatorIT-rbac.yaml");
         cmdKubeClient().create(TestUtils.USER_PATH + "/src/test/resources/TopicOperatorIT-rbac.yaml");
     }
 
-    static void teardownKubeCluster2(String namespace) {
+    static void teardownKubeCluster(String namespace) {
         cmdKubeClient()
                 .delete(TestUtils.USER_PATH + "/src/test/resources/TopicOperatorIT-rbac.yaml")
                 .delete(TestUtils.CRD_TOPIC)

@@ -18,6 +18,7 @@ import io.strimzi.api.kafka.model.topic.KafkaTopicBuilder;
 import io.strimzi.api.kafka.model.topic.KafkaTopicStatus;
 import io.strimzi.operator.common.model.Labels;
 import org.apache.kafka.clients.admin.Admin;
+import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.AlterConfigOp;
 import org.apache.kafka.clients.admin.AlterConfigsResult;
 import org.apache.kafka.clients.admin.Config;
@@ -83,8 +84,8 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
 import static io.strimzi.api.ResourceAnnotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION;
-import static io.strimzi.operator.topic.v2.BatchingTopicController.isPaused;
 import static io.strimzi.operator.topic.v2.TopicOperatorTestUtil.findKafkaTopicByName;
+import static io.strimzi.operator.topic.v2.TopicOperatorUtil.isPaused;
 import static java.lang.String.format;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -117,13 +118,13 @@ class TopicControllerIT {
     private TopicOperatorConfig operatorConfig;
 
     @BeforeAll
-    public static void setupKubeCluster() {
-        TopicOperatorTestUtil.setupKubeCluster(NAMESPACE);
+    public static void setupKubeCluster(TestInfo testInfo) {
+        TopicOperatorTestUtil.setupKubeCluster(testInfo, NAMESPACE);
     }
 
     @AfterAll
     public static void teardownKubeCluster() {
-        TopicOperatorTestUtil.teardownKubeCluster2(NAMESPACE);
+        TopicOperatorTestUtil.teardownKubeCluster(NAMESPACE);
     }
 
     @BeforeEach
@@ -256,10 +257,14 @@ class TopicControllerIT {
 
     private void maybeStartOperator(TopicOperatorConfig config) throws ExecutionException, InterruptedException {
         if (admin == null) {
-            admin = new Admin[]{Admin.create(config.adminClientConfig())};
+            Map<String, Object> testConfig = config.adminClientConfig();
+            testConfig.replace(AdminClientConfig.CLIENT_ID_CONFIG, config.clientId() + "-test");
+            admin = new Admin[]{Admin.create(testConfig)};
         }
         if (operatorAdmin == null) {
-            operatorAdmin = new Admin[]{Admin.create(config.adminClientConfig())};
+            Map<String, Object> adminConfig = config.adminClientConfig();
+            adminConfig.replace(AdminClientConfig.CLIENT_ID_CONFIG, config.clientId() + "-operator");
+            operatorAdmin = new Admin[]{Admin.create(adminConfig)};
         }
         if (operator == null) {
             this.operatorConfig = config;
@@ -351,7 +356,7 @@ class TopicControllerIT {
                 .withLabels(labels)
                 .withAnnotations(annotations);
         if (managed != null) {
-            metadataBuilder = metadataBuilder.addToAnnotations(BatchingTopicController.MANAGED, managed.toString());
+            metadataBuilder = metadataBuilder.addToAnnotations(TopicOperatorUtil.MANAGED, managed.toString());
         }
         var kt = metadataBuilder.endMetadata()
                 .withNewSpec()
@@ -370,7 +375,7 @@ class TopicControllerIT {
             .withName(metadataName)
             .withNamespace(ns)
             .withLabels(SELECTOR)
-            .addToAnnotations(BatchingTopicController.MANAGED, "true")
+            .addToAnnotations(TopicOperatorUtil.MANAGED, "true")
             .endMetadata();
         if (spec) {
             builder = builder.editOrNewSpec().endSpec();
@@ -1096,7 +1101,7 @@ class TopicControllerIT {
         // when
         var unmanaged = modifyTopicAndAwait(kt, theKt -> {
             return new KafkaTopicBuilder(theKt)
-                    .editOrNewMetadata().addToAnnotations(BatchingTopicController.MANAGED, "false").endMetadata()
+                    .editOrNewMetadata().addToAnnotations(TopicOperatorUtil.MANAGED, "false").endMetadata()
                     .editOrNewSpec().withPartitions(3).endSpec()
                     .build();
         },
@@ -1131,7 +1136,7 @@ class TopicControllerIT {
             KafkaCluster kafkaCluster) throws ExecutionException, InterruptedException, TimeoutException {
         // given
         var created = createTopic(kafkaCluster, kt);
-        if (BatchingTopicController.isManaged(kt)) {
+        if (TopicOperatorUtil.isManaged(kt)) {
             assertCreateSuccess(kt, created);
         }
 
@@ -1227,12 +1232,16 @@ class TopicControllerIT {
     }
 
     private static TopicOperatorConfig topicOperatorConfig(String ns, KafkaCluster kafkaCluster, boolean useFinalizer, long fullReconciliationIntervalMs) {
-        return new TopicOperatorConfig(ns, Labels.fromMap(SELECTOR),
-                kafkaCluster.getBootstrapServers(), TopicControllerIT.class.getSimpleName(), fullReconciliationIntervalMs,
+        return new TopicOperatorConfig(ns, 
+                Labels.fromMap(SELECTOR),
+                kafkaCluster.getBootstrapServers(), 
+                TopicControllerIT.class.getSimpleName(), 
+                fullReconciliationIntervalMs,
                 false, "", "", "", "", "",
                 false, "", "", "", "",
                 useFinalizer,
-                100, 100, 10, false);
+                100, 100, 10, false,
+                false, false, "", 9090, false, false);
     }
 
     @ParameterizedTest
@@ -1286,7 +1295,7 @@ class TopicControllerIT {
 
         createTopicAndAssertSuccess(kafkaCluster, kt);
         modifyTopic(kt, theKt -> {
-            return new KafkaTopicBuilder(theKt).editOrNewMetadata().addToAnnotations(BatchingTopicController.MANAGED, "false").endMetadata().build();
+            return new KafkaTopicBuilder(theKt).editOrNewMetadata().addToAnnotations(TopicOperatorUtil.MANAGED, "false").endMetadata().build();
         });
 
         // when
@@ -1317,7 +1326,7 @@ class TopicControllerIT {
 
         createTopicAndAssertSuccess(kafkaCluster, kt);
         modifyTopic(kt, theKt -> {
-            return new KafkaTopicBuilder(theKt).editOrNewMetadata().addToAnnotations(BatchingTopicController.MANAGED, "false").endMetadata().build();
+            return new KafkaTopicBuilder(theKt).editOrNewMetadata().addToAnnotations(TopicOperatorUtil.MANAGED, "false").endMetadata().build();
         });
 
         Crds.topicOperation(client).resource(kt).delete();
@@ -1903,8 +1912,8 @@ class TopicControllerIT {
 
         // unmanage foo
         LOGGER.info("Unmanage foo");
-        var unmanagedFoo = modifyTopicAndAwait(editedFoo, theKt ->
-                new KafkaTopicBuilder(theKt).editMetadata().addToAnnotations(BatchingTopicController.MANAGED, "false").endMetadata().build(),
+        var unmanagedFoo = modifyTopicAndAwait(editedFoo, theKt -> 
+                new KafkaTopicBuilder(theKt).editMetadata().addToAnnotations(TopicOperatorUtil.MANAGED, "false").endMetadata().build(), 
             readyIsTrue());
 
         // when: delete foo
@@ -1954,7 +1963,7 @@ class TopicControllerIT {
         // the failed resource should become ready after we unmanage and delete the other
         LOGGER.info("Unmanage {}", ready.getMetadata().getName());
         var unmanagedBar = modifyTopicAndAwait(ready, theKt -> new KafkaTopicBuilder(theKt)
-                .editMetadata().addToAnnotations(BatchingTopicController.MANAGED, "false").endMetadata().build(),
+                .editMetadata().addToAnnotations(TopicOperatorUtil.MANAGED, "false").endMetadata().build(),
             readyIsTrue());
 
         LOGGER.info("Delete {}", ready.getMetadata().getName());
@@ -2001,7 +2010,8 @@ class TopicControllerIT {
                 false, "", "", "", "", "",
                 false, "", "", "", "",
                 true,
-                1, 100, 5_0000, false);
+                1, 100, 5_0000, false,
+                false, false, "", 9090, false, false);
 
         maybeStartOperator(config);
 

@@ -50,8 +50,14 @@ import static io.strimzi.operator.common.operator.resource.ConfigParameterParser
  * @param maxBatchSize                  The maximum size of a reconciliation batch
  * @param maxBatchLingerMs              The maximum time to wait for a reconciliation batch to contain {@code maxBatchSize} items.
  * @param enableAdditionalMetrics       Whether to enable additional metrics
+ * @param cruiseControlEnabled          Whether Cruise Control integration is enabled
+ * @param cruiseControlRackEnabled      Whether the target Kafka cluster has rack awareness
+ * @param cruiseControlHostname         Cruise Control hostname
+ * @param cruiseControlPort             Cruise Control port
+ * @param cruiseControlSslEnabled       Whether Cruise Control SSL encryption is enabled
+ * @param cruiseControlAuthEnabled      Whether Cruise Control Basic authentication is enabled
  */
-record TopicOperatorConfig(
+public record TopicOperatorConfig(
         String namespace,
         Labels labelSelector,
         String bootstrapServers,
@@ -72,7 +78,13 @@ record TopicOperatorConfig(
         int maxQueueSize,
         int maxBatchSize,
         long maxBatchLingerMs,
-        boolean enableAdditionalMetrics
+        boolean enableAdditionalMetrics,
+        boolean cruiseControlEnabled,
+        boolean cruiseControlRackEnabled,
+        String cruiseControlHostname,
+        int cruiseControlPort,
+        boolean cruiseControlSslEnabled,
+        boolean cruiseControlAuthEnabled
 ) {
     private final static ReconciliationLogger LOGGER = ReconciliationLogger.create(TopicOperatorConfig.class);
 
@@ -99,16 +111,29 @@ record TopicOperatorConfig(
     static final ConfigParameter<Integer> MAX_BATCH_SIZE = new ConfigParameter<>("STRIMZI_MAX_BATCH_SIZE", strictlyPositive(INTEGER), "100", CONFIG_VALUES);
     static final ConfigParameter<Long> MAX_BATCH_LINGER_MS = new ConfigParameter<>("STRIMZI_MAX_BATCH_LINGER_MS", strictlyPositive(LONG), "100", CONFIG_VALUES);
     static final ConfigParameter<Boolean> ENABLE_ADDITIONAL_METRICS = new ConfigParameter<>("STRIMZI_ENABLE_ADDITIONAL_METRICS", BOOLEAN, "false", CONFIG_VALUES);
+    
+    // Cruise Control integration
+    static final ConfigParameter<Boolean> CRUISE_CONTROL_ENABLED = new ConfigParameter<>("STRIMZI_CRUISE_CONTROL_ENABLED", BOOLEAN, "false", CONFIG_VALUES);
+    static final ConfigParameter<Boolean> CRUISE_CONTROL_RACK_ENABLED = new ConfigParameter<>("STRIMZI_CRUISE_CONTROL_RACK_ENABLED", BOOLEAN, "false", CONFIG_VALUES);
+    static final ConfigParameter<String> CRUISE_CONTROL_HOSTNAME = new ConfigParameter<>("STRIMZI_CRUISE_CONTROL_HOSTNAME", STRING, "", CONFIG_VALUES);
+    static final ConfigParameter<Integer> CRUISE_CONTROL_PORT = new ConfigParameter<>("STRIMZI_CRUISE_CONTROL_PORT", strictlyPositive(INTEGER), "9090", CONFIG_VALUES);
+    static final ConfigParameter<Boolean> CRUISE_CONTROL_SSL_ENABLED = new ConfigParameter<>("STRIMZI_CRUISE_CONTROL_SSL_ENABLED", BOOLEAN, "false", CONFIG_VALUES);
+    static final ConfigParameter<Boolean> CRUISE_CONTROL_AUTH_ENABLED = new ConfigParameter<>("STRIMZI_CRUISE_CONTROL_AUTH_ENABLED", BOOLEAN, "false", CONFIG_VALUES);
 
     @SuppressWarnings("unchecked")
     private static <T> T get(Map<String, Object> map, ConfigParameter<T> value) {
         return (T) map.get(value.key());
     }
 
-    public static Set<String> keyNames() {
+    static Set<String> keyNames() {
         return Collections.unmodifiableSet(CONFIG_VALUES.keySet());
     }
 
+    /**
+     * Creates the TopicOperator configuration from a map.
+     * @param map Configuration map.
+     * @return TopicOperator config.
+     */
     public static TopicOperatorConfig buildFromMap(Map<String, String> map) {
         Map<String, String> envMap = new HashMap<>(map);
         envMap.keySet().retainAll(TopicOperatorConfig.keyNames());
@@ -120,6 +145,10 @@ record TopicOperatorConfig(
         return topicOperatorConfig;
     }
 
+    /**
+     * Creates the TopicOperator configuration.
+     * @param map Configuration map.
+     */
     public TopicOperatorConfig(Map<String, Object> map) {
         this(
                 get(map, NAMESPACE),
@@ -142,7 +171,13 @@ record TopicOperatorConfig(
                 get(map, MAX_QUEUE_SIZE),
                 get(map, MAX_BATCH_SIZE),
                 get(map, MAX_BATCH_LINGER_MS),
-                get(map, ENABLE_ADDITIONAL_METRICS)
+                get(map, ENABLE_ADDITIONAL_METRICS),
+                get(map, CRUISE_CONTROL_ENABLED),
+                get(map, CRUISE_CONTROL_RACK_ENABLED),
+                get(map, CRUISE_CONTROL_HOSTNAME),
+                get(map, CRUISE_CONTROL_PORT),
+                get(map, CRUISE_CONTROL_SSL_ENABLED),
+                get(map, CRUISE_CONTROL_AUTH_ENABLED)
         );
     }
 
@@ -247,6 +282,12 @@ record TopicOperatorConfig(
                 "\n\tmaxBatchSize=" + maxBatchSize +
                 "\n\tmaxBatchLingerMs=" + maxBatchLingerMs +
                 "\n\tenableAdditionalMetrics=" + enableAdditionalMetrics +
+                "\n\tcruiseControlEnabled=" + cruiseControlEnabled +
+                "\n\tcruiseControlRackEnabled=" + cruiseControlRackEnabled +
+                "\n\tcruiseControlHostname=" + cruiseControlHostname +
+                "\n\tcruiseControlPort=" + cruiseControlPort +
+                "\n\tcruiseControlSslEnabled=" + cruiseControlSslEnabled +
+                "\n\tcruiseControlAuthEnabled=" + cruiseControlAuthEnabled +
                 '}';
     }
 }

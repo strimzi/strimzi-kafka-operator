@@ -53,8 +53,7 @@ public class TopicOperatorMain implements Liveness, Readiness {
 
     private final HealthCheckAndMetricsServer healthAndMetricsServer;
 
-    TopicOperatorMain(
-                      String namespace,
+    TopicOperatorMain(String namespace,
                       Map<String, String> selector,
                       Admin admin,
                       KubernetesClient client,
@@ -67,7 +66,7 @@ public class TopicOperatorMain implements Liveness, Readiness {
         this.admin = admin;
         TopicOperatorMetricsProvider metricsProvider = createMetricsProvider();
         TopicOperatorMetricsHolder metrics = new TopicOperatorMetricsHolder(KafkaTopic.RESOURCE_KIND, Labels.fromMap(selector), metricsProvider);
-        this.controller = new BatchingTopicController(selector, admin, client, config.useFinalizer(), metrics, namespace, config.enableAdditionalMetrics());
+        this.controller = new BatchingTopicController(config, selector, admin, client, metrics);
         this.itemStore = new BasicItemStore<>(Cache::metaNamespaceKeyFunc);
         this.queue = new BatchingLoop(config.maxQueueSize(), controller, 1, config.maxBatchSize(), config.maxBatchLingerMs(), itemStore, this::stop, metrics, namespace);
         this.handler = new TopicOperatorEventHandler(config, queue, metrics);

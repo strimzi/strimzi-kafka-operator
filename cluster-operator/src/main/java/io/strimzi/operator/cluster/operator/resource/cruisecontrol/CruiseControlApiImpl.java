@@ -6,7 +6,6 @@ package io.strimzi.operator.cluster.operator.resource.cruisecontrol;
 
 import io.fabric8.kubernetes.api.model.HTTPHeader;
 import io.fabric8.kubernetes.api.model.Secret;
-import io.strimzi.operator.cluster.model.CruiseControl;
 import io.strimzi.operator.cluster.operator.resource.HttpClientUtils;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlEndpoints;
@@ -29,6 +28,9 @@ import java.net.ConnectException;
 import java.net.NoRouteToHostException;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeoutException;
+
+import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.API_ADMIN_NAME;
+import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.API_ADMIN_PASSWORD_KEY;
 
 /**
  * Implementation of the Cruise Control API client
@@ -94,8 +96,8 @@ public class CruiseControlApiImpl implements CruiseControlApi {
 
     protected static HTTPHeader getAuthHttpHeader(boolean apiAuthEnabled, Secret apiSecret) {
         if (apiAuthEnabled) {
-            String password = new String(Util.decodeFromSecret(apiSecret, CruiseControl.API_ADMIN_PASSWORD_KEY), StandardCharsets.US_ASCII);
-            return generateAuthHttpHeader(CruiseControl.API_ADMIN_NAME, password);
+            String password = new String(Util.decodeFromSecret(apiSecret, API_ADMIN_PASSWORD_KEY), StandardCharsets.US_ASCII);
+            return generateAuthHttpHeader(API_ADMIN_NAME, password);
         } else {
             return null;
         }

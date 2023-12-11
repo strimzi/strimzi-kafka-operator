@@ -64,31 +64,21 @@ import static io.strimzi.operator.cluster.model.VolumeUtils.createSecretVolume;
 import static io.strimzi.operator.cluster.model.VolumeUtils.createVolumeMount;
 import static io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlConfiguration.CRUISE_CONTROL_DEFAULT_ANOMALY_DETECTION_GOALS;
 import static io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlConfiguration.CRUISE_CONTROL_GOALS;
+import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.API_ADMIN_NAME;
+import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.API_ADMIN_PASSWORD_KEY;
+import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.API_ADMIN_ROLE;
+import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.API_AUTH_FILE_KEY;
+import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.API_USER_NAME;
+import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.API_USER_PASSWORD_KEY;
+import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.API_USER_ROLE;
+import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.COMPONENT_TYPE;
 
 /**
  * Cruise Control model
  */
 public class CruiseControl extends AbstractModel implements SupportsMetrics, SupportsLogging {
-    protected static final String COMPONENT_TYPE = "cruise-control";
     protected static final String CRUISE_CONTROL_CONTAINER_NAME = "cruise-control";
-
-    // Fields used for Cruise Control API authentication
-    /**
-     * Name of the admin user
-     */
-    public static final String API_ADMIN_NAME = "admin";
-    private static final String API_ADMIN_ROLE = "ADMIN";
-    protected static final String API_USER_NAME = "user";
-    private static final String API_USER_ROLE = "USER";
-
-    /**
-     * Key for the admin user password
-     */
-    public static final String API_ADMIN_PASSWORD_KEY = COMPONENT_TYPE + ".apiAdminPassword";
-    private static final String API_USER_PASSWORD_KEY = COMPONENT_TYPE + ".apiUserPassword";
-    private static final String API_AUTH_FILE_KEY = COMPONENT_TYPE + ".apiAuthFile";
     protected static final String API_HEALTHCHECK_PATH = "/kafkacruisecontrol/state";
-
     protected static final String TLS_CC_CERTS_VOLUME_NAME = "cc-certs";
     protected static final String TLS_CC_CERTS_VOLUME_MOUNT = "/etc/cruise-control/cc-certs/";
     protected static final String TLS_CA_CERTS_VOLUME_NAME = "cluster-ca-certs";
@@ -402,8 +392,8 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
 
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_SSL_ENABLED,  String.valueOf(this.sslEnabled)));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_AUTH_ENABLED,  String.valueOf(this.authEnabled)));
-        varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_USER,  API_USER_NAME));
-        varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_PORT,  String.valueOf(REST_API_PORT)));
+        varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_USER, API_USER_NAME));
+        varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_PORT, String.valueOf(REST_API_PORT)));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_HEALTHCHECK_PATH, API_HEALTHCHECK_PATH));
 
         JvmOptionUtils.heapOptions(varList, 75, 0L, jvmOptions, resources);
@@ -419,11 +409,11 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     }
 
     /**
-     * Creates Cruise Control API auth usernames, passwords, and credentials file
+     * Creates Cruise Control API auth usernames, passwords, and credentials file.
      *
-     * @param passwordGenerator The password generator for API users
-     *
-     * @return Map containing Cruise Control API auth credentials
+     * @param passwordGenerator The password generator for API users.
+     * 
+     * @return Map containing Cruise Control API auth credentials.
      */
     public static Map<String, String> generateCruiseControlApiCredentials(PasswordGenerator passwordGenerator) {
         String apiAdminPassword = passwordGenerator.generate();
@@ -434,7 +424,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
          *  HashLoginService's file format: username: password [,rolename ...]
          */
         String authCredentialsFile =
-                API_ADMIN_NAME + ": " + apiAdminPassword + "," + API_ADMIN_ROLE + "\n" +
+            API_ADMIN_NAME + ": " + apiAdminPassword + "," + API_ADMIN_ROLE + "\n" +
                 API_USER_NAME + ": " + apiUserPassword + "," + API_USER_ROLE + "\n";
 
         Map<String, String> data = new HashMap<>(3);
@@ -446,15 +436,45 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     }
 
     /**
+     * Creates Cruise Control API auth usernames, passwords, and credentials file including Topic Operator user.
+     *
+     * @param passwordGenerator The password generator for API users.
+     * @param username Username for the Cruise Control API admin user.
+     * @param password Password for the Cruise Control API admin user.
+     * 
+     * @return Map containing Cruise Control API auth credentials.
+     */
+    public static Map<String, String> generateApiCredentialsWithTopicOperatorUser(PasswordGenerator passwordGenerator, String username, String password) {
+        Map<String, String> data = generateCruiseControlApiCredentials(passwordGenerator);
+        String newAuthCredentialsFile = Util.decodeFromBase64(data.get(API_AUTH_FILE_KEY));
+        newAuthCredentialsFile += username + ": " + password + "," + API_ADMIN_ROLE + "\n";
+        data.replace(API_AUTH_FILE_KEY, Util.encodeToBase64(newAuthCredentialsFile));
+        return data;
+    }
+
+    /**
      * Generate the Secret containing the Cruise Control API auth credentials.
      *
-     * @param passwordGenerator The password generator for API users
+     * @param passwordGenerator The password generator for API users.
      * 
      * @return The generated Secret.
      */
     public Secret generateApiSecret(PasswordGenerator passwordGenerator) {
-        return ModelUtils.createSecret(CruiseControlResources.apiSecretName(cluster), namespace, labels, ownerReference, 
+        return ModelUtils.createSecret(CruiseControlResources.apiSecretName(cluster), namespace, labels, ownerReference,
             generateCruiseControlApiCredentials(passwordGenerator), Collections.emptyMap(), Collections.emptyMap());
+    }
+
+    /**
+     * Generate the Secret containing the Cruise Control API auth credentials, including the Topic Operator user.
+     *
+     * @param passwordGenerator The password generator for API users.
+     * @param username Username for the Cruise Control API user.
+     * @param password Password for the Cruise Control API user.
+     * @return The generated Secret.
+     */
+    public Secret generateApiSecretWithTopicOperatorUser(PasswordGenerator passwordGenerator, String username, String password) {
+        return ModelUtils.createSecret(CruiseControlResources.apiSecretName(cluster), namespace, labels, ownerReference, 
+            generateApiCredentialsWithTopicOperatorUser(passwordGenerator, username, password), Collections.emptyMap(), Collections.emptyMap());
     }
 
     /**

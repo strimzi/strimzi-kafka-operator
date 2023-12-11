@@ -543,13 +543,24 @@ public class Util {
     }
 
     /**
-     * Encodes a String into Base64
+     * Encodes a String into Base64 using US_ASCII charset.
      *
-     * @param encode    String which should be encoded
+     * @param data String that should be encoded.
      *
-     * @return          Base64 data
+     * @return Base64 data.
      */
-    public static String encodeToBase64(String encode)  {
-        return Base64.getEncoder().encodeToString(encode.getBytes(StandardCharsets.US_ASCII));
+    public static String encodeToBase64(String data)  {
+        return Base64.getEncoder().encodeToString(data.getBytes(StandardCharsets.US_ASCII));
+    }
+
+    /**
+     * Decodes a String from Base64 using US_ASCII charset.
+     *
+     * @param data String that should be decoded.
+     *
+     * @return Plain data.
+     */
+    public static String decodeFromBase64(String data)  {
+        return new String(Base64.getDecoder().decode(data), StandardCharsets.US_ASCII);
     }
 }

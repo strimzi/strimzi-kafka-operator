@@ -26,6 +26,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mockito;
 
 import java.util.Arrays;
 import java.util.List;
@@ -55,8 +56,8 @@ public class TopicOperatorMetricsTest {
     private static TopicOperatorMetricsHolder metrics;
 
     @BeforeAll
-    public static void beforeAll() {
-        TopicOperatorTestUtil.setupKubeCluster(NAMESPACE);
+    public static void beforeAll(TestInfo testInfo) {
+        TopicOperatorTestUtil.setupKubeCluster(testInfo, NAMESPACE);
         client = new KubernetesClientBuilder().build();
         TopicOperatorMetricsProvider metricsProvider = new TopicOperatorMetricsProvider(new SimpleMeterRegistry());
         metrics = new TopicOperatorMetricsHolder(RESOURCE_KIND, null, metricsProvider);
@@ -65,7 +66,7 @@ public class TopicOperatorMetricsTest {
     @AfterAll
     public static void afterAll(TestInfo testInfo) {
         TopicOperatorTestUtil.cleanupNamespace(client, testInfo, NAMESPACE);
-        TopicOperatorTestUtil.teardownKubeCluster2(NAMESPACE);
+        TopicOperatorTestUtil.teardownKubeCluster(NAMESPACE);
         client.close();
     }
 
@@ -158,7 +159,11 @@ public class TopicOperatorMetricsTest {
     @Test
     public void shouldHaveMetricsAfterSomeReconciliations(KafkaCluster cluster) throws ExecutionException, InterruptedException {
         Admin admin = Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, cluster.getBootstrapServers()));
-        BatchingTopicController controller = new BatchingTopicController(Map.of("key", "VALUE"), admin, client, true, metrics, NAMESPACE, true);
+        var config = Mockito.mock(TopicOperatorConfig.class);
+        Mockito.doReturn(NAMESPACE).when(config).namespace();
+        Mockito.doReturn(true).when(config).useFinalizer();
+        Mockito.doReturn(false).when(config).enableAdditionalMetrics();
+        BatchingTopicController controller = new BatchingTopicController(config, Map.of("key", "VALUE"), admin, client, metrics);
 
         KafkaTopic t1 = createResource(client, "t1", "t1");
         KafkaTopic t2 = createResource(client, "t2", "t1");

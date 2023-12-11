@@ -28,10 +28,18 @@ import io.strimzi.operator.cluster.model.logging.LoggingModel;
 import io.strimzi.operator.cluster.model.logging.SupportsLogging;
 import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProviderContextImpl;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.model.PasswordGenerator;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
+import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.API_TO_ADMIN_NAME;
+import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.API_TO_ADMIN_NAME_KEY;
+import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.API_TO_ADMIN_PASSWORD_KEY;
 
 /**
  * Represents the Topic Operator deployment
@@ -65,11 +73,20 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
     // Volume name of the temporary volume used by the TO container
     // Because the container shares the pod with other containers, it needs to have unique name
     /* test */ static final String TOPIC_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME = "strimzi-to-tmp";
+    
+    /* test */ static final String ENV_VAR_CRUISE_CONTROL_ENABLED = "STRIMZI_CRUISE_CONTROL_ENABLED";
+    /* test */ static final String ENV_VAR_CRUISE_CONTROL_RACK_ENABLED = "STRIMZI_CRUISE_CONTROL_RACK_AWARE";
+    /* test */ static final String ENV_VAR_CRUISE_CONTROL_HOSTNAME = "STRIMZI_CRUISE_CONTROL_HOSTNAME";
+    /* test */ static final String ENV_VAR_CRUISE_CONTROL_PORT = "STRIMZI_CRUISE_CONTROL_PORT";
+    /* test */ static final String ENV_VAR_CRUISE_CONTROL_SSL_ENABLED = "STRIMZI_CRUISE_CONTROL_SSL_ENABLED";
+    /* test */ static final String ENV_VAR_CRUISE_CONTROL_AUTH_ENABLED = "STRIMZI_CRUISE_CONTROL_AUTH_ENABLED";
 
     // Kafka bootstrap servers and Zookeeper nodes can't be specified in the JSON
     /* test */ String kafkaBootstrapServers;
     /* test */ String zookeeperConnect;
     private boolean unidirectionalTopicOperator;
+    private boolean cruiseControlEnabled;
+    private boolean rackAwarenessEnabled;
 
     private String watchedNamespace;
     /* test */ int reconciliationIntervalMs;
@@ -153,6 +170,12 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
             if (kafkaAssembly.getSpec().getEntityOperator().getTemplate() != null)  {
                 result.templateRoleBinding = kafkaAssembly.getSpec().getEntityOperator().getTemplate().getTopicOperatorRoleBinding();
             }
+            
+            result.cruiseControlEnabled = kafkaAssembly.getSpec().getCruiseControl() != null;
+            if (result.cruiseControlEnabled) {
+                result.rackAwarenessEnabled = kafkaAssembly.getSpec().getKafka().getReplicas() > 1
+                    && kafkaAssembly.getSpec().getKafka().getRack() != null;
+            }
 
             return result;
         } else {
@@ -192,7 +215,19 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_FULL_RECONCILIATION_INTERVAL_MS, Integer.toString(reconciliationIntervalMs)));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_SECURITY_PROTOCOL, EntityTopicOperatorSpec.DEFAULT_SECURITY_PROTOCOL));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_TLS_ENABLED, Boolean.toString(true)));
-        varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
+        varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_GC_LOG_ENABLED, Boolean.toString(gcLoggingEnabled)));
+        
+        // Add environment variables required for Cruise Control integration
+        varList.add(ContainerUtils.createEnvVar(ENV_VAR_CRUISE_CONTROL_ENABLED, Boolean.toString(cruiseControlEnabled)));
+        if (this.unidirectionalTopicOperator && this.cruiseControlEnabled) {
+            varList.add(ContainerUtils.createEnvVar(ENV_VAR_CRUISE_CONTROL_RACK_ENABLED, Boolean.toString(rackAwarenessEnabled)));
+            varList.add(ContainerUtils.createEnvVar(ENV_VAR_CRUISE_CONTROL_HOSTNAME, String.format("%s-cruise-control.%s.svc", cluster, namespace)));
+            varList.add(ContainerUtils.createEnvVar(ENV_VAR_CRUISE_CONTROL_PORT, "9090"));
+            varList.add(ContainerUtils.createEnvVar(ENV_VAR_CRUISE_CONTROL_SSL_ENABLED, "true"));
+            varList.add(ContainerUtils.createEnvVar(ENV_VAR_CRUISE_CONTROL_AUTH_ENABLED, "true"));
+            // Truststore and API credentials are mounted in the container
+        }
+        
         JvmOptionUtils.javaOptions(varList, jvmOptions);
 
         // Add shared environment variables used for all containers
@@ -208,10 +243,15 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
     }
 
     private List<VolumeMount> getVolumeMounts() {
-        return List.of(VolumeUtils.createTempDirVolumeMount(TOPIC_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME),
-                VolumeUtils.createVolumeMount(LOG_AND_METRICS_CONFIG_VOLUME_NAME, LOG_AND_METRICS_CONFIG_VOLUME_MOUNT),
-                VolumeUtils.createVolumeMount(EntityOperator.ETO_CERTS_VOLUME_NAME, EntityOperator.ETO_CERTS_VOLUME_MOUNT),
-                VolumeUtils.createVolumeMount(EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_NAME, EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT));
+        List<VolumeMount> result = new ArrayList<>();
+        result.add(VolumeUtils.createTempDirVolumeMount(TOPIC_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
+        result.add(VolumeUtils.createVolumeMount(LOG_AND_METRICS_CONFIG_VOLUME_NAME, LOG_AND_METRICS_CONFIG_VOLUME_MOUNT));
+        result.add(VolumeUtils.createVolumeMount(EntityOperator.ETO_CERTS_VOLUME_NAME, EntityOperator.ETO_CERTS_VOLUME_MOUNT));
+        result.add(VolumeUtils.createVolumeMount(EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_NAME, EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT));
+        if (cruiseControlEnabled) {
+            result.add(VolumeUtils.createVolumeMount(EntityOperator.ETO_CC_API_VOLUME_NAME, EntityOperator.ETO_CC_API_VOLUME_MOUNT));
+        }
+        return Collections.unmodifiableList(result);
     }
 
     /**
@@ -262,6 +302,32 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
         Secret secret = clusterCa.entityTopicOperatorSecret();
         return CertUtils.buildTrustedCertificateSecret(reconciliation, clusterCa, secret, namespace, KafkaResources.entityTopicOperatorSecretName(cluster), componentName,
             CERT_SECRET_KEY_NAME, labels, ownerReference, isMaintenanceTimeWindowsSatisfied);
+    }
+
+    /**
+     * Creates the Secret containing Cruise Control API auth credentials.
+     *
+     * @return The generated Secret.
+     */
+    public Secret generateCruiseControlApiSecret() {
+        return ModelUtils.createSecret(KafkaResources.entityTopicOperatorCcApiSecretName(cluster), namespace, labels, ownerReference, 
+            generateCruiseControlApiCredentials(), Collections.emptyMap(), Collections.emptyMap());
+    }
+
+    /**
+     * Creates Cruise Control API auth credentials.
+     *
+     * @return Map containing Cruise Control API auth credentials
+     */
+    public static Map<String, String> generateCruiseControlApiCredentials() {
+        PasswordGenerator passwordGenerator = new PasswordGenerator(16);
+        String apiToAdminPassword = passwordGenerator.generate();
+
+        Map<String, String> data = new HashMap<>(2);
+        data.put(API_TO_ADMIN_NAME_KEY, Util.encodeToBase64(API_TO_ADMIN_NAME));
+        data.put(API_TO_ADMIN_PASSWORD_KEY, Util.encodeToBase64(apiToAdminPassword));
+
+        return data;
     }
 
     /**

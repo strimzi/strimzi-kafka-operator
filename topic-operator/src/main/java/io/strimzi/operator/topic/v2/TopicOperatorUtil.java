@@ -4,12 +4,21 @@
  */
 package io.strimzi.operator.topic.v2;
 
+import io.micrometer.core.instrument.Timer;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
+import io.strimzi.operator.common.Annotations;
+import io.strimzi.operator.topic.v2.metrics.TopicOperatorMetricsHolder;
+
+import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Utility class.
  */
 public class TopicOperatorUtil {
+    static final String MANAGED = "strimzi.io/managed";
+
     private TopicOperatorUtil() {
     }
 
@@ -28,5 +37,102 @@ public class TopicOperatorUtil {
             tn = kafkaTopic.getMetadata().getName();
         }
         return tn;
+    }
+
+    /**
+     * Get topic names from reconcilable topics.
+     * 
+     * @param reconcilableTopics Reconcilable topics.
+     * @return Topic names
+     */
+    public static List<String> topicNames(List<ReconcilableTopic> reconcilableTopics) {
+        List<String> result = reconcilableTopics.stream()
+            .map(ReconcilableTopic::topicName)
+            .collect(Collectors.toList());
+        return result;
+    }
+
+    /**
+     * Start the reconciliation timer.
+     * 
+     * @param reconcilableTopic Reconcilable topic.
+     * @param metrics Metrics holder.
+     */
+    public static void startReconciliationTimer(ReconcilableTopic reconcilableTopic,
+                                                TopicOperatorMetricsHolder metrics) {
+        if (reconcilableTopic.reconciliationTimerSample() == null) {
+            reconcilableTopic.reconciliationTimerSample(Timer.start(metrics.metricsProvider().meterRegistry()));
+        }
+    }
+
+    /**
+     * Stop the reconciliation timer.
+     * 
+     * @param reconcilableTopic Reconcilable topic.
+     * @param metrics Metrics holder.
+     * @param namespace Namespace.
+     */
+    public static void stopReconciliationTimer(ReconcilableTopic reconcilableTopic,
+                                               TopicOperatorMetricsHolder metrics,
+                                               String namespace) {
+        if (reconcilableTopic.reconciliationTimerSample() != null) {
+            reconcilableTopic.reconciliationTimerSample().stop(metrics.reconciliationsTimer(namespace));
+        }
+    }
+
+    /**
+     * Start the operation timer.
+     * 
+     * @param enableAdditionalMetrics Whether to enable additional metrics.
+     * @param metrics Metrics holder.
+     * @return The timer sample.
+     */
+    public static Timer.Sample startOperationTimer(boolean enableAdditionalMetrics,
+                                                   TopicOperatorMetricsHolder metrics) {
+        if (enableAdditionalMetrics) {
+            return Timer.start(metrics.metricsProvider().meterRegistry());
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Stop the operation timer.
+     *
+     * @param timerSample The timer sample.
+     * @param opTimer Operation timer.
+     * @param enableAdditionalMetrics Whether to enable additional metrics.
+     * @param namespace Namespace.
+     */
+    public static void stopOperationTimer(Timer.Sample timerSample, 
+                                          Function<String, Timer> opTimer,
+                                          boolean enableAdditionalMetrics,
+                                          String namespace) {
+        if (timerSample != null && enableAdditionalMetrics) {
+            timerSample.stop(opTimer.apply(namespace));
+        }
+    }
+
+    /**
+     * Whether the {@link KafkaTopic} is managed.
+     *
+     * @param kt Kafka topic.
+     * @return True if the topic is managed.
+     */
+    public static boolean isManaged(KafkaTopic kt) {
+        return kt.getMetadata() == null
+            || kt.getMetadata().getAnnotations() == null
+            || kt.getMetadata().getAnnotations().get(MANAGED) == null
+            || !"false".equals(kt.getMetadata().getAnnotations().get(MANAGED));
+    }
+
+    /**
+     * Whether the {@link KafkaTopic} is paused.
+     *
+     * @param kt Kafka topic.
+     * @return True if the topic is paused.
+     */
+    public static boolean isPaused(KafkaTopic kt) {
+        return Annotations.isReconciliationPausedWithAnnotation(kt);
     }
 }
