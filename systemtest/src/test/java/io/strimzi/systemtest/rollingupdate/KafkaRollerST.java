@@ -19,13 +19,10 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
-import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolTemplate;
-import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolTemplateBuilder;
 import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
 import io.strimzi.api.kafka.model.template.KafkaClusterTemplate;
 import io.strimzi.api.kafka.model.template.KafkaClusterTemplateBuilder;
 import io.strimzi.api.kafka.model.template.PodTemplate;
-import io.strimzi.api.kafka.model.template.PodTemplateBuilder;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.TestConstants;
@@ -394,7 +391,6 @@ public class KafkaRollerST extends AbstractST {
 
             resourceManager.createResourceWithWait(extensionContext, controllerPoolC2);
 
-            // TODO: create helper method to remove redundancy - AGAIN: the creation of additional controller nodes should trigger RollingUpdate (`Pod has old revision`)
             // only mixed-role and broker-role nodes rolls
             kafkaPoolAPodsSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(),
                     kafkaPoolASelector, mixedPoolAReplicas, kafkaPoolAPodsSnapshot);
@@ -455,54 +451,7 @@ public class KafkaRollerST extends AbstractST {
             RollingUpdateUtils.waitForNoRollingUpdate(testStorage.getNamespaceName(), kafkaPoolC1Selector, kafkaPoolC1PodsSnapshot);
             RollingUpdateUtils.waitForNoRollingUpdate(testStorage.getNamespaceName(), kafkaPoolC2Selector, kafkaPoolC2PodsSnapshot);
         }
-
-        // ######################################################################################################################################################
-
-        // TODO: 2 Test Scenario, where we move a controllers pods to pending (probably we could create separate test case for this?)
-
-        if (Environment.isKRaftModeEnabled()) {
-            final NodeSelectorRequirement nsr = new NodeSelectorRequirementBuilder()
-                .withKey("dedicated_test")
-                .withOperator("In")
-                .withValues("Kafka")
-                .build();
-
-            final KafkaNodePoolTemplate kafkaNodePoolTemplate = new KafkaNodePoolTemplateBuilder()
-                .withPod(new PodTemplateBuilder().withAffinity(new AffinityBuilder()
-                            .withNewNodeAffinity()
-                                .withNewRequiredDuringSchedulingIgnoredDuringExecution()
-                                .withNodeSelectorTerms(
-                                    new NodeSelectorTermBuilder()
-                                        .withMatchExpressions(nsr)
-                                        .build())
-                                .endRequiredDuringSchedulingIgnoredDuringExecution()
-                            .endNodeAffinity()
-                            .build())
-                        .build())
-                .build();
-
-            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(nodePoolNameC1, knp -> knp.getSpec().setTemplate(kafkaNodePoolTemplate), testStorage.getNamespaceName());
-
-            // pods are stable in the Pending state
-            PodUtils.waitUntilPodStabilityReplicasCount(testStorage.getNamespaceName(), nodePoolNameC1, 1);
-
-            LOGGER.info("Removing requirement for the affinity");
-            if (Environment.isKafkaNodePoolsEnabled()) {
-                KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(nodePoolNameC1, k ->
-                        k.getSpec().getTemplate().getPod().setAffinity(null), testStorage.getNamespaceName());
-            } else {
-                KafkaResource.replaceKafkaResourceInSpecificNamespace(nodePoolNameC1, k ->
-                        k.getSpec().getKafka().getTemplate().getPod().setAffinity(null), testStorage.getNamespaceName());
-            }
-
-            PodUtils.waitForPodsReady(testStorage.getNamespaceName(), kafkaPoolC1Selector, controllerPoolC1Replicas, true);
-        }
     }
-    // TODO:
-
-    // TODO: make a test case where KafkaCR configuration is propagated to the KafkaNodePools (which does not have that specific conf:
-    //          i) for NodePools which has identical as KafkaCR - do nothing
-    //          ii) for NodePools which has not identical as KafkaCR - it would do something, probably trigger RollingUpdate i don't know...
 
     boolean checkIfExactlyOneKafkaPodIsNotReady(String namespaceName, String clusterName) {
         List<Pod> kafkaPods = kubeClient(namespaceName).listPodsByPrefixInName(KafkaResource.getStrimziPodSetName(clusterName));
