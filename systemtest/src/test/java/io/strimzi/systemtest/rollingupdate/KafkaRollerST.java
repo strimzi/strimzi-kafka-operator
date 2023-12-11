@@ -72,6 +72,8 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @Tag(REGRESSION)
 @Tag(INTERNAL_CLIENTS_USED)
@@ -327,149 +329,106 @@ public class KafkaRollerST extends AbstractST {
     }
 
     /**
-     * @description This test case examines the behavior of Kafka rollers under various node pool configurations, focusing on how rolling updates are triggered or prevented in different scenarios.
+     * @description This test case verifies the rolling update behavior of Kafka controller nodes under specific conditions.
+     * It focuses on ensuring that changes in Kafka configuration affect only the intended node pools, particularly
+     * the controller nodes, while leaving others like broker nodes unaffected.
      *
      * @steps
-     *  1. - Initialize test environment and create node pools with different roles (mixed, broker, controller) and varying replica counts.
-     *     - Create Kafka instance with a single replica and deploy mixed node pool 'A' with 1 replica.
-     *  2. - Deploy two additional broker node pools 'B1' and 'B2' with 1 and 2 replicas, respectively.
-     *     - Verify that the creation of these broker nodes does not trigger a rolling update in the existing node pool 'A'.
-     *  3. - In KRaft mode, deploy two controller node pools 'C1' and 'C2' with 2 and 1 replicas, respectively.
-     *     - Expect a rolling update for mixed-role and broker-role nodes, but not for the controller nodes initially.
-     *  4. - After creating controller node pools, verify rolling updates across different node pools as they adjust to the new configuration.
-     *     - Check that the controller nodes roll only when their specific pool is modified.
-     *  5. - Change controller-only configuration and verify that only mixed and controller node pools are affected, while broker nodes remain unchanged.
-     *  6. - Modify broker-only configuration and observe that only mixed-role and broker-role node pools roll, leaving controller-role nodes unaffected.
+     *  1. - Assume that KRaft mode is enabled and the installation method is bundle only.
+     *  2. - Initialize the test environment and create a Kafka instance with a single replica.
+     *  3. - Create and deploy a Kafka node pool with broker roles (brokerPool) and another with controller roles (controllerPool), each with 3 replicas.
+     *  4. - Take snapshots of the broker and controller pods for later comparison.
+     *  5. - Update a specific Kafka configuration that affects only controller nodes and verify the rolling update behavior.
+     *     - Ensure that only controller nodes undergo a rolling update, while broker nodes remain unaffected.
+     *  6. - Verify the rolling update of controller nodes by comparing the snapshots taken before and after the configuration change.
      *
      * @usecase
-     *  - kafka-node-pool-rolling-update
-     *  - kafka-roller
-     *  - kafka-configuration-management
+     *  - kafka-controller-node-rolling-update
+     *  - kafka-configuration-change-impact
+     *  - kafka-node-pool-management
      */
     @ParallelNamespaceTest
-    void testKafkaRollerBehaviorUnderVariousScenarios(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
-        final String nodePoolNameA = testStorage.getKafkaNodePoolName() + "-a";
-        final String nodePoolNameB1 = testStorage.getKafkaNodePoolName() + "-b1";
-        final String nodePoolNameB2 = testStorage.getKafkaNodePoolName() + "-b2";
-        final String nodePoolNameC1 = testStorage.getKafkaNodePoolName() + "-c1";
-        final String nodePoolNameC2 = testStorage.getKafkaNodePoolName() + "-c2";
+    void testKafkaRollingUpdatesOfControllerNodes(final ExtensionContext extensionContext) {
+        assumeTrue(Environment.isKRaftModeEnabled());
+        assumeFalse(Environment.isOlmInstall() || Environment.isHelmInstall());
 
-        final int mixedPoolAReplicas = 1, brokerPoolB1Replicas = 1, brokerPoolB2Replicas = 2, controllerPoolC1Replicas = 2, controllerPoolC2Replicas = 1;
+        final TestStorage testStorage = new TestStorage(extensionContext);
+        final String brokerPoolName = testStorage.getKafkaNodePoolName() + "-b";
+        final String controllerPoolName = testStorage.getKafkaNodePoolName() + "-c";
+
+        final int brokerPoolReplicas = 3, controllerPoolReplicas = 3;
 
         final Kafka kafka = KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 1, 1).build();
-        final KafkaNodePool mixedPoolA = KafkaNodePoolTemplates.kafkaBasedNodePoolWithDualRole(nodePoolNameA, kafka, mixedPoolAReplicas).build();
+        final KafkaNodePool brokerPool = KafkaNodePoolTemplates.kafkaBasedNodePoolWithBrokerRole(brokerPoolName, kafka, brokerPoolReplicas).build();
+        final KafkaNodePool controllerPool = KafkaNodePoolTemplates.kafkaBasedNodePoolWithControllerRole(controllerPoolName, kafka, controllerPoolReplicas).build();
 
-        resourceManager.createResourceWithWait(extensionContext, mixedPoolA, kafka);
+        final LabelSelector brokerPoolSelector = KafkaNodePoolResource.getLabelSelector(testStorage.getClusterName(), brokerPoolName, ProcessRoles.BROKER);
+        final LabelSelector controllerPoolSelector = KafkaNodePoolResource.getLabelSelector(testStorage.getClusterName(), controllerPoolName, ProcessRoles.CONTROLLER);
 
-        final KafkaNodePool brokerPoolB1 = KafkaNodePoolTemplates.kafkaBasedNodePoolWithBrokerRole(nodePoolNameB1, kafka, brokerPoolB1Replicas).build();
-        final KafkaNodePool brokerPoolB2 = KafkaNodePoolTemplates.kafkaBasedNodePoolWithBrokerRole(nodePoolNameB2, kafka, brokerPoolB2Replicas).build();
+        resourceManager.createResourceWithoutWait(extensionContext, brokerPool, controllerPool, kafka);
 
-        // for KNP A Controller/Broker role it does not matter in this case
-        final LabelSelector kafkaPoolASelector = KafkaNodePoolResource.getLabelSelector(testStorage.getClusterName(), nodePoolNameA, ProcessRoles.CONTROLLER);
-        final LabelSelector kafkaPoolB1Selector = KafkaNodePoolResource.getLabelSelector(testStorage.getClusterName(), nodePoolNameB1, ProcessRoles.BROKER);
-        final LabelSelector kafkaPoolB2Selector = KafkaNodePoolResource.getLabelSelector(testStorage.getClusterName(), nodePoolNameB2, ProcessRoles.BROKER);
-        final LabelSelector kafkaPoolC1Selector = KafkaNodePoolResource.getLabelSelector(testStorage.getClusterName(), nodePoolNameC1, ProcessRoles.CONTROLLER);
+        PodUtils.waitForPodsReady(testStorage.getNamespaceName(), brokerPoolSelector, brokerPoolReplicas, true);
+        PodUtils.waitForPodsReady(testStorage.getNamespaceName(), controllerPoolSelector, controllerPoolReplicas, true);
 
-        Map<String, String> kafkaPoolAPodsSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), kafkaPoolASelector);
-        Map<String, String> kafkaPoolB2PodsSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), kafkaPoolB2Selector);
-        Map<String, String> kafkaPoolC1PodsSnapshot = null;
+        Map<String, String> brokerPoolPodsSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), brokerPoolSelector);
+        Map<String, String> controllerPoolPodsSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), controllerPoolSelector);
 
-        resourceManager.createResourceWithWait(extensionContext, brokerPoolB1);
-
-        // the creation of additional broker nodes should not trigger RollingUpdate
-        RollingUpdateUtils.waitForNoRollingUpdate(testStorage.getNamespaceName(), kafkaPoolASelector, kafkaPoolAPodsSnapshot);
-
-        Map<String, String> kafkaPoolB1PodsSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), kafkaPoolB1Selector);
-
-        resourceManager.createResourceWithWait(extensionContext, brokerPoolB2);
-
-        // the creation of additional broker nodes should not trigger RollingUpdate
-        RollingUpdateUtils.waitForNoRollingUpdate(testStorage.getNamespaceName(), kafkaPoolASelector, kafkaPoolAPodsSnapshot);
-        RollingUpdateUtils.waitForNoRollingUpdate(testStorage.getNamespaceName(), kafkaPoolB1Selector, kafkaPoolB1PodsSnapshot);
-
-        if (Environment.isKRaftModeEnabled()) {
-            final KafkaNodePool controllerPoolC1 = KafkaNodePoolTemplates.kafkaBasedNodePoolWithControllerRole(nodePoolNameC1, kafka, controllerPoolC1Replicas).build();
-            final KafkaNodePool controllerPoolC2 = KafkaNodePoolTemplates.kafkaBasedNodePoolWithControllerRole(nodePoolNameC2, kafka, controllerPoolC2Replicas).build();
-
-            resourceManager.createResourceWithWait(extensionContext, controllerPoolC1);
-
-            // the creation of additional controller nodes should trigger RollingUpdate (`Pod has old revision`)
-
-            // only mixed-role and broker-role nodes rolls
-            kafkaPoolAPodsSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(),
-                    kafkaPoolASelector, mixedPoolAReplicas, kafkaPoolAPodsSnapshot);
-
-            // then broker-role
-            kafkaPoolB1PodsSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(),
-                    kafkaPoolB1Selector, brokerPoolB1Replicas, kafkaPoolB1PodsSnapshot);
-            kafkaPoolB2PodsSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(),
-                    kafkaPoolB2Selector, brokerPoolB2Replicas, kafkaPoolB2PodsSnapshot);
-
-            kafkaPoolC1PodsSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), kafkaPoolC1Selector);
-
-            resourceManager.createResourceWithWait(extensionContext, controllerPoolC2);
-
-            // only mixed-role and broker-role nodes rolls
-            kafkaPoolAPodsSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(),
-                    kafkaPoolASelector, mixedPoolAReplicas, kafkaPoolAPodsSnapshot);
-
-            // then first already created controller nodes [4-5]
-            kafkaPoolC1PodsSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(),
-                    kafkaPoolC1Selector, controllerPoolC1Replicas, kafkaPoolC1PodsSnapshot);
-
-            // then broker-role
-            kafkaPoolB1PodsSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(),
-                    kafkaPoolB1Selector, brokerPoolB1Replicas, kafkaPoolB1PodsSnapshot);
-            kafkaPoolB2PodsSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(),
-                    kafkaPoolB2Selector, brokerPoolB2Replicas, kafkaPoolB2PodsSnapshot);
-        }
-
-        final LabelSelector kafkaPoolC2Selector = KafkaNodePoolResource.getLabelSelector(testStorage.getClusterName(), nodePoolNameC2, ProcessRoles.CONTROLLER);
-
-        Map<String, String> kafkaPoolC2PodsSnapshot  = PodUtils.podSnapshot(testStorage.getNamespaceName(), kafkaPoolC2Selector);
-
-        // 1 Test Scenario, where we change configuration only when +UseKRaft
-        if (Environment.isKRaftModeEnabled()) {
-            // i.) change Controller-only configuration inside shared Kafka configuration between KafkaNodePools and see that only mixed and controller pods rolls
-            // ######################################################################################################################################################
-            KafkaUtils.updateSpecificConfiguration(testStorage.getNamespaceName(), testStorage.getClusterName(), "controller.quorum.election.backoff.max.ms", 10000);
-
-            // only mixed-role and controller-role nodes rolls
-            kafkaPoolAPodsSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(),
-                    kafkaPoolASelector, mixedPoolAReplicas, kafkaPoolAPodsSnapshot);
-
-            // then controller-role
-            kafkaPoolC1PodsSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(),
-                    kafkaPoolC1Selector, controllerPoolC1Replicas, kafkaPoolC1PodsSnapshot);
-            kafkaPoolC2PodsSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(),
-                    kafkaPoolC2Selector, controllerPoolC2Replicas, kafkaPoolC2PodsSnapshot);
-
-            // broker-role nodes does not roll
-            RollingUpdateUtils.waitForNoRollingUpdate(testStorage.getNamespaceName(), kafkaPoolB1Selector, kafkaPoolB1PodsSnapshot);
-            RollingUpdateUtils.waitForNoRollingUpdate(testStorage.getNamespaceName(), kafkaPoolB2Selector, kafkaPoolB2PodsSnapshot);
-        }
-
+        // change Controller-only configuration inside shared Kafka configuration between KafkaNodePools and see that only mixed and controller pods rolls
         // ######################################################################################################################################################
+        KafkaUtils.updateSpecificConfiguration(testStorage.getNamespaceName(), testStorage.getClusterName(), "controller.quorum.election.timeout.ms", 10000);
 
-        // ii. change broker-only configuration so broker/mixed nodes will roll but controllers nodes will not!
-        KafkaUtils.updateSpecificConfiguration(testStorage.getNamespaceName(), testStorage.getClusterName(), "broker.only.configuration", "true");
+        // only controller-role nodes rolls
+        controllerPoolPodsSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(),
+                controllerPoolSelector, controllerPoolReplicas, controllerPoolPodsSnapshot);
 
-        // only mixed-role and broker-role nodes rolls
-        kafkaPoolAPodsSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(),
-                kafkaPoolASelector, mixedPoolAReplicas, kafkaPoolAPodsSnapshot);
+        // broker-role nodes does not roll
+        RollingUpdateUtils.waitForNoRollingUpdate(testStorage.getNamespaceName(), brokerPoolSelector, brokerPoolPodsSnapshot);
+    }
 
-        // then broker-role
-        kafkaPoolB1PodsSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(),
-                kafkaPoolB1Selector, brokerPoolB1Replicas, kafkaPoolB1PodsSnapshot);
-        kafkaPoolB2PodsSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(),
-                kafkaPoolB2Selector, brokerPoolB2Replicas, kafkaPoolB2PodsSnapshot);
+    /**
+     * @description This test case assesses the rolling update behavior of Kafka nodes in mixed-role configurations.
+     * The main focus is to verify that configuration changes impacting controller roles result in rolling updates
+     * of nodes serving mixed roles, while ensuring compatibility with KRaft mode and excluding OLM or Helm installations.
+     *
+     * @steps
+     *  1. - Ensure that the environment is running in KRaft mode and is neither an OLM nor Helm installation (only Bundle/YAML!).
+     *  2. - Initialize the test environment by setting up a Kafka instance with a single replica.
+     *  3. - Create and deploy a Kafka node pool with mixed roles (controller and broker), consisting of 6 replicas.
+     *  4. - Take a snapshot of the mixed-role pods for comparison before and after the configuration change.
+     *  5. - Update a specific Kafka configuration targeting controller roles.
+     *  6. - Observe and verify that all mixed-role nodes undergo a rolling update in response to the configuration change.
+     *  7. - Confirm the successful rolling update by comparing pod snapshots taken before and after the configuration change.
+     *
+     * @usecase
+     *  - kafka-mixed-node-rolling-update
+     *  - kafka-configuration-change-impact-on-mixed-nodes
+     *  - kafka-node-pool-management-in-non-KRaft-mode
+     */
+    @ParallelNamespaceTest
+    void testKafkaRollingUpdatesOfMixedNodes(final ExtensionContext extensionContext) {
+        assumeTrue(Environment.isKRaftModeEnabled());
+        assumeFalse(Environment.isOlmInstall() || Environment.isHelmInstall());
 
-        if (Environment.isKRaftModeEnabled()) {
-            // controller-role nodes does not roll
-            RollingUpdateUtils.waitForNoRollingUpdate(testStorage.getNamespaceName(), kafkaPoolC1Selector, kafkaPoolC1PodsSnapshot);
-            RollingUpdateUtils.waitForNoRollingUpdate(testStorage.getNamespaceName(), kafkaPoolC2Selector, kafkaPoolC2PodsSnapshot);
-        }
+        final TestStorage testStorage = new TestStorage(extensionContext);
+        final String mixedPoolName = testStorage.getKafkaNodePoolName();
+        final int mixedPoolReplicas = 6;
+
+        final Kafka kafka = KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 1, 1).build();
+        final KafkaNodePool mixedPool = KafkaNodePoolTemplates.kafkaBasedNodePoolWithDualRole(mixedPoolName, kafka, mixedPoolReplicas).build();
+
+        resourceManager.createResourceWithWait(extensionContext, mixedPool, kafka);
+
+        final LabelSelector mixedPoolSelector = KafkaNodePoolResource.getLabelSelector(testStorage.getClusterName(), mixedPoolName, ProcessRoles.CONTROLLER);
+
+        Map<String, String> mixedPoolPodsSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), mixedPoolSelector);
+
+        // change Controller-only configuration inside shared Kafka configuration between KafkaNodePools and see that only mixed and controller pods rolls
+        // ######################################################################################################################################################
+        KafkaUtils.updateSpecificConfiguration(testStorage.getNamespaceName(), testStorage.getClusterName(), "controller.quorum.fetch.timeout.ms", 10000);
+
+        // all mixed nodes rolls
+        mixedPoolPodsSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(),
+                mixedPoolSelector, mixedPoolReplicas, mixedPoolPodsSnapshot);
     }
 
     boolean checkIfExactlyOneKafkaPodIsNotReady(String namespaceName, String clusterName) {

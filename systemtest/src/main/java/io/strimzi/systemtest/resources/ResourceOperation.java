@@ -12,7 +12,6 @@ import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.api.kafka.model.balancing.KafkaRebalanceState;
-import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
 import io.strimzi.systemtest.TestConstants;
 
 import java.time.Duration;
@@ -29,7 +28,6 @@ public class ResourceOperation {
 
         switch (kind) {
             case Kafka.RESOURCE_KIND:
-            case KafkaNodePool.RESOURCE_KIND:
                 timeout = Duration.ofMinutes(14).toMillis();
                 break;
             case KafkaConnect.RESOURCE_KIND:
