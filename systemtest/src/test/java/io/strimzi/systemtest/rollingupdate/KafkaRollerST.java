@@ -374,7 +374,6 @@ public class KafkaRollerST extends AbstractST {
         Map<String, String> controllerPoolPodsSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), controllerPoolSelector);
 
         // change Controller-only configuration inside shared Kafka configuration between KafkaNodePools and see that only mixed and controller pods rolls
-        // ######################################################################################################################################################
         KafkaUtils.updateSpecificConfiguration(testStorage.getNamespaceName(), testStorage.getClusterName(), "controller.quorum.election.timeout.ms", 10000);
 
         // only controller-role nodes rolls
@@ -423,7 +422,6 @@ public class KafkaRollerST extends AbstractST {
         Map<String, String> mixedPoolPodsSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), mixedPoolSelector);
 
         // change Controller-only configuration inside shared Kafka configuration between KafkaNodePools and see that only mixed and controller pods rolls
-        // ######################################################################################################################################################
         KafkaUtils.updateSpecificConfiguration(testStorage.getNamespaceName(), testStorage.getClusterName(), "controller.quorum.fetch.timeout.ms", 10000);
 
         // all mixed nodes rolls
