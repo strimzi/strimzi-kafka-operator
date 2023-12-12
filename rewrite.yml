@@ -11,5 +11,4 @@ recipeList:
         License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
   - org.openrewrite.java.format.TypecastParenPad
   - org.openrewrite.staticanalysis.DefaultComesLast
-  - org.openrewrite.java.ShortenFullyQualifiedTypeReferences
   - org.openrewrite.java.format.PadEmptyForLoopComponents
