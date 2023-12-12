@@ -339,7 +339,7 @@ public class KafkaRollerST extends AbstractST {
      *
      * @steps
      *  1. - Assume that KRaft mode is enabled and the installation method is bundle only.
-     *  2. - Create and deploy a Kafka node pool with broker roles (brokerPool) and another with controller roles (controllerPool), each with 3 replicas.
+     *  2. - Create and deploy a Kafka node pool with broker role (brokerPool) and another with controller role (controllerPool), each with 3 replicas.
      *  3. - Take snapshots of the broker and controller pods for later comparison.
      *  4. - Update a specific Kafka configuration that affects only controller nodes and verify the rolling update behavior.
      *     - Ensure that only controller nodes undergo a rolling update, while broker nodes remain unaffected.
@@ -379,7 +379,7 @@ public class KafkaRollerST extends AbstractST {
         Map<String, String> brokerPoolPodsSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), brokerPoolSelector);
         Map<String, String> controllerPoolPodsSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), controllerPoolSelector);
 
-        // change Controller-only configuration inside shared Kafka configuration between KafkaNodePools and see that only mixed and controller pods rolls
+        // change Controller-only configuration inside shared Kafka configuration between KafkaNodePools and see that only controller pods rolls
         KafkaUtils.updateSpecificConfiguration(testStorage.getNamespaceName(), testStorage.getClusterName(), "controller.quorum.election.timeout.ms", 10000);
 
         // only controller-role nodes rolls
@@ -422,7 +422,6 @@ public class KafkaRollerST extends AbstractST {
 
         // Verify that broker nodes do not roll due to the controller node pool affinity change
         RollingUpdateUtils.waitForNoRollingUpdate(testStorage.getNamespaceName(), brokerPoolSelector, brokerPoolPodsSnapshot);
-
     }
 
     /**
@@ -461,7 +460,7 @@ public class KafkaRollerST extends AbstractST {
 
         Map<String, String> mixedPoolPodsSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), mixedPoolSelector);
 
-        // change Controller-only configuration inside shared Kafka configuration between KafkaNodePools and see that only mixed and controller pods rolls
+        // change Controller-only configuration inside shared Kafka configuration between KafkaNodePools and see that all mixed pods rolls
         KafkaUtils.updateSpecificConfiguration(testStorage.getNamespaceName(), testStorage.getClusterName(), "controller.quorum.fetch.timeout.ms", 10000);
 
         // all mixed nodes rolls
