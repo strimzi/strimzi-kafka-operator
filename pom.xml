@@ -1012,8 +1012,19 @@
                     </activeRecipes>
                     <exclusions>
                         <exclusion>.git/**</exclusion>
-                        <exclusion>*.yaml</exclusion>
-                        <exclusion>*.yml</exclusion>
+                        <exclusion>**/*.yaml</exclusion>
+                        <exclusion>**/*.yml</exclusion>
+                        <exclusion>**/*.md</exclusion>
+                        <exclusion>**/*.json</exclusion>
+                        <exclusion>**/*.xml</exclusion>
+                        <exclusion>**/*.properties</exclusion>
+                        <exclusion>.jenkins/**</exclusion>
+                        <exclusion>.github/**</exclusion>
+                        <exclusion>.checksums</exclusion>
+                        <exclusion>*.version</exclusion>
+                        <exclusion>*.os</exclusion>
+                        <exclusion>*.adoc</exclusion>
+                        <exclusion>*.txt</exclusion>
                     </exclusions>
                 </configuration>
                 <dependencies>
