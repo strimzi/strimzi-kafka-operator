@@ -1002,6 +1002,38 @@
                 </executions>
             </plugin>
             <plugin>
+                <groupId>org.openrewrite.maven</groupId>
+                <artifactId>rewrite-maven-plugin</artifactId>
+                <version>5.14.1</version>
+                <configuration>
+                    <checkstyleConfigFile>.checkstyle/checkstyle.xml</checkstyleConfigFile>
+                    <activeRecipes>
+                        <recipe>io.strimzi.strimzi-kafka-operator</recipe>
+                    </activeRecipes>
+                    <exclusions>
+                        <exclusion>.git/**</exclusion>
+                        <exclusion>*.yaml</exclusion>
+                        <exclusion>*.yml</exclusion>
+                    </exclusions>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.openrewrite.recipe</groupId>
+                        <artifactId>rewrite-static-analysis</artifactId>
+                        <version>1.1.1</version>
+                    </dependency>
+                </dependencies>
+                <executions>
+                    <execution>
+                        <id>validate</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>${maven.jacoco.version}</version>
@@ -1245,29 +1277,6 @@
                         </configuration>
                     </execution>
                 </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.openrewrite.maven</groupId>
-                <artifactId>rewrite-maven-plugin</artifactId>
-                <version>5.14.1</version>
-                <configuration>
-                    <checkstyleConfigFile>.checkstyle/checkstyle.xml</checkstyleConfigFile>
-                    <activeRecipes>
-                        <recipe>io.strimzi.strimzi-kafka-operator</recipe>
-                    </activeRecipes>
-                    <exclusions>
-                        <exclusion>.git/**</exclusion>
-                        <exclusion>*.yaml</exclusion>
-                        <exclusion>*.yml</exclusion>
-                    </exclusions>
-                </configuration>
-                <dependencies>
-                    <dependency>
-                        <groupId>org.openrewrite.recipe</groupId>
-                        <artifactId>rewrite-static-analysis</artifactId>
-                        <version>1.1.1</version>
-                    </dependency>
-                </dependencies>
             </plugin>
         </plugins>
     </build>
