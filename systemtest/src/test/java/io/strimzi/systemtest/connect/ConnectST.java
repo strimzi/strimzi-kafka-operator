@@ -19,6 +19,7 @@ import io.fabric8.kubernetes.api.model.SecretVolumeSourceBuilder;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.AutoRestartBuilder;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
+import io.strimzi.api.kafka.model.ConnectorState;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaConnector;
@@ -79,6 +80,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.function.Consumer;
 
 import static io.strimzi.systemtest.TestConstants.ACCEPTANCE;
 import static io.strimzi.systemtest.TestConstants.COMPONENT_SCALING;
@@ -168,12 +170,30 @@ class ConnectST extends AbstractST {
         LOGGER.info("Docker images verified");
     }
 
+    /**
+     * @description This test case verifies pausing, stopping and running of connector via 'spec.pause' or 'spec.state' specification.
+     *
+     * @steps
+     *  1. - Deploy prerequisites for running FileSink KafkaConnector, that is KafkaTopic, Kafka cluster, KafkaConnect, and FileSink KafkaConnector.
+     *     - All resources are deployed and ready.
+     *  2. - Pause and run connector by modifying 'spec.pause' property of Connector, while also producing messages when connector pauses.
+     *     - Connector is paused and resumed as expected, after connector is resumed, produced messages are present in destination file, indicating connector resumed correctly.
+     *  3. - Stop and run connector by modifying 'spec.state' property of Connector (with priority over now set 'spec.pause=false'), while also producing messages when connector stops.
+     *     - Connector stops and resumes as expected, after resuming, produced messages are present in destination file, indicating connector resumed correctly.
+     *  4. - Pause and run connector by modifying 'spec.state' property of Connector (with priority over now set 'spec.pause=false'), while also producing messages when connector pauses.
+     *     - Connector pauses and resumes as expected, after resuming, produced messages are present in destination file, indicating connector resumed correctly.
+     *
+     * @usecase
+     *  - kafka-connect
+     *  - kafka-connector
+     *  - connector-state
+     */
     @ParallelNamespaceTest
     @Tag(SANITY)
     @Tag(SMOKE)
     @Tag(INTERNAL_CLIENTS_USED)
-    void testKafkaConnectAndPausedConnectorWithFileSinkPlugin(ExtensionContext extensionContext) {
-        TestStorage testStorage = new TestStorage(extensionContext);
+    void testKafkaConnectAndConnectorStateWithFileSinkPlugin(ExtensionContext extensionContext) {
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3).build());
         resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(testStorage).build());
@@ -189,12 +209,11 @@ class ConnectST extends AbstractST {
             .endSpec()
             .build());
 
-        final String kafkaConnectPodName = kubeClient(testStorage.getNamespaceName()).listPodsByPrefixInName(KafkaConnectResources.deploymentName(testStorage.getClusterName())).get(0).getMetadata().getName();
+        final String connectPodName = kubeClient(testStorage.getNamespaceName()).listPodsByPrefixInName(KafkaConnectResources.deploymentName(testStorage.getClusterName())).get(0).getMetadata().getName();
 
-        KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(testStorage.getNamespaceName(), kafkaConnectPodName);
+        KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(testStorage.getNamespaceName(), connectPodName);
 
-        LOGGER.info("Creating KafkaConnector with 'pause: true'");
-
+        LOGGER.info("Creating KafkaConnector: {}/{} without 'spec.pause' or 'spec.state' specified", testStorage.getNamespaceName(), testStorage.getClusterName());
         resourceManager.createResourceWithWait(extensionContext, KafkaConnectorTemplates.kafkaConnector(testStorage.getClusterName())
             .editSpec()
                 .withClassName("org.apache.kafka.connect.file.FileStreamSinkConnector")
@@ -205,42 +224,21 @@ class ConnectST extends AbstractST {
             .endSpec()
             .build());
 
-        KafkaClients kafkaClients = new KafkaClientsBuilder()
-            .withTopicName(testStorage.getTopicName())
-            .withMessageCount(testStorage.getMessageCount())
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
-            .withProducerName(testStorage.getProducerName())
-            .withConsumerName(testStorage.getConsumerName())
-            .withNamespaceName(testStorage.getNamespaceName())
-            .build();
+        // TODO in future releases can be removed completely as 'spec.pause' property is becoming deprecated.
+        LOGGER.info("Verify pausing and running KafkaConnector, by setting 'spec.pause' property to 'true' and 'false'");
+        verifySinkConnectorByBlockAndUnblock(testStorage, connectPodName,
+            connector -> connector.getSpec().setPause(true),
+            connector -> connector.getSpec().setPause(false));
 
-        resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
-        ClientUtils.waitForClientsSuccess(testStorage);
+        LOGGER.info("Verify stopping and running KafkaConnector, by setting 'spec.state' property to '' and false");
+        verifySinkConnectorByBlockAndUnblock(testStorage, connectPodName,
+            connector -> connector.getSpec().setState(ConnectorState.STOPPED),
+            connector -> connector.getSpec().setState(ConnectorState.RUNNING));
 
-        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), kafkaConnectPodName, TestConstants.DEFAULT_SINK_FILE_PATH, "99");
-
-        LOGGER.info("Pausing KafkaConnector: {}", testStorage.getClusterName());
-        KafkaConnectorResource.replaceKafkaConnectorResourceInSpecificNamespace(testStorage.getClusterName(),
-            kafkaConnector -> kafkaConnector.getSpec().setPause(true), testStorage.getNamespaceName());
-
-        KafkaConnectorUtils.waitForConnectorReady(testStorage.getNamespaceName(), testStorage.getClusterName());
-
-        LOGGER.info("Clearing FileSink file to check if KafkaConnector will be really paused");
-        KafkaConnectUtils.clearFileSinkFile(testStorage.getNamespaceName(), kafkaConnectPodName, TestConstants.DEFAULT_SINK_FILE_PATH);
-
-        resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
-        ClientUtils.waitForClientsSuccess(testStorage);
-
-        LOGGER.info("Because KafkaConnector is paused, no messages should appear to FileSink file");
-        assertThrows(Exception.class, () -> KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), kafkaConnectPodName, TestConstants.DEFAULT_SINK_FILE_PATH, "99"));
-
-        LOGGER.info("Unpausing KafkaConnector, messages should again appear to FileSink file");
-        KafkaConnectorResource.replaceKafkaConnectorResourceInSpecificNamespace(testStorage.getClusterName(),
-            kafkaConnector -> kafkaConnector.getSpec().setPause(false), testStorage.getNamespaceName());
-
-        KafkaConnectorUtils.waitForConnectorReady(testStorage.getNamespaceName(), testStorage.getClusterName());
-
-        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), kafkaConnectPodName, TestConstants.DEFAULT_SINK_FILE_PATH, "99");
+        LOGGER.info("Verify pausing and running KafkaConnector, by setting 'spec.state' property to 'paused' and 'running'");
+        verifySinkConnectorByBlockAndUnblock(testStorage, connectPodName,
+            connector -> connector.getSpec().setState(ConnectorState.PAUSED),
+            connector -> connector.getSpec().setState(ConnectorState.RUNNING));
     }
 
     @ParallelNamespaceTest
@@ -1414,6 +1412,50 @@ class ConnectST extends AbstractST {
 
         final String kafkaConnectPodNameAfterRU = kubeClient(namespaceName).listPodsByPrefixInName(KafkaConnectResources.deploymentName(clusterName)).get(0).getMetadata().getName();
         KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(namespaceName, kafkaConnectPodNameAfterRU);
+    }
+
+    /**
+     * This method tests the (FileSink) connector's ability to pause/stop and resume correctly.
+     *
+     * Firstly the connector is blocked (stopped or paused) using the provided 'blockEditor' consumer.
+     * Then, the existing messages in the FileSink file are cleared, so in next step any new message present would indicate connector running again.
+     * New messages are produced to the topic, but due to the connector being blocked, these messages should not appear in the FileSink file.
+     * Finally, unblocking the connector using the 'unblockEditor' consumer, and the test checks if new messages appear in the FileSink file.
+     *
+     * @param testStorage         contains configuration.
+     * @param kafkaConnectPodName The name of the Kafka Connect Pod.
+     * @param connectorBlockEditor         A consumer function to apply the block specification on the Kafka Connector.
+     * @param connectorUnblockEditor       A consumer function to apply the unblock specification on the Kafka Connector.
+     *
+     * @throws Exception if messages produced during FileSink KafkaConnector being stopped/paused do not appear in destination file in reasonable time.
+     */
+    void verifySinkConnectorByBlockAndUnblock(TestStorage testStorage, String kafkaConnectPodName, Consumer<KafkaConnector> connectorBlockEditor, Consumer<KafkaConnector> connectorUnblockEditor) {
+        LOGGER.info("Blocking KafkaConnector: {}", testStorage.getClusterName());
+        KafkaConnectorResource.replaceKafkaConnectorResourceInSpecificNamespace(testStorage.getClusterName(), connectorBlockEditor, testStorage.getNamespaceName());
+
+        LOGGER.info("Clearing FileSink file to check if KafkaConnector will be really paused/stopped");
+        KafkaConnectUtils.clearFileSinkFile(testStorage.getNamespaceName(), kafkaConnectPodName, TestConstants.DEFAULT_SINK_FILE_PATH);
+
+        // messages need to be produced for each run (although there are more messages in topic eventually, sink will not copy messages it copied previously (before clearing them)
+        LOGGER.info("Producing new messages which are to be watched KafkaConnector once it is resumed");
+        final KafkaClients kafkaClients = new KafkaClientsBuilder()
+            .withTopicName(testStorage.getTopicName())
+            .withMessageCount(testStorage.getMessageCount())
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .build();
+        resourceManager.createResourceWithWait(testStorage.getExtensionContext(), kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
+        ClientUtils.waitForClientsSuccess(testStorage);
+
+        LOGGER.info("Because KafkaConnector is blocked, no messages should appear to FileSink file");
+        assertThrows(Exception.class, () -> KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), kafkaConnectPodName, TestConstants.DEFAULT_SINK_FILE_PATH, "99"));
+
+        LOGGER.info("Unblocking KafkaConnector, newly produced messages should again appear to FileSink file");
+        KafkaConnectorResource.replaceKafkaConnectorResourceInSpecificNamespace(testStorage.getClusterName(), connectorUnblockEditor, testStorage.getNamespaceName());
+        KafkaConnectorUtils.waitForConnectorReady(testStorage.getNamespaceName(), testStorage.getClusterName());
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), kafkaConnectPodName, TestConstants.DEFAULT_SINK_FILE_PATH, "99");
     }
 
     @BeforeAll

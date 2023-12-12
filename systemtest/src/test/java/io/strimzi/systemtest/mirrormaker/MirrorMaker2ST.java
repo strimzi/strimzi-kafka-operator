@@ -6,6 +6,7 @@ package io.strimzi.systemtest.mirrormaker;
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.strimzi.api.kafka.model.CertSecretSource;
+import io.strimzi.api.kafka.model.ConnectorState;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2Resources;
 import io.strimzi.api.kafka.model.KafkaResources;
@@ -833,15 +834,24 @@ class MirrorMaker2ST extends AbstractST {
     }
 
     @ParallelNamespaceTest
-    void testKafkaMirrorMaker2ReflectsConnectorsState(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext, Environment.TEST_SUITE_NAMESPACE);
+    void testKafkaMirrorMaker2ConnectorsState(ExtensionContext extensionContext) {
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
-        String errorMessage = "One or more connectors are in FAILED state";
+        final String errorMessage = "One or more connectors are in FAILED state";
 
+        final KafkaClients sourceKafkaClients = ClientUtils.getDefaultClientBuilder(testStorage)
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getSourceClusterName()))
+            .withTopicName(testStorage.getTopicName())
+            .build();
+        final KafkaClients targetKafkaCLients = ClientUtils.getDefaultClientBuilder(testStorage)
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getTargetClusterName()))
+            .withTopicName(testStorage.getMirroredSourceTopicName())
+            .build();
+
+        LOGGER.info("Deploy Kafka clusters and KafkaMirrorMaker2: {}/{} with wrong bootstrap service name configuration", testStorage.getNamespaceName(), testStorage.getClusterName());
         resourceManager.createResourceWithWait(extensionContext,
-            KafkaTemplates.kafkaEphemeral(testStorage.getSourceClusterName(), 1, 1).build(),
-            KafkaTemplates.kafkaEphemeral(testStorage.getTargetClusterName(), 1, 1).build());
-
+            KafkaTemplates.kafkaEphemeral(testStorage.getSourceClusterName(), 1, 3).build(),
+            KafkaTemplates.kafkaEphemeral(testStorage.getTargetClusterName(), 1, 3).build());
         resourceManager.createResourceWithoutWait(extensionContext,
             KafkaMirrorMaker2Templates.kafkaMirrorMaker2(testStorage, 1, false)
                 .editSpec()
@@ -851,9 +861,9 @@ class MirrorMaker2ST extends AbstractST {
                     .endCluster()
                 .endSpec()
                 .build());
-
         KafkaMirrorMaker2Utils.waitForKafkaMirrorMaker2StatusMessage(testStorage.getNamespaceName(), testStorage.getClusterName(), errorMessage);
 
+        LOGGER.info("Modify originally wrong bootstrap service name configuration in KafkaMirrorMaker2: {}/{}", testStorage.getNamespaceName(), testStorage.getClusterName());
         KafkaMirrorMaker2Resource.replaceKafkaMirrorMaker2ResourceInSpecificNamespace(testStorage.getClusterName(), mm2 ->
             mm2.getSpec().getClusters().stream().filter(mm2ClusterSpec -> mm2ClusterSpec.getAlias().equals(testStorage.getSourceClusterName()))
                 .findFirst().get().setBootstrapServers(KafkaUtils.namespacedPlainBootstrapAddress(testStorage.getSourceClusterName(), testStorage.getNamespaceName())), testStorage.getNamespaceName());
@@ -862,6 +872,29 @@ class MirrorMaker2ST extends AbstractST {
 
         KafkaMirrorMaker2Status kmm2Status = KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus();
         assertFalse(kmm2Status.getConditions().stream().anyMatch(condition -> condition.getMessage() != null && condition.getMessage().contains(errorMessage)));
+
+        LOGGER.info("Pausing KafkaMirrorMaker2: {}/{} source connector", testStorage.getNamespaceName(), testStorage.getClusterName());
+        KafkaMirrorMaker2Resource.replaceKafkaMirrorMaker2ResourceInSpecificNamespace(testStorage.getClusterName(), mm2 ->
+            mm2.getSpec().getMirrors().get(0).getSourceConnector().setState(ConnectorState.PAUSED), testStorage.getNamespaceName()
+        );
+
+        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(testStorage.getSourceClusterName(), testStorage.getTopicName(), 3, testStorage.getNamespaceName()).build());
+
+        LOGGER.info("Success to produce and consume messages on source Kafka Cluster: {}/{} while connector is stopped", testStorage.getNamespaceName(), testStorage.getSourceClusterName());
+        resourceManager.createResourceWithWait(extensionContext, sourceKafkaClients.producerStrimzi(), sourceKafkaClients.consumerStrimzi());
+        ClientUtils.waitForClientsSuccess(testStorage);
+        LOGGER.info("Fail to consume messages on target Kafka Cluster: {}/{} while connector is stopped", testStorage.getNamespaceName(), testStorage.getSourceClusterName());
+        resourceManager.createResourceWithWait(extensionContext, targetKafkaCLients.consumerStrimzi());
+        ClientUtils.waitForConsumerClientTimeout(testStorage);
+
+        LOGGER.info("Re-running KafkaMirrorMaker2: {}/{} source connector", testStorage.getNamespaceName(), testStorage.getClusterName());
+        KafkaMirrorMaker2Resource.replaceKafkaMirrorMaker2ResourceInSpecificNamespace(testStorage.getClusterName(), mm2 ->
+            mm2.getSpec().getMirrors().get(0).getSourceConnector().setState(ConnectorState.RUNNING), testStorage.getNamespaceName()
+        );
+
+        LOGGER.info("Consumer in target cluster and Topic should receive {} messages", testStorage.getMessageCount());
+        resourceManager.createResourceWithWait(extensionContext, targetKafkaCLients.consumerStrimzi());
+        ClientUtils.waitForConsumerClientSuccess(testStorage);
     }
 
     /**
