@@ -132,4 +132,9 @@ public class KafkaNodePoolResource implements ResourceType<KafkaNodePool> {
             .withMatchLabels(matchLabels)
             .build();
     }
+
+    public static String getStrimziPodSetName(String kafkaClusterName, String kafkaNodePoolName) {
+        return kafkaClusterName + "-" + kafkaNodePoolName;
+    }
+
 }

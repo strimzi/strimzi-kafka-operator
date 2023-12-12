@@ -242,6 +242,7 @@ public class ClientUtils {
             .withNamespaceName(testStorage.getNamespaceName())
             .withMessageCount(testStorage.getMessageCount())
             .withUsername(testStorage.getUsername())
+            .withTopicName(testStorage.getTopicName())
             .withProducerName(testStorage.getProducerName())
             .withConsumerName(testStorage.getConsumerName());
     }
