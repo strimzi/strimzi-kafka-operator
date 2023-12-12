@@ -21,7 +21,6 @@ import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceType;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PersistentVolumeClaimUtils;
-import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -71,12 +70,7 @@ public class KafkaNodePoolResource implements ResourceType<KafkaNodePool> {
 
     @Override
     public boolean waitForReadiness(KafkaNodePool resource) {
-        final LabelSelector kafkaNodePoolSelector = KafkaNodePoolResource.getLabelSelector(resource.getMetadata().getName(), resource.getSpec().getRoles().get(0));
-
-        // here we wait for readiness of the Kafka pods related to KafkaNodePools
-        PodUtils.waitForPodsReady(resource.getMetadata().getNamespace(), kafkaNodePoolSelector, resource.getSpec().getReplicas(), true);
-
-        return true;
+        return resource != null;
     }
 
     public static MixedOperation<KafkaNodePool, KafkaNodePoolList, Resource<KafkaNodePool>> kafkaNodePoolClient() {

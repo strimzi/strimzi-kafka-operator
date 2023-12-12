@@ -453,10 +453,11 @@ public class KafkaRollerST extends AbstractST {
 
         final Kafka kafka = KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 1, 1).build();
         final KafkaNodePool mixedPool = KafkaNodePoolTemplates.kafkaBasedNodePoolWithDualRole(mixedPoolName, kafka, mixedPoolReplicas).build();
-
-        resourceManager.createResourceWithWait(extensionContext, mixedPool, kafka);
-
         final LabelSelector mixedPoolSelector = KafkaNodePoolResource.getLabelSelector(testStorage.getClusterName(), mixedPoolName, ProcessRoles.CONTROLLER);
+
+        resourceManager.createResourceWithoutWait(extensionContext, mixedPool, kafka);
+
+        PodUtils.waitForPodsReady(testStorage.getNamespaceName(), mixedPoolSelector, mixedPoolReplicas, true);
 
         Map<String, String> mixedPoolPodsSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), mixedPoolSelector);
 
