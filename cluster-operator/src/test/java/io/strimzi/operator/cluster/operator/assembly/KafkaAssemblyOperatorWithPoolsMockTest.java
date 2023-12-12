@@ -501,10 +501,14 @@ public class KafkaAssemblyOperatorWithPoolsMockTest {
                 KafkaNodePool poolA = Crds.kafkaNodePoolOperation(client).inNamespace(NAMESPACE).withName("pool-a").get();
                 assertThat(poolA.getStatus().getReplicas(), is(2));
                 assertThat(poolA.getStatus().getNodeIds(), is(List.of(0, 1)));
+                assertThat(poolA.getStatus().getRoles().size(), is(1));
+                assertThat(poolA.getStatus().getRoles(), hasItems(ProcessRoles.BROKER));
 
                 KafkaNodePool poolB = Crds.kafkaNodePoolOperation(client).inNamespace(NAMESPACE).withName("pool-b").get();
                 assertThat(poolB.getStatus().getReplicas(), is(2));
                 assertThat(poolB.getStatus().getNodeIds(), is(List.of(3, 4)));
+                assertThat(poolB.getStatus().getRoles().size(), is(1));
+                assertThat(poolB.getStatus().getRoles(), hasItems(ProcessRoles.BROKER));
 
                 async.flag();
             })));
@@ -543,10 +547,14 @@ public class KafkaAssemblyOperatorWithPoolsMockTest {
                 KafkaNodePool poolA = Crds.kafkaNodePoolOperation(client).inNamespace(NAMESPACE).withName("pool-a").get();
                 assertThat(poolA.getStatus().getReplicas(), is(4));
                 assertThat(poolA.getStatus().getNodeIds(), is(List.of(0, 1, 2, 5)));
+                assertThat(poolA.getStatus().getRoles().size(), is(1));
+                assertThat(poolA.getStatus().getRoles(), hasItems(ProcessRoles.BROKER));
 
                 KafkaNodePool poolB = Crds.kafkaNodePoolOperation(client).inNamespace(NAMESPACE).withName("pool-b").get();
                 assertThat(poolB.getStatus().getReplicas(), is(2));
                 assertThat(poolB.getStatus().getNodeIds(), is(List.of(3, 4)));
+                assertThat(poolB.getStatus().getRoles().size(), is(1));
+                assertThat(poolB.getStatus().getRoles(), hasItems(ProcessRoles.BROKER));
 
                 async.flag();
             })));
@@ -601,14 +609,20 @@ public class KafkaAssemblyOperatorWithPoolsMockTest {
                 KafkaNodePool poolA = Crds.kafkaNodePoolOperation(client).inNamespace(NAMESPACE).withName("pool-a").get();
                 assertThat(poolA.getStatus().getReplicas(), is(3));
                 assertThat(poolA.getStatus().getNodeIds(), is(List.of(0, 1, 2)));
+                assertThat(poolA.getStatus().getRoles().size(), is(1));
+                assertThat(poolA.getStatus().getRoles(), hasItems(ProcessRoles.BROKER));
 
                 KafkaNodePool poolB = Crds.kafkaNodePoolOperation(client).inNamespace(NAMESPACE).withName("pool-b").get();
                 assertThat(poolB.getStatus().getReplicas(), is(2));
                 assertThat(poolB.getStatus().getNodeIds(), is(List.of(3, 4)));
+                assertThat(poolB.getStatus().getRoles().size(), is(1));
+                assertThat(poolB.getStatus().getRoles(), hasItems(ProcessRoles.BROKER));
 
                 KafkaNodePool poolC = Crds.kafkaNodePoolOperation(client).inNamespace(NAMESPACE).withName("pool-c").get();
                 assertThat(poolC.getStatus().getReplicas(), is(2));
                 assertThat(poolC.getStatus().getNodeIds(), is(List.of(5, 6)));
+                assertThat(poolC.getStatus().getRoles().size(), is(1));
+                assertThat(poolC.getStatus().getRoles(), hasItems(ProcessRoles.BROKER));
 
                 async.flag();
             })));
@@ -658,14 +672,20 @@ public class KafkaAssemblyOperatorWithPoolsMockTest {
                 KafkaNodePool poolA = Crds.kafkaNodePoolOperation(client).inNamespace(NAMESPACE).withName("pool-a").get();
                 assertThat(poolA.getStatus().getReplicas(), is(3));
                 assertThat(poolA.getStatus().getNodeIds(), is(List.of(0, 1, 2)));
+                assertThat(poolA.getStatus().getRoles().size(), is(1));
+                assertThat(poolA.getStatus().getRoles(), hasItems(ProcessRoles.BROKER));
 
                 KafkaNodePool poolB = Crds.kafkaNodePoolOperation(client).inNamespace(NAMESPACE).withName("pool-b").get();
                 assertThat(poolB.getStatus().getReplicas(), is(2));
                 assertThat(poolB.getStatus().getNodeIds(), is(List.of(3, 4)));
+                assertThat(poolB.getStatus().getRoles().size(), is(1));
+                assertThat(poolB.getStatus().getRoles(), hasItems(ProcessRoles.BROKER));
 
                 KafkaNodePool poolC = Crds.kafkaNodePoolOperation(client).inNamespace(NAMESPACE).withName("pool-c").get();
                 assertThat(poolC.getStatus().getReplicas(), is(2));
                 assertThat(poolC.getStatus().getNodeIds(), is(List.of(5, 6)));
+                assertThat(poolC.getStatus().getRoles().size(), is(1));
+                assertThat(poolC.getStatus().getRoles(), hasItems(ProcessRoles.BROKER));
 
                 // Remove pool-b
                 Crds.kafkaNodePoolOperation(client).inNamespace(NAMESPACE).withName("pool-b").withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();

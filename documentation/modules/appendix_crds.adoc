@@ -3499,6 +3499,8 @@ Used in: xref:type-KafkaNodePool-{context}[`KafkaNodePool`]
 |integer array
 |clusterId           1.2+<.<a|Kafka cluster ID.
 |string
+|roles               1.2+<.<a|The roles currently assigned to this pool.
+|string (one or more of [controller, broker]) array
 |replicas            1.2+<.<a|The current number of pods being used to provide this resource.
 |integer
 |labelSelector       1.2+<.<a|Label selector for pods providing this resource.

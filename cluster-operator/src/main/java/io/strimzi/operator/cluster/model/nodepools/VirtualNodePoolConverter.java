@@ -57,6 +57,7 @@ public class VirtualNodePoolConverter {
                 .endSpec()
                 .withNewStatus()
                     .withNodeIds(nodeIds)
+                    .withRoles(ProcessRoles.BROKER)
                 .endStatus()
                 .build();
     }

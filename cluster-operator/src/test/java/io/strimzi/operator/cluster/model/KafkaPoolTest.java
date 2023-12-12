@@ -123,6 +123,8 @@ public class KafkaPoolTest {
         assertThat(status.getLabelSelector(), is("strimzi.io/cluster=my-cluster,strimzi.io/name=my-cluster-kafka,strimzi.io/kind=Kafka,strimzi.io/pool-name=pool"));
         assertThat(status.getNodeIds().size(), is(3));
         assertThat(status.getNodeIds(), hasItems(10, 11, 13));
+        assertThat(status.getRoles().size(), is(1));
+        assertThat(status.getRoles(), hasItems(ProcessRoles.BROKER));
     }
 
     @Test

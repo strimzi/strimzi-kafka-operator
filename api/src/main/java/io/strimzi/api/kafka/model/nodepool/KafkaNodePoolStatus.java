@@ -23,7 +23,7 @@ import java.util.List;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "conditions", "observedGeneration", "nodeIds", "clusterId", "replicas", "labelSelector" })
+@JsonPropertyOrder({ "conditions", "observedGeneration", "nodeIds", "clusterId", "roles", "replicas", "labelSelector" })
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaNodePoolStatus extends Status {
@@ -31,6 +31,7 @@ public class KafkaNodePoolStatus extends Status {
 
     private List<Integer> nodeIds;
     private String clusterId;
+    private List<ProcessRoles> roles;
 
     // Replicas and label selector are required for scale subresource
     private int replicas;
@@ -52,6 +53,15 @@ public class KafkaNodePoolStatus extends Status {
 
     public void setClusterId(String clusterId) {
         this.clusterId = clusterId;
+    }
+
+    @Description("The roles currently assigned to this pool.")
+    public List<ProcessRoles> getRoles() {
+        return roles;
+    }
+
+    public void setRoles(List<ProcessRoles> roles) {
+        this.roles = roles;
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
