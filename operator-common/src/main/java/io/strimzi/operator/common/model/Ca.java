@@ -37,6 +37,7 @@ import java.time.format.SignStyle;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -776,6 +777,13 @@ public abstract class Ca {
             return Annotations.intAnnotation(caCertSecret, ANNO_STRIMZI_IO_CA_CERT_GENERATION, INIT_GENERATION);
         }
         return INIT_GENERATION;
+    }
+
+    /**
+     * @return the generation of the current CA certificate as an annotation
+     */
+    public Map<String, String> caCertGenerationFullAnnotation() {
+        return Collections.singletonMap(caCertGenerationAnnotation(), String.valueOf(certGeneration()));
     }
 
     /**

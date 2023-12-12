@@ -120,7 +120,6 @@ public class ModelUtils {
      */
     public static Secret buildSecret(Reconciliation reconciliation, ClusterCa clusterCa, Secret secret, String namespace, String secretName,
                                      String commonName, String keyCertName, Labels labels, OwnerReference ownerReference, boolean isMaintenanceTimeWindowsSatisfied) {
-        Map<String, String> data = new HashMap<>(4);
         CertAndKey certAndKey = null;
         boolean shouldBeRegenerated = false;
         List<String> reasons = new ArrayList<>(2);
@@ -171,15 +170,19 @@ public class ModelUtils {
             }
         }
 
-        if (certAndKey != null) {
+        return buildSecret(namespace, secretName, Collections.singletonMap(keyCertName, certAndKey), labels, ownerReference, clusterCa.caCertGenerationFullAnnotation(), emptyMap());
+    }
+
+    public static Secret buildSecret(String namespace, String secretName, Map<String, CertAndKey> certificates,
+                                     Labels labels, OwnerReference ownerReference, Map<String, String> customAnnotations, Map<String, String> customLabels) {
+        Map<String, String> data = new HashMap<>(certificates.size() * 4);
+        certificates.forEach((keyCertName, certAndKey) -> {;
             data.put(keyCertName + ".key", certAndKey.keyAsBase64String());
             data.put(keyCertName + ".crt", certAndKey.certAsBase64String());
             data.put(keyCertName + ".p12", certAndKey.keyStoreAsBase64String());
             data.put(keyCertName + ".password", certAndKey.storePasswordAsBase64String());
-        }
-
-        return createSecret(secretName, namespace, labels, ownerReference, data,
-                Collections.singletonMap(clusterCa.caCertGenerationAnnotation(), String.valueOf(clusterCa.certGeneration())), emptyMap());
+        });
+        return createSecret(secretName, namespace, labels, ownerReference, data, customAnnotations, customLabels);
     }
 
     /**
