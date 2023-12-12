@@ -1287,15 +1287,6 @@
                                 <version>1.1.1</version>
                             </dependency>
                         </dependencies>
-                        <executions>
-                            <execution>
-                                <id>validate</id>
-                                <phase>validate</phase>
-                                <goals>
-                                    <goal>run</goal>
-                                </goals>
-                            </execution>
-                        </executions>
                     </plugin>
                 </plugins>
             </build>
