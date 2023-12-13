@@ -24,7 +24,7 @@ Use custom resources to configure and create instances of the following componen
 You can also use custom resource configuration to manage your instances or modify your deployment to introduce additional features.
 This might include configuration that supports the following:
 
-* (Preview) Specifying node pools
+* Specifying node pools
 * Securing client access to Kafka brokers
 * Accessing Kafka brokers from outside the cluster
 * Creating topics

@@ -12,27 +12,24 @@ You can use these files to deploy the Topic Operator and User Operator at the sa
 
 After you have deployed the Cluster Operator, use a `Kafka` resource to deploy the following components:
 
-* xref:deploying-kafka-cluster-{context}[Kafka cluster] or (preview) xref:deploying-kafka-node-pools-{context}[Kafka cluster with node pools]
+* A Kafka cluster that uses KRaft or ZooKeeper:
+** xref:deploying-kafka-node-pools-{context}[KRaft-based or ZooKeeper-based Kafka cluster with node pools]
+** xref:deploying-kafka-cluster-{context}[ZooKeeper-based Kafka cluster without node pools]
 * xref:deploying-the-topic-operator-using-the-cluster-operator-{context}[Topic Operator]
 * xref:deploying-the-user-operator-using-the-cluster-operator-{context}[User Operator]
 
-When installing Kafka, Strimzi also installs a ZooKeeper cluster and adds the necessary configuration to connect Kafka with ZooKeeper.
-
-If you are trying the preview of the node pools feature, you can deploy a Kafka cluster with one or more node pools.
 Node pools provide configuration for a set of Kafka nodes.
-By using node pools, nodes can have different configuration within the same Kafka cluster.
-
-Node pools are not enabled by default, so you must xref:ref-operator-kafka-node-pools-feature-gate-{context}[enable the `KafkaNodePools` feature gate] before using them. 
+By using node pools, nodes can have different configuration within the same Kafka cluster. 
 
 If you haven't deployed a Kafka cluster as a `Kafka` resource, you can't use the Cluster Operator to manage it.
 This applies, for example, to a Kafka cluster running outside of Kubernetes.
 However, you can use the Topic Operator and User Operator with a Kafka cluster that is *not managed* by Strimzi, by xref:deploy-standalone-operators_{context}[deploying them as standalone components].
 You can also deploy and use other Kafka components with a Kafka cluster not managed by Strimzi. 
 
-//Deploy Kafka cluster with storage option
-include::../../modules/deploying/proc-deploy-kafka-cluster.adoc[leveloffset=+1]
-//Deploy Kafka node pools
+//Deploy Kafka w/ node pools
 include::../../modules/deploying/proc-deploy-kafka-node-pools.adoc[leveloffset=+1]
+//Deploy ZooKeeper-based Kafka cluster
+include::../../modules/deploying/proc-deploy-kafka-cluster.adoc[leveloffset=+1]
 //Include Topic Operator in deployment
 include::../../modules/deploying/proc-deploy-topic-operator-with-cluster-operator.adoc[leveloffset=+1]
 //Include User Operator in deployment
