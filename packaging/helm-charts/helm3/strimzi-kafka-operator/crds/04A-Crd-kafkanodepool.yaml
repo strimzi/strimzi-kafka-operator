@@ -921,6 +921,14 @@ spec:
               clusterId:
                 type: string
                 description: Kafka cluster ID.
+              roles:
+                type: array
+                items:
+                  type: string
+                  enum:
+                  - controller
+                  - broker
+                description: The roles currently assigned to this pool.
               replicas:
                 type: integer
                 description: The current number of pods being used to provide this resource.

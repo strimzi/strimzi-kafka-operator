@@ -182,6 +182,8 @@ public class VirtualNodePoolConverterTest {
 
         // Status
         assertThat(pool.getStatus().getNodeIds(), is(nullValue()));
+        assertThat(pool.getStatus().getRoles().size(), is(1));
+        assertThat(pool.getStatus().getRoles(), hasItems(ProcessRoles.BROKER));
     }
 
     @Test
@@ -206,6 +208,8 @@ public class VirtualNodePoolConverterTest {
         // Status
         assertThat(pool.getStatus().getNodeIds().size(), is(3));
         assertThat(pool.getStatus().getNodeIds(), hasItems(0, 1, 2));
+        assertThat(pool.getStatus().getRoles().size(), is(1));
+        assertThat(pool.getStatus().getRoles(), hasItems(ProcessRoles.BROKER));
     }
 
     @Test
@@ -267,5 +271,7 @@ public class VirtualNodePoolConverterTest {
         // Status
         assertThat(pool.getStatus().getNodeIds().size(), is(3));
         assertThat(pool.getStatus().getNodeIds(), hasItems(0, 1, 2));
+        assertThat(pool.getStatus().getRoles().size(), is(1));
+        assertThat(pool.getStatus().getRoles(), hasItems(ProcessRoles.BROKER));
     }
 }

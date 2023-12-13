@@ -158,10 +158,14 @@ public class KafkaClusterWithPoolsTest {
         assertThat(statuses.get("pool-a").getLabelSelector(), is("strimzi.io/cluster=my-cluster,strimzi.io/name=my-cluster-kafka,strimzi.io/kind=Kafka,strimzi.io/pool-name=pool-a"));
         assertThat(statuses.get("pool-a").getNodeIds().size(), is(3));
         assertThat(statuses.get("pool-a").getNodeIds(), hasItems(0, 1, 2));
+        assertThat(statuses.get("pool-a").getRoles().size(), is(1));
+        assertThat(statuses.get("pool-a").getRoles(), hasItems(ProcessRoles.BROKER));
         assertThat(statuses.get("pool-b").getReplicas(), is(2));
         assertThat(statuses.get("pool-b").getLabelSelector(), is("strimzi.io/cluster=my-cluster,strimzi.io/name=my-cluster-kafka,strimzi.io/kind=Kafka,strimzi.io/pool-name=pool-b"));
         assertThat(statuses.get("pool-b").getNodeIds().size(), is(2));
         assertThat(statuses.get("pool-b").getNodeIds(), hasItems(10, 11));
+        assertThat(statuses.get("pool-b").getRoles().size(), is(1));
+        assertThat(statuses.get("pool-b").getRoles(), hasItems(ProcessRoles.BROKER));
     }
 
     @Test

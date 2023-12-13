@@ -302,6 +302,7 @@ public class KafkaPool extends AbstractModel {
         return new KafkaNodePoolStatusBuilder()
                 .withClusterId(clusterId)
                 .withNodeIds(new ArrayList<>(idAssignment.desired()))
+                .withRoles(processRoles.stream().sorted().toList())
                 .withReplicas(idAssignment.desired().size())
                 .withLabelSelector(getSelectorLabels().toSelectorString())
                 .withConditions(warningConditions)

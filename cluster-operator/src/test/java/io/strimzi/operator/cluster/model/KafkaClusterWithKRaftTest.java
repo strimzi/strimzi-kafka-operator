@@ -176,10 +176,14 @@ public class KafkaClusterWithKRaftTest {
         assertThat(statuses.get("controllers").getLabelSelector(), is("strimzi.io/cluster=my-cluster,strimzi.io/name=my-cluster-kafka,strimzi.io/kind=Kafka,strimzi.io/pool-name=controllers"));
         assertThat(statuses.get("controllers").getNodeIds().size(), is(3));
         assertThat(statuses.get("controllers").getNodeIds(), hasItems(0, 1, 2));
+        assertThat(statuses.get("controllers").getRoles().size(), is(1));
+        assertThat(statuses.get("controllers").getRoles(), hasItems(ProcessRoles.CONTROLLER));
         assertThat(statuses.get("brokers").getReplicas(), is(3));
         assertThat(statuses.get("brokers").getLabelSelector(), is("strimzi.io/cluster=my-cluster,strimzi.io/name=my-cluster-kafka,strimzi.io/kind=Kafka,strimzi.io/pool-name=brokers"));
         assertThat(statuses.get("brokers").getNodeIds().size(), is(3));
         assertThat(statuses.get("brokers").getNodeIds(), hasItems(1000, 1001, 1002));
+        assertThat(statuses.get("brokers").getRoles().size(), is(1));
+        assertThat(statuses.get("brokers").getRoles(), hasItems(ProcessRoles.BROKER));
     }
 
     @Test
