@@ -9,8 +9,6 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.cluster.model.ClusterCa;
-import io.strimzi.operator.cluster.model.ModelUtils;
-import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.vertx.junit5.VertxExtension;
 import org.junit.jupiter.api.Test;
@@ -40,7 +38,7 @@ public class CertificateRenewalTest {
         Labels labels = Labels.forStrimziCluster("my-cluster");
         OwnerReference ownerReference = new OwnerReference();
 
-        Secret newSecret = ModelUtils.buildSecret(Reconciliation.DUMMY_RECONCILIATION, clusterCaMock, null, namespace, secretName, commonName,
+        Secret newSecret = clusterCaMock.buildTrustedCertificateSecret(null, namespace, secretName, commonName,
                 keyCertName, labels, ownerReference, true);
 
         assertThat(newSecret.getData(), hasEntry("deployment.crt", newCertAndKey.certAsBase64String()));
@@ -73,7 +71,7 @@ public class CertificateRenewalTest {
         Labels labels = Labels.forStrimziCluster("my-cluster");
         OwnerReference ownerReference = new OwnerReference();
 
-        Secret newSecret = ModelUtils.buildSecret(Reconciliation.DUMMY_RECONCILIATION, clusterCaMock, initialSecret, namespace, secretName, commonName,
+        Secret newSecret = clusterCaMock.buildTrustedCertificateSecret(initialSecret, namespace, secretName, commonName,
                 keyCertName, labels, ownerReference, true);
 
         assertThat(newSecret.getData(), hasEntry("deployment.crt", newCertAndKey.certAsBase64String()));
@@ -106,7 +104,7 @@ public class CertificateRenewalTest {
         Labels labels = Labels.forStrimziCluster("my-cluster");
         OwnerReference ownerReference = new OwnerReference();
 
-        Secret newSecret = ModelUtils.buildSecret(Reconciliation.DUMMY_RECONCILIATION, clusterCaMock, initialSecret, namespace, secretName, commonName,
+        Secret newSecret = clusterCaMock.buildTrustedCertificateSecret(initialSecret, namespace, secretName, commonName,
                 keyCertName, labels, ownerReference, true);
 
         assertThat(newSecret.getData(), hasEntry("deployment.crt", newCertAndKey.certAsBase64String()));
@@ -139,7 +137,7 @@ public class CertificateRenewalTest {
         Labels labels = Labels.forStrimziCluster("my-cluster");
         OwnerReference ownerReference = new OwnerReference();
 
-        Secret newSecret = ModelUtils.buildSecret(Reconciliation.DUMMY_RECONCILIATION, clusterCaMock, initialSecret, namespace, secretName, commonName,
+        Secret newSecret = clusterCaMock.buildTrustedCertificateSecret(initialSecret, namespace, secretName, commonName,
                 keyCertName, labels, ownerReference, false);
 
         assertThat(newSecret.getData(), hasEntry("deployment.crt", Base64.getEncoder().encodeToString("old-cert".getBytes())));

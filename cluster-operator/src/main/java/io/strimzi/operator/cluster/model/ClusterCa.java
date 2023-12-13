@@ -6,12 +6,14 @@ package io.strimzi.operator.cluster.model;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,6 +22,7 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.api.kafka.model.CertificateExpirationPolicy;
 import io.strimzi.api.kafka.model.CruiseControlResources;
@@ -28,10 +31,14 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.CertManager;
 import io.strimzi.certs.IpAndDnsValidation;
+import io.strimzi.certs.SecretCertProvider;
 import io.strimzi.certs.Subject;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Ca;
+
+import static java.util.Collections.emptyMap;
 
 /**
  * Represents the Cluster CA
@@ -102,6 +109,10 @@ public class ClusterCa extends Ca {
     @Override
     public String toString() {
         return "cluster-ca";
+    }
+
+    private static byte[] decodeFromSecret(Secret secret, String key) {
+        return Base64.getDecoder().decode(secret.getData().get(key));
     }
 
     /**
@@ -374,6 +385,74 @@ public class ClusterCa extends Ca {
         delete(reconciliation, brokerKeyStoreFile);
 
         return certs;
+    }
+
+    /**
+     * Builds a clusterCa certificate secret for the different Strimzi components (TO, UO, KE, ...)
+     *
+     * @param secret                                Kubernetes Secret
+     * @param namespace                             Namespace
+     * @param secretName                            Name of the Kubernetes secret
+     * @param commonName                            Common Name of the certificate
+     * @param keyCertName                           Key under which the certificate will be stored in the new Secret
+     * @param labels                                Labels
+     * @param ownerReference                        Owner reference
+     * @param isMaintenanceTimeWindowsSatisfied     Flag whether we are inside a maintenance window or not
+     *
+     * @return  Newly built Secret
+     */
+    public Secret buildTrustedCertificateSecret(Secret secret, String namespace, String secretName,
+                                                String commonName, String keyCertName, Labels labels, OwnerReference ownerReference, boolean isMaintenanceTimeWindowsSatisfied) {
+        CertAndKey certAndKey = null;
+        boolean shouldBeRegenerated = false;
+        List<String> reasons = new ArrayList<>(2);
+
+        if (secret == null) {
+            reasons.add("certificate doesn't exist yet");
+            shouldBeRegenerated = true;
+        } else {
+            if (keyCreated() || certRenewed() ||
+                    (isMaintenanceTimeWindowsSatisfied && isExpiring(secret, keyCertName + ".crt")) ||
+                    hasCaCertGenerationChanged(secret)) {
+                reasons.add("certificate needs to be renewed");
+                shouldBeRegenerated = true;
+            }
+        }
+
+        if (shouldBeRegenerated) {
+            LOGGER.debugCr(reconciliation, "Certificate for pod {} need to be regenerated because: {}", keyCertName, String.join(", ", reasons));
+
+            try {
+                certAndKey = generateSignedCert(commonName, Ca.IO_STRIMZI);
+            } catch (IOException e) {
+                LOGGER.warnCr(reconciliation, "Error while generating certificates", e);
+            }
+
+            LOGGER.debugCr(reconciliation, "End generating certificates");
+        } else {
+            if (secret.getData().get(keyCertName + ".p12") != null &&
+                    !secret.getData().get(keyCertName + ".p12").isEmpty() &&
+                    secret.getData().get(keyCertName + ".password") != null &&
+                    !secret.getData().get(keyCertName + ".password").isEmpty()) {
+                certAndKey = new CertAndKey(
+                        decodeFromSecret(secret, keyCertName + ".key"),
+                        decodeFromSecret(secret, keyCertName + ".crt"),
+                        null,
+                        decodeFromSecret(secret, keyCertName + ".p12"),
+                        new String(decodeFromSecret(secret, keyCertName + ".password"), StandardCharsets.US_ASCII)
+                );
+            } else {
+                try {
+                    // coming from an older operator version, the secret exists but without keystore and password
+                    certAndKey = addKeyAndCertToKeyStore(commonName,
+                            decodeFromSecret(secret, keyCertName + ".key"),
+                            decodeFromSecret(secret, keyCertName + ".crt"));
+                } catch (IOException e) {
+                    LOGGER.errorCr(reconciliation, "Error generating the keystore for {}", keyCertName, e);
+                }
+            }
+        }
+        return ModelUtils.createSecret(secretName, namespace, labels, ownerReference, SecretCertProvider.buildSecretData(Collections.singletonMap(keyCertName, certAndKey)), caCertGenerationFullAnnotation(), emptyMap());
     }
 
     /**

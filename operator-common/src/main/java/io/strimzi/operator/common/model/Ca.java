@@ -336,6 +336,24 @@ public abstract class Ca {
         this.clock = clock;
     }
 
+    /**
+     * Extracts the CA generation from the CA
+     *
+     * @return CA generation or the initial generation if no generation is set
+     */
+    public int caCertGeneration() {
+        return Annotations.intAnnotation(caCertSecret(), ANNO_STRIMZI_IO_CA_CERT_GENERATION, INIT_GENERATION);
+    }
+
+    /**
+     * Extracts the CA key generation from the CA
+     *
+     * @return CA key generation or the initial generation if no generation is set
+     */
+    public int caKeyGeneration() {
+        return Annotations.intAnnotation(caKeySecret(), ANNO_STRIMZI_IO_CA_KEY_GENERATION, INIT_GENERATION);
+    }
+
     protected static void delete(Reconciliation reconciliation, File file) {
         if (!file.delete()) {
             LOGGER.warnCr(reconciliation, "{} cannot be deleted", file.getName());

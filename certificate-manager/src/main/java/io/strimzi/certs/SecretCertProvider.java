@@ -26,6 +26,54 @@ import static java.util.Collections.singletonList;
 public class SecretCertProvider {
 
     /**
+     * Constructs a Map containing the provided certificates to be stored in a Kubernetes Secret.
+     *
+     * @param certificates to store
+     * @return Map of certificate identifier to base64 encoded certificate or key
+     */
+    public static Map<String, String> buildSecretData(Map<String, CertAndKey> certificates) {
+        Map<String, String> data = new HashMap<>(certificates.size() * 4);
+        certificates.forEach((keyCertName, certAndKey) -> {
+            data.put(keyCertName + ".key", certAndKey.keyAsBase64String());
+            data.put(keyCertName + ".crt", certAndKey.certAsBase64String());
+            data.put(keyCertName + ".p12", certAndKey.keyStoreAsBase64String());
+            data.put(keyCertName + ".password", certAndKey.storePasswordAsBase64String());
+        });
+        return data;
+    }
+
+    /**
+     * Compares two Secrets with certificates and checks whether any value for a key which exists in both Secrets
+     * changed. This method is used to evaluate whether rolling update of existing brokers is needed when secrets with
+     * certificates change. It separates changes for existing certificates with other changes to the secret such as
+     * added or removed certificates (scale-up or scale-down).
+     *
+     * @param current   Existing secret
+     * @param desired   Desired secret
+     *
+     * @return  True if there is a key which exists in the data sections of both secrets and which changed.
+     */
+    public static boolean doExistingCertificatesDiffer(Secret current, Secret desired) {
+        Map<String, String> currentData = current.getData();
+        Map<String, String> desiredData = desired.getData();
+
+        if (currentData == null) {
+            return true;
+        } else {
+            for (Map.Entry<String, String> entry : currentData.entrySet()) {
+                String desiredValue = desiredData.get(entry.getKey());
+                if (entry.getValue() != null
+                        && desiredValue != null
+                        && !entry.getValue().equals(desiredValue)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Create a Kubernetes secret containing the provided private key and related certificate
      *
      * @param namespace Namespace

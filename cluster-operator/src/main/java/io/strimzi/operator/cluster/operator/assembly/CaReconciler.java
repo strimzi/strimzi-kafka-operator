@@ -329,9 +329,7 @@ public class CaReconciler {
             LOGGER.warnCr(reconciliation, "Cluster CA needs to be fully trusted across the cluster, keeping current CO secret and certs");
             return Future.succeededFuture();
         }
-        Secret secret = ModelUtils.buildSecret(
-                reconciliation,
-                clusterCa,
+        Secret secret = clusterCa.buildTrustedCertificateSecret(
                 clusterCa.clusterOperatorSecret(),
                 reconciliation.namespace(),
                 KafkaResources.secretName(reconciliation.name()),
