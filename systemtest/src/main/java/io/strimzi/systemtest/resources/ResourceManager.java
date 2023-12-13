@@ -163,7 +163,7 @@ public class ResourceManager {
     }
 
     @SafeVarargs
-    private final <T extends HasMetadata> void createResource(ExtensionContext testContext, boolean waitReady, T... resources) {
+    private <T extends HasMetadata> void createResource(ExtensionContext testContext, boolean waitReady, T... resources) {
         for (T resource : resources) {
             ResourceType<T> type = findResourceType(resource);
 

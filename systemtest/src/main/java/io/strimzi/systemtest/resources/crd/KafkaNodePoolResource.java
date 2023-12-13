@@ -118,7 +118,9 @@ public class KafkaNodePoolResource implements ResourceType<KafkaNodePool> {
 
     public static LabelSelector getLabelSelector(String clusterName, String poolName, ProcessRoles processRole) {
         Map<String, String> matchLabels = new HashMap<>();
-        matchLabels.put(Labels.STRIMZI_CLUSTER_LABEL, clusterName);
+        if (clusterName != null) {
+            matchLabels.put(Labels.STRIMZI_CLUSTER_LABEL, clusterName);
+        }
         matchLabels.put(Labels.STRIMZI_KIND_LABEL, Kafka.RESOURCE_KIND);
         matchLabels.put(Labels.STRIMZI_POOL_NAME_LABEL, poolName);
 
@@ -131,6 +133,10 @@ public class KafkaNodePoolResource implements ResourceType<KafkaNodePool> {
         return new LabelSelectorBuilder()
             .withMatchLabels(matchLabels)
             .build();
+    }
+
+    public static LabelSelector getLabelSelector(final String poolName, final ProcessRoles processRoles) {
+        return getLabelSelector(null, poolName, processRoles);
     }
 
     public static String getStrimziPodSetName(String kafkaClusterName, String kafkaNodePoolName) {
