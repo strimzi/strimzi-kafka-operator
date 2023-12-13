@@ -17,6 +17,7 @@ import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.AbstractModel;
+import io.strimzi.operator.cluster.model.CertUtils;
 import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.common.model.ClientsCa;
 import io.strimzi.operator.cluster.model.ClusterCa;
@@ -329,7 +330,7 @@ public class CaReconciler {
             LOGGER.warnCr(reconciliation, "Cluster CA needs to be fully trusted across the cluster, keeping current CO secret and certs");
             return Future.succeededFuture();
         }
-        Secret secret = ModelUtils.buildSecret(
+        Secret secret = CertUtils.buildTrustedCertificateSecret(
                 reconciliation,
                 clusterCa,
                 clusterCa.clusterOperatorSecret(),

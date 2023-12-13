@@ -64,6 +64,7 @@ import io.strimzi.api.kafka.model.template.PodDisruptionBudgetTemplate;
 import io.strimzi.api.kafka.model.template.PodTemplate;
 import io.strimzi.api.kafka.model.template.ResourceTemplate;
 import io.strimzi.certs.CertAndKey;
+import io.strimzi.certs.SecretCertProvider;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlMetricsReporter;
 import io.strimzi.operator.cluster.model.jmx.JmxModel;
@@ -1117,8 +1118,8 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
             throw new RuntimeException("Failed to prepare Kafka certificates", e);
         }
 
-        return ModelUtils.buildSecret(namespace, KafkaResources.kafkaSecretName(cluster), brokerCerts,
-                labels, ownerReference,
+        return ModelUtils.createSecret(KafkaResources.kafkaSecretName(cluster), namespace, labels, ownerReference,
+                SecretCertProvider.buildSecretData(brokerCerts),
                 Map.of(
                         clusterCa.caCertGenerationAnnotation(), String.valueOf(clusterCa.certGeneration()),
                         clientsCa.caCertGenerationAnnotation(), String.valueOf(clientsCa.certGeneration())

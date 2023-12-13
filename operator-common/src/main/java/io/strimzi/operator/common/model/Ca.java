@@ -62,42 +62,6 @@ import static java.util.Collections.singletonMap;
 @SuppressWarnings("checkstyle:CyclomaticComplexity")
 public abstract class Ca {
 
-    /**
-     * A certificate entry in a ConfigMap. Each entry contains an entry name and data.
-     */
-    public enum SecretEntry {
-        /**
-         * A 64-bit encoded X509 Certificate
-         */
-        CRT(".crt"),
-        /**
-         * Entity private key
-         */
-        KEY(".key"),
-        /**
-         * Entity certificate and key as a P12 keystore
-         */
-        P12_KEYSTORE(".p12"),
-        /**
-         * P12 keystore password
-         */
-        P12_KEYSTORE_PASSWORD(".password");
-
-        final String suffix;
-
-        SecretEntry(String suffix) {
-            this.suffix = suffix;
-        }
-
-        /**
-         * @return The suffix of the entry name in the Secret
-         */
-        public String getSuffix() {
-            return suffix;
-        }
-
-    }
-
     protected static final ReconciliationLogger LOGGER = ReconciliationLogger.create(Ca.class);
 
     private static final DateTimeFormatter DATE_TIME_FORMATTER = new DateTimeFormatterBuilder()
@@ -334,6 +298,24 @@ public abstract class Ca {
      */
     public void setClock(Clock clock) {
         this.clock = clock;
+    }
+
+    /**
+     * Extracts the CA generation from the CA
+     *
+     * @return CA generation or the initial generation if no generation is set
+     */
+    public int caCertGeneration() {
+        return Annotations.intAnnotation(caCertSecret(), ANNO_STRIMZI_IO_CA_CERT_GENERATION, INIT_GENERATION);
+    }
+
+    /**
+     * Extracts the CA key generation from the CA
+     *
+     * @return CA key generation or the initial generation if no generation is set
+     */
+    public int caKeyGeneration() {
+        return Annotations.intAnnotation(caKeySecret(), ANNO_STRIMZI_IO_CA_KEY_GENERATION, INIT_GENERATION);
     }
 
     protected static void delete(Reconciliation reconciliation, File file) {
