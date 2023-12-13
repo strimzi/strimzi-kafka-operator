@@ -55,14 +55,17 @@ spec:
                   properties:
                     version:
                       type: string
-                      description: "The kafka broker version. Defaults to {DefaultKafkaVersion}. Consult the user documentation to understand the process required to upgrade or downgrade the version."
+                      description: The Kafka broker version. Defaults to the latest version. Consult the user documentation to understand the process required to upgrade or downgrade the version.
+                    metadataVersion:
+                      type: string
+                      description: "The KRaft metadata version used by the Kafka cluster. This property is ignored when running in ZooKeeper mode. If the property is not set, it defaults to the metadata version that corresponds to the `version` property."
                     replicas:
                       type: integer
                       minimum: 1
                       description: The number of pods in the cluster.
                     image:
                       type: string
-                      description: The docker image for the pods. The default value depends on the configured `Kafka.spec.kafka.version`.
+                      description: "The container image used for Kafka pods. If the property is not set, the default Kafka image version is determined based on the `version` configuration. The image names are specifically mapped to corresponding versions in the Cluster Operator configuration. Changing the Kafka image version does not automatically update the image versions for other components, such as Kafka Exporter. "
                     listeners:
                       type: array
                       minItems: 1
@@ -813,7 +816,7 @@ spec:
                                 optional:
                                   type: boolean
                               description: Reference to the key in the ConfigMap containing the configuration.
-                          description: "ConfigMap entry where the Prometheus JMX Exporter configuration is stored. For details of the structure of this configuration, see the {JMXExporter}."
+                          description: 'ConfigMap entry where the Prometheus JMX Exporter configuration is stored. '
                       required:
                         - type
                         - valueFrom
@@ -1263,7 +1266,7 @@ spec:
                               description: The pod's tolerations.
                             priorityClassName:
                               type: string
-                              description: "The name of the priority class used to assign priority to the pods. For more information about priority classes, see {K8sPriorityClass}."
+                              description: 'The name of the priority class used to assign priority to the pods. '
                             schedulerName:
                               type: string
                               description: "The name of the scheduler used to dispatch this `Pod`. If not specified, the default scheduler will be used."
@@ -1765,7 +1768,7 @@ spec:
                       description: The number of pods in the cluster.
                     image:
                       type: string
-                      description: The docker image for the pods.
+                      description: "The container image used for ZooKeeper pods. If no image name is explicitly specified, it is determined based on the Kafka version set in `spec.kafka.version`. The image names are specifically mapped to corresponding versions in the Cluster Operator configuration."
                     storage:
                       type: object
                       properties:
@@ -1947,7 +1950,7 @@ spec:
                                 optional:
                                   type: boolean
                               description: Reference to the key in the ConfigMap containing the configuration.
-                          description: "ConfigMap entry where the Prometheus JMX Exporter configuration is stored. For details of the structure of this configuration, see the {JMXExporter}."
+                          description: 'ConfigMap entry where the Prometheus JMX Exporter configuration is stored. '
                       required:
                         - type
                         - valueFrom
@@ -2397,7 +2400,7 @@ spec:
                               description: The pod's tolerations.
                             priorityClassName:
                               type: string
-                              description: "The name of the priority class used to assign priority to the pods. For more information about priority classes, see {K8sPriorityClass}."
+                              description: 'The name of the priority class used to assign priority to the pods. '
                             schedulerName:
                               type: string
                               description: "The name of the scheduler used to dispatch this `Pod`. If not specified, the default scheduler will be used."
@@ -3508,7 +3511,7 @@ spec:
                               description: The pod's tolerations.
                             priorityClassName:
                               type: string
-                              description: "The name of the priority class used to assign priority to the pods. For more information about priority classes, see {K8sPriorityClass}."
+                              description: 'The name of the priority class used to assign priority to the pods. '
                             schedulerName:
                               type: string
                               description: "The name of the scheduler used to dispatch this `Pod`. If not specified, the default scheduler will be used."
@@ -3914,7 +3917,7 @@ spec:
                   properties:
                     image:
                       type: string
-                      description: The docker image for the pods.
+                      description: "The container image used for Cruise Control pods. If no image name is explicitly specified, the image name corresponds to the name specified in the Cluster Operator configuration. If an image name is not defined in the Cluster Operator configuration, a default value is used."
                     tlsSidecar:
                       type: object
                       properties:
@@ -4540,7 +4543,7 @@ spec:
                               description: The pod's tolerations.
                             priorityClassName:
                               type: string
-                              description: "The name of the priority class used to assign priority to the pods. For more information about priority classes, see {K8sPriorityClass}."
+                              description: 'The name of the priority class used to assign priority to the pods. '
                             schedulerName:
                               type: string
                               description: "The name of the scheduler used to dispatch this `Pod`. If not specified, the default scheduler will be used."
@@ -4896,7 +4899,7 @@ spec:
                                 optional:
                                   type: boolean
                               description: Reference to the key in the ConfigMap containing the configuration.
-                          description: "ConfigMap entry where the Prometheus JMX Exporter configuration is stored. For details of the structure of this configuration, see the {JMXExporter}."
+                          description: 'ConfigMap entry where the Prometheus JMX Exporter configuration is stored. '
                       required:
                         - type
                         - valueFrom
@@ -5395,7 +5398,7 @@ spec:
                               description: The pod's tolerations.
                             priorityClassName:
                               type: string
-                              description: "The name of the priority class used to assign priority to the pods. For more information about priority classes, see {K8sPriorityClass}."
+                              description: 'The name of the priority class used to assign priority to the pods. '
                             schedulerName:
                               type: string
                               description: "The name of the scheduler used to dispatch this `Pod`. If not specified, the default scheduler will be used."
@@ -5560,7 +5563,7 @@ spec:
                   properties:
                     image:
                       type: string
-                      description: The docker image for the pods.
+                      description: "The container image used for the Kafka Exporter pods. If no image name is explicitly specified, the image name corresponds to the version specified in the Cluster Operator configuration. If an image name is not defined in the Cluster Operator configuration, a default value is used."
                     groupRegex:
                       type: string
                       description: Regular expression to specify which consumer groups to collect. Default value is `.*`.
@@ -6011,7 +6014,7 @@ spec:
                               description: The pod's tolerations.
                             priorityClassName:
                               type: string
-                              description: "The name of the priority class used to assign priority to the pods. For more information about priority classes, see {K8sPriorityClass}."
+                              description: 'The name of the priority class used to assign priority to the pods. '
                             schedulerName:
                               type: string
                               description: "The name of the scheduler used to dispatch this `Pod`. If not specified, the default scheduler will be used."
@@ -6318,4 +6321,7 @@ spec:
                 kafkaVersion:
                   type: string
                   description: The version of Kafka currently deployed in the cluster.
+                kafkaMetadataVersion:
+                  type: string
+                  description: The KRaft metadata.version currently used by the Kafka cluster.
               description: "The status of the Kafka and ZooKeeper clusters, and Topic Operator."

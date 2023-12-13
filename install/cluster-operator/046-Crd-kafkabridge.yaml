@@ -56,7 +56,7 @@ spec:
                 description: The number of pods in the `Deployment`.  Defaults to `1`.
               image:
                 type: string
-                description: The docker image for the pods.
+                description: "The container image used for Kafka Bridge pods. If no image name is explicitly specified, the image name corresponds to the image specified in the Cluster Operator configuration. If an image name is not defined in the Cluster Operator configuration, a default value is used."
               bootstrapServers:
                 type: string
                 description: A list of host:port pairs for establishing the initial connection to the Kafka cluster.
@@ -826,7 +826,7 @@ spec:
                         description: The pod's tolerations.
                       priorityClassName:
                         type: string
-                        description: "The name of the priority class used to assign priority to the pods. For more information about priority classes, see {K8sPriorityClass}."
+                        description: 'The name of the priority class used to assign priority to the pods. '
                       schedulerName:
                         type: string
                         description: "The name of the scheduler used to dispatch this `Pod`. If not specified, the default scheduler will be used."

@@ -603,7 +603,7 @@ spec:
                         description: The pod's tolerations.
                       priorityClassName:
                         type: string
-                        description: "The name of the priority class used to assign priority to the pods. For more information about priority classes, see {K8sPriorityClass}."
+                        description: 'The name of the priority class used to assign priority to the pods. '
                       schedulerName:
                         type: string
                         description: "The name of the scheduler used to dispatch this `Pod`. If not specified, the default scheduler will be used."
@@ -921,6 +921,14 @@ spec:
               clusterId:
                 type: string
                 description: Kafka cluster ID.
+              roles:
+                type: array
+                items:
+                  type: string
+                  enum:
+                  - controller
+                  - broker
+                description: The roles currently assigned to this pool.
               replicas:
                 type: integer
                 description: The current number of pods being used to provide this resource.

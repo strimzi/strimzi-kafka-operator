@@ -47,13 +47,13 @@ spec:
             properties:
               version:
                 type: string
-                description: "The Kafka Connect version. Defaults to {DefaultKafkaVersion}. Consult the user documentation to understand the process required to upgrade or downgrade the version."
+                description: The Kafka Connect version. Defaults to the latest version. Consult the user documentation to understand the process required to upgrade or downgrade the version.
               replicas:
                 type: integer
                 description: The number of pods in the Kafka Connect group. Defaults to `3`.
               image:
                 type: string
-                description: The docker image for the pods.
+                description: "The container image used for Kafka Connect pods. If no image name is explicitly specified, it is determined based on the `spec.version` configuration. The image names are specifically mapped to corresponding versions in the Cluster Operator configuration."
               bootstrapServers:
                 type: string
                 description: Bootstrap servers to connect to. This should be given as a comma separated list of _<hostname>_:_<port>_ pairs.
@@ -818,7 +818,7 @@ spec:
                         description: The pod's tolerations.
                       priorityClassName:
                         type: string
-                        description: "The name of the priority class used to assign priority to the pods. For more information about priority classes, see {K8sPriorityClass}."
+                        description: 'The name of the priority class used to assign priority to the pods. '
                       schedulerName:
                         type: string
                         description: "The name of the scheduler used to dispatch this `Pod`. If not specified, the default scheduler will be used."
@@ -1535,7 +1535,7 @@ spec:
                         description: The pod's tolerations.
                       priorityClassName:
                         type: string
-                        description: "The name of the priority class used to assign priority to the pods. For more information about priority classes, see {K8sPriorityClass}."
+                        description: 'The name of the priority class used to assign priority to the pods. '
                       schedulerName:
                         type: string
                         description: "The name of the scheduler used to dispatch this `Pod`. If not specified, the default scheduler will be used."
@@ -1725,7 +1725,7 @@ spec:
                             description: Annotations added to the Kubernetes resource.
                         description: Metadata applied to the resource.
                     description: Template for Secret of the Kafka Connect Cluster JMX authentication.
-                description: "Template for Kafka Connect and Kafka Mirror Maker 2 resources. The template allows users to specify how the `Deployment`, `Pods` and `Service` are generated."
+                description: "Template for Kafka Connect and Kafka Mirror Maker 2 resources. The template allows users to specify how the `Pods`, `Service`, and other services are generated."
               externalConfiguration:
                 type: object
                 properties:
@@ -1943,7 +1943,7 @@ spec:
                           optional:
                             type: boolean
                         description: Reference to the key in the ConfigMap containing the configuration.
-                    description: "ConfigMap entry where the Prometheus JMX Exporter configuration is stored. For details of the structure of this configuration, see the {JMXExporter}."
+                    description: 'ConfigMap entry where the Prometheus JMX Exporter configuration is stored. '
                 required:
                 - type
                 - valueFrom

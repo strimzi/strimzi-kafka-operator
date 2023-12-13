@@ -95,7 +95,7 @@ the documentation for more details.
 | `watchAnyNamespace`                         | Watch the whole Kubernetes cluster (all namespaces)                             | `false`                      |
 | `defaultImageRegistry`                      | Default image registry for all the images                                       | `quay.io`                    |
 | `defaultImageRepository`                    | Default image registry for all the images                                       | `strimzi`                    |
-| `defaultImageTag`                           | Default image tag for all the images except Kafka Bridge                        | `0.38.0`                     |
+| `defaultImageTag`                           | Default image tag for all the images except Kafka Bridge                        | `0.39.0`                     |
 | `image.registry`                            | Override default Cluster Operator image registry                                | `nil`                        |
 | `image.repository`                          | Override default Cluster Operator image repository                              | `nil`                        |
 | `image.name`                                | Cluster Operator image name                                                     | `cluster-operator`           |
@@ -113,6 +113,9 @@ the documentation for more details.
 | `rbac.create`                               | Whether to create RBAC related resources                                        | `yes`                        |
 | `serviceAccountCreate`                      | Whether to create a service account                                             | `yes`                        |
 | `serviceAccount`                            | Cluster Operator's service account                                              | `strimzi-cluster-operator`   |
+| `podDisruptionBudget.enabled`               | Whether to enable the podDisruptionBudget feature                               | `false`                      |
+| `podDisruptionBudget.minAvailable`          | Default value for how many pods must be running in a cluster                    | `1`                          |
+| `podDisruptionBudget.maxUnavailable`        | Default value for how many pods can be down                                     | `nil`                        |
 | `extraEnvs`                                 | Extra environment variables for the Cluster operator container                  | `[]`                         |
 | `kafka.image.registry`                      | Override default Kafka image registry                                           | `nil`                        |
 | `kafka.image.repository`                    | Override default Kafka image repository                                         | `nil`                        |

@@ -10,7 +10,7 @@ watchAnyNamespace: false
 
 defaultImageRegistry: quay.io
 defaultImageRepository: strimzi
-defaultImageTag: 0.38.0
+defaultImageTag: 0.39.0
 
 image:
   registry: ""
@@ -52,6 +52,25 @@ serviceAccount: strimzi-cluster-operator
 
 leaderElection:
   enable: true
+
+# https://kubernetes.io/docs/tasks/run-application/configure-pdb/
+podDisruptionBudget:  
+  enabled: false
+  # The PDB definition only has two attributes to control the availability requirements: minAvailable or maxUnavailable (mutually exclusive). 
+  # Field maxUnavailable tells how many pods can be down and minAvailable tells how many pods must be running in a cluster.
+  
+  # The pdb template will check values according to below order
+  #
+  #  {{- if .Values.podDisruptionBudget.minAvailable }}
+  #     minAvailable: {{ .Values.podDisruptionBudget.minAvailable }}
+  #  {{- end  }}
+  #  {{- if .Values.podDisruptionBudget.maxUnavailable }}
+  #     maxUnavailable: {{ .Values.podDisruptionBudget.maxUnavailable }}
+  #  {{- end }}
+  #
+  # If both values are set, the template will use the first one and ignore the second one. currently by default minAvailable is set to 1
+  minAvailable: 1
+  maxUnavailable:
 
 # If you are using the grafana dashboard sidecar,
 # you can import some default dashboards here
