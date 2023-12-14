@@ -65,24 +65,6 @@ spec:
 
 .Procedure
 
-. If you want to use a ZooKeeper-based Kafka cluster without node pools, disable the `KafkaNodePools` feature gate from the command line:
-+
-[source,shell]
-----
-kubectl set env deployment/strimzi-cluster-operator STRIMZI_FEATURE_GATES="-KafkaNodePools"
-----
-+
-Or by editing the Cluster Operator `Deployment` and updating the `STRIMZI_FEATURE_GATES` environment variable:
-+
-[source,yaml]
-----
-env
-  - name: STRIMZI_FEATURE_GATES
-    value: -KafkaNodePools
-----
-+
-This updates the Cluster Operator.
-
 . Deploy a ZooKeeper-based Kafka cluster.
 +
 --

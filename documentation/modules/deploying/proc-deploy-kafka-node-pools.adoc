@@ -64,7 +64,7 @@ kubectl apply -f examples/kafka/nodepools/kafka-with-kraft.yaml
 * To deploy an ephemeral Kafka cluster in KRaft mode with separate node pools for broker and controller nodes: 
 +
 [source,shell,subs="attributes+"]
-kubectl apply -f examples/kafka/nodepools/kafka-with-kraft.yaml
+kubectl apply -f examples/kafka/nodepools/kafka-with-kraft-ephemeral.yaml
 
 * To deploy a Kafka cluster and ZooKeeper cluster with two node pools of three brokers:
 +
