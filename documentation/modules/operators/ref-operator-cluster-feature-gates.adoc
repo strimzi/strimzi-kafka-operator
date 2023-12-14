@@ -102,7 +102,7 @@ The `Kafka` custom resource using KRaft mode must also have the annotation `stri
 If this annotation is set to `disabled` or any other value, or if it is missing, the operator handles the `Kafka` custom resource as if it is using ZooKeeper for cluster management.
 
 [id='ref-operator-kafka-node-pools-feature-gate-{context}']
-== (Preview) KafkaNodePools feature gate
+== KafkaNodePools feature gate
 
 The `KafkaNodePools` feature gate has a default state of _enabled_.
 

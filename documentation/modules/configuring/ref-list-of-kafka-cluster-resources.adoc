@@ -62,7 +62,7 @@ The following resources are created by the Cluster Operator in the Kubernetes cl
 `data-<kafka_cluster_name>-kafka-<pod_id>`:: Persistent Volume Claim for the volume used for storing data for a specific Kafka broker. This resource is created only if persistent storage is selected for provisioning persistent volumes to store data.
 `data-<id>-<kafka_cluster_name>-kafka-<pod_id>`:: Persistent Volume Claim for the volume `id` used for storing data for a specific Kafka broker. This resource is created only if persistent storage is selected for JBOD volumes when provisioning persistent volumes to store data.
 
-.(Preview) Kafka node pools
+.Kafka node pools
 
 If you are using Kafka node pools, the resources created apply to the nodes managed in the node pools whether they are operating as brokers, controllers, or both.
 The naming convention includes the name of the Kafka cluster and the node pool: `<kafka_cluster_name>-<pool_name>`.

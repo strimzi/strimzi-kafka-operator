@@ -3,7 +3,7 @@
 // overview/assembly-configuration-points.adoc
 
 [id="configuration-points-node_pools_{context}"]
-= (Preview) Kafka node pools configuration
+= Kafka node pools configuration
 
 [role="_abstract"]
 A node pool refers to a distinct group of Kafka nodes within a Kafka cluster.

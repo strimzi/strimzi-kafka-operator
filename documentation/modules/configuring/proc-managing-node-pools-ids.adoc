@@ -3,7 +3,7 @@
 // assembly-config.adoc
 
 [id='proc-managing-node-pools-ids-{context}']
-= (Preview) Assigning IDs to node pools for scaling operations
+= Assigning IDs to node pools for scaling operations
 
 [role="_abstract"]
 This procedure describes how to use annotations for advanced node ID handling by the Cluster Operator when performing scaling operations on node pools. 

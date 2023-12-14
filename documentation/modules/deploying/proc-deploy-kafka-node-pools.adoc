@@ -3,34 +3,31 @@
 // deploying/assembly_deploy-kafka-cluster.adoc
 
 [id='deploying-kafka-node-pools-{context}']
-= (Preview) Deploying Kafka node pools
+= Deploying a Kafka cluster with node pools
 
 [role="_abstract"]
-This procedure shows how to deploy Kafka node pools to your Kubernetes cluster using the Cluster Operator.
+This procedure shows how to deploy Kafka with node pools to your Kubernetes cluster using the Cluster Operator.
 Node pools represent a distinct group of Kafka nodes within a Kafka cluster that share the same configuration.
 For each Kafka node in the node pool, any configuration not defined in node pool is inherited from the cluster configuration in the `kafka` resource.
 
-NOTE: The node pools feature is available as a preview. Node pools are not enabled by default, so you must xref:ref-operator-kafka-node-pools-feature-gate-{context}[enable the `KafkaNodePools` feature gate] before using them. 
-
 The deployment uses a YAML file to provide the specification to create a `KafkaNodePool` resource.
 You can use node pools with Kafka clusters that use KRaft (Kafka Raft metadata) mode or ZooKeeper for cluster management.
+To deploy a Kafka cluster in KRaft mode, you must use the `KafkaNodePool` resources.
 
 IMPORTANT: **KRaft mode is not ready for production in Apache Kafka or in Strimzi.**
 
-Strimzi provides the following xref:config-examples-{context}[example files] that you can use to create a Kafka node pool:
+Strimzi provides the following xref:config-examples-{context}[example files] that you can use to create a Kafka cluster that uses node pools:
 
-`kafka.yaml`:: Deploys ZooKeeper with 3 nodes, and 2 different pools of Kafka brokers. Each of the pools has 3 brokers. The pools in the example use different storage configuration.
 `kafka-with-dual-role-kraft-nodes.yaml`:: Deploys a Kafka cluster with one pool of KRaft nodes that share the broker and controller roles.
-`kafka-with-kraft.yaml`:: Deploys a Kafka cluster with one pool of controller nodes and one pool of broker nodes.
+`kafka-with-kraft.yaml`:: Deploys a persistent Kafka cluster with one pool of controller nodes and one pool of broker nodes.
+`kafka-with-kraft-ephemeral.yaml`:: Deploys an ephemeral Kafka cluster with one pool of controller nodes and one pool of broker nodes.
+`kafka.yaml`:: Deploys ZooKeeper with 3 nodes, and 2 different pools of Kafka brokers. Each of the pools has 3 brokers. The pools in the example use different storage configuration.
 
-NOTE: You don't need to start using node pools right away. If you decide to use them, you can perform the steps outlined here to deploy a new Kafka cluster with `KafkaNodePool` resources or xref:proc-migrating-clusters-node-pools-{context}[migrate your existing Kafka cluster].  
+NOTE: You can perform the steps outlined here to deploy a new Kafka cluster with `KafkaNodePool` resources or xref:proc-migrating-clusters-node-pools-{context}[migrate your existing Kafka cluster].  
 
 .Prerequisites
 
-* xref:deploying-cluster-operator-str[The Cluster Operator must be deployed.]
-* You have xref:deploying-kafka-cluster-{context}[created and deployed a Kafka cluster]. 
-
-NOTE: If you want to migrate an existing Kafka cluster to use node pools, see the xref:proc-migrating-clusters-node-pools-{context}[steps to  migrate existing Kafka clusters].  
+* xref:deploying-cluster-operator-str[The Cluster Operator must be deployed.]  
 
 .Procedure
 
@@ -52,22 +49,27 @@ env
 +
 This updates the Cluster Operator.
 
-. Create a node pool.
+. Deploy a Kafka cluster with node pools
 +
-* To deploy a Kafka cluster and ZooKeeper cluster with two node pools of three brokers:
-+
-[source,shell,subs="attributes+"]
-kubectl apply -f examples/kafka/nodepools/kafka.yaml
-
 * To deploy a Kafka cluster in KRaft mode with a  single node pool that uses dual-role nodes: 
 +
 [source,shell,subs="attributes+"]
 kubectl apply -f examples/kafka/nodepools/kafka-with-dual-role-kraft-nodes.yaml
 
-* To deploy a Kafka cluster in KRaft mode with separate node pools for broker and controller nodes: 
+* To deploy a persistent Kafka cluster in KRaft mode with separate node pools for broker and controller nodes: 
 +
 [source,shell,subs="attributes+"]
 kubectl apply -f examples/kafka/nodepools/kafka-with-kraft.yaml
+
+* To deploy an ephemeral Kafka cluster in KRaft mode with separate node pools for broker and controller nodes: 
++
+[source,shell,subs="attributes+"]
+kubectl apply -f examples/kafka/nodepools/kafka-with-kraft-ephemeral.yaml
+
+* To deploy a Kafka cluster and ZooKeeper cluster with two node pools of three brokers:
++
+[source,shell,subs="attributes+"]
+kubectl apply -f examples/kafka/nodepools/kafka.yaml
 
 . Check the status of the deployment:
 +
