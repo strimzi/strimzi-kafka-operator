@@ -3,7 +3,7 @@
 // assembly-config.adoc
 
 [id='proc-scaling-up-node-pools-{context}']
-= (Preview) Adding nodes to a node pool
+= Adding nodes to a node pool
 
 [role="_abstract"]
 This procedure describes how to scale up a node pool to add new nodes.

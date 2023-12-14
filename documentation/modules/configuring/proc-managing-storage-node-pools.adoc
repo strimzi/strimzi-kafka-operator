@@ -3,7 +3,7 @@
 // assembly-config.adoc
 
 [id='proc-managing-storage-node-pools-{context}']
-= (Preview) Managing storage using node pools
+= Managing storage using node pools
 
 [role="_abstract"]
 Storage management in Strimzi is usually straightforward, and requires little change when set up, but there might be situations where you need to modify your storage configurations. 

@@ -3,7 +3,7 @@
 // assembly-config.adoc
 
 [id='proc-scaling-down-node-pools-{context}']
-= (Preview) Removing nodes from a node pool
+= Removing nodes from a node pool
 
 [role="_abstract"]
 This procedure describes how to scale down a node pool to remove nodes.

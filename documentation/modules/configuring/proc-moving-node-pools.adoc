@@ -3,7 +3,7 @@
 // assembly-config.adoc
 
 [id='proc-moving-node-pools-{context}']
-= (Preview) Moving nodes between node pools
+= Moving nodes between node pools
 
 [role="_abstract"]
 This procedure describes how to move nodes between source and target Kafka node pools without downtime.

@@ -3,13 +3,13 @@
 // assembly-config.adoc
 
 [id='proc-migrating-clusters-node-pools-{context}']
-= (Preview) Migrating existing Kafka clusters to use Kafka node pools
+= Migrating existing Kafka clusters to use Kafka node pools
 
 [role="_abstract"]
 This procedure describes how to migrate existing Kafka clusters to use Kafka node pools.
 After you have updated the Kafka cluster, you can use the node pools to manage the configuration of nodes within each pool.
 
-NOTE: While the `KafkaNodePools` feature gate that enables node pools is in alpha phase, replica and storage configuration in the `KafkaNodePool` resource must also be present in the `Kafka` resource. The configuration is ignored when node pools are being used. 
+NOTE: Currently, replica and storage configuration in the `KafkaNodePool` resource must also be present in the `Kafka` resource. The configuration is ignored when node pools are being used. 
 
 .Prerequisites
 
@@ -63,7 +63,7 @@ By applying this resource, you switch Kafka to using node pools.
 +
 There is no change or rolling update and resources are identical to how they were before.
 
-. Enable the `KafkaNodePools` in the `Kafka` resource using the `strimzi.io/node-pools: enabled` annotation.
+. Enable support for node pools in the `Kafka` resource using the `strimzi.io/node-pools: enabled` annotation.
 +
 .Example configuration for a node pool in a cluster using ZooKeeper
 [source,yaml,subs="+attributes"]

@@ -3,12 +3,10 @@
 // assembly-config.adoc
 
 [id='config-node-pools-{context}']
-= (Preview) Configuring node pools
+= Configuring node pools
 
 [role="_abstract"]
 Update the `spec` properties of the `KafkaNodePool` custom resource to configure a node pool deployment.
-
-NOTE: The node pools feature is available as a preview. Node pools are not enabled by default, so you must xref:ref-operator-kafka-node-pools-feature-gate-{context}[enable the `KafkaNodePools` feature gate] before using them. 
 
 A node pool refers to a distinct group of Kafka nodes within a Kafka cluster.
 Each pool has its own unique configuration, which includes mandatory settings for the number of replicas, roles, and storage allocation.
@@ -37,21 +35,22 @@ IMPORTANT: **KRaft mode is not ready for production in Apache Kafka or in Strimz
 
 For a deeper understanding of the node pool configuration options, refer to the link:{BookURLConfiguring}[Strimzi Custom Resource API Reference^].
 
-NOTE: While the `KafkaNodePools` feature gate that enables node pools is in alpha phase, replica and storage configuration properties in the `KafkaNodePool` resource must also be present in the `Kafka` resource. The configuration in the `Kafka` resource is ignored when node pools are used. Similarly, ZooKeeper configuration properties must also be present in the `Kafka` resource when using KRaft mode. These properties are also ignored.
+NOTE: Currently, replica and storage configuration properties in the `KafkaNodePool` resource must also be present in the `Kafka` resource. The configuration in the `Kafka` resource is ignored when node pools are used. Similarly, ZooKeeper configuration properties must also be present in the `Kafka` resource when using KRaft mode. These properties are also ignored.
 
-.Example configuration for a node pool in a cluster using ZooKeeper
+.Example configuration for a node pool in a cluster using KRaft mode 
 [source,yaml,subs="+attributes"]
 ----
 apiVersion: {KafkaNodePoolApiVersion}
 kind: KafkaNodePool
 metadata:
-  name: pool-a # <1>
+  name: kraft-dual-role # <1>
   labels:
     strimzi.io/cluster: my-cluster # <2>
 spec:
   replicas: 3 # <3>
-  roles:
-    - broker # <4>
+  roles: # <4>
+    - controller
+    - broker
   storage: # <5>
     type: jbod
     volumes:
@@ -70,30 +69,31 @@ spec:
 <1> Unique name for the node pool.
 <2> The Kafka cluster the node pool belongs to. A node pool can only belong to a single cluster.
 <3> Number of replicas for the nodes. 
-<4> Roles for the nodes in the node pool, which can only be `broker` when using Kafka with ZooKeeper.
+<4> Roles for the nodes in the node pool. In this example, the nodes have dual roles as controllers and brokers.
 <5> Storage specification for the nodes. 
 <6> Requests for reservation of supported resources, currently `cpu` and `memory`, and limits to specify the maximum resources that can be consumed.
 
-.Example configuration for a node pool in a cluster using KRaft mode 
+NOTE: The configuration for the `Kafka` resource must be suitable for KRaft mode. Currently, KRaft mode has xref:ref-operator-use-kraft-feature-gate-str[a number of limitations]. 
+
+.Example configuration for a node pool in a cluster using ZooKeeper
 [source,yaml,subs="+attributes"]
 ----
 apiVersion: {KafkaNodePoolApiVersion}
 kind: KafkaNodePool
 metadata:
-  name: kraft-dual-role
+  name: pool-a
   labels:
     strimzi.io/cluster: my-cluster
 spec:
   replicas: 3
-  roles: # <1>
-    - controller
-    - broker
+  roles:
+    - broker # <1>
   storage:
     type: jbod
     volumes:
       - id: 0
         type: persistent-claim
-        size: 20Gi
+        size: 100Gi
         deleteClaim: false
   resources:
       requests:
@@ -103,7 +103,4 @@ spec:
         memory: 64Gi
         cpu: "12"      
 ----
-<1> Roles for the nodes in the node pool. In this example, the nodes have dual roles as controllers and brokers.
-
-NOTE: The configuration for the `Kafka` resource must be suitable for KRaft mode. Currently, KRaft mode has xref:ref-operator-use-kraft-feature-gate-str[a number of limitations]. 
-
+<1> Roles for the nodes in the node pool, which can only be `broker` when using Kafka with ZooKeeper.

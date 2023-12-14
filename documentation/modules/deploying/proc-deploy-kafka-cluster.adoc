@@ -3,10 +3,10 @@
 // deploying/assembly_deploy-kafka-cluster.adoc
 
 [id='deploying-kafka-cluster-{context}']
-= Deploying the Kafka cluster
+= Deploying a ZooKeeper-based Kafka cluster without node pools
 
 [role="_abstract"]
-This procedure shows how to deploy a Kafka cluster to your Kubernetes cluster using the Cluster Operator.
+This procedure shows how to deploy a ZooKeeper-based Kafka cluster to your Kubernetes cluster using the Cluster Operator.
 
 The deployment uses a YAML file to provide the specification to create a `Kafka` resource.
 
@@ -65,15 +65,15 @@ spec:
 
 .Procedure
 
-. Create and deploy an ephemeral or persistent cluster.
+. Deploy a ZooKeeper-based Kafka cluster.
 +
 --
-* To create and deploy an ephemeral cluster:
+* To deploy an ephemeral cluster:
 +
 [source,shell,subs="attributes+"]
 kubectl apply -f examples/kafka/kafka-ephemeral.yaml
 
-* To create and deploy a persistent cluster:
+* To deploy a persistent cluster:
 +
 [source,shell,subs="attributes+"]
 kubectl apply -f examples/kafka/kafka-persistent.yaml

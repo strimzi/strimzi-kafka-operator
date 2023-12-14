@@ -3,7 +3,7 @@
 // assembly-config.adoc
 
 [id='proc-managing-storage-affinity-node-pools-{context}']
-= (Preview) Managing storage affinity using node pools
+= Managing storage affinity using node pools
 
 [role="_abstract"]
 In situations where storage resources, such as local persistent volumes, are constrained to specific worker nodes, or availability zones, configuring storage affinity helps to schedule pods to use the right nodes. 
