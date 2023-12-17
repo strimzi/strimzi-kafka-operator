@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -x
 
-TEST_HELM3_VERSION=${TEST_HELM3_VERSION:-'v3.12.0'}
+TEST_HELM3_VERSION=${TEST_HELM3_VERSION:-'v3.13.3'}
 
 function install_helm3 {
     export HELM_INSTALL_DIR=/usr/bin

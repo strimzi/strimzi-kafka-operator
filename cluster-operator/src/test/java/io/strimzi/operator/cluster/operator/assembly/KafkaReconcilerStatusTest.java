@@ -68,7 +68,7 @@ public class KafkaReconcilerStatusTest {
     private final static String NAMESPACE = "testns";
     private final static String CLUSTER_NAME = "testkafka";
     private final static KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
-    private final static PlatformFeaturesAvailability PFA = new PlatformFeaturesAvailability(true, KubernetesVersion.V1_22);
+    private final static PlatformFeaturesAvailability PFA = new PlatformFeaturesAvailability(true, KubernetesVersion.MINIMAL_SUPPORTED_VERSION);
     private final static KafkaVersionChange VERSION_CHANGE = new KafkaVersionChange(
             VERSIONS.defaultVersion(),
             VERSIONS.defaultVersion(),

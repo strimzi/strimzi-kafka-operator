@@ -11,30 +11,36 @@ import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.lessThan;
 
 public class KubernetesVersionTest {
+    // Kubernetes versions used for tests => comparing Kubernetes versions
+    private static final KubernetesVersion V1_5 = new KubernetesVersion(1, 5); // very old version
+    private static final KubernetesVersion V1_14 = new KubernetesVersion(1, 14);
+    private static final KubernetesVersion V1_15 = new KubernetesVersion(1, 15);
+    private static final KubernetesVersion V1_16 = new KubernetesVersion(1, 16);
+
     @Test
     public void versionTest() {
         KubernetesVersion kv1p5 = new KubernetesVersion(1, 5);
-        assertThat(kv1p5.compareTo(KubernetesVersion.V1_15), lessThan(0));
-        assertThat(kv1p5.compareTo(KubernetesVersion.V1_21), lessThan(0));
-        assertThat(kv1p5.compareTo(KubernetesVersion.V1_25), lessThan(0));
+        assertThat(kv1p5.compareTo(V1_14), lessThan(0));
+        assertThat(kv1p5.compareTo(V1_15), lessThan(0));
+        assertThat(kv1p5.compareTo(V1_16), lessThan(0));
 
-        assertThat(KubernetesVersion.V1_15.compareTo(KubernetesVersion.V1_15), is(0));
-        assertThat(KubernetesVersion.V1_15.compareTo(KubernetesVersion.V1_21), lessThan(0));
-        assertThat(KubernetesVersion.V1_15.compareTo(KubernetesVersion.V1_25), lessThan(0));
+        assertThat(V1_5.compareTo(V1_5), is(0));
+        assertThat(V1_5.compareTo(V1_14), lessThan(0));
+        assertThat(V1_5.compareTo(V1_15), lessThan(0));
 
 
-        assertThat(KubernetesVersion.V1_22.compareTo(KubernetesVersion.V1_15), greaterThan(0));
-        assertThat(KubernetesVersion.V1_22.compareTo(KubernetesVersion.V1_21), greaterThan(0));
-        assertThat(KubernetesVersion.V1_22.compareTo(KubernetesVersion.V1_22), is(0));
+        assertThat(V1_15.compareTo(V1_5), greaterThan(0));
+        assertThat(V1_15.compareTo(V1_14), greaterThan(0));
+        assertThat(V1_15.compareTo(V1_15), is(0));
 
         KubernetesVersion kv2p22 = new KubernetesVersion(2, 22);
-        assertThat(kv2p22.compareTo(KubernetesVersion.V1_15), greaterThan(0));
-        assertThat(kv2p22.compareTo(KubernetesVersion.V1_21), greaterThan(0));
+        assertThat(kv2p22.compareTo(V1_5), greaterThan(0));
+        assertThat(kv2p22.compareTo(V1_15), greaterThan(0));
     }
 
     @Test
     public void versionsEqualTest() {
-        KubernetesVersion kv1p25 = new KubernetesVersion(1, 25);
-        assertThat(kv1p25, is(KubernetesVersion.V1_25));
+        KubernetesVersion kv1p25 = new KubernetesVersion(1, 15);
+        assertThat(kv1p25, is(V1_15));
     }
 }

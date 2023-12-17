@@ -97,7 +97,7 @@ public class KafkaBridgeAssemblyOperatorTest {
     private static final KafkaBridgeHttpConfig KAFKA_BRIDGE_HTTP_SPEC = new KafkaBridgeHttpConfig();
     private final String image = "kafka-bridge:latest";
 
-    private final KubernetesVersion kubernetesVersion = KubernetesVersion.V1_21;
+    private final KubernetesVersion kubernetesVersion = KubernetesVersion.MINIMAL_SUPPORTED_VERSION;
 
     @BeforeAll
     public static void before() {
