@@ -38,6 +38,7 @@ import org.apache.kafka.common.TopicPartitionInfo;
 import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.config.TopicConfig;
 import org.apache.kafka.common.errors.TopicAuthorizationException;
+import org.apache.kafka.common.errors.TopicExistsException;
 import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
 import org.apache.kafka.common.internals.KafkaFutureImpl;
 import org.apache.logging.log4j.Level;
@@ -1883,7 +1884,7 @@ class TopicControllerIT {
                 "Decreasing partitions not supported"));
     }
 
-    private static <T> KafkaFuture<T> failedFuture(Throwable error) throws ExecutionException, InterruptedException {
+    private static <T> KafkaFuture<T> failedFuture(Throwable error) {
         var future = new KafkaFutureImpl<T>();
         future.completeExceptionally(error);
         return future;
@@ -2079,5 +2080,23 @@ class TopicControllerIT {
             .create();
 
         assertNotExistsInKafka(expectedTopicName(created));
+    }
+
+    @Test
+    public void shouldReconcileOnTopicExistsException(
+            @BrokerConfig(name = "auto.create.topics.enable", value = "false")
+            KafkaCluster kafkaCluster) throws ExecutionException, InterruptedException {
+        var config = topicOperatorConfig(NAMESPACE, kafkaCluster);
+        var topicName = randomTopicName();
+        
+        var creteTopicResult = mock(CreateTopicsResult.class);
+        var existsException = new TopicExistsException(format("Topic '%s' already exists.", topicName));
+        Mockito.doReturn(failedFuture(existsException)).when(creteTopicResult).all();
+        Mockito.doReturn(Map.of(topicName, failedFuture(existsException))).when(creteTopicResult).values();
+        operatorAdmin = new Admin[]{Mockito.spy(Admin.create(config.adminClientConfig()))};
+        Mockito.doReturn(creteTopicResult).when(operatorAdmin[0]).createTopics(any());
+
+        KafkaTopic kafkaTopic = createTopic(kafkaCluster, kafkaTopic(NAMESPACE, topicName, true, topicName, 2, 1));
+        assertTrue(readyIsTrue().test(kafkaTopic));
     }
 }
