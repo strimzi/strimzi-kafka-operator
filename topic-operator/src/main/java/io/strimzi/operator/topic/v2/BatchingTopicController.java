@@ -39,6 +39,7 @@ import org.apache.kafka.common.TopicPartitionInfo;
 import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.errors.ApiException;
 import org.apache.kafka.common.errors.TopicDeletionDisabledException;
+import org.apache.kafka.common.errors.TopicExistsException;
 import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
 
 import java.io.InterruptedIOException;
@@ -283,7 +284,12 @@ public class BatchingTopicController {
                 values.get(reconcilableTopic.topicName()).get();
                 return pair(reconcilableTopic, Either.ofRight((null)));
             } catch (ExecutionException e) {
-                return pair(reconcilableTopic, Either.ofLeft(handleAdminException(e)));
+                if (e.getCause() != null && e.getCause() instanceof TopicExistsException) {
+                    // we treat this as a success, the next reconciliation checks the configuration
+                    return pair(reconcilableTopic, Either.ofRight((null)));
+                } else {
+                    return pair(reconcilableTopic, Either.ofLeft(handleAdminException(e)));
+                }
             } catch (InterruptedException e) {
                 throw new UncheckedInterruptedException(e);
             }
