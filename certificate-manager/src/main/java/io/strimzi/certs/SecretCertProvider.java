@@ -26,7 +26,7 @@ import static java.util.Collections.singletonList;
 public class SecretCertProvider {
 
     /**
-     * A certificate entry in a ConfigMap. Each entry contains an entry name and data.
+     * A certificate entry in a Secret. Each entry contains an entry name and data.
      */
     public enum SecretEntry {
         /**
