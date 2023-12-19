@@ -32,7 +32,6 @@ import io.strimzi.api.kafka.model.template.DeploymentTemplate;
 import io.strimzi.api.kafka.model.template.InternalServiceTemplate;
 import io.strimzi.api.kafka.model.template.PodTemplate;
 import io.strimzi.certs.CertAndKey;
-import io.strimzi.certs.SecretCertProvider;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.cruisecontrol.Capacity;
 import io.strimzi.operator.cluster.model.logging.LoggingModel;
@@ -473,7 +472,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
         LOGGER.debugCr(reconciliation, "End generating certificates");
 
         return ModelUtils.createSecret(CruiseControlResources.secretName(cluster), namespace, labels, ownerReference,
-                SecretCertProvider.buildSecretData(ccCerts), clusterCa.caCertGenerationFullAnnotation(), Map.of());
+                CertUtils.buildSecretData(ccCerts), Map.ofEntries(clusterCa.caCertGenerationFullAnnotation()), Map.of());
     }
 
     /**

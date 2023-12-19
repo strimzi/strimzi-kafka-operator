@@ -37,7 +37,6 @@ import java.time.format.SignStyle;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Base64;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -107,11 +106,6 @@ public abstract class Ca {
      * Organization used in the generated CAs
      */
     public static final String IO_STRIMZI = "io.strimzi";
-
-    /**
-     * Annotation for requesting a renewal of the CA and rolling it out
-     */
-    public static final String ANNO_STRIMZI_IO_FORCE_RENEW = Annotations.STRIMZI_DOMAIN + "force-renew";
 
     /**
      * Annotation for tracking the CA key generation used by Kubernetes resources
@@ -756,7 +750,7 @@ public abstract class Ca {
                 LOGGER.warnOp("Secret {}/{} is missing generation annotation {}",
                         caCertSecret.getMetadata().getNamespace(), caCertSecret.getMetadata().getName(), ANNO_STRIMZI_IO_CA_CERT_GENERATION);
             }
-            return Annotations.intAnnotation(caCertSecret, ANNO_STRIMZI_IO_CA_CERT_GENERATION, INIT_GENERATION);
+            return caCertGeneration();
         }
         return INIT_GENERATION;
     }
@@ -764,8 +758,8 @@ public abstract class Ca {
     /**
      * @return the generation of the current CA certificate as an annotation
      */
-    public Map<String, String> caCertGenerationFullAnnotation() {
-        return Collections.singletonMap(caCertGenerationAnnotation(), String.valueOf(certGeneration()));
+    public Map.Entry<String, String> caCertGenerationFullAnnotation() {
+        return Map.entry(caCertGenerationAnnotation(), String.valueOf(certGeneration()));
     }
 
     /**
@@ -777,7 +771,7 @@ public abstract class Ca {
                 LOGGER.warnOp("Secret {}/{} is missing generation annotation {}",
                         caKeySecret.getMetadata().getNamespace(), caKeySecret.getMetadata().getName(), ANNO_STRIMZI_IO_CA_KEY_GENERATION);
             }
-            return Annotations.intAnnotation(caKeySecret, ANNO_STRIMZI_IO_CA_KEY_GENERATION, INIT_GENERATION);
+            return caKeyGeneration();
         }
         return INIT_GENERATION;
     }

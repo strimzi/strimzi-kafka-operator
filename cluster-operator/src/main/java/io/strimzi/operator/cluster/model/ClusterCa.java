@@ -28,7 +28,6 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.CertManager;
 import io.strimzi.certs.IpAndDnsValidation;
-import io.strimzi.certs.SecretCertProvider;
 import io.strimzi.certs.Subject;
 import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
@@ -320,8 +319,8 @@ public class ClusterCa extends Ca {
 
             if (!this.certRenewed() // No CA renewal is happening
                     && secret != null && secret.getData() != null // Secret exists and has some data
-                    && secretEntryExists(secret, podName, SecretCertProvider.SecretEntry.CRT) // The secret has the public key for this pod
-                    && secretEntryExists(secret, podName, SecretCertProvider.SecretEntry.KEY) // The secret has the private key for this pod
+                    && secretEntryExists(secret, podName, CertUtils.SecretEntry.CRT) // The secret has the public key for this pod
+                    && secretEntryExists(secret, podName, CertUtils.SecretEntry.KEY) // The secret has the private key for this pod
                     && !hasCaCertGenerationChanged(secret) // The generation on the Secret is the same as the CA has
             )   {
                 // A certificate for this node already exists, so we will try to reuse it
@@ -334,8 +333,8 @@ public class ClusterCa extends Ca {
                 } else {
                     // coming from an older operator version, the secret exists but without keystore and password
                     certAndKey = addKeyAndCertToKeyStore(subject.commonName(),
-                            Base64.getDecoder().decode(secretEntryDataForPod(secret, podName, SecretCertProvider.SecretEntry.KEY)),
-                            Base64.getDecoder().decode(secretEntryDataForPod(secret, podName, SecretCertProvider.SecretEntry.CRT)));
+                            Base64.getDecoder().decode(secretEntryDataForPod(secret, podName, CertUtils.SecretEntry.KEY)),
+                            Base64.getDecoder().decode(secretEntryDataForPod(secret, podName, CertUtils.SecretEntry.CRT)));
                 }
 
                 List<String> reasons = new ArrayList<>(2);
@@ -387,8 +386,8 @@ public class ClusterCa extends Ca {
      * @return  True if this secret was created by a newer version of the operator and false otherwise.
      */
     private boolean isNewVersion(Secret secret, String podName) {
-        String store = secretEntryDataForPod(secret, podName, SecretCertProvider.SecretEntry.P12_KEYSTORE);
-        String password = secretEntryDataForPod(secret, podName, SecretCertProvider.SecretEntry.P12_KEYSTORE_PASSWORD);
+        String store = secretEntryDataForPod(secret, podName, CertUtils.SecretEntry.P12_KEYSTORE);
+        String password = secretEntryDataForPod(secret, podName, CertUtils.SecretEntry.P12_KEYSTORE_PASSWORD);
 
         return store != null && !store.isEmpty() && password != null && !password.isEmpty();
     }
@@ -402,10 +401,10 @@ public class ClusterCa extends Ca {
      * @return  CertAndKey instance
      */
     private static CertAndKey asCertAndKey(Secret secret, String podName) {
-        return asCertAndKey(secret, secretEntryNameForPod(podName, SecretCertProvider.SecretEntry.KEY),
-                secretEntryNameForPod(podName, SecretCertProvider.SecretEntry.CRT),
-                secretEntryNameForPod(podName, SecretCertProvider.SecretEntry.P12_KEYSTORE),
-                secretEntryNameForPod(podName, SecretCertProvider.SecretEntry.P12_KEYSTORE_PASSWORD));
+        return asCertAndKey(secret, secretEntryNameForPod(podName, CertUtils.SecretEntry.KEY),
+                secretEntryNameForPod(podName, CertUtils.SecretEntry.CRT),
+                secretEntryNameForPod(podName, CertUtils.SecretEntry.P12_KEYSTORE),
+                secretEntryNameForPod(podName, CertUtils.SecretEntry.P12_KEYSTORE_PASSWORD));
     }
 
     /**
@@ -466,7 +465,7 @@ public class ClusterCa extends Ca {
      *
      * @return  True if the Secret contains a key based on the pod name and entry type. False otherwise.
      */
-    private static boolean secretEntryExists(Secret secret, String podName, SecretCertProvider.SecretEntry entry) {
+    private static boolean secretEntryExists(Secret secret, String podName, CertUtils.SecretEntry entry) {
         return secret.getData().containsKey(secretEntryNameForPod(podName, entry));
     }
 
@@ -479,7 +478,7 @@ public class ClusterCa extends Ca {
      *
      * @return  The data of the secret entry if found or null otherwise
      */
-    private static String secretEntryDataForPod(Secret secret, String podName, SecretCertProvider.SecretEntry entry) {
+    private static String secretEntryDataForPod(Secret secret, String podName, CertUtils.SecretEntry entry) {
         return secret.getData().get(secretEntryNameForPod(podName, entry));
     }
 
@@ -491,7 +490,7 @@ public class ClusterCa extends Ca {
      *
      * @return  The name of the secret entry
      */
-    public static String secretEntryNameForPod(String podName, SecretCertProvider.SecretEntry entry) {
+    public static String secretEntryNameForPod(String podName, CertUtils.SecretEntry entry) {
         return podName + entry.getSuffix();
     }
 

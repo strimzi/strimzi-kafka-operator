@@ -22,7 +22,6 @@ import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBui
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
-import io.strimzi.certs.SecretCertProvider;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
@@ -198,7 +197,7 @@ public class KafkaAssemblyOperatorMockTest {
                     assertThat(pod.getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, "0"));
                     var brokersSecret = client.secrets().inNamespace(NAMESPACE).withName(KafkaResources.kafkaSecretName(CLUSTER_NAME)).get();
                     assertThat(pod.getMetadata().getAnnotations(), hasEntry(Annotations.ANNO_STRIMZI_SERVER_CERT_HASH,
-                            CertUtils.getCertificateThumbprint(brokersSecret, ClusterCa.secretEntryNameForPod(pod.getMetadata().getName(), SecretCertProvider.SecretEntry.CRT))
+                            CertUtils.getCertificateThumbprint(brokersSecret, ClusterCa.secretEntryNameForPod(pod.getMetadata().getName(), CertUtils.SecretEntry.CRT))
                     ));
                 });
 
@@ -208,7 +207,7 @@ public class KafkaAssemblyOperatorMockTest {
                     assertThat(pod.getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, "0"));
                     var zooKeeperSecret = client.secrets().inNamespace(NAMESPACE).withName(KafkaResources.zookeeperSecretName(CLUSTER_NAME)).get();
                     assertThat(pod.getMetadata().getAnnotations(), hasEntry(Annotations.ANNO_STRIMZI_SERVER_CERT_HASH,
-                            CertUtils.getCertificateThumbprint(zooKeeperSecret, ClusterCa.secretEntryNameForPod(pod.getMetadata().getName(), SecretCertProvider.SecretEntry.CRT))
+                            CertUtils.getCertificateThumbprint(zooKeeperSecret, ClusterCa.secretEntryNameForPod(pod.getMetadata().getName(), CertUtils.SecretEntry.CRT))
                     ));
                 });
                 assertThat(client.configMaps().inNamespace(NAMESPACE).withName(KafkaResources.zookeeperMetricsAndLogConfigMapName(CLUSTER_NAME)).get(), is(notNullValue()));

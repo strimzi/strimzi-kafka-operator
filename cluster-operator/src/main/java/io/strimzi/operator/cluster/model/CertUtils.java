@@ -7,7 +7,6 @@ package io.strimzi.operator.cluster.model;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.certs.CertAndKey;
-import io.strimzi.certs.SecretCertProvider;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
@@ -16,10 +15,13 @@ import io.strimzi.operator.common.model.Labels;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.security.cert.CertificateEncodingException;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Base64;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static java.util.Collections.emptyMap;
 
@@ -27,8 +29,43 @@ import static java.util.Collections.emptyMap;
  * Certificate utility methods
  */
 public class CertUtils {
-
     protected static final ReconciliationLogger LOGGER = ReconciliationLogger.create(CertUtils.class.getName());
+
+    /**
+     * A certificate entry in a Kubernetes Secret. Used to construct the keys in the Secret data where certificates are stored.
+     */
+    public enum SecretEntry {
+        /**
+         * A 64-bit encoded X509 Certificate
+         */
+        CRT(".crt"),
+        /**
+         * Entity private key
+         */
+        KEY(".key"),
+        /**
+         * Entity certificate and key as a P12 keystore
+         */
+        P12_KEYSTORE(".p12"),
+        /**
+         * P12 keystore password
+         */
+        P12_KEYSTORE_PASSWORD(".password");
+
+        final String suffix;
+
+        SecretEntry(String suffix) {
+            this.suffix = suffix;
+        }
+
+        /**
+         * @return The suffix of the key in the Secret
+         */
+        public String getSuffix() {
+            return suffix;
+        }
+
+    }
 
     /**
      * Generates a short SHA1-hash (a hash stub) of the certificate which is used to track when the certificate changes and rolling update needs to be triggered.
@@ -63,7 +100,7 @@ public class CertUtils {
      *
      * @param reconciliation                        Reconciliation marker
      * @param clusterCa                             The Cluster CA
-     * @param secret                                Kubernetes Secret
+     * @param secret                                Existing Kubernetes certificate Secret containing the certificate to use if present and does not need renewing
      * @param namespace                             Namespace
      * @param secretName                            Name of the Kubernetes secret
      * @param commonName                            Common Name of the certificate
@@ -74,9 +111,9 @@ public class CertUtils {
      *
      * @return  Newly built Secret
      */
-    public static Secret buildTrustedCertificateSecret(Reconciliation reconciliation, ClusterCa clusterCa, Secret secret, String namespace, String secretName,
-                                                       String commonName, String keyCertName, Labels labels, OwnerReference ownerReference, boolean isMaintenanceTimeWindowsSatisfied) {
-        CertAndKey certAndKey = null;
+    public static Secret buildTrustedCertificateSecret(Reconciliation reconciliation, ClusterCa clusterCa, Secret secret, String namespace,
+                                                       String secretName, String commonName, String keyCertName,
+                                                       Labels labels, OwnerReference ownerReference, boolean isMaintenanceTimeWindowsSatisfied) {
         boolean shouldBeRegenerated = false;
         List<String> reasons = new ArrayList<>(2);
 
@@ -84,14 +121,16 @@ public class CertUtils {
             reasons.add("certificate doesn't exist yet");
             shouldBeRegenerated = true;
         } else {
-            if (clusterCa.keyCreated() || clusterCa.certRenewed() ||
-                    (isMaintenanceTimeWindowsSatisfied && clusterCa.isExpiring(secret, keyCertName + SecretCertProvider.SecretEntry.CRT.getSuffix())) ||
-                    clusterCa.hasCaCertGenerationChanged(secret)) {
+            if (clusterCa.keyCreated()
+                    || clusterCa.certRenewed()
+                    || (isMaintenanceTimeWindowsSatisfied && clusterCa.isExpiring(secret, keyCertName + SecretEntry.CRT.getSuffix()))
+                    || clusterCa.hasCaCertGenerationChanged(secret)) {
                 reasons.add("certificate needs to be renewed");
                 shouldBeRegenerated = true;
             }
         }
 
+        CertAndKey certAndKey = null;
         if (shouldBeRegenerated) {
             LOGGER.debugCr(reconciliation, "Certificate for pod {} need to be regenerated because: {}", keyCertName, String.join(", ", reasons));
 
@@ -103,9 +142,9 @@ public class CertUtils {
 
             LOGGER.debugCr(reconciliation, "End generating certificates");
         } else {
-            CertAndKey keyStoreCertAndKey = SecretCertProvider.keyStoreCertAndKey(secret, keyCertName);
-            if (keyStoreCertAndKey.keyStore().length != 0 &&
-                    keyStoreCertAndKey.storePassword() != null) {
+            CertAndKey keyStoreCertAndKey = keyStoreCertAndKey(secret, keyCertName);
+            if (keyStoreCertAndKey.keyStore().length != 0
+                    && keyStoreCertAndKey.storePassword() != null) {
                 certAndKey = keyStoreCertAndKey;
             } else {
                 try {
@@ -118,6 +157,84 @@ public class CertUtils {
                 }
             }
         }
-        return ModelUtils.createSecret(secretName, namespace, labels, ownerReference, SecretCertProvider.buildSecretData(Collections.singletonMap(keyCertName, certAndKey)), clusterCa.caCertGenerationFullAnnotation(), emptyMap());
+
+        Map<String, String> secretData = certAndKey == null ? Map.of() : buildSecretData(Map.of(keyCertName, certAndKey));
+
+        return ModelUtils.createSecret(secretName, namespace, labels, ownerReference, secretData, Map.ofEntries(clusterCa.caCertGenerationFullAnnotation()), emptyMap());
+    }
+
+    /**
+     * Constructs a Map containing the provided certificates to be stored in a Kubernetes Secret.
+     *
+     * @param certificates to store
+     * @return Map of certificate identifier to base64 encoded certificate or key
+     */
+    public static Map<String, String> buildSecretData(Map<String, CertAndKey> certificates) {
+        Map<String, String> data = new HashMap<>(certificates.size() * 4);
+        certificates.forEach((keyCertName, certAndKey) -> {
+            data.put(keyCertName + SecretEntry.KEY.getSuffix(), certAndKey.keyAsBase64String());
+            data.put(keyCertName + SecretEntry.CRT.getSuffix(), certAndKey.certAsBase64String());
+            data.put(keyCertName + SecretEntry.P12_KEYSTORE.getSuffix(), certAndKey.keyStoreAsBase64String());
+            data.put(keyCertName + SecretEntry.P12_KEYSTORE_PASSWORD.getSuffix(), certAndKey.storePasswordAsBase64String());
+        });
+        return data;
+    }
+
+    private static byte[] decodeFromSecret(Secret secret, String key) {
+        if (secret.getData().get(key) != null && !secret.getData().get(key).isEmpty()) {
+            return Base64.getDecoder().decode(secret.getData().get(key));
+        } else {
+            return new byte[]{};
+        }
+    }
+
+    /**
+     * Extracts the KeyStore from the Kubernetes Secret as a CertAndKey
+     * @param secret to extract certificate and key from
+     * @param keyCertName name of the KeyStore
+     * @return the KeyStore as a CertAndKey. Returned object has empty truststore and
+     * may have empty key, cert or keystore and null store password.
+     */
+    public static CertAndKey keyStoreCertAndKey(Secret secret, String keyCertName) {
+        byte[] passwordBytes = decodeFromSecret(secret, keyCertName + SecretEntry.P12_KEYSTORE_PASSWORD.getSuffix());
+        String password = passwordBytes.length == 0 ? null : new String(passwordBytes, StandardCharsets.US_ASCII);
+        return new CertAndKey(
+                decodeFromSecret(secret, keyCertName + SecretEntry.KEY.getSuffix()),
+                decodeFromSecret(secret, keyCertName + SecretEntry.CRT.getSuffix()),
+                new byte[]{},
+                decodeFromSecret(secret, keyCertName + SecretEntry.P12_KEYSTORE.getSuffix()),
+                password
+        );
+    }
+
+    /**
+     * Compares two Kubernetes Secrets with certificates and checks whether any value for a key which exists in both Secrets
+     * changed. This method is used to evaluate whether rolling update of existing brokers is needed when secrets with
+     * certificates change. It separates changes for existing certificates with other changes to the Secret such as
+     * added or removed certificates (scale-up or scale-down).
+     *
+     * @param current   Existing secret
+     * @param desired   Desired secret
+     *
+     * @return  True if there is a key which exists in the data sections of both secrets and which changed.
+     */
+    public static boolean doExistingCertificatesDiffer(Secret current, Secret desired) {
+        Map<String, String> currentData = current.getData();
+        Map<String, String> desiredData = desired.getData();
+
+        if (currentData == null) {
+            return true;
+        } else {
+            for (Map.Entry<String, String> entry : currentData.entrySet()) {
+                String desiredValue = desiredData.get(entry.getKey());
+                if (entry.getValue() != null
+                        && desiredValue != null
+                        && !entry.getValue().equals(desiredValue)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 }

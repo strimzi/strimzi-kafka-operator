@@ -12,8 +12,8 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.strimzi.api.kafka.model.CruiseControlResources;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.storage.Storage;
-import io.strimzi.certs.SecretCertProvider;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
+import io.strimzi.operator.cluster.model.CertUtils;
 import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.CruiseControl;
@@ -207,7 +207,7 @@ public class CruiseControlReconciler {
                                 .compose(patchResult -> {
                                     if (patchResult instanceof ReconcileResult.Patched) {
                                         // The secret is patched and some changes to the existing certificates actually occurred
-                                        existingCertsChanged = SecretCertProvider.doExistingCertificatesDiffer(oldSecret, patchResult.resource());
+                                        existingCertsChanged = CertUtils.doExistingCertificatesDiffer(oldSecret, patchResult.resource());
                                     } else {
                                         existingCertsChanged = false;
                                     }

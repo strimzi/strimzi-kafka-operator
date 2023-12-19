@@ -14,7 +14,6 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.api.kafka.model.status.KafkaStatus;
 import io.strimzi.api.kafka.model.storage.Storage;
-import io.strimzi.certs.SecretCertProvider;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.common.model.Ca;
@@ -421,7 +420,7 @@ public class ZooKeeperReconciler {
                                         zkCertificateHash.put(
                                                 podNum,
                                                 CertUtils.getCertificateThumbprint(patchResult.resource(),
-                                                        ClusterCa.secretEntryNameForPod(podName, SecretCertProvider.SecretEntry.CRT)
+                                                        ClusterCa.secretEntryNameForPod(podName, CertUtils.SecretEntry.CRT)
                                                 ));
                                     }
                                 }

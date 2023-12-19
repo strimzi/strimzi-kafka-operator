@@ -2,7 +2,7 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.certs;
+package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
@@ -11,8 +11,7 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-public class SecretCertProviderTest {
-
+public class CertUtilsTest {
     @Test
     public void testExistingCertificatesDiffer()   {
         Secret defaultSecret = new SecretBuilder()
@@ -99,12 +98,12 @@ public class SecretCertProviderTest {
                 .addToData("my-cluster-kafka-0.key", "NewKey0")
                 .build();
 
-        assertThat(SecretCertProvider.doExistingCertificatesDiffer(defaultSecret, defaultSecret), is(false));
-        assertThat(SecretCertProvider.doExistingCertificatesDiffer(defaultSecret, sameAsDefaultSecret), is(false));
-        assertThat(SecretCertProvider.doExistingCertificatesDiffer(defaultSecret, scaleDownSecret), is(false));
-        assertThat(SecretCertProvider.doExistingCertificatesDiffer(defaultSecret, scaleUpSecret), is(false));
-        assertThat(SecretCertProvider.doExistingCertificatesDiffer(defaultSecret, changedSecret), is(true));
-        assertThat(SecretCertProvider.doExistingCertificatesDiffer(defaultSecret, changedScaleUpSecret), is(true));
-        assertThat(SecretCertProvider.doExistingCertificatesDiffer(defaultSecret, changedScaleDownSecret), is(true));
+        assertThat(CertUtils.doExistingCertificatesDiffer(defaultSecret, defaultSecret), is(false));
+        assertThat(CertUtils.doExistingCertificatesDiffer(defaultSecret, sameAsDefaultSecret), is(false));
+        assertThat(CertUtils.doExistingCertificatesDiffer(defaultSecret, scaleDownSecret), is(false));
+        assertThat(CertUtils.doExistingCertificatesDiffer(defaultSecret, scaleUpSecret), is(false));
+        assertThat(CertUtils.doExistingCertificatesDiffer(defaultSecret, changedSecret), is(true));
+        assertThat(CertUtils.doExistingCertificatesDiffer(defaultSecret, changedScaleUpSecret), is(true));
+        assertThat(CertUtils.doExistingCertificatesDiffer(defaultSecret, changedScaleDownSecret), is(true));
     }
 }

@@ -9,8 +9,8 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.certs.SecretCertProvider;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
+import io.strimzi.operator.cluster.model.CertUtils;
 import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.EntityOperator;
@@ -349,7 +349,7 @@ public class EntityOperatorReconciler {
                                 .compose(patchResult -> {
                                     if (patchResult instanceof ReconcileResult.Patched) {
                                         // The secret is patched and some changes to the existing certificates actually occurred
-                                        existingEntityTopicOperatorCertsChanged = SecretCertProvider.doExistingCertificatesDiffer(oldSecret, patchResult.resource());
+                                        existingEntityTopicOperatorCertsChanged = CertUtils.doExistingCertificatesDiffer(oldSecret, patchResult.resource());
                                     } else {
                                         existingEntityTopicOperatorCertsChanged = false;
                                     }
@@ -382,7 +382,7 @@ public class EntityOperatorReconciler {
                                 .compose(patchResult -> {
                                     if (patchResult instanceof ReconcileResult.Patched) {
                                         // The secret is patched and some changes to the existing certificates actually occurred
-                                        existingEntityUserOperatorCertsChanged = SecretCertProvider.doExistingCertificatesDiffer(oldSecret, patchResult.resource());
+                                        existingEntityUserOperatorCertsChanged = CertUtils.doExistingCertificatesDiffer(oldSecret, patchResult.resource());
                                     } else {
                                         existingEntityUserOperatorCertsChanged = false;
                                     }

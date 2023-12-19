@@ -35,7 +35,6 @@ import io.strimzi.api.kafka.model.template.PodTemplate;
 import io.strimzi.api.kafka.model.template.ResourceTemplate;
 import io.strimzi.api.kafka.model.template.ZookeeperClusterTemplate;
 import io.strimzi.certs.CertAndKey;
-import io.strimzi.certs.SecretCertProvider;
 import io.strimzi.operator.cluster.model.jmx.JmxModel;
 import io.strimzi.operator.cluster.model.jmx.SupportsJmx;
 import io.strimzi.operator.cluster.model.logging.LoggingModel;
@@ -453,7 +452,7 @@ public class ZookeeperCluster extends AbstractModel implements SupportsMetrics, 
         }
 
         return ModelUtils.createSecret(KafkaResources.zookeeperSecretName(cluster), namespace, labels, ownerReference,
-                SecretCertProvider.buildSecretData(certs), clusterCa.caCertGenerationFullAnnotation(), emptyMap());
+                CertUtils.buildSecretData(certs), Map.ofEntries(clusterCa.caCertGenerationFullAnnotation()), emptyMap());
     }
 
     /* test */ Container createContainer(ImagePullPolicy imagePullPolicy) {

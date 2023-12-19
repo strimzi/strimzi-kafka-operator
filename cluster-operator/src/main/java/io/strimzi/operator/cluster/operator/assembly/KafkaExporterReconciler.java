@@ -8,8 +8,8 @@ import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaExporterResources;
-import io.strimzi.certs.SecretCertProvider;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
+import io.strimzi.operator.cluster.model.CertUtils;
 import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.ImagePullPolicy;
@@ -134,7 +134,7 @@ public class KafkaExporterReconciler {
                                 .compose(patchResult -> {
                                     if (patchResult instanceof ReconcileResult.Patched) {
                                         // The secret is patched and some changes to the existing certificates actually occurred
-                                        existingKafkaExporterCertsChanged = SecretCertProvider.doExistingCertificatesDiffer(oldSecret, patchResult.resource());
+                                        existingKafkaExporterCertsChanged = CertUtils.doExistingCertificatesDiffer(oldSecret, patchResult.resource());
                                     } else {
                                         existingKafkaExporterCertsChanged = false;
                                     }
