@@ -18,7 +18,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.IOException;
 import java.util.Base64;
+import java.util.Map;
 
+import static io.strimzi.operator.common.model.Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.mockito.ArgumentMatchers.any;
@@ -33,6 +35,7 @@ public class CertificateRenewalTest {
         CertAndKey newCertAndKey = new CertAndKey("new-key".getBytes(), "new-cert".getBytes(), "new-truststore".getBytes(), "new-keystore".getBytes(), "new-password");
         ClusterCa clusterCaMock = mock(ClusterCa.class);
         when(clusterCaMock.generateSignedCert(anyString(), anyString())).thenReturn(newCertAndKey);
+        when(clusterCaMock.caCertGenerationFullAnnotation()).thenReturn(Map.entry(ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "1"));
         String namespace = "my-namespace";
         String secretName = "my-secret";
         String commonName = "deployment";
@@ -66,6 +69,7 @@ public class CertificateRenewalTest {
         when(clusterCaMock.certRenewed()).thenReturn(true);
         when(clusterCaMock.isExpiring(any(), any())).thenReturn(false);
         when(clusterCaMock.generateSignedCert(anyString(), anyString())).thenReturn(newCertAndKey);
+        when(clusterCaMock.caCertGenerationFullAnnotation()).thenReturn(Map.entry(ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "1"));
         String namespace = "my-namespace";
         String secretName = "my-secret";
         String commonName = "deployment";
@@ -99,6 +103,7 @@ public class CertificateRenewalTest {
         when(clusterCaMock.certRenewed()).thenReturn(false);
         when(clusterCaMock.isExpiring(any(), any())).thenReturn(true);
         when(clusterCaMock.generateSignedCert(anyString(), anyString())).thenReturn(newCertAndKey);
+        when(clusterCaMock.caCertGenerationFullAnnotation()).thenReturn(Map.entry(ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "1"));
         String namespace = "my-namespace";
         String secretName = "my-secret";
         String commonName = "deployment";
@@ -132,6 +137,7 @@ public class CertificateRenewalTest {
         when(clusterCaMock.certRenewed()).thenReturn(false);
         when(clusterCaMock.isExpiring(any(), any())).thenReturn(true);
         when(clusterCaMock.generateSignedCert(anyString(), anyString())).thenReturn(newCertAndKey);
+        when(clusterCaMock.caCertGenerationFullAnnotation()).thenReturn(Map.entry(ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "1"));
         String namespace = "my-namespace";
         String secretName = "my-secret";
         String commonName = "deployment";
