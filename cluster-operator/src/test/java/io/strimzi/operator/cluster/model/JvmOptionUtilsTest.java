@@ -225,6 +225,29 @@ class JvmOptionUtilsTest {
     }
 
     @ParallelTest
+    void testThatUnlockExperimentalVMOptionsPerformanceOptionIsAlwaysSetFirst() {
+        // when
+        var envVars = new ArrayList<EnvVar>();
+        var jvmOptions = new JvmOptions();
+        jvmOptions.setXx(Map.of(
+                "a", "1",
+                "b", "false",
+                "c", "true",
+                "UnlockExperimentalVMOptions", "true",
+                "z", "anything"));
+
+        // when
+        JvmOptionUtils.jvmPerformanceOptions(envVars, jvmOptions);
+
+        // then
+        var expectedPerformanceOpts = new EnvVarBuilder()
+                .withName(AbstractModel.ENV_VAR_KAFKA_JVM_PERFORMANCE_OPTS)
+                .withValue("-XX:+UnlockExperimentalVMOptions -XX:a=1 -XX:-b -XX:+c -XX:z=anything")
+                .build();
+        assertThat(envVars, equalTo(List.of(expectedPerformanceOpts)));
+    }
+
+    @ParallelTest
     void testThatJavaOptionsAreIgnoredOnNullJvmOptions() {
         // given
         var envVars = new ArrayList<EnvVar>();

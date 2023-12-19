@@ -29,7 +29,7 @@ public final class JvmOptionUtils  {
     /**
      * Set of JVM performance options to be prioritized in sorting.
      */
-    private static final Set<String> JVM_PERFORMANCE_PRIORITY_OPTIONS = Set.of("UnlockDiagnosticVMOptions");
+    private static final Set<String> JVM_PERFORMANCE_PRIORITY_OPTIONS = Set.of("UnlockDiagnosticVMOptions", "UnlockExperimentalVMOptions");
 
     private static final String X_MS = "-Xms";
     private static final String X_MX = "-Xmx";
