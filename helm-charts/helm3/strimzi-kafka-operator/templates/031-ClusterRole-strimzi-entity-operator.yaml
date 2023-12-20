@@ -13,12 +13,8 @@ rules:
 - apiGroups:
   - "kafka.strimzi.io"
   resources:
-    # The entity operator runs the KafkaTopic assembly operator, which needs to access and manage KafkaTopic resources
+    # The Entity Operator contains the Topic Operator which needs to access and manage KafkaTopic resources
   - kafkatopics
-  - kafkatopics/status
-    # The entity operator runs the KafkaUser assembly operator, which needs to access and manage KafkaUser resources
-  - kafkausers
-  - kafkausers/status
   verbs:
   - get
   - list
@@ -27,6 +23,29 @@ rules:
   - patch
   - update
   - delete
+- apiGroups:
+  - "kafka.strimzi.io"
+  resources:
+    # The Entity Operator contains the User Operator which needs to access and manage KafkaUser resources
+  - kafkausers
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - patch
+  - update
+- apiGroups:
+  - "kafka.strimzi.io"
+  resources:
+    # The Entity Operator contains the Topic Operator which needs to access and manage KafkaTopic resources
+  - kafkatopics/status
+    # The Entity Operator contains the User Operator which needs to access and manage KafkaUser resources
+  - kafkausers/status
+  verbs:
+  - get
+  - patch
+  - update
 - apiGroups:
   - ""
   resources:
