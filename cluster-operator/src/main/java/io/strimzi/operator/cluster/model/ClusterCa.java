@@ -319,8 +319,8 @@ public class ClusterCa extends Ca {
 
             if (!this.certRenewed() // No CA renewal is happening
                     && secret != null && secret.getData() != null // Secret exists and has some data
-                    && secretEntryExists(secret, podName, CertUtils.SecretEntry.CRT) // The secret has the public key for this pod
-                    && secretEntryExists(secret, podName, CertUtils.SecretEntry.KEY) // The secret has the private key for this pod
+                    && secretEntryExists(secret, podName, SecretEntry.CRT) // The secret has the public key for this pod
+                    && secretEntryExists(secret, podName, SecretEntry.KEY) // The secret has the private key for this pod
                     && !hasCaCertGenerationChanged(secret) // The generation on the Secret is the same as the CA has
             )   {
                 // A certificate for this node already exists, so we will try to reuse it
@@ -333,8 +333,8 @@ public class ClusterCa extends Ca {
                 } else {
                     // coming from an older operator version, the secret exists but without keystore and password
                     certAndKey = addKeyAndCertToKeyStore(subject.commonName(),
-                            Base64.getDecoder().decode(secretEntryDataForPod(secret, podName, CertUtils.SecretEntry.KEY)),
-                            Base64.getDecoder().decode(secretEntryDataForPod(secret, podName, CertUtils.SecretEntry.CRT)));
+                            Base64.getDecoder().decode(secretEntryDataForPod(secret, podName, SecretEntry.KEY)),
+                            Base64.getDecoder().decode(secretEntryDataForPod(secret, podName, SecretEntry.CRT)));
                 }
 
                 List<String> reasons = new ArrayList<>(2);
@@ -386,8 +386,8 @@ public class ClusterCa extends Ca {
      * @return  True if this secret was created by a newer version of the operator and false otherwise.
      */
     private boolean isNewVersion(Secret secret, String podName) {
-        String store = secretEntryDataForPod(secret, podName, CertUtils.SecretEntry.P12_KEYSTORE);
-        String password = secretEntryDataForPod(secret, podName, CertUtils.SecretEntry.P12_KEYSTORE_PASSWORD);
+        String store = secretEntryDataForPod(secret, podName, SecretEntry.P12_KEYSTORE);
+        String password = secretEntryDataForPod(secret, podName, SecretEntry.P12_KEYSTORE_PASSWORD);
 
         return store != null && !store.isEmpty() && password != null && !password.isEmpty();
     }
@@ -401,10 +401,10 @@ public class ClusterCa extends Ca {
      * @return  CertAndKey instance
      */
     private static CertAndKey asCertAndKey(Secret secret, String podName) {
-        return asCertAndKey(secret, secretEntryNameForPod(podName, CertUtils.SecretEntry.KEY),
-                secretEntryNameForPod(podName, CertUtils.SecretEntry.CRT),
-                secretEntryNameForPod(podName, CertUtils.SecretEntry.P12_KEYSTORE),
-                secretEntryNameForPod(podName, CertUtils.SecretEntry.P12_KEYSTORE_PASSWORD));
+        return asCertAndKey(secret, SecretEntry.KEY.asKey(podName),
+                SecretEntry.CRT.asKey(podName),
+                SecretEntry.P12_KEYSTORE.asKey(podName),
+                SecretEntry.P12_KEYSTORE_PASSWORD.asKey(podName));
     }
 
     /**
@@ -465,8 +465,8 @@ public class ClusterCa extends Ca {
      *
      * @return  True if the Secret contains a key based on the pod name and entry type. False otherwise.
      */
-    private static boolean secretEntryExists(Secret secret, String podName, CertUtils.SecretEntry entry) {
-        return secret.getData().containsKey(secretEntryNameForPod(podName, entry));
+    private static boolean secretEntryExists(Secret secret, String podName, SecretEntry entry) {
+        return secret.getData().containsKey(entry.asKey(podName));
     }
 
     /**
@@ -478,20 +478,8 @@ public class ClusterCa extends Ca {
      *
      * @return  The data of the secret entry if found or null otherwise
      */
-    private static String secretEntryDataForPod(Secret secret, String podName, CertUtils.SecretEntry entry) {
-        return secret.getData().get(secretEntryNameForPod(podName, entry));
-    }
-
-    /**
-     * Get the name of secret entry of given SecretEntry type for podName
-     *
-     * @param podName   Name of the pod which secret entry is looked for
-     * @param entry     The SecretEntry type
-     *
-     * @return  The name of the secret entry
-     */
-    public static String secretEntryNameForPod(String podName, CertUtils.SecretEntry entry) {
-        return podName + entry.getSuffix();
+    private static String secretEntryDataForPod(Secret secret, String podName, SecretEntry entry) {
+        return secret.getData().get(entry.asKey(podName));
     }
 
     /**

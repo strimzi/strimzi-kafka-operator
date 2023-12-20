@@ -32,42 +32,6 @@ public class CertUtils {
     protected static final ReconciliationLogger LOGGER = ReconciliationLogger.create(CertUtils.class.getName());
 
     /**
-     * A certificate entry in a Kubernetes Secret. Used to construct the keys in the Secret data where certificates are stored.
-     */
-    public enum SecretEntry {
-        /**
-         * A 64-bit encoded X509 Certificate
-         */
-        CRT(".crt"),
-        /**
-         * Entity private key
-         */
-        KEY(".key"),
-        /**
-         * Entity certificate and key as a P12 keystore
-         */
-        P12_KEYSTORE(".p12"),
-        /**
-         * P12 keystore password
-         */
-        P12_KEYSTORE_PASSWORD(".password");
-
-        final String suffix;
-
-        SecretEntry(String suffix) {
-            this.suffix = suffix;
-        }
-
-        /**
-         * @return The suffix of the key in the Secret
-         */
-        public String getSuffix() {
-            return suffix;
-        }
-
-    }
-
-    /**
      * Generates a short SHA1-hash (a hash stub) of the certificate which is used to track when the certificate changes and rolling update needs to be triggered.
      *
      * @param certSecret    Secrets with the certificate
@@ -123,7 +87,7 @@ public class CertUtils {
         } else {
             if (clusterCa.keyCreated()
                     || clusterCa.certRenewed()
-                    || (isMaintenanceTimeWindowsSatisfied && clusterCa.isExpiring(secret, keyCertName + SecretEntry.CRT.getSuffix()))
+                    || (isMaintenanceTimeWindowsSatisfied && clusterCa.isExpiring(secret, Ca.SecretEntry.CRT.asKey(keyCertName)))
                     || clusterCa.hasCaCertGenerationChanged(secret)) {
                 reasons.add("certificate needs to be renewed");
                 shouldBeRegenerated = true;
@@ -172,10 +136,10 @@ public class CertUtils {
     public static Map<String, String> buildSecretData(Map<String, CertAndKey> certificates) {
         Map<String, String> data = new HashMap<>(certificates.size() * 4);
         certificates.forEach((keyCertName, certAndKey) -> {
-            data.put(keyCertName + SecretEntry.KEY.getSuffix(), certAndKey.keyAsBase64String());
-            data.put(keyCertName + SecretEntry.CRT.getSuffix(), certAndKey.certAsBase64String());
-            data.put(keyCertName + SecretEntry.P12_KEYSTORE.getSuffix(), certAndKey.keyStoreAsBase64String());
-            data.put(keyCertName + SecretEntry.P12_KEYSTORE_PASSWORD.getSuffix(), certAndKey.storePasswordAsBase64String());
+            data.put(Ca.SecretEntry.KEY.asKey(keyCertName), certAndKey.keyAsBase64String());
+            data.put(Ca.SecretEntry.CRT.asKey(keyCertName), certAndKey.certAsBase64String());
+            data.put(Ca.SecretEntry.P12_KEYSTORE.asKey(keyCertName), certAndKey.keyStoreAsBase64String());
+            data.put(Ca.SecretEntry.P12_KEYSTORE_PASSWORD.asKey(keyCertName), certAndKey.storePasswordAsBase64String());
         });
         return data;
     }
@@ -196,13 +160,13 @@ public class CertUtils {
      * may have empty key, cert or keystore and null store password.
      */
     public static CertAndKey keyStoreCertAndKey(Secret secret, String keyCertName) {
-        byte[] passwordBytes = decodeFromSecret(secret, keyCertName + SecretEntry.P12_KEYSTORE_PASSWORD.getSuffix());
+        byte[] passwordBytes = decodeFromSecret(secret, Ca.SecretEntry.P12_KEYSTORE_PASSWORD.asKey(keyCertName));
         String password = passwordBytes.length == 0 ? null : new String(passwordBytes, StandardCharsets.US_ASCII);
         return new CertAndKey(
-                decodeFromSecret(secret, keyCertName + SecretEntry.KEY.getSuffix()),
-                decodeFromSecret(secret, keyCertName + SecretEntry.CRT.getSuffix()),
+                decodeFromSecret(secret, Ca.SecretEntry.KEY.asKey(keyCertName)),
+                decodeFromSecret(secret, Ca.SecretEntry.CRT.asKey(keyCertName)),
                 new byte[]{},
-                decodeFromSecret(secret, keyCertName + SecretEntry.P12_KEYSTORE.getSuffix()),
+                decodeFromSecret(secret, Ca.SecretEntry.P12_KEYSTORE.asKey(keyCertName)),
                 password
         );
     }
