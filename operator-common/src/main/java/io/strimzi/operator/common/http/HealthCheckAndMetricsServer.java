@@ -79,11 +79,11 @@ public class HealthCheckAndMetricsServer {
 
     private static ContextHandler contextHandler(String path, Handler handler) {
         LOGGER.debug("Configuring path {} with handler {}", path, handler);
-        ContextHandler metricsContext = new ContextHandler();
-        metricsContext.setContextPath(path);
-        metricsContext.setHandler(handler);
-        metricsContext.setAllowNullPathInfo(true);
-        return metricsContext;
+        ContextHandler contextHandler = new ContextHandler();
+        contextHandler.setContextPath(path);
+        contextHandler.setHandler(handler);
+        contextHandler.setAllowNullPathInfo(true);
+        return contextHandler;
     }
 
     /**
