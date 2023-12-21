@@ -14,6 +14,12 @@ The Cluster Operator performs rolling updates based on the annotation.
 
 * You have xref:proc-drain-cleaner-deploying-{context}[deployed the Strimzi Drain Cleaner].
 
+.Considerations when using anti-affinity configuration 
+
+If using xref:assembly-scheduling-str[anti-affinity] with your Kafka or ZooKeeper pods, consider adding a spare worker node to your cluster or allowing pod rescheduling on the master node.
+Including spare nodes ensures that your cluster has the capacity to reschedule pods, especially during node draining or temporary unavailability of other nodes.
+When a worker node is drained, and anti-affinity rules restrict pod rescheduling on alternative nodes, spare nodes help prevent restarted pods from becoming unschedulable on other worker nodes.  This mitigates the risk of the draining operation failing.
+
 .Procedure
 
 . Drain a specified Kubernetes node hosting the Kafka broker or ZooKeeper pods.
