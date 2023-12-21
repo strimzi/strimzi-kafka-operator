@@ -4,7 +4,7 @@ metadata:
   name: cluster-a
 spec:
   kafka:
-    version: 3.6.0
+    version: 3.6.1
     replicas: 1
     listeners:
       - name: tls
@@ -46,7 +46,7 @@ metadata:
   name: cluster-b
 spec:
   kafka:
-    version: 3.6.0
+    version: 3.6.1
     replicas: 1
     listeners:
       - name: tls
@@ -218,7 +218,7 @@ kind: KafkaMirrorMaker2
 metadata:
   name: my-mirror-maker-2
 spec:
-  version: 3.6.0
+  version: 3.6.1
   replicas: 1
   connectCluster: "cluster-b" # Must be the target custer
   clusters:
@@ -261,11 +261,16 @@ spec:
           replication.factor: -1
           offset-syncs.topic.replication.factor: -1
           sync.topic.acls.enabled: "false"
+          refresh.topics.interval.seconds: 600
+          offset.lag.max: 100
       checkpointConnector:
         tasksMax: 1
         config:
           # -1 means it will use the default replication factor configured in the broker
           checkpoints.topic.replication.factor: -1
           sync.group.offsets.enabled: "true"
+          emit.checkpoints.interval.seconds: 60
+          sync.group.offsets.interval.seconds: 60
+          refresh.groups.interval.seconds: 600
       topicsPattern: ".*"
       groupsPattern: ".*"

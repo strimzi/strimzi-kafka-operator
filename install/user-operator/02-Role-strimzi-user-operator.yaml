@@ -9,7 +9,6 @@ rules:
   - "kafka.strimzi.io"
   resources:
   - kafkausers
-  - kafkausers/status
   verbs:
   - get
   - list
@@ -17,7 +16,14 @@ rules:
   - create
   - patch
   - update
-  - delete
+- apiGroups:
+  - "kafka.strimzi.io"
+  resources:
+  - kafkausers/status
+  verbs:
+  - get
+  - patch
+  - update
 - apiGroups:
   - ""
   resources:
