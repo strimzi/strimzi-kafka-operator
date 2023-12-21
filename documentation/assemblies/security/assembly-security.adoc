@@ -8,40 +8,53 @@
 [role="_abstract"]
 Strimzi supports TLS for encrypted communication between Kafka and Strimzi components.
 
-Strimzi establishes encrypted TLS connections for communication between the following components:
+Strimzi establishes encrypted TLS connections for communication between the following components when using Kafka in KRaft mode:
 
-* Kafka brokers and ZooKeeper nodes
-* Kafka brokers (interbroker communication) 
-* ZooKeeper nodes (internodal communication)
-* Strimzi operators and Kafka and ZooKeeper
-* Cruise Control and Kafka
-* Kafka Exporter and Kafka
+* Kafka brokers
+* Kafka controllers
+* Kafka brokers and controllers
+* Strimzi operators and Kafka
+* Cruise Control and Kafka brokers
+* Kafka Exporter and Kafka brokers
 
-Connections between clients and brokers use listeners that you must configure to use TLS-encrypted communication. 
+Connections between clients and Kafka brokers use listeners that you must configure to use TLS-encrypted communication. 
 You configure these listeners in the `Kafka` custom resource and each listener name and port number must be unique within the cluster. 
 Communication between Kafka brokers and Kafka clients is encrypted according to how the `tls` property is configured for the listener.
 For more information, see xref:deploy-client-access-str[].
  
 The following diagram shows the connections for secure communication.   
 
-.Kafka and ZooKeeper communication secured by TLS encryption
-image::secure_communication.png[Secure Communication]
+.KRaft-based Kafka communication secured by TLS encryption
+image::secure_communication_kraft.png[Secure Communication]
 
 The ports shown in the diagram are used as follows:
 
-Control plane listener (9090):: Connections between the Kafka controller and brokers use an internal control plane listener on port 9090, facilitating interbroker communication.
+Control plane listener (9090):: The internal control plane listener on port 9090 facilitates interbroker communication between Kafka controllers and broker-to-controller communication.
+Additionally, the Cluster Operator communicates with the controllers through the listener.
 This listener is not accessible to Kafka clients.
-Replication listener (9091):: Data replication between brokers, as well as internal connections from Strimzi operators, Cruise Control, and the Kafka Exporter, use the replication listener on port 9091.
+Replication listener (9091):: Data replication between brokers, as well as internal connections to the brokers from Strimzi operators, Cruise Control, and the Kafka Exporter, use the replication listener on port 9091.
 This listener is not accessible to Kafka clients.
 Listeners for client connections (9092 or higher):: 
 For TLS-encrypted communication (through configuration of the listener), internal and external clients connect to Kafka brokers.
 External clients (producers and consumers) connect to the Kafka brokers through the advertised listener port.    
-ZooKeeper Port (2181):: ZooKeeper port for connection to Kafka.
-ZooKeeper internodal communication port (2888):: ZooKeeper port for internodal communication between ZooKeeper nodes.
-ZooKeeper leader election port (3888):: ZooKeeper port for leader election among ZooKeeper nodes in a ZooKeeper cluster.
 
 IMPORTANT: When configuring listeners for client access to brokers, you can use port 9092 or higher (9093, 9094, and so on), but with a few exceptions.
 The listeners cannot be configured to use the ports reserved for interbroker communication (9090 and 9091), Prometheus metrics (9404), and JMX (Java Management Extensions) monitoring (9999).
+
+If you are using ZooKeeper for cluster management, there are TLS connections between ZooKeeper and Kafka brokers and Strimzi operators. 
+
+The following diagram shows the connections for secure communication when using ZooKeeper.   
+
+.Kafka and ZooKeeper communication secured by TLS encryption
+image::secure_communication_zookeeper.png[Secure Communication]
+
+The ZooKeeper ports are used as follows:
+
+ZooKeeper Port (2181):: ZooKeeper port for connection to Kafka brokers.
+Additionally, the Cluster Operator communicates with ZooKeeper through this port.
+If you are using the Topic Operator in bidirectional mode, it also communicates with ZooKeeper through this port.
+ZooKeeper internodal communication port (2888):: ZooKeeper port for internodal communication between ZooKeeper nodes.
+ZooKeeper leader election port (3888):: ZooKeeper port for leader election among ZooKeeper nodes in a ZooKeeper cluster.
 
 include::../../modules/security/con-certificate-authorities.adoc[leveloffset=+1]
 
