@@ -89,9 +89,10 @@ public abstract class Ca {
         }
 
         /**
+         * Build the Kubernetes Secret key to use with this type of SecretEntry.
          *
          * @param prefix to use for the certificate Secret key
-         * @return a certificate Secret key with the correct suffix
+         * @return a certificate Secret key with the provided prefix and the suffix of this type of SecretEntry
          */
         public String asKey(String prefix) {
             return prefix + suffix;
