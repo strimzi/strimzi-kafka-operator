@@ -102,9 +102,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
 
     // Configuration defaults
     protected static final boolean DEFAULT_CRUISE_CONTROL_METRICS_ENABLED = false;
-
-
-    private String minInsyncReplicas = "1";
+    
     private boolean sslEnabled;
     private boolean authEnabled;
     @SuppressFBWarnings({"UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"}) // This field is initialized in the fromCrd method
@@ -129,7 +127,6 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     // Cruise Control configuration keys (EnvVariables)
     protected static final String ENV_VAR_CRUISE_CONTROL_CONFIGURATION = "CRUISE_CONTROL_CONFIGURATION";
     protected static final String ENV_VAR_STRIMZI_KAFKA_BOOTSTRAP_SERVERS = "STRIMZI_KAFKA_BOOTSTRAP_SERVERS";
-    protected static final String ENV_VAR_MIN_INSYNC_REPLICAS = "MIN_INSYNC_REPLICAS";
 
     protected static final String ENV_VAR_CRUISE_CONTROL_CAPACITY_CONFIGURATION = "CRUISE_CONTROL_CAPACITY_CONFIGURATION";
 
@@ -205,11 +202,6 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
             CruiseControlConfiguration ccConfiguration = result.configuration;
             result.sslEnabled = ccConfiguration.isApiSslEnabled();
             result.authEnabled = ccConfiguration.isApiAuthEnabled();
-
-            KafkaConfiguration configuration = new KafkaConfiguration(reconciliation, kafkaClusterSpec.getConfig().entrySet());
-            if (configuration.getConfigOption(MIN_INSYNC_REPLICAS) != null) {
-                result.minInsyncReplicas = configuration.getConfigOption(MIN_INSYNC_REPLICAS);
-            }
 
             // To avoid illegal storage configurations provided by the user,
             // we rely on the storage configuration provided by the KafkaAssemblyOperator
@@ -387,7 +379,6 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_CRUISE_CONTROL_METRICS_ENABLED, String.valueOf(metrics.isEnabled())));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_KAFKA_BOOTSTRAP_SERVERS, KafkaResources.bootstrapServiceName(cluster) + ":" + KafkaCluster.REPLICATION_PORT));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
-        varList.add(ContainerUtils.createEnvVar(ENV_VAR_MIN_INSYNC_REPLICAS, String.valueOf(minInsyncReplicas)));
 
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_CRUISE_CONTROL_CAPACITY_CONFIGURATION, capacity.toString()));
 
