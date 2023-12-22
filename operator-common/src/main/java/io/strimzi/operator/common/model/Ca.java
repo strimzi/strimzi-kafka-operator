@@ -62,7 +62,7 @@ import static java.util.Collections.singletonMap;
 public abstract class Ca {
 
     /**
-     * A certificate entry in a ConfigMap. Each entry contains an entry name and data.
+     * A certificate entry in a Kubernetes Secret. Used to construct the keys in the Secret data where certificates are stored.
      */
     public enum SecretEntry {
         /**
@@ -89,10 +89,22 @@ public abstract class Ca {
         }
 
         /**
-         * @return The suffix of the entry name in the Secret
+         * Build the Kubernetes Secret key to use with this type of SecretEntry.
+         *
+         * @param prefix to use for the certificate Secret key
+         * @return a certificate Secret key with the provided prefix and the suffix of this type of SecretEntry
          */
-        public String getSuffix() {
-            return suffix;
+        public String asKey(String prefix) {
+            return prefix + suffix;
+        }
+
+        /**
+         *
+         * @param key to check the type of
+         * @return whether this key has the correct suffix for the entry
+         */
+        private boolean matchesType(String key) {
+            return key.endsWith(suffix);
         }
 
     }
@@ -118,35 +130,32 @@ public abstract class Ca {
             .appendOffsetId()
             .toFormatter().withChronology(IsoChronology.INSTANCE);
 
+    private static final String CA_SECRET_PREFIX = "ca";
+
     /**
      * Key for storing the CA private key in a Kubernetes Secret
      */
-    public static final String CA_KEY = "ca.key";
+    public static final String CA_KEY = SecretEntry.KEY.asKey(CA_SECRET_PREFIX);
 
     /**
      * Key for storing the CA public key in a Kubernetes Secret
      */
-    public static final String CA_CRT = "ca.crt";
+    public static final String CA_CRT = SecretEntry.CRT.asKey(CA_SECRET_PREFIX);
 
     /**
      * Key for storing the CA PKCS21 store in a Kubernetes Secret
      */
-    public static final String CA_STORE = "ca.p12";
+    public static final String CA_STORE = SecretEntry.P12_KEYSTORE.asKey(CA_SECRET_PREFIX);
 
     /**
      * Key for storing the PKCS12 store password in a Kubernetes Secret
      */
-    public static final String CA_STORE_PASSWORD = "ca.password";
+    public static final String CA_STORE_PASSWORD = SecretEntry.P12_KEYSTORE_PASSWORD.asKey(CA_SECRET_PREFIX);
 
     /**
      * Organization used in the generated CAs
      */
     public static final String IO_STRIMZI = "io.strimzi";
-
-    /**
-     * Annotation for requesting a renewal of the CA and rolling it out
-     */
-    public static final String ANNO_STRIMZI_IO_FORCE_RENEW = Annotations.STRIMZI_DOMAIN + "force-renew";
 
     /**
      * Annotation for tracking the CA key generation used by Kubernetes resources
@@ -333,6 +342,24 @@ public abstract class Ca {
      */
     public void setClock(Clock clock) {
         this.clock = clock;
+    }
+
+    /**
+     * Extracts the CA generation from the CA
+     *
+     * @return CA generation or the initial generation if no generation is set
+     */
+    public int caCertGeneration() {
+        return Annotations.intAnnotation(caCertSecret(), ANNO_STRIMZI_IO_CA_CERT_GENERATION, INIT_GENERATION);
+    }
+
+    /**
+     * Extracts the CA key generation from the CA
+     *
+     * @return CA key generation or the initial generation if no generation is set
+     */
+    public int caKeyGeneration() {
+        return Annotations.intAnnotation(caKeySecret(), ANNO_STRIMZI_IO_CA_KEY_GENERATION, INIT_GENERATION);
     }
 
     protected static void delete(Reconciliation reconciliation, File file) {
@@ -533,8 +560,8 @@ public abstract class Ca {
                     certData = new HashMap<>(caCertSecret.getData());
                     if (certData.containsKey(CA_CRT)) {
                         String notAfterDate = DATE_TIME_FORMATTER.format(currentCert.getNotAfter().toInstant().atZone(ZoneId.of("Z")));
-                        addCertCaToTrustStore("ca-" + notAfterDate + ".crt", certData);
-                        certData.put("ca-" + notAfterDate + ".crt", certData.remove(CA_CRT));
+                        addCertCaToTrustStore("ca-" + notAfterDate + SecretEntry.CRT.suffix, certData);
+                        certData.put("ca-" + notAfterDate + SecretEntry.CRT.suffix, certData.remove(CA_CRT));
                     }
                     ++caCertGeneration;
                     generateCaKeyAndCert(nextCaSubject(++caKeyGeneration), keyData, certData);
@@ -773,9 +800,16 @@ public abstract class Ca {
                 LOGGER.warnOp("Secret {}/{} is missing generation annotation {}",
                         caCertSecret.getMetadata().getNamespace(), caCertSecret.getMetadata().getName(), ANNO_STRIMZI_IO_CA_CERT_GENERATION);
             }
-            return Annotations.intAnnotation(caCertSecret, ANNO_STRIMZI_IO_CA_CERT_GENERATION, INIT_GENERATION);
+            return caCertGeneration();
         }
         return INIT_GENERATION;
+    }
+
+    /**
+     * @return the generation of the current CA certificate as an annotation
+     */
+    public Map.Entry<String, String> caCertGenerationFullAnnotation() {
+        return Map.entry(caCertGenerationAnnotation(), String.valueOf(certGeneration()));
     }
 
     /**
@@ -787,7 +821,7 @@ public abstract class Ca {
                 LOGGER.warnOp("Secret {}/{} is missing generation annotation {}",
                         caKeySecret.getMetadata().getNamespace(), caKeySecret.getMetadata().getName(), ANNO_STRIMZI_IO_CA_KEY_GENERATION);
             }
-            return Annotations.intAnnotation(caKeySecret, ANNO_STRIMZI_IO_CA_KEY_GENERATION, INIT_GENERATION);
+            return caKeyGeneration();
         }
         return INIT_GENERATION;
     }
@@ -812,7 +846,7 @@ public abstract class Ca {
             }
         } catch (CertificateException e) {
             // doesn't remove stores and related password
-            if (!certName.endsWith(".p12") && !certName.endsWith(".password")) {
+            if (!SecretEntry.P12_KEYSTORE.matchesType(certName) && !SecretEntry.P12_KEYSTORE_PASSWORD.matchesType(certName)) {
                 remove = true;
                 LOGGER.debugCr(reconciliation, "The certificate (data.{}) in Secret is not an X.509 certificate; removing it",
                         certName.replace(".", "\\."));
@@ -908,7 +942,7 @@ public abstract class Ca {
                     .getData()
                     .entrySet()
                     .stream()
-                    .filter(record -> record.getKey().endsWith(".crt"))
+                    .filter(record -> SecretEntry.CRT.matchesType(record.getKey()))
                     .map(record -> {
                         byte[] bytes = decoder.decode(record.getValue());
                         try {

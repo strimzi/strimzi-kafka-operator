@@ -15,7 +15,6 @@ import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.common.model.ClientsCa;
 import io.strimzi.operator.cluster.model.KafkaCluster;
-import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.cluster.model.RestartReason;
@@ -193,7 +192,7 @@ public class ReconcilerUtils {
      * @return      True when the generations match, false otherwise
      */
     private static boolean isPodCaCertUpToDate(Pod pod, Ca ca) {
-        return ModelUtils.caCertGeneration(ca) == Annotations.intAnnotation(pod, getCaCertAnnotation(ca), Ca.INIT_GENERATION);
+        return ca.caCertGeneration() == Annotations.intAnnotation(pod, getCaCertAnnotation(ca), Ca.INIT_GENERATION);
     }
 
     /**

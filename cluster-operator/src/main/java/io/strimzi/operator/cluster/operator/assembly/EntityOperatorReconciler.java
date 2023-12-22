@@ -10,12 +10,12 @@ import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
+import io.strimzi.operator.cluster.model.CertUtils;
 import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.EntityOperator;
 import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.KafkaVersion;
-import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
@@ -349,7 +349,7 @@ public class EntityOperatorReconciler {
                                 .compose(patchResult -> {
                                     if (patchResult instanceof ReconcileResult.Patched) {
                                         // The secret is patched and some changes to the existing certificates actually occurred
-                                        existingEntityTopicOperatorCertsChanged = ModelUtils.doExistingCertificatesDiffer(oldSecret, patchResult.resource());
+                                        existingEntityTopicOperatorCertsChanged = CertUtils.doExistingCertificatesDiffer(oldSecret, patchResult.resource());
                                     } else {
                                         existingEntityTopicOperatorCertsChanged = false;
                                     }
@@ -382,7 +382,7 @@ public class EntityOperatorReconciler {
                                 .compose(patchResult -> {
                                     if (patchResult instanceof ReconcileResult.Patched) {
                                         // The secret is patched and some changes to the existing certificates actually occurred
-                                        existingEntityUserOperatorCertsChanged = ModelUtils.doExistingCertificatesDiffer(oldSecret, patchResult.resource());
+                                        existingEntityUserOperatorCertsChanged = CertUtils.doExistingCertificatesDiffer(oldSecret, patchResult.resource());
                                     } else {
                                         existingEntityUserOperatorCertsChanged = false;
                                     }
@@ -423,9 +423,9 @@ public class EntityOperatorReconciler {
     protected Future<Void> deployment(boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
         if (entityOperator != null) {
             Deployment deployment = entityOperator.generateDeployment(isOpenShift, imagePullPolicy, imagePullSecrets);
-            int caCertGeneration = ModelUtils.caCertGeneration(clusterCa);
+            int caCertGeneration = clusterCa.caCertGeneration();
             Annotations.annotations(deployment.getSpec().getTemplate()).put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(caCertGeneration));
-            int caKeyGeneration = ModelUtils.caKeyGeneration(clusterCa);
+            int caKeyGeneration = clusterCa.caKeyGeneration();
             Annotations.annotations(deployment.getSpec().getTemplate()).put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, String.valueOf(caKeyGeneration));
 
             return deploymentOperator

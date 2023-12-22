@@ -24,27 +24,18 @@ import io.strimzi.api.kafka.model.CertificateAuthority;
 import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.TlsSidecarLogLevel;
 import io.strimzi.api.kafka.model.storage.Storage;
-import io.strimzi.certs.CertAndKey;
-import io.strimzi.operator.common.Annotations;
-import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
-import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
 
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
-import static java.util.Collections.emptyMap;
 
 /**
  * ModelUtils is a utility class that holds generic static helper functions
@@ -58,6 +49,8 @@ public class ModelUtils {
     protected static final String TLS_SIDECAR_LOG_LEVEL = "TLS_SIDECAR_LOG_LEVEL";
 
     /**
+     * Extract certificate validity days from cluster CA configuration
+     *
      * @param certificateAuthority The CA configuration.
      * @return The cert validity.
      */
@@ -71,6 +64,8 @@ public class ModelUtils {
     }
 
     /**
+     * Extract certificate renewal days from cluster CA configuration
+     *
      * @param certificateAuthority The CA configuration.
      * @return The renewal days.
      */
@@ -100,86 +95,6 @@ public class ModelUtils {
         return ContainerUtils.createEnvVar(TLS_SIDECAR_LOG_LEVEL,
                 (tlsSidecar != null && tlsSidecar.getLogLevel() != null ?
                         tlsSidecar.getLogLevel() : TlsSidecarLogLevel.NOTICE).toValue());
-    }
-
-    /**
-     * Builds a certificate secret for the different Strimzi components (TO, UO, KE, ...)
-     *
-     * @param reconciliation                        Reconciliation marker
-     * @param clusterCa                             The Cluster CA
-     * @param secret                                Kubernetes Secret
-     * @param namespace                             Namespace
-     * @param secretName                            Name of the Kubernetes secret
-     * @param commonName                            Common Name of the certificate
-     * @param keyCertName                           Key under which the certificate will be stored in the new Secret
-     * @param labels                                Labels
-     * @param ownerReference                        Owner reference
-     * @param isMaintenanceTimeWindowsSatisfied     Flag whether we are inside a maintenance window or not
-     *
-     * @return  Newly built Secret
-     */
-    public static Secret buildSecret(Reconciliation reconciliation, ClusterCa clusterCa, Secret secret, String namespace, String secretName,
-                                     String commonName, String keyCertName, Labels labels, OwnerReference ownerReference, boolean isMaintenanceTimeWindowsSatisfied) {
-        Map<String, String> data = new HashMap<>(4);
-        CertAndKey certAndKey = null;
-        boolean shouldBeRegenerated = false;
-        List<String> reasons = new ArrayList<>(2);
-
-        if (secret == null) {
-            reasons.add("certificate doesn't exist yet");
-            shouldBeRegenerated = true;
-        } else {
-            if (clusterCa.keyCreated() || clusterCa.certRenewed() ||
-                    (isMaintenanceTimeWindowsSatisfied && clusterCa.isExpiring(secret, keyCertName + ".crt")) ||
-                    clusterCa.hasCaCertGenerationChanged(secret)) {
-                reasons.add("certificate needs to be renewed");
-                shouldBeRegenerated = true;
-            }
-        }
-
-        if (shouldBeRegenerated) {
-            LOGGER.debugCr(reconciliation, "Certificate for pod {} need to be regenerated because: {}", keyCertName, String.join(", ", reasons));
-
-            try {
-                certAndKey = clusterCa.generateSignedCert(commonName, Ca.IO_STRIMZI);
-            } catch (IOException e) {
-                LOGGER.warnCr(reconciliation, "Error while generating certificates", e);
-            }
-
-            LOGGER.debugCr(reconciliation, "End generating certificates");
-        } else {
-            if (secret.getData().get(keyCertName + ".p12") != null &&
-                    !secret.getData().get(keyCertName + ".p12").isEmpty() &&
-                    secret.getData().get(keyCertName + ".password") != null &&
-                    !secret.getData().get(keyCertName + ".password").isEmpty()) {
-                certAndKey = new CertAndKey(
-                        decodeFromSecret(secret, keyCertName + ".key"),
-                        decodeFromSecret(secret, keyCertName + ".crt"),
-                        null,
-                        decodeFromSecret(secret, keyCertName + ".p12"),
-                        new String(decodeFromSecret(secret, keyCertName + ".password"), StandardCharsets.US_ASCII)
-                );
-            } else {
-                try {
-                    // coming from an older operator version, the secret exists but without keystore and password
-                    certAndKey = clusterCa.addKeyAndCertToKeyStore(commonName,
-                            decodeFromSecret(secret, keyCertName + ".key"),
-                            decodeFromSecret(secret, keyCertName + ".crt"));
-                } catch (IOException e) {
-                    LOGGER.errorCr(reconciliation, "Error generating the keystore for {}", keyCertName, e);
-                }
-            }
-        }
-
-        if (certAndKey != null) {
-            data.put(keyCertName + ".key", certAndKey.keyAsBase64String());
-            data.put(keyCertName + ".crt", certAndKey.certAsBase64String());
-            data.put(keyCertName + ".p12", certAndKey.keyStoreAsBase64String());
-            data.put(keyCertName + ".password", certAndKey.storePasswordAsBase64String());
-        }
-
-        return createSecret(secretName, namespace, labels, ownerReference, data,
-                Collections.singletonMap(clusterCa.caCertGenerationAnnotation(), String.valueOf(clusterCa.certGeneration())), emptyMap());
     }
 
     /**
@@ -262,41 +177,6 @@ public class ModelUtils {
      */
     public static Map<String, String> getCustomLabelsOrAnnotations(String envVarName)   {
         return Util.parseMap(System.getenv().get(envVarName));
-    }
-
-    private static byte[] decodeFromSecret(Secret secret, String key) {
-        return Base64.getDecoder().decode(secret.getData().get(key));
-    }
-
-    /**
-     * Compares two Secrets with certificates and checks whether any value for a key which exists in both Secrets
-     * changed. This method is used to evaluate whether rolling update of existing brokers is needed when secrets with
-     * certificates change. It separates changes for existing certificates with other changes to the secret such as
-     * added or removed certificates (scale-up or scale-down).
-     *
-     * @param current   Existing secret
-     * @param desired   Desired secret
-     *
-     * @return  True if there is a key which exists in the data sections of both secrets and which changed.
-     */
-    public static boolean doExistingCertificatesDiffer(Secret current, Secret desired) {
-        Map<String, String> currentData = current.getData();
-        Map<String, String> desiredData = desired.getData();
-
-        if (currentData == null) {
-            return true;
-        } else {
-            for (Map.Entry<String, String> entry : currentData.entrySet()) {
-                String desiredValue = desiredData.get(entry.getKey());
-                if (entry.getValue() != null
-                        && desiredValue != null
-                        && !entry.getValue().equals(desiredValue)) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
     }
 
     /**
@@ -422,27 +302,6 @@ public class ModelUtils {
         } else {
             return false;
         }
-    }
-
-    /**
-     * Extracts the CA generation from the CA
-     *
-     * @param ca    CA from which the generation should be extracted
-     *
-     * @return      CA generation or the initial generation if no generation is set
-     */
-    public static int caCertGeneration(Ca ca) {
-        return Annotations.intAnnotation(ca.caCertSecret(), Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, Ca.INIT_GENERATION);
-    }
-
-    /**
-     * Extract the CA key generation from the CA
-     *
-     * @param ca CA from which the generation should be extracted
-     * @return CA key generation or the initial generation if no generation is set
-     */
-    public static int caKeyGeneration(Ca ca) {
-        return Annotations.intAnnotation(ca.caKeySecret(), Ca.ANNO_STRIMZI_IO_CA_KEY_GENERATION, Ca.INIT_GENERATION);
     }
 
     /**

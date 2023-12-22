@@ -471,24 +471,8 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
         }
         LOGGER.debugCr(reconciliation, "End generating certificates");
 
-        String keyCertName = "cruise-control";
-        Map<String, String> data = new HashMap<>(4);
-
-        CertAndKey cert = ccCerts.get(keyCertName);
-        data.put(keyCertName + ".key", cert.keyAsBase64String());
-        data.put(keyCertName + ".crt", cert.certAsBase64String());
-        data.put(keyCertName + ".p12", cert.keyStoreAsBase64String());
-        data.put(keyCertName + ".password", cert.storePasswordAsBase64String());
-
-        return ModelUtils.createSecret(
-                CruiseControlResources.secretName(cluster),
-                namespace,
-                labels,
-                ownerReference,
-                data,
-                Map.of(clusterCa.caCertGenerationAnnotation(), String.valueOf(clusterCa.certGeneration())),
-                Map.of()
-        );
+        return ModelUtils.createSecret(CruiseControlResources.secretName(cluster), namespace, labels, ownerReference,
+                CertUtils.buildSecretData(ccCerts), Map.ofEntries(clusterCa.caCertGenerationFullAnnotation()), Map.of());
     }
 
     /**

@@ -1117,25 +1117,11 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
             throw new RuntimeException("Failed to prepare Kafka certificates", e);
         }
 
-        Map<String, String> data = new HashMap<>();
-
-        for (NodeRef node : nodes)  {
-            CertAndKey cert = brokerCerts.get(node.podName());
-            data.put(node.podName() + ".key", cert.keyAsBase64String());
-            data.put(node.podName() + ".crt", cert.certAsBase64String());
-            data.put(node.podName() + ".p12", cert.keyStoreAsBase64String());
-            data.put(node.podName() + ".password", cert.storePasswordAsBase64String());
-        }
-
-        return ModelUtils.createSecret(
-                KafkaResources.kafkaSecretName(cluster),
-                namespace,
-                labels,
-                ownerReference,
-                data,
-                Map.of(
-                        clusterCa.caCertGenerationAnnotation(), String.valueOf(clusterCa.certGeneration()),
-                        clientsCa.caCertGenerationAnnotation(), String.valueOf(clientsCa.certGeneration())
+        return ModelUtils.createSecret(KafkaResources.kafkaSecretName(cluster), namespace, labels, ownerReference,
+                CertUtils.buildSecretData(brokerCerts),
+                Map.ofEntries(
+                        clusterCa.caCertGenerationFullAnnotation(),
+                        clientsCa.caCertGenerationFullAnnotation()
                 ),
                 emptyMap());
     }

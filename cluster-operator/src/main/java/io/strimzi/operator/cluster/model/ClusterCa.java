@@ -401,10 +401,10 @@ public class ClusterCa extends Ca {
      * @return  CertAndKey instance
      */
     private static CertAndKey asCertAndKey(Secret secret, String podName) {
-        return asCertAndKey(secret, secretEntryNameForPod(podName, SecretEntry.KEY),
-                secretEntryNameForPod(podName, SecretEntry.CRT),
-                secretEntryNameForPod(podName, SecretEntry.P12_KEYSTORE),
-                secretEntryNameForPod(podName, SecretEntry.P12_KEYSTORE_PASSWORD));
+        return asCertAndKey(secret, SecretEntry.KEY.asKey(podName),
+                SecretEntry.CRT.asKey(podName),
+                SecretEntry.P12_KEYSTORE.asKey(podName),
+                SecretEntry.P12_KEYSTORE_PASSWORD.asKey(podName));
     }
 
     /**
@@ -466,7 +466,7 @@ public class ClusterCa extends Ca {
      * @return  True if the Secret contains a key based on the pod name and entry type. False otherwise.
      */
     private static boolean secretEntryExists(Secret secret, String podName, SecretEntry entry) {
-        return secret.getData().containsKey(secretEntryNameForPod(podName, entry));
+        return secret.getData().containsKey(entry.asKey(podName));
     }
 
     /**
@@ -479,19 +479,7 @@ public class ClusterCa extends Ca {
      * @return  The data of the secret entry if found or null otherwise
      */
     private static String secretEntryDataForPod(Secret secret, String podName, SecretEntry entry) {
-        return secret.getData().get(secretEntryNameForPod(podName, entry));
-    }
-
-    /**
-     * Get the name of secret entry of given SecretEntry type for podName
-     *
-     * @param podName   Name of the pod which secret entry is looked for
-     * @param entry     The SecretEntry type
-     *
-     * @return  The name of the secret entry
-     */
-    public static String secretEntryNameForPod(String podName, SecretEntry entry) {
-        return podName + entry.getSuffix();
+        return secret.getData().get(entry.asKey(podName));
     }
 
     /**

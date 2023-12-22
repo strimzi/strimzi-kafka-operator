@@ -442,7 +442,6 @@ public class ZookeeperCluster extends AbstractModel implements SupportsMetrics, 
      * @return The generated Secret with the ZooKeeper node certificates
      */
     public Secret generateCertificatesSecret(ClusterCa clusterCa, boolean isMaintenanceTimeWindowsSatisfied) {
-        Map<String, String> secretData = new HashMap<>(replicas * 4);
         Map<String, CertAndKey> certs;
 
         try {
@@ -452,23 +451,8 @@ public class ZookeeperCluster extends AbstractModel implements SupportsMetrics, 
             throw new RuntimeException("Failed to prepare ZooKeeper certificates", e);
         }
 
-        for (int i = 0; i < replicas; i++) {
-            CertAndKey cert = certs.get(KafkaResources.zookeeperPodName(cluster, i));
-            secretData.put(KafkaResources.zookeeperPodName(cluster, i) + ".key", cert.keyAsBase64String());
-            secretData.put(KafkaResources.zookeeperPodName(cluster, i) + ".crt", cert.certAsBase64String());
-            secretData.put(KafkaResources.zookeeperPodName(cluster, i) + ".p12", cert.keyStoreAsBase64String());
-            secretData.put(KafkaResources.zookeeperPodName(cluster, i) + ".password", cert.storePasswordAsBase64String());
-        }
-
-        return ModelUtils.createSecret(
-                KafkaResources.zookeeperSecretName(cluster),
-                namespace,
-                labels,
-                ownerReference,
-                secretData,
-                Map.of(clusterCa.caCertGenerationAnnotation(), String.valueOf(clusterCa.certGeneration())),
-                emptyMap()
-        );
+        return ModelUtils.createSecret(KafkaResources.zookeeperSecretName(cluster), namespace, labels, ownerReference,
+                CertUtils.buildSecretData(certs), Map.ofEntries(clusterCa.caCertGenerationFullAnnotation()), emptyMap());
     }
 
     /* test */ Container createContainer(ImagePullPolicy imagePullPolicy) {
