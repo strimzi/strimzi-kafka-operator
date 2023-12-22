@@ -28,17 +28,17 @@
 - fromVersion: HEAD
   toVersion: 0.38.0
   fromExamples: HEAD
-  toExamples: strimzi-0.38.0
+  toExamples: strimzi-0.39.0
   fromUrl: HEAD
-  toUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.38.0/strimzi-0.38.0.zip
+  toUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.39.0/strimzi-0.39.0.zip
   fromKafkaVersionsUrl: HEAD
   additionalTopics: 2
   imagesAfterOperations:
-    zookeeper: strimzi/kafka:0.38.0-kafka-3.6.0
-    kafka: strimzi/kafka:0.38.0-kafka-3.6.0
-    topicOperator: strimzi/operator:0.38.0
-    userOperator: strimzi/operator:0.38.0
-  deployKafkaVersion: 3.6.0
+    zookeeper: strimzi/kafka:0.39.0-kafka-3.6.1
+    kafka: strimzi/kafka:0.39.0-kafka-3.6.1
+    topicOperator: strimzi/operator:0.39.0
+    userOperator: strimzi/operator:0.39.0
+  deployKafkaVersion: 3.6.1
   client:
     continuousClientsMessages: 500
   environmentInfo:
@@ -46,22 +46,22 @@
     status: stable
     flakyEnvVariable: none
     reason: Test is working on all environment used by QE.
-  featureGatesBefore: "-KafkaNodePools"
-  featureGatesAfter: "-StableConnectIdentities,-UnidirectionalTopicOperator"
+  featureGatesBefore: ""
+  featureGatesAfter: "-UnidirectionalTopicOperator"
 - fromVersion: HEAD
-  toVersion: 0.38.0
+  toVersion: 0.39.0
   fromExamples: HEAD
-  toExamples: strimzi-0.38.0
+  toExamples: strimzi-0.39.0
   fromUrl: HEAD
-  toUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.38.0/strimzi-0.38.0.zip
+  toUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.39.0/strimzi-0.39.0.zip
   fromKafkaVersionsUrl: HEAD
   additionalTopics: 2
   imagesAfterOperations:
-    zookeeper: strimzi/kafka:0.38.0-kafka-3.5.1
-    kafka: strimzi/kafka:0.38.0-kafka-3.5.1
-    topicOperator: strimzi/operator:0.38.0
-    userOperator: strimzi/operator:0.38.0
-  deployKafkaVersion: 3.5.1
+    zookeeper: strimzi/kafka:0.39.0-kafka-3.5.2
+    kafka: strimzi/kafka:0.39.0-kafka-3.5.2
+    topicOperator: strimzi/operator:0.39.0
+    userOperator: strimzi/operator:0.39.0
+  deployKafkaVersion: 3.5.2
   client:
     continuousClientsMessages: 500
   environmentInfo:
@@ -69,5 +69,5 @@
     status: stable
     flakyEnvVariable: none
     reason: Test is working on all environment used by QE.
-  featureGatesBefore: "-KafkaNodePools"
+  featureGatesBefore: ""
   featureGatesAfter: ""
