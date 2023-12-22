@@ -116,7 +116,7 @@ public class KubernetesRestartEventsMockTest {
 
     private final static Kafka KAFKA = kafka();
     private final static KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
-    private final static PlatformFeaturesAvailability PFA = new PlatformFeaturesAvailability(false, KubernetesVersion.V1_22);
+    private final static PlatformFeaturesAvailability PFA = new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION);
     private final static KafkaVersionChange VERSION_CHANGE = new KafkaVersionChange(
             VERSIONS.defaultVersion(),
             VERSIONS.defaultVersion(),

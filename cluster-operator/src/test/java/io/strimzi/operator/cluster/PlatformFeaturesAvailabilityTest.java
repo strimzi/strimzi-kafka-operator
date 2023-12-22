@@ -51,16 +51,17 @@ public class PlatformFeaturesAvailabilityTest {
     public void testVersionDetectionOpenShift(Vertx vertx, VertxTestContext context) throws InterruptedException, ExecutionException {
         String version = """
                 {
-                  "major": "1",
-                  "minor": "21",
-                  "gitVersion": "v1.21.1",
+                  "major": "%s",
+                  "minor": "%S",
+                  "gitVersion": "v%s.%s.1",
                   "gitCommit": "c4d752765b3bbac2237bf87cf0b1c2e307844666",
                   "gitTreeState": "clean",
                   "buildDate": "2020-12-18T12:00:47Z",
                   "goVersion": "go1.15.5",
                   "compiler": "gc",
                   "platform": "linux/amd64"
-                }""";
+                }"""
+                .formatted(KubernetesVersion.MINIMAL_SUPPORTED_MAJOR, KubernetesVersion.MINIMAL_SUPPORTED_MINOR, KubernetesVersion.MINIMAL_SUPPORTED_MAJOR, KubernetesVersion.MINIMAL_SUPPORTED_MINOR);
 
         startMockApi(vertx, version, Collections.emptyList());
 
@@ -69,7 +70,7 @@ public class PlatformFeaturesAvailabilityTest {
         Checkpoint a = context.checkpoint();
 
         PlatformFeaturesAvailability.create(vertx, client).onComplete(context.succeeding(pfa -> context.verify(() -> {
-            assertThat("Versions are not equal", pfa.getKubernetesVersion(), is(KubernetesVersion.V1_21));
+            assertThat("Versions are not equal", pfa.getKubernetesVersion(), is(KubernetesVersion.MINIMAL_SUPPORTED_VERSION));
             a.flag();
         })));
     }
@@ -78,16 +79,17 @@ public class PlatformFeaturesAvailabilityTest {
     public void testVersionDetectionMinikube(Vertx vertx, VertxTestContext context) throws InterruptedException, ExecutionException {
         String version = """
                 {
-                  "major": "1",
-                  "minor": "21",
-                  "gitVersion": "v1.21.1",
+                  "major": "%s",
+                  "minor": "%s",
+                  "gitVersion": "v%s.%s.1",
                   "gitCommit": "c4d752765b3bbac2237bf87cf0b1c2e307844666",
                   "gitTreeState": "clean",
                   "buildDate": "2020-12-18T12:09:25Z",
                   "goVersion": "go1.15.5",
                   "compiler": "gc",
                   "platform": "linux/amd64"
-                }""";
+                }"""
+                .formatted(KubernetesVersion.MINIMAL_SUPPORTED_MAJOR, KubernetesVersion.MINIMAL_SUPPORTED_MINOR, KubernetesVersion.MINIMAL_SUPPORTED_MAJOR, KubernetesVersion.MINIMAL_SUPPORTED_MINOR);
 
         startMockApi(vertx, version, Collections.emptyList());
 
@@ -96,7 +98,7 @@ public class PlatformFeaturesAvailabilityTest {
         Checkpoint async = context.checkpoint();
 
         PlatformFeaturesAvailability.create(vertx, client).onComplete(context.succeeding(pfa -> context.verify(() -> {
-            assertThat("Versions are not equal", pfa.getKubernetesVersion(), is(KubernetesVersion.V1_21));
+            assertThat("Versions are not equal", pfa.getKubernetesVersion(), is(KubernetesVersion.MINIMAL_SUPPORTED_VERSION));
             async.flag();
         })));
     }

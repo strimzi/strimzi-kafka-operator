@@ -157,7 +157,7 @@ public class KafkaAssemblyOperatorTest {
     private final String differentMetricsCMName = "metrics-cm-2";
     private final ConfigMap metricsCM = io.strimzi.operator.cluster.TestUtils.getJmxMetricsCm(metricsCmJson, metricsCMName, "metrics-config.yml");
 
-    private final KubernetesVersion kubernetesVersion = KubernetesVersion.V1_21;
+    private final KubernetesVersion kubernetesVersion = KubernetesVersion.MINIMAL_SUPPORTED_VERSION;
 
     private static boolean openShift;
     private static boolean metrics;

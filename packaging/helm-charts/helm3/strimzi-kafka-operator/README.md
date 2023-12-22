@@ -9,8 +9,8 @@ Upgrading to Strimzi 0.32 and newer directly from Strimzi 0.22 and earlier is no
 Please follow the [documentation](https://strimzi.io/docs/operators/latest/full/deploying.html#assembly-upgrade-str) for more details.
 
 **!!! IMPORTANT !!!**
-From Strimzi 0.36 on, we support only Kubernetes 1.21 and newer.
-Kubernetes versions 1.19 and 1.20 are no longer supported.
+From Strimzi 0.40 on, we support only Kubernetes 1.23 and newer.
+Kubernetes versions 1.21 and 1.22 are no longer supported.
 
 ## Introduction
 
@@ -59,7 +59,7 @@ Strimzi is licensed under the [Apache License, Version 2.0](https://github.com/s
 
 ## Prerequisites
 
-- Kubernetes 1.21+
+- Kubernetes 1.23+
 
 ## Installing the Chart
 

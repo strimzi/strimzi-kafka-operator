@@ -20,7 +20,7 @@
 :UpgradeGuide: link:https://strimzi.io/docs/operators/0.24.0/deploying.html#assembly-upgrade-resources-str[Strimzi 0.24.0 upgrade documentation^]
 
 // Kubernetes versions
-:KubernetesVersion: 1.21 and later
+:KubernetesVersion: 1.23 and later
 
 // Kafka upgrade attributes used in kafka upgrades section
 :DefaultKafkaVersion: 3.6.1

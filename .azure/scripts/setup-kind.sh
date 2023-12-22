@@ -3,7 +3,7 @@ set -xe
 
 rm -rf ~/.kube
 
-KUBE_VERSION=${KUBE_VERSION:-1.21.0}
+KUBE_VERSION=${KUBE_VERSION:-1.23.0}
 COPY_DOCKER_LOGIN=${COPY_DOCKER_LOGIN:-"false"}
 
 DEFAULT_CLUSTER_MEMORY=$(free -m | grep "Mem" | awk '{print $2}')

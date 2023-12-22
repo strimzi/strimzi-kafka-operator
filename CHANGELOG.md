@@ -3,6 +3,11 @@
 ## 0.40.0
 
 
+### Changes, deprecations and removals
+
+* **From Strimzi 0.40.0 on, we support only Kubernetes 1.23 and newer.**
+  Kubernetes 1.21 and 1.22 are not supported anymore.
+
 ## 0.39.0
 
 * Add support for Apache Kafka 3.5.2 and 3.6.1

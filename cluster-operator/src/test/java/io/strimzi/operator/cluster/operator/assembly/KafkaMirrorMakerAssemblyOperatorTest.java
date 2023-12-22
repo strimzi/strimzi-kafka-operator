@@ -93,7 +93,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
     private final String include = ".*";
     private final String image = "my-image:latest";
 
-    private final KubernetesVersion kubernetesVersion = KubernetesVersion.V1_21;
+    private final KubernetesVersion kubernetesVersion = KubernetesVersion.MINIMAL_SUPPORTED_VERSION;
 
     @BeforeAll
     public static void before() {

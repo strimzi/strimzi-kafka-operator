@@ -105,7 +105,7 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
     private final static String COMPONENT_NAME = NAME + "-connect";
     private final static String NAMESPACE = "my-namespace";
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
-    private static final KubernetesVersion KUBERNETES_VERSION = KubernetesVersion.V1_26;
+    private static final KubernetesVersion KUBERNETES_VERSION = KubernetesVersion.MINIMAL_SUPPORTED_VERSION;
     private static final Reconciliation RECONCILIATION = new Reconciliation("test", "KafkaConnect", NAMESPACE, NAME);
     private static final SharedEnvironmentProvider SHARED_ENV_PROVIDER = new MockSharedEnvironmentProvider();
 
