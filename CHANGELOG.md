@@ -2,6 +2,7 @@
 
 ## 0.40.0
 
+* Remove support for Apache Kafka 3.5.0 and 3.5.1
 
 ### Changes, deprecations and removals
 
