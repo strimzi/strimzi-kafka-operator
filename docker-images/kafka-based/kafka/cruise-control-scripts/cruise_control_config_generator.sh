@@ -2,18 +2,10 @@
 set -e
 
 CC_CAPACITY_FILE="/tmp/capacity.json"
-CC_CLUSTER_CONFIG_FILE="/tmp/clusterConfig.json"
 CC_ACCESS_LOG="/tmp/access.log"
 
 # Generate capacity file
 echo "${CRUISE_CONTROL_CAPACITY_CONFIGURATION}" > "${CC_CAPACITY_FILE}"
-
-# Generate cluster config
-cat <<EOF > $CC_CLUSTER_CONFIG_FILE
-{
-min.insync.replicas=$MIN_INSYNC_REPLICAS
-}
-EOF
 
 # Write all webserver access logs to stdout
 ln -sf /dev/stdout $CC_ACCESS_LOG
@@ -22,7 +14,6 @@ ln -sf /dev/stdout $CC_ACCESS_LOG
 cat <<EOF
 bootstrap.servers=$STRIMZI_KAFKA_BOOTSTRAP_SERVERS
 capacity.config.file=$CC_CAPACITY_FILE
-cluster.configs.file=$CC_CLUSTER_CONFIG_FILE
 webserver.accesslog.path=$CC_ACCESS_LOG
 webserver.http.address=0.0.0.0
 webserver.http.cors.allowmethods=OPTIONS,GET
