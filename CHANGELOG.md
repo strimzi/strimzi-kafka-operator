@@ -2,6 +2,7 @@
 
 ## 0.40.0
 
+* Fix NullPointerException from missing listenerConfig when using custom auth
 
 ## 0.39.0
 
