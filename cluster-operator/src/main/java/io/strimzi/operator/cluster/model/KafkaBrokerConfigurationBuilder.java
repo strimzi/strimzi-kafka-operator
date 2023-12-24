@@ -32,6 +32,7 @@ import java.io.StringWriter;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -502,7 +503,11 @@ public class KafkaBrokerConfigurationBuilder {
             writer.println();
         } else if (auth instanceof KafkaListenerAuthenticationCustom customAuth) {
             securityProtocol.add(String.format("%s:%s", listenerName, getSecurityProtocol(tls, customAuth.isSasl())));
-            KafkaListenerCustomAuthConfiguration config = new KafkaListenerCustomAuthConfiguration(reconciliation, customAuth.getListenerConfig().entrySet());
+            Map<String, Object> listenerConfig = customAuth.getListenerConfig();
+            if (listenerConfig == null) {
+                listenerConfig = new HashMap<String, Object>();
+            }
+            KafkaListenerCustomAuthConfiguration config = new KafkaListenerCustomAuthConfiguration(reconciliation, listenerConfig.entrySet());
             config.asOrderedProperties().asMap().forEach((key, value) -> writer.println(String.format("listener.name.%s.%s=%s", listenerNameInProperty, key, value)));
         } else {
             securityProtocol.add(String.format("%s:%s", listenerName, getSecurityProtocol(tls, false)));
