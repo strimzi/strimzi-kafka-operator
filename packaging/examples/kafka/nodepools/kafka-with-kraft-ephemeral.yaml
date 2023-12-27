@@ -66,4 +66,5 @@ spec:
     storage:
       type: ephemeral
   entityOperator:
+    topicOperator: {}
     userOperator: {}
