@@ -9,7 +9,7 @@
 * **From Strimzi 0.40.0 on, we support only Kubernetes 1.23 and newer.**
   Kubernetes 1.21 and 1.22 are not supported anymore.
 * Support for the JmxTrans component is now completely removed.
-  If you are upgrading from Strimzi 0.34 or earlier and hava JmxTrans enabled, you should disable it before the upgrade or delete it manually after the upgrade is complete.
+  If you are upgrading from Strimzi 0.34 or earlier and have JmxTrans enabled in `.spec.jmxTrans` of the `Kafka` custom resource, you should disable it before the upgrade or delete it manually after the upgrade is complete.
 
 ## 0.39.0
 
