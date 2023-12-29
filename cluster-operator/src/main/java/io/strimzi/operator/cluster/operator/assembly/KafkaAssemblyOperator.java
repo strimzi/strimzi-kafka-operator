@@ -236,7 +236,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.reconcileEntityOperator(clock))
                 .compose(state -> state.reconcileCruiseControl(clock))
                 .compose(state -> state.reconcileKafkaExporter(clock))
-                .compose(state -> state.reconcileJmxTrans())
 
                 // Finish the reconciliation
                 .map((Void) null)
@@ -678,29 +677,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         /**
-         * Provider method for JMX Trans reconciler. Overriding this method can be used to get mocked reconciler.
-         *
-         * @return  JMX Trans reconciler
-         */
-        JmxTransReconciler jmxTransReconciler()   {
-            return new JmxTransReconciler(
-                    reconciliation,
-                    supplier
-            );
-        }
-
-        /**
-         * Run the reconciliation pipeline for the JMX Trans
-         *
-         * @return              Future with Reconciliation State
-         */
-        Future<ReconciliationState> reconcileJmxTrans()    {
-            return jmxTransReconciler()
-                    .reconcile()
-                    .map(this);
-        }
-
-        /**
          * Provider method for Cruise Control reconciler. Overriding this method can be used to get mocked reconciler.
          *
          * @return  Cruise Control reconciler
@@ -826,7 +802,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
     /**
      * Checks the KafkaNodePool resource and decides if a reconciliation should be triggered. This decision is based on
-     * whether there is a matching Kafka resource, if it matches the seelctor etc.
+     * whether there is a matching Kafka resource, if it matches the selector etc.
      *
      * @param action    Action describing the event
      * @param resource  KafkaNodePool resource to which the event happened
