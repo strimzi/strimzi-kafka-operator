@@ -1584,6 +1584,8 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |xref:type-Probe-{context}[`Probe`]
 |readinessProbe       1.2+<.<a|Pod readiness check.
 |xref:type-Probe-{context}[`Probe`]
+|showAllOffsets       1.2+<.<a|Enable/disable offset show all option.
+|boolean
 |====
 
 [id='type-KafkaExporterTemplate-{context}']

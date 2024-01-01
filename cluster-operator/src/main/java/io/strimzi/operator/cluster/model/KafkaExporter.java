@@ -73,7 +73,7 @@ public class KafkaExporter extends AbstractModel {
     protected String groupExcludeRegex;
     protected String topicExcludeRegex;
     protected boolean saramaLoggingEnabled;
-    protected boolean offsetShowAll;
+    protected boolean showAllOffsets;
     /* test */ String exporterLogging;
     protected String version;
 
@@ -98,7 +98,7 @@ public class KafkaExporter extends AbstractModel {
         super(reconciliation, resource, KafkaExporterResources.deploymentName(resource.getMetadata().getName()), COMPONENT_TYPE, sharedEnvironmentProvider);
 
         this.saramaLoggingEnabled = false;
-        this.offsetShowAll = true;
+        this.showAllOffsets = true;
     }
 
     /**
@@ -135,7 +135,7 @@ public class KafkaExporter extends AbstractModel {
 
             result.exporterLogging = spec.getLogging();
             result.saramaLoggingEnabled = spec.getEnableSaramaLogging();
-            result.offsetShowAll = spec.getOffsetShowAll();
+            result.showAllOffsets = spec.getShowAllOffsets();
 
             if (spec.getTemplate() != null) {
                 KafkaExporterTemplate template = spec.getTemplate();
@@ -228,7 +228,7 @@ public class KafkaExporter extends AbstractModel {
         }
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_EXPORTER_KAFKA_SERVER, KafkaResources.bootstrapServiceName(cluster) + ":" + KafkaCluster.REPLICATION_PORT));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_EXPORTER_ENABLE_SARAMA, String.valueOf(saramaLoggingEnabled)));
-        varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_EXPORTER_OFFSET_SHOW_ALL, String.valueOf(offsetShowAll)));
+        varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_EXPORTER_OFFSET_SHOW_ALL, String.valueOf(showAllOffsets)));
 
         // Add shared environment variables used for all containers
         varList.addAll(sharedEnvironmentProvider.variables());

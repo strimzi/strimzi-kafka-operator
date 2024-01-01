@@ -45,7 +45,7 @@ public class KafkaExporterSpec implements HasLivenessProbe, HasReadinessProbe, U
     private Probe readinessProbe;
     private String logging = "info";
     private boolean enableSaramaLogging;
-    private boolean offsetShowAll = true;
+    private boolean showAllOffsets = true;
     private KafkaExporterTemplate template;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
@@ -115,12 +115,12 @@ public class KafkaExporterSpec implements HasLivenessProbe, HasReadinessProbe, U
 
     @Description("Enable/disable offset show all option.")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-    public boolean getOffsetShowAll() {
-        return offsetShowAll;
+    public boolean getShowAllOffsets() {
+        return showAllOffsets;
     }
 
-    public void setOffsetShowAll(boolean offsetShowAll) {
-        this.offsetShowAll = offsetShowAll;
+    public void setShowAllOffsets(boolean showAllOffsets) {
+        this.showAllOffsets = showAllOffsets;
     }
 
     @Description("Only log messages with the given severity or above. " +

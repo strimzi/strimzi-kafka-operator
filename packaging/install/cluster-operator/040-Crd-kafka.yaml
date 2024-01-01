@@ -6233,6 +6233,9 @@ spec:
                         minimum: 1
                         description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
                     description: Pod readiness check.
+                  showAllOffsets:
+                    type: boolean
+                    description: Enable/disable offset show all option.
                 description: "Configuration of the Kafka Exporter. Kafka Exporter can provide additional metrics, for example lag of consumer group at topic/partition."
               maintenanceTimeWindows:
                 type: array
