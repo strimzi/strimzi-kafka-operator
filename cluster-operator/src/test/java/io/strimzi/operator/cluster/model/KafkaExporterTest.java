@@ -93,6 +93,7 @@ public class KafkaExporterTest {
     private final String topicRegex = "my-topic-.*";
     private final String groupExcludeRegex = "my-group-exclude-.*";
     private final String topicExcludeRegex = "my-topic-exclude-.*";
+    private final boolean offsetShowAll = false;
 
     private final KafkaExporterSpec exporterOperator = new KafkaExporterSpecBuilder()
             .withLogging(exporterOperatorLogging)
@@ -102,6 +103,7 @@ public class KafkaExporterTest {
             .withTopicExcludeRegex(topicExcludeRegex)
             .withImage(keImage)
             .withEnableSaramaLogging(true)
+            .withOffsetShowAll(offsetShowAll)
             .withNewTemplate()
                 .withNewPod()
                     .withTmpDirSizeLimit("100Mi")
@@ -135,6 +137,7 @@ public class KafkaExporterTest {
         expected.add(new EnvVarBuilder().withName(KafkaExporter.ENV_VAR_KAFKA_EXPORTER_TOPIC_EXCLUDE_REGEX).withValue(topicExcludeRegex).build());
         expected.add(new EnvVarBuilder().withName(KafkaExporter.ENV_VAR_KAFKA_EXPORTER_KAFKA_SERVER).withValue("foo-kafka-bootstrap:" + KafkaCluster.REPLICATION_PORT).build());
         expected.add(new EnvVarBuilder().withName(KafkaExporter.ENV_VAR_KAFKA_EXPORTER_ENABLE_SARAMA).withValue("true").build());
+        expected.add(new EnvVarBuilder().withName(KafkaExporter.ENV_VAR_KAFKA_EXPORTER_OFFSET_SHOW_ALL).withValue(String.valueOf(offsetShowAll)).build());
         return expected;
     }
 
@@ -152,6 +155,7 @@ public class KafkaExporterTest {
         assertNull(ke.groupExcludeRegex);
         assertNull(ke.topicExcludeRegex);
         assertThat(ke.saramaLoggingEnabled, is(false));
+        assertThat(ke.offsetShowAll, is(true));
     }
 
     @ParallelTest

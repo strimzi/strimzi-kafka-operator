@@ -29,7 +29,7 @@ import java.util.Map;
     "image", "groupRegex", "topicRegex", 
     "groupExcludeRegex", "topicExcludeRegex",
     "resources", "logging",
-    "enableSaramaLogging", "template"})
+    "enableSaramaLogging", "offsetShowAll", "template"})
 @EqualsAndHashCode
 public class KafkaExporterSpec implements HasLivenessProbe, HasReadinessProbe, UnknownPropertyPreserving, Serializable {
     private static final long serialVersionUID = 1L;
@@ -45,6 +45,7 @@ public class KafkaExporterSpec implements HasLivenessProbe, HasReadinessProbe, U
     private Probe readinessProbe;
     private String logging = "info";
     private boolean enableSaramaLogging;
+    private boolean offsetShowAll = true;
     private KafkaExporterTemplate template;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
@@ -110,6 +111,16 @@ public class KafkaExporterSpec implements HasLivenessProbe, HasReadinessProbe, U
 
     public void setEnableSaramaLogging(boolean enableSaramaLogging) {
         this.enableSaramaLogging = enableSaramaLogging;
+    }
+
+    @Description("Enable/disable offset show all option.")
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    public boolean getOffsetShowAll() {
+        return offsetShowAll;
+    }
+
+    public void setOffsetShowAll(boolean offsetShowAll) {
+        this.offsetShowAll = offsetShowAll;
     }
 
     @Description("Only log messages with the given severity or above. " +

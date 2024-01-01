@@ -64,6 +64,7 @@ public class KafkaExporter extends AbstractModel {
     protected static final String ENV_VAR_KAFKA_EXPORTER_TOPIC_EXCLUDE_REGEX = "KAFKA_EXPORTER_TOPIC_EXCLUDE_REGEX";
     protected static final String ENV_VAR_KAFKA_EXPORTER_KAFKA_SERVER = "KAFKA_EXPORTER_KAFKA_SERVER";
     protected static final String ENV_VAR_KAFKA_EXPORTER_ENABLE_SARAMA = "KAFKA_EXPORTER_ENABLE_SARAMA";
+    protected static final String ENV_VAR_KAFKA_EXPORTER_OFFSET_SHOW_ALL = "KAFKA_EXPORTER_OFFSET_SHOW_ALL";
 
     protected static final String CO_ENV_VAR_CUSTOM_KAFKA_EXPORTER_POD_LABELS = "STRIMZI_CUSTOM_KAFKA_EXPORTER_LABELS";
 
@@ -72,6 +73,7 @@ public class KafkaExporter extends AbstractModel {
     protected String groupExcludeRegex;
     protected String topicExcludeRegex;
     protected boolean saramaLoggingEnabled;
+    protected boolean offsetShowAll;
     /* test */ String exporterLogging;
     protected String version;
 
@@ -96,6 +98,7 @@ public class KafkaExporter extends AbstractModel {
         super(reconciliation, resource, KafkaExporterResources.deploymentName(resource.getMetadata().getName()), COMPONENT_TYPE, sharedEnvironmentProvider);
 
         this.saramaLoggingEnabled = false;
+        this.offsetShowAll = true;
     }
 
     /**
@@ -132,6 +135,7 @@ public class KafkaExporter extends AbstractModel {
 
             result.exporterLogging = spec.getLogging();
             result.saramaLoggingEnabled = spec.getEnableSaramaLogging();
+            result.offsetShowAll = spec.getOffsetShowAll();
 
             if (spec.getTemplate() != null) {
                 KafkaExporterTemplate template = spec.getTemplate();
@@ -224,6 +228,7 @@ public class KafkaExporter extends AbstractModel {
         }
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_EXPORTER_KAFKA_SERVER, KafkaResources.bootstrapServiceName(cluster) + ":" + KafkaCluster.REPLICATION_PORT));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_EXPORTER_ENABLE_SARAMA, String.valueOf(saramaLoggingEnabled)));
+        varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_EXPORTER_OFFSET_SHOW_ALL, String.valueOf(offsetShowAll)));
 
         // Add shared environment variables used for all containers
         varList.addAll(sharedEnvironmentProvider.variables());
