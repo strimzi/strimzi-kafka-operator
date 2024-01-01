@@ -29,7 +29,7 @@ import java.util.Map;
     "image", "groupRegex", "topicRegex", 
     "groupExcludeRegex", "topicExcludeRegex",
     "resources", "logging",
-    "enableSaramaLogging", "offsetShowAll", "template"})
+    "enableSaramaLogging", "showAllOffsets", "template"})
 @EqualsAndHashCode
 public class KafkaExporterSpec implements HasLivenessProbe, HasReadinessProbe, UnknownPropertyPreserving, Serializable {
     private static final long serialVersionUID = 1L;
