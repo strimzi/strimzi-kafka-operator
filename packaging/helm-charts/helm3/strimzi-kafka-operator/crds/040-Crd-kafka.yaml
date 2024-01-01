@@ -5599,6 +5599,9 @@ spec:
                     enableSaramaLogging:
                       type: boolean
                       description: "Enable Sarama logging, a Go client library used by the Kafka Exporter."
+                    showAllOffsets:
+                      type: boolean
+                      description: Enable/disable offset show all option.
                     template:
                       type: object
                       properties:
