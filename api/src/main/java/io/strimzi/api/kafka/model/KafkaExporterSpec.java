@@ -113,7 +113,7 @@ public class KafkaExporterSpec implements HasLivenessProbe, HasReadinessProbe, U
         this.enableSaramaLogging = enableSaramaLogging;
     }
 
-    @Description("Enable/disable offset show all option.")
+    @Description("Whether show the offset/lag for all consumer group, otherwise, only show connected consumer groups.")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public boolean getShowAllOffsets() {
         return showAllOffsets;
