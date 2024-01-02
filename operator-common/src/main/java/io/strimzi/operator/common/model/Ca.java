@@ -6,10 +6,10 @@ package io.strimzi.operator.common.model;
 
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.CertificateExpirationPolicy;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.CertManager;
-import io.strimzi.certs.SecretCertProvider;
 import io.strimzi.certs.Subject;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
@@ -52,7 +52,9 @@ import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
 import static java.time.temporal.ChronoField.NANO_OF_SECOND;
 import static java.time.temporal.ChronoField.SECOND_OF_MINUTE;
 import static java.time.temporal.ChronoField.YEAR;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
+import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 
 /**
@@ -582,7 +584,6 @@ public abstract class Ca {
             }
             this.caCertsRemoved = removeCerts(certData, this::removeExpiredCert) > 0;
         }
-        SecretCertProvider secretCertProvider = new SecretCertProvider();
 
         if (caCertsRemoved) {
             LOGGER.infoCr(reconciliation, "{}: Expired CA certificates removed", this);
@@ -610,11 +611,38 @@ public abstract class Ca {
             keyAnnotations.put(Annotations.ANNO_STRIMZI_IO_FORCE_REPLACE, Annotations.stringAnnotation(caKeySecret, Annotations.ANNO_STRIMZI_IO_FORCE_REPLACE, "false"));
         }
 
-        caCertSecret = secretCertProvider.createSecret(namespace, caCertSecretName, certData, Util.mergeLabelsOrAnnotations(labels, additionalLabels),
+        caCertSecret = createCaSecret(namespace, caCertSecretName, certData, Util.mergeLabelsOrAnnotations(labels, additionalLabels),
                 Util.mergeLabelsOrAnnotations(certAnnotations, additionalAnnotations), ownerRef);
 
-        caKeySecret = secretCertProvider.createSecret(namespace, caKeySecretName, keyData, labels,
+        caKeySecret = createCaSecret(namespace, caKeySecretName, keyData, labels,
                 keyAnnotations, ownerRef);
+    }
+
+    /**
+     * Create a Kubernetes secret containing the provided secret data section
+     *
+     * @param namespace Namespace
+     * @param name Secret name
+     * @param data Map with secret data / files
+     * @param labels Labels to add to the Secret
+     * @param annotations annotations to add to the Secret
+     * @param ownerReference owner of the Secret
+     * @return the Secret
+     */
+    private static Secret createCaSecret(String namespace, String name, Map<String, String> data,
+                               Map<String, String> labels, Map<String, String> annotations, OwnerReference ownerReference) {
+        List<OwnerReference> or = ownerReference != null ? singletonList(ownerReference) : emptyList();
+        return new SecretBuilder()
+                .withNewMetadata()
+                .withName(name)
+                .withNamespace(namespace)
+                .withLabels(labels)
+                .withAnnotations(annotations)
+                .withOwnerReferences(or)
+                .endMetadata()
+                .withType("Opaque")
+                .withData(data)
+                .build();
     }
 
     private Subject nextCaSubject(int version) {
