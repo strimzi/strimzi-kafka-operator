@@ -30,6 +30,10 @@ if [ "$KAFKA_EXPORTER_ENABLE_SARAMA" = "true" ]; then
     saramaenable="--log.enable-sarama"
 fi
 
+if [ "$KAFKA_EXPORTER_OFFSET_SHOW_ALL" = "true" ]; then
+    allgroups="--offset.show-all"
+fi
+
 if [ -n "$KAFKA_EXPORTER_LOGGING" ]; then
     loglevel="--verbosity=${KAFKA_EXPORTER_LOGGING}"
 fi
@@ -47,8 +51,6 @@ version="--kafka.version=\""$KAFKA_EXPORTER_KAFKA_VERSION"\""
 kafkaserver="--kafka.server="$KAFKA_EXPORTER_KAFKA_SERVER
 
 listenaddress="--web.listen-address=:9404"
-
-allgroups="--offset.show-all"
 
 tls="--tls.enabled --tls.ca-file=$CA_CERTS --tls.cert-file=/etc/kafka-exporter/kafka-exporter-certs/kafka-exporter.crt  --tls.key-file=/etc/kafka-exporter/kafka-exporter-certs/kafka-exporter.key"
 

@@ -1578,6 +1578,8 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |string
 |enableSaramaLogging  1.2+<.<a|Enable Sarama logging, a Go client library used by the Kafka Exporter.
 |boolean
+|showAllOffsets       1.2+<.<a|Whether show the offset/lag for all consumer group, otherwise, only show connected consumer groups.
+|boolean
 |template             1.2+<.<a|Customization of deployment templates and pods.
 |xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`]
 |livenessProbe        1.2+<.<a|Pod liveness check.

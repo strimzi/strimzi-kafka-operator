@@ -3,6 +3,7 @@
 ## 0.40.0
 
 * Fix NullPointerException from missing listenerConfig when using custom auth
+* Added support for Kafka Exporter `offset.show-all` parameter
 
 ### Changes, deprecations and removals
 
