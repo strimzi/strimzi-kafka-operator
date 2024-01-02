@@ -38,6 +38,7 @@ import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClientsBuilder;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.ComponentType;
+import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
@@ -703,10 +704,7 @@ public class MetricsST extends AbstractST {
     void setupEnvironment(ExtensionContext extensionContext) throws Exception {
         // Metrics tests are not designed to run with namespace RBAC scope.
         assumeFalse(Environment.isNamespaceRbacScope());
-        cluster.createNamespaces(CollectorElement.createCollectorElement(this.getClass().getName()), Environment.TEST_SUITE_NAMESPACE, Arrays.asList(namespaceFirst, namespaceSecond));
-        // Copy pull secret into newly created namespaces
-        StUtils.copyImagePullSecrets(namespaceFirst);
-        StUtils.copyImagePullSecrets(namespaceSecond);
+        NamespaceManager.getInstance().createNamespaces(Environment.TEST_SUITE_NAMESPACE, CollectorElement.createCollectorElement(this.getClass().getName()), Arrays.asList(namespaceFirst, namespaceSecond));
 
         clusterOperator = clusterOperator.defaultInstallation(extensionContext)
             .createInstallation()

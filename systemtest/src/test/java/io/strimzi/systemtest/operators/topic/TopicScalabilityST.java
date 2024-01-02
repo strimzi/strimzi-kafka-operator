@@ -9,6 +9,7 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.annotations.BTONotSupported;
 import io.strimzi.systemtest.annotations.KRaftWithoutUTONotSupported;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicScalabilityUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
@@ -113,7 +114,9 @@ public class TopicScalabilityST extends AbstractST {
             .runInstallation();
 
         LOGGER.info("Deploying shared Kafka across all test cases in Namespace: {}", Environment.TEST_SUITE_NAMESPACE);
-        cluster.createNamespace(Environment.TEST_SUITE_NAMESPACE);
+
+        NamespaceManager.getInstance().createNamespaceAndPrepare(Environment.TEST_SUITE_NAMESPACE);
+
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(sharedClusterName, 3, 1)
             .editMetadata()
                 .withNamespace(Environment.TEST_SUITE_NAMESPACE)

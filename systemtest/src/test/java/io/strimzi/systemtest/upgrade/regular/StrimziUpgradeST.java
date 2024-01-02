@@ -8,6 +8,7 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.KRaftNotSupported;
+import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.upgrade.AbstractUpgradeST;
@@ -20,7 +21,6 @@ import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
-import io.strimzi.systemtest.utils.kubeUtils.objects.NamespaceUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -189,8 +189,7 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
 
     @BeforeEach
     void setupEnvironment() {
-        cluster.createNamespace(TestConstants.CO_NAMESPACE);
-        StUtils.copyImagePullSecrets(TestConstants.CO_NAMESPACE);
+        NamespaceManager.getInstance().createNamespaceAndPrepare(CO_NAMESPACE);
     }
 
     protected void afterEachMayOverride(ExtensionContext extensionContext) {
@@ -199,6 +198,6 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
         KafkaTopicUtils.waitForTopicWithPrefixDeletion(TestConstants.CO_NAMESPACE, topicName);
 
         ResourceManager.getInstance().deleteResources(extensionContext);
-        NamespaceUtils.deleteNamespaceWithWait(CO_NAMESPACE);
+        NamespaceManager.getInstance().deleteNamespaceWithWait(CO_NAMESPACE);
     }
 }

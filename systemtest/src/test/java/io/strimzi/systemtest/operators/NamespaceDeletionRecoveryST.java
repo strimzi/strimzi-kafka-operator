@@ -19,6 +19,7 @@ import io.strimzi.systemtest.annotations.UTONotSupported;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
+import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -28,10 +29,8 @@ import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.specific.ScraperTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
-import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
-import io.strimzi.systemtest.utils.kubeUtils.objects.NamespaceUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PersistentVolumeClaimUtils;
 import java.util.Map;
 import org.apache.logging.log4j.LogManager;
@@ -286,13 +285,10 @@ class NamespaceDeletionRecoveryST extends AbstractST {
     }
 
     private void deleteAndRecreateNamespace(String namespace) {
-        // Delete namespace with all resources
-        kubeClient().deleteNamespace(namespace);
-        NamespaceUtils.waitForNamespaceDeletion(namespace);
+        NamespaceManager.getInstance().deleteNamespaceWithWait(namespace);
 
         // Recreate namespace
-        cluster.createNamespace(namespace);
-        StUtils.copyImagePullSecrets(namespace);
+        NamespaceManager.getInstance().createNamespaceAndPrepare(namespace);
     }
 
     @BeforeAll

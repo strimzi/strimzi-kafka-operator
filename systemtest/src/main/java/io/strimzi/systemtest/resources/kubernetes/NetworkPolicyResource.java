@@ -224,12 +224,12 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
         LOGGER.info("Network policy for LabelSelector {} successfully created", labelSelector);
     }
 
-    public static void applyDefaultNetworkPolicySettings(ExtensionContext extensionContext, List<String> namespaces) {
+    public static void applyDefaultNetworkPolicySettings(List<String> namespaces) {
         for (String namespace : namespaces) {
             if (Environment.DEFAULT_TO_DENY_NETWORK_POLICIES) {
-                NetworkPolicyTemplates.applyDefaultNetworkPolicy(extensionContext, namespace, DefaultNetworkPolicy.DEFAULT_TO_DENY);
+                NetworkPolicyTemplates.applyDefaultNetworkPolicy(namespace, DefaultNetworkPolicy.DEFAULT_TO_DENY);
             } else {
-                NetworkPolicyTemplates.applyDefaultNetworkPolicy(extensionContext, namespace, DefaultNetworkPolicy.DEFAULT_TO_ALLOW);
+                NetworkPolicyTemplates.applyDefaultNetworkPolicy(namespace, DefaultNetworkPolicy.DEFAULT_TO_ALLOW);
             }
             LOGGER.info("NetworkPolicy successfully set to: {} for Namespace: {}", Environment.DEFAULT_TO_DENY_NETWORK_POLICIES, namespace);
         }
