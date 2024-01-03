@@ -53,18 +53,23 @@ Compression is useful for improving throughput and reducing the load on storage,
 == Data durability
 
 Message delivery acknowledgments minimize the likelihood that messages are lost.
-Acknowledgments are enabled by default with the `acks` property set at `acks=all`.
+By default, acknowledgments are enabled with the acks property set to `acks=all`. 
+To control the maximum time the producer waits for acknowledgments from the broker and handle potential delays in sending messages, you can use the `delivery.timeout.ms` property.
 
 .Acknowledging message delivery
 [source,env]
 ----
 # ...
 acks=all <1>
+delivery.timeout.ms=120000 <2>
 # ...
 ----
 
 <1> `acks=all` forces a leader replica to replicate messages to a certain number of followers before
 acknowledging that the message request was successfully received. 
+<2> The maximum time in milliseconds to wait for a complete send request. 
+You can set the value to `MAX_LONG` to delegate to Kafka an indefinite number of retries.
+The default is `120000` or 2 minutes.
 
 The `acks=all` setting offers the strongest guarantee of delivery, but it will increase the latency between the producer sending a message and receiving acknowledgment.
 If you don't require such strong guarantees, a setting of `acks=0` or `acks=1` provides either no delivery guarantees or only acknowledgment that the leader replica has written the record to its log.
@@ -251,24 +256,20 @@ batch.size=16384 <2>
 buffer.memory=33554432 <3>
 # ...
 ----
-<1> The `linger` property adds a delay in milliseconds so that larger batches of messages are accumulated and sent in a request. The default is `0`.
+<1> The `linger.ms` property adds a delay in milliseconds so that larger batches of messages are accumulated and sent in a request. The default is `0`.
 <2> If a maximum `batch.size` in bytes is used, a request is sent when the maximum is reached, or messages have been queued for longer than `linger.ms` (whichever comes sooner).
 Adding the delay allows batches to accumulate messages up to the batch size.
 <3> The buffer size must be at least as big as the batch size, and be able to accommodate buffering, compression, and in-flight requests.
 
 .Increasing throughput
 
-You can improve throughput of your message requests by using the `delivery.timeout.ms` property to adjust the maximum time to wait before a message is delivered and completes a send request.
-You can also direct messages to a specified partition by writing a custom partitioner to replace the default.
+You can improve throughput of your message requests by directing messages to a specified partition using a custom partitioner to replace the default.
 
 [source,env]
 ----
 # ...
-delivery.timeout.ms=120000 <1>
-partitioner.class=my-custom-partitioner <2>
+partitioner.class=my-custom-partitioner <1>
 
 # ...
 ----
-<1> The maximum time in milliseconds to wait for a complete send request. You can set the value to `MAX_LONG` to delegate to Kafka an indefinite number of retries.
-The default is `120000` or 2 minutes.
-<2> Specify the class name of the custom partitioner.
+<1> Specify the class name of your custom partitioner.

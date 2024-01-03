@@ -69,6 +69,7 @@ but it does mean that there are consumers on standby should one stop functioning
 If you can meet throughput goals with fewer consumers, you save on resources.
 
 Consumers within the same consumer group send offset commits and heartbeats to the same broker.
+The consumer sends heartbeats to the Kafka broker to indicate its activity within the consumer group.
 So the greater the number of consumers in the group, the higher the request load on the broker.
 
 [source,env]
@@ -231,16 +232,20 @@ isolation.level=read_committed <1>
 
 == Recovering from failure to avoid data loss
 
-Kafka provides a rebalance protocol which helps with failure detection and recovery within a consumer group.  
-Two useful properties that aid in this recovery process are `session.timeout.ms` and `heartbeat.interval.ms`.
+In the event of failures within a consumer group, Kafka provides a rebalance protocol designed for effective detection and recovery.
+To minimize the potential impact of these failures, one key strategy is to adjust the `max.poll.records` property to balance efficient processing with system stability. 
+This property determines the maximum number of records a consumer can fetch in a single poll.
+Fine-tuning `max.poll.records` helps to maintain a controlled consumption rate, preventing the consumer from overwhelming itself or the Kafka broker.
 
-The `session.timeout.ms` property specifies the maximum amount of time a consumer in a group can go without sending a heartbeat to the Kafka broker. 
-This heartbeat is an indicator that the consumer is active in the group. 
-If a consumer fails to send a heartbeat within the specified session timeout, Kafka considers it as a failure, and the consumer is marked as inactive. 
+Additionally, Kafka offers advanced configuration properties like `session.timeout.ms` and `heartbeat.interval.ms`. 
+These settings are typically reserved for more specialized use cases and may not require adjustment in standard scenarios.
+
+The `session.timeout.ms` property specifies the maximum amount of time a consumer can go without sending a heartbeat to the Kafka broker to indicate it is active within the consumer group. 
+If a consumer fails to send a heartbeat within the session timeout, it is considered inactive.
 A consumer marked as inactive triggers a rebalancing of the partitions for the topic. 
-Setting this value too low can result in false-positive outcomes, while setting it too high can lead to delayed recovery from failures.
+Setting the `session.timeout.ms` property value too low can result in false-positive outcomes, while setting it too high can lead to delayed recovery from failures.
 
-The `heartbeat.interval.ms` property determines how frequently a consumer sends heartbeats to the Kafka broker. 
+The `heartbeat.interval.ms` property determines how frequently a consumer sends heartbeats to the Kafka broker.    
 A shorter interval between consecutive heartbeats allows for quicker detection of consumer failures. 
 The heartbeat interval must be lower, usually by a third, than the session timeout. 
 Decreasing the heartbeat interval reduces the chance of accidental rebalancing, but more frequent heartbeats increases the overhead on broker resources.
