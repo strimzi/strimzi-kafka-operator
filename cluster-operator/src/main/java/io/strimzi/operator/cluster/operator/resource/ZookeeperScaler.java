@@ -4,14 +4,14 @@
  */
 package io.strimzi.operator.cluster.operator.resource;
 
-import io.fabric8.kubernetes.api.model.Secret;
+import io.strimzi.operator.cluster.model.ClusterOperatorPKCS12AuthIdentity;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.VertxUtil;
-import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.common.model.PasswordGenerator;
+import io.strimzi.operator.common.model.PemTrustSet;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -59,15 +59,15 @@ public class ZookeeperScaler implements AutoCloseable {
      * @param vertx                         Vertx instance
      * @param zookeeperConnectionString     Connection string to connect to the right Zookeeper
      * @param zkNodeAddress                 Function for generating the Zookeeper node addresses
-     * @param clusterCaCertSecret           Secret with Kafka cluster CA public key
-     * @param coKeySecret                   Secret with Cluster Operator public and private key
+     * @param pemTrustSet                   Trust set for connecting to Zookeeper
+     * @param pksc12AuthIdentity            Identity for TLS client authentication for connecting to Zookeeper
      * @param operationTimeoutMs            Operation timeout
      * @param zkAdminSessionTimeoutMs       Zookeeper Admin session timeout
      *
      */
     protected ZookeeperScaler(Reconciliation reconciliation, Vertx vertx, ZooKeeperAdminProvider zooAdminProvider,
                               String zookeeperConnectionString, Function<Integer, String> zkNodeAddress,
-                              Secret clusterCaCertSecret, Secret coKeySecret, long operationTimeoutMs,
+                              PemTrustSet pemTrustSet, ClusterOperatorPKCS12AuthIdentity pksc12AuthIdentity, long operationTimeoutMs,
                               int zkAdminSessionTimeoutMs) {
         this.reconciliation = reconciliation;
 
@@ -84,11 +84,11 @@ public class ZookeeperScaler implements AutoCloseable {
         // We cannot use P12 because of custom CAs which for simplicity provide only PEM
         PasswordGenerator pg = new PasswordGenerator(12);
         trustStorePassword = pg.generate();
-        trustStoreFile = Util.createFileTrustStore(getClass().getName(), "p12", Ca.certs(clusterCaCertSecret), trustStorePassword.toCharArray());
+        trustStoreFile = Util.createFileTrustStore(getClass().getName(), "p12", pemTrustSet.trustedCertificates(), trustStorePassword.toCharArray());
 
         // Setup keystore from PKCS12 in cluster-operator secret
-        keyStorePassword = new String(Util.decodeFromSecret(coKeySecret, "cluster-operator.password"), StandardCharsets.US_ASCII);
-        keyStoreFile = Util.createFileStore(getClass().getName(), "p12", Util.decodeFromSecret(coKeySecret, "cluster-operator.p12"));
+        keyStorePassword = pksc12AuthIdentity.password();
+        keyStoreFile = Util.createFileStore(getClass().getName(), "p12", pksc12AuthIdentity.keystore());
     }
 
     /**

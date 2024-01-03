@@ -9,7 +9,6 @@ import io.fabric8.kubernetes.api.model.ContainerStateWaiting;
 import io.fabric8.kubernetes.api.model.ContainerStatus;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.operator.cluster.model.DnsNameGenerator;
@@ -27,6 +26,8 @@ import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.VertxUtil;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.OrderedProperties;
+import io.strimzi.operator.common.model.PemAuthIdentity;
+import io.strimzi.operator.common.model.PemTrustSet;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -118,8 +119,8 @@ public class KafkaRoller {
     protected final long operationTimeoutMs;
     protected final Vertx vertx;
     private final String cluster;
-    private final Secret clusterCaCertSecret;
-    private final Secret coKeySecret;
+    private final PemTrustSet pemTrustSet;
+    private final PemAuthIdentity pemAuthIdentity;
     private final Set<NodeRef> nodes;
     private final KubernetesRestartEventPublisher eventsPublisher;
     private final Supplier<BackOff> backoffSupplier;
@@ -152,8 +153,8 @@ public class KafkaRoller {
      * @param operationTimeoutMs        Operation timeout in milliseconds
      * @param backOffSupplier           Backoff supplier
      * @param nodes                     List of Kafka node references to consider rolling
-     * @param clusterCaCertSecret       Secret with the Cluster CA public key
-     * @param coKeySecret               Secret with the Cluster CA private key
+     * @param pemTrustSet               Trust set to use in KafkaAgentClient
+     * @param pemAuthIdentity           Identity for TLS client authentication to use in KafkaAgentClient
      * @param adminClientProvider       Kafka Admin client provider
      * @param kafkaAgentClientProvider  Kafka Agent client provider
      * @param kafkaConfigProvider       Kafka configuration provider
@@ -164,7 +165,7 @@ public class KafkaRoller {
      */
     public KafkaRoller(Reconciliation reconciliation, Vertx vertx, PodOperator podOperations,
                        long pollingIntervalMs, long operationTimeoutMs, Supplier<BackOff> backOffSupplier, Set<NodeRef> nodes,
-                       Secret clusterCaCertSecret, Secret coKeySecret,
+                       PemTrustSet pemTrustSet, PemAuthIdentity pemAuthIdentity,
                        AdminClientProvider adminClientProvider, KafkaAgentClientProvider kafkaAgentClientProvider,
                        Function<Integer, String> kafkaConfigProvider, String kafkaLogging, KafkaVersion kafkaVersion, boolean allowReconfiguration, KubernetesRestartEventPublisher eventsPublisher) {
         this.namespace = reconciliation.namespace();
@@ -175,8 +176,8 @@ public class KafkaRoller {
             throw new IllegalArgumentException();
         }
         this.backoffSupplier = backOffSupplier;
-        this.clusterCaCertSecret = clusterCaCertSecret;
-        this.coKeySecret = coKeySecret;
+        this.pemTrustSet = pemTrustSet;
+        this.pemAuthIdentity = pemAuthIdentity;
         this.vertx = vertx;
         this.operationTimeoutMs = operationTimeoutMs;
         this.podOperations = podOperations;
@@ -523,7 +524,7 @@ public class KafkaRoller {
 
     KafkaAgentClient initKafkaAgentClient() throws FatalProblem {
         try {
-            return kafkaAgentClientProvider.createKafkaAgentClient(reconciliation, clusterCaCertSecret, coKeySecret);
+            return kafkaAgentClientProvider.createKafkaAgentClient(reconciliation, pemTrustSet, pemAuthIdentity);
         } catch (Exception e) {
             throw new FatalProblem("Failed to initialise KafkaAgentClient", e);
         }
@@ -931,7 +932,7 @@ public class KafkaRoller {
 
         try {
             LOGGER.debugCr(reconciliation, "Creating AdminClient for {}", bootstrapHostnames);
-            return adminClientProvider.createAdminClient(bootstrapHostnames, this.clusterCaCertSecret, this.coKeySecret, "cluster-operator");
+            return adminClientProvider.createAdminClient(bootstrapHostnames, pemTrustSet, pemAuthIdentity);
         } catch (KafkaException e) {
             if (ceShouldBeFatal && (e instanceof ConfigException
                     || e.getCause() instanceof ConfigException)) {

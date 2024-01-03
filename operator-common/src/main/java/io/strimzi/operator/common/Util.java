@@ -6,6 +6,7 @@ package io.strimzi.operator.common;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
@@ -36,6 +37,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
@@ -129,6 +131,31 @@ public class Util {
     }
 
     /**
+     * Returns exception when secret is missing a particular key. This is used from several different methods to provide identical exception.
+     *
+     * @param namespace     Namespace of the Secret
+     * @param secretName    Name of the Secret
+     * @param keyName       Name of the Secret key
+     * @return              RuntimeException
+     */
+    public static RuntimeException missingSecretKeyException(String namespace, String secretName, String keyName) {
+        return new RuntimeException("The Secret " + namespace + "/" + secretName + " is missing the key " + keyName);
+    }
+
+    /**
+     * Returns exception when certificate is corrupt. This is used from several different methods to provide identical exception.
+     *
+     * @param namespace     Namespace of the Secret
+     * @param secretName    Name of the Secret
+     * @param keyName       Name of the Secret key
+     * @return              RuntimeException
+     */
+    public static RuntimeException corruptCertificateException(String namespace, String secretName, String keyName) {
+        return new RuntimeException("Bad/corrupt certificate found in data." + keyName + ".crt of Secret "
+                + secretName + " in namespace " + namespace);
+    }
+
+    /**
      * Create a file with Keystore or Truststore from the given {@code bytes}.
      * The file will be set to get deleted when the JVM exist.
      *
@@ -162,22 +189,46 @@ public class Util {
      * @return          Decoded bytes
      */
     public static byte[] decodeFromSecret(Secret secret, String key) {
-        return Base64.getDecoder().decode(secret.getData().get(key));
+        return Optional.ofNullable(secret)
+                .map(Secret::getData)
+                .map(data -> data.get(key))
+                .map(value -> Base64.getDecoder().decode(value))
+                .orElseThrow(() -> {
+                    String name = Optional.ofNullable(secret)
+                            .map(Secret::getMetadata)
+                            .map(ObjectMeta::getName)
+                            .orElse("unknown");
+                    String namespace = Optional.ofNullable(secret)
+                            .map(Secret::getMetadata)
+                            .map(ObjectMeta::getNamespace)
+                            .orElse("unknown");
+                    return Util.missingSecretKeyException(namespace, name, key);
+                });
     }
 
     /**
-     * Decode the binary item in a Kubernetes Secret, which holds a private key in PEM format, from base64 to a byte array.
-     * Before decoding it into byte array, it removes the PEM header and footer.
+     * Decode binary item from Kubernetes Secret from base64 into String
+     *
      * @param secret    Kubernetes Secret
      * @param key       Key which should be retrieved and decoded
-     * @return          Decoded bytes
+     * @return          Decoded String
      */
-    public static byte[] decodePemPrivateKeyFromSecret(Secret secret, String key) {
-        String privateKey = new String(decodeFromSecret(secret, key), StandardCharsets.UTF_8)
+    public static String decodeFromSecretAsString(Secret secret, String key) {
+        return decodeToString(decodeFromSecret(secret, key));
+    }
+
+    /**
+     * Decode the private key in PEM format, from base64 to a byte array.
+     * Before decoding it into byte array, it removes the PEM header and footer.
+     * @param privateKey        Key which should be decoded
+     * @return                  Decoded bytes
+     */
+    public static byte[] decodePemPrivateKey(String privateKey) {
+        String decodedPrivateKey = privateKey
                 .replace("-----BEGIN PRIVATE KEY-----", "")
                 .replaceAll(System.lineSeparator(), "")
                 .replace("-----END PRIVATE KEY-----", "");
-        return Base64.getDecoder().decode(privateKey);
+        return Base64.getDecoder().decode(decodedPrivateKey);
     }
 
     /**
@@ -484,32 +535,6 @@ public class Util {
     }
 
     /**
-     * Returns concatenated string of all public keys (all .crt records) from a secret
-     *
-     * @param secret    Kubernetes Secret with certificates
-     *
-     * @return          String secrets
-     */
-    public static String certsToPemString(Secret secret)  {
-        if (secret == null || secret.getData() == null) {
-            return "";
-        } else {
-            Base64.Decoder decoder = Base64.getDecoder();
-
-            return secret
-                    .getData()
-                    .entrySet()
-                    .stream()
-                    .filter(record -> record.getKey().endsWith(".crt"))
-                    .map(record -> {
-                        byte[] bytes = decoder.decode(record.getValue());
-                        return new String(bytes, StandardCharsets.US_ASCII);
-                    })
-                    .collect(Collectors.joining("\n"));
-        }
-    }
-
-    /**
      * Checks whether maintenance time window is satisfied by a given point in time or not
      *
      * @param reconciliation        Reconciliation marker
@@ -563,4 +588,14 @@ public class Util {
     public static String decodeFromBase64(String data)  {
         return new String(Base64.getDecoder().decode(data), StandardCharsets.US_ASCII);
     }
+
+    /**
+     * Decodes the provided byte array using the charset StandardCharsets.US_ASCII
+     * @param bytes Byte array to convert to String
+     * @return New String object containing the provided byte array
+     */
+    public static String decodeToString(byte[] bytes) {
+        return new String(bytes, StandardCharsets.US_ASCII);
+    }
+
 }

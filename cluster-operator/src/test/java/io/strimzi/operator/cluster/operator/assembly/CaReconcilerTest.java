@@ -35,6 +35,8 @@ import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.PasswordGenerator;
+import io.strimzi.operator.common.model.PemAuthIdentity;
+import io.strimzi.operator.common.model.PemTrustSet;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
@@ -1668,7 +1670,7 @@ public class CaReconcilerTest {
         }
 
         @Override
-        Future<Void> maybeRollZookeeper(int replicas, RestartReasons podRestartReasons) {
+        Future<Void> maybeRollZookeeper(int replicas, RestartReasons podRestartReasons, PemTrustSet pemTrustSet, PemAuthIdentity pemAuthIdentity) {
             this.zkPodRestartReasons = podRestartReasons;
             return Future.succeededFuture();
         }
@@ -1683,7 +1685,7 @@ public class CaReconcilerTest {
         }
 
         @Override
-        Future<Void> rollKafkaBrokers(Set<NodeRef> nodes, RestartReasons podRollReasons) {
+        Future<Void> rollKafkaBrokers(Set<NodeRef> nodes, RestartReasons podRollReasons, PemTrustSet pemTrustSet, PemAuthIdentity pemAuthIdentity) {
             this.kPodRollReasons = podRollReasons;
             return Future.succeededFuture();
         }

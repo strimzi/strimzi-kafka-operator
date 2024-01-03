@@ -4,48 +4,26 @@
  */
 package io.strimzi.operator.common;
 
-import io.fabric8.kubernetes.api.model.Secret;
-import io.fabric8.kubernetes.api.model.SecretBuilder;
+import io.strimzi.operator.common.model.PemAuthIdentity;
+import io.strimzi.operator.common.model.PemTrustSet;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.common.config.SslConfigs;
 import org.junit.jupiter.api.Test;
 
-import java.util.Map;
 import java.util.Properties;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class DefaultAdminClientProviderTest {
-    private static final Secret EMPTY_SECRET = new SecretBuilder()
-            .withNewMetadata()
-                .withNamespace("my-namespace")
-                .withName("empty-secret")
-            .endMetadata()
-            .build();
-    private static final Secret INVALID_SECRET = new SecretBuilder()
-            .withNewMetadata()
-                .withNamespace("my-namespace")
-                .withName("invalid-secret")
-            .endMetadata()
-            .withData(Map.of("not.certificate", "dGhpcyBpcyBub3QgY2VydGlmaWNhdGU="))
-            .build();
-    private static final Secret CA_SECRET = new SecretBuilder()
-            .withNewMetadata()
-                .withNamespace("my-namespace")
-                .withName("ca-secret")
-            .endMetadata()
-            .withData(Map.of("ca1.crt", "Y2Ex", "ca2.crt", "Y2Ey"))
-            .build();
-    private static final Secret USER_SECRET = new SecretBuilder()
-            .withNewMetadata()
-                .withNamespace("my-namespace")
-                .withName("user-secret")
-            .endMetadata()
-            .withData(Map.of("user.key", "dXNlci1rZXk=", "user.crt", "dXNlci1jZXJ0"))
-            .build();
+    private static final String CA1 = "ca1";
+    private static final String CA2 = "ca2";
+    private static final String USER_CERT = "user-cert";
+    private static final String USER_KEY = "user-key";
 
     private void assertDefaultConfigs(Properties config) {
         assertThat(config.get(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG), is("my-kafka:9092"));
@@ -57,7 +35,7 @@ public class DefaultAdminClientProviderTest {
 
     @Test
     public void testPlainConnection() {
-        Properties config = DefaultAdminClientProvider.adminClientConfiguration("my-kafka:9092", null, null, null, new Properties());
+        Properties config = DefaultAdminClientProvider.adminClientConfiguration("my-kafka:9092", null, null, new Properties());
 
         assertThat(config.size(), is(5));
         assertDefaultConfigs(config);
@@ -69,7 +47,7 @@ public class DefaultAdminClientProviderTest {
         customConfig.setProperty(AdminClientConfig.RETRIES_CONFIG, "5"); // Override a value we have default for
         customConfig.setProperty(AdminClientConfig.RECONNECT_BACKOFF_MS_CONFIG, "13000"); // Override a value we do not use
 
-        Properties config = DefaultAdminClientProvider.adminClientConfiguration("my-kafka:9092", null, null, null, customConfig);
+        Properties config = DefaultAdminClientProvider.adminClientConfiguration("my-kafka:9092", null, null, customConfig);
 
         assertThat(config.size(), is(6));
         assertThat(config.get(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG), is("my-kafka:9092"));
@@ -82,7 +60,7 @@ public class DefaultAdminClientProviderTest {
 
     @Test
     public void testTlsConnection() {
-        Properties config = DefaultAdminClientProvider.adminClientConfiguration("my-kafka:9092", CA_SECRET, null, null, new Properties());
+        Properties config = DefaultAdminClientProvider.adminClientConfiguration("my-kafka:9092", mockPemTrustSet(), null, new Properties());
 
         assertThat(config.size(), is(8));
         assertDefaultConfigs(config);
@@ -94,7 +72,7 @@ public class DefaultAdminClientProviderTest {
 
     @Test
     public void testMTlsConnection() {
-        Properties config = DefaultAdminClientProvider.adminClientConfiguration("my-kafka:9092", CA_SECRET, USER_SECRET, "user", new Properties());
+        Properties config = DefaultAdminClientProvider.adminClientConfiguration("my-kafka:9092", mockPemTrustSet(), mockPemAuthIdentity(), new Properties());
 
         assertThat(config.size(), is(11));
         assertDefaultConfigs(config);
@@ -109,7 +87,7 @@ public class DefaultAdminClientProviderTest {
 
     @Test
     public void testMTlsWithPublicCAConnection() {
-        Properties config = DefaultAdminClientProvider.adminClientConfiguration("my-kafka:9092", null, USER_SECRET, "user", new Properties());
+        Properties config = DefaultAdminClientProvider.adminClientConfiguration("my-kafka:9092", null, mockPemAuthIdentity(), new Properties());
 
         assertThat(config.size(), is(9));
         assertDefaultConfigs(config);
@@ -121,25 +99,20 @@ public class DefaultAdminClientProviderTest {
 
     @Test
     public void testNullConfig() {
-        InvalidConfigurationException ex = assertThrows(InvalidConfigurationException.class, () -> DefaultAdminClientProvider.adminClientConfiguration("my-kafka:9092", null, USER_SECRET, "user", null));
+        InvalidConfigurationException ex = assertThrows(InvalidConfigurationException.class, () -> DefaultAdminClientProvider.adminClientConfiguration("my-kafka:9092", null, mockPemAuthIdentity(), null));
         assertThat(ex.getMessage(), is("The config parameter should not be null"));
     }
 
-    @Test
-    public void testInvalidCASecret() {
-        InvalidConfigurationException ex = assertThrows(InvalidConfigurationException.class, () -> DefaultAdminClientProvider.adminClientConfiguration("my-kafka:9092", EMPTY_SECRET, USER_SECRET, "user", new Properties()));
-        assertThat(ex.getMessage(), is("The Secret empty-secret does not seem to contain any .crt entries"));
-
-        ex = assertThrows(InvalidConfigurationException.class, () -> DefaultAdminClientProvider.adminClientConfiguration("my-kafka:9092", INVALID_SECRET, USER_SECRET, "user", new Properties()));
-        assertThat(ex.getMessage(), is("The Secret invalid-secret does not seem to contain any .crt entries"));
+    public static PemTrustSet mockPemTrustSet() {
+        PemTrustSet mockTrustSet = mock(PemTrustSet.class);
+        when(mockTrustSet.trustedCertificatesString()).thenReturn(String.format("%s%n%s", CA1, CA2));
+        return mockTrustSet;
     }
 
-    @Test
-    public void testInvalidUserSecret() {
-        InvalidConfigurationException ex = assertThrows(InvalidConfigurationException.class, () -> DefaultAdminClientProvider.adminClientConfiguration("my-kafka:9092", CA_SECRET, EMPTY_SECRET, "user", new Properties()));
-        assertThat(ex.getMessage(), is("The Secret empty-secret does not seem to contain user.key and user.crt entries"));
-
-        ex = assertThrows(InvalidConfigurationException.class, () -> DefaultAdminClientProvider.adminClientConfiguration("my-kafka:9092", CA_SECRET, INVALID_SECRET, "user", new Properties()));
-        assertThat(ex.getMessage(), is("The Secret invalid-secret does not seem to contain user.key and user.crt entries"));
+    public static PemAuthIdentity mockPemAuthIdentity() {
+        PemAuthIdentity mockAuthIdentity = mock(PemAuthIdentity.class);
+        when(mockAuthIdentity.pemCertificateChainString()).thenReturn(USER_CERT);
+        when(mockAuthIdentity.pemPrivateKeyString()).thenReturn(USER_KEY);
+        return mockAuthIdentity;
     }
 }

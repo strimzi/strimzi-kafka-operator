@@ -4,8 +4,9 @@
  */
 package io.strimzi.operator.cluster.operator.resource;
 
-import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.model.PemAuthIdentity;
+import io.strimzi.operator.common.model.PemTrustSet;
 
 /**
  * Class to provide the real KafkaAgentClient which connects to actual Kafka Agent
@@ -13,7 +14,7 @@ import io.strimzi.operator.common.Reconciliation;
 public class DefaultKafkaAgentClientProvider implements KafkaAgentClientProvider {
 
     @Override
-    public KafkaAgentClient createKafkaAgentClient(Reconciliation reconciliation, Secret clusterCaCertSecret, Secret coKeySecret) {
-        return new KafkaAgentClient(reconciliation, reconciliation.name(), reconciliation.namespace(), clusterCaCertSecret, coKeySecret);
+    public KafkaAgentClient createKafkaAgentClient(Reconciliation reconciliation, PemTrustSet pemTrustSet, PemAuthIdentity pemAuthIdentity) {
+        return new KafkaAgentClient(reconciliation, reconciliation.name(), reconciliation.namespace(), pemTrustSet, pemAuthIdentity);
     }
 }

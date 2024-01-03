@@ -27,7 +27,6 @@ import io.vertx.core.net.PemTrustOptions;
 
 import java.net.ConnectException;
 import java.net.NoRouteToHostException;
-import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeoutException;
 
 /**
@@ -94,7 +93,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
 
     protected static HTTPHeader getAuthHttpHeader(boolean apiAuthEnabled, Secret apiSecret) {
         if (apiAuthEnabled) {
-            String password = new String(Util.decodeFromSecret(apiSecret, CruiseControlApiProperties.API_ADMIN_PASSWORD_KEY), StandardCharsets.US_ASCII);
+            String password = Util.decodeFromSecretAsString(apiSecret, CruiseControlApiProperties.API_ADMIN_PASSWORD_KEY);
             return generateAuthHttpHeader(CruiseControlApiProperties.API_ADMIN_NAME, password);
         } else {
             return null;

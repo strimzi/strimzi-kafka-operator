@@ -64,6 +64,8 @@ import io.strimzi.operator.common.MicrometerMetricsProvider;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.model.PemAuthIdentity;
+import io.strimzi.operator.common.model.PemTrustSet;
 import io.strimzi.operator.common.operator.resource.BuildConfigOperator;
 import io.strimzi.operator.common.operator.resource.BuildOperator;
 import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
@@ -89,8 +91,6 @@ import io.strimzi.test.TestUtils;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.net.NetClientOptions;
-import io.vertx.core.net.PemKeyCertOptions;
-import io.vertx.core.net.PemTrustOptions;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.DescribeClusterResult;
@@ -473,16 +473,6 @@ public class ResourceUtils {
                 protected Future<Boolean> isLeader(Reconciliation reconciliation, String podName, NetClientOptions options) {
                     return Future.succeededFuture(true);
                 }
-
-                @Override
-                protected PemTrustOptions trustOptions(Reconciliation reconciliation, Secret s) {
-                    return new PemTrustOptions();
-                }
-
-                @Override
-                protected PemKeyCertOptions keyCertOptions(Secret s) {
-                    return new PemKeyCertOptions();
-                }
             };
     }
 
@@ -585,19 +575,19 @@ public class ResourceUtils {
     public static AdminClientProvider adminClientProvider(Admin mockAdminClient) {
         return new AdminClientProvider() {
             @Override
-            public Admin createAdminClient(String bootstrapHostnames, Secret clusterCaCertSecret, Secret keyCertSecret, String keyCertName) {
-                return createAdminClient(bootstrapHostnames, clusterCaCertSecret, keyCertSecret, keyCertName, new Properties());
+            public Admin createAdminClient(String bootstrapHostnames, PemTrustSet pemTrustSet, PemAuthIdentity pemAuthIdentity) {
+                return createAdminClient(bootstrapHostnames, pemTrustSet, pemAuthIdentity, new Properties());
             }
 
             @Override
-            public Admin createAdminClient(String bootstrapHostnames, Secret clusterCaCertSecret, Secret keyCertSecret, String keyCertName, Properties config) {
+            public Admin createAdminClient(String bootstrapHostnames, PemTrustSet pemTrustSet, PemAuthIdentity pemAuthIdentity, Properties config) {
                 return mockAdminClient;
             }
         };
     }
 
     public static ZookeeperScalerProvider zookeeperScalerProvider() {
-        return (reconciliation, vertx, zookeeperConnectionString, zkNodeAddress, clusterCaCertSecret, coKeySecret, operationTimeoutMs, zkAdminSessionTimoutMs) -> {
+        return (reconciliation, vertx, zookeeperConnectionString, zkNodeAddress, trustSet, clientAuthIdentity, operationTimeoutMs, zkAdminSessionTimoutMs) -> {
             ZookeeperScaler mockZooScaler = mock(ZookeeperScaler.class);
             when(mockZooScaler.scale(anyInt())).thenReturn(Future.succeededFuture());
             return mockZooScaler;
@@ -620,7 +610,7 @@ public class ResourceUtils {
     public static KafkaAgentClientProvider kafkaAgentClientProvider(KafkaAgentClient mockKafkaAgentClient) {
         return new KafkaAgentClientProvider() {
             @Override
-            public KafkaAgentClient createKafkaAgentClient(Reconciliation reconciliation, Secret clusterCaCertSecret, Secret coKeySecret) {
+            public KafkaAgentClient createKafkaAgentClient(Reconciliation reconciliation, PemTrustSet pemTrustSet, PemAuthIdentity pemAuthIdentity) {
                 return mockKafkaAgentClient;
             }
         };

@@ -10,7 +10,8 @@ import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.VertxUtil;
-import io.strimzi.operator.common.operator.resource.SecretOperator;
+import io.strimzi.operator.common.model.PemAuthIdentity;
+import io.strimzi.operator.common.model.PemTrustSet;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import org.apache.kafka.clients.admin.Admin;
@@ -37,44 +38,43 @@ public class BrokersInUseCheck {
      *
      * @param reconciliation        Reconciliation marker
      * @param vertx                 Vert.x instance
-     * @param secretOperator        Secret operator for working with Secrets
+     * @param pemTrustSet           Trust set for connecting to the Kafka cluster
+     * @param pemAuthIdentity       Identity for TLS client authentication for connecting to the Kafka cluster
      * @param adminClientProvider   Used to create the Admin client instance
      *
      * @return returns future set of node ids containing partition replicas based on the outcome of the check
      */
-    public Future<Set<Integer>> brokersInUse(Reconciliation reconciliation, Vertx vertx, SecretOperator secretOperator, AdminClientProvider adminClientProvider) {
-        return ReconcilerUtils.clientSecrets(reconciliation, secretOperator)
-                .compose(adminClientSecrets -> {
-                    try {
-                        String bootstrapHostname = KafkaResources.bootstrapServiceName(reconciliation.name()) + "." + reconciliation.namespace() + ".svc:" + KafkaCluster.REPLICATION_PORT;
-                        LOGGER.debugCr(reconciliation, "Creating AdminClient for Kafka cluster in namespace {}", reconciliation.namespace());
-                        Admin kafkaAdmin = adminClientProvider.createAdminClient(bootstrapHostname, adminClientSecrets.resultAt(0), adminClientSecrets.resultAt(1), "cluster-operator");
+    public Future<Set<Integer>> brokersInUse(Reconciliation reconciliation, Vertx vertx, PemTrustSet pemTrustSet,
+                                             PemAuthIdentity pemAuthIdentity, AdminClientProvider adminClientProvider) {
+        try {
+            String bootstrapHostname = KafkaResources.bootstrapServiceName(reconciliation.name()) + "." + reconciliation.namespace() + ".svc:" + KafkaCluster.REPLICATION_PORT;
+            LOGGER.debugCr(reconciliation, "Creating AdminClient for Kafka cluster in namespace {}", reconciliation.namespace());
+            Admin kafkaAdmin = adminClientProvider.createAdminClient(bootstrapHostname, pemTrustSet, pemAuthIdentity);
 
-                        return topicNames(reconciliation, vertx, kafkaAdmin)
-                                .compose(names -> describeTopics(reconciliation, vertx, kafkaAdmin, names))
-                                .compose(topicDescriptions -> {
-                                    Set<Integer> brokersWithPartitionReplicas = new HashSet<>();
+            return topicNames(reconciliation, vertx, kafkaAdmin)
+                    .compose(names -> describeTopics(reconciliation, vertx, kafkaAdmin, names))
+                    .compose(topicDescriptions -> {
+                        Set<Integer> brokersWithPartitionReplicas = new HashSet<>();
 
-                                    for (TopicDescription td : topicDescriptions.values()) {
-                                        for (TopicPartitionInfo pd : td.partitions()) {
-                                            for (org.apache.kafka.common.Node broker : pd.replicas()) {
-                                                brokersWithPartitionReplicas.add(broker.id());
-                                            }
-                                        }
-                                    }
+                        for (TopicDescription td : topicDescriptions.values()) {
+                            for (TopicPartitionInfo pd : td.partitions()) {
+                                for (org.apache.kafka.common.Node broker : pd.replicas()) {
+                                    brokersWithPartitionReplicas.add(broker.id());
+                                }
+                            }
+                        }
 
-                                    kafkaAdmin.close();
-                                    return Future.succeededFuture(brokersWithPartitionReplicas);
-                                }).recover(error -> {
-                                    LOGGER.warnCr(reconciliation, "Failed to get list of brokers in use", error);
-                                    kafkaAdmin.close();
-                                    return Future.failedFuture(error);
-                                });
-                    } catch (KafkaException e) {
-                        LOGGER.warnCr(reconciliation, "Failed to check if broker contains any partition replicas", e);
-                        return Future.failedFuture(e);
-                    }
-                });
+                        kafkaAdmin.close();
+                        return Future.succeededFuture(brokersWithPartitionReplicas);
+                    }).recover(error -> {
+                        LOGGER.warnCr(reconciliation, "Failed to get list of brokers in use", error);
+                        kafkaAdmin.close();
+                        return Future.failedFuture(error);
+                    });
+        } catch (KafkaException e) {
+            LOGGER.warnCr(reconciliation, "Failed to check if broker contains any partition replicas", e);
+            return Future.failedFuture(e);
+        }
     }
 
     /**

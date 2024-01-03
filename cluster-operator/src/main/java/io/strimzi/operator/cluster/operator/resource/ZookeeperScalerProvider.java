@@ -4,8 +4,9 @@
  */
 package io.strimzi.operator.cluster.operator.resource;
 
-import io.fabric8.kubernetes.api.model.Secret;
+import io.strimzi.operator.cluster.model.ClusterOperatorPKCS12AuthIdentity;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.model.PemTrustSet;
 import io.vertx.core.Vertx;
 
 import java.util.function.Function;
@@ -21,14 +22,14 @@ public interface ZookeeperScalerProvider {
      * @param vertx                         Vertx instance
      * @param zookeeperConnectionString     Connection string to connect to the right Zookeeper
      * @param zkNodeAddress                 Function for generating the Zookeeper node addresses
-     * @param clusterCaCertSecret           Secret with Kafka cluster CA public key
-     * @param coKeySecret                   Secret with Cluster Operator public and private key
+     * @param pemTrustSet                   Trust set for connecting to Zookeeper
+     * @param pksc12AuthIdentity            Identity for TLS client authentication for connecting to Zookeeper
      * @param operationTimeoutMs            Operation timeout
      * @param zkAdminSessionTimeoutMs       Zookeeper Admin client session timeout
      *
      * @return  ZookeeperScaler instance
      */
     ZookeeperScaler createZookeeperScaler(Reconciliation reconciliation, Vertx vertx, String zookeeperConnectionString,
-                                          Function<Integer, String> zkNodeAddress, Secret clusterCaCertSecret,
-                                          Secret coKeySecret, long operationTimeoutMs, int zkAdminSessionTimeoutMs);
+                                          Function<Integer, String> zkNodeAddress, PemTrustSet pemTrustSet,
+                                          ClusterOperatorPKCS12AuthIdentity pksc12AuthIdentity, long operationTimeoutMs, int zkAdminSessionTimeoutMs);
 }

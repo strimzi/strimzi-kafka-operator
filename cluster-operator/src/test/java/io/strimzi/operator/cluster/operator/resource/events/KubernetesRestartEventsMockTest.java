@@ -54,6 +54,8 @@ import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.common.model.ClientsCa;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.PasswordGenerator;
+import io.strimzi.operator.common.model.PemAuthIdentity;
+import io.strimzi.operator.common.model.PemTrustSet;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.platform.KubernetesVersion;
 import io.strimzi.test.TestUtils;
@@ -398,7 +400,7 @@ public class KubernetesRestartEventsMockTest {
     @Test
     void testEventEmittedWhenConfigChangeRequiresRestart(Vertx vertx, VertxTestContext context) {
         // Modify mocked configs call to return a new property to trigger a reconfiguration reconciliation that requires a restart
-        Admin adminClient = withChangedBrokerConf(ResourceUtils.adminClientProvider().createAdminClient(null, null, null, null));
+        Admin adminClient = withChangedBrokerConf(ResourceUtils.adminClientProvider().createAdminClient(null, null, null));
         ResourceOperatorSupplier supplierWithModifiedAdmin = supplierWithAdmin(vertx, () -> adminClient);
 
         KafkaCluster kafkaCluster = KafkaClusterCreator.createKafkaCluster(reconciliation,
@@ -594,12 +596,12 @@ public class KubernetesRestartEventsMockTest {
     private ResourceOperatorSupplier supplierWithAdmin(Vertx vertx, Supplier<Admin> adminClientSupplier) {
         AdminClientProvider adminClientProvider = new AdminClientProvider() {
             @Override
-            public Admin createAdminClient(String bootstrapHostnames, Secret clusterCaCertSecret, Secret keyCertSecret, String keyCertName) {
+            public Admin createAdminClient(String bootstrapHostnames, PemTrustSet trustSet, PemAuthIdentity clientAuthIdentity) {
                 return adminClientSupplier.get();
             }
 
             @Override
-            public Admin createAdminClient(String bootstrapHostnames, Secret clusterCaCertSecret, Secret keyCertSecret, String keyCertName, Properties config) {
+            public Admin createAdminClient(String bootstrapHostnames, PemTrustSet trustSet, PemAuthIdentity clientAuthIdentity, Properties config) {
                 return adminClientSupplier.get();
             }
         };

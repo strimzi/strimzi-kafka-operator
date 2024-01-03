@@ -11,8 +11,9 @@ import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.VertxUtil;
+import io.strimzi.operator.common.model.PemAuthIdentity;
+import io.strimzi.operator.common.model.PemTrustSet;
 import io.strimzi.operator.common.model.StatusUtils;
-import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -53,7 +54,8 @@ public class KRaftMetadataManager {
      *
      * @param reconciliation            Reconciliation marker
      * @param vertx                     Vert.x instance
-     * @param secretOperator            Secret operator for getting the secrets for connecting to the Kafka cluster
+     * @param pemTrustSet               Trust set for connecting to the Kafka cluster
+     * @param pemAuthIdentity           Identity for TLS client authentication for connecting to the Kafka cluster
      * @param adminClientProvider       Kafka Admin client provider
      * @param desiredMetadataVersion    Desired metadata version
      * @param status                    Kafka status
@@ -63,28 +65,26 @@ public class KRaftMetadataManager {
     public static Future<Void> maybeUpdateMetadataVersion(
             Reconciliation reconciliation,
             Vertx vertx,
-            SecretOperator secretOperator,
+            PemTrustSet pemTrustSet,
+            PemAuthIdentity pemAuthIdentity,
             AdminClientProvider adminClientProvider,
             String desiredMetadataVersion,
             KafkaStatus status
     ) {
-        return ReconcilerUtils.clientSecrets(reconciliation, secretOperator)
-                .compose(secrets -> {
-                    String bootstrapHostname = KafkaResources.bootstrapServiceName(reconciliation.name()) + "." + reconciliation.namespace() + ".svc:" + KafkaCluster.REPLICATION_PORT;
-                    LOGGER.debugCr(reconciliation, "Creating AdminClient for Kafka cluster in namespace {}", reconciliation.namespace());
-                    Admin kafkaAdmin = adminClientProvider.createAdminClient(bootstrapHostname, secrets.resultAt(0), secrets.resultAt(1), "cluster-operator");
+        String bootstrapHostname = KafkaResources.bootstrapServiceName(reconciliation.name()) + "." + reconciliation.namespace() + ".svc:" + KafkaCluster.REPLICATION_PORT;
+        LOGGER.debugCr(reconciliation, "Creating AdminClient for Kafka cluster in namespace {}", reconciliation.namespace());
+        Admin kafkaAdmin = adminClientProvider.createAdminClient(bootstrapHostname, pemTrustSet, pemAuthIdentity);
 
-                    Promise<Void> updatePromise = Promise.promise();
-                    maybeUpdateMetadataVersion(reconciliation, vertx, kafkaAdmin, desiredMetadataVersion, status)
-                            .onComplete(res -> {
-                                // Close the Admin client and return the original result
-                                LOGGER.debugCr(reconciliation, "Closing the Kafka Admin API connection");
-                                kafkaAdmin.close();
-                                updatePromise.handle(res);
-                            });
-
-                    return updatePromise.future();
+        Promise<Void> updatePromise = Promise.promise();
+        maybeUpdateMetadataVersion(reconciliation, vertx, kafkaAdmin, desiredMetadataVersion, status)
+                .onComplete(res -> {
+                    // Close the Admin client and return the original result
+                    LOGGER.debugCr(reconciliation, "Closing the Kafka Admin API connection");
+                    kafkaAdmin.close();
+                    updatePromise.handle(res);
                 });
+
+        return updatePromise.future();
     }
 
     private static Future<Void> maybeUpdateMetadataVersion(

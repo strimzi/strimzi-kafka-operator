@@ -6,7 +6,6 @@ package io.strimzi.operator.cluster.operator.resource;
 
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
-import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.PodOperator;
@@ -69,7 +68,7 @@ public class ZooKeeperRollerTest {
 
         MockZooKeeperRoller roller = new MockZooKeeperRoller(podOperator, leaderFinder, 300_00L);
 
-        roller.maybeRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, 3, DUMMY_SELECTOR, pod -> List.of("Should restart"), new Secret(), new Secret())
+        roller.maybeRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, 3, DUMMY_SELECTOR, pod -> List.of("Should restart"), null, null)
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     assertThat(roller.podRestarts.size(), is(3));
                     assertThat(roller.podRestarts.contains("name-zookeeper-0"), is(true));
@@ -99,7 +98,7 @@ public class ZooKeeperRollerTest {
         MockZooKeeperRoller roller = new MockZooKeeperRoller(podOperator, leaderFinder, 300_00L);
 
         Function<Pod, List<String>> shouldRoll = pod -> List.of("Pod was manually annotated to be rolled");
-        roller.maybeRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, 3, DUMMY_SELECTOR, shouldRoll, new Secret(), new Secret())
+        roller.maybeRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, 3, DUMMY_SELECTOR, shouldRoll, null, null)
               .onComplete(context.succeeding(v -> context.verify(() -> {
                   assertThat(roller.podRestarts.size(), is(3));
                   assertThat(roller.podRestarts, contains(followerPodNonReady, followerPodReady, leaderPodReady));
@@ -133,7 +132,7 @@ public class ZooKeeperRollerTest {
 
         MockZooKeeperRoller roller = new MockZooKeeperRoller(podOperator, leaderFinder, 300_00L);
 
-        roller.maybeRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, 3, DUMMY_SELECTOR, shouldRestart, new Secret(), new Secret())
+        roller.maybeRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, 3, DUMMY_SELECTOR, shouldRestart, null, null)
               .onComplete(context.failing(v -> context.verify(() -> {
                   assertThat(roller.podRestarts.size(), is(0));
                   context.completeNow();
@@ -165,7 +164,7 @@ public class ZooKeeperRollerTest {
 
         MockZooKeeperRoller roller = new MockZooKeeperRoller(podOperator, leaderFinder, 300_00L);
 
-        roller.maybeRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, 3, DUMMY_SELECTOR, shouldRestart, new Secret(), new Secret())
+        roller.maybeRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, 3, DUMMY_SELECTOR, shouldRestart, null, null)
               .onComplete(context.failing(v -> context.verify(() -> {
                   assertThat(roller.podRestarts.size(), is(0));
                   context.completeNow();
@@ -182,7 +181,7 @@ public class ZooKeeperRollerTest {
 
         MockZooKeeperRoller roller = new MockZooKeeperRoller(podOperator, leaderFinder, 300_00L);
 
-        roller.maybeRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, 3, DUMMY_SELECTOR, pod -> null, new Secret(), new Secret())
+        roller.maybeRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, 3, DUMMY_SELECTOR, pod -> null, null, null)
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     assertThat(roller.podRestarts.size(), is(0));
 
@@ -201,7 +200,7 @@ public class ZooKeeperRollerTest {
 
         MockZooKeeperRoller roller = new MockZooKeeperRoller(podOperator, leaderFinder, 300_00L);
 
-        roller.maybeRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, 3, DUMMY_SELECTOR, pod -> List.of("Should restart"), new Secret(), new Secret())
+        roller.maybeRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, 3, DUMMY_SELECTOR, pod -> List.of("Should restart"), null, null)
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     assertThat(roller.podRestarts.size(), is(3));
                     assertThat(roller.podRestarts.removeLast(), is("name-zookeeper-1"));
@@ -231,7 +230,7 @@ public class ZooKeeperRollerTest {
             }
         };
 
-        roller.maybeRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, 3, DUMMY_SELECTOR, shouldRoll, new Secret(), new Secret())
+        roller.maybeRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, 3, DUMMY_SELECTOR, shouldRoll, null, null)
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     assertThat(roller.podRestarts.size(), is(2));
                     assertThat(roller.podRestarts.contains("name-zookeeper-0"), is(true));
