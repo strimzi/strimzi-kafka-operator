@@ -84,7 +84,7 @@ public class JmxST extends AbstractST {
             .build());
 
         resourceManager.createResourceWithWait(extensionContext, ScraperTemplates.scraperPod(namespaceName, scraperName).build());
-        String scraperPodName = kubeClient().listPodsByPrefixInName(scraperName).get(0).getMetadata().getName();
+        String scraperPodName = kubeClient().listPodsByPrefixInName(namespaceName, scraperName).get(0).getMetadata().getName();
         JmxUtils.downloadJmxTermToPod(namespaceName, scraperPodName);
 
         resourceManager.createResourceWithWait(extensionContext, KafkaConnectTemplates.kafkaConnect(clusterName, namespaceName, 1)
