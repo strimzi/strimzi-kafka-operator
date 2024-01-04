@@ -66,6 +66,23 @@ public class KafkaTemplates {
             .endSpec();
     }
 
+    /**
+     * Overloads {@link #kafkaPersistent(String, int)}, but the difference is that it removes LMFV and IBPV from the Kafka
+     * config
+     * @param name of the Kafka cluster
+     * @param kafkaReplicas number of Kafka replicas
+     * @return KafkaBuilder for Kafka with persistent storage
+     */
+    public static KafkaBuilder kafkaPersistentKRaft(String name, int kafkaReplicas) {
+        return kafkaPersistent(name, kafkaReplicas)
+            .editSpec()
+                .editKafka()
+                    .removeFromConfig("log.message.format.version")
+                    .removeFromConfig("inter.broker.protocol.version")
+                .endKafka()
+            .endSpec();
+    }
+
     public static KafkaBuilder kafkaJBOD(String name, int kafkaReplicas, JbodStorage jbodStorage) {
         return kafkaJBOD(name, kafkaReplicas, 3, jbodStorage);
     }

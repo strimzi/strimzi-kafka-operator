@@ -76,16 +76,22 @@ public class StrimziDowngradeST extends AbstractUpgradeST {
         // https://strimzi.io/docs/operators/latest/full/deploying.html#con-target-downgrade-version-str
         setupEnvAndUpgradeClusterOperator(extensionContext, downgradeData, testStorage, testUpgradeKafkaVersion, TestConstants.CO_NAMESPACE);
         logPodImages(TestConstants.CO_NAMESPACE);
+
+        // Check if UTO is used before changing the CO -> used for check for KafkaTopics
+        boolean wasUTOUsedBefore = StUtils.isUnidirectionalTopicOperatorUsed(TestConstants.CO_NAMESPACE, eoSelector);
+
         // Downgrade CO
         changeClusterOperator(downgradeData, TestConstants.CO_NAMESPACE, extensionContext);
         // Wait for Kafka cluster rolling update
         waitForKafkaClusterRollingUpdate();
         logPodImages(TestConstants.CO_NAMESPACE);
+        // Downgrade kafka
+        changeKafkaAndLogFormatVersion(downgradeData, extensionContext);
         // Verify that pods are stable
         PodUtils.verifyThatRunningPodsAreStable(TestConstants.CO_NAMESPACE, clusterName);
         checkAllImages(downgradeData, TestConstants.CO_NAMESPACE);
         // Verify upgrade
-        verifyProcedure(downgradeData, testStorage.getProducerName(), testStorage.getConsumerName(), TestConstants.CO_NAMESPACE);
+        verifyProcedure(downgradeData, testStorage.getProducerName(), testStorage.getConsumerName(), TestConstants.CO_NAMESPACE, wasUTOUsedBefore);
     }
 
     @BeforeEach
@@ -95,6 +101,7 @@ public class StrimziDowngradeST extends AbstractUpgradeST {
 
     @AfterEach
     void afterEach() {
+        cleanUpKafkaTopics();
         deleteInstalledYamls(coDir, TestConstants.CO_NAMESPACE);
         NamespaceManager.getInstance().deleteNamespaceWithWait(CO_NAMESPACE);
     }
