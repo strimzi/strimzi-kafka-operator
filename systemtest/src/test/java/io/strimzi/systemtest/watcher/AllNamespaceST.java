@@ -6,6 +6,7 @@ package io.strimzi.systemtest.watcher;
 
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.test.logs.CollectorElement;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -26,7 +27,7 @@ class AllNamespaceST extends AbstractNamespaceST {
     private void deployTestSpecificClusterOperator(final ExtensionContext extensionContext) {
         LOGGER.info("Creating Cluster Operator which will watch over all Namespaces");
 
-        cluster.createNamespaces(CollectorElement.createCollectorElement(this.getClass().getName()), clusterOperator.getDeploymentNamespace(), Arrays.asList(PRIMARY_KAFKA_WATCHED_NAMESPACE, MAIN_TEST_NAMESPACE));
+        NamespaceManager.getInstance().createNamespaces(clusterOperator.getDeploymentNamespace(), CollectorElement.createCollectorElement(this.getClass().getName()), Arrays.asList(PRIMARY_KAFKA_WATCHED_NAMESPACE, MAIN_TEST_NAMESPACE));
 
         clusterOperator = clusterOperator.defaultInstallation(extensionContext)
             .withWatchingNamespaces(TestConstants.WATCH_ALL_NAMESPACES)

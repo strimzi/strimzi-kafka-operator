@@ -7,15 +7,13 @@ package io.strimzi.systemtest.parallel;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.listeners.ExecutionListener;
-import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
+import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.systemtest.utils.StUtils;
-import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.logs.CollectorElement;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
-import java.util.Collections;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -52,9 +50,7 @@ public class TestSuiteNamespaceManager {
         if (ExecutionListener.hasSuiteParallelOrIsolatedTest(extensionContext)) {
             // if RBAC is enabled we don't run tests in parallel mode and with that said we don't create another namespaces
             if (!Environment.isNamespaceRbacScope()) {
-                KubeClusterResource.getInstance().createNamespace(CollectorElement.createCollectorElement(testSuiteName), Environment.TEST_SUITE_NAMESPACE);
-                NetworkPolicyResource.applyDefaultNetworkPolicySettings(extensionContext, Collections.singletonList(Environment.TEST_SUITE_NAMESPACE));
-                StUtils.copyImagePullSecrets(Environment.TEST_SUITE_NAMESPACE);
+                NamespaceManager.getInstance().createNamespaceAndPrepare(Environment.TEST_SUITE_NAMESPACE, CollectorElement.createCollectorElement(testSuiteName));
             } else {
                 LOGGER.info("We are not gonna create additional namespace: {}, because test suite: {} does not " +
                         "contains @ParallelTest or @IsolatedTest.", Environment.TEST_SUITE_NAMESPACE, testSuiteName);
@@ -74,7 +70,7 @@ public class TestSuiteNamespaceManager {
                 final String testSuiteName = extensionContext.getRequiredTestClass().getName();
 
                 LOGGER.info("Deleting Namespace: {} for TestSuite: {}", Environment.TEST_SUITE_NAMESPACE, StUtils.removePackageName(testSuiteName));
-                KubeClusterResource.getInstance().deleteNamespace(CollectorElement.createCollectorElement(testSuiteName), Environment.TEST_SUITE_NAMESPACE);
+                NamespaceManager.getInstance().deleteNamespaceWithWaitAndRemoveFromSet(Environment.TEST_SUITE_NAMESPACE, CollectorElement.createCollectorElement(testSuiteName));
             }
         }
 
@@ -101,9 +97,7 @@ public class TestSuiteNamespaceManager {
                 // create namespace by
                 LOGGER.info("Creating Namespace: {} for TestCase: {}", namespaceTestCase, StUtils.removePackageName(testCaseName));
 
-                KubeClusterResource.getInstance().createNamespace(CollectorElement.createCollectorElement(extensionContext.getRequiredTestClass().getName(), testCaseName), namespaceTestCase);
-                NetworkPolicyResource.applyDefaultNetworkPolicySettings(extensionContext, Collections.singletonList(namespaceTestCase));
-                StUtils.copyImagePullSecrets(namespaceTestCase);
+                NamespaceManager.getInstance().createNamespaceAndPrepare(namespaceTestCase, CollectorElement.createCollectorElement(extensionContext.getRequiredTestClass().getName(), testCaseName));
             }
         }
     }
@@ -122,7 +116,8 @@ public class TestSuiteNamespaceManager {
                 final String testCaseName = extensionContext.getRequiredTestMethod().getName();
 
                 LOGGER.info("Deleting Namespace: {} for TestCase: {}", namespaceToDelete, StUtils.removePackageName(testCaseName));
-                KubeClusterResource.getInstance().deleteNamespace(CollectorElement.createCollectorElement(extensionContext.getRequiredTestClass().getName(), testCaseName), namespaceToDelete);
+
+                NamespaceManager.getInstance().deleteNamespaceWithWaitAndRemoveFromSet(namespaceToDelete, CollectorElement.createCollectorElement(extensionContext.getRequiredTestClass().getName(), testCaseName));
             }
         }
     }

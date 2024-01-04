@@ -10,19 +10,13 @@ import io.strimzi.test.k8s.cluster.KubeCluster;
 import io.strimzi.test.k8s.cluster.Microshift;
 import io.strimzi.test.k8s.cluster.OpenShift;
 import io.strimzi.test.k8s.cmdClient.KubeCmdClient;
-import io.strimzi.test.logs.CollectorElement;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 /**
  * A Junit resource which discovers the running cluster and provides an appropriate KubeClient for it,
@@ -48,8 +42,6 @@ public class KubeClusterResource {
     private static KubeClusterResource kubeClusterResource;
 
     private String namespace;
-    // {test-suite-name} -> {{namespace-1}, {namespace-2},...,}
-    private final static Map<CollectorElement, Set<String>> MAP_WITH_SUITE_NAMESPACES = new HashMap<>();
 
     protected List<String> bindingsNamespaces = new ArrayList<>();
     private List<String> deploymentNamespaces = new ArrayList<>();
@@ -145,7 +137,7 @@ public class KubeClusterResource {
      * @param useNamespace namespace which will be used as default by kubernetes client
      * @param namespaces list of namespaces which will be created
      */
-    public void createNamespaces(CollectorElement collectorElement, String useNamespace, List<String> namespaces) {
+    public void createNamespaces(String useNamespace, List<String> namespaces) {
         bindingsNamespaces = namespaces;
         for (String namespace: namespaces) {
 
@@ -159,9 +151,6 @@ public class KubeClusterResource {
             deploymentNamespaces.add(namespace);
             kubeClient().createNamespace(namespace);
             cmdKubeClient().waitForResourceCreation("Namespace", namespace);
-            if (collectorElement != null) {
-                addNamespaceToSet(collectorElement, namespace);
-            }
         }
         kubeClusterResource.setNamespace(useNamespace);
     }
@@ -171,56 +160,24 @@ public class KubeClusterResource {
      * by calling {@link #deleteNamespaces()}
      * @param useNamespace namespace which will be created and used as default by kubernetes client
      */
-    public void createNamespace(CollectorElement collectorElement, String useNamespace) {
-        createNamespaces(collectorElement, useNamespace, Collections.singletonList(useNamespace));
-    }
-
     public void createNamespace(String useNamespace) {
-        createNamespaces(null, useNamespace, Collections.singletonList(useNamespace));
+        createNamespaces(useNamespace, Collections.singletonList(useNamespace));
     }
 
     /**
      * Delete all created namespaces. Namespaces are deleted in the reverse order than they were created.
      */
-    public void deleteNamespaces(CollectorElement collectorElement) {
+    public void deleteNamespaces() {
         Collections.reverse(deploymentNamespaces);
         for (String namespace: deploymentNamespaces) {
             LOGGER.info("Deleting Namespace: {}", namespace);
             kubeClient().deleteNamespace(namespace);
             cmdKubeClient().waitForResourceDeletion("Namespace", namespace);
-            if (collectorElement != null) deleteNamespaceFromSet(collectorElement, namespace);
         }
         deploymentNamespaces.clear();
         bindingsNamespaces = null;
         LOGGER.info("Using Namespace: {}", this.namespace);
         setNamespace(this.namespace);
-
-        if (collectorElement != null) deleteNamespaceFromSet(collectorElement, this.namespace);
-    }
-
-    public void deleteNamespaces() {
-        deleteNamespaces(null);
-    }
-
-    public void deleteNamespace(CollectorElement collectorElement, String namespaceName) {
-        kubeClient().deleteNamespace(namespaceName);
-        cmdKubeClient().waitForResourceDeletion("Namespace", namespaceName);
-        if (collectorElement != null) {
-            deleteNamespaceFromSet(collectorElement, namespaceName);
-        }
-    }
-
-    public synchronized void deleteAllSetNamespaces() {
-        MAP_WITH_SUITE_NAMESPACES.values()
-            .forEach(setOfNamespaces ->
-                setOfNamespaces.parallelStream()
-                    .forEach(namespaceName -> {
-                        LOGGER.debug("Deleting Namespace: {}", namespaceName);
-                        kubeClient().deleteNamespace(namespaceName);
-                        client.getClient().namespaces().withName(namespaceName).waitUntilCondition(namespace -> namespace == null, 4, TimeUnit.MINUTES);
-                    }));
-
-        MAP_WITH_SUITE_NAMESPACES.clear();
     }
 
     /**
@@ -379,31 +336,6 @@ public class KubeClusterResource {
     /** Returns list of currently deployed resources */
     public List<String> getListOfDeployedResources() {
         return deploymentResources;
-    }
-
-    private synchronized void addNamespaceToSet(CollectorElement collectorElement, String namespaceName) {
-        if (MAP_WITH_SUITE_NAMESPACES.containsKey(collectorElement)) {
-            Set<String> testSuiteNamespaces = MAP_WITH_SUITE_NAMESPACES.get(collectorElement);
-            testSuiteNamespaces.add(namespaceName);
-            MAP_WITH_SUITE_NAMESPACES.put(collectorElement, testSuiteNamespaces);
-        } else {
-            // test-suite is new
-            MAP_WITH_SUITE_NAMESPACES.put(collectorElement, new HashSet<>(Set.of(namespaceName)));
-        }
-
-        LOGGER.trace("SUITE_NAMESPACE_MAP: {}", MAP_WITH_SUITE_NAMESPACES);
-    }
-
-    private synchronized void deleteNamespaceFromSet(CollectorElement collectorElement, String namespaceName) {
-        // dynamically removing from the map
-        Set<String> testSuiteNamespaces = new HashSet<>(MAP_WITH_SUITE_NAMESPACES.get(collectorElement));
-        testSuiteNamespaces.remove(namespaceName);
-        MAP_WITH_SUITE_NAMESPACES.put(collectorElement, testSuiteNamespaces);
-        LOGGER.trace("SUITE_NAMESPACE_MAP after deletion: {}", MAP_WITH_SUITE_NAMESPACES);
-    }
-
-    public static Map<CollectorElement, Set<String>> getMapWithSuiteNamespaces() {
-        return MAP_WITH_SUITE_NAMESPACES;
     }
 
     public boolean fipsEnabled() {

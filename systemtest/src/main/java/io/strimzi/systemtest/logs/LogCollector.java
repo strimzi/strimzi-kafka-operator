@@ -10,10 +10,10 @@ import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.enums.ClusterOperatorInstallType;
+import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.logs.CollectorElement;
 import io.strimzi.test.k8s.KubeClient;
-import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -135,11 +135,11 @@ public class LogCollector {
      *      5.@AfterAll scope
      */
     public synchronized void collect() {
-        Set<String> namespaces = KubeClusterResource.getMapWithSuiteNamespaces().get(this.collectorElement);
+        Set<String> namespaces = NamespaceManager.getMapWithSuiteNamespaces().get(this.collectorElement);
         // ensure that namespaces created in beforeAll are also collected
         if (namespaces == null) {
             CollectorElement classCollectorElement = new CollectorElement(this.collectorElement.getTestClassName(), "");
-            namespaces = KubeClusterResource.getMapWithSuiteNamespaces().get(classCollectorElement);
+            namespaces = NamespaceManager.getMapWithSuiteNamespaces().get(classCollectorElement);
         }
         // ensure that namespaces is never null
         namespaces = namespaces == null ? new HashSet<>() : namespaces;
@@ -158,7 +158,7 @@ public class LogCollector {
                     String testMethod = extensionContext.getTestMethod().isPresent() ? extensionContext.getTestMethod().get().getName() : "";
 
                     final Set<String> generatedTestSuiteNamespaces =
-                        KubeClusterResource.getMapWithSuiteNamespaces().get(
+                        NamespaceManager.getMapWithSuiteNamespaces().get(
                             CollectorElement.createCollectorElement(
                                 extensionContext.getRequiredTestClass().getName(),
                                 testMethod

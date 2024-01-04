@@ -25,6 +25,7 @@ import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.enums.ClusterOperatorRBACType;
 import io.strimzi.systemtest.enums.OlmInstallationStrategy;
+import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.systemtest.resources.ResourceItem;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.kubernetes.ClusterRoleBindingResource;
@@ -36,7 +37,6 @@ import io.strimzi.systemtest.resources.operator.configuration.OlmConfigurationBu
 import io.strimzi.systemtest.resources.operator.specific.HelmResource;
 import io.strimzi.systemtest.resources.operator.specific.OlmResource;
 import io.strimzi.systemtest.templates.kubernetes.ClusterRoleBindingTemplates;
-import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.specific.OlmUtils;
 import io.strimzi.test.TestUtils;
@@ -406,8 +406,7 @@ public class SetupClusterOperator {
                     CollectorElement.createCollectorElement(this.testClassName) :
                     CollectorElement.createCollectorElement(this.testClassName, this.testMethodName);
 
-                cluster.createNamespaces(collectorElement, namespaceInstallTo, bindingsNamespaces);
-                StUtils.copyImagePullSecrets(namespaceInstallTo);
+                NamespaceManager.getInstance().createNamespaces(namespaceInstallTo, collectorElement, bindingsNamespaces);
 
                 this.extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo, true);
             }
@@ -416,8 +415,7 @@ public class SetupClusterOperator {
 
     private void deleteClusterOperatorNamespace() {
         LOGGER.info("Deleting Namespace {}", this.namespaceInstallTo);
-        cluster.deleteNamespace(CollectorElement.createCollectorElement(testClassName, testMethodName),
-                this.namespaceInstallTo);
+        NamespaceManager.getInstance().deleteNamespaceWithWaitAndRemoveFromSet(this.namespaceInstallTo, CollectorElement.createCollectorElement(testClassName, testMethodName));
     }
 
     private void createClusterRoleBindings() {
@@ -558,7 +556,7 @@ public class SetupClusterOperator {
     public void prepareEnvForOperator(ExtensionContext extensionContext, String clientNamespace, List<String> namespaces, String... resources) {
         assumeTrue(!Environment.isHelmInstall() && !Environment.isOlmInstall());
         applyClusterOperatorInstallFiles(clientNamespace);
-        NetworkPolicyResource.applyDefaultNetworkPolicySettings(extensionContext, namespaces);
+        NetworkPolicyResource.applyDefaultNetworkPolicySettings(namespaces);
 
         if (cluster.cluster() instanceof OpenShift) {
             // This is needed in case you are using internal kubernetes registry and you want to pull images from there

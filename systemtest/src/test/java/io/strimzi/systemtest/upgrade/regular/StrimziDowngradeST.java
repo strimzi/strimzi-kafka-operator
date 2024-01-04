@@ -6,13 +6,13 @@ package io.strimzi.systemtest.upgrade.regular;
 
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.KRaftNotSupported;
+import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.upgrade.AbstractUpgradeST;
 import io.strimzi.systemtest.upgrade.BundleVersionModificationData;
 import io.strimzi.systemtest.upgrade.UpgradeKafkaVersion;
 import io.strimzi.systemtest.upgrade.VersionModificationDataLoader;
 import io.strimzi.systemtest.utils.StUtils;
-import io.strimzi.systemtest.utils.kubeUtils.objects.NamespaceUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -90,13 +90,12 @@ public class StrimziDowngradeST extends AbstractUpgradeST {
 
     @BeforeEach
     void setupEnvironment() {
-        cluster.createNamespace(TestConstants.CO_NAMESPACE);
-        StUtils.copyImagePullSecrets(TestConstants.CO_NAMESPACE);
+        NamespaceManager.getInstance().createNamespaceAndPrepare(CO_NAMESPACE);
     }
 
     @AfterEach
     void afterEach() {
         deleteInstalledYamls(coDir, TestConstants.CO_NAMESPACE);
-        NamespaceUtils.deleteNamespaceWithWait(CO_NAMESPACE);
+        NamespaceManager.getInstance().deleteNamespaceWithWait(CO_NAMESPACE);
     }
 }
