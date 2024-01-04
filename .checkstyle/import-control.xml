@@ -39,7 +39,6 @@ We also control imports only in production classes and not in tests. This is con
         <allow pkg="io.strimzi.api.annotations" />
         <allow pkg="io.strimzi.api.kafka" />
         <allow class="io.strimzi.api.ResourceLabels" />
-        <allow class="io.strimzi.api.ResourceAnotations" />
         <allow pkg="io.strimzi.certs" />
         <allow pkg="io.strimzi.operator.common.model" />
         <allow class="io.strimzi.operator.common.Reconciliation" />
