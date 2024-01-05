@@ -197,11 +197,13 @@ spec:
                           type: object
                           properties:
                             labels:
-                              x-kubernetes-preserve-unknown-fields: true
+                              additionalProperties:
+                                type: string
                               type: object
                               description: Labels added to the Kubernetes resource.
                             annotations:
-                              x-kubernetes-preserve-unknown-fields: true
+                              additionalProperties:
+                                type: string
                               type: object
                               description: Annotations added to the Kubernetes resource.
                           description: Metadata applied to the resource.
@@ -418,11 +420,13 @@ spec:
                           type: object
                           properties:
                             labels:
-                              x-kubernetes-preserve-unknown-fields: true
+                              additionalProperties:
+                                type: string
                               type: object
                               description: Labels added to the Kubernetes resource.
                             annotations:
-                              x-kubernetes-preserve-unknown-fields: true
+                              additionalProperties:
+                                type: string
                               type: object
                               description: Annotations added to the Kubernetes resource.
                           description: Metadata applied to the resource.
@@ -639,11 +643,13 @@ spec:
                           type: object
                           properties:
                             labels:
-                              x-kubernetes-preserve-unknown-fields: true
+                              additionalProperties:
+                                type: string
                               type: object
                               description: Labels added to the Kubernetes resource.
                             annotations:
-                              x-kubernetes-preserve-unknown-fields: true
+                              additionalProperties:
+                                type: string
                               type: object
                               description: Annotations added to the Kubernetes resource.
                           description: Metadata applied to the resource.

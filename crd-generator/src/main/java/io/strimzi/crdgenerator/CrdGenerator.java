@@ -798,7 +798,12 @@ class CrdGenerator {
                 || long.class.equals(elementType)) {
             itemResult.put("type", "integer");
         } else if (Map.class.equals(elementType)) {
-            preserveUnknownFields(itemResult);
+            if (isStringStringMap(propertyType)) {
+                preserveUnknownStringFields(itemResult);
+            } else {
+                preserveUnknownFields(itemResult);
+            }
+
             itemResult.put("type", "object");
         } else if (elementType.isEnum()) {
             itemResult.put("type", "string");
@@ -815,7 +820,12 @@ class CrdGenerator {
         return result;
     }
 
-    private ObjectNode buildBasicTypeSchema(AnnotatedElement element, Class type) {
+    private boolean isStringStringMap(PropertyType propertyType) {
+        java.lang.reflect.Type[] types = ((ParameterizedType) propertyType.getGenericType()).getActualTypeArguments();
+        return String.class.equals(types[0]) && String.class.equals(types[1]);
+    }
+
+    private ObjectNode buildBasicTypeSchema(Property element, Class type) {
         ObjectNode result = nf.objectNode();
 
         String typeName;
@@ -823,7 +833,11 @@ class CrdGenerator {
         if (typeAnno == null) {
             typeName = typeName(type);
             if (Map.class.equals(type)) {
-                preserveUnknownFields(result);
+                if (isStringStringMap(element.getType())) {
+                    preserveUnknownStringFields(result);
+                } else {
+                    preserveUnknownFields(result);
+                }
             }
         } else {
             typeName = typeAnno.value();
@@ -836,6 +850,13 @@ class CrdGenerator {
     private void preserveUnknownFields(ObjectNode result)    {
         if (crdApiVersion.compareTo(V1) >= 0) {
             result.put("x-kubernetes-preserve-unknown-fields", true);
+        }
+    }
+
+    private void preserveUnknownStringFields(ObjectNode result)    {
+        if (crdApiVersion.compareTo(V1) >= 0) {
+            ObjectNode additionalProperties = result.putObject("additionalProperties");
+            additionalProperties.put("type", "string");
         }
     }
 

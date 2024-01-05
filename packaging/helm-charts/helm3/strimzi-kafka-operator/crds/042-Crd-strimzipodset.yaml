@@ -67,7 +67,8 @@ spec:
                             items:
                               type: string
                     matchLabels:
-                      x-kubernetes-preserve-unknown-fields: true
+                      additionalProperties:
+                        type: string
                       type: object
                   description: "Selector is a label query which matches all the pods managed by this `StrimziPodSet`. Only `matchLabels` is supported. If `matchExpressions` is set, it will be ignored."
                 pods:
