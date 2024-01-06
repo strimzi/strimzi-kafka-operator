@@ -145,7 +145,8 @@ spec:
                                         items:
                                           type: string
                                 matchLabels:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                             namespaceSelector:
                               type: object
@@ -164,7 +165,8 @@ spec:
                                         items:
                                           type: string
                                 matchLabels:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                             namespaces:
                               type: array
@@ -196,7 +198,8 @@ spec:
                                     items:
                                       type: string
                             matchLabels:
-                              x-kubernetes-preserve-unknown-fields: true
+                              additionalProperties:
+                                type: string
                               type: object
                         namespaceSelector:
                           type: object
@@ -215,7 +218,8 @@ spec:
                                     items:
                                       type: string
                             matchLabels:
-                              x-kubernetes-preserve-unknown-fields: true
+                              additionalProperties:
+                                type: string
                               type: object
                         namespaces:
                           type: array
@@ -251,7 +255,8 @@ spec:
                                         items:
                                           type: string
                                 matchLabels:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                             namespaceSelector:
                               type: object
@@ -270,7 +275,8 @@ spec:
                                         items:
                                           type: string
                                 matchLabels:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                             namespaces:
                               type: array
@@ -302,7 +308,8 @@ spec:
                                     items:
                                       type: string
                             matchLabels:
-                              x-kubernetes-preserve-unknown-fields: true
+                              additionalProperties:
+                                type: string
                               type: object
                         namespaceSelector:
                           type: object
@@ -321,7 +328,8 @@ spec:
                                     items:
                                       type: string
                             matchLabels:
-                              x-kubernetes-preserve-unknown-fields: true
+                              additionalProperties:
+                                type: string
                               type: object
                         namespaces:
                           type: array
@@ -497,8 +505,12 @@ spec:
             example: 42
             minimum: 42
             description: An example long property.
-          mapProperty:
+          mapStringObject:
             x-kubernetes-preserve-unknown-fields: true
+            type: object
+          mapStringString:
+            additionalProperties:
+              type: string
             type: object
           normalEnum:
             type: string
@@ -555,6 +567,12 @@ spec:
             or: {}
           required:
           - or
+        - properties:
+            mapStringString: {}
+            mapStringObject: {}
+          required:
+          - mapStringString
+          - mapStringObject
         required:
         - stringProperty
   - name: v1beta1
@@ -681,7 +699,8 @@ spec:
                                         items:
                                           type: string
                                 matchLabels:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                             namespaceSelector:
                               type: object
@@ -700,7 +719,8 @@ spec:
                                         items:
                                           type: string
                                 matchLabels:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                             namespaces:
                               type: array
@@ -732,7 +752,8 @@ spec:
                                     items:
                                       type: string
                             matchLabels:
-                              x-kubernetes-preserve-unknown-fields: true
+                              additionalProperties:
+                                type: string
                               type: object
                         namespaceSelector:
                           type: object
@@ -751,7 +772,8 @@ spec:
                                     items:
                                       type: string
                             matchLabels:
-                              x-kubernetes-preserve-unknown-fields: true
+                              additionalProperties:
+                                type: string
                               type: object
                         namespaces:
                           type: array
@@ -787,7 +809,8 @@ spec:
                                         items:
                                           type: string
                                 matchLabels:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                             namespaceSelector:
                               type: object
@@ -806,7 +829,8 @@ spec:
                                         items:
                                           type: string
                                 matchLabels:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                             namespaces:
                               type: array
@@ -838,7 +862,8 @@ spec:
                                     items:
                                       type: string
                             matchLabels:
-                              x-kubernetes-preserve-unknown-fields: true
+                              additionalProperties:
+                                type: string
                               type: object
                         namespaceSelector:
                           type: object
@@ -857,7 +882,8 @@ spec:
                                     items:
                                       type: string
                             matchLabels:
-                              x-kubernetes-preserve-unknown-fields: true
+                              additionalProperties:
+                                type: string
                               type: object
                         namespaces:
                           type: array
@@ -1033,8 +1059,12 @@ spec:
             example: 42
             minimum: 42
             description: An example long property.
-          mapProperty:
+          mapStringObject:
             x-kubernetes-preserve-unknown-fields: true
+            type: object
+          mapStringString:
+            additionalProperties:
+              type: string
             type: object
           normalEnum:
             type: string
@@ -1091,5 +1121,11 @@ spec:
             or: {}
           required:
           - or
+        - properties:
+            mapStringString: {}
+            mapStringObject: {}
+          required:
+          - mapStringString
+          - mapStringObject
         required:
         - stringProperty

@@ -67,7 +67,9 @@
 |xref:type-Number-{context}[`Number`] array of dimension 2
 |longProperty            1.2+<.<a|An example long property.
 |integer
-|mapProperty             1.2+<.<a|
+|mapStringObject         1.2+<.<a|
+|map
+|mapStringString         1.2+<.<a|
 |map
 |normalEnum              1.2+<.<a|
 |string (one of [BAR, FOO])
