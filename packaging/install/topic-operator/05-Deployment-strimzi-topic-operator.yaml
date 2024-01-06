@@ -33,10 +33,6 @@ spec:
               value: "strimzi.io/cluster=my-cluster"
             - name: STRIMZI_KAFKA_BOOTSTRAP_SERVERS
               value: my-cluster-kafka-bootstrap:9092
-            - name: STRIMZI_ZOOKEEPER_CONNECT
-              value: my-cluster-zookeeper-client:2181
-            - name: STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS
-              value: "18000"
             - name: STRIMZI_FULL_RECONCILIATION_INTERVAL_MS
               value: "120000"
             - name: STRIMZI_TOPIC_METADATA_MAX_ATTEMPTS
