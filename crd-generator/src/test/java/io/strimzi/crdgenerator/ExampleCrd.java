@@ -11,6 +11,7 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.client.CustomResource;
+import io.strimzi.crdgenerator.annotations.AddedIn;
 import io.strimzi.crdgenerator.annotations.Crd;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Example;
@@ -245,6 +246,7 @@ public class ExampleCrd<T, U extends Number, V extends U> extends CustomResource
     @Description("An example int property")
     @Example("42")
     @Minimum(42)
+    @AddedIn("0.0.1")
     public int getIntProperty() {
         return intProperty;
     }

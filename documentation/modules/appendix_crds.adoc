@@ -61,7 +61,7 @@ include::../api/io.strimzi.api.kafka.model.KafkaClusterSpec.adoc[leveloffset=+1]
 |Property                    |Description
 |version              1.2+<.<a|The Kafka broker version. Defaults to the latest version. Consult the user documentation to understand the process required to upgrade or downgrade the version.
 |string
-|metadataVersion      1.2+<.<a|The KRaft metadata version used by the Kafka cluster. This property is ignored when running in ZooKeeper mode. If the property is not set, it defaults to the metadata version that corresponds to the `version` property.
+|metadataVersion      1.2+<.<a|The KRaft metadata version used by the Kafka cluster. This property is ignored when running in ZooKeeper mode. If the property is not set, it defaults to the metadata version that corresponds to the `version` property. Added in Strimzi 0.39.0.
 |string
 |replicas             1.2+<.<a|The number of pods in the cluster.
 |integer
@@ -3501,7 +3501,7 @@ Used in: xref:type-KafkaNodePool-{context}[`KafkaNodePool`]
 |integer array
 |clusterId           1.2+<.<a|Kafka cluster ID.
 |string
-|roles               1.2+<.<a|The roles currently assigned to this pool.
+|roles               1.2+<.<a|The roles currently assigned to this pool. Added in Strimzi 0.39.0.
 |string (one or more of [controller, broker]) array
 |replicas            1.2+<.<a|The current number of pods being used to provide this resource.
 |integer
