@@ -35,8 +35,6 @@ spec:
               value: my-cluster-kafka-bootstrap:9092
             - name: STRIMZI_FULL_RECONCILIATION_INTERVAL_MS
               value: "120000"
-            - name: STRIMZI_TOPIC_METADATA_MAX_ATTEMPTS
-              value: "6"
             - name: STRIMZI_LOG_LEVEL
               value: INFO
             - name: STRIMZI_TLS_ENABLED
