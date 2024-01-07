@@ -31,45 +31,27 @@ NOTE: You can perform the steps outlined here to deploy a new Kafka cluster with
 
 .Procedure
 
-. If you want to use KRaft, enable the `UseKRaft` feature gate from the command line:
+. Deploy a KRaft-based Kafka cluster
 +
-[source,shell]
-----
-kubectl set env deployment/strimzi-cluster-operator STRIMZI_FEATURE_GATES="+UseKRaft"
-----
-+
-Or by editing the Cluster Operator `Deployment` and updating the `STRIMZI_FEATURE_GATES` environment variable:
-+
-[source,yaml]
-----
-env
-  - name: STRIMZI_FEATURE_GATES
-    value: +UseKRaft
-----
-+
-This updates the Cluster Operator.
-
-. Deploy a Kafka cluster with node pools
-+
-* To deploy a Kafka cluster in KRaft mode with a  single node pool that uses dual-role nodes: 
+* To deploy a Kafka cluster in KRaft mode with a single node pool that uses dual-role nodes:
 +
 [source,shell,subs="attributes+"]
-kubectl apply -f examples/kafka/nodepools/kafka-with-dual-role-kraft-nodes.yaml
+kubectl apply -f examples/kafka/kraft/kafka-with-dual-role-kraft-nodes.yaml
 
 * To deploy a persistent Kafka cluster in KRaft mode with separate node pools for broker and controller nodes: 
 +
 [source,shell,subs="attributes+"]
-kubectl apply -f examples/kafka/nodepools/kafka-with-kraft.yaml
+kubectl apply -f examples/kafka/kraft/kafka-with-kraft.yaml
 
 * To deploy an ephemeral Kafka cluster in KRaft mode with separate node pools for broker and controller nodes: 
 +
 [source,shell,subs="attributes+"]
-kubectl apply -f examples/kafka/nodepools/kafka-with-kraft-ephemeral.yaml
+kubectl apply -f examples/kafka/kraft/kafka-with-kraft-ephemeral.yaml
 
 * To deploy a Kafka cluster and ZooKeeper cluster with two node pools of three brokers:
 +
 [source,shell,subs="attributes+"]
-kubectl apply -f examples/kafka/nodepools/kafka.yaml
+kubectl apply -f examples/kafka/kafka-with-node-pools.yaml
 
 . Check the status of the deployment:
 +

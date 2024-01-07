@@ -14,7 +14,7 @@ You apply the reassignment specified in the file to the brokers and then verify 
 This procedure describes a secure scaling process that uses TLS.
 You'll need a Kafka cluster that uses TLS encryption and mTLS authentication.
 
-The `kafka-reassign-partitions.sh` tool can be used to reassign partitions within a Kafka cluster, regardless of whether you are managing all nodes through the cluster or using the node pools preview to manage groups of nodes within the cluster.
+The `kafka-reassign-partitions.sh` tool can be used to reassign partitions within a Kafka cluster, regardless of whether you are managing all nodes through the cluster or using the node pools to manage groups of nodes within the cluster.
 
 NOTE: Though you can use the `kafka-reassign-partitions.sh` tool, Cruise Control is recommended xref:cruise-control-concepts-str[for automated partition reassignments and cluster rebalancing]. 
 Cruise Control can move topics from one broker to another without any downtime, and it is the most efficient way to reassign partitions.

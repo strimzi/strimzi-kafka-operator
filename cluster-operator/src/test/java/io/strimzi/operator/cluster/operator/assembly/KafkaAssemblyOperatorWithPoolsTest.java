@@ -1356,9 +1356,7 @@ public class KafkaAssemblyOperatorWithPoolsTest {
         CrdOperator<KubernetesClient, Kafka, KafkaList> mockKafkaOps = supplier.kafkaOperator;
         when(mockKafkaOps.getAsync(eq(NAMESPACE), eq(CLUSTER_NAME))).thenReturn(Future.succeededFuture(kafka));
 
-        ClusterOperatorConfig config = new ClusterOperatorConfig.ClusterOperatorConfigBuilder(ResourceUtils.dummyClusterOperatorConfig(), VERSIONS)
-                .with(ClusterOperatorConfig.FEATURE_GATES.key(), "+UseKRaft")
-                .build();
+        ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
 
         KafkaAssemblyOperator kao = new KafkaAssemblyOperator(
                 vertx, new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
@@ -1412,9 +1410,7 @@ public class KafkaAssemblyOperatorWithPoolsTest {
         CrdOperator<KubernetesClient, KafkaNodePool, KafkaNodePoolList> mockKafkaNodePoolOps = supplier.kafkaNodePoolOperator;
         when(mockKafkaNodePoolOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(null));
 
-        ClusterOperatorConfig config = new ClusterOperatorConfig.ClusterOperatorConfigBuilder(ResourceUtils.dummyClusterOperatorConfig(), VERSIONS)
-                .with(ClusterOperatorConfig.FEATURE_GATES.key(), "+UseKRaft")
-                .build();
+        ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
 
         KafkaAssemblyOperator kao = new KafkaAssemblyOperator(
                 vertx, new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),

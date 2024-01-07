@@ -209,17 +209,24 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Promise<Void> chainPromise = Promise.promise();
 
         boolean isKRaftEnabled = featureGates.useKRaftEnabled() && ReconcilerUtils.kraftEnabled(reconcileState.kafkaAssembly);
+        boolean nodePoolsEnabled = featureGates.kafkaNodePoolsEnabled() && ReconcilerUtils.nodePoolsEnabled(reconcileState.kafkaAssembly);
 
         if (isKRaftEnabled) {
             // Makes sure KRaft is used only with KafkaNodePool custom resources and not with virtual node pools
-            if (featureGates.kafkaNodePoolsEnabled()
-                    && !ReconcilerUtils.nodePoolsEnabled(reconcileState.kafkaAssembly))  {
+            if (!nodePoolsEnabled)  {
                 throw new InvalidConfigurationException("The UseKRaft feature gate can be used only together with a Kafka cluster based on the KafkaNodePool resources.");
             }
 
             // Validates features which are currently not supported in KRaft mode
             try {
                 KRaftUtils.validateKafkaCrForKRaft(reconcileState.kafkaAssembly.getSpec(), featureGates.unidirectionalTopicOperatorEnabled());
+            } catch (InvalidResourceException e)    {
+                return Future.failedFuture(e);
+            }
+        } else {
+            // Validates the properties required for a ZooKeeper based Kafka cluster
+            try {
+                KRaftUtils.validateKafkaCrForZooKeeper(reconcileState.kafkaAssembly.getSpec(), nodePoolsEnabled);
             } catch (InvalidResourceException e)    {
                 return Future.failedFuture(e);
             }

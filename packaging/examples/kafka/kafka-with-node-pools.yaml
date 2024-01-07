@@ -1,21 +1,7 @@
 apiVersion: kafka.strimzi.io/v1beta2
 kind: KafkaNodePool
 metadata:
-  name: controller
-  labels:
-    strimzi.io/cluster: my-cluster
-spec:
-  replicas: 3
-  roles:
-    - controller
-  storage:
-    type: ephemeral
----
-
-apiVersion: kafka.strimzi.io/v1beta2
-kind: KafkaNodePool
-metadata:
-  name: broker
+  name: pool-a
   labels:
     strimzi.io/cluster: my-cluster
 spec:
@@ -23,7 +9,31 @@ spec:
   roles:
     - broker
   storage:
-    type: ephemeral
+    type: jbod
+    volumes:
+      - id: 0
+        type: persistent-claim
+        size: 100Gi
+        deleteClaim: false
+---
+
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaNodePool
+metadata:
+  name: pool-b
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  replicas: 3
+  roles:
+    - broker
+  storage:
+    type: jbod
+    volumes:
+      - id: 0
+        type: persistent-claim
+        size: 200Gi
+        deleteClaim: false
 ---
 
 apiVersion: kafka.strimzi.io/v1beta2
@@ -32,14 +42,9 @@ metadata:
   name: my-cluster
   annotations:
     strimzi.io/node-pools: enabled
-    strimzi.io/kraft: enabled
 spec:
   kafka:
     version: 3.6.1
-    metadataVersion: 3.6-IV2
-    # The replicas field is required by the Kafka CRD schema while the KafkaNodePools feature gate is in alpha phase.
-    # But it will be ignored when Kafka Node Pools are used
-    replicas: 3
     listeners:
       - name: plain
         port: 9092
@@ -55,16 +60,13 @@ spec:
       transaction.state.log.min.isr: 2
       default.replication.factor: 3
       min.insync.replicas: 2
-    # The storage field is required by the Kafka CRD schema while the KafkaNodePools feature gate is in alpha phase.
-    # But it will be ignored when Kafka Node Pools are used
-    storage:
-      type: ephemeral
-  # The ZooKeeper section is required by the Kafka CRD schema while the UseKRaft feature gate is in alpha phase.
-  # But it will be ignored when running in KRaft mode
+      inter.broker.protocol.version: "3.6"
   zookeeper:
     replicas: 3
     storage:
-      type: ephemeral
+      type: persistent-claim
+      size: 100Gi
+      deleteClaim: false
   entityOperator:
     topicOperator: {}
     userOperator: {}

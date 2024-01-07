@@ -139,8 +139,8 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, HasConfigurable
         this.rack = rack;
     }
 
-    @Description("Storage configuration (disk). Cannot be updated.")
-    @JsonProperty(required = true)
+    @Description("Storage configuration (disk). Cannot be updated. " +
+            "This property is required when Node Pools are not used.")
     public Storage getStorage() {
         return storage;
     }
@@ -161,9 +161,9 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, HasConfigurable
         this.logging = logging;
     }
 
-    @Description("The number of pods in the cluster.")
+    @Description("The number of pods in the cluster. " +
+            "This property is required when Node Pools are not used.")
     @Minimum(1)
-    @JsonProperty(required = true)
     public int getReplicas() {
         return replicas;
     }

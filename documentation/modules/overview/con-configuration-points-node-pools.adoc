@@ -10,12 +10,11 @@ A node pool refers to a distinct group of Kafka nodes within a Kafka cluster.
 By using node pools, nodes can have different configuration within the same Kafka cluster.
 Configuration options not specified in the node pool are inherited from the Kafka configuration.
 
-The node pools feature is available as a preview that can be enabled using the `KafkaNodePool` feature gate.
 You can deploy a Kafka cluster with one or more node pools.
 The node pool configuration includes mandatory and optional settings.
 Configuration for replicas, roles, and storage is mandatory.
 
-If you are using KRaft mode (which is also available as a preview), you can specify roles for all nodes in the node pool to operate as brokers, controllers, or both.
+If you are using KRaft mode, you can specify roles for all nodes in the node pool to operate as brokers, controllers, or both.
 Controller and dual roles are specific to KRaft.
 If you are using Kafka clusters that use ZooKeeper for cluster management, you can use node pools that are configured with broker roles only. 
 

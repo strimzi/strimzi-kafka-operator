@@ -22,7 +22,14 @@ public class FeatureGatesTest {
     public void testIndividualFeatureGates() {
         for (FeatureGates.FeatureGate gate : FeatureGates.NONE.allFeatureGates()) {
             FeatureGates enabled = new FeatureGates("+" + gate.getName());
-            FeatureGates disabled = new FeatureGates("-" + gate.getName());
+            FeatureGates disabled;
+
+            // KafkaNodePools FG can be disabled only together with UseKRaft FG
+            if (gate.getName().equals("KafkaNodePools")) {
+                disabled = new FeatureGates("-" + gate.getName() + ",-UseKRaft");
+            } else {
+                disabled = new FeatureGates("-" + gate.getName());
+            }
 
             assertThat(enabled.allFeatureGates().stream().filter(g -> gate.getName().equals(g.getName())).findFirst().orElseThrow().isEnabled(), is(true));
             assertThat(disabled.allFeatureGates().stream().filter(g -> gate.getName().equals(g.getName())).findFirst().orElseThrow().isEnabled(), is(false));

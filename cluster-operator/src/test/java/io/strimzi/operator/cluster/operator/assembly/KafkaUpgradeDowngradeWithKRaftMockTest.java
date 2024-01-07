@@ -191,7 +191,6 @@ public class KafkaUpgradeDowngradeWithKRaftMockTest {
 
         ClusterOperatorConfig config = new ClusterOperatorConfig.ClusterOperatorConfigBuilder(ResourceUtils.dummyClusterOperatorConfig(), VERSIONS)
                 .with(ClusterOperatorConfig.OPERATION_TIMEOUT_MS.key(), "10000")
-                .with(ClusterOperatorConfig.FEATURE_GATES.key(), "+UseKRaft")
                 .build();
 
         operator = new KafkaAssemblyOperator(vertx, PFA, new MockCertManager(),
