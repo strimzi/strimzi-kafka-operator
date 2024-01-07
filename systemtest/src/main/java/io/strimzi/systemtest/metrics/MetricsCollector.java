@@ -180,7 +180,7 @@ public class MetricsCollector {
             case ClusterOperator:
                 return kubeClient().getDeploymentSelectors(namespaceName, componentName);
             case KafkaBridge:
-                return kubeClient().getDeploymentSelectors(namespaceName, KafkaBridgeResources.deploymentName(componentName));
+                return kubeClient().getDeploymentSelectors(namespaceName, KafkaBridgeResources.componentName(componentName));
             default:
                 return new LabelSelector();
         }
