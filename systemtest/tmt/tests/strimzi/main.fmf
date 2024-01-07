@@ -13,7 +13,7 @@ environment:
   RERUN_FAILED_TEST_COUNT: 2
 adjust:
   - environment+:
-      EXCLUDED_TEST_GROUPS: "loadbalancer,arm64unsupported"
+      EXCLUDED_TEST_GROUPS: "loadbalancer"
     when: arch == aarch64, arm64
 
 /smoke:

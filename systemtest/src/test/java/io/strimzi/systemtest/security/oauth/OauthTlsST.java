@@ -47,7 +47,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import static io.strimzi.systemtest.TestConstants.ACCEPTANCE;
-import static io.strimzi.systemtest.TestConstants.ARM64_UNSUPPORTED;
 import static io.strimzi.systemtest.TestConstants.BRIDGE;
 import static io.strimzi.systemtest.TestConstants.CONNECT;
 import static io.strimzi.systemtest.TestConstants.CONNECT_COMPONENTS;
@@ -65,7 +64,6 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 @Tag(OAUTH)
 @Tag(REGRESSION)
 @Tag(ACCEPTANCE)
-@Tag(ARM64_UNSUPPORTED)
 @FIPSNotSupported("Keycloak is not customized to run on FIPS env - https://github.com/strimzi/strimzi-kafka-operator/issues/8331")
 public class OauthTlsST extends OauthAbstractST {
     protected static final Logger LOGGER = LogManager.getLogger(OauthTlsST.class);
