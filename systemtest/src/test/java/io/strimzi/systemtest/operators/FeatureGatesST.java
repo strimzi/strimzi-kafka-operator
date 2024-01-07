@@ -226,7 +226,7 @@ public class FeatureGatesST extends AbstractST {
         StrimziPodSetUtils.waitForAllStrimziPodSetAndPodsReady(
             testStorage.getNamespaceName(),
             KafkaResource.getStrimziPodSetName(testStorage.getClusterName(), kafkaNodePoolName),
-            KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()),
+            KafkaResources.kafkaComponentName(testStorage.getClusterName()),
             nodePoolIncreasedKafkaReplicaCount
         );
 
@@ -255,11 +255,11 @@ public class FeatureGatesST extends AbstractST {
 
         StrimziPodSetUtils.waitForAllStrimziPodSetAndPodsReady(
             testStorage.getNamespaceName(),
-            KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()),
-            KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()),
+            KafkaResources.kafkaComponentName(testStorage.getClusterName()),
+            KafkaResources.kafkaComponentName(testStorage.getClusterName()),
             originalKafkaReplicaCount
         );
-        PodUtils.waitUntilPodStabilityReplicasCount(testStorage.getNamespaceName(), KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()), originalKafkaReplicaCount);
+        PodUtils.waitUntilPodStabilityReplicasCount(testStorage.getNamespaceName(), KafkaResources.kafkaComponentName(testStorage.getClusterName()), originalKafkaReplicaCount);
 
         LOGGER.info("Producing and Consuming messages with clients: {}, {} in Namespace {}", testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName());
         resourceManager.createResourceWithWait(extensionContext,
@@ -288,10 +288,10 @@ public class FeatureGatesST extends AbstractST {
         StrimziPodSetUtils.waitForAllStrimziPodSetAndPodsReady(
             testStorage.getNamespaceName(),
             KafkaResource.getStrimziPodSetName(testStorage.getClusterName(), kafkaNodePoolName),
-            KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()),
+            KafkaResources.kafkaComponentName(testStorage.getClusterName()),
             nodePoolIncreasedKafkaReplicaCount
         );
-        PodUtils.waitUntilPodStabilityReplicasCount(testStorage.getNamespaceName(), KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()), nodePoolIncreasedKafkaReplicaCount);
+        PodUtils.waitUntilPodStabilityReplicasCount(testStorage.getNamespaceName(), KafkaResources.kafkaComponentName(testStorage.getClusterName()), nodePoolIncreasedKafkaReplicaCount);
 
         LOGGER.info("Producing and Consuming messages with clients: {}, {} in Namespace {}", testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName());
         resourceManager.createResourceWithWait(extensionContext,

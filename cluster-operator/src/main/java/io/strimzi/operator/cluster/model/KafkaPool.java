@@ -103,7 +103,7 @@ public class KafkaPool extends AbstractModel {
                         .withStrimziKind(kafka.getKind())
                         // This needs ot be selectable through KafkaCluster selector. So we intentionally use the <clusterName>-kafka
                         // as the strimzi.io/name. strimzi.io/pool-name can be used to select through node pool.
-                        .withStrimziName(KafkaResources.kafkaStatefulSetName(kafka.getMetadata().getName()))
+                        .withStrimziName(KafkaResources.kafkaComponentName(kafka.getMetadata().getName()))
                         .withStrimziCluster(kafka.getMetadata().getName())
                         .withStrimziComponentType(COMPONENT_TYPE)
                         .withStrimziPoolName(pool.getMetadata().getName())

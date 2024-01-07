@@ -196,7 +196,7 @@ public class PartialRollingUpdateMockTest {
         kco.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)).onComplete(ar -> {
             context.verify(() -> assertThat(ar.succeeded(), is(true)));
 
-            StrimziPodSet kafkaPodSet = supplier.strimziPodSetOperator.client().inNamespace(NAMESPACE).withName(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).get();
+            StrimziPodSet kafkaPodSet = supplier.strimziPodSetOperator.client().inNamespace(NAMESPACE).withName(KafkaResources.kafkaComponentName(CLUSTER_NAME)).get();
             List<Pod> kafkaPodsFromPodSet = PodSetUtils.podSetToPods(kafkaPodSet);
 
             for (int i = 0; i <= 4; i++) {
@@ -262,7 +262,7 @@ public class PartialRollingUpdateMockTest {
             if (ar.failed()) ar.cause().printStackTrace();
             context.verify(() -> assertThat(ar.succeeded(), is(true)));
 
-            StrimziPodSet zooPodSet = supplier.strimziPodSetOperator.client().inNamespace(NAMESPACE).withName(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME)).get();
+            StrimziPodSet zooPodSet = supplier.strimziPodSetOperator.client().inNamespace(NAMESPACE).withName(KafkaResources.zookeeperComponentName(CLUSTER_NAME)).get();
             List<Pod> zooPodsFromPodSet = PodSetUtils.podSetToPods(zooPodSet);
 
             for (int i = 0; i <= 2; i++) {

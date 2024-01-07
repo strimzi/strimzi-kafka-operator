@@ -19,17 +19,21 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * A Junit resource which discovers the running cluster and provides an appropriate KubeClient for it,
+ * A Junit resource which discovers the running cluster and provides an
+ * appropriate KubeClient for it,
  * for use with {@code @BeforeAll} (or {@code BeforeEach}.
  * For example:
- * <pre><code>
+ * 
+ * <pre>
+ * <code>
  *     public static KubeClusterResource testCluster = new KubeClusterResources();
  *
  *     &#64;BeforeEach
  *     void before() {
  *         testCluster.before();
  *     }
- * </code></pre>
+ * </code>
+ * </pre>
  */
 public class KubeClusterResource {
 
@@ -44,7 +48,7 @@ public class KubeClusterResource {
     private String namespace;
 
     protected List<String> bindingsNamespaces = new ArrayList<>();
-    private List<String> deploymentNamespaces = new ArrayList<>();
+    private List<String> componentNamespaces = new ArrayList<>();
     private List<String> deploymentResources = new ArrayList<>();
 
     public static synchronized KubeClusterResource getInstance() {
@@ -56,7 +60,8 @@ public class KubeClusterResource {
         return kubeClusterResource;
     }
 
-    private KubeClusterResource() { }
+    private KubeClusterResource() {
+    }
 
     private static void initNamespaces() {
         kubeClusterResource.setDefaultNamespace(cmdKubeClient().defaultNamespace());
@@ -68,6 +73,7 @@ public class KubeClusterResource {
 
     /**
      * Sets the namespace value for Kubernetes clients
+     * 
      * @param futureNamespace Namespace which should be used in Kubernetes clients
      * @return Previous namespace which was used in Kubernetes clients
      */
@@ -84,6 +90,7 @@ public class KubeClusterResource {
 
     /**
      * Gets namespace which is used in Kubernetes clients at the moment
+     * 
      * @return Used namespace
      */
     public String getNamespace() {
@@ -92,6 +99,7 @@ public class KubeClusterResource {
 
     /**
      * Provides appropriate CMD client for running cluster
+     * 
      * @return CMD client
      */
     public static KubeCmdClient<?> cmdKubeClient() {
@@ -100,6 +108,7 @@ public class KubeClusterResource {
 
     /**
      * Provides appropriate CMD client with expected namespace for running cluster
+     * 
      * @param inNamespace Namespace will be used as a current namespace for client
      * @return CMD client with expected namespace in configuration
      */
@@ -109,6 +118,7 @@ public class KubeClusterResource {
 
     /**
      * Provides appropriate Kubernetes client for running cluster
+     * 
      * @return Kubernetes client
      */
     public static KubeClient kubeClient() {
@@ -116,7 +126,9 @@ public class KubeClusterResource {
     }
 
     /**
-     * Provides approriate Helm client for running Helm operations in specific namespace
+     * Provides approriate Helm client for running Helm operations in specific
+     * namespace
+     * 
      * @return Helm client
      */
     public static HelmClient helmClusterClient() {
@@ -124,7 +136,9 @@ public class KubeClusterResource {
     }
 
     /**
-     * Provides appropriate Kubernetes client with expected namespace for running cluster
+     * Provides appropriate Kubernetes client with expected namespace for running
+     * cluster
+     * 
      * @param inNamespace Namespace will be used as a current namespace for client
      * @return Kubernetes client with expected namespace in configuration
      */
@@ -134,21 +148,24 @@ public class KubeClusterResource {
 
     /**
      * Create namespaces for test resources.
-     * @param useNamespace namespace which will be used as default by kubernetes client
-     * @param namespaces list of namespaces which will be created
+     * 
+     * @param useNamespace namespace which will be used as default by kubernetes
+     *                     client
+     * @param namespaces   list of namespaces which will be created
      */
     public void createNamespaces(String useNamespace, List<String> namespaces) {
         bindingsNamespaces = namespaces;
-        for (String namespace: namespaces) {
+        for (String namespace : namespaces) {
 
-            if (kubeClient().getNamespace(namespace) != null && (System.getenv("SKIP_TEARDOWN") == null || !System.getenv("SKIP_TEARDOWN").equals("true"))) {
+            if (kubeClient().getNamespace(namespace) != null
+                    && (System.getenv("SKIP_TEARDOWN") == null || !System.getenv("SKIP_TEARDOWN").equals("true"))) {
                 LOGGER.warn("Namespace {} is already created, going to delete it", namespace);
                 kubeClient().deleteNamespace(namespace);
                 cmdKubeClient().waitForResourceDeletion("Namespace", namespace);
             }
 
             LOGGER.info("Creating Namespace: {}", namespace);
-            deploymentNamespaces.add(namespace);
+            componentNamespaces.add(namespace);
             kubeClient().createNamespace(namespace);
             cmdKubeClient().waitForResourceCreation("Namespace", namespace);
         }
@@ -156,32 +173,37 @@ public class KubeClusterResource {
     }
 
     /**
-     * Create namespace for test resources. Deletion is up to caller and can be managed
+     * Create namespace for test resources. Deletion is up to caller and can be
+     * managed
      * by calling {@link #deleteNamespaces()}
-     * @param useNamespace namespace which will be created and used as default by kubernetes client
+     * 
+     * @param useNamespace namespace which will be created and used as default by
+     *                     kubernetes client
      */
     public void createNamespace(String useNamespace) {
         createNamespaces(useNamespace, Collections.singletonList(useNamespace));
     }
 
     /**
-     * Delete all created namespaces. Namespaces are deleted in the reverse order than they were created.
+     * Delete all created namespaces. Namespaces are deleted in the reverse order
+     * than they were created.
      */
     public void deleteNamespaces() {
-        Collections.reverse(deploymentNamespaces);
-        for (String namespace: deploymentNamespaces) {
+        Collections.reverse(componentNamespaces);
+        for (String namespace : componentNamespaces) {
             LOGGER.info("Deleting Namespace: {}", namespace);
             kubeClient().deleteNamespace(namespace);
             cmdKubeClient().waitForResourceDeletion("Namespace", namespace);
         }
-        deploymentNamespaces.clear();
+        componentNamespaces.clear();
         bindingsNamespaces = null;
         LOGGER.info("Using Namespace: {}", this.namespace);
         setNamespace(this.namespace);
     }
 
     /**
-     * Replaces custom resources for CO such as templates. Deletion is up to caller and can be managed
+     * Replaces custom resources for CO such as templates. Deletion is up to caller
+     * and can be managed
      * by calling {@link #deleteCustomResources()}
      *
      * @param resources array of paths to yaml files with resources specifications
@@ -195,15 +217,20 @@ public class KubeClusterResource {
     }
 
     /**
-     * Creates custom resources for CO such as templates. Deletion is up to caller and can be managed
+     * Creates custom resources for CO such as templates. Deletion is up to caller
+     * and can be managed
      * by calling {@link #deleteCustomResources()}
-     * @param extensionContext extension context of specific test case because of namespace name
-     * @param resources array of paths to yaml files with resources specifications
+     * 
+     * @param extensionContext extension context of specific test case because of
+     *                         namespace name
+     * @param resources        array of paths to yaml files with resources
+     *                         specifications
      */
     public void createCustomResources(ExtensionContext extensionContext, String... resources) {
-        final String namespaceName = !extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get("NAMESPACE_NAME").toString().isEmpty() ?
-            extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get("NAMESPACE_NAME").toString() :
-            getNamespace();
+        final String namespaceName = !extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get("NAMESPACE_NAME")
+                .toString().isEmpty()
+                        ? extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get("NAMESPACE_NAME").toString()
+                        : getNamespace();
 
         for (String resource : resources) {
             LOGGER.info("Creating resources {} in Namespace {}", resource, namespaceName);
@@ -213,8 +240,10 @@ public class KubeClusterResource {
     }
 
     /**
-     * Creates custom resources for CO such as templates. Deletion is up to caller and can be managed
+     * Creates custom resources for CO such as templates. Deletion is up to caller
+     * and can be managed
      * by calling {@link #deleteCustomResources()}
+     * 
      * @param resources array of paths to yaml files with resources specifications
      */
     public void createCustomResources(String... resources) {
@@ -228,7 +257,7 @@ public class KubeClusterResource {
     /**
      * Waits for a CRD resource to be ready
      *
-     * @param name  Name of the CRD to wait for
+     * @param name Name of the CRD to wait for
      */
     public void waitForCustomResourceDefinition(String name) {
         cmdKubeClient().waitFor("crd", name, crd -> {
@@ -239,7 +268,7 @@ public class KubeClusterResource {
                     && json.get("status").get("conditions").isArray()) {
                 for (JsonNode condition : json.get("status").get("conditions")) {
                     if ("Established".equals(condition.get("type").asText())
-                            && "True".equals(condition.get("status").asText()))   {
+                            && "True".equals(condition.get("status").asText())) {
                         return true;
                     }
                 }
@@ -252,7 +281,8 @@ public class KubeClusterResource {
     }
 
     /**
-     * Delete custom resources such as templates. Resources are deleted in the reverse order than they were created.
+     * Delete custom resources such as templates. Resources are deleted in the
+     * reverse order than they were created.
      */
     public void deleteCustomResources() {
         Collections.reverse(deploymentResources);
@@ -264,7 +294,8 @@ public class KubeClusterResource {
     }
 
     /**
-     * Delete custom resources such as templates. Resources are deleted in the reverse order than they were created.
+     * Delete custom resources such as templates. Resources are deleted in the
+     * reverse order than they were created.
      */
     public void deleteCustomResources(String... resources) {
         for (String resource : resources) {
@@ -275,11 +306,11 @@ public class KubeClusterResource {
     }
 
     public void deleteCustomResources(ExtensionContext extensionContext, String... resources) {
-        final String namespaceName =
-            extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get("NAMESPACE_NAME") != null &&
-            !extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get("NAMESPACE_NAME").toString().isEmpty() ?
-            extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get("NAMESPACE_NAME").toString() :
-            getNamespace();
+        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL)
+                .get("NAMESPACE_NAME") != null &&
+                !extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get("NAMESPACE_NAME").toString().isEmpty()
+                        ? extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get("NAMESPACE_NAME").toString()
+                        : getNamespace();
 
         for (String resource : resources) {
             LOGGER.info("Deleting resources {}", resource);
@@ -340,7 +371,8 @@ public class KubeClusterResource {
 
     public boolean fipsEnabled() {
         if (isOpenShift()) {
-            return kubeClient().getConfigMap("kube-system", "cluster-config-v1").getData().get("install-config").contains("fips: true");
+            return kubeClient().getConfigMap("kube-system", "cluster-config-v1").getData().get("install-config")
+                    .contains("fips: true");
         }
         return false;
     }

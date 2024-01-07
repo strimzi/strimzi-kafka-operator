@@ -93,7 +93,7 @@ public class KRaftVersionChangeCreator implements VersionChangeCreator {
     private Future<List<Pod>> getPods()   {
         Labels selectorLabels = Labels.forStrimziKind(Kafka.RESOURCE_KIND)
                 .withStrimziCluster(reconciliation.name())
-                .withStrimziName(KafkaResources.kafkaStatefulSetName(reconciliation.name()));
+                .withStrimziName(KafkaResources.kafkaComponentName(reconciliation.name()));
 
         return podOperator.listAsync(reconciliation.namespace(), selectorLabels);
     }

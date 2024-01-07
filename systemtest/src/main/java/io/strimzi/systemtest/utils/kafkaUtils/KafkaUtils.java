@@ -53,8 +53,8 @@ import java.util.stream.Collectors;
 
 import static io.strimzi.api.kafka.model.kafka.KafkaClusterSpec.FORBIDDEN_PREFIXES;
 import static io.strimzi.api.kafka.model.kafka.KafkaClusterSpec.FORBIDDEN_PREFIX_EXCEPTIONS;
-import static io.strimzi.api.kafka.model.kafka.KafkaResources.kafkaStatefulSetName;
-import static io.strimzi.api.kafka.model.kafka.KafkaResources.zookeeperStatefulSetName;
+import static io.strimzi.api.kafka.model.kafka.KafkaResources.kafkaComponentName;
+import static io.strimzi.api.kafka.model.kafka.KafkaResources.zookeeperComponentName;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.TestUtils.indent;

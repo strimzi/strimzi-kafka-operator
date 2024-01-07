@@ -98,12 +98,12 @@ final public class TestStorage {
         this.kafkaUsername = KafkaUserUtils.generateRandomNameOfKafkaUser();
         this.eoDeploymentName = KafkaResources.entityOperatorDeploymentName(clusterName);
         this.kafkaStatefulSetName = Environment.isKafkaNodePoolsEnabled() ?
-            this.clusterName + "-" + this.kafkaNodePoolName : KafkaResources.kafkaStatefulSetName(clusterName);
-        this.zkStatefulSetName = KafkaResources.zookeeperStatefulSetName(clusterName);
-        this.kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
+            this.clusterName + "-" + this.kafkaNodePoolName : KafkaResources.kafkaComponentName(clusterName);
+        this.zkStatefulSetName = KafkaResources.zookeeperComponentName(clusterName);
+        this.kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaComponentName(clusterName));
         this.zkSelector = KafkaResource.getLabelSelector(clusterName, this.zkStatefulSetName);
-        this.kafkaConnectSelector = KafkaConnectResource.getLabelSelector(clusterName, KafkaConnectResources.deploymentName(clusterName));
-        this.mm2Selector = KafkaMirrorMaker2Resource.getLabelSelector(clusterName, KafkaMirrorMaker2Resources.deploymentName(clusterName));
+        this.kafkaConnectSelector = KafkaConnectResource.getLabelSelector(clusterName, KafkaConnectResources.componentName(clusterName));
+        this.mm2Selector = KafkaMirrorMaker2Resource.getLabelSelector(clusterName, KafkaMirrorMaker2Resources.componentName(clusterName));
         this.messageCount = messageCount;
         this.testExecutionStartTime = System.currentTimeMillis();
 

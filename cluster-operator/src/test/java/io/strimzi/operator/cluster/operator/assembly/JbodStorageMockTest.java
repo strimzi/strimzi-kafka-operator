@@ -324,7 +324,7 @@ public class JbodStorageMockTest {
     }
 
     private List<PersistentVolumeClaim> getPvcs() {
-        String kafkaStsName = KafkaResources.kafkaStatefulSetName(JbodStorageMockTest.NAME);
+        String kafkaStsName = KafkaResources.kafkaComponentName(JbodStorageMockTest.NAME);
         Labels pvcSelector = Labels.forStrimziCluster(JbodStorageMockTest.NAME).withStrimziKind(Kafka.RESOURCE_KIND).withStrimziName(kafkaStsName);
         return client.persistentVolumeClaims()
                 .inNamespace(JbodStorageMockTest.NAMESPACE)

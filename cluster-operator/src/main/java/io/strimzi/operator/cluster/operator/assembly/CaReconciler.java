@@ -371,8 +371,8 @@ public class CaReconciler {
                     .compose(i -> getKafkaReplicas())
                     .compose(nodes -> rollKafkaBrokers(nodes, podRollReasons))
                     .compose(i -> maybeRollDeploymentIfExists(KafkaResources.entityOperatorDeploymentName(reconciliation.name()), podRollReasons))
-                    .compose(i -> maybeRollDeploymentIfExists(KafkaExporterResources.deploymentName(reconciliation.name()), podRollReasons))
-                    .compose(i -> maybeRollDeploymentIfExists(CruiseControlResources.deploymentName(reconciliation.name()), podRollReasons));
+                    .compose(i -> maybeRollDeploymentIfExists(KafkaExporterResources.componentName(reconciliation.name()), podRollReasons))
+                    .compose(i -> maybeRollDeploymentIfExists(CruiseControlResources.componentName(reconciliation.name()), podRollReasons));
         } else {
             return Future.succeededFuture();
         }
@@ -458,7 +458,7 @@ public class CaReconciler {
      * @return  Current number of ZooKeeper replicas
      */
     /* test */ Future<Integer> getZooKeeperReplicas() {
-        return strimziPodSetOperator.getAsync(reconciliation.namespace(), KafkaResources.zookeeperStatefulSetName(reconciliation.name()))
+        return strimziPodSetOperator.getAsync(reconciliation.namespace(), KafkaResources.zookeeperComponentName(reconciliation.name()))
                 .compose(podSet -> {
                     if (podSet != null
                             && podSet.getSpec() != null
@@ -485,7 +485,7 @@ public class CaReconciler {
             Labels zkSelectorLabels = Labels.EMPTY
                     .withStrimziKind(reconciliation.kind())
                     .withStrimziCluster(reconciliation.name())
-                    .withStrimziName(KafkaResources.zookeeperStatefulSetName(reconciliation.name()));
+                    .withStrimziName(KafkaResources.zookeeperComponentName(reconciliation.name()));
 
             Function<Pod, List<String>> rollZkPodAndLogReason = pod -> {
                 List<String> reason = List.of(RestartReason.CLUSTER_CA_CERT_KEY_REPLACED.getDefaultNote());
@@ -503,7 +503,7 @@ public class CaReconciler {
         Labels selectorLabels = Labels.EMPTY
                 .withStrimziKind(reconciliation.kind())
                 .withStrimziCluster(reconciliation.name())
-                .withStrimziName(KafkaResources.kafkaStatefulSetName(reconciliation.name()));
+                .withStrimziName(KafkaResources.kafkaComponentName(reconciliation.name()));
 
         return strimziPodSetOperator.listAsync(reconciliation.namespace(), selectorLabels)
                 .compose(podSets -> {

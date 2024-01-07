@@ -15,7 +15,7 @@ public class JmxTransResources {
      * @param kafkaClusterName  The {@code metadata.name} of the {@code Kafka} resource.
      * @return The name of the corresponding JmxTrans {@code Deployment}.
      */
-    public static String deploymentName(String kafkaClusterName) {
+    public static String componentName(String kafkaClusterName) {
         return kafkaClusterName + "-kafka-jmx-trans";
     }
 
@@ -25,7 +25,7 @@ public class JmxTransResources {
      * @return The name of the corresponding JmxTrans {@code ServiceAccount}.
      */
     public static String serviceAccountName(String kafkaClusterName) {
-        return deploymentName(kafkaClusterName);
+        return componentName(kafkaClusterName);
     }
 
     /**

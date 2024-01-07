@@ -16,7 +16,7 @@ public class KafkaConnectResources {
      * @param clusterName  The {@code metadata.name} of the {@code KafkaConnect} resource.
      * @return The name of the corresponding Kafka Connect {@code Deployment}.
      */
-    public static String deploymentName(String clusterName) {
+    public static String componentName(String clusterName) {
         return clusterName + "-connect";
     }
 
@@ -26,7 +26,7 @@ public class KafkaConnectResources {
      * @return The name of the corresponding Kafka Connect {@code ServiceAccount}.
      */
     public static String serviceAccountName(String clusterName) {
-        return deploymentName(clusterName);
+        return componentName(clusterName);
     }
 
     /**
@@ -58,7 +58,7 @@ public class KafkaConnectResources {
      * @return The name of the corresponding KafkaConnect metrics and log {@code ConfigMap}.
      */
     public static String metricsAndLogConfigMapName(String clusterName) {
-        return deploymentName(clusterName) + "-config";
+        return componentName(clusterName) + "-config";
     }
 
     /**
@@ -67,7 +67,7 @@ public class KafkaConnectResources {
      * @return The name of the corresponding KafkaConnect config offsets value.
      */
     public static String configStorageTopicOffsets(String clusterName) {
-        return deploymentName(clusterName) + "-offsets";
+        return componentName(clusterName) + "-offsets";
     }
 
     /**
@@ -76,7 +76,7 @@ public class KafkaConnectResources {
      * @return The name of the corresponding KafkaConnect config status value.
      */
     public static String configStorageTopicStatus(String clusterName) {
-        return deploymentName(clusterName) + "-status";
+        return componentName(clusterName) + "-status";
     }
 
     /**
@@ -110,7 +110,7 @@ public class KafkaConnectResources {
      * @return The name of the init container's cluster role binding.
      */
     public static String initContainerClusterRoleBindingName(String clusterName, String namespace) {
-        return "strimzi-" + namespace + "-" + deploymentName(clusterName) + "-init";
+        return "strimzi-" + namespace + "-" + componentName(clusterName) + "-init";
     }
 
     /**
@@ -119,7 +119,7 @@ public class KafkaConnectResources {
      * @return The name of the corresponding Kafka Connect {@code ConfigMap}.
      */
     public static String dockerFileConfigMapName(String clusterName) {
-        return deploymentName(clusterName) + "-dockerfile";
+        return componentName(clusterName) + "-dockerfile";
     }
 
     /**
@@ -129,7 +129,7 @@ public class KafkaConnectResources {
      * @return The name of the corresponding Kafka Connect build {@code Pod}.
      */
     public static String buildPodName(String clusterName) {
-        return deploymentName(clusterName) + "-build";
+        return componentName(clusterName) + "-build";
     }
 
     /**
@@ -140,7 +140,7 @@ public class KafkaConnectResources {
      * @return The name of the corresponding Kafka Connect Build {@code ServiceAccount}.
      */
     public static String buildServiceAccountName(String clusterName) {
-        return deploymentName(clusterName) + "-build";
+        return componentName(clusterName) + "-build";
     }
 
     /**
@@ -150,7 +150,7 @@ public class KafkaConnectResources {
      * @return The name of the corresponding Kafka Connect {@code BuildConfig}.
      */
     public static String buildConfigName(String clusterName) {
-        return deploymentName(clusterName) + "-build";
+        return componentName(clusterName) + "-build";
     }
 
     /**

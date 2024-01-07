@@ -908,7 +908,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
 
         Deployment deployment = new DeploymentBuilder()
                 .withNewMetadata()
-                    .withName(KafkaMirrorMaker2Resources.deploymentName(NAME))
+                    .withName(KafkaMirrorMaker2Resources.componentName(NAME))
                 .endMetadata()
                 .withNewSpec()
                     .withReplicas(3)
@@ -1167,7 +1167,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
 
         when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
 
-        when(mockNetPolOps.reconcile(any(), eq(kmm2.getMetadata().getNamespace()), eq(KafkaMirrorMaker2Resources.deploymentName(
+        when(mockNetPolOps.reconcile(any(), eq(kmm2.getMetadata().getNamespace()), eq(KafkaMirrorMaker2Resources.componentName(
                 kmm2.getMetadata().getName())), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
 
         when(mockSecretOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture());

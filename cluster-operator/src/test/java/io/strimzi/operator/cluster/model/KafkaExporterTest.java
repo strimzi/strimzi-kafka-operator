@@ -180,7 +180,7 @@ public class KafkaExporterTest {
 
         assertThat(containers.size(), is(1));
 
-        assertThat(dep.getMetadata().getName(), is(KafkaExporterResources.deploymentName(cluster)));
+        assertThat(dep.getMetadata().getName(), is(KafkaExporterResources.componentName(cluster)));
         assertThat(dep.getMetadata().getNamespace(), is(namespace));
         TestUtils.checkOwnerReference(dep, resource);
 

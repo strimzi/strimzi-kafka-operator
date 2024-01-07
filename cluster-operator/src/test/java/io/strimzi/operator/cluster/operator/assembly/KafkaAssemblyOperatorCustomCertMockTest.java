@@ -189,7 +189,7 @@ public class KafkaAssemblyOperatorCustomCertMockTest {
         operator.reconcile(new Reconciliation("test-trigger-1", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME))
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     // Verify the initial hash stub of the custom listener cert
-                    StrimziPodSet sps = supplier.strimziPodSetOperator.client().inNamespace(NAMESPACE).withName(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).get();
+                    StrimziPodSet sps = supplier.strimziPodSetOperator.client().inNamespace(NAMESPACE).withName(KafkaResources.kafkaComponentName(CLUSTER_NAME)).get();
                     sps.getSpec().getPods().stream().map(PodSetUtils::mapToPod).forEach(pod -> {
                         context.verify(() -> assertThat(pod.getMetadata().getAnnotations(), hasEntry(KafkaCluster.ANNO_STRIMZI_CUSTOM_LISTENER_CERT_THUMBPRINTS, getThumbprint())));
                     });
@@ -208,7 +208,7 @@ public class KafkaAssemblyOperatorCustomCertMockTest {
                 .compose(i -> operator.reconcile(new Reconciliation("test-trigger-2", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)))
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     // Verify the updated hash stub of the custom listener cert
-                    StrimziPodSet sps = supplier.strimziPodSetOperator.client().inNamespace(NAMESPACE).withName(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).get();
+                    StrimziPodSet sps = supplier.strimziPodSetOperator.client().inNamespace(NAMESPACE).withName(KafkaResources.kafkaComponentName(CLUSTER_NAME)).get();
                     sps.getSpec().getPods().stream().map(PodSetUtils::mapToPod).forEach(pod -> {
                         context.verify(() -> assertThat(pod.getMetadata().getAnnotations(), hasEntry(KafkaCluster.ANNO_STRIMZI_CUSTOM_LISTENER_CERT_THUMBPRINTS, getUpdatedThumbprint())));
                     });

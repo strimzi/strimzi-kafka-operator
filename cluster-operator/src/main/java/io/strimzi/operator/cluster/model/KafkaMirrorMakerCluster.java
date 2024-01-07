@@ -143,7 +143,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel implements SupportsMe
      * @param sharedEnvironmentProvider Shared environment provider
      */
     protected KafkaMirrorMakerCluster(Reconciliation reconciliation, HasMetadata resource, SharedEnvironmentProvider sharedEnvironmentProvider) {
-        super(reconciliation, resource, KafkaMirrorMakerResources.deploymentName(resource.getMetadata().getName()), COMPONENT_TYPE, sharedEnvironmentProvider);
+        super(reconciliation, resource, KafkaMirrorMakerResources.componentName(resource.getMetadata().getName()), COMPONENT_TYPE, sharedEnvironmentProvider);
     }
 
     /**
