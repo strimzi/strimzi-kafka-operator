@@ -679,10 +679,7 @@ class ConnectST extends AbstractST {
         // Give some time to connector task to get back to running state after recovery
         KafkaConnectorUtils.waitForConnectorTaskState(testStorage.getNamespaceName(), TestConstants.ECHO_SINK_CONNECTOR_NAME, 0, "RUNNING");
         // If task is in running state for about 2 minutes, it resets the auto-restart count back to 0
-
-        // TODO: the check is currently not working - there is some issue with committing the consumer offset and the Connector is restarted multiple times
-        // https://github.com/strimzi/strimzi-kafka-operator/issues/8560
-        // KafkaConnectorUtils.waitForConnectorAutoRestartCount(testStorage.getNamespaceName(), TestConstants.ECHO_SINK_CONNECTOR_NAME, 0);
+        KafkaConnectorUtils.waitForConnectorAutoRestartCount(testStorage.getNamespaceName(), TestConstants.ECHO_SINK_CONNECTOR_NAME, 0);
     }
 
     @ParallelNamespaceTest
