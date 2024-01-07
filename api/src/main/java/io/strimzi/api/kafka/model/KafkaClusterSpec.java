@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.template.KafkaClusterTemplate;
+import io.strimzi.crdgenerator.annotations.AddedIn;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.strimzi.crdgenerator.annotations.KubeLink;
@@ -84,6 +85,7 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, HasConfigurable
         this.version = version;
     }
 
+    @AddedIn("0.39.0")
     @Description("The KRaft metadata version used by the Kafka cluster. " +
             "This property is ignored when running in ZooKeeper mode. " +
             "If the property is not set, it defaults to the metadata version that corresponds to the `version` property.")

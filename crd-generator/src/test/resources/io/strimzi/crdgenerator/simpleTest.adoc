@@ -31,7 +31,7 @@
 |string
 |fieldProperty           1.2+<.<a|Example of field property.
 |string
-|intProperty             1.2+<.<a|An example int property.
+|intProperty             1.2+<.<a|An example int property. Added in Strimzi 0.0.1.
 |integer
 |listOfArray             1.2+<.<a|
 |string array of dimension 2
