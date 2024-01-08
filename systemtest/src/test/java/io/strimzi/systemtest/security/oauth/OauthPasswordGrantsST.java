@@ -74,7 +74,7 @@ public class OauthPasswordGrantsST extends OauthAbstractST {
     @ParallelTest
     @Tag(MIRROR_MAKER)
     void testPasswordGrantsKafkaMirrorMaker(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+        final TestStorage testStorage = storageMap.get(extensionContext);
 
         KafkaOauthClients oauthExampleClients = new KafkaOauthClientsBuilder()
             .withNamespaceName(Environment.TEST_SUITE_NAMESPACE)
@@ -206,7 +206,7 @@ public class OauthPasswordGrantsST extends OauthAbstractST {
     @ParallelTest
     @Tag(MIRROR_MAKER2)
     void testPasswordGrantsKafkaMirrorMaker2(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+        final TestStorage testStorage = storageMap.get(extensionContext);
 
         KafkaOauthClients oauthExampleClients = new KafkaOauthClientsBuilder()
             .withNamespaceName(Environment.TEST_SUITE_NAMESPACE)
@@ -228,9 +228,8 @@ public class OauthPasswordGrantsST extends OauthAbstractST {
         ClientUtils.waitForClientSuccess(testStorage.getConsumerName(), Environment.TEST_SUITE_NAMESPACE, testStorage.getMessageCount());
 
         String kafkaSourceClusterName = oauthClusterName;
-        String kafkaTargetClusterName = testStorage.getTargetClusterName();
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaTargetClusterName, 1, 1)
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getTargetClusterName(), 1, 1)
             .editMetadata()
                 .withNamespace(Environment.TEST_SUITE_NAMESPACE)
             .endMetadata()
@@ -276,9 +275,9 @@ public class OauthPasswordGrantsST extends OauthAbstractST {
             .build();
 
         KafkaMirrorMaker2ClusterSpec targetClusterWithOauth = new KafkaMirrorMaker2ClusterSpecBuilder()
-            .withAlias(kafkaTargetClusterName)
+            .withAlias(testStorage.getTargetClusterName())
             .withConfig(connectorConfig)
-            .withBootstrapServers(KafkaResources.plainBootstrapAddress(kafkaTargetClusterName))
+            .withBootstrapServers(KafkaResources.plainBootstrapAddress(testStorage.getTargetClusterName()))
             .withNewKafkaClientAuthenticationOAuth()
                 .withTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
                 .withClientId(OAUTH_MM2_CLIENT_ID)
@@ -296,7 +295,7 @@ public class OauthPasswordGrantsST extends OauthAbstractST {
             .endKafkaClientAuthenticationOAuth()
             .build();
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaMirrorMaker2Templates.kafkaMirrorMaker2(oauthClusterName, kafkaTargetClusterName, kafkaSourceClusterName, 1, false)
+        resourceManager.createResourceWithWait(extensionContext, KafkaMirrorMaker2Templates.kafkaMirrorMaker2(oauthClusterName, testStorage.getTargetClusterName(), kafkaSourceClusterName, 1, false)
             .editMetadata()
                 .withNamespace(Environment.TEST_SUITE_NAMESPACE)
             .endMetadata()
@@ -312,19 +311,19 @@ public class OauthPasswordGrantsST extends OauthAbstractST {
         final String kafkaMirrorMaker2Logs = KubeClusterResource.cmdKubeClient(Environment.TEST_SUITE_NAMESPACE).execInCurrentNamespace(Level.DEBUG, "logs", kafkaMirrorMaker2PodName).out();
         verifyOauthConfiguration(kafkaMirrorMaker2Logs);
 
-        TestUtils.waitFor("MirrorMaker2 to copy messages from " + kafkaSourceClusterName + " to " + kafkaTargetClusterName,
+        TestUtils.waitFor("MirrorMaker2 to copy messages from " + kafkaSourceClusterName + " to " + testStorage.getTargetClusterName(),
             Duration.ofSeconds(30).toMillis(), TestConstants.TIMEOUT_FOR_MIRROR_MAKER_COPY_MESSAGES_BETWEEN_BROKERS,
             () -> {
                 LOGGER.info("Deleting Job: {}/{}", Environment.TEST_SUITE_NAMESPACE, testStorage.getConsumerName());
                 JobUtils.deleteJobWithWait(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName());
 
-                LOGGER.info("Creating new client with new consumer group and also to point on {} cluster", kafkaTargetClusterName);
+                LOGGER.info("Creating new client with new consumer group and also to point on {} cluster", testStorage.getTargetClusterName());
 
                 KafkaOauthClients kafkaOauthClientJob = new KafkaOauthClientsBuilder()
                     .withNamespaceName(Environment.TEST_SUITE_NAMESPACE)
                     .withProducerName(testStorage.getProducerName())
                     .withConsumerName(testStorage.getConsumerName())
-                    .withBootstrapAddress(KafkaResources.plainBootstrapAddress(kafkaTargetClusterName))
+                    .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getTargetClusterName()))
                     .withTopicName(kafkaSourceClusterName + "." + testStorage.getTopicName())
                     .withMessageCount(testStorage.getMessageCount())
                     .withOauthClientId(OAUTH_CLIENT_NAME)
@@ -348,7 +347,7 @@ public class OauthPasswordGrantsST extends OauthAbstractST {
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
     void testPasswordGrantsKafkaConnect(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+        final TestStorage testStorage = storageMap.get(extensionContext);
 
         KafkaOauthClients oauthExampleClients = new KafkaOauthClientsBuilder()
             .withNamespaceName(Environment.TEST_SUITE_NAMESPACE)
@@ -421,7 +420,7 @@ public class OauthPasswordGrantsST extends OauthAbstractST {
     @ParallelTest
     @Tag(BRIDGE)
     void testPasswordGrantsKafkaBridge(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+        final TestStorage testStorage = storageMap.get(extensionContext);
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, testStorage.getTopicName(), Environment.TEST_SUITE_NAMESPACE).build());
 

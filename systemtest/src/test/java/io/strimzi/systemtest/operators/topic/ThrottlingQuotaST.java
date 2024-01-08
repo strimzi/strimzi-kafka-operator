@@ -55,7 +55,7 @@ public class ThrottlingQuotaST extends AbstractST {
     @KRaftWithoutUTONotSupported
     @UTONotSupported("https://github.com/strimzi/strimzi-kafka-operator/issues/8864")
     void testThrottlingQuotasDuringAllTopicOperations(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext, Environment.TEST_SUITE_NAMESPACE);
+        final TestStorage testStorage = storageMap.get(extensionContext);
 
         int numOfTopics = 25;
         int numOfPartitions = 100;

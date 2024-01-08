@@ -58,7 +58,7 @@ public class OlmUpgradeST extends AbstractUpgradeST {
     private final OlmVersionModificationData olmUpgradeData = new VersionModificationDataLoader(ModificationType.OLM_UPGRADE).getOlmUpgradeData();
     @Test
     void testStrimziUpgrade(ExtensionContext extensionContext) throws IOException {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+        final TestStorage testStorage = storageMap.get(extensionContext);
         final String toVersion = olmUpgradeData.getToVersion();
         final String fromVersion = olmUpgradeData.getFromVersion();
 

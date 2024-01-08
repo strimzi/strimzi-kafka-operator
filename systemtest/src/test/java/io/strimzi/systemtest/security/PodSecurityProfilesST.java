@@ -98,7 +98,7 @@ public class PodSecurityProfilesST extends AbstractST {
     @RequiredMinKubeOrOcpBasedKubeVersion(kubeVersion = 1.23, ocpBasedKubeVersion = 1.24)
     void testOperandsWithRestrictedSecurityProfile(ExtensionContext extensionContext) {
 
-        final TestStorage testStorage = new TestStorage(extensionContext);
+        final TestStorage testStorage = storageMap.get(extensionContext);
 
         final String mm1TargetClusterName = testStorage.getTargetClusterName() + "-mm1";
         final String mm2TargetClusterName = testStorage.getTargetClusterName() + "-mm2";

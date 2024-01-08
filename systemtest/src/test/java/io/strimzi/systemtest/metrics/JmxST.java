@@ -18,7 +18,6 @@ import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.specific.ScraperTemplates;
-import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.specific.JmxUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -50,17 +49,14 @@ public class JmxST extends AbstractST {
     @FIPSNotSupported("JMX with auth is not working with FIPS")
     void testKafkaZookeeperAndKafkaConnectWithJMX(ExtensionContext extensionContext) {
         final TestStorage testStorage = storageMap.get(extensionContext);
-        final String clusterName = testStorage.getClusterName();
-        final String scraperName = testStorage.getScraperName();
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(Environment.TEST_SUITE_NAMESPACE, extensionContext);
-        final String zkSecretName = clusterName + "-zookeeper-jmx";
-        final String connectJmxSecretName = clusterName + "-kafka-connect-jmx";
-        final String kafkaJmxSecretName = clusterName + "-kafka-jmx";
+        final String zkSecretName = testStorage.getClusterName() + "-zookeeper-jmx";
+        final String connectJmxSecretName = testStorage.getClusterName() + "-kafka-connect-jmx";
+        final String kafkaJmxSecretName = testStorage.getClusterName() + "-kafka-jmx";
 
         Map<String, String> jmxSecretLabels = Collections.singletonMap("my-label", "my-value");
         Map<String, String> jmxSecretAnnotations = Collections.singletonMap("my-annotation", "some-value");
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3)
             .editOrNewSpec()
                 .editKafka()
                     .withNewJmxOptions()
@@ -83,11 +79,11 @@ public class JmxST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResourceWithWait(extensionContext, ScraperTemplates.scraperPod(namespaceName, scraperName).build());
-        String scraperPodName = kubeClient().listPodsByPrefixInName(namespaceName, scraperName).get(0).getMetadata().getName();
-        JmxUtils.downloadJmxTermToPod(namespaceName, scraperPodName);
+        resourceManager.createResourceWithWait(extensionContext, ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build());
+        String scraperPodName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
+        JmxUtils.downloadJmxTermToPod(testStorage.getNamespaceName(), scraperPodName);
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaConnectTemplates.kafkaConnect(clusterName, namespaceName, 1)
+        resourceManager.createResourceWithWait(extensionContext, KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), testStorage.getNamespaceName(), 1)
             .editOrNewSpec()
                 .withNewJmxOptions()
                     .withAuthentication(new KafkaJmxAuthenticationPassword())
@@ -95,18 +91,18 @@ public class JmxST extends AbstractST {
             .endSpec()
             .build());
 
-        String kafkaResults = JmxUtils.collectJmxMetricsWithWait(namespaceName, KafkaResources.brokersServiceName(clusterName), kafkaJmxSecretName, scraperPodName, "bean kafka.server:type=app-info\nget -i *");
-        String kafkaConnectResults = JmxUtils.collectJmxMetricsWithWait(namespaceName, KafkaConnectResources.serviceName(clusterName), connectJmxSecretName, scraperPodName, "bean kafka.connect:type=app-info\nget -i *");
+        String kafkaResults = JmxUtils.collectJmxMetricsWithWait(testStorage.getNamespaceName(), KafkaResources.brokersServiceName(testStorage.getClusterName()), kafkaJmxSecretName, scraperPodName, "bean kafka.server:type=app-info\nget -i *");
+        String kafkaConnectResults = JmxUtils.collectJmxMetricsWithWait(testStorage.getNamespaceName(), KafkaConnectResources.serviceName(testStorage.getClusterName()), connectJmxSecretName, scraperPodName, "bean kafka.connect:type=app-info\nget -i *");
         assertThat("Result from Kafka JMX doesn't contain right version of Kafka, result: " + kafkaResults, kafkaResults, containsString("version = " + Environment.ST_KAFKA_VERSION));
         assertThat("Result from KafkaConnect JMX doesn't contain right version of Kafka, result: " + kafkaConnectResults, kafkaConnectResults, containsString("version = " + Environment.ST_KAFKA_VERSION));
 
         if (!Environment.isKRaftModeEnabled()) {
-            Secret jmxZkSecret = kubeClient().getSecret(namespaceName, zkSecretName);
+            Secret jmxZkSecret = kubeClient().getSecret(testStorage.getNamespaceName(), zkSecretName);
 
-            String zkBeans = JmxUtils.collectJmxMetricsWithWait(namespaceName, KafkaResources.zookeeperHeadlessServiceName(clusterName), zkSecretName, scraperPodName, "domain org.apache.ZooKeeperService\nbeans");
+            String zkBeans = JmxUtils.collectJmxMetricsWithWait(testStorage.getNamespaceName(), KafkaResources.zookeeperHeadlessServiceName(testStorage.getClusterName()), zkSecretName, scraperPodName, "domain org.apache.ZooKeeperService\nbeans");
             String zkBean = Arrays.stream(zkBeans.split("\\n")).filter(bean -> bean.matches("org.apache.ZooKeeperService:name[0-9]+=ReplicatedServer_id[0-9]+")).findFirst().orElseThrow();
 
-            String zkResults = JmxUtils.collectJmxMetricsWithWait(namespaceName, KafkaResources.zookeeperHeadlessServiceName(clusterName), zkSecretName, scraperPodName, "bean " + zkBean + "\nget -i *");
+            String zkResults = JmxUtils.collectJmxMetricsWithWait(testStorage.getNamespaceName(), KafkaResources.zookeeperHeadlessServiceName(testStorage.getClusterName()), zkSecretName, scraperPodName, "bean " + zkBean + "\nget -i *");
             assertThat("Result from ZooKeeper JMX doesn't contain right quorum size, result: " + zkResults, zkResults, containsString("QuorumSize = 3"));
 
             LOGGER.info("Checking that ZooKeeper JMX Secret is created with custom labels and annotations");

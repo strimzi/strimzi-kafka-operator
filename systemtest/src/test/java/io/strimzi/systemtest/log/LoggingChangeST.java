@@ -449,7 +449,7 @@ class LoggingChangeST extends AbstractST {
     @Tag(BRIDGE)
     @Tag(ROLLING_UPDATE)
     void testDynamicallySetBridgeLoggingLevels(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+        final TestStorage testStorage = storageMap.get(extensionContext);
 
         InlineLogging ilOff = new InlineLogging();
         Map<String, String> loggers = new HashMap<>();
@@ -665,7 +665,7 @@ class LoggingChangeST extends AbstractST {
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
     void testDynamicallySetConnectLoggingLevels(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+        final TestStorage testStorage = storageMap.get(extensionContext);
         InlineLogging ilOff = new InlineLogging();
         Map<String, String> loggers = new HashMap<>();
         loggers.put("connect.root.logger.level", "OFF");
@@ -1350,7 +1350,7 @@ class LoggingChangeST extends AbstractST {
 
     @ParallelNamespaceTest
     void testLoggingHierarchy(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+        final TestStorage testStorage = storageMap.get(extensionContext);
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3).build());
 

@@ -109,8 +109,8 @@ class CustomResourceStatusST extends AbstractST {
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     void testKafkaStatus(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
         LOGGER.info("Checking status of deployed Kafka cluster");
+        final TestStorage testStorage = storageMap.get(extensionContext);
         KafkaUtils.waitForKafkaReady(Environment.TEST_SUITE_NAMESPACE, CUSTOM_RESOURCE_STATUS_CLUSTER_NAME);
 
         ExternalKafkaClient externalKafkaClient = new ExternalKafkaClient.Builder()
@@ -163,7 +163,6 @@ class CustomResourceStatusST extends AbstractST {
     @ParallelTest
     void testKafkaUserStatus(ExtensionContext extensionContext) {
         final TestStorage testStorage = storageMap.get(extensionContext);
-        String userName = testStorage.getKafkaUsername();
 
         final AclRule aclRule = new AclRuleBuilder()
             .withNewAclRuleTopicResource()
@@ -172,7 +171,7 @@ class CustomResourceStatusST extends AbstractST {
             .withOperations(AclOperation.WRITE, AclOperation.DESCRIBE)
             .build();
 
-        resourceManager.createResourceWithoutWait(extensionContext, KafkaUserTemplates.tlsUser(Environment.TEST_SUITE_NAMESPACE, CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, userName)
+        resourceManager.createResourceWithoutWait(extensionContext, KafkaUserTemplates.tlsUser(Environment.TEST_SUITE_NAMESPACE, CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, testStorage.getKafkaUsername())
             .editSpec()
                 .withNewKafkaUserAuthorizationSimple()
                     .withAcls(aclRule)
@@ -180,13 +179,13 @@ class CustomResourceStatusST extends AbstractST {
             .endSpec()
             .build());
 
-        KafkaUserUtils.waitForKafkaUserNotReady(Environment.TEST_SUITE_NAMESPACE, userName);
+        KafkaUserUtils.waitForKafkaUserNotReady(Environment.TEST_SUITE_NAMESPACE, testStorage.getKafkaUsername());
 
-        KafkaUserResource.replaceUserResourceInSpecificNamespace(userName, user -> user.getSpec().setAuthorization(null), Environment.TEST_SUITE_NAMESPACE);
-        KafkaUserUtils.waitForKafkaUserReady(Environment.TEST_SUITE_NAMESPACE, userName);
+        KafkaUserResource.replaceUserResourceInSpecificNamespace(testStorage.getKafkaUsername(), user -> user.getSpec().setAuthorization(null), Environment.TEST_SUITE_NAMESPACE);
+        KafkaUserUtils.waitForKafkaUserReady(Environment.TEST_SUITE_NAMESPACE, testStorage.getKafkaUsername());
 
         LOGGER.info("Checking status of deployed KafkaUser");
-        Condition kafkaCondition = KafkaUserResource.kafkaUserClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(userName).get().getStatus().getConditions().get(0);
+        Condition kafkaCondition = KafkaUserResource.kafkaUserClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(testStorage.getKafkaUsername()).get().getStatus().getConditions().get(0);
         LOGGER.info("KafkaUser Status: {}", kafkaCondition.getStatus());
         LOGGER.info("KafkaUser Type: {}", kafkaCondition.getType());
         assertThat("KafkaUser is in wrong state!", kafkaCondition.getType(), is(Ready.toString()));
@@ -197,8 +196,7 @@ class CustomResourceStatusST extends AbstractST {
     @Tag(MIRROR_MAKER)
     void testKafkaMirrorMakerStatusWrongBootstrap(ExtensionContext extensionContext) {
         final TestStorage testStorage = storageMap.get(extensionContext);
-        String clusterName = testStorage.getClusterName();
-        String mirrorMakerName = clusterName + "-mirror-maker-2";
+        String mirrorMakerName = testStorage.getClusterName() + "-mirror-maker-2";
 
         resourceManager.createResourceWithWait(extensionContext, KafkaMirrorMakerTemplates.kafkaMirrorMaker(mirrorMakerName, CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, ClientUtils.generateRandomConsumerGroup(), 1, false)
             .editMetadata()
@@ -248,7 +246,7 @@ class CustomResourceStatusST extends AbstractST {
     @Tag(CONNECTOR_OPERATOR)
     @Tag(CONNECT_COMPONENTS)
     void testKafkaConnectAndConnectorStatus(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+        final TestStorage testStorage = storageMap.get(extensionContext);
         String connectUrl = KafkaConnectResources.url(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, testStorage.getNamespaceName(), 8083);
 
         resourceManager.createResourceWithWait(extensionContext, KafkaConnectTemplates.kafkaConnectWithFilePlugin(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, testStorage.getNamespaceName(), 1)
@@ -315,21 +313,20 @@ class CustomResourceStatusST extends AbstractST {
     @Tag(CONNECTOR_OPERATOR)
     void testKafkaConnectorWithoutClusterConfig(ExtensionContext extensionContext) {
         final TestStorage testStorage = storageMap.get(extensionContext);
-        String clusterName = testStorage.getClusterName();
 
         // This test check NPE when connect cluster is not specified in labels
         // Check for NPE in CO logs is performed after every test in BaseST
-        resourceManager.createResourceWithoutWait(extensionContext, KafkaConnectorTemplates.kafkaConnector(clusterName, CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, 2)
+        resourceManager.createResourceWithoutWait(extensionContext, KafkaConnectorTemplates.kafkaConnector(testStorage.getClusterName(), CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, 2)
             .withNewMetadata()
-                .withName(clusterName)
+                .withName(testStorage.getClusterName())
                 .withNamespace(Environment.TEST_SUITE_NAMESPACE)
             .endMetadata()
             .build());
 
-        KafkaConnectorUtils.waitForConnectorNotReady(Environment.TEST_SUITE_NAMESPACE, clusterName);
+        KafkaConnectorUtils.waitForConnectorNotReady(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName());
 
-        KafkaConnectorResource.kafkaConnectorClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(clusterName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
-        KafkaConnectorUtils.waitForConnectorDeletion(Environment.TEST_SUITE_NAMESPACE, clusterName);
+        KafkaConnectorResource.kafkaConnectorClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(testStorage.getClusterName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
+        KafkaConnectorUtils.waitForConnectorDeletion(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName());
     }
 
     @ParallelTest
@@ -395,8 +392,7 @@ class CustomResourceStatusST extends AbstractST {
     @Tag(MIRROR_MAKER2)
     void testKafkaMirrorMaker2WrongBootstrap(ExtensionContext extensionContext) {
         final TestStorage testStorage = storageMap.get(extensionContext);
-        String clusterName = testStorage.getClusterName();
-        String mirrorMaker2Name = clusterName + "-mirror-maker-2";
+        String mirrorMaker2Name = testStorage.getClusterName() + "-mirror-maker-2";
 
         KafkaMirrorMaker2 kafkaMirrorMaker2 = KafkaMirrorMaker2Templates.kafkaMirrorMaker2(mirrorMaker2Name,
             "non-existing-source", "non-existing-target", 1, false)

@@ -141,16 +141,14 @@ public abstract class AbstractNamespaceST extends AbstractST {
 
         LOGGER.info("Topic Operator in Kafka: {}/{} watches KafkaTopics in (different) Namespace: {}", MAIN_TEST_NAMESPACE, PRIMARY_KAFKA_NAME, PRIMARY_KAFKA_WATCHED_NAMESPACE);
 
-
-        final String topicName = testStorage.getTopicName();
-        LOGGER.info("Verifying that KafkaTopic: {}/{} does not exist before test", PRIMARY_KAFKA_WATCHED_NAMESPACE, topicName);
+        LOGGER.info("Verifying that KafkaTopic: {}/{} does not exist before test", PRIMARY_KAFKA_WATCHED_NAMESPACE, testStorage.getTopicName());
         List<String> topics = KafkaCmdClient.listTopicsUsingPodCli(MAIN_TEST_NAMESPACE, scraperPodName, KafkaResources.plainBootstrapAddress(PRIMARY_KAFKA_NAME));
-        assertThat(topics, not(hasItems(topicName)));
+        assertThat(topics, not(hasItems(testStorage.getTopicName())));
 
-        LOGGER.info("Verifying that KafkaTopic: {}/{} is watched by TO by asserting its existence", PRIMARY_KAFKA_WATCHED_NAMESPACE, topicName);
-        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(PRIMARY_KAFKA_NAME, topicName, PRIMARY_KAFKA_WATCHED_NAMESPACE).build());
+        LOGGER.info("Verifying that KafkaTopic: {}/{} is watched by TO by asserting its existence", PRIMARY_KAFKA_WATCHED_NAMESPACE, testStorage.getTopicName());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(PRIMARY_KAFKA_NAME, testStorage.getTopicName(), PRIMARY_KAFKA_WATCHED_NAMESPACE).build());
         topics = KafkaCmdClient.listTopicsUsingPodCli(MAIN_TEST_NAMESPACE, scraperPodName, KafkaResources.plainBootstrapAddress(PRIMARY_KAFKA_NAME));
-        assertThat(topics, hasItems(topicName));
+        assertThat(topics, hasItems(testStorage.getTopicName()));
     }
 
     /**
@@ -229,7 +227,7 @@ public abstract class AbstractNamespaceST extends AbstractST {
     @Tag(MIRROR_MAKER2)
     final void testDeployMirrorMaker2InNamespaceDifferentFromCO(ExtensionContext extensionContext) {
         LOGGER.info("Deploying KafkaMirrorMaker in different Namespace than CO");
-        final TestStorage testStorage = new TestStorage(extensionContext);
+        final TestStorage testStorage = storageMap.get(extensionContext);
         final String mirrorMakerName = testStorage.getClusterName() + "-mirror-maker-2";
 
         LOGGER.info("Target Kafka cluster: {} and consequently MirrorMaker2: {} will be created in Namespace: {}", testStorage.getTargetClusterName(), mirrorMakerName, MAIN_TEST_NAMESPACE);

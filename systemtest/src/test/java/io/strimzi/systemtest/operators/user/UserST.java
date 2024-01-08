@@ -255,7 +255,7 @@ class UserST extends AbstractST {
 
     @ParallelNamespaceTest
     void testCreatingUsersWithSecretPrefix(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext, Environment.TEST_SUITE_NAMESPACE);
+        final TestStorage testStorage = storageMap.get(extensionContext);
 
         final String secretPrefix = "top-secret-";
         final String tlsUserName = "encrypted-leopold";

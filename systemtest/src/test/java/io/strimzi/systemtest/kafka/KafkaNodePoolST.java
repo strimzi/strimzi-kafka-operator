@@ -64,7 +64,7 @@ public class KafkaNodePoolST extends AbstractST {
      */
     @ParallelNamespaceTest
     void testKafkaNodePoolBrokerIdsManagementUsingAnnotations(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+        final TestStorage testStorage = storageMap.get(extensionContext);
         final String nodePoolNameA = testStorage.getKafkaNodePoolName() + "-a";
         final String nodePoolNameB = testStorage.getKafkaNodePoolName() + "-b";
         final String nodePoolNameInitial = testStorage.getKafkaNodePoolName() + "-initial";
@@ -161,7 +161,7 @@ public class KafkaNodePoolST extends AbstractST {
      */
     @ParallelNamespaceTest
     void testNodePoolsAdditionAndRemoval(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+        final TestStorage testStorage = storageMap.get(extensionContext);
         // node pools name convention is 'A' for all roles (: if possible i.e. based on feature gate) 'B' for broker roles.
         final String poolAName = testStorage.getKafkaNodePoolName() + "-a";
         final String poolB1Name = testStorage.getKafkaNodePoolName() + "-b1";

@@ -79,7 +79,7 @@ public class CustomCaST extends AbstractST {
      */
     @ParallelNamespaceTest
     void testReplacingCustomClusterKeyPairToInvokeRenewalProcess(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+        final TestStorage testStorage = storageMap.get(extensionContext);
         // Generate root and intermediate certificate authority with cluster CA
         SystemTestCertHolder clusterCa = new SystemTestCertHolder(
             "CN=" + testStorage.getTestName() + "ClusterCA",
@@ -167,7 +167,7 @@ public class CustomCaST extends AbstractST {
      */
     @ParallelNamespaceTest
     void testReplacingCustomClientsKeyPairToInvokeRenewalProcess(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+        final TestStorage testStorage = storageMap.get(extensionContext);
         // Generate root and intermediate certificate authority with clients CA
         final SystemTestCertHolder clientsCa = new SystemTestCertHolder(
             "CN=" + testStorage.getTestName() + "ClientsCA",
@@ -221,7 +221,7 @@ public class CustomCaST extends AbstractST {
      */
     @ParallelNamespaceTest
     void testCustomClusterCaAndClientsCaCertificates(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+        final TestStorage testStorage = storageMap.get(extensionContext);
 
         final SystemTestCertHolder clientsCa = new SystemTestCertHolder(
             "CN=" + testStorage.getTestName() + "ClientsCA",
@@ -306,7 +306,7 @@ public class CustomCaST extends AbstractST {
      */
     @ParallelNamespaceTest
     void testReplaceCustomClusterCACertificateValidityToInvokeRenewalProcess(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+        final TestStorage testStorage = storageMap.get(extensionContext);
         final int renewalDays = 15;
         final int newRenewalDays = 150;
         final int validityDays = 20;
@@ -428,7 +428,7 @@ public class CustomCaST extends AbstractST {
      */
     @ParallelNamespaceTest
     void testReplaceCustomClientsCACertificateValidityToInvokeRenewalProcess(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+        final TestStorage testStorage = storageMap.get(extensionContext);
         final int renewalDays = 15;
         final int newRenewalDays = 150;
         final int validityDays = 20;

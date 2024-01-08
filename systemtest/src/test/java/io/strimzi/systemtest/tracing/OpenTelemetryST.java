@@ -434,7 +434,7 @@ public class OpenTelemetryST extends AbstractST {
 
     @BeforeEach
     void createTestResources(final ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext, Environment.TEST_SUITE_NAMESPACE);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         SetupJaeger.deployJaegerInstance(extensionContext, testStorage.getNamespaceName());
 

@@ -188,7 +188,6 @@ class LogSettingST extends AbstractST {
     void testKafkaLogSetting(ExtensionContext extensionContext) {
         final TestStorage testStorage = storageMap.get(extensionContext);
 
-        String kafkaMap = KafkaResources.kafkaMetricsAndLogConfigMapName(LOG_SETTING_CLUSTER_NAME);
         String zookeeperMap = KafkaResources.zookeeperMetricsAndLogConfigMapName(LOG_SETTING_CLUSTER_NAME);
         String topicOperatorMap = String.format("%s-%s", LOG_SETTING_CLUSTER_NAME, "entity-topic-operator-config");
         String userOperatorMap = String.format("%s-%s", LOG_SETTING_CLUSTER_NAME, "entity-user-operator-config");
@@ -204,11 +203,8 @@ class LogSettingST extends AbstractST {
         Map<String, String> kafkaPods = PodUtils.podSnapshot(Environment.TEST_SUITE_NAMESPACE, kafkaSelector);
         Map<String, String> zkPods = PodUtils.podSnapshot(Environment.TEST_SUITE_NAMESPACE, zkSelector);
 
-        String userName = testStorage.getKafkaUsername();
-        String topicName = testStorage.getTopicName();
-
-        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(LOG_SETTING_CLUSTER_NAME, topicName, Environment.TEST_SUITE_NAMESPACE).build());
-        resourceManager.createResourceWithWait(extensionContext, KafkaUserTemplates.tlsUser(Environment.TEST_SUITE_NAMESPACE, LOG_SETTING_CLUSTER_NAME, userName).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(LOG_SETTING_CLUSTER_NAME, testStorage.getTopicName(), Environment.TEST_SUITE_NAMESPACE).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaUserTemplates.tlsUser(Environment.TEST_SUITE_NAMESPACE, LOG_SETTING_CLUSTER_NAME, testStorage.getKafkaUsername()).build());
 
         LOGGER.info("Checking if Kafka, ZooKeeper, TO and UO of cluster: {} has log level set properly", LOG_SETTING_CLUSTER_NAME);
         StUtils.getKafkaConfigurationConfigMaps(LOG_SETTING_CLUSTER_NAME, 3)
@@ -277,8 +273,7 @@ class LogSettingST extends AbstractST {
     @Tag(CONNECT)
     void testConnectLogSetting(ExtensionContext extensionContext) {
         final TestStorage testStorage = storageMap.get(extensionContext);
-        String clusterName = testStorage.getClusterName();
-        String connectClusterName = clusterName + "-connect";
+        String connectClusterName = testStorage.getClusterName() + "-connect";
 
         resourceManager.createResourceWithWait(extensionContext, KafkaConnectTemplates.kafkaConnect(connectClusterName, Environment.TEST_SUITE_NAMESPACE, LOG_SETTING_CLUSTER_NAME, 1)
             .editMetadata()
@@ -315,8 +310,7 @@ class LogSettingST extends AbstractST {
     @Tag(MIRROR_MAKER)
     void testMirrorMakerLogSetting(ExtensionContext extensionContext) {
         final TestStorage testStorage = storageMap.get(extensionContext);
-        String clusterName = testStorage.getClusterName();
-        String mirrorMakerName = clusterName + "-mirror-maker";
+        String mirrorMakerName = testStorage.getClusterName() + "-mirror-maker";
 
         resourceManager.createResourceWithWait(extensionContext, KafkaMirrorMakerTemplates.kafkaMirrorMaker(mirrorMakerName, LOG_SETTING_CLUSTER_NAME, GC_LOGGING_SET_NAME, "my-group", 1, false)
             .editMetadata()
@@ -352,9 +346,8 @@ class LogSettingST extends AbstractST {
     @Tag(MIRROR_MAKER2)
     void testMirrorMaker2LogSetting(ExtensionContext extensionContext) {
         final TestStorage testStorage = storageMap.get(extensionContext);
-        final String clusterName = testStorage.getClusterName();
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaMirrorMaker2Templates.kafkaMirrorMaker2(clusterName, LOG_SETTING_CLUSTER_NAME, GC_LOGGING_SET_NAME, 1, false)
+        resourceManager.createResourceWithWait(extensionContext, KafkaMirrorMaker2Templates.kafkaMirrorMaker2(testStorage.getClusterName(), LOG_SETTING_CLUSTER_NAME, GC_LOGGING_SET_NAME, 1, false)
             .editMetadata()
                 .withNamespace(Environment.TEST_SUITE_NAMESPACE)
             .endMetadata()
@@ -368,31 +361,29 @@ class LogSettingST extends AbstractST {
             .endSpec()
             .build());
 
-        final String mm2DepName = KafkaMirrorMaker2Resources.componentName(clusterName);
-        final String mirrorMakerMap = KafkaMirrorMaker2Resources.metricsAndLogConfigMapName(clusterName);
-        final LabelSelector labelSelector = KafkaMirrorMaker2Resource.getLabelSelector(clusterName, KafkaMirrorMaker2Resources.componentName(clusterName));
-        final Map<String, String> mm2Pods = PodUtils.podSnapshot(Environment.TEST_SUITE_NAMESPACE, labelSelector);
+        final String mm2DepName = KafkaMirrorMaker2Resources.componentName(testStorage.getClusterName());
+        final String mirrorMakerMap = KafkaMirrorMaker2Resources.metricsAndLogConfigMapName(testStorage.getClusterName());
+        final Map<String, String> mm2Pods = PodUtils.podSnapshot(Environment.TEST_SUITE_NAMESPACE, testStorage.getMM2Selector());
 
         LOGGER.info("Checking if MirrorMaker2 has log level set properly");
         assertThat("KafkaMirrorMaker2's log level is set properly", checkLoggersLevel(Environment.TEST_SUITE_NAMESPACE, MIRROR_MAKER_LOGGERS, mirrorMakerMap), is(true));
-        this.checkGcLoggingPods(Environment.TEST_SUITE_NAMESPACE, labelSelector, true);
-        this.checkGcLogging(Environment.TEST_SUITE_NAMESPACE, labelSelector, mm2DepName, true);
+        this.checkGcLoggingPods(Environment.TEST_SUITE_NAMESPACE, testStorage.getMM2Selector(), true);
+        this.checkGcLogging(Environment.TEST_SUITE_NAMESPACE, testStorage.getMM2Selector(), mm2DepName, true);
 
-        KafkaMirrorMaker2Resource.replaceKafkaMirrorMaker2ResourceInSpecificNamespace(clusterName, mm2 -> mm2.getSpec().setJvmOptions(JVM_OPTIONS), Environment.TEST_SUITE_NAMESPACE);
-        StUtils.waitTillStrimziPodSetOrDeploymentRolled(Environment.TEST_SUITE_NAMESPACE, mm2DepName, 1, mm2Pods, labelSelector);
+        KafkaMirrorMaker2Resource.replaceKafkaMirrorMaker2ResourceInSpecificNamespace(testStorage.getClusterName(), mm2 -> mm2.getSpec().setJvmOptions(JVM_OPTIONS), Environment.TEST_SUITE_NAMESPACE);
+        StUtils.waitTillStrimziPodSetOrDeploymentRolled(Environment.TEST_SUITE_NAMESPACE, mm2DepName, 1, mm2Pods, testStorage.getMM2Selector());
 
-        this.checkGcLogging(Environment.TEST_SUITE_NAMESPACE, labelSelector, mm2DepName,  false);
+        this.checkGcLogging(Environment.TEST_SUITE_NAMESPACE, testStorage.getMM2Selector(), mm2DepName,  false);
 
-        kubectlGetStrimziUntilOperationIsSuccessful(Environment.TEST_SUITE_NAMESPACE, clusterName);
-        checkContainersHaveProcessOneAsTini(Environment.TEST_SUITE_NAMESPACE, clusterName);
+        kubectlGetStrimziUntilOperationIsSuccessful(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName());
+        checkContainersHaveProcessOneAsTini(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName());
     }
 
     @ParallelTest
     @Tag(BRIDGE)
     void testBridgeLogSetting(ExtensionContext extensionContext) {
         final TestStorage testStorage = storageMap.get(extensionContext);
-        final String clusterName = testStorage.getClusterName();
-        final String bridgeName = clusterName + "-bridge";
+        final String bridgeName = testStorage.getClusterName() + "-bridge";
 
         resourceManager.createResourceWithWait(extensionContext, KafkaBridgeTemplates.kafkaBridge(bridgeName, LOG_SETTING_CLUSTER_NAME, KafkaResources.plainBootstrapAddress(LOG_SETTING_CLUSTER_NAME), 1)
             .editMetadata()

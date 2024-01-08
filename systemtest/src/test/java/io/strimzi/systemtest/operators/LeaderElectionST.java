@@ -64,7 +64,7 @@ public class LeaderElectionST extends AbstractST {
     @IsolatedTest
     @Tag(ACCEPTANCE)
     void testLeaderElection(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+        final TestStorage testStorage = storageMap.get(extensionContext);
 
         // create CO with 2 replicas, wait for Deployment readiness and leader election
         clusterOperator = clusterOperator.defaultInstallation(extensionContext)
@@ -104,7 +104,7 @@ public class LeaderElectionST extends AbstractST {
         // Currently there is no way how to disable LeaderElection when deploying CO via Helm (duplicated envs)
         assumeTrue(!Environment.isHelmInstall());
 
-        final TestStorage testStorage = new TestStorage(extensionContext);
+        final TestStorage testStorage = storageMap.get(extensionContext);
 
         // create CO with 1 replicas and with disabled leader election, wait for Deployment readiness
         clusterOperator = clusterOperator.defaultInstallation(extensionContext)

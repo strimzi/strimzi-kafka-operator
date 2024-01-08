@@ -80,23 +80,19 @@ public class KRaftKafkaUpgradeDowngradeST extends AbstractKRaftUpgradeST {
         final TestStorage testStorage = storageMap.get(testContext);
         List<TestKafkaVersion> sortedVersions = TestKafkaVersion.getSupportedKafkaVersions();
 
-        String clusterName = testStorage.getClusterName();
-        String producerName = clusterName + "-producer";
-        String consumerName = clusterName + "-consumer";
-
         for (int x = sortedVersions.size() - 1; x > 0; x--) {
             TestKafkaVersion initialVersion = sortedVersions.get(x);
             TestKafkaVersion newVersion = sortedVersions.get(x - 1);
 
             // If it is a downgrade then we make sure that we are using the lowest metadataVersion from the whole list
             String metadataVersion = sortedVersions.get(0).metadataVersion();
-            runVersionChange(initialVersion, newVersion, producerName, consumerName, metadataVersion, 3, 3, testContext);
+            runVersionChange(initialVersion, newVersion, testStorage.getProducerName(), testStorage.getConsumerName(), metadataVersion, 3, 3, testContext);
         }
 
         // ##############################
         // Validate that continuous clients finished successfully
         // ##############################
-        ClientUtils.waitForClientsSuccess(producerName, consumerName, TestConstants.CO_NAMESPACE, continuousClientsMessageCount);
+        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), TestConstants.CO_NAMESPACE, continuousClientsMessageCount);
         // ##############################
     }
 

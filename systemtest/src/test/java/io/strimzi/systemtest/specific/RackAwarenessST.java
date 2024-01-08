@@ -90,8 +90,7 @@ class RackAwarenessST extends AbstractST {
                 .build());
 
         LOGGER.info("Kafka cluster deployed successfully");
-        String ssName = testStorage.getKafkaStatefulSetName();
-        String podName = PodUtils.getPodNameByPrefix(testStorage.getNamespaceName(), ssName);
+        String podName = PodUtils.getPodNameByPrefix(testStorage.getNamespaceName(), testStorage.getKafkaStatefulSetName());
         Pod pod = kubeClient().getPod(testStorage.getNamespaceName(), podName);
 
         // check that spec matches the actual pod configuration

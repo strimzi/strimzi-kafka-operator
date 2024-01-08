@@ -86,7 +86,7 @@ public class NetworkPoliciesST extends AbstractST {
     void testNetworkPoliciesOnListenersWhenOperatorIsInSameNamespaceAsOperands(ExtensionContext extensionContext) {
         assumeTrue(!Environment.isHelmInstall() && !Environment.isOlmInstall());
 
-        final TestStorage testStorage = new TestStorage(extensionContext, Environment.TEST_SUITE_NAMESPACE);
+        final TestStorage testStorage = storageMap.get(extensionContext);
 
         final String topicNameAccessedTls = testStorage.getTopicName() + "-accessed-tls";
         final String topicNameAccessedPlain = testStorage.getTopicName() + "-accessed-plain";
@@ -240,7 +240,6 @@ public class NetworkPoliciesST extends AbstractST {
         assumeTrue(!Environment.isHelmInstall() && !Environment.isOlmInstall());
 
         final TestStorage testStorage = storageMap.get(extensionContext);
-        String clusterName = testStorage.getClusterName();
         String secondNamespace = "second-" + Environment.TEST_SUITE_NAMESPACE;
 
         Map<String, String> labels = new HashMap<>();
@@ -269,15 +268,15 @@ public class NetworkPoliciesST extends AbstractST {
 
         cluster.setNamespace(secondNamespace);
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaWithMetrics(clusterName, secondNamespace, 3, 3)
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaWithMetrics(testStorage.getClusterName(), secondNamespace, 3, 3)
             .editMetadata()
                 .addToLabels(labels)
             .endMetadata()
             .build());
 
-        checkNetworkPoliciesInNamespace(clusterName, secondNamespace);
+        checkNetworkPoliciesInNamespace(testStorage.getClusterName(), secondNamespace);
 
-        changeKafkaConfigurationAndCheckObservedGeneration(clusterName, secondNamespace);
+        changeKafkaConfigurationAndCheckObservedGeneration(testStorage.getClusterName(), secondNamespace);
     }
 
     @IsolatedTest("Specific Cluster Operator for test case")
@@ -286,7 +285,6 @@ public class NetworkPoliciesST extends AbstractST {
         assumeTrue(!Environment.isHelmInstall() && !Environment.isOlmInstall());
 
         final TestStorage testStorage = storageMap.get(extensionContext);
-        final String clusterName = testStorage.getClusterName();
 
         EnvVar networkPolicyGenerationEnv = new EnvVarBuilder()
             .withName("STRIMZI_NETWORK_POLICY_GENERATION")
@@ -300,10 +298,10 @@ public class NetworkPoliciesST extends AbstractST {
             .createInstallation()
             .runInstallation();
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3)
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaWithCruiseControl(testStorage.getClusterName(), 3, 3)
             .build());
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaConnectTemplates.kafkaConnect(clusterName, Environment.TEST_SUITE_NAMESPACE, 1)
+        resourceManager.createResourceWithWait(extensionContext, KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), Environment.TEST_SUITE_NAMESPACE, 1)
                 .build());
 
         List<NetworkPolicy> networkPolicyList = kubeClient().getClient().network().networkPolicies().list().getItems().stream()

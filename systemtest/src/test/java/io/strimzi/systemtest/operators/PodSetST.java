@@ -46,7 +46,7 @@ public class PodSetST extends AbstractST {
 
     @IsolatedTest("We are changing CO env variables in this test")
     void testPodSetOnlyReconciliation(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+        final TestStorage testStorage = storageMap.get(extensionContext);
         final Map<String, String> coPod = DeploymentUtils.depSnapshot(clusterOperator.getDeploymentNamespace(), clusterOperator.getClusterOperatorName());
         final int replicas = 3;
         final int probeTimeoutSeconds = 6;
