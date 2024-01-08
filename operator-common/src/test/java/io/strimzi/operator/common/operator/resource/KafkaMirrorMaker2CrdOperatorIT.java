@@ -6,8 +6,8 @@ package io.strimzi.operator.common.operator.resource;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.KafkaMirrorMaker2List;
-import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
-import io.strimzi.api.kafka.model.KafkaMirrorMaker2Builder;
+import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2;
+import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Builder;
 import io.strimzi.test.TestUtils;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;

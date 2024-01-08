@@ -8,8 +8,8 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.annotations.DeprecatedType;
-import io.strimzi.api.kafka.model.UnknownPropertyPreserving;
-import io.strimzi.api.kafka.model.status.Condition;
+import io.strimzi.api.kafka.model.common.Condition;
+import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 

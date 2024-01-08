@@ -5,7 +5,7 @@
 
 package io.strimzi.operator.cluster.model;
 
-import io.strimzi.api.kafka.model.AbstractConnectorSpec;
+import io.strimzi.api.kafka.model.connector.AbstractConnectorSpec;
 import io.strimzi.operator.common.Reconciliation;
 
 import java.util.HashMap;

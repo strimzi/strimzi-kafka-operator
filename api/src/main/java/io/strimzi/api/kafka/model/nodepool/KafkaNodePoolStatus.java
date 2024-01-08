@@ -6,9 +6,9 @@ package io.strimzi.api.kafka.model.nodepool;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import io.strimzi.api.kafka.model.Constants;
-import io.strimzi.api.kafka.model.status.Status;
 import io.strimzi.crdgenerator.annotations.AddedIn;
+import io.strimzi.api.kafka.model.common.Constants;
+import io.strimzi.api.kafka.model.kafka.Status;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;

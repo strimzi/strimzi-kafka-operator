@@ -6,7 +6,7 @@
 package io.strimzi.operator.cluster.model;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.strimzi.api.kafka.model.KafkaClusterSpec;
+import io.strimzi.api.kafka.model.kafka.KafkaClusterSpec;
 import io.strimzi.kafka.config.model.ConfigModel;
 import io.strimzi.kafka.config.model.ConfigModels;
 import io.strimzi.operator.common.Reconciliation;

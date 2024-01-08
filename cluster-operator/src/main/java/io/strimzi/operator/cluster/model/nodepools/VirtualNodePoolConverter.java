@@ -4,13 +4,13 @@
  */
 package io.strimzi.operator.cluster.model.nodepools;
 
-import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.api.kafka.model.kafka.Kafka;
+import io.strimzi.api.kafka.model.kafka.KafkaClusterTemplate;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolBuilder;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolTemplate;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolTemplateBuilder;
 import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
-import io.strimzi.api.kafka.model.template.KafkaClusterTemplate;
 
 import java.util.List;
 import java.util.stream.IntStream;

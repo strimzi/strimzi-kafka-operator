@@ -4,8 +4,8 @@
  */
 package io.strimzi.systemtest.parallel;
 
-import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.listeners.ExecutionListener;
 import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.systemtest.utils.StUtils;

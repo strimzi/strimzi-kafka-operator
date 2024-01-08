@@ -6,7 +6,6 @@ package io.strimzi.kafka.init;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.operator.common.OperatorKubernetesClientBuilder;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

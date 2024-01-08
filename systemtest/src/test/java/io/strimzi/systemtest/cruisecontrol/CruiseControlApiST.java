@@ -4,11 +4,11 @@
  */
 package io.strimzi.systemtest.cruisecontrol;
 
-import io.strimzi.api.kafka.model.KafkaRebalance;
-import io.strimzi.operator.common.model.cruisecontrol.CruiseControlEndpoints;
-import io.strimzi.operator.common.model.cruisecontrol.CruiseControlUserTaskStatus;
+import io.strimzi.api.kafka.model.rebalance.KafkaRebalance;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.model.cruisecontrol.CruiseControlEndpoints;
+import io.strimzi.operator.common.model.cruisecontrol.CruiseControlUserTaskStatus;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.KRaftWithoutUTONotSupported;

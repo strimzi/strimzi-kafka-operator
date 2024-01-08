@@ -5,10 +5,10 @@
 
 package io.strimzi.operator.cluster.model;
 
-import io.strimzi.api.kafka.model.CruiseControlSpec;
-import io.strimzi.operator.common.model.cruisecontrol.CruiseControlGoals;
-import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters;
+import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlSpec;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters;
+import io.strimzi.operator.common.model.cruisecontrol.CruiseControlGoals;
 
 import java.util.Collections;
 import java.util.List;

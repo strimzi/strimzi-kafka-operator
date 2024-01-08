@@ -33,6 +33,7 @@
   You have to first downgrade to Strimzi version between 0.34 to 0.38, disable the `StableConnectIdentities` feature gate, and only then downgrade to an older Strimzi version.
 * Strimzi 0.39.0 (and any of its patch releases) is the last Strimzi version with support for Kubernetes 1.21 and 1.22.
   From Strimzi 0.40.0 on, we will support only Kubernetes 1.23 and newer.
+* The `api` module was refactored and classes were moved to new packages
 
 ## 0.38.0
 
@@ -74,7 +75,7 @@
     config.providers.env.class: org.apache.kafka.common.config.provider.EnvVarConfigProvider
     # ...
   ```
-
+  
 ## 0.37.0
 
 * The `StableConnectIdentites` feature gate moves to beta stage.

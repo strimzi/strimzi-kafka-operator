@@ -5,11 +5,11 @@
 package io.strimzi.systemtest.upgrade.regular;
 
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
-import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.KafkaTopic;
-import io.strimzi.api.kafka.model.KafkaTopicBuilder;
-import io.strimzi.systemtest.TestConstants;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.api.kafka.model.topic.KafkaTopic;
+import io.strimzi.api.kafka.model.topic.KafkaTopicBuilder;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
@@ -20,6 +20,7 @@ import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.upgrade.AbstractUpgradeST;
 import io.strimzi.systemtest.upgrade.OlmVersionModificationData;
 import io.strimzi.systemtest.upgrade.VersionModificationDataLoader;
+import io.strimzi.systemtest.upgrade.VersionModificationDataLoader.ModificationType;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.FileUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
@@ -31,15 +32,14 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtensionContext;
-import io.strimzi.systemtest.upgrade.VersionModificationDataLoader.ModificationType;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 
-import static io.strimzi.systemtest.TestConstants.OLM_UPGRADE;
 import static io.strimzi.systemtest.TestConstants.CO_NAMESPACE;
+import static io.strimzi.systemtest.TestConstants.OLM_UPGRADE;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;

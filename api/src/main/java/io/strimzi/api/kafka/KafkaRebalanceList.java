@@ -5,7 +5,7 @@
 package io.strimzi.api.kafka;
 
 import io.fabric8.kubernetes.api.model.DefaultKubernetesResourceList;
-import io.strimzi.api.kafka.model.KafkaRebalance;
+import io.strimzi.api.kafka.model.rebalance.KafkaRebalance;
 
 /**
  * A {@code DefaultKubernetesResourceList<KafkaRebalance>} required for using Fabric8 CRD support.

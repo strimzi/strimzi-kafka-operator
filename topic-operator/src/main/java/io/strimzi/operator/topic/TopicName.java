@@ -4,7 +4,7 @@
  */
 package io.strimzi.operator.topic;
 
-import io.strimzi.api.kafka.model.KafkaTopic;
+import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import org.apache.kafka.common.internals.Topic;
 
 import java.math.BigInteger;

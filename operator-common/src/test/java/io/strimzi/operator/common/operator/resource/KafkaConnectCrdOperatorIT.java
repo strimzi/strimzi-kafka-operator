@@ -6,8 +6,8 @@ package io.strimzi.operator.common.operator.resource;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.KafkaConnectList;
-import io.strimzi.api.kafka.model.KafkaConnect;
-import io.strimzi.api.kafka.model.KafkaConnectBuilder;
+import io.strimzi.api.kafka.model.connect.KafkaConnect;
+import io.strimzi.api.kafka.model.connect.KafkaConnectBuilder;
 import io.strimzi.test.TestUtils;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;

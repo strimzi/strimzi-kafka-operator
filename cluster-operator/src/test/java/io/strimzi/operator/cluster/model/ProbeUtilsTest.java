@@ -6,10 +6,10 @@ package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.Probe;
 import io.fabric8.kubernetes.api.model.ProbeBuilder;
-import io.strimzi.api.kafka.model.EntityTopicOperatorSpec;
-import io.strimzi.api.kafka.model.EntityTopicOperatorSpecBuilder;
-import io.strimzi.api.kafka.model.TlsSidecar;
-import io.strimzi.api.kafka.model.TlsSidecarBuilder;
+import io.strimzi.api.kafka.model.kafka.entityoperator.EntityTopicOperatorSpec;
+import io.strimzi.api.kafka.model.kafka.entityoperator.EntityTopicOperatorSpecBuilder;
+import io.strimzi.api.kafka.model.kafka.entityoperator.TlsSidecar;
+import io.strimzi.api.kafka.model.kafka.entityoperator.TlsSidecarBuilder;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
 
@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @ParallelSuite
 public class ProbeUtilsTest {
 
-    private static final io.strimzi.api.kafka.model.Probe DEFAULT_CONFIG = new io.strimzi.api.kafka.model.ProbeBuilder()
+    private static final io.strimzi.api.kafka.model.common.Probe DEFAULT_CONFIG = new io.strimzi.api.kafka.model.common.ProbeBuilder()
             .withInitialDelaySeconds(1)
             .withTimeoutSeconds(2)
             .withPeriodSeconds(3)
@@ -52,10 +52,10 @@ public class ProbeUtilsTest {
 
     }
 
-    // Inherits defaults from the io.strimzi.api.kafka.model.Probe class
+    // Inherits defaults from the io.strimzi.api.kafka.model.common.Probe class
     @ParallelTest
     public void testDefaultBuilderNoValues() {
-        Probe probe = ProbeUtils.defaultBuilder(new io.strimzi.api.kafka.model.ProbeBuilder().build())
+        Probe probe = ProbeUtils.defaultBuilder(new io.strimzi.api.kafka.model.common.ProbeBuilder().build())
                 .build();
         assertThat(probe, is(new ProbeBuilder()
                 .withInitialDelaySeconds(15)
@@ -192,7 +192,7 @@ public class ProbeUtilsTest {
 
     @ParallelTest
     public void testZeroInitialDelayIsSetToNull() {
-        io.strimzi.api.kafka.model.Probe probeConfig = new io.strimzi.api.kafka.model.ProbeBuilder()
+        io.strimzi.api.kafka.model.common.Probe probeConfig = new io.strimzi.api.kafka.model.common.ProbeBuilder()
                 .withInitialDelaySeconds(0)
                 .build();
 
@@ -228,7 +228,7 @@ public class ProbeUtilsTest {
                 .endStartupProbe()
                 .build();
 
-        io.strimzi.api.kafka.model.Probe probe = ProbeUtils.extractLivenessProbeOptionsOrDefault(spec, ProbeUtils.DEFAULT_HEALTHCHECK_OPTIONS);
+        io.strimzi.api.kafka.model.common.Probe probe = ProbeUtils.extractLivenessProbeOptionsOrDefault(spec, ProbeUtils.DEFAULT_HEALTHCHECK_OPTIONS);
         assertThat(probe.getInitialDelaySeconds(), is(11));
         assertThat(probe.getTimeoutSeconds(), is(12));
         assertThat(probe.getPeriodSeconds(), is(13));
@@ -254,7 +254,7 @@ public class ProbeUtilsTest {
     public void testExtractProbeOptionNotSet()  {
         EntityTopicOperatorSpec spec = new EntityTopicOperatorSpecBuilder().build();
 
-        io.strimzi.api.kafka.model.Probe probe = ProbeUtils.extractLivenessProbeOptionsOrDefault(spec, ProbeUtils.DEFAULT_HEALTHCHECK_OPTIONS);
+        io.strimzi.api.kafka.model.common.Probe probe = ProbeUtils.extractLivenessProbeOptionsOrDefault(spec, ProbeUtils.DEFAULT_HEALTHCHECK_OPTIONS);
         assertThat(probe.getInitialDelaySeconds(), is(15));
         assertThat(probe.getTimeoutSeconds(), is(5));
         assertThat(probe.getPeriodSeconds(), is(nullValue()));

@@ -11,11 +11,11 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaBridgeList;
-import io.strimzi.api.kafka.model.KafkaBridge;
+import io.strimzi.api.kafka.model.bridge.KafkaBridge;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.enums.CustomResourceStatus;
-import io.strimzi.systemtest.resources.ResourceType;
 import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.ResourceType;
 
 import java.util.HashMap;
 import java.util.Map;

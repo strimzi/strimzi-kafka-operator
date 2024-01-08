@@ -4,7 +4,7 @@
  */
 package io.strimzi.operator.topic;
 
-import io.strimzi.api.kafka.model.KafkaTopic;
+import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.test.container.StrimziKafkaCluster;
 import io.vertx.core.Future;
 import kafka.server.KafkaConfig$;

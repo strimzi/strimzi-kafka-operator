@@ -4,8 +4,8 @@
  */
 package io.strimzi.systemtest.upgrade.regular;
 
-import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.KafkaTopic;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.resources.NamespaceManager;
@@ -15,6 +15,7 @@ import io.strimzi.systemtest.upgrade.AbstractUpgradeST;
 import io.strimzi.systemtest.upgrade.BundleVersionModificationData;
 import io.strimzi.systemtest.upgrade.UpgradeKafkaVersion;
 import io.strimzi.systemtest.upgrade.VersionModificationDataLoader;
+import io.strimzi.systemtest.upgrade.VersionModificationDataLoader.ModificationType;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
@@ -30,7 +31,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-import io.strimzi.systemtest.upgrade.VersionModificationDataLoader.ModificationType;
 
 import java.io.IOException;
 import java.util.Map;

@@ -29,13 +29,13 @@ import io.fabric8.kubernetes.api.model.TopologySpreadConstraint;
 import io.fabric8.kubernetes.api.model.TopologySpreadConstraintBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentStrategy;
-import io.strimzi.api.kafka.model.StrimziPodSet;
-import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
-import io.strimzi.api.kafka.model.storage.Storage;
-import io.strimzi.api.kafka.model.template.DeploymentTemplateBuilder;
-import io.strimzi.api.kafka.model.template.PodTemplate;
-import io.strimzi.api.kafka.model.template.PodTemplateBuilder;
-import io.strimzi.api.kafka.model.template.ResourceTemplateBuilder;
+import io.strimzi.api.kafka.model.common.template.DeploymentTemplateBuilder;
+import io.strimzi.api.kafka.model.common.template.PodTemplate;
+import io.strimzi.api.kafka.model.common.template.PodTemplateBuilder;
+import io.strimzi.api.kafka.model.common.template.ResourceTemplateBuilder;
+import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
+import io.strimzi.api.kafka.model.kafka.Storage;
+import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import org.junit.jupiter.api.Test;
@@ -135,7 +135,7 @@ public class WorkloadUtilsTest {
                 null,
                 REPLICAS,
                 Map.of("extra", "annotations"),
-                WorkloadUtils.deploymentStrategy(io.strimzi.api.kafka.model.template.DeploymentStrategy.RECREATE),
+                WorkloadUtils.deploymentStrategy(io.strimzi.api.kafka.model.common.template.DeploymentStrategy.RECREATE),
                 DUMMY_POD_TEMPLATE_SPEC
         );
 
@@ -169,7 +169,7 @@ public class WorkloadUtilsTest {
                         .build(),
                 REPLICAS,
                 Map.of("extra", "annotations"),
-                WorkloadUtils.deploymentStrategy(io.strimzi.api.kafka.model.template.DeploymentStrategy.ROLLING_UPDATE),
+                WorkloadUtils.deploymentStrategy(io.strimzi.api.kafka.model.common.template.DeploymentStrategy.ROLLING_UPDATE),
                 DUMMY_POD_TEMPLATE_SPEC
         );
 
@@ -964,7 +964,7 @@ public class WorkloadUtilsTest {
 
     @Test
     public void testDeploymentStrategyRecreate()    {
-        DeploymentStrategy strategy = WorkloadUtils.deploymentStrategy(io.strimzi.api.kafka.model.template.DeploymentStrategy.RECREATE);
+        DeploymentStrategy strategy = WorkloadUtils.deploymentStrategy(io.strimzi.api.kafka.model.common.template.DeploymentStrategy.RECREATE);
 
         assertThat(strategy.getType(), is("Recreate"));
         assertThat(strategy.getRollingUpdate(), is(nullValue()));
@@ -972,7 +972,7 @@ public class WorkloadUtilsTest {
 
     @Test
     public void testDeploymentStrategyRollingUpdate()    {
-        DeploymentStrategy strategy = WorkloadUtils.deploymentStrategy(io.strimzi.api.kafka.model.template.DeploymentStrategy.ROLLING_UPDATE);
+        DeploymentStrategy strategy = WorkloadUtils.deploymentStrategy(io.strimzi.api.kafka.model.common.template.DeploymentStrategy.ROLLING_UPDATE);
 
         assertThat(strategy.getType(), is("RollingUpdate"));
         assertThat(strategy.getRollingUpdate().getMaxSurge(), is(new IntOrString(1)));

@@ -6,10 +6,10 @@ package io.strimzi.operator.common.operator.resource;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.KafkaBridgeList;
-import io.strimzi.api.kafka.model.InlineLogging;
-import io.strimzi.api.kafka.model.KafkaBridge;
-import io.strimzi.api.kafka.model.KafkaBridgeBuilder;
-import io.strimzi.api.kafka.model.status.ConditionBuilder;
+import io.strimzi.api.kafka.model.bridge.KafkaBridge;
+import io.strimzi.api.kafka.model.bridge.KafkaBridgeBuilder;
+import io.strimzi.api.kafka.model.common.ConditionBuilder;
+import io.strimzi.api.kafka.model.common.InlineLogging;
 import io.strimzi.test.TestUtils;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;

@@ -5,8 +5,8 @@
 package io.strimzi.systemtest.utils.specific;
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
-import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;

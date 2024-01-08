@@ -6,7 +6,7 @@ package io.strimzi.operator.common.model;
 
 import io.fabric8.kubernetes.api.model.NodeAddress;
 import io.fabric8.kubernetes.api.model.NodeAddressBuilder;
-import io.strimzi.api.kafka.model.listener.NodeAddressType;
+import io.strimzi.api.kafka.model.kafka.listener.NodeAddressType;
 import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.Test;
 

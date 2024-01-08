@@ -4,8 +4,8 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import io.strimzi.api.kafka.model.EntityOperatorSpec;
-import io.strimzi.api.kafka.model.KafkaSpec;
+import io.strimzi.api.kafka.model.kafka.KafkaSpec;
+import io.strimzi.api.kafka.model.kafka.entityoperator.EntityOperatorSpec;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import org.apache.kafka.server.common.MetadataVersion;
 

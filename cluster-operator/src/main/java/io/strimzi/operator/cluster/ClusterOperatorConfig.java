@@ -18,20 +18,20 @@ import io.strimzi.operator.common.operator.resource.ConfigParameterParser;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.HashMap;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.LONG;
+import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.BOOLEAN;
 import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.INTEGER;
+import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.LABEL_PREDICATE;
 import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.LOCAL_OBJECT_REFERENCE_LIST;
+import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.LONG;
 import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.NAMESPACE_SET;
 import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.STRING;
-import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.LABEL_PREDICATE;
-import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.BOOLEAN;
 
 /**
  * Cluster Operator configuration

@@ -5,12 +5,6 @@
 package io.strimzi.kafka.agent;
 
 import com.yammer.metrics.core.Gauge;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import javax.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
@@ -18,6 +12,13 @@ import org.eclipse.jetty.server.handler.ContextHandler;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import javax.servlet.http.HttpServletResponse;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;

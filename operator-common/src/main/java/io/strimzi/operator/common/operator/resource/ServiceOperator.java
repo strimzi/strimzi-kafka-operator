@@ -4,8 +4,6 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
-import static io.strimzi.operator.common.Annotations.LOADBALANCER_ANNOTATION_IGNORELIST;
-
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceList;
 import io.fabric8.kubernetes.api.model.ServicePort;
@@ -22,6 +20,8 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import static io.strimzi.operator.common.Annotations.LOADBALANCER_ANNOTATION_IGNORELIST;
 
 /**
  * Operations for {@code Service}s.

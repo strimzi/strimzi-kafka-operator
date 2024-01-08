@@ -20,10 +20,20 @@ import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
+<<<<<<< HEAD
 import io.strimzi.api.kafka.model.CertificateAuthority;
 import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.TlsSidecarLogLevel;
 import io.strimzi.api.kafka.model.storage.Storage;
+=======
+import io.strimzi.api.kafka.model.common.CertificateAuthority;
+import io.strimzi.api.kafka.model.kafka.Storage;
+import io.strimzi.api.kafka.model.kafka.entityoperator.TlsSidecar;
+import io.strimzi.api.kafka.model.kafka.entityoperator.TlsSidecarLogLevel;
+import io.strimzi.certs.CertAndKey;
+import io.strimzi.operator.common.Annotations;
+import io.strimzi.operator.common.Reconciliation;
+>>>>>>> a38d85ad2 (Added changes)
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.InvalidResourceException;

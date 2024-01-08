@@ -6,9 +6,9 @@ package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.KafkaConnectorList;
-import io.strimzi.api.kafka.model.KafkaConnector;
-import io.strimzi.api.kafka.model.KafkaConnectorBuilder;
-import io.strimzi.api.kafka.model.status.AutoRestartStatusBuilder;
+import io.strimzi.api.kafka.model.connector.AutoRestartStatusBuilder;
+import io.strimzi.api.kafka.model.connector.KafkaConnector;
+import io.strimzi.api.kafka.model.connector.KafkaConnectorBuilder;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;

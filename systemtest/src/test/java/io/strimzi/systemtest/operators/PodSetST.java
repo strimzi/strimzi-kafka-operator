@@ -5,8 +5,8 @@
 package io.strimzi.systemtest.operators;
 
 import io.fabric8.kubernetes.api.model.EnvVar;
-import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.ProbeBuilder;
+import io.strimzi.api.kafka.model.common.ProbeBuilder;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedTest;

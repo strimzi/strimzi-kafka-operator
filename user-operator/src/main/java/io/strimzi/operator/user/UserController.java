@@ -10,7 +10,7 @@ import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
 import io.fabric8.kubernetes.client.informers.cache.Lister;
 import io.strimzi.api.kafka.KafkaUserList;
-import io.strimzi.api.kafka.model.KafkaUser;
+import io.strimzi.api.kafka.model.user.KafkaUser;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.InformerUtils;
 import io.strimzi.operator.common.MetricsProvider;

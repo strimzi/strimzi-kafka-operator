@@ -5,7 +5,7 @@
 package io.strimzi.api.kafka;
 
 import io.fabric8.kubernetes.api.model.DefaultKubernetesResourceList;
-import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
+import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2;
 
 /**
  * A {@code DefaultKubernetesResourceList<KafkaMirrorMaker2>} required for using Fabric8 CRD support.

@@ -5,11 +5,10 @@
 package io.strimzi.operator.topic;
 
 import io.fabric8.kubernetes.client.Watcher;
-import io.strimzi.api.kafka.model.KafkaTopic;
+import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.operator.common.Reconciliation;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
 
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;

@@ -4,12 +4,6 @@
  */
 package io.strimzi.operator.topic;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-
 import io.strimzi.test.container.StrimziKafkaContainer;
 import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.admin.AdminClient;
@@ -18,6 +12,12 @@ import org.apache.kafka.streams.StreamsConfig;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
 
 public class KafkaStreamsTopicStoreIT extends TopicStoreTestBase {
     private static final Map<String, String> MANDATORY_CONFIG;

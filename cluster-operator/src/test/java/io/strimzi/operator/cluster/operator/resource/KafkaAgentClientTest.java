@@ -4,15 +4,14 @@
  */
 package io.strimzi.operator.cluster.operator.resource;
 
+import io.strimzi.operator.common.Reconciliation;
+import org.junit.jupiter.api.Test;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.spy;
-
-import org.junit.jupiter.api.Test;
-
-import io.strimzi.operator.common.Reconciliation;
 
 public class KafkaAgentClientTest {
 

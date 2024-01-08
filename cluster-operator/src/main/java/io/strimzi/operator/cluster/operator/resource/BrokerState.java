@@ -4,10 +4,10 @@
  */
 package io.strimzi.operator.cluster.operator.resource;
 
-import java.util.Map;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+
+import java.util.Map;
 
 /**
  * Java representation of the JSON response from the /v1/broker-state endpoint of the KafkaAgent

@@ -5,13 +5,13 @@
 package io.strimzi.operator.cluster.model.logging;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.strimzi.api.kafka.model.ExternalLogging;
-import io.strimzi.api.kafka.model.InlineLogging;
-import io.strimzi.api.kafka.model.Logging;
+import io.strimzi.api.kafka.model.common.ExternalLogging;
+import io.strimzi.api.kafka.model.common.InlineLogging;
+import io.strimzi.api.kafka.model.common.Logging;
 import io.strimzi.operator.cluster.model.AbstractModel;
-import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
+import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.OrderedProperties;
 
 import java.io.IOException;

@@ -13,7 +13,7 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.base.PatchContext;
 import io.fabric8.kubernetes.client.dsl.base.PatchType;
 import io.strimzi.api.kafka.KafkaTopicList;
-import io.strimzi.api.kafka.model.KafkaTopic;
+import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.VertxUtil;
 import io.strimzi.operator.common.operator.resource.CrdOperator;

@@ -6,7 +6,7 @@ package io.strimzi.operator.cluster.model.securityprofiles;
 
 import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.fabric8.kubernetes.api.model.SecurityContextBuilder;
-import io.strimzi.api.kafka.model.template.ContainerTemplate;
+import io.strimzi.api.kafka.model.common.template.ContainerTemplate;
 import io.strimzi.plugin.security.profiles.PodSecurityProvider;
 import io.strimzi.plugin.security.profiles.impl.RestrictedPodSecurityProvider;
 import org.hamcrest.CoreMatchers;

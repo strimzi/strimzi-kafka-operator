@@ -5,7 +5,7 @@
 package io.strimzi.api.kafka.model.connect.build;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import io.strimzi.api.kafka.model.Constants;
+import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Pattern;
 import io.sundr.builder.annotations.Buildable;

@@ -4,12 +4,6 @@
  */
 package io.strimzi.operator.common.operator.resource.concurrent;
 
-import java.util.List;
-import java.util.Objects;
-import java.util.concurrent.CompletionStage;
-import java.util.concurrent.Executor;
-import java.util.regex.Pattern;
-
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.api.model.LabelSelector;
@@ -21,6 +15,12 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.ResourceDiff;
+
+import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Executor;
+import java.util.regex.Pattern;
 
 /**
  * Abstract resource creation, for a generic resource type {@code R}. This class

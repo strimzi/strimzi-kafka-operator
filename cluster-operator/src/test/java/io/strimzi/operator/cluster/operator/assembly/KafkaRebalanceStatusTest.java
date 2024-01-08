@@ -8,13 +8,13 @@ package io.strimzi.operator.cluster.operator.assembly;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.strimzi.api.kafka.model.KafkaRebalance;
-import io.strimzi.api.kafka.model.KafkaRebalanceBuilder;
-import io.strimzi.api.kafka.model.KafkaRebalanceSpec;
-import io.strimzi.api.kafka.model.KafkaRebalanceSpecBuilder;
+import io.strimzi.api.kafka.model.rebalance.KafkaRebalance;
+import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceBuilder;
+import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceSpec;
+import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceSpecBuilder;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlLoadParameters;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlRebalanceKeys;
-import io.strimzi.operator.common.model.Labels;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.Test;
@@ -24,9 +24,9 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.is;
 
 public class KafkaRebalanceStatusTest {
 

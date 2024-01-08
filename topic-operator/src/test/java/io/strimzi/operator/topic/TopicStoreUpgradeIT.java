@@ -4,12 +4,6 @@
  */
 package io.strimzi.operator.topic;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.TimeUnit;
-
 import io.apicurio.registry.utils.ConcurrentUtil;
 import io.strimzi.operator.topic.zk.Zk;
 import io.strimzi.test.container.StrimziKafkaCluster;
@@ -29,6 +23,12 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 

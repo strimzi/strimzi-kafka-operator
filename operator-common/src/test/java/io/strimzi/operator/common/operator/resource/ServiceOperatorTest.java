@@ -16,14 +16,14 @@ import io.strimzi.operator.common.Reconciliation;
 import io.vertx.core.Vertx;
 import org.junit.jupiter.api.Test;
 
+import java.util.Map;
+
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-
-import java.util.Map;
 
 public class ServiceOperatorTest extends AbstractNamespacedResourceOperatorTest<KubernetesClient, Service, ServiceList, ServiceResource<Service>> {
 

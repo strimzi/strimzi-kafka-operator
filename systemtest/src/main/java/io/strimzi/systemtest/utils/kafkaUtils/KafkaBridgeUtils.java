@@ -5,12 +5,12 @@
 package io.strimzi.systemtest.utils.kafkaUtils;
 
 import io.fabric8.kubernetes.api.model.Service;
-import io.strimzi.api.kafka.model.KafkaBridge;
+import io.strimzi.api.kafka.model.bridge.KafkaBridge;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.templates.kubernetes.ServiceTemplates;
-import io.strimzi.operator.common.model.Labels;
 
 import java.util.HashMap;
 import java.util.Map;

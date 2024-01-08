@@ -6,9 +6,9 @@ package io.strimzi.systemtest.resources.jaeger;
 
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyBuilder;
-import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.NamespaceManager;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.resources.ResourceItem;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;

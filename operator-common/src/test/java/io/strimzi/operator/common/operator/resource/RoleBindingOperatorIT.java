@@ -17,10 +17,9 @@ import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-
-import static java.util.Collections.singletonMap;
 
 @ExtendWith(VertxExtension.class)
 public class RoleBindingOperatorIT extends AbstractNamespacedResourceOperatorIT<KubernetesClient, RoleBinding, RoleBindingList, Resource<RoleBinding>> {

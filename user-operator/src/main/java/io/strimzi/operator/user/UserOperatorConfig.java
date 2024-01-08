@@ -4,24 +4,24 @@
  */
 package io.strimzi.operator.user;
 
-import io.strimzi.operator.common.operator.resource.ConfigParameter;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.operator.resource.ConfigParameter;
 
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.List;
 import java.util.Set;
-import java.util.Collections;
 
-import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.LONG;
-import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.INTEGER;
-import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.NON_EMPTY_STRING;
-import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.SEMICOLON_SEPARATED_LIST;
-import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.PROPERTIES;
-import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.STRING;
-import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.LABEL_PREDICATE;
 import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.BOOLEAN;
+import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.INTEGER;
+import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.LABEL_PREDICATE;
+import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.LONG;
+import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.NON_EMPTY_STRING;
+import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.PROPERTIES;
+import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.SEMICOLON_SEPARATED_LIST;
+import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.STRING;
 import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.strictlyPositive;
 
 /**

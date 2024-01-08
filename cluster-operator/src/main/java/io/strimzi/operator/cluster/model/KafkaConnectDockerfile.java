@@ -4,14 +4,6 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
-
 import io.strimzi.api.kafka.model.connect.build.Artifact;
 import io.strimzi.api.kafka.model.connect.build.Build;
 import io.strimzi.api.kafka.model.connect.build.DownloadableArtifact;
@@ -24,6 +16,14 @@ import io.strimzi.api.kafka.model.connect.build.ZipArtifact;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.Util;
+
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * This class is used to generate the Dockerfile used by Kafka Connect Build. It takes the API definition with the

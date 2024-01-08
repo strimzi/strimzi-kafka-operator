@@ -4,13 +4,13 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import io.strimzi.api.kafka.model.status.Condition;
-import io.strimzi.api.kafka.model.status.ConditionBuilder;
-import io.strimzi.api.kafka.model.status.KafkaStatus;
-import io.strimzi.api.kafka.model.status.KafkaStatusBuilder;
-import io.strimzi.api.kafka.model.status.ListenerAddressBuilder;
-import io.strimzi.api.kafka.model.status.ListenerStatus;
-import io.strimzi.api.kafka.model.status.ListenerStatusBuilder;
+import io.strimzi.api.kafka.model.common.Condition;
+import io.strimzi.api.kafka.model.common.ConditionBuilder;
+import io.strimzi.api.kafka.model.kafka.KafkaStatus;
+import io.strimzi.api.kafka.model.kafka.KafkaStatusBuilder;
+import io.strimzi.api.kafka.model.kafka.listener.ListenerAddressBuilder;
+import io.strimzi.api.kafka.model.kafka.listener.ListenerStatus;
+import io.strimzi.api.kafka.model.kafka.listener.ListenerStatusBuilder;
 import io.strimzi.operator.common.model.StatusDiff;
 import io.strimzi.operator.common.model.StatusUtils;
 import io.strimzi.test.annotations.ParallelSuite;

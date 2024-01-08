@@ -11,9 +11,9 @@ import io.strimzi.test.TestUtils;
 import io.strimzi.test.executor.Exec;
 import io.strimzi.test.executor.ExecResult;
 import io.strimzi.test.k8s.exceptions.KubeClusterException;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.Level;
 
 import java.io.File;
 import java.io.IOException;

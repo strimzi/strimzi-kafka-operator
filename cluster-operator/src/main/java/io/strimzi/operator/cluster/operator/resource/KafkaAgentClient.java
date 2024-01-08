@@ -5,6 +5,17 @@
 package io.strimzi.operator.cluster.operator.resource;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.fabric8.kubernetes.api.model.Secret;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.operator.cluster.model.DnsNameGenerator;
+import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.ReconciliationLogger;
+import io.strimzi.operator.common.Util;
+
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManagerFactory;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URI;
@@ -16,7 +27,6 @@ import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
 import java.security.KeyStore;
-
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
@@ -25,18 +35,6 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManagerFactory;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import io.fabric8.kubernetes.api.model.Secret;
-import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.operator.cluster.model.DnsNameGenerator;
-import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.ReconciliationLogger;
-import io.strimzi.operator.common.Util;
 
 /**
  * Creates HTTP client and interacts with Kafka Agent's REST endpoint
