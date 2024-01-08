@@ -33,3 +33,5 @@ These environment variables do not need to be set if you are deploying the opera
 include::../../modules/operators/con-operators-namespaces.adoc[leveloffset=+1]
 //cluster operator's management of rbac resources
 include::../../modules/operators/ref-operator-cluster-rbac-resources.adoc[leveloffset=+1]
+//cluster operator's management of pod resources
+include::../../modules/configuring/con-pod-management.adoc[leveloffset=+1]
