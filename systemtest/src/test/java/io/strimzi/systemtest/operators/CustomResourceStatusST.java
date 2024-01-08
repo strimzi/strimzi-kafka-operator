@@ -109,8 +109,8 @@ class CustomResourceStatusST extends AbstractST {
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     void testKafkaStatus(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
         LOGGER.info("Checking status of deployed Kafka cluster");
+        final TestStorage testStorage = storageMap.get(extensionContext);
         KafkaUtils.waitForKafkaReady(Environment.TEST_SUITE_NAMESPACE, CUSTOM_RESOURCE_STATUS_CLUSTER_NAME);
 
         ExternalKafkaClient externalKafkaClient = new ExternalKafkaClient.Builder()
