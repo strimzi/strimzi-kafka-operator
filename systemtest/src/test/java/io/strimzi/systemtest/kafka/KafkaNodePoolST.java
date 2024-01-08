@@ -27,19 +27,18 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
-
-import static io.strimzi.operator.common.Util.hashStub;
-import static io.strimzi.systemtest.TestConstants.REGRESSION;
-import static org.junit.jupiter.api.Assumptions.assumeFalse;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
-
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Random;
+
+import static io.strimzi.operator.common.Util.hashStub;
+import static io.strimzi.systemtest.TestConstants.REGRESSION;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 
 @Tag(REGRESSION)

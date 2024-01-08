@@ -5,8 +5,8 @@
 package io.strimzi.systemtest.watcher;
 
 import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.systemtest.TestConstants;
+import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.test.logs.CollectorElement;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
