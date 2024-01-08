@@ -739,10 +739,33 @@ class CrdGenerator {
 
     private ObjectNode buildSchemaProperties(ApiVersion crApiVersion, Class<?> crdClass, boolean description) {
         ObjectNode properties = nf.objectNode();
+
+        buildKindApiVersionAndMetadata(properties, crdClass);
+
         for (Property property : unionOfSubclassProperties(crApiVersion, crdClass)) {
             buildProperty(crApiVersion, properties, property, description);
         }
         return properties;
+    }
+
+    private void buildKindApiVersionAndMetadata(ObjectNode properties, Class<?> crdClass)   {
+        if (crdClass.isAnnotationPresent(Crd.class))    {
+            // Add metadata to the CRD class root
+            ObjectNode apiVersion = properties.putObject("apiVersion");
+            apiVersion.put("type", "string");
+            apiVersion.put("description", "APIVersion defines the versioned schema of this representation of an object. " +
+                    "Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. " +
+                    "More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources");
+
+            ObjectNode kind = properties.putObject("kind");
+            kind.put("type", "string");
+            kind.put("description", "Kind is a string value representing the REST resource this object " +
+                    "represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. " +
+                    "In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds");
+
+            ObjectNode metadata = properties.putObject("metadata");
+            metadata.put("type", "object");
+        }
     }
 
     private void buildProperty(ApiVersion crdApiVersion, ObjectNode properties, Property property, boolean description) {
