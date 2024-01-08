@@ -80,7 +80,7 @@ class HttpBridgeST extends AbstractST {
             .withProducerName(producerName)
             .withBootstrapAddress(KafkaBridgeResources.serviceName(httpBridgeClusterName))
             .withTopicName(topicName)
-            .withMessageCount(MESSAGE_COUNT)
+            .withMessageCount(testStorage.getMessageCount())
             .withPort(TestConstants.HTTP_BRIDGE_DEFAULT_PORT)
             .withDelayMs(1000)
             .withPollInterval(1000)
@@ -92,11 +92,11 @@ class HttpBridgeST extends AbstractST {
 
         resourceManager.createResourceWithWait(extensionContext, kafkaBridgeClientJob.producerStrimziBridge());
 
-        ClientUtils.waitForClientSuccess(producerName, Environment.TEST_SUITE_NAMESPACE, MESSAGE_COUNT);
+        ClientUtils.waitForClientSuccess(producerName, Environment.TEST_SUITE_NAMESPACE, testStorage.getMessageCount());
 
         KafkaClients kafkaClients = new KafkaClientsBuilder()
             .withTopicName(topicName)
-            .withMessageCount(MESSAGE_COUNT)
+            .withMessageCount(testStorage.getMessageCount())
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(httpBridgeClusterName))
             .withConsumerName(consumerName)
             .withNamespaceName(Environment.TEST_SUITE_NAMESPACE)
@@ -104,7 +104,7 @@ class HttpBridgeST extends AbstractST {
 
         resourceManager.createResourceWithWait(extensionContext, kafkaClients.consumerStrimzi());
 
-        ClientUtils.waitForClientSuccess(consumerName, Environment.TEST_SUITE_NAMESPACE, MESSAGE_COUNT);
+        ClientUtils.waitForClientSuccess(consumerName, Environment.TEST_SUITE_NAMESPACE, testStorage.getMessageCount());
 
         // Checking labels for KafkaBridge
         verifyLabelsOnPods(Environment.TEST_SUITE_NAMESPACE, httpBridgeClusterName, "my-bridge", "KafkaBridge");
@@ -124,7 +124,7 @@ class HttpBridgeST extends AbstractST {
             .withConsumerName(consumerName)
             .withBootstrapAddress(KafkaBridgeResources.serviceName(httpBridgeClusterName))
             .withTopicName(topicName)
-            .withMessageCount(MESSAGE_COUNT)
+            .withMessageCount(testStorage.getMessageCount())
             .withPort(TestConstants.HTTP_BRIDGE_DEFAULT_PORT)
             .withDelayMs(1000)
             .withPollInterval(1000)
@@ -136,7 +136,7 @@ class HttpBridgeST extends AbstractST {
         // Send messages to Kafka
         KafkaClients kafkaClients = new KafkaClientsBuilder()
             .withTopicName(topicName)
-            .withMessageCount(MESSAGE_COUNT)
+            .withMessageCount(testStorage.getMessageCount())
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(httpBridgeClusterName))
             .withProducerName(producerName)
             .withNamespaceName(Environment.TEST_SUITE_NAMESPACE)
@@ -144,7 +144,7 @@ class HttpBridgeST extends AbstractST {
 
         resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerStrimzi());
 
-        ClientUtils.waitForClientsSuccess(producerName, consumerName, Environment.TEST_SUITE_NAMESPACE, MESSAGE_COUNT);
+        ClientUtils.waitForClientsSuccess(producerName, consumerName, Environment.TEST_SUITE_NAMESPACE, testStorage.getMessageCount());
     }
 
     @ParallelTest

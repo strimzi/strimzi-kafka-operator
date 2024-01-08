@@ -431,7 +431,7 @@ public class ListenersST extends AbstractST {
             .withTopicName(topicName)
             .withNamespaceName(namespaceName)
             .withClusterName(clusterName)
-            .withMessageCount(MESSAGE_COUNT)
+            .withMessageCount(testStorage.getMessageCount())
             .withListenerName(TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME)
             .build();
 
@@ -521,7 +521,7 @@ public class ListenersST extends AbstractST {
             .withTopicName(topicName)
             .withNamespaceName(namespaceName)
             .withClusterName(clusterName)
-            .withMessageCount(MESSAGE_COUNT)
+            .withMessageCount(testStorage.getMessageCount())
             .withListenerName(TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME)
             .build();
 
@@ -563,7 +563,7 @@ public class ListenersST extends AbstractST {
             .withTopicName(topicName)
             .withNamespaceName(namespaceName)
             .withClusterName(clusterName)
-            .withMessageCount(MESSAGE_COUNT)
+            .withMessageCount(testStorage.getMessageCount())
             .withKafkaUsername(userName)
             .withSecurityProtocol(SecurityProtocol.SSL)
             .withListenerName(TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME)
@@ -607,7 +607,7 @@ public class ListenersST extends AbstractST {
             .withTopicName(topicName)
             .withNamespaceName(namespaceName)
             .withClusterName(clusterName)
-            .withMessageCount(MESSAGE_COUNT)
+            .withMessageCount(testStorage.getMessageCount())
             .withListenerName(TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME)
             .build();
 
@@ -655,7 +655,7 @@ public class ListenersST extends AbstractST {
             .withTopicName(topicName)
             .withNamespaceName(namespaceName)
             .withClusterName(clusterName)
-            .withMessageCount(MESSAGE_COUNT)
+            .withMessageCount(testStorage.getMessageCount())
             .withKafkaUsername(userName)
             .withSecurityProtocol(SecurityProtocol.SSL)
             .withListenerName(TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME)
@@ -693,17 +693,17 @@ public class ListenersST extends AbstractST {
                 .withNamespaceName(namespaceName)
                 .withTopicName(testStorage.getTopicName())
                 .withBootstrapAddress(KafkaUtils.bootstrapAddressFromStatus(clusterName, namespaceName, TestConstants.CLUSTER_IP_LISTENER_DEFAULT_NAME))
-                .withMessageCount(MESSAGE_COUNT)
+                .withMessageCount(testStorage.getMessageCount())
                 .withUsername(testStorage.getUsername())
                 .withProducerName(testStorage.getProducerName())
                 .withConsumerName(testStorage.getConsumerName())
                 .build();
 
         resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerStrimzi());
-        ClientUtils.waitForClientSuccess(testStorage.getProducerName(), namespaceName, MESSAGE_COUNT);
+        ClientUtils.waitForClientSuccess(testStorage.getProducerName(), namespaceName, testStorage.getMessageCount());
 
         resourceManager.createResourceWithWait(extensionContext, kafkaClients.consumerStrimzi());
-        ClientUtils.waitForClientSuccess(testStorage.getConsumerName(), namespaceName, MESSAGE_COUNT);
+        ClientUtils.waitForClientSuccess(testStorage.getConsumerName(), namespaceName, testStorage.getMessageCount());
 
     }
 

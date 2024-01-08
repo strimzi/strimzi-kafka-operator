@@ -42,6 +42,7 @@ import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
+import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectorTemplates;
@@ -295,6 +296,7 @@ public class MetricsST extends AbstractST {
     @IsolatedTest
     @Tag(INTERNAL_CLIENTS_USED)
     void testKafkaExporterMetrics(ExtensionContext extensionContext) {
+        TestStorage testStorage = storageMap.get(extensionContext);
         final String producerName = "producer-" + new Random().nextInt(Integer.MAX_VALUE);
         final String consumerName = "consumer-" + new Random().nextInt(Integer.MAX_VALUE);
         final String kafkaStrimziPodSetName = KafkaResources.kafkaComponentName(kafkaClusterFirstName);
@@ -310,7 +312,7 @@ public class MetricsST extends AbstractST {
             .build();
 
         resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
-        ClientUtils.waitForClientsSuccess(producerName, consumerName, namespaceFirst, MESSAGE_COUNT, false);
+        ClientUtils.waitForClientsSuccess(producerName, consumerName, namespaceFirst, testStorage.getMessageCount(), false);
 
         assertMetricValueNotNull(kafkaExporterCollector, "kafka_consumergroup_current_offset\\{.*\\}");
 
@@ -541,6 +543,7 @@ public class MetricsST extends AbstractST {
     @ParallelTest
     @Tag(BRIDGE)
     void testKafkaBridgeMetrics(ExtensionContext extensionContext) {
+        TestStorage testStorage = storageMap.get(extensionContext);
         String producerName = "bridge-producer";
         String consumerName = "bridge-consumer";
 
@@ -563,7 +566,7 @@ public class MetricsST extends AbstractST {
             .withConsumerName(consumerName)
             .withBootstrapAddress(KafkaBridgeResources.serviceName(bridgeClusterName))
             .withTopicName(bridgeTopicName)
-            .withMessageCount(MESSAGE_COUNT)
+            .withMessageCount(testStorage.getMessageCount())
             .withPort(TestConstants.HTTP_BRIDGE_DEFAULT_PORT)
             .withDelayMs(200)
             .withPollInterval(200)

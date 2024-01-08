@@ -1042,17 +1042,17 @@ class SecurityST extends AbstractST {
             .withNamespaceName(namespaceName)
             .withClusterName(clusterName)
             .withKafkaUsername(userName)
-            .withMessageCount(MESSAGE_COUNT)
+            .withMessageCount(testStorage.getMessageCount())
             .withSecurityProtocol(SecurityProtocol.SSL)
             .withListenerName(TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME)
             .build();
 
-        assertThat(externalKafkaClient.sendMessagesTls(), is(MESSAGE_COUNT));
+        assertThat(externalKafkaClient.sendMessagesTls(), is(testStorage.getMessageCount()));
 
         LOGGER.info("Checking Kafka super user: {}/{} that is able to read messages to Topic: {}/{} regardless that " +
                 "we configured Acls with only write operation", namespaceName, userName, namespaceName, topicName);
 
-        assertThat(externalKafkaClient.receiveMessagesTls(), is(MESSAGE_COUNT));
+        assertThat(externalKafkaClient.receiveMessagesTls(), is(testStorage.getMessageCount()));
 
         String nonSuperuserName = userName + "-non-super-user";
 
@@ -1075,7 +1075,7 @@ class SecurityST extends AbstractST {
             .withKafkaUsername(nonSuperuserName)
             .build();
 
-        assertThat(externalKafkaClient.sendMessagesTls(), is(MESSAGE_COUNT));
+        assertThat(externalKafkaClient.sendMessagesTls(), is(testStorage.getMessageCount()));
 
         LOGGER.info("Checking Kafka super user: {}/{} that is not able to read messages to Topic: {}/{} because of defined" +
                 " ACLs on only write operation", namespaceName, nonSuperuserName, namespaceName, topicName);

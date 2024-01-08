@@ -298,7 +298,7 @@ public class DynamicConfST extends AbstractST {
             .withTopicName(topicName)
             .withNamespaceName(Environment.TEST_SUITE_NAMESPACE)
             .withClusterName(clusterName)
-            .withMessageCount(MESSAGE_COUNT)
+            .withMessageCount(testStorage.getMessageCount())
             .withKafkaUsername(userName)
             .withSecurityProtocol(SecurityProtocol.SSL)
             .withListenerName(TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME)
@@ -308,7 +308,7 @@ public class DynamicConfST extends AbstractST {
             .withTopicName(topicName)
             .withNamespaceName(Environment.TEST_SUITE_NAMESPACE)
             .withClusterName(clusterName)
-            .withMessageCount(MESSAGE_COUNT)
+            .withMessageCount(testStorage.getMessageCount())
             .withSecurityProtocol(SecurityProtocol.PLAINTEXT)
             .withListenerName(TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME)
             .build();
@@ -348,7 +348,7 @@ public class DynamicConfST extends AbstractST {
         kafkaPods = RollingUpdateUtils.waitTillComponentHasRolled(Environment.TEST_SUITE_NAMESPACE, kafkaSelector, KAFKA_REPLICAS, kafkaPods);
 
         externalKafkaClientTls.verifyProducedAndConsumedMessages(
-            externalKafkaClientTls.sendMessagesTls() + MESSAGE_COUNT,
+            externalKafkaClientTls.sendMessagesTls() + testStorage.getMessageCount(),
             externalKafkaClientTls.receiveMessagesTls()
         );
 
@@ -379,7 +379,7 @@ public class DynamicConfST extends AbstractST {
         });
 
         externalKafkaClientPlain.verifyProducedAndConsumedMessages(
-            externalKafkaClientPlain.sendMessagesPlain() + MESSAGE_COUNT,
+            externalKafkaClientPlain.sendMessagesPlain() + testStorage.getMessageCount(),
             externalKafkaClientPlain.receiveMessagesPlain()
         );
     }

@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
 import static io.strimzi.systemtest.TestConstants.DYNAMIC_CONFIGURATION;
@@ -49,6 +50,7 @@ public class DynamicConfSharedST extends AbstractST {
     private final String dynamicConfigurationSharedClusterName = "dynamic-config-shared";
 
     private String scraperPodName;
+    public static Random rng = new Random();
 
     @TestFactory
     Iterator<DynamicTest> testDynConfiguration() {

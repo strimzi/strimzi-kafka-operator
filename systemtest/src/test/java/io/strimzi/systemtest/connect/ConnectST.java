@@ -818,7 +818,7 @@ class ConnectST extends AbstractST {
 
         KafkaClients kafkaClients = new KafkaClientsBuilder()
             .withTopicName(testStorage.getTopicName())
-            .withMessageCount(MESSAGE_COUNT)
+            .withMessageCount(testStorage.getMessageCount())
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
             .withProducerName(testStorage.getProducerName())
             .withConsumerName(testStorage.getConsumerName())
@@ -972,6 +972,7 @@ class ConnectST extends AbstractST {
     }
 
     void testConnectAuthorizationWithWeirdUserName(ExtensionContext extensionContext, String clusterName, String userName, SecurityProtocol securityProtocol, String topicName) {
+        TestStorage testStorage = storageMap.get(extensionContext);
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Environment.TEST_SUITE_NAMESPACE, extensionContext);
         final String connectorPodName = kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, clusterName + "-connect").get(0).getMetadata().getName();
 
@@ -987,13 +988,13 @@ class ConnectST extends AbstractST {
             .withNamespaceName(namespaceName)
             .withClusterName(clusterName)
             .withKafkaUsername(userName)
-            .withMessageCount(MESSAGE_COUNT)
+            .withMessageCount(testStorage.getMessageCount())
             .withSecurityProtocol(securityProtocol)
             .withTopicName(topicName)
             .withListenerName(TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME)
             .build();
 
-        assertThat(externalKafkaClient.sendMessagesTls(), is(MESSAGE_COUNT));
+        assertThat(externalKafkaClient.sendMessagesTls(), is(testStorage.getMessageCount()));
 
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(namespaceName, connectorPodName, TestConstants.DEFAULT_SINK_FILE_PATH, "\"Hello-world - 99\"");
     }

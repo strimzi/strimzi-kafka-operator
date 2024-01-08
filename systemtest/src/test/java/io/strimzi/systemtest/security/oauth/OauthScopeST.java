@@ -156,7 +156,7 @@ public class OauthScopeST extends OauthAbstractST {
             .withConsumerName(consumerName)
             .withBootstrapAddress(KafkaResources.bootstrapServiceName(oauthClusterName) + ":" + scopeListenerPort)
             .withTopicName(topicName)
-            .withMessageCount(MESSAGE_COUNT)
+            .withMessageCount(testStorage.getMessageCount())
             // configures SASL/PLAIN to be used
             .withAdditionalConfig(additionalOauthConfig)
             .build();
@@ -168,7 +168,7 @@ public class OauthScopeST extends OauthAbstractST {
 
         resourceManager.createResourceWithWait(extensionContext, oauthInternalClientChecksJob.producerStrimzi());
         // client should succeeded because we set to `clientScope=test` and also Kafka has `scope=test`
-        ClientUtils.waitForClientSuccess(producerName, Environment.TEST_SUITE_NAMESPACE, MESSAGE_COUNT);
+        ClientUtils.waitForClientSuccess(producerName, Environment.TEST_SUITE_NAMESPACE, testStorage.getMessageCount());
     }
 
     @IsolatedTest("Modification of shared Kafka cluster")
@@ -186,7 +186,7 @@ public class OauthScopeST extends OauthAbstractST {
             .withConsumerName(consumerName)
             .withBootstrapAddress(KafkaResources.bootstrapServiceName(oauthClusterName) + ":" + scopeListenerPort)
             .withTopicName(topicName)
-            .withMessageCount(MESSAGE_COUNT)
+            .withMessageCount(testStorage.getMessageCount())
             // configures SASL/PLAIN to be used
             .withAdditionalConfig(additionalOauthConfig)
             .build();
@@ -213,7 +213,7 @@ public class OauthScopeST extends OauthAbstractST {
         // client should fail because the listener requires scope: 'test' in JWT token but was (the listener) temporarily
         // configured without clientScope resulting in a JWT token without the scope claim when using the clientId and
         // secret passed via SASL/PLAIN to obtain an access token in client's name.
-        ClientUtils.waitForClientTimeout(producerName, Environment.TEST_SUITE_NAMESPACE, MESSAGE_COUNT);
+        ClientUtils.waitForClientTimeout(producerName, Environment.TEST_SUITE_NAMESPACE, testStorage.getMessageCount());
         JobUtils.deleteJobWithWait(Environment.TEST_SUITE_NAMESPACE, producerName);
 
         // rollback previous configuration
