@@ -6,8 +6,8 @@ package io.strimzi.systemtest.upgrade.kraft;
 
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.strimzi.api.kafka.Crds;
-import io.strimzi.api.kafka.model.KafkaBuilder;
-import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;

@@ -4,20 +4,18 @@
  */
 package io.strimzi.operator.user.model.acl;
 
-import io.strimzi.api.kafka.model.AclOperation;
-import io.strimzi.api.kafka.model.AclRule;
-import io.strimzi.api.kafka.model.AclRuleType;
-
+import io.strimzi.api.kafka.model.user.acl.AclOperation;
+import io.strimzi.api.kafka.model.user.acl.AclRule;
+import io.strimzi.api.kafka.model.user.acl.AclRuleType;
 import io.strimzi.operator.common.model.InvalidResourceException;
-
 import org.apache.kafka.common.acl.AccessControlEntry;
 import org.apache.kafka.common.acl.AclBinding;
 import org.apache.kafka.common.acl.AclPermissionType;
 import org.apache.kafka.common.resource.ResourcePattern;
 import org.apache.kafka.common.security.auth.KafkaPrincipal;
 
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Immutable class which represents a single ACL rule for Kafka's built-in authorizer.

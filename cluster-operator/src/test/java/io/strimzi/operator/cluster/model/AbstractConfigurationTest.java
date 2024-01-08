@@ -4,16 +4,16 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import io.strimzi.operator.common.model.InvalidConfigParameterException;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.model.InvalidConfigParameterException;
 import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
 import io.vertx.core.json.JsonObject;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static io.strimzi.test.TestUtils.LINE_SEPARATOR;
 import static java.util.Arrays.asList;

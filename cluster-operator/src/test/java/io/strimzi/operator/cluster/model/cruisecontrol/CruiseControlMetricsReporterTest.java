@@ -4,12 +4,12 @@
  */
 package io.strimzi.operator.cluster.model.cruisecontrol;
 
-import io.strimzi.api.kafka.model.Kafka;
-import io.strimzi.api.kafka.model.KafkaBuilder;
-import io.strimzi.operator.common.model.InvalidResourceException;
+import io.strimzi.api.kafka.model.kafka.Kafka;
+import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.operator.cluster.model.KafkaConfiguration;
-import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.model.InvalidResourceException;
+import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;

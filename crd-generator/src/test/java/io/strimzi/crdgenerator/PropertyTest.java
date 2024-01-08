@@ -6,11 +6,11 @@ package io.strimzi.crdgenerator;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.Map;
+
 import static io.strimzi.crdgenerator.Property.properties;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-
-import java.util.Map;
 
 public class PropertyTest {
 

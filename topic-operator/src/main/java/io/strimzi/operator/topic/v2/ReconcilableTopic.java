@@ -5,7 +5,7 @@
 package io.strimzi.operator.topic.v2;
 
 import io.micrometer.core.instrument.Timer;
-import io.strimzi.api.kafka.model.KafkaTopic;
+import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.operator.common.Reconciliation;
 
 /**

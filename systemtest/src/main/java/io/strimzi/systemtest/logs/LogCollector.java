@@ -6,18 +6,18 @@ package io.strimzi.systemtest.logs;
 
 import io.fabric8.kubernetes.api.model.ContainerStatus;
 import io.fabric8.kubernetes.api.model.Pod;
-import io.strimzi.api.kafka.model.StrimziPodSet;
-import io.strimzi.systemtest.TestConstants;
+import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.enums.ClusterOperatorInstallType;
 import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.systemtest.utils.StUtils;
-import io.strimzi.test.logs.CollectorElement;
 import io.strimzi.test.k8s.KubeClient;
+import io.strimzi.test.logs.CollectorElement;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.extension.ExtensionContext;
-import org.apache.logging.log4j.Level;
 
 import java.io.File;
 import java.io.IOException;

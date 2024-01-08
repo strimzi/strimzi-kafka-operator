@@ -22,11 +22,11 @@ import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.fabric8.kubernetes.api.model.apps.DeploymentStrategy;
 import io.fabric8.kubernetes.api.model.apps.DeploymentStrategyBuilder;
 import io.fabric8.kubernetes.api.model.apps.RollingUpdateDeploymentBuilder;
-import io.strimzi.api.kafka.model.StrimziPodSet;
-import io.strimzi.api.kafka.model.StrimziPodSetBuilder;
-import io.strimzi.api.kafka.model.template.DeploymentTemplate;
-import io.strimzi.api.kafka.model.template.PodTemplate;
-import io.strimzi.api.kafka.model.template.ResourceTemplate;
+import io.strimzi.api.kafka.model.common.template.DeploymentTemplate;
+import io.strimzi.api.kafka.model.common.template.PodTemplate;
+import io.strimzi.api.kafka.model.common.template.ResourceTemplate;
+import io.strimzi.api.kafka.model.podset.StrimziPodSet;
+import io.strimzi.api.kafka.model.podset.StrimziPodSetBuilder;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
@@ -385,7 +385,7 @@ public class WorkloadUtils {
      *
      * @return  Created deployment strategy
      */
-    public static DeploymentStrategy deploymentStrategy(io.strimzi.api.kafka.model.template.DeploymentStrategy strategy) {
+    public static DeploymentStrategy deploymentStrategy(io.strimzi.api.kafka.model.common.template.DeploymentStrategy strategy) {
         return switch (strategy) {
             case ROLLING_UPDATE -> rollingUpdateStrategy();
             case RECREATE -> recreateStrategy();

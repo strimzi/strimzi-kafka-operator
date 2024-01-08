@@ -10,7 +10,6 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.OrderedProperties;
-
 import org.apache.kafka.common.config.ConfigResource;
 import org.quartz.CronExpression;
 

@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest.security;
 
-import java.nio.charset.StandardCharsets;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
@@ -15,6 +14,7 @@ import javax.naming.ldap.LdapName;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;

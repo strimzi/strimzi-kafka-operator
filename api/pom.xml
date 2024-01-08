@@ -188,14 +188,14 @@
                                 <argument>--api-versions</argument><argument>v1beta2</argument>
                                 <argument>--storage-version</argument><argument>v1beta2</argument>
                                 <argument>--yaml</argument>
-                                <argument>io.strimzi.api.kafka.model.Kafka=${project.basedir}${file.separator}..${file.separator}packaging${file.separator}install${file.separator}cluster-operator${file.separator}040-Crd-kafka.yaml</argument>
-                                <argument>io.strimzi.api.kafka.model.KafkaConnect=${project.basedir}${file.separator}..${file.separator}packaging${file.separator}install${file.separator}cluster-operator${file.separator}041-Crd-kafkaconnect.yaml</argument>
-                                <argument>io.strimzi.api.kafka.model.KafkaMirrorMaker=${project.basedir}${file.separator}..${file.separator}packaging${file.separator}install${file.separator}cluster-operator${file.separator}045-Crd-kafkamirrormaker.yaml</argument>
-                                <argument>io.strimzi.api.kafka.model.KafkaBridge=${project.basedir}${file.separator}..${file.separator}packaging${file.separator}install${file.separator}cluster-operator${file.separator}046-Crd-kafkabridge.yaml</argument>
-                                <argument>io.strimzi.api.kafka.model.KafkaConnector=${project.basedir}${file.separator}..${file.separator}packaging${file.separator}install${file.separator}cluster-operator${file.separator}047-Crd-kafkaconnector.yaml</argument>
-                                <argument>io.strimzi.api.kafka.model.KafkaMirrorMaker2=${project.basedir}${file.separator}..${file.separator}packaging${file.separator}install${file.separator}cluster-operator${file.separator}048-Crd-kafkamirrormaker2.yaml</argument>
-                                <argument>io.strimzi.api.kafka.model.KafkaRebalance=${project.basedir}${file.separator}..${file.separator}packaging${file.separator}install${file.separator}cluster-operator${file.separator}049-Crd-kafkarebalance.yaml</argument>
-                                <argument>io.strimzi.api.kafka.model.StrimziPodSet=${project.basedir}${file.separator}..${file.separator}packaging${file.separator}install${file.separator}cluster-operator${file.separator}042-Crd-strimzipodset.yaml</argument>
+                                <argument>io.strimzi.api.kafka.model.kafka.Kafka=${project.basedir}${file.separator}..${file.separator}packaging${file.separator}install${file.separator}cluster-operator${file.separator}040-Crd-kafka.yaml</argument>
+                                <argument>io.strimzi.api.kafka.model.connect.KafkaConnect=${project.basedir}${file.separator}..${file.separator}packaging${file.separator}install${file.separator}cluster-operator${file.separator}041-Crd-kafkaconnect.yaml</argument>
+                                <argument>io.strimzi.api.kafka.model.mirrormaker.KafkaMirrorMaker=${project.basedir}${file.separator}..${file.separator}packaging${file.separator}install${file.separator}cluster-operator${file.separator}045-Crd-kafkamirrormaker.yaml</argument>
+                                <argument>io.strimzi.api.kafka.model.bridge.KafkaBridge=${project.basedir}${file.separator}..${file.separator}packaging${file.separator}install${file.separator}cluster-operator${file.separator}046-Crd-kafkabridge.yaml</argument>
+                                <argument>io.strimzi.api.kafka.model.connector.KafkaConnector=${project.basedir}${file.separator}..${file.separator}packaging${file.separator}install${file.separator}cluster-operator${file.separator}047-Crd-kafkaconnector.yaml</argument>
+                                <argument>io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2=${project.basedir}${file.separator}..${file.separator}packaging${file.separator}install${file.separator}cluster-operator${file.separator}048-Crd-kafkamirrormaker2.yaml</argument>
+                                <argument>io.strimzi.api.kafka.model.rebalance.KafkaRebalance=${project.basedir}${file.separator}..${file.separator}packaging${file.separator}install${file.separator}cluster-operator${file.separator}049-Crd-kafkarebalance.yaml</argument>
+                                <argument>io.strimzi.api.kafka.model.podset.StrimziPodSet=${project.basedir}${file.separator}..${file.separator}packaging${file.separator}install${file.separator}cluster-operator${file.separator}042-Crd-strimzipodset.yaml</argument>
                                 <argument>io.strimzi.api.kafka.model.nodepool.KafkaNodePool=${project.basedir}${file.separator}..${file.separator}packaging${file.separator}install${file.separator}cluster-operator${file.separator}04A-Crd-kafkanodepool.yaml</argument>
                             </arguments>
                         </configuration>
@@ -224,8 +224,8 @@
                                 <argument>--api-versions</argument><argument>v1alpha1,v1beta1,v1beta2</argument>
                                 <argument>--storage-version</argument><argument>v1beta2</argument>
                                 <argument>--yaml</argument>
-                                <argument>io.strimzi.api.kafka.model.KafkaTopic=${project.basedir}${file.separator}..${file.separator}packaging${file.separator}install${file.separator}cluster-operator${file.separator}043-Crd-kafkatopic.yaml</argument>
-                                <argument>io.strimzi.api.kafka.model.KafkaUser=${project.basedir}${file.separator}..${file.separator}packaging${file.separator}install${file.separator}cluster-operator${file.separator}044-Crd-kafkauser.yaml</argument>
+                                <argument>io.strimzi.api.kafka.model.topic.KafkaTopic=${project.basedir}${file.separator}..${file.separator}packaging${file.separator}install${file.separator}cluster-operator${file.separator}043-Crd-kafkatopic.yaml</argument>
+                                <argument>io.strimzi.api.kafka.model.user.KafkaUser=${project.basedir}${file.separator}..${file.separator}packaging${file.separator}install${file.separator}cluster-operator${file.separator}044-Crd-kafkauser.yaml</argument>
                             </arguments>
                         </configuration>
                     </execution>
@@ -245,17 +245,17 @@
                                 <argument>io.strimzi.crdgenerator.KubeLinker</argument>
                                 <argument>https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/</argument>
                                 <argument>modules/appendix_crds.adoc</argument>
-                                <argument>io.strimzi.api.kafka.model.Kafka</argument>
-                                <argument>io.strimzi.api.kafka.model.KafkaConnect</argument>
-                                <argument>io.strimzi.api.kafka.model.KafkaTopic</argument>
-                                <argument>io.strimzi.api.kafka.model.KafkaUser</argument>
-                                <argument>io.strimzi.api.kafka.model.KafkaMirrorMaker</argument>
-                                <argument>io.strimzi.api.kafka.model.KafkaBridge</argument>
-                                <argument>io.strimzi.api.kafka.model.KafkaConnector</argument>
-                                <argument>io.strimzi.api.kafka.model.KafkaMirrorMaker2</argument>
-                                <argument>io.strimzi.api.kafka.model.KafkaRebalance</argument>
+                                <argument>io.strimzi.api.kafka.model.kafka.Kafka</argument>
+                                <argument>io.strimzi.api.kafka.model.connect.KafkaConnect</argument>
+                                <argument>io.strimzi.api.kafka.model.topic.KafkaTopic</argument>
+                                <argument>io.strimzi.api.kafka.model.user.KafkaUser</argument>
+                                <argument>io.strimzi.api.kafka.model.mirrormaker.KafkaMirrorMaker</argument>
+                                <argument>io.strimzi.api.kafka.model.bridge.KafkaBridge</argument>
+                                <argument>io.strimzi.api.kafka.model.connector.KafkaConnector</argument>
+                                <argument>io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2</argument>
+                                <argument>io.strimzi.api.kafka.model.rebalance.KafkaRebalance</argument>
                                 <argument>io.strimzi.api.kafka.model.nodepool.KafkaNodePool</argument>
-                                <argument>io.strimzi.api.kafka.model.StrimziPodSet</argument>
+                                <argument>io.strimzi.api.kafka.model.podset.StrimziPodSet</argument>
                             </arguments>
                             <workingDirectory>${project.basedir}${file.separator}..${file.separator}documentation</workingDirectory>
                         </configuration>

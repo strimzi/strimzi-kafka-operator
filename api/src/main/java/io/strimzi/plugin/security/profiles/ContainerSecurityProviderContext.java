@@ -5,7 +5,7 @@
 package io.strimzi.plugin.security.profiles;
 
 import io.fabric8.kubernetes.api.model.SecurityContext;
-import io.strimzi.api.kafka.model.storage.Storage;
+import io.strimzi.api.kafka.model.kafka.Storage;
 
 /**
  * Interface which provides the context which can be used to generate the (container) security context

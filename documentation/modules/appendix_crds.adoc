@@ -50,7 +50,7 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 
 xref:type-KafkaClusterSpec-schema-{context}[Full list of `KafkaClusterSpec` schema properties]
 
-include::../api/io.strimzi.api.kafka.model.KafkaClusterSpec.adoc[leveloffset=+1]
+include::../api/io.strimzi.api.kafka.model.kafka.KafkaClusterSpec.adoc[leveloffset=+1]
 
 [id='type-KafkaClusterSpec-schema-{context}']
 == `KafkaClusterSpec` schema properties
@@ -106,7 +106,7 @@ Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 
 xref:type-GenericKafkaListener-schema-{context}[Full list of `GenericKafkaListener` schema properties]
 
-include::../api/io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListener.adoc[leveloffset=+1]
+include::../api/io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener.adoc[leveloffset=+1]
 
 [id='type-GenericKafkaListener-schema-{context}']
 == `GenericKafkaListener` schema properties
@@ -297,7 +297,7 @@ Used in: xref:type-GenericKafkaListener-{context}[`GenericKafkaListener`]
 
 xref:type-KafkaListenerAuthenticationCustom-schema-{context}[Full list of `KafkaListenerAuthenticationCustom` schema properties]
 
-include::../api/io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationCustom.adoc[leveloffset=+1]
+include::../api/io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationCustom.adoc[leveloffset=+1]
 
 [id='type-KafkaListenerAuthenticationCustom-schema-{context}']
 == `KafkaListenerAuthenticationCustom` schema properties
@@ -325,7 +325,7 @@ Used in: xref:type-GenericKafkaListener-{context}[`GenericKafkaListener`]
 
 xref:type-GenericKafkaListenerConfiguration-schema-{context}[Full list of `GenericKafkaListenerConfiguration` schema properties]
 
-include::../api/io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfiguration.adoc[leveloffset=+1]
+include::../api/io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerConfiguration.adoc[leveloffset=+1]
 
 [id='type-GenericKafkaListenerConfiguration-schema-{context}']
 == `GenericKafkaListenerConfiguration` schema properties
@@ -396,7 +396,7 @@ Used in: xref:type-GenericKafkaListenerConfiguration-{context}[`GenericKafkaList
 
 xref:type-GenericKafkaListenerConfigurationBootstrap-schema-{context}[Full list of `GenericKafkaListenerConfigurationBootstrap` schema properties]
 
-include::../api/io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfigurationBootstrap.adoc[leveloffset=+1]
+include::../api/io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerConfigurationBootstrap.adoc[leveloffset=+1]
 
 [id='type-GenericKafkaListenerConfigurationBootstrap-schema-{context}']
 == `GenericKafkaListenerConfigurationBootstrap` schema properties
@@ -426,7 +426,7 @@ Used in: xref:type-GenericKafkaListenerConfiguration-{context}[`GenericKafkaList
 
 xref:type-GenericKafkaListenerConfigurationBroker-schema-{context}[Full list of `GenericKafkaListenerConfigurationBroker` schema properties]
 
-include::../api/io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfigurationBroker.adoc[leveloffset=+1]
+include::../api/io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerConfigurationBroker.adoc[leveloffset=+1]
 
 [id='type-GenericKafkaListenerConfigurationBroker-schema-{context}']
 == `GenericKafkaListenerConfigurationBroker` schema properties
@@ -538,7 +538,7 @@ Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 
 xref:type-KafkaAuthorizationSimple-schema-{context}[Full list of `KafkaAuthorizationSimple` schema properties]
 
-include::../api/io.strimzi.api.kafka.model.KafkaAuthorizationSimple.adoc[leveloffset=+1]
+include::../api/io.strimzi.api.kafka.model.kafka.KafkaAuthorizationSimple.adoc[leveloffset=+1]
 
 [id='type-KafkaAuthorizationSimple-schema-{context}']
 == `KafkaAuthorizationSimple` schema properties
@@ -562,7 +562,7 @@ Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 
 xref:type-KafkaAuthorizationOpa-schema-{context}[Full list of `KafkaAuthorizationOpa` schema properties]
 
-include::../api/io.strimzi.api.kafka.model.KafkaAuthorizationOpa.adoc[leveloffset=+1]
+include::../api/io.strimzi.api.kafka.model.kafka.KafkaAuthorizationOpa.adoc[leveloffset=+1]
 
 [id='type-KafkaAuthorizationOpa-schema-{context}']
 == `KafkaAuthorizationOpa` schema properties
@@ -647,7 +647,7 @@ Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 
 xref:type-KafkaAuthorizationCustom-schema-{context}[Full list of `KafkaAuthorizationCustom` schema properties]
 
-include::../api/io.strimzi.api.kafka.model.KafkaAuthorizationCustom.adoc[leveloffset=+1]
+include::../api/io.strimzi.api.kafka.model.kafka.KafkaAuthorizationCustom.adoc[leveloffset=+1]
 
 [id='type-KafkaAuthorizationCustom-schema-{context}']
 == `KafkaAuthorizationCustom` schema properties
@@ -675,7 +675,7 @@ Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-Kafka
 
 xref:type-Rack-schema-{context}[Full list of `Rack` schema properties]
 
-include::../api/io.strimzi.api.kafka.model.Rack.adoc[leveloffset=+1]
+include::../api/io.strimzi.api.kafka.model.common.Rack.adoc[leveloffset=+1]
 
 [id='type-Rack-schema-{context}']
 == `Rack` schema properties
@@ -752,7 +752,7 @@ Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-Kaf
 
 xref:type-KafkaJmxOptions-schema-{context}[Full list of `KafkaJmxOptions` schema properties]
 
-include::../api/io.strimzi.api.kafka.model.KafkaJmxOptions.adoc[leveloffset=+1]
+include::../api/io.strimzi.api.kafka.model.common.jmx.KafkaJmxOptions.adoc[leveloffset=+1]
 
 [id='type-KafkaJmxOptions-schema-{context}']
 == `KafkaJmxOptions` schema properties
@@ -917,7 +917,7 @@ Used in: xref:type-BuildConfigTemplate-{context}[`BuildConfigTemplate`], xref:ty
 
 xref:type-MetadataTemplate-schema-{context}[Full list of `MetadataTemplate` schema properties]
 
-include::../api/io.strimzi.api.kafka.model.template.MetadataTemplate.adoc[leveloffset=+1]
+include::../api/io.strimzi.api.kafka.model.common.template.MetadataTemplate.adoc[leveloffset=+1]
 
 [id='type-MetadataTemplate-schema-{context}']
 == `MetadataTemplate` schema properties
@@ -939,7 +939,7 @@ Used in: xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`], xre
 
 xref:type-PodTemplate-schema-{context}[Full list of `PodTemplate` schema properties]
 
-include::../api/io.strimzi.api.kafka.model.template.PodTemplate.adoc[leveloffset=+1]
+include::../api/io.strimzi.api.kafka.model.common.template.PodTemplate.adoc[leveloffset=+1]
 
 [id='type-PodTemplate-schema-{context}']
 == `PodTemplate` schema properties
@@ -1023,7 +1023,7 @@ Used in: xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`], xre
 
 xref:type-PodDisruptionBudgetTemplate-schema-{context}[Full list of `PodDisruptionBudgetTemplate` schema properties]
 
-include::../api/io.strimzi.api.kafka.model.template.PodDisruptionBudgetTemplate.adoc[leveloffset=+1]
+include::../api/io.strimzi.api.kafka.model.common.template.PodDisruptionBudgetTemplate.adoc[leveloffset=+1]
 
 [id='type-PodDisruptionBudgetTemplate-schema-{context}']
 == `PodDisruptionBudgetTemplate` schema properties
@@ -1045,7 +1045,7 @@ Used in: xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`], xre
 
 xref:type-ContainerTemplate-schema-{context}[Full list of `ContainerTemplate` schema properties]
 
-include::../api/io.strimzi.api.kafka.model.template.ContainerTemplate.adoc[leveloffset=+1]
+include::../api/io.strimzi.api.kafka.model.common.template.ContainerTemplate.adoc[leveloffset=+1]
 
 [id='type-ContainerTemplate-schema-{context}']
 == `ContainerTemplate` schema properties
@@ -1084,7 +1084,7 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 
 xref:type-ZookeeperClusterSpec-schema-{context}[Full list of `ZookeeperClusterSpec` schema properties]
 
-include::../api/io.strimzi.api.kafka.model.ZookeeperClusterSpec.adoc[leveloffset=+1]
+include::../api/io.strimzi.api.kafka.model.zookeeper.ZookeeperClusterSpec.adoc[leveloffset=+1]
 
 [id='type-ZookeeperClusterSpec-schema-{context}']
 == `ZookeeperClusterSpec` schema properties
@@ -1178,7 +1178,7 @@ Used in: xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`]
 
 xref:type-EntityTopicOperatorSpec-schema-{context}[Full list of `EntityTopicOperatorSpec` schema properties]
 
-include::../api/io.strimzi.api.kafka.model.EntityTopicOperatorSpec.adoc[leveloffset=+1]
+include::../api/io.strimzi.api.kafka.model.kafka.entityoperator.EntityTopicOperatorSpec.adoc[leveloffset=+1]
 
 [id='type-EntityTopicOperatorSpec-schema-{context}']
 == `EntityTopicOperatorSpec` schema properties
@@ -1220,7 +1220,7 @@ Used in: xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`]
 
 xref:type-EntityUserOperatorSpec-schema-{context}[Full list of `EntityUserOperatorSpec` schema properties]
 
-include::../api/io.strimzi.api.kafka.model.EntityUserOperatorSpec.adoc[leveloffset=+1]
+include::../api/io.strimzi.api.kafka.model.kafka.entityoperator.EntityUserOperatorSpec.adoc[leveloffset=+1]
 
 [id='type-EntityUserOperatorSpec-schema-{context}']
 == `EntityUserOperatorSpec` schema properties
@@ -1260,7 +1260,7 @@ Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`], xref:type-E
 
 xref:type-TlsSidecar-schema-{context}[Full list of `TlsSidecar` schema properties]
 
-include::../api/io.strimzi.api.kafka.model.TlsSidecar.adoc[leveloffset=+1]
+include::../api/io.strimzi.api.kafka.model.kafka.entityoperator.TlsSidecar.adoc[leveloffset=+1]
 
 [id='type-TlsSidecar-schema-{context}']
 == `TlsSidecar` schema properties
@@ -1319,7 +1319,7 @@ Used in: xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`], xre
 
 xref:type-DeploymentTemplate-schema-{context}[Full list of `DeploymentTemplate` schema properties]
 
-include::../api/io.strimzi.api.kafka.model.template.DeploymentTemplate.adoc[leveloffset=+1]
+include::../api/io.strimzi.api.kafka.model.common.template.DeploymentTemplate.adoc[leveloffset=+1]
 
 [id='type-DeploymentTemplate-schema-{context}']
 == `DeploymentTemplate` schema properties
@@ -1363,7 +1363,7 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 
 xref:type-CruiseControlSpec-schema-{context}[Full list of `CruiseControlSpec` schema properties]
 
-include::../api/io.strimzi.api.kafka.model.CruiseControlSpec.adoc[leveloffset=+1]
+include::../api/io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlSpec.adoc[leveloffset=+1]
 
 [id='type-CruiseControlSpec-schema-{context}']
 == `CruiseControlSpec` schema properties
@@ -1726,7 +1726,7 @@ Used in: xref:type-KafkaConnect-{context}[`KafkaConnect`]
 
 xref:type-KafkaConnectSpec-schema-{context}[Full list of `KafkaConnectSpec` schema properties]
 
-include::../api/io.strimzi.api.kafka.model.KafkaConnectSpec.adoc[leveloffset=+1]
+include::../api/io.strimzi.api.kafka.model.connect.KafkaConnectSpec.adoc[leveloffset=+1]
 
 [id='type-KafkaConnectSpec-schema-{context}']
 == `KafkaConnectSpec` schema properties
@@ -1786,7 +1786,7 @@ Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-Kafka
 
 xref:type-ClientTls-schema-{context}[Full list of `ClientTls` schema properties]
 
-include::../api/io.strimzi.api.kafka.model.ClientTls.adoc[leveloffset=+1]
+include::../api/io.strimzi.api.kafka.model.common.ClientTls.adoc[leveloffset=+1]
 
 [id='type-ClientTls-schema-{context}']
 == `ClientTls` schema properties
@@ -1806,7 +1806,7 @@ Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-Kafka
 
 xref:type-KafkaClientAuthenticationTls-schema-{context}[Full list of `KafkaClientAuthenticationTls` schema properties]
 
-include::../api/io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationTls.adoc[leveloffset=+1]
+include::../api/io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationTls.adoc[leveloffset=+1]
 
 [id='type-KafkaClientAuthenticationTls-schema-{context}']
 == `KafkaClientAuthenticationTls` schema properties
@@ -1830,7 +1830,7 @@ Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-Kafka
 
 xref:type-KafkaClientAuthenticationScramSha256-schema-{context}[Full list of `KafkaClientAuthenticationScramSha256` schema properties]
 
-include::../api/io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationScramSha256.adoc[leveloffset=+1]
+include::../api/io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationScramSha256.adoc[leveloffset=+1]
 
 [id='type-KafkaClientAuthenticationScramSha256-schema-{context}']
 == `KafkaClientAuthenticationScramSha256` schema properties
@@ -1869,7 +1869,7 @@ Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-Kafka
 
 xref:type-KafkaClientAuthenticationScramSha512-schema-{context}[Full list of `KafkaClientAuthenticationScramSha512` schema properties]
 
-include::../api/io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationScramSha512.adoc[leveloffset=+1]
+include::../api/io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationScramSha512.adoc[leveloffset=+1]
 
 [id='type-KafkaClientAuthenticationScramSha512-schema-{context}']
 == `KafkaClientAuthenticationScramSha512` schema properties
@@ -1893,7 +1893,7 @@ Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-Kafka
 
 xref:type-KafkaClientAuthenticationPlain-schema-{context}[Full list of `KafkaClientAuthenticationPlain` schema properties]
 
-include::../api/io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationPlain.adoc[leveloffset=+1]
+include::../api/io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationPlain.adoc[leveloffset=+1]
 
 [id='type-KafkaClientAuthenticationPlain-schema-{context}']
 == `KafkaClientAuthenticationPlain` schema properties
@@ -1919,7 +1919,7 @@ Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-Kafka
 
 xref:type-KafkaClientAuthenticationOAuth-schema-{context}[Full list of `KafkaClientAuthenticationOAuth` schema properties]
 
-include::../api/io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationOAuth.adoc[leveloffset=+1]
+include::../api/io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationOAuth.adoc[leveloffset=+1]
 
 [id='type-KafkaClientAuthenticationOAuth-schema-{context}']
 == `KafkaClientAuthenticationOAuth` schema properties
@@ -2546,7 +2546,7 @@ Used in: xref:type-KafkaUserAuthorizationSimple-{context}[`KafkaUserAuthorizatio
 
 xref:type-AclRule-schema-{context}[Full list of `AclRule` schema properties]
 
-include::../api/io.strimzi.api.kafka.model.AclRule.adoc[leveloffset=+1]
+include::../api/io.strimzi.api.kafka.model.user.acl.AclRule.adoc[leveloffset=+1]
 
 [id='type-AclRule-schema-{context}']
 == `AclRule` schema properties
@@ -2646,7 +2646,7 @@ Used in: xref:type-KafkaUserSpec-{context}[`KafkaUserSpec`]
 
 xref:type-KafkaUserQuotas-schema-{context}[Full list of `KafkaUserQuotas` schema properties]
 
-include::../api/io.strimzi.api.kafka.model.KafkaUserQuotas.adoc[leveloffset=+1]
+include::../api/io.strimzi.api.kafka.model.user.KafkaUserQuotas.adoc[leveloffset=+1]
 
 [id='type-KafkaUserQuotas-schema-{context}']
 == `KafkaUserQuotas` schema properties
@@ -2672,7 +2672,7 @@ Used in: xref:type-KafkaUserSpec-{context}[`KafkaUserSpec`]
 
 xref:type-KafkaUserTemplate-schema-{context}[Full list of `KafkaUserTemplate` schema properties]
 
-include::../api/io.strimzi.api.kafka.model.template.KafkaUserTemplate.adoc[leveloffset=+1]
+include::../api/io.strimzi.api.kafka.model.user.KafkaUserTemplate.adoc[leveloffset=+1]
 
 [id='type-KafkaUserTemplate-schema-{context}']
 == `KafkaUserTemplate` schema properties
@@ -2727,7 +2727,7 @@ Used in: xref:type-KafkaMirrorMaker-{context}[`KafkaMirrorMaker`]
 
 xref:type-KafkaMirrorMakerSpec-schema-{context}[Full list of `KafkaMirrorMakerSpec` schema properties]
 
-include::../api/io.strimzi.api.kafka.model.KafkaMirrorMakerSpec.adoc[leveloffset=+1]
+include::../api/io.strimzi.api.kafka.model.mirrormaker.KafkaMirrorMakerSpec.adoc[leveloffset=+1]
 
 [id='type-KafkaMirrorMakerSpec-schema-{context}']
 == `KafkaMirrorMakerSpec` schema properties
@@ -2777,7 +2777,7 @@ Used in: xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`]
 
 xref:type-KafkaMirrorMakerConsumerSpec-schema-{context}[Full list of `KafkaMirrorMakerConsumerSpec` schema properties]
 
-include::../api/io.strimzi.api.kafka.model.KafkaMirrorMakerConsumerSpec.adoc[leveloffset=+1]
+include::../api/io.strimzi.api.kafka.model.mirrormaker.KafkaMirrorMakerConsumerSpec.adoc[leveloffset=+1]
 
 [id='type-KafkaMirrorMakerConsumerSpec-schema-{context}']
 == `KafkaMirrorMakerConsumerSpec` schema properties
@@ -2809,7 +2809,7 @@ Used in: xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`]
 
 xref:type-KafkaMirrorMakerProducerSpec-schema-{context}[Full list of `KafkaMirrorMakerProducerSpec` schema properties]
 
-include::../api/io.strimzi.api.kafka.model.KafkaMirrorMakerProducerSpec.adoc[leveloffset=+1]
+include::../api/io.strimzi.api.kafka.model.mirrormaker.KafkaMirrorMakerProducerSpec.adoc[leveloffset=+1]
 
 [id='type-KafkaMirrorMakerProducerSpec-schema-{context}']
 == `KafkaMirrorMakerProducerSpec` schema properties
@@ -2890,7 +2890,7 @@ Used in: xref:type-KafkaBridge-{context}[`KafkaBridge`]
 
 xref:type-KafkaBridgeSpec-schema-{context}[Full list of `KafkaBridgeSpec` schema properties]
 
-include::../api/io.strimzi.api.kafka.model.KafkaBridgeSpec.adoc[leveloffset=+1]
+include::../api/io.strimzi.api.kafka.model.bridge.KafkaBridgeSpec.adoc[leveloffset=+1]
 
 [id='type-KafkaBridgeSpec-schema-{context}']
 == `KafkaBridgeSpec` schema properties
@@ -2948,7 +2948,7 @@ Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`]
 
 xref:type-KafkaBridgeHttpConfig-schema-{context}[Full list of `KafkaBridgeHttpConfig` schema properties]
 
-include::../api/io.strimzi.api.kafka.model.KafkaBridgeHttpConfig.adoc[leveloffset=+1]
+include::../api/io.strimzi.api.kafka.model.bridge.KafkaBridgeHttpConfig.adoc[leveloffset=+1]
 
 [id='type-KafkaBridgeHttpConfig-schema-{context}']
 == `KafkaBridgeHttpConfig` schema properties
@@ -2998,7 +2998,7 @@ Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`]
 
 xref:type-KafkaBridgeConsumerSpec-schema-{context}[Full list of `KafkaBridgeConsumerSpec` schema properties]
 
-include::../api/io.strimzi.api.kafka.model.KafkaBridgeConsumerSpec.adoc[leveloffset=+1]
+include::../api/io.strimzi.api.kafka.model.bridge.KafkaBridgeConsumerSpec.adoc[leveloffset=+1]
 
 [id='type-KafkaBridgeConsumerSpec-schema-{context}']
 == `KafkaBridgeConsumerSpec` schema properties
@@ -3018,7 +3018,7 @@ Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`]
 
 xref:type-KafkaBridgeProducerSpec-schema-{context}[Full list of `KafkaBridgeProducerSpec` schema properties]
 
-include::../api/io.strimzi.api.kafka.model.KafkaBridgeProducerSpec.adoc[leveloffset=+1]
+include::../api/io.strimzi.api.kafka.model.bridge.KafkaBridgeProducerSpec.adoc[leveloffset=+1]
 
 [id='type-KafkaBridgeProducerSpec-schema-{context}']
 == `KafkaBridgeProducerSpec` schema properties
@@ -3122,7 +3122,7 @@ Used in: xref:type-KafkaConnectorSpec-{context}[`KafkaConnectorSpec`], xref:type
 
 xref:type-AutoRestart-schema-{context}[Full list of `AutoRestart` schema properties]
 
-include::../api/io.strimzi.api.kafka.model.AutoRestart.adoc[leveloffset=+1]
+include::../api/io.strimzi.api.kafka.model.connector.AutoRestart.adoc[leveloffset=+1]
 
 [id='type-AutoRestart-schema-{context}']
 == `AutoRestart` schema properties
@@ -3246,7 +3246,7 @@ Used in: xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`]
 
 xref:type-KafkaMirrorMaker2ClusterSpec-schema-{context}[Full list of `KafkaMirrorMaker2ClusterSpec` schema properties]
 
-include::../api/io.strimzi.api.kafka.model.KafkaMirrorMaker2ClusterSpec.adoc[leveloffset=+1]
+include::../api/io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2ClusterSpec.adoc[leveloffset=+1]
 
 [id='type-KafkaMirrorMaker2ClusterSpec-schema-{context}']
 == `KafkaMirrorMaker2ClusterSpec` schema properties
@@ -3514,7 +3514,7 @@ Used in: xref:type-KafkaNodePool-{context}[`KafkaNodePool`]
 
 xref:type-StrimziPodSet-schema-{context}[Full list of `StrimziPodSet` schema properties]
 
-include::../api/io.strimzi.api.kafka.model.StrimziPodSet.adoc[leveloffset=+1]
+include::../api/io.strimzi.api.kafka.model.podset.StrimziPodSet.adoc[leveloffset=+1]
 
 [id='type-StrimziPodSet-schema-{context}']
 == `StrimziPodSet` schema properties

@@ -5,10 +5,10 @@
 package io.strimzi.operator.topic;
 
 import io.fabric8.kubernetes.api.model.Event;
-import io.strimzi.api.kafka.model.KafkaTopic;
-import io.strimzi.api.kafka.model.KafkaTopicBuilder;
-import io.strimzi.api.kafka.model.status.KafkaTopicStatus;
-import io.strimzi.api.kafka.model.status.KafkaTopicStatusBuilder;
+import io.strimzi.api.kafka.model.topic.KafkaTopic;
+import io.strimzi.api.kafka.model.topic.KafkaTopicBuilder;
+import io.strimzi.api.kafka.model.topic.KafkaTopicStatus;
+import io.strimzi.api.kafka.model.topic.KafkaTopicStatusBuilder;
 import io.strimzi.operator.common.Reconciliation;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;

@@ -4,7 +4,7 @@
  */
 package io.strimzi.operator.common;
 
-import io.strimzi.api.kafka.model.status.Status;
+import io.strimzi.api.kafka.model.kafka.Status;
 
 /**
  * Custom exception which wraps the Custom Resource status together with the original exception which caused the issue.

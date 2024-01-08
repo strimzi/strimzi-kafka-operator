@@ -5,7 +5,7 @@
 package io.strimzi.operator.topic.v2;
 
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
-import io.strimzi.api.kafka.model.KafkaTopic;
+import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.metrics.MetricsHolder;
 
