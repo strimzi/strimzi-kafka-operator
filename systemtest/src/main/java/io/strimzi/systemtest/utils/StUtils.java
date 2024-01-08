@@ -12,6 +12,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.jayway.jsonpath.JsonPath;
 import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
@@ -43,6 +44,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.function.BiFunction;
 import java.util.function.BooleanSupplier;
@@ -548,5 +550,28 @@ public class StUtils {
     public static void waitUntilSupplierIsSatisfied(final BooleanSupplier sup) {
         TestUtils.waitFor(sup.getAsBoolean() + " is satisfied", TestConstants.GLOBAL_POLL_INTERVAL,
                 TestConstants.GLOBAL_STATUS_TIMEOUT, sup);
+    }
+
+    /**
+     * Checks env variables of Topic operator container (inside EO Pod) and based on that determines, if BTO or UTO is used.
+     * Normally we can determine that based on {@link Environment#isUnidirectionalTopicOperatorEnabled()}, but in case that the
+     * FG is changed during test, we have no other way to check it.
+     *
+     * @param namespaceName name of the Namespace, where the EO Pod is running
+     * @param eoLabelSelector LabelSelector of EO
+     * @return boolean determining if UTO is used or not
+     */
+    public static boolean isUnidirectionalTopicOperatorUsed(String namespaceName, LabelSelector eoLabelSelector) {
+        Optional<Container> topicOperatorContainer = kubeClient().listPods(namespaceName, eoLabelSelector).get(0).getSpec().getContainers()
+            .stream().filter(container -> container.getName().equals("topic-operator")).findFirst();
+
+        if (topicOperatorContainer.isPresent()) {
+            return topicOperatorContainer.get().getEnv()
+                // ZK related env vars are only present in BTO mode -> because of that we can determine which of the TOs is used
+                .stream().noneMatch(envVar -> envVar.getName().contains("ZOOKEEPER"));
+        }
+
+        LOGGER.warn("Cannot determine if UTO is used or not, because the EO Pod doesn't exist, gonna assume that it's not");
+        return false;
     }
 }
