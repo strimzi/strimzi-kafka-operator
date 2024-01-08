@@ -36,17 +36,17 @@ NOTE: You can perform the steps outlined here to deploy a new Kafka cluster with
 * To deploy a Kafka cluster in KRaft mode with a single node pool that uses dual-role nodes:
 +
 [source,shell,subs="attributes+"]
-kubectl apply -f examples/kafka/kraft/kafka-with-dual-role-kraft-nodes.yaml
+kubectl apply -f examples/kafka/kraft/kafka-with-dual-role-nodes.yaml
 
 * To deploy a persistent Kafka cluster in KRaft mode with separate node pools for broker and controller nodes: 
 +
 [source,shell,subs="attributes+"]
-kubectl apply -f examples/kafka/kraft/kafka-with-kraft.yaml
+kubectl apply -f examples/kafka/kraft/kafka.yaml
 
 * To deploy an ephemeral Kafka cluster in KRaft mode with separate node pools for broker and controller nodes: 
 +
 [source,shell,subs="attributes+"]
-kubectl apply -f examples/kafka/kraft/kafka-with-kraft-ephemeral.yaml
+kubectl apply -f examples/kafka/kraft/kafka-ephemeral.yaml
 
 * To deploy a Kafka cluster and ZooKeeper cluster with two node pools of three brokers:
 +
