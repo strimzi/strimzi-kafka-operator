@@ -112,7 +112,7 @@ class HttpBridgeTlsST extends AbstractST {
 
     @BeforeAll
     void setUp(ExtensionContext extensionContext) {
-        TestStorage testStorage = storageMap.get(extensionContext);
+        TestStorage testStorage = new TestStorage(extensionContext);
         clusterOperator = clusterOperator.defaultInstallation(extensionContext)
                 .createInstallation()
                 .runInstallation();
