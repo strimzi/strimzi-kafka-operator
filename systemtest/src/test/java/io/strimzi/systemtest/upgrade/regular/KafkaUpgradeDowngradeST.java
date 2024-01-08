@@ -80,10 +80,6 @@ public class KafkaUpgradeDowngradeST extends AbstractUpgradeST {
         final TestStorage testStorage = storageMap.get(testContext);
         List<TestKafkaVersion> sortedVersions = TestKafkaVersion.getSupportedKafkaVersions();
 
-        String clusterName = testStorage.getClusterName();
-        String producerName = clusterName + "-producer";
-        String consumerName = clusterName + "-consumer";
-
         for (int x = sortedVersions.size() - 1; x > 0; x--) {
             TestKafkaVersion initialVersion = sortedVersions.get(x);
             TestKafkaVersion newVersion = sortedVersions.get(x - 1);
@@ -91,13 +87,13 @@ public class KafkaUpgradeDowngradeST extends AbstractUpgradeST {
             // If it is a downgrade then we make sure to use the lower version number for the message format
             String logMsgFormat = newVersion.messageVersion();
             String interBrokerProtocol = newVersion.protocolVersion();
-            runVersionChange(initialVersion, newVersion, producerName, consumerName, logMsgFormat, interBrokerProtocol, 3, 3, testContext);
+            runVersionChange(initialVersion, newVersion, testStorage.getProducerName(), testStorage.getConsumerName(), logMsgFormat, interBrokerProtocol, 3, 3, testContext);
         }
 
         // ##############################
         // Validate that continuous clients finished successfully
         // ##############################
-        ClientUtils.waitForClientsSuccess(producerName, consumerName, TestConstants.CO_NAMESPACE, continuousClientsMessageCount);
+        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), TestConstants.CO_NAMESPACE, continuousClientsMessageCount);
         // ##############################
     }
 
@@ -106,10 +102,6 @@ public class KafkaUpgradeDowngradeST extends AbstractUpgradeST {
         final TestStorage testStorage = storageMap.get(testContext);
         List<TestKafkaVersion> sortedVersions = TestKafkaVersion.getSupportedKafkaVersions();
 
-        String clusterName = testStorage.getClusterName();
-        String producerName = clusterName + "-producer";
-        String consumerName = clusterName + "-consumer";
-
         String initLogMsgFormat = sortedVersions.get(0).messageVersion();
         String initInterBrokerProtocol = sortedVersions.get(0).protocolVersion();
 
@@ -117,13 +109,13 @@ public class KafkaUpgradeDowngradeST extends AbstractUpgradeST {
             TestKafkaVersion initialVersion = sortedVersions.get(x);
             TestKafkaVersion newVersion = sortedVersions.get(x - 1);
 
-            runVersionChange(initialVersion, newVersion, producerName, consumerName, initLogMsgFormat, initInterBrokerProtocol, 3, 3, testContext);
+            runVersionChange(initialVersion, newVersion, testStorage.getProducerName(), testStorage.getConsumerName(), initLogMsgFormat, initInterBrokerProtocol, 3, 3, testContext);
         }
 
         // ##############################
         // Validate that continuous clients finished successfully
         // ##############################
-        ClientUtils.waitForClientsSuccess(producerName, consumerName, TestConstants.CO_NAMESPACE, continuousClientsMessageCount);
+        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), TestConstants.CO_NAMESPACE, continuousClientsMessageCount);
         // ##############################
     }
 

@@ -53,7 +53,7 @@ class HttpBridgeTlsST extends AbstractST {
     @ParallelTest
     void testSendSimpleMessageTls(ExtensionContext extensionContext) {
 
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
         final String producerName = "producer-" + new Random().nextInt(Integer.MAX_VALUE);
         final String consumerName = "consumer-" + new Random().nextInt(Integer.MAX_VALUE);
 
@@ -83,7 +83,7 @@ class HttpBridgeTlsST extends AbstractST {
     @ParallelTest
     void testReceiveSimpleMessageTls(ExtensionContext extensionContext) {
 
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
         final String producerName = "producer-" + new Random().nextInt(Integer.MAX_VALUE);
         final String consumerName = "consumer-" + new Random().nextInt(Integer.MAX_VALUE);
 

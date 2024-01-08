@@ -13,7 +13,6 @@ import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
-import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
 import io.strimzi.test.WaitException;
 import org.hamcrest.CoreMatchers;
@@ -37,15 +36,11 @@ public class QuotasST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
     void testKafkaQuotasPluginIntegration(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(Environment.TEST_SUITE_NAMESPACE, extensionContext);
-        final String clusterName = testStorage.getClusterName();
-        final String topicName = testStorage.getTopicName();
-
+        final TestStorage testStorage = new TestStorage(extensionContext);
         final String producerName = "quotas-producer";
         final String consumerName = "quotas-consumer";
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 1)
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 1)
             .editSpec()
                 .editKafka()
                     .addToConfig("client.quota.callback.class", "io.strimzi.kafka.quotas.StaticQuotaCallback")
@@ -58,14 +53,14 @@ public class QuotasST extends AbstractST {
                 .endKafka()
             .endSpec()
             .build());
-        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName, namespaceName).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), testStorage.getNamespaceName()).build());
 
         // Send more messages than disk can store to see if the integration works
         KafkaClients basicClients = new KafkaClientsBuilder()
             .withProducerName(producerName)
             .withConsumerName(consumerName)
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(clusterName))
-            .withTopicName(topicName)
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+            .withTopicName(testStorage.getTopicName())
             .withMessageCount(100000000)
             .withDelayMs(0)
             .withMessage(String.join("", Collections.nCopies(1000, "#")))
@@ -75,7 +70,7 @@ public class QuotasST extends AbstractST {
         // Kafka Quotas Plugin should stop producer in around 10-20 seconds with configured throughput
         assertThrows(WaitException.class, () -> JobUtils.waitForJobFailure(producerName, Environment.TEST_SUITE_NAMESPACE, 120_000));
 
-        String kafkaLog = kubeClient(namespaceName).logs(KafkaResources.kafkaPodName(clusterName, 0));
+        String kafkaLog = kubeClient(testStorage.getNamespaceName()).logs(KafkaResources.kafkaPodName(testStorage.getClusterName(), 0));
         String softLimitLog = "disk is beyond soft limit";
         String hardLimitLog = "disk is full";
         assertThat("Kafka log doesn't contain '" + softLimitLog + "' log", kafkaLog, CoreMatchers.containsString(softLimitLog));
@@ -83,9 +78,9 @@ public class QuotasST extends AbstractST {
     }
 
     @AfterEach
-    void afterEach(ExtensionContext extensionContext) throws Exception {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(Environment.TEST_SUITE_NAMESPACE, extensionContext);
-        kubeClient(namespaceName).getClient().persistentVolumeClaims().inNamespace(namespaceName).delete();
+    void afterEach(ExtensionContext extensionContext) {
+        final TestStorage testStorage = new TestStorage(extensionContext);
+        kubeClient(testStorage.getNamespaceName()).getClient().persistentVolumeClaims().inNamespace(testStorage.getNamespaceName()).delete();
     }
 
     @BeforeAll

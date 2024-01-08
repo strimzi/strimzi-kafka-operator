@@ -70,7 +70,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
-import java.util.Random;
 import java.util.concurrent.ExecutionException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -296,9 +295,7 @@ public class MetricsST extends AbstractST {
     @IsolatedTest
     @Tag(INTERNAL_CLIENTS_USED)
     void testKafkaExporterMetrics(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
-        final String producerName = "producer-" + new Random().nextInt(Integer.MAX_VALUE);
-        final String consumerName = "consumer-" + new Random().nextInt(Integer.MAX_VALUE);
+        final TestStorage testStorage = new TestStorage(extensionContext);
         final String kafkaStrimziPodSetName = KafkaResources.kafkaComponentName(kafkaClusterFirstName);
         final LabelSelector kafkaPodsSelector = KafkaResource.getLabelSelector(kafkaClusterFirstName, kafkaStrimziPodSetName);
 
@@ -307,12 +304,12 @@ public class MetricsST extends AbstractST {
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(kafkaClusterFirstName))
             .withNamespaceName(namespaceFirst)
             .withMessageCount(5000)
-            .withProducerName(producerName)
-            .withConsumerName(consumerName)
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getClusterName())
             .build();
 
         resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
-        ClientUtils.waitForClientsSuccess(producerName, consumerName, namespaceFirst, testStorage.getMessageCount(), false);
+        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), namespaceFirst, testStorage.getMessageCount(), false);
 
         assertMetricValueNotNull(kafkaExporterCollector, "kafka_consumergroup_current_offset\\{.*\\}");
 
@@ -543,9 +540,7 @@ public class MetricsST extends AbstractST {
     @ParallelTest
     @Tag(BRIDGE)
     void testKafkaBridgeMetrics(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
-        String producerName = "bridge-producer";
-        String consumerName = "bridge-consumer";
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         resourceManager.createResourceWithWait(extensionContext,
                 KafkaBridgeTemplates.kafkaBridgeWithMetrics(bridgeClusterName, kafkaClusterFirstName, KafkaResources.plainBootstrapAddress(kafkaClusterFirstName), 1)
@@ -562,8 +557,8 @@ public class MetricsST extends AbstractST {
         // Attach consumer before producer
         BridgeClients kafkaBridgeClientJob = new BridgeClientsBuilder()
             .withNamespaceName(namespaceFirst)
-            .withProducerName(producerName)
-            .withConsumerName(consumerName)
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
             .withBootstrapAddress(KafkaBridgeResources.serviceName(bridgeClusterName))
             .withTopicName(bridgeTopicName)
             .withMessageCount(testStorage.getMessageCount())
