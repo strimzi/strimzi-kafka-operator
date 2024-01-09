@@ -56,6 +56,7 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
     private Integer jwksExpirySeconds;
     private boolean jwksIgnoreKeyUse = false;
     private String introspectionEndpointUri;
+    private String serverBearerTokenLocation;
     private String userNameClaim;
     private String fallbackUserNameClaim;
     private String fallbackUserNamePrefix;
@@ -283,6 +284,16 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
 
     public void setIntrospectionEndpointUri(String introspectionEndpointUri) {
         this.introspectionEndpointUri = introspectionEndpointUri;
+    }
+
+    @Description("Path to the file on the local filesystem that contains a bearer token to be used instead of client_id and secret when authenticating to authorization server")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public String getServerBearerTokenLocation() {
+        return serverBearerTokenLocation;
+    }
+
+    public void setServerBearerTokenLocation(String serverBearerTokenLocation) {
+        this.serverBearerTokenLocation = serverBearerTokenLocation;
     }
 
     @Description("Name of the claim from the JWT authentication token, Introspection Endpoint response or User Info Endpoint response " +

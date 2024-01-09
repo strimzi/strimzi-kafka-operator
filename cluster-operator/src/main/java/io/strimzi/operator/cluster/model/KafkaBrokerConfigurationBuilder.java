@@ -586,6 +586,7 @@ public class KafkaBrokerConfigurationBuilder {
         if (oauth.getJwksMinRefreshPauseSeconds() != null && oauth.getJwksMinRefreshPauseSeconds() >= 0) {
             addOptionIfNotNull(options, ServerConfig.OAUTH_JWKS_REFRESH_MIN_PAUSE_SECONDS, String.valueOf(oauth.getJwksMinRefreshPauseSeconds()));
         }
+        addOptionIfNotEmpty(options, ServerConfig.OAUTH_SERVER_BEARER_TOKEN_LOCATION, oauth.getServerBearerTokenLocation());
         addBooleanOptionIfTrue(options, ServerConfig.OAUTH_JWKS_IGNORE_KEY_USE, oauth.getJwksIgnoreKeyUse());
         addOptionIfNotNull(options, ServerConfig.OAUTH_INTROSPECTION_ENDPOINT_URI, oauth.getIntrospectionEndpointUri());
         addOptionIfNotNull(options, ServerConfig.OAUTH_USERINFO_ENDPOINT_URI, oauth.getUserInfoEndpointUri());
@@ -624,6 +625,12 @@ public class KafkaBrokerConfigurationBuilder {
 
     static void addOptionIfNotNull(Map<String, String> options, String option, String value) {
         if (value != null) {
+            options.put(option, value);
+        }
+    }
+
+    static void addOptionIfNotEmpty(Map<String, String> options, String option, String value) {
+        if (value != null && !value.isEmpty()) {
             options.put(option, value);
         }
     }
