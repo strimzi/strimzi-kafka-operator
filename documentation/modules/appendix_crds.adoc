@@ -5,9 +5,9 @@
 = `Kafka` schema reference
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |spec
 |xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |The specification of the Kafka and ZooKeeper clusters, and Topic Operator.
@@ -22,9 +22,9 @@
 Used in: xref:type-Kafka-{context}[`Kafka`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |kafka
 |xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 |Configuration of the Kafka cluster.
@@ -67,9 +67,9 @@ include::../api/io.strimzi.api.kafka.model.kafka.KafkaClusterSpec.adoc[leveloffs
 == `KafkaClusterSpec` schema properties
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |version
 |string
 |The Kafka broker version. Defaults to the latest version. Consult the user documentation to understand the process required to upgrade or downgrade the version.
@@ -87,7 +87,7 @@ include::../api/io.strimzi.api.kafka.model.kafka.KafkaClusterSpec.adoc[leveloffs
 |Configures listeners of Kafka brokers.
 |config
 |map
-|Kafka broker config properties with the following prefixes cannot be set: listeners, advertised., broker., listener., host.name, port, inter.broker.listener.name, sasl., ssl., security., password., log.dir, zookeeper.connect, zookeeper.set.acl, zookeeper.ssl, zookeeper.clientCnxnSocket, authorizer., super.user, cruise.control.metrics.topic, cruise.control.metrics.reporter.bootstrap.servers,node.id, process.roles, controller., metadata.log.dir (with the exception of: zookeeper.connection.timeout.ms, sasl.server.max.receive.size,ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols, ssl.secure.random.implementation,cruise.control.metrics.topic.num.partitions, cruise.control.metrics.topic.replication.factor, cruise.control.metrics.topic.retention.ms,cruise.control.metrics.topic.auto.create.retries, cruise.control.metrics.topic.auto.create.timeout.ms,cruise.control.metrics.topic.min.insync.replicas,controller.quorum.election.backoff.max.ms, controller.quorum.election.timeout.ms, controller.quorum.fetch.timeout.ms).
+|Kafka broker config properties with the following prefixes cannot be set: listeners, advertised., broker., listener., host.name, port, inter.broker.listener.name, sasl., ssl., security., password., log.dir, zookeeper.connect, zookeeper.set.acl, zookeeper.ssl, zookeeper.clientCnxnSocket, authorizer., super.user, cruise.control.metrics.topic, cruise.control.metrics.reporter.bootstrap.servers, node.id, process.roles, controller., metadata.log.dir (with the exception of: zookeeper.connection.timeout.ms, sasl.server.max.receive.size, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols, ssl.secure.random.implementation, cruise.control.metrics.topic.num.partitions, cruise.control.metrics.topic.replication.factor, cruise.control.metrics.topic.retention.ms, cruise.control.metrics.topic.auto.create.retries, cruise.control.metrics.topic.auto.create.timeout.ms, cruise.control.metrics.topic.min.insync.replicas, controller.quorum.election.backoff.max.ms, controller.quorum.election.timeout.ms, controller.quorum.fetch.timeout.ms).
 |storage
 |xref:type-EphemeralStorage-{context}[`EphemeralStorage`], xref:type-PersistentClaimStorage-{context}[`PersistentClaimStorage`], xref:type-JbodStorage-{context}[`JbodStorage`]
 |Storage configuration (disk). Cannot be updated.
@@ -139,9 +139,9 @@ include::../api/io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener.a
 == `GenericKafkaListener` schema properties
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |name
 |string
 |Name of the listener. The name will be used to identify the listener and the related Kubernetes objects. The name has to be unique within given a Kafka cluster. The name can consist of lowercase characters and numbers and be up to 11 characters long.
@@ -181,9 +181,9 @@ Used in: xref:type-GenericKafkaListener-{context}[`GenericKafkaListener`]
 
 The `type` property is a discriminator that distinguishes use of the `KafkaListenerAuthenticationTls` type from xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`], xref:type-KafkaListenerAuthenticationOAuth-{context}[`KafkaListenerAuthenticationOAuth`], xref:type-KafkaListenerAuthenticationCustom-{context}[`KafkaListenerAuthenticationCustom`].
 It must have the value `tls` for the type `KafkaListenerAuthenticationTls`.
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |type
 |string
 |Must be `tls`.
@@ -197,9 +197,9 @@ Used in: xref:type-GenericKafkaListener-{context}[`GenericKafkaListener`]
 
 The `type` property is a discriminator that distinguishes use of the `KafkaListenerAuthenticationScramSha512` type from xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationOAuth-{context}[`KafkaListenerAuthenticationOAuth`], xref:type-KafkaListenerAuthenticationCustom-{context}[`KafkaListenerAuthenticationCustom`].
 It must have the value `scram-sha-512` for the type `KafkaListenerAuthenticationScramSha512`.
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |type
 |string
 |Must be `scram-sha-512`.
@@ -213,9 +213,9 @@ Used in: xref:type-GenericKafkaListener-{context}[`GenericKafkaListener`]
 
 The `type` property is a discriminator that distinguishes use of the `KafkaListenerAuthenticationOAuth` type from xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`], xref:type-KafkaListenerAuthenticationCustom-{context}[`KafkaListenerAuthenticationCustom`].
 It must have the value `oauth` for the type `KafkaListenerAuthenticationOAuth`.
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |accessTokenIsJwt
 |boolean
 |Configure whether the access token is treated as JWT. This must be set to `false` if the authorization server returns opaque tokens. Defaults to `true`.
@@ -338,9 +338,9 @@ It must have the value `oauth` for the type `KafkaListenerAuthenticationOAuth`.
 Used in: xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`], xref:type-KafkaListenerAuthenticationCustom-{context}[`KafkaListenerAuthenticationCustom`], xref:type-KafkaListenerAuthenticationOAuth-{context}[`KafkaListenerAuthenticationOAuth`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |key
 |string
 |The key under which the secret value is stored in the Kubernetes Secret.
@@ -355,9 +355,9 @@ Used in: xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenti
 Used in: xref:type-ClientTls-{context}[`ClientTls`], xref:type-KafkaAuthorizationKeycloak-{context}[`KafkaAuthorizationKeycloak`], xref:type-KafkaAuthorizationOpa-{context}[`KafkaAuthorizationOpa`], xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`], xref:type-KafkaListenerAuthenticationOAuth-{context}[`KafkaListenerAuthenticationOAuth`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |certificate
 |string
 |The name of the file certificate in the Secret.
@@ -381,9 +381,9 @@ include::../api/io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthentic
 
 The `type` property is a discriminator that distinguishes use of the `KafkaListenerAuthenticationCustom` type from xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`], xref:type-KafkaListenerAuthenticationOAuth-{context}[`KafkaListenerAuthenticationOAuth`].
 It must have the value `custom` for the type `KafkaListenerAuthenticationCustom`.
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |listenerConfig
 |map
 |Configuration to be used for a specific listener. All values are prefixed with listener.name._<listener_name>_.
@@ -411,9 +411,9 @@ include::../api/io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerCo
 == `GenericKafkaListenerConfiguration` schema properties
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |brokerCertChainAndKey
 |xref:type-CertAndKeySecretSource-{context}[`CertAndKeySecretSource`]
 |Reference to the `Secret` which holds the certificate and private key pair which will be used for this listener. The certificate can optionally contain the whole chain. This field can be used only with listeners with enabled TLS encryption.
@@ -472,9 +472,9 @@ This field is used to select the preferred address type, which is checked first.
 Used in: xref:type-GenericKafkaListenerConfiguration-{context}[`GenericKafkaListenerConfiguration`], xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |certificate
 |string
 |The name of the file certificate in the Secret.
@@ -499,9 +499,9 @@ include::../api/io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerCo
 == `GenericKafkaListenerConfigurationBootstrap` schema properties
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |alternativeNames
 |string array
 |Additional alternative names for the bootstrap service. The alternative names will be added to the list of subject alternative names of the TLS certificates.
@@ -535,9 +535,9 @@ include::../api/io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerCo
 == `GenericKafkaListenerConfigurationBroker` schema properties
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |broker
 |integer
 |ID of the kafka broker (broker identifier). Broker IDs start from 0 and correspond to the number of broker replicas.
@@ -572,9 +572,9 @@ Used in: xref:type-JbodStorage-{context}[`JbodStorage`], xref:type-KafkaClusterS
 
 The `type` property is a discriminator that distinguishes use of the `EphemeralStorage` type from xref:type-PersistentClaimStorage-{context}[`PersistentClaimStorage`].
 It must have the value `ephemeral` for the type `EphemeralStorage`.
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |id
 |integer
 |Storage identification number. It is mandatory only for storage volumes defined in a storage of type 'jbod'.
@@ -594,9 +594,9 @@ Used in: xref:type-JbodStorage-{context}[`JbodStorage`], xref:type-KafkaClusterS
 
 The `type` property is a discriminator that distinguishes use of the `PersistentClaimStorage` type from xref:type-EphemeralStorage-{context}[`EphemeralStorage`].
 It must have the value `persistent-claim` for the type `PersistentClaimStorage`.
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |type
 |string
 |Must be `persistent-claim`.
@@ -626,9 +626,9 @@ It must have the value `persistent-claim` for the type `PersistentClaimStorage`.
 Used in: xref:type-PersistentClaimStorage-{context}[`PersistentClaimStorage`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |class
 |string
 |The storage class to use for dynamic volume allocation for this broker.
@@ -645,9 +645,9 @@ Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-Kaf
 
 The `type` property is a discriminator that distinguishes use of the `JbodStorage` type from xref:type-EphemeralStorage-{context}[`EphemeralStorage`], xref:type-PersistentClaimStorage-{context}[`PersistentClaimStorage`].
 It must have the value `jbod` for the type `JbodStorage`.
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |type
 |string
 |Must be `jbod`.
@@ -671,9 +671,9 @@ include::../api/io.strimzi.api.kafka.model.kafka.KafkaAuthorizationSimple.adoc[l
 
 The `type` property is a discriminator that distinguishes use of the `KafkaAuthorizationSimple` type from xref:type-KafkaAuthorizationOpa-{context}[`KafkaAuthorizationOpa`], xref:type-KafkaAuthorizationKeycloak-{context}[`KafkaAuthorizationKeycloak`], xref:type-KafkaAuthorizationCustom-{context}[`KafkaAuthorizationCustom`].
 It must have the value `simple` for the type `KafkaAuthorizationSimple`.
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |type
 |string
 |Must be `simple`.
@@ -697,9 +697,9 @@ include::../api/io.strimzi.api.kafka.model.kafka.KafkaAuthorizationOpa.adoc[leve
 
 The `type` property is a discriminator that distinguishes use of the `KafkaAuthorizationOpa` type from xref:type-KafkaAuthorizationSimple-{context}[`KafkaAuthorizationSimple`], xref:type-KafkaAuthorizationKeycloak-{context}[`KafkaAuthorizationKeycloak`], xref:type-KafkaAuthorizationCustom-{context}[`KafkaAuthorizationCustom`].
 It must have the value `opa` for the type `KafkaAuthorizationOpa`.
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |type
 |string
 |Must be `opa`.
@@ -737,9 +737,9 @@ Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 
 The `type` property is a discriminator that distinguishes use of the `KafkaAuthorizationKeycloak` type from xref:type-KafkaAuthorizationSimple-{context}[`KafkaAuthorizationSimple`], xref:type-KafkaAuthorizationOpa-{context}[`KafkaAuthorizationOpa`], xref:type-KafkaAuthorizationCustom-{context}[`KafkaAuthorizationCustom`].
 It must have the value `keycloak` for the type `KafkaAuthorizationKeycloak`.
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |type
 |string
 |Must be `keycloak`.
@@ -808,9 +808,9 @@ include::../api/io.strimzi.api.kafka.model.kafka.KafkaAuthorizationCustom.adoc[l
 
 The `type` property is a discriminator that distinguishes use of the `KafkaAuthorizationCustom` type from xref:type-KafkaAuthorizationSimple-{context}[`KafkaAuthorizationSimple`], xref:type-KafkaAuthorizationOpa-{context}[`KafkaAuthorizationOpa`], xref:type-KafkaAuthorizationKeycloak-{context}[`KafkaAuthorizationKeycloak`].
 It must have the value `custom` for the type `KafkaAuthorizationCustom`.
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |type
 |string
 |Must be `custom`.
@@ -838,9 +838,9 @@ include::../api/io.strimzi.api.kafka.model.common.Rack.adoc[leveloffset=+1]
 == `Rack` schema properties
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |topologyKey
 |string
 |A key that matches labels assigned to the Kubernetes cluster nodes. The value of the label is used to set a broker's `broker.rack` config, and the `client.rack` config for Kafka Connect or MirrorMaker 2.
@@ -852,9 +852,9 @@ include::../api/io.strimzi.api.kafka.model.common.Rack.adoc[leveloffset=+1]
 Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`], xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`], xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`], xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaExporterSpec-{context}[`KafkaExporterSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`], xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`], xref:type-TlsSidecar-{context}[`TlsSidecar`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |failureThreshold
 |integer
 |Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
@@ -878,9 +878,9 @@ Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`], xref:type-E
 Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`], xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`], xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`], xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`], xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`], xref:type-KafkaNodePoolSpec-{context}[`KafkaNodePoolSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |-XX
 |map
 |A map of -XX options to the JVM.
@@ -904,9 +904,9 @@ Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`], xref:type-E
 Used in: xref:type-JvmOptions-{context}[`JvmOptions`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |name
 |string
 |The system property name.
@@ -928,9 +928,9 @@ include::../api/io.strimzi.api.kafka.model.common.jmx.KafkaJmxOptions.adoc[level
 == `KafkaJmxOptions` schema properties
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |authentication
 |xref:type-KafkaJmxAuthenticationPassword-{context}[`KafkaJmxAuthenticationPassword`]
 |Authentication configuration for connecting to the JMX port.
@@ -944,9 +944,9 @@ Used in: xref:type-KafkaJmxOptions-{context}[`KafkaJmxOptions`]
 
 The `type` property is a discriminator that distinguishes use of the `KafkaJmxAuthenticationPassword` type from other subtypes which may be added in the future.
 It must have the value `password` for the type `KafkaJmxAuthenticationPassword`.
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |type
 |string
 |Must be `password`.
@@ -960,9 +960,9 @@ Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`], xref:type-K
 
 The `type` property is a discriminator that distinguishes use of the `JmxPrometheusExporterMetrics` type from other subtypes which may be added in the future.
 It must have the value `jmxPrometheusExporter` for the type `JmxPrometheusExporterMetrics`.
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |type
 |string
 |Must be `jmxPrometheusExporter`.
@@ -977,9 +977,9 @@ It must have the value `jmxPrometheusExporter` for the type `JmxPrometheusExport
 Used in: xref:type-ExternalLogging-{context}[`ExternalLogging`], xref:type-JmxPrometheusExporterMetrics-{context}[`JmxPrometheusExporterMetrics`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |configMapKeyRef
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#configmapkeyselector-v1-core[ConfigMapKeySelector]
 |Reference to the key in the ConfigMap containing the configuration.
@@ -993,9 +993,9 @@ Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`], xref:type-E
 
 The `type` property is a discriminator that distinguishes use of the `InlineLogging` type from xref:type-ExternalLogging-{context}[`ExternalLogging`].
 It must have the value `inline` for the type `InlineLogging`.
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |type
 |string
 |Must be `inline`.
@@ -1012,9 +1012,9 @@ Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`], xref:type-E
 
 The `type` property is a discriminator that distinguishes use of the `ExternalLogging` type from xref:type-InlineLogging-{context}[`InlineLogging`].
 It must have the value `external` for the type `ExternalLogging`.
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |type
 |string
 |Must be `external`.
@@ -1029,9 +1029,9 @@ It must have the value `external` for the type `ExternalLogging`.
 Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |statefulset
 |xref:type-StatefulSetTemplate-{context}[`StatefulSetTemplate`]
 |**The `statefulset` property has been deprecated.** Support for StatefulSets was removed in Strimzi 0.35.0. This property is ignored. Template for Kafka `StatefulSet`.
@@ -1097,9 +1097,9 @@ Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 Used in: xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |metadata
 |xref:type-MetadataTemplate-{context}[`MetadataTemplate`]
 |Metadata applied to the resource.
@@ -1121,9 +1121,9 @@ include::../api/io.strimzi.api.kafka.model.common.template.MetadataTemplate.adoc
 == `MetadataTemplate` schema properties
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |labels
 |map
 |Labels added to the Kubernetes resource.
@@ -1145,9 +1145,9 @@ include::../api/io.strimzi.api.kafka.model.common.template.PodTemplate.adoc[leve
 == `PodTemplate` schema properties
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |metadata
 |xref:type-MetadataTemplate-{context}[`MetadataTemplate`]
 |Metadata applied to the resource.
@@ -1192,9 +1192,9 @@ include::../api/io.strimzi.api.kafka.model.common.template.PodTemplate.adoc[leve
 Used in: xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |metadata
 |xref:type-MetadataTemplate-{context}[`MetadataTemplate`]
 |Metadata applied to the resource.
@@ -1212,9 +1212,9 @@ Used in: xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`], xre
 Used in: xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`], xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-JmxTransTemplate-{context}[`JmxTransTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`], xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`], xref:type-KafkaNodePoolTemplate-{context}[`KafkaNodePoolTemplate`], xref:type-KafkaUserTemplate-{context}[`KafkaUserTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |metadata
 |xref:type-MetadataTemplate-{context}[`MetadataTemplate`]
 |Metadata applied to the resource.
@@ -1233,9 +1233,9 @@ include::../api/io.strimzi.api.kafka.model.common.template.PodDisruptionBudgetTe
 == `PodDisruptionBudgetTemplate` schema properties
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |metadata
 |xref:type-MetadataTemplate-{context}[`MetadataTemplate`]
 |Metadata to apply to the `PodDisruptionBudgetTemplate` resource.
@@ -1257,9 +1257,9 @@ include::../api/io.strimzi.api.kafka.model.common.template.ContainerTemplate.ado
 == `ContainerTemplate` schema properties
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |env
 |xref:type-ContainerEnvVar-{context}[`ContainerEnvVar`] array
 |Environment variables which should be applied to the container.
@@ -1274,9 +1274,9 @@ include::../api/io.strimzi.api.kafka.model.common.template.ContainerTemplate.ado
 Used in: xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |name
 |string
 |The environment variable key.
@@ -1298,9 +1298,9 @@ include::../api/io.strimzi.api.kafka.model.zookeeper.ZookeeperClusterSpec.adoc[l
 == `ZookeeperClusterSpec` schema properties
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |replicas
 |integer
 |The number of pods in the cluster.
@@ -1345,9 +1345,9 @@ include::../api/io.strimzi.api.kafka.model.zookeeper.ZookeeperClusterSpec.adoc[l
 Used in: xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |statefulset
 |xref:type-StatefulSetTemplate-{context}[`StatefulSetTemplate`]
 |**The `statefulset` property has been deprecated.** Support for StatefulSets was removed in Strimzi 0.35.0. This property is ignored. Template for ZooKeeper `StatefulSet`.
@@ -1386,9 +1386,9 @@ Used in: xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |topicOperator
 |xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`]
 |Configuration of the Topic Operator.
@@ -1416,9 +1416,9 @@ include::../api/io.strimzi.api.kafka.model.kafka.entityoperator.EntityTopicOpera
 == `EntityTopicOperatorSpec` schema properties
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |watchedNamespace
 |string
 |The namespace the Topic Operator should watch.
@@ -1467,9 +1467,9 @@ include::../api/io.strimzi.api.kafka.model.kafka.entityoperator.EntityUserOperat
 == `EntityUserOperatorSpec` schema properties
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |watchedNamespace
 |string
 |The namespace the User Operator should watch.
@@ -1515,9 +1515,9 @@ include::../api/io.strimzi.api.kafka.model.kafka.entityoperator.TlsSidecar.adoc[
 == `TlsSidecar` schema properties
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |image
 |string
 |The docker image for the container.
@@ -1541,9 +1541,9 @@ include::../api/io.strimzi.api.kafka.model.kafka.entityoperator.TlsSidecar.adoc[
 Used in: xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |deployment
 |xref:type-DeploymentTemplate-{context}[`DeploymentTemplate`]
 |Template for Entity Operator `Deployment`.
@@ -1586,9 +1586,9 @@ include::../api/io.strimzi.api.kafka.model.common.template.DeploymentTemplate.ad
 == `DeploymentTemplate` schema properties
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |metadata
 |xref:type-MetadataTemplate-{context}[`MetadataTemplate`]
 |Metadata applied to the resource.
@@ -1604,9 +1604,9 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 
 Configuration of how TLS certificates are used within the cluster. This applies to certificates used for both internal communication within the cluster and to certificates used for client access via `Kafka.spec.kafka.listeners.tls`.
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |generateCertificateAuthority
 |boolean
 |If true then Certificate Authority certificates will be generated automatically. Otherwise the user will need to provide a Secret with the CA certificate. Default is true.
@@ -1637,9 +1637,9 @@ include::../api/io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlSpec
 == `CruiseControlSpec` schema properties
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |image
 |string
 |The container image used for Cruise Control pods. If no image name is explicitly specified, the image name corresponds to the name specified in the Cluster Operator configuration. If an image name is not defined in the Cluster Operator configuration, a default value is used.
@@ -1681,9 +1681,9 @@ include::../api/io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlSpec
 Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |deployment
 |xref:type-DeploymentTemplate-{context}[`DeploymentTemplate`]
 |Template for Cruise Control `Deployment`.
@@ -1713,9 +1713,9 @@ Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`]
 Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |disk
 |string
 |**The `disk` property has been deprecated.** The Cruise Control disk capacity setting has been deprecated, is ignored, and will be removed in the future Broker capacity for disk in bytes. Use a number value with either standard Kubernetes byte units (K, M, G, or T), their bibyte (power of two) equivalents (Ki, Mi, Gi, or Ti), or a byte value with or without E notation. For example, 100000M, 100000Mi, 104857600000, or 1e+11.
@@ -1742,9 +1742,9 @@ Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`]
 Used in: xref:type-BrokerCapacity-{context}[`BrokerCapacity`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |brokers
 |integer array
 |List of Kafka brokers (broker identifiers).
@@ -1767,9 +1767,9 @@ Used in: xref:type-BrokerCapacity-{context}[`BrokerCapacity`]
 Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |image
 |string
 |The image to use for the JmxTrans.
@@ -1796,9 +1796,9 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 Used in: xref:type-JmxTransSpec-{context}[`JmxTransSpec`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |outputType
 |string
 |Template for setting the format of the data that will be pushed.For more information see https://github.com/jmxtrans/jmxtrans/wiki/OutputWriters[JmxTrans OutputWriters].
@@ -1825,9 +1825,9 @@ Used in: xref:type-JmxTransSpec-{context}[`JmxTransSpec`]
 Used in: xref:type-JmxTransSpec-{context}[`JmxTransSpec`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |targetMBean
 |string
 |If using wildcards instead of a specific MBean then the data is gathered from multiple MBeans. Otherwise if specifying an MBean then data is gathered from that specified MBean.
@@ -1845,9 +1845,9 @@ Used in: xref:type-JmxTransSpec-{context}[`JmxTransSpec`]
 Used in: xref:type-JmxTransSpec-{context}[`JmxTransSpec`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |deployment
 |xref:type-DeploymentTemplate-{context}[`DeploymentTemplate`]
 |Template for JmxTrans `Deployment`.
@@ -1868,9 +1868,9 @@ Used in: xref:type-JmxTransSpec-{context}[`JmxTransSpec`]
 Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |image
 |string
 |The container image used for the Kafka Exporter pods. If no image name is explicitly specified, the image name corresponds to the version specified in the Cluster Operator configuration. If an image name is not defined in the Cluster Operator configuration, a default value is used.
@@ -1915,9 +1915,9 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 Used in: xref:type-KafkaExporterSpec-{context}[`KafkaExporterSpec`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |deployment
 |xref:type-DeploymentTemplate-{context}[`DeploymentTemplate`]
 |Template for Kafka Exporter `Deployment`.
@@ -1941,9 +1941,9 @@ Used in: xref:type-KafkaExporterSpec-{context}[`KafkaExporterSpec`]
 Used in: xref:type-Kafka-{context}[`Kafka`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |conditions
 |xref:type-Condition-{context}[`Condition`] array
 |List of status conditions.
@@ -1976,9 +1976,9 @@ Used in: xref:type-Kafka-{context}[`Kafka`]
 Used in: xref:type-KafkaBridgeStatus-{context}[`KafkaBridgeStatus`], xref:type-KafkaConnectorStatus-{context}[`KafkaConnectorStatus`], xref:type-KafkaConnectStatus-{context}[`KafkaConnectStatus`], xref:type-KafkaMirrorMaker2Status-{context}[`KafkaMirrorMaker2Status`], xref:type-KafkaMirrorMakerStatus-{context}[`KafkaMirrorMakerStatus`], xref:type-KafkaNodePoolStatus-{context}[`KafkaNodePoolStatus`], xref:type-KafkaRebalanceStatus-{context}[`KafkaRebalanceStatus`], xref:type-KafkaStatus-{context}[`KafkaStatus`], xref:type-KafkaTopicStatus-{context}[`KafkaTopicStatus`], xref:type-KafkaUserStatus-{context}[`KafkaUserStatus`], xref:type-StrimziPodSetStatus-{context}[`StrimziPodSetStatus`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |type
 |string
 |The unique identifier of a condition, used to distinguish between other conditions in the resource.
@@ -2002,9 +2002,9 @@ Used in: xref:type-KafkaBridgeStatus-{context}[`KafkaBridgeStatus`], xref:type-K
 Used in: xref:type-KafkaStatus-{context}[`KafkaStatus`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |type
 |string
 |**The `type` property has been deprecated.** The `type` property is not used anymore. Use the `name` property with the same value. The name of the listener.
@@ -2028,9 +2028,9 @@ Used in: xref:type-KafkaStatus-{context}[`KafkaStatus`]
 Used in: xref:type-ListenerStatus-{context}[`ListenerStatus`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |host
 |string
 |The DNS name or IP address of the Kafka bootstrap service.
@@ -2045,9 +2045,9 @@ Used in: xref:type-ListenerStatus-{context}[`ListenerStatus`]
 Used in: xref:type-KafkaStatus-{context}[`KafkaStatus`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |name
 |string
 |The name of the KafkaNodePool used by this Kafka resource.
@@ -2057,9 +2057,9 @@ Used in: xref:type-KafkaStatus-{context}[`KafkaStatus`]
 = `KafkaConnect` schema reference
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |spec
 |xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`]
 |The specification of the Kafka Connect cluster.
@@ -2081,9 +2081,9 @@ include::../api/io.strimzi.api.kafka.model.connect.KafkaConnectSpec.adoc[levelof
 == `KafkaConnectSpec` schema properties
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |version
 |string
 |The Kafka Connect version. Defaults to the latest version. Consult the user documentation to understand the process required to upgrade or downgrade the version.
@@ -2159,9 +2159,9 @@ include::../api/io.strimzi.api.kafka.model.common.ClientTls.adoc[leveloffset=+1]
 == `ClientTls` schema properties
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |trustedCertificates
 |xref:type-CertSecretSource-{context}[`CertSecretSource`] array
 |Trusted certificates for TLS connection.
@@ -2182,9 +2182,9 @@ include::../api/io.strimzi.api.kafka.model.common.authentication.KafkaClientAuth
 
 The `type` property is a discriminator that distinguishes use of the `KafkaClientAuthenticationTls` type from xref:type-KafkaClientAuthenticationScramSha256-{context}[`KafkaClientAuthenticationScramSha256`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`], xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`].
 It must have the value `tls` for the type `KafkaClientAuthenticationTls`.
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |certificateAndKey
 |xref:type-CertAndKeySecretSource-{context}[`CertAndKeySecretSource`]
 |Reference to the `Secret` which holds the certificate and private key pair.
@@ -2206,9 +2206,9 @@ include::../api/io.strimzi.api.kafka.model.common.authentication.KafkaClientAuth
 == `KafkaClientAuthenticationScramSha256` schema properties
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |passwordSecret
 |xref:type-PasswordSecretSource-{context}[`PasswordSecretSource`]
 |Reference to the `Secret` which holds the password.
@@ -2226,9 +2226,9 @@ include::../api/io.strimzi.api.kafka.model.common.authentication.KafkaClientAuth
 Used in: xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`], xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`], xref:type-KafkaClientAuthenticationScramSha256-{context}[`KafkaClientAuthenticationScramSha256`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |password
 |string
 |The name of the key in the Secret under which the password is stored.
@@ -2250,9 +2250,9 @@ include::../api/io.strimzi.api.kafka.model.common.authentication.KafkaClientAuth
 == `KafkaClientAuthenticationScramSha512` schema properties
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |passwordSecret
 |xref:type-PasswordSecretSource-{context}[`PasswordSecretSource`]
 |Reference to the `Secret` which holds the password.
@@ -2279,9 +2279,9 @@ include::../api/io.strimzi.api.kafka.model.common.authentication.KafkaClientAuth
 
 The `type` property is a discriminator that distinguishes use of the `KafkaClientAuthenticationPlain` type from xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`], xref:type-KafkaClientAuthenticationScramSha256-{context}[`KafkaClientAuthenticationScramSha256`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`].
 It must have the value `plain` for the type `KafkaClientAuthenticationPlain`.
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |passwordSecret
 |xref:type-PasswordSecretSource-{context}[`PasswordSecretSource`]
 |Reference to the `Secret` which holds the password.
@@ -2308,9 +2308,9 @@ include::../api/io.strimzi.api.kafka.model.common.authentication.KafkaClientAuth
 
 The `type` property is a discriminator that distinguishes use of the `KafkaClientAuthenticationOAuth` type from xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`], xref:type-KafkaClientAuthenticationScramSha256-{context}[`KafkaClientAuthenticationScramSha256`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`].
 It must have the value `oauth` for the type `KafkaClientAuthenticationOAuth`.
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |accessToken
 |xref:type-GenericSecretSource-{context}[`GenericSecretSource`]
 |Link to Kubernetes Secret containing the access token which was obtained from the authorization server.
@@ -2383,9 +2383,9 @@ Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-Kafka
 
 The `type` property is a discriminator that distinguishes use of the `JaegerTracing` type from xref:type-OpenTelemetryTracing-{context}[`OpenTelemetryTracing`].
 It must have the value `jaeger` for the type `JaegerTracing`.
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |type
 |string
 |Must be `jaeger`.
@@ -2399,9 +2399,9 @@ Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-Kafka
 
 The `type` property is a discriminator that distinguishes use of the `OpenTelemetryTracing` type from xref:type-JaegerTracing-{context}[`JaegerTracing`].
 It must have the value `opentelemetry` for the type `OpenTelemetryTracing`.
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |type
 |string
 |Must be `opentelemetry`.
@@ -2413,9 +2413,9 @@ It must have the value `opentelemetry` for the type `OpenTelemetryTracing`.
 Used in: xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |deployment
 |xref:type-DeploymentTemplate-{context}[`DeploymentTemplate`]
 |**The `deployment` property has been deprecated.** Kafka Connect and MirrorMaker 2 operands do not use `Deployment` resources anymore. This field will be ignored. Template for Kafka Connect `Deployment`.
@@ -2469,9 +2469,9 @@ Used in: xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-Kaf
 Used in: xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |metadata
 |xref:type-MetadataTemplate-{context}[`MetadataTemplate`]
 |Metadata to apply to the `PodDisruptionBudgetTemplate` resource.
@@ -2493,9 +2493,9 @@ include::../api/io.strimzi.api.kafka.model.connect.ExternalConfiguration.adoc[le
 == `ExternalConfiguration` schema properties
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |env
 |xref:type-ExternalConfigurationEnv-{context}[`ExternalConfigurationEnv`] array
 |Makes data from a Secret or ConfigMap available in the Kafka Connect pods as environment variables.
@@ -2510,9 +2510,9 @@ include::../api/io.strimzi.api.kafka.model.connect.ExternalConfiguration.adoc[le
 Used in: xref:type-ExternalConfiguration-{context}[`ExternalConfiguration`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |name
 |string
 |Name of the environment variable which will be passed to the Kafka Connect pods. The name of the environment variable cannot start with `KAFKA_` or `STRIMZI_`.
@@ -2527,9 +2527,9 @@ Used in: xref:type-ExternalConfiguration-{context}[`ExternalConfiguration`]
 Used in: xref:type-ExternalConfigurationEnv-{context}[`ExternalConfigurationEnv`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |configMapKeyRef
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#configmapkeyselector-v1-core[ConfigMapKeySelector]
 |Reference to a key in a ConfigMap.
@@ -2544,9 +2544,9 @@ Used in: xref:type-ExternalConfigurationEnv-{context}[`ExternalConfigurationEnv`
 Used in: xref:type-ExternalConfiguration-{context}[`ExternalConfiguration`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |configMap
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#configmapvolumesource-v1-core[ConfigMapVolumeSource]
 |Reference to a key in a ConfigMap. Exactly one Secret or ConfigMap has to be specified.
@@ -2571,9 +2571,9 @@ include::../api/io.strimzi.api.kafka.model.connect.build.Build.adoc[leveloffset=
 == `Build` schema properties
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |output
 |xref:type-DockerOutput-{context}[`DockerOutput`], xref:type-ImageStreamOutput-{context}[`ImageStreamOutput`]
 |Configures where should the newly built image be stored. Required.
@@ -2593,9 +2593,9 @@ Used in: xref:type-Build-{context}[`Build`]
 
 The `type` property is a discriminator that distinguishes use of the `DockerOutput` type from xref:type-ImageStreamOutput-{context}[`ImageStreamOutput`].
 It must have the value `docker` for the type `DockerOutput`.
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |image
 |string
 |The full name which should be used for tagging and pushing the newly built image. For example `quay.io/my-organization/my-custom-connect:latest`. Required.
@@ -2618,9 +2618,9 @@ Used in: xref:type-Build-{context}[`Build`]
 
 The `type` property is a discriminator that distinguishes use of the `ImageStreamOutput` type from xref:type-DockerOutput-{context}[`DockerOutput`].
 It must have the value `imagestream` for the type `ImageStreamOutput`.
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |image
 |string
 |The name and tag of the ImageStream where the newly built image will be pushed. For example `my-custom-connect:latest`. Required.
@@ -2635,9 +2635,9 @@ It must have the value `imagestream` for the type `ImageStreamOutput`.
 Used in: xref:type-Build-{context}[`Build`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |name
 |string
 |The unique name of the connector plugin. Will be used to generate the path where the connector artifacts will be stored. The name has to be unique within the KafkaConnect resource. The name has to follow the following pattern: `^[a-z][-_a-z0-9]*[a-z]$`. Required.
@@ -2652,9 +2652,9 @@ Used in: xref:type-Build-{context}[`Build`]
 Used in: xref:type-Plugin-{context}[`Plugin`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |url
 |string
 |URL of the artifact which will be downloaded. Strimzi does not do any security scanning of the downloaded artifacts. For security reasons, you should first verify the artifacts manually and configure the checksum verification to make sure the same artifact is used in the automated build. Required for `jar`, `zip`, `tgz` and `other` artifacts. Not applicable to the `maven` artifact type.
@@ -2675,9 +2675,9 @@ Used in: xref:type-Plugin-{context}[`Plugin`]
 Used in: xref:type-Plugin-{context}[`Plugin`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |url
 |string
 |URL of the artifact which will be downloaded. Strimzi does not do any security scanning of the downloaded artifacts. For security reasons, you should first verify the artifacts manually and configure the checksum verification to make sure the same artifact is used in the automated build. Required for `jar`, `zip`, `tgz` and `other` artifacts. Not applicable to the `maven` artifact type.
@@ -2698,9 +2698,9 @@ Used in: xref:type-Plugin-{context}[`Plugin`]
 Used in: xref:type-Plugin-{context}[`Plugin`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |url
 |string
 |URL of the artifact which will be downloaded. Strimzi does not do any security scanning of the downloaded artifacts. For security reasons, you should first verify the artifacts manually and configure the checksum verification to make sure the same artifact is used in the automated build. Required for `jar`, `zip`, `tgz` and `other` artifacts. Not applicable to the `maven` artifact type.
@@ -2723,9 +2723,9 @@ Used in: xref:type-Plugin-{context}[`Plugin`]
 
 The `type` property is a discriminator that distinguishes use of the `MavenArtifact` type from xref:type-JarArtifact-{context}[`JarArtifact`], xref:type-TgzArtifact-{context}[`TgzArtifact`], xref:type-ZipArtifact-{context}[`ZipArtifact`], xref:type-OtherArtifact-{context}[`OtherArtifact`].
 It must have the value `maven` for the type `MavenArtifact`.
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |repository
 |string
 |Maven repository to download the artifact from. Applicable to the `maven` artifact type only.
@@ -2752,9 +2752,9 @@ It must have the value `maven` for the type `MavenArtifact`.
 Used in: xref:type-Plugin-{context}[`Plugin`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |url
 |string
 |URL of the artifact which will be downloaded. Strimzi does not do any security scanning of the downloaded artifacts. For security reasons, you should first verify the artifacts manually and configure the checksum verification to make sure the same artifact is used in the automated build. Required for `jar`, `zip`, `tgz` and `other` artifacts. Not applicable to the `maven` artifact type.
@@ -2778,9 +2778,9 @@ Used in: xref:type-Plugin-{context}[`Plugin`]
 Used in: xref:type-KafkaConnect-{context}[`KafkaConnect`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |conditions
 |xref:type-Condition-{context}[`Condition`] array
 |List of status conditions.
@@ -2807,9 +2807,9 @@ Used in: xref:type-KafkaConnect-{context}[`KafkaConnect`]
 Used in: xref:type-KafkaConnectStatus-{context}[`KafkaConnectStatus`], xref:type-KafkaMirrorMaker2Status-{context}[`KafkaMirrorMaker2Status`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |type
 |string
 |The type of the connector plugin. The available types are `sink` and `source`.
@@ -2825,9 +2825,9 @@ Used in: xref:type-KafkaConnectStatus-{context}[`KafkaConnectStatus`], xref:type
 = `KafkaTopic` schema reference
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |spec
 |xref:type-KafkaTopicSpec-{context}[`KafkaTopicSpec`]
 |The specification of the topic.
@@ -2842,9 +2842,9 @@ Used in: xref:type-KafkaConnectStatus-{context}[`KafkaConnectStatus`], xref:type
 Used in: xref:type-KafkaTopic-{context}[`KafkaTopic`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |partitions
 |integer
 |The number of partitions the topic should have. This cannot be decreased after topic creation. It can be increased after topic creation, but it is important to understand the consequences that has, especially for topics with semantic partitioning. When absent this will default to the broker configuration for `num.partitions`.
@@ -2865,9 +2865,9 @@ Used in: xref:type-KafkaTopic-{context}[`KafkaTopic`]
 Used in: xref:type-KafkaTopic-{context}[`KafkaTopic`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |conditions
 |xref:type-Condition-{context}[`Condition`] array
 |List of status conditions.
@@ -2883,9 +2883,9 @@ Used in: xref:type-KafkaTopic-{context}[`KafkaTopic`]
 = `KafkaUser` schema reference
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |spec
 |xref:type-KafkaUserSpec-{context}[`KafkaUserSpec`]
 |The specification of the user.
@@ -2900,9 +2900,9 @@ Used in: xref:type-KafkaTopic-{context}[`KafkaTopic`]
 Used in: xref:type-KafkaUser-{context}[`KafkaUser`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |authentication
 |xref:type-KafkaUserTlsClientAuthentication-{context}[`KafkaUserTlsClientAuthentication`], xref:type-KafkaUserTlsExternalClientAuthentication-{context}[`KafkaUserTlsExternalClientAuthentication`], xref:type-KafkaUserScramSha512ClientAuthentication-{context}[`KafkaUserScramSha512ClientAuthentication`]
 |Authentication mechanism enabled for this Kafka user. The supported authentication mechanisms are `scram-sha-512`, `tls`, and `tls-external`. 
@@ -2932,9 +2932,9 @@ Used in: xref:type-KafkaUserSpec-{context}[`KafkaUserSpec`]
 
 The `type` property is a discriminator that distinguishes use of the `KafkaUserTlsClientAuthentication` type from xref:type-KafkaUserTlsExternalClientAuthentication-{context}[`KafkaUserTlsExternalClientAuthentication`], xref:type-KafkaUserScramSha512ClientAuthentication-{context}[`KafkaUserScramSha512ClientAuthentication`].
 It must have the value `tls` for the type `KafkaUserTlsClientAuthentication`.
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |type
 |string
 |Must be `tls`.
@@ -2948,9 +2948,9 @@ Used in: xref:type-KafkaUserSpec-{context}[`KafkaUserSpec`]
 
 The `type` property is a discriminator that distinguishes use of the `KafkaUserTlsExternalClientAuthentication` type from xref:type-KafkaUserTlsClientAuthentication-{context}[`KafkaUserTlsClientAuthentication`], xref:type-KafkaUserScramSha512ClientAuthentication-{context}[`KafkaUserScramSha512ClientAuthentication`].
 It must have the value `tls-external` for the type `KafkaUserTlsExternalClientAuthentication`.
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |type
 |string
 |Must be `tls-external`.
@@ -2964,9 +2964,9 @@ Used in: xref:type-KafkaUserSpec-{context}[`KafkaUserSpec`]
 
 The `type` property is a discriminator that distinguishes use of the `KafkaUserScramSha512ClientAuthentication` type from xref:type-KafkaUserTlsClientAuthentication-{context}[`KafkaUserTlsClientAuthentication`], xref:type-KafkaUserTlsExternalClientAuthentication-{context}[`KafkaUserTlsExternalClientAuthentication`].
 It must have the value `scram-sha-512` for the type `KafkaUserScramSha512ClientAuthentication`.
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |password
 |xref:type-Password-{context}[`Password`]
 |Specify the password for the user. If not set, a new password is generated by the User Operator.
@@ -2981,9 +2981,9 @@ It must have the value `scram-sha-512` for the type `KafkaUserScramSha512ClientA
 Used in: xref:type-KafkaUserScramSha512ClientAuthentication-{context}[`KafkaUserScramSha512ClientAuthentication`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |valueFrom
 |xref:type-PasswordSource-{context}[`PasswordSource`]
 |Secret from which the password should be read.
@@ -2995,9 +2995,9 @@ Used in: xref:type-KafkaUserScramSha512ClientAuthentication-{context}[`KafkaUser
 Used in: xref:type-Password-{context}[`Password`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |secretKeyRef
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#secretkeyselector-v1-core[SecretKeySelector]
 |Selects a key of a Secret in the resource's namespace.
@@ -3011,9 +3011,9 @@ Used in: xref:type-KafkaUserSpec-{context}[`KafkaUserSpec`]
 
 The `type` property is a discriminator that distinguishes use of the `KafkaUserAuthorizationSimple` type from other subtypes which may be added in the future.
 It must have the value `simple` for the type `KafkaUserAuthorizationSimple`.
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |type
 |string
 |Must be `simple`.
@@ -3035,9 +3035,9 @@ include::../api/io.strimzi.api.kafka.model.user.acl.AclRule.adoc[leveloffset=+1]
 == `AclRule` schema properties
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |host
 |string
 |The host from which the action described in the ACL rule is allowed or denied.
@@ -3063,9 +3063,9 @@ Used in: xref:type-AclRule-{context}[`AclRule`]
 
 The `type` property is a discriminator that distinguishes use of the `AclRuleTopicResource` type from xref:type-AclRuleGroupResource-{context}[`AclRuleGroupResource`], xref:type-AclRuleClusterResource-{context}[`AclRuleClusterResource`], xref:type-AclRuleTransactionalIdResource-{context}[`AclRuleTransactionalIdResource`].
 It must have the value `topic` for the type `AclRuleTopicResource`.
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |type
 |string
 |Must be `topic`.
@@ -3085,9 +3085,9 @@ Used in: xref:type-AclRule-{context}[`AclRule`]
 
 The `type` property is a discriminator that distinguishes use of the `AclRuleGroupResource` type from xref:type-AclRuleTopicResource-{context}[`AclRuleTopicResource`], xref:type-AclRuleClusterResource-{context}[`AclRuleClusterResource`], xref:type-AclRuleTransactionalIdResource-{context}[`AclRuleTransactionalIdResource`].
 It must have the value `group` for the type `AclRuleGroupResource`.
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |type
 |string
 |Must be `group`.
@@ -3107,9 +3107,9 @@ Used in: xref:type-AclRule-{context}[`AclRule`]
 
 The `type` property is a discriminator that distinguishes use of the `AclRuleClusterResource` type from xref:type-AclRuleTopicResource-{context}[`AclRuleTopicResource`], xref:type-AclRuleGroupResource-{context}[`AclRuleGroupResource`], xref:type-AclRuleTransactionalIdResource-{context}[`AclRuleTransactionalIdResource`].
 It must have the value `cluster` for the type `AclRuleClusterResource`.
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |type
 |string
 |Must be `cluster`.
@@ -3123,9 +3123,9 @@ Used in: xref:type-AclRule-{context}[`AclRule`]
 
 The `type` property is a discriminator that distinguishes use of the `AclRuleTransactionalIdResource` type from xref:type-AclRuleTopicResource-{context}[`AclRuleTopicResource`], xref:type-AclRuleGroupResource-{context}[`AclRuleGroupResource`], xref:type-AclRuleClusterResource-{context}[`AclRuleClusterResource`].
 It must have the value `transactionalId` for the type `AclRuleTransactionalIdResource`.
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |type
 |string
 |Must be `transactionalId`.
@@ -3150,9 +3150,9 @@ include::../api/io.strimzi.api.kafka.model.user.KafkaUserQuotas.adoc[leveloffset
 == `KafkaUserQuotas` schema properties
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |consumerByteRate
 |integer
 |A quota on the maximum bytes per-second that each client group can fetch from a broker before the clients in the group are throttled. Defined on a per-broker basis.
@@ -3180,9 +3180,9 @@ include::../api/io.strimzi.api.kafka.model.user.KafkaUserTemplate.adoc[leveloffs
 == `KafkaUserTemplate` schema properties
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |secret
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |Template for KafkaUser resources. The template allows users to specify how the `Secret` with password or TLS certificates is generated.
@@ -3194,9 +3194,9 @@ include::../api/io.strimzi.api.kafka.model.user.KafkaUserTemplate.adoc[leveloffs
 Used in: xref:type-KafkaUser-{context}[`KafkaUser`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |conditions
 |xref:type-Condition-{context}[`Condition`] array
 |List of status conditions.
@@ -3218,9 +3218,9 @@ Used in: xref:type-KafkaUser-{context}[`KafkaUser`]
 Please use xref:type-KafkaMirrorMaker2-{context}[`KafkaMirrorMaker2`] instead.
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |spec
 |xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`]
 |The specification of Kafka MirrorMaker.
@@ -3242,9 +3242,9 @@ include::../api/io.strimzi.api.kafka.model.mirrormaker.KafkaMirrorMakerSpec.adoc
 == `KafkaMirrorMakerSpec` schema properties
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |version
 |string
 |The Kafka MirrorMaker version. Defaults to the latest version. Consult the documentation to understand the process required to upgrade or downgrade the version.
@@ -3305,9 +3305,9 @@ include::../api/io.strimzi.api.kafka.model.mirrormaker.KafkaMirrorMakerConsumerS
 == `KafkaMirrorMakerConsumerSpec` schema properties
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |numStreams
 |integer
 |Specifies the number of consumer stream threads to create.
@@ -3344,9 +3344,9 @@ include::../api/io.strimzi.api.kafka.model.mirrormaker.KafkaMirrorMakerProducerS
 == `KafkaMirrorMakerProducerSpec` schema properties
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |bootstrapServers
 |string
 |A list of host:port pairs for establishing the initial connection to the Kafka cluster.
@@ -3370,9 +3370,9 @@ include::../api/io.strimzi.api.kafka.model.mirrormaker.KafkaMirrorMakerProducerS
 Used in: xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |deployment
 |xref:type-DeploymentTemplate-{context}[`DeploymentTemplate`]
 |Template for Kafka MirrorMaker `Deployment`.
@@ -3396,9 +3396,9 @@ Used in: xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`]
 Used in: xref:type-KafkaMirrorMaker-{context}[`KafkaMirrorMaker`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |conditions
 |xref:type-Condition-{context}[`Condition`] array
 |List of status conditions.
@@ -3417,9 +3417,9 @@ Used in: xref:type-KafkaMirrorMaker-{context}[`KafkaMirrorMaker`]
 = `KafkaBridge` schema reference
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |spec
 |xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`]
 |The specification of the Kafka Bridge.
@@ -3441,9 +3441,9 @@ include::../api/io.strimzi.api.kafka.model.bridge.KafkaBridgeSpec.adoc[leveloffs
 == `KafkaBridgeSpec` schema properties
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |replicas
 |integer
 |The number of pods in the `Deployment`.  Defaults to `1`.
@@ -3516,9 +3516,9 @@ include::../api/io.strimzi.api.kafka.model.bridge.KafkaBridgeHttpConfig.adoc[lev
 == `KafkaBridgeHttpConfig` schema properties
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |port
 |integer
 |The port which is the server listening on.
@@ -3533,9 +3533,9 @@ include::../api/io.strimzi.api.kafka.model.bridge.KafkaBridgeHttpConfig.adoc[lev
 Used in: xref:type-KafkaBridgeHttpConfig-{context}[`KafkaBridgeHttpConfig`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |allowedOrigins
 |string array
 |List of allowed origins. Java regular expressions can be used.
@@ -3550,9 +3550,9 @@ Used in: xref:type-KafkaBridgeHttpConfig-{context}[`KafkaBridgeHttpConfig`]
 Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |config
 |map
 |The Kafka AdminClient configuration used for AdminClient instances created by the bridge.
@@ -3571,9 +3571,9 @@ include::../api/io.strimzi.api.kafka.model.bridge.KafkaBridgeConsumerSpec.adoc[l
 == `KafkaBridgeConsumerSpec` schema properties
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |config
 |map
 |The Kafka consumer configuration used for consumer instances created by the bridge. Properties with the following prefixes cannot be set: ssl., bootstrap.servers, group.id, sasl., security. (with the exception of: ssl.endpoint.identification.algorithm, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols).
@@ -3592,9 +3592,9 @@ include::../api/io.strimzi.api.kafka.model.bridge.KafkaBridgeProducerSpec.adoc[l
 == `KafkaBridgeProducerSpec` schema properties
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |config
 |map
 |The Kafka producer configuration used for producer instances created by the bridge. Properties with the following prefixes cannot be set: ssl., bootstrap.servers, sasl., security. (with the exception of: ssl.endpoint.identification.algorithm, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols).
@@ -3606,9 +3606,9 @@ include::../api/io.strimzi.api.kafka.model.bridge.KafkaBridgeProducerSpec.adoc[l
 Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |deployment
 |xref:type-DeploymentTemplate-{context}[`DeploymentTemplate`]
 |Template for Kafka Bridge `Deployment`.
@@ -3641,9 +3641,9 @@ Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`]
 Used in: xref:type-KafkaBridge-{context}[`KafkaBridge`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |conditions
 |xref:type-Condition-{context}[`Condition`] array
 |List of status conditions.
@@ -3665,9 +3665,9 @@ Used in: xref:type-KafkaBridge-{context}[`KafkaBridge`]
 = `KafkaConnector` schema reference
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |spec
 |xref:type-KafkaConnectorSpec-{context}[`KafkaConnectorSpec`]
 |The specification of the Kafka Connector.
@@ -3682,9 +3682,9 @@ Used in: xref:type-KafkaBridge-{context}[`KafkaBridge`]
 Used in: xref:type-KafkaConnector-{context}[`KafkaConnector`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |class
 |string
 |The Class for the Kafka Connector.
@@ -3718,9 +3718,9 @@ include::../api/io.strimzi.api.kafka.model.connector.AutoRestart.adoc[leveloffse
 == `AutoRestart` schema properties
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |enabled
 |boolean
 |Whether automatic restart for failed connectors and tasks should be enabled or disabled.
@@ -3735,9 +3735,9 @@ include::../api/io.strimzi.api.kafka.model.connector.AutoRestart.adoc[leveloffse
 Used in: xref:type-KafkaConnector-{context}[`KafkaConnector`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |conditions
 |xref:type-Condition-{context}[`Condition`] array
 |List of status conditions.
@@ -3764,9 +3764,9 @@ Used in: xref:type-KafkaConnector-{context}[`KafkaConnector`]
 Used in: xref:type-KafkaConnectorStatus-{context}[`KafkaConnectorStatus`], xref:type-KafkaMirrorMaker2Status-{context}[`KafkaMirrorMaker2Status`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |count
 |integer
 |The number of times the connector or task is restarted.
@@ -3782,9 +3782,9 @@ Used in: xref:type-KafkaConnectorStatus-{context}[`KafkaConnectorStatus`], xref:
 = `KafkaMirrorMaker2` schema reference
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |spec
 |xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`]
 |The specification of the Kafka MirrorMaker 2 cluster.
@@ -3799,9 +3799,9 @@ Used in: xref:type-KafkaConnectorStatus-{context}[`KafkaConnectorStatus`], xref:
 Used in: xref:type-KafkaMirrorMaker2-{context}[`KafkaMirrorMaker2`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |version
 |string
 |The Kafka Connect version. Defaults to the latest version. Consult the user documentation to understand the process required to upgrade or downgrade the version.
@@ -3871,9 +3871,9 @@ include::../api/io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Cluster
 == `KafkaMirrorMaker2ClusterSpec` schema properties
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |alias
 |string
 |Alias used to reference the Kafka cluster.
@@ -3897,9 +3897,9 @@ include::../api/io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Cluster
 Used in: xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |sourceCluster
 |string
 |The alias of the source cluster used by the Kafka MirrorMaker 2 connectors. The alias must match a cluster in the list at `spec.clusters`.
@@ -3941,9 +3941,9 @@ Used in: xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`]
 Used in: xref:type-KafkaMirrorMaker2MirrorSpec-{context}[`KafkaMirrorMaker2MirrorSpec`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |tasksMax
 |integer
 |The maximum number of tasks for the Kafka Connector.
@@ -3967,9 +3967,9 @@ Used in: xref:type-KafkaMirrorMaker2MirrorSpec-{context}[`KafkaMirrorMaker2Mirro
 Used in: xref:type-KafkaMirrorMaker2-{context}[`KafkaMirrorMaker2`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |conditions
 |xref:type-Condition-{context}[`Condition`] array
 |List of status conditions.
@@ -4000,9 +4000,9 @@ Used in: xref:type-KafkaMirrorMaker2-{context}[`KafkaMirrorMaker2`]
 = `KafkaRebalance` schema reference
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |spec
 |xref:type-KafkaRebalanceSpec-{context}[`KafkaRebalanceSpec`]
 |The specification of the Kafka rebalance.
@@ -4017,9 +4017,9 @@ Used in: xref:type-KafkaMirrorMaker2-{context}[`KafkaMirrorMaker2`]
 Used in: xref:type-KafkaRebalance-{context}[`KafkaRebalance`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |mode
 |string (one of [remove-brokers, full, add-brokers])
 |Mode to run the rebalancing. The supported modes are `full`, `add-brokers`, `remove-brokers`.
@@ -4067,9 +4067,9 @@ If not specified, the `full` mode is used by default.
 Used in: xref:type-KafkaRebalance-{context}[`KafkaRebalance`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |conditions
 |xref:type-Condition-{context}[`Condition`] array
 |List of status conditions.
@@ -4088,9 +4088,9 @@ Used in: xref:type-KafkaRebalance-{context}[`KafkaRebalance`]
 = `KafkaNodePool` schema reference
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |spec
 |xref:type-KafkaNodePoolSpec-{context}[`KafkaNodePoolSpec`]
 |The specification of the KafkaNodePool.
@@ -4105,9 +4105,9 @@ Used in: xref:type-KafkaRebalance-{context}[`KafkaRebalance`]
 Used in: xref:type-KafkaNodePool-{context}[`KafkaNodePool`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |replicas
 |integer
 |The number of pods in the pool.
@@ -4134,9 +4134,9 @@ Used in: xref:type-KafkaNodePool-{context}[`KafkaNodePool`]
 Used in: xref:type-KafkaNodePoolSpec-{context}[`KafkaNodePoolSpec`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |podSet
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |Template for Kafka `StrimziPodSet` resource.
@@ -4169,9 +4169,9 @@ Used in: xref:type-KafkaNodePoolSpec-{context}[`KafkaNodePoolSpec`]
 Used in: xref:type-KafkaNodePool-{context}[`KafkaNodePool`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |conditions
 |xref:type-Condition-{context}[`Condition`] array
 |List of status conditions.
@@ -4206,9 +4206,9 @@ include::../api/io.strimzi.api.kafka.model.podset.StrimziPodSet.adoc[leveloffset
 == `StrimziPodSet` schema properties
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |spec
 |xref:type-StrimziPodSetSpec-{context}[`StrimziPodSetSpec`]
 |The specification of the StrimziPodSet.
@@ -4223,9 +4223,9 @@ include::../api/io.strimzi.api.kafka.model.podset.StrimziPodSet.adoc[leveloffset
 Used in: xref:type-StrimziPodSet-{context}[`StrimziPodSet`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |selector
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#labelselector-v1-meta[LabelSelector]
 |Selector is a label query which matches all the pods managed by this `StrimziPodSet`. Only `matchLabels` is supported. If `matchExpressions` is set, it will be ignored.
@@ -4240,9 +4240,9 @@ Used in: xref:type-StrimziPodSet-{context}[`StrimziPodSet`]
 Used in: xref:type-StrimziPodSet-{context}[`StrimziPodSet`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property |Property Type |Description
+|Property |Property type |Description
 |conditions
 |xref:type-Condition-{context}[`Condition`] array
 |List of status conditions.
