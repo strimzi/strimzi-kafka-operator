@@ -644,7 +644,7 @@ public class AbstractUpgradeST extends AbstractST {
 
     protected String downloadExamplesAndGetPath(CommonVersionModificationData versionModificationData) throws IOException {
         if (versionModificationData.getToUrl().equals("HEAD")) {
-            return PATH_TO_PACKAGING_EXAMPLES;
+            return PATH_TO_PACKAGING;
         } else {
             File dir = FileUtils.downloadAndUnzip(versionModificationData.getToUrl());
             return dir.getAbsolutePath() + "/" + versionModificationData.getToExamples();
