@@ -26,7 +26,7 @@
 
 - fromVersion: 0.39.0
   fromExamples: strimzi-0.39.0
-  oldestKafka: 3.5.0
+  oldestKafka: 3.5.2
   fromUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.39.0/strimzi-0.39.0.zip
   fromKafkaVersionsUrl: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/0.39.0/kafka-versions.yaml
   additionalTopics: 2
@@ -46,7 +46,7 @@
   featureGatesAfter: ""
 - fromVersion: 0.39.0
   fromExamples: strimzi-0.39.0
-  oldestKafka: 3.5.0
+  oldestKafka: 3.5.2
   fromUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.39.0/strimzi-0.39.0.zip
   fromKafkaVersionsUrl: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/0.39.0/kafka-versions.yaml
   additionalTopics: 2
