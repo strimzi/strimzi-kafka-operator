@@ -10,7 +10,8 @@ import com.fasterxml.jackson.annotation.JsonValue;
 public enum KafkaRebalanceMode {
     FULL("full"),
     ADD_BROKERS("add-brokers"),
-    REMOVE_BROKERS("remove-brokers");
+    REMOVE_BROKERS("remove-brokers"),
+    REMOVE_DISKS("remove-disks");
 
     private String name;
 
@@ -27,6 +28,8 @@ public enum KafkaRebalanceMode {
                 return ADD_BROKERS;
             case "remove-brokers":
                 return REMOVE_BROKERS;
+            case "remove-disks":
+                return REMOVE_DISKS;
             default:
                 return null;
         }

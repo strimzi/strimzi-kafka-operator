@@ -20,7 +20,7 @@ import java.util.List;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "mode", "brokers", "goals", "skipHardGoalCheck", "rebalanceDisk", "excludedTopics", "concurrentPartitionMovementsPerBroker",
+@JsonPropertyOrder({ "mode", "brokers", "brokerandlogdirs", "goals", "skipHardGoalCheck", "rebalanceDisk", "excludedTopics", "concurrentPartitionMovementsPerBroker",
     "concurrentIntraBrokerPartitionMovements", "concurrentLeaderMovements", "replicationThrottle", "replicaMovementStrategies" })
 @EqualsAndHashCode
 public class KafkaRebalanceSpec extends Spec {
@@ -29,6 +29,19 @@ public class KafkaRebalanceSpec extends Spec {
     // rebalancing modes
     private KafkaRebalanceMode mode = KafkaRebalanceMode.FULL;
     private List<Integer> brokers;
+
+    @Description("The list of newly added brokers in case of scaling up or the ones to be removed in case of scaling down to use for rebalancing. " +
+            "This list can be used only with rebalancing mode `add-brokers` and `removed-brokers`. It is ignored with `full` mode.")
+    public List<String> getBrokerandlogdirs() {
+        return brokerandlogdirs;
+    }
+
+    public void setBrokerandlogdirs(List<String> brokerandlogdirs) {
+        this.brokerandlogdirs = brokerandlogdirs;
+    }
+
+
+    private List<String> brokerandlogdirs;
 
     // Optimization goal configurations
     private List<String> goals;
