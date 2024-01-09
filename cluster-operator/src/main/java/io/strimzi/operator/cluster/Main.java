@@ -306,7 +306,8 @@ public class Main {
             Future.all(futures).onComplete(res -> {
                 if (res.succeeded())    {
                     returnPromise.complete();
-                } else  {
+                } else {
+                    LOGGER.error("Failed to create Cluster Roles.", res.cause());
                     returnPromise.fail("Failed to create Cluster Roles.");
                 }
             });

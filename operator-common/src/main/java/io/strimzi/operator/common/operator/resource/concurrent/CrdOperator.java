@@ -78,7 +78,7 @@ public class CrdOperator<C extends KubernetesClient,
             "deleted",
             1_000,
             deleteTimeoutMs(),
-            () -> resourceOp.get() != null)
+            () -> resourceOp.get() == null)
             .toCompletableFuture();
 
         CompletableFuture<Void> deleteFuture = resourceSupport.deleteAsync(resourceOp.withPropagationPolicy(cascading ? DeletionPropagation.FOREGROUND : DeletionPropagation.ORPHAN).withGracePeriod(-1L))
