@@ -22,6 +22,11 @@
 #    reason:  #  String - reason why we skip / not skip the test case
 #  featureGatesBefore: String - FG added to `STRIMZI_FEATURE_GATES` environment variable, on initial deploy of CO
 #  featureGatesAfter: String - FG added to `STRIMZI_FEATURE_GATES` environment variable, on upgrade of CO
+#  filePaths: path to example files for particular resources
+#    kafkaBefore: path to Kafka resource (ZK mode) in the version of Strimzi, from which we are doing the upgrade
+#    kafkaAfter: path to Kafka resource (ZK mode) in the version of Strimzi, to which we are doing the upgrade
+#    kafkaKRaftBefore: path to Kafka and KafkaNodePool resources (KRaft mode), collected in one file, in the version of Strimzi, from which we are doing the upgrade
+#    kafkaKRaftAfter: path to Kafka and KafkaNodePool resources (KRaft mode), collected in one file, in the version of Strimzi, to which we are doing the upgrade
 #  --- Structure ---
 
 - fromVersion: 0.39.0

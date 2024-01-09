@@ -4,6 +4,11 @@
 #  fromExamples: String - Folder name which contains examples to deploy. Downloaded from "fromUrl"
 #  fromUrl: String - url, from which examples are downloaded
 #  fromKafkaVersionsUrl: String - url, from which is kafka-versions.yaml file downloaded
+#  filePaths: path to example files for particular resources
+#    kafkaBefore: path to Kafka resource (ZK mode) in the version of Strimzi, from which we are doing the upgrade
+#    kafkaAfter: path to Kafka resource (ZK mode) in the version of Strimzi, to which we are doing the upgrade
+#    kafkaKRaftBefore: path to Kafka and KafkaNodePool resources (KRaft mode), collected in one file, in the version of Strimzi, from which we are doing the upgrade
+#    kafkaKRaftAfter: path to Kafka and KafkaNodePool resources (KRaft mode), collected in one file, in the version of Strimzi, to which we are doing the upgrade
 #  --- Structure ---
 #
 #  --- Prerequisites ---
