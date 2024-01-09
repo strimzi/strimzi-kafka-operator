@@ -71,7 +71,7 @@ class HttpBridgeScramShaST extends AbstractST {
             .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(httpBridgeScramShaClusterName))
             .withConsumerName(consumerName)
             .withNamespaceName(Environment.TEST_SUITE_NAMESPACE)
-            .withUsername(USER_NAME)
+            .withUsername(testStorage.getUsername())
             .build();
 
         resourceManager.createResourceWithWait(extensionContext, kafkaClients.consumerScramShaTlsStrimzi(httpBridgeScramShaClusterName));
@@ -100,7 +100,7 @@ class HttpBridgeScramShaST extends AbstractST {
             .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(httpBridgeScramShaClusterName))
             .withProducerName(producerName)
             .withNamespaceName(Environment.TEST_SUITE_NAMESPACE)
-            .withUsername(USER_NAME)
+            .withUsername(testStorage.getUsername())
             .build();
 
         resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerScramShaTlsStrimzi(httpBridgeScramShaClusterName));
@@ -136,7 +136,7 @@ class HttpBridgeScramShaST extends AbstractST {
             .endSpec().build());
 
         // Create Kafka user
-        KafkaUser scramShaUser = KafkaUserTemplates.scramShaUser(Environment.TEST_SUITE_NAMESPACE, httpBridgeScramShaClusterName, USER_NAME)
+        KafkaUser scramShaUser = KafkaUserTemplates.scramShaUser(Environment.TEST_SUITE_NAMESPACE, httpBridgeScramShaClusterName, testStorage.getUsername())
             .editMetadata()
                 .withNamespace(Environment.TEST_SUITE_NAMESPACE)
             .endMetadata()
@@ -146,7 +146,7 @@ class HttpBridgeScramShaST extends AbstractST {
 
         // Initialize PasswordSecret to set this as PasswordSecret in MirrorMaker spec
         PasswordSecretSource passwordSecret = new PasswordSecretSource();
-        passwordSecret.setSecretName(USER_NAME);
+        passwordSecret.setSecretName(testStorage.getUsername());
         passwordSecret.setPassword("password");
 
         // Initialize CertSecretSource with certificate and Secret names for consumer
@@ -165,7 +165,7 @@ class HttpBridgeScramShaST extends AbstractST {
                         .addToConfig(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
                     .endConsumer()
                     .withNewKafkaClientAuthenticationScramSha512()
-                        .withUsername(USER_NAME)
+                        .withUsername(testStorage.getUsername())
                         .withPasswordSecret(passwordSecret)
                     .endKafkaClientAuthenticationScramSha512()
                     .withNewTls()

@@ -386,8 +386,8 @@ public class OauthTlsST extends OauthAbstractST {
         assertThat(kafkaMirrorMakerLogs,
             not(containsString("keytool error: java.io.FileNotFoundException: /opt/kafka/consumer-oauth-certs/**/* (No such file or directory)")));
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaUserTemplates.tlsUser(Environment.TEST_SUITE_NAMESPACE, oauthClusterName, USER_NAME).build());
-        KafkaUserUtils.waitForKafkaUserCreation(Environment.TEST_SUITE_NAMESPACE, USER_NAME);
+        resourceManager.createResourceWithWait(extensionContext, KafkaUserTemplates.tlsUser(Environment.TEST_SUITE_NAMESPACE, oauthClusterName, testStorage.getUsername()).build());
+        KafkaUserUtils.waitForKafkaUserCreation(Environment.TEST_SUITE_NAMESPACE, testStorage.getUsername());
 
         LOGGER.info("Creating new client with new consumer-group and also to point on {} cluster", targetKafkaCluster);
 
@@ -395,7 +395,7 @@ public class OauthTlsST extends OauthAbstractST {
             .withNamespaceName(Environment.TEST_SUITE_NAMESPACE)
             .withProducerName(producerName)
             .withConsumerName(consumerName)
-            .withClientUserName(USER_NAME)
+            .withClientUserName(testStorage.getUsername())
             .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(targetKafkaCluster))
             .withTopicName(testStorage.getTopicName())
             .withMessageCount(testStorage.getMessageCount())
