@@ -58,8 +58,12 @@ if [ -n "$KAFKA_MIRRORMAKER_SASL_MECHANISM_PRODUCER" ]; then
             OAUTH_CLIENT_SECRET="oauth.client.secret=\"$KAFKA_MIRRORMAKER_OAUTH_CLIENT_SECRET_PRODUCER\""
         fi
 
-        if [ -n "$KAFKA_MIRRORMAKER_OAUTH_PASSWORD_GRANT_PASSWORD_CONSUMER" ]; then
-            OAUTH_PASSWORD_GRANT_PASSWORD="oauth.password.grant.password=\"$KAFKA_MIRRORMAKER_OAUTH_PASSWORD_GRANT_PASSWORD_CONSUMER\""
+        if [ -n "$KAFKA_MIRRORMAKER_OAUTH_PASSWORD_GRANT_PASSWORD_PRODUCER" ]; then
+            OAUTH_PASSWORD_GRANT_PASSWORD="oauth.password.grant.password=\"$KAFKA_MIRRORMAKER_OAUTH_PASSWORD_GRANT_PASSWORD_PRODUCER\""
+        fi
+
+        if [ -n "$KAFKA_MIRRORMAKER_OAUTH_CLIENT_ASSERTION_PRODUCER" ]; then
+            OAUTH_CLIENT_ASSERTION="oauth.client.assertion=\"$KAFKA_MIRRORMAKER_OAUTH_CLIENT_ASSERTION_PRODUCER\""
         fi
 
         if [ -f "/tmp/kafka/producer-oauth.keystore.p12" ]; then
@@ -67,7 +71,7 @@ if [ -n "$KAFKA_MIRRORMAKER_SASL_MECHANISM_PRODUCER" ]; then
         fi
 
         SASL_MECHANISM="OAUTHBEARER"
-        JAAS_CONFIG="org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required ${KAFKA_MIRRORMAKER_OAUTH_CONFIG_PRODUCER} ${OAUTH_CLIENT_SECRET} ${OAUTH_REFRESH_TOKEN} ${OAUTH_ACCESS_TOKEN} ${OAUTH_PASSWORD_GRANT_PASSWORD} ${OAUTH_TRUSTSTORE};"
+        JAAS_CONFIG="org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required ${KAFKA_MIRRORMAKER_OAUTH_CONFIG_PRODUCER} ${OAUTH_CLIENT_SECRET} ${OAUTH_REFRESH_TOKEN} ${OAUTH_ACCESS_TOKEN} ${OAUTH_PASSWORD_GRANT_PASSWORD} ${OAUTH_CLIENT_ASSERTION} ${OAUTH_TRUSTSTORE};"
         OAUTH_CALLBACK_CLASS="sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler"
     fi
 

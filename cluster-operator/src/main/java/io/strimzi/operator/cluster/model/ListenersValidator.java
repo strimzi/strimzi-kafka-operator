@@ -632,12 +632,12 @@ public class ListenersValidator {
                 if (oAuth.getJwksEndpointUri() != null) {
                     errors.add("listener " + listenerName + ": 'accessTokenIsJwt' can not be 'false' when 'jwksEndpointUri' is set");
                 }
-                if (!oAuth.isCheckAccessTokenType()) {
+                if (oAuth.getCheckAccessTokenType() != null && !oAuth.getCheckAccessTokenType()) {
                     errors.add("listener " + listenerName + ": 'checkAccessTokenType' can not be set to 'false' when 'accessTokenIsJwt' is 'false'");
                 }
             }
 
-            if (!oAuth.isCheckAccessTokenType() && oAuth.getIntrospectionEndpointUri() != null) {
+            if (oAuth.getCheckAccessTokenType() != null && !oAuth.getCheckAccessTokenType() && oAuth.getIntrospectionEndpointUri() != null) {
                 errors.add("listener " + listenerName + ": 'checkAccessTokenType' can not be set to 'false' when 'introspectionEndpointUri' is set");
             }
 

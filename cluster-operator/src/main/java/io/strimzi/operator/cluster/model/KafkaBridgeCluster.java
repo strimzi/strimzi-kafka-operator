@@ -99,6 +99,7 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
     protected static final String ENV_VAR_KAFKA_BRIDGE_OAUTH_ACCESS_TOKEN = "KAFKA_BRIDGE_OAUTH_ACCESS_TOKEN";
     protected static final String ENV_VAR_KAFKA_BRIDGE_OAUTH_REFRESH_TOKEN = "KAFKA_BRIDGE_OAUTH_REFRESH_TOKEN";
     protected static final String ENV_VAR_KAFKA_BRIDGE_OAUTH_PASSWORD_GRANT_PASSWORD = "KAFKA_BRIDGE_OAUTH_PASSWORD_GRANT_PASSWORD";
+    protected static final String ENV_VAR_KAFKA_BRIDGE_OAUTH_CLIENT_ASSERTION = "KAFKA_BRIDGE_OAUTH_CLIENT_ASSERTION";
     protected static final String OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT = "/opt/strimzi/oauth-certs/";
     protected static final String ENV_VAR_STRIMZI_TRACING = "STRIMZI_TRACING";
 

@@ -705,6 +705,7 @@ public class KafkaMirrorMaker2ConnectorsTest {
                         "oauth.access.token", "${file:/tmp/strimzi-mirrormaker2-connector.properties:sourceClusterAlias.oauth.access.token}",
                         "oauth.refresh.token", "${file:/tmp/strimzi-mirrormaker2-connector.properties:sourceClusterAlias.oauth.refresh.token}",
                         "oauth.password.grant.password", "${file:/tmp/strimzi-mirrormaker2-connector.properties:sourceClusterAlias.oauth.password.grant.password}",
+                        "oauth.client.assertion", "${file:/tmp/strimzi-mirrormaker2-connector.properties:sourceClusterAlias.oauth.client.assertion}",
                         "oauth.ssl.truststore.location", "/tmp/kafka/clusters/sourceClusterAlias-oauth.truststore.p12",
                         "oauth.ssl.truststore.type", "PKCS12",
                         "oauth.ssl.truststore.password", "${file:/tmp/strimzi-mirrormaker2-connector.properties:oauth.ssl.truststore.password}")));

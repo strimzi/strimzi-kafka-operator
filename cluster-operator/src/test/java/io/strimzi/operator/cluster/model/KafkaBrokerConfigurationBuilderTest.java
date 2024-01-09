@@ -1820,8 +1820,12 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withNewKafkaListenerAuthenticationOAuth()
                     .withValidIssuerUri("http://valid-issuer")
                     .withJwksEndpointUri("http://jwks")
+                    .withServerBearerTokenLocation("/var/run/secrets/kubernetes.io/serviceaccount/token")
                     .withEnableECDSA(true)
                     .withUserNameClaim("preferred_username")
+                    .withUserNamePrefix("user-")
+                    .withFallbackUserNameClaim("client_id")
+                    .withFallbackUserNamePrefix("service-account-")
                     .withGroupsClaim("$.groups")
                     .withGroupsClaimDelimiter(";")
                     .withMaxSecondsWithoutReauthentication(3600)
@@ -1864,9 +1868,9 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "ssl.endpoint.identification.algorithm=HTTPS",
                 "principal.builder.class=io.strimzi.kafka.oauth.server.OAuthKafkaPrincipalBuilder",
                 "listener.name.plain-9092.oauthbearer.sasl.server.callback.handler.class=io.strimzi.kafka.oauth.server.JaasServerOauthValidatorCallbackHandler",
-                "listener.name.plain-9092.oauthbearer.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required unsecuredLoginStringClaim_sub=\"thePrincipalName\" oauth.valid.issuer.uri=\"http://valid-issuer\" oauth.jwks.endpoint.uri=\"http://jwks\" oauth.jwks.refresh.min.pause.seconds=\"5\" oauth.username.claim=\"preferred_username\" oauth.groups.claim=\"$.groups\" oauth.groups.claim.delimiter=\";\" oauth.connect.timeout.seconds=\"30\" oauth.read.timeout.seconds=\"30\" oauth.enable.metrics=\"true\" oauth.include.accept.header=\"false\" oauth.config.id=\"PLAIN-9092\";",
+                "listener.name.plain-9092.oauthbearer.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required unsecuredLoginStringClaim_sub=\"thePrincipalName\" oauth.valid.issuer.uri=\"http://valid-issuer\" oauth.jwks.endpoint.uri=\"http://jwks\" oauth.jwks.refresh.min.pause.seconds=\"5\" oauth.server.bearer.token.location=\"/var/run/secrets/kubernetes.io/serviceaccount/token\" oauth.username.claim=\"preferred_username\" oauth.username.prefix=\"user-\" oauth.fallback.username.claim=\"client_id\" oauth.fallback.username.prefix=\"service-account-\" oauth.groups.claim=\"$.groups\" oauth.groups.claim.delimiter=\";\" oauth.connect.timeout.seconds=\"30\" oauth.read.timeout.seconds=\"30\" oauth.enable.metrics=\"true\" oauth.include.accept.header=\"false\" oauth.config.id=\"PLAIN-9092\";",
                 "listener.name.plain-9092.plain.sasl.server.callback.handler.class=io.strimzi.kafka.oauth.server.plain.JaasServerOauthOverPlainValidatorCallbackHandler",
-                "listener.name.plain-9092.plain.sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required oauth.valid.issuer.uri=\"http://valid-issuer\" oauth.jwks.endpoint.uri=\"http://jwks\" oauth.jwks.refresh.min.pause.seconds=\"5\" oauth.username.claim=\"preferred_username\" oauth.groups.claim=\"$.groups\" oauth.groups.claim.delimiter=\";\" oauth.connect.timeout.seconds=\"30\" oauth.read.timeout.seconds=\"30\" oauth.enable.metrics=\"true\" oauth.include.accept.header=\"false\" oauth.config.id=\"PLAIN-9092\" oauth.token.endpoint.uri=\"http://token\";",
+                "listener.name.plain-9092.plain.sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required oauth.valid.issuer.uri=\"http://valid-issuer\" oauth.jwks.endpoint.uri=\"http://jwks\" oauth.jwks.refresh.min.pause.seconds=\"5\" oauth.server.bearer.token.location=\"/var/run/secrets/kubernetes.io/serviceaccount/token\" oauth.username.claim=\"preferred_username\" oauth.username.prefix=\"user-\" oauth.fallback.username.claim=\"client_id\" oauth.fallback.username.prefix=\"service-account-\" oauth.groups.claim=\"$.groups\" oauth.groups.claim.delimiter=\";\" oauth.connect.timeout.seconds=\"30\" oauth.read.timeout.seconds=\"30\" oauth.enable.metrics=\"true\" oauth.include.accept.header=\"false\" oauth.config.id=\"PLAIN-9092\" oauth.token.endpoint.uri=\"http://token\";",
                 "listener.name.plain-9092.sasl.enabled.mechanisms=OAUTHBEARER,PLAIN",
                 "listener.name.plain-9092.connections.max.reauth.ms=3600000"));
     }
@@ -2088,6 +2092,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withCheckAudience(true)
                 .withJwksEndpointUri("http://jwks-endpoint")
                 .withIntrospectionEndpointUri("http://introspection-endpoint")
+                .withServerBearerTokenLocation("/var/run/secrets/kubernetes.io/serviceaccount/token")
                 .withUserInfoEndpointUri("http://userinfo-endpoint")
                 .withJwksExpirySeconds(160)
                 .withJwksRefreshSeconds(50)
@@ -2095,6 +2100,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withJwksIgnoreKeyUse()
                 .withEnableECDSA(true)
                 .withUserNameClaim("preferred_username")
+                .withUserNamePrefix("user-")
                 .withFallbackUserNameClaim("client_id")
                 .withFallbackUserNamePrefix("client-account-")
                 .withCheckAccessTokenType(false)
@@ -2131,8 +2137,10 @@ public class KafkaBrokerConfigurationBuilderTest {
         expectedOptions.put(ServerConfig.OAUTH_JWKS_REFRESH_MIN_PAUSE_SECONDS, "5");
         expectedOptions.put(ServerConfig.OAUTH_JWKS_IGNORE_KEY_USE, String.valueOf(true));
         expectedOptions.put(ServerConfig.OAUTH_INTROSPECTION_ENDPOINT_URI, "http://introspection-endpoint");
+        expectedOptions.put(ServerConfig.OAUTH_SERVER_BEARER_TOKEN_LOCATION, "/var/run/secrets/kubernetes.io/serviceaccount/token");
         expectedOptions.put(ServerConfig.OAUTH_USERINFO_ENDPOINT_URI, "http://userinfo-endpoint");
         expectedOptions.put(ServerConfig.OAUTH_USERNAME_CLAIM, "preferred_username");
+        expectedOptions.put(ServerConfig.OAUTH_USERNAME_PREFIX, "user-");
         expectedOptions.put(ServerConfig.OAUTH_FALLBACK_USERNAME_CLAIM, "client_id");
         expectedOptions.put(ServerConfig.OAUTH_FALLBACK_USERNAME_PREFIX, "client-account-");
         expectedOptions.put(ServerConfig.OAUTH_ACCESS_TOKEN_IS_JWT, String.valueOf(false));

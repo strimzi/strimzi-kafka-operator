@@ -76,6 +76,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
@@ -1703,6 +1704,74 @@ public class KafkaMirrorMaker2ClusterTest {
             assertThat(cont.getEnv().stream().filter(var -> KafkaMirrorMaker2Cluster.ENV_VAR_KAFKA_CONNECT_SASL_MECHANISM.equals(var.getName())).findFirst().orElseThrow().getValue(), is("oauth"));
             assertThat(cont.getEnv().stream().filter(var -> KafkaMirrorMaker2Cluster.ENV_VAR_KAFKA_CONNECT_OAUTH_CLIENT_SECRET.equals(var.getName())).findFirst().orElseThrow().getValueFrom().getSecretKeyRef().getName(), is("my-secret-secret"));
             assertThat(cont.getEnv().stream().filter(var -> KafkaMirrorMaker2Cluster.ENV_VAR_KAFKA_CONNECT_OAUTH_CLIENT_SECRET.equals(var.getName())).findFirst().orElseThrow().getValueFrom().getSecretKeyRef().getKey(), is("my-secret-key"));
+            assertThat(cont.getEnv().stream().filter(var -> KafkaMirrorMaker2Cluster.ENV_VAR_KAFKA_CONNECT_OAUTH_CONFIG.equals(var.getName())).findFirst().orElseThrow().getValue().trim(),
+                    is(String.format("%s=\"%s\" %s=\"%s\"", ClientConfig.OAUTH_CLIENT_ID, "my-client-id", ClientConfig.OAUTH_TOKEN_ENDPOINT_URI, "http://my-oauth-server")));
+        });
+    }
+
+    @ParallelTest
+    public void testPodSetWithOAuthWithClientSecretAndSaslExtensions() {
+        KafkaMirrorMaker2ClusterSpec targetClusterWithOAuthWithClientSecret = new KafkaMirrorMaker2ClusterSpecBuilder(this.targetCluster)
+                .withAuthentication(
+                        new KafkaClientAuthenticationOAuthBuilder()
+                                .withClientId("my-client-id")
+                                .withTokenEndpointUri("http://my-oauth-server")
+                                .withNewClientSecret()
+                                    .withSecretName("my-secret-secret")
+                                    .withKey("my-secret-key")
+                                .endClientSecret()
+                                .withSaslExtensions(new TreeMap(Map.of("key1", "value1", "key2", "value2")))
+                                .build())
+                .build();
+        KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(this.resource)
+                .editSpec()
+                    .withClusters(targetClusterWithOAuthWithClientSecret)
+                .endSpec()
+                .build();
+
+        KafkaMirrorMaker2Cluster kmm2 = KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
+
+        // Check PodSet
+        StrimziPodSet podSet = kmm2.generatePodSet(3, Map.of(), Map.of(), false, null, null, null);
+        PodSetUtils.podSetToPods(podSet).forEach(pod -> {
+            Container cont = pod.getSpec().getContainers().get(0);
+            assertThat(cont.getEnv().stream().filter(var -> KafkaMirrorMaker2Cluster.ENV_VAR_KAFKA_CONNECT_SASL_MECHANISM.equals(var.getName())).findFirst().orElseThrow().getValue(), is("oauth"));
+            assertThat(cont.getEnv().stream().filter(var -> KafkaMirrorMaker2Cluster.ENV_VAR_KAFKA_CONNECT_OAUTH_CLIENT_SECRET.equals(var.getName())).findFirst().orElseThrow().getValueFrom().getSecretKeyRef().getName(), is("my-secret-secret"));
+            assertThat(cont.getEnv().stream().filter(var -> KafkaMirrorMaker2Cluster.ENV_VAR_KAFKA_CONNECT_OAUTH_CLIENT_SECRET.equals(var.getName())).findFirst().orElseThrow().getValueFrom().getSecretKeyRef().getKey(), is("my-secret-key"));
+            assertThat(cont.getEnv().stream().filter(var -> KafkaMirrorMaker2Cluster.ENV_VAR_KAFKA_CONNECT_OAUTH_CONFIG.equals(var.getName())).findFirst().orElseThrow().getValue().trim(),
+                    is(String.format("%s=\"%s\" %s=\"%s\" %s=\"%s\" %s=\"%s\"", ClientConfig.OAUTH_CLIENT_ID, "my-client-id", ClientConfig.OAUTH_TOKEN_ENDPOINT_URI, "http://my-oauth-server",
+                            ClientConfig.OAUTH_SASL_EXTENSION_PREFIX + "key1", "value1", ClientConfig.OAUTH_SASL_EXTENSION_PREFIX + "key2", "value2")));
+        });
+    }
+
+    @ParallelTest
+    public void testPodSetWithOAuthWithClientAssertion() {
+        KafkaMirrorMaker2ClusterSpec targetClusterWithOAuthWithClientSecret = new KafkaMirrorMaker2ClusterSpecBuilder(this.targetCluster)
+                .withAuthentication(
+                        new KafkaClientAuthenticationOAuthBuilder()
+                                .withClientId("my-client-id")
+                                .withTokenEndpointUri("http://my-oauth-server")
+                                .withNewClientAssertion()
+                                    .withSecretName("my-secret-secret")
+                                    .withKey("my-secret-key")
+                                .endClientAssertion()
+                                .build())
+                .build();
+        KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(this.resource)
+                .editSpec()
+                    .withClusters(targetClusterWithOAuthWithClientSecret)
+                .endSpec()
+                .build();
+
+        KafkaMirrorMaker2Cluster kmm2 = KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
+
+        // Check PodSet
+        StrimziPodSet podSet = kmm2.generatePodSet(3, Map.of(), Map.of(), false, null, null, null);
+        PodSetUtils.podSetToPods(podSet).forEach(pod -> {
+            Container cont = pod.getSpec().getContainers().get(0);
+            assertThat(cont.getEnv().stream().filter(var -> KafkaMirrorMaker2Cluster.ENV_VAR_KAFKA_CONNECT_SASL_MECHANISM.equals(var.getName())).findFirst().orElseThrow().getValue(), is("oauth"));
+            assertThat(cont.getEnv().stream().filter(var -> KafkaMirrorMaker2Cluster.ENV_VAR_KAFKA_CONNECT_OAUTH_CLIENT_ASSERTION.equals(var.getName())).findFirst().orElseThrow().getValueFrom().getSecretKeyRef().getName(), is("my-secret-secret"));
+            assertThat(cont.getEnv().stream().filter(var -> KafkaMirrorMaker2Cluster.ENV_VAR_KAFKA_CONNECT_OAUTH_CLIENT_ASSERTION.equals(var.getName())).findFirst().orElseThrow().getValueFrom().getSecretKeyRef().getKey(), is("my-secret-key"));
             assertThat(cont.getEnv().stream().filter(var -> KafkaMirrorMaker2Cluster.ENV_VAR_KAFKA_CONNECT_OAUTH_CONFIG.equals(var.getName())).findFirst().orElseThrow().getValue().trim(),
                     is(String.format("%s=\"%s\" %s=\"%s\"", ClientConfig.OAUTH_CLIENT_ID, "my-client-id", ClientConfig.OAUTH_TOKEN_ENDPOINT_URI, "http://my-oauth-server")));
         });

@@ -84,14 +84,15 @@ public class AuthenticationUtils {
     }
 
     private static void validateClientAuthenticationOAuth(KafkaClientAuthenticationOAuth auth) {
-        boolean accessTokenCase = auth.getAccessToken() != null;
+        boolean accessTokenCase = auth.getAccessToken() != null || auth.getAccessTokenLocation() != null;
         boolean refreshTokenCase = auth.getTokenEndpointUri() != null && auth.getClientId() != null && auth.getRefreshToken() != null;
         boolean clientSecretCase = auth.getTokenEndpointUri() != null && auth.getClientId() != null && auth.getClientSecret() != null;
         boolean passwordGrantCase = auth.getTokenEndpointUri() != null && auth.getClientId() != null && auth.getUsername() != null && auth.getPasswordSecret() != null;
+        boolean clientAssertionCase = auth.getTokenEndpointUri() != null && auth.getClientId() != null && (auth.getClientAssertion() != null || auth.getClientAssertionLocation() != null);
 
         // If not one of valid cases throw exception
-        if (!(accessTokenCase || refreshTokenCase || clientSecretCase || passwordGrantCase)) {
-            throw new InvalidResourceException("OAUTH authentication selected, but some options are missing. You have to specify one of the following combinations: [accessToken], [tokenEndpointUri, clientId, refreshToken], [tokenEndpointUri, clientId, clientSecret], [tokenEndpointUri, username, password, clientId].");
+        if (!(accessTokenCase || refreshTokenCase || clientSecretCase || passwordGrantCase || clientAssertionCase)) {
+            throw new InvalidResourceException("OAUTH authentication selected, but some options are missing. You have to specify one of the following combinations: [accessToken], [accessTokenLocation], [tokenEndpointUri, clientId, refreshToken], [tokenEndpointUri, clientId, clientSecret], [tokenEndpointUri, clientId, clientAssertion], [tokenEndpointUri, clientId, clientAssertionLocation], [tokenEndpointUri, username, password, clientId].");
         }
 
         // Additional validation
@@ -153,6 +154,9 @@ public class AuthenticationUtils {
                 if (createOAuthSecretVolumes) {
                     if (oauth.getClientSecret() != null) {
                         addNewVolume(volumeList, volumeNamePrefix, oauth.getClientSecret().getSecretName(), isOpenShift);
+                    }
+                    if (oauth.getClientAssertion() != null) {
+                        addNewVolume(volumeList, volumeNamePrefix, oauth.getClientAssertion().getSecretName(), isOpenShift);
                     }
                     if (oauth.getAccessToken() != null) {
                         addNewVolume(volumeList, volumeNamePrefix, oauth.getAccessToken().getSecretName(), isOpenShift);
@@ -224,6 +228,9 @@ public class AuthenticationUtils {
                     if (oauth.getClientSecret() != null) {
                         volumeMountList.add(VolumeUtils.createVolumeMount(volumeNamePrefix + oauth.getClientSecret().getSecretName(), oauthSecretsVolumeMount + oauth.getClientSecret().getSecretName()));
                     }
+                    if (oauth.getClientAssertion() != null) {
+                        volumeMountList.add(VolumeUtils.createVolumeMount(volumeNamePrefix + oauth.getClientAssertion().getSecretName(), oauthSecretsVolumeMount + oauth.getClientAssertion().getSecretName()));
+                    }
                     if (oauth.getAccessToken() != null) {
                         volumeMountList.add(VolumeUtils.createVolumeMount(volumeNamePrefix + oauth.getAccessToken().getSecretName(), oauthSecretsVolumeMount + oauth.getAccessToken().getSecretName()));
                     }
@@ -267,6 +274,9 @@ public class AuthenticationUtils {
                 if (oauth.getClientSecret() != null) {
                     varList.add(ContainerUtils.createEnvVarFromSecret(envVarNamer.apply("OAUTH_CLIENT_SECRET"), oauth.getClientSecret().getSecretName(), oauth.getClientSecret().getKey()));
                 }
+                if (oauth.getClientAssertion() != null) {
+                    varList.add(ContainerUtils.createEnvVarFromSecret(envVarNamer.apply("OAUTH_CLIENT_ASSERTION"), oauth.getClientAssertion().getSecretName(), oauth.getClientAssertion().getKey()));
+                }
                 if (oauth.getAccessToken() != null) {
                     varList.add(ContainerUtils.createEnvVarFromSecret(envVarNamer.apply("OAUTH_ACCESS_TOKEN"), oauth.getAccessToken().getSecretName(), oauth.getAccessToken().getKey()));
                 }
@@ -289,7 +299,7 @@ public class AuthenticationUtils {
      * @return The OAuth JAAS configuration options.
      */
     public static Map<String, String> oauthJaasOptions(KafkaClientAuthenticationOAuth oauth) {
-        Map<String, String> options = new LinkedHashMap<>(13);
+        Map<String, String> options = new LinkedHashMap<>(15);
         addOption(options, ClientConfig.OAUTH_CLIENT_ID, oauth.getClientId());
         addOption(options, ClientConfig.OAUTH_PASSWORD_GRANT_USERNAME, oauth.getUsername());
         addOption(options, ClientConfig.OAUTH_TOKEN_ENDPOINT_URI, oauth.getTokenEndpointUri());
@@ -311,6 +321,20 @@ public class AuthenticationUtils {
         }
         if (!oauth.isIncludeAcceptHeader()) {
             options.put(ServerConfig.OAUTH_INCLUDE_ACCEPT_HEADER, "false");
+        }
+        String tokenPath = oauth.getAccessTokenLocation();
+        if (tokenPath != null) {
+            addOption(options, ClientConfig.OAUTH_ACCESS_TOKEN_LOCATION, tokenPath);
+        }
+
+        addOption(options, ClientConfig.OAUTH_CLIENT_ASSERTION_LOCATION, oauth.getClientAssertionLocation());
+        addOption(options, ClientConfig.OAUTH_CLIENT_ASSERTION_TYPE, oauth.getClientAssertionType());
+
+        Map<String, String> saslExtensions = oauth.getSaslExtensions();
+        if (saslExtensions != null && !saslExtensions.isEmpty()) {
+            for (Map.Entry<String, String> ent: saslExtensions.entrySet()) {
+                addOption(options, ClientConfig.OAUTH_SASL_EXTENSION_PREFIX + ent.getKey(), ent.getValue());
+            }
         }
         return options;
     }

@@ -53,6 +53,7 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
     protected static final String ENV_VAR_KAFKA_MIRRORMAKER_2_OAUTH_ACCESS_TOKENS_CLUSTERS = "KAFKA_MIRRORMAKER_2_OAUTH_OAUTH_ACCESS_TOKENS_CLUSTERS";
     protected static final String ENV_VAR_KAFKA_MIRRORMAKER_2_OAUTH_REFRESH_TOKENS_CLUSTERS = "KAFKA_MIRRORMAKER_2_OAUTH_REFRESH_TOKENS_CLUSTERS";
     protected static final String ENV_VAR_KAFKA_MIRRORMAKER_2_OAUTH_PASSWORDS_CLUSTERS = "KAFKA_MIRRORMAKER_2_OAUTH_PASSWORDS_CLUSTERS";
+    protected static final String ENV_VAR_KAFKA_MIRRORMAKER_2_OAUTH_CLIENT_ASSERTIONS_CLUSTERS = "KAFKA_MIRRORMAKER_2_OAUTH_CLIENT_ASSERTIONS_CLUSTERS";
     protected static final String CO_ENV_VAR_CUSTOM_MIRROR_MAKER2_POD_LABELS = "STRIMZI_CUSTOM_KAFKA_MIRROR_MAKER2_LABELS";
 
     protected static final String MIRRORMAKER_2_OAUTH_SECRETS_BASE_VOLUME_MOUNT = "/opt/kafka/mm2-oauth/";
@@ -219,6 +220,7 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
         final StringBuilder clustersOauthRefreshTokens = new StringBuilder();
         final StringBuilder clustersOauthPasswords = new StringBuilder();
         final StringBuilder clustersOauthTrustedCerts = new StringBuilder();
+        final StringBuilder clustersOauthClientAssertions = new StringBuilder();
 
         for (KafkaMirrorMaker2ClusterSpec mirrorMaker2Cluster : clusters) {
             String clusterAlias = mirrorMaker2Cluster.getAlias();
@@ -254,6 +256,7 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
                     appendClusterOAuthSecretSource(clustersOauthAccessTokens, clusterAlias, oauth.getAccessToken());
                     appendClusterOAuthSecretSource(clustersOauthRefreshTokens, clusterAlias, oauth.getRefreshToken());
                     appendClusterPasswordSecretSource(clustersOauthPasswords, clusterAlias, oauth.getPasswordSecret());
+                    appendClusterOAuthSecretSource(clustersOauthClientAssertions, clusterAlias, oauth.getClientAssertion());
                 }
             }
         }
@@ -296,6 +299,10 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
 
         if (clustersOauthPasswords.length() > 0) {
             varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_2_OAUTH_PASSWORDS_CLUSTERS, clustersOauthPasswords.toString()));
+        }
+
+        if (clustersOauthClientAssertions.length() > 0) {
+            varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_2_OAUTH_CLIENT_ASSERTIONS_CLUSTERS, clustersOauthClientAssertions.toString()));
         }
 
         JvmOptionUtils.jvmSystemProperties(varList, jvmOptions);

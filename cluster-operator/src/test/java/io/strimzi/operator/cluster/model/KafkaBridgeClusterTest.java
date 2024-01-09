@@ -66,6 +66,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.TreeMap;
 
 import static io.strimzi.operator.cluster.model.KafkaBridgeCluster.ENV_VAR_KAFKA_INIT_INIT_FOLDER_KEY;
 import static java.util.Collections.emptyMap;
@@ -996,6 +997,66 @@ public class KafkaBridgeClusterTest {
         assertThat(cont.getEnv().stream().filter(var -> KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_SASL_MECHANISM.equals(var.getName())).findFirst().orElseThrow().getValue(), is("oauth"));
         assertThat(cont.getEnv().stream().filter(var -> KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_OAUTH_CLIENT_SECRET.equals(var.getName())).findFirst().orElseThrow().getValueFrom().getSecretKeyRef().getName(), is("my-secret-secret"));
         assertThat(cont.getEnv().stream().filter(var -> KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_OAUTH_CLIENT_SECRET.equals(var.getName())).findFirst().orElseThrow().getValueFrom().getSecretKeyRef().getKey(), is("my-secret-key"));
+        assertThat(cont.getEnv().stream().filter(var -> KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_OAUTH_CONFIG.equals(var.getName())).findFirst().orElseThrow().getValue().trim(),
+                is(String.format("%s=\"%s\" %s=\"%s\" %s=\"%s\" %s=\"%s\"", ClientConfig.OAUTH_CLIENT_ID, "my-client-id", ClientConfig.OAUTH_TOKEN_ENDPOINT_URI, "http://my-oauth-server", ClientConfig.OAUTH_SCOPE, "all", ClientConfig.OAUTH_AUDIENCE, "kafka")));
+    }
+
+    @ParallelTest
+    public void testGenerateDeploymentWithOAuthWithClientSecretAndSaslExtensions() {
+        KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
+                .editSpec()
+                .withAuthentication(
+                        new KafkaClientAuthenticationOAuthBuilder()
+                                .withClientId("my-client-id")
+                                .withTokenEndpointUri("http://my-oauth-server")
+                                .withAudience("kafka")
+                                .withScope("all")
+                                .withNewClientSecret()
+                                    .withSecretName("my-secret-secret")
+                                    .withKey("my-secret-key")
+                                .endClientSecret()
+                                .withSaslExtensions(new TreeMap(Map.of("key1", "value1", "key2", "value2")))
+                                .build())
+                .endSpec()
+                .build();
+
+        KafkaBridgeCluster kb = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, SHARED_ENV_PROVIDER);
+        Deployment dep = kb.generateDeployment(emptyMap(), true, null, null);
+        Container cont = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
+
+        assertThat(cont.getEnv().stream().filter(var -> KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_SASL_MECHANISM.equals(var.getName())).findFirst().orElseThrow().getValue(), is("oauth"));
+        assertThat(cont.getEnv().stream().filter(var -> KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_OAUTH_CLIENT_SECRET.equals(var.getName())).findFirst().orElseThrow().getValueFrom().getSecretKeyRef().getName(), is("my-secret-secret"));
+        assertThat(cont.getEnv().stream().filter(var -> KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_OAUTH_CLIENT_SECRET.equals(var.getName())).findFirst().orElseThrow().getValueFrom().getSecretKeyRef().getKey(), is("my-secret-key"));
+        assertThat(cont.getEnv().stream().filter(var -> KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_OAUTH_CONFIG.equals(var.getName())).findFirst().orElseThrow().getValue().trim(),
+                is(String.format("%s=\"%s\" %s=\"%s\" %s=\"%s\" %s=\"%s\" %s=\"%s\" %s=\"%s\"", ClientConfig.OAUTH_CLIENT_ID, "my-client-id", ClientConfig.OAUTH_TOKEN_ENDPOINT_URI, "http://my-oauth-server",
+                        ClientConfig.OAUTH_SCOPE, "all", ClientConfig.OAUTH_AUDIENCE, "kafka", ClientConfig.OAUTH_SASL_EXTENSION_PREFIX + "key1", "value1", ClientConfig.OAUTH_SASL_EXTENSION_PREFIX + "key2", "value2")));
+    }
+
+    @ParallelTest
+    public void testGenerateDeploymentWithOAuthWithClientAssertion() {
+        KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
+                .editSpec()
+                .withAuthentication(
+                        new KafkaClientAuthenticationOAuthBuilder()
+                                .withClientId("my-client-id")
+                                .withTokenEndpointUri("http://my-oauth-server")
+                                .withAudience("kafka")
+                                .withScope("all")
+                                .withNewClientAssertion()
+                                    .withSecretName("my-secret-secret")
+                                    .withKey("my-secret-key")
+                                .endClientAssertion()
+                                .build())
+                .endSpec()
+                .build();
+
+        KafkaBridgeCluster kb = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, SHARED_ENV_PROVIDER);
+        Deployment dep = kb.generateDeployment(emptyMap(), true, null, null);
+        Container cont = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
+
+        assertThat(cont.getEnv().stream().filter(var -> KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_SASL_MECHANISM.equals(var.getName())).findFirst().orElseThrow().getValue(), is("oauth"));
+        assertThat(cont.getEnv().stream().filter(var -> KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_OAUTH_CLIENT_ASSERTION.equals(var.getName())).findFirst().orElseThrow().getValueFrom().getSecretKeyRef().getName(), is("my-secret-secret"));
+        assertThat(cont.getEnv().stream().filter(var -> KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_OAUTH_CLIENT_ASSERTION.equals(var.getName())).findFirst().orElseThrow().getValueFrom().getSecretKeyRef().getKey(), is("my-secret-key"));
         assertThat(cont.getEnv().stream().filter(var -> KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_OAUTH_CONFIG.equals(var.getName())).findFirst().orElseThrow().getValue().trim(),
                 is(String.format("%s=\"%s\" %s=\"%s\" %s=\"%s\" %s=\"%s\"", ClientConfig.OAUTH_CLIENT_ID, "my-client-id", ClientConfig.OAUTH_TOKEN_ENDPOINT_URI, "http://my-oauth-server", ClientConfig.OAUTH_SCOPE, "all", ClientConfig.OAUTH_AUDIENCE, "kafka")));
     }
