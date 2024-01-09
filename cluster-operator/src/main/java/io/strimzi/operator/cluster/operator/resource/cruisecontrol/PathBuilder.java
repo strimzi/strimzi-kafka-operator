@@ -99,9 +99,7 @@ public class PathBuilder {
 
     private PathBuilder withAbstractRebalanceParameters(AbstractRebalanceOptions options) {
         if (options != null) {
-            PathBuilder builder = withParameter(CruiseControlParameters.DRY_RUN, String.valueOf(options.isDryRun()))
-                    .withParameter(CruiseControlParameters.VERBOSE, String.valueOf(options.isVerbose()))
-                    .withParameter(CruiseControlParameters.SKIP_HARD_GOAL_CHECK, String.valueOf(options.isSkipHardGoalCheck()));
+            PathBuilder builder = withParameter(CruiseControlParameters.DRY_RUN, String.valueOf(options.isDryRun()));
 
             if (options.getExcludedTopics() != null) {
                 builder.withParameter(CruiseControlParameters.EXCLUDED_TOPICS, options.getExcludedTopics());
@@ -133,6 +131,8 @@ public class PathBuilder {
     public PathBuilder withAddBrokerParameters(AddBrokerOptions options) {
         if (options != null) {
             return withAbstractRebalanceParameters(options)
+                    .withParameter(CruiseControlParameters.VERBOSE, String.valueOf(options.isVerbose()))
+                    .withParameter(CruiseControlParameters.SKIP_HARD_GOAL_CHECK, String.valueOf(options.isSkipHardGoalCheck()))
                     .withParameter(CruiseControlParameters.BROKER_ID, options.getBrokers().stream().map(String::valueOf).collect(Collectors.joining(",")));
         } else {
             return this;
@@ -149,7 +149,25 @@ public class PathBuilder {
     public PathBuilder withRemoveBrokerParameters(RemoveBrokerOptions options) {
         if (options != null) {
             return withAbstractRebalanceParameters(options)
+                    .withParameter(CruiseControlParameters.VERBOSE, String.valueOf(options.isVerbose()))
+                    .withParameter(CruiseControlParameters.SKIP_HARD_GOAL_CHECK, String.valueOf(options.isSkipHardGoalCheck()))
                     .withParameter(CruiseControlParameters.BROKER_ID, options.getBrokers().stream().map(String::valueOf).collect(Collectors.joining(",")));
+        } else {
+            return this;
+        }
+    }
+
+    /**
+     * Adds remove disks options to the path
+     *
+     * @param options   Remove-disks options
+     *
+     * @return  Instance of this builder
+     */
+    public PathBuilder withRemoveBrokerDisksParameters(RemoveDisksOptions options) {
+        if (options != null) {
+            return withAbstractRebalanceParameters(options)
+                    .withParameter(CruiseControlParameters.BROKER_ID_AND_LOG_DIRS, options.getBrokersandLogDirs().stream().map(String::valueOf).collect(Collectors.joining(",")));
         } else {
             return this;
         }

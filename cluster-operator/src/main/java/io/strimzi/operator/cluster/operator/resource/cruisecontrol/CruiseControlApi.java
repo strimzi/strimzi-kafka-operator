@@ -78,6 +78,20 @@ public interface CruiseControlApi {
     Future<CruiseControlRebalanceResponse> removeBroker(String host, int port, RemoveBrokerOptions options, String userTaskId);
 
     /**
+     * Send a request to the Cruise Control server to perform a cluster rebalance when removing existing brokers.
+     * This method allows to move replicas out from the brokers to remove to the others remaining in the cluster.
+     *
+     * @param host The address of the Cruise Control server.
+     * @param port The port the Cruise Control Server is listening on.
+     * @param options The remove broker parameters to be passed to the Cruise Control server.
+     * @param userTaskId This is the unique ID of a previous removeBroker request. If a previous request had not been
+     *                   completed when the response was returned then this ID can be used to retrieve the results of that
+     *                   request.
+     * @return A future for the rebalance response from the Cruise Control server containing details of the optimization.
+     */
+    Future<CruiseControlRebalanceResponse> removeBrokerDisksData(String host, int port, RemoveDisksOptions options, String userTaskId);
+
+    /**
      *  Get the state of a specific task (e.g. a rebalance) from the Cruise Control server.
      *
      * @param host The address of the Cruise Control server.

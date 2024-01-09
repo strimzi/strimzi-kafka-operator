@@ -27,7 +27,7 @@ spec:
             name: strimzi-cluster-operator
       containers:
         - name: strimzi-cluster-operator
-          image: quay.io/strimzi/operator:latest
+          image: docker.io/shubhamrwt/operator:latest
           ports:
             - containerPort: 8080
               name: http
@@ -48,51 +48,51 @@ spec:
             - name: STRIMZI_OPERATION_TIMEOUT_MS
               value: "300000"
             - name: STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE
-              value: quay.io/strimzi/kafka:latest-kafka-3.6.1
+              value: docker.io/shubhamrwt/kafka:latest-kafka-3.6.1
             - name: STRIMZI_DEFAULT_KAFKA_EXPORTER_IMAGE
-              value: quay.io/strimzi/kafka:latest-kafka-3.6.1
+              value: docker.io/shubhamrwt/kafka:latest-kafka-3.6.1
             - name: STRIMZI_DEFAULT_CRUISE_CONTROL_IMAGE
-              value: quay.io/strimzi/kafka:latest-kafka-3.6.1
+              value: docker.io/shubhamrwt/kafka:latest-kafka-3.6.1
             - name: STRIMZI_KAFKA_IMAGES
               value: |
-                3.5.0=quay.io/strimzi/kafka:latest-kafka-3.5.0
-                3.5.1=quay.io/strimzi/kafka:latest-kafka-3.5.1
-                3.5.2=quay.io/strimzi/kafka:latest-kafka-3.5.2
-                3.6.0=quay.io/strimzi/kafka:latest-kafka-3.6.0
-                3.6.1=quay.io/strimzi/kafka:latest-kafka-3.6.1
+                3.5.0=docker.io/shubhamrwt/kafka:latest-kafka-3.5.0
+                3.5.1=docker.io/shubhamrwt/kafka:latest-kafka-3.5.1
+                3.5.2=docker.io/shubhamrwt/kafka:latest-kafka-3.5.2
+                3.6.0=docker.io/shubhamrwt/kafka:latest-kafka-3.6.0
+                3.6.1=docker.io/shubhamrwt/kafka:latest-kafka-3.6.1
             - name: STRIMZI_KAFKA_CONNECT_IMAGES
               value: |
-                3.5.0=quay.io/strimzi/kafka:latest-kafka-3.5.0
-                3.5.1=quay.io/strimzi/kafka:latest-kafka-3.5.1
-                3.5.2=quay.io/strimzi/kafka:latest-kafka-3.5.2
-                3.6.0=quay.io/strimzi/kafka:latest-kafka-3.6.0
-                3.6.1=quay.io/strimzi/kafka:latest-kafka-3.6.1
+                3.5.0=docker.io/shubhamrwt/kafka:latest-kafka-3.5.0
+                3.5.1=docker.io/shubhamrwt/kafka:latest-kafka-3.5.1
+                3.5.2=docker.io/shubhamrwt/kafka:latest-kafka-3.5.2
+                3.6.0=docker.io/shubhamrwt/kafka:latest-kafka-3.6.0
+                3.6.1=docker.io/shubhamrwt/kafka:latest-kafka-3.6.1
             - name: STRIMZI_KAFKA_MIRROR_MAKER_IMAGES
               value: |
-                3.5.0=quay.io/strimzi/kafka:latest-kafka-3.5.0
-                3.5.1=quay.io/strimzi/kafka:latest-kafka-3.5.1
-                3.5.2=quay.io/strimzi/kafka:latest-kafka-3.5.2
-                3.6.0=quay.io/strimzi/kafka:latest-kafka-3.6.0
-                3.6.1=quay.io/strimzi/kafka:latest-kafka-3.6.1
+                3.5.0=docker.io/shubhamrwt/kafka:latest-kafka-3.5.0
+                3.5.1=docker.io/shubhamrwt/kafka:latest-kafka-3.5.1
+                3.5.2=docker.io/shubhamrwt/kafka:latest-kafka-3.5.2
+                3.6.0=docker.io/shubhamrwt/kafka:latest-kafka-3.6.0
+                3.6.1=docker.io/shubhamrwt/kafka:latest-kafka-3.6.1
             - name: STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES
               value: |
-                3.5.0=quay.io/strimzi/kafka:latest-kafka-3.5.0
-                3.5.1=quay.io/strimzi/kafka:latest-kafka-3.5.1
-                3.5.2=quay.io/strimzi/kafka:latest-kafka-3.5.2
-                3.6.0=quay.io/strimzi/kafka:latest-kafka-3.6.0
-                3.6.1=quay.io/strimzi/kafka:latest-kafka-3.6.1
+                3.5.0=docker.io/shubhamrwt/kafka:latest-kafka-3.5.0
+                3.5.1=docker.io/shubhamrwt/kafka:latest-kafka-3.5.1
+                3.5.2=docker.io/shubhamrwt/kafka:latest-kafka-3.5.2
+                3.6.0=docker.io/shubhamrwt/kafka:latest-kafka-3.6.0
+                3.6.1=docker.io/shubhamrwt/kafka:latest-kafka-3.6.1
             - name: STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE
-              value: quay.io/strimzi/operator:latest
+              value: docker.io/shubhamrwt/operator:latest
             - name: STRIMZI_DEFAULT_USER_OPERATOR_IMAGE
-              value: quay.io/strimzi/operator:latest
+              value: docker.io/shubhamrwt/operator:latest
             - name: STRIMZI_DEFAULT_KAFKA_INIT_IMAGE
-              value: quay.io/strimzi/operator:latest
+              value: docker.io/shubhamrwt/operator:latest
             - name: STRIMZI_DEFAULT_KAFKA_BRIDGE_IMAGE
-              value: quay.io/strimzi/kafka-bridge:0.27.0
+              value: docker.io/shubhamrwt/kafka-bridge:0.27.0
             - name: STRIMZI_DEFAULT_KANIKO_EXECUTOR_IMAGE
-              value: quay.io/strimzi/kaniko-executor:latest
+              value: docker.io/shubhamrwt/kaniko-executor:latest
             - name: STRIMZI_DEFAULT_MAVEN_BUILDER
-              value: quay.io/strimzi/maven-builder:latest
+              value: docker.io/shubhamrwt/maven-builder:latest
             - name: STRIMZI_OPERATOR_NAMESPACE
               valueFrom:
                 fieldRef:

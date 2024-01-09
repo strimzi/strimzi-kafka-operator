@@ -28,6 +28,7 @@ import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.CruiseControl;
 import io.strimzi.operator.cluster.model.CruiseControlConfiguration;
+import io.strimzi.operator.cluster.operator.resource.cruisecontrol.RemoveDisksOptions;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.model.NoSuchResourceException;
@@ -145,7 +146,7 @@ import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_REBALANCE_A
  *    |-----------→|               |                   |
  * </code></pre>
  */
-@SuppressWarnings({"checkstyle:ClassFanOutComplexity"})
+@SuppressWarnings({"checkstyle:ClassFanOutComplexity", "checkstyle:CyclomaticComplexity"})
 public class KafkaRebalanceAssemblyOperator
        extends AbstractOperator<KafkaRebalance, KafkaRebalanceSpec, KafkaRebalanceStatus, AbstractWatchableStatusedNamespacedResourceOperator<KubernetesClient, KafkaRebalance, KafkaRebalanceList, Resource<KafkaRebalance>>> {
 
@@ -333,6 +334,9 @@ public class KafkaRebalanceAssemblyOperator
         List<Integer> brokers = Optional.ofNullable(kafkaRebalanceSpec)
                 .map(kr -> kr.getBrokers())
                 .orElse(null);
+        List<String> brokersandLogDirs = Optional.ofNullable(kafkaRebalanceSpec)
+                .map(kr -> kr.getBrokerandlogdirs())
+                .orElse(null);
 
         switch (mode) {
             case ADD_BROKERS:
@@ -347,6 +351,14 @@ public class KafkaRebalanceAssemblyOperator
                 rebalanceOptionsBuilder = new RemoveBrokerOptions.RemoveBrokerOptionsBuilder();
                 if (brokers != null && !brokers.isEmpty()) {
                     ((RemoveBrokerOptions.RemoveBrokerOptionsBuilder) rebalanceOptionsBuilder).withBrokers(brokers);
+                } else {
+                    throw new IllegalArgumentException("The brokers list is mandatory when using the " + mode.toValue() + " rebalancing mode");
+                }
+                break;
+            case REMOVE_DISKS:
+                rebalanceOptionsBuilder = new RemoveDisksOptions.RemoveDisksOptionsBuilder();
+                if (brokersandLogDirs != null && !brokersandLogDirs.isEmpty()) {
+                    ((RemoveDisksOptions.RemoveDisksOptionsBuilder) rebalanceOptionsBuilder).withBrokersandLogDirs(brokersandLogDirs);
                 } else {
                     throw new IllegalArgumentException("The brokers list is mandatory when using the " + mode.toValue() + " rebalancing mode");
                 }
@@ -1299,6 +1311,9 @@ public class KafkaRebalanceAssemblyOperator
                 break;
             case REMOVE_BROKERS:
                 future = apiClient.removeBroker(host, CruiseControl.REST_API_PORT, ((RemoveBrokerOptions.RemoveBrokerOptionsBuilder) rebalanceOptionsBuilder).build(), userTaskID);
+                break;
+            case REMOVE_DISKS:
+                future = apiClient.removeBrokerDisksData(host, CruiseControl.REST_API_PORT, ((RemoveDisksOptions.RemoveDisksOptionsBuilder) rebalanceOptionsBuilder).build(), userTaskID);
                 break;
             default:
                 future = apiClient.rebalance(host, CruiseControl.REST_API_PORT, ((RebalanceOptions.RebalanceOptionsBuilder) rebalanceOptionsBuilder).build(), userTaskID);

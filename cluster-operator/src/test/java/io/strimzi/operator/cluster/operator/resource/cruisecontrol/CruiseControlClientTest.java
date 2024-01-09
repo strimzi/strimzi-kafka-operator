@@ -85,7 +85,6 @@ public class CruiseControlClientTest {
                     assertThat(result.getJson(), hasKeys("summary", "goalSummary", "loadAfterOptimization"));
                 });
     }
-
     @Test
     public void testCCRebalanceVerbose(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
         RebalanceOptions options = new RebalanceOptions.RebalanceOptionsBuilder().withVerboseResponse().build();
@@ -198,6 +197,18 @@ public class CruiseControlClientTest {
     }
 
     @Test
+    public void testCCRemoveBrokerDisks(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+        RemoveDisksOptions options = new RemoveDisksOptions.RemoveDisksOptionsBuilder()
+                .withBrokersandLogDirs(List.of("3-logdir1", "4-logdir2"))
+                .build();
+        this.ccRebalance(vertx, context, 0, options, CruiseControlEndpoints.REMOVE_DISKS,
+                result -> {
+                    assertThat(result.getUserTaskId(), is(MockCruiseControl.REBALANCE_NO_GOALS_RESPONSE_UTID));
+                    assertThat(result.getJson(), hasKeys("summary", "goalSummary", "loadAfterOptimization"));
+                });
+    }
+
+    @Test
     public void testCCRemoveBrokerVerbose(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
         RemoveBrokerOptions options = new RemoveBrokerOptions.RemoveBrokerOptionsBuilder()
                 .withVerboseResponse()
@@ -213,7 +224,7 @@ public class CruiseControlClientTest {
     @Test
     public void testCCRemoveBrokerNotEnoughValidWindowsException(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
         RemoveBrokerOptions options = new RemoveBrokerOptions.RemoveBrokerOptionsBuilder()
-                .withBrokers(List.of(3))
+                .withBrokers(List.of(3, 4))
                 .build();
         this.ccRebalanceNotEnoughValidWindowsException(vertx, context, options, CruiseControlEndpoints.REMOVE_BROKER,
                 result -> assertThat(result.isNotEnoughDataForProposal(), is(true))
@@ -270,6 +281,12 @@ public class CruiseControlClientTest {
                             checkpoint.flag();
                         })));
                 break;
+            case REMOVE_DISKS:
+                client.removeBrokerDisksData(HOST, PORT, (RemoveDisksOptions) options, null)
+                        .onComplete(context.succeeding(result -> context.verify(() -> {
+                            assertion.accept(result);
+                            checkpoint.flag();
+                        })));
         }
     }
 

@@ -277,6 +277,26 @@ public class CruiseControlApiImpl implements CruiseControlApi {
     }
 
     @Override
+    public Future<CruiseControlRebalanceResponse> removeBrokerDisksData(String host, int port, RemoveDisksOptions options, String userTaskId) {
+        if (options == null && userTaskId == null) {
+            return Future.failedFuture(
+                    new IllegalArgumentException("Either remove broker options or user task ID should be supplied, both were null"));
+        }
+
+        String path = new PathBuilder(CruiseControlEndpoints.REMOVE_DISKS)
+                .withParameter(CruiseControlParameters.JSON, "true")
+                .withRemoveBrokerDisksParameters(options)
+                .build();
+
+        System.out.println(path);
+        HttpClientOptions httpOptions = getHttpClientOptions();
+
+        return HttpClientUtils.withHttpClient(vertx, httpOptions, (httpClient, result) -> {
+            httpClient.request(HttpMethod.POST, port, host, path, request -> internalRebalance(host, port, path, userTaskId, request, result));
+        });
+    }
+
+    @Override
     public Future<CruiseControlRebalanceResponse> removeBroker(String host, int port, RemoveBrokerOptions options, String userTaskId) {
         if (options == null && userTaskId == null) {
             return Future.failedFuture(
@@ -288,6 +308,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                 .withRemoveBrokerParameters(options)
                 .build();
 
+        System.out.println(path);
         HttpClientOptions httpOptions = getHttpClientOptions();
 
         return HttpClientUtils.withHttpClient(vertx, httpOptions, (httpClient, result) -> {

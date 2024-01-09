@@ -85,7 +85,12 @@ public enum CruiseControlParameters {
     /**
      * Broker ID
      */
-    BROKER_ID("brokerid");
+    BROKER_ID("brokerid"),
+
+    /**
+     * Remove Disk
+     */
+    BROKER_ID_AND_LOG_DIRS("brokerid_and_logdirs");
 
     private final String key;
 

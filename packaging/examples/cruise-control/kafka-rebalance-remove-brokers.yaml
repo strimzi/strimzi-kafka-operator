@@ -6,5 +6,5 @@ metadata:
     strimzi.io/cluster: my-cluster
 # no goals specified, using the default goals from the Cruise Control configuration
 spec:
-  mode: remove-brokers
-  brokers: [3, 4]
+  mode: remove-disks
+  brokerandlogdirs: [0-/var/lib/kafka/data-0/kafka-log0]
