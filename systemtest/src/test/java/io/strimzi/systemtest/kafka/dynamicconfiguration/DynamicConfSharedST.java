@@ -68,7 +68,7 @@ public class DynamicConfSharedST extends AbstractST {
                 // verify phase
                 assertThat(KafkaUtils.verifyCrDynamicConfiguration(Environment.TEST_SUITE_NAMESPACE, dynamicConfigurationSharedClusterName, key, value), is(true));
                 assertThat(KafkaUtils.verifyPodDynamicConfiguration(Environment.TEST_SUITE_NAMESPACE, scraperPodName,
-                    KafkaResources.plainBootstrapAddress(dynamicConfigurationSharedClusterName), KafkaResources.kafkaStatefulSetName(dynamicConfigurationSharedClusterName), key, value), is(true));
+                    KafkaResources.plainBootstrapAddress(dynamicConfigurationSharedClusterName), KafkaResources.kafkaComponentName(dynamicConfigurationSharedClusterName), key, value), is(true));
             }));
         }
 

@@ -187,7 +187,7 @@ public class ClusterCa extends Ca {
         Function<NodeRef, Subject> subjectFn = node -> {
             Subject.Builder subject = new Subject.Builder()
                     .withOrganizationName("io.strimzi")
-                    .withCommonName(KafkaResources.zookeeperStatefulSetName(crName));
+                    .withCommonName(KafkaResources.zookeeperComponentName(crName));
             subject.addDnsName(KafkaResources.zookeeperServiceName(crName));
             subject.addDnsName(String.format("%s.%s", KafkaResources.zookeeperServiceName(crName), namespace));
             subject.addDnsName(zkDnsGenerator.serviceDnsNameWithoutClusterDomain());
@@ -222,7 +222,7 @@ public class ClusterCa extends Ca {
         Function<NodeRef, Subject> subjectFn = node -> {
             Subject.Builder subject = new Subject.Builder()
                     .withOrganizationName("io.strimzi")
-                    .withCommonName(KafkaResources.kafkaStatefulSetName(crName));
+                    .withCommonName(KafkaResources.kafkaComponentName(crName));
 
             subject.addDnsNames(ModelUtils.generateAllServiceDnsNames(namespace, KafkaResources.bootstrapServiceName(crName)));
             subject.addDnsNames(ModelUtils.generateAllServiceDnsNames(namespace, KafkaResources.brokersServiceName(crName)));

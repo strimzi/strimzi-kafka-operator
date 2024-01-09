@@ -60,7 +60,7 @@ public class KafkaConnectMigrationTest {
 
     private final static Deployment DEPLOYMENT = new DeploymentBuilder()
                 .withNewMetadata()
-                    .withName(KafkaConnectResources.deploymentName(NAME))
+                    .withName(KafkaConnectResources.componentName(NAME))
                 .endMetadata()
                 .withNewSpec()
                     .withReplicas(3)

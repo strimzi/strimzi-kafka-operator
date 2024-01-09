@@ -91,10 +91,10 @@ public class OauthScopeST extends OauthAbstractST {
                 .endSpec()
             .build());
 
-        String kafkaConnectPodName = PodUtils.getPodsByPrefixInNameWithDynamicWait(Environment.TEST_SUITE_NAMESPACE, KafkaConnectResources.deploymentName(clusterName)).get(0).getMetadata().getName();
+        String kafkaConnectPodName = PodUtils.getPodsByPrefixInNameWithDynamicWait(Environment.TEST_SUITE_NAMESPACE, KafkaConnectResources.componentName(clusterName)).get(0).getMetadata().getName();
 
         // we except that "Token validation failed: Custom claim check failed because we specify scope='null'"
-        StUtils.waitUntilLogFromPodContainsString(Environment.TEST_SUITE_NAMESPACE, kafkaConnectPodName, KafkaConnectResources.deploymentName(clusterName), "30s", "Token validation failed: Custom claim check failed");
+        StUtils.waitUntilLogFromPodContainsString(Environment.TEST_SUITE_NAMESPACE, kafkaConnectPodName, KafkaConnectResources.componentName(clusterName), "30s", "Token validation failed: Custom claim check failed");
     }
 
     @ParallelTest
@@ -178,7 +178,7 @@ public class OauthScopeST extends OauthAbstractST {
         final String producerName = OAUTH_PRODUCER_NAME + "-" + clusterName;
         final String consumerName = OAUTH_CONSUMER_NAME + "-" + clusterName;
         final String topicName = testStorage.getTopicName();
-        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(oauthClusterName, KafkaResources.kafkaStatefulSetName(oauthClusterName));
+        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(oauthClusterName, KafkaResources.kafkaComponentName(oauthClusterName));
 
         KafkaClients oauthInternalClientChecksJob = new KafkaClientsBuilder()
             .withNamespaceName(Environment.TEST_SUITE_NAMESPACE)

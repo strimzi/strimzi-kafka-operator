@@ -194,8 +194,8 @@ class LogSettingST extends AbstractST {
         String userOperatorMap = String.format("%s-%s", LOG_SETTING_CLUSTER_NAME, "entity-user-operator-config");
 
         String eoDepName = KafkaResources.entityOperatorDeploymentName(LOG_SETTING_CLUSTER_NAME);
-        String kafkaSsName = KafkaResources.kafkaStatefulSetName(LOG_SETTING_CLUSTER_NAME);
-        String zkSsName = KafkaResources.zookeeperStatefulSetName(LOG_SETTING_CLUSTER_NAME);
+        String kafkaSsName = KafkaResources.kafkaComponentName(LOG_SETTING_CLUSTER_NAME);
+        String zkSsName = KafkaResources.zookeeperComponentName(LOG_SETTING_CLUSTER_NAME);
 
         LabelSelector kafkaSelector = KafkaResource.getLabelSelector(LOG_SETTING_CLUSTER_NAME, kafkaSsName);
         LabelSelector zkSelector = KafkaResource.getLabelSelector(LOG_SETTING_CLUSTER_NAME, zkSsName);
@@ -294,8 +294,8 @@ class LogSettingST extends AbstractST {
             .endSpec()
             .build());
 
-        final String connectDepName = KafkaConnectResources.deploymentName(connectClusterName);
-        final LabelSelector labelSelector = KafkaConnectResource.getLabelSelector(connectClusterName, KafkaConnectResources.deploymentName(connectClusterName));
+        final String connectDepName = KafkaConnectResources.componentName(connectClusterName);
+        final LabelSelector labelSelector = KafkaConnectResource.getLabelSelector(connectClusterName, KafkaConnectResources.componentName(connectClusterName));
         final String connectMap = KafkaConnectResources.metricsAndLogConfigMapName(connectClusterName);
         final Map<String, String> connectPods = PodUtils.podSnapshot(Environment.TEST_SUITE_NAMESPACE, labelSelector);
 
@@ -332,7 +332,7 @@ class LogSettingST extends AbstractST {
             .endSpec()
             .build());
 
-        String mmDepName = KafkaMirrorMakerResources.deploymentName(mirrorMakerName);
+        String mmDepName = KafkaMirrorMakerResources.componentName(mirrorMakerName);
         Map<String, String> mmPods = DeploymentUtils.depSnapshot(Environment.TEST_SUITE_NAMESPACE, mmDepName);
         String mirrorMakerMap = KafkaMirrorMakerResources.metricsAndLogConfigMapName(mirrorMakerName);
 
@@ -368,9 +368,9 @@ class LogSettingST extends AbstractST {
             .endSpec()
             .build());
 
-        final String mm2DepName = KafkaMirrorMaker2Resources.deploymentName(clusterName);
+        final String mm2DepName = KafkaMirrorMaker2Resources.componentName(clusterName);
         final String mirrorMakerMap = KafkaMirrorMaker2Resources.metricsAndLogConfigMapName(clusterName);
-        final LabelSelector labelSelector = KafkaMirrorMaker2Resource.getLabelSelector(clusterName, KafkaMirrorMaker2Resources.deploymentName(clusterName));
+        final LabelSelector labelSelector = KafkaMirrorMaker2Resource.getLabelSelector(clusterName, KafkaMirrorMaker2Resources.componentName(clusterName));
         final Map<String, String> mm2Pods = PodUtils.podSnapshot(Environment.TEST_SUITE_NAMESPACE, labelSelector);
 
         LOGGER.info("Checking if MirrorMaker2 has log level set properly");
@@ -408,10 +408,10 @@ class LogSettingST extends AbstractST {
             .endSpec()
             .build());
 
-        final String bridgeDepName = KafkaBridgeResources.deploymentName(bridgeName);
+        final String bridgeDepName = KafkaBridgeResources.componentName(bridgeName);
         final Map<String, String> bridgePods = DeploymentUtils.depSnapshot(Environment.TEST_SUITE_NAMESPACE, bridgeDepName);
         final String bridgeMap = KafkaBridgeResources.metricsAndLogConfigMapName(bridgeName);
-        final LabelSelector labelSelector = KafkaBridgeResource.getLabelSelector(bridgeDepName, KafkaMirrorMaker2Resources.deploymentName(bridgeDepName));
+        final LabelSelector labelSelector = KafkaBridgeResource.getLabelSelector(bridgeDepName, KafkaMirrorMaker2Resources.componentName(bridgeDepName));
 
         LOGGER.info("Checking if Bridge has log level set properly");
         assertThat("Bridge's log level is set properly", checkLoggersLevel(Environment.TEST_SUITE_NAMESPACE, BRIDGE_LOGGERS, bridgeMap), is(true));

@@ -141,7 +141,7 @@ class MirrorMaker2ST extends AbstractST {
         resourceManager.createResourceWithWait(extensionContext, clients.producerStrimzi(), clients.consumerStrimzi());
         ClientUtils.waitForClientsSuccess(testStorage);
 
-        String podName = PodUtils.getPodNameByPrefix(testStorage.getNamespaceName(), KafkaMirrorMaker2Resources.deploymentName(testStorage.getClusterName()));
+        String podName = PodUtils.getPodNameByPrefix(testStorage.getNamespaceName(), KafkaMirrorMaker2Resources.componentName(testStorage.getClusterName()));
         String kafkaPodJson = TestUtils.toJsonString(kubeClient().getPod(testStorage.getNamespaceName(), podName));
 
         assertThat(kafkaPodJson, hasJsonPath(StUtils.globalVariableJsonPathBuilder(0, "KAFKA_CONNECT_BOOTSTRAP_SERVERS"),
@@ -171,9 +171,9 @@ class MirrorMaker2ST extends AbstractST {
 
         // Test Manual Rolling Update
         LOGGER.info("MirrorMaker2 manual rolling update");
-        final LabelSelector mm2LabelSelector = KafkaMirrorMaker2Resource.getLabelSelector(testStorage.getClusterName(), KafkaMirrorMaker2Resources.deploymentName(testStorage.getClusterName()));
+        final LabelSelector mm2LabelSelector = KafkaMirrorMaker2Resource.getLabelSelector(testStorage.getClusterName(), KafkaMirrorMaker2Resources.componentName(testStorage.getClusterName()));
         final Map<String, String> mm2PodsSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), mm2LabelSelector);
-        StrimziPodSetUtils.annotateStrimziPodSet(testStorage.getNamespaceName(), KafkaMirrorMaker2Resources.deploymentName(testStorage.getClusterName()), Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true"));
+        StrimziPodSetUtils.annotateStrimziPodSet(testStorage.getNamespaceName(), KafkaMirrorMaker2Resources.componentName(testStorage.getClusterName()), Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true"));
 
         RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), mm2LabelSelector, mirrorMakerReplicasCount, mm2PodsSnapshot);
 
@@ -448,7 +448,7 @@ class MirrorMaker2ST extends AbstractST {
     void testScaleMirrorMaker2UpAndDownToZero(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext, Environment.TEST_SUITE_NAMESPACE);
 
-        LabelSelector mmSelector = KafkaMirrorMaker2Resource.getLabelSelector(testStorage.getClusterName(), KafkaMirrorMaker2Resources.deploymentName(testStorage.getClusterName()));
+        LabelSelector mmSelector = KafkaMirrorMaker2Resource.getLabelSelector(testStorage.getClusterName(), KafkaMirrorMaker2Resources.componentName(testStorage.getClusterName()));
 
         // Deploy source kafka
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getSourceClusterName(), 1, 1).build());
@@ -1020,7 +1020,7 @@ class MirrorMaker2ST extends AbstractST {
 
         LOGGER.info("Messages successfully mirrored");
 
-        LabelSelector mmSelector = KafkaMirrorMaker2Resource.getLabelSelector(testStorage.getClusterName(), KafkaMirrorMaker2Resources.deploymentName(testStorage.getClusterName()));
+        LabelSelector mmSelector = KafkaMirrorMaker2Resource.getLabelSelector(testStorage.getClusterName(), KafkaMirrorMaker2Resources.componentName(testStorage.getClusterName()));
         Map<String, String> mmSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), mmSelector);
 
         LOGGER.info("Changing KafkaUser sha-password on MirrorMaker2 Source and make sure it rolled");
@@ -1145,7 +1145,7 @@ class MirrorMaker2ST extends AbstractST {
             .endSpec()
             .build());
 
-        LabelSelector mmSelector = KafkaMirrorMaker2Resource.getLabelSelector(testStorage.getClusterName(), KafkaMirrorMaker2Resources.deploymentName(testStorage.getClusterName()));
+        LabelSelector mmSelector = KafkaMirrorMaker2Resource.getLabelSelector(testStorage.getClusterName(), KafkaMirrorMaker2Resources.componentName(testStorage.getClusterName()));
         Map<String, String> mmSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), mmSelector);
 
         KafkaClients clients = new KafkaClientsBuilder()
@@ -1174,11 +1174,11 @@ class MirrorMaker2ST extends AbstractST {
 
         LOGGER.info("Messages successfully mirrored");
 
-        LabelSelector zkSourceSelector = KafkaResource.getLabelSelector(testStorage.getSourceClusterName(), KafkaResources.zookeeperStatefulSetName(testStorage.getSourceClusterName()));
-        LabelSelector kafkaSourceSelector = KafkaResource.getLabelSelector(testStorage.getSourceClusterName(), KafkaResources.kafkaStatefulSetName(testStorage.getSourceClusterName()));
+        LabelSelector zkSourceSelector = KafkaResource.getLabelSelector(testStorage.getSourceClusterName(), KafkaResources.zookeeperComponentName(testStorage.getSourceClusterName()));
+        LabelSelector kafkaSourceSelector = KafkaResource.getLabelSelector(testStorage.getSourceClusterName(), KafkaResources.kafkaComponentName(testStorage.getSourceClusterName()));
 
-        LabelSelector zkTargetSelector = KafkaResource.getLabelSelector(testStorage.getTargetClusterName(), KafkaResources.zookeeperStatefulSetName(testStorage.getTargetClusterName()));
-        LabelSelector kafkaTargetSelector = KafkaResource.getLabelSelector(testStorage.getTargetClusterName(), KafkaResources.kafkaStatefulSetName(testStorage.getTargetClusterName()));
+        LabelSelector zkTargetSelector = KafkaResource.getLabelSelector(testStorage.getTargetClusterName(), KafkaResources.zookeeperComponentName(testStorage.getTargetClusterName()));
+        LabelSelector kafkaTargetSelector = KafkaResource.getLabelSelector(testStorage.getTargetClusterName(), KafkaResources.kafkaComponentName(testStorage.getTargetClusterName()));
 
         Map<String, String> kafkaSourcePods = PodUtils.podSnapshot(testStorage.getNamespaceName(), kafkaSourceSelector);
         Map<String, String> zkSourcePods = PodUtils.podSnapshot(testStorage.getNamespaceName(), zkSourceSelector);

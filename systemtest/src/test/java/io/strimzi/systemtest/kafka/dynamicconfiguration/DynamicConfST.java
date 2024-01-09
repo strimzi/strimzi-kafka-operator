@@ -128,7 +128,7 @@ public class DynamicConfST extends AbstractST {
 
         Map<String, Object> deepCopyOfShardKafkaConfig = kafkaConfig.entrySet().stream()
             .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
-        LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
+        LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaComponentName(clusterName));
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, KAFKA_REPLICAS, 1)
             .editMetadata()
@@ -270,7 +270,7 @@ public class DynamicConfST extends AbstractST {
         String userName = testStorage.getKafkaUsername();
         Map<String, Object> deepCopyOfShardKafkaConfig = kafkaConfig.entrySet().stream()
             .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
-        LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
+        LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaComponentName(clusterName));
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, KAFKA_REPLICAS, 1)
             .editMetadata()
@@ -390,7 +390,7 @@ public class DynamicConfST extends AbstractST {
      * @param kafkaConfig specific kafka configuration, which will be changed
      */
     private void updateAndVerifyDynConf(final String namespaceName, String clusterName, Map<String, Object> kafkaConfig) {
-        LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
+        LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaComponentName(clusterName));
         Map<String, String> kafkaPods = PodUtils.podSnapshot(namespaceName, kafkaSelector);
 
         LOGGER.info("Updating configuration of Kafka cluster");
@@ -399,7 +399,7 @@ public class DynamicConfST extends AbstractST {
             kafkaClusterSpec.setConfig(kafkaConfig);
         }, namespaceName);
 
-        PodUtils.verifyThatRunningPodsAreStable(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName));
+        PodUtils.verifyThatRunningPodsAreStable(namespaceName, KafkaResources.kafkaComponentName(clusterName));
         assertThat(RollingUpdateUtils.componentHasRolled(namespaceName, kafkaSelector, kafkaPods), is(false));
     }
 

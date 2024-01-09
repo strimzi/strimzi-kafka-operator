@@ -123,14 +123,14 @@ public class KafkaConnectAssemblyOperatorMockTest {
         kco.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME))
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 if (!reconciliationPaused) {
-                    assertThat(Crds.strimziPodSetOperation(client).inNamespace(NAMESPACE).withName(KafkaConnectResources.deploymentName(CLUSTER_NAME)).get(), is(notNullValue()));
-                    assertThat(client.apps().deployments().inNamespace(NAMESPACE).withName(KafkaConnectResources.deploymentName(CLUSTER_NAME)).get(), is(nullValue()));
+                    assertThat(Crds.strimziPodSetOperation(client).inNamespace(NAMESPACE).withName(KafkaConnectResources.componentName(CLUSTER_NAME)).get(), is(notNullValue()));
+                    assertThat(client.apps().deployments().inNamespace(NAMESPACE).withName(KafkaConnectResources.componentName(CLUSTER_NAME)).get(), is(nullValue()));
                     assertThat(client.configMaps().inNamespace(NAMESPACE).withName(KafkaConnectResources.metricsAndLogConfigMapName(CLUSTER_NAME)).get(), is(notNullValue()));
                     assertThat(client.services().inNamespace(NAMESPACE).withName(KafkaConnectResources.serviceName(CLUSTER_NAME)).get(), is(notNullValue()));
-                    assertThat(client.policy().v1().podDisruptionBudget().inNamespace(NAMESPACE).withName(KafkaConnectResources.deploymentName(CLUSTER_NAME)).get(), is(notNullValue()));
+                    assertThat(client.policy().v1().podDisruptionBudget().inNamespace(NAMESPACE).withName(KafkaConnectResources.componentName(CLUSTER_NAME)).get(), is(notNullValue()));
                 } else {
-                    assertThat(Crds.strimziPodSetOperation(client).inNamespace(NAMESPACE).withName(KafkaConnectResources.deploymentName(CLUSTER_NAME)).get(), is(nullValue()));
-                    assertThat(client.apps().deployments().inNamespace(NAMESPACE).withName(KafkaConnectResources.deploymentName(CLUSTER_NAME)).get(), is(nullValue()));
+                    assertThat(Crds.strimziPodSetOperation(client).inNamespace(NAMESPACE).withName(KafkaConnectResources.componentName(CLUSTER_NAME)).get(), is(nullValue()));
+                    assertThat(client.apps().deployments().inNamespace(NAMESPACE).withName(KafkaConnectResources.componentName(CLUSTER_NAME)).get(), is(nullValue()));
                 }
                 created.complete();
             })));

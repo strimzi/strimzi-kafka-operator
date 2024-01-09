@@ -128,7 +128,7 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
     }
 
     public static void allowNetworkPolicySettingsForKafkaExporter(ExtensionContext extensionContext, String clusterName, String namespace) {
-        String kafkaExporterDeploymentName = KafkaExporterResources.deploymentName(clusterName);
+        String kafkaExporterDeploymentName = KafkaExporterResources.componentName(clusterName);
         LabelSelector labelSelector = new LabelSelectorBuilder()
             .addToMatchLabels(TestConstants.SCRAPER_LABEL_KEY, TestConstants.SCRAPER_LABEL_VALUE)
             .build();

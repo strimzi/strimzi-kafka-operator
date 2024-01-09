@@ -385,7 +385,7 @@ class CustomResourceStatusST extends AbstractST {
         KafkaMirrorMaker2Utils.waitForKafkaMirrorMaker2ConnectorReadiness(Environment.TEST_SUITE_NAMESPACE, mirrorMaker2Name);
         assertKafkaMirrorMaker2Status(3, mm2Url, mirrorMaker2Name);
         // Wait for pods stability and check that pods weren't rolled
-        PodUtils.verifyThatRunningPodsAreStable(Environment.TEST_SUITE_NAMESPACE, KafkaMirrorMaker2Resources.deploymentName(mirrorMaker2Name));
+        PodUtils.verifyThatRunningPodsAreStable(Environment.TEST_SUITE_NAMESPACE, KafkaMirrorMaker2Resources.componentName(mirrorMaker2Name));
         assertKafkaMirrorMaker2Status(3, mm2Url, mirrorMaker2Name);
         KafkaMirrorMaker2Utils.waitForKafkaMirrorMaker2ConnectorReadiness(Environment.TEST_SUITE_NAMESPACE, mirrorMaker2Name);
     }
@@ -411,7 +411,7 @@ class CustomResourceStatusST extends AbstractST {
         // delete
         KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(mirrorMaker2Name).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
 
-        DeploymentUtils.waitForDeploymentDeletion(Environment.TEST_SUITE_NAMESPACE, KafkaMirrorMaker2Resources.deploymentName(mirrorMaker2Name));
+        DeploymentUtils.waitForDeploymentDeletion(Environment.TEST_SUITE_NAMESPACE, KafkaMirrorMaker2Resources.componentName(mirrorMaker2Name));
     }
 
     @BeforeAll

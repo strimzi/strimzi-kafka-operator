@@ -482,8 +482,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          * @return  Future with ZooKeeper reconciler
          */
         Future<ZooKeeperReconciler> zooKeeperReconciler()   {
-            Future<StatefulSet> stsFuture = stsOperations.getAsync(namespace, KafkaResources.zookeeperStatefulSetName(name));
-            Future<StrimziPodSet> podSetFuture = strimziPodSetOperator.getAsync(namespace, KafkaResources.zookeeperStatefulSetName(name));
+            Future<StatefulSet> stsFuture = stsOperations.getAsync(namespace, KafkaResources.zookeeperComponentName(name));
+            Future<StrimziPodSet> podSetFuture = strimziPodSetOperator.getAsync(namespace, KafkaResources.zookeeperComponentName(name));
 
             return Future.join(stsFuture, podSetFuture)
                     .compose(res -> {
@@ -579,7 +579,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             Labels kafkaSelectorLabels = Labels.EMPTY
                     .withStrimziKind(reconciliation.kind())
                     .withStrimziCluster(reconciliation.name())
-                    .withStrimziName(KafkaResources.kafkaStatefulSetName(reconciliation.name()));
+                    .withStrimziName(KafkaResources.kafkaComponentName(reconciliation.name()));
 
             Future<List<KafkaNodePool>> nodePoolFuture;
             if (featureGates.kafkaNodePoolsEnabled()
@@ -590,7 +590,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 nodePoolFuture = Future.succeededFuture(null);
             }
 
-            Future<StatefulSet> stsFuture = stsOperations.getAsync(namespace, KafkaResources.kafkaStatefulSetName(name));
+            Future<StatefulSet> stsFuture = stsOperations.getAsync(namespace, KafkaResources.kafkaComponentName(name));
             Future<List<StrimziPodSet>> podSetFuture = strimziPodSetOperator.listAsync(namespace, kafkaSelectorLabels);
 
             return Future.join(stsFuture, podSetFuture, nodePoolFuture)

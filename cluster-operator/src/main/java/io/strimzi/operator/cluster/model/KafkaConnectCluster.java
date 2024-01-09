@@ -169,7 +169,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
      * @param sharedEnvironmentProvider Shared environment provider
      */
     protected KafkaConnectCluster(Reconciliation reconciliation, HasMetadata resource, SharedEnvironmentProvider sharedEnvironmentProvider) {
-        this(reconciliation, resource, KafkaConnectResources.deploymentName(resource.getMetadata().getName()), COMPONENT_TYPE, sharedEnvironmentProvider);
+        this(reconciliation, resource, KafkaConnectResources.componentName(resource.getMetadata().getName()), COMPONENT_TYPE, sharedEnvironmentProvider);
     }
 
     /**

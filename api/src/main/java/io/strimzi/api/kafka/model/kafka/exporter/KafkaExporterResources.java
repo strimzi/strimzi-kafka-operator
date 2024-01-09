@@ -16,7 +16,7 @@ public class KafkaExporterResources {
      * @param kafkaClusterName  The {@code metadata.name} of the {@code Kafka} resource.
      * @return The name of the corresponding Kafka Exporter {@code Deployment}.
      */
-    public static String deploymentName(String kafkaClusterName) {
+    public static String componentName(String kafkaClusterName) {
         return kafkaClusterName + "-kafka-exporter";
     }
 
@@ -26,7 +26,7 @@ public class KafkaExporterResources {
      * @return The name of the corresponding Kafka Exporter {@code ServiceAccount}.
      */
     public static String serviceAccountName(String kafkaClusterName) {
-        return deploymentName(kafkaClusterName);
+        return componentName(kafkaClusterName);
     }
 
     /**
@@ -47,6 +47,6 @@ public class KafkaExporterResources {
      * @return The name of the corresponding Kafka Exporter {@code Secret}.
      */
     public static String secretName(String clusterName) {
-        return deploymentName(clusterName) + "-certs";
+        return componentName(clusterName) + "-certs";
     }
 }

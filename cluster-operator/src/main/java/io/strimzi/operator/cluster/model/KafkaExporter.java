@@ -95,7 +95,7 @@ public class KafkaExporter extends AbstractModel {
      * @param sharedEnvironmentProvider Shared environment provider
      */
     protected KafkaExporter(Reconciliation reconciliation, HasMetadata resource, SharedEnvironmentProvider sharedEnvironmentProvider) {
-        super(reconciliation, resource, KafkaExporterResources.deploymentName(resource.getMetadata().getName()), COMPONENT_TYPE, sharedEnvironmentProvider);
+        super(reconciliation, resource, KafkaExporterResources.componentName(resource.getMetadata().getName()), COMPONENT_TYPE, sharedEnvironmentProvider);
 
         this.saramaLoggingEnabled = false;
         this.showAllOffsets = true;

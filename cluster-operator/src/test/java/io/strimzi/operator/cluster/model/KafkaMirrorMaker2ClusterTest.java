@@ -180,7 +180,7 @@ public class KafkaMirrorMaker2ClusterTest {
     }
 
     private Map<String, String> expectedLabels()    {
-        return expectedLabels(KafkaMirrorMaker2Resources.deploymentName(clusterName));
+        return expectedLabels(KafkaMirrorMaker2Resources.componentName(clusterName));
     }
 
     protected List<EnvVar> getExpectedEnvVars() {
@@ -287,11 +287,11 @@ public class KafkaMirrorMaker2ClusterTest {
         // Check PodSet
         StrimziPodSet ps = kmm2.generatePodSet(3, Map.of("anno2", "anno-value2"), Map.of("anno3", "anno-value3"), false, null, null, null);
 
-        assertThat(ps.getMetadata().getName(), is(KafkaMirrorMaker2Resources.deploymentName(clusterName)));
+        assertThat(ps.getMetadata().getName(), is(KafkaMirrorMaker2Resources.componentName(clusterName)));
         assertThat(ps.getMetadata().getLabels().entrySet().containsAll(kmm2.labels.withAdditionalLabels(null).toMap().entrySet()), is(true));
         assertThat(ps.getMetadata().getAnnotations(), is(Map.of("anno1", "anno-value1", "anno2", "anno-value2")));
         TestUtils.checkOwnerReference(ps, resource);
-        assertThat(ps.getSpec().getSelector().getMatchLabels(), is(kmm2.getSelectorLabels().withStrimziPodSetController(KafkaMirrorMaker2Resources.deploymentName(clusterName)).toMap()));
+        assertThat(ps.getSpec().getSelector().getMatchLabels(), is(kmm2.getSelectorLabels().withStrimziPodSetController(KafkaMirrorMaker2Resources.componentName(clusterName)).toMap()));
         assertThat(ps.getSpec().getPods().size(), is(3));
 
         // We need to loop through the pods to make sure they have the right values
@@ -303,7 +303,7 @@ public class KafkaMirrorMaker2ClusterTest {
             assertThat(pod.getMetadata().getAnnotations().get("anno3"), is("anno-value3"));
 
             assertThat(pod.getSpec().getHostname(), is(pod.getMetadata().getName()));
-            assertThat(pod.getSpec().getSubdomain(), is(KafkaMirrorMaker2Resources.deploymentName(clusterName)));
+            assertThat(pod.getSpec().getSubdomain(), is(KafkaMirrorMaker2Resources.componentName(clusterName)));
             assertThat(pod.getSpec().getRestartPolicy(), is("Always"));
             assertThat(pod.getSpec().getTerminationGracePeriodSeconds(), is(30L));
             assertThat(pod.getSpec().getVolumes().stream()
@@ -311,7 +311,7 @@ public class KafkaMirrorMaker2ClusterTest {
                     .findFirst().orElseThrow().getEmptyDir().getSizeLimit(), is(new Quantity(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_SIZE)));
 
             assertThat(pod.getSpec().getContainers().size(), is(1));
-            assertThat(pod.getSpec().getContainers().get(0).getName(), is(KafkaMirrorMaker2Resources.deploymentName(this.clusterName)));
+            assertThat(pod.getSpec().getContainers().get(0).getName(), is(KafkaMirrorMaker2Resources.componentName(this.clusterName)));
             assertThat(pod.getSpec().getContainers().get(0).getImage(), is(kmm2.image));
             assertThat(pod.getSpec().getContainers().get(0).getEnv(), is(getExpectedEnvVars()));
             assertThat(pod.getSpec().getContainers().get(0).getLivenessProbe().getTimeoutSeconds(), is(healthTimeout));

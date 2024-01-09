@@ -17,7 +17,7 @@ public class KafkaBridgeResources {
      * @param clusterName  The {@code metadata.name} of the {@code KafkaBridge} resource.
      * @return The name of the corresponding Kafka Bridge {@code Deployment}.
      */
-    public static String deploymentName(String clusterName) {
+    public static String componentName(String clusterName) {
         return clusterName + "-bridge";
     }
 
@@ -45,7 +45,7 @@ public class KafkaBridgeResources {
      * @return The name of the corresponding Kafka Bridge {@code ServiceAccount}.
      */
     public static String serviceAccountName(String clusterName) {
-        return deploymentName(clusterName);
+        return componentName(clusterName);
     }
 
     /**
@@ -68,6 +68,6 @@ public class KafkaBridgeResources {
      * @return The name of the init container's cluster role binding.
      */
     public static String initContainerClusterRoleBindingName(String clusterName, String namespace) {
-        return "strimzi-" + namespace + "-" + deploymentName(clusterName) + "-init";
+        return "strimzi-" + namespace + "-" + componentName(clusterName) + "-init";
     }
 }

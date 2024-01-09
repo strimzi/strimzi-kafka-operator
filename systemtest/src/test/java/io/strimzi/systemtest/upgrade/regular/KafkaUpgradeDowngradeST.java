@@ -306,7 +306,7 @@ public class KafkaUpgradeDowngradeST extends AbstractUpgradeST {
 
         LOGGER.info("Deployment of Kafka (" + newVersion.version() + ") complete");
 
-        PodUtils.verifyThatRunningPodsAreStable(TestConstants.CO_NAMESPACE, KafkaResources.kafkaStatefulSetName(clusterName));
+        PodUtils.verifyThatRunningPodsAreStable(TestConstants.CO_NAMESPACE, KafkaResources.kafkaComponentName(clusterName));
 
         // Extract the zookeeper version number from the jars in the lib directory
         zkResult = cmdKubeClient().execInPodContainer(KafkaResources.zookeeperPodName(clusterName, 0),
@@ -343,7 +343,7 @@ public class KafkaUpgradeDowngradeST extends AbstractUpgradeST {
                 LOGGER.info("Kafka roll (log.message.format.version change) is complete");
             } else {
                 LOGGER.info("Cluster Operator already changed the configuration, there should be no rolling update");
-                PodUtils.verifyThatRunningPodsAreStable(TestConstants.CO_NAMESPACE, KafkaResources.kafkaStatefulSetName(clusterName));
+                PodUtils.verifyThatRunningPodsAreStable(TestConstants.CO_NAMESPACE, KafkaResources.kafkaComponentName(clusterName));
                 assertFalse(RollingUpdateUtils.componentHasRolled(TestConstants.CO_NAMESPACE, kafkaSelector, kafkaPods));
             }
         }

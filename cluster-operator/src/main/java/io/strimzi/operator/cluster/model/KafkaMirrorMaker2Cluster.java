@@ -79,7 +79,7 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
      * @param sharedEnvironmentProvider Shared environment provider
      */
     private KafkaMirrorMaker2Cluster(Reconciliation reconciliation, HasMetadata resource, SharedEnvironmentProvider sharedEnvironmentProvider) {
-        super(reconciliation, resource, KafkaMirrorMaker2Resources.deploymentName(resource.getMetadata().getName()), COMPONENT_TYPE, sharedEnvironmentProvider);
+        super(reconciliation, resource, KafkaMirrorMaker2Resources.componentName(resource.getMetadata().getName()), COMPONENT_TYPE, sharedEnvironmentProvider);
 
         this.serviceName = KafkaMirrorMaker2Resources.serviceName(cluster);
         this.loggingAndMetricsConfigMapName = KafkaMirrorMaker2Resources.metricsAndLogConfigMapName(cluster);

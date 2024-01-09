@@ -16,7 +16,7 @@ public class KafkaMirrorMakerResources {
      * @param clusterName  The {@code metadata.name} of the {@code KafkaMirrorMaker} resource.
      * @return The name of the corresponding Kafka MirrorMaker {@code Deployment}.
      */
-    public static String deploymentName(String clusterName) {
+    public static String componentName(String clusterName) {
         return clusterName + "-mirror-maker";
     }
 
@@ -26,7 +26,7 @@ public class KafkaMirrorMakerResources {
      * @return The name of the corresponding Kafka MirrorMaker {@code ServiceAccount}.
      */
     public static String serviceAccountName(String clusterName) {
-        return deploymentName(clusterName);
+        return componentName(clusterName);
     }
 
     /**

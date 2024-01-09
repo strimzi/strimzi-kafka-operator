@@ -79,7 +79,7 @@ public class KafkaConnectTemplates {
                 .withNewTls()
                     .withTrustedCertificates(new CertSecretSourceBuilder().withSecretName(kafkaClusterName + "-cluster-ca-cert").withCertificate("ca.crt").build())
                 .endTls()
-                .addToConfig("group.id", KafkaConnectResources.deploymentName(name))
+                .addToConfig("group.id", KafkaConnectResources.componentName(name))
                 .addToConfig("offset.storage.topic", KafkaConnectResources.configStorageTopicOffsets(name))
                 .addToConfig("config.storage.topic", KafkaConnectResources.metricsAndLogConfigMapName(name))
                 .addToConfig("status.storage.topic", KafkaConnectResources.configStorageTopicStatus(name))

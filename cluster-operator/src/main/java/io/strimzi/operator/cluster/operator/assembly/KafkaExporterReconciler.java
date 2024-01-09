@@ -111,7 +111,7 @@ public class KafkaExporterReconciler {
                 .reconcile(
                         reconciliation,
                         reconciliation.namespace(),
-                        KafkaExporterResources.deploymentName(reconciliation.name()),
+                        KafkaExporterResources.componentName(reconciliation.name()),
                         kafkaExporter != null ? kafkaExporter.generateServiceAccount() : null
                 ).map((Void) null);
     }
@@ -160,7 +160,7 @@ public class KafkaExporterReconciler {
                     .reconcile(
                             reconciliation,
                             reconciliation.namespace(),
-                            KafkaExporterResources.deploymentName(reconciliation.name()),
+                            KafkaExporterResources.componentName(reconciliation.name()),
                             kafkaExporter != null ? kafkaExporter.generateNetworkPolicy() : null
                     ).map((Void) null);
         } else {
@@ -188,7 +188,7 @@ public class KafkaExporterReconciler {
                     Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, String.valueOf(caKeyGeneration));
 
             return deploymentOperator
-                    .reconcile(reconciliation, reconciliation.namespace(), KafkaExporterResources.deploymentName(reconciliation.name()), deployment)
+                    .reconcile(reconciliation, reconciliation.namespace(), KafkaExporterResources.componentName(reconciliation.name()), deployment)
                     .compose(patchResult -> {
                         if (patchResult instanceof ReconcileResult.Noop)   {
                             // Deployment needs ot be rolled because the certificate secret changed or older/expired cluster CA removed
@@ -203,7 +203,7 @@ public class KafkaExporterReconciler {
                     });
         } else  {
             return deploymentOperator
-                    .reconcile(reconciliation, reconciliation.namespace(), KafkaExporterResources.deploymentName(reconciliation.name()), null)
+                    .reconcile(reconciliation, reconciliation.namespace(), KafkaExporterResources.componentName(reconciliation.name()), null)
                     .map((Void) null);
         }
     }
@@ -214,7 +214,7 @@ public class KafkaExporterReconciler {
      * @return  Future which completes when the reconciliation is done
      */
     private Future<Void> kafkaExporterRollingUpdate() {
-        return deploymentOperator.rollingUpdate(reconciliation, reconciliation.namespace(), KafkaExporterResources.deploymentName(reconciliation.name()), operationTimeoutMs);
+        return deploymentOperator.rollingUpdate(reconciliation, reconciliation.namespace(), KafkaExporterResources.componentName(reconciliation.name()), operationTimeoutMs);
     }
 
     /**
@@ -224,8 +224,8 @@ public class KafkaExporterReconciler {
      */
     private Future<Void> waitForDeploymentReadiness() {
         if (kafkaExporter != null) {
-            return deploymentOperator.waitForObserved(reconciliation, reconciliation.namespace(), KafkaExporterResources.deploymentName(reconciliation.name()), 1_000, operationTimeoutMs)
-                    .compose(i -> deploymentOperator.readiness(reconciliation, reconciliation.namespace(), KafkaExporterResources.deploymentName(reconciliation.name()), 1_000, operationTimeoutMs));
+            return deploymentOperator.waitForObserved(reconciliation, reconciliation.namespace(), KafkaExporterResources.componentName(reconciliation.name()), 1_000, operationTimeoutMs)
+                    .compose(i -> deploymentOperator.readiness(reconciliation, reconciliation.namespace(), KafkaExporterResources.componentName(reconciliation.name()), 1_000, operationTimeoutMs));
         } else {
             return Future.succeededFuture();
         }

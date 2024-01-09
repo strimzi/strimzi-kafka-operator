@@ -256,7 +256,7 @@ public class MultipleClusterOperatorsST extends AbstractST {
     void testKafkaCCAndRebalanceWithMultipleCOs(ExtensionContext extensionContext) {
         assumeFalse(Environment.isNamespaceRbacScope());
         TestStorage testStorage = new TestStorage(extensionContext, DEFAULT_NAMESPACE);
-        LabelSelector kafkaSelector = KafkaResource.getLabelSelector(testStorage.getClusterName(), KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()));
+        LabelSelector kafkaSelector = KafkaResource.getLabelSelector(testStorage.getClusterName(), KafkaResources.kafkaComponentName(testStorage.getClusterName()));
 
         int scaleTo = 4;
 
