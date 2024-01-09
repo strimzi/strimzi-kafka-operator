@@ -144,8 +144,9 @@ public class AbstractKRaftUpgradeST extends AbstractUpgradeST {
         // #################    Update CRs to latest version   ###################
         // #######################################################################
         String examplesPath = downloadExamplesAndGetPath(versionModificationData);
+        String kafkaFilePath = examplesPath + versionModificationData.getKafkaKRaftFilePathAfter();
 
-        applyCustomResourcesFromPath(examplesPath, kafkaVersionFromCR, currentMetadataVersion);
+        applyCustomResourcesFromPath(examplesPath, kafkaFilePath, kafkaVersionFromCR, currentMetadataVersion);
 
         // #######################################################################
 
@@ -197,23 +198,23 @@ public class AbstractKRaftUpgradeST extends AbstractUpgradeST {
         brokerPods = RollingUpdateUtils.waitTillComponentHasRolled(TestConstants.CO_NAMESPACE, brokerSelector, 3, brokerPods);
     }
 
-    protected void applyKafkaCustomResourceFromPath(String examplesPath, String kafkaVersionFromCR, String kafkaMetadataVersion) {
+    protected void applyKafkaCustomResourceFromPath(String kafkaFilePath, String kafkaVersionFromCR, String kafkaMetadataVersion) {
         // Change kafka version of it's empty (null is for remove the version)
         String metadataVersion = kafkaVersionFromCR == null ? null : kafkaMetadataVersion;
 
-        kafkaYaml = new File(examplesPath + "/kafka/nodepools/kafka-with-kraft.yaml");
+        kafkaYaml = new File(kafkaFilePath);
         LOGGER.info("Deploying Kafka from: {}", kafkaYaml.getPath());
         cmdKubeClient().applyContent(KafkaUtils.changeOrRemoveKafkaConfigurationInKRaft(kafkaYaml, kafkaVersionFromCR, metadataVersion));
     }
 
-    protected void applyCustomResourcesFromPath(String examplesPath, String kafkaVersionFromCR, String kafkaMetadataVersion) {
-        applyKafkaCustomResourceFromPath(examplesPath, kafkaVersionFromCR, kafkaMetadataVersion);
+    protected void applyCustomResourcesFromPath(String examplesPath, String kafkaFilePath, String kafkaVersionFromCR, String kafkaMetadataVersion) {
+        applyKafkaCustomResourceFromPath(kafkaFilePath, kafkaVersionFromCR, kafkaMetadataVersion);
 
-        kafkaUserYaml = new File(examplesPath + "/user/kafka-user.yaml");
+        kafkaUserYaml = new File(examplesPath + "/examples/user/kafka-user.yaml");
         LOGGER.info("Deploying KafkaUser from: {}", kafkaUserYaml.getPath());
         cmdKubeClient().applyContent(KafkaUserUtils.removeKafkaUserPart(kafkaUserYaml, "authorization"));
 
-        kafkaTopicYaml = new File(examplesPath + "/topic/kafka-topic.yaml");
+        kafkaTopicYaml = new File(examplesPath + "/examples/topic/kafka-topic.yaml");
         LOGGER.info("Deploying KafkaTopic from: {}", kafkaTopicYaml.getPath());
         cmdKubeClient().applyContent(TestUtils.readFile(kafkaTopicYaml));
     }

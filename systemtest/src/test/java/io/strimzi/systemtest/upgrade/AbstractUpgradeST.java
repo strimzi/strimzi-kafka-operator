@@ -161,11 +161,11 @@ public class AbstractUpgradeST extends AbstractST {
         String defaultValueForVersions = kafkaVersionFromCR == null ? null : TestKafkaVersion.getSpecificVersion(kafkaVersionFromCR).messageVersion();
         cmdKubeClient().applyContent(KafkaUtils.changeOrRemoveKafkaConfiguration(kafkaYaml, kafkaVersionFromCR, defaultValueForVersions, defaultValueForVersions));
 
-        kafkaUserYaml = new File(examplesPath + "/user/kafka-user.yaml");
+        kafkaUserYaml = new File(examplesPath + "/examples/user/kafka-user.yaml");
         LOGGER.info("Deploying KafkaUser from: {}", kafkaUserYaml.getPath());
         cmdKubeClient().applyContent(KafkaUserUtils.removeKafkaUserPart(kafkaUserYaml, "authorization"));
 
-        kafkaTopicYaml = new File(examplesPath + "/topic/kafka-topic.yaml");
+        kafkaTopicYaml = new File(examplesPath + "/examples/topic/kafka-topic.yaml");
         LOGGER.info("Deploying KafkaTopic from: {}", kafkaTopicYaml.getPath());
         cmdKubeClient().applyContent(TestUtils.readFile(kafkaTopicYaml));
         // #######################################################################
