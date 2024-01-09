@@ -44,6 +44,11 @@
     reason: Test is working on environment, where k8s server version is < 1.22
   featureGatesBefore: ""
   featureGatesAfter: ""
+  filePaths:
+    kafkaBefore: "/examples/kafka/kafka-persistent.yaml"
+    kafkaAfter: "/examples/kafka/kafka-persistent.yaml"
+    kafkaKRaftBefore: "/examples/kafka/nodepools/kafka-with-kraft.yaml"
+    kafkaKRaftAfter: "/examples/kafka/nodepools/kafka-with-kraft.yaml"
 - fromVersion: 0.39.0
   fromExamples: strimzi-0.39.0
   oldestKafka: 3.5.0
@@ -64,3 +69,8 @@
     reason: Test is working on environment, where k8s server version is < 1.22
   featureGatesBefore: "-UnidirectionalTopicOperator"
   featureGatesAfter: ""
+  filePaths:
+    kafkaBefore: "/examples/kafka/kafka-persistent.yaml"
+    kafkaAfter: "/examples/kafka/kafka-persistent.yaml"
+    kafkaKRaftBefore: "/examples/kafka/nodepools/kafka-with-kraft.yaml"
+    kafkaKRaftAfter: "/examples/kafka/nodepools/kafka-with-kraft.yaml"

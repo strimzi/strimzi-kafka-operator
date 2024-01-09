@@ -18,3 +18,8 @@ fromOlmChannelName: strimzi-0.39.x
 fromExamples: strimzi-0.39.0
 fromUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.39.0/strimzi-0.39.0.zip
 fromKafkaVersionsUrl: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/0.39.0/kafka-versions.yaml
+filePaths:
+  kafkaBefore: "/examples/kafka/kafka-persistent.yaml"
+  kafkaAfter: "/examples/kafka/kafka-persistent.yaml"
+  kafkaKRaftBefore: "/examples/kafka/nodepools/kafka-with-kraft.yaml"
+  kafkaKRaftAfter: "/examples/kafka/nodepools/kafka-with-kraft.yaml"

@@ -48,6 +48,11 @@
     reason: Test is working on all environment used by QE.
   featureGatesBefore: ""
   featureGatesAfter: "-UnidirectionalTopicOperator"
+  filePaths:
+    kafkaBefore: "/examples/kafka/kafka-persistent.yaml"
+    kafkaAfter: "/examples/kafka/kafka-persistent.yaml"
+    kafkaKRaftBefore: "/examples/kafka/nodepools/kafka-with-kraft.yaml"
+    kafkaKRaftAfter: "/examples/kafka/nodepools/kafka-with-kraft.yaml"
 - fromVersion: HEAD
   toVersion: 0.39.0
   fromExamples: HEAD
@@ -71,3 +76,8 @@
     reason: Test is working on all environment used by QE.
   featureGatesBefore: ""
   featureGatesAfter: ""
+  filePaths:
+    kafkaBefore: "/examples/kafka/kafka-persistent.yaml"
+    kafkaAfter: "/examples/kafka/kafka-persistent.yaml"
+    kafkaKRaftBefore: "/examples/kafka/nodepools/kafka-with-kraft.yaml"
+    kafkaKRaftAfter: "/examples/kafka/nodepools/kafka-with-kraft.yaml"

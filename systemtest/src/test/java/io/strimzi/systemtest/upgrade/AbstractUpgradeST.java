@@ -65,6 +65,7 @@ import java.util.Random;
 import static io.strimzi.systemtest.TestConstants.CO_NAMESPACE;
 import static io.strimzi.systemtest.TestConstants.DEFAULT_SINK_FILE_PATH;
 import static io.strimzi.systemtest.TestConstants.PATH_TO_KAFKA_TOPIC_CONFIG;
+import static io.strimzi.systemtest.TestConstants.PATH_TO_PACKAGING;
 import static io.strimzi.systemtest.TestConstants.PATH_TO_PACKAGING_EXAMPLES;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -148,13 +149,13 @@ public class AbstractUpgradeST extends AbstractST {
         // #######################################################################
         String examplesPath = "";
         if (versionModificationData.getToUrl().equals("HEAD")) {
-            examplesPath = PATH_TO_PACKAGING_EXAMPLES + "";
+            examplesPath = PATH_TO_PACKAGING;
         } else {
             File dir = FileUtils.downloadAndUnzip(versionModificationData.getToUrl());
-            examplesPath = dir.getAbsolutePath() + "/" + versionModificationData.getToExamples() + "/examples";
+            examplesPath = dir.getAbsolutePath() + "/" + versionModificationData.getToExamples();
         }
 
-        kafkaYaml = new File(examplesPath + "/kafka/kafka-persistent.yaml");
+        kafkaYaml = new File(examplesPath + versionModificationData.getKafkaFilePathAfter());
         LOGGER.info("Deploying Kafka from: {}", kafkaYaml.getPath());
         // Change kafka version of it's empty (null is for remove the version)
         String defaultValueForVersions = kafkaVersionFromCR == null ? null : TestKafkaVersion.getSpecificVersion(kafkaVersionFromCR).messageVersion();
@@ -463,7 +464,7 @@ public class AbstractUpgradeST extends AbstractST {
                     .endSpec()
                     .build());
             } else {
-                kafkaYaml = new File(dir, upgradeData.getFromExamples() + "/examples/kafka/kafka-persistent.yaml");
+                kafkaYaml = new File(dir, upgradeData.getFromExamples() + upgradeData.getKafkaFilePathBefore());
                 LOGGER.info("Deploying Kafka from: {}", kafkaYaml.getPath());
                 // Change kafka version of it's empty (null is for remove the version)
                 if (upgradeKafkaVersion == null) {
@@ -646,7 +647,7 @@ public class AbstractUpgradeST extends AbstractST {
             return PATH_TO_PACKAGING_EXAMPLES;
         } else {
             File dir = FileUtils.downloadAndUnzip(versionModificationData.getToUrl());
-            return dir.getAbsolutePath() + "/" + versionModificationData.getToExamples() + "/examples";
+            return dir.getAbsolutePath() + "/" + versionModificationData.getToExamples();
         }
     }
 

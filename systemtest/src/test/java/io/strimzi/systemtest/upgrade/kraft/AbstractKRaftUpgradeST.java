@@ -82,7 +82,7 @@ public class AbstractKRaftUpgradeST extends AbstractUpgradeST {
                         .endSpec()
                         .build());
             } else {
-                kafkaYaml = new File(dir, upgradeData.getFromExamples() + "/examples/kafka/nodepools/kafka-with-kraft.yaml");
+                kafkaYaml = new File(dir, upgradeData.getFromExamples() + upgradeData.getKafkaKRaftFilePathBefore());
                 LOGGER.info("Deploying Kafka from: {}", kafkaYaml.getPath());
                 // Change kafka version of it's empty (null is for remove the version)
                 if (upgradeKafkaVersion == null) {
