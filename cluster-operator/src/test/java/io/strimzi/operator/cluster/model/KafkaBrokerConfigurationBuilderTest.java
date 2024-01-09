@@ -2084,6 +2084,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withCheckAudience(true)
                 .withJwksEndpointUri("http://jwks-endpoint")
                 .withIntrospectionEndpointUri("http://introspection-endpoint")
+                .withServerBearerTokenLocation("/var/run/secrets/kubernetes.io/serviceaccount/token")
                 .withUserInfoEndpointUri("http://userinfo-endpoint")
                 .withJwksExpirySeconds(160)
                 .withJwksRefreshSeconds(50)
@@ -2127,6 +2128,7 @@ public class KafkaBrokerConfigurationBuilderTest {
         expectedOptions.put(ServerConfig.OAUTH_JWKS_REFRESH_MIN_PAUSE_SECONDS, "5");
         expectedOptions.put(ServerConfig.OAUTH_JWKS_IGNORE_KEY_USE, String.valueOf(true));
         expectedOptions.put(ServerConfig.OAUTH_INTROSPECTION_ENDPOINT_URI, "http://introspection-endpoint");
+        expectedOptions.put(ServerConfig.OAUTH_SERVER_BEARER_TOKEN_LOCATION, "/var/run/secrets/kubernetes.io/serviceaccount/token");
         expectedOptions.put(ServerConfig.OAUTH_USERINFO_ENDPOINT_URI, "http://userinfo-endpoint");
         expectedOptions.put(ServerConfig.OAUTH_USERNAME_CLAIM, "preferred_username");
         expectedOptions.put(ServerConfig.OAUTH_FALLBACK_USERNAME_CLAIM, "client_id");
