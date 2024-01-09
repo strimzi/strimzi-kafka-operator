@@ -23,6 +23,11 @@
 #    reason: String - reason why we skip / not skip the test case (information, not propagated to test itself)
 #  featureGatesBefore: String - FG added to `STRIMZI_FEATURE_GATES` environment variable, on initial deploy of CO
 #  featureGatesAfter: String - FG added to `STRIMZI_FEATURE_GATES` environment variable, on upgrade of CO
+#  filePaths: path to example files for particular resources
+#    kafkaBefore: path to Kafka resource (ZK mode) in the version of Strimzi, from which we are doing the downgrade
+#    kafkaAfter: path to Kafka resource (ZK mode) in the version of Strimzi, to which we are doing the downgrade
+#    kafkaKRaftBefore: path to Kafka and KafkaNodePool resources (KRaft mode), collected in one file, in the version of Strimzi, from which we are doing the downgrade
+#    kafkaKRaftAfter: path to Kafka and KafkaNodePool resources (KRaft mode), collected in one file, in the version of Strimzi, to which we are doing the downgrade
 # --- Structure ---
   
 - fromVersion: HEAD
@@ -48,6 +53,11 @@
     reason: Test is working on all environment used by QE.
   featureGatesBefore: ""
   featureGatesAfter: "-UnidirectionalTopicOperator"
+  filePaths:
+    kafkaBefore: "/examples/kafka/kafka-persistent.yaml"
+    kafkaAfter: "/examples/kafka/kafka-persistent.yaml"
+    kafkaKRaftBefore: "/examples/kafka/nodepools/kafka-with-kraft.yaml"
+    kafkaKRaftAfter: "/examples/kafka/nodepools/kafka-with-kraft.yaml"
 - fromVersion: HEAD
   toVersion: 0.39.0
   fromExamples: HEAD
@@ -71,3 +81,8 @@
     reason: Test is working on all environment used by QE.
   featureGatesBefore: ""
   featureGatesAfter: ""
+  filePaths:
+    kafkaBefore: "/examples/kafka/kafka-persistent.yaml"
+    kafkaAfter: "/examples/kafka/kafka-persistent.yaml"
+    kafkaKRaftBefore: "/examples/kafka/nodepools/kafka-with-kraft.yaml"
+    kafkaKRaftAfter: "/examples/kafka/nodepools/kafka-with-kraft.yaml"

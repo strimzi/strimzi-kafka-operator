@@ -4,6 +4,8 @@
  */
 package io.strimzi.systemtest.upgrade;
 
+import java.util.Map;
+
 /**
  * This class contains all the common fields needed for upgrade and downgrade tests from which specific classes
  * inherit these values and extending them further for specific needs of the process.
@@ -17,6 +19,7 @@ public class CommonVersionModificationData {
     private String toExamples;
     private String toUrl;
     private UpgradeKafkaVersion procedures;
+    private Map<String, String> filePaths;
 
     public String getFromVersion() {
         return fromVersion;
@@ -80,6 +83,30 @@ public class CommonVersionModificationData {
 
     public void setProcedures(UpgradeKafkaVersion procedures) {
         this.procedures = procedures;
+    }
+
+    public void setFilePaths(Map<String, String> filePaths) {
+        this.filePaths = filePaths;
+    }
+
+    public Map<String, String> getFilePaths() {
+        return filePaths;
+    }
+
+    public String getKafkaFilePathBefore() {
+        return getFilePaths().get("kafkaBefore");
+    }
+
+    public String getKafkaFilePathAfter() {
+        return getFilePaths().get("kafkaAfter");
+    }
+
+    public String getKafkaKRaftFilePathBefore() {
+        return getFilePaths().get("kafkaKRaftBefore");
+    }
+
+    public String getKafkaKRaftFilePathAfter() {
+        return getFilePaths().get("kafkaKRaftAfter");
     }
 
     @Override
