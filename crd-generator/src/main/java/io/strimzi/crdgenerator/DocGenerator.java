@@ -241,7 +241,7 @@ class DocGenerator {
         AddedIn addedIn = property.getAnnotation(AddedIn.class);
 
         if (addedIn != null) {
-            out.append(" Added in Strimzi " + addedIn.value() + ". ");
+            out.append("Added in Strimzi " + addedIn.value() + ". ");
         }
     }
 
