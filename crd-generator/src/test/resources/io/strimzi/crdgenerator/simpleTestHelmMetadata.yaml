@@ -156,6 +156,14 @@ spec:
                                   additionalProperties:
                                     type: string
                                   type: object
+                            matchLabelKeys:
+                              type: array
+                              items:
+                                type: string
+                            mismatchLabelKeys:
+                              type: array
+                              items:
+                                type: string
                             namespaceSelector:
                               type: object
                               properties:
@@ -209,6 +217,14 @@ spec:
                               additionalProperties:
                                 type: string
                               type: object
+                        matchLabelKeys:
+                          type: array
+                          items:
+                            type: string
+                        mismatchLabelKeys:
+                          type: array
+                          items:
+                            type: string
                         namespaceSelector:
                           type: object
                           properties:
@@ -266,6 +282,14 @@ spec:
                                   additionalProperties:
                                     type: string
                                   type: object
+                            matchLabelKeys:
+                              type: array
+                              items:
+                                type: string
+                            mismatchLabelKeys:
+                              type: array
+                              items:
+                                type: string
                             namespaceSelector:
                               type: object
                               properties:
@@ -319,6 +343,14 @@ spec:
                               additionalProperties:
                                 type: string
                               type: object
+                        matchLabelKeys:
+                          type: array
+                          items:
+                            type: string
+                        mismatchLabelKeys:
+                          type: array
+                          items:
+                            type: string
                         namespaceSelector:
                           type: object
                           properties:
@@ -718,6 +750,14 @@ spec:
                                   additionalProperties:
                                     type: string
                                   type: object
+                            matchLabelKeys:
+                              type: array
+                              items:
+                                type: string
+                            mismatchLabelKeys:
+                              type: array
+                              items:
+                                type: string
                             namespaceSelector:
                               type: object
                               properties:
@@ -771,6 +811,14 @@ spec:
                               additionalProperties:
                                 type: string
                               type: object
+                        matchLabelKeys:
+                          type: array
+                          items:
+                            type: string
+                        mismatchLabelKeys:
+                          type: array
+                          items:
+                            type: string
                         namespaceSelector:
                           type: object
                           properties:
@@ -828,6 +876,14 @@ spec:
                                   additionalProperties:
                                     type: string
                                   type: object
+                            matchLabelKeys:
+                              type: array
+                              items:
+                                type: string
+                            mismatchLabelKeys:
+                              type: array
+                              items:
+                                type: string
                             namespaceSelector:
                               type: object
                               properties:
@@ -881,6 +937,14 @@ spec:
                               additionalProperties:
                                 type: string
                               type: object
+                        matchLabelKeys:
+                          type: array
+                          items:
+                            type: string
+                        mismatchLabelKeys:
+                          type: array
+                          items:
+                            type: string
                         namespaceSelector:
                           type: object
                           properties:
