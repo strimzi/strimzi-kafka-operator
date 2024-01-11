@@ -443,12 +443,14 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                                             Map<String, Map<String, String>> fetchedLoggers = mapper.readValue(buffer.getBytes(), MAP_OF_MAP_OF_STRINGS);
                                             Map<String, String> loggerMap = new HashMap<>(fetchedLoggers.size());
                                             for (var e : fetchedLoggers.entrySet()) {
-                                                String level = e.getValue().get("level");
-                                                if (level != null && e.getValue().size() == 1) {
-                                                    loggerMap.put(e.getKey(), level);
-                                                } else {
-                                                    result.tryFail("Inner map has unexpected keys " + e.getValue().keySet());
+                                                if (Set.of("level", "last_timestamp").containsAll(e.getValue().keySet()))   {
+                                                    result.tryFail(new RuntimeException("Inner map has unexpected keys " + e.getValue().keySet()));
                                                     break;
+                                                } else {
+                                                    String level = e.getValue().get("level");
+                                                    if (level != null) {
+                                                        loggerMap.put(e.getKey(), level);
+                                                    }
                                                 }
                                             }
                                             result.tryComplete(loggerMap);

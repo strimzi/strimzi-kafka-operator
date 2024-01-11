@@ -10,7 +10,7 @@ import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.api.kafka.model.topic.KafkaTopicBuilder;
 import io.strimzi.test.container.StrimziKafkaCluster;
-import kafka.admin.ReassignPartitionsCommand;
+import org.apache.kafka.tools.reassign.ReassignPartitionsCommand;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;

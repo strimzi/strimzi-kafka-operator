@@ -283,7 +283,7 @@
   checksum: 229CCC5E3E6B3B9845F59F6E829D70711C5A5A2293F32B6BCABC37350666F874BC7D8F08130F712A1B32915205C10F2847F04908C20D5F7FDB4B62D058C9DEFE
   zookeeper: 3.6.4
   third-party-libs: 3.5.x
-  supported: true
+  supported: false
   default: false
 - version: 3.6.0
   format: 3.6
@@ -303,5 +303,15 @@
   checksum: 1F063CD67463DD3BB5A5E06E7A1C2278DB84BFC836A634FAC7C9A005DE66A42AC00B32F5E9BBDD22086605F73659EFD4CE5BD1185196B02A743BE0898DAAC55D
   zookeeper: 3.8.3
   third-party-libs: 3.6.x
+  supported: true
+  default: false
+- version: 3.7.0
+  format: 3.7
+  protocol: 3.7
+  metadata: 3.7
+  url: https://home.apache.org/~stanislavkozlovski/kafka-3.7.0-rc2/kafka_2.13-3.7.0.tgz
+  checksum: 9FAD39445D5B247B55C0A4C5A8AA005B0207735C71770CA2F944BFE7821A9259B432E880655290DDA46C72CA25B899133F2D369D75F026C7B08F6F013F33F88C
+  zookeeper: 3.8.3
+  third-party-libs: 3.7.x
   supported: true
   default: true
