@@ -39,8 +39,8 @@
   fromKafkaVersionsUrl: HEAD
   additionalTopics: 2
   imagesAfterOperations:
-    zookeeper: strimzi/kafka:0.39.0-kafka-3.5.2
-    kafka: strimzi/kafka:0.39.0-kafka-3.5.2
+    zookeeper: strimzi/kafka:0.39.0-kafka-3.6.0
+    kafka: strimzi/kafka:0.39.0-kafka-3.6.0
     topicOperator: strimzi/operator:0.39.0
     userOperator: strimzi/operator:0.39.0
   deployKafkaVersion: 3.6.1
@@ -67,8 +67,8 @@
   fromKafkaVersionsUrl: HEAD
   additionalTopics: 2
   imagesAfterOperations:
-    zookeeper: strimzi/kafka:0.39.0-kafka-3.5.2
-    kafka: strimzi/kafka:0.39.0-kafka-3.5.2
+    zookeeper: strimzi/kafka:0.39.0-kafka-3.6.0
+    kafka: strimzi/kafka:0.39.0-kafka-3.6.0
     topicOperator: strimzi/operator:0.39.0
     userOperator: strimzi/operator:0.39.0
   deployKafkaVersion: 3.6.1
