@@ -69,7 +69,7 @@ spec:
                   replicas:
                     type: integer
                     minimum: 1
-                    description: The number of pods in the cluster. This property is required when Node Pools are not used.
+                    description: The number of pods in the cluster. This property is required when node pools are not used.
                   image:
                     type: string
                     description: "The container image used for Kafka pods. If the property is not set, the default Kafka image version is determined based on the `version` configuration. The image names are specifically mapped to corresponding versions in the Cluster Operator configuration. Changing the Kafka image version does not automatically update the image versions for other components, such as Kafka Exporter. "
@@ -580,7 +580,7 @@ spec:
                         description: List of volumes as Storage objects representing the JBOD disks array.
                     required:
                     - type
-                    description: Storage configuration (disk). Cannot be updated. This property is required when Node Pools are not used.
+                    description: Storage configuration (disk). Cannot be updated. This property is required when node pools are not used.
                   authorization:
                     type: object
                     properties:

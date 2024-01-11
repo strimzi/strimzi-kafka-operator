@@ -15,7 +15,7 @@ For example, you cannot decrease the size of a persistent storage volume after i
 NOTE: JBOD storage is supported for *Kafka only*, not for ZooKeeper.
 
 To use JBOD storage, you set the storage type configuration in the `Kafka` resource to `jbod`.
-If you are using the node pools feature, you can also specify `jbod` in the storage configuration of individual node pools.
+If you are using node pools, you can also specify `jbod` in the storage configuration of individual node pools.
 
 The `volumes` property allows you to describe the disks that make up your JBOD storage array or configuration. 
 

@@ -43,7 +43,7 @@ spec:
 When adding brokers through the `Kafka` configuration, node IDs start at 0 (zero) and the Cluster Operator assigns the next lowest ID to a new node. 
 The broker removal process starts from the broker pod with the highest ID in the cluster.
 
-If you are managing nodes in the cluster using the node pools feature, you adjust the `KafkaNodePool.spec.replicas` configuration to change the number of nodes in the node pool.
+If you are managing nodes in the cluster using node pools, adjust the `KafkaNodePool.spec.replicas` configuration to change the number of nodes in the node pool.
 Additionally, when scaling existing clusters with node pools, you can xref:proc-managing-node-pools-ids-{context}[assign node IDs for the scaling operations].  
 
 When you add add or remove brokers, Kafka does not automatically reassign partitions. 

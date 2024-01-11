@@ -140,7 +140,7 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, HasConfigurable
     }
 
     @Description("Storage configuration (disk). Cannot be updated. " +
-            "This property is required when Node Pools are not used.")
+            "This property is required when node pools are not used.")
     public Storage getStorage() {
         return storage;
     }
@@ -162,7 +162,7 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, HasConfigurable
     }
 
     @Description("The number of pods in the cluster. " +
-            "This property is required when Node Pools are not used.")
+            "This property is required when node pools are not used.")
     @Minimum(1)
     public int getReplicas() {
         return replicas;

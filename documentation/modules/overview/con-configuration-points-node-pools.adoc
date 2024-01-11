@@ -14,7 +14,7 @@ You can deploy a Kafka cluster with one or more node pools.
 The node pool configuration includes mandatory and optional settings.
 Configuration for replicas, roles, and storage is mandatory.
 
-If you are using KRaft mode, you can specify roles for all nodes in the node pool to operate as brokers, controllers, or both.
+If you are using KRaft mode, you can specify roles that all nodes in the node pool operate as brokers, controllers, or both.
 Controller and dual roles are specific to KRaft.
 If you are using Kafka clusters that use ZooKeeper for cluster management, you can use node pools that are configured with broker roles only. 
 
