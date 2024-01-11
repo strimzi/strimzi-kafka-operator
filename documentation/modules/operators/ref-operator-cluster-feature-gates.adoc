@@ -10,14 +10,14 @@ Strimzi operators use feature gates to enable or disable specific features and f
 Enabling a feature gate alters the behavior of the associated operator, introducing the corresponding feature to your Strimzi deployment.
 
 The purpose of feature gates is to facilitate the trial and testing of a feature before it is fully adopted. 
-The preview state (enabled or disabled) of a feature gate may vary by default, depending on its maturity level.
+The state (enabled or disabled) of a feature gate may vary by default, depending on its maturity level.
 
-As a feature gate matures and reaches General Availability (GA), it transitions to an enabled state by default and becomes a permanent part of the Strimzi deployment.
+As a feature gate graduates and reaches General Availability (GA), it transitions to an enabled state by default and becomes a permanent part of the Strimzi deployment.
 A feature gate at the GA stage cannot be disabled. 
 
-== Mature feature gates (GA)
+== Graduated feature gates (GA)
 
-Mature feature gates have reached General Availability (GA) and are permanently enabled.
+Graduated feature gates have reached General Availability (GA) and are permanently enabled.
 
 === ControlPlaneListener feature gate
 
@@ -51,10 +51,10 @@ The `StableConnectIdentities` feature gate introduced the `StrimziPodSet` custom
 IMPORTANT: With the `StableConnectIdentities` feature gate permanently enabled, direct downgrades from Strimzi 0.39 and newer to Strimzi 0.33 or earlier are not possible.
 You must first downgrade through one of the Strimzi versions in-between, disable the `StableConnectIdentities` feature gate, and then downgrade to Strimzi 0.33 or earlier.
 
-== Preview feature gates (alpha/beta)
+== Early access feature gates (alpha/beta)
 
-Preview feature gates that have not yet reached the GA stage can be enabled or disabled. 
-A preview feature gate provides an opportunity for assessment before its functionality is permanently incorporated into AMQ Streams.
+Early access feature gates have not yet reached the GA stage, and they can be enabled or disabled. 
+An early access feature gate provides an opportunity for assessment before its functionality is permanently incorporated into Strimzi.
 
 [id='ref-operator-use-kraft-feature-gate-{context}']
 === UseKRaft feature gate
@@ -141,7 +141,7 @@ For more information on topic management, see xref:ref-operator-topic-str[].
 
 To disable the `UnidirectionalTopicOperator` feature gate, specify `-UnidirectionalTopicOperator` in the `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.
 
-== Enabling preview feature gates
+== Enabling feature gates
 
 To modify a feature gate's default state, use the `STRIMZI_FEATURE_GATES` environment variable in the operator's configuration.
 You can modify multiple feature gates using this single environment variable.

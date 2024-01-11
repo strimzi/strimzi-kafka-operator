@@ -13,4 +13,4 @@ You must not create, update, or delete `StrimziPodSet` resources.
 The `StrimziPodSet` custom resource is used internally and resources are managed solely by the Cluster Operator.
 As a consequence, the Cluster Operator must be running properly to avoid the possibility of pods not starting and Kafka clusters not being available.
 
-NOTE: Kubernetes `Deployment` resources are used for creating and managing Kafka Bridge and (deprecated) MirrorMaker pods.
+NOTE: Kubernetes `Deployment` resources are used for creating and managing the pods of other components: Kafka Bridge, Kafka Exporter, Cruise Control, (deprecated) MirrorMaker 1, User Operator and Topic Operator.
