@@ -109,7 +109,7 @@ class CustomResourceStatusST extends AbstractST {
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     void testKafkaStatus(ExtensionContext extensionContext) {
-        TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = storageMap.get(extensionContext);
         LOGGER.info("Checking status of deployed Kafka cluster");
         KafkaUtils.waitForKafkaReady(Environment.TEST_SUITE_NAMESPACE, CUSTOM_RESOURCE_STATUS_CLUSTER_NAME);
 
@@ -417,7 +417,7 @@ class CustomResourceStatusST extends AbstractST {
 
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
-        TestStorage testStorage = new TestStorage(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
         this.clusterOperator = this.clusterOperator.defaultInstallation(extensionContext)
             .withOperationTimeout(TestConstants.CO_OPERATION_TIMEOUT_SHORT)
             .createInstallation()

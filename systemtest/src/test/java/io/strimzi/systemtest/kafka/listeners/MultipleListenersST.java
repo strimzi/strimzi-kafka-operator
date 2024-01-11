@@ -164,7 +164,7 @@ public class MultipleListenersST extends AbstractST {
     }
 
     private void runListenersTest(ExtensionContext extensionContext, List<GenericKafkaListener> listeners, String clusterName) {
-        TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = storageMap.get(extensionContext);
         LOGGER.info("These are listeners to be verified: {}", listeners);
 
         // exercise phase

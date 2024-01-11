@@ -127,7 +127,7 @@ public class MultipleClusterOperatorsST extends AbstractST {
         // Strimzi is deployed with cluster-wide access in this class STRIMZI_RBAC_SCOPE=NAMESPACE won't work
         assumeFalse(Environment.isNamespaceRbacScope());
 
-        TestStorage testStorage = new TestStorage(extensionContext, DEFAULT_NAMESPACE);
+        final TestStorage testStorage = new TestStorage(extensionContext, DEFAULT_NAMESPACE);
 
         String firstCOScraperName = FIRST_NAMESPACE + "-" + TestConstants.SCRAPER_NAME;
         String secondCOScraperName = SECOND_NAMESPACE + "-" + TestConstants.SCRAPER_NAME;
@@ -255,7 +255,7 @@ public class MultipleClusterOperatorsST extends AbstractST {
     @KRaftNotSupported("The scaling of the Kafka Pods is not working properly at the moment")
     void testKafkaCCAndRebalanceWithMultipleCOs(ExtensionContext extensionContext) {
         assumeFalse(Environment.isNamespaceRbacScope());
-        TestStorage testStorage = new TestStorage(extensionContext, DEFAULT_NAMESPACE);
+        final TestStorage testStorage = new TestStorage(extensionContext, DEFAULT_NAMESPACE);
         LabelSelector kafkaSelector = KafkaResource.getLabelSelector(testStorage.getClusterName(), KafkaResources.kafkaComponentName(testStorage.getClusterName()));
 
         int scaleTo = 4;

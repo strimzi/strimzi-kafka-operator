@@ -905,7 +905,7 @@ class MirrorMaker2ST extends AbstractST {
     @KRaftWithoutUTONotSupported
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testKMM2RollAfterSecretsCertsUpdateScramSha(ExtensionContext extensionContext) {
-        TestStorage testStorage = new TestStorage(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         final String customSecretSource = "custom-secret-source";
         final String customSecretTarget = "custom-secret-target";
@@ -1060,7 +1060,7 @@ class MirrorMaker2ST extends AbstractST {
     @ParallelNamespaceTest
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testKMM2RollAfterSecretsCertsUpdateTLS(ExtensionContext extensionContext) {
-        TestStorage testStorage = new TestStorage(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         // Deploy source kafka with tls listener and mutual tls auth
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getSourceClusterName(), 1)

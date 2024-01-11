@@ -50,7 +50,7 @@ public class DynamicConfSharedST extends AbstractST {
     private final String dynamicConfigurationSharedClusterName = "dynamic-config-shared";
 
     private String scraperPodName;
-    public static Random rng = new Random();
+    private static Random rng = new Random();
 
     @TestFactory
     Iterator<DynamicTest> testDynConfiguration() {

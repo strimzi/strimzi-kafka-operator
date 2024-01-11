@@ -48,7 +48,7 @@ public class DrainCleanerST extends AbstractST {
     @IsolatedTest
     @RequiredMinKubeApiVersion(version = 1.17)
     void testDrainCleanerWithComponents(ExtensionContext extensionContext) {
-        TestStorage testStorage = new TestStorage(extensionContext, TestConstants.DRAIN_CLEANER_NAMESPACE);
+        final TestStorage testStorage = new TestStorage(extensionContext, TestConstants.DRAIN_CLEANER_NAMESPACE);
 
         final int replicas = 3;
 

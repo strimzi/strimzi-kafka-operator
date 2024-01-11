@@ -597,7 +597,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
     @ParallelNamespaceTest
     @Order(10)
     void testKeycloakAuthorizerToDelegateToSimpleAuthorizer(ExtensionContext extensionContext) {
-        TestStorage testStorage = new TestStorage(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         if (!Environment.isNamespaceRbacScope()) {
             // we have to create keycloak, team-a-client and team-b-client secret from `co-namespace` to the new namespace

@@ -296,7 +296,7 @@ public class MetricsST extends AbstractST {
     @IsolatedTest
     @Tag(INTERNAL_CLIENTS_USED)
     void testKafkaExporterMetrics(ExtensionContext extensionContext) {
-        TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = storageMap.get(extensionContext);
         final String producerName = "producer-" + new Random().nextInt(Integer.MAX_VALUE);
         final String consumerName = "consumer-" + new Random().nextInt(Integer.MAX_VALUE);
         final String kafkaStrimziPodSetName = KafkaResources.kafkaComponentName(kafkaClusterFirstName);
@@ -543,7 +543,7 @@ public class MetricsST extends AbstractST {
     @ParallelTest
     @Tag(BRIDGE)
     void testKafkaBridgeMetrics(ExtensionContext extensionContext) {
-        TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = storageMap.get(extensionContext);
         String producerName = "bridge-producer";
         String consumerName = "bridge-consumer";
 
