@@ -31,13 +31,13 @@
 
 - fromVersion: 0.39.0
   fromExamples: strimzi-0.39.0
-  oldestKafka: 3.5.2
+  oldestKafka: 3.6.0
   fromUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.39.0/strimzi-0.39.0.zip
   fromKafkaVersionsUrl: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/0.39.0/kafka-versions.yaml
   additionalTopics: 2
   imagesAfterOperations:
-    zookeeper: strimzi/kafka:latest-kafka-3.6.1
-    kafka: strimzi/kafka:latest-kafka-3.6.1
+    zookeeper: strimzi/kafka:latest-kafka-3.7.0
+    kafka: strimzi/kafka:latest-kafka-3.7.0
     topicOperator: strimzi/operator:latest
     userOperator: strimzi/operator:latest
   client:
@@ -56,13 +56,13 @@
     kafkaKRaftAfter: "/examples/kafka/kraft/kafka.yaml"
 - fromVersion: 0.39.0
   fromExamples: strimzi-0.39.0
-  oldestKafka: 3.5.2
+  oldestKafka: 3.6.0
   fromUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.39.0/strimzi-0.39.0.zip
   fromKafkaVersionsUrl: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/0.39.0/kafka-versions.yaml
   additionalTopics: 2
   imagesAfterOperations:
-    zookeeper: strimzi/kafka:latest-kafka-3.6.1
-    kafka: strimzi/kafka:latest-kafka-3.6.1
+    zookeeper: strimzi/kafka:latest-kafka-3.7.0
+    kafka: strimzi/kafka:latest-kafka-3.7.0
     topicOperator: strimzi/operator:latest
     userOperator: strimzi/operator:latest
   client:

@@ -37,6 +37,11 @@
                 <artifactId>kafka-raft</artifactId>
                 <version>${kafka-metadata-version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.apache.kafka</groupId>
+                <artifactId>kafka-server-common</artifactId>
+                <version>${kafka-metadata-version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 

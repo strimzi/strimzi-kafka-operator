@@ -18,7 +18,7 @@
     <properties>
         <strimzi-oauth.version>0.14.0</strimzi-oauth.version>
         <jayway-json-path.version>2.9.0</jayway-json-path.version>
-        <cruise-control.version>2.5.135</cruise-control.version>
+        <cruise-control.version>2.5.137</cruise-control.version>
         <opa-authorizer.version>1.5.1</opa-authorizer.version>
         <kafka-quotas-plugin.version>0.2.0</kafka-quotas-plugin.version>
         <kafka-mirror-maker-2-extensions.version>1.2.0</kafka-mirror-maker-2-extensions.version>
@@ -56,6 +56,9 @@
                     </exclusion>
                 </exclusions>
             </dependency>
+            <!--
+            Override guava version coming from org.openpolicyagent.kafka:opa-authorizer
+            -->
             <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
@@ -296,6 +299,14 @@
                     <groupId>com.google.code.findbugs</groupId>
                     <artifactId>jsr305</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>com.google.errorprone</groupId>
+                    <artifactId>error_prone_annotations</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.checkerframework</groupId>
+                    <artifactId>checker-qual</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <!-- Mirror Maker 2 Extensions -->
@@ -332,7 +343,27 @@
                     <groupId>com.fasterxml.jackson.core</groupId>
                     <artifactId>jackson-databind</artifactId>
                 </exclusion>
+                <exclusion>
+                    <!-- Excluded and imported separately to keep the Jackson version in sync with Kafka -->
+                    <groupId>com.fasterxml.jackson.dataformat</groupId>
+                    <artifactId>jackson-dataformat-yaml</artifactId>
+                </exclusion>
+                <exclusion>
+                    <!-- Excluded and imported separately to keep the Jackson version in sync with Kafka -->
+                    <groupId>com.fasterxml.jackson.datatype</groupId>
+                    <artifactId>jackson-datatype-jsr310</artifactId>
+                </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-yaml</artifactId>
+            <version>2.16.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+            <version>2.16.0</version>
         </dependency>
         <!-- EnvVar Configuration Provider for Apache Kafka -->
         <dependency>

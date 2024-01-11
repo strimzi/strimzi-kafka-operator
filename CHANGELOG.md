@@ -2,7 +2,8 @@
 
 ## 0.40.0
 
-* Remove support for Apache Kafka 3.5.0 and 3.5.1
+* Add support for Apache Kafka 3.7.0.
+  Remove support for Apache Kafka 3.5.0, 3.5.1, and 3.5.2.
 * The `UseKRaft` feature gate moves to beta stage and is enabled by default.
   If needed, `UseKRaft` can be disabled in the feature gates configuration in the Cluster Operator.
 * Add support for moving from dedicated controller-only KRaft nodes to mixed KRaft nodes

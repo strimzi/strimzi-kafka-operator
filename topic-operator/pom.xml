@@ -98,6 +98,12 @@
             <artifactId>zookeeper-jute</artifactId>
         </dependency>
         <dependency>
+            <!-- Required for TO tests using ZooKeeper -->
+            <groupId>org.xerial.snappy</groupId>
+            <artifactId>snappy-java</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
         </dependency>
@@ -201,6 +207,11 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka-tools</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>io.strimzi</groupId>
             <artifactId>operator-common</artifactId>
         </dependency>
@@ -258,6 +269,7 @@
                                 <ignoredUnusedDeclaredDependency>io.fabric8:kubernetes-httpclient-jdk</ignoredUnusedDeclaredDependency>
                                 <ignoredUnusedDeclaredDependency>org.apache.logging.log4j:log4j-slf4j-impl</ignoredUnusedDeclaredDependency>
                                 <ignoredUnusedDeclaredDependency>org.mockito:mockito-inline</ignoredUnusedDeclaredDependency>
+                                <ignoredUnusedDeclaredDependency>org.xerial.snappy:snappy-java</ignoredUnusedDeclaredDependency>
                             </ignoredUnusedDeclaredDependencies>
                         </configuration>
                     </execution>

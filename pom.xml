@@ -136,9 +136,10 @@
         <fasterxml.jackson-jaxrs.version>2.16.1</fasterxml.jackson-jaxrs.version>
         <vertx.version>4.5.4</vertx.version>
         <vertx-junit5.version>4.5.4</vertx-junit5.version>
-        <kafka.version>3.6.1</kafka.version>
+        <kafka.version>3.7.0</kafka.version>
         <yammer-metrics.version>2.2.0</yammer-metrics.version>
         <zookeeper.version>3.8.3</zookeeper.version>
+        <snappy.version>1.1.10.5</snappy.version>
         <zkclient.version>0.11</zkclient.version>
         <slf4j.version>1.7.36</slf4j.version>
         <log4j.version>2.17.2</log4j.version>
@@ -424,6 +425,12 @@
             </dependency>
             <dependency>
                 <groupId>org.apache.kafka</groupId>
+                <artifactId>kafka-tools</artifactId>
+                <version>${kafka.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.kafka</groupId>
                 <artifactId>kafka_2.13</artifactId>
                 <version>${kafka.version}</version>
             </dependency>
@@ -483,6 +490,13 @@
                         <artifactId>slf4j-api</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+            <dependency>
+                <!-- Required for TO tests using ZooKeeper -->
+                <groupId>org.xerial.snappy</groupId>
+                <artifactId>snappy-java</artifactId>
+                <version>${snappy.version}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.apache.zookeeper</groupId>
