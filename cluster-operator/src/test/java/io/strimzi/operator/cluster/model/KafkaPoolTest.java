@@ -80,7 +80,7 @@ public class KafkaPoolTest {
                 Reconciliation.DUMMY_RECONCILIATION,
                 KAFKA,
                 POOL,
-                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of()),
+                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of(), Set.of()),
                 new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build()).build(),
                 OWNER_REFERENCE,
                 SHARED_ENV_PROVIDER
@@ -139,7 +139,7 @@ public class KafkaPoolTest {
                 Reconciliation.DUMMY_RECONCILIATION,
                 KAFKA,
                 pool,
-                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of()),
+                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of(), Set.of()),
                 new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build()).build(),
                 OWNER_REFERENCE,
                 SHARED_ENV_PROVIDER
@@ -170,7 +170,7 @@ public class KafkaPoolTest {
                 Reconciliation.DUMMY_RECONCILIATION,
                 KAFKA,
                 pool,
-                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of()),
+                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of(), Set.of()),
                 new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build()).build(),
                 OWNER_REFERENCE,
                 SHARED_ENV_PROVIDER
@@ -210,7 +210,7 @@ public class KafkaPoolTest {
                 Reconciliation.DUMMY_RECONCILIATION,
                 KAFKA,
                 pool,
-                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of()),
+                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of(), Set.of()),
                 new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build()).build(),
                 OWNER_REFERENCE,
                 SHARED_ENV_PROVIDER
@@ -255,7 +255,7 @@ public class KafkaPoolTest {
                 Reconciliation.DUMMY_RECONCILIATION,
                 kafka,
                 POOL,
-                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of()),
+                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of(), Set.of()),
                 new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build()).build(),
                 OWNER_REFERENCE,
                 SHARED_ENV_PROVIDER
@@ -315,7 +315,7 @@ public class KafkaPoolTest {
                 Reconciliation.DUMMY_RECONCILIATION,
                 kafka,
                 pool,
-                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of()),
+                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of(), Set.of()),
                 new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build()).build(),
                 OWNER_REFERENCE,
                 SHARED_ENV_PROVIDER
@@ -370,7 +370,7 @@ public class KafkaPoolTest {
                 Reconciliation.DUMMY_RECONCILIATION,
                 kafka,
                 pool,
-                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of()),
+                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of(), Set.of()),
                 new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build()).build(),
                 OWNER_REFERENCE,
                 SHARED_ENV_PROVIDER
@@ -407,7 +407,7 @@ public class KafkaPoolTest {
                 Reconciliation.DUMMY_RECONCILIATION,
                 KAFKA,
                 pool,
-                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of()),
+                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of(), Set.of()),
                 new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build()).build(),
                 OWNER_REFERENCE,
                 SHARED_ENV_PROVIDER
@@ -430,7 +430,7 @@ public class KafkaPoolTest {
                 Reconciliation.DUMMY_RECONCILIATION,
                 KAFKA,
                 pool,
-                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of()),
+                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of(), Set.of()),
                 null,
                 OWNER_REFERENCE,
                 SHARED_ENV_PROVIDER

@@ -310,11 +310,20 @@ public class KafkaPool extends AbstractModel {
     }
 
     /**
-     * Generates list of references to Kafka nodes going to be removed from the Kafka cluster.
+     * Generates list of IDs to Kafka nodes going to be removed from the Kafka cluster.
      *
-     * @return  Set of Kafka node ids which are going to be removed
+     * @return  Set of Kafka node IDs which are going to be removed
      */
     public Set<Integer> scaledDownNodes() {
         return idAssignment.toBeRemoved();
+    }
+
+    /**
+     * Generates list of IDs to Kafka nodes that used to have the broker role but do not have it anymore.
+     *
+     * @return  Set of Kafka node IDs which are removing the broker role
+     */
+    public Set<Integer> usedToBeBrokerNodes() {
+        return idAssignment.usedToBeBroker();
     }
 }

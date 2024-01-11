@@ -25,7 +25,7 @@ import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceList;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.model.DefaultSharedEnvironmentProvider;
 import io.strimzi.operator.cluster.model.SharedEnvironmentProvider;
-import io.strimzi.operator.cluster.operator.assembly.PreventBrokerScaleDownCheck;
+import io.strimzi.operator.cluster.operator.assembly.BrokersInUseCheck;
 import io.strimzi.operator.cluster.operator.resource.events.KubernetesRestartEventPublisher;
 import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.BackOff;
@@ -239,7 +239,7 @@ public class ResourceOperatorSupplier {
     /**
      * Broker Scale Down operations
      */
-    public final PreventBrokerScaleDownCheck brokerScaleDownOperations;
+    public final BrokersInUseCheck brokersInUseCheck;
 
     /**
      * Constructor
@@ -342,7 +342,7 @@ public class ResourceOperatorSupplier {
                 zlf,
                 restartEventPublisher,
                 new DefaultSharedEnvironmentProvider(),
-                new PreventBrokerScaleDownCheck());
+                new BrokersInUseCheck());
     }
 
     /**
@@ -383,7 +383,7 @@ public class ResourceOperatorSupplier {
      * @param zookeeperLeaderFinder                 ZooKeeper Leader Finder
      * @param restartEventsPublisher                Kubernetes Events publisher
      * @param sharedEnvironmentProvider             Shared environment provider
-     * @param brokerScaleDownOperations             Broker scale down operations
+     * @param brokersInUseCheck             Broker scale down operations
      */
     @SuppressWarnings({"checkstyle:ParameterNumber"})
     public ResourceOperatorSupplier(ServiceOperator serviceOperations,
@@ -421,7 +421,7 @@ public class ResourceOperatorSupplier {
                                     ZookeeperLeaderFinder zookeeperLeaderFinder,
                                     KubernetesRestartEventPublisher restartEventsPublisher,
                                     SharedEnvironmentProvider sharedEnvironmentProvider,
-                                    PreventBrokerScaleDownCheck brokerScaleDownOperations) {
+                                    BrokersInUseCheck brokersInUseCheck) {
         this.serviceOperations = serviceOperations;
         this.routeOperations = routeOperations;
         this.imageStreamOperations = imageStreamOperations;
@@ -457,6 +457,6 @@ public class ResourceOperatorSupplier {
         this.zookeeperLeaderFinder = zookeeperLeaderFinder;
         this.restartEventsPublisher = restartEventsPublisher;
         this.sharedEnvironmentProvider = sharedEnvironmentProvider;
-        this.brokerScaleDownOperations = brokerScaleDownOperations;
+        this.brokersInUseCheck = brokersInUseCheck;
     }
 }

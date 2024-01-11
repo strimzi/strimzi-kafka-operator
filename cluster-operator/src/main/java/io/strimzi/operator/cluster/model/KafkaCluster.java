@@ -403,15 +403,30 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     }
 
     /**
-     * Generates list of references to Kafka node ids going to be removed from the Kafka cluster.
+     * Generates list of IDs to Kafka node ids going to be removed from the Kafka cluster.
      *
-     * @return  Set of Kafka node ids which are going to be removed
+     * @return  Set of Kafka node IDs which are going to be removed
      */
     public Set<Integer> removedNodes() {
         Set<Integer> nodes = new LinkedHashSet<>();
 
         for (KafkaPool pool : nodePools)    {
             nodes.addAll(pool.scaledDownNodes());
+        }
+
+        return nodes;
+    }
+
+    /**
+     * Generates list of IDs to Kafka nodes that used to have the broker role but do not have it anymore.
+     *
+     * @return  Set of Kafka node IDs which are removing the broker role
+     */
+    public Set<Integer> usedToBeBrokerNodes() {
+        Set<Integer> nodes = new LinkedHashSet<>();
+
+        for (KafkaPool pool : nodePools)    {
+            nodes.addAll(pool.usedToBeBrokerNodes());
         }
 
         return nodes;
