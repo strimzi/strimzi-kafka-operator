@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-CRUISE_CONTROL_CONFIGURATION=$(</opt/cruise-control/custom-config/server.properties)
+CRUISE_CONTROL_CONFIGURATION=$(</opt/cruise-control/custom-config/cruisecontrol.properties)
 
 CC_ACCESS_LOG="/tmp/access.log"
 

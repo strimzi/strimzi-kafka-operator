@@ -92,7 +92,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     protected static final String TLS_CA_CERTS_VOLUME_NAME = "cluster-ca-certs";
     protected static final String TLS_CA_CERTS_VOLUME_MOUNT = "/etc/cruise-control/cluster-ca-certs/";
     protected static final String CONFIG_VOLUME_NAME = "config";
-    protected static final String SERVER_CONFIG_FILENAME = "server.properties";
+    protected static final String SERVER_CONFIG_FILENAME = "cruisecontrol.properties";
     protected static final String CAPACITY_CONFIG_FILENAME = "capacity.json";
     protected static final String CONFIG_VOLUME_MOUNT = "/opt/cruise-control/custom-config/";
     protected static final String API_AUTH_CONFIG_VOLUME_NAME = "api-auth-config";
@@ -111,7 +111,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     @SuppressFBWarnings({"UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"}) // This field is initialized in the fromCrd method
     private MetricsModel metrics;
     private LoggingModel logging;
-   /* test */ CruiseControlConfiguration configuration;
+    /* test */ CruiseControlConfiguration configuration;
 
     /**
      * Port of the Cruise Control REST API
@@ -517,7 +517,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
      * @return The generated data
      */
     public ConfigMap generateConfigMap(MetricsAndLogging metricsAndLogging) {
-        Map<String, String> configMapData = new HashMap<>(3);
+        Map<String, String> configMapData = new HashMap<>();
         configMapData.put(SERVER_CONFIG_FILENAME, configuration.asOrderedProperties().asPairs());
         configMapData.put(CAPACITY_CONFIG_FILENAME, capacity.toString());
         configMapData.putAll(ConfigMapUtils.generateMetricsAndLogConfigMapData(reconciliation, this, metricsAndLogging));
