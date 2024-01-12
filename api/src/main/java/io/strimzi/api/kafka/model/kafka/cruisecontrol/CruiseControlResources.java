@@ -77,7 +77,7 @@ public class CruiseControlResources {
      * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
      * @return The name of the corresponding Cruise Control log {@code ConfigMap}.
      */
-    public static String logAndMetricsConfigMapName(String clusterName) {
+    public static String configMapName(String clusterName) {
         return clusterName + "-cruise-control-config";
     }
 
@@ -92,14 +92,5 @@ public class CruiseControlResources {
      */
     public static String networkPolicyName(String clusterName) {
         return clusterName + "-network-policy-cruise-control";
-    }
-
-    /**
-     * Returns the name of the Cruise Control Broker capacity {@code ConfigMap} for a {@code Kafka} cluster of the given name.
-     * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
-     * @return The name of the corresponding Cruise Control capacity {@code ConfigMap}.
-     */
-    public static String brokerCapacityConfigMapName(String clusterName) {
-        return clusterName + "-cruise-control-capacity-config";
     }
 }

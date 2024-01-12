@@ -75,13 +75,11 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 
 import static io.strimzi.operator.cluster.model.CruiseControl.API_HEALTHCHECK_PATH;
 import static io.strimzi.operator.cluster.model.CruiseControl.API_USER_NAME;
-import static io.strimzi.operator.cluster.model.CruiseControl.ENV_VAR_CRUISE_CONTROL_CAPACITY_CONFIGURATION;
 import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters.ANOMALY_DETECTION_CONFIG_KEY;
 import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters.DEFAULT_GOALS_CONFIG_KEY;
 import static java.util.Collections.singletonList;
@@ -129,8 +127,6 @@ public class CruiseControlTest {
             putAll(CruiseControlConfiguration.getCruiseControlDefaultPropertiesMap());
             put("num.partition.metrics.windows", "2");
         }};
-
-    private final CruiseControlConfiguration ccConfiguration = new CruiseControlConfiguration(Reconciliation.DUMMY_RECONCILIATION, ccConfig.entrySet());
 
     private final Storage kafkaStorage = new EphemeralStorage();
     private final InlineLogging kafkaLogJson = new InlineLogging();
@@ -220,14 +216,12 @@ public class CruiseControlTest {
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_CRUISE_CONTROL_METRICS_ENABLED).withValue(Boolean.toString(CruiseControl.DEFAULT_CRUISE_CONTROL_METRICS_ENABLED)).build());
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_STRIMZI_KAFKA_BOOTSTRAP_SERVERS).withValue(KafkaResources.bootstrapServiceName(CLUSTER) + ":" + KafkaCluster.REPLICATION_PORT).build());
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED).withValue(Boolean.toString(JvmOptions.DEFAULT_GC_LOGGING_ENABLED)).build());
-        expected.add(new EnvVarBuilder().withName(ENV_VAR_CRUISE_CONTROL_CAPACITY_CONFIGURATION).withValue(cc.capacity.toString()).build());
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_API_SSL_ENABLED).withValue(Boolean.toString(CruiseControlConfigurationParameters.DEFAULT_WEBSERVER_SSL_ENABLED)).build());
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_API_AUTH_ENABLED).withValue(Boolean.toString(CruiseControlConfigurationParameters.DEFAULT_WEBSERVER_SECURITY_ENABLED)).build());
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_API_USER).withValue(API_USER_NAME).build());
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_API_PORT).withValue(Integer.toString(CruiseControl.REST_API_PORT)).build());
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_API_HEALTHCHECK_PATH).withValue(API_HEALTHCHECK_PATH).build());
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_KAFKA_HEAP_OPTS).withValue("-Xms" + JvmOptionUtils.DEFAULT_JVM_XMS).build());
-        expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_CRUISE_CONTROL_CONFIGURATION).withValue(ccConfiguration.getConfiguration()).build());
         return expected;
     }
 
@@ -515,10 +509,6 @@ public class CruiseControlTest {
         assertThat(volume, is(notNullValue()));
         assertThat(volume.getSecret().getSecretName(), is(AbstractModel.clusterCaCertSecretName(CLUSTER)));
 
-        volume = volumes.stream().filter(vol -> CruiseControl.LOG_AND_METRICS_CONFIG_VOLUME_NAME.equals(vol.getName())).findFirst().orElseThrow();
-        assertThat(volume, is(notNullValue()));
-        assertThat(volume.getConfigMap().getName(), is(CruiseControlResources.logAndMetricsConfigMapName(CLUSTER)));
-
         volume = volumes.stream().filter(vol -> CruiseControl.API_AUTH_CONFIG_VOLUME_NAME.equals(vol.getName())).findFirst().orElseThrow();
         assertThat(volume, is(notNullValue()));
         assertThat(volume.getSecret().getSecretName(), is(CruiseControlResources.apiSecretName(CLUSTER)));
@@ -528,9 +518,9 @@ public class CruiseControlTest {
         assertThat(volume.getEmptyDir().getMedium(), is("Memory"));
         assertThat(volume.getEmptyDir().getSizeLimit(), is(new Quantity("100Mi")));
 
-        volume = volumes.stream().filter(vol -> CruiseControl.ENV_VAR_CRUISE_CONTROL_CAPACITY_CONFIGURATION.equals(vol.getName())).findFirst().orElseThrow();
+        volume = volumes.stream().filter(vol -> CruiseControl.CRUISE_CONTROL_CONFIG_VOLUME_NAME.equals(vol.getName())).findFirst().orElseThrow();
         assertThat(volume, is(notNullValue()));
-        assertThat(volume.getConfigMap().getName(), is(CruiseControlResources.brokerCapacityConfigMapName(CLUSTER)));
+        assertThat(volume.getConfigMap().getName(), is(CruiseControlResources.configMapName(CLUSTER)));
 
         // Test volume mounts
         List<VolumeMount> volumesMounts = dep.getSpec().getTemplate().getSpec().getContainers().get(0).getVolumeMounts();
@@ -544,10 +534,6 @@ public class CruiseControlTest {
         assertThat(volumeMount, is(notNullValue()));
         assertThat(volumeMount.getMountPath(), is(CruiseControl.TLS_CA_CERTS_VOLUME_MOUNT));
 
-        volumeMount = volumesMounts.stream().filter(vol -> CruiseControl.LOG_AND_METRICS_CONFIG_VOLUME_NAME.equals(vol.getName())).findFirst().orElseThrow();
-        assertThat(volumeMount, is(notNullValue()));
-        assertThat(volumeMount.getMountPath(), is(CruiseControl.LOG_AND_METRICS_CONFIG_VOLUME_MOUNT));
-
         volumeMount = volumesMounts.stream().filter(vol -> CruiseControl.API_AUTH_CONFIG_VOLUME_NAME.equals(vol.getName())).findFirst().orElseThrow();
         assertThat(volumeMount, is(notNullValue()));
         assertThat(volumeMount.getMountPath(), is(CruiseControl.API_AUTH_CONFIG_VOLUME_MOUNT));
@@ -556,9 +542,9 @@ public class CruiseControlTest {
         assertThat(volumeMount, is(notNullValue()));
         assertThat(volumeMount.getMountPath(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH));
 
-        volumeMount = volumesMounts.stream().filter(vol -> CruiseControl.DEFAULT_CAPACITY_CONFIG_FILE_CONFIG.equals(vol.getName())).findFirst().orElseThrow();
+        volumeMount = volumesMounts.stream().filter(vol -> CruiseControl.CRUISE_CONTROL_CONFIG_VOLUME_NAME.equals(vol.getName())).findFirst().orElseThrow();
         assertThat(volumeMount, is(notNullValue()));
-        assertThat(volumeMount.getMountPath(), is(CruiseControl.DEFAULT_CAPACITY_CONFIG_FILE_CONFIG));
+        assertThat(volumeMount.getMountPath(), is(CruiseControl.CONFIG_VOLUME_MOUNT));
     }
 
     @ParallelTest
@@ -929,12 +915,12 @@ public class CruiseControlTest {
         Container ccContainer = containers.stream().filter(container -> ccImage.equals(container.getImage())).findFirst().orElseThrow();
         List<EnvVar> envVarList = ccContainer.getEnv();
 
-        assertThat(envVarList.contains(e1), is(true));
-        assertThat(envVarList.contains(e2), is(true));
+        assertThat(envVarList.contains(e1),  is(true));
+        assertThat(envVarList.contains(e2),  is(true));
     }
 
     @ParallelTest
-    public void testProbeConfiguration() {
+    public void testProbeConfiguration()   {
         CruiseControlSpec cruiseControlSpec = new CruiseControlSpecBuilder()
                 .withImage(ccImage)
                 .withNewLivenessProbe()
@@ -1147,7 +1133,7 @@ public class CruiseControlTest {
 
         CruiseControl cruiseControlWithCustomGoals = createCruiseControl(resourceWithCustomGoals);
 
-        String anomalyDetectionGoals = cruiseControlWithCustomGoals
+        String anomalyDetectionGoals =  cruiseControlWithCustomGoals
                 .configuration.asOrderedProperties().asMap()
                 .get(ANOMALY_DETECTION_CONFIG_KEY.getValue());
 
@@ -1188,27 +1174,21 @@ public class CruiseControlTest {
 
     @ParallelTest
     public void testDefaultTopicNames() {
+        Map<String, String> topicConfigs = new HashMap<>();
+        topicConfigs.put(CruiseControlConfigurationParameters.PARTITION_METRIC_TOPIC_NAME.getValue(), CruiseControlConfigurationParameters.DEFAULT_PARTITION_METRIC_TOPIC_NAME);
+        topicConfigs.put(CruiseControlConfigurationParameters.BROKER_METRIC_TOPIC_NAME.getValue(), CruiseControlConfigurationParameters.DEFAULT_BROKER_METRIC_TOPIC_NAME);
+        topicConfigs.put(CruiseControlConfigurationParameters.METRIC_REPORTER_TOPIC_NAME.getValue(), CruiseControlConfigurationParameters.DEFAULT_METRIC_REPORTER_TOPIC_NAME);
+        Map<String, Object> customConfig = ccConfig;
+        customConfig.putAll(topicConfigs);
+
         CruiseControlSpec cruiseControlSpec = new CruiseControlSpecBuilder()
                 .withImage(ccImage)
                 .withConfig(ccConfig)
                 .build();
 
         Kafka resource = createKafka(cruiseControlSpec);
-
         CruiseControl cc = createCruiseControl(resource);
-        Deployment dep = cc.generateDeployment(true, null, null);
-        List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
-
-        // checks on the main Cruise Control container
-        Container ccContainer = containers.stream().filter(container -> ccImage.equals(container.getImage())).findFirst().orElseThrow();
-        List<EnvVar> envVarList = ccContainer.getEnv();
-        Optional<EnvVar> configEnvVar = envVarList.stream().filter(envVar -> envVar.getName().equals(CruiseControl.ENV_VAR_CRUISE_CONTROL_CONFIGURATION))
-                .findFirst();
-        assertThat(configEnvVar.isPresent(), is(true));
-        String config = configEnvVar.get().getValue();
-        assertThat(config, containsString(String.format("%s=%s", CruiseControlConfigurationParameters.PARTITION_METRIC_TOPIC_NAME.getValue(), CruiseControlConfigurationParameters.DEFAULT_PARTITION_METRIC_TOPIC_NAME)));
-        assertThat(config, containsString(String.format("%s=%s", CruiseControlConfigurationParameters.BROKER_METRIC_TOPIC_NAME.getValue(), CruiseControlConfigurationParameters.DEFAULT_BROKER_METRIC_TOPIC_NAME)));
-        assertThat(config, containsString(String.format("%s=%s", CruiseControlConfigurationParameters.METRIC_REPORTER_TOPIC_NAME.getValue(), CruiseControlConfigurationParameters.DEFAULT_METRIC_REPORTER_TOPIC_NAME)));
+        topicConfigs.forEach((configParam, name) -> assertThat(cc.configuration.getConfiguration(), containsString(String.format("%s=%s", configParam, name))));
     }
 
     @ParallelTest
@@ -1226,19 +1206,8 @@ public class CruiseControlTest {
                 .build();
 
         Kafka resource = createKafka(cruiseControlSpec);
-
         CruiseControl cc = createCruiseControl(resource);
-        Deployment dep = cc.generateDeployment(true, null, null);
-        List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
-
-        // checks on the main Cruise Control container
-        Container ccContainer = containers.stream().filter(container -> ccImage.equals(container.getImage())).findFirst().orElseThrow();
-        List<EnvVar> envVarList = ccContainer.getEnv();
-        Optional<EnvVar> configEnvVar = envVarList.stream().filter(envVar -> envVar.getName().equals(CruiseControl.ENV_VAR_CRUISE_CONTROL_CONFIGURATION))
-                .findFirst();
-        assertThat(configEnvVar.isPresent(), is(true));
-        String config = configEnvVar.get().getValue();
-        topicConfigs.forEach((configParam, name) -> assertThat(config, containsString(String.format("%s=%s", configParam, name))));
+        topicConfigs.forEach((configParam, name) -> assertThat(cc.configuration.getConfiguration(), containsString(String.format("%s=%s", configParam, name))));
     }
 
     @AfterAll

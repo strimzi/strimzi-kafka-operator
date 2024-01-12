@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -e
 
-CC_CAPACITY_FILE="/tmp/capacity.json"
+CRUISE_CONTROL_CONFIGURATION=$(</opt/cruise-control/custom-config/server-config)
+
 CC_ACCESS_LOG="/tmp/access.log"
 
 # Write all webserver access logs to stdout

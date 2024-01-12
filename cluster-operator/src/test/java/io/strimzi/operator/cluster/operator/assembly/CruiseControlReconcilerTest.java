@@ -93,8 +93,7 @@ public class CruiseControlReconcilerTest {
         when(mockNetPolicyOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.networkPolicyName(NAME)), netPolicyCaptor.capture())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<ConfigMap> cmCaptor = ArgumentCaptor.forClass(ConfigMap.class);
-        when(mockCmOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.logAndMetricsConfigMapName(NAME)), cmCaptor.capture())).thenReturn(Future.succeededFuture());
-        when(mockCmOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.brokerCapacityConfigMapName(NAME)), cmCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockCmOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.configMapName(NAME)), cmCaptor.capture())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<Deployment> depCaptor = ArgumentCaptor.forClass(Deployment.class);
         when(mockDepOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.componentName(NAME)), depCaptor.capture())).thenReturn(Future.succeededFuture());
@@ -144,9 +143,8 @@ public class CruiseControlReconcilerTest {
                     assertThat(netPolicyCaptor.getAllValues().size(), is(1));
                     assertThat(netPolicyCaptor.getValue(), is(notNullValue()));
 
-                    assertThat(cmCaptor.getAllValues().size(), is(2));
-                    assertThat(cmCaptor.getAllValues().get(0), is(notNullValue()));
-                    assertThat(cmCaptor.getAllValues().get(1), is(notNullValue()));
+                    assertThat(cmCaptor.getAllValues().size(), is(1));
+                    assertThat(cmCaptor.getValue(), is(notNullValue()));
 
                     assertThat(depCaptor.getAllValues().size(), is(1));
                     assertThat(depCaptor.getValue(), is(notNullValue()));
@@ -179,9 +177,7 @@ public class CruiseControlReconcilerTest {
         when(mockNetPolicyOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.networkPolicyName(NAME)), netPolicyCaptor.capture())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<ConfigMap> cmCaptor = ArgumentCaptor.forClass(ConfigMap.class);
-        when(mockCmOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.logAndMetricsConfigMapName(NAME)), cmCaptor.capture())).thenReturn(Future.succeededFuture());
-        when(mockCmOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.brokerCapacityConfigMapName(NAME)), cmCaptor.capture())).thenReturn(Future.succeededFuture());
-
+        when(mockCmOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.configMapName(NAME)), cmCaptor.capture())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<Deployment> depCaptor = ArgumentCaptor.forClass(Deployment.class);
         when(mockDepOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.componentName(NAME)), depCaptor.capture())).thenReturn(Future.succeededFuture());
@@ -227,9 +223,8 @@ public class CruiseControlReconcilerTest {
                     assertThat(netPolicyCaptor.getAllValues().size(), is(1));
                     assertThat(netPolicyCaptor.getValue(), is(nullValue()));
 
-                    assertThat(cmCaptor.getAllValues().size(), is(2));
-                    assertThat(secretCaptor.getAllValues().get(0), is(nullValue()));
-                    assertThat(secretCaptor.getAllValues().get(1), is(nullValue()));
+                    assertThat(cmCaptor.getAllValues().size(), is(1));
+                    assertThat(secretCaptor.getValue(), is(nullValue()));
 
                     assertThat(depCaptor.getAllValues().size(), is(1));
                     assertThat(depCaptor.getValue(), is(nullValue()));

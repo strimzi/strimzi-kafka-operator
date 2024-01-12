@@ -122,8 +122,7 @@ public class CruiseControlReconciler {
     public Future<Void> reconcile(boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets, Clock clock)    {
         return networkPolicy()
                 .compose(i -> serviceAccount())
-                .compose(i -> metricsAndLoggingConfigMap())
-                .compose(i -> brokerCapacityConfigMap())
+                .compose(i -> configMap())
                 .compose(i -> certificatesSecret(clock))
                 .compose(i -> apiSecret())
                 .compose(i -> service())
@@ -166,47 +165,29 @@ public class CruiseControlReconciler {
     }
 
     /**
-     * Manages the Cruise Control Config Map with logging and metrics configuration.
+     * Manages the Cruise Control ConfigMap which contains the following:
+     * (1) Cruise Control server configuration
+     * (2) Cruise Control broker capacity configuration
+     * (3) Cruise Control server logging and metrics configuration
      *
-     * @return  Future which completes when the reconciliation is done
+     * @return Future which completes when the reconciliation is done
      */
-    protected Future<Void> metricsAndLoggingConfigMap() {
-        if (cruiseControl != null)  {
+    protected Future<Void> configMap() {
+        if (cruiseControl != null) {
             return MetricsAndLoggingUtils.metricsAndLogging(reconciliation, configMapOperator, cruiseControl.logging(), cruiseControl.metrics())
                     .compose(metricsAndLogging -> {
-                        ConfigMap logAndMetricsConfigMap = cruiseControl.generateMetricsAndLogConfigMap(metricsAndLogging);
-
+                        ConfigMap logAndMetricsConfigMap = cruiseControl.generateConfigMap(metricsAndLogging);
                         return configMapOperator
                                 .reconcile(
                                         reconciliation,
                                         reconciliation.namespace(),
-                                        CruiseControlResources.logAndMetricsConfigMapName(reconciliation.name()),
+                                        CruiseControlResources.configMapName(reconciliation.name()),
                                         logAndMetricsConfigMap
                                 ).map((Void) null);
                     });
-        } else {
-            return configMapOperator.reconcile(reconciliation, reconciliation.namespace(), CruiseControlResources.logAndMetricsConfigMapName(reconciliation.name()), null)
-                    .map((Void) null);
-        }
-    }
-    /**
-     * Manages the Cruise Control certificates Secret.
-     *
-     * @return Future which completes when the reconciliation is done
-     */
-    protected Future<Void> brokerCapacityConfigMap() {
-        if (cruiseControl != null) {
-            ConfigMap brokerCapacityConfigMap = cruiseControl.generatebrokerCapacityConfigMap();
 
-            return configMapOperator
-                    .reconcile(
-                            reconciliation,
-                            reconciliation.namespace(),
-                            CruiseControlResources.brokerCapacityConfigMapName(reconciliation.name()),
-                            brokerCapacityConfigMap
-                    ).map((Void) null);
         } else {
-            return configMapOperator.reconcile(reconciliation, reconciliation.namespace(), CruiseControlResources.brokerCapacityConfigMapName(reconciliation.name()), null)
+            return configMapOperator.reconcile(reconciliation, reconciliation.namespace(), CruiseControlResources.configMapName(reconciliation.name()), null)
                     .map((Void) null);
         }
     }

@@ -73,6 +73,7 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 @Tag(REGRESSION)
 @Tag(CRUISE_CONTROL)
@@ -145,12 +146,18 @@ public class CruiseControlST extends AbstractST {
     }
 
     @IsolatedTest
-    @KRaftNotSupported("Topic Operator is not supported by KRaft mode and is used in this test class")
-    void testAutoCreationOfCruiseControlCapacityConfigMap(ExtensionContext extensionContext) {
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        String cpu = "2";
-        String nwThroughputInbound = "10000";
-        String nwThroughputOutbound = "20000";
+    void testCreationOfCruiseControlConfigMap(ExtensionContext extensionContext) {
+        final TestStorage testStorage = storageMap.get(extensionContext);
+        final String clusterName = testStorage.getClusterName();
+        String cpu = "2.0";
+        String nwThroughputInbound = "10000.0";
+        String nwThroughputOutbound = "20000.0";
+
+        String numPartitionMetricWindowsConfigKey = "num.partition.metrics.windows";
+        String numPartitionMetricWindowsConfigValue = "4";
+
+        String rootLoggerLevelKey = "rootLogger.level";
+        String rootLoggerLevelValue = "DEBUG";
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3)
                 .editMetadata()
@@ -158,21 +165,31 @@ public class CruiseControlST extends AbstractST {
                 .endMetadata()
                 .editOrNewSpec()
                     .editCruiseControl()
+                        .addToConfig(numPartitionMetricWindowsConfigKey, numPartitionMetricWindowsConfigValue)
                         .withNewBrokerCapacity()
                             .withCpu(cpu)
-                            .withInboundNetwork(nwThroughputInbound + "KiB/s")
-                            .withOutboundNetwork(nwThroughputOutbound + "KiB/s")
+                            .withInboundNetwork(nwThroughputInbound.split("\\.")[0] + "KiB/s")
+                            .withOutboundNetwork(nwThroughputOutbound.split("\\.")[0] + "KiB/s")
                         .endBrokerCapacity()
+                        .withNewInlineLogging()
+                          .addToLoggers(rootLoggerLevelKey, rootLoggerLevelValue)
+                        .endInlineLogging()
                     .endCruiseControl()
                 .endSpec()
                 .build());
 
 
-        ConfigMap cm = kubeClient().listConfigMaps(CruiseControlResources.brokerCapacityConfigMapName(clusterName)).get(0);
-
+        ConfigMap cm = kubeClient().listConfigMaps(CruiseControlResources.configMapName(clusterName)).get(0);
 
         Map<String, String> keyAndValue = cm.getData();
-        String capacityConfigAsString = keyAndValue.get("capacity.json");
+
+        // Check CC server config
+        String serverConfigAsString = keyAndValue.get("server-config");
+        Map serverConfigAsMap = stringToMap(serverConfigAsString);
+        assertThat(serverConfigAsMap.get(numPartitionMetricWindowsConfigKey), is(numPartitionMetricWindowsConfigValue));
+
+        // Check CC capacity config
+        String capacityConfigAsString = keyAndValue.get("capacity-config");
 
         try {
             ObjectMapper objectMapper = new ObjectMapper();
@@ -181,13 +198,35 @@ public class CruiseControlST extends AbstractST {
 
             for (JsonNode brokerCapacityEntry : brokerCapacities) {
                 JsonNode capacity = brokerCapacityEntry.get("capacity");
-                assertThat(cpu, is(capacity.get("CPU").get("num.cores")));
-                assertThat(nwThroughputInbound, is(capacity.get("NW_IN")));
-                assertThat(nwThroughputOutbound, is(capacity.get("NW_OUT")));
+                assertThat(capacity.get("CPU").get("num.cores").asText(), is(cpu));
+                assertThat(capacity.get("NW_IN").asText(), is(nwThroughputInbound));
+                assertThat(capacity.get("NW_OUT").asText(), is(nwThroughputOutbound));
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            fail(e.getMessage());
         }
+
+        // Check CC server metrics config
+        String loggingsConfigAsString = keyAndValue.get("log4j2.properties");
+        // Remove comment lines from String
+        Map loggingConfigAsMap = stringToMap(loggingsConfigAsString);
+        assertThat(loggingConfigAsMap.get(rootLoggerLevelKey), is(rootLoggerLevelValue));
+    }
+
+    private static Map<String, String> stringToMap(String configAsString) {
+        // Remove empty lines
+        configAsString = configAsString.replaceAll("(?m)^[ \t]*\r?\n", "");
+        // Remove comments from lines
+        configAsString = configAsString.replaceAll("(?m)^#.*", "");
+
+        String[] keyValuePairs = configAsString.split("\n");
+        Map<String, String> map = new HashMap<>();
+
+        for (String pair : keyValuePairs) {
+            String[] entry = pair.split("=");
+            map.put(entry[0].trim(), entry[1].trim());
+        }
+        return map;
     }
 
     @IsolatedTest
@@ -533,6 +572,7 @@ public class CruiseControlST extends AbstractST {
         } else {
             KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> kafka.getSpec().getKafka().setReplicas(initialReplicas), testStorage.getNamespaceName());
         }
+
         RollingUpdateUtils.waitForComponentScaleUpOrDown(testStorage.getNamespaceName(), testStorage.getKafkaSelector(), initialReplicas);
     }
 
