@@ -143,7 +143,7 @@ public class HttpBridgeKafkaExternalListenersST extends AbstractST {
             .withConsumerName(ts.getClusterName() + "-" + consumerName)
             .withBootstrapAddress(KafkaBridgeResources.serviceName(ts.getClusterName()))
             .withTopicName(ts.getTopicName())
-            .withMessageCount(MESSAGE_COUNT)
+            .withMessageCount(ts.getMessageCount())
             .withPort(TestConstants.HTTP_BRIDGE_DEFAULT_PORT)
             .withNamespaceName(ts.getNamespaceName())
             .build();
@@ -198,7 +198,7 @@ public class HttpBridgeKafkaExternalListenersST extends AbstractST {
             .withBootstrapAddress(externalBootstrapServers)
             .withNamespaceName(ts.getNamespaceName())
             .withTopicName(ts.getTopicName())
-            .withMessageCount(MESSAGE_COUNT)
+            .withMessageCount(ts.getMessageCount())
             .withUsername(weirdUserName)
             // we disable ssl.endpoint.identification.algorithm for external listener (i.e., NodePort),
             // because TLS hostname verification is not supported on such listener type.
@@ -213,9 +213,9 @@ public class HttpBridgeKafkaExternalListenersST extends AbstractST {
             resourceManager.createResourceWithWait(extensionContext, externalKafkaProducer.producerScramShaTlsStrimzi(ts.getClusterName()));
         }
 
-        ClientUtils.waitForClientSuccess(kafkaProducerExternalName, ts.getNamespaceName(), MESSAGE_COUNT);
+        ClientUtils.waitForClientSuccess(kafkaProducerExternalName, ts.getNamespaceName(), ts.getMessageCount());
 
-        ClientUtils.waitForClientSuccess(ts.getClusterName() + "-" + consumerName, ts.getNamespaceName(), MESSAGE_COUNT);
+        ClientUtils.waitForClientSuccess(ts.getClusterName() + "-" + consumerName, ts.getNamespaceName(), ts.getMessageCount());
     }
 
     @BeforeAll

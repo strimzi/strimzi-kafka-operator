@@ -152,7 +152,7 @@ public class ConfigProviderST extends AbstractST {
             .withProducerName(producerName)
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(clusterName))
             .withTopicName(topicName)
-            .withMessageCount(MESSAGE_COUNT)
+            .withMessageCount(testStorage.getMessageCount())
             .withDelayMs(0)
             .withNamespaceName(namespaceName)
             .build();

@@ -125,7 +125,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
             .withConsumerName(testStorage.getConsumerName())
             .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
             .withTopicName(testStorage.getTopicName())
-            .withMessageCount(MESSAGE_COUNT)
+            .withMessageCount(testStorage.getMessageCount())
             .withNamespaceName(testStorage.getNamespaceName())
             .withUsername(testStorage.getUsername())
             .build();
@@ -406,7 +406,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
             .withConsumerName(testStorage.getConsumerName())
             .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
             .withTopicName(testStorage.getTopicName())
-            .withMessageCount(MESSAGE_COUNT)
+            .withMessageCount(testStorage.getMessageCount())
             .withNamespaceName(testStorage.getNamespaceName())
             .withUsername(testStorage.getUsername())
             .build();

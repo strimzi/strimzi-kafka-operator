@@ -905,7 +905,7 @@ class MirrorMaker2ST extends AbstractST {
     @KRaftWithoutUTONotSupported
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testKMM2RollAfterSecretsCertsUpdateScramSha(ExtensionContext extensionContext) {
-        TestStorage testStorage = new TestStorage(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         final String customSecretSource = "custom-secret-source";
         final String customSecretTarget = "custom-secret-target";
@@ -1001,7 +1001,7 @@ class MirrorMaker2ST extends AbstractST {
             .withUsername(testStorage.getSourceUsername())
             .withNamespaceName(testStorage.getNamespaceName())
             .withTopicName(testStorage.getTopicName())
-            .withMessageCount(MESSAGE_COUNT)
+            .withMessageCount(testStorage.getMessageCount())
             .build();
 
         resourceManager.createResourceWithWait(extensionContext, clients.producerScramShaTlsStrimzi(testStorage.getSourceClusterName()), clients.consumerScramShaTlsStrimzi(testStorage.getSourceClusterName()));
@@ -1060,7 +1060,7 @@ class MirrorMaker2ST extends AbstractST {
     @ParallelNamespaceTest
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testKMM2RollAfterSecretsCertsUpdateTLS(ExtensionContext extensionContext) {
-        TestStorage testStorage = new TestStorage(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         // Deploy source kafka with tls listener and mutual tls auth
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getSourceClusterName(), 1)
@@ -1155,7 +1155,7 @@ class MirrorMaker2ST extends AbstractST {
             .withUsername(testStorage.getSourceUsername())
             .withNamespaceName(testStorage.getNamespaceName())
             .withTopicName(testStorage.getTopicName())
-            .withMessageCount(MESSAGE_COUNT)
+            .withMessageCount(testStorage.getMessageCount())
             .build();
 
         resourceManager.createResourceWithWait(extensionContext, clients.producerTlsStrimzi(testStorage.getSourceClusterName()), clients.consumerTlsStrimzi(testStorage.getSourceClusterName()));
@@ -1167,7 +1167,7 @@ class MirrorMaker2ST extends AbstractST {
             .withUsername(testStorage.getTargetUsername())
             .build();
 
-        LOGGER.info("Consumer in target cluster and Topic should receive {} messages", MESSAGE_COUNT);
+        LOGGER.info("Consumer in target cluster and Topic should receive {} messages", testStorage.getMessageCount());
 
         resourceManager.createResourceWithWait(extensionContext, clients.consumerTlsStrimzi(testStorage.getTargetClusterName()));
         ClientUtils.waitForConsumerClientSuccess(testStorage);
@@ -1209,7 +1209,7 @@ class MirrorMaker2ST extends AbstractST {
         resourceManager.createResourceWithWait(extensionContext, clients.producerTlsStrimzi(testStorage.getSourceClusterName()));
         ClientUtils.waitForProducerClientSuccess(testStorage);
 
-        LOGGER.info("Consumer in target cluster and Topic should receive {} messages", MESSAGE_COUNT);
+        LOGGER.info("Consumer in target cluster and Topic should receive {} messages", testStorage.getMessageCount());
 
         clients = new KafkaClientsBuilder(clients)
             .withTopicName(testStorage.getMirroredSourceTopicName())
@@ -1254,7 +1254,7 @@ class MirrorMaker2ST extends AbstractST {
         resourceManager.createResourceWithWait(extensionContext, clients.producerTlsStrimzi(testStorage.getSourceClusterName()));
         ClientUtils.waitForProducerClientSuccess(testStorage);
 
-        LOGGER.info("Consumer in target cluster and Topic should receive {} messages", MESSAGE_COUNT);
+        LOGGER.info("Consumer in target cluster and Topic should receive {} messages", testStorage.getMessageCount());
 
         clients = new KafkaClientsBuilder(clients)
             .withTopicName(testStorage.getMirroredSourceTopicName())
