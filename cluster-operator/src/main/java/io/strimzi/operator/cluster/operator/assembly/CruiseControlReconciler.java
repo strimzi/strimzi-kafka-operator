@@ -36,9 +36,11 @@ import io.strimzi.operator.common.operator.resource.ServiceOperator;
 import io.vertx.core.Future;
 
 import java.time.Clock;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 
 /**
  * Class used for reconciliation of Cruise Control. This class contains both the steps of the Cruise Control
@@ -64,6 +66,13 @@ public class CruiseControlReconciler {
     private final ConfigMapOperator configMapOperator;
 
     private boolean existingCertsChanged = false;
+
+    private String logging = "";
+    private String loggingHash = "";
+    private String serverConfiguration = "";
+    private String serverConfigurationHash = "";
+    private String capacityConfiguration = "";
+    private String capacityConfigurationHash = "";
 
     /**
      * Constructs the Cruise Control reconciler
@@ -177,6 +186,14 @@ public class CruiseControlReconciler {
             return MetricsAndLoggingUtils.metricsAndLogging(reconciliation, configMapOperator, cruiseControl.logging(), cruiseControl.metrics())
                     .compose(metricsAndLogging -> {
                         ConfigMap configMap = cruiseControl.generateConfigMap(metricsAndLogging);
+
+                        this.serverConfiguration = configMap.getData().get(CruiseControl.SERVER_CONFIG_FILENAME);
+                        this.serverConfigurationHash = Util.hashStub(serverConfiguration);
+                        this.capacityConfiguration = configMap.getData().get(CruiseControl.CAPACITY_CONFIG_FILENAME);
+                        this.capacityConfigurationHash = Util.hashStub(capacityConfiguration);
+                        this.logging = cruiseControl.logging().loggingConfiguration(reconciliation, metricsAndLogging.loggingCm());
+                        this.loggingHash = Util.hashStub(Util.getLoggingDynamicallyUnmodifiableEntries(logging));
+
                         return configMapOperator
                                 .reconcile(
                                         reconciliation,
@@ -185,7 +202,6 @@ public class CruiseControlReconciler {
                                         configMap
                                 ).map((Void) null);
                     });
-
         } else {
             return configMapOperator.reconcile(reconciliation, reconciliation.namespace(), CruiseControlResources.configMapName(reconciliation.name()), null)
                     .map((Void) null);
@@ -273,14 +289,15 @@ public class CruiseControlReconciler {
      */
     protected Future<Void> deployment(boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
         if (cruiseControl != null) {
-            Deployment deployment = cruiseControl.generateDeployment(isOpenShift, imagePullPolicy, imagePullSecrets);
 
-            int caCertGeneration = clusterCa.caCertGeneration();
-            Annotations.annotations(deployment.getSpec().getTemplate()).put(
-                    Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(caCertGeneration));
-            int caKeyGeneration = clusterCa.caKeyGeneration();
-            Annotations.annotations(deployment.getSpec().getTemplate()).put(
-                    Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, String.valueOf(caKeyGeneration));
+            Map<String, String> podAnnotations = new LinkedHashMap<>();
+            podAnnotations.put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(clusterCa.caCertGeneration()));
+            podAnnotations.put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, String.valueOf(clusterCa.caKeyGeneration()));
+            podAnnotations.put(Annotations.ANNO_STRIMZI_LOGGING_APPENDERS_HASH, loggingHash);
+            podAnnotations.put(CruiseControl.ANNO_STRIMZI_SERVER_CONFIGURATION_HASH, serverConfigurationHash);
+            podAnnotations.put(CruiseControl.ANNO_STRIMZI_CAPACITY_CONFIGURATION_HASH, capacityConfigurationHash);
+
+            Deployment deployment = cruiseControl.generateDeployment(podAnnotations, isOpenShift, imagePullPolicy, imagePullSecrets);
 
             return deploymentOperator
                     .reconcile(reconciliation, reconciliation.namespace(), CruiseControlResources.componentName(reconciliation.name()), deployment)

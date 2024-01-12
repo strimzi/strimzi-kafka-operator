@@ -40,6 +40,7 @@ import io.strimzi.operator.cluster.model.metrics.MetricsModel;
 import io.strimzi.operator.cluster.model.metrics.SupportsMetrics;
 import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProviderContextImpl;
 import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderContextImpl;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
@@ -92,14 +93,32 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     protected static final String TLS_CA_CERTS_VOLUME_NAME = "cluster-ca-certs";
     protected static final String TLS_CA_CERTS_VOLUME_MOUNT = "/etc/cruise-control/cluster-ca-certs/";
     protected static final String CONFIG_VOLUME_NAME = "config";
-    protected static final String SERVER_CONFIG_FILENAME = "cruisecontrol.properties";
-    protected static final String CAPACITY_CONFIG_FILENAME = "capacity.json";
+    /**
+     * Server config file name
+     */
+    public static final String SERVER_CONFIG_FILENAME = "cruisecontrol.properties";
+    /**
+     * Capacity config file name
+     */
+    public static final String CAPACITY_CONFIG_FILENAME = "capacity.json";
     protected static final String CONFIG_VOLUME_MOUNT = "/opt/cruise-control/custom-config/";
     protected static final String API_AUTH_CONFIG_VOLUME_NAME = "api-auth-config";
     protected static final String API_AUTH_CONFIG_VOLUME_MOUNT = "/opt/cruise-control/api-auth-config/";
     protected static final String API_AUTH_CREDENTIALS_FILE = API_AUTH_CONFIG_VOLUME_MOUNT + API_AUTH_FILE_KEY;
 
     protected static final String ENV_VAR_CRUISE_CONTROL_METRICS_ENABLED = "CRUISE_CONTROL_METRICS_ENABLED";
+
+    /**
+     * Annotation for rolling a cluster whenever the server configuration has changed.
+     * By changing the annotation we force a restart since the pod will be out of date compared to the Pod.
+     */
+    public static final String ANNO_STRIMZI_SERVER_CONFIGURATION_HASH = Annotations.STRIMZI_DOMAIN + "server-configuration-hash";
+
+    /**
+     * Annotation for rolling a cluster whenever the capacity configuration has changed.
+     * By changing the annotation we force a restart since the pod will be out of date compared to the Pod.
+     */
+    public static final String ANNO_STRIMZI_CAPACITY_CONFIGURATION_HASH = Annotations.STRIMZI_DOMAIN + "capacity-configuration-hash";
 
     // Configuration defaults
     protected static final boolean DEFAULT_CRUISE_CONTROL_METRICS_ENABLED = false;
@@ -323,13 +342,14 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     /**
      * Generates Kubernetes Deployment for Cruise Control
      *
+     * @param annotations       Map with annotations
      * @param isOpenShift       Flag indicating if we are on OpenShift or not
      * @param imagePullPolicy   Image pull policy
      * @param imagePullSecrets  Image pull secrets
      *
      * @return  Cruise Control Kubernetes Deployment
      */
-    public Deployment generateDeployment(boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
+    public Deployment generateDeployment(Map<String, String> annotations, boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
         return WorkloadUtils.createDeployment(
                 componentName,
                 namespace,
@@ -344,7 +364,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
                         labels,
                         templatePod,
                         DEFAULT_POD_LABELS,
-                        Map.of(),
+                        annotations,
                         templatePod != null ? templatePod.getAffinity() : null,
                         null,
                         List.of(createContainer(imagePullPolicy)),
