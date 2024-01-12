@@ -168,7 +168,7 @@
         <rest-assured.version>4.4.0</rest-assured.version>
         <rest-assured-json-path.version>4.4.0</rest-assured-json-path.version>
         <bouncycastle.version>1.76</bouncycastle.version>
-        <kroxylicious-testing.version>0.4.0</kroxylicious-testing.version>
+        <kroxylicious-testing.version>0.8.1</kroxylicious-testing.version>
 
         <!-- properties to skip surefire tests during failsafe execution -->
         <skipTests>false</skipTests>
