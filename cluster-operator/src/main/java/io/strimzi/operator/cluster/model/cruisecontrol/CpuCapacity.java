@@ -11,7 +11,10 @@ import io.vertx.core.json.JsonObject;
  * Cruise Control CPU Capacity class
  */
 public class CpuCapacity {
-    private static final String CORES_KEY = "num.cores";
+    /**
+     * CPU core key
+     */
+    public static final String CORES_KEY = "num.cores";
 
     private final String cores;
 
@@ -28,7 +31,12 @@ public class CpuCapacity {
         return String.valueOf(milliCPU / 1000.0);
     }
 
-    protected JsonObject getJson() {
+    /**
+     * Returns CpuCapacity object as a JsonObject
+     *
+     * @return The CpuCapacity object as a JsonObject
+     */
+    public JsonObject getJson() {
         return new JsonObject().put(CORES_KEY, this.cores);
     }
 

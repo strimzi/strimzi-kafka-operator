@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 
+
 /**
  * Class for handling Cruise Control configuration passed by the user
  */
@@ -91,7 +92,7 @@ public class CruiseControlConfiguration extends AbstractConfiguration {
             Map.entry(CruiseControlConfigurationParameters.PARTITION_METRIC_TOPIC_NAME.getValue(), CruiseControlConfigurationParameters.DEFAULT_PARTITION_METRIC_TOPIC_NAME),
             Map.entry(CruiseControlConfigurationParameters.BROKER_METRIC_TOPIC_NAME.getValue(), CruiseControlConfigurationParameters.DEFAULT_BROKER_METRIC_TOPIC_NAME),
             Map.entry(CruiseControlConfigurationParameters.METRIC_REPORTER_TOPIC_NAME.getValue(), CruiseControlConfigurationParameters.DEFAULT_METRIC_REPORTER_TOPIC_NAME),
-            Map.entry(CruiseControlConfigurationParameters.CAPACITY_CONFIG_FILE.getValue(), CruiseControl.CAPACITY_CONFIG_FILE)
+            Map.entry(CruiseControlConfigurationParameters.CAPACITY_CONFIG_FILE.getValue(), CruiseControl.CONFIG_VOLUME_MOUNT + CruiseControl.CAPACITY_CONFIG_FILENAME)
     )));
 
     private static final List<String> FORBIDDEN_PREFIXES = AbstractConfiguration.splitPrefixesToList(CruiseControlSpec.FORBIDDEN_PREFIXES);
