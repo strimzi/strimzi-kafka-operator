@@ -775,13 +775,13 @@
             <dependency>
                 <groupId>io.javaoperatorsdk</groupId>
                 <artifactId>jenvtest</artifactId>
-                <version>0.9.1</version>
+                <version>0.9.5</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>io.javaoperatorsdk</groupId>
                 <artifactId>jenvtest-fabric8-client-support</artifactId>
-                <version>0.9.1</version>
+                <version>0.9.5</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
