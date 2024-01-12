@@ -4,23 +4,25 @@
  */
 package io.strimzi.systemtest.cruisecontrol;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
-import io.strimzi.api.kafka.model.kafka.JbodStorage;
-import io.strimzi.api.kafka.model.kafka.JbodStorageBuilder;
-import io.strimzi.api.kafka.model.kafka.KafkaResources;
-import io.strimzi.api.kafka.model.kafka.KafkaStatus;
-import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
-import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
-import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlSpec;
-import io.strimzi.api.kafka.model.rebalance.KafkaRebalance;
-import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceAnnotation;
-import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceMode;
-import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState;
-import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceStatus;
-import io.strimzi.api.kafka.model.topic.KafkaTopicSpec;
+import io.strimzi.api.kafka.model.CruiseControlResources;
+import io.strimzi.api.kafka.model.CruiseControlSpec;
+import io.strimzi.api.kafka.model.KafkaRebalance;
+import io.strimzi.api.kafka.model.KafkaTopicSpec;
+import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.balancing.KafkaRebalanceMode;
+import io.strimzi.api.kafka.model.status.KafkaRebalanceStatus;
+import io.strimzi.api.kafka.model.status.KafkaStatus;
+import io.strimzi.api.kafka.model.storage.JbodStorage;
+import io.strimzi.api.kafka.model.storage.JbodStorageBuilder;
+import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
@@ -140,6 +142,52 @@ public class CruiseControlST extends AbstractST {
         LOGGER.info("Checking partitions and replicas for {}", CRUISE_CONTROL_PARTITION_METRICS_SAMPLES_TOPIC);
         assertThat(partitionMetricsTopic.getPartitions(), is(32));
         assertThat(partitionMetricsTopic.getReplicas(), is(2));
+    }
+
+    @IsolatedTest
+    @KRaftNotSupported("Topic Operator is not supported by KRaft mode and is used in this test class")
+    void testAutoCreationOfCruiseControlCapacityConfigMap(ExtensionContext extensionContext) {
+        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String cpu = "2";
+        String nwThroughputInbound = "10000";
+        String nwThroughputOutbound = "20000";
+
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3)
+                .editMetadata()
+                .withNamespace(clusterOperator.getDeploymentNamespace())
+                .endMetadata()
+                .editOrNewSpec()
+                    .editCruiseControl()
+                        .withNewBrokerCapacity()
+                            .withCpu(cpu)
+                            .withInboundNetwork(nwThroughputInbound + "KiB/s")
+                            .withOutboundNetwork(nwThroughputOutbound + "KiB/s")
+                        .endBrokerCapacity()
+                    .endCruiseControl()
+                .endSpec()
+                .build());
+
+
+        ConfigMap cm = kubeClient().listConfigMaps(CruiseControlResources.brokerCapacityConfigMapName(clusterName)).get(0);
+
+
+        Map<String, String> keyAndValue = cm.getData();
+        String capacityConfigAsString = keyAndValue.get("capacity.json");
+
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            JsonNode capacityConfigAsJsonNode = objectMapper.readTree(capacityConfigAsString);
+            ArrayNode brokerCapacities = (ArrayNode) capacityConfigAsJsonNode.get("brokerCapacities");
+
+            for (JsonNode brokerCapacityEntry : brokerCapacities) {
+                JsonNode capacity = brokerCapacityEntry.get("capacity");
+                assertThat(cpu, is(capacity.get("CPU").get("num.cores")));
+                assertThat(nwThroughputInbound, is(capacity.get("NW_IN")));
+                assertThat(nwThroughputOutbound, is(capacity.get("NW_OUT")));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @IsolatedTest
@@ -485,7 +533,6 @@ public class CruiseControlST extends AbstractST {
         } else {
             KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> kafka.getSpec().getKafka().setReplicas(initialReplicas), testStorage.getNamespaceName());
         }
-
         RollingUpdateUtils.waitForComponentScaleUpOrDown(testStorage.getNamespaceName(), testStorage.getKafkaSelector(), initialReplicas);
     }
 

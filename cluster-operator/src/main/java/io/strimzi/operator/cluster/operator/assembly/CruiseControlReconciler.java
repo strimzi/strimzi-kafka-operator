@@ -123,6 +123,7 @@ public class CruiseControlReconciler {
         return networkPolicy()
                 .compose(i -> serviceAccount())
                 .compose(i -> metricsAndLoggingConfigMap())
+                .compose(i -> brokerCapacityConfigMap())
                 .compose(i -> certificatesSecret(clock))
                 .compose(i -> apiSecret())
                 .compose(i -> service())
@@ -185,6 +186,27 @@ public class CruiseControlReconciler {
                     });
         } else {
             return configMapOperator.reconcile(reconciliation, reconciliation.namespace(), CruiseControlResources.logAndMetricsConfigMapName(reconciliation.name()), null)
+                    .map((Void) null);
+        }
+    }
+    /**
+     * Manages the Cruise Control certificates Secret.
+     *
+     * @return Future which completes when the reconciliation is done
+     */
+    protected Future<Void> brokerCapacityConfigMap() {
+        if (cruiseControl != null) {
+            ConfigMap brokerCapacityConfigMap = cruiseControl.generatebrokerCapacityConfigMap();
+
+            return configMapOperator
+                    .reconcile(
+                            reconciliation,
+                            reconciliation.namespace(),
+                            CruiseControlResources.brokerCapacityConfigMapName(reconciliation.name()),
+                            brokerCapacityConfigMap
+                    ).map((Void) null);
+        } else {
+            return configMapOperator.reconcile(reconciliation, reconciliation.namespace(), CruiseControlResources.brokerCapacityConfigMapName(reconciliation.name()), null)
                     .map((Void) null);
         }
     }

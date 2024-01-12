@@ -95,7 +95,15 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     protected static final String LOG_AND_METRICS_CONFIG_VOLUME_MOUNT = "/opt/cruise-control/custom-config/";
     protected static final String API_AUTH_CONFIG_VOLUME_NAME = "api-auth-config";
     protected static final String API_AUTH_CONFIG_VOLUME_MOUNT = "/opt/cruise-control/api-auth-config/";
-
+    protected static final String CRUISE_CONTROL_CAPACITY_CONFIG_VOLUME_NAME = "capacity.json";
+    protected static final String CRUISE_CONTROL_CAPACITY_CONFIG_VOLUME_MOUNT = "/tmp";
+    /**
+     * Name of the Cruise Control capacity file
+     */
+    public static final String DEFAULT_CRUISE_CONTROL_CAPACITY_CONFIG_NAME = CRUISE_CONTROL_CAPACITY_CONFIG_VOLUME_MOUNT + CRUISE_CONTROL_CAPACITY_CONFIG_VOLUME_NAME;
+    protected static final String DEFAULT_CAPACITY_CONFIG_FILE_CONFIG =
+            CRUISE_CONTROL_CAPACITY_CONFIG_VOLUME_MOUNT + "/" +
+            CRUISE_CONTROL_CAPACITY_CONFIG_VOLUME_NAME;
     protected static final String API_AUTH_CREDENTIALS_FILE = API_AUTH_CONFIG_VOLUME_MOUNT + API_AUTH_FILE_KEY;
 
     protected static final String ENV_VAR_CRUISE_CONTROL_METRICS_ENABLED = "CRUISE_CONTROL_METRICS_ENABLED";
@@ -142,7 +150,6 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     private DeploymentTemplate templateDeployment;
     private PodTemplate templatePod;
     private InternalServiceTemplate templateService;
-
     private static final Map<String, String> DEFAULT_POD_LABELS = new HashMap<>();
     static {
         String value = System.getenv(CO_ENV_VAR_CUSTOM_CRUISE_CONTROL_POD_LABELS);
@@ -155,8 +162,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
      * Constructor
      *
      * @param reconciliation The reconciliation
-     * @param resource  Kubernetes resource with metadata containing the namespace and cluster name
-     * @param sharedEnvironmentProvider Shared environment provider
+     * @param resource       Kubernetes resource with metadata containing the namespace and cluster name
      */
     private CruiseControl(Reconciliation reconciliation, HasMetadata resource, SharedEnvironmentProvider sharedEnvironmentProvider) {
         super(reconciliation, resource, CruiseControlResources.componentName(resource.getMetadata().getName()), COMPONENT_TYPE, sharedEnvironmentProvider);
@@ -166,15 +172,15 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
      * Creates an instance of the Cruise Control model from the custom resource. When Cruise Control is not enabled,
      * this will return null.
      *
-     * @param reconciliation                Reconciliation marker used for logging
-     * @param kafkaCr                       The Kafka custom resource
-     * @param versions                      Supported Kafka versions
-     * @param kafkaBrokerNodes              List of the broker nodes which are part of the Kafka cluster
-     * @param kafkaStorage                  A map with storage configuration used by the Kafka cluster and its node pools
-     * @param kafkaBrokerResources          A map with resource configuration used by the Kafka cluster and its broker pools
-     * @param sharedEnvironmentProvider     Shared environment provider
+     * @param reconciliation            Reconciliation marker used for logging
+     * @param kafkaCr                   The Kafka custom resource
+     * @param versions                  Supported Kafka versions
+     * @param kafkaBrokerNodes          List of the broker nodes which are part of the Kafka cluster
+     * @param kafkaStorage              A map with storage configuration used by the Kafka cluster and its node pools
+     * @param kafkaBrokerResources      A map with resource configuration used by the Kafka cluster and its broker pools
+     * @param sharedEnvironmentProvider A Interface to be implemented for returning an instance of the environment variables shared by all containers.
      *
-     * @return  Instance of the Cruise Control model
+     * @return Instance of the Cruise Control model
      */
     @SuppressWarnings({"checkstyle:NPathComplexity", "checkstyle:CyclomaticComplexity"})
     public static CruiseControl fromCrd(
@@ -243,9 +249,6 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     }
 
     /**
-     *  This method ensures that the checks in cruise-control/src/main/java/com/linkedin/kafka/cruisecontrol/config/KafkaCruiseControlConfig.java
-     *  sanityCheckGoalNames() method (L118)  don't fail if a user submits custom default goals that have less members then the default
-     *  anomaly.detection.goals.
      * @param configuration The configuration instance to be checked.
      * @throws UnsupportedOperationException If the configuration contains self.healing.goals configurations.
      */
@@ -311,7 +314,8 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
                 createSecretVolume(TLS_CC_CERTS_VOLUME_NAME, CruiseControlResources.secretName(cluster), isOpenShift),
                 createSecretVolume(TLS_CA_CERTS_VOLUME_NAME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift),
                 createSecretVolume(API_AUTH_CONFIG_VOLUME_NAME, CruiseControlResources.apiSecretName(cluster), isOpenShift),
-                createConfigMapVolume(LOG_AND_METRICS_CONFIG_VOLUME_NAME, CruiseControlResources.logAndMetricsConfigMapName(cluster)));
+                createConfigMapVolume(LOG_AND_METRICS_CONFIG_VOLUME_NAME, CruiseControlResources.logAndMetricsConfigMapName(cluster)),
+                createConfigMapVolume(CRUISE_CONTROL_CAPACITY_CONFIG_VOLUME_NAME, CruiseControlResources.brokerCapacityConfigMapName(cluster)));
     }
 
     protected List<VolumeMount> getVolumeMounts() {
@@ -319,17 +323,19 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
                 createVolumeMount(CruiseControl.TLS_CC_CERTS_VOLUME_NAME, CruiseControl.TLS_CC_CERTS_VOLUME_MOUNT),
                 createVolumeMount(CruiseControl.TLS_CA_CERTS_VOLUME_NAME, CruiseControl.TLS_CA_CERTS_VOLUME_MOUNT),
                 createVolumeMount(CruiseControl.API_AUTH_CONFIG_VOLUME_NAME, CruiseControl.API_AUTH_CONFIG_VOLUME_MOUNT),
-                createVolumeMount(LOG_AND_METRICS_CONFIG_VOLUME_NAME, LOG_AND_METRICS_CONFIG_VOLUME_MOUNT));
+                createVolumeMount(LOG_AND_METRICS_CONFIG_VOLUME_NAME, LOG_AND_METRICS_CONFIG_VOLUME_MOUNT),
+                createVolumeMount(CRUISE_CONTROL_CAPACITY_CONFIG_VOLUME_NAME, CRUISE_CONTROL_CAPACITY_CONFIG_VOLUME_MOUNT));
+
     }
 
     /**
      * Generates Kubernetes Deployment for Cruise Control
      *
-     * @param isOpenShift       Flag indicating if we are on OpenShift or not
-     * @param imagePullPolicy   Image pull policy
-     * @param imagePullSecrets  Image pull secrets
+     * @param isOpenShift      Flag indicating if we are on OpenShift or not
+     * @param imagePullPolicy  Image pull policy
+     * @param imagePullSecrets Image pull secrets
      *
-     * @return  Cruise Control Kubernetes Deployment
+     * @return Cruise Control Kubernetes Deployment
      */
     public Deployment generateDeployment(boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
         return WorkloadUtils.createDeployment(
@@ -380,12 +386,12 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_KAFKA_BOOTSTRAP_SERVERS, KafkaResources.bootstrapServiceName(cluster) + ":" + KafkaCluster.REPLICATION_PORT));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
 
-        varList.add(ContainerUtils.createEnvVar(ENV_VAR_CRUISE_CONTROL_CAPACITY_CONFIGURATION, capacity.toString()));
+        //varList.add(ContainerUtils.createEnvVar(ENV_VAR_CRUISE_CONTROL_CAPACITY_CONFIGURATION, capacity.toString()));
 
-        varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_SSL_ENABLED,  String.valueOf(this.sslEnabled)));
-        varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_AUTH_ENABLED,  String.valueOf(this.authEnabled)));
-        varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_USER,  API_USER_NAME));
-        varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_PORT,  String.valueOf(REST_API_PORT)));
+        varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_SSL_ENABLED, String.valueOf(this.sslEnabled)));
+        varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_AUTH_ENABLED, String.valueOf(this.authEnabled)));
+        varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_USER, API_USER_NAME));
+        varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_PORT, String.valueOf(REST_API_PORT)));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_HEALTHCHECK_PATH, API_HEALTHCHECK_PATH));
 
         JvmOptionUtils.heapOptions(varList, 75, 0L, jvmOptions, resources);
@@ -444,12 +450,11 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
      * internal communication with Kafka
      * It also contains the related Cruise Control private key.
      *
-     * @param namespace Namespace in which the Cruise Control cluster runs
-     * @param kafkaName Name of the Kafka cluster (it is used for the SANs in the certificate)
-     * @param clusterCa The cluster CA.
+     * @param namespace                         Namespace in which the Cruise Control cluster runs
+     * @param kafkaName                         Name of the Kafka cluster (it is used for the SANs in the certificate)
+     * @param clusterCa                         The cluster CA.
      * @param isMaintenanceTimeWindowsSatisfied Indicates whether we are in the maintenance window or not.
-     *                                          This is used for certificate renewals
-     *
+     * This is used for certificate renewals
      * @return The generated Secret.
      */
     public Secret generateCertificatesSecret(String namespace, String kafkaName, ClusterCa clusterCa, boolean isMaintenanceTimeWindowsSatisfied) {
@@ -469,9 +474,8 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     /**
      * Generates the NetworkPolicies relevant for Cruise Control
      *
-     * @param operatorNamespace                             Namespace where the Strimzi Cluster Operator runs. Null if not configured.
-     * @param operatorNamespaceLabels                       Labels of the namespace where the Strimzi Cluster Operator runs. Null if not configured.
-     *
+     * @param operatorNamespace       Namespace where the Strimzi Cluster Operator runs. Null if not configured.
+     * @param operatorNamespaceLabels Labels of the namespace where the Strimzi Cluster Operator runs. Null if not configured.
      * @return The network policy.
      */
     public NetworkPolicy generateNetworkPolicy(String operatorNamespace, Labels operatorNamespaceLabels) {
@@ -502,8 +506,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
      * Generates a metrics and logging ConfigMap according to the configuration. If this operand doesn't support logging
      * or metrics, they will nto be set.
      *
-     * @param metricsAndLogging     The external CMs with logging and metrics configuration
-     *
+     * @param metricsAndLogging The external CMs with logging and metrics configuration
      * @return The generated ConfigMap
      */
     public ConfigMap generateMetricsAndLogConfigMap(MetricsAndLogging metricsAndLogging) {
@@ -518,16 +521,44 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     }
 
     /**
-     * @return  Metrics Model instance for configuring Prometheus metrics
+     * @return Metrics Model instance for configuring Prometheus metrics
      */
-    public MetricsModel metrics()   {
+    public MetricsModel metrics() {
         return metrics;
     }
 
     /**
-     * @return  Logging Model instance for configuring logging
+     * @return Logging Model instance for configuring logging
      */
-    public LoggingModel logging()   {
+    public LoggingModel logging() {
         return logging;
+    }
+
+    /**
+     * Generates data for broker capacity ConfigMap
+     *
+     * @param capacity data used for broker capacity configuration
+     * @return The generated ConfigMap.
+     */
+    public static Map<String, String> generateBrokerCapacityConfigMapData(Capacity capacity) {
+        Map<String, String> data = new HashMap<>();
+        data.put(CRUISE_CONTROL_CAPACITY_CONFIG_VOLUME_NAME, capacity.toString());
+        return data;
+    }
+
+    /**
+     * Generates a Cruise Control capacity ConfigMap.
+     *
+     * @return The generated data
+     */
+    public ConfigMap generatebrokerCapacityConfigMap() {
+        return ConfigMapUtils
+                .createConfigMap(
+                        CruiseControlResources.brokerCapacityConfigMapName(cluster),
+                        namespace,
+                        labels,
+                        ownerReference,
+                        CruiseControl.generateBrokerCapacityConfigMapData(capacity)
+                );
     }
 }

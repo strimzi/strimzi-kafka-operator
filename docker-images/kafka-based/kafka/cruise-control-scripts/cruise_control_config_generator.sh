@@ -4,16 +4,12 @@ set -e
 CC_CAPACITY_FILE="/tmp/capacity.json"
 CC_ACCESS_LOG="/tmp/access.log"
 
-# Generate capacity file
-echo "${CRUISE_CONTROL_CAPACITY_CONFIGURATION}" > "${CC_CAPACITY_FILE}"
-
 # Write all webserver access logs to stdout
 ln -sf /dev/stdout $CC_ACCESS_LOG
 
 # Write the config file
 cat <<EOF
 bootstrap.servers=$STRIMZI_KAFKA_BOOTSTRAP_SERVERS
-capacity.config.file=$CC_CAPACITY_FILE
 webserver.accesslog.path=$CC_ACCESS_LOG
 webserver.http.address=0.0.0.0
 webserver.http.cors.allowmethods=OPTIONS,GET

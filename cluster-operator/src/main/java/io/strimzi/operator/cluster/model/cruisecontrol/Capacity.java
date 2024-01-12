@@ -185,11 +185,11 @@ public class Capacity {
     /**
      * Constructor
      *
-     * @param reconciliation        Reconciliation marker
-     * @param spec                  Spec of the Kafka custom resource
-     * @param kafkaBrokerNodes      List of the broker nodes which are part of the Kafka cluster
-     * @param kafkaStorage          A map with storage configuration used by the Kafka cluster and its node pools
-     * @param kafkaBrokerResources  A map with resource configuration used by the Kafka cluster and its broker pools
+     * @param reconciliation       Reconciliation marker
+     * @param spec                 Spec of the Kafka custom resource
+     * @param kafkaBrokerNodes     List of the broker nodes which are part of the Kafka cluster
+     * @param kafkaStorage         A map with storage configuration used by the Kafka cluster and its node pools
+     * @param kafkaBrokerResources A map with resource configuration used by the Kafka cluster and its broker pools
      */
     public Capacity(
             Reconciliation reconciliation,
@@ -443,7 +443,7 @@ public class Capacity {
     }
 
     /**
-     * @return  Capacity entries
+     * @return Capacity entries
      */
     public TreeMap<Integer, BrokerCapacity> getCapacityEntries() {
         return capacityEntries;

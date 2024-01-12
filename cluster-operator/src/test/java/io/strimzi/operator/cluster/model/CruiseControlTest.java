@@ -275,10 +275,6 @@ public class CruiseControlTest {
 
         Kafka resource = createKafka(cruiseControlSpec);
 
-        Capacity capacity = new Capacity(Reconciliation.DUMMY_RECONCILIATION, resource.getSpec(), NODES, createStorageMap(resource), createResourceRequirementsMap(resource));
-
-        assertThat(getCapacityConfigurationFromEnvVar(resource, ENV_VAR_CRUISE_CONTROL_CAPACITY_CONFIGURATION), is(capacity.toString()));
-
         // Test generated disk capacity
         JbodStorage jbodStorage = new JbodStorageBuilder()
                 .withVolumes(
@@ -300,7 +296,7 @@ public class CruiseControlTest {
             .endSpec()
             .build();
 
-        capacity = new Capacity(Reconciliation.DUMMY_RECONCILIATION, resource.getSpec(), NODES, createStorageMap(resource), createResourceRequirementsMap(resource));
+        Capacity capacity = new Capacity(Reconciliation.DUMMY_RECONCILIATION, resource.getSpec(), NODES, createStorageMap(resource), createResourceRequirementsMap(resource));
         String cpuCapacity = new CpuCapacity(userDefinedCpuCapacity).toString();
 
         JsonArray brokerEntries = capacity.generateCapacityConfig().getJsonArray(Capacity.CAPACITIES_KEY);
@@ -309,8 +305,6 @@ public class CruiseControlTest {
             assertThat(isJBOD(brokerCapacity), is(true));
             assertThat(brokerCapacity.get(Capacity.CPU_KEY).toString(), is(cpuCapacity));
         }
-
-        assertThat(getCapacityConfigurationFromEnvVar(resource, ENV_VAR_CRUISE_CONTROL_CAPACITY_CONFIGURATION), is(capacity.toString()));
 
         // Test capacity overrides
         String userDefinedCpuCapacityOverride0 = "1.222";
@@ -366,8 +360,6 @@ public class CruiseControlTest {
 
         assertThat(capacityEntries.get(broker2).getCpu().toString(), is(new CpuCapacity(userDefinedCpuCapacityOverride0).toString()));
         assertThat(capacityEntries.get(broker2).getInboundNetwork(), is(Capacity.getThroughputInKiB(inboundNetworkOverride0)));
-
-        assertThat(getCapacityConfigurationFromEnvVar(resource, ENV_VAR_CRUISE_CONTROL_CAPACITY_CONFIGURATION), is(capacity.toString()));
 
         // Test generated CPU capacity
         userDefinedCpuCapacity = "500m";
@@ -536,6 +528,10 @@ public class CruiseControlTest {
         assertThat(volume.getEmptyDir().getMedium(), is("Memory"));
         assertThat(volume.getEmptyDir().getSizeLimit(), is(new Quantity("100Mi")));
 
+        volume = volumes.stream().filter(vol -> CruiseControl.ENV_VAR_CRUISE_CONTROL_CAPACITY_CONFIGURATION.equals(vol.getName())).findFirst().orElseThrow();
+        assertThat(volume, is(notNullValue()));
+        assertThat(volume.getConfigMap().getName(), is(CruiseControlResources.brokerCapacityConfigMapName(CLUSTER)));
+
         // Test volume mounts
         List<VolumeMount> volumesMounts = dep.getSpec().getTemplate().getSpec().getContainers().get(0).getVolumeMounts();
         assertThat(volumesMounts.size(), is(5));
@@ -559,6 +555,10 @@ public class CruiseControlTest {
         volumeMount = volumesMounts.stream().filter(vol -> VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME.equals(vol.getName())).findFirst().orElseThrow();
         assertThat(volumeMount, is(notNullValue()));
         assertThat(volumeMount.getMountPath(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH));
+
+        volumeMount = volumesMounts.stream().filter(vol -> CruiseControl.DEFAULT_CAPACITY_CONFIG_FILE_CONFIG.equals(vol.getName())).findFirst().orElseThrow();
+        assertThat(volumeMount, is(notNullValue()));
+        assertThat(volumeMount.getMountPath(), is(CruiseControl.DEFAULT_CAPACITY_CONFIG_FILE_CONFIG));
     }
 
     @ParallelTest
@@ -929,12 +929,12 @@ public class CruiseControlTest {
         Container ccContainer = containers.stream().filter(container -> ccImage.equals(container.getImage())).findFirst().orElseThrow();
         List<EnvVar> envVarList = ccContainer.getEnv();
 
-        assertThat(envVarList.contains(e1),  is(true));
-        assertThat(envVarList.contains(e2),  is(true));
+        assertThat(envVarList.contains(e1), is(true));
+        assertThat(envVarList.contains(e2), is(true));
     }
 
     @ParallelTest
-    public void testProbeConfiguration()   {
+    public void testProbeConfiguration() {
         CruiseControlSpec cruiseControlSpec = new CruiseControlSpecBuilder()
                 .withImage(ccImage)
                 .withNewLivenessProbe()
@@ -1147,7 +1147,7 @@ public class CruiseControlTest {
 
         CruiseControl cruiseControlWithCustomGoals = createCruiseControl(resourceWithCustomGoals);
 
-        String anomalyDetectionGoals =  cruiseControlWithCustomGoals
+        String anomalyDetectionGoals = cruiseControlWithCustomGoals
                 .configuration.asOrderedProperties().asMap()
                 .get(ANOMALY_DETECTION_CONFIG_KEY.getValue());
 
