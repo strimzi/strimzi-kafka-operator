@@ -53,7 +53,7 @@
     kafkaBefore: "/examples/kafka/kafka-persistent.yaml"
     kafkaAfter: "/examples/kafka/kafka-persistent.yaml"
     kafkaKRaftBefore: "/examples/kafka/nodepools/kafka-with-kraft.yaml"
-    kafkaKRaftAfter: "/examples/kafka/nodepools/kafka-with-kraft.yaml"
+    kafkaKRaftAfter: "/examples/kafka/kraft/kafka.yaml"
 - fromVersion: 0.39.0
   fromExamples: strimzi-0.39.0
   oldestKafka: 3.5.2
@@ -78,4 +78,4 @@
     kafkaBefore: "/examples/kafka/kafka-persistent.yaml"
     kafkaAfter: "/examples/kafka/kafka-persistent.yaml"
     kafkaKRaftBefore: "/examples/kafka/nodepools/kafka-with-kraft.yaml"
-    kafkaKRaftAfter: "/examples/kafka/nodepools/kafka-with-kraft.yaml"
+    kafkaKRaftAfter: "/examples/kafka/kraft/kafka.yaml"

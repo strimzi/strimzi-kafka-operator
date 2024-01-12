@@ -166,4 +166,112 @@ public class KRaftUtilsTest {
         e = assertThrows(InvalidResourceException.class, () -> KRaftUtils.validateMetadataVersion("3.2-IV0"));
         assertThat(e.getMessage(), containsString("The oldest supported metadata version is 3.3-IV0"));
     }
+
+    @ParallelTest
+    public void testValidZooBasedCluster() {
+        KafkaSpec spec = new KafkaSpecBuilder()
+                .withNewZookeeper()
+                    .withReplicas(3)
+                    .withNewEphemeralStorage()
+                    .endEphemeralStorage()
+                .endZookeeper()
+                .withNewKafka()
+                    .withReplicas(3)
+                    .withListeners(new GenericKafkaListenerBuilder()
+                            .withName("listener")
+                            .withPort(9092)
+                            .withTls(true)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withNewKafkaListenerAuthenticationTlsAuth()
+                            .endKafkaListenerAuthenticationTlsAuth()
+                            .build())
+                    .withNewEphemeralStorage()
+                    .endEphemeralStorage()
+                    .withNewKafkaAuthorizationOpa()
+                        .withUrl("http://opa:8080")
+                    .endKafkaAuthorizationOpa()
+                .endKafka()
+                .build();
+
+        assertDoesNotThrow(() -> KRaftUtils.validateKafkaCrForZooKeeper(spec, false));
+    }
+
+    @ParallelTest
+    public void testValidZooBasedClusterWithNodePools() {
+        KafkaSpec spec = new KafkaSpecBuilder()
+                .withNewZookeeper()
+                    .withReplicas(3)
+                    .withNewEphemeralStorage()
+                    .endEphemeralStorage()
+                .endZookeeper()
+                .withNewKafka()
+                    .withListeners(new GenericKafkaListenerBuilder()
+                            .withName("listener")
+                            .withPort(9092)
+                            .withTls(true)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withNewKafkaListenerAuthenticationTlsAuth()
+                            .endKafkaListenerAuthenticationTlsAuth()
+                            .build())
+                    .withNewKafkaAuthorizationOpa()
+                        .withUrl("http://opa:8080")
+                    .endKafkaAuthorizationOpa()
+                .endKafka()
+                .build();
+
+        assertDoesNotThrow(() -> KRaftUtils.validateKafkaCrForZooKeeper(spec, true));
+    }
+
+    @ParallelTest
+    public void testZooBasedClusterWithMissingZooSection() {
+        KafkaSpec spec = new KafkaSpecBuilder()
+                .withNewKafka()
+                    .withReplicas(3)
+                    .withListeners(new GenericKafkaListenerBuilder()
+                            .withName("listener")
+                            .withPort(9092)
+                            .withTls(true)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withNewKafkaListenerAuthenticationTlsAuth()
+                            .endKafkaListenerAuthenticationTlsAuth()
+                            .build())
+                    .withNewEphemeralStorage()
+                    .endEphemeralStorage()
+                    .withNewKafkaAuthorizationOpa()
+                        .withUrl("http://opa:8080")
+                    .endKafkaAuthorizationOpa()
+                .endKafka()
+                .build();
+
+        InvalidResourceException e = assertThrows(InvalidResourceException.class, () -> KRaftUtils.validateKafkaCrForZooKeeper(spec, false));
+        assertThat(e.getMessage(), containsString("The .spec.zookeeper section of the Kafka custom resource is missing. This section is required for a ZooKeeper-based cluster."));
+    }
+
+    @ParallelTest
+    public void testZooBasedClusterWithMissingReplicasAndStorage() {
+        KafkaSpec spec = new KafkaSpecBuilder()
+                .withNewZookeeper()
+                    .withReplicas(3)
+                    .withNewEphemeralStorage()
+                    .endEphemeralStorage()
+                .endZookeeper()
+                .withNewKafka()
+                    .withListeners(new GenericKafkaListenerBuilder()
+                            .withName("listener")
+                            .withPort(9092)
+                            .withTls(true)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withNewKafkaListenerAuthenticationTlsAuth()
+                            .endKafkaListenerAuthenticationTlsAuth()
+                            .build())
+                    .withNewKafkaAuthorizationOpa()
+                        .withUrl("http://opa:8080")
+                    .endKafkaAuthorizationOpa()
+                .endKafka()
+                .build();
+
+        InvalidResourceException e = assertThrows(InvalidResourceException.class, () -> KRaftUtils.validateKafkaCrForZooKeeper(spec, false));
+        assertThat(e.getMessage(), containsString("The .spec.kafka.replicas property of the Kafka custom resource is missing. This property is required for a ZooKeeper-based Kafka cluster that is not using Node Pools."));
+        assertThat(e.getMessage(), containsString("The .spec.kafka.storage section of the Kafka custom resource is missing. This section is required for a ZooKeeper-based Kafka cluster that is not using Node Pools."));
+    }
 }

@@ -70,4 +70,40 @@ public class KRaftUtils {
             throw new InvalidResourceException("Metadata version " + metadataVersion + " is invalid", e);
         }
     }
+
+    /**
+     * In ZooKeeper mode, some of the fields marked as not required (because they are not used in KRaft) are in fact
+     * required. This method validates that the fields are present and in case they are missing, it throws an exception.
+     *
+     * @param kafkaSpec         The .spec section of the Kafka CR which should be checked
+     * @param nodePoolsEnabled  Flag indicating whether Node Pools are enabled or not
+     */
+    public static void validateKafkaCrForZooKeeper(KafkaSpec kafkaSpec, boolean nodePoolsEnabled)   {
+        Set<String> errors = new HashSet<>(0);
+
+        if (kafkaSpec != null)  {
+            if (kafkaSpec.getZookeeper() == null)   {
+                errors.add("The .spec.zookeeper section of the Kafka custom resource is missing. " +
+                        "This section is required for a ZooKeeper-based cluster.");
+            }
+
+            if (!nodePoolsEnabled)  {
+                if (kafkaSpec.getKafka().getReplicas() == 0)   {
+                    errors.add("The .spec.kafka.replicas property of the Kafka custom resource is missing. " +
+                            "This property is required for a ZooKeeper-based Kafka cluster that is not using Node Pools.");
+                }
+
+                if (kafkaSpec.getKafka().getStorage() == null)   {
+                    errors.add("The .spec.kafka.storage section of the Kafka custom resource is missing. " +
+                            "This section is required for a ZooKeeper-based Kafka cluster that is not using Node Pools.");
+                }
+            }
+        } else {
+            errors.add("The .spec section of the Kafka custom resource is missing");
+        }
+
+        if (!errors.isEmpty())  {
+            throw new InvalidResourceException("Kafka configuration is not valid: " + errors);
+        }
+    }
 }

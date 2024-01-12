@@ -55,7 +55,6 @@ adjust:
   tier: 2
   environment+:
     TEST_PROFILE: operators
-    STRIMZI_FEATURE_GATES: "+UseKRaft"
 
 /kraft-components:
   summary: Run regression kraft strimzi test suite
@@ -64,7 +63,6 @@ adjust:
   tier: 2
   environment+:
     TEST_PROFILE: components
-    STRIMZI_FEATURE_GATES: "+UseKRaft"
 
 /acceptance:
   summary: Run acceptance strimzi test suite

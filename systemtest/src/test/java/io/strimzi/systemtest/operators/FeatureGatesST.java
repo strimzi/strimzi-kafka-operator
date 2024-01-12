@@ -176,7 +176,7 @@ public class FeatureGatesST extends AbstractST {
         final String kafkaNodePoolName = "kafka";
 
         // as the only FG set in the CO is 'KafkaNodePools' (kraft not included) Broker role is the only one that kafka broker can take
-        setupClusterOperatorWithFeatureGate(extensionContext, "+KafkaNodePools");
+        setupClusterOperatorWithFeatureGate(extensionContext, "");
 
         // setup clients
         final KafkaClients clients = new KafkaClientsBuilder()
@@ -239,7 +239,7 @@ public class FeatureGatesST extends AbstractST {
 
         LOGGER.info("Changing FG env variable to disable Kafka Node Pools");
         List<EnvVar> coEnvVars = kubeClient().getDeployment(clusterOperator.getDeploymentNamespace(), TestConstants.STRIMZI_DEPLOYMENT_NAME).getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
-        coEnvVars.stream().filter(env -> env.getName().equals(Environment.STRIMZI_FEATURE_GATES_ENV)).findFirst().get().setValue("-KafkaNodePools");
+        coEnvVars.stream().filter(env -> env.getName().equals(Environment.STRIMZI_FEATURE_GATES_ENV)).findFirst().get().setValue("-KafkaNodePools,-UseKRaft");
 
         Deployment coDep = kubeClient().getDeployment(clusterOperator.getDeploymentNamespace(), TestConstants.STRIMZI_DEPLOYMENT_NAME);
         coDep.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(coEnvVars);

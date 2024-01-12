@@ -91,9 +91,6 @@ public class KafkaUpgradeDowngradeWithKRaftMockTest {
                 .endMetadata()
                 .withNewSpec()
                     .withNewKafka()
-                        .withReplicas(3)
-                        .withNewEphemeralStorage()
-                        .endEphemeralStorage()
                         .withListeners(new GenericKafkaListenerBuilder()
                                 .withName("plain")
                                 .withPort(9092)
@@ -101,11 +98,6 @@ public class KafkaUpgradeDowngradeWithKRaftMockTest {
                                 .withTls(false)
                                 .build())
                     .endKafka()
-                    .withNewZookeeper()
-                        .withReplicas(3)
-                            .withNewEphemeralStorage()
-                            .endEphemeralStorage()
-                    .endZookeeper()
                     .withNewEntityOperator()
                         .withNewTopicOperator()
                         .endTopicOperator()
@@ -191,7 +183,6 @@ public class KafkaUpgradeDowngradeWithKRaftMockTest {
 
         ClusterOperatorConfig config = new ClusterOperatorConfig.ClusterOperatorConfigBuilder(ResourceUtils.dummyClusterOperatorConfig(), VERSIONS)
                 .with(ClusterOperatorConfig.OPERATION_TIMEOUT_MS.key(), "10000")
-                .with(ClusterOperatorConfig.FEATURE_GATES.key(), "+UseKRaft")
                 .build();
 
         operator = new KafkaAssemblyOperator(vertx, PFA, new MockCertManager(),

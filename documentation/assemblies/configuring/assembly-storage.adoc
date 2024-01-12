@@ -17,8 +17,7 @@ The supported storage types are:
 To configure storage, you specify `storage` properties in the custom resource of the component. 
 The storage type is set using the `storage.type` property.
 
-You can also use the preview of the node pools feature for advanced storage management of the Kafka cluster.
-You can specify storage configuration unique to each node pool used in the cluster. 
+When using node pools, you can specify storage configuration unique to each node pool used in the cluster.
 The same storage properties available to the `Kafka` resource are also available to the `KafkaNodePool` pool resource.
 
 The storage-related schema references provide more information on the storage configuration properties:

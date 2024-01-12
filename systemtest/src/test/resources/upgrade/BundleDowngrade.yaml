@@ -56,7 +56,7 @@
   filePaths:
     kafkaBefore: "/examples/kafka/kafka-persistent.yaml"
     kafkaAfter: "/examples/kafka/kafka-persistent.yaml"
-    kafkaKRaftBefore: "/examples/kafka/nodepools/kafka-with-kraft.yaml"
+    kafkaKRaftBefore: "/examples/kafka/kraft/kafka.yaml"
     kafkaKRaftAfter: "/examples/kafka/nodepools/kafka-with-kraft.yaml"
 - fromVersion: HEAD
   toVersion: 0.39.0
@@ -84,5 +84,5 @@
   filePaths:
     kafkaBefore: "/examples/kafka/kafka-persistent.yaml"
     kafkaAfter: "/examples/kafka/kafka-persistent.yaml"
-    kafkaKRaftBefore: "/examples/kafka/nodepools/kafka-with-kraft.yaml"
+    kafkaKRaftBefore: "/examples/kafka/kraft/kafka.yaml"
     kafkaKRaftAfter: "/examples/kafka/nodepools/kafka-with-kraft.yaml"
