@@ -220,6 +220,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             // Validates features which are currently not supported in KRaft mode
             try {
                 KRaftUtils.validateKafkaCrForKRaft(reconcileState.kafkaAssembly.getSpec(), featureGates.unidirectionalTopicOperatorEnabled());
+                KRaftUtils.kraftWarnings(reconcileState.kafkaAssembly, reconcileState.kafkaStatus);
             } catch (InvalidResourceException e)    {
                 return Future.failedFuture(e);
             }
@@ -227,6 +228,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             // Validates the properties required for a ZooKeeper based Kafka cluster
             try {
                 KRaftUtils.validateKafkaCrForZooKeeper(reconcileState.kafkaAssembly.getSpec(), nodePoolsEnabled);
+
+                if (nodePoolsEnabled)   {
+                    KRaftUtils.nodePoolWarnings(reconcileState.kafkaAssembly, reconcileState.kafkaStatus);
+                }
             } catch (InvalidResourceException e)    {
                 return Future.failedFuture(e);
             }
