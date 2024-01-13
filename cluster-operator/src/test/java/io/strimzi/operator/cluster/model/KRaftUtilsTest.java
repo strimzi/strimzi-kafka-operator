@@ -359,7 +359,7 @@ public class KRaftUtilsTest {
         KafkaStatus status = new KafkaStatus();
         KRaftUtils.nodePoolWarnings(kafka, status);
 
-        assertThat(status.getConditions().size(), is(3));
+        assertThat(status.getConditions().size(), is(2));
 
         Condition condition = status.getConditions().stream().filter(c -> "UnusedReplicasConfiguration".equals(c.getReason())).findFirst().orElseThrow();
         assertThat(condition.getMessage(), is("The .spec.kafka.replicas property in the Kafka custom resource is ignored when node pools are used and should be removed from the custom resource."));
