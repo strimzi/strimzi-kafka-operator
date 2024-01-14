@@ -4,8 +4,12 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import io.strimzi.api.kafka.model.common.Condition;
+import io.strimzi.api.kafka.model.kafka.Kafka;
+import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaSpec;
 import io.strimzi.api.kafka.model.kafka.KafkaSpecBuilder;
+import io.strimzi.api.kafka.model.kafka.KafkaStatus;
 import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.kafka.entityoperator.EntityOperatorSpec;
 import io.strimzi.api.kafka.model.kafka.entityoperator.EntityOperatorSpecBuilder;
@@ -273,5 +277,98 @@ public class KRaftUtilsTest {
         InvalidResourceException e = assertThrows(InvalidResourceException.class, () -> KRaftUtils.validateKafkaCrForZooKeeper(spec, false));
         assertThat(e.getMessage(), containsString("The .spec.kafka.replicas property of the Kafka custom resource is missing. This property is required for a ZooKeeper-based Kafka cluster that is not using Node Pools."));
         assertThat(e.getMessage(), containsString("The .spec.kafka.storage section of the Kafka custom resource is missing. This section is required for a ZooKeeper-based Kafka cluster that is not using Node Pools."));
+    }
+
+    @ParallelTest
+    public void testKRaftWarnings() {
+        Kafka kafka = new KafkaBuilder()
+                .withNewSpec()
+                    .withNewZookeeper()
+                        .withReplicas(3)
+                        .withNewEphemeralStorage()
+                        .endEphemeralStorage()
+                    .endZookeeper()
+                    .withNewKafka()
+                        .withReplicas(3)
+                        .withListeners(new GenericKafkaListenerBuilder()
+                                .withName("listener")
+                                .withPort(9092)
+                                .withTls(true)
+                                .withType(KafkaListenerType.INTERNAL)
+                                .withNewKafkaListenerAuthenticationTlsAuth()
+                                .endKafkaListenerAuthenticationTlsAuth()
+                                .build())
+                        .withNewEphemeralStorage()
+                        .endEphemeralStorage()
+                        .withNewKafkaAuthorizationOpa()
+                            .withUrl("http://opa:8080")
+                        .endKafkaAuthorizationOpa()
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        KafkaStatus status = new KafkaStatus();
+        KRaftUtils.kraftWarnings(kafka, status);
+
+        assertThat(status.getConditions().size(), is(3));
+
+        Condition condition = status.getConditions().stream().filter(c -> "UnusedZooKeeperConfiguration".equals(c.getReason())).findFirst().orElseThrow();
+        assertThat(condition.getMessage(), is("The .spec.zookeeper section in the Kafka custom resource is ignored in KRaft mode and should be removed from the custom resource."));
+        assertThat(condition.getType(), is("Warning"));
+        assertThat(condition.getStatus(), is("True"));
+
+        condition = status.getConditions().stream().filter(c -> "UnusedReplicasConfiguration".equals(c.getReason())).findFirst().orElseThrow();
+        assertThat(condition.getMessage(), is("The .spec.kafka.replicas property in the Kafka custom resource is ignored when node pools are used and should be removed from the custom resource."));
+        assertThat(condition.getType(), is("Warning"));
+        assertThat(condition.getStatus(), is("True"));
+
+        condition = status.getConditions().stream().filter(c -> "UnusedStorageConfiguration".equals(c.getReason())).findFirst().orElseThrow();
+        assertThat(condition.getMessage(), is("The .spec.kafka.storage section in the Kafka custom resource is ignored when node pools are used and should be removed from the custom resource."));
+        assertThat(condition.getType(), is("Warning"));
+        assertThat(condition.getStatus(), is("True"));
+    }
+
+    @ParallelTest
+    public void testZooKeeperWarnings() {
+        Kafka kafka = new KafkaBuilder()
+                .withNewSpec()
+                    .withNewZookeeper()
+                        .withReplicas(3)
+                        .withNewEphemeralStorage()
+                        .endEphemeralStorage()
+                    .endZookeeper()
+                    .withNewKafka()
+                        .withReplicas(3)
+                        .withListeners(new GenericKafkaListenerBuilder()
+                                .withName("listener")
+                                .withPort(9092)
+                                .withTls(true)
+                                .withType(KafkaListenerType.INTERNAL)
+                                .withNewKafkaListenerAuthenticationTlsAuth()
+                                .endKafkaListenerAuthenticationTlsAuth()
+                                .build())
+                        .withNewEphemeralStorage()
+                        .endEphemeralStorage()
+                        .withNewKafkaAuthorizationOpa()
+                            .withUrl("http://opa:8080")
+                        .endKafkaAuthorizationOpa()
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        KafkaStatus status = new KafkaStatus();
+        KRaftUtils.nodePoolWarnings(kafka, status);
+
+        assertThat(status.getConditions().size(), is(2));
+
+        Condition condition = status.getConditions().stream().filter(c -> "UnusedReplicasConfiguration".equals(c.getReason())).findFirst().orElseThrow();
+        assertThat(condition.getMessage(), is("The .spec.kafka.replicas property in the Kafka custom resource is ignored when node pools are used and should be removed from the custom resource."));
+        assertThat(condition.getType(), is("Warning"));
+        assertThat(condition.getStatus(), is("True"));
+
+        condition = status.getConditions().stream().filter(c -> "UnusedStorageConfiguration".equals(c.getReason())).findFirst().orElseThrow();
+        assertThat(condition.getMessage(), is("The .spec.kafka.storage section in the Kafka custom resource is ignored when node pools are used and should be removed from the custom resource."));
+        assertThat(condition.getType(), is("Warning"));
+        assertThat(condition.getStatus(), is("True"));
     }
 }
