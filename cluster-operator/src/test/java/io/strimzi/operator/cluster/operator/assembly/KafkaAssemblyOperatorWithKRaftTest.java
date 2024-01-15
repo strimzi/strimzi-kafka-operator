@@ -45,7 +45,6 @@ import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.cluster.model.RestartReason;
 import io.strimzi.operator.cluster.model.RestartReasons;
 import io.strimzi.operator.cluster.model.SharedEnvironmentProvider;
-import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.cluster.model.nodepools.NodePoolUtils;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
@@ -89,14 +88,11 @@ import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.empty;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.startsWith;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -105,7 +101,7 @@ import static org.mockito.Mockito.when;
  */
 @ExtendWith(VertxExtension.class)
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
-public class KafkaAssemblyOperatorWithPoolsTest {
+public class KafkaAssemblyOperatorWithKRaftTest {
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
     private static final SharedEnvironmentProvider SHARED_ENV_PROVIDER = new MockSharedEnvironmentProvider();
     private static final ClusterOperatorConfig CONFIG = ResourceUtils.dummyClusterOperatorConfig();
@@ -125,7 +121,7 @@ public class KafkaAssemblyOperatorWithPoolsTest {
                 .withNewMetadata()
                     .withName(CLUSTER_NAME)
                     .withNamespace(NAMESPACE)
-                    .withAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled"))
+                    .withAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled", Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled"))
                 .endMetadata()
                 .withNewSpec()
                     .withNewKafka()
@@ -136,17 +132,12 @@ public class KafkaAssemblyOperatorWithPoolsTest {
                                 .withTls(false)
                                 .build())
                     .endKafka()
-                    .withNewZookeeper()
-                        .withReplicas(3)
-                        .withNewEphemeralStorage()
-                        .endEphemeralStorage()
-                    .endZookeeper()
                 .endSpec()
                 .build();
 
-    private final static KafkaNodePool POOL_A = new KafkaNodePoolBuilder()
+    private final static KafkaNodePool CONTROLLERS = new KafkaNodePoolBuilder()
             .withNewMetadata()
-                .withName("pool-a")
+                .withName("controllers")
                 .withNamespace(NAMESPACE)
                 .withGeneration(1L)
                 .withLabels(Map.of(Labels.STRIMZI_CLUSTER_LABEL, CLUSTER_NAME))
@@ -156,19 +147,19 @@ public class KafkaAssemblyOperatorWithPoolsTest {
                 .withNewJbodStorage()
                     .withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build())
                 .endJbodStorage()
-                .withRoles(ProcessRoles.BROKER)
+                .withRoles(ProcessRoles.CONTROLLER)
                 .withResources(new ResourceRequirementsBuilder().withRequests(Map.of("cpu", new Quantity("4"))).build())
             .endSpec()
             .build();
-    private final static KafkaNodePool POOL_B = new KafkaNodePoolBuilder()
+    private final static KafkaNodePool BROKERS = new KafkaNodePoolBuilder()
             .withNewMetadata()
-                .withName("pool-b")
+                .withName("brokers")
                 .withNamespace(NAMESPACE)
                 .withGeneration(1L)
                 .withLabels(Map.of(Labels.STRIMZI_CLUSTER_LABEL, CLUSTER_NAME))
             .endMetadata()
             .withNewSpec()
-                .withReplicas(2)
+                .withReplicas(3)
                 .withNewJbodStorage()
                     .withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("200Gi").build())
                 .endJbodStorage()
@@ -176,8 +167,8 @@ public class KafkaAssemblyOperatorWithPoolsTest {
                 .withResources(new ResourceRequirementsBuilder().withRequests(Map.of("cpu", new Quantity("6"))).build())
             .endSpec()
             .build();
-    private static final List<KafkaPool> POOLS = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(POOL_A, POOL_B), Map.of(), Map.of(), false, SHARED_ENV_PROVIDER);
-    private static final KafkaCluster KAFKA_CLUSTER = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, POOLS, VERSIONS, KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, false, null, SHARED_ENV_PROVIDER);
+    private static final List<KafkaPool> POOLS = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(CONTROLLERS, BROKERS), Map.of(), Map.of(), true, SHARED_ENV_PROVIDER);
+    private static final KafkaCluster KAFKA_CLUSTER = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, POOLS, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, null, SHARED_ENV_PROVIDER);
 
     private static final Map<Integer, Map<String, String>> ADVERTISED_HOSTNAMES = Map.of(
             0, Map.of("PLAIN_9092", "broker-0"),
@@ -186,7 +177,8 @@ public class KafkaAssemblyOperatorWithPoolsTest {
             3, Map.of("PLAIN_9092", "broker-3"),
             4, Map.of("PLAIN_9092", "broker-4"),
             5, Map.of("PLAIN_9092", "broker-5"),
-            6, Map.of("PLAIN_9092", "broker-6")
+            6, Map.of("PLAIN_9092", "broker-6"),
+            7, Map.of("PLAIN_9092", "broker-7")
     );
 
     private static final Map<Integer, Map<String, String>> ADVERTISED_PORTS = Map.of(
@@ -196,7 +188,8 @@ public class KafkaAssemblyOperatorWithPoolsTest {
             3, Map.of("PLAIN_9092", "10003"),
             4, Map.of("PLAIN_9092", "10004"),
             5, Map.of("PLAIN_9092", "10005"),
-            6, Map.of("PLAIN_9092", "10006")
+            6, Map.of("PLAIN_9092", "10006"),
+            7, Map.of("PLAIN_9092", "10007")
     );
 
     private final static ClusterCa CLUSTER_CA = new ClusterCa(
@@ -244,8 +237,6 @@ public class KafkaAssemblyOperatorWithPoolsTest {
      */
     @Test
     public void testRegularReconciliation(VertxTestContext context)  {
-        ZookeeperCluster zkCluster = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, VERSIONS, SHARED_ENV_PROVIDER);
-        StrimziPodSet zkPodSet = zkCluster.generatePodSet(KAFKA.getSpec().getZookeeper().getReplicas(), false, null, null, podNum -> null);
         List<StrimziPodSet> kafkaPodSets = KAFKA_CLUSTER.generatePodSets(false, null, null, brokerId -> null);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
@@ -262,9 +253,6 @@ public class KafkaAssemblyOperatorWithPoolsTest {
         when(mockCmOps.deleteAsync(any(), any(), cmDeletionCaptor.capture(), anyBoolean())).thenReturn(Future.succeededFuture());
 
         StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
-        // Zoo
-        when(mockPodSetOps.getAsync(any(), eq(zkCluster.getComponentName()))).thenReturn(Future.succeededFuture(zkPodSet));
-        when(mockPodSetOps.reconcile(any(), any(), eq(zkCluster.getComponentName()), any())).thenReturn(Future.succeededFuture(ReconcileResult.noop(zkPodSet)));
         // Kafka
         when(mockPodSetOps.listAsync(any(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenReturn(Future.succeededFuture(kafkaPodSets));
         when(mockPodSetOps.batchReconcile(any(), any(), any(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenAnswer(i -> {
@@ -280,11 +268,9 @@ public class KafkaAssemblyOperatorWithPoolsTest {
         });
 
         StatefulSetOperator mockStsOps = supplier.stsOperations;
-        when(mockStsOps.getAsync(any(), eq(zkCluster.getComponentName()))).thenReturn(Future.succeededFuture(null)); // Zoo STS is queried and deleted if it still exists
         when(mockStsOps.getAsync(any(), eq(KAFKA_CLUSTER.getComponentName()))).thenReturn(Future.succeededFuture(null)); // Kafka STS is queried and deleted if it still exists
 
         PodOperator mockPodOps = supplier.podOperations;
-        when(mockPodOps.listAsync(any(), eq(zkCluster.getSelectorLabels()))).thenReturn(Future.succeededFuture(Collections.emptyList()));
         when(mockPodOps.listAsync(any(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenReturn(Future.succeededFuture(Collections.emptyList()));
         when(mockPodOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(Collections.emptyList()));
 
@@ -297,18 +283,6 @@ public class KafkaAssemblyOperatorWithPoolsTest {
         ArgumentCaptor<KafkaNodePool> kafkaNodePoolStatusCaptor = ArgumentCaptor.forClass(KafkaNodePool.class);
         when(mockKafkaNodePoolOps.updateStatusAsync(any(), kafkaNodePoolStatusCaptor.capture())).thenReturn(Future.succeededFuture());
 
-        MockZooKeeperReconciler zr = new MockZooKeeperReconciler(
-                new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
-                vertx,
-                CONFIG,
-                supplier,
-                new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
-                KAFKA,
-                VERSION_CHANGE,
-                null,
-                0,
-                CLUSTER_CA);
-
         MockKafkaReconciler kr = new MockKafkaReconciler(
                 new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
                 vertx,
@@ -316,7 +290,7 @@ public class KafkaAssemblyOperatorWithPoolsTest {
                 supplier,
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 KAFKA,
-                List.of(POOL_A, POOL_B),
+                List.of(CONTROLLERS, BROKERS),
                 VERSION_CHANGE,
                 Map.of(),
                 Map.of(),
@@ -329,26 +303,21 @@ public class KafkaAssemblyOperatorWithPoolsTest {
                 PASSWORD_GENERATOR,
                 supplier,
                 CONFIG,
-                zr,
                 kr);
 
         Checkpoint async = context.checkpoint();
         kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME))
                 .onComplete(context.succeeding(v -> context.verify(() -> {
-                    assertThat(zr.maybeRollZooKeeperInvocations, is(1));
-                    assertThat(zr.zooPodNeedsRestart.apply(podFromPodSet(zkPodSet, "my-cluster-zookeeper-0")), empty());
-                    assertThat(zr.zooPodNeedsRestart.apply(podFromPodSet(zkPodSet, "my-cluster-zookeeper-1")), empty());
-                    assertThat(zr.zooPodNeedsRestart.apply(podFromPodSet(zkPodSet, "my-cluster-zookeeper-2")), empty());
-
                     assertThat(kr.maybeRollKafkaInvocations, is(1));
-                    assertThat(kr.kafkaPodNeedsRestart.apply(podFromPodSet(kafkaPodSets.get(0), "my-cluster-pool-a-0")), is(RestartReasons.empty()));
-                    assertThat(kr.kafkaPodNeedsRestart.apply(podFromPodSet(kafkaPodSets.get(0), "my-cluster-pool-a-1")), is(RestartReasons.empty()));
-                    assertThat(kr.kafkaPodNeedsRestart.apply(podFromPodSet(kafkaPodSets.get(0), "my-cluster-pool-a-2")), is(RestartReasons.empty()));
-                    assertThat(kr.kafkaPodNeedsRestart.apply(podFromPodSet(kafkaPodSets.get(1), "my-cluster-pool-b-3")), is(RestartReasons.empty()));
-                    assertThat(kr.kafkaPodNeedsRestart.apply(podFromPodSet(kafkaPodSets.get(1), "my-cluster-pool-b-4")), is(RestartReasons.empty()));
+                    assertThat(kr.kafkaPodNeedsRestart.apply(podFromPodSet(kafkaPodSets.get(0), "my-cluster-controllers-0")), is(RestartReasons.empty()));
+                    assertThat(kr.kafkaPodNeedsRestart.apply(podFromPodSet(kafkaPodSets.get(0), "my-cluster-controllers-1")), is(RestartReasons.empty()));
+                    assertThat(kr.kafkaPodNeedsRestart.apply(podFromPodSet(kafkaPodSets.get(0), "my-cluster-controllers-2")), is(RestartReasons.empty()));
+                    assertThat(kr.kafkaPodNeedsRestart.apply(podFromPodSet(kafkaPodSets.get(1), "my-cluster-brokers-3")), is(RestartReasons.empty()));
+                    assertThat(kr.kafkaPodNeedsRestart.apply(podFromPodSet(kafkaPodSets.get(1), "my-cluster-brokers-4")), is(RestartReasons.empty()));
+                    assertThat(kr.kafkaPodNeedsRestart.apply(podFromPodSet(kafkaPodSets.get(1), "my-cluster-brokers-5")), is(RestartReasons.empty()));
 
-                    assertThat(cmReconciliationCaptor.getAllValues().size(), is(6));
-                    assertThat(cmReconciliationCaptor.getAllValues(), is(List.of("my-cluster-pool-a-0", "my-cluster-pool-a-1", "my-cluster-pool-a-2", "my-cluster-pool-b-3", "my-cluster-pool-b-4", "my-cluster-kafka-config")));
+                    assertThat(cmReconciliationCaptor.getAllValues().size(), is(7));
+                    assertThat(cmReconciliationCaptor.getAllValues(), is(List.of("my-cluster-controllers-0", "my-cluster-controllers-1", "my-cluster-controllers-2", "my-cluster-brokers-3", "my-cluster-brokers-4", "my-cluster-brokers-5", "my-cluster-kafka-config")));
 
                     assertThat(cmDeletionCaptor.getAllValues().size(), is(0));
 
@@ -358,25 +327,24 @@ public class KafkaAssemblyOperatorWithPoolsTest {
                     assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(0).getStatus().getNodeIds(), is(List.of(0, 1, 2)));
                     assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(0).getStatus().getObservedGeneration(), is(1L));
                     assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(0).getStatus().getRoles().size(), is(1));
-                    assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(0).getStatus().getRoles(), hasItems(ProcessRoles.BROKER));
-                    assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(1).getStatus().getReplicas(), is(2));
-                    assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(1).getStatus().getNodeIds(), is(List.of(3, 4)));
+                    assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(0).getStatus().getRoles(), hasItems(ProcessRoles.CONTROLLER));
+                    assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(1).getStatus().getReplicas(), is(3));
+                    assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(1).getStatus().getNodeIds(), is(List.of(3, 4, 5)));
                     assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(1).getStatus().getObservedGeneration(), is(1L));
                     assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(1).getStatus().getRoles().size(), is(1));
                     assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(1).getStatus().getRoles(), hasItems(ProcessRoles.BROKER));
-                    assertThat(kao.state.kafkaStatus.getKafkaNodePools().stream().map(UsedNodePoolStatus::getName).toList(), is(List.of("pool-a", "pool-b")));
+                    assertThat(kao.state.kafkaStatus.getKafkaNodePools().stream().map(UsedNodePoolStatus::getName).toList(), is(List.of("brokers", "controllers")));
 
                     // Assert the info passed over for Cruise Control
-                    assertThat(kr.kafkaBrokerNodes().size(), is(5));
-                    assertThat(kr.kafkaBrokerNodes().stream().map(NodeRef::podName).toList(), is(List.of("my-cluster-pool-a-0", "my-cluster-pool-a-1", "my-cluster-pool-a-2", "my-cluster-pool-b-3", "my-cluster-pool-b-4")));
+                    assertThat(kr.kafkaBrokerNodes().size(), is(3));
+                    assertThat(kr.kafkaBrokerNodes().stream().map(NodeRef::podName).toList(), is(List.of("my-cluster-brokers-3", "my-cluster-brokers-4", "my-cluster-brokers-5")));
 
                     assertThat(kr.kafkaStorage().size(), is(2));
-                    assertThat(kr.kafkaStorage().get("pool-a"), is(new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build()).build()));
-                    assertThat(kr.kafkaStorage().get("pool-b"), is(new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("200Gi").build()).build()));
+                    assertThat(kr.kafkaStorage().get("controllers"), is(new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build()).build()));
+                    assertThat(kr.kafkaStorage().get("brokers"), is(new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("200Gi").build()).build()));
 
-                    assertThat(kr.kafkaBrokerResourceRequirements().size(), is(2));
-                    assertThat(kr.kafkaBrokerResourceRequirements().get("pool-a"), is(new ResourceRequirementsBuilder().withRequests(Map.of("cpu", new Quantity("4"))).build()));
-                    assertThat(kr.kafkaBrokerResourceRequirements().get("pool-b"), is(new ResourceRequirementsBuilder().withRequests(Map.of("cpu", new Quantity("6"))).build()));
+                    assertThat(kr.kafkaBrokerResourceRequirements().size(), is(1));
+                    assertThat(kr.kafkaBrokerResourceRequirements().get("brokers"), is(new ResourceRequirementsBuilder().withRequests(Map.of("cpu", new Quantity("6"))).build()));
 
                     async.flag();
                 })));
@@ -389,8 +357,6 @@ public class KafkaAssemblyOperatorWithPoolsTest {
      */
     @Test
     public void testFirstReconciliation(VertxTestContext context)  {
-        ZookeeperCluster zkCluster = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, VERSIONS, SHARED_ENV_PROVIDER);
-        StrimziPodSet zkPodSet = zkCluster.generatePodSet(KAFKA.getSpec().getZookeeper().getReplicas(), false, null, null, podNum -> null);
         List<StrimziPodSet> kafkaPodSets = KAFKA_CLUSTER.generatePodSets(false, null, null, brokerId -> null);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
@@ -407,9 +373,6 @@ public class KafkaAssemblyOperatorWithPoolsTest {
         when(mockCmOps.deleteAsync(any(), any(), cmDeletionCaptor.capture(), anyBoolean())).thenReturn(Future.succeededFuture());
 
         StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
-        // Zoo
-        when(mockPodSetOps.getAsync(any(), eq(zkCluster.getComponentName()))).thenReturn(Future.succeededFuture(null)); // The PodSet does not exist yet in the first reconciliation
-        when(mockPodSetOps.reconcile(any(), any(), eq(zkCluster.getComponentName()), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(zkPodSet)));
         // Kafka
         when(mockPodSetOps.listAsync(any(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenReturn(Future.succeededFuture(List.of()));
         when(mockPodSetOps.batchReconcile(any(), any(), any(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenAnswer(i -> {
@@ -425,15 +388,11 @@ public class KafkaAssemblyOperatorWithPoolsTest {
         });
 
         StatefulSetOperator mockStsOps = supplier.stsOperations;
-        // Zoo
-        when(mockStsOps.getAsync(any(), eq(zkCluster.getComponentName()))).thenReturn(Future.succeededFuture(new StatefulSetBuilder().withNewMetadata().withName(zkCluster.getComponentName()).withNamespace(NAMESPACE).endMetadata().build())); // Zoo STS still exists in the first reconciliation
-        when(mockStsOps.deleteAsync(any(), any(), eq(zkCluster.getComponentName()), eq(false))).thenReturn(Future.succeededFuture()); // The Zoo STS will be deleted during the reconciliation
         // Kafka
         when(mockStsOps.getAsync(any(), eq(KAFKA_CLUSTER.getComponentName()))).thenReturn(Future.succeededFuture(new StatefulSetBuilder().withNewMetadata().withName(KAFKA_CLUSTER.getComponentName()).withNamespace(NAMESPACE).endMetadata().build()));
         when(mockStsOps.deleteAsync(any(), any(), eq(KAFKA_CLUSTER.getComponentName()), eq(false))).thenReturn(Future.succeededFuture()); // The Kafka STS will be deleted during the reconciliation
 
         PodOperator mockPodOps = supplier.podOperations;
-        when(mockPodOps.listAsync(any(), eq(zkCluster.getSelectorLabels()))).thenReturn(Future.succeededFuture(Collections.emptyList()));
         when(mockPodOps.listAsync(any(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenReturn(Future.succeededFuture(Collections.emptyList()));
         when(mockPodOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(Collections.emptyList()));
 
@@ -445,18 +404,6 @@ public class KafkaAssemblyOperatorWithPoolsTest {
         CrdOperator<KubernetesClient, KafkaNodePool, KafkaNodePoolList> mockKafkaNodePoolOps = supplier.kafkaNodePoolOperator;
         when(mockKafkaNodePoolOps.updateStatusAsync(any(), any())).thenReturn(Future.succeededFuture());
 
-        MockZooKeeperReconciler zr = new MockZooKeeperReconciler(
-                new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
-                vertx,
-                CONFIG,
-                supplier,
-                new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
-                KAFKA,
-                VERSION_CHANGE,
-                null,
-                0,
-                CLUSTER_CA);
-
         MockKafkaReconciler kr = new MockKafkaReconciler(
                 new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
                 vertx,
@@ -464,7 +411,7 @@ public class KafkaAssemblyOperatorWithPoolsTest {
                 supplier,
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 KAFKA,
-                List.of(POOL_A, POOL_B),
+                List.of(CONTROLLERS, BROKERS),
                 VERSION_CHANGE,
                 Map.of(),
                 Map.of(),
@@ -477,29 +424,22 @@ public class KafkaAssemblyOperatorWithPoolsTest {
                 PASSWORD_GENERATOR,
                 supplier,
                 CONFIG,
-                zr,
                 kr);
 
         Checkpoint async = context.checkpoint();
         kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME))
                 .onComplete(context.succeeding(v -> context.verify(() -> {
-                    // Test that the old Zoo STS was deleted
-                    verify(mockStsOps, times(1)).deleteAsync(any(), any(), eq(zkCluster.getComponentName()), eq(false));
-
-                    assertThat(zr.maybeRollZooKeeperInvocations, is(1));
-                    assertThat(zr.zooPodNeedsRestart.apply(podFromPodSet(zkPodSet, "my-cluster-zookeeper-0")), empty());
-                    assertThat(zr.zooPodNeedsRestart.apply(podFromPodSet(zkPodSet, "my-cluster-zookeeper-1")), empty());
-                    assertThat(zr.zooPodNeedsRestart.apply(podFromPodSet(zkPodSet, "my-cluster-zookeeper-2")), empty());
 
                     assertThat(kr.maybeRollKafkaInvocations, is(1));
-                    assertThat(kr.kafkaPodNeedsRestart.apply(podFromPodSet(kafkaPodSets.get(0), "my-cluster-pool-a-0")), is(RestartReasons.empty()));
-                    assertThat(kr.kafkaPodNeedsRestart.apply(podFromPodSet(kafkaPodSets.get(0), "my-cluster-pool-a-1")), is(RestartReasons.empty()));
-                    assertThat(kr.kafkaPodNeedsRestart.apply(podFromPodSet(kafkaPodSets.get(0), "my-cluster-pool-a-2")), is(RestartReasons.empty()));
-                    assertThat(kr.kafkaPodNeedsRestart.apply(podFromPodSet(kafkaPodSets.get(1), "my-cluster-pool-b-3")), is(RestartReasons.empty()));
-                    assertThat(kr.kafkaPodNeedsRestart.apply(podFromPodSet(kafkaPodSets.get(1), "my-cluster-pool-b-4")), is(RestartReasons.empty()));
+                    assertThat(kr.kafkaPodNeedsRestart.apply(podFromPodSet(kafkaPodSets.get(0), "my-cluster-controllers-0")), is(RestartReasons.empty()));
+                    assertThat(kr.kafkaPodNeedsRestart.apply(podFromPodSet(kafkaPodSets.get(0), "my-cluster-controllers-1")), is(RestartReasons.empty()));
+                    assertThat(kr.kafkaPodNeedsRestart.apply(podFromPodSet(kafkaPodSets.get(0), "my-cluster-controllers-2")), is(RestartReasons.empty()));
+                    assertThat(kr.kafkaPodNeedsRestart.apply(podFromPodSet(kafkaPodSets.get(1), "my-cluster-brokers-3")), is(RestartReasons.empty()));
+                    assertThat(kr.kafkaPodNeedsRestart.apply(podFromPodSet(kafkaPodSets.get(1), "my-cluster-brokers-4")), is(RestartReasons.empty()));
+                    assertThat(kr.kafkaPodNeedsRestart.apply(podFromPodSet(kafkaPodSets.get(1), "my-cluster-brokers-5")), is(RestartReasons.empty()));
 
-                    assertThat(cmReconciliationCaptor.getAllValues().size(), is(6));
-                    assertThat(cmReconciliationCaptor.getAllValues(), is(List.of("my-cluster-pool-a-0", "my-cluster-pool-a-1", "my-cluster-pool-a-2", "my-cluster-pool-b-3", "my-cluster-pool-b-4", "my-cluster-kafka-config")));
+                    assertThat(cmReconciliationCaptor.getAllValues().size(), is(7));
+                    assertThat(cmReconciliationCaptor.getAllValues(), is(List.of("my-cluster-controllers-0", "my-cluster-controllers-1", "my-cluster-controllers-2", "my-cluster-brokers-3", "my-cluster-brokers-4", "my-cluster-brokers-5", "my-cluster-kafka-config")));
 
                     assertThat(cmDeletionCaptor.getAllValues().size(), is(0));
 
@@ -513,25 +453,17 @@ public class KafkaAssemblyOperatorWithPoolsTest {
      * @param context   Test context
      */
     @Test
-    public void testReconciliationWithRoll(VertxTestContext context)  {
+    public void testReconciliationWithRollDueToImageChange(VertxTestContext context)  {
         Kafka oldKafka = new KafkaBuilder(KAFKA)
                 .editSpec()
-                    .editZookeeper()
-                        .withImage("old-image:latest")
-                    .endZookeeper()
                     .editKafka()
                         .withImage("old-image:latest")
                     .endKafka()
                 .endSpec()
                 .build();
 
-        ZookeeperCluster oldZkCluster = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, oldKafka, VERSIONS, SHARED_ENV_PROVIDER);
-        StrimziPodSet oldZkPodSet = oldZkCluster.generatePodSet(KAFKA.getSpec().getZookeeper().getReplicas(), false, null, null, podNum -> null);
-        //List<KafkaPool> oldPools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, oldKafka, null, Map.of(), Map.of(), false);
-        KafkaCluster oldKafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, oldKafka, POOLS, VERSIONS, KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, false, null, SHARED_ENV_PROVIDER);
+        KafkaCluster oldKafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, oldKafka, POOLS, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, null, SHARED_ENV_PROVIDER);
         List<StrimziPodSet> oldKafkaPodSets = oldKafkaCluster.generatePodSets(false, null, null, brokerId -> null);
-
-        ZookeeperCluster newZkCluster = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, VERSIONS, SHARED_ENV_PROVIDER);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
@@ -545,8 +477,6 @@ public class KafkaAssemblyOperatorWithPoolsTest {
         when(mockCmOps.deleteAsync(any(), any(), eq("my-cluster-kafka-config"), anyBoolean())).thenReturn(Future.succeededFuture());
 
         StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
-        when(mockPodSetOps.getAsync(any(), eq(newZkCluster.getComponentName()))).thenReturn(Future.succeededFuture(oldZkPodSet));
-        when(mockPodSetOps.reconcile(any(), any(), eq(newZkCluster.getComponentName()), any())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.noop(i.getArgument(3))));
         when(mockPodSetOps.listAsync(any(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenReturn(Future.succeededFuture(oldKafkaPodSets));
         when(mockPodSetOps.batchReconcile(any(), any(), any(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenAnswer(i -> {
             List<StrimziPodSet> podSets = i.getArgument(2);
@@ -560,11 +490,9 @@ public class KafkaAssemblyOperatorWithPoolsTest {
         });
 
         StatefulSetOperator mockStsOps = supplier.stsOperations;
-        when(mockStsOps.getAsync(any(), eq(newZkCluster.getComponentName()))).thenReturn(Future.succeededFuture(null)); // Zoo STS is queried and deleted if it still exists
         when(mockStsOps.getAsync(any(), eq(KAFKA_CLUSTER.getComponentName()))).thenReturn(Future.succeededFuture(null)); // Kafka STS is queried and deleted if it still exists
 
         PodOperator mockPodOps = supplier.podOperations;
-        when(mockPodOps.listAsync(any(), eq(newZkCluster.getSelectorLabels()))).thenReturn(Future.succeededFuture(Collections.emptyList()));
         when(mockPodOps.listAsync(any(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenReturn(Future.succeededFuture(Collections.emptyList()));
         when(mockPodOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(Collections.emptyList()));
 
@@ -576,18 +504,6 @@ public class KafkaAssemblyOperatorWithPoolsTest {
         CrdOperator<KubernetesClient, KafkaNodePool, KafkaNodePoolList> mockKafkaNodePoolOps = supplier.kafkaNodePoolOperator;
         when(mockKafkaNodePoolOps.updateStatusAsync(any(), any())).thenReturn(Future.succeededFuture());
 
-        MockZooKeeperReconciler zr = new MockZooKeeperReconciler(
-                new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
-                vertx,
-                CONFIG,
-                supplier,
-                new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
-                KAFKA,
-                VERSION_CHANGE,
-                null,
-                0,
-                CLUSTER_CA);
-
         MockKafkaReconciler kr = new MockKafkaReconciler(
                 new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
                 vertx,
@@ -595,7 +511,7 @@ public class KafkaAssemblyOperatorWithPoolsTest {
                 supplier,
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 KAFKA,
-                List.of(POOL_A, POOL_B),
+                List.of(CONTROLLERS, BROKERS),
                 VERSION_CHANGE,
                 Map.of(),
                 Map.of(),
@@ -608,57 +524,40 @@ public class KafkaAssemblyOperatorWithPoolsTest {
                 PASSWORD_GENERATOR,
                 supplier,
                 CONFIG,
-                zr,
                 kr);
 
         Checkpoint async = context.checkpoint();
         kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME))
                 .onComplete(context.succeeding(v -> context.verify(() -> {
-                    assertThat(zr.maybeRollZooKeeperInvocations, is(1));
-                    assertThat(zr.zooPodNeedsRestart.apply(podFromPodSet(oldZkPodSet, "my-cluster-zookeeper-0")), is(List.of("Pod has old revision")));
-                    assertThat(zr.zooPodNeedsRestart.apply(podFromPodSet(oldZkPodSet, "my-cluster-zookeeper-1")), is(List.of("Pod has old revision")));
-                    assertThat(zr.zooPodNeedsRestart.apply(podFromPodSet(oldZkPodSet, "my-cluster-zookeeper-2")), is(List.of("Pod has old revision")));
-
                     assertThat(kr.maybeRollKafkaInvocations, is(1));
-                    assertThat(kr.kafkaPodNeedsRestart.apply(podFromPodSet(oldKafkaPodSets.get(0), "my-cluster-pool-a-0")), is(RestartReasons.of(RestartReason.POD_HAS_OLD_REVISION)));
-                    assertThat(kr.kafkaPodNeedsRestart.apply(podFromPodSet(oldKafkaPodSets.get(0), "my-cluster-pool-a-1")), is(RestartReasons.of(RestartReason.POD_HAS_OLD_REVISION)));
-                    assertThat(kr.kafkaPodNeedsRestart.apply(podFromPodSet(oldKafkaPodSets.get(0), "my-cluster-pool-a-2")), is(RestartReasons.of(RestartReason.POD_HAS_OLD_REVISION)));
-                    assertThat(kr.kafkaPodNeedsRestart.apply(podFromPodSet(oldKafkaPodSets.get(1), "my-cluster-pool-b-3")), is(RestartReasons.of(RestartReason.POD_HAS_OLD_REVISION)));
-                    assertThat(kr.kafkaPodNeedsRestart.apply(podFromPodSet(oldKafkaPodSets.get(1), "my-cluster-pool-b-4")), is(RestartReasons.of(RestartReason.POD_HAS_OLD_REVISION)));
+                    assertThat(kr.kafkaPodNeedsRestart.apply(podFromPodSet(oldKafkaPodSets.get(0), "my-cluster-controllers-0")), is(RestartReasons.of(RestartReason.POD_HAS_OLD_REVISION)));
+                    assertThat(kr.kafkaPodNeedsRestart.apply(podFromPodSet(oldKafkaPodSets.get(0), "my-cluster-controllers-1")), is(RestartReasons.of(RestartReason.POD_HAS_OLD_REVISION)));
+                    assertThat(kr.kafkaPodNeedsRestart.apply(podFromPodSet(oldKafkaPodSets.get(0), "my-cluster-controllers-2")), is(RestartReasons.of(RestartReason.POD_HAS_OLD_REVISION)));
+                    assertThat(kr.kafkaPodNeedsRestart.apply(podFromPodSet(oldKafkaPodSets.get(1), "my-cluster-brokers-3")), is(RestartReasons.of(RestartReason.POD_HAS_OLD_REVISION)));
+                    assertThat(kr.kafkaPodNeedsRestart.apply(podFromPodSet(oldKafkaPodSets.get(1), "my-cluster-brokers-4")), is(RestartReasons.of(RestartReason.POD_HAS_OLD_REVISION)));
+                    assertThat(kr.kafkaPodNeedsRestart.apply(podFromPodSet(oldKafkaPodSets.get(1), "my-cluster-brokers-5")), is(RestartReasons.of(RestartReason.POD_HAS_OLD_REVISION)));
 
                     async.flag();
                 })));
     }
 
     /**
-     * Tests reconciliation with scale-up from 1 to 3 ZooKeeper pods
+     * Tests reconciliation with scale-up from 2 to 3 Kafka brokers
      *
      * @param context   Test context
      */
     @Test
     @SuppressWarnings({"checkstyle:MethodLength"})
     public void testScaleUp(VertxTestContext context)  {
-        Kafka oldKafka = new KafkaBuilder(KAFKA)
+        KafkaNodePool oldBrokersPool = new KafkaNodePoolBuilder(BROKERS)
                 .editSpec()
-                    .editZookeeper()
-                        .withReplicas(1)
-                    .endZookeeper()
+                    .withReplicas(2)
                 .endSpec()
                 .build();
 
-        KafkaNodePool oldPoolB = new KafkaNodePoolBuilder(POOL_B)
-                .editSpec()
-                    .withReplicas(1)
-                .endSpec()
-                .build();
-
-        ZookeeperCluster oldZkCluster = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, oldKafka, VERSIONS, SHARED_ENV_PROVIDER);
-        StrimziPodSet oldZkPodSet = oldZkCluster.generatePodSet(oldKafka.getSpec().getZookeeper().getReplicas(), false, null, null, podNum -> null);
-        List<KafkaPool> oldPools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, oldKafka, List.of(POOL_A, oldPoolB), Map.of(), Map.of(), false, SHARED_ENV_PROVIDER);
-        KafkaCluster oldKafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, oldKafka, oldPools, VERSIONS, KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, false, null, SHARED_ENV_PROVIDER);
+        List<KafkaPool> oldPools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(CONTROLLERS, oldBrokersPool), Map.of(), Map.of(), true, SHARED_ENV_PROVIDER);
+        KafkaCluster oldKafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, oldPools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, null, SHARED_ENV_PROVIDER);
         List<StrimziPodSet> oldKafkaPodSets = oldKafkaCluster.generatePodSets(false, null, null, brokerId -> null);
-
-        ZookeeperCluster zkCluster = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, VERSIONS, SHARED_ENV_PROVIDER);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
@@ -675,10 +574,6 @@ public class KafkaAssemblyOperatorWithPoolsTest {
         when(mockCmOps.deleteAsync(any(), any(), cmDeletionCaptor.capture(), anyBoolean())).thenReturn(Future.succeededFuture());
 
         StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
-        // Zoo
-        when(mockPodSetOps.getAsync(any(), eq(zkCluster.getComponentName()))).thenReturn(Future.succeededFuture(oldZkPodSet));
-        ArgumentCaptor<StrimziPodSet> zkPodSetCaptor =  ArgumentCaptor.forClass(StrimziPodSet.class);
-        when(mockPodSetOps.reconcile(any(), any(), eq(zkCluster.getComponentName()), zkPodSetCaptor.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.noop(i.getArgument(3))));
         // Kafka
         when(mockPodSetOps.listAsync(any(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenReturn(Future.succeededFuture(oldKafkaPodSets));
         @SuppressWarnings({ "unchecked" })
@@ -695,11 +590,9 @@ public class KafkaAssemblyOperatorWithPoolsTest {
         });
 
         StatefulSetOperator mockStsOps = supplier.stsOperations;
-        when(mockStsOps.getAsync(any(), eq(zkCluster.getComponentName()))).thenReturn(Future.succeededFuture(null)); // Zoo STS is queried and deleted if it still exists
         when(mockStsOps.getAsync(any(), eq(KAFKA_CLUSTER.getComponentName()))).thenReturn(Future.succeededFuture(null)); // Kafka STS is queried and deleted if it still exists
 
         PodOperator mockPodOps = supplier.podOperations;
-        when(mockPodOps.listAsync(any(), eq(zkCluster.getSelectorLabels()))).thenReturn(Future.succeededFuture(Collections.emptyList()));
         when(mockPodOps.listAsync(any(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenReturn(Future.succeededFuture(Collections.emptyList()));
         when(mockPodOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(Collections.emptyList()));
         when(mockPodOps.readiness(any(), any(), any(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
@@ -713,18 +606,6 @@ public class KafkaAssemblyOperatorWithPoolsTest {
         ArgumentCaptor<KafkaNodePool> kafkaNodePoolStatusCaptor = ArgumentCaptor.forClass(KafkaNodePool.class);
         when(mockKafkaNodePoolOps.updateStatusAsync(any(), kafkaNodePoolStatusCaptor.capture())).thenReturn(Future.succeededFuture());
 
-        MockZooKeeperReconciler zr = new MockZooKeeperReconciler(
-                new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
-                vertx,
-                CONFIG,
-                supplier,
-                new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
-                KAFKA,
-                VERSION_CHANGE,
-                null,
-                1,
-                CLUSTER_CA);
-
         MockKafkaReconciler kr = new MockKafkaReconciler(
                 new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
                 vertx,
@@ -732,7 +613,7 @@ public class KafkaAssemblyOperatorWithPoolsTest {
                 supplier,
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 KAFKA,
-                List.of(POOL_A, POOL_B),
+                List.of(CONTROLLERS, BROKERS),
                 VERSION_CHANGE,
                 Map.of(),
                 Map.of(),
@@ -745,32 +626,22 @@ public class KafkaAssemblyOperatorWithPoolsTest {
                 PASSWORD_GENERATOR,
                 supplier,
                 CONFIG,
-                zr,
                 kr);
 
         Checkpoint async = context.checkpoint();
         kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME))
                 .onComplete(context.succeeding(v -> context.verify(() -> {
-                    // Scale-up of Zoo is done pod by pod => the reconcile method is called 3 times with 1, 2 and 3 pods.
-                    assertThat(zkPodSetCaptor.getAllValues().size(), is(3));
-                    assertThat(zkPodSetCaptor.getAllValues().get(0).getSpec().getPods().size(), is(1)); // => first capture is from zkPodSet() with old replica count
-                    assertThat(zkPodSetCaptor.getAllValues().get(1).getSpec().getPods().size(), is(2)); // => second capture is from zkScalingUp() with new replica count
-                    assertThat(zkPodSetCaptor.getAllValues().get(2).getSpec().getPods().size(), is(3)); // => third capture is from zkScalingUp() with new replica count
-
-                    // Still one maybe-roll invocation
-                    assertThat(zr.maybeRollZooKeeperInvocations, is(1));
-
                     // Scale-up of Kafka is done in one go => we should see two invocations from regular patching
                     assertThat(kafkaPodSetBatchCaptor.getAllValues().size(), is(1));
                     assertThat(kafkaPodSetBatchCaptor.getAllValues().get(0).get(0).getSpec().getPods().size(), is(3));
-                    assertThat(kafkaPodSetBatchCaptor.getAllValues().get(0).get(1).getSpec().getPods().size(), is(2));
+                    assertThat(kafkaPodSetBatchCaptor.getAllValues().get(0).get(1).getSpec().getPods().size(), is(3));
 
                     // Still one maybe-roll invocation
                     assertThat(kr.maybeRollKafkaInvocations, is(1));
 
                     // CMs for all pods are reconciled
-                    assertThat(cmReconciliationCaptor.getAllValues().size(), is(6));
-                    assertThat(cmReconciliationCaptor.getAllValues(), is(List.of("my-cluster-pool-a-0", "my-cluster-pool-a-1", "my-cluster-pool-a-2", "my-cluster-pool-b-3", "my-cluster-pool-b-4", "my-cluster-kafka-config")));
+                    assertThat(cmReconciliationCaptor.getAllValues().size(), is(7));
+                    assertThat(cmReconciliationCaptor.getAllValues(), is(List.of("my-cluster-controllers-0", "my-cluster-controllers-1", "my-cluster-controllers-2", "my-cluster-brokers-3", "my-cluster-brokers-4", "my-cluster-brokers-5", "my-cluster-kafka-config")));
 
                     // Only the shared CM is deleted
                     assertThat(cmDeletionCaptor.getAllValues().size(), is(0));
@@ -781,59 +652,46 @@ public class KafkaAssemblyOperatorWithPoolsTest {
                     assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(0).getStatus().getNodeIds(), is(List.of(0, 1, 2)));
                     assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(0).getStatus().getObservedGeneration(), is(1L));
                     assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(0).getStatus().getRoles().size(), is(1));
-                    assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(0).getStatus().getRoles(), hasItems(ProcessRoles.BROKER));
-                    assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(1).getStatus().getReplicas(), is(2));
-                    assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(1).getStatus().getNodeIds(), is(List.of(3, 4)));
+                    assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(0).getStatus().getRoles(), hasItems(ProcessRoles.CONTROLLER));
+                    assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(1).getStatus().getReplicas(), is(3));
+                    assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(1).getStatus().getNodeIds(), is(List.of(3, 4, 5)));
                     assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(1).getStatus().getObservedGeneration(), is(1L));
                     assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(1).getStatus().getRoles().size(), is(1));
                     assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(1).getStatus().getRoles(), hasItems(ProcessRoles.BROKER));
-                    assertThat(kao.state.kafkaStatus.getKafkaNodePools().stream().map(UsedNodePoolStatus::getName).toList(), is(List.of("pool-a", "pool-b")));
+                    assertThat(kao.state.kafkaStatus.getKafkaNodePools().stream().map(UsedNodePoolStatus::getName).toList(), is(List.of("brokers", "controllers")));
 
                     // Assert the info passed over for Cruise Control
-                    assertThat(kr.kafkaBrokerNodes().size(), is(5));
-                    assertThat(kr.kafkaBrokerNodes().stream().map(NodeRef::podName).toList(), is(List.of("my-cluster-pool-a-0", "my-cluster-pool-a-1", "my-cluster-pool-a-2", "my-cluster-pool-b-3", "my-cluster-pool-b-4")));
+                    assertThat(kr.kafkaBrokerNodes().size(), is(3));
+                    assertThat(kr.kafkaBrokerNodes().stream().map(NodeRef::podName).toList(), is(List.of("my-cluster-brokers-3", "my-cluster-brokers-4", "my-cluster-brokers-5")));
 
                     assertThat(kr.kafkaStorage().size(), is(2));
-                    assertThat(kr.kafkaStorage().get("pool-a"), is(new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build()).build()));
-                    assertThat(kr.kafkaStorage().get("pool-b"), is(new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("200Gi").build()).build()));
+                    assertThat(kr.kafkaStorage().get("controllers"), is(new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build()).build()));
+                    assertThat(kr.kafkaStorage().get("brokers"), is(new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("200Gi").build()).build()));
 
-                    assertThat(kr.kafkaBrokerResourceRequirements().size(), is(2));
-                    assertThat(kr.kafkaBrokerResourceRequirements().get("pool-a"), is(new ResourceRequirementsBuilder().withRequests(Map.of("cpu", new Quantity("4"))).build()));
-                    assertThat(kr.kafkaBrokerResourceRequirements().get("pool-b"), is(new ResourceRequirementsBuilder().withRequests(Map.of("cpu", new Quantity("6"))).build()));
+                    assertThat(kr.kafkaBrokerResourceRequirements().size(), is(1));
+                    assertThat(kr.kafkaBrokerResourceRequirements().get("brokers"), is(new ResourceRequirementsBuilder().withRequests(Map.of("cpu", new Quantity("6"))).build()));
 
                     async.flag();
                 })));
     }
 
     /**
-     * Tests reconciliation with scale-down from 5 to 3 ZooKeeper pods
+     * Tests reconciliation with scale-down from 5 to 3 Kafka brokers
      *
      * @param context   Test context
      */
     @Test
     @SuppressWarnings({"checkstyle:MethodLength"})
     public void testScaleDown(VertxTestContext context)  {
-        Kafka oldKafka = new KafkaBuilder(KAFKA)
+        KafkaNodePool oldBrokersPool = new KafkaNodePoolBuilder(BROKERS)
                 .editSpec()
-                    .editZookeeper()
-                        .withReplicas(5)
-                    .endZookeeper()
+                    .withReplicas(5)
                 .endSpec()
                 .build();
 
-        KafkaNodePool oldPoolB = new KafkaNodePoolBuilder(POOL_B)
-                .editSpec()
-                    .withReplicas(4)
-                .endSpec()
-                .build();
-
-        ZookeeperCluster oldZkCluster = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, oldKafka, VERSIONS, SHARED_ENV_PROVIDER);
-        StrimziPodSet oldZkPodSet = oldZkCluster.generatePodSet(oldKafka.getSpec().getZookeeper().getReplicas(), false, null, null, podNum -> null);
-        List<KafkaPool> oldPools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, oldKafka, List.of(POOL_A, oldPoolB), Map.of(), Map.of(), false, SHARED_ENV_PROVIDER);
-        KafkaCluster oldKafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, oldKafka, oldPools, VERSIONS, KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, false, null, SHARED_ENV_PROVIDER);
+        List<KafkaPool> oldPools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(CONTROLLERS, oldBrokersPool), Map.of(), Map.of(), true, SHARED_ENV_PROVIDER);
+        KafkaCluster oldKafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, oldPools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, null, SHARED_ENV_PROVIDER);
         List<StrimziPodSet> oldKafkaPodSets = oldKafkaCluster.generatePodSets(false, null, null, brokerId -> null);
-
-        ZookeeperCluster zkCluster = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, VERSIONS, SHARED_ENV_PROVIDER);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
@@ -850,10 +708,6 @@ public class KafkaAssemblyOperatorWithPoolsTest {
         when(mockCmOps.deleteAsync(any(), any(), cmDeletionCaptor.capture(), anyBoolean())).thenReturn(Future.succeededFuture());
 
         StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
-        // Zoo
-        when(mockPodSetOps.getAsync(any(), eq(zkCluster.getComponentName()))).thenReturn(Future.succeededFuture(oldZkPodSet));
-        ArgumentCaptor<StrimziPodSet> zkPodSetCaptor =  ArgumentCaptor.forClass(StrimziPodSet.class);
-        when(mockPodSetOps.reconcile(any(), any(), eq(zkCluster.getComponentName()), zkPodSetCaptor.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.noop(i.getArgument(3))));
         // Kafka
         when(mockPodSetOps.listAsync(any(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenReturn(Future.succeededFuture(oldKafkaPodSets));
         @SuppressWarnings({ "unchecked" })
@@ -869,14 +723,12 @@ public class KafkaAssemblyOperatorWithPoolsTest {
             return Future.succeededFuture(result);
         });
         ArgumentCaptor<StrimziPodSet> kafkaPodSetCaptor =  ArgumentCaptor.forClass(StrimziPodSet.class);
-        when(mockPodSetOps.reconcile(any(), any(), startsWith("my-cluster-pool-"), kafkaPodSetCaptor.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.noop(i.getArgument(3))));
+        when(mockPodSetOps.reconcile(any(), any(), startsWith("my-cluster-brokers"), kafkaPodSetCaptor.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.noop(i.getArgument(3))));
 
         StatefulSetOperator mockStsOps = supplier.stsOperations;
-        when(mockStsOps.getAsync(any(), eq(zkCluster.getComponentName()))).thenReturn(Future.succeededFuture(null)); // Zoo STS is queried and deleted if it still exists
         when(mockStsOps.getAsync(any(), eq(KAFKA_CLUSTER.getComponentName()))).thenReturn(Future.succeededFuture(null)); // Kafka STS is queried and deleted if it still exists
 
         PodOperator mockPodOps = supplier.podOperations;
-        when(mockPodOps.listAsync(any(), eq(zkCluster.getSelectorLabels()))).thenReturn(Future.succeededFuture(Collections.emptyList()));
         when(mockPodOps.listAsync(any(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenReturn(Future.succeededFuture(Collections.emptyList()));
         when(mockPodOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(Collections.emptyList()));
         when(mockPodOps.readiness(any(), any(), any(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
@@ -891,18 +743,6 @@ public class KafkaAssemblyOperatorWithPoolsTest {
         ArgumentCaptor<KafkaNodePool> kafkaNodePoolStatusCaptor = ArgumentCaptor.forClass(KafkaNodePool.class);
         when(mockKafkaNodePoolOps.updateStatusAsync(any(), kafkaNodePoolStatusCaptor.capture())).thenReturn(Future.succeededFuture());
 
-        MockZooKeeperReconciler zr = new MockZooKeeperReconciler(
-                new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
-                vertx,
-                CONFIG,
-                supplier,
-                new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
-                KAFKA,
-                VERSION_CHANGE,
-                null,
-                5,
-                CLUSTER_CA);
-
         MockKafkaReconciler kr = new MockKafkaReconciler(
                 new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
                 vertx,
@@ -910,7 +750,7 @@ public class KafkaAssemblyOperatorWithPoolsTest {
                 supplier,
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 KAFKA,
-                List.of(POOL_A, POOL_B),
+                List.of(CONTROLLERS, BROKERS),
                 VERSION_CHANGE,
                 Map.of(),
                 Map.of(CLUSTER_NAME + "-kafka", IntStream.rangeClosed(0, 4).mapToObj(i -> CLUSTER_NAME + "-kafka-" + i).toList()),
@@ -923,38 +763,28 @@ public class KafkaAssemblyOperatorWithPoolsTest {
                 PASSWORD_GENERATOR,
                 supplier,
                 CONFIG,
-                zr,
                 kr);
 
         Checkpoint async = context.checkpoint();
         kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME))
                 .onComplete(context.succeeding(v -> context.verify(() -> {
-                    // Scale-down of Zoo is done pod by pod => the reconcile method is called 3 times with 1, 2 and 3 pods.
-                    assertThat(zkPodSetCaptor.getAllValues().size(), is(3));
-                    assertThat(zkPodSetCaptor.getAllValues().get(0).getSpec().getPods().size(), is(5)); // => first capture is from zkPodSet() with old replica count
-                    assertThat(zkPodSetCaptor.getAllValues().get(1).getSpec().getPods().size(), is(4)); // => second capture is from zkScalingDown() with new replica count
-                    assertThat(zkPodSetCaptor.getAllValues().get(2).getSpec().getPods().size(), is(3)); // => third capture is from zkScalingDown() with new replica count
-
-                    // Still one maybe-roll invocation
-                    assertThat(zr.maybeRollZooKeeperInvocations, is(1));
-
                     // Scale-down of Kafka is done in one go => we should see two invocations (first from scale-down and second from regular patching)
                     assertThat(kafkaPodSetCaptor.getAllValues().size(), is(1));
-                    assertThat(kafkaPodSetCaptor.getAllValues().get(0).getSpec().getPods().size(), is(2)); // => first capture is from kafkaScaleDown() with new replica count
+                    assertThat(kafkaPodSetCaptor.getAllValues().get(0).getSpec().getPods().size(), is(3)); // => first capture is from kafkaScaleDown() with new replica count
                     assertThat(kafkaPodSetBatchCaptor.getAllValues().size(), is(1));
-                    assertThat(kafkaPodSetBatchCaptor.getAllValues().get(0).get(0).getSpec().getPods().size(), is(3)); // => The unchanged pool-a
-                    assertThat(kafkaPodSetBatchCaptor.getAllValues().get(0).get(1).getSpec().getPods().size(), is(2)); // => second capture is from kafkaPodSet() again with new replica count
+                    assertThat(kafkaPodSetBatchCaptor.getAllValues().get(0).get(0).getSpec().getPods().size(), is(3)); // => The unchanged controllers pool
+                    assertThat(kafkaPodSetBatchCaptor.getAllValues().get(0).get(1).getSpec().getPods().size(), is(3)); // => second capture is from kafkaPodSet() again with new replica count
 
                     // Still one maybe-roll invocation
                     assertThat(kr.maybeRollKafkaInvocations, is(1));
 
                     // CMs for all remaining pods + the old shared config CM are reconciled
-                    assertThat(cmReconciliationCaptor.getAllValues().size(), is(6));
-                    assertThat(cmReconciliationCaptor.getAllValues(), is(List.of("my-cluster-pool-a-0", "my-cluster-pool-a-1", "my-cluster-pool-a-2", "my-cluster-pool-b-3", "my-cluster-pool-b-4", "my-cluster-kafka-config")));
+                    assertThat(cmReconciliationCaptor.getAllValues().size(), is(7));
+                    assertThat(cmReconciliationCaptor.getAllValues(), is(List.of("my-cluster-controllers-0", "my-cluster-controllers-1", "my-cluster-controllers-2", "my-cluster-brokers-3", "my-cluster-brokers-4", "my-cluster-brokers-5", "my-cluster-kafka-config")));
 
                     // The  CMs for scaled down pods are deleted
                     assertThat(cmDeletionCaptor.getAllValues().size(), is(2));
-                    assertThat(cmDeletionCaptor.getAllValues(), is(List.of("my-cluster-pool-b-5", "my-cluster-pool-b-6")));
+                    assertThat(cmDeletionCaptor.getAllValues(), is(List.of("my-cluster-brokers-6", "my-cluster-brokers-7")));
 
                     // Check statuses
                     assertThat(kafkaNodePoolStatusCaptor.getAllValues().size(), is(2));
@@ -962,25 +792,24 @@ public class KafkaAssemblyOperatorWithPoolsTest {
                     assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(0).getStatus().getNodeIds(), is(List.of(0, 1, 2)));
                     assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(0).getStatus().getObservedGeneration(), is(1L));
                     assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(0).getStatus().getRoles().size(), is(1));
-                    assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(0).getStatus().getRoles(), hasItems(ProcessRoles.BROKER));
-                    assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(1).getStatus().getReplicas(), is(2));
-                    assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(1).getStatus().getNodeIds(), is(List.of(3, 4)));
+                    assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(0).getStatus().getRoles(), hasItems(ProcessRoles.CONTROLLER));
+                    assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(1).getStatus().getReplicas(), is(3));
+                    assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(1).getStatus().getNodeIds(), is(List.of(3, 4, 5)));
                     assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(1).getStatus().getObservedGeneration(), is(1L));
                     assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(1).getStatus().getRoles().size(), is(1));
                     assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(1).getStatus().getRoles(), hasItems(ProcessRoles.BROKER));
-                    assertThat(kao.state.kafkaStatus.getKafkaNodePools().stream().map(UsedNodePoolStatus::getName).toList(), is(List.of("pool-a", "pool-b")));
+                    assertThat(kao.state.kafkaStatus.getKafkaNodePools().stream().map(UsedNodePoolStatus::getName).toList(), is(List.of("brokers", "controllers")));
 
                     // Assert the info passed over for Cruise Control
-                    assertThat(kr.kafkaBrokerNodes().size(), is(5));
-                    assertThat(kr.kafkaBrokerNodes().stream().map(NodeRef::podName).toList(), is(List.of("my-cluster-pool-a-0", "my-cluster-pool-a-1", "my-cluster-pool-a-2", "my-cluster-pool-b-3", "my-cluster-pool-b-4")));
+                    assertThat(kr.kafkaBrokerNodes().size(), is(3));
+                    assertThat(kr.kafkaBrokerNodes().stream().map(NodeRef::podName).toList(), is(List.of("my-cluster-brokers-3", "my-cluster-brokers-4", "my-cluster-brokers-5")));
 
                     assertThat(kr.kafkaStorage().size(), is(2));
-                    assertThat(kr.kafkaStorage().get("pool-a"), is(new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build()).build()));
-                    assertThat(kr.kafkaStorage().get("pool-b"), is(new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("200Gi").build()).build()));
+                    assertThat(kr.kafkaStorage().get("controllers"), is(new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build()).build()));
+                    assertThat(kr.kafkaStorage().get("brokers"), is(new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("200Gi").build()).build()));
 
-                    assertThat(kr.kafkaBrokerResourceRequirements().size(), is(2));
-                    assertThat(kr.kafkaBrokerResourceRequirements().get("pool-a"), is(new ResourceRequirementsBuilder().withRequests(Map.of("cpu", new Quantity("4"))).build()));
-                    assertThat(kr.kafkaBrokerResourceRequirements().get("pool-b"), is(new ResourceRequirementsBuilder().withRequests(Map.of("cpu", new Quantity("6"))).build()));
+                    assertThat(kr.kafkaBrokerResourceRequirements().size(), is(1));
+                    assertThat(kr.kafkaBrokerResourceRequirements().get("brokers"), is(new ResourceRequirementsBuilder().withRequests(Map.of("cpu", new Quantity("6"))).build()));
 
                     async.flag();
                 })));
@@ -994,9 +823,9 @@ public class KafkaAssemblyOperatorWithPoolsTest {
     @Test
     @SuppressWarnings({"checkstyle:MethodLength"})
     public void testNewPool(VertxTestContext context)  {
-        KafkaNodePool poolC = new KafkaNodePoolBuilder()
+        KafkaNodePool newPool = new KafkaNodePoolBuilder()
             .withNewMetadata()
-                .withName("pool-c")
+                .withName("new")
                 .withNamespace(NAMESPACE)
                 .withGeneration(1L)
                 .withLabels(Map.of(Labels.STRIMZI_CLUSTER_LABEL, CLUSTER_NAME))
@@ -1010,8 +839,6 @@ public class KafkaAssemblyOperatorWithPoolsTest {
             .endSpec()
             .build();
 
-        ZookeeperCluster zkCluster = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, VERSIONS, SHARED_ENV_PROVIDER);
-        StrimziPodSet zkPodSet = zkCluster.generatePodSet(KAFKA.getSpec().getZookeeper().getReplicas(), false, null, null, podNum -> null);
         List<StrimziPodSet> kafkaPodSets = KAFKA_CLUSTER.generatePodSets(false, null, null, brokerId -> null);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
@@ -1029,10 +856,6 @@ public class KafkaAssemblyOperatorWithPoolsTest {
         when(mockCmOps.deleteAsync(any(), any(), cmDeletionCaptor.capture(), anyBoolean())).thenReturn(Future.succeededFuture());
 
         StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
-        // Zoo
-        when(mockPodSetOps.getAsync(any(), eq(zkCluster.getComponentName()))).thenReturn(Future.succeededFuture(zkPodSet));
-        ArgumentCaptor<StrimziPodSet> zkPodSetCaptor =  ArgumentCaptor.forClass(StrimziPodSet.class);
-        when(mockPodSetOps.reconcile(any(), any(), eq(zkCluster.getComponentName()), zkPodSetCaptor.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.noop(i.getArgument(3))));
         // Kafka
         when(mockPodSetOps.listAsync(any(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenReturn(Future.succeededFuture(kafkaPodSets));
         @SuppressWarnings({ "unchecked" })
@@ -1050,11 +873,9 @@ public class KafkaAssemblyOperatorWithPoolsTest {
         });
 
         StatefulSetOperator mockStsOps = supplier.stsOperations;
-        when(mockStsOps.getAsync(any(), eq(zkCluster.getComponentName()))).thenReturn(Future.succeededFuture(null)); // Zoo STS is queried and deleted if it still exists
         when(mockStsOps.getAsync(any(), eq(KAFKA_CLUSTER.getComponentName()))).thenReturn(Future.succeededFuture(null)); // Kafka STS is queried and deleted if it still exists
 
         PodOperator mockPodOps = supplier.podOperations;
-        when(mockPodOps.listAsync(any(), eq(zkCluster.getSelectorLabels()))).thenReturn(Future.succeededFuture(Collections.emptyList()));
         when(mockPodOps.listAsync(any(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenReturn(Future.succeededFuture(Collections.emptyList()));
         when(mockPodOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(Collections.emptyList()));
         when(mockPodOps.readiness(any(), any(), any(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
@@ -1068,18 +889,6 @@ public class KafkaAssemblyOperatorWithPoolsTest {
         ArgumentCaptor<KafkaNodePool> kafkaNodePoolStatusCaptor = ArgumentCaptor.forClass(KafkaNodePool.class);
         when(mockKafkaNodePoolOps.updateStatusAsync(any(), kafkaNodePoolStatusCaptor.capture())).thenReturn(Future.succeededFuture());
 
-        MockZooKeeperReconciler zr = new MockZooKeeperReconciler(
-                new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
-                vertx,
-                CONFIG,
-                supplier,
-                new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
-                KAFKA,
-                VERSION_CHANGE,
-                null,
-                3,
-                CLUSTER_CA);
-
         MockKafkaReconciler kr = new MockKafkaReconciler(
                 new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
                 vertx,
@@ -1087,7 +896,7 @@ public class KafkaAssemblyOperatorWithPoolsTest {
                 supplier,
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 KAFKA,
-                List.of(POOL_A, POOL_B, poolC),
+                List.of(CONTROLLERS, BROKERS, newPool),
                 VERSION_CHANGE,
                 Map.of(),
                 Map.of(),
@@ -1100,27 +909,22 @@ public class KafkaAssemblyOperatorWithPoolsTest {
                 PASSWORD_GENERATOR,
                 supplier,
                 CONFIG,
-                zr,
                 kr);
 
         Checkpoint async = context.checkpoint();
         kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME))
                 .onComplete(context.succeeding(v -> context.verify(() -> {
-                    assertThat(zkPodSetCaptor.getAllValues().size(), is(1));
-                    assertThat(zkPodSetCaptor.getAllValues().get(0).getSpec().getPods().size(), is(3));
-                    assertThat(zr.maybeRollZooKeeperInvocations, is(1));
-
                     assertThat(kafkaPodSetBatchCaptor.getAllValues().size(), is(1));
                     assertThat(kafkaPodSetBatchCaptor.getAllValues().get(0).size(), is(3)); // Number of PodSets
                     assertThat(kafkaPodSetBatchCaptor.getAllValues().get(0).get(0).getSpec().getPods().size(), is(3));
-                    assertThat(kafkaPodSetBatchCaptor.getAllValues().get(0).get(1).getSpec().getPods().size(), is(2));
+                    assertThat(kafkaPodSetBatchCaptor.getAllValues().get(0).get(1).getSpec().getPods().size(), is(3));
                     assertThat(kafkaPodSetBatchCaptor.getAllValues().get(0).get(2).getSpec().getPods().size(), is(2));
 
                     assertThat(kr.maybeRollKafkaInvocations, is(1));
 
                     // CMs for all pods are reconciled
-                    assertThat(cmReconciliationCaptor.getAllValues().size(), is(8));
-                    assertThat(cmReconciliationCaptor.getAllValues(), is(List.of("my-cluster-pool-a-0", "my-cluster-pool-a-1", "my-cluster-pool-a-2", "my-cluster-pool-b-3", "my-cluster-pool-b-4", "my-cluster-pool-c-5", "my-cluster-pool-c-6", "my-cluster-kafka-config")));
+                    assertThat(cmReconciliationCaptor.getAllValues().size(), is(9));
+                    assertThat(cmReconciliationCaptor.getAllValues(), is(List.of("my-cluster-controllers-0", "my-cluster-controllers-1", "my-cluster-controllers-2", "my-cluster-brokers-3", "my-cluster-brokers-4", "my-cluster-brokers-5", "my-cluster-new-6", "my-cluster-new-7", "my-cluster-kafka-config")));
 
                     // Only the shared CM is deleted
                     assertThat(cmDeletionCaptor.getAllValues().size(), is(0));
@@ -1130,31 +934,30 @@ public class KafkaAssemblyOperatorWithPoolsTest {
                     assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(0).getStatus().getReplicas(), is(3));
                     assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(0).getStatus().getNodeIds(), is(List.of(0, 1, 2)));
                     assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(0).getStatus().getRoles().size(), is(1));
-                    assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(0).getStatus().getRoles(), hasItems(ProcessRoles.BROKER));
-                    assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(1).getStatus().getReplicas(), is(2));
-                    assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(1).getStatus().getNodeIds(), is(List.of(3, 4)));
+                    assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(0).getStatus().getRoles(), hasItems(ProcessRoles.CONTROLLER));
+                    assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(1).getStatus().getReplicas(), is(3));
+                    assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(1).getStatus().getNodeIds(), is(List.of(3, 4, 5)));
                     assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(1).getStatus().getRoles().size(), is(1));
                     assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(1).getStatus().getRoles(), hasItems(ProcessRoles.BROKER));
                     assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(2).getStatus().getReplicas(), is(2));
-                    assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(2).getStatus().getNodeIds(), is(List.of(5, 6)));
+                    assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(2).getStatus().getNodeIds(), is(List.of(6, 7)));
                     assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(2).getStatus().getObservedGeneration(), is(1L));
                     assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(2).getStatus().getRoles().size(), is(1));
                     assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(2).getStatus().getRoles(), hasItems(ProcessRoles.BROKER));
-                    assertThat(kao.state.kafkaStatus.getKafkaNodePools().stream().map(UsedNodePoolStatus::getName).toList(), is(List.of("pool-a", "pool-b", "pool-c")));
+                    assertThat(kao.state.kafkaStatus.getKafkaNodePools().stream().map(UsedNodePoolStatus::getName).toList(), is(List.of("brokers", "controllers", "new")));
 
                     // Assert the info passed over for Cruise Control
-                    assertThat(kr.kafkaBrokerNodes().size(), is(7));
-                    assertThat(kr.kafkaBrokerNodes().stream().map(NodeRef::podName).toList(), is(List.of("my-cluster-pool-a-0", "my-cluster-pool-a-1", "my-cluster-pool-a-2", "my-cluster-pool-b-3", "my-cluster-pool-b-4", "my-cluster-pool-c-5", "my-cluster-pool-c-6")));
+                    assertThat(kr.kafkaBrokerNodes().size(), is(5));
+                    assertThat(kr.kafkaBrokerNodes().stream().map(NodeRef::podName).toList(), is(List.of("my-cluster-brokers-3", "my-cluster-brokers-4", "my-cluster-brokers-5", "my-cluster-new-6", "my-cluster-new-7")));
 
                     assertThat(kr.kafkaStorage().size(), is(3));
-                    assertThat(kr.kafkaStorage().get("pool-a"), is(new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build()).build()));
-                    assertThat(kr.kafkaStorage().get("pool-b"), is(new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("200Gi").build()).build()));
-                    assertThat(kr.kafkaStorage().get("pool-c"), is(new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("300Gi").build()).build()));
+                    assertThat(kr.kafkaStorage().get("controllers"), is(new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build()).build()));
+                    assertThat(kr.kafkaStorage().get("brokers"), is(new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("200Gi").build()).build()));
+                    assertThat(kr.kafkaStorage().get("new"), is(new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("300Gi").build()).build()));
 
-                    assertThat(kr.kafkaBrokerResourceRequirements().size(), is(3));
-                    assertThat(kr.kafkaBrokerResourceRequirements().get("pool-a"), is(new ResourceRequirementsBuilder().withRequests(Map.of("cpu", new Quantity("4"))).build()));
-                    assertThat(kr.kafkaBrokerResourceRequirements().get("pool-b"), is(new ResourceRequirementsBuilder().withRequests(Map.of("cpu", new Quantity("6"))).build()));
-                    assertThat(kr.kafkaBrokerResourceRequirements().get("pool-c"), is(nullValue()));
+                    assertThat(kr.kafkaBrokerResourceRequirements().size(), is(2));
+                    assertThat(kr.kafkaBrokerResourceRequirements().get("brokers"), is(new ResourceRequirementsBuilder().withRequests(Map.of("cpu", new Quantity("6"))).build()));
+                    assertThat(kr.kafkaBrokerResourceRequirements().get("new"), is(nullValue()));
 
                     async.flag();
                 })));
@@ -1168,9 +971,9 @@ public class KafkaAssemblyOperatorWithPoolsTest {
     @Test
     @SuppressWarnings({"checkstyle:MethodLength"})
     public void testRemovePool(VertxTestContext context)  {
-        KafkaNodePool poolC = new KafkaNodePoolBuilder()
+        KafkaNodePool newPool = new KafkaNodePoolBuilder()
             .withNewMetadata()
-                .withName("pool-c")
+                .withName("new")
                 .withNamespace(NAMESPACE)
             .endMetadata()
             .withNewSpec()
@@ -1182,13 +985,9 @@ public class KafkaAssemblyOperatorWithPoolsTest {
             .endSpec()
             .build();
 
-        ZookeeperCluster oldZkCluster = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, VERSIONS, SHARED_ENV_PROVIDER);
-        StrimziPodSet oldZkPodSet = oldZkCluster.generatePodSet(KAFKA.getSpec().getZookeeper().getReplicas(), false, null, null, podNum -> null);
-        List<KafkaPool> oldPools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(POOL_A, POOL_B, poolC), Map.of(), Map.of(), false, SHARED_ENV_PROVIDER);
-        KafkaCluster oldKafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, oldPools, VERSIONS, KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, false, null, SHARED_ENV_PROVIDER);
+        List<KafkaPool> oldPools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(CONTROLLERS, BROKERS, newPool), Map.of(), Map.of(), true, SHARED_ENV_PROVIDER);
+        KafkaCluster oldKafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, oldPools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, null, SHARED_ENV_PROVIDER);
         List<StrimziPodSet> oldKafkaPodSets = oldKafkaCluster.generatePodSets(false, null, null, brokerId -> null);
-
-        ZookeeperCluster zkCluster = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, VERSIONS, SHARED_ENV_PROVIDER);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
@@ -1205,10 +1004,6 @@ public class KafkaAssemblyOperatorWithPoolsTest {
         when(mockCmOps.deleteAsync(any(), any(), cmDeletionCaptor.capture(), anyBoolean())).thenReturn(Future.succeededFuture());
 
         StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
-        // Zoo
-        when(mockPodSetOps.getAsync(any(), eq(zkCluster.getComponentName()))).thenReturn(Future.succeededFuture(oldZkPodSet));
-        ArgumentCaptor<StrimziPodSet> zkPodSetCaptor =  ArgumentCaptor.forClass(StrimziPodSet.class);
-        when(mockPodSetOps.reconcile(any(), any(), eq(zkCluster.getComponentName()), zkPodSetCaptor.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.noop(i.getArgument(3))));
         // Kafka
         when(mockPodSetOps.listAsync(any(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenReturn(Future.succeededFuture(oldKafkaPodSets));
         @SuppressWarnings({ "unchecked" })
@@ -1224,14 +1019,12 @@ public class KafkaAssemblyOperatorWithPoolsTest {
             return Future.succeededFuture(result);
         });
         ArgumentCaptor<StrimziPodSet> kafkaPodSetCaptor =  ArgumentCaptor.forClass(StrimziPodSet.class);
-        when(mockPodSetOps.reconcile(any(), any(), startsWith("my-cluster-pool-"), kafkaPodSetCaptor.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.noop(i.getArgument(3))));
+        when(mockPodSetOps.reconcile(any(), any(), startsWith("my-cluster-new"), kafkaPodSetCaptor.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.noop(i.getArgument(3))));
 
         StatefulSetOperator mockStsOps = supplier.stsOperations;
-        when(mockStsOps.getAsync(any(), eq(zkCluster.getComponentName()))).thenReturn(Future.succeededFuture(null)); // Zoo STS is queried and deleted if it still exists
         when(mockStsOps.getAsync(any(), eq(KAFKA_CLUSTER.getComponentName()))).thenReturn(Future.succeededFuture(null)); // Kafka STS is queried and deleted if it still exists
 
         PodOperator mockPodOps = supplier.podOperations;
-        when(mockPodOps.listAsync(any(), eq(zkCluster.getSelectorLabels()))).thenReturn(Future.succeededFuture(Collections.emptyList()));
         when(mockPodOps.listAsync(any(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenReturn(Future.succeededFuture(Collections.emptyList()));
         when(mockPodOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(Collections.emptyList()));
         when(mockPodOps.readiness(any(), any(), any(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
@@ -1246,18 +1039,6 @@ public class KafkaAssemblyOperatorWithPoolsTest {
         ArgumentCaptor<KafkaNodePool> kafkaNodePoolStatusCaptor = ArgumentCaptor.forClass(KafkaNodePool.class);
         when(mockKafkaNodePoolOps.updateStatusAsync(any(), kafkaNodePoolStatusCaptor.capture())).thenReturn(Future.succeededFuture());
 
-        MockZooKeeperReconciler zr = new MockZooKeeperReconciler(
-                new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
-                vertx,
-                CONFIG,
-                supplier,
-                new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
-                KAFKA,
-                VERSION_CHANGE,
-                null,
-                3,
-                CLUSTER_CA);
-
         MockKafkaReconciler kr = new MockKafkaReconciler(
                 new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
                 vertx,
@@ -1265,7 +1046,7 @@ public class KafkaAssemblyOperatorWithPoolsTest {
                 supplier,
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 KAFKA,
-                List.of(POOL_A, POOL_B),
+                List.of(CONTROLLERS, BROKERS),
                 VERSION_CHANGE,
                 Map.of(),
                 Map.of(CLUSTER_NAME + "-kafka", IntStream.rangeClosed(0, 4).mapToObj(i -> CLUSTER_NAME + "-kafka-" + i).toList()),
@@ -1278,59 +1059,92 @@ public class KafkaAssemblyOperatorWithPoolsTest {
                 PASSWORD_GENERATOR,
                 supplier,
                 CONFIG,
-                zr,
                 kr);
 
         Checkpoint async = context.checkpoint();
         kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME))
                 .onComplete(context.succeeding(v -> context.verify(() -> {
-                    assertThat(zkPodSetCaptor.getAllValues().size(), is(1));
-                    assertThat(zkPodSetCaptor.getAllValues().get(0).getSpec().getPods().size(), is(3));
-                    assertThat(zr.maybeRollZooKeeperInvocations, is(1));
-
                     // Scale-down of Kafka is done in one go => we should see two invocations (first from scale-down and second from regular patching)
                     assertThat(kafkaPodSetCaptor.getAllValues().size(), is(1));
                     assertThat(kafkaPodSetCaptor.getAllValues().get(0).getSpec().getPods().size(), is(0)); // => The removed pool is first scaled to 0
                     assertThat(kafkaPodSetBatchCaptor.getAllValues().size(), is(1));
                     assertThat(kafkaPodSetBatchCaptor.getAllValues().get(0).size(), is(2)); // Number of PodSets
-                    assertThat(kafkaPodSetBatchCaptor.getAllValues().get(0).get(0).getSpec().getPods().size(), is(3)); // => The unchanged pool-a
-                    assertThat(kafkaPodSetBatchCaptor.getAllValues().get(0).get(1).getSpec().getPods().size(), is(2)); // => second capture is from kafkaPodSet() again with new replica count
+                    assertThat(kafkaPodSetBatchCaptor.getAllValues().get(0).get(0).getSpec().getPods().size(), is(3)); // => The unchanged controllers pool
+                    assertThat(kafkaPodSetBatchCaptor.getAllValues().get(0).get(1).getSpec().getPods().size(), is(3)); // => The unchanged brokers pool
 
                     // Still one maybe-roll invocation
                     assertThat(kr.maybeRollKafkaInvocations, is(1));
 
                     // CMs for all remaining pods + the old shared config CM are reconciled
-                    assertThat(cmReconciliationCaptor.getAllValues().size(), is(6));
-                    assertThat(cmReconciliationCaptor.getAllValues(), is(List.of("my-cluster-pool-a-0", "my-cluster-pool-a-1", "my-cluster-pool-a-2", "my-cluster-pool-b-3", "my-cluster-pool-b-4", "my-cluster-kafka-config")));
+                    assertThat(cmReconciliationCaptor.getAllValues().size(), is(7));
+                    assertThat(cmReconciliationCaptor.getAllValues(), is(List.of("my-cluster-controllers-0", "my-cluster-controllers-1", "my-cluster-controllers-2", "my-cluster-brokers-3", "my-cluster-brokers-4", "my-cluster-brokers-5", "my-cluster-kafka-config")));
 
                     // The  CMs for scaled down pods are deleted
                     assertThat(cmDeletionCaptor.getAllValues().size(), is(2));
-                    assertThat(cmDeletionCaptor.getAllValues(), is(List.of("my-cluster-pool-c-5", "my-cluster-pool-c-6")));
+                    assertThat(cmDeletionCaptor.getAllValues(), is(List.of("my-cluster-new-6", "my-cluster-new-7")));
 
                     // Check statuses
                     assertThat(kafkaNodePoolStatusCaptor.getAllValues().size(), is(2));
                     assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(0).getStatus().getReplicas(), is(3));
                     assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(0).getStatus().getNodeIds(), is(List.of(0, 1, 2)));
                     assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(0).getStatus().getRoles().size(), is(1));
-                    assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(0).getStatus().getRoles(), hasItems(ProcessRoles.BROKER));
-                    assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(1).getStatus().getReplicas(), is(2));
-                    assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(1).getStatus().getNodeIds(), is(List.of(3, 4)));
+                    assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(0).getStatus().getRoles(), hasItems(ProcessRoles.CONTROLLER));
+                    assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(1).getStatus().getReplicas(), is(3));
+                    assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(1).getStatus().getNodeIds(), is(List.of(3, 4, 5)));
                     assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(1).getStatus().getRoles().size(), is(1));
                     assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(1).getStatus().getRoles(), hasItems(ProcessRoles.BROKER));
-                    assertThat(kao.state.kafkaStatus.getKafkaNodePools().stream().map(UsedNodePoolStatus::getName).toList(), is(List.of("pool-a", "pool-b")));
+                    assertThat(kao.state.kafkaStatus.getKafkaNodePools().stream().map(UsedNodePoolStatus::getName).toList(), is(List.of("brokers", "controllers")));
 
                     // Assert the info passed over for Cruise Control
-                    assertThat(kr.kafkaBrokerNodes().size(), is(5));
-                    assertThat(kr.kafkaBrokerNodes().stream().map(NodeRef::podName).toList(), is(List.of("my-cluster-pool-a-0", "my-cluster-pool-a-1", "my-cluster-pool-a-2", "my-cluster-pool-b-3", "my-cluster-pool-b-4")));
+                    assertThat(kr.kafkaBrokerNodes().size(), is(3));
+                    assertThat(kr.kafkaBrokerNodes().stream().map(NodeRef::podName).toList(), is(List.of("my-cluster-brokers-3", "my-cluster-brokers-4", "my-cluster-brokers-5")));
 
                     assertThat(kr.kafkaStorage().size(), is(2));
-                    assertThat(kr.kafkaStorage().get("pool-a"), is(new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build()).build()));
-                    assertThat(kr.kafkaStorage().get("pool-b"), is(new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("200Gi").build()).build()));
+                    assertThat(kr.kafkaStorage().get("controllers"), is(new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build()).build()));
+                    assertThat(kr.kafkaStorage().get("brokers"), is(new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("200Gi").build()).build()));
 
-                    assertThat(kr.kafkaBrokerResourceRequirements().size(), is(2));
-                    assertThat(kr.kafkaBrokerResourceRequirements().get("pool-a"), is(new ResourceRequirementsBuilder().withRequests(Map.of("cpu", new Quantity("4"))).build()));
-                    assertThat(kr.kafkaBrokerResourceRequirements().get("pool-b"), is(new ResourceRequirementsBuilder().withRequests(Map.of("cpu", new Quantity("6"))).build()));
+                    assertThat(kr.kafkaBrokerResourceRequirements().size(), is(1));
+                    assertThat(kr.kafkaBrokerResourceRequirements().get("brokers"), is(new ResourceRequirementsBuilder().withRequests(Map.of("cpu", new Quantity("6"))).build()));
 
+                    async.flag();
+                })));
+    }
+
+    /**
+     * Tests that KRaft cluster cannot be deployed without using NodePools
+     *
+     * @param context   Test context
+     */
+    @Test
+    public void testKRaftClusterWithoutNodePools(VertxTestContext context)  {
+        Kafka kafka = new KafkaBuilder(KAFKA)
+                .editMetadata()
+                    .withAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled"))
+                .endMetadata()
+                .editSpec()
+                    .withZookeeper(null)
+                .endSpec()
+                .build();
+
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+
+        CrdOperator<KubernetesClient, Kafka, KafkaList> mockKafkaOps = supplier.kafkaOperator;
+        when(mockKafkaOps.getAsync(eq(NAMESPACE), eq(CLUSTER_NAME))).thenReturn(Future.succeededFuture(kafka));
+
+        ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
+
+        KafkaAssemblyOperator kao = new KafkaAssemblyOperator(
+                vertx, new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
+                CERT_MANAGER,
+                PASSWORD_GENERATOR,
+                supplier,
+                config);
+
+        Checkpoint async = context.checkpoint();
+        kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME))
+                .onComplete(context.failing(v -> context.verify(() -> {
+                    assertThat(v, instanceOf(InvalidConfigurationException.class));
+                    assertThat(v.getMessage(), is("The UseKRaft feature gate can be used only together with a Kafka cluster based on the KafkaNodePool resources."));
                     async.flag();
                 })));
     }
@@ -1342,7 +1156,6 @@ public class KafkaAssemblyOperatorWithPoolsTest {
      */
     @Test
     public void testNoNodePoolsValidation(VertxTestContext context)  {
-
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         SecretOperator secretOps = supplier.secretOperations;
@@ -1353,15 +1166,7 @@ public class KafkaAssemblyOperatorWithPoolsTest {
         when(mockPodOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(Collections.emptyList()));
 
         CrdOperator<KubernetesClient, Kafka, KafkaList> mockKafkaOps = supplier.kafkaOperator;
-        Kafka kraftEnabledKafka = new KafkaBuilder(KAFKA)
-                .editMetadata()
-                    .addToAnnotations(Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled")
-                .endMetadata()
-                .editSpec()
-                    .withZookeeper(null)
-                .endSpec()
-                .build();
-        when(mockKafkaOps.getAsync(eq(NAMESPACE), eq(CLUSTER_NAME))).thenReturn(Future.succeededFuture(kraftEnabledKafka));
+        when(mockKafkaOps.getAsync(eq(NAMESPACE), eq(CLUSTER_NAME))).thenReturn(Future.succeededFuture(KAFKA));
         when(mockKafkaOps.updateStatusAsync(any(), any())).thenReturn(Future.succeededFuture());
 
         StatefulSetOperator mockStsOps = supplier.stsOperations;
@@ -1399,13 +1204,11 @@ public class KafkaAssemblyOperatorWithPoolsTest {
     }
 
     static class MockKafkaAssemblyOperator extends KafkaAssemblyOperator  {
-        ZooKeeperReconciler mockZooKeeperReconciler;
         KafkaReconciler mockKafkaReconciler;
         ReconciliationState state;
 
-        public MockKafkaAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa, CertManager certManager, PasswordGenerator passwordGenerator, ResourceOperatorSupplier supplier, ClusterOperatorConfig config, ZooKeeperReconciler mockZooKeeperReconciler, KafkaReconciler mockKafkaReconciler) {
+        public MockKafkaAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa, CertManager certManager, PasswordGenerator passwordGenerator, ResourceOperatorSupplier supplier, ClusterOperatorConfig config, KafkaReconciler mockKafkaReconciler) {
             super(vertx, pfa, certManager, passwordGenerator, supplier, config);
-            this.mockZooKeeperReconciler = mockZooKeeperReconciler;
             this.mockKafkaReconciler = mockKafkaReconciler;
         }
 
@@ -1414,56 +1217,30 @@ public class KafkaAssemblyOperatorWithPoolsTest {
             return state;
         }
 
-        @Override
-        Future<Void> reconcile(ReconciliationState reconcileState)  {
-            return Future.succeededFuture(reconcileState)
-                    .compose(state -> state.reconcileCas(this.clock))
-                    .compose(state -> state.reconcileZooKeeper(this.clock))
-                    .compose(state -> state.reconcileKafka(this.clock))
-                    .mapEmpty();
-        }
-
         class MockReconciliationState extends ReconciliationState {
             MockReconciliationState(Reconciliation reconciliation, Kafka kafkaAssembly) {
                 super(reconciliation, kafkaAssembly);
             }
 
             @Override
-            Future<ZooKeeperReconciler> zooKeeperReconciler()    {
-                return Future.succeededFuture(mockZooKeeperReconciler);
-            }
-
-            @Override
             Future<KafkaReconciler> kafkaReconciler()    {
                 return Future.succeededFuture(mockKafkaReconciler);
             }
-        }
-    }
 
-    static class MockZooKeeperReconciler extends ZooKeeperReconciler   {
-        int maybeRollZooKeeperInvocations = 0;
-        Function<Pod, List<String>> zooPodNeedsRestart = null;
+            @Override
+            Future<ReconciliationState> reconcileEntityOperator(Clock clock)    {
+                return Future.succeededFuture(this);
+            }
 
-        public MockZooKeeperReconciler(Reconciliation reconciliation, Vertx vertx, ClusterOperatorConfig config, ResourceOperatorSupplier supplier, PlatformFeaturesAvailability pfa, Kafka kafkaAssembly, KafkaVersionChange versionChange, Storage oldStorage, int currentReplicas, ClusterCa clusterCa) {
-            super(reconciliation, vertx, config, supplier, pfa, kafkaAssembly, versionChange, oldStorage, currentReplicas, clusterCa);
-        }
+            @Override
+            Future<ReconciliationState> reconcileCruiseControl(Clock clock)    {
+                return Future.succeededFuture(this);
+            }
 
-        @Override
-        public Future<Void> reconcile(KafkaStatus kafkaStatus, Clock clock)    {
-            return manualPodCleaning()
-                    .compose(i -> manualRollingUpdate())
-                    .compose(i -> migrateFromStatefulSetToPodSet())
-                    .compose(i -> podSet())
-                    .compose(i -> scaleDown())
-                    .compose(i -> rollingUpdate())
-                    .compose(i -> scaleUp());
-        }
-
-        @Override
-        Future<Void> maybeRollZooKeeper(Function<Pod, List<String>> podNeedsRestart) {
-            maybeRollZooKeeperInvocations++;
-            zooPodNeedsRestart = podNeedsRestart;
-            return Future.succeededFuture();
+            @Override
+            Future<ReconciliationState> reconcileKafkaExporter(Clock clock)    {
+                return Future.succeededFuture(this);
+            }
         }
     }
 
