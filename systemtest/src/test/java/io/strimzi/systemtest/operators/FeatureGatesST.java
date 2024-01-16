@@ -125,7 +125,7 @@ public class FeatureGatesST extends AbstractST {
         final int kafkaReplicas = 3;
 
         // as the only FG set in the CO is 'KafkaNodePools' (kraft not included) Broker role is the only one that kafka broker can take
-        setupClusterOperatorWithFeatureGate(extensionContext, "+KafkaNodePools");
+        setupClusterOperatorWithFeatureGate(extensionContext, "+KafkaNodePools,-UseKRaft");
 
         LOGGER.info("Deploying Kafka Cluster: {}/{} controlled by KafkaNodePool: {}", testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getKafkaNodePoolName());
         final Kafka kafkaCr = KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), kafkaReplicas, 3)
