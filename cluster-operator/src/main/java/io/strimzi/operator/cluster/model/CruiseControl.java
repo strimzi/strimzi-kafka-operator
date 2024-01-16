@@ -110,13 +110,13 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
 
     /**
      * Annotation for rolling a cluster whenever the server configuration has changed.
-     * By changing the annotation we force a restart since the pod will be out of date compared to the Pod.
+     * When the configuration hash annotation change is detected, we force a pod restart.
      */
     public static final String ANNO_STRIMZI_SERVER_CONFIGURATION_HASH = Annotations.STRIMZI_DOMAIN + "server-configuration-hash";
 
     /**
      * Annotation for rolling a cluster whenever the capacity configuration has changed.
-     * By changing the annotation we force a restart since the pod will be out of date compared to the Pod.
+     * When the configuration hash annotation change is detected, we force a pod restart.
      */
     public static final String ANNO_STRIMZI_CAPACITY_CONFIGURATION_HASH = Annotations.STRIMZI_DOMAIN + "capacity-configuration-hash";
 
@@ -139,10 +139,6 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     /* test */ static final String REST_API_PORT_NAME = "rest-api";
 
     /* test */ static final String MIN_INSYNC_REPLICAS = "min.insync.replicas";
-
-    /* test */ Capacity getCapacity() {
-        return capacity;
-    }
 
     // Cruise Control configuration keys (EnvVariables)
     protected static final String ENV_VAR_STRIMZI_KAFKA_BOOTSTRAP_SERVERS = "STRIMZI_KAFKA_BOOTSTRAP_SERVERS";
@@ -397,7 +393,6 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_CRUISE_CONTROL_METRICS_ENABLED, String.valueOf(metrics.isEnabled())));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_KAFKA_BOOTSTRAP_SERVERS, KafkaResources.bootstrapServiceName(cluster) + ":" + KafkaCluster.REPLICATION_PORT));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
-
 
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_SSL_ENABLED,  String.valueOf(this.sslEnabled)));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_AUTH_ENABLED,  String.valueOf(this.authEnabled)));

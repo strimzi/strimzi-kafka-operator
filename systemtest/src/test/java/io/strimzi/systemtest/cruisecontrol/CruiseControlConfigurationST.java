@@ -4,8 +4,7 @@
  */
 package io.strimzi.systemtest.cruisecontrol;
 
-import io.fabric8.kubernetes.api.model.Container;
-import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
@@ -175,24 +174,10 @@ public class CruiseControlConfigurationST extends AbstractST {
         Properties fileConfiguration = new Properties();
         fileConfiguration.load(configurationFileStream);
 
-        Container cruiseControlContainer = null;
+        ConfigMap configMap = kubeClient(namespaceName).getConfigMap(namespaceName, CruiseControlResources.configMapName(clusterName));
 
-        for (Container container : cruiseControlPod.getSpec().getContainers()) {
-            if (container.getName().equals("cruise-control")) {
-                cruiseControlContainer = container;
-            }
-        }
-
-        EnvVar cruiseControlConfiguration = null;
-
-        for (EnvVar envVar : Objects.requireNonNull(cruiseControlContainer).getEnv()) {
-            if (envVar.getName().equals(TestConstants.CRUISE_CONTROL_CONFIGURATION_ENV)) {
-                cruiseControlConfiguration = envVar;
-            }
-        }
-
-        InputStream configurationContainerStream = new ByteArrayInputStream(Objects.requireNonNull(cruiseControlConfiguration).getValue().getBytes(StandardCharsets.UTF_8));
-
+        InputStream configurationContainerStream = new ByteArrayInputStream(
+                Objects.requireNonNull(configMap.getData().get("cruisecontrol.properties")).getBytes(StandardCharsets.UTF_8));
         Properties containerConfiguration = new Properties();
         containerConfiguration.load(configurationContainerStream);
 
@@ -236,9 +221,6 @@ public class CruiseControlConfigurationST extends AbstractST {
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3).build());
 
-        Container cruiseControlContainer;
-        EnvVar cruiseControlConfiguration;
-
         Map<String, String> kafkaSnapShot = PodUtils.podSnapshot(namespaceName, kafkaSelector);
         Map<String, String> cruiseControlSnapShot = DeploymentUtils.depSnapshot(namespaceName, CruiseControlResources.componentName(clusterName));
         Map<String, Object> performanceTuningOpts = new HashMap<String, Object>() {{
@@ -262,19 +244,10 @@ public class CruiseControlConfigurationST extends AbstractST {
         RollingUpdateUtils.waitForNoRollingUpdate(namespaceName, kafkaSelector, kafkaSnapShot);
 
         LOGGER.info("Verifying new configuration in the Kafka CR");
-        Pod cruiseControlPod = kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, clusterName + "-cruise-control-").get(0);
-
-        // Get CruiseControl resource properties
-        cruiseControlContainer = cruiseControlPod.getSpec().getContainers().stream()
-                .filter(container -> container.getName().equals(TestConstants.CRUISE_CONTROL_CONTAINER_NAME))
-                .findFirst().orElse(null);
-
-        cruiseControlConfiguration = Objects.requireNonNull(cruiseControlContainer).getEnv().stream()
-                .filter(envVar -> envVar.getName().equals(TestConstants.CRUISE_CONTROL_CONFIGURATION_ENV))
-                .findFirst().orElse(null);
+        ConfigMap configMap = kubeClient(namespaceName).getConfigMap(namespaceName, CruiseControlResources.configMapName(clusterName));
 
         InputStream configurationContainerStream = new ByteArrayInputStream(
-                Objects.requireNonNull(cruiseControlConfiguration).getValue().getBytes(StandardCharsets.UTF_8));
+                Objects.requireNonNull(configMap.getData().get("cruisecontrol.properties")).getBytes(StandardCharsets.UTF_8));
         Properties containerConfiguration = new Properties();
         containerConfiguration.load(configurationContainerStream);
 
