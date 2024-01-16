@@ -22,6 +22,7 @@ import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static io.strimzi.operator.cluster.model.ListenersUtils.isListenerWithK8sOIDC;
 import static io.strimzi.operator.cluster.model.ListenersUtils.isListenerWithOAuth;
 
 /**
@@ -558,9 +559,13 @@ public class ListenersValidator {
      */
     @SuppressWarnings({"checkstyle:BooleanExpressionComplexity", "checkstyle:NPathComplexity", "checkstyle:CyclomaticComplexity"})
     private static void validateOauth(Set<String> errors, GenericKafkaListener listener) {
-        if (isListenerWithOAuth(listener)) {
+        if (isListenerWithOAuth(listener) || isListenerWithK8sOIDC(listener)) {
             KafkaListenerAuthenticationOAuth oAuth = (KafkaListenerAuthenticationOAuth) listener.getAuth();
             String listenerName = listener.getName();
+
+            if (isListenerWithK8sOIDC(listener)) {
+                configureK8sOIDC(oAuth);
+            }
 
             if (!oAuth.isEnablePlain() && !oAuth.isEnableOauthBearer()) {
                 errors.add("listener " + listenerName + ": At least one of 'enablePlain', 'enableOauthBearer' has to be set to 'true'");
@@ -632,12 +637,12 @@ public class ListenersValidator {
                 if (oAuth.getJwksEndpointUri() != null) {
                     errors.add("listener " + listenerName + ": 'accessTokenIsJwt' can not be 'false' when 'jwksEndpointUri' is set");
                 }
-                if (!oAuth.isCheckAccessTokenType()) {
+                if (oAuth.getCheckAccessTokenType() != null && !oAuth.getCheckAccessTokenType()) {
                     errors.add("listener " + listenerName + ": 'checkAccessTokenType' can not be set to 'false' when 'accessTokenIsJwt' is 'false'");
                 }
             }
 
-            if (!oAuth.isCheckAccessTokenType() && oAuth.getIntrospectionEndpointUri() != null) {
+            if (oAuth.getCheckAccessTokenType() != null && !oAuth.getCheckAccessTokenType() && oAuth.getIntrospectionEndpointUri() != null) {
                 errors.add("listener " + listenerName + ": 'checkAccessTokenType' can not be set to 'false' when 'introspectionEndpointUri' is set");
             }
 
@@ -653,6 +658,27 @@ public class ListenersValidator {
                     errors.add("listener " + listenerName + ": 'groupsClaim' value not a valid JsonPath query - " + e.getMessage());
                 }
             }
+        }
+    }
+
+    private static void configureK8sOIDC(KafkaListenerAuthenticationOAuth oAuth) {
+        if (oAuth.getValidIssuerUri() == null) {
+            oAuth.setValidIssuerUri("https://kubernetes.default.svc.cluster.local");
+        }
+        if (oAuth.getJwksEndpointUri() == null) {
+            oAuth.setJwksEndpointUri("https://kubernetes.default.svc.cluster.local/openid/v1/jwks");
+        }
+        if (oAuth.getServerBearerTokenLocation() == null) {
+            oAuth.setServerBearerTokenLocation("/var/run/secrets/kubernetes.io/serviceaccount/token");
+        }
+
+        if (oAuth.getIncludeAcceptHeader() == null || oAuth.getIncludeAcceptHeader()) {
+            LOGGER.warnOp("'includeAcceptHeader' force-set to 'false' for compatibility with 'k8s-oidc'");
+            oAuth.setIncludeAcceptHeader(false);
+        }
+        if (oAuth.getCheckAccessTokenType() == null || oAuth.getCheckAccessTokenType()) {
+            LOGGER.warnOp("'checkAccessTokenType' force-set to 'false' for compatibility with 'k8s-oidc'");
+            oAuth.setCheckAccessTokenType(false);
         }
     }
 
