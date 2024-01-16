@@ -191,7 +191,7 @@
             <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
         </repository>
     </distributionManagement>
-    
+
     <modules>
         <module>kafka-agent</module>
         <module>mirror-maker-agent</module>

@@ -18,6 +18,7 @@ import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerConfiguration;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthentication;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationCustom;
+import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationK8sOIDC;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationOAuth;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationScramSha512;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationTls;
@@ -484,7 +485,10 @@ public class KafkaBrokerConfigurationBuilder {
                 addOptionIfNotNull(jaasOptions, "oauth.client.secret", String.format(PLACEHOLDER_OAUTH_CLIENT_SECRET, listenerNameInEnvVar));
             }
 
-            if (oauth.getTlsTrustedCertificates() != null && oauth.getTlsTrustedCertificates().size() > 0)    {
+            if (auth instanceof KafkaListenerAuthenticationK8sOIDC) {
+                addOptionIfNotNull(jaasOptions, "oauth.ssl.truststore.location", "/var/run/secrets/kubernetes.io/serviceaccount/..data/ca.crt");
+                addOptionIfNotNull(jaasOptions, "oauth.ssl.truststore.type", "PEM");
+            } else if (oauth.getTlsTrustedCertificates() != null && oauth.getTlsTrustedCertificates().size() > 0)    {
                 addOptionIfNotNull(jaasOptions, "oauth.ssl.truststore.location", String.format("/tmp/kafka/oauth-%s.truststore.p12", listenerNameInProperty));
                 addOptionIfNotNull(jaasOptions, "oauth.ssl.truststore.password", PLACEHOLDER_CERT_STORE_PASSWORD);
                 addOptionIfNotNull(jaasOptions, "oauth.ssl.truststore.type", "PKCS12");
@@ -596,7 +600,7 @@ public class KafkaBrokerConfigurationBuilder {
         addOptionIfNotNull(options, ServerConfig.OAUTH_GROUPS_CLAIM, oauth.getGroupsClaim());
         addOptionIfNotNull(options, ServerConfig.OAUTH_GROUPS_CLAIM_DELIMITER, oauth.getGroupsClaimDelimiter());
         addBooleanOptionIfFalse(options, ServerConfig.OAUTH_ACCESS_TOKEN_IS_JWT, oauth.isAccessTokenIsJwt());
-        addBooleanOptionIfFalse(options, ServerConfig.OAUTH_CHECK_ACCESS_TOKEN_TYPE, oauth.isCheckAccessTokenType());
+        addBooleanOptionIfFalse(options, ServerConfig.OAUTH_CHECK_ACCESS_TOKEN_TYPE, getOrDefault(oauth.getCheckAccessTokenType(), true));
         addOptionIfNotNull(options, ServerConfig.OAUTH_VALID_TOKEN_TYPE, oauth.getValidTokenType());
 
         if (oauth.isDisableTlsHostnameVerification()) {
@@ -618,7 +622,7 @@ public class KafkaBrokerConfigurationBuilder {
 
         addBooleanOptionIfTrue(options, ServerConfig.OAUTH_ENABLE_METRICS, oauth.isEnableMetrics());
         addBooleanOptionIfFalse(options, ServerConfig.OAUTH_FAIL_FAST, oauth.getFailFast());
-        addBooleanOptionIfFalse(options, ServerConfig.OAUTH_INCLUDE_ACCEPT_HEADER, oauth.isIncludeAcceptHeader());
+        addBooleanOptionIfFalse(options, ServerConfig.OAUTH_INCLUDE_ACCEPT_HEADER, getOrDefault(oauth.getIncludeAcceptHeader(), true));
 
         return options;
     }
@@ -651,6 +655,10 @@ public class KafkaBrokerConfigurationBuilder {
         if (value != null) {
             writer.println(name + "=" + value);
         }
+    }
+
+    static <T> T getOrDefault(T option, T value) {
+        return option != null ? option : value;
     }
 
     /**
