@@ -1153,10 +1153,10 @@ public class KafkaAssemblyOperatorTest {
 
         if (originalCruiseControl != null) {
             when(mockDepOps.get(clusterNamespace, CruiseControlResources.componentName(clusterName))).thenReturn(
-                    originalCruiseControl.generateDeployment(emptyMap(), true, null, null)
+                    originalCruiseControl.generateDeployment(Map.of(), true, null, null)
             );
             when(mockDepOps.getAsync(clusterNamespace, KafkaResources.entityOperatorDeploymentName(clusterName))).thenReturn(
-                    Future.succeededFuture(originalCruiseControl.generateDeployment(emptyMap(), true, null, null))
+                    Future.succeededFuture(originalCruiseControl.generateDeployment(Map.of(), true, null, null))
             );
             when(mockDepOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(
                     Future.succeededFuture()

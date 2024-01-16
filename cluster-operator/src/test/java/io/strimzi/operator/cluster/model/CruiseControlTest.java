@@ -82,7 +82,6 @@ import static io.strimzi.operator.cluster.model.CruiseControl.API_HEALTHCHECK_PA
 import static io.strimzi.operator.cluster.model.CruiseControl.API_USER_NAME;
 import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters.ANOMALY_DETECTION_CONFIG_KEY;
 import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters.DEFAULT_GOALS_CONFIG_KEY;
-import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.containsString;
@@ -477,7 +476,7 @@ public class CruiseControlTest {
 
     @ParallelTest
     public void testGenerateDeployment() {
-        Deployment dep = cc.generateDeployment(emptyMap(), true, null, null);
+        Deployment dep = cc.generateDeployment(Map.of(), true, null, null);
 
         List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
 
@@ -558,12 +557,12 @@ public class CruiseControlTest {
 
     @ParallelTest
     public void testImagePullPolicy() {
-        Deployment dep = cc.generateDeployment(emptyMap(), true, ImagePullPolicy.ALWAYS, null);
+        Deployment dep = cc.generateDeployment(Map.of(), true, ImagePullPolicy.ALWAYS, null);
         List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
         Container ccContainer = containers.stream().filter(container -> ccImage.equals(container.getImage())).findFirst().orElseThrow();
         assertThat(ccContainer.getImagePullPolicy(), is(ImagePullPolicy.ALWAYS.toString()));
 
-        dep = cc.generateDeployment(emptyMap(), true, ImagePullPolicy.IFNOTPRESENT, null);
+        dep = cc.generateDeployment(Map.of(), true, ImagePullPolicy.IFNOTPRESENT, null);
         containers = dep.getSpec().getTemplate().getSpec().getContainers();
         ccContainer = containers.stream().filter(container -> ccImage.equals(container.getImage())).findFirst().orElseThrow();
         assertThat(ccContainer.getImagePullPolicy(), is(ImagePullPolicy.IFNOTPRESENT.toString()));
@@ -739,7 +738,7 @@ public class CruiseControlTest {
         CruiseControl cc = createCruiseControl(resource);
 
         // Check Deployment
-        Deployment dep = cc.generateDeployment(emptyMap(), true, null, null);
+        Deployment dep = cc.generateDeployment(Map.of(), true, null, null);
         depLabels.putAll(expectedLabels());
         assertThat(dep.getMetadata().getLabels(), is(depLabels));
         assertThat(dep.getMetadata().getAnnotations(), is(depAnots));
@@ -786,7 +785,7 @@ public class CruiseControlTest {
         Kafka resource = createKafka(cruiseControlSpec);
 
         CruiseControl cc = createCruiseControl(resource);
-        Deployment dep = cc.generateDeployment(emptyMap(), true, null, null);
+        Deployment dep = cc.generateDeployment(Map.of(), true, null, null);
         List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
         Container ccContainer = containers.stream().filter(container -> ccImage.equals(container.getImage())).findFirst().orElseThrow();
 
@@ -907,7 +906,7 @@ public class CruiseControlTest {
         Kafka resource = createKafka(cruiseControlSpec);
 
         CruiseControl cc = createCruiseControl(resource);
-        Deployment dep = cc.generateDeployment(emptyMap(), true, null, null);
+        Deployment dep = cc.generateDeployment(Map.of(), true, null, null);
         List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
 
         // checks on the main Cruise Control container
@@ -935,7 +934,7 @@ public class CruiseControlTest {
         Kafka resource = createKafka(cruiseControlSpec);
 
         CruiseControl cc = createCruiseControl(resource);
-        Deployment dep = cc.generateDeployment(emptyMap(), true, null, null);
+        Deployment dep = cc.generateDeployment(Map.of(), true, null, null);
         List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
 
         // checks on the main Cruise Control container
@@ -963,7 +962,7 @@ public class CruiseControlTest {
 
         CruiseControl cc = createCruiseControl(resource);
 
-        Deployment dep = cc.generateDeployment(emptyMap(), true, null, null);
+        Deployment dep = cc.generateDeployment(Map.of(), true, null, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext(), is(notNullValue()));
         assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext().getFsGroup(), is(123L));
         assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext().getRunAsGroup(), is(456L));
@@ -976,7 +975,7 @@ public class CruiseControlTest {
         cc.securityProvider = new RestrictedPodSecurityProvider();
         cc.securityProvider.configure(new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION));
 
-        Deployment dep = cc.generateDeployment(emptyMap(), true, null, null);
+        Deployment dep = cc.generateDeployment(Map.of(), true, null, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext(), is(nullValue()));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getSecurityContext().getAllowPrivilegeEscalation(), is(false));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getSecurityContext().getRunAsNonRoot(), is(true));
@@ -1017,7 +1016,7 @@ public class CruiseControlTest {
 
     @ParallelTest
     public void testDefaultSecurityContext() {
-        Deployment dep = cc.generateDeployment(emptyMap(), true, null, null);
+        Deployment dep = cc.generateDeployment(Map.of(), true, null, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext(), is(nullValue()));
     }
 
@@ -1047,7 +1046,7 @@ public class CruiseControlTest {
 
         CruiseControl cc = createCruiseControl(resource);
 
-        Deployment dep = cc.generateDeployment(emptyMap(), true, null, null);
+        Deployment dep = cc.generateDeployment(Map.of(), true, null, null);
 
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers(),
                 hasItem(allOf(

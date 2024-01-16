@@ -21,10 +21,16 @@ import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.ClusterCa;
+import io.strimzi.operator.cluster.model.CruiseControl;
 import io.strimzi.operator.cluster.model.KafkaVersion;
+import io.strimzi.operator.cluster.model.MetricsAndLogging;
+import io.strimzi.operator.cluster.model.MockSharedEnvironmentProvider;
 import io.strimzi.operator.cluster.model.NodeRef;
+import io.strimzi.operator.cluster.model.SharedEnvironmentProvider;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
@@ -42,6 +48,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 
 import java.time.Clock;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -56,6 +63,7 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
 public class CruiseControlReconcilerTest {
+    private static final SharedEnvironmentProvider SHARED_ENV_PROVIDER = new MockSharedEnvironmentProvider();
     private static final String NAMESPACE = "namespace";
     private static final String NAME = "name";
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
@@ -63,7 +71,6 @@ public class CruiseControlReconcilerTest {
             new NodeRef(NAME + "kafka-0", 0, "kafka", false, true),
             new NodeRef(NAME + "kafka-1", 1, "kafka", false, true),
             new NodeRef(NAME + "kafka-2", 2, "kafka", false, true));
-
     private final CruiseControlSpec cruiseControlSpec = new CruiseControlSpecBuilder()
             .withBrokerCapacity(new BrokerCapacityBuilder().withInboundNetwork("10000KB/s").withOutboundNetwork("10000KB/s").build())
             .withConfig(Map.of("hard.goals", "com.linkedin.kafka.cruisecontrol.analyzer.goals.NetworkInboundCapacityGoal,com.linkedin.kafka.cruisecontrol.analyzer.goals.NetworkOutboundCapacityGoal"))
@@ -146,6 +153,20 @@ public class CruiseControlReconcilerTest {
                     assertThat(cmCaptor.getAllValues().size(), is(1));
                     assertThat(cmCaptor.getValue(), is(notNullValue()));
 
+                    // Verify annotations
+                    CruiseControl expectCruiseControl = CruiseControl.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS, NODES, Map.of("kafka", kafka.getSpec().getKafka().getStorage()), Map.of(), SHARED_ENV_PROVIDER);
+                    ConfigMap configMap = expectCruiseControl.generateConfigMap(new MetricsAndLogging(null, null));
+
+                    Map<String, String> expectedAnnotations = new HashMap<>();
+                    expectedAnnotations.put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(clusterCa.caCertGeneration()));
+                    expectedAnnotations.put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, String.valueOf(clusterCa.caKeyGeneration()));
+                    expectedAnnotations.put(CruiseControl.ANNO_STRIMZI_SERVER_CONFIGURATION_HASH, Util.hashStub(configMap.getData().get(CruiseControl.SERVER_CONFIG_FILENAME)));
+                    expectedAnnotations.put(CruiseControl.ANNO_STRIMZI_CAPACITY_CONFIGURATION_HASH,  Util.hashStub(configMap.getData().get(CruiseControl.CAPACITY_CONFIG_FILENAME)));
+
+                    Map<String, String> actualAnnotations = depCaptor.getAllValues().get(0).getSpec().getTemplate().getMetadata().getAnnotations();
+                    assertThat("Annotations are not equal", actualAnnotations, is(expectedAnnotations));
+
+                    // Verify deployment
                     assertThat(depCaptor.getAllValues().size(), is(1));
                     assertThat(depCaptor.getValue(), is(notNullValue()));
 
@@ -224,7 +245,7 @@ public class CruiseControlReconcilerTest {
                     assertThat(netPolicyCaptor.getValue(), is(nullValue()));
 
                     assertThat(cmCaptor.getAllValues().size(), is(1));
-                    assertThat(secretCaptor.getValue(), is(nullValue()));
+                    assertThat(cmCaptor.getValue(), is(nullValue()));
 
                     assertThat(depCaptor.getAllValues().size(), is(1));
                     assertThat(depCaptor.getValue(), is(nullValue()));

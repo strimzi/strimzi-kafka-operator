@@ -20,7 +20,6 @@ import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
-import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
@@ -67,11 +66,7 @@ public class CruiseControlReconciler {
 
     private boolean existingCertsChanged = false;
 
-    private String logging = "";
-    private String loggingHash = "";
-    private String serverConfiguration = "";
     private String serverConfigurationHash = "";
-    private String capacityConfiguration = "";
     private String capacityConfigurationHash = "";
 
     /**
@@ -187,12 +182,8 @@ public class CruiseControlReconciler {
                     .compose(metricsAndLogging -> {
                         ConfigMap configMap = cruiseControl.generateConfigMap(metricsAndLogging);
 
-                        this.serverConfiguration = configMap.getData().get(CruiseControl.SERVER_CONFIG_FILENAME);
-                        this.serverConfigurationHash = Util.hashStub(serverConfiguration);
-                        this.capacityConfiguration = configMap.getData().get(CruiseControl.CAPACITY_CONFIG_FILENAME);
-                        this.capacityConfigurationHash = Util.hashStub(capacityConfiguration);
-                        this.logging = cruiseControl.logging().loggingConfiguration(reconciliation, metricsAndLogging.loggingCm());
-                        this.loggingHash = Util.hashStub(Util.getLoggingDynamicallyUnmodifiableEntries(logging));
+                        this.serverConfigurationHash = Util.hashStub(configMap.getData().get(CruiseControl.SERVER_CONFIG_FILENAME));
+                        this.capacityConfigurationHash = Util.hashStub(configMap.getData().get(CruiseControl.CAPACITY_CONFIG_FILENAME));
 
                         return configMapOperator
                                 .reconcile(
@@ -289,11 +280,9 @@ public class CruiseControlReconciler {
      */
     protected Future<Void> deployment(boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
         if (cruiseControl != null) {
-
             Map<String, String> podAnnotations = new LinkedHashMap<>();
             podAnnotations.put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(clusterCa.caCertGeneration()));
             podAnnotations.put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, String.valueOf(clusterCa.caKeyGeneration()));
-            podAnnotations.put(Annotations.ANNO_STRIMZI_LOGGING_APPENDERS_HASH, loggingHash);
             podAnnotations.put(CruiseControl.ANNO_STRIMZI_SERVER_CONFIGURATION_HASH, serverConfigurationHash);
             podAnnotations.put(CruiseControl.ANNO_STRIMZI_CAPACITY_CONFIGURATION_HASH, capacityConfigurationHash);
 
