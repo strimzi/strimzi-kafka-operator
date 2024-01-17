@@ -7,21 +7,16 @@ package io.strimzi.operator.cluster.operator.assembly;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.DefaultKubernetesResourceList;
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.dsl.Resource;
 import io.micrometer.core.instrument.Timer;
-import io.netty.channel.ConnectTimeoutException;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.common.ConnectorState;
 import io.strimzi.api.kafka.model.connect.AbstractKafkaConnectSpec;
-import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
-import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
 import io.strimzi.api.kafka.model.connect.KafkaConnectStatus;
 import io.strimzi.api.kafka.model.connector.AutoRestartStatus;
 import io.strimzi.api.kafka.model.connector.AutoRestartStatusBuilder;
@@ -50,7 +45,6 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.operator.common.model.StatusDiff;
 import io.strimzi.operator.common.model.StatusUtils;
 import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
@@ -73,7 +67,6 @@ import io.vertx.core.json.JsonObject;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -82,7 +75,6 @@ import java.util.TreeMap;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_RESTART;
 import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_RESTART_TASK;
@@ -94,13 +86,12 @@ import static java.util.Collections.emptyMap;
  * @param <C>   Kubernetes client type
  * @param <T>   Custom Resource type
  * @param <L>   Custom Resource List type
- * @param <R>   Custom Resource "Resource" type
  * @param <P>   Custom Resource Spec type
  * @param <S>   Custom Resource Status type
  */
 @SuppressWarnings({"checkstyle:ClassFanOutComplexity", "checkstyle:CyclomaticComplexity"})
 public abstract class AbstractConnectOperator<C extends KubernetesClient, T extends CustomResource<P, S>,
-        L extends DefaultKubernetesResourceList<T>, R extends Resource<T>, P extends AbstractKafkaConnectSpec, S extends KafkaConnectStatus>
+        L extends DefaultKubernetesResourceList<T>, P extends AbstractKafkaConnectSpec, S extends KafkaConnectStatus>
         extends AbstractOperator<T, P, S, CrdOperator<C, T, L>> {
 
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(AbstractConnectOperator.class.getName());
@@ -126,7 +117,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     protected final ServiceAccountOperator serviceAccountOperations;
     protected final KafkaVersion.Lookup versions;
     protected final SharedEnvironmentProvider sharedEnvironmentProvider;
-    private final int port;
+    protected final int port;
 
     /**
      * Constructor
@@ -285,87 +276,14 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     /**
      * Generates a config map for metrics and logging information.
      *
-     * @param reconciliation       The reconciliation
-     * @param namespace            Namespace of the Connect cluster
-     * @param kafkaConnectCluster  KafkaConnectCluster object
-     * @return                     Future for tracking the asynchronous result of getting the metrics and logging config map
+     * @param reconciliation        The reconciliation
+     * @param kafkaConnectCluster   KafkaConnectCluster object
+     *
+     * @return Future for tracking the asynchronous result of getting the metrics and logging config map
      */
-    protected Future<ConfigMap> generateMetricsAndLoggingConfigMap(Reconciliation reconciliation, String namespace, KafkaConnectCluster kafkaConnectCluster) {
+    protected Future<ConfigMap> generateMetricsAndLoggingConfigMap(Reconciliation reconciliation, KafkaConnectCluster kafkaConnectCluster) {
         return MetricsAndLoggingUtils.metricsAndLogging(reconciliation, configMapOperations, kafkaConnectCluster.logging(), kafkaConnectCluster.metrics())
                 .compose(metricsAndLoggingCm -> Future.succeededFuture(kafkaConnectCluster.generateMetricsAndLogConfigMap(metricsAndLoggingCm)));
-    }
-
-    /**
-     * Reconcile all the connectors selected by the given connect instance, updated each connectors status with the result.
-     * @param reconciliation The reconciliation
-     * @param connect The connector
-     * @param connectStatus Status of the KafkaConnect  resource (will be used to set the available
-     *                      connector plugins)
-     * @param scaledToZero  Indicated whether the related Connect cluster is currently scaled to 0 replicas
-     * @return A future, failed if any of the connectors' statuses could not be updated.
-     */
-    protected Future<Void> reconcileConnectors(Reconciliation reconciliation, T connect, S connectStatus, boolean scaledToZero, String desiredLogging, OrderedProperties defaultLogging) {
-        String connectName = connect.getMetadata().getName();
-        String namespace = connect.getMetadata().getNamespace();
-        String host = KafkaConnectResources.qualifiedServiceName(connectName, namespace);
-
-        if (!isUseResources(connect))    {
-            return Future.succeededFuture();
-        }
-
-        if (scaledToZero)   {
-            return connectorOperator.listAsync(namespace, new LabelSelectorBuilder().addToMatchLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName).build())
-                    .compose(connectors -> Future.join(
-                            connectors.stream().map(connector -> maybeUpdateConnectorStatus(reconciliation, connector, null, zeroReplicas(namespace, connectName)))
-                                    .collect(Collectors.toList())
-                    ))
-                    .map((Void) null);
-        }
-
-        KafkaConnectApi apiClient = connectClientProvider.apply(vertx);
-
-        return Future.join(
-                apiClient.list(reconciliation, host, port),
-                connectorOperator.listAsync(namespace, new LabelSelectorBuilder().addToMatchLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName).build()),
-                apiClient.listConnectorPlugins(reconciliation, host, port),
-                apiClient.updateConnectLoggers(reconciliation, host, port, desiredLogging, defaultLogging)
-        ).compose(cf -> {
-            List<String> runningConnectorNames = cf.resultAt(0);
-            List<KafkaConnector> desiredConnectors = cf.resultAt(1);
-            List<ConnectorPlugin> connectorPlugins = cf.resultAt(2);
-
-            LOGGER.debugCr(reconciliation, "Setting list of connector plugins in Kafka Connect status");
-            connectStatus.setConnectorPlugins(connectorPlugins);
-
-            Set<String> deleteConnectorNames = new HashSet<>(runningConnectorNames);
-            deleteConnectorNames.removeAll(desiredConnectors.stream().map(c -> c.getMetadata().getName()).collect(Collectors.toSet()));
-            LOGGER.debugCr(reconciliation, "{} cluster: delete connectors: {}", kind(), deleteConnectorNames);
-            Stream<Future<Void>> deletionFutures = deleteConnectorNames.stream().map(connectorName ->
-                    reconcileConnectorAndHandleResult(reconciliation, host, apiClient, true, connectorName, null)
-            );
-
-            LOGGER.debugCr(reconciliation, "{} cluster: required connectors: {}", kind(), desiredConnectors);
-            Stream<Future<Void>> createUpdateFutures = desiredConnectors.stream()
-                    .map(connector -> reconcileConnectorAndHandleResult(reconciliation, host, apiClient, true, connector.getMetadata().getName(), connector));
-
-            return Future.join(Stream.concat(deletionFutures, createUpdateFutures).collect(Collectors.toList())).map((Void) null);
-        }).recover(error -> {
-            if (error instanceof ConnectTimeoutException) {
-                Promise<Void> connectorStatuses = Promise.promise();
-                LOGGER.warnCr(reconciliation, "Failed to connect to the REST API => trying to update the connector status");
-
-                connectorOperator.listAsync(namespace, new LabelSelectorBuilder().addToMatchLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName).build())
-                        .compose(connectors -> Future.join(
-                                connectors.stream().map(connector -> maybeUpdateConnectorStatus(reconciliation, connector, null, error))
-                                        .collect(Collectors.toList())
-                        ))
-                        .onComplete(ignore -> connectorStatuses.fail(error));
-
-                return connectorStatuses.future();
-            } else {
-                return Future.failedFuture(error);
-            }
-        });
     }
 
     protected KafkaConnectApi getKafkaConnectApi() {
@@ -615,10 +533,10 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                      return Future.succeededFuture(previousStatus.getAutoRestart());
                  })
                  .compose(previousAutoRestartStatus -> {
-                     boolean needsRestart = connectorHasFailed(statusResultJson) || failedTaskIds(statusResultJson).size() > 0;
+                     boolean needsRestart = connectorHasFailed(statusResultJson) || !failedTaskIds(statusResultJson).isEmpty();
 
                      if (needsRestart)    {
-                         // Connector or task failed and we should check it for auto-restart
+                         // Connector or task failed, and we should check it for auto-restart
                          if (shouldAutoRestart(previousAutoRestartStatus, connectorSpec.getAutoRestart().getMaxRestarts()))    {
                              // There are failures, and it is a time to restart the connector now
                              metrics().connectorsAutoRestartsCounter(reconciliation.namespace()).increment();
@@ -930,7 +848,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
             List<String> failedTaskIds;
             if (connectorHasFailed(statusResultJson)) {
                 connectorReadiness = Future.failedFuture(new Throwable("Connector has failed, see connectorStatus for more details."));
-            } else if ((failedTaskIds = failedTaskIds(statusResultJson)).size() > 0) {
+            } else if (!(failedTaskIds = failedTaskIds(statusResultJson)).isEmpty()) {
                 connectorReadiness = Future.failedFuture(new Throwable(String.format("The following tasks have failed: %s, see connectorStatus for more details.", String.join(", ", failedTaskIds))));
             }
             topics = connectorStatus.topics.stream().sorted().collect(Collectors.toList());
@@ -954,9 +872,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         status.addConditions(conditions);
 
         return maybeUpdateStatusCommon(connectorOperator, connector, reconciliation, status,
-            (connector1, status1) -> {
-                return new KafkaConnectorBuilder(connector1).withStatus(status1).build();
-            });
+            (connector1, status1) -> new KafkaConnectorBuilder(connector1).withStatus(status1).build());
     }
 
     private boolean connectorHasFailed(JsonObject statusResult) {
@@ -976,7 +892,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     }
 
     /**
-     * The tasksMax are mirrored in the KafkaConnector.status where they are used by the scale subresource.
+     * The tasksMax are mirrored in the KafkaConnector status section where they are used by the scale subresource.
      * However, .spec.tasksMax is not always set and has no default value in Strimzi (only in Kafka Connect). So when
      * it is not set, we try to count the tasks from the status. And if these are missing as well, we just set it to 0.
      *
@@ -1031,8 +947,10 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     }
 
     /**
-     * Updates the Status field of the KafkaConnect or KafkaConnector CR. It diffs the desired status against the current status and calls
-     * the update only when there is any difference in non-timestamp fields.
+     * Updates the Status field of the KafkaConnect or KafkaConnector CR. It diffs the desired status against the
+     * current status and calls the update only when there is any difference in non-timestamp fields. The parameters
+     * defined separately from the class-level parameters because they cover also KafkaConnector resources and not only
+     * KafkaConnect and KafkaMirrorMaker2 resources.
      *
      * @param resourceOperator  The resource operator for managing custom resources
      * @param resource          The CR of KafkaConnect or KafkaConnector
@@ -1040,23 +958,23 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      * @param desiredStatus     The KafkaConnectStatus or KafkaConnectorStatus which should be set
      * @param copyWithStatus    BiFunction for copying parts of the status
      *
-     * @param <T>   Custom resource type
-     * @param <S>   Custom resource status type
-     * @param <L>   Custom resource list type
+     * @param <U>   Custom resource type
+     * @param <V>   Custom resource status type
+     * @param <W>   Custom resource list type
      *
      * @return  Future which completes then the status is updated
      */
-    protected <T extends CustomResource<?, S>, S extends Status, L extends DefaultKubernetesResourceList<T>> Future<Void>
-        maybeUpdateStatusCommon(CrdOperator<KubernetesClient, T, L> resourceOperator,
-                                T resource,
+    protected <U extends CustomResource<?, V>, V extends Status, W extends DefaultKubernetesResourceList<U>> Future<Void>
+        maybeUpdateStatusCommon(CrdOperator<KubernetesClient, U, W> resourceOperator,
+                                U resource,
                                 Reconciliation reconciliation,
-                                S desiredStatus,
-                                BiFunction<T, S, T> copyWithStatus) {
+                                V desiredStatus,
+                                BiFunction<U, V, U> copyWithStatus) {
         Promise<Void> updateStatusPromise = Promise.promise();
 
         resourceOperator.getAsync(resource.getMetadata().getNamespace(), resource.getMetadata().getName()).onComplete(getRes -> {
             if (getRes.succeeded()) {
-                T fetchedResource = getRes.result();
+                U fetchedResource = getRes.result();
 
                 if (fetchedResource != null) {
                     if ((!(fetchedResource instanceof KafkaConnector))
@@ -1065,12 +983,12 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                                 fetchedResource.getKind(), fetchedResource.getMetadata().getName(), fetchedResource.getApiVersion());
                         updateStatusPromise.complete();
                     } else {
-                        S currentStatus = fetchedResource.getStatus();
+                        V currentStatus = fetchedResource.getStatus();
 
                         StatusDiff ksDiff = new StatusDiff(currentStatus, desiredStatus);
 
                         if (!ksDiff.isEmpty()) {
-                            T resourceWithNewStatus = copyWithStatus.apply(fetchedResource, desiredStatus);
+                            U resourceWithNewStatus = copyWithStatus.apply(fetchedResource, desiredStatus);
 
                             resourceOperator.updateStatusAsync(reconciliation, resourceWithNewStatus).onComplete(updateRes -> {
                                 if (updateRes.succeeded()) {
