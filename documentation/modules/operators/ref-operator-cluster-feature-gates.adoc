@@ -60,7 +60,6 @@ Stable feature gates are production-ready, but they can still be disabled.
 == UseKRaft feature gate
 
 The `UseKRaft` feature gate has a default state of _enabled_.
-The `UseKRaft` feature gate has a default state of _enabled_.
 
 The `UseKRaft` feature gate deploys a Kafka cluster in KRaft (Kafka Raft metadata) mode without ZooKeeper.
 ZooKeeper and KRaft are mechanisms used to manage metadata and coordinate operations in Kafka clusters. 
