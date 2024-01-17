@@ -8,22 +8,22 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
-import io.strimzi.api.kafka.model.CertSecretSource;
-import io.strimzi.api.kafka.model.GenericSecretSource;
-import io.strimzi.api.kafka.model.KafkaConnectSpec;
-import io.strimzi.api.kafka.model.KafkaConnectSpecBuilder;
-import io.strimzi.api.kafka.model.ClientTls;
-import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
-import io.strimzi.api.kafka.model.KafkaMirrorMaker2ClusterSpec;
-import io.strimzi.api.kafka.model.KafkaMirrorMaker2ClusterSpecBuilder;
-import io.strimzi.api.kafka.model.KafkaMirrorMaker2Resources;
-import io.strimzi.api.kafka.model.KafkaMirrorMaker2Spec;
-import io.strimzi.api.kafka.model.PasswordSecretSource;
-import io.strimzi.api.kafka.model.authentication.KafkaClientAuthentication;
-import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationOAuth;
-import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationPlain;
-import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationScram;
-import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationTls;
+import io.strimzi.api.kafka.model.common.CertSecretSource;
+import io.strimzi.api.kafka.model.common.ClientTls;
+import io.strimzi.api.kafka.model.common.GenericSecretSource;
+import io.strimzi.api.kafka.model.common.PasswordSecretSource;
+import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthentication;
+import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationOAuth;
+import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationPlain;
+import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationScram;
+import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationTls;
+import io.strimzi.api.kafka.model.connect.KafkaConnectSpec;
+import io.strimzi.api.kafka.model.connect.KafkaConnectSpecBuilder;
+import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2;
+import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2ClusterSpec;
+import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2ClusterSpecBuilder;
+import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Resources;
+import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Spec;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
@@ -79,7 +79,7 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
      * @param sharedEnvironmentProvider Shared environment provider
      */
     private KafkaMirrorMaker2Cluster(Reconciliation reconciliation, HasMetadata resource, SharedEnvironmentProvider sharedEnvironmentProvider) {
-        super(reconciliation, resource, KafkaMirrorMaker2Resources.deploymentName(resource.getMetadata().getName()), COMPONENT_TYPE, sharedEnvironmentProvider);
+        super(reconciliation, resource, KafkaMirrorMaker2Resources.componentName(resource.getMetadata().getName()), COMPONENT_TYPE, sharedEnvironmentProvider);
 
         this.serviceName = KafkaMirrorMaker2Resources.serviceName(cluster);
         this.loggingAndMetricsConfigMapName = KafkaMirrorMaker2Resources.metricsAndLogConfigMapName(cluster);

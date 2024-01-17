@@ -4,9 +4,9 @@
  */
 package io.strimzi.operator.user;
 
-import io.strimzi.api.kafka.model.KafkaUser;
-import io.strimzi.api.kafka.model.status.Condition;
-import io.strimzi.api.kafka.model.status.KafkaUserStatus;
+import io.strimzi.api.kafka.model.common.Condition;
+import io.strimzi.api.kafka.model.user.KafkaUser;
+import io.strimzi.api.kafka.model.user.KafkaUserStatus;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.StatusUtils;
 

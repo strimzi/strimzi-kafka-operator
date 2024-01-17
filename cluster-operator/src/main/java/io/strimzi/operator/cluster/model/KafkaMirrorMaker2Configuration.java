@@ -5,7 +5,7 @@
 
 package io.strimzi.operator.cluster.model;
 
-import io.strimzi.api.kafka.model.KafkaMirrorMaker2ClusterSpec;
+import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2ClusterSpec;
 import io.strimzi.operator.common.Reconciliation;
 
 import java.util.HashMap;

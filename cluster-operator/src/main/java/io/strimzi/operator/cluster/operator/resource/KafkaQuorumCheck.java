@@ -9,10 +9,11 @@ import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.VertxUtil;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
-import java.util.Map;
-import java.util.stream.Collectors;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.QuorumInfo;
+
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Provides methods to determine whether it's safe to restart a KRaft controller and identify the quorum leader id.

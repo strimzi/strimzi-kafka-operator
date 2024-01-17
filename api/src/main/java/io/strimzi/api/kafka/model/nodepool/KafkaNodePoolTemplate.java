@@ -6,11 +6,11 @@ package io.strimzi.api.kafka.model.nodepool;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import io.strimzi.api.kafka.model.Constants;
-import io.strimzi.api.kafka.model.Spec;
-import io.strimzi.api.kafka.model.template.ContainerTemplate;
-import io.strimzi.api.kafka.model.template.PodTemplate;
-import io.strimzi.api.kafka.model.template.ResourceTemplate;
+import io.strimzi.api.kafka.model.common.Constants;
+import io.strimzi.api.kafka.model.common.Spec;
+import io.strimzi.api.kafka.model.common.template.ContainerTemplate;
+import io.strimzi.api.kafka.model.common.template.PodTemplate;
+import io.strimzi.api.kafka.model.common.template.ResourceTemplate;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;

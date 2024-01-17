@@ -9,8 +9,8 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.KubernetesClientException;
-import io.strimzi.api.kafka.model.status.Condition;
-import io.strimzi.api.kafka.model.status.ConditionBuilder;
+import io.strimzi.api.kafka.model.common.Condition;
+import io.strimzi.api.kafka.model.common.ConditionBuilder;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.test.TestUtils;
@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
@@ -126,7 +127,10 @@ public abstract class AbstractCustomResourceOperatorIT<
     }
 
     /**
-     * Tests what happens when the resource is deleted while updating the status
+     * Tests what happens when the resource is deleted while updating the status.
+     *
+     * The CR removal does not consistently complete within the default timeout.
+     * This requires increasing the timeout for completion to 1 minute.
      */
     @Test
     public void testUpdateStatusAfterResourceDeletedThrowsKubernetesClientException() {
@@ -145,17 +149,15 @@ public abstract class AbstractCustomResourceOperatorIT<
                 return op.deleteAsync(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, false);
             })
             .thenCompose(i -> {
-                LOGGER.info("Wait for confirmed deletion");
-                return op.waitFor(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, 100L, 10_000L, (n, ns) -> operator().get(namespace, resourceName) == null);
-            })
-            .thenCompose(i -> {
                 LOGGER.info("Updating resource with new status - should fail");
                 return op.updateStatusAsync(Reconciliation.DUMMY_RECONCILIATION, newStatus.get());
             })
             .<Void>handle((i, error) -> {
                 assertThat(Util.unwrap(error), instanceOf(KubernetesClientException.class));
                 return null;
-            }));
+            }),
+            1,
+            TimeUnit.MINUTES);
     }
 
     /**

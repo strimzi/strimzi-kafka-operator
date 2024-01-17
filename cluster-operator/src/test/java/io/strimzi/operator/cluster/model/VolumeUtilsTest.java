@@ -6,15 +6,14 @@ package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.KeyToPathBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
-import io.strimzi.api.kafka.model.storage.EphemeralStorageBuilder;
-import io.strimzi.api.kafka.model.storage.JbodStorageBuilder;
-import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
-import io.strimzi.api.kafka.model.storage.Storage;
+import io.fabric8.kubernetes.api.model.Volume;
+import io.strimzi.api.kafka.model.kafka.EphemeralStorageBuilder;
+import io.strimzi.api.kafka.model.kafka.JbodStorageBuilder;
+import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
+import io.strimzi.api.kafka.model.kafka.Storage;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
-
-import io.fabric8.kubernetes.api.model.Volume;
 import org.junit.jupiter.api.Assertions;
 
 import java.util.Collections;

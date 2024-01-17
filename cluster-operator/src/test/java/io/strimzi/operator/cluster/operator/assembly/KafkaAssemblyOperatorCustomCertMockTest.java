@@ -9,25 +9,25 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.server.mock.EnableKubernetesMockClient;
-import io.strimzi.api.kafka.model.Kafka;
-import io.strimzi.api.kafka.model.KafkaBuilder;
-import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.StrimziPodSet;
-import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
-import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
-import io.strimzi.platform.KubernetesVersion;
-import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
+import io.strimzi.api.kafka.model.kafka.Kafka;
+import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
+import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
+import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
+import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
-import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.operator.MockCertManager;
+import io.strimzi.platform.KubernetesVersion;
 import io.strimzi.test.mockkube2.MockKube2;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -189,7 +189,7 @@ public class KafkaAssemblyOperatorCustomCertMockTest {
         operator.reconcile(new Reconciliation("test-trigger-1", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME))
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     // Verify the initial hash stub of the custom listener cert
-                    StrimziPodSet sps = supplier.strimziPodSetOperator.client().inNamespace(NAMESPACE).withName(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).get();
+                    StrimziPodSet sps = supplier.strimziPodSetOperator.client().inNamespace(NAMESPACE).withName(KafkaResources.kafkaComponentName(CLUSTER_NAME)).get();
                     sps.getSpec().getPods().stream().map(PodSetUtils::mapToPod).forEach(pod -> {
                         context.verify(() -> assertThat(pod.getMetadata().getAnnotations(), hasEntry(KafkaCluster.ANNO_STRIMZI_CUSTOM_LISTENER_CERT_THUMBPRINTS, getThumbprint())));
                     });
@@ -208,7 +208,7 @@ public class KafkaAssemblyOperatorCustomCertMockTest {
                 .compose(i -> operator.reconcile(new Reconciliation("test-trigger-2", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)))
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     // Verify the updated hash stub of the custom listener cert
-                    StrimziPodSet sps = supplier.strimziPodSetOperator.client().inNamespace(NAMESPACE).withName(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).get();
+                    StrimziPodSet sps = supplier.strimziPodSetOperator.client().inNamespace(NAMESPACE).withName(KafkaResources.kafkaComponentName(CLUSTER_NAME)).get();
                     sps.getSpec().getPods().stream().map(PodSetUtils::mapToPod).forEach(pod -> {
                         context.verify(() -> assertThat(pod.getMetadata().getAnnotations(), hasEntry(KafkaCluster.ANNO_STRIMZI_CUSTOM_LISTENER_CERT_THUMBPRINTS, getUpdatedThumbprint())));
                     });

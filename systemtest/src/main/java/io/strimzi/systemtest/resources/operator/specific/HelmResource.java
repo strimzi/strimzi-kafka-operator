@@ -5,8 +5,8 @@
 package io.strimzi.systemtest.resources.operator.specific;
 
 import io.fabric8.kubernetes.api.model.EnvVar;
-import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.resources.ResourceItem;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;

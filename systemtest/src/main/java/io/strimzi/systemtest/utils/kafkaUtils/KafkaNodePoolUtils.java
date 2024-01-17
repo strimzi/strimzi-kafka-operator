@@ -13,11 +13,12 @@ import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
 import io.strimzi.systemtest.resources.crd.StrimziPodSetResource;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
-import java.util.List;
-import java.util.Map;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import java.util.List;
+import java.util.Map;
 
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 

@@ -4,7 +4,7 @@
  */
 package io.strimzi.systemtest.templates.crd;
 
-import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolBuilder;
 import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
 import io.strimzi.operator.common.model.Labels;

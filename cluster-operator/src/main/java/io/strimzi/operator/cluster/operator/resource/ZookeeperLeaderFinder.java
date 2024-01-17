@@ -5,15 +5,15 @@
 package io.strimzi.operator.cluster.operator.resource;
 
 import io.fabric8.kubernetes.api.model.Secret;
-import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.certs.CertAndKey;
-import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.cluster.model.DnsNameGenerator;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.model.Ca;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;

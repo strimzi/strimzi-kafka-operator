@@ -5,8 +5,8 @@
 package io.strimzi.operator.common.operator.resource;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.strimzi.api.kafka.StrimziPodSetList;
-import io.strimzi.api.kafka.model.StrimziPodSet;
+import io.strimzi.api.kafka.model.podset.StrimziPodSet;
+import io.strimzi.api.kafka.model.podset.StrimziPodSetList;
 import io.strimzi.operator.common.Reconciliation;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;

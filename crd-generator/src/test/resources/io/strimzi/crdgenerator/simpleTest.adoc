@@ -31,7 +31,7 @@
 |string
 |fieldProperty           1.2+<.<a|Example of field property.
 |string
-|intProperty             1.2+<.<a|An example int property.
+|intProperty             1.2+<.<a|An example int property. Added in Strimzi 0.0.1.
 |integer
 |listOfArray             1.2+<.<a|
 |string array of dimension 2
@@ -67,7 +67,9 @@
 |xref:type-Number-{context}[`Number`] array of dimension 2
 |longProperty            1.2+<.<a|An example long property.
 |integer
-|mapProperty             1.2+<.<a|
+|mapStringObject         1.2+<.<a|
+|map
+|mapStringString         1.2+<.<a|
 |map
 |normalEnum              1.2+<.<a|
 |string (one of [BAR, FOO])

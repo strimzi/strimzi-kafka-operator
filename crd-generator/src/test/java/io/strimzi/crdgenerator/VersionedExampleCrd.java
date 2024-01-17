@@ -4,9 +4,6 @@
  */
 package io.strimzi.crdgenerator;
 
-import java.util.List;
-import java.util.Objects;
-
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.client.CustomResource;
@@ -17,6 +14,9 @@ import io.strimzi.crdgenerator.annotations.Minimum;
 import io.strimzi.crdgenerator.annotations.MinimumItems;
 import io.strimzi.crdgenerator.annotations.Pattern;
 import io.strimzi.crdgenerator.annotations.PresentInVersions;
+
+import java.util.List;
+import java.util.Objects;
 
 @Crd(
     spec = @Crd.Spec(

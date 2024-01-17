@@ -9,23 +9,16 @@ import io.fabric8.kubernetes.api.model.NodeAffinity;
 import io.fabric8.kubernetes.api.model.NodeSelectorRequirement;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodAffinityTerm;
-import io.strimzi.api.kafka.model.KafkaConnect;
-import io.strimzi.api.kafka.model.KafkaConnectResources;
-import io.strimzi.api.kafka.model.KafkaMirrorMaker2Resources;
-import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.connect.KafkaConnect;
+import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Resources;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
-import static io.strimzi.systemtest.TestConstants.CONNECT;
-import static io.strimzi.systemtest.TestConstants.MIRROR_MAKER2;
-import static io.strimzi.systemtest.TestConstants.REGRESSION;
-
-import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
-
-import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
-
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -40,15 +33,9 @@ import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StrimziPodSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
-
 import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.hasEntry;
-import static org.hamcrest.Matchers.is;
-
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -57,6 +44,15 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import static io.strimzi.systemtest.TestConstants.CONNECT;
+import static io.strimzi.systemtest.TestConstants.MIRROR_MAKER2;
+import static io.strimzi.systemtest.TestConstants.REGRESSION;
+import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
+import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.is;
 
 @Tag(REGRESSION)
 class RackAwarenessST extends AbstractST {
@@ -82,7 +78,7 @@ class RackAwarenessST extends AbstractST {
     void testKafkaRackAwareness(ExtensionContext extensionContext) {
         Assumptions.assumeFalse(Environment.isNamespaceRbacScope());
 
-        TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = storageMap.get(extensionContext);
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 1, 1)
                 .editSpec()
@@ -112,7 +108,7 @@ class RackAwarenessST extends AbstractST {
         assertThat(podAntiAffinityTerm, is(specPodAntiAffinityTerm));
         assertThat(specPodAntiAffinityTerm.getTopologyKey(), is(TOPOLOGY_KEY));
         assertThat(specPodAntiAffinityTerm.getLabelSelector().getMatchLabels(), hasEntry("strimzi.io/cluster", testStorage.getClusterName()));
-        assertThat(specPodAntiAffinityTerm.getLabelSelector().getMatchLabels(), hasEntry("strimzi.io/name", KafkaResources.kafkaStatefulSetName(testStorage.getClusterName())));
+        assertThat(specPodAntiAffinityTerm.getLabelSelector().getMatchLabels(), hasEntry("strimzi.io/name", KafkaResources.kafkaComponentName(testStorage.getClusterName())));
 
         // check Kafka rack awareness configuration
         String podNodeName = pod.getSpec().getNodeName();
@@ -196,7 +192,7 @@ class RackAwarenessST extends AbstractST {
         KafkaConnectUtils.waitForConnectReady(testStorage.getNamespaceName(), testStorage.getClusterName());
 
         LOGGER.info("KafkaConnect cluster deployed successfully");
-        String deployName = KafkaConnectResources.deploymentName(testStorage.getClusterName());
+        String deployName = KafkaConnectResources.componentName(testStorage.getClusterName());
         String podName = PodUtils.getPodNameByPrefix(testStorage.getNamespaceName(), deployName);
         Pod pod = kubeClient().getPod(testStorage.getNamespaceName(), podName);
 
@@ -253,7 +249,7 @@ class RackAwarenessST extends AbstractST {
     void testMirrorMaker2RackAwareness(ExtensionContext extensionContext) {
         Assumptions.assumeFalse(Environment.isNamespaceRbacScope());
 
-        TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = storageMap.get(extensionContext);
 
         resourceManager.createResourceWithWait(extensionContext,
                 KafkaTemplates.kafkaEphemeral(testStorage.getSourceClusterName(), 1, 1).build());
@@ -273,7 +269,7 @@ class RackAwarenessST extends AbstractST {
                         .build());
 
         LOGGER.info("MirrorMaker2: {}/{} cluster deployed successfully", testStorage.getNamespaceName(), testStorage.getClusterName());
-        String deployName = KafkaMirrorMaker2Resources.deploymentName(testStorage.getClusterName());
+        String deployName = KafkaMirrorMaker2Resources.componentName(testStorage.getClusterName());
         String podName = PodUtils.getPodNameByPrefix(testStorage.getNamespaceName(), deployName);
         Pod pod = kubeClient().getPod(testStorage.getNamespaceName(), podName);
 

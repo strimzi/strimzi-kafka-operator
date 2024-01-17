@@ -4,6 +4,9 @@
  */
 package io.strimzi.certs;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import javax.security.auth.x500.X500Principal;
 import java.util.Collections;
 import java.util.HashMap;
@@ -12,9 +15,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Represents the subject for a certificate.

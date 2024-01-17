@@ -4,9 +4,9 @@
  */
 package io.strimzi.operator.user.operator;
 
-import io.strimzi.api.kafka.model.AclOperation;
-import io.strimzi.api.kafka.model.AclResourcePatternType;
-import io.strimzi.api.kafka.model.AclRuleType;
+import io.strimzi.api.kafka.model.user.acl.AclOperation;
+import io.strimzi.api.kafka.model.user.acl.AclResourcePatternType;
+import io.strimzi.api.kafka.model.user.acl.AclRuleType;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.user.ResourceUtils;

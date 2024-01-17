@@ -5,13 +5,13 @@
 package io.strimzi.systemtest.kafka.dynamicconfiguration;
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
-import io.strimzi.api.kafka.model.KafkaClusterSpec;
-import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
-import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
+import io.strimzi.api.kafka.model.kafka.KafkaClusterSpec;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
+import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.kafkaclients.externalClients.ExternalKafkaClient;
@@ -128,7 +128,7 @@ public class DynamicConfST extends AbstractST {
 
         Map<String, Object> deepCopyOfShardKafkaConfig = kafkaConfig.entrySet().stream()
             .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
-        LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
+        LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaComponentName(clusterName));
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, KAFKA_REPLICAS, 1)
             .editMetadata()
@@ -270,7 +270,7 @@ public class DynamicConfST extends AbstractST {
         String userName = testStorage.getKafkaUsername();
         Map<String, Object> deepCopyOfShardKafkaConfig = kafkaConfig.entrySet().stream()
             .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
-        LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
+        LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaComponentName(clusterName));
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, KAFKA_REPLICAS, 1)
             .editMetadata()
@@ -298,7 +298,7 @@ public class DynamicConfST extends AbstractST {
             .withTopicName(topicName)
             .withNamespaceName(Environment.TEST_SUITE_NAMESPACE)
             .withClusterName(clusterName)
-            .withMessageCount(MESSAGE_COUNT)
+            .withMessageCount(testStorage.getMessageCount())
             .withKafkaUsername(userName)
             .withSecurityProtocol(SecurityProtocol.SSL)
             .withListenerName(TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME)
@@ -308,7 +308,7 @@ public class DynamicConfST extends AbstractST {
             .withTopicName(topicName)
             .withNamespaceName(Environment.TEST_SUITE_NAMESPACE)
             .withClusterName(clusterName)
-            .withMessageCount(MESSAGE_COUNT)
+            .withMessageCount(testStorage.getMessageCount())
             .withSecurityProtocol(SecurityProtocol.PLAINTEXT)
             .withListenerName(TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME)
             .build();
@@ -348,7 +348,7 @@ public class DynamicConfST extends AbstractST {
         kafkaPods = RollingUpdateUtils.waitTillComponentHasRolled(Environment.TEST_SUITE_NAMESPACE, kafkaSelector, KAFKA_REPLICAS, kafkaPods);
 
         externalKafkaClientTls.verifyProducedAndConsumedMessages(
-            externalKafkaClientTls.sendMessagesTls() + MESSAGE_COUNT,
+            externalKafkaClientTls.sendMessagesTls() + testStorage.getMessageCount(),
             externalKafkaClientTls.receiveMessagesTls()
         );
 
@@ -379,7 +379,7 @@ public class DynamicConfST extends AbstractST {
         });
 
         externalKafkaClientPlain.verifyProducedAndConsumedMessages(
-            externalKafkaClientPlain.sendMessagesPlain() + MESSAGE_COUNT,
+            externalKafkaClientPlain.sendMessagesPlain() + testStorage.getMessageCount(),
             externalKafkaClientPlain.receiveMessagesPlain()
         );
     }
@@ -390,7 +390,7 @@ public class DynamicConfST extends AbstractST {
      * @param kafkaConfig specific kafka configuration, which will be changed
      */
     private void updateAndVerifyDynConf(final String namespaceName, String clusterName, Map<String, Object> kafkaConfig) {
-        LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
+        LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaComponentName(clusterName));
         Map<String, String> kafkaPods = PodUtils.podSnapshot(namespaceName, kafkaSelector);
 
         LOGGER.info("Updating configuration of Kafka cluster");
@@ -399,7 +399,7 @@ public class DynamicConfST extends AbstractST {
             kafkaClusterSpec.setConfig(kafkaConfig);
         }, namespaceName);
 
-        PodUtils.verifyThatRunningPodsAreStable(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName));
+        PodUtils.verifyThatRunningPodsAreStable(namespaceName, KafkaResources.kafkaComponentName(clusterName));
         assertThat(RollingUpdateUtils.componentHasRolled(namespaceName, kafkaSelector, kafkaPods), is(false));
     }
 

@@ -4,12 +4,11 @@
  */
 package io.strimzi.operator.common;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-
+import io.fabric8.kubernetes.client.KubernetesClient;
 import org.junit.jupiter.api.Test;
 
-import io.fabric8.kubernetes.client.KubernetesClient;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class OperatorKubernetesClientBuilderTest {
     

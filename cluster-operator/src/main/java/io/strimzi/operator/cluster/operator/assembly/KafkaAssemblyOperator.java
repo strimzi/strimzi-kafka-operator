@@ -10,46 +10,46 @@ import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.strimzi.api.kafka.KafkaList;
-import io.strimzi.api.kafka.KafkaNodePoolList;
-import io.strimzi.api.kafka.model.Constants;
-import io.strimzi.api.kafka.model.Kafka;
-import io.strimzi.api.kafka.model.KafkaBuilder;
-import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.KafkaSpec;
-import io.strimzi.api.kafka.model.StrimziPodSet;
+import io.strimzi.api.kafka.model.common.Condition;
+import io.strimzi.api.kafka.model.common.ConditionBuilder;
+import io.strimzi.api.kafka.model.common.Constants;
+import io.strimzi.api.kafka.model.kafka.Kafka;
+import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
+import io.strimzi.api.kafka.model.kafka.KafkaList;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.api.kafka.model.kafka.KafkaSpec;
+import io.strimzi.api.kafka.model.kafka.KafkaStatus;
+import io.strimzi.api.kafka.model.kafka.KafkaStatusBuilder;
+import io.strimzi.api.kafka.model.kafka.Storage;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
-import io.strimzi.api.kafka.model.status.Condition;
-import io.strimzi.api.kafka.model.status.ConditionBuilder;
-import io.strimzi.api.kafka.model.status.KafkaStatus;
-import io.strimzi.api.kafka.model.status.KafkaStatusBuilder;
-import io.strimzi.api.kafka.model.storage.Storage;
+import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolList;
+import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.FeatureGates;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
-import io.strimzi.operator.common.model.ClientsCa;
 import io.strimzi.operator.cluster.model.ClusterCa;
-import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.cluster.model.KRaftUtils;
 import io.strimzi.operator.cluster.model.KafkaVersionChange;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.model.PodSetUtils;
-import io.strimzi.operator.common.model.StatusDiff;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.InvalidConfigurationException;
-import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationException;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.VertxUtil;
+import io.strimzi.operator.common.model.ClientsCa;
+import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.operator.common.operator.resource.CrdOperator;
+import io.strimzi.operator.common.model.PasswordGenerator;
+import io.strimzi.operator.common.model.StatusDiff;
 import io.strimzi.operator.common.model.StatusUtils;
+import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.StrimziPodSetOperator;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -209,17 +209,29 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Promise<Void> chainPromise = Promise.promise();
 
         boolean isKRaftEnabled = featureGates.useKRaftEnabled() && ReconcilerUtils.kraftEnabled(reconcileState.kafkaAssembly);
+        boolean nodePoolsEnabled = featureGates.kafkaNodePoolsEnabled() && ReconcilerUtils.nodePoolsEnabled(reconcileState.kafkaAssembly);
 
         if (isKRaftEnabled) {
             // Makes sure KRaft is used only with KafkaNodePool custom resources and not with virtual node pools
-            if (featureGates.kafkaNodePoolsEnabled()
-                    && !ReconcilerUtils.nodePoolsEnabled(reconcileState.kafkaAssembly))  {
+            if (!nodePoolsEnabled)  {
                 throw new InvalidConfigurationException("The UseKRaft feature gate can be used only together with a Kafka cluster based on the KafkaNodePool resources.");
             }
 
             // Validates features which are currently not supported in KRaft mode
             try {
                 KRaftUtils.validateKafkaCrForKRaft(reconcileState.kafkaAssembly.getSpec(), featureGates.unidirectionalTopicOperatorEnabled());
+                KRaftUtils.kraftWarnings(reconcileState.kafkaAssembly, reconcileState.kafkaStatus);
+            } catch (InvalidResourceException e)    {
+                return Future.failedFuture(e);
+            }
+        } else {
+            // Validates the properties required for a ZooKeeper based Kafka cluster
+            try {
+                KRaftUtils.validateKafkaCrForZooKeeper(reconcileState.kafkaAssembly.getSpec(), nodePoolsEnabled);
+
+                if (nodePoolsEnabled)   {
+                    KRaftUtils.nodePoolWarnings(reconcileState.kafkaAssembly, reconcileState.kafkaStatus);
+                }
             } catch (InvalidResourceException e)    {
                 return Future.failedFuture(e);
             }
@@ -482,8 +494,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          * @return  Future with ZooKeeper reconciler
          */
         Future<ZooKeeperReconciler> zooKeeperReconciler()   {
-            Future<StatefulSet> stsFuture = stsOperations.getAsync(namespace, KafkaResources.zookeeperStatefulSetName(name));
-            Future<StrimziPodSet> podSetFuture = strimziPodSetOperator.getAsync(namespace, KafkaResources.zookeeperStatefulSetName(name));
+            Future<StatefulSet> stsFuture = stsOperations.getAsync(namespace, KafkaResources.zookeeperComponentName(name));
+            Future<StrimziPodSet> podSetFuture = strimziPodSetOperator.getAsync(namespace, KafkaResources.zookeeperComponentName(name));
 
             return Future.join(stsFuture, podSetFuture)
                     .compose(res -> {
@@ -579,7 +591,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             Labels kafkaSelectorLabels = Labels.EMPTY
                     .withStrimziKind(reconciliation.kind())
                     .withStrimziCluster(reconciliation.name())
-                    .withStrimziName(KafkaResources.kafkaStatefulSetName(reconciliation.name()));
+                    .withStrimziName(KafkaResources.kafkaComponentName(reconciliation.name()));
 
             Future<List<KafkaNodePool>> nodePoolFuture;
             if (featureGates.kafkaNodePoolsEnabled()
@@ -590,7 +602,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 nodePoolFuture = Future.succeededFuture(null);
             }
 
-            Future<StatefulSet> stsFuture = stsOperations.getAsync(namespace, KafkaResources.kafkaStatefulSetName(name));
+            Future<StatefulSet> stsFuture = stsOperations.getAsync(namespace, KafkaResources.kafkaComponentName(name));
             Future<List<StrimziPodSet>> podSetFuture = strimziPodSetOperator.listAsync(namespace, kafkaSelectorLabels);
 
             return Future.join(stsFuture, podSetFuture, nodePoolFuture)

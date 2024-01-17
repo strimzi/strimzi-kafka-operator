@@ -8,25 +8,25 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMapKeySelector;
 import io.fabric8.kubernetes.api.model.ConfigMapKeySelectorBuilder;
-import io.strimzi.api.kafka.model.ExternalLogging;
-import io.strimzi.api.kafka.model.ExternalLoggingBuilder;
-import io.strimzi.api.kafka.model.InlineLogging;
-import io.strimzi.api.kafka.model.KafkaBridgeResources;
-import io.strimzi.api.kafka.model.KafkaConnect;
-import io.strimzi.api.kafka.model.KafkaConnectResources;
-import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
-import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.status.Condition;
+import io.strimzi.api.kafka.model.bridge.KafkaBridgeResources;
+import io.strimzi.api.kafka.model.common.Condition;
+import io.strimzi.api.kafka.model.common.ExternalLogging;
+import io.strimzi.api.kafka.model.common.ExternalLoggingBuilder;
+import io.strimzi.api.kafka.model.common.InlineLogging;
+import io.strimzi.api.kafka.model.connect.KafkaConnect;
+import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.KRaftWithoutUTONotSupported;
+import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.enums.CustomResourceStatus;
-import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
@@ -48,9 +48,9 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.Level;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -473,7 +473,7 @@ class LoggingChangeST extends AbstractST {
         DeploymentUtils.waitForDeploymentReady(testStorage.getNamespaceName(), testStorage.getScraperName());
         KafkaBridgeUtils.waitForKafkaBridgeReady(testStorage.getNamespaceName(), testStorage.getClusterName());
 
-        Map<String, String> bridgeSnapshot = DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), KafkaBridgeResources.deploymentName(testStorage.getClusterName()));
+        Map<String, String> bridgeSnapshot = DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), KafkaBridgeResources.componentName(testStorage.getClusterName()));
         final String bridgePodName = bridgeSnapshot.keySet().iterator().next();
 
         LOGGER.info("Asserting if log is without records");
@@ -493,13 +493,13 @@ class LoggingChangeST extends AbstractST {
 
         LOGGER.info("Waiting for log4j2.properties will contain desired settings");
         TestUtils.waitFor("Logger change", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
-            () -> cmdKubeClient().namespace(testStorage.getNamespaceName()).execInPodContainer(Level.TRACE, bridgePodName, KafkaBridgeResources.deploymentName(testStorage.getClusterName()), "cat", "/opt/strimzi/custom-config/log4j2.properties").out().contains("rootLogger.level=DEBUG")
-                && cmdKubeClient().namespace(testStorage.getNamespaceName()).execInPodContainer(Level.TRACE, bridgePodName, KafkaBridgeResources.deploymentName(testStorage.getClusterName()), "cat", "/opt/strimzi/custom-config/log4j2.properties").out().contains("monitorInterval=30")
+            () -> cmdKubeClient().namespace(testStorage.getNamespaceName()).execInPodContainer(Level.TRACE, bridgePodName, KafkaBridgeResources.componentName(testStorage.getClusterName()), "cat", "/opt/strimzi/custom-config/log4j2.properties").out().contains("rootLogger.level=DEBUG")
+                && cmdKubeClient().namespace(testStorage.getNamespaceName()).execInPodContainer(Level.TRACE, bridgePodName, KafkaBridgeResources.componentName(testStorage.getClusterName()), "cat", "/opt/strimzi/custom-config/log4j2.properties").out().contains("monitorInterval=30")
         );
 
         TestUtils.waitFor("log to not be empty", Duration.ofMillis(100).toMillis(), TestConstants.SAFETY_RECONCILIATION_INTERVAL,
             () -> {
-                String bridgeLog = StUtils.getLogFromPodByTime(testStorage.getNamespaceName(), bridgePodName, KafkaBridgeResources.deploymentName(testStorage.getClusterName()), "30s");
+                String bridgeLog = StUtils.getLogFromPodByTime(testStorage.getNamespaceName(), bridgePodName, KafkaBridgeResources.componentName(testStorage.getClusterName()), "30s");
                 return bridgeLog != null && !bridgeLog.isEmpty() && DEFAULT_LOG4J_PATTERN.matcher(bridgeLog).find();
             });
 
@@ -556,17 +556,17 @@ class LoggingChangeST extends AbstractST {
 
         LOGGER.info("Waiting for log4j2.properties will contain desired settings");
         TestUtils.waitFor("Logger change", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
-            () -> cmdKubeClient().namespace(testStorage.getNamespaceName()).execInPodContainer(Level.TRACE, bridgePodName, KafkaBridgeResources.deploymentName(testStorage.getClusterName()), "cat", "/opt/strimzi/custom-config/log4j2.properties").out().contains("rootLogger.level = OFF")
-                && cmdKubeClient().namespace(testStorage.getNamespaceName()).execInPodContainer(Level.TRACE, bridgePodName, KafkaBridgeResources.deploymentName(testStorage.getClusterName()), "cat", "/opt/strimzi/custom-config/log4j2.properties").out().contains("monitorInterval=30")
+            () -> cmdKubeClient().namespace(testStorage.getNamespaceName()).execInPodContainer(Level.TRACE, bridgePodName, KafkaBridgeResources.componentName(testStorage.getClusterName()), "cat", "/opt/strimzi/custom-config/log4j2.properties").out().contains("rootLogger.level = OFF")
+                && cmdKubeClient().namespace(testStorage.getNamespaceName()).execInPodContainer(Level.TRACE, bridgePodName, KafkaBridgeResources.componentName(testStorage.getClusterName()), "cat", "/opt/strimzi/custom-config/log4j2.properties").out().contains("monitorInterval=30")
         );
 
         TestUtils.waitFor("log to be empty", Duration.ofMillis(100).toMillis(), TestConstants.SAFETY_RECONCILIATION_INTERVAL,
             () -> {
-                String bridgeLog = StUtils.getLogFromPodByTime(testStorage.getNamespaceName(), bridgePodName, KafkaBridgeResources.deploymentName(testStorage.getClusterName()), "30s");
+                String bridgeLog = StUtils.getLogFromPodByTime(testStorage.getNamespaceName(), bridgePodName, KafkaBridgeResources.componentName(testStorage.getClusterName()), "30s");
                 return bridgeLog != null && bridgeLog.isEmpty() && !DEFAULT_LOG4J_PATTERN.matcher(bridgeLog).find();
             });
 
-        assertThat("Bridge Pod should not roll", DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), KafkaBridgeResources.deploymentName(testStorage.getClusterName())), equalTo(bridgeSnapshot));
+        assertThat("Bridge Pod should not roll", DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), KafkaBridgeResources.componentName(testStorage.getClusterName())), equalTo(bridgeSnapshot));
     }
 
     @IsolatedTest("Scraping log from shared Cluster Operator")
@@ -665,7 +665,7 @@ class LoggingChangeST extends AbstractST {
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
     void testDynamicallySetConnectLoggingLevels(ExtensionContext extensionContext) {
-        TestStorage testStorage = new TestStorage(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
         InlineLogging ilOff = new InlineLogging();
         Map<String, String> loggers = new HashMap<>();
         loggers.put("connect.root.logger.level", "OFF");
@@ -689,7 +689,7 @@ class LoggingChangeST extends AbstractST {
         resourceManager.synchronizeResources(extensionContext);
 
         LOGGER.info("Deploying NetworkPolicies for KafkaConnect");
-        NetworkPolicyResource.deployNetworkPolicyForResource(extensionContext, connect, KafkaConnectResources.deploymentName(testStorage.getClusterName()));
+        NetworkPolicyResource.deployNetworkPolicyForResource(extensionContext, connect, KafkaConnectResources.componentName(testStorage.getClusterName()));
 
         String scraperPodName = PodUtils.getPodsByPrefixInNameWithDynamicWait(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
 
@@ -1350,7 +1350,7 @@ class LoggingChangeST extends AbstractST {
 
     @ParallelNamespaceTest
     void testLoggingHierarchy(ExtensionContext extensionContext) {
-        TestStorage testStorage = new TestStorage(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3).build());
 
@@ -1373,7 +1373,7 @@ class LoggingChangeST extends AbstractST {
         );
 
         LOGGER.info("Deploying network policies for KafkaConnect");
-        NetworkPolicyResource.deployNetworkPolicyForResource(extensionContext, connect, KafkaConnectResources.deploymentName(testStorage.getClusterName()));
+        NetworkPolicyResource.deployNetworkPolicyForResource(extensionContext, connect, KafkaConnectResources.componentName(testStorage.getClusterName()));
 
 
         String connectorClassName = "org.apache.kafka.connect.file.FileStreamSourceConnector";

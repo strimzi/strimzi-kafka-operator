@@ -4,7 +4,7 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import io.strimzi.api.kafka.model.status.Condition;
+import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.operator.common.model.StatusUtils;
 
 import java.util.ArrayList;

@@ -5,13 +5,13 @@
 package io.strimzi.operator.cluster.operator.resource;
 
 import io.fabric8.kubernetes.api.model.Secret;
-import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
-import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.VertxUtil;
+import io.strimzi.operator.common.model.Ca;
+import io.strimzi.operator.common.model.PasswordGenerator;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;

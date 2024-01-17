@@ -5,8 +5,8 @@
 package io.strimzi.systemtest.operators;
 
 import io.fabric8.kubernetes.api.model.EnvVar;
-import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.ProbeBuilder;
+import io.strimzi.api.kafka.model.common.ProbeBuilder;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedTest;
@@ -131,7 +131,7 @@ public class PodSetST extends AbstractST {
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getKafkaSelector(), replicas, kafkaPods);
 
         LOGGER.info("Wait till all StrimziPodSet {}/{} status match number of ready pods", testStorage.getNamespaceName(), testStorage.getKafkaStatefulSetName());
-        StrimziPodSetUtils.waitForAllStrimziPodSetAndPodsReady(testStorage.getNamespaceName(), testStorage.getKafkaStatefulSetName(), KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()), 3);
+        StrimziPodSetUtils.waitForAllStrimziPodSetAndPodsReady(testStorage.getNamespaceName(), testStorage.getKafkaStatefulSetName(), KafkaResources.kafkaComponentName(testStorage.getClusterName()), 3);
 
         ClientUtils.waitForClientsSuccess(testStorage);
     }

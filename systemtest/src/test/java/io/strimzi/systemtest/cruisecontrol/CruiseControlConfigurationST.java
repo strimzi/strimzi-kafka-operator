@@ -8,14 +8,14 @@ import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Pod;
-import io.strimzi.api.kafka.model.CruiseControlResources;
-import io.strimzi.api.kafka.model.CruiseControlSpec;
-import io.strimzi.api.kafka.model.CruiseControlSpecBuilder;
-import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
+import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlSpec;
+import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlSpecBuilder;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.KRaftWithoutUTONotSupported;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -67,7 +67,7 @@ public class CruiseControlConfigurationST extends AbstractST {
         final TestStorage testStorage = storageMap.get(extensionContext);
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Environment.TEST_SUITE_NAMESPACE, extensionContext);
         final String clusterName = testStorage.getClusterName();
-        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
+        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaComponentName(clusterName));
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3).build());
 
@@ -119,12 +119,12 @@ public class CruiseControlConfigurationST extends AbstractST {
         final TestStorage testStorage = storageMap.get(extensionContext);
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Environment.TEST_SUITE_NAMESPACE, extensionContext);
         final String clusterName = testStorage.getClusterName();
-        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
+        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaComponentName(clusterName));
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3).build());
 
         Map<String, String> kafkaSnapShot = PodUtils.podSnapshot(namespaceName, kafkaSelector);
-        Map<String, String> cruiseControlSnapShot = DeploymentUtils.depSnapshot(namespaceName, CruiseControlResources.deploymentName(clusterName));
+        Map<String, String> cruiseControlSnapShot = DeploymentUtils.depSnapshot(namespaceName, CruiseControlResources.componentName(clusterName));
 
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> {
 
@@ -140,7 +140,7 @@ public class CruiseControlConfigurationST extends AbstractST {
         }, namespaceName);
 
         LOGGER.info("Verifying that CC Pod is rolling, because of change size of disk");
-        DeploymentUtils.waitTillDepHasRolled(namespaceName, CruiseControlResources.deploymentName(clusterName), 1, cruiseControlSnapShot);
+        DeploymentUtils.waitTillDepHasRolled(namespaceName, CruiseControlResources.componentName(clusterName), 1, cruiseControlSnapShot);
 
         LOGGER.info("Verifying that Kafka Pods did not roll");
         RollingUpdateUtils.waitForNoRollingUpdate(namespaceName, kafkaSelector, kafkaSnapShot);
@@ -231,7 +231,7 @@ public class CruiseControlConfigurationST extends AbstractST {
         final TestStorage testStorage = storageMap.get(extensionContext);
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Environment.TEST_SUITE_NAMESPACE, extensionContext);
         final String clusterName = testStorage.getClusterName();
-        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
+        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaComponentName(clusterName));
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3).build());
 
@@ -239,7 +239,7 @@ public class CruiseControlConfigurationST extends AbstractST {
         EnvVar cruiseControlConfiguration;
 
         Map<String, String> kafkaSnapShot = PodUtils.podSnapshot(namespaceName, kafkaSelector);
-        Map<String, String> cruiseControlSnapShot = DeploymentUtils.depSnapshot(namespaceName, CruiseControlResources.deploymentName(clusterName));
+        Map<String, String> cruiseControlSnapShot = DeploymentUtils.depSnapshot(namespaceName, CruiseControlResources.componentName(clusterName));
         Map<String, Object> performanceTuningOpts = new HashMap<String, Object>() {{
                 put(CruiseControlConfigurationParameters.CONCURRENT_INTRA_PARTITION_MOVEMENTS.getValue(), 2);
                 put(CruiseControlConfigurationParameters.CONCURRENT_PARTITION_MOVEMENTS.getValue(), 5);
@@ -255,7 +255,7 @@ public class CruiseControlConfigurationST extends AbstractST {
         }, namespaceName);
 
         LOGGER.info("Verifying that CC Pod is rolling, after changing options");
-        DeploymentUtils.waitTillDepHasRolled(namespaceName, CruiseControlResources.deploymentName(clusterName), 1, cruiseControlSnapShot);
+        DeploymentUtils.waitTillDepHasRolled(namespaceName, CruiseControlResources.componentName(clusterName), 1, cruiseControlSnapShot);
 
         LOGGER.info("Verifying that Kafka Pods did not roll");
         RollingUpdateUtils.waitForNoRollingUpdate(namespaceName, kafkaSelector, kafkaSnapShot);

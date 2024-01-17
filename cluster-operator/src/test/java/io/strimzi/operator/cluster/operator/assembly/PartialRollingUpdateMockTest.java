@@ -9,26 +9,26 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.server.mock.EnableKubernetesMockClient;
-import io.strimzi.api.kafka.model.Kafka;
-import io.strimzi.api.kafka.model.KafkaBuilder;
-import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.StrimziPodSet;
-import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
-import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
-import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
+import io.strimzi.api.kafka.model.kafka.Kafka;
+import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
+import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
+import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
+import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
-import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.cluster.model.CertUtils;
 import io.strimzi.operator.cluster.model.KafkaVersion;
-import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.cluster.model.PodRevision;
+import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Annotations;
-import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.platform.KubernetesVersion;
 import io.strimzi.test.mockkube2.MockKube2;
@@ -196,7 +196,7 @@ public class PartialRollingUpdateMockTest {
         kco.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)).onComplete(ar -> {
             context.verify(() -> assertThat(ar.succeeded(), is(true)));
 
-            StrimziPodSet kafkaPodSet = supplier.strimziPodSetOperator.client().inNamespace(NAMESPACE).withName(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).get();
+            StrimziPodSet kafkaPodSet = supplier.strimziPodSetOperator.client().inNamespace(NAMESPACE).withName(KafkaResources.kafkaComponentName(CLUSTER_NAME)).get();
             List<Pod> kafkaPodsFromPodSet = PodSetUtils.podSetToPods(kafkaPodSet);
 
             for (int i = 0; i <= 4; i++) {
@@ -262,7 +262,7 @@ public class PartialRollingUpdateMockTest {
             if (ar.failed()) ar.cause().printStackTrace();
             context.verify(() -> assertThat(ar.succeeded(), is(true)));
 
-            StrimziPodSet zooPodSet = supplier.strimziPodSetOperator.client().inNamespace(NAMESPACE).withName(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME)).get();
+            StrimziPodSet zooPodSet = supplier.strimziPodSetOperator.client().inNamespace(NAMESPACE).withName(KafkaResources.zookeeperComponentName(CLUSTER_NAME)).get();
             List<Pod> zooPodsFromPodSet = PodSetUtils.podSetToPods(zooPodSet);
 
             for (int i = 0; i <= 2; i++) {

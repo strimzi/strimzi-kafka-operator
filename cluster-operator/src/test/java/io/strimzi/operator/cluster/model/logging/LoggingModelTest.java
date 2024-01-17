@@ -4,8 +4,8 @@
  */
 package io.strimzi.operator.cluster.model.logging;
 
-import io.strimzi.api.kafka.model.InlineLoggingBuilder;
-import io.strimzi.api.kafka.model.KafkaConnectSpecBuilder;
+import io.strimzi.api.kafka.model.common.InlineLoggingBuilder;
+import io.strimzi.api.kafka.model.connect.KafkaConnectSpecBuilder;
 import io.strimzi.operator.common.Reconciliation;
 import org.junit.jupiter.api.Test;
 

@@ -9,8 +9,8 @@ import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMapKeySelectorBuilder;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
-import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
-import io.strimzi.api.kafka.model.JmxPrometheusExporterMetricsBuilder;
+import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetrics;
+import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetricsBuilder;
 
 import java.util.Map;
 import java.util.stream.Collectors;

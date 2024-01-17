@@ -9,12 +9,11 @@ import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
-import io.strimzi.api.kafka.model.CruiseControlResources;
-import io.strimzi.api.kafka.model.Kafka;
-import io.strimzi.api.kafka.model.storage.Storage;
+import io.strimzi.api.kafka.model.kafka.Kafka;
+import io.strimzi.api.kafka.model.kafka.Storage;
+import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.CertUtils;
-import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.CruiseControl;
 import io.strimzi.operator.cluster.model.ImagePullPolicy;
@@ -25,6 +24,7 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
@@ -280,7 +280,7 @@ public class CruiseControlReconciler {
                     Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, String.valueOf(caKeyGeneration));
 
             return deploymentOperator
-                    .reconcile(reconciliation, reconciliation.namespace(), CruiseControlResources.deploymentName(reconciliation.name()), deployment)
+                    .reconcile(reconciliation, reconciliation.namespace(), CruiseControlResources.componentName(reconciliation.name()), deployment)
                     .compose(patchResult -> {
                         if (patchResult instanceof ReconcileResult.Noop)   {
                             // Deployment needs ot be rolled because the certificate secret changed or older/expired cluster CA removed
@@ -294,7 +294,7 @@ public class CruiseControlReconciler {
                         return Future.succeededFuture();
                     });
         } else {
-            return deploymentOperator.reconcile(reconciliation, reconciliation.namespace(), CruiseControlResources.deploymentName(reconciliation.name()), null)
+            return deploymentOperator.reconcile(reconciliation, reconciliation.namespace(), CruiseControlResources.componentName(reconciliation.name()), null)
                     .map((Void) null);
         }
     }
@@ -305,7 +305,7 @@ public class CruiseControlReconciler {
      * @return  Future which completes when the reconciliation is done
      */
     protected Future<Void> cruiseControlRollingUpdate() {
-        return deploymentOperator.rollingUpdate(reconciliation, reconciliation.namespace(), CruiseControlResources.deploymentName(reconciliation.name()), operationTimeoutMs);
+        return deploymentOperator.rollingUpdate(reconciliation, reconciliation.namespace(), CruiseControlResources.componentName(reconciliation.name()), operationTimeoutMs);
     }
 
     /**
@@ -315,8 +315,8 @@ public class CruiseControlReconciler {
      */
     protected Future<Void> waitForDeploymentReadiness() {
         if (cruiseControl != null) {
-            return deploymentOperator.waitForObserved(reconciliation, reconciliation.namespace(), CruiseControlResources.deploymentName(reconciliation.name()), 1_000, operationTimeoutMs)
-                    .compose(i -> deploymentOperator.readiness(reconciliation, reconciliation.namespace(), CruiseControlResources.deploymentName(reconciliation.name()), 1_000, operationTimeoutMs));
+            return deploymentOperator.waitForObserved(reconciliation, reconciliation.namespace(), CruiseControlResources.componentName(reconciliation.name()), 1_000, operationTimeoutMs)
+                    .compose(i -> deploymentOperator.readiness(reconciliation, reconciliation.namespace(), CruiseControlResources.componentName(reconciliation.name()), 1_000, operationTimeoutMs));
         } else {
             return Future.succeededFuture();
         }

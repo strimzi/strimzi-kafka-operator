@@ -5,7 +5,7 @@
 package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.Secret;
-import io.strimzi.api.kafka.model.status.KafkaStatus;
+import io.strimzi.api.kafka.model.kafka.KafkaStatus;
 import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.resource.SecretOperator;

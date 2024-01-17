@@ -5,8 +5,8 @@
 package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.Pod;
-import io.strimzi.api.kafka.model.Kafka;
-import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.kafka.Kafka;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.KafkaUpgradeException;
 import io.strimzi.operator.cluster.model.KafkaVersion;
@@ -93,7 +93,7 @@ public class KRaftVersionChangeCreator implements VersionChangeCreator {
     private Future<List<Pod>> getPods()   {
         Labels selectorLabels = Labels.forStrimziKind(Kafka.RESOURCE_KIND)
                 .withStrimziCluster(reconciliation.name())
-                .withStrimziName(KafkaResources.kafkaStatefulSetName(reconciliation.name()));
+                .withStrimziName(KafkaResources.kafkaComponentName(reconciliation.name()));
 
         return podOperator.listAsync(reconciliation.namespace(), selectorLabels);
     }

@@ -23,19 +23,19 @@ import io.fabric8.kubernetes.api.model.Toleration;
 import io.fabric8.kubernetes.api.model.TolerationBuilder;
 import io.fabric8.kubernetes.api.model.TopologySpreadConstraint;
 import io.fabric8.kubernetes.api.model.TopologySpreadConstraintBuilder;
-import io.strimzi.api.kafka.model.ContainerEnvVar;
-import io.strimzi.api.kafka.model.JvmOptions;
-import io.strimzi.api.kafka.model.Kafka;
-import io.strimzi.api.kafka.model.KafkaBuilder;
-import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.Probe;
-import io.strimzi.api.kafka.model.StrimziPodSet;
-import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
-import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
-import io.strimzi.api.kafka.model.storage.JbodStorageBuilder;
-import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
-import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
+import io.strimzi.api.kafka.model.common.ContainerEnvVar;
+import io.strimzi.api.kafka.model.common.JvmOptions;
+import io.strimzi.api.kafka.model.common.Probe;
+import io.strimzi.api.kafka.model.kafka.JbodStorageBuilder;
+import io.strimzi.api.kafka.model.kafka.Kafka;
+import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
+import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
+import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
+import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
+import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.model.nodepools.NodePoolUtils;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
@@ -109,7 +109,7 @@ public class KafkaClusterPodSetTest {
     public void testPodSet()   {
         StrimziPodSet ps = KC.generatePodSets(true, null, null, brokerId -> Map.of("test-anno", KC.getPodName(brokerId))).get(0);
 
-        assertThat(ps.getMetadata().getName(), is(KafkaResources.kafkaStatefulSetName(CLUSTER)));
+        assertThat(ps.getMetadata().getName(), is(KafkaResources.kafkaComponentName(CLUSTER)));
         assertThat(ps.getMetadata().getLabels().entrySet().containsAll(KC.labels.withAdditionalLabels(null).toMap().entrySet()), is(true));
         assertThat(ps.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_IO_STORAGE), is(ModelUtils.encodeStorageToJson(new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").withDeleteClaim(false).build()).build())));
         TestUtils.checkOwnerReference(ps, KAFKA);
@@ -364,7 +364,7 @@ public class KafkaClusterPodSetTest {
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, false, null, SHARED_ENV_PROVIDER);
         StrimziPodSet ps = kc.generatePodSets(true, null, null, brokerId -> Map.of("special", "annotation")).get(0);
 
-        assertThat(ps.getMetadata().getName(), is(KafkaResources.kafkaStatefulSetName(CLUSTER)));
+        assertThat(ps.getMetadata().getName(), is(KafkaResources.kafkaComponentName(CLUSTER)));
         assertThat(ps.getMetadata().getLabels().entrySet().containsAll(spsLabels.entrySet()), is(true));
         assertThat(ps.getMetadata().getAnnotations().entrySet().containsAll(spsAnnos.entrySet()), is(true));
         assertThat(ps.getSpec().getSelector().getMatchLabels(), is(kc.getSelectorLabels().withStrimziPoolName("kafka").toMap()));

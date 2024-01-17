@@ -7,18 +7,18 @@ package io.strimzi.systemtest.rollingupdate;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
-import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.StrimziPodSet;
-import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
-import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
-import io.strimzi.api.kafka.model.storage.JbodStorage;
-import io.strimzi.api.kafka.model.storage.JbodStorageBuilder;
-import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
-import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
+import io.strimzi.api.kafka.model.kafka.JbodStorage;
+import io.strimzi.api.kafka.model.kafka.JbodStorageBuilder;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.api.kafka.model.kafka.PersistentClaimStorage;
+import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
+import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
+import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
+import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
@@ -125,7 +125,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
             .withConsumerName(testStorage.getConsumerName())
             .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
             .withTopicName(testStorage.getTopicName())
-            .withMessageCount(MESSAGE_COUNT)
+            .withMessageCount(testStorage.getMessageCount())
             .withNamespaceName(testStorage.getNamespaceName())
             .withUsername(testStorage.getUsername())
             .build();
@@ -212,7 +212,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 3).build());
 
-        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
+        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaComponentName(clusterName));
         final Map<String, String> kafkaPods = PodUtils.podSnapshot(namespaceName, kafkaSelector);
 
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> {
@@ -263,8 +263,8 @@ class AlternativeReconcileTriggersST extends AbstractST {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Environment.TEST_SUITE_NAMESPACE, extensionContext);
         final String clusterName = testStorage.getClusterName();
 
-        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
-        final LabelSelector zkSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.zookeeperStatefulSetName(clusterName));
+        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaComponentName(clusterName));
+        final LabelSelector zkSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.zookeeperComponentName(clusterName));
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3).build());
 
@@ -406,7 +406,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
             .withConsumerName(testStorage.getConsumerName())
             .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
             .withTopicName(testStorage.getTopicName())
-            .withMessageCount(MESSAGE_COUNT)
+            .withMessageCount(testStorage.getMessageCount())
             .withNamespaceName(testStorage.getNamespaceName())
             .withUsername(testStorage.getUsername())
             .build();

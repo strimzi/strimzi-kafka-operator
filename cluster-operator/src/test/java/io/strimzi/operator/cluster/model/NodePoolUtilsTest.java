@@ -4,16 +4,16 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import io.strimzi.api.kafka.model.Kafka;
-import io.strimzi.api.kafka.model.KafkaBuilder;
+import io.strimzi.api.kafka.model.kafka.JbodStorage;
+import io.strimzi.api.kafka.model.kafka.JbodStorageBuilder;
+import io.strimzi.api.kafka.model.kafka.Kafka;
+import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
+import io.strimzi.api.kafka.model.kafka.PersistentClaimStorage;
+import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
+import io.strimzi.api.kafka.model.kafka.Storage;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolBuilder;
 import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
-import io.strimzi.api.kafka.model.storage.JbodStorage;
-import io.strimzi.api.kafka.model.storage.JbodStorageBuilder;
-import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
-import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
-import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.operator.cluster.model.nodepools.NodePoolUtils;
 import io.strimzi.operator.cluster.model.nodepools.VirtualNodePoolConverter;
 import io.strimzi.operator.common.Annotations;

@@ -28,32 +28,32 @@ import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
-import io.strimzi.api.kafka.model.CertSecretSource;
-import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
-import io.strimzi.api.kafka.model.ContainerEnvVar;
-import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
-import io.strimzi.api.kafka.model.JmxPrometheusExporterMetricsBuilder;
-import io.strimzi.api.kafka.model.JvmOptions;
-import io.strimzi.api.kafka.model.KafkaJmxAuthenticationPasswordBuilder;
-import io.strimzi.api.kafka.model.KafkaJmxOptionsBuilder;
-import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
-import io.strimzi.api.kafka.model.KafkaMirrorMaker2Builder;
-import io.strimzi.api.kafka.model.KafkaMirrorMaker2ClusterSpec;
-import io.strimzi.api.kafka.model.KafkaMirrorMaker2ClusterSpecBuilder;
-import io.strimzi.api.kafka.model.KafkaMirrorMaker2Resources;
-import io.strimzi.api.kafka.model.MetricsConfig;
-import io.strimzi.api.kafka.model.Probe;
-import io.strimzi.api.kafka.model.StrimziPodSet;
-import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationOAuthBuilder;
-import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationTlsBuilder;
+import io.strimzi.api.kafka.model.common.CertSecretSource;
+import io.strimzi.api.kafka.model.common.CertSecretSourceBuilder;
+import io.strimzi.api.kafka.model.common.ContainerEnvVar;
+import io.strimzi.api.kafka.model.common.JvmOptions;
+import io.strimzi.api.kafka.model.common.Probe;
+import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationOAuthBuilder;
+import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationTlsBuilder;
+import io.strimzi.api.kafka.model.common.jmx.KafkaJmxAuthenticationPasswordBuilder;
+import io.strimzi.api.kafka.model.common.jmx.KafkaJmxOptionsBuilder;
+import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetrics;
+import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetricsBuilder;
+import io.strimzi.api.kafka.model.common.metrics.MetricsConfig;
+import io.strimzi.api.kafka.model.common.template.ContainerTemplate;
+import io.strimzi.api.kafka.model.common.template.IpFamily;
+import io.strimzi.api.kafka.model.common.template.IpFamilyPolicy;
+import io.strimzi.api.kafka.model.common.tracing.OpenTelemetryTracing;
 import io.strimzi.api.kafka.model.connect.ExternalConfigurationEnv;
 import io.strimzi.api.kafka.model.connect.ExternalConfigurationEnvBuilder;
 import io.strimzi.api.kafka.model.connect.ExternalConfigurationVolumeSource;
 import io.strimzi.api.kafka.model.connect.ExternalConfigurationVolumeSourceBuilder;
-import io.strimzi.api.kafka.model.template.ContainerTemplate;
-import io.strimzi.api.kafka.model.template.IpFamily;
-import io.strimzi.api.kafka.model.template.IpFamilyPolicy;
-import io.strimzi.api.kafka.model.tracing.OpenTelemetryTracing;
+import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2;
+import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Builder;
+import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2ClusterSpec;
+import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2ClusterSpecBuilder;
+import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Resources;
+import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.kafka.oauth.client.ClientConfig;
 import io.strimzi.kafka.oauth.server.ServerConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
@@ -180,7 +180,7 @@ public class KafkaMirrorMaker2ClusterTest {
     }
 
     private Map<String, String> expectedLabels()    {
-        return expectedLabels(KafkaMirrorMaker2Resources.deploymentName(clusterName));
+        return expectedLabels(KafkaMirrorMaker2Resources.componentName(clusterName));
     }
 
     protected List<EnvVar> getExpectedEnvVars() {
@@ -287,11 +287,11 @@ public class KafkaMirrorMaker2ClusterTest {
         // Check PodSet
         StrimziPodSet ps = kmm2.generatePodSet(3, Map.of("anno2", "anno-value2"), Map.of("anno3", "anno-value3"), false, null, null, null);
 
-        assertThat(ps.getMetadata().getName(), is(KafkaMirrorMaker2Resources.deploymentName(clusterName)));
+        assertThat(ps.getMetadata().getName(), is(KafkaMirrorMaker2Resources.componentName(clusterName)));
         assertThat(ps.getMetadata().getLabels().entrySet().containsAll(kmm2.labels.withAdditionalLabels(null).toMap().entrySet()), is(true));
         assertThat(ps.getMetadata().getAnnotations(), is(Map.of("anno1", "anno-value1", "anno2", "anno-value2")));
         TestUtils.checkOwnerReference(ps, resource);
-        assertThat(ps.getSpec().getSelector().getMatchLabels(), is(kmm2.getSelectorLabels().withStrimziPodSetController(KafkaMirrorMaker2Resources.deploymentName(clusterName)).toMap()));
+        assertThat(ps.getSpec().getSelector().getMatchLabels(), is(kmm2.getSelectorLabels().withStrimziPodSetController(KafkaMirrorMaker2Resources.componentName(clusterName)).toMap()));
         assertThat(ps.getSpec().getPods().size(), is(3));
 
         // We need to loop through the pods to make sure they have the right values
@@ -303,7 +303,7 @@ public class KafkaMirrorMaker2ClusterTest {
             assertThat(pod.getMetadata().getAnnotations().get("anno3"), is("anno-value3"));
 
             assertThat(pod.getSpec().getHostname(), is(pod.getMetadata().getName()));
-            assertThat(pod.getSpec().getSubdomain(), is(KafkaMirrorMaker2Resources.deploymentName(clusterName)));
+            assertThat(pod.getSpec().getSubdomain(), is(KafkaMirrorMaker2Resources.componentName(clusterName)));
             assertThat(pod.getSpec().getRestartPolicy(), is("Always"));
             assertThat(pod.getSpec().getTerminationGracePeriodSeconds(), is(30L));
             assertThat(pod.getSpec().getVolumes().stream()
@@ -311,7 +311,7 @@ public class KafkaMirrorMaker2ClusterTest {
                     .findFirst().orElseThrow().getEmptyDir().getSizeLimit(), is(new Quantity(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_SIZE)));
 
             assertThat(pod.getSpec().getContainers().size(), is(1));
-            assertThat(pod.getSpec().getContainers().get(0).getName(), is(KafkaMirrorMaker2Resources.deploymentName(this.clusterName)));
+            assertThat(pod.getSpec().getContainers().get(0).getName(), is(KafkaMirrorMaker2Resources.componentName(this.clusterName)));
             assertThat(pod.getSpec().getContainers().get(0).getImage(), is(kmm2.image));
             assertThat(pod.getSpec().getContainers().get(0).getEnv(), is(getExpectedEnvVars()));
             assertThat(pod.getSpec().getContainers().get(0).getLivenessProbe().getTimeoutSeconds(), is(healthTimeout));

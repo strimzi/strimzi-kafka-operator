@@ -5,9 +5,9 @@
 package io.strimzi.test.executor;
 
 import io.strimzi.test.k8s.exceptions.KubeClusterException;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.Level;
 
 import java.io.File;
 import java.io.IOException;

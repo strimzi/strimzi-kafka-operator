@@ -4,14 +4,14 @@
  */
 package io.strimzi.operator.common.operator.resource.concurrent;
 
-import java.util.concurrent.CompletionStage;
-import java.util.concurrent.Executor;
-
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.operator.common.Reconciliation;
+
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Executor;
 
 /**
  * Class used for managing Kubernetes resources which can be watched and have Status. This is used by the assembly

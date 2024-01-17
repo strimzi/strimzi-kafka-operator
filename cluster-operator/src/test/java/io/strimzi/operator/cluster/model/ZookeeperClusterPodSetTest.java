@@ -22,16 +22,16 @@ import io.fabric8.kubernetes.api.model.Toleration;
 import io.fabric8.kubernetes.api.model.TolerationBuilder;
 import io.fabric8.kubernetes.api.model.TopologySpreadConstraint;
 import io.fabric8.kubernetes.api.model.TopologySpreadConstraintBuilder;
-import io.strimzi.api.kafka.model.ContainerEnvVar;
-import io.strimzi.api.kafka.model.JvmOptions;
-import io.strimzi.api.kafka.model.Kafka;
-import io.strimzi.api.kafka.model.KafkaBuilder;
-import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.Probe;
-import io.strimzi.api.kafka.model.StrimziPodSet;
-import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
-import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
+import io.strimzi.api.kafka.model.common.ContainerEnvVar;
+import io.strimzi.api.kafka.model.common.JvmOptions;
+import io.strimzi.api.kafka.model.common.Probe;
+import io.strimzi.api.kafka.model.kafka.Kafka;
+import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
+import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
+import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.OrderedProperties;
@@ -92,7 +92,7 @@ public class ZookeeperClusterPodSetTest {
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, VERSIONS, SHARED_ENV_PROVIDER);
         StrimziPodSet ps = zc.generatePodSet(3, true, null, null, podNumber -> Map.of());
 
-        assertThat(ps.getMetadata().getName(), is(KafkaResources.zookeeperStatefulSetName(CLUSTER)));
+        assertThat(ps.getMetadata().getName(), is(KafkaResources.zookeeperComponentName(CLUSTER)));
         assertThat(ps.getMetadata().getLabels().entrySet().containsAll(zc.labels.withAdditionalLabels(null).toMap().entrySet()), is(true));
         assertThat(ps.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_IO_STORAGE), is(ModelUtils.encodeStorageToJson(new PersistentClaimStorageBuilder().withSize("100Gi").withDeleteClaim(false).build())));
         TestUtils.checkOwnerReference(ps, KAFKA);
@@ -281,7 +281,7 @@ public class ZookeeperClusterPodSetTest {
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS, SHARED_ENV_PROVIDER);
         StrimziPodSet ps = zc.generatePodSet(3, true, null, null, podNum -> Map.of("special", "annotation"));
 
-        assertThat(ps.getMetadata().getName(), is(KafkaResources.zookeeperStatefulSetName(CLUSTER)));
+        assertThat(ps.getMetadata().getName(), is(KafkaResources.zookeeperComponentName(CLUSTER)));
         assertThat(ps.getMetadata().getLabels().entrySet().containsAll(spsLabels.entrySet()), is(true));
         assertThat(ps.getMetadata().getAnnotations().entrySet().containsAll(spsAnnos.entrySet()), is(true));
         assertThat(ps.getSpec().getSelector().getMatchLabels(), is(zc.getSelectorLabels().toMap()));

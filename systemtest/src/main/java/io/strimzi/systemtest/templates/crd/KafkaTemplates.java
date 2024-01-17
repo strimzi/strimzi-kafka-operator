@@ -10,15 +10,15 @@ import io.fabric8.kubernetes.api.model.ConfigMapKeySelector;
 import io.fabric8.kubernetes.api.model.ConfigMapKeySelectorBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
-import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
-import io.strimzi.api.kafka.model.JmxPrometheusExporterMetricsBuilder;
-import io.strimzi.api.kafka.model.Kafka;
-import io.strimzi.api.kafka.model.KafkaBuilder;
-import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
-import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
-import io.strimzi.api.kafka.model.storage.JbodStorage;
-import io.strimzi.systemtest.TestConstants;
+import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetrics;
+import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetricsBuilder;
+import io.strimzi.api.kafka.model.kafka.JbodStorage;
+import io.strimzi.api.kafka.model.kafka.Kafka;
+import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
+import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
+import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
@@ -63,6 +63,23 @@ public class KafkaTemplates {
                         .withDeleteClaim(true)
                     .endPersistentClaimStorage()
                 .endZookeeper()
+            .endSpec();
+    }
+
+    /**
+     * Overloads {@link #kafkaPersistent(String, int)}, but the difference is that it removes LMFV and IBPV from the Kafka
+     * config
+     * @param name of the Kafka cluster
+     * @param kafkaReplicas number of Kafka replicas
+     * @return KafkaBuilder for Kafka with persistent storage
+     */
+    public static KafkaBuilder kafkaPersistentKRaft(String name, int kafkaReplicas) {
+        return kafkaPersistent(name, kafkaReplicas)
+            .editSpec()
+                .editKafka()
+                    .removeFromConfig("log.message.format.version")
+                    .removeFromConfig("inter.broker.protocol.version")
+                .endKafka()
             .endSpec();
     }
 

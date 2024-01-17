@@ -4,12 +4,12 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationOAuth;
-import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
-import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListener;
-import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfiguration;
-import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfigurationBroker;
-import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
+import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener;
+import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerConfiguration;
+import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerConfigurationBroker;
+import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationOAuth;
+import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationTls;
+import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.kafka.oauth.jsonpath.JsonPathFilterQuery;
 import io.strimzi.kafka.oauth.jsonpath.JsonPathQuery;
 import io.strimzi.operator.common.Reconciliation;

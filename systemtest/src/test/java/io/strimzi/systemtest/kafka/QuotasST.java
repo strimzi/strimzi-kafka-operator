@@ -4,7 +4,7 @@
  */
 package io.strimzi.systemtest.kafka;
 
-import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;

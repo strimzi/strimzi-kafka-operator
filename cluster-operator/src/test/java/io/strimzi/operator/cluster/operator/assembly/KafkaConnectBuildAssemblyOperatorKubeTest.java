@@ -13,33 +13,31 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.strimzi.api.kafka.KafkaConnectList;
-import io.strimzi.api.kafka.KafkaConnectorList;
-import io.strimzi.api.kafka.model.KafkaConnect;
-import io.strimzi.api.kafka.model.KafkaConnectBuilder;
-import io.strimzi.api.kafka.model.KafkaConnectResources;
-import io.strimzi.api.kafka.model.KafkaConnector;
-import io.strimzi.api.kafka.model.StrimziPodSet;
+import io.strimzi.api.kafka.model.connect.KafkaConnect;
+import io.strimzi.api.kafka.model.connect.KafkaConnectBuilder;
+import io.strimzi.api.kafka.model.connect.KafkaConnectList;
+import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
+import io.strimzi.api.kafka.model.connect.KafkaConnectStatus;
 import io.strimzi.api.kafka.model.connect.build.JarArtifactBuilder;
 import io.strimzi.api.kafka.model.connect.build.Plugin;
 import io.strimzi.api.kafka.model.connect.build.PluginBuilder;
-import io.strimzi.api.kafka.model.status.KafkaConnectStatus;
-import io.strimzi.operator.cluster.model.PodSetUtils;
-import io.strimzi.operator.cluster.model.MockSharedEnvironmentProvider;
-import io.strimzi.operator.cluster.model.SharedEnvironmentProvider;
-import io.strimzi.operator.common.model.Labels;
-import io.strimzi.operator.common.operator.resource.StrimziPodSetOperator;
-import io.strimzi.platform.KubernetesVersion;
-import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
+import io.strimzi.api.kafka.model.connector.KafkaConnector;
+import io.strimzi.api.kafka.model.connector.KafkaConnectorList;
+import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
+import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.KafkaConnectBuild;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
+import io.strimzi.operator.cluster.model.MockSharedEnvironmentProvider;
+import io.strimzi.operator.cluster.model.PodSetUtils;
+import io.strimzi.operator.cluster.model.SharedEnvironmentProvider;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.BuildConfigOperator;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
@@ -48,9 +46,11 @@ import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
 import io.strimzi.operator.common.operator.resource.PodDisruptionBudgetOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
+import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
-import io.strimzi.operator.common.operator.resource.SecretOperator;
+import io.strimzi.operator.common.operator.resource.StrimziPodSetOperator;
+import io.strimzi.platform.KubernetesVersion;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
@@ -216,7 +216,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
         when(mockBcOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildConfigName(NAME)), eq(null))).thenReturn(Future.succeededFuture(ReconcileResult.noop(null)));
 
         // Mock and capture NP ops
-        when(mockNetPolOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.deploymentName(NAME)), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
+        when(mockNetPolOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.componentName(NAME)), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
 
         // Mock and capture PDB ops
         when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture());
@@ -374,7 +374,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
         when(mockBcOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildConfigName(NAME)), eq(null))).thenReturn(Future.succeededFuture(ReconcileResult.noop(null)));
 
         // Mock and capture NP ops
-        when(mockNetPolOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.deploymentName(NAME)), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
+        when(mockNetPolOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.componentName(NAME)), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
 
         // Mock and capture PDB ops
         when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture());
@@ -535,7 +535,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
         when(mockBcOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildConfigName(NAME)), eq(null))).thenReturn(Future.succeededFuture(ReconcileResult.noop(null)));
 
         // Mock and capture NP ops
-        when(mockNetPolOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.deploymentName(NAME)), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
+        when(mockNetPolOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.componentName(NAME)), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
 
         // Mock and capture PDB ops
         when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture());
@@ -723,7 +723,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
         when(mockBcOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildConfigName(NAME)), eq(null))).thenReturn(Future.succeededFuture(ReconcileResult.noop(null)));
 
         // Mock and capture NP ops
-        when(mockNetPolOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.deploymentName(NAME)), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
+        when(mockNetPolOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.componentName(NAME)), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
 
         // Mock and capture PDB ops
         when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture());
@@ -922,7 +922,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
         when(mockBcOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildConfigName(NAME)), eq(null))).thenReturn(Future.succeededFuture(ReconcileResult.noop(null)));
 
         // Mock and capture NP ops
-        when(mockNetPolOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.deploymentName(NAME)), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
+        when(mockNetPolOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.componentName(NAME)), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
 
         // Mock and capture PDB ops
         when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture());
@@ -1119,7 +1119,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
         when(mockBcOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildConfigName(NAME)), eq(null))).thenReturn(Future.succeededFuture(ReconcileResult.noop(null)));
 
         // Mock and capture NP ops
-        when(mockNetPolOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.deploymentName(NAME)), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
+        when(mockNetPolOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.componentName(NAME)), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
 
         // Mock and capture PDB ops
         when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture());
@@ -1321,7 +1321,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
         when(mockBcOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildConfigName(NAME)), eq(null))).thenReturn(Future.succeededFuture(ReconcileResult.noop(null)));
 
         // Mock and capture NP ops
-        when(mockNetPolOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.deploymentName(NAME)), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
+        when(mockNetPolOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.componentName(NAME)), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
 
         // Mock and capture PDB ops
         when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture());
@@ -1471,7 +1471,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
         when(mockBcOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildConfigName(NAME)), eq(null))).thenReturn(Future.succeededFuture(ReconcileResult.noop(null)));
 
         // Mock and capture NP ops
-        when(mockNetPolOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.deploymentName(NAME)), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
+        when(mockNetPolOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.componentName(NAME)), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
 
         // Mock and capture PDB ops
         when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture());
@@ -1638,7 +1638,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
         when(mockBcOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildConfigName(NAME)), eq(null))).thenReturn(Future.succeededFuture(ReconcileResult.noop(null)));
 
         // Mock and capture NP ops
-        when(mockNetPolOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.deploymentName(NAME)), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
+        when(mockNetPolOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.componentName(NAME)), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
 
         // Mock and capture PDB ops
         when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture());

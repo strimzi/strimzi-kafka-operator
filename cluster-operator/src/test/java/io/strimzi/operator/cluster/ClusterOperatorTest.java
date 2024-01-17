@@ -65,7 +65,7 @@ public class ClusterOperatorTest {
         env.put(ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_IMAGES, KafkaVersionTestUtils.getKafkaConnectImagesEnvVarString());
         env.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_IMAGES, KafkaVersionTestUtils.getKafkaMirrorMakerImagesEnvVarString());
         env.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES, KafkaVersionTestUtils.getKafkaMirrorMaker2ImagesEnvVarString());
-        env.put(ClusterOperatorConfig.FEATURE_GATES.key(), "-KafkaNodePools");
+        env.put(ClusterOperatorConfig.FEATURE_GATES.key(), "-UseKRaft");
 
         if (podSetsOnly) {
             env.put(ClusterOperatorConfig.POD_SET_RECONCILIATION_ONLY.key(), "true");

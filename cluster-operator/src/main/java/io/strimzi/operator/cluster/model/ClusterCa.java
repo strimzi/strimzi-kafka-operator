@@ -4,6 +4,19 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import io.fabric8.kubernetes.api.model.Secret;
+import io.strimzi.api.kafka.model.common.CertificateExpirationPolicy;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
+import io.strimzi.api.kafka.model.kafka.exporter.KafkaExporterResources;
+import io.strimzi.certs.CertAndKey;
+import io.strimzi.certs.CertManager;
+import io.strimzi.certs.IpAndDnsValidation;
+import io.strimzi.certs.Subject;
+import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.model.Ca;
+import io.strimzi.operator.common.model.PasswordGenerator;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -19,19 +32,6 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
-import io.fabric8.kubernetes.api.model.Secret;
-import io.strimzi.api.kafka.model.CertificateExpirationPolicy;
-import io.strimzi.api.kafka.model.CruiseControlResources;
-import io.strimzi.api.kafka.model.KafkaExporterResources;
-import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.certs.CertAndKey;
-import io.strimzi.certs.CertManager;
-import io.strimzi.certs.IpAndDnsValidation;
-import io.strimzi.certs.Subject;
-import io.strimzi.operator.common.model.PasswordGenerator;
-import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.model.Ca;
 
 /**
  * Represents the Cluster CA
@@ -187,7 +187,7 @@ public class ClusterCa extends Ca {
         Function<NodeRef, Subject> subjectFn = node -> {
             Subject.Builder subject = new Subject.Builder()
                     .withOrganizationName("io.strimzi")
-                    .withCommonName(KafkaResources.zookeeperStatefulSetName(crName));
+                    .withCommonName(KafkaResources.zookeeperComponentName(crName));
             subject.addDnsName(KafkaResources.zookeeperServiceName(crName));
             subject.addDnsName(String.format("%s.%s", KafkaResources.zookeeperServiceName(crName), namespace));
             subject.addDnsName(zkDnsGenerator.serviceDnsNameWithoutClusterDomain());
@@ -222,7 +222,7 @@ public class ClusterCa extends Ca {
         Function<NodeRef, Subject> subjectFn = node -> {
             Subject.Builder subject = new Subject.Builder()
                     .withOrganizationName("io.strimzi")
-                    .withCommonName(KafkaResources.kafkaStatefulSetName(crName));
+                    .withCommonName(KafkaResources.kafkaComponentName(crName));
 
             subject.addDnsNames(ModelUtils.generateAllServiceDnsNames(namespace, KafkaResources.bootstrapServiceName(crName)));
             subject.addDnsNames(ModelUtils.generateAllServiceDnsNames(namespace, KafkaResources.brokersServiceName(crName)));

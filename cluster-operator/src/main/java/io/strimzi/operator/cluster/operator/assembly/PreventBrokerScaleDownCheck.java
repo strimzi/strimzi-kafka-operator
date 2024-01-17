@@ -4,7 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
-import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.Reconciliation;
@@ -21,9 +21,9 @@ import org.apache.kafka.common.KafkaException;
 import org.apache.kafka.common.TopicPartitionInfo;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.HashSet;
 /**
  * Class which contains several utility function which check if broker scale down can be done or not.
  */

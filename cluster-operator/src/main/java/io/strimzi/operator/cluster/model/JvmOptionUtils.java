@@ -4,7 +4,10 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import static java.util.stream.Collectors.joining;
+import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.ResourceRequirements;
+import io.strimzi.api.kafka.model.common.JvmOptions;
+import io.strimzi.api.kafka.model.common.SystemProperty;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,14 +15,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import io.fabric8.kubernetes.api.model.EnvVar;
-import io.fabric8.kubernetes.api.model.ResourceRequirements;
-import io.strimzi.api.kafka.model.JvmOptions;
-import io.strimzi.api.kafka.model.SystemProperty;
+import static java.util.stream.Collectors.joining;
 
 
 /**
- * Utility for {@link io.strimzi.api.kafka.model.JvmOptions} object.
+ * Utility for {@link JvmOptions} object.
  */
 public final class JvmOptionUtils  {
     /**

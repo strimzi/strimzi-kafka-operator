@@ -8,10 +8,6 @@ import io.strimzi.operator.common.Reconciliation;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.OptionalLong;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.DescribeMetadataQuorumResult;
 import org.apache.kafka.clients.admin.QuorumInfo;
@@ -22,10 +18,15 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.OptionalLong;
+
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 

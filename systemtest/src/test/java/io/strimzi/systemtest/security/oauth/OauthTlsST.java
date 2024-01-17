@@ -4,18 +4,18 @@
  */
 package io.strimzi.systemtest.security.oauth;
 
-import io.strimzi.api.kafka.model.CertSecretSource;
-import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
-import io.strimzi.api.kafka.model.KafkaBridgeResources;
-import io.strimzi.api.kafka.model.KafkaConnect;
-import io.strimzi.api.kafka.model.KafkaConnectResources;
-import io.strimzi.api.kafka.model.KafkaMirrorMakerResources;
-import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
-import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
+import io.strimzi.api.kafka.model.bridge.KafkaBridgeResources;
+import io.strimzi.api.kafka.model.common.CertSecretSource;
+import io.strimzi.api.kafka.model.common.CertSecretSourceBuilder;
+import io.strimzi.api.kafka.model.connect.KafkaConnect;
+import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
+import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
+import io.strimzi.api.kafka.model.mirrormaker.KafkaMirrorMakerResources;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.FIPSNotSupported;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.ParallelTest;
@@ -91,17 +91,17 @@ public class OauthTlsST extends OauthAbstractST {
             .withConsumerName(consumerName)
             .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(oauthClusterName))
             .withTopicName(topicName)
-            .withMessageCount(MESSAGE_COUNT)
+            .withMessageCount(testStorage.getMessageCount())
             .withOauthClientId(OAUTH_CLIENT_NAME)
             .withOauthClientSecret(OAUTH_CLIENT_SECRET)
             .withOauthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
             .build();
 
         resourceManager.createResourceWithWait(extensionContext, oauthExampleClients.producerStrimziOauthTls(oauthClusterName));
-        ClientUtils.waitForClientSuccess(producerName, Environment.TEST_SUITE_NAMESPACE, MESSAGE_COUNT);
+        ClientUtils.waitForClientSuccess(producerName, Environment.TEST_SUITE_NAMESPACE, testStorage.getMessageCount());
 
         resourceManager.createResourceWithWait(extensionContext, oauthExampleClients.consumerStrimziOauthTls(oauthClusterName));
-        ClientUtils.waitForClientSuccess(consumerName, Environment.TEST_SUITE_NAMESPACE, MESSAGE_COUNT);
+        ClientUtils.waitForClientSuccess(consumerName, Environment.TEST_SUITE_NAMESPACE, testStorage.getMessageCount());
     }
 
     @Description("As an OAuth KafkaConnect, I am able to sink messages from Kafka Broker topic using encrypted communication.")
@@ -124,17 +124,17 @@ public class OauthTlsST extends OauthAbstractST {
             .withConsumerName(consumerName)
             .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(oauthClusterName))
             .withTopicName(topicName)
-            .withMessageCount(MESSAGE_COUNT)
+            .withMessageCount(testStorage.getMessageCount())
             .withOauthClientId(OAUTH_CLIENT_NAME)
             .withOauthClientSecret(OAUTH_CLIENT_SECRET)
             .withOauthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
             .build();
 
         resourceManager.createResourceWithWait(extensionContext, oauthExampleClients.producerStrimziOauthTls(oauthClusterName));
-        ClientUtils.waitForClientSuccess(producerName, Environment.TEST_SUITE_NAMESPACE, MESSAGE_COUNT);
+        ClientUtils.waitForClientSuccess(producerName, Environment.TEST_SUITE_NAMESPACE, testStorage.getMessageCount());
 
         resourceManager.createResourceWithWait(extensionContext, oauthExampleClients.consumerStrimziOauthTls(oauthClusterName));
-        ClientUtils.waitForClientSuccess(consumerName, Environment.TEST_SUITE_NAMESPACE, MESSAGE_COUNT);
+        ClientUtils.waitForClientSuccess(consumerName, Environment.TEST_SUITE_NAMESPACE, testStorage.getMessageCount());
 
         KafkaConnect connect = KafkaConnectTemplates.kafkaConnectWithFilePlugin(clusterName, Environment.TEST_SUITE_NAMESPACE, oauthClusterName, 1)
             .editSpec()
@@ -170,7 +170,7 @@ public class OauthTlsST extends OauthAbstractST {
         resourceManager.createResourceWithWait(extensionContext, connect, ScraperTemplates.scraperPod(Environment.TEST_SUITE_NAMESPACE, scraperName).build());
 
         LOGGER.info("Deploying NetworkPolicies for KafkaConnect");
-        NetworkPolicyResource.deployNetworkPolicyForResource(extensionContext, connect, KafkaConnectResources.deploymentName(clusterName));
+        NetworkPolicyResource.deployNetworkPolicyForResource(extensionContext, connect, KafkaConnectResources.componentName(clusterName));
 
         String kafkaConnectPodName = kubeClient().listPods(Environment.TEST_SUITE_NAMESPACE, clusterName, Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
         String scraperPodName = kubeClient().listPodsByPrefixInName(Environment.TEST_SUITE_NAMESPACE, scraperName).get(0).getMetadata().getName();
@@ -199,17 +199,17 @@ public class OauthTlsST extends OauthAbstractST {
             .withConsumerName(consumerName)
             .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(oauthClusterName))
             .withTopicName(topicName)
-            .withMessageCount(MESSAGE_COUNT)
+            .withMessageCount(testStorage.getMessageCount())
             .withOauthClientId(OAUTH_CLIENT_NAME)
             .withOauthClientSecret(OAUTH_CLIENT_SECRET)
             .withOauthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
             .build();
 
         resourceManager.createResourceWithWait(extensionContext, oauthExampleClients.producerStrimziOauthTls(oauthClusterName));
-        ClientUtils.waitForClientSuccess(producerName, Environment.TEST_SUITE_NAMESPACE, MESSAGE_COUNT);
+        ClientUtils.waitForClientSuccess(producerName, Environment.TEST_SUITE_NAMESPACE, testStorage.getMessageCount());
 
         resourceManager.createResourceWithWait(extensionContext, oauthExampleClients.consumerStrimziOauthTls(oauthClusterName));
-        ClientUtils.waitForClientSuccess(consumerName, Environment.TEST_SUITE_NAMESPACE, MESSAGE_COUNT);
+        ClientUtils.waitForClientSuccess(consumerName, Environment.TEST_SUITE_NAMESPACE, testStorage.getMessageCount());
 
         resourceManager.createResourceWithWait(extensionContext, KafkaBridgeTemplates.kafkaBridge(oauthClusterName, KafkaResources.tlsBootstrapAddress(oauthClusterName), 1)
             .editMetadata()
@@ -252,7 +252,7 @@ public class OauthTlsST extends OauthAbstractST {
             .build();
 
         resourceManager.createResourceWithWait(extensionContext, kafkaBridgeClientJob.producerStrimziBridge());
-        ClientUtils.waitForClientSuccess(producerName, Environment.TEST_SUITE_NAMESPACE, MESSAGE_COUNT);
+        ClientUtils.waitForClientSuccess(producerName, Environment.TEST_SUITE_NAMESPACE, testStorage.getMessageCount());
     }
 
     @Description("As a OAuth MirrorMaker, I am able to replicate Topic data using using encrypted communication")
@@ -276,17 +276,17 @@ public class OauthTlsST extends OauthAbstractST {
             .withConsumerName(consumerName)
             .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(oauthClusterName))
             .withTopicName(testStorage.getTopicName())
-            .withMessageCount(MESSAGE_COUNT)
+            .withMessageCount(testStorage.getMessageCount())
             .withOauthClientId(OAUTH_CLIENT_NAME)
             .withOauthClientSecret(OAUTH_CLIENT_SECRET)
             .withOauthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
             .build();
 
         resourceManager.createResourceWithWait(extensionContext, oauthExampleClients.producerStrimziOauthTls(oauthClusterName));
-        ClientUtils.waitForClientSuccess(producerName, Environment.TEST_SUITE_NAMESPACE, MESSAGE_COUNT);
+        ClientUtils.waitForClientSuccess(producerName, Environment.TEST_SUITE_NAMESPACE, testStorage.getMessageCount());
 
         resourceManager.createResourceWithWait(extensionContext, oauthExampleClients.consumerStrimziOauthTls(oauthClusterName));
-        ClientUtils.waitForClientSuccess(consumerName, Environment.TEST_SUITE_NAMESPACE, MESSAGE_COUNT);
+        ClientUtils.waitForClientSuccess(consumerName, Environment.TEST_SUITE_NAMESPACE, testStorage.getMessageCount());
 
         String targetKafkaCluster = oauthClusterName + "-target";
 
@@ -380,14 +380,14 @@ public class OauthTlsST extends OauthAbstractST {
                 .endSpec()
                 .build());
 
-        String mirrorMakerPodName = kubeClient().listPodsByPrefixInName(Environment.TEST_SUITE_NAMESPACE, KafkaMirrorMakerResources.deploymentName(oauthClusterName)).get(0).getMetadata().getName();
+        String mirrorMakerPodName = kubeClient().listPodsByPrefixInName(Environment.TEST_SUITE_NAMESPACE, KafkaMirrorMakerResources.componentName(oauthClusterName)).get(0).getMetadata().getName();
         String kafkaMirrorMakerLogs = kubeClient().logsInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, mirrorMakerPodName);
 
         assertThat(kafkaMirrorMakerLogs,
             not(containsString("keytool error: java.io.FileNotFoundException: /opt/kafka/consumer-oauth-certs/**/* (No such file or directory)")));
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaUserTemplates.tlsUser(Environment.TEST_SUITE_NAMESPACE, oauthClusterName, USER_NAME).build());
-        KafkaUserUtils.waitForKafkaUserCreation(Environment.TEST_SUITE_NAMESPACE, USER_NAME);
+        resourceManager.createResourceWithWait(extensionContext, KafkaUserTemplates.tlsUser(Environment.TEST_SUITE_NAMESPACE, oauthClusterName, testStorage.getUsername()).build());
+        KafkaUserUtils.waitForKafkaUserCreation(Environment.TEST_SUITE_NAMESPACE, testStorage.getUsername());
 
         LOGGER.info("Creating new client with new consumer-group and also to point on {} cluster", targetKafkaCluster);
 
@@ -395,10 +395,10 @@ public class OauthTlsST extends OauthAbstractST {
             .withNamespaceName(Environment.TEST_SUITE_NAMESPACE)
             .withProducerName(producerName)
             .withConsumerName(consumerName)
-            .withClientUserName(USER_NAME)
+            .withClientUserName(testStorage.getUsername())
             .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(targetKafkaCluster))
             .withTopicName(testStorage.getTopicName())
-            .withMessageCount(MESSAGE_COUNT)
+            .withMessageCount(testStorage.getMessageCount())
             .withOauthClientId(OAUTH_CLIENT_NAME)
             .withOauthClientSecret(OAUTH_CLIENT_SECRET)
             .withOauthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
@@ -406,7 +406,7 @@ public class OauthTlsST extends OauthAbstractST {
 
         resourceManager.createResourceWithWait(extensionContext, kafkaOauthClientJob.consumerStrimziOauthTls(targetKafkaCluster));
 
-        ClientUtils.waitForClientSuccess(consumerName, Environment.TEST_SUITE_NAMESPACE, MESSAGE_COUNT);
+        ClientUtils.waitForClientSuccess(consumerName, Environment.TEST_SUITE_NAMESPACE, testStorage.getMessageCount());
     }
 
     @ParallelTest
@@ -461,17 +461,17 @@ public class OauthTlsST extends OauthAbstractST {
                 .withConsumerName(consumerName)
                 .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(introspectionKafka))
                 .withTopicName(topicName)
-                .withMessageCount(MESSAGE_COUNT)
+                .withMessageCount(testStorage.getMessageCount())
                 .withOauthClientId(OAUTH_CLIENT_NAME)
                 .withOauthClientSecret(OAUTH_CLIENT_SECRET)
                 .withOauthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
                 .build();
 
         resourceManager.createResourceWithWait(extensionContext, oauthInternalClientIntrospectionJob.producerStrimziOauthTls(introspectionKafka));
-        ClientUtils.waitForClientSuccess(producerName, Environment.TEST_SUITE_NAMESPACE, MESSAGE_COUNT);
+        ClientUtils.waitForClientSuccess(producerName, Environment.TEST_SUITE_NAMESPACE, testStorage.getMessageCount());
 
         resourceManager.createResourceWithWait(extensionContext, oauthInternalClientIntrospectionJob.consumerStrimziOauthTls(introspectionKafka));
-        ClientUtils.waitForClientSuccess(consumerName, Environment.TEST_SUITE_NAMESPACE, MESSAGE_COUNT);
+        ClientUtils.waitForClientSuccess(consumerName, Environment.TEST_SUITE_NAMESPACE, testStorage.getMessageCount());
     }
 
     @BeforeAll

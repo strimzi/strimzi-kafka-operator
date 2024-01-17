@@ -7,24 +7,24 @@ package io.strimzi.systemtest.operators;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
-import io.strimzi.api.kafka.model.Kafka;
-import io.strimzi.api.kafka.model.KafkaConnect;
-import io.strimzi.api.kafka.model.KafkaConnector;
-import io.strimzi.api.kafka.model.KafkaRebalance;
-import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.connect.KafkaConnect;
+import io.strimzi.api.kafka.model.connector.KafkaConnector;
+import io.strimzi.api.kafka.model.kafka.Kafka;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.api.kafka.model.rebalance.KafkaRebalance;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.TestConstants;
+import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.metrics.MetricsCollector;
 import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
 import io.strimzi.systemtest.resources.crd.KafkaRebalanceResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -45,9 +45,6 @@ import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.specific.MetricsUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import static io.strimzi.systemtest.utils.specific.MetricsUtils.setupCOMetricsCollectorInNamespace;
-import static org.hamcrest.CoreMatchers.is;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -60,7 +57,9 @@ import static io.strimzi.systemtest.TestConstants.CONNECT;
 import static io.strimzi.systemtest.TestConstants.CONNECT_COMPONENTS;
 import static io.strimzi.systemtest.TestConstants.CRUISE_CONTROL;
 import static io.strimzi.systemtest.TestConstants.REGRESSION;
+import static io.strimzi.systemtest.utils.specific.MetricsUtils.setupCOMetricsCollectorInNamespace;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
@@ -128,7 +127,7 @@ public class MultipleClusterOperatorsST extends AbstractST {
         // Strimzi is deployed with cluster-wide access in this class STRIMZI_RBAC_SCOPE=NAMESPACE won't work
         assumeFalse(Environment.isNamespaceRbacScope());
 
-        TestStorage testStorage = new TestStorage(extensionContext, DEFAULT_NAMESPACE);
+        final TestStorage testStorage = new TestStorage(extensionContext, DEFAULT_NAMESPACE);
 
         String firstCOScraperName = FIRST_NAMESPACE + "-" + TestConstants.SCRAPER_NAME;
         String secondCOScraperName = SECOND_NAMESPACE + "-" + TestConstants.SCRAPER_NAME;
@@ -197,11 +196,11 @@ public class MultipleClusterOperatorsST extends AbstractST {
             .withConsumerName(testStorage.getConsumerName())
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
             .withTopicName(testStorage.getTopicName())
-            .withMessageCount(MESSAGE_COUNT)
+            .withMessageCount(testStorage.getMessageCount())
             .build();
 
         resourceManager.createResourceWithWait(extensionContext, basicClients.producerStrimzi());
-        ClientUtils.waitForClientSuccess(testStorage.getProducerName(), testStorage.getNamespaceName(), MESSAGE_COUNT);
+        ClientUtils.waitForClientSuccess(testStorage.getProducerName(), testStorage.getNamespaceName(), testStorage.getMessageCount());
 
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), kafkaConnectPodName, TestConstants.DEFAULT_SINK_FILE_PATH, "Hello-world - 99");
 
@@ -256,8 +255,8 @@ public class MultipleClusterOperatorsST extends AbstractST {
     @KRaftNotSupported("The scaling of the Kafka Pods is not working properly at the moment")
     void testKafkaCCAndRebalanceWithMultipleCOs(ExtensionContext extensionContext) {
         assumeFalse(Environment.isNamespaceRbacScope());
-        TestStorage testStorage = new TestStorage(extensionContext, DEFAULT_NAMESPACE);
-        LabelSelector kafkaSelector = KafkaResource.getLabelSelector(testStorage.getClusterName(), KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()));
+        final TestStorage testStorage = new TestStorage(extensionContext, DEFAULT_NAMESPACE);
+        LabelSelector kafkaSelector = KafkaResource.getLabelSelector(testStorage.getClusterName(), KafkaResources.kafkaComponentName(testStorage.getClusterName()));
 
         int scaleTo = 4;
 

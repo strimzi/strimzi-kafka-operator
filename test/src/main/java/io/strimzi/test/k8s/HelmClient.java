@@ -6,9 +6,9 @@ package io.strimzi.test.k8s;
 
 import io.strimzi.test.executor.Exec;
 import io.strimzi.test.k8s.cmdClient.KubeCmdClient;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.Level;
 
 import java.nio.file.Path;
 import java.util.ArrayList;

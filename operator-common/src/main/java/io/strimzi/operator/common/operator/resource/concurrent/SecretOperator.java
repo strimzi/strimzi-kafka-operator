@@ -4,13 +4,13 @@
  */
 package io.strimzi.operator.common.operator.resource.concurrent;
 
-import java.util.concurrent.Executor;
-
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
+
+import java.util.concurrent.Executor;
 
 /**
  * Operations for {@code Secret}s.

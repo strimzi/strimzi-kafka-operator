@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.strimzi.api.annotations.ApiVersion;
 import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.annotations.DeprecatedType;
+import io.strimzi.crdgenerator.annotations.AddedIn;
 import io.strimzi.crdgenerator.annotations.Crd;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.DescriptionFile;
@@ -173,6 +174,9 @@ class DocGenerator {
             String externalUrl = linker != null && kubeLink != null ? linker.link(kubeLink) : null;
             addExternalUrl(property, kubeLink, externalUrl);
 
+            // Add the version the field was added in
+            addAddedIn(property);
+
             // Add the types to the `types` array to also generate the docs for the type itself
             Class<?> documentedType = propertyType.isArray() ? propertyType.arrayBase() : propertyType.getType();
 
@@ -232,6 +236,21 @@ class DocGenerator {
             }
         } else {
             out.append(getDescription(description));
+        }
+    }
+
+    /**
+     * Sets the version in which the property was added. It is done only for properties that have the AddedIn annotation.
+     *
+     * @param property  The property for which the version should be added
+     *
+     * @throws IOException  Throws IOException when appending to the output fails
+     */
+    private void addAddedIn(Property property) throws IOException {
+        AddedIn addedIn = property.getAnnotation(AddedIn.class);
+
+        if (addedIn != null) {
+            out.append(" Added in Strimzi " + addedIn.value() + ".");
         }
     }
 

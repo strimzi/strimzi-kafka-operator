@@ -10,13 +10,13 @@ import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyBuilder;
 import io.fabric8.kubernetes.client.CustomResource;
-import io.strimzi.api.kafka.model.Kafka;
-import io.strimzi.api.kafka.model.KafkaExporterResources;
-import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.Spec;
-import io.strimzi.api.kafka.model.status.Status;
-import io.strimzi.systemtest.TestConstants;
+import io.strimzi.api.kafka.model.common.Spec;
+import io.strimzi.api.kafka.model.kafka.Kafka;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.api.kafka.model.kafka.Status;
+import io.strimzi.api.kafka.model.kafka.exporter.KafkaExporterResources;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.enums.DefaultNetworkPolicy;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceType;
@@ -128,7 +128,7 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
     }
 
     public static void allowNetworkPolicySettingsForKafkaExporter(ExtensionContext extensionContext, String clusterName, String namespace) {
-        String kafkaExporterDeploymentName = KafkaExporterResources.deploymentName(clusterName);
+        String kafkaExporterDeploymentName = KafkaExporterResources.componentName(clusterName);
         LabelSelector labelSelector = new LabelSelectorBuilder()
             .addToMatchLabels(TestConstants.SCRAPER_LABEL_KEY, TestConstants.SCRAPER_LABEL_VALUE)
             .build();

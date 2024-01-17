@@ -2,6 +2,9 @@
 
 ## 0.40.0
 
+* Remove support for Apache Kafka 3.5.0 and 3.5.1
+* The `UseKRaft` feature gate moves to beta stage and is enabled by default.
+  If needed, `UseKRaft` can be disabled in the feature gates configuration in the Cluster Operator.
 * Fix NullPointerException from missing listenerConfig when using custom auth
 * Added support for Kafka Exporter `offset.show-all` parameter
 
@@ -11,6 +14,7 @@
   Kubernetes 1.21 and 1.22 are not supported anymore.
 * Support for the JmxTrans component is now completely removed.
   If you are upgrading from Strimzi 0.34 or earlier and have JmxTrans enabled in `.spec.jmxTrans` of the `Kafka` custom resource, you should disable it before the upgrade or delete it manually after the upgrade is complete.
+* The `api` module was refactored and classes were moved to new packages.
 
 ## 0.39.0
 
@@ -74,7 +78,7 @@
     config.providers.env.class: org.apache.kafka.common.config.provider.EnvVarConfigProvider
     # ...
   ```
-
+  
 ## 0.37.0
 
 * The `StableConnectIdentites` feature gate moves to beta stage.

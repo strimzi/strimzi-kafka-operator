@@ -4,15 +4,15 @@
  */
 package io.strimzi.systemtest.tracing;
 
-import io.strimzi.api.kafka.model.KafkaBridgeResources;
-import io.strimzi.api.kafka.model.KafkaConnectBuilder;
-import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.tracing.OpenTelemetryTracing;
-import io.strimzi.api.kafka.model.tracing.Tracing;
+import io.strimzi.api.kafka.model.bridge.KafkaBridgeResources;
+import io.strimzi.api.kafka.model.common.tracing.OpenTelemetryTracing;
+import io.strimzi.api.kafka.model.common.tracing.Tracing;
+import io.strimzi.api.kafka.model.connect.KafkaConnectBuilder;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.BridgeTracingClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.BridgeTracingClientsBuilder;
@@ -303,7 +303,8 @@ public class OpenTelemetryST extends AbstractST {
         ClientUtils.waitForClientsSuccess(
             testStorage.getProducerName(),
             testStorage.getConsumerName(),
-            testStorage.getNamespaceName(), MESSAGE_COUNT);
+            testStorage.getNamespaceName(),
+            testStorage.getMessageCount());
 
         TracingUtils.verify(testStorage.getNamespaceName(), JAEGER_PRODUCER_SERVICE, testStorage.getScraperPodName(), "To_" + testStorage.getTopicName(), JAEGER_QUERY_SERVICE);
         TracingUtils.verify(testStorage.getNamespaceName(), JAEGER_CONSUMER_SERVICE, testStorage.getScraperPodName(), "From_" + testStorage.getTopicName(), JAEGER_QUERY_SERVICE);
@@ -357,7 +358,7 @@ public class OpenTelemetryST extends AbstractST {
             .withNamespaceName(testStorage.getNamespaceName())
             .withBootstrapAddress(KafkaBridgeResources.serviceName(testStorage.getClusterName()))
             .withTopicName(testStorage.getTopicName())
-            .withMessageCount(MESSAGE_COUNT)
+            .withMessageCount(testStorage.getMessageCount())
             .withPort(TestConstants.HTTP_BRIDGE_DEFAULT_PORT)
             .withDelayMs(1000)
             .withPollInterval(1000)
@@ -366,7 +367,7 @@ public class OpenTelemetryST extends AbstractST {
 
         resourceManager.createResourceWithWait(extensionContext, kafkaBridgeClientJob.producerStrimziBridgeWithTracing());
         resourceManager.createResourceWithWait(extensionContext, (testStorage.getTracingClients()).consumerWithTracing());
-        ClientUtils.waitForClientSuccess(bridgeProducer, testStorage.getNamespaceName(), MESSAGE_COUNT);
+        ClientUtils.waitForClientSuccess(bridgeProducer, testStorage.getNamespaceName(), testStorage.getMessageCount());
 
         TracingUtils.verify(testStorage.getNamespaceName(), JAEGER_KAFKA_BRIDGE_SERVICE, testStorage.getScraperPodName(), JAEGER_QUERY_SERVICE);
     }
@@ -416,7 +417,7 @@ public class OpenTelemetryST extends AbstractST {
             .withNamespaceName(testStorage.getNamespaceName())
             .withBootstrapAddress(KafkaBridgeResources.serviceName(testStorage.getClusterName()))
             .withTopicName(testStorage.getTopicName())
-            .withMessageCount(MESSAGE_COUNT)
+            .withMessageCount(testStorage.getMessageCount())
             .withPort(TestConstants.HTTP_BRIDGE_DEFAULT_PORT)
             .withDelayMs(1000)
             .withPollInterval(1000)
@@ -425,7 +426,7 @@ public class OpenTelemetryST extends AbstractST {
 
         resourceManager.createResourceWithWait(extensionContext, kafkaBridgeClientJob.producerStrimziBridgeWithTracing());
         resourceManager.createResourceWithWait(extensionContext, (testStorage.getTracingClients()).consumerWithTracing());
-        ClientUtils.waitForClientSuccess(bridgeProducer, testStorage.getNamespaceName(), MESSAGE_COUNT);
+        ClientUtils.waitForClientSuccess(bridgeProducer, testStorage.getNamespaceName(), testStorage.getMessageCount());
 
         TracingUtils.verify(testStorage.getNamespaceName(), JAEGER_KAFKA_BRIDGE_SERVICE, testStorage.getScraperPodName(), JAEGER_QUERY_SERVICE);
         TracingUtils.verify(testStorage.getNamespaceName(), bridgeProducer, testStorage.getScraperPodName(), JAEGER_QUERY_SERVICE);
@@ -447,7 +448,7 @@ public class OpenTelemetryST extends AbstractST {
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
             .withTopicName(testStorage.getTopicName())
             .withStreamsTopicTargetName(testStorage.getStreamsTopicTargetName())
-            .withMessageCount(MESSAGE_COUNT)
+            .withMessageCount(testStorage.getMessageCount())
             .withJaegerServiceProducerName(JAEGER_PRODUCER_SERVICE)
             .withJaegerServiceConsumerName(JAEGER_CONSUMER_SERVICE)
             .withJaegerServiceStreamsName(JAEGER_KAFKA_STREAMS_SERVICE)

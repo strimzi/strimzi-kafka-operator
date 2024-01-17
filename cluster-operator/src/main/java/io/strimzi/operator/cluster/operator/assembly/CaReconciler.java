@@ -8,20 +8,17 @@ import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
-import io.strimzi.api.kafka.model.CertificateAuthority;
-import io.strimzi.api.kafka.model.CruiseControlResources;
-import io.strimzi.api.kafka.model.Kafka;
-import io.strimzi.api.kafka.model.KafkaExporterResources;
-import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.StrimziPodSet;
+import io.strimzi.api.kafka.model.common.CertificateAuthority;
+import io.strimzi.api.kafka.model.kafka.Kafka;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
+import io.strimzi.api.kafka.model.kafka.exporter.KafkaExporterResources;
+import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.CertUtils;
-import io.strimzi.operator.common.model.Ca;
-import io.strimzi.operator.common.model.ClientsCa;
 import io.strimzi.operator.cluster.model.ClusterCa;
-import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.model.RestartReason;
@@ -34,11 +31,14 @@ import io.strimzi.operator.cluster.operator.resource.events.KubernetesRestartEve
 import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.BackOff;
-import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.model.Ca;
+import io.strimzi.operator.common.model.ClientsCa;
+import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
@@ -371,8 +371,8 @@ public class CaReconciler {
                     .compose(i -> getKafkaReplicas())
                     .compose(nodes -> rollKafkaBrokers(nodes, podRollReasons))
                     .compose(i -> maybeRollDeploymentIfExists(KafkaResources.entityOperatorDeploymentName(reconciliation.name()), podRollReasons))
-                    .compose(i -> maybeRollDeploymentIfExists(KafkaExporterResources.deploymentName(reconciliation.name()), podRollReasons))
-                    .compose(i -> maybeRollDeploymentIfExists(CruiseControlResources.deploymentName(reconciliation.name()), podRollReasons));
+                    .compose(i -> maybeRollDeploymentIfExists(KafkaExporterResources.componentName(reconciliation.name()), podRollReasons))
+                    .compose(i -> maybeRollDeploymentIfExists(CruiseControlResources.componentName(reconciliation.name()), podRollReasons));
         } else {
             return Future.succeededFuture();
         }
@@ -458,7 +458,7 @@ public class CaReconciler {
      * @return  Current number of ZooKeeper replicas
      */
     /* test */ Future<Integer> getZooKeeperReplicas() {
-        return strimziPodSetOperator.getAsync(reconciliation.namespace(), KafkaResources.zookeeperStatefulSetName(reconciliation.name()))
+        return strimziPodSetOperator.getAsync(reconciliation.namespace(), KafkaResources.zookeeperComponentName(reconciliation.name()))
                 .compose(podSet -> {
                     if (podSet != null
                             && podSet.getSpec() != null
@@ -485,7 +485,7 @@ public class CaReconciler {
             Labels zkSelectorLabels = Labels.EMPTY
                     .withStrimziKind(reconciliation.kind())
                     .withStrimziCluster(reconciliation.name())
-                    .withStrimziName(KafkaResources.zookeeperStatefulSetName(reconciliation.name()));
+                    .withStrimziName(KafkaResources.zookeeperComponentName(reconciliation.name()));
 
             Function<Pod, List<String>> rollZkPodAndLogReason = pod -> {
                 List<String> reason = List.of(RestartReason.CLUSTER_CA_CERT_KEY_REPLACED.getDefaultNote());
@@ -503,7 +503,7 @@ public class CaReconciler {
         Labels selectorLabels = Labels.EMPTY
                 .withStrimziKind(reconciliation.kind())
                 .withStrimziCluster(reconciliation.name())
-                .withStrimziName(KafkaResources.kafkaStatefulSetName(reconciliation.name()));
+                .withStrimziName(KafkaResources.kafkaComponentName(reconciliation.name()));
 
         return strimziPodSetOperator.listAsync(reconciliation.namespace(), selectorLabels)
                 .compose(podSets -> {

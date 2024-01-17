@@ -18,7 +18,7 @@ import io.micrometer.core.instrument.binder.system.ProcessorMetrics;
 import io.micrometer.prometheus.PrometheusConfig;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
 import io.strimzi.api.kafka.Crds;
-import io.strimzi.api.kafka.model.KafkaTopic;
+import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.operator.common.OperatorKubernetesClientBuilder;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.http.HealthCheckAndMetricsServer;

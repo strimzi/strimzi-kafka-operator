@@ -8,10 +8,10 @@ import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.Role;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
-import io.strimzi.api.kafka.model.status.Condition;
+import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -130,7 +130,7 @@ public class SpecificST extends AbstractST {
         KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(testStorage.getClusterName(), Environment.TEST_SUITE_NAMESPACE,
                 ".*code=403.*");
 
-        final Condition condition = KafkaResource.kafkaClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(testStorage.getClusterName()).get().getStatus().getConditions().stream().findFirst().get();
+        final Condition condition = KafkaResource.kafkaClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(testStorage.getClusterName()).get().getStatus().getConditions().stream().filter(c -> "NotReady".equals(c.getType())).findFirst().orElseThrow();
 
         assertThat(condition.getReason(), CoreMatchers.is("KubernetesClientException"));
         assertThat(condition.getStatus(), CoreMatchers.is("True"));

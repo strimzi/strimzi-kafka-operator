@@ -5,27 +5,27 @@
 package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.VolumeMount;
-import io.strimzi.api.kafka.model.CertAndKeySecretSource;
-import io.strimzi.api.kafka.model.KafkaAuthorization;
-import io.strimzi.api.kafka.model.KafkaAuthorizationCustom;
-import io.strimzi.api.kafka.model.KafkaAuthorizationKeycloak;
-import io.strimzi.api.kafka.model.KafkaAuthorizationOpa;
-import io.strimzi.api.kafka.model.KafkaAuthorizationSimple;
-import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.Rack;
-import io.strimzi.api.kafka.model.listener.KafkaListenerAuthentication;
-import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationCustom;
-import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationOAuth;
-import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationScramSha512;
-import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
-import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListener;
-import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfiguration;
+import io.strimzi.api.kafka.model.common.CertAndKeySecretSource;
+import io.strimzi.api.kafka.model.common.Rack;
+import io.strimzi.api.kafka.model.kafka.KafkaAuthorization;
+import io.strimzi.api.kafka.model.kafka.KafkaAuthorizationCustom;
+import io.strimzi.api.kafka.model.kafka.KafkaAuthorizationKeycloak;
+import io.strimzi.api.kafka.model.kafka.KafkaAuthorizationOpa;
+import io.strimzi.api.kafka.model.kafka.KafkaAuthorizationSimple;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener;
+import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerConfiguration;
+import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthentication;
+import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationCustom;
+import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationOAuth;
+import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationScramSha512;
+import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
 import io.strimzi.kafka.oauth.server.ServerConfig;
 import io.strimzi.kafka.oauth.server.plain.ServerPlainConfig;
 import io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlMetricsReporter;
-import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -33,11 +33,11 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.Set;
-import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -627,7 +627,7 @@ public class KafkaBrokerConfigurationBuilder {
             List<String> superUsers = new ArrayList<>();
 
             // Broker super users
-            superUsers.add(String.format("User:CN=%s,O=io.strimzi", KafkaResources.kafkaStatefulSetName(clusterName)));
+            superUsers.add(String.format("User:CN=%s,O=io.strimzi", KafkaResources.kafkaComponentName(clusterName)));
             superUsers.add(String.format("User:CN=%s-%s,O=io.strimzi", clusterName, "entity-topic-operator"));
             superUsers.add(String.format("User:CN=%s-%s,O=io.strimzi", clusterName, "entity-user-operator"));
             superUsers.add(String.format("User:CN=%s-%s,O=io.strimzi", clusterName, "kafka-exporter"));

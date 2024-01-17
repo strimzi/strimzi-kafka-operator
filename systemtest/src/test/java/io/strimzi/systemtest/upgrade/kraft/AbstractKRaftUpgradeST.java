@@ -5,8 +5,8 @@
 package io.strimzi.systemtest.upgrade.kraft;
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
-import io.strimzi.api.kafka.model.Kafka;
-import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.kafka.Kafka;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.TestConstants;
@@ -19,7 +19,6 @@ import io.strimzi.systemtest.upgrade.BundleVersionModificationData;
 import io.strimzi.systemtest.upgrade.CommonVersionModificationData;
 import io.strimzi.systemtest.upgrade.UpgradeKafkaVersion;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
-import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
@@ -50,13 +49,6 @@ public class AbstractKRaftUpgradeST extends AbstractUpgradeST {
     protected final LabelSelector controllerSelector = KafkaNodePoolResource.getLabelSelector(clusterName, CONTROLLER_NODE_NAME, ProcessRoles.CONTROLLER);
     protected final LabelSelector brokerSelector = KafkaNodePoolResource.getLabelSelector(clusterName, BROKER_NODE_NAME, ProcessRoles.BROKER);
 
-    // topics that are just present in Kafka itself are not created as CRs in UTO, thus -3 topics in comparison to regular upgrade
-    protected final int expectedTopicCount = upgradeTopicCount;
-
-    protected int getExpectedTopicCount() {
-        return expectedTopicCount;
-    }
-
     @Override
     protected void makeSnapshots() {
         coPods = DeploymentUtils.depSnapshot(TestConstants.CO_NAMESPACE, ResourceManager.getCoDeploymentName());
@@ -77,7 +69,7 @@ public class AbstractKRaftUpgradeST extends AbstractUpgradeST {
                 resourceManager.createResourceWithWait(extensionContext,
                     KafkaNodePoolTemplates.kafkaNodePoolWithControllerRoleAndPersistentStorage(TestConstants.CO_NAMESPACE, CONTROLLER_NODE_NAME, clusterName, 3).build(),
                     KafkaNodePoolTemplates.kafkaNodePoolWithBrokerRoleAndPersistentStorage(TestConstants.CO_NAMESPACE, BROKER_NODE_NAME, clusterName, 3).build(),
-                    KafkaTemplates.kafkaPersistent(clusterName, 3, 3)
+                    KafkaTemplates.kafkaPersistentKRaft(clusterName, 3)
                         .editMetadata()
                             .addToAnnotations(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled")
                             .addToAnnotations(Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled")
@@ -90,7 +82,7 @@ public class AbstractKRaftUpgradeST extends AbstractUpgradeST {
                         .endSpec()
                         .build());
             } else {
-                kafkaYaml = new File(dir, upgradeData.getFromExamples() + "/examples/kafka/nodepools/kafka-with-kraft.yaml");
+                kafkaYaml = new File(dir, upgradeData.getFromExamples() + upgradeData.getKafkaKRaftFilePathBefore());
                 LOGGER.info("Deploying Kafka from: {}", kafkaYaml.getPath());
                 // Change kafka version of it's empty (null is for remove the version)
                 if (upgradeKafkaVersion == null) {
@@ -152,8 +144,9 @@ public class AbstractKRaftUpgradeST extends AbstractUpgradeST {
         // #################    Update CRs to latest version   ###################
         // #######################################################################
         String examplesPath = downloadExamplesAndGetPath(versionModificationData);
+        String kafkaFilePath = examplesPath + versionModificationData.getKafkaKRaftFilePathAfter();
 
-        applyCustomResourcesFromPath(examplesPath, kafkaVersionFromCR);
+        applyCustomResourcesFromPath(examplesPath, kafkaFilePath, kafkaVersionFromCR, currentMetadataVersion);
 
         // #######################################################################
 
@@ -205,23 +198,23 @@ public class AbstractKRaftUpgradeST extends AbstractUpgradeST {
         brokerPods = RollingUpdateUtils.waitTillComponentHasRolled(TestConstants.CO_NAMESPACE, brokerSelector, 3, brokerPods);
     }
 
-    protected void applyKafkaCustomResourceFromPath(String examplesPath, String kafkaVersionFromCR) {
+    protected void applyKafkaCustomResourceFromPath(String kafkaFilePath, String kafkaVersionFromCR, String kafkaMetadataVersion) {
         // Change kafka version of it's empty (null is for remove the version)
-        String metadataVersion = kafkaVersionFromCR == null ? null : TestKafkaVersion.getSpecificVersion(kafkaVersionFromCR).metadataVersion();
+        String metadataVersion = kafkaVersionFromCR == null ? null : kafkaMetadataVersion;
 
-        kafkaYaml = new File(examplesPath + "/kafka/nodepools/kafka-with-kraft.yaml");
+        kafkaYaml = new File(kafkaFilePath);
         LOGGER.info("Deploying Kafka from: {}", kafkaYaml.getPath());
         cmdKubeClient().applyContent(KafkaUtils.changeOrRemoveKafkaConfigurationInKRaft(kafkaYaml, kafkaVersionFromCR, metadataVersion));
     }
 
-    protected void applyCustomResourcesFromPath(String examplesPath, String kafkaVersionFromCR) {
-        applyKafkaCustomResourceFromPath(examplesPath, kafkaVersionFromCR);
+    protected void applyCustomResourcesFromPath(String examplesPath, String kafkaFilePath, String kafkaVersionFromCR, String kafkaMetadataVersion) {
+        applyKafkaCustomResourceFromPath(kafkaFilePath, kafkaVersionFromCR, kafkaMetadataVersion);
 
-        kafkaUserYaml = new File(examplesPath + "/user/kafka-user.yaml");
+        kafkaUserYaml = new File(examplesPath + "/examples/user/kafka-user.yaml");
         LOGGER.info("Deploying KafkaUser from: {}", kafkaUserYaml.getPath());
         cmdKubeClient().applyContent(KafkaUserUtils.removeKafkaUserPart(kafkaUserYaml, "authorization"));
 
-        kafkaTopicYaml = new File(examplesPath + "/topic/kafka-topic.yaml");
+        kafkaTopicYaml = new File(examplesPath + "/examples/topic/kafka-topic.yaml");
         LOGGER.info("Deploying KafkaTopic from: {}", kafkaTopicYaml.getPath());
         cmdKubeClient().applyContent(TestUtils.readFile(kafkaTopicYaml));
     }

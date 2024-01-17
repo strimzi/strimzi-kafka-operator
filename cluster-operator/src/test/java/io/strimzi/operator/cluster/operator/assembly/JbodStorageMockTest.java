@@ -8,29 +8,29 @@ import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.server.mock.EnableKubernetesMockClient;
 import io.strimzi.api.kafka.Crds;
-import io.strimzi.api.kafka.model.Kafka;
-import io.strimzi.api.kafka.model.KafkaBuilder;
-import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
-import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
-import io.strimzi.api.kafka.model.storage.JbodStorage;
-import io.strimzi.api.kafka.model.storage.JbodStorageBuilder;
-import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
-import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
-import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
-import io.strimzi.platform.KubernetesVersion;
-import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
+import io.strimzi.api.kafka.model.kafka.JbodStorage;
+import io.strimzi.api.kafka.model.kafka.JbodStorageBuilder;
+import io.strimzi.api.kafka.model.kafka.Kafka;
+import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.api.kafka.model.kafka.PersistentClaimStorage;
+import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
+import io.strimzi.api.kafka.model.kafka.SingleVolumeStorage;
+import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
+import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
+import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.VolumeUtils;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Annotations;
-import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.operator.MockCertManager;
+import io.strimzi.platform.KubernetesVersion;
 import io.strimzi.test.mockkube2.MockKube2;
 import io.vertx.core.Vertx;
 import io.vertx.core.WorkerExecutor;
@@ -324,7 +324,7 @@ public class JbodStorageMockTest {
     }
 
     private List<PersistentVolumeClaim> getPvcs() {
-        String kafkaStsName = KafkaResources.kafkaStatefulSetName(JbodStorageMockTest.NAME);
+        String kafkaStsName = KafkaResources.kafkaComponentName(JbodStorageMockTest.NAME);
         Labels pvcSelector = Labels.forStrimziCluster(JbodStorageMockTest.NAME).withStrimziKind(Kafka.RESOURCE_KIND).withStrimziName(kafkaStsName);
         return client.persistentVolumeClaims()
                 .inNamespace(JbodStorageMockTest.NAMESPACE)

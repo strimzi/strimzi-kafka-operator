@@ -5,12 +5,12 @@
 package io.strimzi.systemtest.operators;
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
-import io.strimzi.api.kafka.model.KafkaConnect;
-import io.strimzi.api.kafka.model.KafkaConnectResources;
-import io.strimzi.api.kafka.model.KafkaRebalance;
-import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.balancing.KafkaRebalanceAnnotation;
-import io.strimzi.api.kafka.model.balancing.KafkaRebalanceState;
+import io.strimzi.api.kafka.model.connect.KafkaConnect;
+import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.api.kafka.model.rebalance.KafkaRebalance;
+import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceAnnotation;
+import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
@@ -71,7 +71,7 @@ public class ReconciliationST extends AbstractST {
         final TestStorage testStorage = storageMap.get(extensionContext);
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Environment.TEST_SUITE_NAMESPACE, extensionContext);
         final String clusterName = testStorage.getClusterName();
-        String kafkaSsName = KafkaResources.kafkaStatefulSetName(clusterName);
+        String kafkaSsName = KafkaResources.kafkaComponentName(clusterName);
 
         final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, kafkaSsName);
 
@@ -99,8 +99,8 @@ public class ReconciliationST extends AbstractST {
             .endMetadata()
             .build());
 
-        final String connectDepName = KafkaConnectResources.deploymentName(clusterName);
-        final LabelSelector labelSelector = KafkaConnectResource.getLabelSelector(clusterName, KafkaConnectResources.deploymentName(clusterName));
+        final String connectDepName = KafkaConnectResources.componentName(clusterName);
+        final LabelSelector labelSelector = KafkaConnectResource.getLabelSelector(clusterName, KafkaConnectResources.componentName(clusterName));
 
         KafkaConnectUtils.waitForConnectStatus(namespaceName, clusterName, CustomResourceStatus.ReconciliationPaused);
         PodUtils.waitUntilPodStabilityReplicasCount(namespaceName, connectDepName, 0);

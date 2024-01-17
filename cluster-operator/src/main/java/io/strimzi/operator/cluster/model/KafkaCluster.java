@@ -38,31 +38,31 @@ import io.fabric8.kubernetes.api.model.rbac.Subject;
 import io.fabric8.kubernetes.api.model.rbac.SubjectBuilder;
 import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.api.model.RouteBuilder;
-import io.strimzi.api.kafka.model.CertAndKeySecretSource;
-import io.strimzi.api.kafka.model.CruiseControlResources;
-import io.strimzi.api.kafka.model.Kafka;
-import io.strimzi.api.kafka.model.KafkaAuthorization;
-import io.strimzi.api.kafka.model.KafkaAuthorizationKeycloak;
-import io.strimzi.api.kafka.model.KafkaAuthorizationOpa;
-import io.strimzi.api.kafka.model.KafkaClusterSpec;
-import io.strimzi.api.kafka.model.KafkaExporterResources;
-import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.KafkaSpec;
-import io.strimzi.api.kafka.model.Rack;
-import io.strimzi.api.kafka.model.StrimziPodSet;
-import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationCustom;
-import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationOAuth;
-import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListener;
-import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
+import io.strimzi.api.kafka.model.common.CertAndKeySecretSource;
+import io.strimzi.api.kafka.model.common.Condition;
+import io.strimzi.api.kafka.model.common.Rack;
+import io.strimzi.api.kafka.model.common.template.ExternalTrafficPolicy;
+import io.strimzi.api.kafka.model.common.template.InternalServiceTemplate;
+import io.strimzi.api.kafka.model.common.template.PodDisruptionBudgetTemplate;
+import io.strimzi.api.kafka.model.common.template.PodTemplate;
+import io.strimzi.api.kafka.model.common.template.ResourceTemplate;
+import io.strimzi.api.kafka.model.kafka.Kafka;
+import io.strimzi.api.kafka.model.kafka.KafkaAuthorization;
+import io.strimzi.api.kafka.model.kafka.KafkaAuthorizationKeycloak;
+import io.strimzi.api.kafka.model.kafka.KafkaAuthorizationOpa;
+import io.strimzi.api.kafka.model.kafka.KafkaClusterSpec;
+import io.strimzi.api.kafka.model.kafka.KafkaClusterTemplate;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.api.kafka.model.kafka.KafkaSpec;
+import io.strimzi.api.kafka.model.kafka.Storage;
+import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
+import io.strimzi.api.kafka.model.kafka.exporter.KafkaExporterResources;
+import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener;
+import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationCustom;
+import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationOAuth;
+import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolStatus;
-import io.strimzi.api.kafka.model.status.Condition;
-import io.strimzi.api.kafka.model.storage.Storage;
-import io.strimzi.api.kafka.model.template.ExternalTrafficPolicy;
-import io.strimzi.api.kafka.model.template.InternalServiceTemplate;
-import io.strimzi.api.kafka.model.template.KafkaClusterTemplate;
-import io.strimzi.api.kafka.model.template.PodDisruptionBudgetTemplate;
-import io.strimzi.api.kafka.model.template.PodTemplate;
-import io.strimzi.api.kafka.model.template.ResourceTemplate;
+import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlMetricsReporter;
@@ -253,7 +253,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      * @param sharedEnvironmentProvider Shared environment provider
      */
     private KafkaCluster(Reconciliation reconciliation, HasMetadata resource, SharedEnvironmentProvider sharedEnvironmentProvider) {
-        super(reconciliation, resource, KafkaResources.kafkaStatefulSetName(resource.getMetadata().getName()), COMPONENT_TYPE, sharedEnvironmentProvider);
+        super(reconciliation, resource, KafkaResources.kafkaComponentName(resource.getMetadata().getName()), COMPONENT_TYPE, sharedEnvironmentProvider);
 
         this.initImage = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_KAFKA_INIT_IMAGE, "quay.io/strimzi/operator:latest");
     }
@@ -1517,8 +1517,8 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         NetworkPolicyPeer clusterOperatorPeer = NetworkPolicyUtils.createPeer(Map.of(Labels.STRIMZI_KIND_LABEL, "cluster-operator"), NetworkPolicyUtils.clusterOperatorNamespaceSelector(namespace, operatorNamespace, operatorNamespaceLabels));
         NetworkPolicyPeer kafkaClusterPeer = NetworkPolicyUtils.createPeer(labels.strimziSelectorLabels().toMap());
         NetworkPolicyPeer entityOperatorPeer = NetworkPolicyUtils.createPeer(Map.of(Labels.STRIMZI_NAME_LABEL, KafkaResources.entityOperatorDeploymentName(cluster)));
-        NetworkPolicyPeer kafkaExporterPeer = NetworkPolicyUtils.createPeer(Map.of(Labels.STRIMZI_NAME_LABEL, KafkaExporterResources.deploymentName(cluster)));
-        NetworkPolicyPeer cruiseControlPeer = NetworkPolicyUtils.createPeer(Map.of(Labels.STRIMZI_NAME_LABEL, CruiseControlResources.deploymentName(cluster)));
+        NetworkPolicyPeer kafkaExporterPeer = NetworkPolicyUtils.createPeer(Map.of(Labels.STRIMZI_NAME_LABEL, KafkaExporterResources.componentName(cluster)));
+        NetworkPolicyPeer cruiseControlPeer = NetworkPolicyUtils.createPeer(Map.of(Labels.STRIMZI_NAME_LABEL, CruiseControlResources.componentName(cluster)));
 
         // List of network policy rules for all ports
         List<NetworkPolicyIngressRule> rules = new ArrayList<>();

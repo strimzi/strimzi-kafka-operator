@@ -4,7 +4,7 @@
  */
 package io.strimzi.systemtest.utils.kafkaUtils;
 
-import io.strimzi.api.kafka.model.KafkaMirrorMaker;
+import io.strimzi.api.kafka.model.mirrormaker.KafkaMirrorMaker;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMakerResource;
 

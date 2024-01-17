@@ -6,10 +6,10 @@ package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMapKeySelector;
-import io.strimzi.api.kafka.model.ExternalLoggingBuilder;
-import io.strimzi.api.kafka.model.JmxPrometheusExporterMetricsBuilder;
-import io.strimzi.api.kafka.model.KafkaConnectSpec;
-import io.strimzi.api.kafka.model.KafkaConnectSpecBuilder;
+import io.strimzi.api.kafka.model.common.ExternalLoggingBuilder;
+import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetricsBuilder;
+import io.strimzi.api.kafka.model.connect.KafkaConnectSpec;
+import io.strimzi.api.kafka.model.connect.KafkaConnectSpecBuilder;
 import io.strimzi.operator.cluster.model.logging.LoggingModel;
 import io.strimzi.operator.cluster.model.metrics.MetricsModel;
 import io.strimzi.operator.common.Reconciliation;

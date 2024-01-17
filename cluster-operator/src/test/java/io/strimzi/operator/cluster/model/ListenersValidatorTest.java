@@ -4,18 +4,18 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationOAuthBuilder;
-import io.strimzi.api.kafka.model.listener.NodeAddressType;
-import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListener;
-import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
-import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfigurationBootstrapBuilder;
-import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfigurationBroker;
-import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfigurationBrokerBuilder;
-import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfigurationBuilder;
-import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
-import io.strimzi.api.kafka.model.template.ExternalTrafficPolicy;
-import io.strimzi.api.kafka.model.template.IpFamily;
-import io.strimzi.api.kafka.model.template.IpFamilyPolicy;
+import io.strimzi.api.kafka.model.common.template.ExternalTrafficPolicy;
+import io.strimzi.api.kafka.model.common.template.IpFamily;
+import io.strimzi.api.kafka.model.common.template.IpFamilyPolicy;
+import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener;
+import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
+import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerConfigurationBootstrapBuilder;
+import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerConfigurationBroker;
+import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerConfigurationBrokerBuilder;
+import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerConfigurationBuilder;
+import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationOAuthBuilder;
+import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
+import io.strimzi.api.kafka.model.kafka.listener.NodeAddressType;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.test.annotations.ParallelSuite;

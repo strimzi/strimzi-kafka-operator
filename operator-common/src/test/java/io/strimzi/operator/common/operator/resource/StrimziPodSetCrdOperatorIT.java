@@ -12,13 +12,14 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
-import io.strimzi.api.kafka.StrimziPodSetList;
-import io.strimzi.api.kafka.model.StrimziPodSet;
-import io.strimzi.api.kafka.model.StrimziPodSetBuilder;
+import io.strimzi.api.kafka.model.podset.StrimziPodSet;
+import io.strimzi.api.kafka.model.podset.StrimziPodSetBuilder;
+import io.strimzi.api.kafka.model.podset.StrimziPodSetList;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.test.TestUtils;
 import io.vertx.core.Promise;
 import io.vertx.junit5.Checkpoint;
+import io.vertx.junit5.Timeout;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.apache.logging.log4j.LogManager;
@@ -28,6 +29,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
@@ -190,11 +192,15 @@ public class StrimziPodSetCrdOperatorIT extends AbstractCustomResourceOperatorIT
     }
 
     /**
-     * Tests what happens when the resource is deleted while updating the status
+     * Tests what happens when the resource is deleted while updating the status.
      *
-     * @param context   Test context
+     * The CR removal does not consistently complete within the default timeout.
+     * This requires increasing the timeout for completion to 1 minute.
+     *
+     * @param context Test context
      */
     @Test
+    @Timeout(value = 1, timeUnit = TimeUnit.MINUTES)
     public void testUpdateStatusAfterResourceDeletedThrowsKubernetesClientException(VertxTestContext context) {
         String resourceName = getResourceName(RESOURCE_NAME);
         Checkpoint async = context.checkpoint();
@@ -215,10 +221,6 @@ public class StrimziPodSetCrdOperatorIT extends AbstractCustomResourceOperatorIT
                     return op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, null);
                 })
                 .onComplete(context.succeeding(i -> { }))
-                .compose(i -> {
-                    LOGGER.info("Wait for confirmed deletion");
-                    return op.waitFor(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, 100L, 10_000L, (n, ns) -> operator().get(namespace, resourceName) == null);
-                })
                 .compose(i -> {
                     LOGGER.info("Updating resource with new status - should fail");
                     return op.updateStatusAsync(Reconciliation.DUMMY_RECONCILIATION, newStatus.get());

@@ -6,17 +6,17 @@ package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
-import io.strimzi.api.kafka.model.KafkaConnect;
-import io.strimzi.api.kafka.model.KafkaConnectBuilder;
-import io.strimzi.api.kafka.model.KafkaConnectResources;
-import io.strimzi.api.kafka.model.StrimziPodSet;
-import io.strimzi.api.kafka.model.template.DeploymentStrategy;
-import io.strimzi.operator.cluster.model.MockSharedEnvironmentProvider;
+import io.strimzi.api.kafka.model.common.template.DeploymentStrategy;
+import io.strimzi.api.kafka.model.connect.KafkaConnect;
+import io.strimzi.api.kafka.model.connect.KafkaConnectBuilder;
+import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
+import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
-import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.cluster.model.MockSharedEnvironmentProvider;
 import io.strimzi.operator.cluster.model.SharedEnvironmentProvider;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
@@ -60,7 +60,7 @@ public class KafkaConnectMigrationTest {
 
     private final static Deployment DEPLOYMENT = new DeploymentBuilder()
                 .withNewMetadata()
-                    .withName(KafkaConnectResources.deploymentName(NAME))
+                    .withName(KafkaConnectResources.componentName(NAME))
                 .endMetadata()
                 .withNewSpec()
                     .withReplicas(3)

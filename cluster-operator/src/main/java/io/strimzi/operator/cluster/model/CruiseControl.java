@@ -20,17 +20,17 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
-import io.strimzi.api.kafka.model.CruiseControlResources;
-import io.strimzi.api.kafka.model.CruiseControlSpec;
-import io.strimzi.api.kafka.model.JvmOptions;
-import io.strimzi.api.kafka.model.Kafka;
-import io.strimzi.api.kafka.model.KafkaClusterSpec;
-import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.storage.Storage;
-import io.strimzi.api.kafka.model.template.CruiseControlTemplate;
-import io.strimzi.api.kafka.model.template.DeploymentTemplate;
-import io.strimzi.api.kafka.model.template.InternalServiceTemplate;
-import io.strimzi.api.kafka.model.template.PodTemplate;
+import io.strimzi.api.kafka.model.common.JvmOptions;
+import io.strimzi.api.kafka.model.common.template.DeploymentTemplate;
+import io.strimzi.api.kafka.model.common.template.InternalServiceTemplate;
+import io.strimzi.api.kafka.model.common.template.PodTemplate;
+import io.strimzi.api.kafka.model.kafka.Kafka;
+import io.strimzi.api.kafka.model.kafka.KafkaClusterSpec;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.api.kafka.model.kafka.Storage;
+import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
+import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlSpec;
+import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlTemplate;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.cruisecontrol.Capacity;
@@ -40,11 +40,11 @@ import io.strimzi.operator.cluster.model.metrics.MetricsModel;
 import io.strimzi.operator.cluster.model.metrics.SupportsMetrics;
 import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProviderContextImpl;
 import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderContextImpl;
-import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters;
-import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.model.PasswordGenerator;
+import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -56,7 +56,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static io.strimzi.api.kafka.model.template.DeploymentStrategy.ROLLING_UPDATE;
+import static io.strimzi.api.kafka.model.common.template.DeploymentStrategy.ROLLING_UPDATE;
 import static io.strimzi.operator.cluster.model.CruiseControlConfiguration.CRUISE_CONTROL_DEFAULT_ANOMALY_DETECTION_GOALS;
 import static io.strimzi.operator.cluster.model.CruiseControlConfiguration.CRUISE_CONTROL_GOALS;
 import static io.strimzi.operator.cluster.model.VolumeUtils.createConfigMapVolume;
@@ -102,9 +102,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
 
     // Configuration defaults
     protected static final boolean DEFAULT_CRUISE_CONTROL_METRICS_ENABLED = false;
-
-
-    private String minInsyncReplicas = "1";
+    
     private boolean sslEnabled;
     private boolean authEnabled;
     @SuppressFBWarnings({"UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"}) // This field is initialized in the fromCrd method
@@ -129,7 +127,6 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     // Cruise Control configuration keys (EnvVariables)
     protected static final String ENV_VAR_CRUISE_CONTROL_CONFIGURATION = "CRUISE_CONTROL_CONFIGURATION";
     protected static final String ENV_VAR_STRIMZI_KAFKA_BOOTSTRAP_SERVERS = "STRIMZI_KAFKA_BOOTSTRAP_SERVERS";
-    protected static final String ENV_VAR_MIN_INSYNC_REPLICAS = "MIN_INSYNC_REPLICAS";
 
     protected static final String ENV_VAR_CRUISE_CONTROL_CAPACITY_CONFIGURATION = "CRUISE_CONTROL_CAPACITY_CONFIGURATION";
 
@@ -162,7 +159,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
      * @param sharedEnvironmentProvider Shared environment provider
      */
     private CruiseControl(Reconciliation reconciliation, HasMetadata resource, SharedEnvironmentProvider sharedEnvironmentProvider) {
-        super(reconciliation, resource, CruiseControlResources.deploymentName(resource.getMetadata().getName()), COMPONENT_TYPE, sharedEnvironmentProvider);
+        super(reconciliation, resource, CruiseControlResources.componentName(resource.getMetadata().getName()), COMPONENT_TYPE, sharedEnvironmentProvider);
     }
 
     /**
@@ -205,11 +202,6 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
             CruiseControlConfiguration ccConfiguration = result.configuration;
             result.sslEnabled = ccConfiguration.isApiSslEnabled();
             result.authEnabled = ccConfiguration.isApiAuthEnabled();
-
-            KafkaConfiguration configuration = new KafkaConfiguration(reconciliation, kafkaClusterSpec.getConfig().entrySet());
-            if (configuration.getConfigOption(MIN_INSYNC_REPLICAS) != null) {
-                result.minInsyncReplicas = configuration.getConfigOption(MIN_INSYNC_REPLICAS);
-            }
 
             // To avoid illegal storage configurations provided by the user,
             // we rely on the storage configuration provided by the KafkaAssemblyOperator
@@ -387,7 +379,6 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_CRUISE_CONTROL_METRICS_ENABLED, String.valueOf(metrics.isEnabled())));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_KAFKA_BOOTSTRAP_SERVERS, KafkaResources.bootstrapServiceName(cluster) + ":" + KafkaCluster.REPLICATION_PORT));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
-        varList.add(ContainerUtils.createEnvVar(ENV_VAR_MIN_INSYNC_REPLICAS, String.valueOf(minInsyncReplicas)));
 
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_CRUISE_CONTROL_CAPACITY_CONFIGURATION, capacity.toString()));
 

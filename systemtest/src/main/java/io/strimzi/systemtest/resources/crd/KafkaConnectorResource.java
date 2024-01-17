@@ -8,11 +8,11 @@ import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
-import io.strimzi.api.kafka.KafkaConnectorList;
-import io.strimzi.api.kafka.model.KafkaConnector;
+import io.strimzi.api.kafka.model.connector.KafkaConnector;
+import io.strimzi.api.kafka.model.connector.KafkaConnectorList;
+import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceType;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
-import io.strimzi.systemtest.resources.ResourceManager;
 
 import java.util.function.Consumer;
 

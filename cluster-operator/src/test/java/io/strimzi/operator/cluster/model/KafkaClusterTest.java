@@ -30,55 +30,55 @@ import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeerBuilder;
 import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.openshift.api.model.Route;
-import io.strimzi.api.kafka.model.CertSecretSource;
-import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
-import io.strimzi.api.kafka.model.CertificateExpirationPolicy;
-import io.strimzi.api.kafka.model.ContainerEnvVar;
-import io.strimzi.api.kafka.model.CruiseControlResources;
-import io.strimzi.api.kafka.model.GenericSecretSourceBuilder;
-import io.strimzi.api.kafka.model.JmxPrometheusExporterMetricsBuilder;
-import io.strimzi.api.kafka.model.Kafka;
-import io.strimzi.api.kafka.model.KafkaAuthorizationKeycloakBuilder;
-import io.strimzi.api.kafka.model.KafkaBuilder;
-import io.strimzi.api.kafka.model.KafkaExporterResources;
-import io.strimzi.api.kafka.model.KafkaJmxAuthenticationPasswordBuilder;
-import io.strimzi.api.kafka.model.KafkaJmxOptionsBuilder;
-import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.MetricsConfig;
-import io.strimzi.api.kafka.model.ProbeBuilder;
-import io.strimzi.api.kafka.model.SystemPropertyBuilder;
-import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationCustomBuilder;
-import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationOAuthBuilder;
-import io.strimzi.api.kafka.model.listener.NodeAddressType;
-import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
-import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfigurationBootstrap;
-import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfigurationBootstrapBuilder;
-import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfigurationBroker;
-import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfigurationBrokerBuilder;
-import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
-import io.strimzi.api.kafka.model.storage.EphemeralStorageBuilder;
-import io.strimzi.api.kafka.model.storage.JbodStorageBuilder;
-import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
-import io.strimzi.api.kafka.model.storage.PersistentClaimStorageOverrideBuilder;
-import io.strimzi.api.kafka.model.storage.Storage;
-import io.strimzi.api.kafka.model.template.ContainerTemplate;
-import io.strimzi.api.kafka.model.template.ExternalTrafficPolicy;
-import io.strimzi.api.kafka.model.template.IpFamily;
-import io.strimzi.api.kafka.model.template.IpFamilyPolicy;
+import io.strimzi.api.kafka.model.common.CertSecretSource;
+import io.strimzi.api.kafka.model.common.CertSecretSourceBuilder;
+import io.strimzi.api.kafka.model.common.CertificateExpirationPolicy;
+import io.strimzi.api.kafka.model.common.ContainerEnvVar;
+import io.strimzi.api.kafka.model.common.GenericSecretSourceBuilder;
+import io.strimzi.api.kafka.model.common.ProbeBuilder;
+import io.strimzi.api.kafka.model.common.SystemPropertyBuilder;
+import io.strimzi.api.kafka.model.common.jmx.KafkaJmxAuthenticationPasswordBuilder;
+import io.strimzi.api.kafka.model.common.jmx.KafkaJmxOptionsBuilder;
+import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetricsBuilder;
+import io.strimzi.api.kafka.model.common.metrics.MetricsConfig;
+import io.strimzi.api.kafka.model.common.template.ContainerTemplate;
+import io.strimzi.api.kafka.model.common.template.ExternalTrafficPolicy;
+import io.strimzi.api.kafka.model.common.template.IpFamily;
+import io.strimzi.api.kafka.model.common.template.IpFamilyPolicy;
+import io.strimzi.api.kafka.model.kafka.EphemeralStorageBuilder;
+import io.strimzi.api.kafka.model.kafka.JbodStorageBuilder;
+import io.strimzi.api.kafka.model.kafka.Kafka;
+import io.strimzi.api.kafka.model.kafka.KafkaAuthorizationKeycloakBuilder;
+import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
+import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageOverrideBuilder;
+import io.strimzi.api.kafka.model.kafka.Storage;
+import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
+import io.strimzi.api.kafka.model.kafka.exporter.KafkaExporterResources;
+import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
+import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerConfigurationBootstrap;
+import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerConfigurationBootstrapBuilder;
+import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerConfigurationBroker;
+import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerConfigurationBrokerBuilder;
+import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationCustomBuilder;
+import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationOAuthBuilder;
+import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
+import io.strimzi.api.kafka.model.kafka.listener.NodeAddressType;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.model.jmx.JmxModel;
 import io.strimzi.operator.cluster.model.metrics.MetricsModel;
 import io.strimzi.operator.cluster.model.nodepools.NodePoolUtils;
-import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.operator.common.Annotations;
-import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.common.model.ClientsCa;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.model.PasswordGenerator;
+import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
@@ -170,7 +170,7 @@ public class KafkaClusterTest {
     //////////
     private Map<String, String> expectedSelectorLabels()    {
         return Map.of(Labels.STRIMZI_CLUSTER_LABEL, CLUSTER,
-                Labels.STRIMZI_NAME_LABEL, KafkaResources.kafkaStatefulSetName(CLUSTER),
+                Labels.STRIMZI_NAME_LABEL, KafkaResources.kafkaComponentName(CLUSTER),
                 Labels.STRIMZI_KIND_LABEL, Kafka.RESOURCE_KIND);
     }
 
@@ -752,7 +752,7 @@ public class KafkaClusterTest {
     public void testPodNames() {
 
         for (int i = 0; i < REPLICAS; i++) {
-            assertThat(KC.getPodName(i), is(KafkaResources.kafkaStatefulSetName(CLUSTER) + "-" + i));
+            assertThat(KC.getPodName(i), is(KafkaResources.kafkaComponentName(CLUSTER) + "-" + i));
         }
     }
 
@@ -1526,7 +1526,7 @@ public class KafkaClusterTest {
 
         for (int i = 0; i < REPLICAS; i++)  {
             Service srv = services.get(i);
-            assertThat(srv.getMetadata().getName(), is(KafkaResources.kafkaStatefulSetName(CLUSTER) + "-" + i));
+            assertThat(srv.getMetadata().getName(), is(KafkaResources.kafkaComponentName(CLUSTER) + "-" + i));
             assertThat(srv.getSpec().getType(), is("ClusterIP"));
             assertThat(srv.getSpec().getSelector().get(Labels.KUBERNETES_STATEFULSET_POD_LABEL), is(KafkaResources.kafkaPodName(CLUSTER, i)));
             assertThat(srv.getSpec().getPorts().size(), is(1));
@@ -1552,10 +1552,10 @@ public class KafkaClusterTest {
 
         for (int i = 0; i < REPLICAS; i++)  {
             Route rt = routes.get(i);
-            assertThat(rt.getMetadata().getName(), is(KafkaResources.kafkaStatefulSetName(CLUSTER) + "-" + i));
+            assertThat(rt.getMetadata().getName(), is(KafkaResources.kafkaComponentName(CLUSTER) + "-" + i));
             assertThat(rt.getSpec().getTls().getTermination(), is("passthrough"));
             assertThat(rt.getSpec().getTo().getKind(), is("Service"));
-            assertThat(rt.getSpec().getTo().getName(), is(KafkaResources.kafkaStatefulSetName(CLUSTER) + "-" + i));
+            assertThat(rt.getSpec().getTo().getName(), is(KafkaResources.kafkaComponentName(CLUSTER) + "-" + i));
             assertThat(rt.getSpec().getPort().getTargetPort(), is(new IntOrString(9094)));
             TestUtils.checkOwnerReference(rt, KAFKA);
         }
@@ -1609,7 +1609,7 @@ public class KafkaClusterTest {
 
         for (int i = 0; i < REPLICAS; i++)  {
             Route rt = routes.get(i);
-            assertThat(rt.getMetadata().getName(), is(KafkaResources.kafkaStatefulSetName(CLUSTER) + "-" + i));
+            assertThat(rt.getMetadata().getName(), is(KafkaResources.kafkaComponentName(CLUSTER) + "-" + i));
             assertThat(rt.getSpec().getHost(), is("my-host-" + i + ".cz"));
         }
     }
@@ -1667,7 +1667,7 @@ public class KafkaClusterTest {
 
         for (int i = 0; i < REPLICAS; i++)  {
             Route rt = routes.get(i);
-            assertThat(rt.getMetadata().getName(), is(KafkaResources.kafkaStatefulSetName(CLUSTER) + "-" + i));
+            assertThat(rt.getMetadata().getName(), is(KafkaResources.kafkaComponentName(CLUSTER) + "-" + i));
             assertThat(rt.getMetadata().getAnnotations().get("anno"), is("anno-value-" + i));
             assertThat(rt.getMetadata().getLabels().get("label"), is("label-value-" + i));
         }
@@ -1718,7 +1718,7 @@ public class KafkaClusterTest {
 
         for (int i = 0; i < REPLICAS; i++)  {
             Service srv = services.get(i);
-            assertThat(srv.getMetadata().getName(), is(KafkaResources.kafkaStatefulSetName(CLUSTER) + "-" + i));
+            assertThat(srv.getMetadata().getName(), is(KafkaResources.kafkaComponentName(CLUSTER) + "-" + i));
             assertThat(srv.getMetadata().getFinalizers(), is(emptyList()));
             assertThat(srv.getSpec().getType(), is("LoadBalancer"));
             assertThat(srv.getSpec().getSelector().get(Labels.KUBERNETES_STATEFULSET_POD_LABEL), is(KafkaResources.kafkaPodName(CLUSTER, i)));
@@ -2116,7 +2116,7 @@ public class KafkaClusterTest {
 
         for (int i = 0; i < REPLICAS; i++)  {
             Service srv = services.get(i);
-            assertThat(srv.getMetadata().getName(), is(KafkaResources.kafkaStatefulSetName(CLUSTER) + "-" + i));
+            assertThat(srv.getMetadata().getName(), is(KafkaResources.kafkaComponentName(CLUSTER) + "-" + i));
             assertThat(srv.getSpec().getType(), is("NodePort"));
             assertThat(srv.getSpec().getSelector().get(Labels.KUBERNETES_STATEFULSET_POD_LABEL), is(KafkaResources.kafkaPodName(CLUSTER, i)));
             assertThat(srv.getSpec().getPorts().size(), is(1));
@@ -2207,7 +2207,7 @@ public class KafkaClusterTest {
 
         for (int i = 0; i < REPLICAS; i++)  {
             Service srv = services.get(i);
-            assertThat(srv.getMetadata().getName(), is(KafkaResources.kafkaStatefulSetName(CLUSTER) + "-" + i));
+            assertThat(srv.getMetadata().getName(), is(KafkaResources.kafkaComponentName(CLUSTER) + "-" + i));
             assertThat(srv.getSpec().getType(), is("NodePort"));
             assertThat(srv.getSpec().getSelector().get(Labels.KUBERNETES_STATEFULSET_POD_LABEL), is(KafkaResources.kafkaPodName(CLUSTER, i)));
             if (i == 0) { // pod with index 0 will have overriden port
@@ -2426,7 +2426,7 @@ public class KafkaClusterTest {
     public void testControlPlanePortNetworkPolicy() {
         NetworkPolicyPeer kafkaBrokersPeer = new NetworkPolicyPeerBuilder()
                 .withNewPodSelector()
-                    .withMatchLabels(Map.of(Labels.STRIMZI_KIND_LABEL, "Kafka", Labels.STRIMZI_CLUSTER_LABEL, CLUSTER, Labels.STRIMZI_NAME_LABEL, KafkaResources.kafkaStatefulSetName(CLUSTER)))
+                    .withMatchLabels(Map.of(Labels.STRIMZI_KIND_LABEL, "Kafka", Labels.STRIMZI_CLUSTER_LABEL, CLUSTER, Labels.STRIMZI_NAME_LABEL, KafkaResources.kafkaComponentName(CLUSTER)))
                 .endPodSelector()
                 .build();
 
@@ -2445,7 +2445,7 @@ public class KafkaClusterTest {
     public void testReplicationPortNetworkPolicy() {
         NetworkPolicyPeer kafkaBrokersPeer = new NetworkPolicyPeerBuilder()
                 .withNewPodSelector()
-                    .withMatchLabels(Map.of(Labels.STRIMZI_KIND_LABEL, "Kafka", Labels.STRIMZI_CLUSTER_LABEL, CLUSTER, Labels.STRIMZI_NAME_LABEL, KafkaResources.kafkaStatefulSetName(CLUSTER)))
+                    .withMatchLabels(Map.of(Labels.STRIMZI_KIND_LABEL, "Kafka", Labels.STRIMZI_CLUSTER_LABEL, CLUSTER, Labels.STRIMZI_NAME_LABEL, KafkaResources.kafkaComponentName(CLUSTER)))
                 .endPodSelector()
                 .build();
 
@@ -2457,13 +2457,13 @@ public class KafkaClusterTest {
 
         NetworkPolicyPeer kafkaExporterPeer = new NetworkPolicyPeerBuilder()
                 .withNewPodSelector()
-                    .withMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, KafkaExporterResources.deploymentName(CLUSTER)))
+                    .withMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, KafkaExporterResources.componentName(CLUSTER)))
                 .endPodSelector()
                 .build();
 
         NetworkPolicyPeer cruiseControlPeer = new NetworkPolicyPeerBuilder()
                 .withNewPodSelector()
-                    .withMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, CruiseControlResources.deploymentName(CLUSTER)))
+                    .withMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, CruiseControlResources.componentName(CLUSTER)))
                 .endPodSelector()
                 .build();
 
@@ -2642,7 +2642,7 @@ public class KafkaClusterTest {
     @ParallelTest
     public void testDefaultPodDisruptionBudget()   {
         PodDisruptionBudget pdb = KC.generatePodDisruptionBudget();
-        assertThat(pdb.getMetadata().getName(), is(KafkaResources.kafkaStatefulSetName(CLUSTER)));
+        assertThat(pdb.getMetadata().getName(), is(KafkaResources.kafkaComponentName(CLUSTER)));
         assertThat(pdb.getSpec().getMaxUnavailable(), is(nullValue()));
         assertThat(pdb.getSpec().getMinAvailable().getIntVal(), is(2));
         assertThat(pdb.getSpec().getSelector().getMatchLabels(), is(KC.getSelectorLabels().toMap()));
@@ -3041,7 +3041,7 @@ public class KafkaClusterTest {
 
         for (int i = 0; i < REPLICAS; i++)  {
             Service srv = services.get(i);
-            assertThat(srv.getMetadata().getName(), is(KafkaResources.kafkaStatefulSetName(CLUSTER) + "-" + i));
+            assertThat(srv.getMetadata().getName(), is(KafkaResources.kafkaComponentName(CLUSTER) + "-" + i));
             assertThat(srv.getSpec().getType(), is("ClusterIP"));
             assertThat(srv.getSpec().getSelector().get(Labels.KUBERNETES_STATEFULSET_POD_LABEL), is(KafkaResources.kafkaPodName(CLUSTER, i)));
             assertThat(srv.getSpec().getPorts().size(), is(1));
@@ -3075,7 +3075,7 @@ public class KafkaClusterTest {
 
         for (int i = 0; i < REPLICAS; i++)  {
             Ingress ing = ingresses.get(i);
-            assertThat(ing.getMetadata().getName(), is(KafkaResources.kafkaStatefulSetName(CLUSTER) + "-" + i));
+            assertThat(ing.getMetadata().getName(), is(KafkaResources.kafkaComponentName(CLUSTER) + "-" + i));
             assertThat(ing.getSpec().getIngressClassName(), is(nullValue()));
             assertThat(ing.getMetadata().getAnnotations().get("dns-annotation"), is("my-kafka-broker.com"));
             assertThat(ing.getMetadata().getLabels().get("label"), is("label-value"));
@@ -3086,7 +3086,7 @@ public class KafkaClusterTest {
             assertThat(ing.getSpec().getRules().get(0).getHost(), is(String.format("my-broker-kafka-%d.com", i)));
             assertThat(ing.getSpec().getRules().get(0).getHttp().getPaths().size(), is(1));
             assertThat(ing.getSpec().getRules().get(0).getHttp().getPaths().get(0).getPath(), is("/"));
-            assertThat(ing.getSpec().getRules().get(0).getHttp().getPaths().get(0).getBackend().getService().getName(), is(KafkaResources.kafkaStatefulSetName(CLUSTER) + "-" + i));
+            assertThat(ing.getSpec().getRules().get(0).getHttp().getPaths().get(0).getBackend().getService().getName(), is(KafkaResources.kafkaComponentName(CLUSTER) + "-" + i));
             assertThat(ing.getSpec().getRules().get(0).getHttp().getPaths().get(0).getBackend().getService().getPort().getNumber(), is(9094));
             TestUtils.checkOwnerReference(ing, KAFKA);
         }
@@ -3246,7 +3246,7 @@ public class KafkaClusterTest {
 
         for (int i = 0; i < REPLICAS; i++)  {
             Service srv = services.get(i);
-            assertThat(srv.getMetadata().getName(), is(KafkaResources.kafkaStatefulSetName(CLUSTER) + "-" + i));
+            assertThat(srv.getMetadata().getName(), is(KafkaResources.kafkaComponentName(CLUSTER) + "-" + i));
             assertThat(srv.getSpec().getType(), is("ClusterIP"));
             assertThat(srv.getSpec().getSelector().get(Labels.KUBERNETES_STATEFULSET_POD_LABEL), is(KafkaResources.kafkaPodName(CLUSTER, i)));
             assertThat(srv.getSpec().getPorts().size(), is(1));

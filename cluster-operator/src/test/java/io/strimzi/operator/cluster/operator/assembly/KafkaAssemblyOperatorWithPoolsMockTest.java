@@ -11,30 +11,30 @@ import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.server.mock.EnableKubernetesMockClient;
 import io.strimzi.api.kafka.Crds;
-import io.strimzi.api.kafka.model.Kafka;
-import io.strimzi.api.kafka.model.KafkaBuilder;
-import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.StrimziPodSet;
-import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
-import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
+import io.strimzi.api.kafka.model.kafka.Kafka;
+import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
+import io.strimzi.api.kafka.model.kafka.UsedNodePoolStatus;
+import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
+import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolBuilder;
 import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
-import io.strimzi.api.kafka.model.status.UsedNodePoolStatus;
-import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
+import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
-import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.cluster.model.CertUtils;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Annotations;
-import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.platform.KubernetesVersion;
 import io.strimzi.test.mockkube2.MockKube2;
@@ -98,18 +98,12 @@ public class KafkaAssemblyOperatorWithPoolsMockTest {
                 .withNewSpec()
                     .withNewKafka()
                         .withConfig(new HashMap<>())
-                        .withReplicas(3)
                         .withListeners(new GenericKafkaListenerBuilder()
                                 .withName("tls")
                                 .withPort(9092)
                                 .withType(KafkaListenerType.INTERNAL)
                                 .withTls(true)
                                 .build())
-                        .withNewPersistentClaimStorage()
-                            .withSize("123")
-                            .withStorageClass("foo")
-                            .withDeleteClaim(true)
-                        .endPersistentClaimStorage()
                     .endKafka()
                     .withNewZookeeper()
                         .withReplicas(3)
@@ -216,7 +210,7 @@ public class KafkaAssemblyOperatorWithPoolsMockTest {
                     ));
                 });
 
-                StrimziPodSet zkSps = supplier.strimziPodSetOperator.client().inNamespace(NAMESPACE).withName(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME)).get();
+                StrimziPodSet zkSps = supplier.strimziPodSetOperator.client().inNamespace(NAMESPACE).withName(KafkaResources.zookeeperComponentName(CLUSTER_NAME)).get();
                 zkSps.getSpec().getPods().stream().map(PodSetUtils::mapToPod).forEach(pod -> {
                     assertThat(pod.getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "0"));
                     var zooKeeperSecret = client.secrets().inNamespace(NAMESPACE).withName(KafkaResources.zookeeperSecretName(CLUSTER_NAME)).get();

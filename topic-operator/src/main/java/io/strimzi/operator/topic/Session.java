@@ -8,8 +8,9 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Watch;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
-import io.strimzi.api.kafka.KafkaTopicList;
-import io.strimzi.api.kafka.model.KafkaTopic;
+import io.strimzi.api.kafka.model.topic.KafkaTopic;
+import io.strimzi.api.kafka.model.topic.KafkaTopicList;
+import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.MicrometerMetricsProvider;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.topic.zk.Zk;
@@ -24,13 +25,11 @@ import io.vertx.core.http.HttpServer;
 import io.vertx.micrometer.backends.BackendRegistries;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
-import org.apache.kafka.common.config.SslConfigs;
 import org.apache.kafka.common.config.SaslConfigs;
+import org.apache.kafka.common.config.SslConfigs;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import io.strimzi.operator.common.InvalidConfigurationException;
 
 import java.security.Security;
 import java.time.Duration;

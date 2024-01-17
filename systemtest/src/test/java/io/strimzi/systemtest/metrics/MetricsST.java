@@ -11,24 +11,24 @@ import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMapKeySelector;
 import io.fabric8.kubernetes.api.model.ConfigMapKeySelectorBuilder;
 import io.fabric8.kubernetes.api.model.LabelSelector;
-import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
-import io.strimzi.api.kafka.model.JmxPrometheusExporterMetricsBuilder;
-import io.strimzi.api.kafka.model.Kafka;
-import io.strimzi.api.kafka.model.KafkaBridge;
-import io.strimzi.api.kafka.model.KafkaBridgeResources;
-import io.strimzi.api.kafka.model.KafkaConnect;
-import io.strimzi.api.kafka.model.KafkaConnector;
-import io.strimzi.api.kafka.model.KafkaExporterResources;
-import io.strimzi.api.kafka.model.KafkaMirrorMaker;
-import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
-import io.strimzi.api.kafka.model.KafkaRebalance;
-import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.KafkaUser;
-import io.strimzi.api.kafka.model.StrimziPodSet;
+import io.strimzi.api.kafka.model.bridge.KafkaBridge;
+import io.strimzi.api.kafka.model.bridge.KafkaBridgeResources;
+import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetrics;
+import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetricsBuilder;
+import io.strimzi.api.kafka.model.connect.KafkaConnect;
+import io.strimzi.api.kafka.model.connector.KafkaConnector;
+import io.strimzi.api.kafka.model.kafka.Kafka;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.api.kafka.model.kafka.exporter.KafkaExporterResources;
+import io.strimzi.api.kafka.model.mirrormaker.KafkaMirrorMaker;
+import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2;
+import io.strimzi.api.kafka.model.podset.StrimziPodSet;
+import io.strimzi.api.kafka.model.rebalance.KafkaRebalance;
+import io.strimzi.api.kafka.model.user.KafkaUser;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.annotations.KindIPv6NotSupported;
@@ -42,10 +42,11 @@ import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
-import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
-import io.strimzi.systemtest.templates.crd.KafkaMirrorMaker2Templates;
+import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectorTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaMirrorMaker2Templates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
@@ -295,9 +296,10 @@ public class MetricsST extends AbstractST {
     @IsolatedTest
     @Tag(INTERNAL_CLIENTS_USED)
     void testKafkaExporterMetrics(ExtensionContext extensionContext) {
+        final TestStorage testStorage = storageMap.get(extensionContext);
         final String producerName = "producer-" + new Random().nextInt(Integer.MAX_VALUE);
         final String consumerName = "consumer-" + new Random().nextInt(Integer.MAX_VALUE);
-        final String kafkaStrimziPodSetName = KafkaResources.kafkaStatefulSetName(kafkaClusterFirstName);
+        final String kafkaStrimziPodSetName = KafkaResources.kafkaComponentName(kafkaClusterFirstName);
         final LabelSelector kafkaPodsSelector = KafkaResource.getLabelSelector(kafkaClusterFirstName, kafkaStrimziPodSetName);
 
         KafkaClients kafkaClients = new KafkaClientsBuilder()
@@ -310,7 +312,7 @@ public class MetricsST extends AbstractST {
             .build();
 
         resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
-        ClientUtils.waitForClientsSuccess(producerName, consumerName, namespaceFirst, MESSAGE_COUNT, false);
+        ClientUtils.waitForClientsSuccess(producerName, consumerName, namespaceFirst, testStorage.getMessageCount(), false);
 
         assertMetricValueNotNull(kafkaExporterCollector, "kafka_consumergroup_current_offset\\{.*\\}");
 
@@ -353,21 +355,21 @@ public class MetricsST extends AbstractST {
     @ParallelTest
     void testKafkaExporterDifferentSetting() throws InterruptedException, ExecutionException, IOException {
         String consumerOffsetsTopicName = "__consumer_offsets";
-        LabelSelector exporterSelector = kubeClient().getDeploymentSelectors(namespaceFirst, KafkaExporterResources.deploymentName(kafkaClusterFirstName));
+        LabelSelector exporterSelector = kubeClient().getDeploymentSelectors(namespaceFirst, KafkaExporterResources.componentName(kafkaClusterFirstName));
         String runScriptContent = getExporterRunScript(kubeClient().listPods(namespaceFirst, exporterSelector).get(0).getMetadata().getName(), namespaceFirst);
         assertThat("Exporter starting script has wrong setting than it's specified in CR", runScriptContent.contains("--group.filter=\".*\""));
         assertThat("Exporter starting script has wrong setting than it's specified in CR", runScriptContent.contains("--topic.filter=\".*\""));
         // Check that metrics contains info about consumer_offsets
         assertMetricValueNotNull(kafkaExporterCollector, "kafka_topic_partitions\\{topic=\"" + consumerOffsetsTopicName + "\"}");
 
-        Map<String, String> kafkaExporterSnapshot = DeploymentUtils.depSnapshot(namespaceFirst, KafkaExporterResources.deploymentName(kafkaClusterFirstName));
+        Map<String, String> kafkaExporterSnapshot = DeploymentUtils.depSnapshot(namespaceFirst, KafkaExporterResources.componentName(kafkaClusterFirstName));
 
         KafkaResource.replaceKafkaResourceInSpecificNamespace(kafkaClusterFirstName, k -> {
             k.getSpec().getKafkaExporter().setGroupRegex("my-group.*");
             k.getSpec().getKafkaExporter().setTopicRegex(topicName);
         }, namespaceFirst);
 
-        kafkaExporterSnapshot = DeploymentUtils.waitTillDepHasRolled(namespaceFirst, KafkaExporterResources.deploymentName(kafkaClusterFirstName), 1, kafkaExporterSnapshot);
+        kafkaExporterSnapshot = DeploymentUtils.waitTillDepHasRolled(namespaceFirst, KafkaExporterResources.componentName(kafkaClusterFirstName), 1, kafkaExporterSnapshot);
 
         runScriptContent = getExporterRunScript(kubeClient().listPods(namespaceFirst, exporterSelector).get(0).getMetadata().getName(), namespaceFirst);
         assertThat("Exporter starting script has wrong setting than it's specified in CR", runScriptContent.contains("--group.filter=\"my-group.*\""));
@@ -382,7 +384,7 @@ public class MetricsST extends AbstractST {
             k.getSpec().getKafkaExporter().setTopicRegex(".*");
         }, namespaceFirst);
 
-        DeploymentUtils.waitTillDepHasRolled(namespaceFirst, KafkaExporterResources.deploymentName(kafkaClusterFirstName), 1, kafkaExporterSnapshot);
+        DeploymentUtils.waitTillDepHasRolled(namespaceFirst, KafkaExporterResources.componentName(kafkaClusterFirstName), 1, kafkaExporterSnapshot);
     }
 
     /**
@@ -541,6 +543,7 @@ public class MetricsST extends AbstractST {
     @ParallelTest
     @Tag(BRIDGE)
     void testKafkaBridgeMetrics(ExtensionContext extensionContext) {
+        final TestStorage testStorage = storageMap.get(extensionContext);
         String producerName = "bridge-producer";
         String consumerName = "bridge-consumer";
 
@@ -563,7 +566,7 @@ public class MetricsST extends AbstractST {
             .withConsumerName(consumerName)
             .withBootstrapAddress(KafkaBridgeResources.serviceName(bridgeClusterName))
             .withTopicName(bridgeTopicName)
-            .withMessageCount(MESSAGE_COUNT)
+            .withMessageCount(testStorage.getMessageCount())
             .withPort(TestConstants.HTTP_BRIDGE_DEFAULT_PORT)
             .withDelayMs(200)
             .withPollInterval(200)

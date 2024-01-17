@@ -56,8 +56,8 @@ NOTE: Feature gates might be removed when they reach GA. This means that the fea
 
 ¦`UseKRaft`
 ¦0.29
-¦ -
-¦ -
+¦0.40
+¦0.42 (planned)
 
 ¦`StableConnectIdentities`
 ¦0.34

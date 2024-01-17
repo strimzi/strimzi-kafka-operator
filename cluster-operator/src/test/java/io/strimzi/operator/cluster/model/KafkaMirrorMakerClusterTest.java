@@ -13,36 +13,36 @@ import io.fabric8.kubernetes.api.model.HostAlias;
 import io.fabric8.kubernetes.api.model.HostAliasBuilder;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
+import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.Probe;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
-import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
-import io.strimzi.api.kafka.model.CertSecretSource;
-import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
-import io.strimzi.api.kafka.model.ContainerEnvVar;
-import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
-import io.strimzi.api.kafka.model.JmxPrometheusExporterMetricsBuilder;
-import io.strimzi.api.kafka.model.JvmOptions;
-import io.strimzi.api.kafka.model.KafkaMirrorMaker;
-import io.strimzi.api.kafka.model.KafkaMirrorMakerBuilder;
-import io.strimzi.api.kafka.model.KafkaMirrorMakerConsumerSpec;
-import io.strimzi.api.kafka.model.KafkaMirrorMakerConsumerSpecBuilder;
-import io.strimzi.api.kafka.model.KafkaMirrorMakerProducerSpec;
-import io.strimzi.api.kafka.model.KafkaMirrorMakerProducerSpecBuilder;
-import io.strimzi.api.kafka.model.KafkaMirrorMakerResources;
-import io.strimzi.api.kafka.model.MetricsConfig;
-import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationOAuthBuilder;
-import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationTlsBuilder;
-import io.strimzi.api.kafka.model.template.ContainerTemplate;
-import io.strimzi.api.kafka.model.template.DeploymentStrategy;
-import io.strimzi.api.kafka.model.tracing.OpenTelemetryTracing;
+import io.strimzi.api.kafka.model.common.CertSecretSource;
+import io.strimzi.api.kafka.model.common.CertSecretSourceBuilder;
+import io.strimzi.api.kafka.model.common.ContainerEnvVar;
+import io.strimzi.api.kafka.model.common.JvmOptions;
+import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationOAuthBuilder;
+import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationTlsBuilder;
+import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetrics;
+import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetricsBuilder;
+import io.strimzi.api.kafka.model.common.metrics.MetricsConfig;
+import io.strimzi.api.kafka.model.common.template.ContainerTemplate;
+import io.strimzi.api.kafka.model.common.template.DeploymentStrategy;
+import io.strimzi.api.kafka.model.common.tracing.OpenTelemetryTracing;
+import io.strimzi.api.kafka.model.mirrormaker.KafkaMirrorMaker;
+import io.strimzi.api.kafka.model.mirrormaker.KafkaMirrorMakerBuilder;
+import io.strimzi.api.kafka.model.mirrormaker.KafkaMirrorMakerConsumerSpec;
+import io.strimzi.api.kafka.model.mirrormaker.KafkaMirrorMakerConsumerSpecBuilder;
+import io.strimzi.api.kafka.model.mirrormaker.KafkaMirrorMakerProducerSpec;
+import io.strimzi.api.kafka.model.mirrormaker.KafkaMirrorMakerProducerSpecBuilder;
+import io.strimzi.api.kafka.model.mirrormaker.KafkaMirrorMakerResources;
 import io.strimzi.kafka.oauth.client.ClientConfig;
 import io.strimzi.kafka.oauth.server.ServerConfig;
-import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
+import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.metrics.MetricsModel;
 import io.strimzi.operator.common.Reconciliation;
@@ -159,7 +159,7 @@ public class KafkaMirrorMakerClusterTest {
     }
 
     private Map<String, String> expectedLabels()    {
-        return expectedLabels(KafkaMirrorMakerResources.deploymentName(cluster));
+        return expectedLabels(KafkaMirrorMakerResources.componentName(cluster));
     }
 
     protected List<EnvVar> getExpectedEnvVars() {
@@ -258,7 +258,7 @@ public class KafkaMirrorMakerClusterTest {
     public void testGenerateDeployment()   {
         Deployment dep = mm.generateDeployment(new HashMap<>(), true, null, null);
 
-        assertThat(dep.getMetadata().getName(), is(KafkaMirrorMakerResources.deploymentName(cluster)));
+        assertThat(dep.getMetadata().getName(), is(KafkaMirrorMakerResources.componentName(cluster)));
         assertThat(dep.getMetadata().getNamespace(), is(namespace));
         Map<String, String> expectedLabels = expectedLabels();
         assertThat(dep.getMetadata().getLabels(), is(expectedLabels));
@@ -266,7 +266,7 @@ public class KafkaMirrorMakerClusterTest {
         assertThat(dep.getSpec().getReplicas(), is(replicas));
         assertThat(dep.getSpec().getTemplate().getMetadata().getLabels(), is(expectedLabels));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().size(), is(1));
-        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getName(), is(KafkaMirrorMakerResources.deploymentName(this.cluster)));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getName(), is(KafkaMirrorMakerResources.componentName(this.cluster)));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImage(), is(mm.image));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv(), is(getExpectedEnvVars()));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getPorts().size(), is(1));

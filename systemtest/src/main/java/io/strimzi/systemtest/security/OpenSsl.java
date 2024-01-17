@@ -6,6 +6,9 @@ package io.strimzi.systemtest.security;
 
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.test.TestUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -16,8 +19,6 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 /**
  * The `OpenSsl` class encapsulates OpenSSL command execution using the OpenSSLCommand object,

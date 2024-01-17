@@ -8,8 +8,8 @@ import io.apicurio.registry.utils.kafka.ProducerActions;
 import io.vertx.core.Future;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.streams.state.ReadOnlyKeyValueStore;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.concurrent.CompletionStage;
 import java.util.function.BiFunction;

@@ -4,17 +4,16 @@
  */
 package io.strimzi.systemtest.utils.kafkaUtils;
 
-import io.strimzi.api.kafka.model.KafkaTopicSpec;
+import io.strimzi.api.kafka.model.topic.KafkaTopicSpec;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.enums.ConditionStatus;
+import io.strimzi.systemtest.enums.CustomResourceStatus;
+import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
-import io.strimzi.systemtest.resources.ResourceManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.extension.ExtensionContext;
-import io.strimzi.systemtest.enums.CustomResourceStatus;
-
 
 import java.util.ArrayList;
 import java.util.List;

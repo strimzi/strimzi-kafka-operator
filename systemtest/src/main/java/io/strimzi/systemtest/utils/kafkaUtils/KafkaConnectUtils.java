@@ -5,17 +5,17 @@
 package io.strimzi.systemtest.utils.kafkaUtils;
 
 import io.fabric8.kubernetes.api.model.PodCondition;
-import io.strimzi.api.kafka.model.KafkaConnect;
-import io.strimzi.api.kafka.model.status.Condition;
+import io.strimzi.api.kafka.model.common.Condition;
+import io.strimzi.api.kafka.model.connect.KafkaConnect;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.test.TestUtils;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.Level;
 
 import java.util.List;
 

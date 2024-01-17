@@ -14,7 +14,7 @@ import io.fabric8.kubernetes.api.model.rbac.RoleBindingBuilder;
 import io.fabric8.kubernetes.api.model.rbac.RoleBuilder;
 import io.fabric8.kubernetes.api.model.rbac.RoleRef;
 import io.fabric8.kubernetes.api.model.rbac.Subject;
-import io.strimzi.api.kafka.model.template.ResourceTemplate;
+import io.strimzi.api.kafka.model.common.template.ResourceTemplate;
 import io.strimzi.operator.common.model.Labels;
 
 import java.util.List;

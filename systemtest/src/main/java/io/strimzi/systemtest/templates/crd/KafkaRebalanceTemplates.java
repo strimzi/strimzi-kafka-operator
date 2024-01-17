@@ -4,8 +4,8 @@
  */
 package io.strimzi.systemtest.templates.crd;
 
-import io.strimzi.api.kafka.model.KafkaRebalance;
-import io.strimzi.api.kafka.model.KafkaRebalanceBuilder;
+import io.strimzi.api.kafka.model.rebalance.KafkaRebalance;
+import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceBuilder;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.test.TestUtils;

@@ -4,8 +4,10 @@
  */
 package io.strimzi.api.kafka.model;
 
+import io.strimzi.api.kafka.model.common.JvmOptions;
 import io.strimzi.test.TestUtils;
 import org.junit.jupiter.api.Test;
+
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;

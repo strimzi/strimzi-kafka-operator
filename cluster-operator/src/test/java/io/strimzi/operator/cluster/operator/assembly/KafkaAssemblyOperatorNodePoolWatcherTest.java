@@ -10,15 +10,15 @@ import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Watcher;
-import io.strimzi.api.kafka.KafkaList;
-import io.strimzi.api.kafka.model.Kafka;
-import io.strimzi.api.kafka.model.KafkaBuilder;
-import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
-import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
+import io.strimzi.api.kafka.model.kafka.Kafka;
+import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
+import io.strimzi.api.kafka.model.kafka.KafkaList;
+import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
+import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
+import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolBuilder;
 import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
-import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Annotations;
@@ -49,15 +49,12 @@ public class KafkaAssemblyOperatorNodePoolWatcherTest {
                 .endMetadata()
                 .withNewSpec()
                     .withNewKafka()
-                        .withReplicas(3)
                         .withListeners(new GenericKafkaListenerBuilder()
                                 .withName("plain")
                                 .withPort(9092)
                                 .withType(KafkaListenerType.INTERNAL)
                                 .withTls(false)
                                 .build())
-                        .withNewEphemeralStorage()
-                        .endEphemeralStorage()
                     .endKafka()
                     .withNewZookeeper()
                         .withReplicas(3)

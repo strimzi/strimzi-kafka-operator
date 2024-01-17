@@ -5,8 +5,8 @@
 package io.strimzi.operator.cluster.model.securityprofiles;
 
 import io.fabric8.kubernetes.api.model.PodSecurityContext;
-import io.strimzi.api.kafka.model.template.PodTemplate;
-import io.strimzi.api.kafka.model.storage.Storage;
+import io.strimzi.api.kafka.model.common.template.PodTemplate;
+import io.strimzi.api.kafka.model.kafka.Storage;
 import io.strimzi.plugin.security.profiles.PodSecurityProviderContext;
 
 /**

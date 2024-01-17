@@ -4,24 +4,14 @@
  */
 package io.strimzi.operator.common;
 
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.BooleanSupplier;
-import java.util.function.Predicate;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
-
-import org.apache.kafka.common.KafkaFuture;
-
 import io.fabric8.kubernetes.api.model.Secret;
-import io.strimzi.api.kafka.model.CertSecretSource;
-import io.strimzi.api.kafka.model.GenericSecretSource;
-import io.strimzi.api.kafka.model.authentication.KafkaClientAuthentication;
-import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationOAuth;
-import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationPlain;
-import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationScram;
-import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationTls;
+import io.strimzi.api.kafka.model.common.CertSecretSource;
+import io.strimzi.api.kafka.model.common.GenericSecretSource;
+import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthentication;
+import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationOAuth;
+import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationPlain;
+import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationScram;
+import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationTls;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.TimeoutException;
@@ -29,6 +19,15 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
+import org.apache.kafka.common.KafkaFuture;
+
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.BooleanSupplier;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 /**
  * Class with various utility methods that use or depend on Vert.x core.

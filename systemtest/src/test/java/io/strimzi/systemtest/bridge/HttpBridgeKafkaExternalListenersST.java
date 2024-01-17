@@ -5,18 +5,18 @@
 package io.strimzi.systemtest.bridge;
 
 import io.fabric8.kubernetes.api.model.Service;
-import io.strimzi.api.kafka.model.CertSecretSource;
-import io.strimzi.api.kafka.model.KafkaBridgeResources;
-import io.strimzi.api.kafka.model.KafkaBridgeSpec;
-import io.strimzi.api.kafka.model.KafkaBridgeSpecBuilder;
-import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.PasswordSecretSource;
-import io.strimzi.api.kafka.model.listener.KafkaListenerAuthentication;
-import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationScramSha512;
-import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
-import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
-import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
-import io.strimzi.api.kafka.model.status.ListenerStatus;
+import io.strimzi.api.kafka.model.bridge.KafkaBridgeResources;
+import io.strimzi.api.kafka.model.bridge.KafkaBridgeSpec;
+import io.strimzi.api.kafka.model.bridge.KafkaBridgeSpecBuilder;
+import io.strimzi.api.kafka.model.common.CertSecretSource;
+import io.strimzi.api.kafka.model.common.PasswordSecretSource;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
+import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthentication;
+import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationScramSha512;
+import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationTls;
+import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
+import io.strimzi.api.kafka.model.kafka.listener.ListenerStatus;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
@@ -143,7 +143,7 @@ public class HttpBridgeKafkaExternalListenersST extends AbstractST {
             .withConsumerName(ts.getClusterName() + "-" + consumerName)
             .withBootstrapAddress(KafkaBridgeResources.serviceName(ts.getClusterName()))
             .withTopicName(ts.getTopicName())
-            .withMessageCount(MESSAGE_COUNT)
+            .withMessageCount(ts.getMessageCount())
             .withPort(TestConstants.HTTP_BRIDGE_DEFAULT_PORT)
             .withNamespaceName(ts.getNamespaceName())
             .build();
@@ -198,7 +198,7 @@ public class HttpBridgeKafkaExternalListenersST extends AbstractST {
             .withBootstrapAddress(externalBootstrapServers)
             .withNamespaceName(ts.getNamespaceName())
             .withTopicName(ts.getTopicName())
-            .withMessageCount(MESSAGE_COUNT)
+            .withMessageCount(ts.getMessageCount())
             .withUsername(weirdUserName)
             // we disable ssl.endpoint.identification.algorithm for external listener (i.e., NodePort),
             // because TLS hostname verification is not supported on such listener type.
@@ -213,9 +213,9 @@ public class HttpBridgeKafkaExternalListenersST extends AbstractST {
             resourceManager.createResourceWithWait(extensionContext, externalKafkaProducer.producerScramShaTlsStrimzi(ts.getClusterName()));
         }
 
-        ClientUtils.waitForClientSuccess(kafkaProducerExternalName, ts.getNamespaceName(), MESSAGE_COUNT);
+        ClientUtils.waitForClientSuccess(kafkaProducerExternalName, ts.getNamespaceName(), ts.getMessageCount());
 
-        ClientUtils.waitForClientSuccess(ts.getClusterName() + "-" + consumerName, ts.getNamespaceName(), MESSAGE_COUNT);
+        ClientUtils.waitForClientSuccess(ts.getClusterName() + "-" + consumerName, ts.getNamespaceName(), ts.getMessageCount());
     }
 
     @BeforeAll

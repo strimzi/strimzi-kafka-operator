@@ -4,17 +4,17 @@
  */
 package io.strimzi.systemtest.kafka.listeners;
 
-import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.KafkaUser;
-import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListener;
-import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
-import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener;
+import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
+import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
+import io.strimzi.api.kafka.model.user.KafkaUser;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.kafkaclients.externalClients.ExternalKafkaClient;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
+import io.strimzi.systemtest.kafkaclients.externalClients.ExternalKafkaClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -164,6 +164,7 @@ public class MultipleListenersST extends AbstractST {
     }
 
     private void runListenersTest(ExtensionContext extensionContext, List<GenericKafkaListener> listeners, String clusterName) {
+        final TestStorage testStorage = storageMap.get(extensionContext);
         LOGGER.info("These are listeners to be verified: {}", listeners);
 
         // exercise phase
@@ -200,7 +201,7 @@ public class MultipleListenersST extends AbstractST {
                             .withTopicName(topicName)
                             .withNamespaceName(Environment.TEST_SUITE_NAMESPACE)
                             .withClusterName(clusterName)
-                            .withMessageCount(MESSAGE_COUNT)
+                            .withMessageCount(testStorage.getMessageCount())
                             .withKafkaUsername(kafkaUsername)
                             .withListenerName(listener.getName())
                             .withSecurityProtocol(SecurityProtocol.SSL)
@@ -219,7 +220,7 @@ public class MultipleListenersST extends AbstractST {
                             .withTopicName(topicName)
                             .withNamespaceName(Environment.TEST_SUITE_NAMESPACE)
                             .withClusterName(clusterName)
-                            .withMessageCount(MESSAGE_COUNT)
+                            .withMessageCount(testStorage.getMessageCount())
                             .withSecurityProtocol(SecurityProtocol.PLAINTEXT)
                             .withListenerName(listener.getName())
                             .build();
@@ -236,7 +237,7 @@ public class MultipleListenersST extends AbstractST {
                     // using internal clients
                     KafkaClients kafkaClients = new KafkaClientsBuilder()
                         .withTopicName(topicName)
-                        .withMessageCount(MESSAGE_COUNT)
+                        .withMessageCount(testStorage.getMessageCount())
                         .withProducerName(producerName)
                         .withConsumerName(consumerName)
                         .withUsername(kafkaUsername)
@@ -256,7 +257,7 @@ public class MultipleListenersST extends AbstractST {
                             kafkaClients.consumerStrimzi()
                         );
                     }
-                    ClientUtils.waitForClientsSuccess(producerName, consumerName, Environment.TEST_SUITE_NAMESPACE, MESSAGE_COUNT);
+                    ClientUtils.waitForClientsSuccess(producerName, consumerName, Environment.TEST_SUITE_NAMESPACE, testStorage.getMessageCount());
                 }
             }
         }

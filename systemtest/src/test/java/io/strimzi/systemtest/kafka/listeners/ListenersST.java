@@ -8,24 +8,24 @@ import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.Service;
-import io.strimzi.api.kafka.model.ContainerEnvVarBuilder;
-import io.strimzi.api.kafka.model.Kafka;
-import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.KafkaUser;
-import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
-import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
-import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfigurationBroker;
-import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfigurationBrokerBuilder;
-import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
-import io.strimzi.api.kafka.model.status.ListenerAddress;
-import io.strimzi.api.kafka.model.status.ListenerStatus;
+import io.strimzi.api.kafka.model.common.ContainerEnvVarBuilder;
+import io.strimzi.api.kafka.model.kafka.Kafka;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
+import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerConfigurationBroker;
+import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerConfigurationBrokerBuilder;
+import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationTls;
+import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
+import io.strimzi.api.kafka.model.kafka.listener.ListenerAddress;
+import io.strimzi.api.kafka.model.kafka.listener.ListenerStatus;
+import io.strimzi.api.kafka.model.user.KafkaUser;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.kafkaclients.externalClients.ExternalKafkaClient;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
+import io.strimzi.systemtest.kafkaclients.externalClients.ExternalKafkaClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -76,8 +76,8 @@ import static io.strimzi.systemtest.TestConstants.REGRESSION;
 import static io.strimzi.systemtest.TestConstants.ROUTE;
 import static io.strimzi.systemtest.TestConstants.SANITY;
 import static io.strimzi.systemtest.security.SystemTestCertManager.exportToPemFiles;
-import static io.strimzi.systemtest.security.SystemTestCertManager.generateIntermediateCaCertAndKey;
 import static io.strimzi.systemtest.security.SystemTestCertManager.generateEndEntityCertAndKey;
+import static io.strimzi.systemtest.security.SystemTestCertManager.generateIntermediateCaCertAndKey;
 import static io.strimzi.systemtest.security.SystemTestCertManager.generateRootCaCertAndKey;
 import static io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils.getKafkaSecretCertificates;
 import static io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils.getKafkaStatusCertificates;
@@ -431,7 +431,7 @@ public class ListenersST extends AbstractST {
             .withTopicName(topicName)
             .withNamespaceName(namespaceName)
             .withClusterName(clusterName)
-            .withMessageCount(MESSAGE_COUNT)
+            .withMessageCount(testStorage.getMessageCount())
             .withListenerName(TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME)
             .build();
 
@@ -448,7 +448,7 @@ public class ListenersST extends AbstractST {
                 List<Integer> listStatusPorts = listenerStatus.getAddresses().stream().map(ListenerAddress::getPort).collect(Collectors.toList());
                 Integer nodePort = kubeClient(namespaceName).getService(namespaceName, KafkaResources.externalBootstrapServiceName(clusterName)).getSpec().getPorts().get(0).getNodePort();
 
-                List<String> nodeIps = kubeClient(namespaceName).listPods(KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName)))
+                List<String> nodeIps = kubeClient(namespaceName).listPods(KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaComponentName(clusterName)))
                         .stream().map(pods -> pods.getStatus().getHostIP()).distinct().collect(Collectors.toList());
                 nodeIps.sort(Comparator.comparing(String::toString));
 
@@ -521,7 +521,7 @@ public class ListenersST extends AbstractST {
             .withTopicName(topicName)
             .withNamespaceName(namespaceName)
             .withClusterName(clusterName)
-            .withMessageCount(MESSAGE_COUNT)
+            .withMessageCount(testStorage.getMessageCount())
             .withListenerName(TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME)
             .build();
 
@@ -563,7 +563,7 @@ public class ListenersST extends AbstractST {
             .withTopicName(topicName)
             .withNamespaceName(namespaceName)
             .withClusterName(clusterName)
-            .withMessageCount(MESSAGE_COUNT)
+            .withMessageCount(testStorage.getMessageCount())
             .withKafkaUsername(userName)
             .withSecurityProtocol(SecurityProtocol.SSL)
             .withListenerName(TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME)
@@ -607,7 +607,7 @@ public class ListenersST extends AbstractST {
             .withTopicName(topicName)
             .withNamespaceName(namespaceName)
             .withClusterName(clusterName)
-            .withMessageCount(MESSAGE_COUNT)
+            .withMessageCount(testStorage.getMessageCount())
             .withListenerName(TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME)
             .build();
 
@@ -655,7 +655,7 @@ public class ListenersST extends AbstractST {
             .withTopicName(topicName)
             .withNamespaceName(namespaceName)
             .withClusterName(clusterName)
-            .withMessageCount(MESSAGE_COUNT)
+            .withMessageCount(testStorage.getMessageCount())
             .withKafkaUsername(userName)
             .withSecurityProtocol(SecurityProtocol.SSL)
             .withListenerName(TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME)
@@ -693,17 +693,17 @@ public class ListenersST extends AbstractST {
                 .withNamespaceName(namespaceName)
                 .withTopicName(testStorage.getTopicName())
                 .withBootstrapAddress(KafkaUtils.bootstrapAddressFromStatus(clusterName, namespaceName, TestConstants.CLUSTER_IP_LISTENER_DEFAULT_NAME))
-                .withMessageCount(MESSAGE_COUNT)
+                .withMessageCount(testStorage.getMessageCount())
                 .withUsername(testStorage.getUsername())
                 .withProducerName(testStorage.getProducerName())
                 .withConsumerName(testStorage.getConsumerName())
                 .build();
 
         resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerStrimzi());
-        ClientUtils.waitForClientSuccess(testStorage.getProducerName(), namespaceName, MESSAGE_COUNT);
+        ClientUtils.waitForClientSuccess(testStorage.getProducerName(), namespaceName, testStorage.getMessageCount());
 
         resourceManager.createResourceWithWait(extensionContext, kafkaClients.consumerStrimzi());
-        ClientUtils.waitForClientSuccess(testStorage.getConsumerName(), namespaceName, MESSAGE_COUNT);
+        ClientUtils.waitForClientSuccess(testStorage.getConsumerName(), namespaceName, testStorage.getMessageCount());
 
     }
 
@@ -2082,7 +2082,7 @@ public class ListenersST extends AbstractST {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Environment.TEST_SUITE_NAMESPACE, extensionContext);
         final String clusterName = testStorage.getClusterName();
         final String nonExistingCertName = "non-existing-certificate";
-        final LabelSelector zkSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.zookeeperStatefulSetName(clusterName));
+        final LabelSelector zkSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.zookeeperComponentName(clusterName));
 
         resourceManager.createResourceWithoutWait(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 1, 1)
             .editSpec()
@@ -2120,7 +2120,7 @@ public class ListenersST extends AbstractST {
         final String clusterName = testStorage.getClusterName();
         final String nonExistingCertName = "non-existing-crt";
         final String clusterCustomCertServer1 = clusterName + "-" + customCertServer1;
-        final LabelSelector zkSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.zookeeperStatefulSetName(clusterName));
+        final LabelSelector zkSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.zookeeperComponentName(clusterName));
 
         SecretUtils.createCustomSecret(clusterCustomCertServer1, clusterName, namespaceName, STRIMZI_CERT_AND_KEY_1);
 
@@ -2161,7 +2161,7 @@ public class ListenersST extends AbstractST {
         final String clusterName = testStorage.getClusterName();
         final String nonExistingCertKey = "non-existing-key";
         final String clusterCustomCertServer1 = clusterName + "-" + customCertServer1;
-        final LabelSelector zkSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.zookeeperStatefulSetName(clusterName));
+        final LabelSelector zkSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.zookeeperComponentName(clusterName));
 
         SecretUtils.createCustomSecret(clusterCustomCertServer1, clusterName, namespaceName, STRIMZI_CERT_AND_KEY_1);
 

@@ -5,13 +5,13 @@
 package io.strimzi.systemtest.security.oauth;
 
 import io.fabric8.kubernetes.api.model.batch.v1.Job;
-import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
-import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListener;
-import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
-import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
+import io.strimzi.api.kafka.model.common.CertSecretSourceBuilder;
+import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener;
+import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
+import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IPv6NotSupported;
 import io.strimzi.systemtest.enums.DefaultNetworkPolicy;
 import io.strimzi.systemtest.keycloak.KeycloakInstance;
@@ -28,16 +28,15 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.HashMap;
-import java.util.Map;
 
 import static io.strimzi.systemtest.TestConstants.ARM64_UNSUPPORTED;
 import static io.strimzi.systemtest.TestConstants.OAUTH;
 import static io.strimzi.systemtest.TestConstants.REGRESSION;
-
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 

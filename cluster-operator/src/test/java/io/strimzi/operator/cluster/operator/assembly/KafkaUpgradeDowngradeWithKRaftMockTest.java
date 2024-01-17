@@ -10,17 +10,17 @@ import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.server.mock.EnableKubernetesMockClient;
 import io.strimzi.api.kafka.Crds;
-import io.strimzi.api.kafka.model.Kafka;
-import io.strimzi.api.kafka.model.KafkaBuilder;
-import io.strimzi.api.kafka.model.StrimziPodSet;
-import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
-import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
+import io.strimzi.api.kafka.model.kafka.Kafka;
+import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
+import io.strimzi.api.kafka.model.kafka.KafkaStatus;
+import io.strimzi.api.kafka.model.kafka.KafkaStatusBuilder;
+import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
+import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
+import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolBuilder;
 import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
-import io.strimzi.api.kafka.model.status.KafkaStatus;
-import io.strimzi.api.kafka.model.status.KafkaStatusBuilder;
-import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
+import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
@@ -91,9 +91,6 @@ public class KafkaUpgradeDowngradeWithKRaftMockTest {
                 .endMetadata()
                 .withNewSpec()
                     .withNewKafka()
-                        .withReplicas(3)
-                        .withNewEphemeralStorage()
-                        .endEphemeralStorage()
                         .withListeners(new GenericKafkaListenerBuilder()
                                 .withName("plain")
                                 .withPort(9092)
@@ -101,11 +98,6 @@ public class KafkaUpgradeDowngradeWithKRaftMockTest {
                                 .withTls(false)
                                 .build())
                     .endKafka()
-                    .withNewZookeeper()
-                        .withReplicas(3)
-                            .withNewEphemeralStorage()
-                            .endEphemeralStorage()
-                    .endZookeeper()
                     .withNewEntityOperator()
                         .withNewTopicOperator()
                         .endTopicOperator()
@@ -191,7 +183,6 @@ public class KafkaUpgradeDowngradeWithKRaftMockTest {
 
         ClusterOperatorConfig config = new ClusterOperatorConfig.ClusterOperatorConfigBuilder(ResourceUtils.dummyClusterOperatorConfig(), VERSIONS)
                 .with(ClusterOperatorConfig.OPERATION_TIMEOUT_MS.key(), "10000")
-                .with(ClusterOperatorConfig.FEATURE_GATES.key(), "+UseKRaft")
                 .build();
 
         operator = new KafkaAssemblyOperator(vertx, PFA, new MockCertManager(),

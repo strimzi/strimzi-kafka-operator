@@ -10,14 +10,14 @@ import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
-import io.strimzi.api.kafka.KafkaList;
-import io.strimzi.api.kafka.model.Kafka;
-import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.status.KafkaStatus;
+import io.strimzi.api.kafka.model.kafka.Kafka;
+import io.strimzi.api.kafka.model.kafka.KafkaList;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.api.kafka.model.kafka.KafkaStatus;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.resources.ResourceType;
@@ -147,7 +147,7 @@ public class KafkaResource implements ResourceType<Kafka> {
         } else if (nodePoolName != null) {
             return String.join("-", clusterName, nodePoolName);
         } else {
-            return KafkaResources.kafkaStatefulSetName(clusterName);
+            return KafkaResources.kafkaComponentName(clusterName);
         }
     }
 

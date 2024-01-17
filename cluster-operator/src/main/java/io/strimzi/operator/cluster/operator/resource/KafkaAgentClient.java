@@ -5,6 +5,17 @@
 package io.strimzi.operator.cluster.operator.resource;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.fabric8.kubernetes.api.model.Secret;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.operator.cluster.model.DnsNameGenerator;
+import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.ReconciliationLogger;
+import io.strimzi.operator.common.Util;
+
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManagerFactory;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URI;
@@ -12,11 +23,9 @@ import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
 import java.security.KeyStore;
-
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
@@ -25,18 +34,6 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManagerFactory;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import io.fabric8.kubernetes.api.model.Secret;
-import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.operator.cluster.model.DnsNameGenerator;
-import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.ReconciliationLogger;
-import io.strimzi.operator.common.Util;
 
 /**
  * Creates HTTP client and interacts with Kafka Agent's REST endpoint
@@ -50,6 +47,7 @@ class KafkaAgentClient {
     private static final int BROKER_STATE_HTTPS_PORT = 8443;
     private static final String KEYSTORE_TYPE_JKS = "JKS";
     private static final String CERT_TYPE_X509 = "X.509";
+    private static final char[] KEYSTORE_PASSWORD = "changeit".toCharArray();
     private final String namespace;
     private final Reconciliation reconciliation;
     private final String cluster;
@@ -82,11 +80,9 @@ class KafkaAgentClient {
             TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(trustManagerFactoryAlgorithm);
             trustManagerFactory.init(getTrustStore());
 
-            char[] keyPassword = new String(Util.decodeFromSecret(coKeySecret, "cluster-operator.password"), StandardCharsets.UTF_8).toCharArray();
-
             String keyManagerFactoryAlgorithm = KeyManagerFactory.getDefaultAlgorithm();
             KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(keyManagerFactoryAlgorithm);
-            keyManagerFactory.init(getKeyStore(keyPassword), keyPassword);
+            keyManagerFactory.init(getKeyStore(), KEYSTORE_PASSWORD);
 
             SSLContext sslContext = SSLContext.getInstance("TLS");
             sslContext.init(keyManagerFactory.getKeyManagers(), trustManagerFactory.getTrustManagers(), null);
@@ -109,7 +105,7 @@ class KafkaAgentClient {
         return trustStore;
     }
 
-    private KeyStore getKeyStore(char[] keyPassword) throws KeyStoreException, CertificateException, NoSuchAlgorithmException, InvalidKeySpecException, IOException {
+    private KeyStore getKeyStore() throws KeyStoreException, CertificateException, NoSuchAlgorithmException, InvalidKeySpecException, IOException {
         final CertificateFactory coCertFactory = CertificateFactory.getInstance(CERT_TYPE_X509);
         final Certificate coCert = coCertFactory.generateCertificate(new ByteArrayInputStream(
                 Util.decodeFromSecret(coKeySecret, "cluster-operator.crt")));
@@ -121,7 +117,7 @@ class KafkaAgentClient {
 
         KeyStore coKeyStore = KeyStore.getInstance(KEYSTORE_TYPE_JKS);
         coKeyStore.load(null);
-        coKeyStore.setKeyEntry("cluster-operator", key, keyPassword, new Certificate[]{coCert});
+        coKeyStore.setKeyEntry("cluster-operator", key, KEYSTORE_PASSWORD, new Certificate[]{coCert});
 
         return coKeyStore;
     }

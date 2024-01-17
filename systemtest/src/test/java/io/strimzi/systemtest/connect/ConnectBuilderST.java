@@ -8,10 +8,9 @@ import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.openshift.api.model.ImageStream;
 import io.fabric8.openshift.api.model.ImageStreamBuilder;
 import io.fabric8.openshift.client.OpenShiftClient;
-import io.strimzi.api.kafka.model.KafkaConnect;
-import io.strimzi.api.kafka.model.KafkaConnectResources;
-import io.strimzi.api.kafka.model.KafkaConnector;
-import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.common.Condition;
+import io.strimzi.api.kafka.model.connect.KafkaConnect;
+import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
 import io.strimzi.api.kafka.model.connect.build.JarArtifactBuilder;
 import io.strimzi.api.kafka.model.connect.build.MavenArtifactBuilder;
 import io.strimzi.api.kafka.model.connect.build.OtherArtifactBuilder;
@@ -19,13 +18,14 @@ import io.strimzi.api.kafka.model.connect.build.Plugin;
 import io.strimzi.api.kafka.model.connect.build.PluginBuilder;
 import io.strimzi.api.kafka.model.connect.build.TgzArtifactBuilder;
 import io.strimzi.api.kafka.model.connect.build.ZipArtifactBuilder;
-import io.strimzi.api.kafka.model.status.Condition;
+import io.strimzi.api.kafka.model.connector.KafkaConnector;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.KindNotSupported;
 import io.strimzi.systemtest.annotations.MicroShiftNotSupported;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
@@ -145,7 +145,7 @@ class ConnectBuilderST extends AbstractST {
 
     @ParallelTest
     void testBuildFailsWithWrongChecksumOfArtifact(ExtensionContext extensionContext) {
-        TestStorage testStorage = new TestStorage(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         final String imageName = getImageNameForTestCase();
 
@@ -178,7 +178,7 @@ class ConnectBuilderST extends AbstractST {
         KafkaConnect kafkaConnect = KafkaConnectResource.kafkaConnectClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get();
 
         LOGGER.info("Deploying network policies for KafkaConnect");
-        NetworkPolicyResource.deployNetworkPolicyForResource(extensionContext, kafkaConnect, KafkaConnectResources.deploymentName(testStorage.getClusterName()));
+        NetworkPolicyResource.deployNetworkPolicyForResource(extensionContext, kafkaConnect, KafkaConnectResources.componentName(testStorage.getClusterName()));
 
         Condition connectCondition = kafkaConnect.getStatus().getConditions().stream().findFirst().orElseThrow();
 
@@ -215,7 +215,7 @@ class ConnectBuilderST extends AbstractST {
 
     @ParallelTest
     void testBuildWithJarTgzAndZip(ExtensionContext extensionContext) {
-        TestStorage testStorage = new TestStorage(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         // this test also testing push into Docker output
         final String imageName = getImageNameForTestCase();
@@ -276,7 +276,7 @@ class ConnectBuilderST extends AbstractST {
     @OpenShiftOnly
     @ParallelTest
     void testPushIntoImageStream(ExtensionContext extensionContext) {
-        TestStorage testStorage = new TestStorage(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         String imageStreamName = "custom-image-stream";
         ImageStream imageStream = new ImageStreamBuilder()
@@ -316,7 +316,7 @@ class ConnectBuilderST extends AbstractST {
 
     @ParallelTest
     void testUpdateConnectWithAnotherPlugin(ExtensionContext extensionContext) {
-        TestStorage testStorage = new TestStorage(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         String camelConnector = "camel-http-connector";
         final String imageName = getImageNameForTestCase();
@@ -355,7 +355,7 @@ class ConnectBuilderST extends AbstractST {
         resourceManager.createResourceWithWait(extensionContext, connect, ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build());
 
         LOGGER.info("Deploying NetworkPolicies for KafkaConnect");
-        NetworkPolicyResource.deployNetworkPolicyForResource(extensionContext, connect, KafkaConnectResources.deploymentName(testStorage.getClusterName()));
+        NetworkPolicyResource.deployNetworkPolicyForResource(extensionContext, connect, KafkaConnectResources.componentName(testStorage.getClusterName()));
 
         Map<String, Object> echoSinkConfig = new HashMap<>();
         echoSinkConfig.put("topics", topicName);
@@ -372,7 +372,7 @@ class ConnectBuilderST extends AbstractST {
             .endSpec()
             .build());
 
-        LabelSelector labelSelector = KafkaConnectResource.getLabelSelector(testStorage.getClusterName(), KafkaConnectResources.deploymentName(testStorage.getClusterName()));
+        LabelSelector labelSelector = KafkaConnectResource.getLabelSelector(testStorage.getClusterName(), KafkaConnectResources.componentName(testStorage.getClusterName()));
         Map<String, String> connectSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), labelSelector);
         String scraperPodName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
 
@@ -415,7 +415,7 @@ class ConnectBuilderST extends AbstractST {
 
     @ParallelTest
     void testBuildOtherPluginTypeWithAndWithoutFileName(ExtensionContext extensionContext) {
-        TestStorage testStorage = new TestStorage(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         final String imageName = getImageNameForTestCase();
 
@@ -439,7 +439,7 @@ class ConnectBuilderST extends AbstractST {
             .endSpec()
             .build());
 
-        LabelSelector labelSelector = KafkaConnectResource.getLabelSelector(testStorage.getClusterName(), KafkaConnectResources.deploymentName(testStorage.getClusterName()));
+        LabelSelector labelSelector = KafkaConnectResource.getLabelSelector(testStorage.getClusterName(), KafkaConnectResources.componentName(testStorage.getClusterName()));
         Map<String, String> connectSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), labelSelector);
         String connectPodName = kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
 
@@ -475,7 +475,7 @@ class ConnectBuilderST extends AbstractST {
     @KindNotSupported("using kind we encounter (error building image: deleting file system after stage 0: unlinkat //product_uuid: device or resource busy)")
     @ParallelTest
     void testBuildPluginUsingMavenCoordinatesArtifacts(ExtensionContext extensionContext) {
-        TestStorage testStorage = new TestStorage(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         final String imageName = getImageNameForTestCase();
         final String connectorName = testStorage.getClusterName() + "-camel-connector";

@@ -296,13 +296,17 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
     @Test
     public void testReconcileDeleteWhenResourceExistsStillDeletes(VertxTestContext context) {
         Deletable mockDeletable = mock(Deletable.class);
-        when(mockDeletable.delete()).thenReturn(List.of());
+        AtomicBoolean resourceDeleted = new AtomicBoolean(false);
+        when(mockDeletable.delete()).thenAnswer(args -> {
+            resourceDeleted.set(true);
+            return List.of();
+        });
         GracePeriodConfigurable mockDeletableGrace = mock(GracePeriodConfigurable.class);
         when(mockDeletableGrace.delete()).thenReturn(List.of());
 
         T resource = resource();
         Resource mockResource = mock(resourceType());
-        when(mockResource.get()).thenReturn(resource);
+        when(mockResource.get()).thenAnswer(args -> resourceDeleted.get() ? null : resource);
         when(mockResource.withPropagationPolicy(eq(DeletionPropagation.FOREGROUND))).thenReturn(mockDeletableGrace);
         when(mockDeletableGrace.withGracePeriod(anyLong())).thenReturn(mockDeletable);
         AtomicBoolean watchClosed = new AtomicBoolean(false);
@@ -336,13 +340,17 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
     @Test
     public void testReconcileDeletionSuccessfullyDeletes(VertxTestContext context) {
         Deletable mockDeletable = mock(Deletable.class);
-        when(mockDeletable.delete()).thenReturn(List.of());
+        AtomicBoolean resourceDeleted = new AtomicBoolean(false);
+        when(mockDeletable.delete()).thenAnswer(args -> {
+            resourceDeleted.set(true);
+            return List.of();
+        });
         GracePeriodConfigurable mockDeletableGrace = mock(GracePeriodConfigurable.class);
         when(mockDeletableGrace.delete()).thenReturn(List.of());
 
         T resource = resource();
         Resource mockResource = mock(resourceType());
-        when(mockResource.get()).thenReturn(resource);
+        when(mockResource.get()).thenAnswer(args -> resourceDeleted.get() ? null : resource);
         when(mockResource.withPropagationPolicy(eq(DeletionPropagation.FOREGROUND))).thenReturn(mockDeletableGrace);
         when(mockDeletableGrace.withGracePeriod(anyLong())).thenReturn(mockDeletable);
         AtomicBoolean watchClosed = new AtomicBoolean(false);
@@ -417,13 +425,17 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
     @SuppressWarnings("unchecked")
     public void testReconcileDeleteDoesNotThrowWhenDeletionReturnsFalse(VertxTestContext context) {
         Deletable mockDeletable = mock(Deletable.class);
-        when(mockDeletable.delete()).thenReturn(List.of());
+        AtomicBoolean resourceDeleted = new AtomicBoolean(false);
+        when(mockDeletable.delete()).thenAnswer(args -> {
+            resourceDeleted.set(true);
+            return List.of();
+        });
         GracePeriodConfigurable mockDeletableGrace = mock(GracePeriodConfigurable.class);
         when(mockDeletableGrace.delete()).thenReturn(List.of());
 
         T resource = resource();
         Resource mockResource = mock(resourceType());
-        when(mockResource.get()).thenReturn(resource);
+        when(mockResource.get()).thenAnswer(args -> resourceDeleted.get() ? null : resource);
         when(mockResource.withPropagationPolicy(eq(DeletionPropagation.FOREGROUND))).thenReturn(mockDeletableGrace);
         when(mockDeletableGrace.withGracePeriod(anyLong())).thenReturn(mockDeletable);
         AtomicBoolean watchClosed = new AtomicBoolean(false);
@@ -518,7 +530,11 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
 
         // For resource1 we need to mock the async deletion process as well
         Deletable mockDeletable1 = mock(Deletable.class);
-        when(mockDeletable1.delete()).thenReturn(List.of());
+        AtomicBoolean resource1Deleted = new AtomicBoolean(false);
+        when(mockDeletable1.delete()).thenAnswer(args -> {
+            resource1Deleted.set(true);
+            return List.of();
+        });
         GracePeriodConfigurable mockDeletableGrace1 = mock(GracePeriodConfigurable.class);
         when(mockDeletableGrace1.withGracePeriod(anyLong())).thenReturn(mockDeletable1);
         Resource mockResource1 = mock(resourceType());
@@ -527,7 +543,7 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
         when(mockResource1.get()).thenAnswer(invocation -> {
             // First get needs to return the resource to trigger deletion
             // Next gets return null since the resource was already deleted
-            if (watchCreated.get()) {
+            if (watchCreated.get() || resource1Deleted.get()) {
                 return null;
             } else {
                 return resource1;

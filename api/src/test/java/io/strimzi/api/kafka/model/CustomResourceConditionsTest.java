@@ -4,7 +4,24 @@
  */
 package io.strimzi.api.kafka.model;
 
-import io.strimzi.api.kafka.model.balancing.KafkaRebalanceState;
+import io.strimzi.api.kafka.model.bridge.KafkaBridge;
+import io.strimzi.api.kafka.model.bridge.KafkaBridgeBuilder;
+import io.strimzi.api.kafka.model.common.CustomResourceConditions;
+import io.strimzi.api.kafka.model.connect.KafkaConnect;
+import io.strimzi.api.kafka.model.connect.KafkaConnectBuilder;
+import io.strimzi.api.kafka.model.connector.KafkaConnector;
+import io.strimzi.api.kafka.model.connector.KafkaConnectorBuilder;
+import io.strimzi.api.kafka.model.kafka.Kafka;
+import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
+import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2;
+import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Builder;
+import io.strimzi.api.kafka.model.rebalance.KafkaRebalance;
+import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceBuilder;
+import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState;
+import io.strimzi.api.kafka.model.topic.KafkaTopic;
+import io.strimzi.api.kafka.model.topic.KafkaTopicBuilder;
+import io.strimzi.api.kafka.model.user.KafkaUser;
+import io.strimzi.api.kafka.model.user.KafkaUserBuilder;
 import org.junit.jupiter.api.Test;
 
 import java.util.function.Predicate;

@@ -4,8 +4,7 @@
  */
 package io.strimzi.systemtest.upgrade.kraft;
 
-import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.KafkaTopic;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.resources.NamespaceManager;
@@ -18,7 +17,6 @@ import io.strimzi.systemtest.upgrade.VersionModificationDataLoader;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
-import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
@@ -36,7 +34,6 @@ import java.util.Map;
 import static io.strimzi.systemtest.TestConstants.CO_NAMESPACE;
 import static io.strimzi.systemtest.TestConstants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.TestConstants.KRAFT_UPGRADE;
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -68,7 +65,7 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
         UpgradeKafkaVersion upgradeKafkaVersion = UpgradeKafkaVersion.getKafkaWithVersionFromUrl(acrossUpgradeData.getFromKafkaVersionsUrl(), acrossUpgradeData.getStartingKafkaVersion());
         upgradeKafkaVersion.setVersion(null);
 
-        TestStorage testStorage = new TestStorage(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         // Setup env
         setupEnvAndUpgradeClusterOperator(extensionContext, acrossUpgradeData, testStorage, upgradeKafkaVersion, TestConstants.CO_NAMESPACE);
@@ -79,6 +76,9 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
 
         // Make snapshots of all Pods
         makeSnapshots();
+
+        // Check if UTO is used before changing the CO -> used for check for KafkaTopics
+        boolean wasUTOUsedBefore = StUtils.isUnidirectionalTopicOperatorUsed(TestConstants.CO_NAMESPACE, eoSelector);
 
         // Upgrade CO
         changeClusterOperator(acrossUpgradeData, TestConstants.CO_NAMESPACE, extensionContext);
@@ -95,7 +95,7 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
         // Verify that Pods are stable
         PodUtils.verifyThatRunningPodsAreStable(TestConstants.CO_NAMESPACE, clusterName);
         // Verify upgrade
-        verifyProcedure(acrossUpgradeData, testStorage.getProducerName(), testStorage.getConsumerName(), TestConstants.CO_NAMESPACE);
+        verifyProcedure(acrossUpgradeData, testStorage.getProducerName(), testStorage.getConsumerName(), TestConstants.CO_NAMESPACE, wasUTOUsedBefore);
 
         String controllerPodName = kubeClient().listPodsByPrefixInName(TestConstants.CO_NAMESPACE, KafkaResource.getStrimziPodSetName(clusterName, CONTROLLER_NODE_NAME)).get(0).getMetadata().getName();
         String brokerPodName = kubeClient().listPodsByPrefixInName(TestConstants.CO_NAMESPACE, KafkaResource.getStrimziPodSetName(clusterName, BROKER_NODE_NAME)).get(0).getMetadata().getName();
@@ -106,7 +106,7 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
 
     @IsolatedTest
     void testUpgradeAcrossVersionsWithUnsupportedKafkaVersion(ExtensionContext extensionContext) throws IOException {
-        TestStorage testStorage = new TestStorage(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
         UpgradeKafkaVersion upgradeKafkaVersion = UpgradeKafkaVersion.getKafkaWithVersionFromUrl(acrossUpgradeData.getFromKafkaVersionsUrl(), acrossUpgradeData.getStartingKafkaVersion());
 
         // Setup env
@@ -114,6 +114,9 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
 
         // Make snapshots of all Pods
         makeSnapshots();
+
+        // Check if UTO is used before changing the CO -> used for check for KafkaTopics
+        boolean wasUTOUsedBefore = StUtils.isUnidirectionalTopicOperatorUsed(TestConstants.CO_NAMESPACE, eoSelector);
 
         // Upgrade CO
         changeClusterOperator(acrossUpgradeData, TestConstants.CO_NAMESPACE, extensionContext);
@@ -133,15 +136,18 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
         PodUtils.verifyThatRunningPodsAreStable(TestConstants.CO_NAMESPACE, clusterName);
 
         // Verify upgrade
-        verifyProcedure(acrossUpgradeData, testStorage.getProducerName(), testStorage.getConsumerName(), TestConstants.CO_NAMESPACE);
+        verifyProcedure(acrossUpgradeData, testStorage.getProducerName(), testStorage.getConsumerName(), TestConstants.CO_NAMESPACE, wasUTOUsedBefore);
     }
 
     @IsolatedTest
     void testUpgradeAcrossVersionsWithNoKafkaVersion(ExtensionContext extensionContext) throws IOException {
-        TestStorage testStorage = new TestStorage(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         // Setup env
         setupEnvAndUpgradeClusterOperator(extensionContext, acrossUpgradeData, testStorage, null, TestConstants.CO_NAMESPACE);
+
+        // Check if UTO is used before changing the CO -> used for check for KafkaTopics
+        boolean wasUTOUsedBefore = StUtils.isUnidirectionalTopicOperatorUsed(TestConstants.CO_NAMESPACE, eoSelector);
 
         // Upgrade CO
         changeClusterOperator(acrossUpgradeData, TestConstants.CO_NAMESPACE, extensionContext);
@@ -165,7 +171,7 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
         PodUtils.verifyThatRunningPodsAreStable(TestConstants.CO_NAMESPACE, clusterName);
 
         // Verify upgrade
-        verifyProcedure(acrossUpgradeData, testStorage.getProducerName(), testStorage.getConsumerName(), TestConstants.CO_NAMESPACE);
+        verifyProcedure(acrossUpgradeData, testStorage.getProducerName(), testStorage.getConsumerName(), TestConstants.CO_NAMESPACE, wasUTOUsedBefore);
     }
 
     @IsolatedTest
@@ -177,7 +183,7 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
     }
 
     private void performUpgrade(BundleVersionModificationData upgradeData, ExtensionContext extensionContext) throws IOException {
-        TestStorage testStorage = new TestStorage(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         // leave empty, so the original Kafka version from appropriate Strimzi's yaml will be used
         UpgradeKafkaVersion upgradeKafkaVersion = new UpgradeKafkaVersion();
@@ -187,6 +193,9 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
 
         // Upgrade CO to HEAD
         logPodImages(TestConstants.CO_NAMESPACE);
+
+        // Check if UTO is used before changing the CO -> used for check for KafkaTopics
+        boolean wasUTOUsedBefore = StUtils.isUnidirectionalTopicOperatorUsed(TestConstants.CO_NAMESPACE, eoSelector);
 
         changeClusterOperator(upgradeData, TestConstants.CO_NAMESPACE, extensionContext);
 
@@ -207,7 +216,7 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
         PodUtils.verifyThatRunningPodsAreStable(TestConstants.CO_NAMESPACE, clusterName);
 
         // Verify upgrade
-        verifyProcedure(upgradeData, testStorage.getProducerName(), testStorage.getConsumerName(), TestConstants.CO_NAMESPACE);
+        verifyProcedure(upgradeData, testStorage.getProducerName(), testStorage.getConsumerName(), TestConstants.CO_NAMESPACE, wasUTOUsedBefore);
     }
 
     @BeforeEach
@@ -216,10 +225,7 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
     }
 
     protected void afterEachMayOverride(ExtensionContext extensionContext) {
-        // delete all topics created in test
-        cmdKubeClient(TestConstants.CO_NAMESPACE).deleteAllByResource(KafkaTopic.RESOURCE_KIND);
-        KafkaTopicUtils.waitForTopicWithPrefixDeletion(TestConstants.CO_NAMESPACE, topicName);
-
+        cleanUpKafkaTopics();
         ResourceManager.getInstance().deleteResources(extensionContext);
         NamespaceManager.getInstance().deleteNamespaceWithWait(CO_NAMESPACE);
     }

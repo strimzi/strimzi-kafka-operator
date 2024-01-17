@@ -57,8 +57,9 @@ Stable feature gates have reached a beta level of maturity, and are generally en
 Stable feature gates are production-ready, but they can still be disabled.
 
 [id='ref-operator-use-kraft-feature-gate-{context}']
-=== UseKRaft feature gate
+== UseKRaft feature gate
 
+The `UseKRaft` feature gate has a default state of _enabled_.
 The `UseKRaft` feature gate has a default state of _enabled_.
 
 The `UseKRaft` feature gate deploys a Kafka cluster in KRaft (Kafka Raft metadata) mode without ZooKeeper.
@@ -68,33 +69,22 @@ In KRaft mode, Kafka nodes take on the roles of brokers, controllers, or both.
 They collectively manage the metadata, which is replicated across partitions. 
 Controllers are responsible for coordinating operations and maintaining the cluster's state.
 
-IMPORTANT: **KRaft mode is not ready for production in Apache Kafka or in Strimzi. This feature gate is currently intended only for development and testing.**
-
-Enabling the `UseKRaft` feature gate requires the `KafkaNodePools` feature gate to be enabled as well.
+Using the `UseKRaft` feature gate requires the `KafkaNodePools` feature gate to be enabled as well.
 To deploy a Kafka cluster in KRaft mode, you must use the `KafkaNodePool` resources.
 For more details and examples, see xref:deploying-kafka-node-pools-{context}[].
 The `Kafka` custom resource using KRaft mode must also have the annotation `strimzi.io/kraft: enabled`.
 
-When the `UseKRaft` feature gate is enabled and such annotation is set, the Kafka cluster is deployed without ZooKeeper.
-*The `.spec.zookeeper` properties in the `Kafka` custom resource are ignored, but still need to be present.*
-The `UseKRaft` feature gate provides an API that configures Kafka cluster nodes and their roles.
-The API is still in development and is expected to change before the KRaft mode is production-ready.
-
 Currently, the KRaft mode in Strimzi has the following major limitations:
 
 * Moving from Kafka clusters with ZooKeeper to KRaft clusters or the other way around is not supported.
-* Controller-only nodes cannot undergo rolling updates or be updated individually.
-* Upgrades and downgrades of Apache Kafka versions or the Strimzi operator are not supported.
-  Users might need to delete the cluster, upgrade the operator and deploy a new Kafka cluster.
 * Only the _Unidirectional_ Topic Operator is supported in KRaft mode.
-  The _Bidirectional_ Topic Operator is not supported and when the `UnidirectionalTopicOperator` feature gate is not enabled, the `spec.entityOperator.topicOperator` property *must be removed* from the `Kafka` custom resource.
+  The _Bidirectional_ Topic Operator is not supported and when the `UnidirectionalTopicOperator` feature gate is disabled, the `spec.entityOperator.topicOperator` property *must be removed* from the `Kafka` custom resource.
 * JBOD storage is not supported. 
   The `type: jbod` storage can be used, but the JBOD array can contain only one disk.
+* Scaling of KRaft controller-only nodes up or down is not supported.
 
-.Enabling the UseKRaft feature gate
-To enable the `UseKRaft` feature gate, specify `+UseKRaft` in the `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.
-The `Kafka` custom resource using KRaft mode must also have the annotation `strimzi.io/kraft: enabled`.
-If this annotation is set to `disabled` or any other value, or if it is missing, the operator handles the `Kafka` custom resource as if it is using ZooKeeper for cluster management.
+.Disabling the UseKRaft feature gate
+To disable the `UseKRaft` feature gate, specify `-UseKRaft` in the `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.
 
 [id='ref-operator-kafka-node-pools-feature-gate-{context}']
 === KafkaNodePools feature gate

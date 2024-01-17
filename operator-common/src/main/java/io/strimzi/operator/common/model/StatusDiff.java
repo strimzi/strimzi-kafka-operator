@@ -6,7 +6,7 @@ package io.strimzi.operator.common.model;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import io.fabric8.zjsonpatch.JsonDiff;
-import io.strimzi.api.kafka.model.status.Status;
+import io.strimzi.api.kafka.model.kafka.Status;
 import io.strimzi.operator.common.ReconciliationLogger;
 
 import java.util.regex.Pattern;

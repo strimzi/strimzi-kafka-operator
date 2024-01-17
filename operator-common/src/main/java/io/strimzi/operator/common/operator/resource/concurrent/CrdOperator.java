@@ -4,10 +4,6 @@
  */
 package io.strimzi.operator.common.operator.resource.concurrent;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
-import java.util.concurrent.Executor;
-
 import io.fabric8.kubernetes.api.model.DefaultKubernetesResourceList;
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.client.CustomResource;
@@ -19,6 +15,10 @@ import io.fabric8.kubernetes.client.dsl.base.PatchType;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
+
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Executor;
 
 /**
  * Operator for managing CRD resources
@@ -78,7 +78,7 @@ public class CrdOperator<C extends KubernetesClient,
             "deleted",
             1_000,
             deleteTimeoutMs(),
-            () -> resourceOp.get() != null)
+            () -> resourceOp.get() == null)
             .toCompletableFuture();
 
         CompletableFuture<Void> deleteFuture = resourceSupport.deleteAsync(resourceOp.withPropagationPolicy(cascading ? DeletionPropagation.FOREGROUND : DeletionPropagation.ORPHAN).withGracePeriod(-1L))

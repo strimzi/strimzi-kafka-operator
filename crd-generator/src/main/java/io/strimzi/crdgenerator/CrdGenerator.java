@@ -4,31 +4,6 @@
  */
 package io.strimzi.crdgenerator;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.AnnotatedElement;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.lang.reflect.ParameterizedType;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Objects;
-import java.util.TreeMap;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
@@ -54,6 +29,31 @@ import io.strimzi.crdgenerator.annotations.MinimumItems;
 import io.strimzi.crdgenerator.annotations.OneOf;
 import io.strimzi.crdgenerator.annotations.Pattern;
 import io.strimzi.crdgenerator.annotations.Type;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.TreeMap;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static io.strimzi.api.annotations.ApiVersion.V1;
 import static io.strimzi.crdgenerator.Property.hasAnyGetterAndAnySetter;
@@ -645,7 +645,7 @@ class CrdGenerator {
         }
         checkInherits(crdClass, "java.io.Serializable");
         if (crdClass.getName().startsWith("io.strimzi.api.")) {
-            checkInherits(crdClass, "io.strimzi.api.kafka.model.UnknownPropertyPreserving");
+            checkInherits(crdClass, "io.strimzi.api.kafka.model.common.UnknownPropertyPreserving");
         }
         if (!Modifier.isAbstract(crdClass.getModifiers())) {
             checkClassOverrides(crdClass, "hashCode");
@@ -739,10 +739,33 @@ class CrdGenerator {
 
     private ObjectNode buildSchemaProperties(ApiVersion crApiVersion, Class<?> crdClass, boolean description) {
         ObjectNode properties = nf.objectNode();
+
+        buildKindApiVersionAndMetadata(properties, crdClass);
+
         for (Property property : unionOfSubclassProperties(crApiVersion, crdClass)) {
             buildProperty(crApiVersion, properties, property, description);
         }
         return properties;
+    }
+
+    private void buildKindApiVersionAndMetadata(ObjectNode properties, Class<?> crdClass)   {
+        if (crdClass.isAnnotationPresent(Crd.class))    {
+            // Add metadata to the CRD class root
+            ObjectNode apiVersion = properties.putObject("apiVersion");
+            apiVersion.put("type", "string");
+            apiVersion.put("description", "APIVersion defines the versioned schema of this representation of an object. " +
+                    "Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. " +
+                    "More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources");
+
+            ObjectNode kind = properties.putObject("kind");
+            kind.put("type", "string");
+            kind.put("description", "Kind is a string value representing the REST resource this object " +
+                    "represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. " +
+                    "In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds");
+
+            ObjectNode metadata = properties.putObject("metadata");
+            metadata.put("type", "object");
+        }
     }
 
     private void buildProperty(ApiVersion crdApiVersion, ObjectNode properties, Property property, boolean description) {
@@ -798,7 +821,12 @@ class CrdGenerator {
                 || long.class.equals(elementType)) {
             itemResult.put("type", "integer");
         } else if (Map.class.equals(elementType)) {
-            preserveUnknownFields(itemResult);
+            if (isStringStringMap(propertyType)) {
+                preserveUnknownStringFields(itemResult);
+            } else {
+                preserveUnknownFields(itemResult);
+            }
+
             itemResult.put("type", "object");
         } else if (elementType.isEnum()) {
             itemResult.put("type", "string");
@@ -815,7 +843,12 @@ class CrdGenerator {
         return result;
     }
 
-    private ObjectNode buildBasicTypeSchema(AnnotatedElement element, Class type) {
+    private boolean isStringStringMap(PropertyType propertyType) {
+        java.lang.reflect.Type[] types = ((ParameterizedType) propertyType.getGenericType()).getActualTypeArguments();
+        return String.class.equals(types[0]) && String.class.equals(types[1]);
+    }
+
+    private ObjectNode buildBasicTypeSchema(Property element, Class type) {
         ObjectNode result = nf.objectNode();
 
         String typeName;
@@ -823,7 +856,11 @@ class CrdGenerator {
         if (typeAnno == null) {
             typeName = typeName(type);
             if (Map.class.equals(type)) {
-                preserveUnknownFields(result);
+                if (isStringStringMap(element.getType())) {
+                    preserveUnknownStringFields(result);
+                } else {
+                    preserveUnknownFields(result);
+                }
             }
         } else {
             typeName = typeAnno.value();
@@ -836,6 +873,13 @@ class CrdGenerator {
     private void preserveUnknownFields(ObjectNode result)    {
         if (crdApiVersion.compareTo(V1) >= 0) {
             result.put("x-kubernetes-preserve-unknown-fields", true);
+        }
+    }
+
+    private void preserveUnknownStringFields(ObjectNode result)    {
+        if (crdApiVersion.compareTo(V1) >= 0) {
+            ObjectNode additionalProperties = result.putObject("additionalProperties");
+            additionalProperties.put("type", "string");
         }
     }
 

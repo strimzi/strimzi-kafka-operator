@@ -9,15 +9,15 @@ import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.server.mock.EnableKubernetesMockClient;
 import io.strimzi.api.kafka.Crds;
-import io.strimzi.api.kafka.model.Kafka;
-import io.strimzi.api.kafka.model.KafkaBuilder;
-import io.strimzi.api.kafka.model.StrimziPodSet;
-import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
-import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
+import io.strimzi.api.kafka.model.kafka.Kafka;
+import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
+import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
+import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
+import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolBuilder;
 import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
-import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
+import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
@@ -88,30 +88,16 @@ public class KafkaAssemblyOperatorWithPoolsKRaftMockTest {
                 .withNewSpec()
                     .withNewKafka()
                         .withConfig(new HashMap<>())
-                        .withReplicas(3)
                         .withListeners(new GenericKafkaListenerBuilder()
                                 .withName("tls")
                                 .withPort(9092)
                                 .withType(KafkaListenerType.INTERNAL)
                                 .withTls(true)
                                 .build())
-                        .withNewPersistentClaimStorage()
-                            .withSize("123")
-                            .withStorageClass("foo")
-                            .withDeleteClaim(true)
-                        .endPersistentClaimStorage()
                     .endKafka()
-                    .withNewZookeeper()
-                        .withReplicas(3)
-                        .withNewPersistentClaimStorage()
-                            .withSize("123")
-                            .withStorageClass("foo")
-                            .withDeleteClaim(true)
-                        .endPersistentClaimStorage()
-                    .endZookeeper()
                 .endSpec()
                 .withNewStatus()
-                .withClusterId("CLUSTERID") // Needed to avoid CLuster ID conflicts => should be the same as used in the Kafka Admin API
+                    .withClusterId("CLUSTERID") // Needed to avoid CLuster ID conflicts => should be the same as used in the Kafka Admin API
                 .endStatus()
                 .build();
 
@@ -173,7 +159,6 @@ public class KafkaAssemblyOperatorWithPoolsKRaftMockTest {
 
         ClusterOperatorConfig config = new ClusterOperatorConfig.ClusterOperatorConfigBuilder(ResourceUtils.dummyClusterOperatorConfig(), VERSIONS)
                 .with(ClusterOperatorConfig.OPERATION_TIMEOUT_MS.key(), "10000")
-                .with(ClusterOperatorConfig.FEATURE_GATES.key(), "+UseKRaft")
                 .build();
         operator = new KafkaAssemblyOperator(vertx, pfa, new MockCertManager(),
                 new PasswordGenerator(10, "a", "a"), supplier, config);

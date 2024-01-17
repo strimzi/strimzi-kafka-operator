@@ -5,9 +5,9 @@
 package io.strimzi.operator.common.model;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.strimzi.api.kafka.model.Kafka;
-import io.strimzi.api.kafka.model.KafkaBuilder;
-import io.strimzi.api.kafka.model.status.Condition;
+import io.strimzi.api.kafka.model.common.Condition;
+import io.strimzi.api.kafka.model.kafka.Kafka;
+import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.logging.TestLogger;

@@ -8,14 +8,14 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.operator.common.OperatorKubernetesClientBuilder;
 import io.strimzi.operator.common.ShutdownHook;
 import io.vertx.core.Vertx;
-
-import java.util.HashMap;
-import java.util.Map;
 import io.vertx.core.VertxOptions;
 import io.vertx.micrometer.MicrometerMetricsOptions;
 import io.vertx.micrometer.VertxPrometheusOptions;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * The entry-point to the topic operator.

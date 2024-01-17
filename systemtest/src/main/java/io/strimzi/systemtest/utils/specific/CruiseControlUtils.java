@@ -5,7 +5,7 @@
 package io.strimzi.systemtest.utils.specific;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import io.strimzi.api.kafka.model.KafkaTopic;
+import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlEndpoints;
 import io.strimzi.systemtest.TestConstants;
@@ -13,9 +13,9 @@ import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.Level;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;

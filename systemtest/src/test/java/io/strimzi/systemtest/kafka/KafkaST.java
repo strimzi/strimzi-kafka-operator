@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.kafka;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Pod;
@@ -13,25 +14,24 @@ import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.Service;
-import io.fabric8.kubernetes.api.model.Container;
-import io.strimzi.api.kafka.KafkaTopicList;
-import io.strimzi.api.kafka.model.EntityUserOperatorSpec;
-import io.strimzi.api.kafka.model.Kafka;
-import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.KafkaTopic;
-import io.strimzi.api.kafka.model.SystemProperty;
-import io.strimzi.api.kafka.model.SystemPropertyBuilder;
-import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListener;
-import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
-import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
-import io.strimzi.api.kafka.model.storage.JbodStorage;
-import io.strimzi.api.kafka.model.storage.JbodStorageBuilder;
-import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
-import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
+import io.strimzi.api.kafka.model.common.SystemProperty;
+import io.strimzi.api.kafka.model.common.SystemPropertyBuilder;
+import io.strimzi.api.kafka.model.kafka.JbodStorage;
+import io.strimzi.api.kafka.model.kafka.JbodStorageBuilder;
+import io.strimzi.api.kafka.model.kafka.Kafka;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.api.kafka.model.kafka.PersistentClaimStorage;
+import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
+import io.strimzi.api.kafka.model.kafka.entityoperator.EntityUserOperatorSpec;
+import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener;
+import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
+import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
+import io.strimzi.api.kafka.model.topic.KafkaTopic;
+import io.strimzi.api.kafka.model.topic.KafkaTopicList;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.annotations.KRaftWithoutUTONotSupported;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
@@ -111,8 +111,8 @@ class KafkaST extends AbstractST {
         final TestStorage testStorage = storageMap.get(extensionContext);
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Environment.TEST_SUITE_NAMESPACE, extensionContext);
         final String clusterName = testStorage.getClusterName();
-        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
-        final LabelSelector zkSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.zookeeperStatefulSetName(clusterName));
+        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaComponentName(clusterName));
+        final LabelSelector zkSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.zookeeperComponentName(clusterName));
 
         ArrayList<SystemProperty> javaSystemProps = new ArrayList<>();
         javaSystemProps.add(new SystemPropertyBuilder().withName("javax.net.debug")
@@ -448,7 +448,7 @@ class KafkaST extends AbstractST {
         final TestStorage testStorage = storageMap.get(extensionContext);
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Environment.TEST_SUITE_NAMESPACE, extensionContext);
         final String clusterName = testStorage.getClusterName();
-        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
+        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaComponentName(clusterName));
 
         LOGGER.info("Creating Kafka without external listener");
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 1).build());
@@ -484,7 +484,7 @@ class KafkaST extends AbstractST {
         Secret secretsWithExt = kubeClient(namespaceName).getSecret(namespaceName, brokerSecret);
 
         LOGGER.info("Checking Secrets");
-        kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName)).forEach(kafkaPod -> {
+        kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, KafkaResources.kafkaComponentName(clusterName)).forEach(kafkaPod -> {
             String kafkaPodName = kafkaPod.getMetadata().getName();
             assertThat(secretsWithExt.getData().get(kafkaPodName + ".crt"), is(not(secretsWithoutExt.getData().get(kafkaPodName + ".crt"))));
             assertThat(secretsWithExt.getData().get(kafkaPodName + ".key"), is(not(secretsWithoutExt.getData().get(kafkaPodName + ".key"))));

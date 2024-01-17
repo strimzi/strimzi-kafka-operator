@@ -5,12 +5,12 @@
 package io.strimzi.systemtest.security.oauth;
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
-import io.strimzi.api.kafka.model.KafkaConnectResources;
-import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationOAuth;
-import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListener;
-import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
-import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
+import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener;
+import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
+import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationOAuth;
+import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.FIPSNotSupported;
 import io.strimzi.systemtest.annotations.IsolatedTest;
@@ -91,10 +91,10 @@ public class OauthScopeST extends OauthAbstractST {
                 .endSpec()
             .build());
 
-        String kafkaConnectPodName = PodUtils.getPodsByPrefixInNameWithDynamicWait(Environment.TEST_SUITE_NAMESPACE, KafkaConnectResources.deploymentName(clusterName)).get(0).getMetadata().getName();
+        String kafkaConnectPodName = PodUtils.getPodsByPrefixInNameWithDynamicWait(Environment.TEST_SUITE_NAMESPACE, KafkaConnectResources.componentName(clusterName)).get(0).getMetadata().getName();
 
         // we except that "Token validation failed: Custom claim check failed because we specify scope='null'"
-        StUtils.waitUntilLogFromPodContainsString(Environment.TEST_SUITE_NAMESPACE, kafkaConnectPodName, KafkaConnectResources.deploymentName(clusterName), "30s", "Token validation failed: Custom claim check failed");
+        StUtils.waitUntilLogFromPodContainsString(Environment.TEST_SUITE_NAMESPACE, kafkaConnectPodName, KafkaConnectResources.componentName(clusterName), "30s", "Token validation failed: Custom claim check failed");
     }
 
     @ParallelTest
@@ -156,7 +156,7 @@ public class OauthScopeST extends OauthAbstractST {
             .withConsumerName(consumerName)
             .withBootstrapAddress(KafkaResources.bootstrapServiceName(oauthClusterName) + ":" + scopeListenerPort)
             .withTopicName(topicName)
-            .withMessageCount(MESSAGE_COUNT)
+            .withMessageCount(testStorage.getMessageCount())
             // configures SASL/PLAIN to be used
             .withAdditionalConfig(additionalOauthConfig)
             .build();
@@ -168,7 +168,7 @@ public class OauthScopeST extends OauthAbstractST {
 
         resourceManager.createResourceWithWait(extensionContext, oauthInternalClientChecksJob.producerStrimzi());
         // client should succeeded because we set to `clientScope=test` and also Kafka has `scope=test`
-        ClientUtils.waitForClientSuccess(producerName, Environment.TEST_SUITE_NAMESPACE, MESSAGE_COUNT);
+        ClientUtils.waitForClientSuccess(producerName, Environment.TEST_SUITE_NAMESPACE, testStorage.getMessageCount());
     }
 
     @IsolatedTest("Modification of shared Kafka cluster")
@@ -178,7 +178,7 @@ public class OauthScopeST extends OauthAbstractST {
         final String producerName = OAUTH_PRODUCER_NAME + "-" + clusterName;
         final String consumerName = OAUTH_CONSUMER_NAME + "-" + clusterName;
         final String topicName = testStorage.getTopicName();
-        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(oauthClusterName, KafkaResources.kafkaStatefulSetName(oauthClusterName));
+        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(oauthClusterName, KafkaResources.kafkaComponentName(oauthClusterName));
 
         KafkaClients oauthInternalClientChecksJob = new KafkaClientsBuilder()
             .withNamespaceName(Environment.TEST_SUITE_NAMESPACE)
@@ -186,7 +186,7 @@ public class OauthScopeST extends OauthAbstractST {
             .withConsumerName(consumerName)
             .withBootstrapAddress(KafkaResources.bootstrapServiceName(oauthClusterName) + ":" + scopeListenerPort)
             .withTopicName(topicName)
-            .withMessageCount(MESSAGE_COUNT)
+            .withMessageCount(testStorage.getMessageCount())
             // configures SASL/PLAIN to be used
             .withAdditionalConfig(additionalOauthConfig)
             .build();
@@ -213,7 +213,7 @@ public class OauthScopeST extends OauthAbstractST {
         // client should fail because the listener requires scope: 'test' in JWT token but was (the listener) temporarily
         // configured without clientScope resulting in a JWT token without the scope claim when using the clientId and
         // secret passed via SASL/PLAIN to obtain an access token in client's name.
-        ClientUtils.waitForClientTimeout(producerName, Environment.TEST_SUITE_NAMESPACE, MESSAGE_COUNT);
+        ClientUtils.waitForClientTimeout(producerName, Environment.TEST_SUITE_NAMESPACE, testStorage.getMessageCount());
         JobUtils.deleteJobWithWait(Environment.TEST_SUITE_NAMESPACE, producerName);
 
         // rollback previous configuration

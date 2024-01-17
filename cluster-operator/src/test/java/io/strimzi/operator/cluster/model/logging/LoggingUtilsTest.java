@@ -6,12 +6,12 @@ package io.strimzi.operator.cluster.model.logging;
 
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMapKeySelector;
-import io.strimzi.api.kafka.model.ExternalLoggingBuilder;
-import io.strimzi.api.kafka.model.InlineLoggingBuilder;
-import io.strimzi.api.kafka.model.KafkaConnectSpec;
-import io.strimzi.api.kafka.model.KafkaConnectSpecBuilder;
-import io.strimzi.operator.common.model.InvalidResourceException;
+import io.strimzi.api.kafka.model.common.ExternalLoggingBuilder;
+import io.strimzi.api.kafka.model.common.InlineLoggingBuilder;
+import io.strimzi.api.kafka.model.connect.KafkaConnectSpec;
+import io.strimzi.api.kafka.model.connect.KafkaConnectSpecBuilder;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.OrderedProperties;
 import org.junit.jupiter.api.Test;
 

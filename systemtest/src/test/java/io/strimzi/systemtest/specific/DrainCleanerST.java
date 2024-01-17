@@ -4,10 +4,10 @@
  */
 package io.strimzi.systemtest.specific;
 
-import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.MicroShiftNotSupported;
 import io.strimzi.systemtest.annotations.RequiredMinKubeApiVersion;
@@ -48,7 +48,7 @@ public class DrainCleanerST extends AbstractST {
     @IsolatedTest
     @RequiredMinKubeApiVersion(version = 1.17)
     void testDrainCleanerWithComponents(ExtensionContext extensionContext) {
-        TestStorage testStorage = new TestStorage(extensionContext, TestConstants.DRAIN_CLEANER_NAMESPACE);
+        final TestStorage testStorage = new TestStorage(extensionContext, TestConstants.DRAIN_CLEANER_NAMESPACE);
 
         final int replicas = 3;
 

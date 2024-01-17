@@ -6,11 +6,11 @@ package io.strimzi.systemtest.watcher;
 
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
-import io.strimzi.api.kafka.model.CruiseControlSpec;
-import io.strimzi.api.kafka.model.KafkaConnect;
-import io.strimzi.api.kafka.model.KafkaExporterSpec;
-import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.status.Condition;
+import io.strimzi.api.kafka.model.common.Condition;
+import io.strimzi.api.kafka.model.connect.KafkaConnect;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlSpec;
+import io.strimzi.api.kafka.model.kafka.exporter.KafkaExporterSpec;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
@@ -295,7 +295,7 @@ public abstract class AbstractNamespaceST extends AbstractST {
 
         // Deploy Kafka Connector
         Map<String, Object> connectorConfig = new HashMap<>();
-        connectorConfig.put("topics", TOPIC_NAME);
+        connectorConfig.put("topics", testStorage.getTopicName());
         connectorConfig.put("file", TestConstants.DEFAULT_SINK_FILE_PATH);
         connectorConfig.put("key.converter", "org.apache.kafka.connect.storage.StringConverter");
         connectorConfig.put("value.converter", "org.apache.kafka.connect.storage.StringConverter");
@@ -317,7 +317,7 @@ public abstract class AbstractNamespaceST extends AbstractST {
         KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(testStorage.getNamespaceName(), kafkaConnectPodName);
 
         KafkaClients kafkaClients = new KafkaClientsBuilder()
-            .withTopicName(TOPIC_NAME)
+            .withTopicName(testStorage.getTopicName())
             .withMessageCount(testStorage.getMessageCount())
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(PRIMARY_KAFKA_NAME))
             .withProducerName(testStorage.getProducerName())

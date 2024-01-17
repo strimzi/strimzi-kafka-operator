@@ -10,12 +10,12 @@ import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
-import io.strimzi.api.kafka.KafkaMirrorMaker2List;
-import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
+import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2;
+import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2List;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceType;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaMirrorMaker2Utils;
-import io.strimzi.systemtest.resources.ResourceManager;
 
 import java.util.HashMap;
 import java.util.Map;

@@ -6,9 +6,9 @@ package io.strimzi.plugin.security.profiles.impl;
 
 import io.fabric8.kubernetes.api.model.PodSecurityContext;
 import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
-import io.strimzi.api.kafka.model.storage.JbodStorage;
-import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
-import io.strimzi.api.kafka.model.storage.Storage;
+import io.strimzi.api.kafka.model.kafka.JbodStorage;
+import io.strimzi.api.kafka.model.kafka.PersistentClaimStorage;
+import io.strimzi.api.kafka.model.kafka.Storage;
 import io.strimzi.platform.PlatformFeatures;
 import io.strimzi.plugin.security.profiles.PodSecurityProvider;
 import io.strimzi.plugin.security.profiles.PodSecurityProviderContext;

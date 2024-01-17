@@ -18,19 +18,19 @@ import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
-import io.strimzi.api.kafka.KafkaConnectList;
-import io.strimzi.api.kafka.KafkaConnectorList;
-import io.strimzi.api.kafka.model.KafkaConnect;
-import io.strimzi.api.kafka.model.KafkaConnectBuilder;
-import io.strimzi.api.kafka.model.KafkaConnectResources;
-import io.strimzi.api.kafka.model.KafkaConnector;
-import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
 import io.strimzi.api.kafka.model.connect.ConnectorPluginBuilder;
+import io.strimzi.api.kafka.model.connect.KafkaConnect;
+import io.strimzi.api.kafka.model.connect.KafkaConnectBuilder;
+import io.strimzi.api.kafka.model.connect.KafkaConnectList;
+import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
+import io.strimzi.api.kafka.model.connect.KafkaConnectStatus;
 import io.strimzi.api.kafka.model.connect.build.BuildBuilder;
 import io.strimzi.api.kafka.model.connect.build.JarArtifactBuilder;
 import io.strimzi.api.kafka.model.connect.build.PluginBuilder;
-import io.strimzi.api.kafka.model.status.KafkaConnectStatus;
+import io.strimzi.api.kafka.model.connector.KafkaConnector;
+import io.strimzi.api.kafka.model.connector.KafkaConnectorList;
+import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
@@ -1483,7 +1483,7 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
 
         Deployment deployment = new DeploymentBuilder()
                 .withNewMetadata()
-                    .withName(KafkaConnectResources.deploymentName(NAME))
+                    .withName(KafkaConnectResources.componentName(NAME))
                 .endMetadata()
                 .withNewSpec()
                     .withReplicas(3)
@@ -1655,7 +1655,7 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
         when(mockConnectOps.updateStatusAsync(any(), connectCaptor.capture())).thenReturn(Future.succeededFuture());
         when(mockDcOps.getAsync(kcNamespace, connect.getComponentName())).thenReturn(Future.succeededFuture(null));
         when(mockPodSetOps.getAsync(any(), any())).thenReturn(Future.succeededFuture());
-        when(mockNetPolOps.reconcile(any(), eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.deploymentName(kc.getMetadata().getName())), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
+        when(mockNetPolOps.reconcile(any(), eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.componentName(kc.getMetadata().getName())), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
         when(mockBcOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture());
         when(mockIsOps.getAsync(kcNamespace, kcName)).thenReturn(Future.succeededFuture());
         when(mockPodOps.listAsync(eq(kcNamespace), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));

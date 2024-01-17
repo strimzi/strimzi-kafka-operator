@@ -4,7 +4,7 @@
  */
 package io.strimzi.operator.user.operator;
 
-import io.strimzi.api.kafka.model.KafkaUserQuotas;
+import io.strimzi.api.kafka.model.user.KafkaUserQuotas;
 import io.strimzi.operator.user.ResourceUtils;
 import io.strimzi.operator.user.model.QuotaUtils;
 import org.apache.kafka.common.quota.ClientQuotaEntity;

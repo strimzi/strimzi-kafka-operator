@@ -4,7 +4,7 @@
  */
 package io.strimzi.systemtest.kafka.dynamicconfiguration;
 
-import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.kafka.config.model.ConfigModel;
 import io.strimzi.kafka.config.model.Type;
 import io.strimzi.systemtest.AbstractST;
@@ -27,13 +27,14 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
 import static io.strimzi.systemtest.TestConstants.DYNAMIC_CONFIGURATION;
 import static io.strimzi.systemtest.TestConstants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * DynamicConfigurationSharedST is responsible for verify that if we change dynamic Kafka configuration it will not
@@ -49,6 +50,7 @@ public class DynamicConfSharedST extends AbstractST {
     private final String dynamicConfigurationSharedClusterName = "dynamic-config-shared";
 
     private String scraperPodName;
+    private static Random rng = new Random();
 
     @TestFactory
     Iterator<DynamicTest> testDynConfiguration() {
@@ -68,7 +70,7 @@ public class DynamicConfSharedST extends AbstractST {
                 // verify phase
                 assertThat(KafkaUtils.verifyCrDynamicConfiguration(Environment.TEST_SUITE_NAMESPACE, dynamicConfigurationSharedClusterName, key, value), is(true));
                 assertThat(KafkaUtils.verifyPodDynamicConfiguration(Environment.TEST_SUITE_NAMESPACE, scraperPodName,
-                    KafkaResources.plainBootstrapAddress(dynamicConfigurationSharedClusterName), KafkaResources.kafkaStatefulSetName(dynamicConfigurationSharedClusterName), key, value), is(true));
+                    KafkaResources.plainBootstrapAddress(dynamicConfigurationSharedClusterName), KafkaResources.kafkaComponentName(dynamicConfigurationSharedClusterName), key, value), is(true));
             }));
         }
 

@@ -5,7 +5,7 @@
 package io.strimzi.operator.topic;
 
 import io.fabric8.kubernetes.client.Watcher;
-import io.strimzi.api.kafka.model.KafkaTopic;
+import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.vertx.core.Future;
 
 import java.util.ArrayList;

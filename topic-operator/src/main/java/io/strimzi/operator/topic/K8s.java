@@ -5,7 +5,7 @@
 package io.strimzi.operator.topic;
 
 import io.fabric8.kubernetes.api.model.Event;
-import io.strimzi.api.kafka.model.KafkaTopic;
+import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.operator.common.Reconciliation;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;

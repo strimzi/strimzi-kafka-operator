@@ -10,22 +10,22 @@ import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.strimzi.api.kafka.KafkaList;
-import io.strimzi.api.kafka.KafkaNodePoolList;
-import io.strimzi.api.kafka.model.Kafka;
-import io.strimzi.api.kafka.model.KafkaBuilder;
-import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.StrimziPodSet;
-import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
-import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
+import io.strimzi.api.kafka.model.kafka.JbodStorageBuilder;
+import io.strimzi.api.kafka.model.kafka.Kafka;
+import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
+import io.strimzi.api.kafka.model.kafka.KafkaList;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.api.kafka.model.kafka.KafkaStatus;
+import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
+import io.strimzi.api.kafka.model.kafka.Storage;
+import io.strimzi.api.kafka.model.kafka.UsedNodePoolStatus;
+import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
+import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolBuilder;
+import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolList;
 import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
-import io.strimzi.api.kafka.model.status.KafkaStatus;
-import io.strimzi.api.kafka.model.status.UsedNodePoolStatus;
-import io.strimzi.api.kafka.model.storage.JbodStorageBuilder;
-import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
-import io.strimzi.api.kafka.model.storage.Storage;
+import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.certs.CertManager;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
@@ -33,28 +33,28 @@ import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
-import io.strimzi.operator.common.model.ClientsCa;
 import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaPool;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.KafkaVersionChange;
+import io.strimzi.operator.cluster.model.MetricsAndLogging;
+import io.strimzi.operator.cluster.model.MockSharedEnvironmentProvider;
 import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.cluster.model.RestartReason;
 import io.strimzi.operator.cluster.model.RestartReasons;
+import io.strimzi.operator.cluster.model.SharedEnvironmentProvider;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.cluster.model.nodepools.NodePoolUtils;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.InvalidConfigurationException;
-import io.strimzi.operator.cluster.model.MetricsAndLogging;
-import io.strimzi.operator.cluster.model.MockSharedEnvironmentProvider;
-import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.cluster.model.SharedEnvironmentProvider;
+import io.strimzi.operator.common.model.ClientsCa;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
@@ -129,15 +129,12 @@ public class KafkaAssemblyOperatorWithPoolsTest {
                 .endMetadata()
                 .withNewSpec()
                     .withNewKafka()
-                        .withReplicas(3)
                         .withListeners(new GenericKafkaListenerBuilder()
                                 .withName("plain")
                                 .withPort(9092)
                                 .withType(KafkaListenerType.INTERNAL)
                                 .withTls(false)
                                 .build())
-                        .withNewEphemeralStorage()
-                        .endEphemeralStorage()
                     .endKafka()
                     .withNewZookeeper()
                         .withReplicas(3)
@@ -1347,8 +1344,11 @@ public class KafkaAssemblyOperatorWithPoolsTest {
     public void testKRaftClusterWithoutNodePools(VertxTestContext context)  {
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editMetadata()
-                .withAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled"))
+                    .withAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled"))
                 .endMetadata()
+                .editSpec()
+                    .withZookeeper(null)
+                .endSpec()
                 .build();
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
@@ -1356,9 +1356,7 @@ public class KafkaAssemblyOperatorWithPoolsTest {
         CrdOperator<KubernetesClient, Kafka, KafkaList> mockKafkaOps = supplier.kafkaOperator;
         when(mockKafkaOps.getAsync(eq(NAMESPACE), eq(CLUSTER_NAME))).thenReturn(Future.succeededFuture(kafka));
 
-        ClusterOperatorConfig config = new ClusterOperatorConfig.ClusterOperatorConfigBuilder(ResourceUtils.dummyClusterOperatorConfig(), VERSIONS)
-                .with(ClusterOperatorConfig.FEATURE_GATES.key(), "+UseKRaft")
-                .build();
+        ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
 
         KafkaAssemblyOperator kao = new KafkaAssemblyOperator(
                 vertx, new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
@@ -1396,8 +1394,11 @@ public class KafkaAssemblyOperatorWithPoolsTest {
         CrdOperator<KubernetesClient, Kafka, KafkaList> mockKafkaOps = supplier.kafkaOperator;
         Kafka kraftEnabledKafka = new KafkaBuilder(KAFKA)
                 .editMetadata()
-                        .addToAnnotations(Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled")
+                    .addToAnnotations(Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled")
                 .endMetadata()
+                .editSpec()
+                    .withZookeeper(null)
+                .endSpec()
                 .build();
         when(mockKafkaOps.getAsync(eq(NAMESPACE), eq(CLUSTER_NAME))).thenReturn(Future.succeededFuture(kraftEnabledKafka));
         when(mockKafkaOps.updateStatusAsync(any(), any())).thenReturn(Future.succeededFuture());
@@ -1412,9 +1413,7 @@ public class KafkaAssemblyOperatorWithPoolsTest {
         CrdOperator<KubernetesClient, KafkaNodePool, KafkaNodePoolList> mockKafkaNodePoolOps = supplier.kafkaNodePoolOperator;
         when(mockKafkaNodePoolOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(null));
 
-        ClusterOperatorConfig config = new ClusterOperatorConfig.ClusterOperatorConfigBuilder(ResourceUtils.dummyClusterOperatorConfig(), VERSIONS)
-                .with(ClusterOperatorConfig.FEATURE_GATES.key(), "+UseKRaft")
-                .build();
+        ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
 
         KafkaAssemblyOperator kao = new KafkaAssemblyOperator(
                 vertx, new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),

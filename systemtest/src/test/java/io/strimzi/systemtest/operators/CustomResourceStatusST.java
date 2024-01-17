@@ -9,32 +9,33 @@ import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Service;
-import io.strimzi.api.kafka.model.AclOperation;
-import io.strimzi.api.kafka.model.AclRule;
-import io.strimzi.api.kafka.model.AclRuleBuilder;
-import io.strimzi.api.kafka.model.KafkaBridgeResources;
-import io.strimzi.api.kafka.model.KafkaBuilder;
-import io.strimzi.api.kafka.model.KafkaConnectResources;
-import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
-import io.strimzi.api.kafka.model.KafkaMirrorMaker2Resources;
-import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.bridge.KafkaBridgeResources;
+import io.strimzi.api.kafka.model.bridge.KafkaBridgeStatus;
+import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
-import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListener;
-import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
-import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
-import io.strimzi.api.kafka.model.status.Condition;
-import io.strimzi.api.kafka.model.status.KafkaBridgeStatus;
-import io.strimzi.api.kafka.model.status.KafkaConnectStatus;
-import io.strimzi.api.kafka.model.status.KafkaConnectorStatus;
-import io.strimzi.api.kafka.model.status.KafkaMirrorMaker2Status;
-import io.strimzi.api.kafka.model.status.KafkaMirrorMakerStatus;
-import io.strimzi.api.kafka.model.status.KafkaStatus;
-import io.strimzi.api.kafka.model.status.ListenerStatus;
+import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
+import io.strimzi.api.kafka.model.connect.KafkaConnectStatus;
+import io.strimzi.api.kafka.model.connector.KafkaConnectorStatus;
+import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.api.kafka.model.kafka.KafkaStatus;
+import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener;
+import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
+import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
+import io.strimzi.api.kafka.model.kafka.listener.ListenerStatus;
+import io.strimzi.api.kafka.model.mirrormaker.KafkaMirrorMakerStatus;
+import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2;
+import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Resources;
+import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Status;
+import io.strimzi.api.kafka.model.user.acl.AclOperation;
+import io.strimzi.api.kafka.model.user.acl.AclRule;
+import io.strimzi.api.kafka.model.user.acl.AclRuleBuilder;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.TestConstants;
+import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.externalClients.ExternalKafkaClient;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
@@ -44,7 +45,6 @@ import io.strimzi.systemtest.resources.crd.KafkaMirrorMakerResource;
 import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
-import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
@@ -77,7 +77,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static io.strimzi.api.kafka.model.KafkaResources.externalBootstrapServiceName;
+import static io.strimzi.api.kafka.model.kafka.KafkaResources.externalBootstrapServiceName;
 import static io.strimzi.systemtest.TestConstants.BRIDGE;
 import static io.strimzi.systemtest.TestConstants.CONNECT;
 import static io.strimzi.systemtest.TestConstants.CONNECTOR_OPERATOR;
@@ -109,14 +109,15 @@ class CustomResourceStatusST extends AbstractST {
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     void testKafkaStatus(ExtensionContext extensionContext) {
+        final TestStorage testStorage = storageMap.get(extensionContext);
         LOGGER.info("Checking status of deployed Kafka cluster");
         KafkaUtils.waitForKafkaReady(Environment.TEST_SUITE_NAMESPACE, CUSTOM_RESOURCE_STATUS_CLUSTER_NAME);
 
         ExternalKafkaClient externalKafkaClient = new ExternalKafkaClient.Builder()
-            .withTopicName(TOPIC_NAME)
+            .withTopicName(testStorage.getTopicName())
             .withNamespaceName(Environment.TEST_SUITE_NAMESPACE)
             .withClusterName(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME)
-            .withMessageCount(MESSAGE_COUNT)
+            .withMessageCount(testStorage.getMessageCount())
             .withListenerName(TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME)
             .build();
 
@@ -385,7 +386,7 @@ class CustomResourceStatusST extends AbstractST {
         KafkaMirrorMaker2Utils.waitForKafkaMirrorMaker2ConnectorReadiness(Environment.TEST_SUITE_NAMESPACE, mirrorMaker2Name);
         assertKafkaMirrorMaker2Status(3, mm2Url, mirrorMaker2Name);
         // Wait for pods stability and check that pods weren't rolled
-        PodUtils.verifyThatRunningPodsAreStable(Environment.TEST_SUITE_NAMESPACE, KafkaMirrorMaker2Resources.deploymentName(mirrorMaker2Name));
+        PodUtils.verifyThatRunningPodsAreStable(Environment.TEST_SUITE_NAMESPACE, KafkaMirrorMaker2Resources.componentName(mirrorMaker2Name));
         assertKafkaMirrorMaker2Status(3, mm2Url, mirrorMaker2Name);
         KafkaMirrorMaker2Utils.waitForKafkaMirrorMaker2ConnectorReadiness(Environment.TEST_SUITE_NAMESPACE, mirrorMaker2Name);
     }
@@ -411,11 +412,12 @@ class CustomResourceStatusST extends AbstractST {
         // delete
         KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(mirrorMaker2Name).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
 
-        DeploymentUtils.waitForDeploymentDeletion(Environment.TEST_SUITE_NAMESPACE, KafkaMirrorMaker2Resources.deploymentName(mirrorMaker2Name));
+        DeploymentUtils.waitForDeploymentDeletion(Environment.TEST_SUITE_NAMESPACE, KafkaMirrorMaker2Resources.componentName(mirrorMaker2Name));
     }
 
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
+        final TestStorage testStorage = new TestStorage(extensionContext);
         this.clusterOperator = this.clusterOperator.defaultInstallation(extensionContext)
             .withOperationTimeout(TestConstants.CO_OPERATION_TIMEOUT_SHORT)
             .createInstallation()
@@ -458,7 +460,7 @@ class CustomResourceStatusST extends AbstractST {
             .endSpec();
 
         resourceManager.createResourceWithWait(extensionContext, kafkaBuilder.build());
-        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, TOPIC_NAME, Environment.TEST_SUITE_NAMESPACE).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, testStorage.getTopicName(), Environment.TEST_SUITE_NAMESPACE).build());
     }
 
     void assertKafkaStatus(long expectedObservedGeneration, String internalAddress) {

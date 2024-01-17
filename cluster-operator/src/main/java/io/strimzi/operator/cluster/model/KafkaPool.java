@@ -5,20 +5,20 @@
 package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.OwnerReference;
-import io.strimzi.api.kafka.model.JvmOptions;
-import io.strimzi.api.kafka.model.Kafka;
-import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.common.Condition;
+import io.strimzi.api.kafka.model.common.JvmOptions;
+import io.strimzi.api.kafka.model.common.template.ContainerTemplate;
+import io.strimzi.api.kafka.model.common.template.PodTemplate;
+import io.strimzi.api.kafka.model.common.template.ResourceTemplate;
+import io.strimzi.api.kafka.model.kafka.Kafka;
+import io.strimzi.api.kafka.model.kafka.KafkaClusterTemplate;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.api.kafka.model.kafka.Storage;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolStatus;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolStatusBuilder;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolTemplate;
 import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
-import io.strimzi.api.kafka.model.status.Condition;
-import io.strimzi.api.kafka.model.storage.Storage;
-import io.strimzi.api.kafka.model.template.ContainerTemplate;
-import io.strimzi.api.kafka.model.template.KafkaClusterTemplate;
-import io.strimzi.api.kafka.model.template.PodTemplate;
-import io.strimzi.api.kafka.model.template.ResourceTemplate;
 import io.strimzi.operator.cluster.model.nodepools.NodeIdAssignment;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
@@ -103,7 +103,7 @@ public class KafkaPool extends AbstractModel {
                         .withStrimziKind(kafka.getKind())
                         // This needs ot be selectable through KafkaCluster selector. So we intentionally use the <clusterName>-kafka
                         // as the strimzi.io/name. strimzi.io/pool-name can be used to select through node pool.
-                        .withStrimziName(KafkaResources.kafkaStatefulSetName(kafka.getMetadata().getName()))
+                        .withStrimziName(KafkaResources.kafkaComponentName(kafka.getMetadata().getName()))
                         .withStrimziCluster(kafka.getMetadata().getName())
                         .withStrimziComponentType(COMPONENT_TYPE)
                         .withStrimziPoolName(pool.getMetadata().getName())

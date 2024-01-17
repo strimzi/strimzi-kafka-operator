@@ -6,23 +6,23 @@ package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
-import io.strimzi.api.kafka.model.Kafka;
-import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.StrimziPodSet;
+import io.strimzi.api.kafka.model.kafka.Kafka;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
-import io.strimzi.operator.cluster.model.KafkaUpgradeException;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaConfiguration;
+import io.strimzi.operator.cluster.model.KafkaUpgradeException;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.KafkaVersionChange;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
-import io.strimzi.operator.common.operator.resource.StrimziPodSetOperator;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.PodOperator;
+import io.strimzi.operator.common.operator.resource.StrimziPodSetOperator;
 import io.vertx.core.Future;
 
 import java.util.List;
@@ -115,8 +115,8 @@ public class ZooKeeperVersionChangeCreator implements VersionChangeCreator {
      * @return  Future which completes when the version is collected from the controller resource
      */
     private Future<Void> getVersionFromController() {
-        Future<StatefulSet> stsFuture = stsOperator.getAsync(reconciliation.namespace(), KafkaResources.kafkaStatefulSetName(reconciliation.name()));
-        Future<StrimziPodSet> podSetFuture = strimziPodSetOperator.getAsync(reconciliation.namespace(), KafkaResources.kafkaStatefulSetName(reconciliation.name()));
+        Future<StatefulSet> stsFuture = stsOperator.getAsync(reconciliation.namespace(), KafkaResources.kafkaComponentName(reconciliation.name()));
+        Future<StrimziPodSet> podSetFuture = strimziPodSetOperator.getAsync(reconciliation.namespace(), KafkaResources.kafkaComponentName(reconciliation.name()));
 
         return Future.join(stsFuture, podSetFuture)
                 .compose(res -> {
@@ -149,7 +149,7 @@ public class ZooKeeperVersionChangeCreator implements VersionChangeCreator {
     private Future<List<Pod>> getPods()   {
         Labels selectorLabels = Labels.forStrimziKind(Kafka.RESOURCE_KIND)
                 .withStrimziCluster(reconciliation.name())
-                .withStrimziName(KafkaResources.kafkaStatefulSetName(reconciliation.name()));
+                .withStrimziName(KafkaResources.kafkaComponentName(reconciliation.name()));
 
         return podOperator.listAsync(reconciliation.namespace(), selectorLabels);
     }

@@ -9,10 +9,10 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.server.mock.EnableKubernetesMockClient;
 import io.strimzi.api.kafka.Crds;
-import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
-import io.strimzi.api.kafka.model.KafkaMirrorMaker2Builder;
-import io.strimzi.api.kafka.model.KafkaMirrorMaker2Resources;
-import io.strimzi.api.kafka.model.status.Condition;
+import io.strimzi.api.kafka.model.common.Condition;
+import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2;
+import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Builder;
+import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Resources;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
@@ -138,13 +138,13 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
         kco.reconcile(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME))
             .onComplete(context.succeeding(ar -> context.verify(() -> {
                 if (!reconciliationPaused) {
-                    assertThat(Crds.strimziPodSetOperation(client).inNamespace(NAMESPACE).withName(KafkaMirrorMaker2Resources.deploymentName(CLUSTER_NAME)).get(), is(notNullValue()));
-                    assertThat(client.apps().deployments().inNamespace(NAMESPACE).withName(KafkaMirrorMaker2Resources.deploymentName(CLUSTER_NAME)).get(), is(nullValue()));
+                    assertThat(Crds.strimziPodSetOperation(client).inNamespace(NAMESPACE).withName(KafkaMirrorMaker2Resources.componentName(CLUSTER_NAME)).get(), is(notNullValue()));
+                    assertThat(client.apps().deployments().inNamespace(NAMESPACE).withName(KafkaMirrorMaker2Resources.componentName(CLUSTER_NAME)).get(), is(nullValue()));
                     assertThat(client.configMaps().inNamespace(NAMESPACE).withName(KafkaMirrorMaker2Resources.metricsAndLogConfigMapName(CLUSTER_NAME)).get(), is(notNullValue()));
                     assertThat(client.services().inNamespace(NAMESPACE).withName(KafkaMirrorMaker2Resources.serviceName(CLUSTER_NAME)).get(), is(notNullValue()));
-                    assertThat(client.policy().v1().podDisruptionBudget().inNamespace(NAMESPACE).withName(KafkaMirrorMaker2Resources.deploymentName(CLUSTER_NAME)).get(), is(notNullValue()));
+                    assertThat(client.policy().v1().podDisruptionBudget().inNamespace(NAMESPACE).withName(KafkaMirrorMaker2Resources.componentName(CLUSTER_NAME)).get(), is(notNullValue()));
                 } else {
-                    assertThat(Crds.strimziPodSetOperation(client).inNamespace(NAMESPACE).withName(KafkaMirrorMaker2Resources.deploymentName(CLUSTER_NAME)).get(), is(nullValue()));
+                    assertThat(Crds.strimziPodSetOperation(client).inNamespace(NAMESPACE).withName(KafkaMirrorMaker2Resources.componentName(CLUSTER_NAME)).get(), is(nullValue()));
                 }
 
                 created.complete();

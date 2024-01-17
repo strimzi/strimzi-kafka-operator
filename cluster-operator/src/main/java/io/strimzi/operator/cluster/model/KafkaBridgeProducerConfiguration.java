@@ -5,7 +5,7 @@
 
 package io.strimzi.operator.cluster.model;
 
-import io.strimzi.api.kafka.model.KafkaBridgeProducerSpec;
+import io.strimzi.api.kafka.model.bridge.KafkaBridgeProducerSpec;
 import io.strimzi.operator.common.Reconciliation;
 
 import java.util.HashMap;

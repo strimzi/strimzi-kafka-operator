@@ -4,16 +4,16 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import io.strimzi.api.kafka.model.Kafka;
-import io.strimzi.api.kafka.model.KafkaBuilder;
-import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
-import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
+import io.strimzi.api.kafka.model.common.Condition;
+import io.strimzi.api.kafka.model.kafka.EphemeralStorage;
+import io.strimzi.api.kafka.model.kafka.Kafka;
+import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
+import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
+import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
+import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolBuilder;
 import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
-import io.strimzi.api.kafka.model.status.Condition;
-import io.strimzi.api.kafka.model.storage.EphemeralStorage;
-import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.model.nodepools.NodePoolUtils;
 import io.strimzi.operator.common.Annotations;
@@ -41,10 +41,6 @@ public class KafkaSpecCheckerWithNodePoolsTest {
                 .endMetadata()
                 .withNewSpec()
                     .withNewKafka()
-                        .withReplicas(3)
-                        .withNewJbodStorage()
-                            .withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build())
-                        .endJbodStorage()
                         .withListeners(new GenericKafkaListenerBuilder().withName("tls").withPort(9093).withType(KafkaListenerType.INTERNAL).withTls().build())
                         .withConfig(Map.of("default.replication.factor", 2, "min.insync.replicas", 2))
                     .endKafka()

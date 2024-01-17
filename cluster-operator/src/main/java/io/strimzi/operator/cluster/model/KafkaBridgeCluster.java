@@ -23,27 +23,27 @@ import io.fabric8.kubernetes.api.model.rbac.RoleRef;
 import io.fabric8.kubernetes.api.model.rbac.RoleRefBuilder;
 import io.fabric8.kubernetes.api.model.rbac.Subject;
 import io.fabric8.kubernetes.api.model.rbac.SubjectBuilder;
-import io.strimzi.api.kafka.model.CertSecretSource;
-import io.strimzi.api.kafka.model.ClientTls;
-import io.strimzi.api.kafka.model.JvmOptions;
-import io.strimzi.api.kafka.model.KafkaBridge;
-import io.strimzi.api.kafka.model.KafkaBridgeAdminClientSpec;
-import io.strimzi.api.kafka.model.KafkaBridgeConsumerSpec;
-import io.strimzi.api.kafka.model.KafkaBridgeHttpConfig;
-import io.strimzi.api.kafka.model.KafkaBridgeProducerSpec;
-import io.strimzi.api.kafka.model.KafkaBridgeResources;
-import io.strimzi.api.kafka.model.KafkaBridgeSpec;
-import io.strimzi.api.kafka.model.Rack;
-import io.strimzi.api.kafka.model.authentication.KafkaClientAuthentication;
-import io.strimzi.api.kafka.model.template.ContainerTemplate;
-import io.strimzi.api.kafka.model.template.DeploymentStrategy;
-import io.strimzi.api.kafka.model.template.DeploymentTemplate;
-import io.strimzi.api.kafka.model.template.InternalServiceTemplate;
-import io.strimzi.api.kafka.model.template.KafkaBridgeTemplate;
-import io.strimzi.api.kafka.model.template.PodDisruptionBudgetTemplate;
-import io.strimzi.api.kafka.model.template.PodTemplate;
-import io.strimzi.api.kafka.model.template.ResourceTemplate;
-import io.strimzi.api.kafka.model.tracing.Tracing;
+import io.strimzi.api.kafka.model.bridge.KafkaBridge;
+import io.strimzi.api.kafka.model.bridge.KafkaBridgeAdminClientSpec;
+import io.strimzi.api.kafka.model.bridge.KafkaBridgeConsumerSpec;
+import io.strimzi.api.kafka.model.bridge.KafkaBridgeHttpConfig;
+import io.strimzi.api.kafka.model.bridge.KafkaBridgeProducerSpec;
+import io.strimzi.api.kafka.model.bridge.KafkaBridgeResources;
+import io.strimzi.api.kafka.model.bridge.KafkaBridgeSpec;
+import io.strimzi.api.kafka.model.bridge.KafkaBridgeTemplate;
+import io.strimzi.api.kafka.model.common.CertSecretSource;
+import io.strimzi.api.kafka.model.common.ClientTls;
+import io.strimzi.api.kafka.model.common.JvmOptions;
+import io.strimzi.api.kafka.model.common.Rack;
+import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthentication;
+import io.strimzi.api.kafka.model.common.template.ContainerTemplate;
+import io.strimzi.api.kafka.model.common.template.DeploymentStrategy;
+import io.strimzi.api.kafka.model.common.template.DeploymentTemplate;
+import io.strimzi.api.kafka.model.common.template.InternalServiceTemplate;
+import io.strimzi.api.kafka.model.common.template.PodDisruptionBudgetTemplate;
+import io.strimzi.api.kafka.model.common.template.PodTemplate;
+import io.strimzi.api.kafka.model.common.template.ResourceTemplate;
+import io.strimzi.api.kafka.model.common.tracing.Tracing;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.logging.LoggingModel;
 import io.strimzi.operator.cluster.model.logging.SupportsLogging;
@@ -159,7 +159,7 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
      * @param sharedEnvironmentProvider Shared environment provider
      */
     private KafkaBridgeCluster(Reconciliation reconciliation, HasMetadata resource, SharedEnvironmentProvider sharedEnvironmentProvider) {
-        super(reconciliation, resource, KafkaBridgeResources.deploymentName(resource.getMetadata().getName()), COMPONENT_TYPE, sharedEnvironmentProvider);
+        super(reconciliation, resource, KafkaBridgeResources.componentName(resource.getMetadata().getName()), COMPONENT_TYPE, sharedEnvironmentProvider);
     }
 
     /**

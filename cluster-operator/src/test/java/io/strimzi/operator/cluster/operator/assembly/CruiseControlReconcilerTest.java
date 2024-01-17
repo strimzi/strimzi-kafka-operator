@@ -10,12 +10,12 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
-import io.strimzi.api.kafka.model.CruiseControlResources;
-import io.strimzi.api.kafka.model.CruiseControlSpec;
-import io.strimzi.api.kafka.model.CruiseControlSpecBuilder;
-import io.strimzi.api.kafka.model.Kafka;
-import io.strimzi.api.kafka.model.KafkaBuilder;
-import io.strimzi.api.kafka.model.balancing.BrokerCapacityBuilder;
+import io.strimzi.api.kafka.model.kafka.Kafka;
+import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
+import io.strimzi.api.kafka.model.kafka.cruisecontrol.BrokerCapacityBuilder;
+import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
+import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlSpec;
+import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlSpecBuilder;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
@@ -24,8 +24,8 @@ import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
-import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
@@ -96,9 +96,9 @@ public class CruiseControlReconcilerTest {
         when(mockCmOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.logAndMetricsConfigMapName(NAME)), cmCaptor.capture())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<Deployment> depCaptor = ArgumentCaptor.forClass(Deployment.class);
-        when(mockDepOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.deploymentName(NAME)), depCaptor.capture())).thenReturn(Future.succeededFuture());
-        when(mockDepOps.waitForObserved(any(), eq(NAMESPACE), eq(CruiseControlResources.deploymentName(NAME)), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockDepOps.readiness(any(), eq(NAMESPACE), eq(CruiseControlResources.deploymentName(NAME)), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockDepOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.componentName(NAME)), depCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockDepOps.waitForObserved(any(), eq(NAMESPACE), eq(CruiseControlResources.componentName(NAME)), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockDepOps.readiness(any(), eq(NAMESPACE), eq(CruiseControlResources.componentName(NAME)), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         Kafka kafka = new KafkaBuilder(ResourceUtils.createKafka(NAMESPACE, NAME, 3, "foo", 120, 30))
                 .editSpec()
@@ -180,9 +180,9 @@ public class CruiseControlReconcilerTest {
         when(mockCmOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.logAndMetricsConfigMapName(NAME)), cmCaptor.capture())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<Deployment> depCaptor = ArgumentCaptor.forClass(Deployment.class);
-        when(mockDepOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.deploymentName(NAME)), depCaptor.capture())).thenReturn(Future.succeededFuture());
-        when(mockDepOps.waitForObserved(any(), eq(NAMESPACE), eq(CruiseControlResources.deploymentName(NAME)), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockDepOps.readiness(any(), eq(NAMESPACE), eq(CruiseControlResources.deploymentName(NAME)), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockDepOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.componentName(NAME)), depCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockDepOps.waitForObserved(any(), eq(NAMESPACE), eq(CruiseControlResources.componentName(NAME)), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockDepOps.readiness(any(), eq(NAMESPACE), eq(CruiseControlResources.componentName(NAME)), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         Kafka kafka = ResourceUtils.createKafka(NAMESPACE, NAME, 3, "foo", 120, 30);
 

@@ -6,18 +6,18 @@ package io.strimzi.systemtest.templates.crd;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
-import io.strimzi.api.kafka.model.KafkaConnect;
-import io.strimzi.api.kafka.model.KafkaConnectBuilder;
-import io.strimzi.api.kafka.model.KafkaConnectResources;
-import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.common.CertSecretSourceBuilder;
+import io.strimzi.api.kafka.model.connect.KafkaConnect;
+import io.strimzi.api.kafka.model.connect.KafkaConnectBuilder;
+import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
 import io.strimzi.api.kafka.model.connect.build.DockerOutput;
 import io.strimzi.api.kafka.model.connect.build.DockerOutputBuilder;
 import io.strimzi.api.kafka.model.connect.build.JarArtifactBuilder;
 import io.strimzi.api.kafka.model.connect.build.Plugin;
 import io.strimzi.api.kafka.model.connect.build.PluginBuilder;
-import io.strimzi.systemtest.TestConstants;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.logging.log4j.LogManager;
@@ -79,7 +79,7 @@ public class KafkaConnectTemplates {
                 .withNewTls()
                     .withTrustedCertificates(new CertSecretSourceBuilder().withSecretName(kafkaClusterName + "-cluster-ca-cert").withCertificate("ca.crt").build())
                 .endTls()
-                .addToConfig("group.id", KafkaConnectResources.deploymentName(name))
+                .addToConfig("group.id", KafkaConnectResources.componentName(name))
                 .addToConfig("offset.storage.topic", KafkaConnectResources.configStorageTopicOffsets(name))
                 .addToConfig("config.storage.topic", KafkaConnectResources.metricsAndLogConfigMapName(name))
                 .addToConfig("status.storage.topic", KafkaConnectResources.configStorageTopicStatus(name))

@@ -4,7 +4,7 @@
  */
 package io.strimzi.operator.topic.v2;
 
-import io.strimzi.api.kafka.model.KafkaTopic;
+import io.strimzi.api.kafka.model.topic.KafkaTopic;
 
 import java.util.Objects;
 

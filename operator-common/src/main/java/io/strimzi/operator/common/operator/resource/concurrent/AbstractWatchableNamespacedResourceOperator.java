@@ -4,8 +4,6 @@
  */
 package io.strimzi.operator.common.operator.resource.concurrent;
 
-import java.util.concurrent.Executor;
-
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.api.model.LabelSelector;
@@ -14,6 +12,8 @@ import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.FilterWatchListDeletable;
 import io.fabric8.kubernetes.client.dsl.Resource;
+
+import java.util.concurrent.Executor;
 
 /**
  * Abstract class for resources which can be watched.

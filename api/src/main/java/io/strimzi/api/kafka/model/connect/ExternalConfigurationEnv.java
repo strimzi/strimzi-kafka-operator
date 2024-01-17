@@ -6,8 +6,8 @@ package io.strimzi.api.kafka.model.connect;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.strimzi.api.kafka.model.Constants;
-import io.strimzi.api.kafka.model.UnknownPropertyPreserving;
+import io.strimzi.api.kafka.model.common.Constants;
+import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;

@@ -5,26 +5,26 @@
 package io.strimzi.systemtest.cruisecontrol;
 
 import io.fabric8.kubernetes.api.model.Container;
+import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
-import io.strimzi.api.kafka.model.CruiseControlResources;
-import io.strimzi.api.kafka.model.CruiseControlSpec;
-import io.strimzi.api.kafka.model.KafkaRebalance;
-import io.strimzi.api.kafka.model.KafkaTopicSpec;
-import io.fabric8.kubernetes.api.model.LabelSelector;
-import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.balancing.KafkaRebalanceMode;
-import io.strimzi.api.kafka.model.status.KafkaRebalanceStatus;
-import io.strimzi.api.kafka.model.status.KafkaStatus;
-import io.strimzi.api.kafka.model.storage.JbodStorage;
-import io.strimzi.api.kafka.model.storage.JbodStorageBuilder;
-import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
+import io.strimzi.api.kafka.model.kafka.JbodStorage;
+import io.strimzi.api.kafka.model.kafka.JbodStorageBuilder;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.api.kafka.model.kafka.KafkaStatus;
+import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
+import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
+import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlSpec;
+import io.strimzi.api.kafka.model.rebalance.KafkaRebalance;
+import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceAnnotation;
+import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceMode;
+import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState;
+import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceStatus;
+import io.strimzi.api.kafka.model.topic.KafkaTopicSpec;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.api.kafka.model.balancing.KafkaRebalanceAnnotation;
-import io.strimzi.api.kafka.model.balancing.KafkaRebalanceState;
-import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.annotations.KRaftWithoutUTONotSupported;
@@ -45,8 +45,8 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaRebalanceUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
-import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
+import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -110,7 +110,7 @@ public class CruiseControlST extends AbstractST {
             .endSpec()
             .build());
 
-        String ccPodName = kubeClient().listPodsByPrefixInName(Environment.TEST_SUITE_NAMESPACE, CruiseControlResources.deploymentName(clusterName)).get(0).getMetadata().getName();
+        String ccPodName = kubeClient().listPodsByPrefixInName(Environment.TEST_SUITE_NAMESPACE, CruiseControlResources.componentName(clusterName)).get(0).getMetadata().getName();
         Container container = (Container) KubeClusterResource.kubeClient(Environment.TEST_SUITE_NAMESPACE).getPod(Environment.TEST_SUITE_NAMESPACE, ccPodName).getSpec().getContainers().stream().filter(c -> c.getName().equals("cruise-control")).findFirst().get();
         assertThat(container.getResources().getLimits().get("memory"), is(new Quantity("300Mi")));
         assertThat(container.getResources().getRequests().get("memory"), is(new Quantity("300Mi")));
@@ -185,7 +185,7 @@ public class CruiseControlST extends AbstractST {
                 .endMetadata()
                 .build());
 
-        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
+        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaComponentName(clusterName));
 
         KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(Environment.TEST_SUITE_NAMESPACE, clusterName, KafkaRebalanceState.NotReady);
 
@@ -208,7 +208,7 @@ public class CruiseControlST extends AbstractST {
 
     @IsolatedTest
     void testCruiseControlChangesFromRebalancingtoProposalReadyWhenSpecUpdated(ExtensionContext extensionContext) {
-        TestStorage testStorage = new TestStorage(extensionContext, Environment.TEST_SUITE_NAMESPACE);
+        final TestStorage testStorage = new TestStorage(extensionContext, Environment.TEST_SUITE_NAMESPACE);
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaWithCruiseControl(testStorage.getClusterName(), 3, 1).build());
 
@@ -312,7 +312,7 @@ public class CruiseControlST extends AbstractST {
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3).build());
 
-        String ccPodName = kubeClient().listPodsByPrefixInName(namespaceName, CruiseControlResources.deploymentName(clusterName)).get(0).getMetadata().getName();
+        String ccPodName = kubeClient().listPodsByPrefixInName(namespaceName, CruiseControlResources.componentName(clusterName)).get(0).getMetadata().getName();
 
         LOGGER.info("Check for default CruiseControl replicaMovementStrategy in Pod configuration file");
         Map<String, Object> actualStrategies = KafkaResource.kafkaClient().inNamespace(namespaceName)
@@ -323,7 +323,7 @@ public class CruiseControlST extends AbstractST {
         String ccConfFileContent = cmdKubeClient(namespaceName).execInPodContainer(ccPodName, TestConstants.CRUISE_CONTROL_CONTAINER_NAME, "cat", TestConstants.CRUISE_CONTROL_CONFIGURATION_FILE_PATH).out();
         assertThat(ccConfFileContent, not(containsString(replicaMovementStrategies)));
 
-        Map<String, String> kafkaRebalanceSnapshot = DeploymentUtils.depSnapshot(namespaceName, CruiseControlResources.deploymentName(clusterName));
+        Map<String, String> kafkaRebalanceSnapshot = DeploymentUtils.depSnapshot(namespaceName, CruiseControlResources.componentName(clusterName));
 
         Map<String, Object> ccConfigMap = new HashMap<>();
         ccConfigMap.put(replicaMovementStrategies, newReplicaMovementStrategies);
@@ -334,9 +334,9 @@ public class CruiseControlST extends AbstractST {
         }, namespaceName);
 
         LOGGER.info("Verifying that CC Pod is rolling, because of change size of disk");
-        DeploymentUtils.waitTillDepHasRolled(namespaceName, CruiseControlResources.deploymentName(clusterName), 1, kafkaRebalanceSnapshot);
+        DeploymentUtils.waitTillDepHasRolled(namespaceName, CruiseControlResources.componentName(clusterName), 1, kafkaRebalanceSnapshot);
 
-        ccPodName = kubeClient().listPodsByPrefixInName(namespaceName, CruiseControlResources.deploymentName(clusterName)).get(0).getMetadata().getName();
+        ccPodName = kubeClient().listPodsByPrefixInName(namespaceName, CruiseControlResources.componentName(clusterName)).get(0).getMetadata().getName();
         ccConfFileContent = cmdKubeClient(namespaceName).execInPodContainer(ccPodName, TestConstants.CRUISE_CONTROL_CONTAINER_NAME, "cat", TestConstants.CRUISE_CONTROL_CONFIGURATION_FILE_PATH).out();
         assertThat(ccConfFileContent, containsString(newReplicaMovementStrategies));
     }

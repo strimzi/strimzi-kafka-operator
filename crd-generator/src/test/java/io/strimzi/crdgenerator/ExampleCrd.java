@@ -11,6 +11,7 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.client.CustomResource;
+import io.strimzi.crdgenerator.annotations.AddedIn;
 import io.strimzi.crdgenerator.annotations.Crd;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Example;
@@ -52,7 +53,7 @@ import java.util.Map;
         }
     )
 )
-@OneOf({@OneOf.Alternative(@OneOf.Alternative.Property("either")), @OneOf.Alternative(@OneOf.Alternative.Property("or"))})
+@OneOf({@OneOf.Alternative(@OneOf.Alternative.Property("either")), @OneOf.Alternative(@OneOf.Alternative.Property("or")), @OneOf.Alternative({@OneOf.Alternative.Property("mapStringString"), @OneOf.Alternative.Property("mapStringObject")})})
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ExampleCrd<T, U extends Number, V extends U> extends CustomResource {
 
@@ -152,7 +153,9 @@ public class ExampleCrd<T, U extends Number, V extends U> extends CustomResource
         }
     }
 
-    private Map<String, Object> mapProperty;
+    private Map<String, Object> mapStringObject;
+
+    private Map<String, String> mapStringString;
 
     private PolymorphicTop polymorphicProperty;
 
@@ -243,6 +246,7 @@ public class ExampleCrd<T, U extends Number, V extends U> extends CustomResource
     @Description("An example int property")
     @Example("42")
     @Minimum(42)
+    @AddedIn("0.0.1")
     public int getIntProperty() {
         return intProperty;
     }
@@ -278,12 +282,20 @@ public class ExampleCrd<T, U extends Number, V extends U> extends CustomResource
         this.objectProperty = objectProperty;
     }
 
-    public Map<String, Object> getMapProperty() {
-        return mapProperty;
+    public Map<String, Object> getMapStringObject() {
+        return mapStringObject;
     }
 
-    public void setMapProperty(Map<String, Object> mapProperty) {
-        this.mapProperty = mapProperty;
+    public void setMapStringObject(Map<String, Object> mapStringObject) {
+        this.mapStringObject = mapStringObject;
+    }
+
+    public Map<String, String> getMapStringString() {
+        return mapStringString;
+    }
+
+    public void setMapStringString(Map<String, String> mapStringString) {
+        this.mapStringString = mapStringString;
     }
 
     public PolymorphicTop getPolymorphicProperty() {

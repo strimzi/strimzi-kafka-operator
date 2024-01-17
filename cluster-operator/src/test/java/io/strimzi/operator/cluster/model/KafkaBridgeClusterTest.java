@@ -28,23 +28,23 @@ import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
-import io.strimzi.api.kafka.model.CertSecretSource;
-import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
-import io.strimzi.api.kafka.model.ContainerEnvVar;
-import io.strimzi.api.kafka.model.JvmOptions;
-import io.strimzi.api.kafka.model.JvmOptionsBuilder;
-import io.strimzi.api.kafka.model.KafkaBridge;
-import io.strimzi.api.kafka.model.KafkaBridgeBuilder;
-import io.strimzi.api.kafka.model.KafkaBridgeHttpConfig;
-import io.strimzi.api.kafka.model.KafkaBridgeResources;
-import io.strimzi.api.kafka.model.SystemPropertyBuilder;
-import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationOAuthBuilder;
-import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationTlsBuilder;
-import io.strimzi.api.kafka.model.template.ContainerTemplate;
-import io.strimzi.api.kafka.model.template.DeploymentStrategy;
-import io.strimzi.api.kafka.model.template.IpFamily;
-import io.strimzi.api.kafka.model.template.IpFamilyPolicy;
-import io.strimzi.api.kafka.model.tracing.OpenTelemetryTracing;
+import io.strimzi.api.kafka.model.bridge.KafkaBridge;
+import io.strimzi.api.kafka.model.bridge.KafkaBridgeBuilder;
+import io.strimzi.api.kafka.model.bridge.KafkaBridgeHttpConfig;
+import io.strimzi.api.kafka.model.bridge.KafkaBridgeResources;
+import io.strimzi.api.kafka.model.common.CertSecretSource;
+import io.strimzi.api.kafka.model.common.CertSecretSourceBuilder;
+import io.strimzi.api.kafka.model.common.ContainerEnvVar;
+import io.strimzi.api.kafka.model.common.JvmOptions;
+import io.strimzi.api.kafka.model.common.JvmOptionsBuilder;
+import io.strimzi.api.kafka.model.common.SystemPropertyBuilder;
+import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationOAuthBuilder;
+import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationTlsBuilder;
+import io.strimzi.api.kafka.model.common.template.ContainerTemplate;
+import io.strimzi.api.kafka.model.common.template.DeploymentStrategy;
+import io.strimzi.api.kafka.model.common.template.IpFamily;
+import io.strimzi.api.kafka.model.common.template.IpFamilyPolicy;
+import io.strimzi.api.kafka.model.common.tracing.OpenTelemetryTracing;
 import io.strimzi.kafka.oauth.client.ClientConfig;
 import io.strimzi.kafka.oauth.server.ServerConfig;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
@@ -127,7 +127,7 @@ public class KafkaBridgeClusterTest {
     }
 
     private Map<String, String> expectedSelectorLabels()    {
-        return Labels.fromMap(expectedLabels(KafkaBridgeResources.deploymentName(cluster))).strimziSelectorLabels().toMap();
+        return Labels.fromMap(expectedLabels(KafkaBridgeResources.componentName(cluster))).strimziSelectorLabels().toMap();
     }
 
     protected List<EnvVar> getExpectedEnvVars() {
@@ -195,15 +195,15 @@ public class KafkaBridgeClusterTest {
     public void testGenerateDeployment()   {
         Deployment dep = kbc.generateDeployment(new HashMap<>(), true, null, null);
 
-        assertThat(dep.getMetadata().getName(), is(KafkaBridgeResources.deploymentName(cluster)));
+        assertThat(dep.getMetadata().getName(), is(KafkaBridgeResources.componentName(cluster)));
         assertThat(dep.getMetadata().getNamespace(), is(namespace));
-        Map<String, String> expectedDeploymentLabels = expectedLabels(KafkaBridgeResources.deploymentName(cluster));
+        Map<String, String> expectedDeploymentLabels = expectedLabels(KafkaBridgeResources.componentName(cluster));
         assertThat(dep.getMetadata().getLabels(), is(expectedDeploymentLabels));
         assertThat(dep.getSpec().getSelector().getMatchLabels(), is(expectedSelectorLabels()));
         assertThat(dep.getSpec().getReplicas(), is(replicas));
         assertThat(dep.getSpec().getTemplate().getMetadata().getLabels(), is(expectedDeploymentLabels));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().size(), is(1));
-        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getName(), is(KafkaBridgeResources.deploymentName(cluster)));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getName(), is(KafkaBridgeResources.componentName(cluster)));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImage(), is(kbc.image));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv(), is(getExpectedEnvVars()));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getLivenessProbe().getInitialDelaySeconds(), is(healthDelay));

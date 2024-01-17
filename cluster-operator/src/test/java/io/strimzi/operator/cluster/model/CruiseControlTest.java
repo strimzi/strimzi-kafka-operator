@@ -31,35 +31,35 @@ import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeerBuilder;
-import io.strimzi.api.kafka.model.ContainerEnvVar;
-import io.strimzi.api.kafka.model.CruiseControlResources;
-import io.strimzi.api.kafka.model.CruiseControlSpec;
-import io.strimzi.api.kafka.model.CruiseControlSpecBuilder;
-import io.strimzi.api.kafka.model.InlineLogging;
-import io.strimzi.api.kafka.model.JmxPrometheusExporterMetricsBuilder;
-import io.strimzi.api.kafka.model.JvmOptions;
-import io.strimzi.api.kafka.model.Kafka;
-import io.strimzi.api.kafka.model.KafkaBuilder;
-import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.MetricsConfig;
-import io.strimzi.api.kafka.model.SystemPropertyBuilder;
-import io.strimzi.api.kafka.model.balancing.BrokerCapacityBuilder;
-import io.strimzi.api.kafka.model.storage.EphemeralStorage;
-import io.strimzi.api.kafka.model.storage.JbodStorage;
-import io.strimzi.api.kafka.model.storage.JbodStorageBuilder;
-import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
-import io.strimzi.api.kafka.model.storage.Storage;
-import io.strimzi.api.kafka.model.template.IpFamily;
-import io.strimzi.api.kafka.model.template.IpFamilyPolicy;
-import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
+import io.strimzi.api.kafka.model.common.ContainerEnvVar;
+import io.strimzi.api.kafka.model.common.InlineLogging;
+import io.strimzi.api.kafka.model.common.JvmOptions;
+import io.strimzi.api.kafka.model.common.SystemPropertyBuilder;
+import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetricsBuilder;
+import io.strimzi.api.kafka.model.common.metrics.MetricsConfig;
+import io.strimzi.api.kafka.model.common.template.IpFamily;
+import io.strimzi.api.kafka.model.common.template.IpFamilyPolicy;
+import io.strimzi.api.kafka.model.kafka.EphemeralStorage;
+import io.strimzi.api.kafka.model.kafka.JbodStorage;
+import io.strimzi.api.kafka.model.kafka.JbodStorageBuilder;
+import io.strimzi.api.kafka.model.kafka.Kafka;
+import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
+import io.strimzi.api.kafka.model.kafka.Storage;
+import io.strimzi.api.kafka.model.kafka.cruisecontrol.BrokerCapacityBuilder;
+import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
+import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlSpec;
+import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlSpecBuilder;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
+import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.cruisecontrol.BrokerCapacity;
 import io.strimzi.operator.cluster.model.cruisecontrol.Capacity;
 import io.strimzi.operator.cluster.model.cruisecontrol.CpuCapacity;
-import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.platform.KubernetesVersion;
 import io.strimzi.plugin.security.profiles.impl.RestrictedPodSecurityProvider;
 import io.strimzi.test.TestUtils;
@@ -212,7 +212,7 @@ public class CruiseControlTest {
     }
 
     private Map<String, String> expectedLabels() {
-        return expectedLabels(CruiseControlResources.deploymentName(CLUSTER));
+        return expectedLabels(CruiseControlResources.componentName(CLUSTER));
     }
 
     private List<EnvVar> getExpectedEnvVars() {
@@ -220,7 +220,6 @@ public class CruiseControlTest {
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_CRUISE_CONTROL_METRICS_ENABLED).withValue(Boolean.toString(CruiseControl.DEFAULT_CRUISE_CONTROL_METRICS_ENABLED)).build());
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_STRIMZI_KAFKA_BOOTSTRAP_SERVERS).withValue(KafkaResources.bootstrapServiceName(CLUSTER) + ":" + KafkaCluster.REPLICATION_PORT).build());
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED).withValue(Boolean.toString(JvmOptions.DEFAULT_GC_LOGGING_ENABLED)).build());
-        expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_MIN_INSYNC_REPLICAS).withValue(MIN_INSYNC_REPLICAS).build());
         expected.add(new EnvVarBuilder().withName(ENV_VAR_CRUISE_CONTROL_CAPACITY_CONFIGURATION).withValue(cc.capacity.toString()).build());
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_API_SSL_ENABLED).withValue(Boolean.toString(CruiseControlConfigurationParameters.DEFAULT_WEBSERVER_SSL_ENABLED)).build());
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_API_AUTH_ENABLED).withValue(Boolean.toString(CruiseControlConfigurationParameters.DEFAULT_WEBSERVER_SECURITY_ENABLED)).build());
@@ -264,7 +263,7 @@ public class CruiseControlTest {
         // Test user defined capacities
         String userDefinedCpuCapacity = "2575m";
 
-        io.strimzi.api.kafka.model.balancing.BrokerCapacity userDefinedBrokerCapacity = new io.strimzi.api.kafka.model.balancing.BrokerCapacity();
+        io.strimzi.api.kafka.model.kafka.cruisecontrol.BrokerCapacity userDefinedBrokerCapacity = new io.strimzi.api.kafka.model.kafka.cruisecontrol.BrokerCapacity();
         userDefinedBrokerCapacity.setCpu(userDefinedCpuCapacity);
         userDefinedBrokerCapacity.setInboundNetwork("50000KB/s");
         userDefinedBrokerCapacity.setOutboundNetwork("50000KB/s");
@@ -494,7 +493,7 @@ public class CruiseControlTest {
 
         assertThat(containers.size(), is(1));
 
-        assertThat(dep.getMetadata().getName(), is(CruiseControlResources.deploymentName(CLUSTER)));
+        assertThat(dep.getMetadata().getName(), is(CruiseControlResources.componentName(CLUSTER)));
         assertThat(dep.getMetadata().getNamespace(), is(NAMESPACE));
         TestUtils.checkOwnerReference(dep, kafka);
 
@@ -823,7 +822,7 @@ public class CruiseControlTest {
                 .addToRequests("cpu", new Quantity(RESOURCE_REQUESTS_CPU))
                 .build();
 
-        io.strimzi.api.kafka.model.balancing.BrokerCapacity brokerCapacityOne = new BrokerCapacityBuilder()
+        io.strimzi.api.kafka.model.kafka.cruisecontrol.BrokerCapacity brokerCapacityOne = new BrokerCapacityBuilder()
                 .withCpu(BROKER_CAPACITY_CPU)
                 .withOverrides()
                     .addNewOverride()
@@ -835,7 +834,7 @@ public class CruiseControlTest {
         verifyBrokerCapacity(nodes, storage, resourceRequirements, brokerCapacityOne, BROKER_CAPACITY_OVERRIDE_CPU, BROKER_CAPACITY_CPU, BROKER_CAPACITY_CPU);
 
         // In this test case, when override is set for a broker, it takes precedence over the Kafka resource request
-        io.strimzi.api.kafka.model.balancing.BrokerCapacity brokerCapacityTwo = new BrokerCapacityBuilder()
+        io.strimzi.api.kafka.model.kafka.cruisecontrol.BrokerCapacity brokerCapacityTwo = new BrokerCapacityBuilder()
                 .withOverrides()
                     .addNewOverride()
                         .addToBrokers(0)
@@ -851,7 +850,7 @@ public class CruiseControlTest {
                 .addToLimits("cpu", new Quantity(RESOURCE_LIMIT_CPU))
                 .build();
 
-        io.strimzi.api.kafka.model.balancing.BrokerCapacity brokerCapacityThree = new BrokerCapacityBuilder()
+        io.strimzi.api.kafka.model.kafka.cruisecontrol.BrokerCapacity brokerCapacityThree = new BrokerCapacityBuilder()
                 .build();
 
         verifyBrokerCapacity(nodes, storage, resourceRequirements3, brokerCapacityThree, RESOURCE_LIMIT_CPU, RESOURCE_LIMIT_CPU, RESOURCE_LIMIT_CPU);
@@ -867,7 +866,7 @@ public class CruiseControlTest {
     private void verifyBrokerCapacity(Set<NodeRef> nodes,
                                      Map<String, Storage> storage,
                                      ResourceRequirements resourceRequirements,
-                                     io.strimzi.api.kafka.model.balancing.BrokerCapacity brokerCapacity,
+                                     io.strimzi.api.kafka.model.kafka.cruisecontrol.BrokerCapacity brokerCapacity,
                                      String brokerOneCpuValue,
                                      String brokerTwoCpuValue,
                                      String brokerThreeCpuValue) {

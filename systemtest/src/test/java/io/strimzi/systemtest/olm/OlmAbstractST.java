@@ -4,15 +4,15 @@
  */
 package io.strimzi.systemtest.olm;
 
-import io.strimzi.api.kafka.model.Kafka;
-import io.strimzi.api.kafka.model.KafkaBridge;
-import io.strimzi.api.kafka.model.KafkaConnect;
-import io.strimzi.api.kafka.model.KafkaMirrorMaker;
-import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
-import io.strimzi.api.kafka.model.KafkaRebalance;
-import io.strimzi.api.kafka.model.KafkaTopic;
-import io.strimzi.api.kafka.model.KafkaUser;
-import io.strimzi.api.kafka.model.balancing.KafkaRebalanceState;
+import io.strimzi.api.kafka.model.bridge.KafkaBridge;
+import io.strimzi.api.kafka.model.connect.KafkaConnect;
+import io.strimzi.api.kafka.model.kafka.Kafka;
+import io.strimzi.api.kafka.model.mirrormaker.KafkaMirrorMaker;
+import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2;
+import io.strimzi.api.kafka.model.rebalance.KafkaRebalance;
+import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState;
+import io.strimzi.api.kafka.model.topic.KafkaTopic;
+import io.strimzi.api.kafka.model.user.KafkaUser;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
@@ -29,7 +29,6 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.extension.ExtensionContext;
-
 
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 

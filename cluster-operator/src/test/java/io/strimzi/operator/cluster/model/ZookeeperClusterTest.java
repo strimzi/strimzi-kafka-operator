@@ -22,35 +22,35 @@ import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeerBuilder;
 import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
-import io.strimzi.api.kafka.model.ContainerEnvVar;
-import io.strimzi.api.kafka.model.JmxPrometheusExporterMetricsBuilder;
-import io.strimzi.api.kafka.model.Kafka;
-import io.strimzi.api.kafka.model.KafkaBuilder;
-import io.strimzi.api.kafka.model.KafkaJmxAuthenticationPasswordBuilder;
-import io.strimzi.api.kafka.model.KafkaJmxOptionsBuilder;
-import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.MetricsConfig;
-import io.strimzi.api.kafka.model.ProbeBuilder;
-import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
-import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
-import io.strimzi.api.kafka.model.storage.EphemeralStorageBuilder;
-import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
-import io.strimzi.api.kafka.model.storage.PersistentClaimStorageOverrideBuilder;
-import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
-import io.strimzi.api.kafka.model.storage.Storage;
-import io.strimzi.api.kafka.model.template.ContainerTemplate;
-import io.strimzi.api.kafka.model.template.IpFamily;
-import io.strimzi.api.kafka.model.template.IpFamilyPolicy;
+import io.strimzi.api.kafka.model.common.ContainerEnvVar;
+import io.strimzi.api.kafka.model.common.ProbeBuilder;
+import io.strimzi.api.kafka.model.common.jmx.KafkaJmxAuthenticationPasswordBuilder;
+import io.strimzi.api.kafka.model.common.jmx.KafkaJmxOptionsBuilder;
+import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetricsBuilder;
+import io.strimzi.api.kafka.model.common.metrics.MetricsConfig;
+import io.strimzi.api.kafka.model.common.template.ContainerTemplate;
+import io.strimzi.api.kafka.model.common.template.IpFamily;
+import io.strimzi.api.kafka.model.common.template.IpFamilyPolicy;
+import io.strimzi.api.kafka.model.kafka.EphemeralStorageBuilder;
+import io.strimzi.api.kafka.model.kafka.Kafka;
+import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
+import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageOverrideBuilder;
+import io.strimzi.api.kafka.model.kafka.SingleVolumeStorage;
+import io.strimzi.api.kafka.model.kafka.Storage;
+import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
+import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.model.jmx.JmxModel;
 import io.strimzi.operator.cluster.model.metrics.MetricsModel;
 import io.strimzi.operator.common.Annotations;
-import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
@@ -126,7 +126,7 @@ public class ZookeeperClusterTest {
 
     private Map<String, String> expectedSelectorLabels()    {
         return Map.of(Labels.STRIMZI_CLUSTER_LABEL, CLUSTER,
-                Labels.STRIMZI_NAME_LABEL, KafkaResources.zookeeperStatefulSetName(CLUSTER),
+                Labels.STRIMZI_NAME_LABEL, KafkaResources.zookeeperComponentName(CLUSTER),
                 Labels.STRIMZI_KIND_LABEL, Kafka.RESOURCE_KIND);
     }
 
@@ -531,7 +531,7 @@ public class ZookeeperClusterTest {
         NetworkPolicy np = zc.generateNetworkPolicy("operator-namespace", null);
 
         LabelSelector podSelector = new LabelSelector();
-        podSelector.setMatchLabels(Map.of(Labels.STRIMZI_KIND_LABEL, "Kafka", Labels.STRIMZI_CLUSTER_LABEL, CLUSTER, Labels.STRIMZI_NAME_LABEL, KafkaResources.zookeeperStatefulSetName(CLUSTER)));
+        podSelector.setMatchLabels(Map.of(Labels.STRIMZI_KIND_LABEL, "Kafka", Labels.STRIMZI_CLUSTER_LABEL, CLUSTER, Labels.STRIMZI_NAME_LABEL, KafkaResources.zookeeperComponentName(CLUSTER)));
         assertThat(np.getSpec().getPodSelector(), is(podSelector));
 
         List<NetworkPolicyIngressRule> rules = np.getSpec().getIngress();
@@ -544,7 +544,7 @@ public class ZookeeperClusterTest {
 
         assertThat(zooRule.getFrom().size(), is(1));
         podSelector = new LabelSelector();
-        podSelector.setMatchLabels(Map.of(Labels.STRIMZI_KIND_LABEL, "Kafka", Labels.STRIMZI_CLUSTER_LABEL, CLUSTER, Labels.STRIMZI_NAME_LABEL, KafkaResources.zookeeperStatefulSetName(CLUSTER)));
+        podSelector.setMatchLabels(Map.of(Labels.STRIMZI_KIND_LABEL, "Kafka", Labels.STRIMZI_CLUSTER_LABEL, CLUSTER, Labels.STRIMZI_NAME_LABEL, KafkaResources.zookeeperComponentName(CLUSTER)));
         assertThat(zooRule.getFrom().get(0), is(new NetworkPolicyPeerBuilder().withPodSelector(podSelector).build()));
 
         // Ports 3888
@@ -554,7 +554,7 @@ public class ZookeeperClusterTest {
 
         assertThat(zooRule2.getFrom().size(), is(1));
         podSelector = new LabelSelector();
-        podSelector.setMatchLabels(Map.of(Labels.STRIMZI_KIND_LABEL, "Kafka", Labels.STRIMZI_CLUSTER_LABEL, CLUSTER, Labels.STRIMZI_NAME_LABEL, KafkaResources.zookeeperStatefulSetName(CLUSTER)));
+        podSelector.setMatchLabels(Map.of(Labels.STRIMZI_KIND_LABEL, "Kafka", Labels.STRIMZI_CLUSTER_LABEL, CLUSTER, Labels.STRIMZI_NAME_LABEL, KafkaResources.zookeeperComponentName(CLUSTER)));
         assertThat(zooRule2.getFrom().get(0), is(new NetworkPolicyPeerBuilder().withPodSelector(podSelector).build()));
 
         // Port 2181
@@ -565,11 +565,11 @@ public class ZookeeperClusterTest {
         assertThat(clientsRule.getFrom().size(), is(4));
 
         podSelector = new LabelSelector();
-        podSelector.setMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, KafkaResources.kafkaStatefulSetName(zc.getCluster())));
+        podSelector.setMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, KafkaResources.kafkaComponentName(zc.getCluster())));
         assertThat(clientsRule.getFrom().get(0), is(new NetworkPolicyPeerBuilder().withPodSelector(podSelector).build()));
 
         podSelector = new LabelSelector();
-        podSelector.setMatchLabels(Map.of(Labels.STRIMZI_KIND_LABEL, "Kafka", Labels.STRIMZI_CLUSTER_LABEL, CLUSTER, Labels.STRIMZI_NAME_LABEL, KafkaResources.zookeeperStatefulSetName(CLUSTER)));
+        podSelector.setMatchLabels(Map.of(Labels.STRIMZI_KIND_LABEL, "Kafka", Labels.STRIMZI_CLUSTER_LABEL, CLUSTER, Labels.STRIMZI_NAME_LABEL, KafkaResources.zookeeperComponentName(CLUSTER)));
         assertThat(clientsRule.getFrom().get(1), is(new NetworkPolicyPeerBuilder().withPodSelector(podSelector).build()));
 
         podSelector = new LabelSelector();
@@ -1008,7 +1008,7 @@ public class ZookeeperClusterTest {
     @ParallelTest
     public void testDefaultPodDisruptionBudget()   {
         PodDisruptionBudget pdb = ZC.generatePodDisruptionBudget();
-        assertThat(pdb.getMetadata().getName(), is(KafkaResources.zookeeperStatefulSetName(CLUSTER)));
+        assertThat(pdb.getMetadata().getName(), is(KafkaResources.zookeeperComponentName(CLUSTER)));
         assertThat(pdb.getSpec().getMaxUnavailable(), is(nullValue()));
         assertThat(pdb.getSpec().getMinAvailable().getIntVal(), is(2));
         assertThat(pdb.getSpec().getSelector().getMatchLabels(), is(ZC.getSelectorLabels().toMap()));
