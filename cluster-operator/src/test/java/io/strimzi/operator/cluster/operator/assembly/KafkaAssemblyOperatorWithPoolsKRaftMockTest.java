@@ -88,30 +88,16 @@ public class KafkaAssemblyOperatorWithPoolsKRaftMockTest {
                 .withNewSpec()
                     .withNewKafka()
                         .withConfig(new HashMap<>())
-                        .withReplicas(3)
                         .withListeners(new GenericKafkaListenerBuilder()
                                 .withName("tls")
                                 .withPort(9092)
                                 .withType(KafkaListenerType.INTERNAL)
                                 .withTls(true)
                                 .build())
-                        .withNewPersistentClaimStorage()
-                            .withSize("123")
-                            .withStorageClass("foo")
-                            .withDeleteClaim(true)
-                        .endPersistentClaimStorage()
                     .endKafka()
-                    .withNewZookeeper()
-                        .withReplicas(3)
-                        .withNewPersistentClaimStorage()
-                            .withSize("123")
-                            .withStorageClass("foo")
-                            .withDeleteClaim(true)
-                        .endPersistentClaimStorage()
-                    .endZookeeper()
                 .endSpec()
                 .withNewStatus()
-                .withClusterId("CLUSTERID") // Needed to avoid CLuster ID conflicts => should be the same as used in the Kafka Admin API
+                    .withClusterId("CLUSTERID") // Needed to avoid CLuster ID conflicts => should be the same as used in the Kafka Admin API
                 .endStatus()
                 .build();
 
@@ -173,7 +159,6 @@ public class KafkaAssemblyOperatorWithPoolsKRaftMockTest {
 
         ClusterOperatorConfig config = new ClusterOperatorConfig.ClusterOperatorConfigBuilder(ResourceUtils.dummyClusterOperatorConfig(), VERSIONS)
                 .with(ClusterOperatorConfig.OPERATION_TIMEOUT_MS.key(), "10000")
-                .with(ClusterOperatorConfig.FEATURE_GATES.key(), "+UseKRaft")
                 .build();
         operator = new KafkaAssemblyOperator(vertx, pfa, new MockCertManager(),
                 new PasswordGenerator(10, "a", "a"), supplier, config);

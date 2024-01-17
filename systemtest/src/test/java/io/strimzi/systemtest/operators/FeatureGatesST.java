@@ -125,7 +125,7 @@ public class FeatureGatesST extends AbstractST {
         final int kafkaReplicas = 3;
 
         // as the only FG set in the CO is 'KafkaNodePools' (kraft not included) Broker role is the only one that kafka broker can take
-        setupClusterOperatorWithFeatureGate(extensionContext, "+KafkaNodePools");
+        setupClusterOperatorWithFeatureGate(extensionContext, "+KafkaNodePools,-UseKRaft");
 
         LOGGER.info("Deploying Kafka Cluster: {}/{} controlled by KafkaNodePool: {}", testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getKafkaNodePoolName());
         final Kafka kafkaCr = KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), kafkaReplicas, 3)
@@ -176,7 +176,7 @@ public class FeatureGatesST extends AbstractST {
         final String kafkaNodePoolName = "kafka";
 
         // as the only FG set in the CO is 'KafkaNodePools' (kraft not included) Broker role is the only one that kafka broker can take
-        setupClusterOperatorWithFeatureGate(extensionContext, "+KafkaNodePools");
+        setupClusterOperatorWithFeatureGate(extensionContext, "");
 
         // setup clients
         final KafkaClients clients = new KafkaClientsBuilder()
@@ -226,7 +226,7 @@ public class FeatureGatesST extends AbstractST {
         StrimziPodSetUtils.waitForAllStrimziPodSetAndPodsReady(
             testStorage.getNamespaceName(),
             KafkaResource.getStrimziPodSetName(testStorage.getClusterName(), kafkaNodePoolName),
-            KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()),
+            KafkaResources.kafkaComponentName(testStorage.getClusterName()),
             nodePoolIncreasedKafkaReplicaCount
         );
 
@@ -239,7 +239,7 @@ public class FeatureGatesST extends AbstractST {
 
         LOGGER.info("Changing FG env variable to disable Kafka Node Pools");
         List<EnvVar> coEnvVars = kubeClient().getDeployment(clusterOperator.getDeploymentNamespace(), TestConstants.STRIMZI_DEPLOYMENT_NAME).getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
-        coEnvVars.stream().filter(env -> env.getName().equals(Environment.STRIMZI_FEATURE_GATES_ENV)).findFirst().get().setValue("-KafkaNodePools");
+        coEnvVars.stream().filter(env -> env.getName().equals(Environment.STRIMZI_FEATURE_GATES_ENV)).findFirst().get().setValue("-KafkaNodePools,-UseKRaft");
 
         Deployment coDep = kubeClient().getDeployment(clusterOperator.getDeploymentNamespace(), TestConstants.STRIMZI_DEPLOYMENT_NAME);
         coDep.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(coEnvVars);
@@ -255,11 +255,11 @@ public class FeatureGatesST extends AbstractST {
 
         StrimziPodSetUtils.waitForAllStrimziPodSetAndPodsReady(
             testStorage.getNamespaceName(),
-            KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()),
-            KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()),
+            KafkaResources.kafkaComponentName(testStorage.getClusterName()),
+            KafkaResources.kafkaComponentName(testStorage.getClusterName()),
             originalKafkaReplicaCount
         );
-        PodUtils.waitUntilPodStabilityReplicasCount(testStorage.getNamespaceName(), KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()), originalKafkaReplicaCount);
+        PodUtils.waitUntilPodStabilityReplicasCount(testStorage.getNamespaceName(), KafkaResources.kafkaComponentName(testStorage.getClusterName()), originalKafkaReplicaCount);
 
         LOGGER.info("Producing and Consuming messages with clients: {}, {} in Namespace {}", testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName());
         resourceManager.createResourceWithWait(extensionContext,
@@ -288,10 +288,10 @@ public class FeatureGatesST extends AbstractST {
         StrimziPodSetUtils.waitForAllStrimziPodSetAndPodsReady(
             testStorage.getNamespaceName(),
             KafkaResource.getStrimziPodSetName(testStorage.getClusterName(), kafkaNodePoolName),
-            KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()),
+            KafkaResources.kafkaComponentName(testStorage.getClusterName()),
             nodePoolIncreasedKafkaReplicaCount
         );
-        PodUtils.waitUntilPodStabilityReplicasCount(testStorage.getNamespaceName(), KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()), nodePoolIncreasedKafkaReplicaCount);
+        PodUtils.waitUntilPodStabilityReplicasCount(testStorage.getNamespaceName(), KafkaResources.kafkaComponentName(testStorage.getClusterName()), nodePoolIncreasedKafkaReplicaCount);
 
         LOGGER.info("Producing and Consuming messages with clients: {}, {} in Namespace {}", testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName());
         resourceManager.createResourceWithWait(extensionContext,

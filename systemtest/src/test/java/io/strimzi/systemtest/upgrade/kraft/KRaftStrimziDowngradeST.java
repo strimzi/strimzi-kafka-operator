@@ -16,7 +16,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -24,7 +23,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.IOException;
-import java.util.List;
 
 import static io.strimzi.systemtest.TestConstants.CO_NAMESPACE;
 import static io.strimzi.systemtest.TestConstants.INTERNAL_CLIENTS_USED;
@@ -37,10 +35,9 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  * Metadata for the following tests are collected from systemtest/src/test/resources/upgrade/BundleDowngrade.yaml
  */
 @Tag(KRAFT_UPGRADE)
-@Disabled("The tests are currently disabled, as the KRaft to KRaft downgrade (with operator downgrade) is not handled in Strimzi 0.38.0")
 public class KRaftStrimziDowngradeST extends AbstractKRaftUpgradeST {
     private static final Logger LOGGER = LogManager.getLogger(KRaftStrimziDowngradeST.class);
-    private final List<BundleVersionModificationData> bundleDowngradeMetadata = new VersionModificationDataLoader(VersionModificationDataLoader.ModificationType.BUNDLE_DOWNGRADE).getBundleUpgradeOrDowngradeDataList();
+    private final BundleVersionModificationData bundleDowngradeVersionData = new VersionModificationDataLoader(VersionModificationDataLoader.ModificationType.BUNDLE_DOWNGRADE).buildDataForDowngradeUsingFirstScenarioForKRaft();
 
     @ParameterizedTest(name = "testDowngradeStrimziVersion-{0}-{1}")
     @MethodSource("io.strimzi.systemtest.upgrade.VersionModificationDataLoader#loadYamlDowngradeDataForKRaft")
@@ -56,17 +53,14 @@ public class KRaftStrimziDowngradeST extends AbstractKRaftUpgradeST {
     @Test
     void testDowngradeOfKafkaConnectAndKafkaConnector(final ExtensionContext extensionContext) throws IOException {
         final TestStorage testStorage = new TestStorage(extensionContext, TestConstants.CO_NAMESPACE);
-        final BundleVersionModificationData bundleDowngradeDataWithFeatureGates = bundleDowngradeMetadata.stream()
-            .filter(bundleMetadata -> bundleMetadata.getFeatureGatesBefore() != null && !bundleMetadata.getFeatureGatesBefore().isEmpty() ||
-                bundleMetadata.getFeatureGatesAfter() != null && !bundleMetadata.getFeatureGatesAfter().isEmpty()).toList().get(0);
-        UpgradeKafkaVersion upgradeKafkaVersion = new UpgradeKafkaVersion(bundleDowngradeDataWithFeatureGates.getDeployKafkaVersion());
+        UpgradeKafkaVersion upgradeKafkaVersion = new UpgradeKafkaVersion(bundleDowngradeVersionData.getDeployKafkaVersion());
 
-        doKafkaConnectAndKafkaConnectorUpgradeOrDowngradeProcedure(extensionContext, bundleDowngradeDataWithFeatureGates, testStorage, upgradeKafkaVersion);
+        doKafkaConnectAndKafkaConnectorUpgradeOrDowngradeProcedure(extensionContext, bundleDowngradeVersionData, testStorage, upgradeKafkaVersion);
     }
 
     @SuppressWarnings("MethodLength")
     private void performDowngrade(BundleVersionModificationData downgradeData, ExtensionContext extensionContext) throws IOException {
-        TestStorage testStorage = new TestStorage(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         String lowerMetadataVersion = downgradeData.getProcedures().getMetadataVersion();
         UpgradeKafkaVersion testUpgradeKafkaVersion = new UpgradeKafkaVersion(downgradeData.getDeployKafkaVersion(), lowerMetadataVersion);
@@ -78,6 +72,8 @@ public class KRaftStrimziDowngradeST extends AbstractKRaftUpgradeST {
         setupEnvAndUpgradeClusterOperator(extensionContext, downgradeData, testStorage, testUpgradeKafkaVersion, TestConstants.CO_NAMESPACE);
 
         logPodImages(TestConstants.CO_NAMESPACE);
+
+        boolean wasUTOUsedBefore = StUtils.isUnidirectionalTopicOperatorUsed(TestConstants.CO_NAMESPACE, eoSelector);
 
         // Downgrade CO
         changeClusterOperator(downgradeData, TestConstants.CO_NAMESPACE, extensionContext);
@@ -96,7 +92,7 @@ public class KRaftStrimziDowngradeST extends AbstractKRaftUpgradeST {
         checkAllImages(downgradeData, TestConstants.CO_NAMESPACE);
 
         // Verify upgrade
-        verifyProcedure(downgradeData, testStorage.getProducerName(), testStorage.getConsumerName(), TestConstants.CO_NAMESPACE);
+        verifyProcedure(downgradeData, testStorage.getProducerName(), testStorage.getConsumerName(), TestConstants.CO_NAMESPACE, wasUTOUsedBefore);
     }
 
     @BeforeEach
@@ -106,6 +102,7 @@ public class KRaftStrimziDowngradeST extends AbstractKRaftUpgradeST {
 
     @AfterEach
     void afterEach() {
+        cleanUpKafkaTopics();
         deleteInstalledYamls(coDir, TestConstants.CO_NAMESPACE);
         NamespaceManager.getInstance().deleteNamespaceWithWait(CO_NAMESPACE);
     }

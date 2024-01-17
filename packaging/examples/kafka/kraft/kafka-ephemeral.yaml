@@ -9,12 +9,7 @@ spec:
   roles:
     - controller
   storage:
-    type: jbod
-    volumes:
-      - id: 0
-        type: persistent-claim
-        size: 20Gi
-        deleteClaim: false
+    type: ephemeral
 ---
 
 apiVersion: kafka.strimzi.io/v1beta2
@@ -28,12 +23,7 @@ spec:
   roles:
     - broker
   storage:
-    type: jbod
-    volumes:
-      - id: 0
-        type: persistent-claim
-        size: 100Gi
-        deleteClaim: false
+    type: ephemeral
 ---
 
 apiVersion: kafka.strimzi.io/v1beta2
@@ -47,9 +37,6 @@ spec:
   kafka:
     version: 3.6.1
     metadataVersion: 3.6-IV2
-    # The replicas field is required by the Kafka CRD schema while the KafkaNodePools feature gate is in alpha phase.
-    # But it will be ignored when Kafka Node Pools are used
-    replicas: 3
     listeners:
       - name: plain
         port: 9092
@@ -65,23 +52,6 @@ spec:
       transaction.state.log.min.isr: 2
       default.replication.factor: 3
       min.insync.replicas: 2
-    # The storage field is required by the Kafka CRD schema while the KafkaNodePools feature gate is in alpha phase.
-    # But it will be ignored when Kafka Node Pools are used
-    storage:
-      type: jbod
-      volumes:
-      - id: 0
-        type: persistent-claim
-        size: 100Gi
-        deleteClaim: false
-  # The ZooKeeper section is required by the Kafka CRD schema while the UseKRaft feature gate is in alpha phase.
-  # But it will be ignored when running in KRaft mode
-  zookeeper:
-    replicas: 3
-    storage:
-      type: persistent-claim
-      size: 100Gi
-      deleteClaim: false
   entityOperator:
     topicOperator: {}
     userOperator: {}

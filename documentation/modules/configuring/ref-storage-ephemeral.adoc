@@ -21,7 +21,7 @@ You can set the total amount of storage for the `emptyDir` using the `sizeLimit`
 IMPORTANT: Ephemeral storage is not suitable for single-node ZooKeeper clusters or Kafka topics with a replication factor of 1.
 
 To use ephemeral storage, you set the storage type configuration in the `Kafka` or `ZooKeeper` resource to `ephemeral`.
-If you are using the preview of the node pools feature, you can also specify `ephemeral` in the storage configuration of individual node pools.
+If you are using node pools, you can also specify `ephemeral` in the storage configuration of individual node pools.
 
 .Example ephemeral storage configuration
 [source,yaml,subs="attributes+"]

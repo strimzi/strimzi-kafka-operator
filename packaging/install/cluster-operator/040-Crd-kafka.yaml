@@ -69,7 +69,7 @@ spec:
                   replicas:
                     type: integer
                     minimum: 1
-                    description: The number of pods in the cluster.
+                    description: The number of pods in the cluster. This property is required when node pools are not used.
                   image:
                     type: string
                     description: "The container image used for Kafka pods. If the property is not set, the default Kafka image version is determined based on the `version` configuration. The image names are specifically mapped to corresponding versions in the Cluster Operator configuration. Changing the Kafka image version does not automatically update the image versions for other components, such as Kafka Exporter. "
@@ -580,7 +580,7 @@ spec:
                         description: List of volumes as Storage objects representing the JBOD disks array.
                     required:
                     - type
-                    description: Storage configuration (disk). Cannot be updated.
+                    description: Storage configuration (disk). Cannot be updated. This property is required when node pools are not used.
                   authorization:
                     type: object
                     properties:
@@ -1087,6 +1087,14 @@ spec:
                                                   additionalProperties:
                                                     type: string
                                                   type: object
+                                            matchLabelKeys:
+                                              type: array
+                                              items:
+                                                type: string
+                                            mismatchLabelKeys:
+                                              type: array
+                                              items:
+                                                type: string
                                             namespaceSelector:
                                               type: object
                                               properties:
@@ -1140,6 +1148,14 @@ spec:
                                               additionalProperties:
                                                 type: string
                                               type: object
+                                        matchLabelKeys:
+                                          type: array
+                                          items:
+                                            type: string
+                                        mismatchLabelKeys:
+                                          type: array
+                                          items:
+                                            type: string
                                         namespaceSelector:
                                           type: object
                                           properties:
@@ -1197,6 +1213,14 @@ spec:
                                                   additionalProperties:
                                                     type: string
                                                   type: object
+                                            matchLabelKeys:
+                                              type: array
+                                              items:
+                                                type: string
+                                            mismatchLabelKeys:
+                                              type: array
+                                              items:
+                                                type: string
                                             namespaceSelector:
                                               type: object
                                               properties:
@@ -1250,6 +1274,14 @@ spec:
                                               additionalProperties:
                                                 type: string
                                               type: object
+                                        matchLabelKeys:
+                                          type: array
+                                          items:
+                                            type: string
+                                        mismatchLabelKeys:
+                                          type: array
+                                          items:
+                                            type: string
                                         namespaceSelector:
                                           type: object
                                           properties:
@@ -1815,9 +1847,7 @@ spec:
                         description: Template for Kafka `StrimziPodSet` resource.
                     description: Template for Kafka cluster resources. The template allows users to specify how the Kubernetes resources are generated.
                 required:
-                - replicas
                 - listeners
-                - storage
                 description: Configuration of the Kafka cluster.
               zookeeper:
                 type: object
@@ -2267,6 +2297,14 @@ spec:
                                                   additionalProperties:
                                                     type: string
                                                   type: object
+                                            matchLabelKeys:
+                                              type: array
+                                              items:
+                                                type: string
+                                            mismatchLabelKeys:
+                                              type: array
+                                              items:
+                                                type: string
                                             namespaceSelector:
                                               type: object
                                               properties:
@@ -2320,6 +2358,14 @@ spec:
                                               additionalProperties:
                                                 type: string
                                               type: object
+                                        matchLabelKeys:
+                                          type: array
+                                          items:
+                                            type: string
+                                        mismatchLabelKeys:
+                                          type: array
+                                          items:
+                                            type: string
                                         namespaceSelector:
                                           type: object
                                           properties:
@@ -2377,6 +2423,14 @@ spec:
                                                   additionalProperties:
                                                     type: string
                                                   type: object
+                                            matchLabelKeys:
+                                              type: array
+                                              items:
+                                                type: string
+                                            mismatchLabelKeys:
+                                              type: array
+                                              items:
+                                                type: string
                                             namespaceSelector:
                                               type: object
                                               properties:
@@ -2430,6 +2484,14 @@ spec:
                                               additionalProperties:
                                                 type: string
                                               type: object
+                                        matchLabelKeys:
+                                          type: array
+                                          items:
+                                            type: string
+                                        mismatchLabelKeys:
+                                          type: array
+                                          items:
+                                            type: string
                                         namespaceSelector:
                                           type: object
                                           properties:
@@ -2779,7 +2841,7 @@ spec:
                 required:
                 - replicas
                 - storage
-                description: Configuration of the ZooKeeper cluster.
+                description: Configuration of the ZooKeeper cluster. This section is required when running a ZooKeeper-based Apache Kafka cluster.
               entityOperator:
                 type: object
                 properties:
@@ -3409,6 +3471,14 @@ spec:
                                                   additionalProperties:
                                                     type: string
                                                   type: object
+                                            matchLabelKeys:
+                                              type: array
+                                              items:
+                                                type: string
+                                            mismatchLabelKeys:
+                                              type: array
+                                              items:
+                                                type: string
                                             namespaceSelector:
                                               type: object
                                               properties:
@@ -3462,6 +3532,14 @@ spec:
                                               additionalProperties:
                                                 type: string
                                               type: object
+                                        matchLabelKeys:
+                                          type: array
+                                          items:
+                                            type: string
+                                        mismatchLabelKeys:
+                                          type: array
+                                          items:
+                                            type: string
                                         namespaceSelector:
                                           type: object
                                           properties:
@@ -3519,6 +3597,14 @@ spec:
                                                   additionalProperties:
                                                     type: string
                                                   type: object
+                                            matchLabelKeys:
+                                              type: array
+                                              items:
+                                                type: string
+                                            mismatchLabelKeys:
+                                              type: array
+                                              items:
+                                                type: string
                                             namespaceSelector:
                                               type: object
                                               properties:
@@ -3572,6 +3658,14 @@ spec:
                                               additionalProperties:
                                                 type: string
                                               type: object
+                                        matchLabelKeys:
+                                          type: array
+                                          items:
+                                            type: string
+                                        mismatchLabelKeys:
+                                          type: array
+                                          items:
+                                            type: string
                                         namespaceSelector:
                                           type: object
                                           properties:
@@ -4464,6 +4558,14 @@ spec:
                                                   additionalProperties:
                                                     type: string
                                                   type: object
+                                            matchLabelKeys:
+                                              type: array
+                                              items:
+                                                type: string
+                                            mismatchLabelKeys:
+                                              type: array
+                                              items:
+                                                type: string
                                             namespaceSelector:
                                               type: object
                                               properties:
@@ -4517,6 +4619,14 @@ spec:
                                               additionalProperties:
                                                 type: string
                                               type: object
+                                        matchLabelKeys:
+                                          type: array
+                                          items:
+                                            type: string
+                                        mismatchLabelKeys:
+                                          type: array
+                                          items:
+                                            type: string
                                         namespaceSelector:
                                           type: object
                                           properties:
@@ -4574,6 +4684,14 @@ spec:
                                                   additionalProperties:
                                                     type: string
                                                   type: object
+                                            matchLabelKeys:
+                                              type: array
+                                              items:
+                                                type: string
+                                            mismatchLabelKeys:
+                                              type: array
+                                              items:
+                                                type: string
                                             namespaceSelector:
                                               type: object
                                               properties:
@@ -4627,6 +4745,14 @@ spec:
                                               additionalProperties:
                                                 type: string
                                               type: object
+                                        matchLabelKeys:
+                                          type: array
+                                          items:
+                                            type: string
+                                        mismatchLabelKeys:
+                                          type: array
+                                          items:
+                                            type: string
                                         namespaceSelector:
                                           type: object
                                           properties:
@@ -5338,6 +5464,14 @@ spec:
                                                   additionalProperties:
                                                     type: string
                                                   type: object
+                                            matchLabelKeys:
+                                              type: array
+                                              items:
+                                                type: string
+                                            mismatchLabelKeys:
+                                              type: array
+                                              items:
+                                                type: string
                                             namespaceSelector:
                                               type: object
                                               properties:
@@ -5391,6 +5525,14 @@ spec:
                                               additionalProperties:
                                                 type: string
                                               type: object
+                                        matchLabelKeys:
+                                          type: array
+                                          items:
+                                            type: string
+                                        mismatchLabelKeys:
+                                          type: array
+                                          items:
+                                            type: string
                                         namespaceSelector:
                                           type: object
                                           properties:
@@ -5448,6 +5590,14 @@ spec:
                                                   additionalProperties:
                                                     type: string
                                                   type: object
+                                            matchLabelKeys:
+                                              type: array
+                                              items:
+                                                type: string
+                                            mismatchLabelKeys:
+                                              type: array
+                                              items:
+                                                type: string
                                             namespaceSelector:
                                               type: object
                                               properties:
@@ -5501,6 +5651,14 @@ spec:
                                               additionalProperties:
                                                 type: string
                                               type: object
+                                        matchLabelKeys:
+                                          type: array
+                                          items:
+                                            type: string
+                                        mismatchLabelKeys:
+                                          type: array
+                                          items:
+                                            type: string
                                         namespaceSelector:
                                           type: object
                                           properties:
@@ -5972,6 +6130,14 @@ spec:
                                                   additionalProperties:
                                                     type: string
                                                   type: object
+                                            matchLabelKeys:
+                                              type: array
+                                              items:
+                                                type: string
+                                            mismatchLabelKeys:
+                                              type: array
+                                              items:
+                                                type: string
                                             namespaceSelector:
                                               type: object
                                               properties:
@@ -6025,6 +6191,14 @@ spec:
                                               additionalProperties:
                                                 type: string
                                               type: object
+                                        matchLabelKeys:
+                                          type: array
+                                          items:
+                                            type: string
+                                        mismatchLabelKeys:
+                                          type: array
+                                          items:
+                                            type: string
                                         namespaceSelector:
                                           type: object
                                           properties:
@@ -6082,6 +6256,14 @@ spec:
                                                   additionalProperties:
                                                     type: string
                                                   type: object
+                                            matchLabelKeys:
+                                              type: array
+                                              items:
+                                                type: string
+                                            mismatchLabelKeys:
+                                              type: array
+                                              items:
+                                                type: string
                                             namespaceSelector:
                                               type: object
                                               properties:
@@ -6135,6 +6317,14 @@ spec:
                                               additionalProperties:
                                                 type: string
                                               type: object
+                                        matchLabelKeys:
+                                          type: array
+                                          items:
+                                            type: string
+                                        mismatchLabelKeys:
+                                          type: array
+                                          items:
+                                            type: string
                                         namespaceSelector:
                                           type: object
                                           properties:
@@ -6413,7 +6603,6 @@ spec:
                 description: "A list of time windows for maintenance tasks (that is, certificates renewal). Each time window is defined by a cron expression."
             required:
             - kafka
-            - zookeeper
             description: "The specification of the Kafka and ZooKeeper clusters, and Topic Operator."
           status:
             type: object

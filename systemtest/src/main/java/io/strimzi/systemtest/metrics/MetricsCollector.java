@@ -165,22 +165,22 @@ public class MetricsCollector {
     private LabelSelector getLabelSelectorForResource() {
         switch (this.componentType) {
             case Kafka:
-                return KafkaResource.getLabelSelector(componentName, KafkaResources.kafkaStatefulSetName(componentName));
+                return KafkaResource.getLabelSelector(componentName, KafkaResources.kafkaComponentName(componentName));
             case Zookeeper:
-                return KafkaResource.getLabelSelector(componentName, KafkaResources.zookeeperStatefulSetName(componentName));
+                return KafkaResource.getLabelSelector(componentName, KafkaResources.zookeeperComponentName(componentName));
             case KafkaConnect:
-                return KafkaConnectResource.getLabelSelector(componentName, KafkaConnectResources.deploymentName(componentName));
+                return KafkaConnectResource.getLabelSelector(componentName, KafkaConnectResources.componentName(componentName));
             case KafkaExporter:
-                return kubeClient().getDeploymentSelectors(namespaceName, KafkaExporterResources.deploymentName(componentName));
+                return kubeClient().getDeploymentSelectors(namespaceName, KafkaExporterResources.componentName(componentName));
             case KafkaMirrorMaker2:
-                return KafkaMirrorMaker2Resource.getLabelSelector(componentName, KafkaMirrorMaker2Resources.deploymentName(componentName));
+                return KafkaMirrorMaker2Resource.getLabelSelector(componentName, KafkaMirrorMaker2Resources.componentName(componentName));
             case UserOperator:
             case TopicOperator:
                 return kubeClient().getDeploymentSelectors(namespaceName, KafkaResources.entityOperatorDeploymentName(componentName));
             case ClusterOperator:
                 return kubeClient().getDeploymentSelectors(namespaceName, componentName);
             case KafkaBridge:
-                return kubeClient().getDeploymentSelectors(namespaceName, KafkaBridgeResources.deploymentName(componentName));
+                return kubeClient().getDeploymentSelectors(namespaceName, KafkaBridgeResources.componentName(componentName));
             default:
                 return new LabelSelector();
         }

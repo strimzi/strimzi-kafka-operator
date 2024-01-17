@@ -53,8 +53,8 @@ import java.util.stream.Collectors;
 
 import static io.strimzi.api.kafka.model.kafka.KafkaClusterSpec.FORBIDDEN_PREFIXES;
 import static io.strimzi.api.kafka.model.kafka.KafkaClusterSpec.FORBIDDEN_PREFIX_EXCEPTIONS;
-import static io.strimzi.api.kafka.model.kafka.KafkaResources.kafkaStatefulSetName;
-import static io.strimzi.api.kafka.model.kafka.KafkaResources.zookeeperStatefulSetName;
+import static io.strimzi.api.kafka.model.kafka.KafkaResources.kafkaComponentName;
+import static io.strimzi.api.kafka.model.kafka.KafkaResources.zookeeperComponentName;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.TestUtils.indent;
@@ -180,8 +180,8 @@ public class KafkaUtils {
 
     @SuppressWarnings("unchecked")
     public static void waitForClusterStability(String namespaceName, String clusterName) {
-        LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, kafkaStatefulSetName(clusterName));
-        LabelSelector zkSelector = KafkaResource.getLabelSelector(clusterName, zookeeperStatefulSetName(clusterName));
+        LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, kafkaComponentName(clusterName));
+        LabelSelector zkSelector = KafkaResource.getLabelSelector(clusterName, zookeeperComponentName(clusterName));
 
         Map<String, String>[] zkPods = new Map[1];
         Map<String, String>[] kafkaPods = new Map[1];
@@ -427,8 +427,8 @@ public class KafkaUtils {
         TestUtils.waitFor("deletion of Kafka: " + namespaceName + "/" + kafkaClusterName, TestConstants.POLL_INTERVAL_FOR_RESOURCE_READINESS, DELETION_TIMEOUT,
             () -> {
                 if (KafkaResource.kafkaClient().inNamespace(namespaceName).withName(kafkaClusterName).get() == null &&
-                    StrimziPodSetResource.strimziPodSetClient().inNamespace(namespaceName).withName(KafkaResources.kafkaStatefulSetName(kafkaClusterName)).get() == null  &&
-                    StrimziPodSetResource.strimziPodSetClient().inNamespace(namespaceName).withName(KafkaResources.zookeeperStatefulSetName(kafkaClusterName)).get() == null  &&
+                    StrimziPodSetResource.strimziPodSetClient().inNamespace(namespaceName).withName(KafkaResources.kafkaComponentName(kafkaClusterName)).get() == null  &&
+                    StrimziPodSetResource.strimziPodSetClient().inNamespace(namespaceName).withName(KafkaResources.zookeeperComponentName(kafkaClusterName)).get() == null  &&
                     kubeClient(namespaceName).getDeployment(namespaceName, KafkaResources.entityOperatorDeploymentName(kafkaClusterName)) == null) {
                     return true;
                 } else {

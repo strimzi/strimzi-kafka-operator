@@ -1483,7 +1483,7 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
 
         Deployment deployment = new DeploymentBuilder()
                 .withNewMetadata()
-                    .withName(KafkaConnectResources.deploymentName(NAME))
+                    .withName(KafkaConnectResources.componentName(NAME))
                 .endMetadata()
                 .withNewSpec()
                     .withReplicas(3)
@@ -1655,7 +1655,7 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
         when(mockConnectOps.updateStatusAsync(any(), connectCaptor.capture())).thenReturn(Future.succeededFuture());
         when(mockDcOps.getAsync(kcNamespace, connect.getComponentName())).thenReturn(Future.succeededFuture(null));
         when(mockPodSetOps.getAsync(any(), any())).thenReturn(Future.succeededFuture());
-        when(mockNetPolOps.reconcile(any(), eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.deploymentName(kc.getMetadata().getName())), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
+        when(mockNetPolOps.reconcile(any(), eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.componentName(kc.getMetadata().getName())), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
         when(mockBcOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture());
         when(mockIsOps.getAsync(kcNamespace, kcName)).thenReturn(Future.succeededFuture());
         when(mockPodOps.listAsync(eq(kcNamespace), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));

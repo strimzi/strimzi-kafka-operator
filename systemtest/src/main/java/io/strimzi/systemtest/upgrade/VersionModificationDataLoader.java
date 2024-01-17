@@ -142,6 +142,23 @@ public class VersionModificationDataLoader {
         return acrossUpgradeData;
     }
 
+    public BundleVersionModificationData buildDataForDowngradeUsingFirstScenarioForKRaft() {
+        return buildDataForDowngradeUsingFirstScenario(KRAFT_UPGRADE_FEATURE_GATES);
+    }
+
+    /**
+     * Picks first downgrade scenario from whole list, adds needed feature gates (if there are some) and returns this updated single scenario.
+     * This is used in test cases where we don't want to go through the whole list of downgrade scenarios from BundleDowngrade.yaml file.
+     *
+     * @param featureGates feature gates that should be added to the whole test scenario
+     * @return data for particular downgrade scenario
+     */
+    public BundleVersionModificationData buildDataForDowngradeUsingFirstScenario(String featureGates) {
+        BundleVersionModificationData downgradeData = bundleVersionModificationDataList.get(0);
+
+        return updateUpgradeDataWithFeatureGates(downgradeData, featureGates);
+    }
+
     public static Stream<Arguments> loadYamlDowngradeData() {
         return loadYamlDowngradeDataWithFeatureGates(null);
     }

@@ -124,9 +124,9 @@
         <lombok.version>1.18.24</lombok.version>
 
         <!-- Runtime dependencies -->
-        <fabric8.kubernetes-client.version>6.9.2</fabric8.kubernetes-client.version>
-        <fabric8.openshift-client.version>6.9.2</fabric8.openshift-client.version>
-        <fabric8.kubernetes-model.version>6.9.2</fabric8.kubernetes-model.version>
+        <fabric8.kubernetes-client.version>6.10.0</fabric8.kubernetes-client.version>
+        <fabric8.openshift-client.version>6.10.0</fabric8.openshift-client.version>
+        <fabric8.kubernetes-model.version>6.10.0</fabric8.kubernetes-model.version>
         <fabric8.zjsonpatch.version>0.3.0</fabric8.zjsonpatch.version>
         <fasterxml.jackson-core.version>2.15.3</fasterxml.jackson-core.version>
         <fasterxml.jackson-databind.version>2.15.3</fasterxml.jackson-databind.version>
@@ -168,7 +168,7 @@
         <rest-assured.version>4.4.0</rest-assured.version>
         <rest-assured-json-path.version>4.4.0</rest-assured-json-path.version>
         <bouncycastle.version>1.76</bouncycastle.version>
-        <kroxylicious-testing.version>0.4.0</kroxylicious-testing.version>
+        <kroxylicious-testing.version>0.8.1</kroxylicious-testing.version>
 
         <!-- properties to skip surefire tests during failsafe execution -->
         <skipTests>false</skipTests>

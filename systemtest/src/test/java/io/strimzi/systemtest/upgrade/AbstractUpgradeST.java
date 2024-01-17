@@ -28,6 +28,7 @@ import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectorTemplates;
@@ -46,6 +47,7 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -60,14 +62,17 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
 
+import static io.strimzi.systemtest.TestConstants.CO_NAMESPACE;
 import static io.strimzi.systemtest.TestConstants.DEFAULT_SINK_FILE_PATH;
 import static io.strimzi.systemtest.TestConstants.PATH_TO_KAFKA_TOPIC_CONFIG;
+import static io.strimzi.systemtest.TestConstants.PATH_TO_PACKAGING;
 import static io.strimzi.systemtest.TestConstants.PATH_TO_PACKAGING_EXAMPLES;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.jupiter.api.Assertions.fail;
 
 public class AbstractUpgradeST extends AbstractST {
@@ -88,21 +93,36 @@ public class AbstractUpgradeST extends AbstractST {
     protected Map<String, String> coPods;
     protected Map<String, String> connectPods;
 
-    protected final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
-    protected final LabelSelector zkSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.zookeeperStatefulSetName(clusterName));
+    protected final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaComponentName(clusterName));
+    protected final LabelSelector zkSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.zookeeperComponentName(clusterName));
     protected final LabelSelector eoSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.entityOperatorDeploymentName(clusterName));
     protected final LabelSelector coSelector = new LabelSelectorBuilder().withMatchLabels(Map.of(Labels.STRIMZI_KIND_LABEL, "cluster-operator")).build();
-    protected final LabelSelector connectLabelSelector = KafkaConnectResource.getLabelSelector(clusterName, KafkaConnectResources.deploymentName(clusterName));
+    protected final LabelSelector connectLabelSelector = KafkaConnectResource.getLabelSelector(clusterName, KafkaConnectResources.componentName(clusterName));
 
     protected final String topicName = "my-topic";
     protected final String userName = "my-user";
     protected final int upgradeTopicCount = 40;
+    protected final int btoKafkaTopicsOnlyCount = 3;
+
     // ExpectedTopicCount contains additionally consumer-offset topic, my-topic and continuous-topic
-    protected final int expectedTopicCount = upgradeTopicCount + 3;
     protected File kafkaYaml;
 
-    protected int getExpectedTopicCount() {
-        return expectedTopicCount;
+    /**
+     * Based on {@param isUTOUsed} and {@param wasUTOUsedBefore} it returns the expected count of KafkaTopics.
+     * In case that UTO was used before and after, the expected number of KafkaTopics is {@link #upgradeTopicCount}.
+     * In other cases - BTO was used before or after the upgrade/downgrade - the expected number of KafkaTopics is {@link #upgradeTopicCount}
+     * with {@link #btoKafkaTopicsOnlyCount}.
+     * @param isUTOUsed boolean value determining if UTO is used after upgrade/downgrade of the CO
+     * @param wasUTOUsedBefore boolean value determining if UTO was used before upgrade/downgrade of the CO
+     * @return expected number of KafkaTopics
+     */
+    protected int getExpectedTopicCount(boolean isUTOUsed, boolean wasUTOUsedBefore) {
+        if (isUTOUsed && wasUTOUsedBefore) {
+            // topics that are just present in Kafka itself are not created as CRs in UTO, thus -3 topics in comparison to regular upgrade
+            return upgradeTopicCount;
+        }
+
+        return upgradeTopicCount + btoKafkaTopicsOnlyCount;
     }
 
     protected void makeSnapshots() {
@@ -129,23 +149,23 @@ public class AbstractUpgradeST extends AbstractST {
         // #######################################################################
         String examplesPath = "";
         if (versionModificationData.getToUrl().equals("HEAD")) {
-            examplesPath = PATH_TO_PACKAGING_EXAMPLES + "";
+            examplesPath = PATH_TO_PACKAGING;
         } else {
             File dir = FileUtils.downloadAndUnzip(versionModificationData.getToUrl());
-            examplesPath = dir.getAbsolutePath() + "/" + versionModificationData.getToExamples() + "/examples";
+            examplesPath = dir.getAbsolutePath() + "/" + versionModificationData.getToExamples();
         }
 
-        kafkaYaml = new File(examplesPath + "/kafka/kafka-persistent.yaml");
+        kafkaYaml = new File(examplesPath + versionModificationData.getKafkaFilePathAfter());
         LOGGER.info("Deploying Kafka from: {}", kafkaYaml.getPath());
         // Change kafka version of it's empty (null is for remove the version)
         String defaultValueForVersions = kafkaVersionFromCR == null ? null : TestKafkaVersion.getSpecificVersion(kafkaVersionFromCR).messageVersion();
         cmdKubeClient().applyContent(KafkaUtils.changeOrRemoveKafkaConfiguration(kafkaYaml, kafkaVersionFromCR, defaultValueForVersions, defaultValueForVersions));
 
-        kafkaUserYaml = new File(examplesPath + "/user/kafka-user.yaml");
+        kafkaUserYaml = new File(examplesPath + "/examples/user/kafka-user.yaml");
         LOGGER.info("Deploying KafkaUser from: {}", kafkaUserYaml.getPath());
         cmdKubeClient().applyContent(KafkaUserUtils.removeKafkaUserPart(kafkaUserYaml, "authorization"));
 
-        kafkaTopicYaml = new File(examplesPath + "/topic/kafka-topic.yaml");
+        kafkaTopicYaml = new File(examplesPath + "/examples/topic/kafka-topic.yaml");
         LOGGER.info("Deploying KafkaTopic from: {}", kafkaTopicYaml.getPath());
         cmdKubeClient().applyContent(TestUtils.readFile(kafkaTopicYaml));
         // #######################################################################
@@ -250,6 +270,8 @@ public class AbstractUpgradeST extends AbstractST {
     }
 
     protected void copyModifyApply(File root, String namespace, final String strimziFeatureGatesValue) {
+        KubeClusterResource.getInstance().setNamespace(namespace);
+
         Arrays.stream(Objects.requireNonNull(root.listFiles())).sorted().forEach(f -> {
             if (f.getName().matches(".*RoleBinding.*")) {
                 cmdKubeClient().replaceContent(TestUtils.changeRoleBindingSubject(f, namespace));
@@ -363,6 +385,7 @@ public class AbstractUpgradeST extends AbstractST {
                 .withTopicName(testStorage.getTopicName())
                 .withMessageCount(upgradeData.getContinuousClientsMessages())
                 .withAdditionalConfig(producerAdditionConfiguration)
+                .withNamespaceName(namespace)
                 .withDelayMs(1000)
                 .build();
 
@@ -374,13 +397,15 @@ public class AbstractUpgradeST extends AbstractST {
         makeSnapshots();
     }
 
-    protected void verifyProcedure(BundleVersionModificationData upgradeData, String producerName, String consumerName, String namespace) {
+    protected void verifyProcedure(BundleVersionModificationData upgradeData, String producerName, String consumerName, String namespace, boolean wasUTOUsedBefore) {
 
         if (upgradeData.getAdditionalTopics() != null) {
+            boolean isUTOUsed = StUtils.isUnidirectionalTopicOperatorUsed(namespace, eoSelector);
+
             // Check that topics weren't deleted/duplicated during upgrade procedures
             String listedTopics = cmdKubeClient().getResources(getResourceApiVersion(KafkaTopic.RESOURCE_PLURAL));
             int additionalTopics = upgradeData.getAdditionalTopics();
-            assertThat("KafkaTopic list doesn't have expected size", Long.valueOf(listedTopics.lines().count() - 1).intValue(), is(getExpectedTopicCount() + additionalTopics));
+            assertThat("KafkaTopic list doesn't have expected size", Long.valueOf(listedTopics.lines().count() - 1).intValue(), greaterThanOrEqualTo(getExpectedTopicCount(isUTOUsed, wasUTOUsedBefore) + additionalTopics));
             assertThat("KafkaTopic " + topicName + " is not in expected Topic list",
                     listedTopics.contains(topicName), is(true));
             for (int x = 0; x < upgradeTopicCount; x++) {
@@ -396,6 +421,7 @@ public class AbstractUpgradeST extends AbstractST {
             // ##############################
         }
     }
+
     protected String getResourceApiVersion(String resourcePlural) {
         return resourcePlural + "." + Constants.V1BETA2 + "." + Constants.RESOURCE_GROUP_NAME;
     }
@@ -438,7 +464,7 @@ public class AbstractUpgradeST extends AbstractST {
                     .endSpec()
                     .build());
             } else {
-                kafkaYaml = new File(dir, upgradeData.getFromExamples() + "/examples/kafka/kafka-persistent.yaml");
+                kafkaYaml = new File(dir, upgradeData.getFromExamples() + upgradeData.getKafkaFilePathBefore());
                 LOGGER.info("Deploying Kafka from: {}", kafkaYaml.getPath());
                 // Change kafka version of it's empty (null is for remove the version)
                 if (upgradeKafkaVersion == null) {
@@ -618,10 +644,24 @@ public class AbstractUpgradeST extends AbstractST {
 
     protected String downloadExamplesAndGetPath(CommonVersionModificationData versionModificationData) throws IOException {
         if (versionModificationData.getToUrl().equals("HEAD")) {
-            return PATH_TO_PACKAGING_EXAMPLES;
+            return PATH_TO_PACKAGING;
         } else {
             File dir = FileUtils.downloadAndUnzip(versionModificationData.getToUrl());
-            return dir.getAbsolutePath() + "/" + versionModificationData.getToExamples() + "/examples";
+            return dir.getAbsolutePath() + "/" + versionModificationData.getToExamples();
         }
+    }
+
+    protected void cleanUpKafkaTopics() {
+        List<KafkaTopic> topics = KafkaTopicResource.kafkaTopicClient().inNamespace(CO_NAMESPACE).list().getItems();
+        boolean finalizersAreSet = topics.stream().anyMatch(kafkaTopic -> kafkaTopic.getFinalizers() != null);
+
+        // in case that we are upgrading/downgrading from UTO to BTO, we have to set finalizers on topics to null before deleting them
+        if (!StUtils.isUnidirectionalTopicOperatorUsed(CO_NAMESPACE, eoSelector) && finalizersAreSet) {
+            KafkaTopicUtils.setFinalizersInAllTopicsToNull(CO_NAMESPACE);
+        }
+
+        // delete all topics created in test
+        cmdKubeClient(TestConstants.CO_NAMESPACE).deleteAllByResource(KafkaTopic.RESOURCE_KIND);
+        KafkaTopicUtils.waitForTopicWithPrefixDeletion(TestConstants.CO_NAMESPACE, topicName);
     }
 }

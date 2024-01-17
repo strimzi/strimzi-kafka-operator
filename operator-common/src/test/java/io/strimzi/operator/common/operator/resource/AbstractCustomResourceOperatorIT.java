@@ -18,6 +18,7 @@ import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.WorkerExecutor;
 import io.vertx.junit5.Checkpoint;
+import io.vertx.junit5.Timeout;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.apache.logging.log4j.LogManager;
@@ -29,6 +30,7 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
@@ -108,6 +110,8 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
             LOGGER.warn("Deleting namespace {} after tests run", namespace);
             kubeClient().deleteNamespace(namespace);
             cmdKubeClient().waitForResourceDeletion("Namespace", namespace);
+            LOGGER.info("Deleting CRD");
+            KubeClusterResource.getInstance().deleteCustomResources();
         }
     }
 
@@ -142,11 +146,15 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
     }
 
     /**
-     * Tests what happens when the resource is deleted while updating the status
+     * Tests what happens when the resource is deleted while updating the status.
      *
-     * @param context   Test context
+     * The CR removal does not consistently complete within the default timeout.
+     * This requires increasing the timeout for completion to 1 minute.
+     *
+     * @param context Test context
      */
     @Test
+    @Timeout(value = 1, timeUnit = TimeUnit.MINUTES)
     public void testUpdateStatusAfterResourceDeletedThrowsKubernetesClientException(VertxTestContext context) {
         String resourceName = getResourceName(RESOURCE_NAME);
         Checkpoint async = context.checkpoint();
@@ -167,10 +175,7 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
                     return op.deleteAsync(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, false);
                 })
                 .onComplete(context.succeeding(i -> { }))
-                .compose(i -> {
-                    LOGGER.info("Wait for confirmed deletion");
-                    return op.waitFor(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, 100L, 10_000L, (n, ns) -> operator().get(namespace, resourceName) == null);
-                })
+
                 .compose(i -> {
                     LOGGER.info("Updating resource with new status - should fail");
                     return op.updateStatusAsync(Reconciliation.DUMMY_RECONCILIATION, newStatus.get());

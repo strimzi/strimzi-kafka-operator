@@ -495,7 +495,7 @@ public class KafkaReconciler {
      */
     protected Future<Void> serviceAccount() {
         return serviceAccountOperator
-                .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.kafkaStatefulSetName(reconciliation.name()), kafka.generateServiceAccount())
+                .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.kafkaComponentName(reconciliation.name()), kafka.generateServiceAccount())
                 .map((Void) null);
     }
 
@@ -747,7 +747,7 @@ public class KafkaReconciler {
      */
     protected Future<Void> podDisruptionBudget() {
         return podDisruptionBudgetOperator
-                    .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.kafkaStatefulSetName(reconciliation.name()), kafka.generatePodDisruptionBudget())
+                    .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.kafkaComponentName(reconciliation.name()), kafka.generatePodDisruptionBudget())
                     .map((Void) null);
     }
 
@@ -797,10 +797,10 @@ public class KafkaReconciler {
      */
     protected Future<Void> migrateFromStatefulSetToPodSet() {
         // Deletes the StatefulSet if it exists as a part of migration to PodSets
-        return stsOperator.getAsync(reconciliation.namespace(), KafkaResources.kafkaStatefulSetName(reconciliation.name()))
+        return stsOperator.getAsync(reconciliation.namespace(), KafkaResources.kafkaComponentName(reconciliation.name()))
                 .compose(sts -> {
                     if (sts != null)    {
-                        return stsOperator.deleteAsync(reconciliation, reconciliation.namespace(), KafkaResources.kafkaStatefulSetName(reconciliation.name()), false);
+                        return stsOperator.deleteAsync(reconciliation, reconciliation.namespace(), KafkaResources.kafkaComponentName(reconciliation.name()), false);
                     } else {
                         return Future.succeededFuture();
                     }

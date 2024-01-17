@@ -4,6 +4,11 @@
 #  fromExamples: String - Folder name which contains examples to deploy. Downloaded from "fromUrl"
 #  fromUrl: String - url, from which examples are downloaded
 #  fromKafkaVersionsUrl: String - url, from which is kafka-versions.yaml file downloaded
+#  filePaths: path to example files for particular resources
+#    kafkaBefore: path to Kafka resource (ZK mode) in the version of Strimzi, from which we are doing the upgrade
+#    kafkaAfter: path to Kafka resource (ZK mode) in the version of Strimzi, to which we are doing the upgrade
+#    kafkaKRaftBefore: path to Kafka and KafkaNodePool resources (KRaft mode), collected in one file, in the version of Strimzi, from which we are doing the upgrade
+#    kafkaKRaftAfter: path to Kafka and KafkaNodePool resources (KRaft mode), collected in one file, in the version of Strimzi, to which we are doing the upgrade
 #  --- Structure ---
 #
 #  --- Prerequisites ---
@@ -13,8 +18,13 @@
 #  Kubernetes cluster.
 #  --- Prerequisites ---
 
-fromVersion: 0.38.0
-fromOlmChannelName: strimzi-0.38.x
-fromExamples: strimzi-0.38.0
-fromUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.38.0/strimzi-0.38.0.zip
-fromKafkaVersionsUrl: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/0.38.0/kafka-versions.yaml
+fromVersion: 0.39.0
+fromOlmChannelName: strimzi-0.39.x
+fromExamples: strimzi-0.39.0
+fromUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.39.0/strimzi-0.39.0.zip
+fromKafkaVersionsUrl: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/0.39.0/kafka-versions.yaml
+filePaths:
+  kafkaBefore: "/examples/kafka/kafka-persistent.yaml"
+  kafkaAfter: "/examples/kafka/kafka-persistent.yaml"
+  kafkaKRaftBefore: "/examples/kafka/nodepools/kafka-with-kraft.yaml"
+  kafkaKRaftAfter: "/examples/kafka/nodepools/kafka-with-kraft.yaml"

@@ -4,9 +4,12 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaSpec;
+import io.strimzi.api.kafka.model.kafka.KafkaStatus;
 import io.strimzi.api.kafka.model.kafka.entityoperator.EntityOperatorSpec;
 import io.strimzi.operator.common.model.InvalidResourceException;
+import io.strimzi.operator.common.model.StatusUtils;
 import org.apache.kafka.server.common.MetadataVersion;
 
 import java.util.HashSet;
@@ -68,6 +71,82 @@ public class KRaftUtils {
             }
         } catch (IllegalArgumentException e)    {
             throw new InvalidResourceException("Metadata version " + metadataVersion + " is invalid", e);
+        }
+    }
+
+    /**
+     * In ZooKeeper mode, some of the fields marked as not required (because they are not used in KRaft) are in fact
+     * required. This method validates that the fields are present and in case they are missing, it throws an exception.
+     *
+     * @param kafkaSpec         The .spec section of the Kafka CR which should be checked
+     * @param nodePoolsEnabled  Flag indicating whether Node Pools are enabled or not
+     */
+    public static void validateKafkaCrForZooKeeper(KafkaSpec kafkaSpec, boolean nodePoolsEnabled)   {
+        Set<String> errors = new HashSet<>(0);
+
+        if (kafkaSpec != null)  {
+            if (kafkaSpec.getZookeeper() == null)   {
+                errors.add("The .spec.zookeeper section of the Kafka custom resource is missing. " +
+                        "This section is required for a ZooKeeper-based cluster.");
+            }
+
+            if (!nodePoolsEnabled)  {
+                if (kafkaSpec.getKafka().getReplicas() == 0)   {
+                    errors.add("The .spec.kafka.replicas property of the Kafka custom resource is missing. " +
+                            "This property is required for a ZooKeeper-based Kafka cluster that is not using Node Pools.");
+                }
+
+                if (kafkaSpec.getKafka().getStorage() == null)   {
+                    errors.add("The .spec.kafka.storage section of the Kafka custom resource is missing. " +
+                            "This section is required for a ZooKeeper-based Kafka cluster that is not using Node Pools.");
+                }
+            }
+        } else {
+            errors.add("The .spec section of the Kafka custom resource is missing");
+        }
+
+        if (!errors.isEmpty())  {
+            throw new InvalidResourceException("Kafka configuration is not valid: " + errors);
+        }
+    }
+
+    /**
+     * Generates Kafka CR status warnings about the fields ignored in Kraft mode if they are set - the ZooKeeper section
+     * and Kafka replicas and storage configuration.
+     *
+     * @param kafkaCr       The Kafka custom resource
+     * @param kafkaStatus   The Kafka Status to add the warnings to
+     */
+    public static void kraftWarnings(Kafka kafkaCr, KafkaStatus kafkaStatus)   {
+        if (kafkaCr.getSpec().getZookeeper() != null)   {
+            kafkaStatus.addCondition(StatusUtils.buildWarningCondition("UnusedZooKeeperConfiguration",
+                    "The .spec.zookeeper section in the Kafka custom resource is ignored in KRaft mode and " +
+                            "should be removed from the custom resource."));
+        }
+
+        nodePoolWarnings(kafkaCr, kafkaStatus);
+    }
+
+    /**
+     * Generates Kafka CR status warnings about the fields ignored when node pools are used if they are set - the
+     * replicas and storage configuration.
+     *
+     * @param kafkaCr       The Kafka custom resource
+     * @param kafkaStatus   The Kafka Status to add the warnings to
+     */
+    public static void nodePoolWarnings(Kafka kafkaCr, KafkaStatus kafkaStatus)   {
+        if (kafkaCr.getSpec().getKafka() != null
+                && kafkaCr.getSpec().getKafka().getReplicas() > 0) {
+            kafkaStatus.addCondition(StatusUtils.buildWarningCondition("UnusedReplicasConfiguration",
+                    "The .spec.kafka.replicas property in the Kafka custom resource is ignored when node pools " +
+                            "are used and should be removed from the custom resource."));
+        }
+
+        if (kafkaCr.getSpec().getKafka() != null
+                && kafkaCr.getSpec().getKafka().getStorage() != null) {
+            kafkaStatus.addCondition(StatusUtils.buildWarningCondition("UnusedStorageConfiguration",
+                    "The .spec.kafka.storage section in the Kafka custom resource is ignored when node pools " +
+                            "are used and should be removed from the custom resource."));
         }
     }
 }

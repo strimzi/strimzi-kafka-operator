@@ -15,7 +15,7 @@ public class CruiseControlResources {
      * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
      * @return The name of the corresponding Cruise Control {@code Deployment}.
      */
-    public static String deploymentName(String clusterName) {
+    public static String componentName(String clusterName) {
         return clusterName + "-cruise-control";
     }
 
@@ -25,7 +25,7 @@ public class CruiseControlResources {
      * @return The name of the corresponding Cruise Control {@code ServiceAccount}.
      */
     public static String serviceAccountName(String clusterName) {
-        return deploymentName(clusterName);
+        return componentName(clusterName);
     }
 
     /**
@@ -34,7 +34,7 @@ public class CruiseControlResources {
      * @return The name of the corresponding Cruise Control {@code Service}.
      */
     public static String serviceName(String clusterName) {
-        return deploymentName(clusterName);
+        return componentName(clusterName);
     }
 
     /**
@@ -57,7 +57,7 @@ public class CruiseControlResources {
      * @return The name of the corresponding Cruise Control {@code Secret}.
      */
     public static String apiSecretName(String clusterName) {
-        return deploymentName(clusterName) + "-api";
+        return componentName(clusterName) + "-api";
     }
 
     /**
@@ -69,7 +69,7 @@ public class CruiseControlResources {
      * @return The name of the corresponding Cruise Control {@code Secret}.
      */
     public static String secretName(String clusterName) {
-        return deploymentName(clusterName) + "-certs";
+        return componentName(clusterName) + "-certs";
     }
 
     /**

@@ -71,7 +71,7 @@ public class ReconciliationST extends AbstractST {
         final TestStorage testStorage = storageMap.get(extensionContext);
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Environment.TEST_SUITE_NAMESPACE, extensionContext);
         final String clusterName = testStorage.getClusterName();
-        String kafkaSsName = KafkaResources.kafkaStatefulSetName(clusterName);
+        String kafkaSsName = KafkaResources.kafkaComponentName(clusterName);
 
         final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, kafkaSsName);
 
@@ -99,8 +99,8 @@ public class ReconciliationST extends AbstractST {
             .endMetadata()
             .build());
 
-        final String connectDepName = KafkaConnectResources.deploymentName(clusterName);
-        final LabelSelector labelSelector = KafkaConnectResource.getLabelSelector(clusterName, KafkaConnectResources.deploymentName(clusterName));
+        final String connectDepName = KafkaConnectResources.componentName(clusterName);
+        final LabelSelector labelSelector = KafkaConnectResource.getLabelSelector(clusterName, KafkaConnectResources.componentName(clusterName));
 
         KafkaConnectUtils.waitForConnectStatus(namespaceName, clusterName, CustomResourceStatus.ReconciliationPaused);
         PodUtils.waitUntilPodStabilityReplicasCount(namespaceName, connectDepName, 0);

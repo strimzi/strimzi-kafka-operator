@@ -78,7 +78,7 @@ class RackAwarenessST extends AbstractST {
     void testKafkaRackAwareness(ExtensionContext extensionContext) {
         Assumptions.assumeFalse(Environment.isNamespaceRbacScope());
 
-        TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = storageMap.get(extensionContext);
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 1, 1)
                 .editSpec()
@@ -108,7 +108,7 @@ class RackAwarenessST extends AbstractST {
         assertThat(podAntiAffinityTerm, is(specPodAntiAffinityTerm));
         assertThat(specPodAntiAffinityTerm.getTopologyKey(), is(TOPOLOGY_KEY));
         assertThat(specPodAntiAffinityTerm.getLabelSelector().getMatchLabels(), hasEntry("strimzi.io/cluster", testStorage.getClusterName()));
-        assertThat(specPodAntiAffinityTerm.getLabelSelector().getMatchLabels(), hasEntry("strimzi.io/name", KafkaResources.kafkaStatefulSetName(testStorage.getClusterName())));
+        assertThat(specPodAntiAffinityTerm.getLabelSelector().getMatchLabels(), hasEntry("strimzi.io/name", KafkaResources.kafkaComponentName(testStorage.getClusterName())));
 
         // check Kafka rack awareness configuration
         String podNodeName = pod.getSpec().getNodeName();
@@ -192,7 +192,7 @@ class RackAwarenessST extends AbstractST {
         KafkaConnectUtils.waitForConnectReady(testStorage.getNamespaceName(), testStorage.getClusterName());
 
         LOGGER.info("KafkaConnect cluster deployed successfully");
-        String deployName = KafkaConnectResources.deploymentName(testStorage.getClusterName());
+        String deployName = KafkaConnectResources.componentName(testStorage.getClusterName());
         String podName = PodUtils.getPodNameByPrefix(testStorage.getNamespaceName(), deployName);
         Pod pod = kubeClient().getPod(testStorage.getNamespaceName(), podName);
 
@@ -249,7 +249,7 @@ class RackAwarenessST extends AbstractST {
     void testMirrorMaker2RackAwareness(ExtensionContext extensionContext) {
         Assumptions.assumeFalse(Environment.isNamespaceRbacScope());
 
-        TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = storageMap.get(extensionContext);
 
         resourceManager.createResourceWithWait(extensionContext,
                 KafkaTemplates.kafkaEphemeral(testStorage.getSourceClusterName(), 1, 1).build());
@@ -269,7 +269,7 @@ class RackAwarenessST extends AbstractST {
                         .build());
 
         LOGGER.info("MirrorMaker2: {}/{} cluster deployed successfully", testStorage.getNamespaceName(), testStorage.getClusterName());
-        String deployName = KafkaMirrorMaker2Resources.deploymentName(testStorage.getClusterName());
+        String deployName = KafkaMirrorMaker2Resources.componentName(testStorage.getClusterName());
         String podName = PodUtils.getPodNameByPrefix(testStorage.getNamespaceName(), deployName);
         Pod pod = kubeClient().getPod(testStorage.getNamespaceName(), podName);
 

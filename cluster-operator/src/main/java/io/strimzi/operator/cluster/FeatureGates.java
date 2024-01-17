@@ -21,7 +21,7 @@ public class FeatureGates {
     private static final String UNIDIRECTIONAL_TOPIC_OPERATOR = "UnidirectionalTopicOperator";
 
     // When adding new feature gates, do not forget to add them to allFeatureGates() and toString() methods
-    private final FeatureGate useKRaft = new FeatureGate(USE_KRAFT, false);
+    private final FeatureGate useKRaft = new FeatureGate(USE_KRAFT, true);
     private final FeatureGate kafkaNodePools = new FeatureGate(KAFKA_NODE_POOLS, true);
     private final FeatureGate unidirectionalTopicOperator = new FeatureGate(UNIDIRECTIONAL_TOPIC_OPERATOR, true);
 

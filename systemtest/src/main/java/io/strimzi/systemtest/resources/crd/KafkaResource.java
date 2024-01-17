@@ -147,7 +147,7 @@ public class KafkaResource implements ResourceType<Kafka> {
         } else if (nodePoolName != null) {
             return String.join("-", clusterName, nodePoolName);
         } else {
-            return KafkaResources.kafkaStatefulSetName(clusterName);
+            return KafkaResources.kafkaComponentName(clusterName);
         }
     }
 

@@ -10,8 +10,8 @@ Persistent data storage retains data in the event of system disruption.
 For pods that use persistent data storage, data is persisted across pod failures and restarts.
 Because of its permanent nature, persistent storage is recommended for production environments.
 
-To use persistent storage in Strimzi, you specify `persistent-claim` in the storage configuration of the `Kafka` or `ZooKeeper` resources. 
-If you are using the preview of the node pools feature, you can also specify `persistent-claim` in the storage configuration of individual node pools.
+To use persistent storage in Strimzi, you specify `persistent-claim` in the storage configuration of the `Kafka` or `ZooKeeper` resources.
+If you are using node pools, you can also specify `persistent-claim` in the storage configuration of individual node pools.
 
 You configure the resource so that pods use {K8sPersistentVolumeClaims} (PVCs) to make storage requests on persistent volumes (PVs).
 PVs represent storage volumes that are created on demand and are independent of the pods that use them.

@@ -15,7 +15,7 @@ public class KafkaMirrorMaker2Resources {
      * @param clusterName  The {@code metadata.name} of the {@code KafkaMirrorMaker2} resource.
      * @return The name of the corresponding Kafka MirrorMaker 2 {@code Deployment}.
      */
-    public static String deploymentName(String clusterName) {
+    public static String componentName(String clusterName) {
         return clusterName + "-mirrormaker2";
     }
 
@@ -25,7 +25,7 @@ public class KafkaMirrorMaker2Resources {
      * @return The name of the corresponding Kafka MirrorMaker 2 {@code ServiceAccount}.
      */
     public static String serviceAccountName(String clusterName) {
-        return deploymentName(clusterName);
+        return componentName(clusterName);
     }
 
     /**
@@ -77,6 +77,6 @@ public class KafkaMirrorMaker2Resources {
      * @return The name of the init container's cluster role binding.
      */
     public static String initContainerClusterRoleBindingName(String clusterName, String namespace) {
-        return "strimzi-" + namespace + "-" + deploymentName(clusterName) + "-init";
+        return "strimzi-" + namespace + "-" + componentName(clusterName) + "-init";
     }
 }

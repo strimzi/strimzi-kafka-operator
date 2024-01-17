@@ -138,13 +138,13 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
         kco.reconcile(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME))
             .onComplete(context.succeeding(ar -> context.verify(() -> {
                 if (!reconciliationPaused) {
-                    assertThat(Crds.strimziPodSetOperation(client).inNamespace(NAMESPACE).withName(KafkaMirrorMaker2Resources.deploymentName(CLUSTER_NAME)).get(), is(notNullValue()));
-                    assertThat(client.apps().deployments().inNamespace(NAMESPACE).withName(KafkaMirrorMaker2Resources.deploymentName(CLUSTER_NAME)).get(), is(nullValue()));
+                    assertThat(Crds.strimziPodSetOperation(client).inNamespace(NAMESPACE).withName(KafkaMirrorMaker2Resources.componentName(CLUSTER_NAME)).get(), is(notNullValue()));
+                    assertThat(client.apps().deployments().inNamespace(NAMESPACE).withName(KafkaMirrorMaker2Resources.componentName(CLUSTER_NAME)).get(), is(nullValue()));
                     assertThat(client.configMaps().inNamespace(NAMESPACE).withName(KafkaMirrorMaker2Resources.metricsAndLogConfigMapName(CLUSTER_NAME)).get(), is(notNullValue()));
                     assertThat(client.services().inNamespace(NAMESPACE).withName(KafkaMirrorMaker2Resources.serviceName(CLUSTER_NAME)).get(), is(notNullValue()));
-                    assertThat(client.policy().v1().podDisruptionBudget().inNamespace(NAMESPACE).withName(KafkaMirrorMaker2Resources.deploymentName(CLUSTER_NAME)).get(), is(notNullValue()));
+                    assertThat(client.policy().v1().podDisruptionBudget().inNamespace(NAMESPACE).withName(KafkaMirrorMaker2Resources.componentName(CLUSTER_NAME)).get(), is(notNullValue()));
                 } else {
-                    assertThat(Crds.strimziPodSetOperation(client).inNamespace(NAMESPACE).withName(KafkaMirrorMaker2Resources.deploymentName(CLUSTER_NAME)).get(), is(nullValue()));
+                    assertThat(Crds.strimziPodSetOperation(client).inNamespace(NAMESPACE).withName(KafkaMirrorMaker2Resources.componentName(CLUSTER_NAME)).get(), is(nullValue()));
                 }
 
                 created.complete();

@@ -212,7 +212,7 @@ public class CruiseControlTest {
     }
 
     private Map<String, String> expectedLabels() {
-        return expectedLabels(CruiseControlResources.deploymentName(CLUSTER));
+        return expectedLabels(CruiseControlResources.componentName(CLUSTER));
     }
 
     private List<EnvVar> getExpectedEnvVars() {
@@ -493,7 +493,7 @@ public class CruiseControlTest {
 
         assertThat(containers.size(), is(1));
 
-        assertThat(dep.getMetadata().getName(), is(CruiseControlResources.deploymentName(CLUSTER)));
+        assertThat(dep.getMetadata().getName(), is(CruiseControlResources.componentName(CLUSTER)));
         assertThat(dep.getMetadata().getNamespace(), is(NAMESPACE));
         TestUtils.checkOwnerReference(dep, kafka);
 

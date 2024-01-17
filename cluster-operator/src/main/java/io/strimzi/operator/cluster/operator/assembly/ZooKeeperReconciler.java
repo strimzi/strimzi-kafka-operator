@@ -263,7 +263,7 @@ public class ZooKeeperReconciler {
      * @return  Future with the result of the rolling update
      */
     protected Future<Void> manualRollingUpdate() {
-        return strimziPodSetOperator.getAsync(reconciliation.namespace(), KafkaResources.zookeeperStatefulSetName(reconciliation.name()))
+        return strimziPodSetOperator.getAsync(reconciliation.namespace(), KafkaResources.zookeeperComponentName(reconciliation.name()))
                 .compose(podSet -> {
                     if (podSet != null
                             && Annotations.booleanAnnotation(podSet, Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, false)) {
@@ -356,7 +356,7 @@ public class ZooKeeperReconciler {
      * @return  Completes when the service account was successfully created or updated
      */
     protected Future<Void> serviceAccount() {
-        return serviceAccountOperator.reconcile(reconciliation, reconciliation.namespace(), KafkaResources.zookeeperStatefulSetName(reconciliation.name()), zk.generateServiceAccount())
+        return serviceAccountOperator.reconcile(reconciliation, reconciliation.namespace(), KafkaResources.zookeeperComponentName(reconciliation.name()), zk.generateServiceAccount())
                 .map((Void) null);
     }
 
@@ -454,7 +454,7 @@ public class ZooKeeperReconciler {
      */
     protected Future<Void> podDisruptionBudget() {
         return podDisruptionBudgetOperator
-                .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.zookeeperStatefulSetName(reconciliation.name()), zk.generatePodDisruptionBudget())
+                .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.zookeeperComponentName(reconciliation.name()), zk.generatePodDisruptionBudget())
                 .map((Void) null);
     }
 
@@ -467,10 +467,10 @@ public class ZooKeeperReconciler {
      */
     protected Future<Void> migrateFromStatefulSetToPodSet() {
         // Delete the StatefulSet if it exists
-        return stsOperator.getAsync(reconciliation.namespace(), KafkaResources.zookeeperStatefulSetName(reconciliation.name()))
+        return stsOperator.getAsync(reconciliation.namespace(), KafkaResources.zookeeperComponentName(reconciliation.name()))
                 .compose(sts -> {
                     if (sts != null)    {
-                        return stsOperator.deleteAsync(reconciliation, reconciliation.namespace(), KafkaResources.zookeeperStatefulSetName(reconciliation.name()), false);
+                        return stsOperator.deleteAsync(reconciliation, reconciliation.namespace(), KafkaResources.zookeeperComponentName(reconciliation.name()), false);
                     } else {
                         return Future.succeededFuture();
                     }
@@ -498,7 +498,7 @@ public class ZooKeeperReconciler {
      */
     private Future<Void> podSet(int replicas) {
         StrimziPodSet zkPodSet = zk.generatePodSet(replicas, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets, this::zkPodSetPodAnnotations);
-        return strimziPodSetOperator.reconcile(reconciliation, reconciliation.namespace(), KafkaResources.zookeeperStatefulSetName(reconciliation.name()), zkPodSet)
+        return strimziPodSetOperator.reconcile(reconciliation, reconciliation.namespace(), KafkaResources.zookeeperComponentName(reconciliation.name()), zkPodSet)
                 .compose(rr -> {
                     podSetDiff = rr;
                     return Future.succeededFuture();

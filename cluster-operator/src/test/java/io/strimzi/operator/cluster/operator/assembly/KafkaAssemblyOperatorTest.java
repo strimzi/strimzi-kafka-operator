@@ -423,8 +423,8 @@ public class KafkaAssemblyOperatorTest {
         // Mock PodSets
         AtomicReference<StrimziPodSet> podSetRef = new AtomicReference<>();
         ArgumentCaptor<StrimziPodSet> spsCaptor = ArgumentCaptor.forClass(StrimziPodSet.class);
-        when(mockPodSetOps.reconcile(any(), eq(kafkaNamespace), eq(KafkaResources.zookeeperStatefulSetName(kafkaName)), spsCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(new StrimziPodSet())));
-        when(mockPodSetOps.reconcile(any(), eq(kafkaNamespace), eq(KafkaResources.kafkaStatefulSetName(kafkaName)), spsCaptor.capture())).thenAnswer(i -> {
+        when(mockPodSetOps.reconcile(any(), eq(kafkaNamespace), eq(KafkaResources.zookeeperComponentName(kafkaName)), spsCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(new StrimziPodSet())));
+        when(mockPodSetOps.reconcile(any(), eq(kafkaNamespace), eq(KafkaResources.kafkaComponentName(kafkaName)), spsCaptor.capture())).thenAnswer(i -> {
             StrimziPodSet sps = new StrimziPodSetBuilder()
                     .withNewMetadata()
                         .withName(kafkaName + "-kafka")
@@ -438,8 +438,8 @@ public class KafkaAssemblyOperatorTest {
             podSetRef.set(sps);
             return Future.succeededFuture(ReconcileResult.created(sps));
         });
-        when(mockPodSetOps.getAsync(eq(kafkaNamespace), eq(KafkaResources.zookeeperStatefulSetName(kafkaName)))).thenReturn(Future.succeededFuture());
-        when(mockPodSetOps.getAsync(eq(kafkaNamespace), eq(KafkaResources.kafkaStatefulSetName(kafkaName)))).thenAnswer(i -> Future.succeededFuture(podSetRef.get()));
+        when(mockPodSetOps.getAsync(eq(kafkaNamespace), eq(KafkaResources.zookeeperComponentName(kafkaName)))).thenReturn(Future.succeededFuture());
+        when(mockPodSetOps.getAsync(eq(kafkaNamespace), eq(KafkaResources.kafkaComponentName(kafkaName)))).thenAnswer(i -> Future.succeededFuture(podSetRef.get()));
         when(mockPodSetOps.batchReconcile(any(), eq(kafkaNamespace), any(), any())).thenCallRealMethod();
         when(mockPodSetOps.listAsync(eq(kafkaNamespace), eq(kafkaCluster.getSelectorLabels()))).thenAnswer(i -> {
             if (podSetRef.get() != null) {
@@ -692,7 +692,7 @@ public class KafkaAssemblyOperatorTest {
                 List<StrimziPodSet> capturedSps = spsCaptor.getAllValues();
                 // We expect a StrimziPodSet for kafka and zookeeper...
                 assertThat(capturedSps.stream().map(sps -> sps.getMetadata().getName()).collect(Collectors.toSet()),
-                        is(set(KafkaResources.kafkaStatefulSetName(kafkaName), KafkaResources.zookeeperStatefulSetName(kafkaName))));
+                        is(set(KafkaResources.kafkaComponentName(kafkaName), KafkaResources.zookeeperComponentName(kafkaName))));
 
                 // expected Secrets with certificates
                 assertThat(new TreeSet<>(secretsMap.keySet()), is(new TreeSet<>(expectedSecrets)));
@@ -700,7 +700,7 @@ public class KafkaAssemblyOperatorTest {
                 // Check PDBs
                 assertThat(pdbCaptor.getAllValues(), hasSize(2));
                 assertThat(pdbCaptor.getAllValues().stream().map(sts -> sts.getMetadata().getName()).collect(Collectors.toSet()),
-                        is(set(KafkaResources.kafkaStatefulSetName(kafkaName), KafkaResources.zookeeperStatefulSetName(kafkaName))));
+                        is(set(KafkaResources.kafkaComponentName(kafkaName), KafkaResources.zookeeperComponentName(kafkaName))));
 
                 // Check PVCs
                 assertThat(pvcCaptor.getAllValues(), hasSize(expectedPvcs.size()));
@@ -1101,27 +1101,27 @@ public class KafkaAssemblyOperatorTest {
         when(mockPolicyOps.get(clusterNamespace, KafkaResources.zookeeperNetworkPolicyName(clusterName))).thenReturn(originalZookeeperCluster.generateNetworkPolicy(null, null));
 
         // Mock PodDisruptionBudget get
-        when(mockPdbOps.get(clusterNamespace, KafkaResources.kafkaStatefulSetName(clusterName))).thenReturn(originalKafkaCluster.generatePodDisruptionBudget());
-        when(mockPdbOps.get(clusterNamespace, KafkaResources.zookeeperStatefulSetName(clusterName))).thenReturn(originalZookeeperCluster.generatePodDisruptionBudget());
+        when(mockPdbOps.get(clusterNamespace, KafkaResources.kafkaComponentName(clusterName))).thenReturn(originalKafkaCluster.generatePodDisruptionBudget());
+        when(mockPdbOps.get(clusterNamespace, KafkaResources.zookeeperComponentName(clusterName))).thenReturn(originalZookeeperCluster.generatePodDisruptionBudget());
 
         // Mock StrimziPodSets
         AtomicReference<StrimziPodSet> zooPodSetRef = new AtomicReference<>();
         zooPodSetRef.set(originalZookeeperCluster.generatePodSet(originalZookeeperCluster.getReplicas(), openShift, null, null, podNum -> Map.of()));
-        when(mockPodSetOps.reconcile(any(), eq(clusterNamespace), eq(KafkaResources.zookeeperStatefulSetName(clusterName)), any())).thenAnswer(invocation -> {
+        when(mockPodSetOps.reconcile(any(), eq(clusterNamespace), eq(KafkaResources.zookeeperComponentName(clusterName)), any())).thenAnswer(invocation -> {
             StrimziPodSet sps = invocation.getArgument(3, StrimziPodSet.class);
             zooPodSetRef.set(sps);
             return Future.succeededFuture(ReconcileResult.patched(sps));
         });
-        when(mockPodSetOps.getAsync(eq(clusterNamespace), eq(KafkaResources.zookeeperStatefulSetName(clusterName)))).thenReturn(Future.succeededFuture(zooPodSetRef.get()));
+        when(mockPodSetOps.getAsync(eq(clusterNamespace), eq(KafkaResources.zookeeperComponentName(clusterName)))).thenReturn(Future.succeededFuture(zooPodSetRef.get()));
 
         AtomicReference<StrimziPodSet> kafkaPodSetRef = new AtomicReference<>();
         kafkaPodSetRef.set(originalKafkaCluster.generatePodSets(openShift, null, null, (p) -> Map.of()).get(0));
-        when(mockPodSetOps.reconcile(any(), eq(clusterNamespace), eq(KafkaResources.kafkaStatefulSetName(clusterName)), any())).thenAnswer(invocation -> {
+        when(mockPodSetOps.reconcile(any(), eq(clusterNamespace), eq(KafkaResources.kafkaComponentName(clusterName)), any())).thenAnswer(invocation -> {
             StrimziPodSet sps = invocation.getArgument(3, StrimziPodSet.class);
             kafkaPodSetRef.set(sps);
             return Future.succeededFuture(ReconcileResult.patched(sps));
         });
-        when(mockPodSetOps.getAsync(eq(clusterNamespace), eq(KafkaResources.kafkaStatefulSetName(clusterName)))).thenReturn(Future.succeededFuture(kafkaPodSetRef.get()));
+        when(mockPodSetOps.getAsync(eq(clusterNamespace), eq(KafkaResources.kafkaComponentName(clusterName)))).thenReturn(Future.succeededFuture(kafkaPodSetRef.get()));
         when(mockPodSetOps.batchReconcile(any(), eq(clusterNamespace), any(), any())).thenCallRealMethod();
         when(mockPodSetOps.listAsync(eq(clusterNamespace), eq(updatedKafkaCluster.getSelectorLabels()))).thenAnswer(i -> {
             if (kafkaPodSetRef.get() != null) {
@@ -1132,8 +1132,8 @@ public class KafkaAssemblyOperatorTest {
         });
 
         // Mock StatefulSet get
-        when(mockStsOps.getAsync(eq(clusterNamespace), eq(KafkaResources.zookeeperStatefulSetName(clusterName)))).thenReturn(Future.succeededFuture());
-        when(mockStsOps.getAsync(eq(clusterNamespace), eq(KafkaResources.kafkaStatefulSetName(clusterName)))).thenReturn(Future.succeededFuture());
+        when(mockStsOps.getAsync(eq(clusterNamespace), eq(KafkaResources.zookeeperComponentName(clusterName)))).thenReturn(Future.succeededFuture());
+        when(mockStsOps.getAsync(eq(clusterNamespace), eq(KafkaResources.kafkaComponentName(clusterName)))).thenReturn(Future.succeededFuture());
 
         // Mock Deployment get
         if (originalEntityOperator != null) {
@@ -1152,7 +1152,7 @@ public class KafkaAssemblyOperatorTest {
         }
 
         if (originalCruiseControl != null) {
-            when(mockDepOps.get(clusterNamespace, CruiseControlResources.deploymentName(clusterName))).thenReturn(
+            when(mockDepOps.get(clusterNamespace, CruiseControlResources.componentName(clusterName))).thenReturn(
                     originalCruiseControl.generateDeployment(true, null, null)
             );
             when(mockDepOps.getAsync(clusterNamespace, KafkaResources.entityOperatorDeploymentName(clusterName))).thenReturn(
@@ -1167,10 +1167,10 @@ public class KafkaAssemblyOperatorTest {
         }
 
         if (metrics) {
-            when(mockDepOps.get(clusterNamespace, KafkaExporterResources.deploymentName(clusterName))).thenReturn(
+            when(mockDepOps.get(clusterNamespace, KafkaExporterResources.componentName(clusterName))).thenReturn(
                     originalKafkaExporter.generateDeployment(true, null, null)
             );
-            when(mockDepOps.getAsync(clusterNamespace, KafkaExporterResources.deploymentName(clusterName))).thenReturn(
+            when(mockDepOps.getAsync(clusterNamespace, KafkaExporterResources.componentName(clusterName))).thenReturn(
                     Future.succeededFuture(originalKafkaExporter.generateDeployment(true, null, null))
             );
             when(mockDepOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(

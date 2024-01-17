@@ -131,7 +131,7 @@ public class PodSetST extends AbstractST {
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getKafkaSelector(), replicas, kafkaPods);
 
         LOGGER.info("Wait till all StrimziPodSet {}/{} status match number of ready pods", testStorage.getNamespaceName(), testStorage.getKafkaStatefulSetName());
-        StrimziPodSetUtils.waitForAllStrimziPodSetAndPodsReady(testStorage.getNamespaceName(), testStorage.getKafkaStatefulSetName(), KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()), 3);
+        StrimziPodSetUtils.waitForAllStrimziPodSetAndPodsReady(testStorage.getNamespaceName(), testStorage.getKafkaStatefulSetName(), KafkaResources.kafkaComponentName(testStorage.getClusterName()), 3);
 
         ClientUtils.waitForClientsSuccess(testStorage);
     }
