@@ -51,15 +51,15 @@ The `StableConnectIdentities` feature gate introduced the `StrimziPodSet` custom
 IMPORTANT: With the `StableConnectIdentities` feature gate permanently enabled, direct downgrades from Strimzi 0.39 and newer to Strimzi 0.33 or earlier are not possible.
 You must first downgrade through one of the Strimzi versions in-between, disable the `StableConnectIdentities` feature gate, and then downgrade to Strimzi 0.33 or earlier.
 
-== Early access feature gates (alpha/beta)
+== Stable feature gates (Beta)
 
-Early access feature gates have not yet reached the GA stage, and they can be enabled or disabled. 
-An early access feature gate provides an opportunity for assessment before its functionality is permanently incorporated into Strimzi.
+Stable feature gates have reached a beta level of maturity, and are generally enabled by default for all users.
+Stable feature gates are production-ready, but they can still be disabled.
 
 [id='ref-operator-use-kraft-feature-gate-{context}']
 === UseKRaft feature gate
 
-The `UseKRaft` feature gate has a default state of _disabled_.
+The `UseKRaft` feature gate has a default state of _enabled_.
 
 The `UseKRaft` feature gate deploys a Kafka cluster in KRaft (Kafka Raft metadata) mode without ZooKeeper.
 ZooKeeper and KRaft are mechanisms used to manage metadata and coordinate operations in Kafka clusters. 
@@ -140,6 +140,13 @@ For more information on topic management, see xref:ref-operator-topic-str[].
 .Disabling the `UnidirectionalTopicOperator` feature gate
 
 To disable the `UnidirectionalTopicOperator` feature gate, specify `-UnidirectionalTopicOperator` in the `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.
+
+== Early access feature gates (Alpha)
+
+Early access feature gates have not yet reached the beta stage, and are disabled by default. 
+An early access feature gate provides an opportunity for assessment before its functionality is permanently incorporated into Strimzi.
+
+Currently, there are no feature gates in alpha stage.
 
 == Enabling feature gates
 

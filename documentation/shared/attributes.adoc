@@ -62,6 +62,7 @@
 // External links
 :aws-ebs: link:https://aws.amazon.com/ebs/[Amazon Elastic Block Store (EBS)^]
 :JavaServiceProvider: link:https://www.baeldung.com/java-spi[Java Service Provider Interface^]
+:JQTool: link:https://github.com/jqlang/jq[command line JSON parser tool^]
 :kubernetes-docs: link:https://kubernetes.io/docs/home/
 :kafkaDoc: link:https://kafka.apache.org/documentation/[Apache Kafka documentation^]
 :K8sAffinity: link:https://kubernetes.io/docs/concepts/configuration/assign-pod-node/[Kubernetes node and pod affinity documentation^]

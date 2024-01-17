@@ -23,7 +23,7 @@ kubectl get kafka <kafka_resource_name> -o jsonpath='{.status}' | jq
 +
 This expression returns all the status information for the specified custom resource. You can use dot notation, such as `status.listeners` or `status.observedGeneration`, to fine-tune the status information you wish to see.
 +
-Using the `jq` command line JSON parser tool makes it easier to read the output.
+Using the `jq` {JQTool} makes it easier to read the output.
 
 [role="_additional-resources"]
 .Additional resources
