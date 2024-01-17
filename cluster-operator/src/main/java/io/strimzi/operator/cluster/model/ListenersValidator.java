@@ -564,7 +564,7 @@ public class ListenersValidator {
             String listenerName = listener.getName();
 
             if (isListenerWithK8sOIDC(listener)) {
-                configureK8sOIDC(oAuth);
+                validateAndOverrideK8sOIDC(oAuth);
             }
 
             if (!oAuth.isEnablePlain() && !oAuth.isEnableOauthBearer()) {
@@ -661,7 +661,7 @@ public class ListenersValidator {
         }
     }
 
-    private static void configureK8sOIDC(KafkaListenerAuthenticationOAuth oAuth) {
+    private static void validateAndOverrideK8sOIDC(KafkaListenerAuthenticationOAuth oAuth) {
         if (oAuth.getValidIssuerUri() == null) {
             oAuth.setValidIssuerUri("https://kubernetes.default.svc.cluster.local");
         }
@@ -673,11 +673,15 @@ public class ListenersValidator {
         }
 
         if (oAuth.getIncludeAcceptHeader() == null || oAuth.getIncludeAcceptHeader()) {
-            LOGGER.warnOp("'includeAcceptHeader' force-set to 'false' for compatibility with 'k8s-oidc'");
+            if (oAuth.getIncludeAcceptHeader() != null && oAuth.getIncludeAcceptHeader()) {
+                LOGGER.warnOp("'includeAcceptHeader' force-set to 'false' for compatibility with 'k8s-oidc'");
+            }
             oAuth.setIncludeAcceptHeader(false);
         }
         if (oAuth.getCheckAccessTokenType() == null || oAuth.getCheckAccessTokenType()) {
-            LOGGER.warnOp("'checkAccessTokenType' force-set to 'false' for compatibility with 'k8s-oidc'");
+            if (oAuth.getCheckAccessTokenType() != null && oAuth.getCheckAccessTokenType()) {
+                LOGGER.warnOp("'checkAccessTokenType' force-set to 'false' for compatibility with 'k8s-oidc'");
+            }
             oAuth.setCheckAccessTokenType(false);
         }
     }

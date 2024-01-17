@@ -485,13 +485,13 @@ public class KafkaBrokerConfigurationBuilder {
                 addOptionIfNotNull(jaasOptions, "oauth.client.secret", String.format(PLACEHOLDER_OAUTH_CLIENT_SECRET, listenerNameInEnvVar));
             }
 
-            if (auth instanceof KafkaListenerAuthenticationK8sOIDC) {
-                addOptionIfNotNull(jaasOptions, "oauth.ssl.truststore.location", "/var/run/secrets/kubernetes.io/serviceaccount/..data/ca.crt");
-                addOptionIfNotNull(jaasOptions, "oauth.ssl.truststore.type", "PEM");
-            } else if (oauth.getTlsTrustedCertificates() != null && oauth.getTlsTrustedCertificates().size() > 0)    {
+            if (oauth.getTlsTrustedCertificates() != null && oauth.getTlsTrustedCertificates().size() > 0)    {
                 addOptionIfNotNull(jaasOptions, "oauth.ssl.truststore.location", String.format("/tmp/kafka/oauth-%s.truststore.p12", listenerNameInProperty));
                 addOptionIfNotNull(jaasOptions, "oauth.ssl.truststore.password", PLACEHOLDER_CERT_STORE_PASSWORD);
                 addOptionIfNotNull(jaasOptions, "oauth.ssl.truststore.type", "PKCS12");
+            } else if (auth instanceof KafkaListenerAuthenticationK8sOIDC) {
+                addOptionIfNotNull(jaasOptions, "oauth.ssl.truststore.location", "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt");
+                addOptionIfNotNull(jaasOptions, "oauth.ssl.truststore.type", "PEM");
             }
 
             StringBuilder enabledMechanisms = new StringBuilder();

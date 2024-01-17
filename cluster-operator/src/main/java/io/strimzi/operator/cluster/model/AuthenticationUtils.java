@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.strimzi.api.kafka.model.common.GenericSecretSource;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthentication;
+import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationK8sOIDC;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationOAuth;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationPlain;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationScram;
@@ -90,7 +91,7 @@ public class AuthenticationUtils {
         boolean passwordGrantCase = auth.getTokenEndpointUri() != null && auth.getClientId() != null && auth.getUsername() != null && auth.getPasswordSecret() != null;
 
         // If not one of valid cases throw exception
-        if (!(accessTokenCase || refreshTokenCase || clientSecretCase || passwordGrantCase)) {
+        if (!(accessTokenCase || refreshTokenCase || clientSecretCase || passwordGrantCase) && !(auth instanceof KafkaClientAuthenticationK8sOIDC)) {
             throw new InvalidResourceException("OAUTH authentication selected, but some options are missing. You have to specify one of the following combinations: [accessToken], [tokenEndpointUri, clientId, refreshToken], [tokenEndpointUri, clientId, clientSecret], [tokenEndpointUri, username, password, clientId].");
         }
 
@@ -289,7 +290,7 @@ public class AuthenticationUtils {
      * @return The OAuth JAAS configuration options.
      */
     public static Map<String, String> oauthJaasOptions(KafkaClientAuthenticationOAuth oauth) {
-        Map<String, String> options = new LinkedHashMap<>(13);
+        Map<String, String> options = new LinkedHashMap<>(15);
         addOption(options, ClientConfig.OAUTH_CLIENT_ID, oauth.getClientId());
         addOption(options, ClientConfig.OAUTH_PASSWORD_GRANT_USERNAME, oauth.getUsername());
         addOption(options, ClientConfig.OAUTH_TOKEN_ENDPOINT_URI, oauth.getTokenEndpointUri());
@@ -311,6 +312,10 @@ public class AuthenticationUtils {
         }
         if (!oauth.isIncludeAcceptHeader()) {
             options.put(ServerConfig.OAUTH_INCLUDE_ACCEPT_HEADER, "false");
+        }
+        if (oauth instanceof KafkaClientAuthenticationK8sOIDC) {
+            String tokenPath = oauth.getAccessTokenLocation();
+            addOption(options, ClientConfig.OAUTH_ACCESS_TOKEN_LOCATION, tokenPath != null ? tokenPath : "/var/run/secrets/kubernetes.io/serviceaccount/token");
         }
         return options;
     }

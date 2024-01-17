@@ -48,6 +48,7 @@ public class KafkaClientAuthenticationOAuth extends KafkaClientAuthentication {
     private GenericSecretSource clientSecret;
     private PasswordSecretSource passwordSecret;
     private GenericSecretSource accessToken;
+    private String accessTokenLocation;
     private GenericSecretSource refreshToken;
     private List<CertSecretSource> tlsTrustedCertificates;
     private boolean disableTlsHostnameVerification = false;
@@ -164,6 +165,16 @@ public class KafkaClientAuthenticationOAuth extends KafkaClientAuthentication {
 
     public void setAccessToken(GenericSecretSource accessToken) {
         this.accessToken = accessToken;
+    }
+
+    @Description("Path to the token file containing an access token to be used for authentication.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public String getAccessTokenLocation() {
+        return accessTokenLocation;
+    }
+
+    public void setAccessTokenLocation(String path) {
+        this.accessTokenLocation = path;
     }
 
     @Description("Link to Kubernetes Secret containing the refresh token which can be used to obtain access token from the authorization server.")
