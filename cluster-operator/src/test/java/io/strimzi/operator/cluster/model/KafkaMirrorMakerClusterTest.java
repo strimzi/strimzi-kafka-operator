@@ -24,6 +24,7 @@ import io.strimzi.api.kafka.model.common.CertSecretSource;
 import io.strimzi.api.kafka.model.common.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.common.ContainerEnvVar;
 import io.strimzi.api.kafka.model.common.JvmOptions;
+import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationK8sOIDCBuilder;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationOAuthBuilder;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationTlsBuilder;
 import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetrics;
@@ -1060,6 +1061,27 @@ public class KafkaMirrorMakerClusterTest {
         assertThat(cont.getEnv().stream().filter(var -> KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_OAUTH_ACCESS_TOKEN_CONSUMER.equals(var.getName())).findFirst().orElseThrow().getValueFrom().getSecretKeyRef().getName(), is("my-token-secret"));
         assertThat(cont.getEnv().stream().filter(var -> KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_OAUTH_ACCESS_TOKEN_CONSUMER.equals(var.getName())).findFirst().orElseThrow().getValueFrom().getSecretKeyRef().getKey(), is("my-token-key"));
         assertThat(cont.getEnv().stream().filter(var -> KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_OAUTH_CONFIG_CONSUMER.equals(var.getName())).findFirst().orElseThrow().getValue().isEmpty(), is(true));
+    }
+
+    @ParallelTest
+    public void testGenerateDeploymentWithConsumerK8sOIDC() {
+        KafkaMirrorMaker resource = new KafkaMirrorMakerBuilder(this.resource)
+                .editSpec()
+                .editConsumer()
+                .withAuthentication(
+                        new KafkaClientAuthenticationK8sOIDCBuilder()
+                                .build())
+                .endConsumer()
+                .endSpec()
+                .build();
+
+        KafkaMirrorMakerCluster kc = KafkaMirrorMakerCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
+        Deployment dep = kc.generateDeployment(emptyMap(), true, null, null);
+        Container cont = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
+
+        assertThat(cont.getEnv().stream().filter(var -> KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_SASL_MECHANISM_CONSUMER.equals(var.getName())).findFirst().orElseThrow().getValue(), is("oauth"));
+        assertThat(cont.getEnv().stream().filter(var -> KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_OAUTH_CONFIG_CONSUMER.equals(var.getName())).findFirst().orElseThrow().getValue().trim(),
+                is(String.format("%s=\"%s\"", ClientConfig.OAUTH_ACCESS_TOKEN_LOCATION, "/var/run/secrets/kubernetes.io/serviceaccount/token")));
     }
 
     @ParallelTest

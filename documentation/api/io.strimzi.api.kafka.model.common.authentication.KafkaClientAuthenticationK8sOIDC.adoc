@@ -1,0 +1,27 @@
+To configure Kubernetes OIDC client authentication, set the `type` property to `k8s-oidc`.
+
+Kubernetes OIDC authentication can be configured using one of the following options:
+
+* Service account token
+
+.Service account token
+You can configure the access token as a service account token obtained from Kubernetes OIDC server.
+By default, the service account token of the pod is used, available in a file mounted by Kubernetes and accessible at `/var/run/secrets/kubernetes.io/serviceaccount/token`.
+Alternatively, `oauth` authentication can be used to set the `accessToken` property to the name of a `Secret` containing the access token.
+Another alternative is to use `oauth` with `accessTokenLocation` property, and specify a path to the token file.
+
+.An example of Kubernetes OIDC client authentication using the service account token provided to the pod by Kubernetes
+[source,yaml,subs=attributes+]
+----
+authentication:
+  type: k8s-oidc
+----
+
+This is equivalent to:
+[source,yaml,subs=attributes+]
+----
+authentication:
+  type: oauth
+  accessTokenLocation: `/var/run/secrets/kubernetes.io/serviceaccount/token`
+----
+
