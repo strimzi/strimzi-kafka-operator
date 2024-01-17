@@ -16,7 +16,6 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 
-
 /**
  * Class for handling Cruise Control configuration passed by the user
  */
