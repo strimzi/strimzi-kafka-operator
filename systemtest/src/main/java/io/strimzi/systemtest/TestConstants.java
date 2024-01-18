@@ -409,7 +409,6 @@ public interface TestConstants {
     String CRUISE_CONTROL_NAME = "Cruise Control";
     String CRUISE_CONTROL_CONTAINER_NAME = "cruise-control";
     String CRUISE_CONTROL_CONFIGURATION_ENV = "CRUISE_CONTROL_CONFIGURATION";
-    String CRUISE_CONTROL_CAPACITY_FILE_PATH = "/tmp/capacity.json";
     String CRUISE_CONTROL_CONFIGURATION_FILE_PATH = "/tmp/cruisecontrol.properties";
     String CRUISE_CONTROL_LOG_FILE_PATH = "/opt/cruise-control/custom-config/log4j2.properties";
 

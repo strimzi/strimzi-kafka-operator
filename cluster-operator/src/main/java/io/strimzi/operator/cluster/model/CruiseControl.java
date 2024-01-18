@@ -40,6 +40,7 @@ import io.strimzi.operator.cluster.model.metrics.MetricsModel;
 import io.strimzi.operator.cluster.model.metrics.SupportsMetrics;
 import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProviderContextImpl;
 import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderContextImpl;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
@@ -91,14 +92,33 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     protected static final String TLS_CC_CERTS_VOLUME_MOUNT = "/etc/cruise-control/cc-certs/";
     protected static final String TLS_CA_CERTS_VOLUME_NAME = "cluster-ca-certs";
     protected static final String TLS_CA_CERTS_VOLUME_MOUNT = "/etc/cruise-control/cluster-ca-certs/";
-    protected static final String LOG_AND_METRICS_CONFIG_VOLUME_NAME = "cruise-control-metrics-and-logging";
-    protected static final String LOG_AND_METRICS_CONFIG_VOLUME_MOUNT = "/opt/cruise-control/custom-config/";
+    protected static final String CONFIG_VOLUME_NAME = "config";
+    /**
+     * Server config file name
+     */
+    public static final String SERVER_CONFIG_FILENAME = "cruisecontrol.properties";
+    /**
+     * Capacity config file name
+     */
+    public static final String CAPACITY_CONFIG_FILENAME = "capacity.json";
+    protected static final String CONFIG_VOLUME_MOUNT = "/opt/cruise-control/custom-config/";
     protected static final String API_AUTH_CONFIG_VOLUME_NAME = "api-auth-config";
     protected static final String API_AUTH_CONFIG_VOLUME_MOUNT = "/opt/cruise-control/api-auth-config/";
-
     protected static final String API_AUTH_CREDENTIALS_FILE = API_AUTH_CONFIG_VOLUME_MOUNT + API_AUTH_FILE_KEY;
 
     protected static final String ENV_VAR_CRUISE_CONTROL_METRICS_ENABLED = "CRUISE_CONTROL_METRICS_ENABLED";
+
+    /**
+     * Annotation for rolling a cluster whenever the server configuration has changed.
+     * When the configuration hash annotation change is detected, we force a pod restart.
+     */
+    public static final String ANNO_STRIMZI_SERVER_CONFIGURATION_HASH = Annotations.STRIMZI_DOMAIN + "server-configuration-hash";
+
+    /**
+     * Annotation for rolling a cluster whenever the capacity configuration has changed.
+     * When the configuration hash annotation change is detected, we force a pod restart.
+     */
+    public static final String ANNO_STRIMZI_CAPACITY_CONFIGURATION_HASH = Annotations.STRIMZI_DOMAIN + "capacity-configuration-hash";
 
     // Configuration defaults
     protected static final boolean DEFAULT_CRUISE_CONTROL_METRICS_ENABLED = false;
@@ -120,15 +140,8 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
 
     /* test */ static final String MIN_INSYNC_REPLICAS = "min.insync.replicas";
 
-    /* test */ Capacity getCapacity() {
-        return capacity;
-    }
-
     // Cruise Control configuration keys (EnvVariables)
-    protected static final String ENV_VAR_CRUISE_CONTROL_CONFIGURATION = "CRUISE_CONTROL_CONFIGURATION";
     protected static final String ENV_VAR_STRIMZI_KAFKA_BOOTSTRAP_SERVERS = "STRIMZI_KAFKA_BOOTSTRAP_SERVERS";
-
-    protected static final String ENV_VAR_CRUISE_CONTROL_CAPACITY_CONFIGURATION = "CRUISE_CONTROL_CAPACITY_CONFIGURATION";
 
     protected static final String ENV_VAR_API_SSL_ENABLED = "STRIMZI_CC_API_SSL_ENABLED";
     protected static final String ENV_VAR_API_AUTH_ENABLED = "STRIMZI_CC_API_AUTH_ENABLED";
@@ -311,7 +324,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
                 createSecretVolume(TLS_CC_CERTS_VOLUME_NAME, CruiseControlResources.secretName(cluster), isOpenShift),
                 createSecretVolume(TLS_CA_CERTS_VOLUME_NAME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift),
                 createSecretVolume(API_AUTH_CONFIG_VOLUME_NAME, CruiseControlResources.apiSecretName(cluster), isOpenShift),
-                createConfigMapVolume(LOG_AND_METRICS_CONFIG_VOLUME_NAME, CruiseControlResources.logAndMetricsConfigMapName(cluster)));
+                createConfigMapVolume(CONFIG_VOLUME_NAME, CruiseControlResources.configMapName(cluster)));
     }
 
     protected List<VolumeMount> getVolumeMounts() {
@@ -319,19 +332,20 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
                 createVolumeMount(CruiseControl.TLS_CC_CERTS_VOLUME_NAME, CruiseControl.TLS_CC_CERTS_VOLUME_MOUNT),
                 createVolumeMount(CruiseControl.TLS_CA_CERTS_VOLUME_NAME, CruiseControl.TLS_CA_CERTS_VOLUME_MOUNT),
                 createVolumeMount(CruiseControl.API_AUTH_CONFIG_VOLUME_NAME, CruiseControl.API_AUTH_CONFIG_VOLUME_MOUNT),
-                createVolumeMount(LOG_AND_METRICS_CONFIG_VOLUME_NAME, LOG_AND_METRICS_CONFIG_VOLUME_MOUNT));
+                createVolumeMount(CONFIG_VOLUME_NAME, CONFIG_VOLUME_MOUNT));
     }
 
     /**
      * Generates Kubernetes Deployment for Cruise Control
      *
+     * @param annotations       Map with annotations
      * @param isOpenShift       Flag indicating if we are on OpenShift or not
      * @param imagePullPolicy   Image pull policy
      * @param imagePullSecrets  Image pull secrets
      *
      * @return  Cruise Control Kubernetes Deployment
      */
-    public Deployment generateDeployment(boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
+    public Deployment generateDeployment(Map<String, String> annotations, boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
         return WorkloadUtils.createDeployment(
                 componentName,
                 namespace,
@@ -346,7 +360,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
                         labels,
                         templatePod,
                         DEFAULT_POD_LABELS,
-                        Map.of(),
+                        annotations,
                         templatePod != null ? templatePod.getAffinity() : null,
                         null,
                         List.of(createContainer(imagePullPolicy)),
@@ -380,8 +394,6 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_KAFKA_BOOTSTRAP_SERVERS, KafkaResources.bootstrapServiceName(cluster) + ":" + KafkaCluster.REPLICATION_PORT));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
 
-        varList.add(ContainerUtils.createEnvVar(ENV_VAR_CRUISE_CONTROL_CAPACITY_CONFIGURATION, capacity.toString()));
-
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_SSL_ENABLED,  String.valueOf(this.sslEnabled)));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_AUTH_ENABLED,  String.valueOf(this.authEnabled)));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_USER,  API_USER_NAME));
@@ -391,10 +403,6 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
         JvmOptionUtils.heapOptions(varList, 75, 0L, jvmOptions, resources);
         JvmOptionUtils.jvmPerformanceOptions(varList, jvmOptions);
         JvmOptionUtils.jvmSystemProperties(varList, jvmOptions);
-
-        if (configuration != null && !configuration.getConfiguration().isEmpty()) {
-            varList.add(ContainerUtils.createEnvVar(ENV_VAR_CRUISE_CONTROL_CONFIGURATION, configuration.getConfiguration()));
-        }
 
         // Add shared environment variables used for all containers
         varList.addAll(sharedEnvironmentProvider.variables());
@@ -499,25 +507,6 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     }
 
     /**
-     * Generates a metrics and logging ConfigMap according to the configuration. If this operand doesn't support logging
-     * or metrics, they will nto be set.
-     *
-     * @param metricsAndLogging     The external CMs with logging and metrics configuration
-     *
-     * @return The generated ConfigMap
-     */
-    public ConfigMap generateMetricsAndLogConfigMap(MetricsAndLogging metricsAndLogging) {
-        return ConfigMapUtils
-                .createConfigMap(
-                        CruiseControlResources.logAndMetricsConfigMapName(cluster),
-                        namespace,
-                        labels,
-                        ownerReference,
-                        ConfigMapUtils.generateMetricsAndLogConfigMapData(reconciliation, this, metricsAndLogging)
-                );
-    }
-
-    /**
      * @return  Metrics Model instance for configuring Prometheus metrics
      */
     public MetricsModel metrics()   {
@@ -529,5 +518,32 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
      */
     public LoggingModel logging()   {
         return logging;
+    }
+
+    /**
+     * Generates a ConfigMap with the following:
+     *
+     *  (1) Cruise Control server configuration
+     *  (2) Cruise Control broker capacity configuration
+     *  (3) Cruise Control server metrics and logging configuration
+     *
+     * @param metricsAndLogging The logging and metrics configuration
+     *
+     * @return The generated data
+     */
+    public ConfigMap generateConfigMap(MetricsAndLogging metricsAndLogging) {
+        Map<String, String> configMapData = new HashMap<>();
+        configMapData.put(SERVER_CONFIG_FILENAME, configuration.asOrderedProperties().asPairs());
+        configMapData.put(CAPACITY_CONFIG_FILENAME, capacity.toString());
+        configMapData.putAll(ConfigMapUtils.generateMetricsAndLogConfigMapData(reconciliation, this, metricsAndLogging));
+
+        return ConfigMapUtils
+                .createConfigMap(
+                        CruiseControlResources.configMapName(cluster),
+                        namespace,
+                        labels,
+                        ownerReference,
+                        configMapData
+                );
     }
 }

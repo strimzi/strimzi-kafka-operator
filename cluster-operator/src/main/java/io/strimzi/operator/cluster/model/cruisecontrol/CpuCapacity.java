@@ -28,21 +28,17 @@ public class CpuCapacity {
         return String.valueOf(milliCPU / 1000.0);
     }
 
-    protected JsonObject getJson() {
+    /**
+     * Returns CpuCapacity object as a JsonObject
+     *
+     * @return The CpuCapacity object as a JsonObject
+     */
+    public JsonObject getJson() {
         return new JsonObject().put(CORES_KEY, this.cores);
     }
 
     @Override
     public String toString() {
         return this.getJson().toString();
-    }
-
-    /**
-     * Retrieves the value of the 'cores' property.
-     *
-     * @return The value of the 'cores' property.
-     */
-    public String getCores() {
-        return cores;
     }
 }

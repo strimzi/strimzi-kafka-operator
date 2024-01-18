@@ -148,6 +148,16 @@ public class Capacity {
     public static final String CPU_KEY = "CPU";
 
     /**
+     * Inbound network key
+     */
+    public static final String INBOUND_NETWORK_KEY = "NW_IN";
+
+    /**
+     * Outbound network key
+     */
+    public static final String OUTBOUND_NETWORK_KEY = "NW_OUT";
+
+    /**
      * Resource type
      */
     public static final String RESOURCE_TYPE = "cpu";
@@ -155,8 +165,6 @@ public class Capacity {
     private static final String KAFKA_MOUNT_PATH = "/var/lib/kafka";
     private static final String KAFKA_LOG_DIR = "kafka-log";
     private static final String BROKER_ID_KEY = "brokerId";
-    private static final String INBOUND_NETWORK_KEY = "NW_IN";
-    private static final String OUTBOUND_NETWORK_KEY = "NW_OUT";
     private static final String DOC_KEY = "doc";
 
     private enum ResourceRequirementType {

@@ -6,6 +6,7 @@ package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.AffinityBuilder;
+import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapKeySelectorBuilder;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
@@ -75,13 +76,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
-import java.util.TreeMap;
 
 import static io.strimzi.operator.cluster.model.CruiseControl.API_HEALTHCHECK_PATH;
 import static io.strimzi.operator.cluster.model.CruiseControl.API_USER_NAME;
-import static io.strimzi.operator.cluster.model.CruiseControl.ENV_VAR_CRUISE_CONTROL_CAPACITY_CONFIGURATION;
 import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters.ANOMALY_DETECTION_CONFIG_KEY;
 import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters.DEFAULT_GOALS_CONFIG_KEY;
 import static java.util.Collections.singletonList;
@@ -129,8 +127,6 @@ public class CruiseControlTest {
             putAll(CruiseControlConfiguration.getCruiseControlDefaultPropertiesMap());
             put("num.partition.metrics.windows", "2");
         }};
-
-    private final CruiseControlConfiguration ccConfiguration = new CruiseControlConfiguration(Reconciliation.DUMMY_RECONCILIATION, ccConfig.entrySet());
 
     private final Storage kafkaStorage = new EphemeralStorage();
     private final InlineLogging kafkaLogJson = new InlineLogging();
@@ -220,31 +216,17 @@ public class CruiseControlTest {
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_CRUISE_CONTROL_METRICS_ENABLED).withValue(Boolean.toString(CruiseControl.DEFAULT_CRUISE_CONTROL_METRICS_ENABLED)).build());
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_STRIMZI_KAFKA_BOOTSTRAP_SERVERS).withValue(KafkaResources.bootstrapServiceName(CLUSTER) + ":" + KafkaCluster.REPLICATION_PORT).build());
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED).withValue(Boolean.toString(JvmOptions.DEFAULT_GC_LOGGING_ENABLED)).build());
-        expected.add(new EnvVarBuilder().withName(ENV_VAR_CRUISE_CONTROL_CAPACITY_CONFIGURATION).withValue(cc.capacity.toString()).build());
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_API_SSL_ENABLED).withValue(Boolean.toString(CruiseControlConfigurationParameters.DEFAULT_WEBSERVER_SSL_ENABLED)).build());
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_API_AUTH_ENABLED).withValue(Boolean.toString(CruiseControlConfigurationParameters.DEFAULT_WEBSERVER_SECURITY_ENABLED)).build());
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_API_USER).withValue(API_USER_NAME).build());
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_API_PORT).withValue(Integer.toString(CruiseControl.REST_API_PORT)).build());
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_API_HEALTHCHECK_PATH).withValue(API_HEALTHCHECK_PATH).build());
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_KAFKA_HEAP_OPTS).withValue("-Xms" + JvmOptionUtils.DEFAULT_JVM_XMS).build());
-        expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_CRUISE_CONTROL_CONFIGURATION).withValue(ccConfiguration.getConfiguration()).build());
         return expected;
     }
 
-    public String getCapacityConfigurationFromEnvVar(Kafka resource, String envVar) {
-        CruiseControl cc = createCruiseControl(resource);
-        Deployment dep = cc.generateDeployment(true, null, null);
-        List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
-
-        // checks on the main Cruise Control container
-        Container ccContainer = containers.stream().filter(container -> ccImage.equals(container.getImage())).findFirst().orElseThrow();
-        List<EnvVar> ccEnvVars = ccContainer.getEnv();
-
-        return ccEnvVars.stream().filter(var -> envVar.equals(var.getName())).map(EnvVar::getValue).findFirst().orElseThrow();
-    }
-
-    private static boolean isJBOD(Map<String, Object> brokerCapacity) {
-        return brokerCapacity.get(Capacity.DISK_KEY) instanceof JsonObject;
+    private static boolean isJBOD(Object diskCapacity) {
+        return diskCapacity instanceof JsonObject;
     }
 
     public Kafka kafkaSpec(CruiseControlSpec cruiseControlSpec, ResourceRequirements resourceRequirements) {
@@ -262,6 +244,7 @@ public class CruiseControlTest {
     public void testBrokerCapacities() {
         // Test user defined capacities
         String userDefinedCpuCapacity = "2575m";
+        JsonObject expectedCpuCapacity = new CpuCapacity(userDefinedCpuCapacity).getJson();
 
         io.strimzi.api.kafka.model.kafka.cruisecontrol.BrokerCapacity userDefinedBrokerCapacity = new io.strimzi.api.kafka.model.kafka.cruisecontrol.BrokerCapacity();
         userDefinedBrokerCapacity.setCpu(userDefinedCpuCapacity);
@@ -274,10 +257,6 @@ public class CruiseControlTest {
                 .build();
 
         Kafka resource = createKafka(cruiseControlSpec);
-
-        Capacity capacity = new Capacity(Reconciliation.DUMMY_RECONCILIATION, resource.getSpec(), NODES, createStorageMap(resource), createResourceRequirementsMap(resource));
-
-        assertThat(getCapacityConfigurationFromEnvVar(resource, ENV_VAR_CRUISE_CONTROL_CAPACITY_CONFIGURATION), is(capacity.toString()));
 
         // Test generated disk capacity
         JbodStorage jbodStorage = new JbodStorageBuilder()
@@ -300,17 +279,19 @@ public class CruiseControlTest {
             .endSpec()
             .build();
 
-        capacity = new Capacity(Reconciliation.DUMMY_RECONCILIATION, resource.getSpec(), NODES, createStorageMap(resource), createResourceRequirementsMap(resource));
-        String cpuCapacity = new CpuCapacity(userDefinedCpuCapacity).toString();
+        CruiseControl cc = createCruiseControl(resource);
+        ConfigMap configMap = cc.generateConfigMap(new MetricsAndLogging(null, null));
 
-        JsonArray brokerEntries = capacity.generateCapacityConfig().getJsonArray(Capacity.CAPACITIES_KEY);
+        JsonObject capacity = new JsonObject(configMap.getData().get(CruiseControl.CAPACITY_CONFIG_FILENAME));
+        JsonArray brokerEntries = capacity.getJsonArray(Capacity.CAPACITIES_KEY);
         for (Object brokerEntry : brokerEntries) {
-            Map<String, Object> brokerCapacity = ((JsonObject) brokerEntry).getJsonObject(Capacity.CAPACITY_KEY).getMap();
-            assertThat(isJBOD(brokerCapacity), is(true));
-            assertThat(brokerCapacity.get(Capacity.CPU_KEY).toString(), is(cpuCapacity));
-        }
+            JsonObject brokerCapacity = ((JsonObject) brokerEntry).getJsonObject(Capacity.CAPACITY_KEY);
+            Object diskCapacity = brokerCapacity.getValue(Capacity.DISK_KEY);
+            JsonObject cpuCapacity  = brokerCapacity.getJsonObject(Capacity.CPU_KEY);
 
-        assertThat(getCapacityConfigurationFromEnvVar(resource, ENV_VAR_CRUISE_CONTROL_CAPACITY_CONFIGURATION), is(capacity.toString()));
+            assertThat(isJBOD(diskCapacity), is(true));
+            assertThat(cpuCapacity, is(expectedCpuCapacity));
+        }
 
         // Test capacity overrides
         String userDefinedCpuCapacityOverride0 = "1.222";
@@ -345,29 +326,33 @@ public class CruiseControlTest {
             .build();
 
         resource = createKafka(cruiseControlSpec);
-        capacity = new Capacity(Reconciliation.DUMMY_RECONCILIATION, resource.getSpec(), NODES, createStorageMap(resource), createResourceRequirementsMap(resource));
+        cc = createCruiseControl(resource);
+        configMap = cc.generateConfigMap(new MetricsAndLogging(null, null));
 
-        brokerEntries = capacity.generateCapacityConfig().getJsonArray(Capacity.CAPACITIES_KEY);
+        capacity = new JsonObject(configMap.getData().get(CruiseControl.CAPACITY_CONFIG_FILENAME));
+        brokerEntries = capacity.getJsonArray(Capacity.CAPACITIES_KEY);
+
         for (Object brokerEntry : brokerEntries) {
-            Map<String, Object> brokerCapacity = ((JsonObject) brokerEntry).getJsonObject(Capacity.CAPACITY_KEY).getMap();
-            assertThat(isJBOD(brokerCapacity), is(false));
+            JsonObject brokerCapacity = ((JsonObject) brokerEntry).getJsonObject(Capacity.CAPACITY_KEY);
+            Object diskCapacity = brokerCapacity.getValue(Capacity.DISK_KEY);
+
+            assertThat(isJBOD(diskCapacity), is(false));
         }
 
-        TreeMap<Integer, BrokerCapacity> capacityEntries = capacity.getCapacityEntries();
-
-        assertThat(capacityEntries.get(broker0).getCpu().toString(), is(new CpuCapacity(userDefinedCpuCapacityOverride0).toString()));
-        assertThat(capacityEntries.get(broker0).getInboundNetwork(), is(Capacity.getThroughputInKiB(inboundNetworkOverride0)));
-        assertThat(capacityEntries.get(broker0).getOutboundNetwork(), is(BrokerCapacity.DEFAULT_OUTBOUND_NETWORK_CAPACITY_IN_KIB_PER_SECOND));
+        JsonObject brokerEntry0 = brokerEntries.getJsonObject(broker0).getJsonObject(Capacity.CAPACITY_KEY);
+        assertThat(brokerEntry0.getJsonObject(Capacity.CPU_KEY), is(new CpuCapacity(userDefinedCpuCapacityOverride0).getJson()));
+        assertThat(brokerEntry0.getString(Capacity.INBOUND_NETWORK_KEY), is(Capacity.getThroughputInKiB(inboundNetworkOverride0)));
+        assertThat(brokerEntry0.getString(Capacity.OUTBOUND_NETWORK_KEY), is(BrokerCapacity.DEFAULT_OUTBOUND_NETWORK_CAPACITY_IN_KIB_PER_SECOND));
 
         // When the same broker id is specified in brokers list of multiple overrides, use the value specified in the first override.
-        assertThat(capacityEntries.get(broker1).getCpu().toString(), is(new CpuCapacity(userDefinedCpuCapacityOverride0).toString()));
-        assertThat(capacityEntries.get(broker1).getInboundNetwork(), is(Capacity.getThroughputInKiB(inboundNetworkOverride0)));
-        assertThat(capacityEntries.get(broker1).getOutboundNetwork(), is(BrokerCapacity.DEFAULT_OUTBOUND_NETWORK_CAPACITY_IN_KIB_PER_SECOND));
+        JsonObject brokerEntry1 = brokerEntries.getJsonObject(broker1).getJsonObject(Capacity.CAPACITY_KEY);
+        assertThat(brokerEntry1.getJsonObject(Capacity.CPU_KEY), is(new CpuCapacity(userDefinedCpuCapacityOverride0).getJson()));
+        assertThat(brokerEntry1.getString(Capacity.INBOUND_NETWORK_KEY), is(Capacity.getThroughputInKiB(inboundNetworkOverride0)));
+        assertThat(brokerEntry1.getString(Capacity.OUTBOUND_NETWORK_KEY), is(BrokerCapacity.DEFAULT_OUTBOUND_NETWORK_CAPACITY_IN_KIB_PER_SECOND));
 
-        assertThat(capacityEntries.get(broker2).getCpu().toString(), is(new CpuCapacity(userDefinedCpuCapacityOverride0).toString()));
-        assertThat(capacityEntries.get(broker2).getInboundNetwork(), is(Capacity.getThroughputInKiB(inboundNetworkOverride0)));
-
-        assertThat(getCapacityConfigurationFromEnvVar(resource, ENV_VAR_CRUISE_CONTROL_CAPACITY_CONFIGURATION), is(capacity.toString()));
+        JsonObject brokerEntry2 = brokerEntries.getJsonObject(broker2).getJsonObject(Capacity.CAPACITY_KEY);
+        assertThat(brokerEntry1.getJsonObject(Capacity.CPU_KEY), is(new CpuCapacity(userDefinedCpuCapacityOverride0).getJson()));
+        assertThat(brokerEntry1.getString(Capacity.INBOUND_NETWORK_KEY), is(Capacity.getThroughputInKiB(inboundNetworkOverride0)));
 
         // Test generated CPU capacity
         userDefinedCpuCapacity = "500m";
@@ -386,13 +371,17 @@ public class CruiseControlTest {
             .endSpec()
             .build();
 
-        capacity = new Capacity(Reconciliation.DUMMY_RECONCILIATION, resource.getSpec(), NODES, createStorageMap(resource), createResourceRequirementsMap(resource));
-        cpuCapacity = new CpuCapacity(userDefinedCpuCapacityOverride0).toString();
+        cc = createCruiseControl(resource);
+        configMap = cc.generateConfigMap(new MetricsAndLogging(null, null));
+        capacity = new JsonObject(configMap.getData().get(CruiseControl.CAPACITY_CONFIG_FILENAME));
 
-        brokerEntries = capacity.generateCapacityConfig().getJsonArray(Capacity.CAPACITIES_KEY);
+        expectedCpuCapacity = new CpuCapacity(userDefinedCpuCapacityOverride0).getJson();
+
+        brokerEntries = capacity.getJsonArray(Capacity.CAPACITIES_KEY);
         for (Object brokerEntry : brokerEntries) {
-            Map<String, Object> brokerCapacity = ((JsonObject) brokerEntry).getJsonObject(Capacity.CAPACITY_KEY).getMap();
-            assertThat(brokerCapacity.get(Capacity.CPU_KEY).toString(), is(cpuCapacity));
+            JsonObject brokerCapacity = ((JsonObject) brokerEntry).getJsonObject(Capacity.CAPACITY_KEY);
+            JsonObject cpuCapacity  = brokerCapacity.getJsonObject(Capacity.CPU_KEY);
+            assertThat(cpuCapacity, is(expectedCpuCapacity));
         }
     }
 
@@ -423,9 +412,9 @@ public class CruiseControlTest {
 
         // Test the capacity
         CruiseControl cc = CruiseControl.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS, nodes, storage, resources, SHARED_ENV_PROVIDER);
-        Capacity capacity = cc.capacity;
-
-        JsonArray brokerEntries = capacity.generateCapacityConfig().getJsonArray(Capacity.CAPACITIES_KEY);
+        ConfigMap configMap = cc.generateConfigMap(new MetricsAndLogging(null, null));
+        JsonObject capacity = new JsonObject(configMap.getData().get(CruiseControl.CAPACITY_CONFIG_FILENAME));
+        JsonArray brokerEntries = capacity.getJsonArray(Capacity.CAPACITIES_KEY);
 
         assertThat(brokerEntries.size(), is(6));
 
@@ -487,7 +476,7 @@ public class CruiseControlTest {
 
     @ParallelTest
     public void testGenerateDeployment() {
-        Deployment dep = cc.generateDeployment(true, null, null);
+        Deployment dep = cc.generateDeployment(Map.of(), true, null, null);
 
         List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
 
@@ -523,10 +512,6 @@ public class CruiseControlTest {
         assertThat(volume, is(notNullValue()));
         assertThat(volume.getSecret().getSecretName(), is(AbstractModel.clusterCaCertSecretName(CLUSTER)));
 
-        volume = volumes.stream().filter(vol -> CruiseControl.LOG_AND_METRICS_CONFIG_VOLUME_NAME.equals(vol.getName())).findFirst().orElseThrow();
-        assertThat(volume, is(notNullValue()));
-        assertThat(volume.getConfigMap().getName(), is(CruiseControlResources.logAndMetricsConfigMapName(CLUSTER)));
-
         volume = volumes.stream().filter(vol -> CruiseControl.API_AUTH_CONFIG_VOLUME_NAME.equals(vol.getName())).findFirst().orElseThrow();
         assertThat(volume, is(notNullValue()));
         assertThat(volume.getSecret().getSecretName(), is(CruiseControlResources.apiSecretName(CLUSTER)));
@@ -535,6 +520,10 @@ public class CruiseControlTest {
         assertThat(volume, is(notNullValue()));
         assertThat(volume.getEmptyDir().getMedium(), is("Memory"));
         assertThat(volume.getEmptyDir().getSizeLimit(), is(new Quantity("100Mi")));
+
+        volume = volumes.stream().filter(vol -> CruiseControl.CONFIG_VOLUME_NAME.equals(vol.getName())).findFirst().orElseThrow();
+        assertThat(volume, is(notNullValue()));
+        assertThat(volume.getConfigMap().getName(), is(CruiseControlResources.configMapName(CLUSTER)));
 
         // Test volume mounts
         List<VolumeMount> volumesMounts = dep.getSpec().getTemplate().getSpec().getContainers().get(0).getVolumeMounts();
@@ -548,10 +537,6 @@ public class CruiseControlTest {
         assertThat(volumeMount, is(notNullValue()));
         assertThat(volumeMount.getMountPath(), is(CruiseControl.TLS_CA_CERTS_VOLUME_MOUNT));
 
-        volumeMount = volumesMounts.stream().filter(vol -> CruiseControl.LOG_AND_METRICS_CONFIG_VOLUME_NAME.equals(vol.getName())).findFirst().orElseThrow();
-        assertThat(volumeMount, is(notNullValue()));
-        assertThat(volumeMount.getMountPath(), is(CruiseControl.LOG_AND_METRICS_CONFIG_VOLUME_MOUNT));
-
         volumeMount = volumesMounts.stream().filter(vol -> CruiseControl.API_AUTH_CONFIG_VOLUME_NAME.equals(vol.getName())).findFirst().orElseThrow();
         assertThat(volumeMount, is(notNullValue()));
         assertThat(volumeMount.getMountPath(), is(CruiseControl.API_AUTH_CONFIG_VOLUME_MOUNT));
@@ -559,6 +544,10 @@ public class CruiseControlTest {
         volumeMount = volumesMounts.stream().filter(vol -> VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME.equals(vol.getName())).findFirst().orElseThrow();
         assertThat(volumeMount, is(notNullValue()));
         assertThat(volumeMount.getMountPath(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH));
+
+        volumeMount = volumesMounts.stream().filter(vol -> CruiseControl.CONFIG_VOLUME_NAME.equals(vol.getName())).findFirst().orElseThrow();
+        assertThat(volumeMount, is(notNullValue()));
+        assertThat(volumeMount.getMountPath(), is(CruiseControl.CONFIG_VOLUME_MOUNT));
     }
 
     @ParallelTest
@@ -568,12 +557,12 @@ public class CruiseControlTest {
 
     @ParallelTest
     public void testImagePullPolicy() {
-        Deployment dep = cc.generateDeployment(true, ImagePullPolicy.ALWAYS, null);
+        Deployment dep = cc.generateDeployment(Map.of(), true, ImagePullPolicy.ALWAYS, null);
         List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
         Container ccContainer = containers.stream().filter(container -> ccImage.equals(container.getImage())).findFirst().orElseThrow();
         assertThat(ccContainer.getImagePullPolicy(), is(ImagePullPolicy.ALWAYS.toString()));
 
-        dep = cc.generateDeployment(true, ImagePullPolicy.IFNOTPRESENT, null);
+        dep = cc.generateDeployment(Map.of(), true, ImagePullPolicy.IFNOTPRESENT, null);
         containers = dep.getSpec().getTemplate().getSpec().getContainers();
         ccContainer = containers.stream().filter(container -> ccImage.equals(container.getImage())).findFirst().orElseThrow();
         assertThat(ccContainer.getImagePullPolicy(), is(ImagePullPolicy.IFNOTPRESENT.toString()));
@@ -749,7 +738,7 @@ public class CruiseControlTest {
         CruiseControl cc = createCruiseControl(resource);
 
         // Check Deployment
-        Deployment dep = cc.generateDeployment(true, null, null);
+        Deployment dep = cc.generateDeployment(Map.of(), true, null, null);
         depLabels.putAll(expectedLabels());
         assertThat(dep.getMetadata().getLabels(), is(depLabels));
         assertThat(dep.getMetadata().getAnnotations(), is(depAnots));
@@ -796,7 +785,7 @@ public class CruiseControlTest {
         Kafka resource = createKafka(cruiseControlSpec);
 
         CruiseControl cc = createCruiseControl(resource);
-        Deployment dep = cc.generateDeployment(true, null, null);
+        Deployment dep = cc.generateDeployment(Map.of(), true, null, null);
         List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
         Container ccContainer = containers.stream().filter(container -> ccImage.equals(container.getImage())).findFirst().orElseThrow();
 
@@ -879,17 +868,12 @@ public class CruiseControlTest {
                 .build();
 
         CruiseControl cc = CruiseControl.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaSpec(cruiseControlSpec, resourceRequirements), VERSIONS, nodes, storage, resources, SHARED_ENV_PROVIDER);
-        Capacity capacity = cc.getCapacity();
-
-        TreeMap<Integer, BrokerCapacity> map = capacity.getCapacityEntries();
-        BrokerCapacity broker0 = map.get(0);
-        BrokerCapacity broker1 = map.get(1);
-        BrokerCapacity broker2 = map.get(2);
-
-        assertThat(capacity, is(notNullValue()));
-        assertThat(broker0.getCpu().getCores(), is(Matchers.equalTo(brokerOneCpuValue)));
-        assertThat(broker1.getCpu().getCores(), is(Matchers.equalTo(brokerTwoCpuValue)));
-        assertThat(broker2.getCpu().getCores(), is(Matchers.equalTo(brokerThreeCpuValue)));
+        ConfigMap configMap = cc.generateConfigMap(new MetricsAndLogging(null, null));
+        JsonObject capacity = new JsonObject(configMap.getData().get(CruiseControl.CAPACITY_CONFIG_FILENAME));
+        JsonArray brokerEntries = capacity.getJsonArray(Capacity.CAPACITIES_KEY);
+        assertThat(brokerEntries.getJsonObject(0).getJsonObject(Capacity.CAPACITY_KEY).getJsonObject(Capacity.CPU_KEY).getString("num.cores"), is(Matchers.equalTo(brokerOneCpuValue)));
+        assertThat(brokerEntries.getJsonObject(1).getJsonObject(Capacity.CAPACITY_KEY).getJsonObject(Capacity.CPU_KEY).getString("num.cores"), is(Matchers.equalTo(brokerTwoCpuValue)));
+        assertThat(brokerEntries.getJsonObject(2).getJsonObject(Capacity.CAPACITY_KEY).getJsonObject(Capacity.CPU_KEY).getString("num.cores"), is(Matchers.equalTo(brokerThreeCpuValue)));
     }
 
     @ParallelTest
@@ -922,7 +906,7 @@ public class CruiseControlTest {
         Kafka resource = createKafka(cruiseControlSpec);
 
         CruiseControl cc = createCruiseControl(resource);
-        Deployment dep = cc.generateDeployment(true, null, null);
+        Deployment dep = cc.generateDeployment(Map.of(), true, null, null);
         List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
 
         // checks on the main Cruise Control container
@@ -950,7 +934,7 @@ public class CruiseControlTest {
         Kafka resource = createKafka(cruiseControlSpec);
 
         CruiseControl cc = createCruiseControl(resource);
-        Deployment dep = cc.generateDeployment(true, null, null);
+        Deployment dep = cc.generateDeployment(Map.of(), true, null, null);
         List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
 
         // checks on the main Cruise Control container
@@ -978,7 +962,7 @@ public class CruiseControlTest {
 
         CruiseControl cc = createCruiseControl(resource);
 
-        Deployment dep = cc.generateDeployment(true, null, null);
+        Deployment dep = cc.generateDeployment(Map.of(), true, null, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext(), is(notNullValue()));
         assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext().getFsGroup(), is(123L));
         assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext().getRunAsGroup(), is(456L));
@@ -991,7 +975,7 @@ public class CruiseControlTest {
         cc.securityProvider = new RestrictedPodSecurityProvider();
         cc.securityProvider.configure(new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION));
 
-        Deployment dep = cc.generateDeployment(true, null, null);
+        Deployment dep = cc.generateDeployment(Map.of(), true, null, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext(), is(nullValue()));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getSecurityContext().getAllowPrivilegeEscalation(), is(false));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getSecurityContext().getRunAsNonRoot(), is(true));
@@ -1032,7 +1016,7 @@ public class CruiseControlTest {
 
     @ParallelTest
     public void testDefaultSecurityContext() {
-        Deployment dep = cc.generateDeployment(true, null, null);
+        Deployment dep = cc.generateDeployment(Map.of(), true, null, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext(), is(nullValue()));
     }
 
@@ -1062,7 +1046,7 @@ public class CruiseControlTest {
 
         CruiseControl cc = createCruiseControl(resource);
 
-        Deployment dep = cc.generateDeployment(true, null, null);
+        Deployment dep = cc.generateDeployment(Map.of(), true, null, null);
 
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers(),
                 hasItem(allOf(
@@ -1188,27 +1172,21 @@ public class CruiseControlTest {
 
     @ParallelTest
     public void testDefaultTopicNames() {
+        Map<String, String> topicConfigs = new HashMap<>();
+        topicConfigs.put(CruiseControlConfigurationParameters.PARTITION_METRIC_TOPIC_NAME.getValue(), CruiseControlConfigurationParameters.DEFAULT_PARTITION_METRIC_TOPIC_NAME);
+        topicConfigs.put(CruiseControlConfigurationParameters.BROKER_METRIC_TOPIC_NAME.getValue(), CruiseControlConfigurationParameters.DEFAULT_BROKER_METRIC_TOPIC_NAME);
+        topicConfigs.put(CruiseControlConfigurationParameters.METRIC_REPORTER_TOPIC_NAME.getValue(), CruiseControlConfigurationParameters.DEFAULT_METRIC_REPORTER_TOPIC_NAME);
+        Map<String, Object> customConfig = ccConfig;
+        customConfig.putAll(topicConfigs);
+
         CruiseControlSpec cruiseControlSpec = new CruiseControlSpecBuilder()
                 .withImage(ccImage)
                 .withConfig(ccConfig)
                 .build();
 
         Kafka resource = createKafka(cruiseControlSpec);
-
         CruiseControl cc = createCruiseControl(resource);
-        Deployment dep = cc.generateDeployment(true, null, null);
-        List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
-
-        // checks on the main Cruise Control container
-        Container ccContainer = containers.stream().filter(container -> ccImage.equals(container.getImage())).findFirst().orElseThrow();
-        List<EnvVar> envVarList = ccContainer.getEnv();
-        Optional<EnvVar> configEnvVar = envVarList.stream().filter(envVar -> envVar.getName().equals(CruiseControl.ENV_VAR_CRUISE_CONTROL_CONFIGURATION))
-                .findFirst();
-        assertThat(configEnvVar.isPresent(), is(true));
-        String config = configEnvVar.get().getValue();
-        assertThat(config, containsString(String.format("%s=%s", CruiseControlConfigurationParameters.PARTITION_METRIC_TOPIC_NAME.getValue(), CruiseControlConfigurationParameters.DEFAULT_PARTITION_METRIC_TOPIC_NAME)));
-        assertThat(config, containsString(String.format("%s=%s", CruiseControlConfigurationParameters.BROKER_METRIC_TOPIC_NAME.getValue(), CruiseControlConfigurationParameters.DEFAULT_BROKER_METRIC_TOPIC_NAME)));
-        assertThat(config, containsString(String.format("%s=%s", CruiseControlConfigurationParameters.METRIC_REPORTER_TOPIC_NAME.getValue(), CruiseControlConfigurationParameters.DEFAULT_METRIC_REPORTER_TOPIC_NAME)));
+        topicConfigs.forEach((configParam, name) -> assertThat(cc.configuration.getConfiguration(), containsString(String.format("%s=%s", configParam, name))));
     }
 
     @ParallelTest
@@ -1226,19 +1204,8 @@ public class CruiseControlTest {
                 .build();
 
         Kafka resource = createKafka(cruiseControlSpec);
-
         CruiseControl cc = createCruiseControl(resource);
-        Deployment dep = cc.generateDeployment(true, null, null);
-        List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
-
-        // checks on the main Cruise Control container
-        Container ccContainer = containers.stream().filter(container -> ccImage.equals(container.getImage())).findFirst().orElseThrow();
-        List<EnvVar> envVarList = ccContainer.getEnv();
-        Optional<EnvVar> configEnvVar = envVarList.stream().filter(envVar -> envVar.getName().equals(CruiseControl.ENV_VAR_CRUISE_CONTROL_CONFIGURATION))
-                .findFirst();
-        assertThat(configEnvVar.isPresent(), is(true));
-        String config = configEnvVar.get().getValue();
-        topicConfigs.forEach((configParam, name) -> assertThat(config, containsString(String.format("%s=%s", configParam, name))));
+        topicConfigs.forEach((configParam, name) -> assertThat(cc.configuration.getConfiguration(), containsString(String.format("%s=%s", configParam, name))));
     }
 
     @AfterAll

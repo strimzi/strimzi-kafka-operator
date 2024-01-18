@@ -20,7 +20,6 @@ import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
-import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
@@ -36,9 +35,11 @@ import io.strimzi.operator.common.operator.resource.ServiceOperator;
 import io.vertx.core.Future;
 
 import java.time.Clock;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 
 /**
  * Class used for reconciliation of Cruise Control. This class contains both the steps of the Cruise Control
@@ -64,6 +65,9 @@ public class CruiseControlReconciler {
     private final ConfigMapOperator configMapOperator;
 
     private boolean existingCertsChanged = false;
+
+    private String serverConfigurationHash = "";
+    private String capacityConfigurationHash = "";
 
     /**
      * Constructs the Cruise Control reconciler
@@ -122,7 +126,7 @@ public class CruiseControlReconciler {
     public Future<Void> reconcile(boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets, Clock clock)    {
         return networkPolicy()
                 .compose(i -> serviceAccount())
-                .compose(i -> metricsAndLoggingConfigMap())
+                .compose(i -> configMap())
                 .compose(i -> certificatesSecret(clock))
                 .compose(i -> apiSecret())
                 .compose(i -> service())
@@ -165,26 +169,32 @@ public class CruiseControlReconciler {
     }
 
     /**
-     * Manages the Cruise Control Config Map with logging and metrics configuration.
+     * Manages the Cruise Control ConfigMap which contains the following:
+     * (1) Cruise Control server configuration
+     * (2) Cruise Control broker capacity configuration
+     * (3) Cruise Control server logging and metrics configuration
      *
-     * @return  Future which completes when the reconciliation is done
+     * @return Future which completes when the reconciliation is done
      */
-    protected Future<Void> metricsAndLoggingConfigMap() {
-        if (cruiseControl != null)  {
+    protected Future<Void> configMap() {
+        if (cruiseControl != null) {
             return MetricsAndLoggingUtils.metricsAndLogging(reconciliation, configMapOperator, cruiseControl.logging(), cruiseControl.metrics())
                     .compose(metricsAndLogging -> {
-                        ConfigMap logAndMetricsConfigMap = cruiseControl.generateMetricsAndLogConfigMap(metricsAndLogging);
+                        ConfigMap configMap = cruiseControl.generateConfigMap(metricsAndLogging);
+
+                        this.serverConfigurationHash = Util.hashStub(configMap.getData().get(CruiseControl.SERVER_CONFIG_FILENAME));
+                        this.capacityConfigurationHash = Util.hashStub(configMap.getData().get(CruiseControl.CAPACITY_CONFIG_FILENAME));
 
                         return configMapOperator
                                 .reconcile(
                                         reconciliation,
                                         reconciliation.namespace(),
-                                        CruiseControlResources.logAndMetricsConfigMapName(reconciliation.name()),
-                                        logAndMetricsConfigMap
+                                        CruiseControlResources.configMapName(reconciliation.name()),
+                                        configMap
                                 ).map((Void) null);
                     });
         } else {
-            return configMapOperator.reconcile(reconciliation, reconciliation.namespace(), CruiseControlResources.logAndMetricsConfigMapName(reconciliation.name()), null)
+            return configMapOperator.reconcile(reconciliation, reconciliation.namespace(), CruiseControlResources.configMapName(reconciliation.name()), null)
                     .map((Void) null);
         }
     }
@@ -270,14 +280,13 @@ public class CruiseControlReconciler {
      */
     protected Future<Void> deployment(boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
         if (cruiseControl != null) {
-            Deployment deployment = cruiseControl.generateDeployment(isOpenShift, imagePullPolicy, imagePullSecrets);
+            Map<String, String> podAnnotations = new LinkedHashMap<>();
+            podAnnotations.put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(clusterCa.caCertGeneration()));
+            podAnnotations.put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, String.valueOf(clusterCa.caKeyGeneration()));
+            podAnnotations.put(CruiseControl.ANNO_STRIMZI_SERVER_CONFIGURATION_HASH, serverConfigurationHash);
+            podAnnotations.put(CruiseControl.ANNO_STRIMZI_CAPACITY_CONFIGURATION_HASH, capacityConfigurationHash);
 
-            int caCertGeneration = clusterCa.caCertGeneration();
-            Annotations.annotations(deployment.getSpec().getTemplate()).put(
-                    Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(caCertGeneration));
-            int caKeyGeneration = clusterCa.caKeyGeneration();
-            Annotations.annotations(deployment.getSpec().getTemplate()).put(
-                    Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, String.valueOf(caKeyGeneration));
+            Deployment deployment = cruiseControl.generateDeployment(podAnnotations, isOpenShift, imagePullPolicy, imagePullSecrets);
 
             return deploymentOperator
                     .reconcile(reconciliation, reconciliation.namespace(), CruiseControlResources.componentName(reconciliation.name()), deployment)

@@ -73,11 +73,11 @@ public class CruiseControlResources {
     }
 
     /**
-     * Returns the name of the Cruise Control log {@code ConfigMap} for a {@code Kafka} cluster of the given name.
-     * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
-     * @return The name of the corresponding Cruise Control log {@code ConfigMap}.
+     * Returns the name of the Cruise Control {@code ConfigMap} for a {@code Kafka} cluster of the given name.
+     * @param clusterName The {@code metadata.name} of the {@code Kafka} resource.
+     * @return The name of the corresponding Cruise Control {@code ConfigMap}.
      */
-    public static String logAndMetricsConfigMapName(String clusterName) {
+    public static String configMapName(String clusterName) {
         return clusterName + "-cruise-control-config";
     }
 
