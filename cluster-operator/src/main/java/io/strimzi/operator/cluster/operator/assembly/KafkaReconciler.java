@@ -1114,25 +1114,7 @@ public class KafkaReconciler {
             // TODO: to be removed, just for monitoring/testing
             LOGGER.infoCr(reconciliation, "No need to check ZooKeeper to KRaft migration state");
             return Future.succeededFuture();
-
-            // TODO: to be removed if we leave the way to finalize rollback by removing the /controller znode manually
-            /*
-            return ReconcilerUtils.clientSecrets(reconciliation, secretOperator)
-                    .compose(compositeFuture -> {
-                        String zkConnectionString = KafkaResources.zookeeperServiceName(reconciliation.name()) + ":" + io.strimzi.operator.cluster.model.ZookeeperCluster.CLIENT_TLS_PORT;
-                        LOGGER.infoCr(reconciliation, "Maybe deleting /controller znode on {}", zkConnectionString);
-                        this.kafkaMetadataStateManager.maybeDeleteZooKeeperControllerZnode(
-                                reconciliation,
-                                compositeFuture.resultAt(0),
-                                compositeFuture.resultAt(1),
-                                operationTimeoutMs,
-                                zkConnectionString
-                        );
-                        return Future.succeededFuture();
-                    });
-             */
         }
-
     }
 
     /**
