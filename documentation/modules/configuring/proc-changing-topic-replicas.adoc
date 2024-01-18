@@ -55,7 +55,7 @@ Save a copy of this file locally in case you need to revert the changes later on
 
 . Edit the `reassignment.json` to remove a replica from each partition.
 +
-For example use `jq` to remove the last replica in the list for each partition of the topic:
+For example use the `jq` {JQTool} to remove the last replica in the list for each partition of the topic:
 +
 .Removing the last topic replica for each partition
 [source,shell,subs=+quotes]

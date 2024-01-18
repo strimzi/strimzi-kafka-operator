@@ -22,7 +22,11 @@ m¦Strimzi resource
 
 m¦Kafka
 ¦`KafkaStatus` schema reference
-¦The Kafka cluster
+¦The Kafka cluster, its listeners, and node pools
+
+m¦KafkaNodePool
+¦`KafkaNodePoolStatus` schema reference
+¦The nodes in the node pool, their roles, and the associated Kafka cluster
 
 m¦KafkaTopic
 ¦`KafkaTopicStatus` schema reference
@@ -34,7 +38,7 @@ m¦KafkaUser
 
 m¦KafkaConnect
 ¦`KafkaConnectStatus` schema reference
-¦The Kafka Connect cluster
+¦The Kafka Connect cluster and connector plugins
 
 m¦KafkaConnector
 ¦`KafkaConnectorStatus` schema reference
@@ -42,7 +46,7 @@ m¦KafkaConnector
 
 m¦KafkaMirrorMaker2
 ¦`KafkaMirrorMaker2Status` schema reference
-¦The Kafka MirrorMaker 2 cluster
+¦The Kafka MirrorMaker 2 cluster and internal connectors
 
 m¦KafkaMirrorMaker
 ¦`KafkaMirrorMakerStatus` schema reference
@@ -55,6 +59,10 @@ m¦KafkaBridge
 m¦KafkaRebalance
 ¦`KafkaRebalance` schema reference
 ¦The status and results of a rebalance
+
+m¦StrimziPodSet
+¦`StrimziPodSetStatus` schema reference
+¦The number of pods: being managed, using the current version, and in a ready state 
 
 |===
 
@@ -141,6 +149,3 @@ status:
 <7> The version of the operator that successfully completed the last reconciliation. 
 
 NOTE: The Kafka bootstrap addresses listed in the status do not signify that those endpoints or the Kafka cluster is in a `Ready` state.
-
-.Accessing status information
-You can access status information for a resource from the command line. For more information, see xref:proc-accessing-resource-status-{context}[].

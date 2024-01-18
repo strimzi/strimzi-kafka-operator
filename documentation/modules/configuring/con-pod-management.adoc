@@ -1,0 +1,16 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-deploy-intro-operators.adoc
+
+[id='con-pod-management-{context}']
+= Managing pod resources
+
+[role="_abstract"]
+The `StrimziPodSet` custom resource is used by Strimzi to create and manage Kafka, Kafka Connect, and MirrorMaker 2 pods.
+If you are using ZooKeeper, ZooKeeper pods are also created and managed using `StrimziPodSet` resources.
+
+You must not create, update, or delete `StrimziPodSet` resources.
+The `StrimziPodSet` custom resource is used internally and resources are managed solely by the Cluster Operator.
+As a consequence, the Cluster Operator must be running properly to avoid the possibility of pods not starting and Kafka clusters not being available.
+
+NOTE: Kubernetes `Deployment` resources are used for creating and managing the pods of other components: Kafka Bridge, Kafka Exporter, Cruise Control, (deprecated) MirrorMaker 1, User Operator and Topic Operator.

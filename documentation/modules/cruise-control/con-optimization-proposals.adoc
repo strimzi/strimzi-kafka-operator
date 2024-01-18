@@ -72,7 +72,7 @@ You can use the name of the `KafkaRebalance` resource to return a summary from t
 kubectl describe kafkarebalance _<kafka_rebalance_resource_name>_ -n _<namespace>_
 ----
 
-You can also use the `jq` command line JSON parser tool.
+You can also use the `jq` {JQTool}.
 
 .Returning an optimization proposal summary using jq
 [source,shell,subs=+quotes]
@@ -251,7 +251,7 @@ You can use the name of the ConfigMap to view its data from the command line.
 kubectl describe configmaps _<my_rebalance_configmap_name>_ -n _<namespace>_
 ----
 
-You can also use the `jq` command line JSON parser tool to extract the JSON string from the ConfigMap.
+You can also use the `jq` {JQTool} to extract the JSON string from the ConfigMap.
 
 .Extracting the JSON string from the ConfigMap using jq
 [source,shell,subs=+quotes]

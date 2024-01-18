@@ -17,7 +17,7 @@ To remove finalizers on all topics, use the following command:
 kubectl get kt -o=json | jq '.items[].metadata.finalizers = null' | kubectl apply -f -
 ----
 
-The command uses the `jq` tool to modify the `KafkaTopic` (`kt`) resources by setting the finalizers to `null`.
+The command uses the `jq` {JQTool} to modify the `KafkaTopic` (`kt`) resources by setting the finalizers to `null`.
 You can also use the command for a specific topic:
 
 .Removing a finalizer on a specific topic
