@@ -25,6 +25,8 @@ listeners:
 # ...
 ----
 
+When the certificate or key in the `brokerCertChainAndKey` secret is updated, the operator will automatically detect it in the next reconciliation and trigger a rolling update of the Kafka brokers to reload the certificate.
+
 [id='property-listener-config-traffic-policy-{context}']
 = `externalTrafficPolicy`
 
