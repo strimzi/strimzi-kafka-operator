@@ -17,7 +17,7 @@ A feature gate at the GA stage cannot be disabled.
 
 == Graduated feature gates (GA)
 
-Graduated feature gates have reached General Availability (GA) and are permanently enabled.
+Graduated feature gates have reached General Availability (GA) and are permanently enabled features.
 
 === ControlPlaneListener feature gate
 
