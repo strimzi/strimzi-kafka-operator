@@ -8,7 +8,6 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.model.common.CertSecretSource;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationOAuth;
@@ -81,7 +80,7 @@ import static java.util.Collections.emptyMap;
  *     <li>A set of MirrorMaker 2 connectors</li>
  * </ul>
  */
-public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List, Resource<KafkaMirrorMaker2>, KafkaMirrorMaker2Spec, KafkaMirrorMaker2Status> {
+public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List, KafkaMirrorMaker2Spec, KafkaMirrorMaker2Status> {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaMirrorMaker2AssemblyOperator.class.getName());
 
     private static final String MIRRORMAKER2_CONNECTOR_PACKAGE = "org.apache.kafka.connect.mirror";
@@ -169,7 +168,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                 .compose(i -> manualRollingUpdate(reconciliation, mirrorMaker2Cluster))
                 .compose(i -> serviceOperations.reconcile(reconciliation, namespace, mirrorMaker2Cluster.getServiceName(), mirrorMaker2Cluster.generateService()))
                 .compose(i -> serviceOperations.reconcile(reconciliation, namespace, mirrorMaker2Cluster.getComponentName(), mirrorMaker2Cluster.generateHeadlessService()))
-                .compose(i -> generateMetricsAndLoggingConfigMap(reconciliation, namespace, mirrorMaker2Cluster))
+                .compose(i -> generateMetricsAndLoggingConfigMap(reconciliation, mirrorMaker2Cluster))
                 .compose(logAndMetricsConfigMap -> {
                     String logging = logAndMetricsConfigMap.getData().get(mirrorMaker2Cluster.logging().configMapKey());
                     podAnnotations.put(Annotations.ANNO_STRIMZI_LOGGING_APPENDERS_HASH, Util.hashStub(Util.getLoggingDynamicallyUnmodifiableEntries(logging)));
