@@ -1,6 +1,6 @@
 //standard custom resources intro text
-Deployment of Kafka components to a Kubernetes cluster using Strimzi is highly configurable through the application of custom resources. 
-These custom resources are created as instances of APIs added by Custom Resource Definitions (CRDs) to extend Kubernetes resources.
+The deployment of Kafka components onto a Kubernetes cluster using Strimzi is highly configurable through the use of custom resources. 
+These resources are created as instances of APIs introduced by Custom Resource Definitions (CRDs), which extend Kubernetes resources.
 
 CRDs act as configuration instructions to describe the custom resources in a Kubernetes cluster,
 and are provided with Strimzi for each Kafka component used in a deployment, as well as users and topics.
