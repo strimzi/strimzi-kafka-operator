@@ -343,9 +343,11 @@ public class KafkaRollerST extends AbstractST {
      *  3. - Take snapshots of the broker and controller pods for later comparison.
      *  4. - Update a specific Kafka configuration that affects only controller nodes and verify the rolling update behavior.
      *     - Ensure that only controller nodes undergo a rolling update, while broker nodes remain unaffected.
-     *  5. - Introduce a change in the controller node pool, such as modifying pod affinity.
+     *  5. - Update a specific Kafka configuration that affects only broker nodes and verify the rolling update behavior.
+     *     - Ensure that only broker nodes undergo a rolling update, while controller node remain unaffected.
+     *  6. - Introduce a change in the controller node pool, such as modifying pod affinity.
      *     - Observe and ensure that this change triggers another rolling update for the controller nodes.
-     *  6. - Verify the rolling updates of controller nodes by comparing the snapshots taken before and after each configuration change.
+     *  7. - Verify the rolling updates of controller nodes by comparing the snapshots taken before and after each configuration change.
      *
      * @usecase
      *  - kafka-controller-node-rolling-update
@@ -354,7 +356,7 @@ public class KafkaRollerST extends AbstractST {
      *  - kafka-node-pool-management
      */
     @ParallelNamespaceTest
-    void testKafkaRollingUpdatesOfControllerNodes(final ExtensionContext extensionContext) {
+    void testKafkaRollingUpdatesOfSingleRoleNodePools(final ExtensionContext extensionContext) {
         assumeTrue(Environment.isKRaftModeEnabled());
         assumeFalse(Environment.isOlmInstall() || Environment.isHelmInstall());
 
@@ -388,6 +390,16 @@ public class KafkaRollerST extends AbstractST {
 
         // broker-role nodes does not roll
         RollingUpdateUtils.waitForNoRollingUpdate(testStorage.getNamespaceName(), brokerPoolSelector, brokerPoolPodsSnapshot);
+
+        // change Broker-only configuration inside shared Kafka configuration between KafkaNodePools and see that only broker pods rolls
+        KafkaUtils.updateSpecificConfiguration(testStorage.getNamespaceName(), testStorage.getClusterName(), "initial.broker.registration.timeout.ms", 33500);
+
+        // only broker-role nodes rolls
+        brokerPoolPodsSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(),
+            brokerPoolSelector, brokerPoolReplicas, brokerPoolPodsSnapshot);
+
+        // controller-role nodes does not roll
+        RollingUpdateUtils.waitForNoRollingUpdate(testStorage.getNamespaceName(), controllerPoolSelector, controllerPoolPodsSnapshot);
 
         // 2nd Rolling update triggered by PodAffinity
 
