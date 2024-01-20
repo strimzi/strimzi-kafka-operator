@@ -35,6 +35,8 @@ final public class TestStorage {
     private static final String ADMIN = "admin-client";
     private static final String USER = "user";
     private static final String CLUSTER_NAME_PREFIX = "my-cluster-";
+    private static final String BROKER_ROLE_SUFFIX = "-b";
+    private static final String CONTROLLER_ROLE_SUFFIX = "-c";
     private static final Random RANDOM = new Random();
 
     private ExtensionContext extensionContext;
@@ -59,6 +61,8 @@ final public class TestStorage {
     private String eoDeploymentName;
     private String kafkaStatefulSetName;
     private String zkStatefulSetName;
+    private String brokerPoolName;
+    private String controllerPoolName;
     private LabelSelector kafkaSelector;
     private LabelSelector zkSelector;
     private LabelSelector kafkaConnectSelector;
@@ -82,6 +86,8 @@ final public class TestStorage {
         this.namespaceName = StUtils.isParallelNamespaceTest(extensionContext) ? StUtils.getNamespaceBasedOnRbac(namespaceName, extensionContext) : namespaceName;
         this.clusterName = CLUSTER_NAME_PREFIX + hashStub(String.valueOf(RANDOM.nextInt(Integer.MAX_VALUE)));
         this.kafkaNodePoolName = TestConstants.KAFKA_NODE_POOL_PREFIX + hashStub(clusterName);
+        this.brokerPoolName = kafkaNodePoolName + BROKER_ROLE_SUFFIX;
+        this.controllerPoolName = kafkaNodePoolName + CONTROLLER_ROLE_SUFFIX;
         this.sourceClusterName = clusterName + "-source";
         this.targetClusterName = clusterName + "-target";
         this.topicName = KafkaTopicUtils.generateRandomNameOfTopic();
@@ -161,6 +167,14 @@ final public class TestStorage {
     }
 
     public String getKafkaNodePoolName() {
+        return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.KAFKA_NODE_POOL_KEY).toString();
+    }
+
+    public String getBrokerPoolName() {
+        return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.KAFKA_NODE_POOL_KEY).toString();
+    }
+
+    public String getControllerPoolName() {
         return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.KAFKA_NODE_POOL_KEY).toString();
     }
 
