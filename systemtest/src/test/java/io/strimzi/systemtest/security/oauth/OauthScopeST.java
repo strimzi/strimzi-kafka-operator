@@ -61,7 +61,7 @@ public class OauthScopeST extends OauthAbstractST {
     @ParallelTest
     @Tag(CONNECT)
     void testScopeKafkaConnectSetIncorrectly(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         // SCOPE TESTING
         resourceManager.createResourceWithoutWait(extensionContext, KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), testStorage.getClusterName(), 1)
@@ -99,7 +99,7 @@ public class OauthScopeST extends OauthAbstractST {
     @ParallelTest
     @Tag(CONNECT)
     void testScopeKafkaConnectSetCorrectly(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         // SCOPE TESTING
         resourceManager.createResourceWithWait(extensionContext, KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), testStorage.getClusterName(), 1)
@@ -142,7 +142,7 @@ public class OauthScopeST extends OauthAbstractST {
 
     @ParallelTest
     void testClientScopeKafkaSetCorrectly(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
         final String producerName = OAUTH_PRODUCER_NAME + "-" + testStorage.getClusterName();
         final String consumerName = OAUTH_CONSUMER_NAME + "-" + testStorage.getClusterName();
 
@@ -169,7 +169,7 @@ public class OauthScopeST extends OauthAbstractST {
 
     @IsolatedTest("Modification of shared Kafka cluster")
     void testClientScopeKafkaSetIncorrectly(ExtensionContext extensionContext) throws UnexpectedException {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
         final String producerName = OAUTH_PRODUCER_NAME + "-" + testStorage.getClusterName();
         final String consumerName = OAUTH_CONSUMER_NAME + "-" + testStorage.getClusterName();
         final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(oauthClusterName, KafkaResources.kafkaComponentName(oauthClusterName));

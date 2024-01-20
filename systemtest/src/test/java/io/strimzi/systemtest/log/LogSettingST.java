@@ -186,7 +186,7 @@ class LogSettingST extends AbstractST {
 
     @IsolatedTest("Using shared Kafka")
     void testKafkaLogSetting(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         String zookeeperMap = KafkaResources.zookeeperMetricsAndLogConfigMapName(LOG_SETTING_CLUSTER_NAME);
         String topicOperatorMap = String.format("%s-%s", LOG_SETTING_CLUSTER_NAME, "entity-topic-operator-config");
@@ -272,7 +272,7 @@ class LogSettingST extends AbstractST {
     @ParallelTest
     @Tag(CONNECT)
     void testConnectLogSetting(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
         String connectClusterName = testStorage.getClusterName() + "-connect";
 
         resourceManager.createResourceWithWait(extensionContext, KafkaConnectTemplates.kafkaConnect(connectClusterName, Environment.TEST_SUITE_NAMESPACE, LOG_SETTING_CLUSTER_NAME, 1)
@@ -309,7 +309,7 @@ class LogSettingST extends AbstractST {
     @ParallelTest
     @Tag(MIRROR_MAKER)
     void testMirrorMakerLogSetting(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
         String mirrorMakerName = testStorage.getClusterName() + "-mirror-maker";
 
         resourceManager.createResourceWithWait(extensionContext, KafkaMirrorMakerTemplates.kafkaMirrorMaker(mirrorMakerName, LOG_SETTING_CLUSTER_NAME, GC_LOGGING_SET_NAME, "my-group", 1, false)
@@ -345,7 +345,7 @@ class LogSettingST extends AbstractST {
     @ParallelTest
     @Tag(MIRROR_MAKER2)
     void testMirrorMaker2LogSetting(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         resourceManager.createResourceWithWait(extensionContext, KafkaMirrorMaker2Templates.kafkaMirrorMaker2(testStorage.getClusterName(), LOG_SETTING_CLUSTER_NAME, GC_LOGGING_SET_NAME, 1, false)
             .editMetadata()
@@ -382,7 +382,7 @@ class LogSettingST extends AbstractST {
     @ParallelTest
     @Tag(BRIDGE)
     void testBridgeLogSetting(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
         final String bridgeName = testStorage.getClusterName() + "-bridge";
 
         resourceManager.createResourceWithWait(extensionContext, KafkaBridgeTemplates.kafkaBridge(bridgeName, LOG_SETTING_CLUSTER_NAME, KafkaResources.plainBootstrapAddress(LOG_SETTING_CLUSTER_NAME), 1)

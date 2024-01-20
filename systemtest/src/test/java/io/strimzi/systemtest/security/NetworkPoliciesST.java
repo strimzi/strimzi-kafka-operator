@@ -86,7 +86,7 @@ public class NetworkPoliciesST extends AbstractST {
     void testNetworkPoliciesOnListenersWhenOperatorIsInSameNamespaceAsOperands(ExtensionContext extensionContext) {
         assumeTrue(!Environment.isHelmInstall() && !Environment.isOlmInstall());
 
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         final String topicNameAccessedTls = testStorage.getTopicName() + "-accessed-tls";
         final String topicNameAccessedPlain = testStorage.getTopicName() + "-accessed-plain";
@@ -239,7 +239,7 @@ public class NetworkPoliciesST extends AbstractST {
     void testNPWhenOperatorIsInDifferentNamespaceThanOperand(ExtensionContext extensionContext) {
         assumeTrue(!Environment.isHelmInstall() && !Environment.isOlmInstall());
 
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
         String secondNamespace = "second-" + Environment.TEST_SUITE_NAMESPACE;
 
         Map<String, String> labels = new HashMap<>();
@@ -284,7 +284,7 @@ public class NetworkPoliciesST extends AbstractST {
     void testNPGenerationEnvironmentVariable(ExtensionContext extensionContext) {
         assumeTrue(!Environment.isHelmInstall() && !Environment.isOlmInstall());
 
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         EnvVar networkPolicyGenerationEnv = new EnvVarBuilder()
             .withName("STRIMZI_NETWORK_POLICY_GENERATION")

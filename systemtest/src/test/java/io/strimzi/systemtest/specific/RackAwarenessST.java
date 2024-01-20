@@ -78,7 +78,7 @@ class RackAwarenessST extends AbstractST {
     void testKafkaRackAwareness(ExtensionContext extensionContext) {
         Assumptions.assumeFalse(Environment.isNamespaceRbacScope());
 
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 1, 1)
                 .editSpec()
@@ -162,7 +162,7 @@ class RackAwarenessST extends AbstractST {
     void testConnectRackAwareness(ExtensionContext extensionContext) {
         Assumptions.assumeFalse(Environment.isNamespaceRbacScope());
 
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
         final String invalidTopologyKey = "invalid-topology-key";
         final String invalidConnectClusterName = testStorage.getClusterName() + "-invalid";
 
@@ -248,7 +248,7 @@ class RackAwarenessST extends AbstractST {
     void testMirrorMaker2RackAwareness(ExtensionContext extensionContext) {
         Assumptions.assumeFalse(Environment.isNamespaceRbacScope());
 
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         resourceManager.createResourceWithWait(extensionContext,
                 KafkaTemplates.kafkaEphemeral(testStorage.getSourceClusterName(), 1, 1).build());

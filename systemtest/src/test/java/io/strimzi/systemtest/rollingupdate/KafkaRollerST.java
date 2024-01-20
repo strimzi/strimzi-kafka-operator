@@ -87,7 +87,7 @@ public class KafkaRollerST extends AbstractST {
     @ParallelNamespaceTest
     @KRaftNotSupported
     void testKafkaDoesNotRollsWhenTopicIsUnderReplicated(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
         Instant startTime = Instant.now();
 
         final int initialBrokerReplicaCount = 3;
@@ -176,7 +176,7 @@ public class KafkaRollerST extends AbstractST {
     @ParallelNamespaceTest
     @KRaftWithoutUTONotSupported
     void testKafkaTopicRFLowerThanMinInSyncReplicas(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
         final String kafkaName = KafkaResources.kafkaComponentName(testStorage.getClusterName());
         final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(testStorage.getClusterName(), kafkaName);
 
@@ -200,7 +200,7 @@ public class KafkaRollerST extends AbstractST {
 
     @ParallelNamespaceTest
     void testKafkaPodCrashLooping(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3, 3)
             .editSpec()
@@ -238,7 +238,7 @@ public class KafkaRollerST extends AbstractST {
 
     @ParallelNamespaceTest
     void testKafkaPodImagePullBackOff(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3, 3).build());
 
@@ -268,7 +268,7 @@ public class KafkaRollerST extends AbstractST {
         // 2. wait for Kafka not ready, kafka pods should be in the pending state
         // 3. fix the Kafka CR, kafka pods should be in the pending state
         // 4. wait for Kafka ready, kafka pods should NOT be in the pending state
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         NodeSelectorRequirement nsr = new NodeSelectorRequirementBuilder()
                 .withKey("dedicated_test")
@@ -349,7 +349,7 @@ public class KafkaRollerST extends AbstractST {
         assumeTrue(Environment.isKRaftModeEnabled());
         assumeFalse(Environment.isOlmInstall() || Environment.isHelmInstall());
 
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
         final String brokerPoolName = testStorage.getKafkaNodePoolName() + "-b";
         final String controllerPoolName = testStorage.getKafkaNodePoolName() + "-c";
 
@@ -448,7 +448,7 @@ public class KafkaRollerST extends AbstractST {
         assumeTrue(Environment.isKRaftModeEnabled());
         assumeFalse(Environment.isOlmInstall() || Environment.isHelmInstall());
 
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
         final String mixedPoolName = testStorage.getKafkaNodePoolName();
         final int mixedPoolReplicas = 6;
 

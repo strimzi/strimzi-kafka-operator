@@ -28,7 +28,7 @@ class HelmChartST extends AbstractST {
 
     @IsolatedTest
     void testStrimziComponentsViaHelmChart(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         // Deploy Kafka and wait for readiness
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3).build());

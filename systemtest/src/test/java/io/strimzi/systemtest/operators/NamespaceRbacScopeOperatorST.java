@@ -33,7 +33,7 @@ class NamespaceRbacScopeOperatorST extends AbstractST {
 
     @IsolatedTest("This test case needs own Cluster Operator")
     void testNamespacedRbacScopeDeploysRoles(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
         assumeFalse(Environment.isOlmInstall() || Environment.isHelmInstall());
 
         this.clusterOperator = this.clusterOperator.defaultInstallation(extensionContext)

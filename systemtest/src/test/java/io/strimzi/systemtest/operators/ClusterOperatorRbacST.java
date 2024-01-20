@@ -45,7 +45,7 @@ public class ClusterOperatorRbacST extends AbstractST {
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
     void testCRBDeletionErrorIsIgnoredWhenRackAwarenessIsNotEnabled(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
         assumeFalse(Environment.isNamespaceRbacScope());
 
         // 060-Deployment
@@ -78,7 +78,7 @@ public class ClusterOperatorRbacST extends AbstractST {
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
     void testCRBDeletionErrorsWhenRackAwarenessIsEnabled(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
         assumeFalse(Environment.isNamespaceRbacScope());
 
         // 060-Deployment

@@ -48,7 +48,7 @@ public class JmxST extends AbstractST {
     @Tag(CONNECT_COMPONENTS)
     @FIPSNotSupported("JMX with auth is not working with FIPS")
     void testKafkaZookeeperAndKafkaConnectWithJMX(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
         final String zkSecretName = testStorage.getClusterName() + "-zookeeper-jmx";
         final String connectJmxSecretName = testStorage.getClusterName() + "-kafka-connect-jmx";
         final String kafkaJmxSecretName = testStorage.getClusterName() + "-kafka-jmx";

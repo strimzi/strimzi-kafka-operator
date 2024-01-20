@@ -90,7 +90,7 @@ class MirrorMaker2ST extends AbstractST {
 
     @ParallelNamespaceTest
     void testMirrorMaker2(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
         final int mirrorMakerReplicasCount = 2;
 
         Map<String, Object> expectedConfig = StUtils.loadProperties("group.id=mirrormaker2-cluster\n" +
@@ -196,7 +196,7 @@ class MirrorMaker2ST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(ACCEPTANCE)
     void testMirrorMaker2TlsAndTlsClientAuth(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         // Deploy source kafka with tls listener and mutual tls auth
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getSourceClusterName(), 1, 1)
@@ -322,7 +322,7 @@ class MirrorMaker2ST extends AbstractST {
     @ParallelNamespaceTest
     @KRaftWithoutUTONotSupported
     void testMirrorMaker2TlsAndScramSha512Auth(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         resourceManager.createResourceWithWait(extensionContext,
             KafkaTemplates.kafkaEphemeral(testStorage.getSourceClusterName(), 1, 1)
@@ -445,7 +445,7 @@ class MirrorMaker2ST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(COMPONENT_SCALING)
     void testScaleMirrorMaker2UpAndDownToZero(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         // Deploy source kafka
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getSourceClusterName(), 1, 1).build());
@@ -505,7 +505,7 @@ class MirrorMaker2ST extends AbstractST {
 
     @ParallelNamespaceTest
     void testMirrorMaker2CorrectlyMirrorsHeaders(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         // Deploy source kafka
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getSourceClusterName(), 1, 1).build());
@@ -561,7 +561,7 @@ class MirrorMaker2ST extends AbstractST {
      */
     @ParallelNamespaceTest
     void testIdentityReplicationPolicy(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         resourceManager.createResourceWithWait(extensionContext,
             KafkaTemplates.kafkaEphemeral(testStorage.getSourceClusterName(), 1, 1).build(),
@@ -628,7 +628,7 @@ class MirrorMaker2ST extends AbstractST {
      */
     @ParallelNamespaceTest
     void testStrimziIdentityReplicationPolicy(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         resourceManager.createResourceWithWait(extensionContext,
             KafkaTemplates.kafkaEphemeral(testStorage.getSourceClusterName(), 1, 1).build(),
@@ -690,7 +690,7 @@ class MirrorMaker2ST extends AbstractST {
     @ParallelNamespaceTest
     @KRaftNotSupported("This the is failing with KRaft and need more investigation")
     void testRestoreOffsetsInConsumerGroup(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         final String consumerGroup = ClientUtils.generateRandomConsumerGroup();
 
@@ -832,7 +832,7 @@ class MirrorMaker2ST extends AbstractST {
 
     @ParallelNamespaceTest
     void testKafkaMirrorMaker2ConnectorsState(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         final String errorMessage = "One or more connectors are in FAILED state";
 
@@ -902,7 +902,7 @@ class MirrorMaker2ST extends AbstractST {
     @KRaftWithoutUTONotSupported
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testKMM2RollAfterSecretsCertsUpdateScramSha(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         final String customSecretSource = "custom-secret-source";
         final String customSecretTarget = "custom-secret-target";
@@ -1056,7 +1056,7 @@ class MirrorMaker2ST extends AbstractST {
     @ParallelNamespaceTest
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testKMM2RollAfterSecretsCertsUpdateTLS(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         // Deploy source kafka with tls listener and mutual tls auth
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getSourceClusterName(), 1)

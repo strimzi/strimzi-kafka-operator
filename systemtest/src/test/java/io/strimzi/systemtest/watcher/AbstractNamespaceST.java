@@ -137,7 +137,7 @@ public abstract class AbstractNamespaceST extends AbstractST {
     @ParallelTest
     @KRaftWithoutUTONotSupported
     final void testTopicOperatorWatchingOtherNamespace(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         LOGGER.info("Topic Operator in Kafka: {}/{} watches KafkaTopics in (different) Namespace: {}", MAIN_TEST_NAMESPACE, PRIMARY_KAFKA_NAME, PRIMARY_KAFKA_WATCHED_NAMESPACE);
 
@@ -227,7 +227,7 @@ public abstract class AbstractNamespaceST extends AbstractST {
     @Tag(MIRROR_MAKER2)
     final void testDeployMirrorMaker2InNamespaceDifferentFromCO(ExtensionContext extensionContext) {
         LOGGER.info("Deploying KafkaMirrorMaker in different Namespace than CO");
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
         final String mirrorMakerName = testStorage.getClusterName() + "-mirror-maker-2";
 
         LOGGER.info("Target Kafka cluster: {} and consequently MirrorMaker2: {} will be created in Namespace: {}", testStorage.getTargetClusterName(), mirrorMakerName, MAIN_TEST_NAMESPACE);
@@ -263,7 +263,7 @@ public abstract class AbstractNamespaceST extends AbstractST {
     @Tag(CONNECT_COMPONENTS)
     final void testDeployKafkaConnectAndKafkaConnectorInNamespaceDifferentFromCO(ExtensionContext extensionContext) {
 
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
         String kafkaConnectName = testStorage.getClusterName() + "kafka-connect";
 
         // Deploy Kafka Connect in other namespace than CO

@@ -60,7 +60,7 @@ public class KRaftStrimziDowngradeST extends AbstractKRaftUpgradeST {
 
     @SuppressWarnings("MethodLength")
     private void performDowngrade(BundleVersionModificationData downgradeData, ExtensionContext extensionContext) throws IOException {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         String lowerMetadataVersion = downgradeData.getProcedures().getMetadataVersion();
         UpgradeKafkaVersion testUpgradeKafkaVersion = new UpgradeKafkaVersion(downgradeData.getDeployKafkaVersion(), lowerMetadataVersion);

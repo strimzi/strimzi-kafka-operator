@@ -68,7 +68,7 @@ class HttpBridgeST extends AbstractST {
 
     @ParallelTest
     void testSendSimpleMessage(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         final BridgeClients kafkaBridgeClientJob = new BridgeClientsBuilder()
             .withProducerName(testStorage.getProducerName())
@@ -107,7 +107,7 @@ class HttpBridgeST extends AbstractST {
 
     @ParallelTest
     void testReceiveSimpleMessage(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(httpBridgeClusterName, testStorage.getTopicName(), Environment.TEST_SUITE_NAMESPACE).build());
 
@@ -368,7 +368,7 @@ class HttpBridgeST extends AbstractST {
 
     @ParallelTest
     void testCustomBridgeLabelsAreProperlySet(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
         final String bridgeName = "bridge-" + testStorage.getClusterName();
 
         resourceManager.createResourceWithWait(extensionContext, KafkaBridgeTemplates.kafkaBridge(bridgeName, KafkaResources.plainBootstrapAddress(httpBridgeClusterName), 1)

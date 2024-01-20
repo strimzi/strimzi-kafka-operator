@@ -90,7 +90,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
     @ParallelTest
     @Order(1)
     void smokeTestForClients(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
         String teamAProducerName = TEAM_A_PRODUCER_NAME + "-" + testStorage.getClusterName();
         String teamAConsumerName = TEAM_A_CONSUMER_NAME + "-" + testStorage.getClusterName();
         String topicName = TOPIC_A + "-" + testStorage.getTopicName();
@@ -123,7 +123,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
     @Order(2)
     @KRaftWithoutUTONotSupported
     void testTeamAWriteToTopic(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
         String teamAProducerName = TEAM_A_PRODUCER_NAME + "-" + testStorage.getClusterName();
         String teamAConsumerName = TEAM_A_CONSUMER_NAME + "-" + testStorage.getClusterName();
         String consumerGroup = "a-consumer_group-" + testStorage.getClusterName();
@@ -184,7 +184,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
     @ParallelTest
     @Order(3)
     void testTeamAReadFromTopic(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
         String teamAProducerName = TEAM_A_PRODUCER_NAME + "-" + testStorage.getClusterName();
         String teamAConsumerName = TEAM_A_CONSUMER_NAME + "-" + testStorage.getClusterName();
         String topicAName = TOPIC_A + "-" + testStorage.getTopicName();
@@ -235,7 +235,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
     @ParallelTest
     @Order(4)
     void testTeamBWriteToTopic(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
         String consumerGroup = "x-" + testStorage.getClusterName();
         String teamBProducerName = TEAM_B_PRODUCER_NAME + "-" + testStorage.getClusterName();
         String teamBConsumerName = TEAM_B_CONSUMER_NAME + "-" + testStorage.getClusterName();
@@ -279,7 +279,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
     @Order(5)
     @KRaftWithoutUTONotSupported
     void testTeamAWriteToTopicStartingWithXAndTeamBReadFromTopicStartingWithX(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
         String teamAProducerName = TEAM_A_PRODUCER_NAME + "-" + testStorage.getClusterName();
         String teamAConsumerName = TEAM_A_CONSUMER_NAME + "-" + testStorage.getClusterName();
         String teamBProducerName = TEAM_B_PRODUCER_NAME + "-" + testStorage.getClusterName();
@@ -332,7 +332,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
     @ParallelTest
     @Order(6)
     void testSuperUserWithOauthAuthorization(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
         String teamAProducerName = TEAM_A_PRODUCER_NAME + "-" + testStorage.getClusterName();
         String teamAConsumerName = TEAM_A_CONSUMER_NAME + "-" + testStorage.getClusterName();
         String teamBProducerName = TEAM_B_PRODUCER_NAME + "-" + testStorage.getClusterName();
@@ -433,7 +433,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
     @Order(7)
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testSessionReAuthentication(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
         String topicXName = TOPIC_X + "-example-topic";
         String topicAName = TOPIC_A + "-example-topic";
         String teamAProducerName = TEAM_A_PRODUCER_NAME + "-" + testStorage.getClusterName();
@@ -587,7 +587,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
     @ParallelNamespaceTest
     @Order(10)
     void testKeycloakAuthorizerToDelegateToSimpleAuthorizer(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         if (!Environment.isNamespaceRbacScope()) {
             // we have to create keycloak, team-a-client and team-b-client secret from `co-namespace` to the new namespace

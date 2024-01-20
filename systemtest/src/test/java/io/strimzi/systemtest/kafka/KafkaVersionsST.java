@@ -48,7 +48,7 @@ public class KafkaVersionsST extends AbstractST {
     @ParameterizedTest(name = "Kafka version: {0}.version()")
     @MethodSource("io.strimzi.systemtest.utils.TestKafkaVersion#getSupportedKafkaVersions")
     void testKafkaWithVersion(final TestKafkaVersion testKafkaVersion, ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         final String kafkaUserRead = testStorage.getUsername() + "-read";
         final String kafkaUserWrite = testStorage.getUsername() + "-write";

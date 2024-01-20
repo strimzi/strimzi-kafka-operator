@@ -66,7 +66,7 @@ public class ReconciliationST extends AbstractST {
     @Tag(CONNECT_COMPONENTS)
     @KRaftNotSupported("Probably bug - https://github.com/strimzi/strimzi-kafka-operator/issues/6862")
     void testPauseReconciliationInKafkaAndKafkaConnectWithConnector(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
         String kafkaSsName = KafkaResources.kafkaComponentName(testStorage.getClusterName());
 
         final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(testStorage.getClusterName(), kafkaSsName);
@@ -133,7 +133,7 @@ public class ReconciliationST extends AbstractST {
     @Tag(CRUISE_CONTROL)
     @KRaftWithoutUTONotSupported
     void testPauseReconciliationInKafkaRebalanceAndTopic(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         resourceManager.createResourceWithWait(extensionContext,
             KafkaTemplates.kafkaWithCruiseControl(testStorage.getClusterName(), 3, 1).build(),

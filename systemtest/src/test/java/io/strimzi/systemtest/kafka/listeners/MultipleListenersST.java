@@ -58,14 +58,14 @@ public class MultipleListenersST extends AbstractST {
     @Tag(EXTERNAL_CLIENTS_USED)
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testMultipleNodePorts(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
         runListenersTest(extensionContext, testCases.get(KafkaListenerType.NODEPORT), testStorage.getClusterName());
     }
 
     @Tag(INTERNAL_CLIENTS_USED)
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testMultipleInternal(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
         runListenersTest(extensionContext, testCases.get(KafkaListenerType.INTERNAL), testStorage.getClusterName());
     }
 
@@ -77,7 +77,7 @@ public class MultipleListenersST extends AbstractST {
     void testCombinationOfInternalAndExternalListeners(ExtensionContext extensionContext) {
         // Nodeport needs cluster wide rights to work properly which is not possible with STRIMZI_RBAC_SCOPE=NAMESPACE
         assumeFalse(Environment.isNamespaceRbacScope());
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         List<GenericKafkaListener> multipleDifferentListeners = new ArrayList<>();
 
@@ -95,7 +95,7 @@ public class MultipleListenersST extends AbstractST {
     @Tag(EXTERNAL_CLIENTS_USED)
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testMultipleLoadBalancers(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
         runListenersTest(extensionContext, testCases.get(KafkaListenerType.LOADBALANCER), testStorage.getClusterName());
     }
 
@@ -103,7 +103,7 @@ public class MultipleListenersST extends AbstractST {
     @Tag(EXTERNAL_CLIENTS_USED)
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testMultipleRoutes(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
         runListenersTest(extensionContext, testCases.get(KafkaListenerType.ROUTE), testStorage.getClusterName());
     }
 
@@ -113,7 +113,7 @@ public class MultipleListenersST extends AbstractST {
     @Tag(INTERNAL_CLIENTS_USED)
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testMixtureOfExternalListeners(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
         List<GenericKafkaListener> multipleDifferentListeners = new ArrayList<>();
 
         List<GenericKafkaListener> routeListeners = testCases.get(KafkaListenerType.ROUTE);
@@ -133,7 +133,7 @@ public class MultipleListenersST extends AbstractST {
     @Tag(INTERNAL_CLIENTS_USED)
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testCombinationOfEveryKindOfListener(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         List<GenericKafkaListener> multipleDifferentListeners = new ArrayList<>();
 
@@ -153,7 +153,7 @@ public class MultipleListenersST extends AbstractST {
 
     private void runListenersTest(ExtensionContext extensionContext, List<GenericKafkaListener> listeners, String clusterName) {
         LOGGER.info("These are listeners to be verified: {}", listeners);
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         // exercise phase
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)

@@ -67,7 +67,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
     @Tag(INTERNAL_CLIENTS_USED)
     @UTONotSupported("https://github.com/strimzi/strimzi-kafka-operator/issues/8864")
     void testTopicAvailable(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         prepareEnvironmentForRecovery(extensionContext, testStorage);
 
@@ -119,7 +119,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
     @Tag(INTERNAL_CLIENTS_USED)
     @UTONotSupported("https://github.com/strimzi/strimzi-kafka-operator/issues/8864")
     void testTopicNotAvailable(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         final List<String> topicsToRemove = List.of("__strimzi-topic-operator-kstreams-topic-store-changelog", "__strimzi_store_topic");
 

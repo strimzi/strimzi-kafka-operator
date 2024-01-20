@@ -83,7 +83,7 @@ public class TopicST extends AbstractST {
 
     @ParallelTest
     void testMoreReplicasThanAvailableBrokers(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
         int topicReplicationFactor = 5;
         int topicPartitions = 5;
 
@@ -120,7 +120,7 @@ public class TopicST extends AbstractST {
     @ParallelTest
     @UTONotSupported
     void testCreateTopicViaKafka(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
         int topicPartitions = 3;
 
         LOGGER.debug("Creating Topic: {} with {} replicas and {} partitions", testStorage.getTopicName(), 3, topicPartitions);
@@ -142,7 +142,7 @@ public class TopicST extends AbstractST {
 
     @ParallelTest
     void testCreateDeleteCreate(ExtensionContext extensionContext) throws InterruptedException {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         resourceManager.createResourceWithWait(extensionContext,
             AdminClientTemplates.defaultAdminClient(testStorage.getNamespaceName(), testStorage.getAdminName(), KafkaResources.plainBootstrapAddress(KAFKA_CLUSTER_NAME)).build()
@@ -191,7 +191,7 @@ public class TopicST extends AbstractST {
     @Tag(INTERNAL_CLIENTS_USED)
     @UTONotSupported
     void testSendingMessagesToNonExistingTopic(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         KafkaClients clients = new KafkaClientsBuilder()
             .withProducerName(testStorage.getProducerName())
@@ -229,7 +229,7 @@ public class TopicST extends AbstractST {
     @Tag(INTERNAL_CLIENTS_USED)
     @UTONotSupported
     void testDeleteTopicEnableFalse(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3, 1)
             .editMetadata()
@@ -353,7 +353,7 @@ public class TopicST extends AbstractST {
     @IsolatedTest
     @UTONotSupported
     void testKafkaTopicDifferentStatesInBTOMode(ExtensionContext extensionContext) throws InterruptedException {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
         int initialReplicas = 1;
         int initialPartitions = 5;
         int decreasePartitions = 1;
@@ -481,7 +481,7 @@ public class TopicST extends AbstractST {
     @KRaftWithoutUTONotSupported
     @BTONotSupported
     void testKafkaTopicDifferentStatesInUTOMode(ExtensionContext extensionContext) throws InterruptedException {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
         int initialReplicas = 1;
         int initialPartitions = 5;
         int decreasePartitions = 1;
@@ -569,7 +569,7 @@ public class TopicST extends AbstractST {
 
     @ParallelTest
     void testKafkaTopicChangingMinInSyncReplicas(ExtensionContext extensionContext) throws InterruptedException {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(KAFKA_CLUSTER_NAME, testStorage.getTopicName(), 5, Environment.TEST_SUITE_NAMESPACE).build());
         KafkaTopicUtils.waitForKafkaTopicReady(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName());
@@ -616,7 +616,7 @@ public class TopicST extends AbstractST {
      */
     @ParallelNamespaceTest
     void testTopicWithoutLabels(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
         final int topicOperatorReconciliationSeconds = 10;
 
         // Negative scenario: creating topic without any labels and make sure that TO can't handle this topic

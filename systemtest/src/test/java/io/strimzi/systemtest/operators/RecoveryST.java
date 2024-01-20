@@ -88,7 +88,7 @@ class RecoveryST extends AbstractST {
 
     @IsolatedTest("We need for each test case its own Cluster Operator")
     void testRecoveryFromKafkaServiceDeletion(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         // kafka cluster already deployed
         LOGGER.info("Running deleteKafkaService with cluster {}", sharedClusterName);
@@ -106,7 +106,7 @@ class RecoveryST extends AbstractST {
     @IsolatedTest("We need for each test case its own Cluster Operator")
     @KRaftNotSupported("Zookeeper is not supported by KRaft mode and is used in this test class")
     void testRecoveryFromZookeeperServiceDeletion(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         // kafka cluster already deployed
         LOGGER.info("Running deleteKafkaService with cluster {}", sharedClusterName);
@@ -124,7 +124,7 @@ class RecoveryST extends AbstractST {
 
     @IsolatedTest("We need for each test case its own Cluster Operator")
     void testRecoveryFromKafkaHeadlessServiceDeletion(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         // kafka cluster already deployed
         LOGGER.info("Running deleteKafkaHeadlessService with cluster {}", sharedClusterName);
@@ -143,7 +143,7 @@ class RecoveryST extends AbstractST {
     @IsolatedTest("We need for each test case its own Cluster Operator")
     @KRaftNotSupported("Zookeeper is not supported by KRaft mode and is used in this test class")
     void testRecoveryFromZookeeperHeadlessServiceDeletion(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         // kafka cluster already deployed
         LOGGER.info("Running deleteKafkaHeadlessService with cluster {}", sharedClusterName);

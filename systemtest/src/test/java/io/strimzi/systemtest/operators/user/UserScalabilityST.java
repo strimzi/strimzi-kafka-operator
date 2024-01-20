@@ -42,13 +42,13 @@ public class UserScalabilityST extends AbstractST {
 
     @IsolatedTest
     void testCreateAndAlterBigAmountOfScramShaUsers(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
         testCreateAndAlterBigAmountOfUsers(extensionContext, testStorage, UserAuthType.ScramSha);
     }
 
     @IsolatedTest
     void testCreateAndAlterBigAmountOfTlsUsers(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
         testCreateAndAlterBigAmountOfUsers(extensionContext, testStorage, UserAuthType.Tls);
     }
 

@@ -45,7 +45,7 @@ public class ConfigProviderST extends AbstractST {
 
     @ParallelNamespaceTest
     void testConnectWithConnectorUsingConfigAndEnvProvider(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
         final String producerName = "producer-" + ClientUtils.generateRandomConsumerGroup();
         final String customFileSinkPath = "/tmp/my-own-path.txt";
 

@@ -74,7 +74,7 @@ public class FeatureGatesST extends AbstractST {
     public void testKRaftMode(ExtensionContext extensionContext) {
         assumeFalse(Environment.isOlmInstall() || Environment.isHelmInstall());
 
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
         final int kafkaReplicas = 3;
 
         // as kraft is included in CO Feature gates, kafka broker can take both roles (Controller and Broker)
@@ -121,7 +121,7 @@ public class FeatureGatesST extends AbstractST {
     void testKafkaNodePoolFeatureGate(ExtensionContext extensionContext) {
         assumeFalse(Environment.isOlmInstall() || Environment.isHelmInstall());
 
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
         final int kafkaReplicas = 3;
 
         // as the only FG set in the CO is 'KafkaNodePools' (kraft not included) Broker role is the only one that kafka broker can take
@@ -170,7 +170,7 @@ public class FeatureGatesST extends AbstractST {
         assumeFalse(Environment.isKRaftModeEnabled());
         assumeFalse(Environment.isOlmInstall() || Environment.isHelmInstall());
 
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
         final int originalKafkaReplicaCount = 3;
         final int nodePoolIncreasedKafkaReplicaCount = 5;
         final String kafkaNodePoolName = "kafka";

@@ -47,7 +47,7 @@ public class SpecificST extends AbstractST {
     void testClusterWideOperatorWithLimitedAccessToSpecificNamespaceViaRbacRole(final ExtensionContext extensionContext) {
         assumeFalse(Environment.isNamespaceRbacScope());
 
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
         final String namespaceWhereCreationOfCustomResourcesIsApproved = "example-1";
 
         // --- a) defining Role and ClusterRoles

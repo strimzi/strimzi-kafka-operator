@@ -84,7 +84,7 @@ class RollingUpdateST extends AbstractST {
     @Tag(ROLLING_UPDATE)
     @KRaftNotSupported("ZooKeeper is not supported by KRaft mode and is used in this test case")
     void testRecoveryDuringZookeeperRollingUpdate(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         resourceManager.createResourceWithWait(extensionContext,
             KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3, 3).build(),
@@ -159,7 +159,7 @@ class RollingUpdateST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(ROLLING_UPDATE)
     void testRecoveryDuringKafkaRollingUpdate(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         resourceManager.createResourceWithWait(extensionContext,
             KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3, 3).build(),
@@ -284,7 +284,7 @@ class RollingUpdateST extends AbstractST {
     @Tag(COMPONENT_SCALING)
     @KRaftNotSupported("The scaling of the Kafka Pods is not working properly at the moment, topic with extra operators will also need a workaround")
     void testKafkaScaleUpScaleDown(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         final String topicNameBeforeScaling = testStorage.getTopicName();
         final String topicNameScaledUp = testStorage.getTopicName() + "-scaled-up";
@@ -444,7 +444,7 @@ class RollingUpdateST extends AbstractST {
     @Tag(COMPONENT_SCALING)
     @KRaftNotSupported("Zookeeper is not supported by KRaft mode and is used in this test case")
     void testZookeeperScaleUpScaleDown(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         resourceManager.createResourceWithWait(extensionContext,
             KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3, 3).build(),
@@ -555,7 +555,7 @@ class RollingUpdateST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(ROLLING_UPDATE)
     void testBrokerConfigurationChangeTriggerRollingUpdate(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3, 3).build());
 
@@ -596,7 +596,7 @@ class RollingUpdateST extends AbstractST {
     @IsolatedTest("Deleting Pod of Shared Cluster Operator")
     @Tag(ROLLING_UPDATE)
     void testClusterOperatorFinishAllRollingUpdates(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3, 3)
             .editMetadata()
@@ -667,7 +667,7 @@ class RollingUpdateST extends AbstractST {
     @KRaftNotSupported("Zookeeper is not supported by KRaft mode and is used in this test class")
     @SuppressWarnings("checkstyle:MethodLength")
     void testMetricsChange(ExtensionContext extensionContext) throws JsonProcessingException {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         //Kafka
         Map<String, Object> kafkaRule = new HashMap<>();

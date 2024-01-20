@@ -72,7 +72,7 @@ public class MirrorMakerST extends AbstractST {
 
     @ParallelNamespaceTest
     void testMirrorMaker(ExtensionContext extensionContext) {
-        TestStorage testStorage = storageMap.get(extensionContext);
+        TestStorage testStorage = new TestStorage(extensionContext);
 
         Map<String, String> jvmOptionsXX = new HashMap<>();
         jvmOptionsXX.put("UseG1GC", "true");
@@ -146,7 +146,7 @@ public class MirrorMakerST extends AbstractST {
     @Tag(ACCEPTANCE)
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testMirrorMakerTlsAuthenticated(ExtensionContext extensionContext) {
-        TestStorage testStorage = storageMap.get(extensionContext);
+        TestStorage testStorage = new TestStorage(extensionContext);
 
         // Deploy source kafka with tls listener and mutual tls auth
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getSourceClusterName(), 1, 1)
@@ -252,7 +252,7 @@ public class MirrorMakerST extends AbstractST {
     @ParallelNamespaceTest
     @SuppressWarnings("checkstyle:methodlength")
     void testMirrorMakerTlsScramSha(ExtensionContext extensionContext) {
-        TestStorage testStorage = storageMap.get(extensionContext);
+        TestStorage testStorage = new TestStorage(extensionContext);
 
         // Deploy source kafka with tls listener and SCRAM-SHA authentication
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getSourceClusterName(), 1, 1)
@@ -359,7 +359,7 @@ public class MirrorMakerST extends AbstractST {
 
     @ParallelNamespaceTest
     void testIncludeList(ExtensionContext extensionContext) throws UnexpectedException {
-        TestStorage testStorage = storageMap.get(extensionContext);
+        TestStorage testStorage = new TestStorage(extensionContext);
 
         String topicName = "included-topic";
         String topicNotIncluded = "not-included-topic";
@@ -422,7 +422,7 @@ public class MirrorMakerST extends AbstractST {
 
     @ParallelNamespaceTest
     void testCustomAndUpdatedValues(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 1, 1)
             .editSpec()
@@ -545,7 +545,7 @@ public class MirrorMakerST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(COMPONENT_SCALING)
     void testScaleMirrorMakerUpAndDownToZero(ExtensionContext extensionContext) {
-        TestStorage testStorage = storageMap.get(extensionContext);
+        TestStorage testStorage = new TestStorage(extensionContext);
 
         resourceManager.createResourceWithWait(extensionContext,
             KafkaTemplates.kafkaEphemeral(testStorage.getSourceClusterName(), 1, 1).build(),
@@ -605,7 +605,7 @@ public class MirrorMakerST extends AbstractST {
 
     @ParallelNamespaceTest
     void testConfigureDeploymentStrategy(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         // Deploy source kafka
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getSourceClusterName(), 1, 1).build());

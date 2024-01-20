@@ -47,7 +47,7 @@ public class CruiseControlApiST extends AbstractST {
     @ParallelNamespaceTest
     @KRaftWithoutUTONotSupported()
     void testCruiseControlBasicAPIRequests(ExtensionContext extensionContext)  {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaWithCruiseControl(testStorage.getClusterName(), 3, 3).build());
 
@@ -131,7 +131,7 @@ public class CruiseControlApiST extends AbstractST {
 
     @ParallelNamespaceTest
     void testCruiseControlBasicAPIRequestsWithSecurityDisabled(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         Map<String, Object> config = new HashMap<>();
         config.put("webserver.security.enable", "false");
@@ -158,7 +158,7 @@ public class CruiseControlApiST extends AbstractST {
 
     @ParallelNamespaceTest
     void testCruiseControlAPIForScalingBrokersUpAndDown(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaWithCruiseControl(testStorage.getClusterName(), 5, 3).build());
 
@@ -190,7 +190,7 @@ public class CruiseControlApiST extends AbstractST {
 
     @ParallelNamespaceTest
     void testKafkaRebalanceAutoApprovalMechanism(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaWithCruiseControl(testStorage.getClusterName(), 3, 3).build());
 

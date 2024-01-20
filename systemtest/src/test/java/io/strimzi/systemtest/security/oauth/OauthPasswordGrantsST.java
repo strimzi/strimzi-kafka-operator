@@ -74,7 +74,7 @@ public class OauthPasswordGrantsST extends OauthAbstractST {
     @ParallelTest
     @Tag(MIRROR_MAKER)
     void testPasswordGrantsKafkaMirrorMaker(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         KafkaOauthClients oauthExampleClients = new KafkaOauthClientsBuilder()
             .withNamespaceName(Environment.TEST_SUITE_NAMESPACE)
@@ -206,7 +206,7 @@ public class OauthPasswordGrantsST extends OauthAbstractST {
     @ParallelTest
     @Tag(MIRROR_MAKER2)
     void testPasswordGrantsKafkaMirrorMaker2(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         KafkaOauthClients oauthExampleClients = new KafkaOauthClientsBuilder()
             .withNamespaceName(Environment.TEST_SUITE_NAMESPACE)
@@ -347,7 +347,7 @@ public class OauthPasswordGrantsST extends OauthAbstractST {
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
     void testPasswordGrantsKafkaConnect(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         KafkaOauthClients oauthExampleClients = new KafkaOauthClientsBuilder()
             .withNamespaceName(Environment.TEST_SUITE_NAMESPACE)
@@ -420,7 +420,7 @@ public class OauthPasswordGrantsST extends OauthAbstractST {
     @ParallelTest
     @Tag(BRIDGE)
     void testPasswordGrantsKafkaBridge(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, testStorage.getTopicName(), Environment.TEST_SUITE_NAMESPACE).build());
 
