@@ -5,6 +5,8 @@
 [id='con-custom-resources-info-{context}']
 = Performing `kubectl` operations on custom resources
 
+[role="_abstract"]
+You can use `kubectl` commands to retrieve information and perform other operations on Strimzi custom resources.
 Use `kubectl` commands, such as `get`, `describe`, `edit`, or `delete`, to perform operations on resource types.
 For example, `kubectl get kafkatopics` retrieves a list of all Kafka topics and `kubectl get kafkas` retrieves all deployed Kafka clusters.
 
@@ -15,6 +17,7 @@ You can also use the _short name_ of the resource.
 Learning short names can save you time when managing Strimzi.
 The short name for `Kafka` is `k`, so you can also run `kubectl get k` to list all Kafka clusters.
 
+.Listing Kafka clusters
 [source,shell]
 ----
 kubectl get k
@@ -50,6 +53,7 @@ All Strimzi custom resources belong to the category `strimzi`, so you can use `s
 
 For example, running `kubectl get strimzi` lists all Strimzi custom resources in a given namespace.
 
+.Listing all custom resources
 [source,shell]
 ----
 kubectl get strimzi
@@ -67,6 +71,7 @@ kafkauser.kafka.strimzi.io/my-user     tls            simple
 The `kubectl get strimzi -o name` command returns all resource types and resource names.
 The `-o name` option fetches the output in the _type/name_ format
 
+.Listing all resource types and names
 [source,shell]
 ----
 kubectl get strimzi -o name
@@ -79,6 +84,7 @@ kafkauser.kafka.strimzi.io/my-user
 You can combine this `strimzi` command with other commands.
 For example, you can pass it into a `kubectl delete` command to delete all resources in a single command.
 
+.Deleting all custom resources
 [source,shell]
 ----
 kubectl delete $(kubectl get strimzi -o name)
@@ -105,8 +111,9 @@ A JSONPath expression can extract or navigate specific parts of any resource.
 For example, you can use the JSONPath expression `{.status.listeners[?(@.name=="tls")].bootstrapServers}`
 to get the bootstrap address from the status of the Kafka custom resource and use it in your Kafka clients.
 
-Here, the command finds the `bootstrapServers` value of the listener named `tls`:
+Here, the command retrieves the `bootstrapServers` value of the listener named `tls`:
 
+.Retrieving the bootstrap address
 [source,shell]
 ----
 kubectl get kafka my-cluster -o=jsonpath='{.status.listeners[?(@.name=="tls")].bootstrapServers}{"\n"}'
