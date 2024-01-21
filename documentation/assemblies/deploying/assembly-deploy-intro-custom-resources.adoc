@@ -12,3 +12,12 @@ include::../../shared/snip-intro-custom-resources.adoc[leveloffset=+1]
 
 //Example custom resource showing configuration options
 include::../../modules/deploying/con-deploy-custom-resources-example.adoc[leveloffset=+1]
+
+//accessing resource information
+include::../../modules/managing/con-custom-resources-info.adoc[leveloffset=+1]
+
+//reference table for resource status
+include::../../modules/managing/con-custom-resources-status.adoc[leveloffset=+1]
+
+//procedure to check status of a resources
+include::../../modules/managing/proc-accessing-resource-status.adoc[leveloffset=+1]
