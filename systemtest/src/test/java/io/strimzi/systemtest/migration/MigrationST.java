@@ -40,6 +40,9 @@ public class MigrationST extends AbstractST {
     void testMigrationFromZkToKRaft(ExtensionContext extensionContext) {
         TestStorage testStorage = new TestStorage(extensionContext);
 
+        String midStepTopicName = testStorage.getTopicName() + "-midstep";
+        String kraftTopicName = testStorage.getTopicName() + "-kraft";
+
         String continuousTopicName = testStorage.getTopicName() + CONTINUOUS_SUFFIX;
         String continuousProducerName = testStorage.getProducerName() + CONTINUOUS_SUFFIX;
         String continuousConsumerName = testStorage.getConsumerName() + CONTINUOUS_SUFFIX;
@@ -113,11 +116,84 @@ public class MigrationST extends AbstractST {
 
         LOGGER.info("2. waiting for controller Pods to be up and running");
         PodUtils.waitForPodsReady(testStorage.getNamespaceName(), controllerSelector, 3, true);
+        Map<String, String> controllerPodsSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), controllerSelector);
 
-        LOGGER.info("3. waiting for rolling update of broker Pods");
+        LOGGER.info("3. waiting for first rolling update of broker Pods");
         brokerPodsSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), brokerSelector, 3, brokerPodsSnapshot);
 
+        LOGGER.info("4. waiting for second rolling update of broker Pods");
+        brokerPodsSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), brokerSelector, 3, brokerPodsSnapshot);
 
+        currentKafkaMetadataState = KafkaResource.kafkaClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus().getKafkaMetadataState();
+        assertThat(currentKafkaMetadataState, is("KRaftPostMigration"));
+
+        LOGGER.info("5. creating KafkaTopic: {} and checking if the metadata are in both ZK and KRaft", midStepTopicName);
+        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), midStepTopicName, testStorage.getNamespaceName()).build());
+
+        LOGGER.info("5a. checking if metadata about KafkaTopic: {} are in ZK", midStepTopicName);
+
+        // TODO: write check here
+
+        LOGGER.info("5b. checking if metadata about KafkaTopic: {} are in KRaft controller", midStepTopicName);
+
+        // TODO: write check here
+
+        LOGGER.info("5c. checking if we are able to do a message transmission on KafkaTopic: {}", midStepTopicName);
+
+        immediateClients = new KafkaClientsBuilder(immediateClients)
+            .withTopicName(midStepTopicName)
+            .build();
+
+        resourceManager.createResourceWithWait(extensionContext,
+            immediateClients.producerTlsStrimzi(testStorage.getClusterName()),
+            immediateClients.consumerTlsStrimzi(testStorage.getClusterName())
+        );
+
+        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName(), testStorage.getMessageCount());
+
+        LOGGER.info("5. finishing migration - applying {}: enabled annotation, controllers should be rolled", Annotations.ANNO_STRIMZI_IO_KRAFT);
+        KafkaResource.kafkaClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled");
+
+        controllerPodsSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), controllerSelector, 3, controllerPodsSnapshot);
+
+        currentKafkaMetadataState = KafkaResource.kafkaClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus().getKafkaMetadataState();
+        assertThat(currentKafkaMetadataState, is("KRaft"));
+
+        LOGGER.info("6. removing LMFV and IBPV from Kafka config -> brokers and controllers should be rolled");
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> {
+            kafka.getSpec().getKafka().getConfig().remove("log.message.format.version");
+            kafka.getSpec().getKafka().getConfig().remove("inter.broker.protocol.version");
+        }, testStorage.getNamespaceName());
+
+        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), brokerSelector, 3, brokerPodsSnapshot);
+        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), controllerSelector, 3, controllerPodsSnapshot);
+
+        LOGGER.info("7. creating KafkaTopic: {} and checking if the metadata are only in KRaft", kraftTopicName);
+        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), kraftTopicName, testStorage.getNamespaceName()).build());
+
+        LOGGER.info("7a. checking if metadata about KafkaTopic: {} are not in ZK", kraftTopicName);
+
+        // TODO: write check here
+
+        LOGGER.info("7b. checking if metadata about KafkaTopic: {} are in KRaft controller", kraftTopicName);
+
+        // TODO: write check here
+
+        LOGGER.info("7c. checking if we are able to do a message transmission on KafkaTopic: {}", kraftTopicName);
+
+        immediateClients = new KafkaClientsBuilder(immediateClients)
+            .withTopicName(kraftTopicName)
+            .build();
+
+        resourceManager.createResourceWithWait(extensionContext,
+            immediateClients.producerTlsStrimzi(testStorage.getClusterName()),
+            immediateClients.consumerTlsStrimzi(testStorage.getClusterName())
+        );
+
+        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName(), testStorage.getMessageCount());
+
+        LOGGER.info("8. migration is completed, waiting for continuous clients to finish");
+        ClientUtils.waitForClientsSuccess(continuousProducerName, continuousConsumerName, testStorage.getNamespaceName(), continuousMessageCount);
     }
 
     @BeforeAll
