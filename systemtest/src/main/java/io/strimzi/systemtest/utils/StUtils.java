@@ -13,6 +13,7 @@ import com.jayway.jsonpath.JsonPath;
 import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Container;
+import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
@@ -21,6 +22,7 @@ import io.strimzi.api.kafka.model.common.ContainerEnvVar;
 import io.strimzi.api.kafka.model.common.ContainerEnvVarBuilder;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
+import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StrimziPodSetUtils;
 import io.strimzi.test.TestUtils;
@@ -41,6 +43,7 @@ import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -551,7 +554,6 @@ public class StUtils {
         TestUtils.waitFor(sup.getAsBoolean() + " is satisfied", TestConstants.GLOBAL_POLL_INTERVAL,
                 TestConstants.GLOBAL_STATUS_TIMEOUT, sup);
     }
-
     /**
      * Checks env variables of Topic operator container (inside EO Pod) and based on that determines, if BTO or UTO is used.
      * Normally we can determine that based on {@link Environment#isUnidirectionalTopicOperatorEnabled()}, but in case that the
@@ -573,5 +575,15 @@ public class StUtils {
 
         LOGGER.warn("Cannot determine if UTO is used or not, because the EO Pod doesn't exist, gonna assume that it's not");
         return false;
+    }
+
+    public static Map<String, String> getImagesFromConfig(String namespaceName) {
+        Map<String, String> images = new HashMap<>();
+        for (Container c : kubeClient(namespaceName).getDeployment(namespaceName, ResourceManager.getCoDeploymentName()).getSpec().getTemplate().getSpec().getContainers()) {
+            for (EnvVar envVar : c.getEnv()) {
+                images.put(envVar.getName(), envVar.getValue());
+            }
+        }
+        return images;
     }
 }

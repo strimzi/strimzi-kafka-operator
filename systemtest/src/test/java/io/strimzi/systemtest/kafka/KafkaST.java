@@ -42,6 +42,7 @@ import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
+import io.strimzi.systemtest.utils.ResourceAssertions;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
@@ -185,16 +186,16 @@ class KafkaST extends AbstractST {
         final Map<String, String> eoPods = DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), eoDepName);
 
         LOGGER.info("Verifying resources and JVM configuration of Kafka Broker Pod");
-        assertResources(testStorage.getNamespaceName(), KafkaResource.getKafkaPodName(testStorage.getClusterName(), 0), "kafka",
+        ResourceAssertions.assertPodResources(testStorage.getNamespaceName(), KafkaResource.getKafkaPodName(testStorage.getClusterName(), 0), "kafka",
                 "1536Mi", "1", "1Gi", "50m");
-        assertExpectedJavaOpts(testStorage.getNamespaceName(), KafkaResource.getKafkaPodName(testStorage.getClusterName(), 0), "kafka",
+        ResourceAssertions.assertExpectedJavaOpts(testStorage.getNamespaceName(), KafkaResource.getKafkaPodName(testStorage.getClusterName(), 0), "kafka",
                 "-Xmx1g", "-Xms512m", "-XX:+UseG1GC");
 
         if (!Environment.isKRaftModeEnabled()) {
             LOGGER.info("Verifying resources and JVM configuration of ZooKeeper Broker Pod");
-            assertResources(testStorage.getNamespaceName(), KafkaResources.zookeeperPodName(testStorage.getClusterName(), 0), "zookeeper",
+            ResourceAssertions.assertPodResources(testStorage.getNamespaceName(), KafkaResources.zookeeperPodName(testStorage.getClusterName(), 0), "zookeeper",
                 "1G", "500m", "500M", "25m");
-            assertExpectedJavaOpts(testStorage.getNamespaceName(), KafkaResources.zookeeperPodName(testStorage.getClusterName(), 0), "zookeeper",
+            ResourceAssertions.assertExpectedJavaOpts(testStorage.getNamespaceName(), KafkaResources.zookeeperPodName(testStorage.getClusterName(), 0), "zookeeper",
                 "-Xmx1G", "-Xms512M", "-XX:+UseG1GC");
         }
 
@@ -205,13 +206,13 @@ class KafkaST extends AbstractST {
                 .findFirst();
         assertThat("EO Pod does not exist", pod.isPresent(), is(true));
 
-        assertResources(testStorage.getNamespaceName(), pod.get().getMetadata().getName(), "topic-operator",
+        ResourceAssertions.assertPodResources(testStorage.getNamespaceName(), pod.get().getMetadata().getName(), "topic-operator",
                 "1Gi", "500m", "384Mi", "25m");
-        assertResources(testStorage.getNamespaceName(), pod.get().getMetadata().getName(), "user-operator",
+        ResourceAssertions.assertPodResources(testStorage.getNamespaceName(), pod.get().getMetadata().getName(), "user-operator",
                 "512M", "300m", "256M", "30m");
-        assertExpectedJavaOpts(testStorage.getNamespaceName(), pod.get().getMetadata().getName(), "topic-operator",
+        ResourceAssertions.assertExpectedJavaOpts(testStorage.getNamespaceName(), pod.get().getMetadata().getName(), "topic-operator",
                 "-Xmx2G", "-Xms1024M", null);
-        assertExpectedJavaOpts(testStorage.getNamespaceName(), pod.get().getMetadata().getName(), "user-operator",
+        ResourceAssertions.assertExpectedJavaOpts(testStorage.getNamespaceName(), pod.get().getMetadata().getName(), "user-operator",
                 "-Xmx1G", "-Xms512M", null);
 
         String eoPod = eoPods.keySet().toArray()[0].toString();

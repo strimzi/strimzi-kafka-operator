@@ -13,6 +13,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLParser;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Pod;
+import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
@@ -21,6 +22,7 @@ import io.strimzi.api.kafka.model.kafka.listener.ListenerStatus;
 import io.strimzi.kafka.config.model.ConfigModel;
 import io.strimzi.kafka.config.model.ConfigModels;
 import io.strimzi.kafka.config.model.Scope;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
@@ -28,6 +30,7 @@ import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.StrimziPodSetResource;
+import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
@@ -61,12 +64,20 @@ import static io.strimzi.test.TestUtils.indent;
 import static io.strimzi.test.TestUtils.waitFor;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class KafkaUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaUtils.class);
     private static final long DELETION_TIMEOUT = ResourceOperation.getTimeoutForResourceDeletion();
     private static final Random RANDOM = new Random();
+    protected static final String KAFKA_IMAGE_MAP = "STRIMZI_KAFKA_IMAGES";
+    protected static final String TO_IMAGE = "STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE";
+    protected static final String UO_IMAGE = "STRIMZI_DEFAULT_USER_OPERATOR_IMAGE";
+    protected static final String KAFKA_INIT_IMAGE = "STRIMZI_DEFAULT_KAFKA_INIT_IMAGE";
+    protected static final String TLS_SIDECAR_EO_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE";
 
     private KafkaUtils() {}
 
@@ -583,5 +594,54 @@ public class KafkaUtils {
 
     public static void removeAnnotation(String clusterName, String namespaceName, String annotationKey) {
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> kafka.getMetadata().getAnnotations().remove(annotationKey), namespaceName);
+    }
+
+    public static void testDockerImagesForKafkaCluster(String clusterName, String clusterOperatorNamespaceName, String kafkaNamespaceName,
+                                                   int kafkaPods, int zkPods, boolean rackAwareEnabled) {
+        LOGGER.info("Verifying docker image names");
+        //Verifying docker image for cluster-operator
+
+        Map<String, String> imgFromDeplConf = StUtils.getImagesFromConfig(clusterOperatorNamespaceName);
+
+        String kafkaVersion = Crds.kafkaOperation(kubeClient(kafkaNamespaceName).getClient()).inNamespace(kafkaNamespaceName).withName(clusterName).get().getSpec().getKafka().getVersion();
+        if (kafkaVersion == null) {
+            kafkaVersion = Environment.ST_KAFKA_VERSION;
+        }
+
+        if (!Environment.isKRaftModeEnabled()) {
+            //Verifying docker image for zookeeper pods
+            for (int i = 0; i < zkPods; i++) {
+                String imgFromPod = PodUtils.getContainerImageNameFromPod(kafkaNamespaceName, KafkaResources.zookeeperPodName(clusterName, i), "zookeeper");
+                assertThat("ZooKeeper Pod: " + i + " uses wrong image", imgFromPod, containsString(TestUtils.parseImageMap(imgFromDeplConf.get(KAFKA_IMAGE_MAP)).get(kafkaVersion)));
+            }
+        }
+
+        //Verifying docker image for kafka pods
+        for (int i = 0; i < kafkaPods; i++) {
+            String imgFromPod = PodUtils.getContainerImageNameFromPod(kafkaNamespaceName, KafkaResource.getKafkaPodName(clusterName, i), "kafka");
+            assertThat("Kafka Pod: " + i + " uses wrong image", imgFromPod, containsString(TestUtils.parseImageMap(imgFromDeplConf.get(KAFKA_IMAGE_MAP)).get(kafkaVersion)));
+            if (rackAwareEnabled) {
+                String initContainerImage = PodUtils.getInitContainerImageName(KafkaResources.kafkaPodName(clusterName, i));
+                assertThat(initContainerImage, is(imgFromDeplConf.get(KAFKA_INIT_IMAGE)));
+            }
+        }
+
+        //Verifying docker image for entity-operator
+        String entityOperatorPodName = cmdKubeClient(kafkaNamespaceName).listResourcesByLabel("pod",
+                Labels.STRIMZI_NAME_LABEL + "=" + clusterName + "-entity-operator").get(0);
+
+        String imgFromPod = PodUtils.getContainerImageNameFromPod(kafkaNamespaceName, entityOperatorPodName, "user-operator");
+        assertThat(imgFromPod, containsString(imgFromDeplConf.get(UO_IMAGE)));
+
+        if (!Environment.isKRaftModeEnabled()) {
+            imgFromPod = PodUtils.getContainerImageNameFromPod(kafkaNamespaceName, entityOperatorPodName, "topic-operator");
+            assertThat(imgFromPod, containsString(imgFromDeplConf.get(TO_IMAGE)));
+            if (!Environment.isUnidirectionalTopicOperatorEnabled()) {
+                imgFromPod = PodUtils.getContainerImageNameFromPod(kafkaNamespaceName, entityOperatorPodName, "tls-sidecar");
+                assertThat(imgFromPod, containsString(imgFromDeplConf.get(TLS_SIDECAR_EO_IMAGE)));
+            }
+        }
+
+        LOGGER.info("Docker images verified");
     }
 }

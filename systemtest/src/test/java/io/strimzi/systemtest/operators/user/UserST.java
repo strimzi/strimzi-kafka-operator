@@ -49,9 +49,9 @@ import java.util.List;
 
 import static io.strimzi.systemtest.TestConstants.ACCEPTANCE;
 import static io.strimzi.systemtest.TestConstants.REGRESSION;
-import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
@@ -94,7 +94,13 @@ class UserST extends AbstractST {
 
         final Condition condition = KafkaUserResource.kafkaUserClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(userWithLongName).get().getStatus().getConditions().get(0);
 
-        verifyCRStatusCondition(condition, "only up to 64 characters", "ExecutionException", "True", NotReady);
+        assertThat(condition.getStatus(), is("True"));
+        assertThat(condition.getType(), is("NotReady"));
+
+        if (condition.getMessage() != null && condition.getReason() != null) {
+            assertThat(condition.getMessage(), containsString("only up to 64 characters"));
+            assertThat(condition.getReason(), is("ExecutionException"));
+        }
     }
 
     @ParallelTest
