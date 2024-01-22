@@ -1,5 +1,5 @@
 PROJECT_NAME := kaniko-executor
-KANIKO_EXECUTOR = gcr.io/kaniko-project/executor:v1.19.1
+KANIKO_EXECUTOR = gcr.io/kaniko-project/executor:v1.20.0
 
 docker_build:
 	# The Kaniko executor image used for building new Kafka Connect images with additional connectors is not build from

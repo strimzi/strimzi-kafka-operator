@@ -76,7 +76,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                 .setLogActivity(HTTP_CLIENT_ACTIVITY_LOGGING)
                 .setSsl(true)
                 .setVerifyHost(true)
-                .setPemTrustOptions(
+                .setTrustOptions(
                     new PemTrustOptions(pto)
                 );
         } else {

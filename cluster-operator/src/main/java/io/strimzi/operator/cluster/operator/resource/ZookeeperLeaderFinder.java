@@ -66,8 +66,8 @@ public class ZookeeperLeaderFinder {
                 .setConnectTimeout(10_000)
                 .setSsl(true)
                 .setHostnameVerificationAlgorithm("HTTPS")
-                .setPemKeyCertOptions(keyCertOptions(coCertKeySecret))
-                .setPemTrustOptions(trustOptions(reconciliation, clusterCaCertificateSecret));
+                .setKeyCertOptions(keyCertOptions(coCertKeySecret))
+                .setTrustOptions(trustOptions(reconciliation, clusterCaCertificateSecret));
     }
 
     private CertificateFactory x509Factory() {
