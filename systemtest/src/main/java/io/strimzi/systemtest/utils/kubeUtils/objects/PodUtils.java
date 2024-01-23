@@ -238,6 +238,10 @@ public class PodUtils {
         }
     }
 
+    public static void waitForPendingPod(String namespaceName, String kafkaName, String nodePoolName) {
+        waitForPendingPod(namespaceName, kafkaName + "-" + nodePoolName);
+    }
+
     /**
      * Ensures that at least one pod from listed (by prefix) is in {@code Pending} phase
      * @param namespaceName Namespace name
@@ -250,6 +254,10 @@ public class PodUtils {
                 List<Pod> actualPods = kubeClient(namespaceName).listPodsByPrefixInName(podPrefix);
                 return actualPods.stream().anyMatch(pod -> pod.getStatus().getPhase().equals("Pending"));
             });
+    }
+
+    public static void verifyThatRunningPodsAreStable(String namespaceName, String kafkaName, String nodePoolName) {
+        verifyThatPodsAreStable(namespaceName, kafkaName + "-" + nodePoolName, "Running");
     }
 
     /**
