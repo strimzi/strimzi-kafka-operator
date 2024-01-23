@@ -30,6 +30,7 @@ import io.strimzi.operator.cluster.FeatureGates;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.KRaftUtils;
+import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaVersionChange;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.model.NodeRef;
@@ -556,23 +557,18 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          * Overriding this method can be used to get mocked reconciler.
          *
          * @param nodePools         List of node pools belonging to this cluster
-         * @param oldStorage        Map of current storage configurations of the running cluster. Empty if the PodSet
-         *                          (or StatefulSet doesn't exist yet).
-         * @param currentPods       Map of lists with the existing pod names for different StrimziPodSets. Empty if the
-         *                          PodSet (or StatefulSet doesn't exist yet)
+         * @param kafkaCluster      The KafkaCluster model instance
          *
          * @return  KafkaReconciler instance
          */
-        KafkaReconciler kafkaReconciler(List<KafkaNodePool> nodePools, Map<String, Storage> oldStorage, Map<String, List<String>> currentPods) {
+        KafkaReconciler kafkaReconciler(List<KafkaNodePool> nodePools, KafkaCluster kafkaCluster) {
             return new KafkaReconciler(
                     reconciliation,
                     kafkaAssembly,
                     nodePools,
-                    oldStorage,
-                    currentPods,
+                    kafkaCluster,
                     clusterCa,
                     clientsCa,
-                    versionChange,
                     config,
                     supplier,
                     pfa,
@@ -613,16 +609,16 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                         if (config.featureGates().kafkaNodePoolsEnabled()
                                 && ReconcilerUtils.nodePoolsEnabled(kafkaAssembly)
-                                && (nodePools == null || nodePools.isEmpty()))  {
+                                && (nodePools == null || nodePools.isEmpty())) {
                             throw new InvalidConfigurationException("KafkaNodePools are enabled, but no KafkaNodePools found for Kafka cluster " + name);
                         }
 
                         Map<String, List<String>> currentPods = new HashMap<>();
                         Map<String, Storage> oldStorage = new HashMap<>();
 
-                        if (podSets != null && !podSets.isEmpty())  {
+                        if (podSets != null && !podSets.isEmpty()) {
                             // One or more PodSets exist => we go on and use them
-                            for (StrimziPodSet podSet : podSets)    {
+                            for (StrimziPodSet podSet : podSets) {
                                 oldStorage.put(podSet.getMetadata().getName(), getOldStorage(podSet));
                                 currentPods.put(podSet.getMetadata().getName(), PodSetUtils.podNames(podSet));
                             }
@@ -633,14 +629,16 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             currentPods.put(sts.getMetadata().getName(), IntStream.range(0, sts.getSpec().getReplicas()).mapToObj(i -> KafkaResources.kafkaPodName(kafkaAssembly.getMetadata().getName(), i)).toList());
                         }
 
-                        KafkaReconciler reconciler = kafkaReconciler(nodePools, oldStorage, currentPods);
+                        return new KafkaClusterCreator(vertx, reconciliation, config, supplier)
+                                .prepareKafkaCluster(kafkaAssembly, nodePools, oldStorage, currentPods, versionChange, true)
+                                .compose(kafkaCluster -> {
+                                    // We store this for use with Cruise Control later
+                                    kafkaBrokerNodes = kafkaCluster.brokerNodes();
+                                    kafkaBrokerStorage = kafkaCluster.getStorageByPoolName();
+                                    kafkaBrokerResources = kafkaCluster.getBrokerResourceRequirementsByPoolName();
 
-                        // We store this for use with Cruise Control later
-                        kafkaBrokerNodes = reconciler.kafkaBrokerNodes();
-                        kafkaBrokerStorage = reconciler.kafkaStorage();
-                        kafkaBrokerResources = reconciler.kafkaBrokerResourceRequirements();
-
-                        return Future.succeededFuture(reconciler);
+                                    return Future.succeededFuture(kafkaReconciler(nodePools, kafkaCluster));
+                                });
                     });
         }
 

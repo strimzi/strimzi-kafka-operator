@@ -45,7 +45,6 @@ import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.cluster.model.RestartReason;
 import io.strimzi.operator.cluster.model.RestartReasons;
-import io.strimzi.operator.cluster.model.nodepools.NodePoolUtils;
 import io.strimzi.operator.cluster.operator.resource.ConcurrentDeletionException;
 import io.strimzi.operator.cluster.operator.resource.KafkaRoller;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
@@ -59,7 +58,6 @@ import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.common.model.ClientsCa;
-import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.NodeUtils;
 import io.strimzi.operator.common.model.StatusDiff;
@@ -110,53 +108,117 @@ import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_SERVER_CERT_HA
 public class KafkaReconciler {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaReconciler.class.getName());
 
-    /* test */ final Reconciliation reconciliation;
-    private final Vertx vertx;
+    // Various settings
     private final long operationTimeoutMs;
-    /* test */ final KafkaCluster kafka;
-    private final List<KafkaNodePool> kafkaNodePoolCrs;
-    private final ClusterCa clusterCa;
-    private final ClientsCa clientsCa;
+    private final boolean isNetworkPolicyGeneration;
+    private final boolean isKafkaNodePoolsEnabled;
     private final List<String> maintenanceWindows;
     private final String operatorNamespace;
     private final Labels operatorNamespaceLabels;
-    private final boolean isNetworkPolicyGeneration;
-    private final boolean isKafkaNodePoolsEnabled;
-    /* test */ final PlatformFeaturesAvailability pfa;
+    private final PlatformFeaturesAvailability pfa;
     private final ImagePullPolicy imagePullPolicy;
     private final List<LocalObjectReference> imagePullSecrets;
 
+    // Objects used during the reconciliation
+    /* test */ final Reconciliation reconciliation;
+    private final KafkaCluster kafka;
+    private final List<KafkaNodePool> kafkaNodePoolCrs;
+    private final ClusterCa clusterCa;
+    private final ClientsCa clientsCa;
+
+    // Tools for operating and managing various resources
+    private final Vertx vertx;
     private final StatefulSetOperator stsOperator;
     private final StrimziPodSetOperator strimziPodSetOperator;
-    /* test */ final SecretOperator secretOperator;
+    private final SecretOperator secretOperator;
     private final ServiceAccountOperator serviceAccountOperator;
-    /* test */ final ServiceOperator serviceOperator;
+    private final ServiceOperator serviceOperator;
     private final PvcOperator pvcOperator;
-    private final PreventBrokerScaleDownCheck brokerScaleDownOperations;
     private final StorageClassOperator storageClassOperator;
     private final ConfigMapOperator configMapOperator;
     private final NetworkPolicyOperator networkPolicyOperator;
     private final PodDisruptionBudgetOperator podDisruptionBudgetOperator;
     private final PodOperator podOperator;
     private final ClusterRoleBindingOperator clusterRoleBindingOperator;
-    /* test */ final RouteOperator routeOperator;
-    /* test */ final IngressOperator ingressOperator;
+    private final RouteOperator routeOperator;
+    private final IngressOperator ingressOperator;
     private final NodeOperator nodeOperator;
     private final CrdOperator<KubernetesClient, KafkaNodePool, KafkaNodePoolList> kafkaNodePoolOperator;
-
     private final KubernetesRestartEventPublisher eventsPublisher;
-
     private final AdminClientProvider adminClientProvider;
 
+    // State of the reconciliation => these objects might change during the reconciliation (the collection objects are
+    // marked as final, but their contents is modified during the reconciliation)
     private final Set<String> fsResizingRestartRequest = new HashSet<>();
     private String logging = "";
     private String loggingHash = "";
-    private final boolean skipBrokerScaleDownCheck;
     private final Map<Integer, String> brokerConfigurationHash = new HashMap<>();
     private final Map<Integer, String> kafkaServerCertificateHash = new HashMap<>();
+    /* test */ KafkaListenersReconciler.ReconciliationResult listenerReconciliationResults; // Result of the listener reconciliation with the listener details
 
-    // Result of the listener reconciliation with the listener details
-    /* test */ KafkaListenersReconciler.ReconciliationResult listenerReconciliationResults;
+    /**
+     * Constructs the Kafka reconciler
+     *
+     * @param reconciliation            Reconciliation marker
+     * @param kafkaCr                   The Kafka custom resource
+     * @param nodePools                 List of KafkaNodePool resources belonging to this cluster
+     * @param kafka                     Kafka cluster instance
+     * @param clusterCa                 The Cluster CA instance
+     * @param clientsCa                 The Clients CA instance
+     * @param config                    Cluster Operator Configuration
+     * @param supplier                  Supplier with Kubernetes Resource Operators
+     * @param pfa                       PlatformFeaturesAvailability describing the environment we run in
+     * @param vertx                     Vert.x instance
+     */
+    public KafkaReconciler(
+            Reconciliation reconciliation,
+            Kafka kafkaCr,
+            List<KafkaNodePool> nodePools,
+            KafkaCluster kafka,
+            ClusterCa clusterCa,
+            ClientsCa clientsCa,
+            ClusterOperatorConfig config,
+            ResourceOperatorSupplier supplier,
+            PlatformFeaturesAvailability pfa,
+            Vertx vertx
+    ) {
+        this.reconciliation = reconciliation;
+        this.vertx = vertx;
+        this.operationTimeoutMs = config.getOperationTimeoutMs();
+        this.kafkaNodePoolCrs = nodePools;
+        this.kafka = kafka;
+
+        this.clusterCa = clusterCa;
+        this.clientsCa = clientsCa;
+        this.maintenanceWindows = kafkaCr.getSpec().getMaintenanceTimeWindows();
+        this.operatorNamespace = config.getOperatorNamespace();
+        this.operatorNamespaceLabels = config.getOperatorNamespaceLabels();
+        this.isNetworkPolicyGeneration = config.isNetworkPolicyGeneration();
+        this.isKafkaNodePoolsEnabled = config.featureGates().kafkaNodePoolsEnabled() && ReconcilerUtils.nodePoolsEnabled(kafkaCr);
+        this.pfa = pfa;
+        this.imagePullPolicy = config.getImagePullPolicy();
+        this.imagePullSecrets = config.getImagePullSecrets();
+
+        this.stsOperator = supplier.stsOperations;
+        this.strimziPodSetOperator = supplier.strimziPodSetOperator;
+        this.secretOperator = supplier.secretOperations;
+        this.serviceAccountOperator = supplier.serviceAccountOperations;
+        this.serviceOperator = supplier.serviceOperations;
+        this.pvcOperator = supplier.pvcOperations;
+        this.storageClassOperator = supplier.storageClassOperations;
+        this.configMapOperator = supplier.configMapOperations;
+        this.networkPolicyOperator = supplier.networkPolicyOperator;
+        this.podDisruptionBudgetOperator = supplier.podDisruptionBudgetOperator;
+        this.podOperator = supplier.podOperations;
+        this.clusterRoleBindingOperator = supplier.clusterRoleBindingOperator;
+        this.routeOperator = supplier.routeOperations;
+        this.ingressOperator = supplier.ingressOperations;
+        this.nodeOperator = supplier.nodeOperator;
+        this.kafkaNodePoolOperator = supplier.kafkaNodePoolOperator;
+        this.eventsPublisher = supplier.restartEventsPublisher;
+
+        this.adminClientProvider = supplier.adminClientProvider;
+    }
 
     /**
      * Constructs the Kafka reconciler
@@ -190,49 +252,19 @@ public class KafkaReconciler {
             PlatformFeaturesAvailability pfa,
             Vertx vertx
     ) {
-        this.reconciliation = reconciliation;
-        this.vertx = vertx;
-        this.operationTimeoutMs = config.getOperationTimeoutMs();
-        this.kafkaNodePoolCrs = nodePools;
-
-        boolean isKRaftEnabled = config.featureGates().useKRaftEnabled() && ReconcilerUtils.kraftEnabled(kafkaCr);
-        // We prepare the KafkaPool models and create the KafkaCluster model
-        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(reconciliation, kafkaCr, nodePools, oldStorage, currentPods, isKRaftEnabled, supplier.sharedEnvironmentProvider);
-        String clusterId = isKRaftEnabled ? NodePoolUtils.getOrGenerateKRaftClusterId(kafkaCr, nodePools) : NodePoolUtils.getClusterIdIfSet(kafkaCr, nodePools);
-        this.kafka = KafkaCluster.fromCrd(reconciliation, kafkaCr, pools, config.versions(), versionChange, isKRaftEnabled, clusterId, supplier.sharedEnvironmentProvider);
-
-        this.clusterCa = clusterCa;
-        this.clientsCa = clientsCa;
-        this.maintenanceWindows = kafkaCr.getSpec().getMaintenanceTimeWindows();
-        this.operatorNamespace = config.getOperatorNamespace();
-        this.operatorNamespaceLabels = config.getOperatorNamespaceLabels();
-        this.isNetworkPolicyGeneration = config.isNetworkPolicyGeneration();
-        this.isKafkaNodePoolsEnabled = config.featureGates().kafkaNodePoolsEnabled() && ReconcilerUtils.nodePoolsEnabled(kafkaCr);
-        this.pfa = pfa;
-        this.imagePullPolicy = config.getImagePullPolicy();
-        this.imagePullSecrets = config.getImagePullSecrets();
-        this.skipBrokerScaleDownCheck = Annotations.booleanAnnotation(kafkaCr, Annotations.ANNO_STRIMZI_IO_SKIP_BROKER_SCALEDOWN_CHECK, false);
-
-        this.stsOperator = supplier.stsOperations;
-        this.strimziPodSetOperator = supplier.strimziPodSetOperator;
-        this.secretOperator = supplier.secretOperations;
-        this.brokerScaleDownOperations = supplier.brokerScaleDownOperations;
-        this.serviceAccountOperator = supplier.serviceAccountOperations;
-        this.serviceOperator = supplier.serviceOperations;
-        this.pvcOperator = supplier.pvcOperations;
-        this.storageClassOperator = supplier.storageClassOperations;
-        this.configMapOperator = supplier.configMapOperations;
-        this.networkPolicyOperator = supplier.networkPolicyOperator;
-        this.podDisruptionBudgetOperator = supplier.podDisruptionBudgetOperator;
-        this.podOperator = supplier.podOperations;
-        this.clusterRoleBindingOperator = supplier.clusterRoleBindingOperator;
-        this.routeOperator = supplier.routeOperations;
-        this.ingressOperator = supplier.ingressOperations;
-        this.nodeOperator = supplier.nodeOperator;
-        this.kafkaNodePoolOperator = supplier.kafkaNodePoolOperator;
-        this.eventsPublisher = supplier.restartEventsPublisher;
-
-        this.adminClientProvider = supplier.adminClientProvider;
+        // TODO: This constructor will be removed once tests are fixed
+        this(
+                reconciliation,
+                kafkaCr,
+                nodePools,
+                KafkaClusterCreator.createKafkaCluster(reconciliation, kafkaCr, nodePools, oldStorage, currentPods, versionChange, config.featureGates().useKRaftEnabled(), config.versions(), supplier.sharedEnvironmentProvider),
+                clusterCa,
+                clientsCa,
+                config,
+                supplier,
+                pfa,
+                vertx
+        );
     }
 
     /**
@@ -247,7 +279,7 @@ public class KafkaReconciler {
      */
     public Future<Void> reconcile(KafkaStatus kafkaStatus, Clock clock)    {
         return modelWarnings(kafkaStatus)
-                .compose(i -> brokerScaleDownCheck())
+                //.compose(i -> brokerScaleDownCheck())
                 .compose(i -> manualPodCleaning())
                 .compose(i -> networkPolicy())
                 .compose(i -> manualRollingUpdate())
@@ -278,20 +310,9 @@ public class KafkaReconciler {
     }
 
     protected Future<Void> brokerScaleDownCheck() {
-        if (skipBrokerScaleDownCheck || kafka.removedNodes().isEmpty()) {
-            return Future.succeededFuture();
-        } else {
-            return brokerScaleDownOperations.canScaleDownBrokers(reconciliation, vertx, kafka.removedNodes(), secretOperator, adminClientProvider)
-                    .compose(brokersContainingPartitions -> {
-                        if (!brokersContainingPartitions.isEmpty()) {
-                            throw new InvalidResourceException("Cannot scale down brokers " + kafka.removedNodes() + " because brokers " + brokersContainingPartitions + " are not empty");
-                        } else {
-                            return Future.succeededFuture();
-                        }
-                    });
-        }
+        // TODO: This will be removed once the tests are fixed
+        return Future.succeededFuture();
     }
-
 
     /**
      * Takes the warning conditions from the Model and adds them in the KafkaStatus
@@ -1110,6 +1131,7 @@ public class KafkaReconciler {
      * @return  Map with the pool names as the keys and storage configuration for given pools as the values
      */
     public Map<String, Storage> kafkaStorage()   {
+        // TODO: Remove after fixing the tests
         return kafka.getStorageByPoolName();
     }
 
@@ -1122,6 +1144,7 @@ public class KafkaReconciler {
      * @return  Map with the pool names as the keys and resource requirements for given pools as the values
      */
     public Map<String, ResourceRequirements> kafkaBrokerResourceRequirements()   {
+        // TODO: Remove after fixing the tests
         return kafka.getBrokerResourceRequirementsByPoolName();
     }
 
@@ -1133,6 +1156,7 @@ public class KafkaReconciler {
      * @return  Set with node references for the Kafka nodes
      */
     public Set<NodeRef> kafkaBrokerNodes()   {
+        // TODO: Remove after fixing the tests
         return kafka.brokerNodes();
     }
 }
