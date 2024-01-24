@@ -68,12 +68,13 @@ public class MigrationST extends AbstractST {
      *  12. - Does immediate message transmission to the new KafkaTopic
      *  13. - Finishes the migration - annotates the Kafka resource with strimzi.io/kraft:enabled
      *  14. - Controller Pods will be rolled
-     *  15. - Checks that Kafka CR has .status.kafkaMetadataState set to KRaft
-     *  16. - Removes LMFV and IBPV from Kafka configuration
-     *  17. - Broker and Controller Pods will be rolled
-     *  18. - Creates a new KafkaTopic and checks KRaft metadata for presence of the KafkaTopic
-     *  19. - Does immediate message transmission to the new KafkaTopic
-     *  20. - Waits until continuous clients are finished successfully
+     *  15. - ZK related resources will be deleted
+     *  16. - Checks that Kafka CR has .status.kafkaMetadataState set to KRaft
+     *  17. - Removes LMFV and IBPV from Kafka configuration
+     *  18. - Broker and Controller Pods will be rolled
+     *  19. - Creates a new KafkaTopic and checks KRaft metadata for presence of the KafkaTopic
+     *  20. - Does immediate message transmission to the new KafkaTopic
+     *  21. - Waits until continuous clients are finished successfully
      *
      * @usecase
      *  - zk-to-kraft-migration
