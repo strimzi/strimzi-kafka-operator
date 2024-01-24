@@ -35,8 +35,8 @@ final public class TestStorage {
     private static final String ADMIN = "admin-client";
     private static final String USER = "user";
     private static final String CLUSTER_NAME_PREFIX = "my-cluster-";
-    private static final String BROKER_ROLE_SUFFIX = "-b";
-    private static final String CONTROLLER_ROLE_SUFFIX = "-c";
+    private static final String BROKER_ROLE_PREFIX = "broker-";
+    private static final String CONTROLLER_ROLE_PREFIX = "controller-";
     private static final Random RANDOM = new Random();
 
     private ExtensionContext extensionContext;
@@ -86,8 +86,8 @@ final public class TestStorage {
         this.namespaceName = StUtils.isParallelNamespaceTest(extensionContext) ? StUtils.getNamespaceBasedOnRbac(namespaceName, extensionContext) : namespaceName;
         this.clusterName = CLUSTER_NAME_PREFIX + hashStub(String.valueOf(RANDOM.nextInt(Integer.MAX_VALUE)));
         this.kafkaNodePoolName = TestConstants.KAFKA_NODE_POOL_PREFIX + hashStub(clusterName);
-        this.brokerPoolName = kafkaNodePoolName + BROKER_ROLE_SUFFIX;
-        this.controllerPoolName = kafkaNodePoolName + CONTROLLER_ROLE_SUFFIX;
+        this.brokerPoolName = BROKER_ROLE_PREFIX + hashStub(clusterName);
+        this.controllerPoolName = CONTROLLER_ROLE_PREFIX + hashStub(clusterName);
         this.sourceClusterName = clusterName + "-source";
         this.targetClusterName = clusterName + "-target";
         this.topicName = KafkaTopicUtils.generateRandomNameOfTopic();

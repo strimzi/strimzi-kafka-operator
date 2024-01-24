@@ -9,6 +9,7 @@ import io.strimzi.api.kafka.model.kafka.KafkaMetadataState;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
 import io.strimzi.operator.common.Annotations;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
@@ -25,6 +26,7 @@ import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -33,13 +35,13 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.Map;
 
-import static io.strimzi.systemtest.TestConstants.REGRESSION;
+import static io.strimzi.systemtest.TestConstants.MIGRATION;
 import static io.strimzi.systemtest.resources.ResourceManager.cmdKubeClient;
 import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@Tag(REGRESSION)
+@Tag(MIGRATION)
 public class MigrationST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(MigrationST.class);
@@ -92,7 +94,7 @@ public class MigrationST extends AbstractST {
         LabelSelector brokerSelector = KafkaNodePoolResource.getLabelSelector(testStorage.getBrokerPoolName(), ProcessRoles.BROKER);
         LabelSelector controllerSelector = KafkaNodePoolResource.getLabelSelector(testStorage.getControllerPoolName(), ProcessRoles.CONTROLLER);
 
-        String clientsAdditionConfiguration = "delivery.timeout.ms=20000\nrequest.timeout.ms=20000";
+        String clientsAdditionConfiguration = "delivery.timeout.ms=20000\nrequest.timeout.ms=20000\nacks=all";
 
         KafkaClients immediateClients = new KafkaClientsBuilder()
             .withProducerName(testStorage.getProducerName())
@@ -123,6 +125,12 @@ public class MigrationST extends AbstractST {
                     .addToAnnotations(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled")
                     .addToAnnotations(Annotations.ANNO_STRIMZI_IO_KRAFT, "disabled")
                 .endMetadata()
+                .editSpec()
+                    .editOrNewKafka()
+                        .addToConfig("default.replication.factor", 3)
+                        .addToConfig("min.insync.replicas", 2)
+                    .endKafka()
+                .endSpec()
                 .build());
 
         Map<String, String> brokerPodsSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), brokerSelector);
@@ -136,13 +144,12 @@ public class MigrationST extends AbstractST {
         LOGGER.info("Creating two topics for immediate and continuous message transmission and KafkaUser for the TLS");
         resourceManager.createResourceWithWait(extensionContext,
             KafkaTopicTemplates.topic(testStorage).build(),
-            KafkaTopicTemplates.topic(testStorage.getClusterName(), continuousTopicName, testStorage.getNamespaceName()).build(),
+            KafkaTopicTemplates.topic(testStorage.getClusterName(), continuousTopicName, 3, 3, 2, testStorage.getNamespaceName()).build(),
             KafkaUserTemplates.tlsUser(testStorage).build()
         );
 
         // sanity check that kafkaMetadataState shows ZooKeeper
-        String currentKafkaMetadataState = KafkaResource.kafkaClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus().getKafkaMetadataState();
-        assertThat(currentKafkaMetadataState, is(KafkaMetadataState.ZooKeeper.name()));
+        KafkaUtils.waitUntilKafkaStatusContainsKafkaMetadataState(testStorage.getNamespaceName(), testStorage.getClusterName(), KafkaMetadataState.ZooKeeper.name());
 
         // start continuous clients and do the immediate message transmission
         resourceManager.createResourceWithWait(extensionContext,
@@ -165,10 +172,10 @@ public class MigrationST extends AbstractST {
         PodUtils.waitForPodsReady(testStorage.getNamespaceName(), controllerSelector, 3, true);
         Map<String, String> controllerPodsSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), controllerSelector);
 
-        LOGGER.info("3. waiting for first rolling update of broker Pods");
+        LOGGER.info("3. waiting for first rolling update of broker Pods - bringing to DualWrite mode");
         brokerPodsSnapshot = RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), brokerSelector, brokerPodsSnapshot);
 
-        LOGGER.info("4. waiting for second rolling update of broker Pods");
+        LOGGER.info("4. waiting for second rolling update of broker Pods - removing dependency on ZK");
         brokerPodsSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), brokerSelector, 3, brokerPodsSnapshot);
 
         KafkaUtils.waitUntilKafkaStatusContainsKafkaMetadataState(testStorage.getNamespaceName(), testStorage.getClusterName(), KafkaMetadataState.KRaftPostMigration.name());
@@ -197,15 +204,21 @@ public class MigrationST extends AbstractST {
 
         ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName(), testStorage.getMessageCount());
 
-        LOGGER.info("5. finishing migration - applying {}: enabled annotation, controllers should be rolled", Annotations.ANNO_STRIMZI_IO_KRAFT);
+        LOGGER.info("6. finishing migration - applying {}: enabled annotation, controllers should be rolled", Annotations.ANNO_STRIMZI_IO_KRAFT);
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(),
             kafka -> kafka.getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled"), testStorage.getNamespaceName());
 
         controllerPodsSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), controllerSelector, 3, controllerPodsSnapshot);
 
+        LOGGER.info("7. ZK related resources should be removed, waiting for SPS to be removed");
+
+        waitForZooKeeperResourcesDeletion(testStorage);
+
+        LOGGER.info("8. Everything related to ZK is deleted, waiting until .status.kafkaMetadataState in Kafka will contain KRaft state");
+
         KafkaUtils.waitUntilKafkaStatusContainsKafkaMetadataState(testStorage.getNamespaceName(), testStorage.getClusterName(), KafkaMetadataState.KRaft.name());
 
-        LOGGER.info("6. removing LMFV and IBPV from Kafka config -> brokers and controllers should be rolled");
+        LOGGER.info("9. removing LMFV and IBPV from Kafka config -> brokers and controllers should be rolled");
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> {
             kafka.getSpec().getKafka().getConfig().remove("log.message.format.version");
             kafka.getSpec().getKafka().getConfig().remove("inter.broker.protocol.version");
@@ -214,14 +227,14 @@ public class MigrationST extends AbstractST {
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), brokerSelector, 3, brokerPodsSnapshot);
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), controllerSelector, 3, controllerPodsSnapshot);
 
-        LOGGER.info("7. creating KafkaTopic: {} and checking if the metadata are only in KRaft", kraftTopicName);
+        LOGGER.info("10. creating KafkaTopic: {} and checking if the metadata are only in KRaft", kraftTopicName);
         resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), kraftTopicName, testStorage.getNamespaceName()).build());
 
-        LOGGER.info("7a. checking if metadata about KafkaTopic: {} are in KRaft controller", kraftTopicName);
+        LOGGER.info("10a. checking if metadata about KafkaTopic: {} are in KRaft controller", kraftTopicName);
 
         assertThatTopicIsPresentInKRaftMetadata(controllerSelector, kraftTopicName);
 
-        LOGGER.info("7b. checking if we are able to do a message transmission on KafkaTopic: {}", kraftTopicName);
+        LOGGER.info("10b. checking if we are able to do a message transmission on KafkaTopic: {}", kraftTopicName);
 
         immediateClients = new KafkaClientsBuilder(immediateClients)
             .withTopicName(kraftTopicName)
@@ -233,10 +246,15 @@ public class MigrationST extends AbstractST {
         );
 
         ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName(), testStorage.getMessageCount());
-        // TODO: continuous clients are failing due to missing messages (one or two) during the whole process. This happens from time to time in upgrade/downgrade tests as well
-        // it needs to be fixed on test-clients side
-        //  LOGGER.info("8. migration is completed, waiting for continuous clients to finish");
-        //  ClientUtils.waitForClientsSuccess(continuousProducerName, continuousConsumerName, testStorage.getNamespaceName(), continuousMessageCount);
+
+        LOGGER.info("11. migration is completed, waiting for continuous clients to finish");
+        ClientUtils.waitForClientsSuccess(continuousProducerName, continuousConsumerName, testStorage.getNamespaceName(), continuousMessageCount);
+    }
+
+    void waitForZooKeeperResourcesDeletion(TestStorage testStorage) {
+        cmdKubeClient().namespace(testStorage.getNamespaceName())
+            .execInCurrentNamespace(Level.INFO, "wait", "--for", "delete", "networkpolicy,serviceaccount,service,secret,configmap,pdb,sps,pvc,pod",
+                "-l", Labels.STRIMZI_NAME_LABEL + "=" + testStorage.getZookeeperStatefulSetName(), "--timeout=300s");
     }
 
     void assertThatTopicIsPresentInZKMetadata(LabelSelector zkSelector, String topicName) {
