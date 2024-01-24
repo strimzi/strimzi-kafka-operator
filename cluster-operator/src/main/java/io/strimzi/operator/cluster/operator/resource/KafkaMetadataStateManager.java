@@ -107,6 +107,7 @@ public class KafkaMetadataStateManager {
             case KRaftMigration -> onKRaftMigration(kafkaStatus);
             case KRaftDualWriting -> onKRaftDualWriting(kafkaStatus);
             case KRaftPostMigration -> onKRaftPostMigration(kafkaStatus);
+            case PreKRaft -> onPreKRaft(kafkaStatus);
         };
         LOGGER.infoCr(reconciliation, "from [{}] to [{}] with strimzi.io/kraft: [{}]", currentState, metadataState, kraftAnno);
         return metadataState;
@@ -159,7 +160,7 @@ public class KafkaMetadataStateManager {
                     return KafkaMetadataConfigurationState.POST_MIGRATION;
                 }
             }
-            case KRaft -> {
+            case PreKRaft, KRaft -> {
                 return KafkaMetadataConfigurationState.KRAFT;
             }
         }
@@ -253,6 +254,13 @@ public class KafkaMetadataStateManager {
             // TODO: to be removed, just for monitoring/testing
             LOGGER.infoCr(reconciliation, "No KRaft migration rollback ongoing ... no need to delete /controller znode");
         }
+    }
+
+    /**
+     * @return true if the ZooKeeper ensemble has to be deleted because KRaft migration is done. False otherwise.
+     */
+    public boolean maybeDeleteZooKeeper() {
+        return this.metadataState.equals(KafkaMetadataState.PreKRaft) && isKRaftAnnoEnabled();
     }
 
     /**
@@ -378,7 +386,7 @@ public class KafkaMetadataStateManager {
      */
     private KafkaMetadataState onKRaftPostMigration(KafkaStatus kafkaStatus) {
         if (isKRaftAnnoEnabled()) {
-            return KafkaMetadataState.KRaft;
+            return KafkaMetadataState.PreKRaft;
         }
         // rollback
         if (isKRaftAnnoRollback()) {
@@ -390,6 +398,25 @@ public class KafkaMetadataStateManager {
                         "You can use rollback value to come back to ZooKeeper. Use the enabled value to finalize migration instead."));
         LOGGER.warnCr(reconciliation, "Warning strimzi.io/kraft: migration|disabled is not allowed in this state");
         return KafkaMetadataState.KRaftPostMigration;
+    }
+
+    /**
+     * Handles the transition from the {@code PreKRaft} state
+     *
+     * @param kafkaStatus Status of the Kafka custom resource where warnings about any issues with metadata state will be added
+     *
+     * @return next state
+     */
+    private KafkaMetadataState onPreKRaft(KafkaStatus kafkaStatus) {
+        if (isKRaftAnnoEnabled()) {
+            return KafkaMetadataState.KRaft;
+        }
+        // set warning condition on Kafka CR status that strimzi.io/kraft: migration|disabled|rollback are not allowed in this state?
+        kafkaStatus.addCondition(StatusUtils.buildWarningCondition("KafkaMetadataStateWarning",
+                "The strimzi.io/kraft annotation can't be set to migration, disabled or rollback in the pre-kraft." +
+                        "Use the enabled value to finalize migration and removing ZooKeeper."));
+        LOGGER.warnCr(reconciliation, "Warning strimzi.io/kraft: migration|disabled|rollback is not allowed in this state");
+        return KafkaMetadataState.PreKRaft;
     }
 
     /**

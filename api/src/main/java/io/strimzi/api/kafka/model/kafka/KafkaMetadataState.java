@@ -62,10 +62,21 @@ public enum KafkaMetadataState {
      * <dl>
      *     <dt>KraftDualWriting</dt><dd>If user applies the strimzi.io/kraft: rollback annotation because they want to rollback to a ZooKeeper-based cluster.</dd>
      *     <dt>KRaftPostMigration</dt><dd>If user applies any invalid values for this state on the strimzi.io/kraft annotation.</dd>
-     *     <dt>KRaft</dt><dd>The strimzi.io/kraft: enabled is still in place, and after brokers, the operator has rolled controllers with ZooKeeper migration disabled and no connection to it anymore. ZooKeeper pods are also deleted if spec.zookeeper was removed.</dd>
+     *     <dt>PreKRaft</dt><dd>The strimzi.io/kraft: enabled is still in place, and after brokers, the operator has rolled controllers with ZooKeeper migration disabled and no connection to it anymore. ZooKeeper pods are still running.</dd>
      * </dl>
      */
     KRaftPostMigration,
+
+    /**
+     * The matadata are stored in KRaft.
+     * The strimzi.io/kraft: enabled annotation is set on the Kafka resource.
+     * ZooKeeper pods are still running and they will be removed during migration finalization when moving to KRaft.
+     * Transitions to:
+     * <dl>
+     *     <dt>KRaft</dt><dd>The strimzi.io/kraft: enabled is still in place, and after brokers, the operator has rolled controllers with ZooKeeper migration disabled and no connection to it anymore. ZooKeeper pods are also deleted.</dd>
+     * </dl>
+     */
+    PreKRaft,
 
     /**
      * The metadata are stored in KRaft.

@@ -261,6 +261,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                 // Run reconciliations of the different components
                 .compose(state -> kafkaMetadataConfigState.isKRaft() ? Future.succeededFuture(state) : state.reconcileZooKeeper(clock))
+                .compose(state -> reconcileState.kafkaMetadataStateManager.maybeDeleteZooKeeper() ? state.reconcileZooKeeperEraser() : Future.succeededFuture(state))
                 .compose(state -> state.reconcileKafka(clock))
                 .compose(state -> state.reconcileEntityOperator(clock))
                 .compose(state -> state.reconcileCruiseControl(clock))
@@ -567,6 +568,34 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Future<ReconciliationState> reconcileZooKeeper(Clock clock)    {
             return zooKeeperReconciler()
                     .compose(reconciler -> reconciler.reconcile(kafkaStatus, clock))
+                    .map(this);
+        }
+
+        /**
+         * Provider method for ZooKeeper eraser. Overriding this method can be used to get mocked eraser.
+         *
+         * @return  Future with ZooKeeper eraser
+         */
+        Future<ZooKeeperEraser> zooKeeperEraser() {
+            ZooKeeperEraser zooKeeperEraser =
+                    new ZooKeeperEraser(
+                            reconciliation,
+                            config,
+                            supplier,
+                            kafkaAssembly
+                            );
+
+            return Future.succeededFuture(zooKeeperEraser);
+        }
+
+        /**
+         * Run the reconciliation pipeline for the ZooKeeper eraser
+         *
+         * @return      Future with Reconciliation State
+         */
+        Future<ReconciliationState> reconcileZooKeeperEraser() {
+            return zooKeeperEraser()
+                    .compose(reconciler -> reconciler.reconcile())
                     .map(this);
         }
 
