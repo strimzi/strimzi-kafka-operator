@@ -5,7 +5,6 @@
 package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.EnvVar;
-import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.strimzi.api.kafka.model.common.CertSecretSource;
@@ -61,8 +60,6 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
     protected static final String MIRRORMAKER_2_TLS_CERTS_BASE_VOLUME_MOUNT = "/opt/kafka/mm2-certs/";
     protected static final String MIRRORMAKER_2_PASSWORD_VOLUME_MOUNT = "/opt/kafka/mm2-password/";
 
-    private List<KafkaMirrorMaker2ClusterSpec> clusters;
-
     private static final Map<String, String> DEFAULT_POD_LABELS = new HashMap<>();
     static {
         String value = System.getenv(CO_ENV_VAR_CUSTOM_MIRROR_MAKER2_POD_LABELS);
@@ -71,6 +68,10 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
         }
     }
 
+    private final KafkaMirrorMaker2Connectors connectors;
+
+    private List<KafkaMirrorMaker2ClusterSpec> clusters;
+
     /**
      * Constructor
      *
@@ -78,9 +79,10 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
      * @param resource Kubernetes resource with metadata containing the namespace and cluster name
      * @param sharedEnvironmentProvider Shared environment provider
      */
-    private KafkaMirrorMaker2Cluster(Reconciliation reconciliation, HasMetadata resource, SharedEnvironmentProvider sharedEnvironmentProvider) {
+    private KafkaMirrorMaker2Cluster(Reconciliation reconciliation, KafkaMirrorMaker2 resource, SharedEnvironmentProvider sharedEnvironmentProvider) {
         super(reconciliation, resource, KafkaMirrorMaker2Resources.componentName(resource.getMetadata().getName()), COMPONENT_TYPE, sharedEnvironmentProvider);
 
+        this.connectors = KafkaMirrorMaker2Connectors.fromCrd(reconciliation, resource);
         this.serviceName = KafkaMirrorMaker2Resources.serviceName(cluster);
         this.loggingAndMetricsConfigMapName = KafkaMirrorMaker2Resources.metricsAndLogConfigMapName(cluster);
     }
@@ -375,5 +377,12 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
     @Override
     protected Map<String, String> defaultPodLabels() {
         return DEFAULT_POD_LABELS;
+    }
+
+    /**
+     * @return  Returns the Mirror Maker 2 Connectors model
+     */
+    public KafkaMirrorMaker2Connectors connectors() {
+        return connectors;
     }
 }

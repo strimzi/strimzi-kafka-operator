@@ -432,7 +432,10 @@ public class ResourceUtils {
                         .withLabels(TestUtils.map(Labels.KUBERNETES_DOMAIN + "part-of", "tests",
                                 "my-user-label", "cromulent"))
                         .build())
-                .withNewSpec().endSpec();
+                .withNewSpec()
+                    .withClusters(List.of())
+                    .withMirrors(List.of())
+                .endSpec();
 
         if (replicas != null) {
             kafkaMirrorMaker2Builder
