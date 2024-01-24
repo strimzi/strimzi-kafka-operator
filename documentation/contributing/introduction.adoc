@@ -43,28 +43,6 @@ Assemblies, which usually encapsulate a feature or process, bring the related co
 An assembly is like a sub-section or chapter in a book.
 A module contain a procedure, concepts or reference content.
 
-.Documentation folder descriptions
-[source,options="nowrap",subs="+quotes"]
-----
-api/                          # Property descriptions for the Custom Resource API Reference guide
-contributing/                 # Documentation contributor guide (this book)
-deploying/                    # Deploying and Managing Strimzi
-overview/                     # Strimzi Overview guide
-configuring/                  # Custom Resource API Reference guide
-assemblies/                   # Assemblies provide content for all guides
-modules/                      # Modules provide the content for assemblies
-shared/                       # Shared include files
-shared/attributes.adoc        # Global book attributes
-shared/images/                # Shared image files
-----
-
-The content for each Strimzi guide is encapsulated in a source file, which is used to build the documentation:
-
-* `overview/overview.adoc` (Strimzi Overview guide)
-* `deploying/deploying.adoc` (Deploying and Managing Strimzi)
-* `configuring/configuring.adoc` (Custom Resource API Reference)
-
-
 === Strimzi Overview guide
 
 The intention of the _Strimzi Overview guide_ is for developing an understanding of Strimzi and Apache Kafka.

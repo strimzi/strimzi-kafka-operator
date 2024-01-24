@@ -18,7 +18,7 @@ To get up and running quickly, check our [Quick Start for Minikube, OKD (OpenShi
 
 ## Documentation
 
-Documentation to the current _main_ branch as well as all releases can be found on our [website][strimzi].
+Documentation for the current _main_ branch as well as all releases can be found on our [website][strimzi].
 
 ## Roadmap
 
