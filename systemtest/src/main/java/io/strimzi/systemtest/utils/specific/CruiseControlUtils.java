@@ -13,6 +13,7 @@ import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.executor.ExecResult;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -35,49 +36,64 @@ public class CruiseControlUtils {
     public static final String CRUISE_CONTROL_MODEL_TRAINING_SAMPLES_TOPIC = "strimzi.cruisecontrol.modeltrainingsamples"; // partitions 32 , rf - 2
     public static final String CRUISE_CONTROL_PARTITION_METRICS_SAMPLES_TOPIC = "strimzi.cruisecontrol.partitionmetricsamples"; // partitions 32 , rf - 2
 
-    private static final int CRUISE_CONTROL_DEFAULT_PORT = 9090;
+    public static final int CRUISE_CONTROL_DEFAULT_PORT = 9090;
     private static final int CRUISE_CONTROL_METRICS_PORT = 9404;
 
     private static final String CONTAINER_NAME = "cruise-control";
 
-    private CruiseControlUtils() { }
-
-    public enum SupportedHttpMethods {
+    public enum HttpMethod {
         GET,
         POST
     }
 
-    public enum SupportedSchemes {
+    public enum Scheme {
         HTTP,
         HTTPS
     }
 
-    public static String callApi(String namespaceName, SupportedHttpMethods method, CruiseControlEndpoints endpoint, SupportedSchemes scheme, Boolean withCredentials) {
-        return callApi(namespaceName, method, endpoint, scheme, withCredentials, "");
-    }
+    public static class ApiResult {
+        private String responseText;
+        private int responseCode;
 
-    @SuppressWarnings("Regexp")
-    @SuppressFBWarnings("DM_CONVERT_CASE")
-    public static String callApi(String namespaceName, SupportedHttpMethods method, CruiseControlEndpoints endpoint, SupportedSchemes scheme, Boolean withCredentials, String endpointSuffix) {
-        String ccPodName = PodUtils.getFirstPodNameContaining(namespaceName, CONTAINER_NAME);
-        String args = " -k ";
-
-        if (withCredentials) {
-            args = " --cacert /etc/cruise-control/cc-certs/cruise-control.crt"
-                + " --user admin:$(cat /opt/cruise-control/api-auth-config/cruise-control.apiAdminPassword) ";
+        public ApiResult(ExecResult execResult) {
+            this.responseText = execResult.out();
+            this.responseCode = responseCode(execResult.out());
         }
 
-        return cmdKubeClient(namespaceName).execInPodContainer(Level.DEBUG, ccPodName, CONTAINER_NAME, "/bin/bash", "-c",
-            "curl -X " + method.name() + args + " " + scheme + "://localhost:" + CRUISE_CONTROL_DEFAULT_PORT + endpoint.toString() + endpointSuffix).out();
+        private int responseCode(String responseText) {
+            responseText = responseText.replaceAll("\n", "");
+            return Integer.parseInt(responseText.substring(responseText.length() - 3));
+        }
+
+        public String getResponseText() {
+            return responseText;
+        }
+
+        public int getResponseCode() {
+            return responseCode;
+        }
     }
 
-    @SuppressWarnings("Regexp")
-    @SuppressFBWarnings("DM_CONVERT_CASE")
-    public static String callApi(String namespaceName, SupportedHttpMethods method, String endpoint) {
-        String ccPodName = PodUtils.getFirstPodNameContaining(namespaceName, CONTAINER_NAME);
+    public static ApiResult callApi(String namespaceName, HttpMethod method, CruiseControlEndpoints endpoint) {
+        return callApi(namespaceName, method, Scheme.HTTPS, CRUISE_CONTROL_DEFAULT_PORT, endpoint, "", true);
+    }
 
-        return cmdKubeClient(namespaceName).execInPodContainer(Level.DEBUG, ccPodName, CONTAINER_NAME, "/bin/bash", "-c",
-            "curl -X" + method.name() + " localhost:" + CRUISE_CONTROL_METRICS_PORT + endpoint).out();
+    @SuppressFBWarnings("DM_CONVERT_CASE")
+    public static ApiResult callApiForMetrics(String namespaceName, HttpMethod method, CruiseControlEndpoints endpoint) {
+        return callApi(namespaceName, method, Scheme.HTTPS, CRUISE_CONTROL_METRICS_PORT, endpoint, "", true);
+    }
+
+    @SuppressFBWarnings("DM_CONVERT_CASE")
+    public static ApiResult callApi(String namespaceName, HttpMethod method, Scheme scheme, int port, CruiseControlEndpoints endpoint, String endpointParameters, boolean withCredentials) {
+        String ccPodName = PodUtils.getFirstPodNameContaining(namespaceName, CONTAINER_NAME);
+        String args = " -k -w \"%{http_code}\" ";
+
+        if (withCredentials) {
+            args += " --user admin:$(cat /opt/cruise-control/api-auth-config/cruise-control.apiAdminPassword) ";
+        }
+
+        String curl = "curl -X " + method.name() + " " + args + " " + scheme + "://localhost:" + port + endpoint.toString() + endpointParameters;
+        return new ApiResult(cmdKubeClient(namespaceName).execInPodContainer(Level.DEBUG, ccPodName, CONTAINER_NAME, "/bin/bash", "-c", curl));
     }
 
     @SuppressWarnings("BooleanExpressionComplexity")
@@ -169,9 +185,10 @@ public class CruiseControlUtils {
     public static void waitForRebalanceEndpointIsReady(String namespaceName) {
         TestUtils.waitFor("rebalance endpoint to be ready",
             TestConstants.API_CRUISE_CONTROL_POLL, TestConstants.API_CRUISE_CONTROL_TIMEOUT, () -> {
-                String response = callApi(namespaceName, SupportedHttpMethods.POST, CruiseControlEndpoints.REBALANCE, SupportedSchemes.HTTPS, true);
+                ApiResult response = callApi(namespaceName, HttpMethod.POST, CruiseControlEndpoints.REBALANCE);
+                String responseText = response.getResponseText();
                 LOGGER.debug("API response: {}", response);
-                return !response.contains("Error processing POST request '/rebalance' due to: " +
+                return !responseText.contains("Error processing POST request '/rebalance' due to: " +
                     "'com.linkedin.kafka.cruisecontrol.exception.KafkaCruiseControlException: " +
                     "com.linkedin.cruisecontrol.exception.NotEnoughValidWindowsException: ");
             });
