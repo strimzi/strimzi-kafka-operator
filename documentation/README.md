@@ -4,7 +4,9 @@
 <!-- omit from toc -->
 # Strimzi documentation
 
-Welcome to the Strimzi documentation! This repository contains the source files for managing the Strimzi documentation. The documentation is written in AsciiDoc, and it covers guides to help you understand, deploy, and configure Strimzi.
+Welcome to the Strimzi documentation! 
+
+This repository contains the source files for managing the Strimzi documentation. The documentation is written in AsciiDoc, and it covers guides to help you understand, deploy, and configure Strimzi.
 
 <!-- omit from toc -->
 ## Table of Contents
@@ -26,7 +28,7 @@ The Strimzi documentation is organized into the following guides:
 
 - **API Reference**
   - Files: [/documentation/configuring/](configuring)
-  - This guide provides detailed information on configuring Strimzi through the API.
+  - This guide provides detailed information on configuring Strimzi through its API.
 
 ## Documentation folder structure
 
@@ -44,9 +46,9 @@ Other documentation folders contain the content that's incorporated into the mai
 | --------------           | -------------------------------------------------    |
 | `api/`                   | Property descriptions for the API Reference guide    |
 | `contributing/`          | Documentation Contributor Guide                      |
-| `deploying/`             | Deploying and Managing Strimzi guide (main)                       |
-| `overview/`              | Strimzi Overview guide (main)                               |
-| `configuring/`           | API Reference (main)                 |
+| `deploying/`             | Deploying and Managing Strimzi guide (main)          |
+| `overview/`              | Strimzi Overview guide (main)                        |
+| `configuring/`           | API Reference (main)                                 |
 | `assemblies/`            | Assemblies (chapters) provide content for all guides |
 | `modules/`               | Modules provide content for assemblies               |
 | `shared/`                | Shared include files                                 |
