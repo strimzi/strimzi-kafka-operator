@@ -37,7 +37,7 @@ public class CruiseControlUtils {
     public static final String CRUISE_CONTROL_PARTITION_METRICS_SAMPLES_TOPIC = "strimzi.cruisecontrol.partitionmetricsamples"; // partitions 32 , rf - 2
 
     public static final int CRUISE_CONTROL_DEFAULT_PORT = 9090;
-    private static final int CRUISE_CONTROL_METRICS_PORT = 9404;
+    public static final int CRUISE_CONTROL_METRICS_PORT = 9404;
 
     private static final String CONTAINER_NAME = "cruise-control";
 
@@ -72,15 +72,6 @@ public class CruiseControlUtils {
         public int getResponseCode() {
             return responseCode;
         }
-    }
-
-    public static ApiResult callApi(String namespaceName, HttpMethod method, CruiseControlEndpoints endpoint) {
-        return callApi(namespaceName, method, Scheme.HTTPS, CRUISE_CONTROL_DEFAULT_PORT, endpoint, "", true);
-    }
-
-    @SuppressFBWarnings("DM_CONVERT_CASE")
-    public static ApiResult callApiForMetrics(String namespaceName, HttpMethod method, CruiseControlEndpoints endpoint) {
-        return callApi(namespaceName, method, Scheme.HTTPS, CRUISE_CONTROL_METRICS_PORT, endpoint, "", true);
     }
 
     @SuppressFBWarnings("DM_CONVERT_CASE")
@@ -180,18 +171,6 @@ public class CruiseControlUtils {
         cruiseControlProperties.put("cluster-name", clusterName);
 
         return cruiseControlProperties;
-    }
-
-    public static void waitForRebalanceEndpointIsReady(String namespaceName) {
-        TestUtils.waitFor("rebalance endpoint to be ready",
-            TestConstants.API_CRUISE_CONTROL_POLL, TestConstants.API_CRUISE_CONTROL_TIMEOUT, () -> {
-                ApiResult response = callApi(namespaceName, HttpMethod.POST, CruiseControlEndpoints.REBALANCE);
-                String responseText = response.getResponseText();
-                LOGGER.debug("API response: {}", response);
-                return !responseText.contains("Error processing POST request '/rebalance' due to: " +
-                    "'com.linkedin.kafka.cruisecontrol.exception.KafkaCruiseControlException: " +
-                    "com.linkedin.cruisecontrol.exception.NotEnoughValidWindowsException: ");
-            });
     }
 
     /**
