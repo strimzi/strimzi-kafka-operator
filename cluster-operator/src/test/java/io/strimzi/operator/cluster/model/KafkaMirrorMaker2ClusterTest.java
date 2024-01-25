@@ -137,6 +137,7 @@ public class KafkaMirrorMaker2ClusterTest {
                 .withLivenessProbe(new Probe(healthDelay, healthTimeout))
                 .withConnectCluster(targetClusterAlias)
                 .withClusters(targetCluster)
+                .withMirrors(List.of())
             .endSpec()
             .build();
 

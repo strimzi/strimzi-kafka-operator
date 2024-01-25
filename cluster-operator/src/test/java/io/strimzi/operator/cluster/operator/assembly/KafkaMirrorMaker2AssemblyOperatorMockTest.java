@@ -162,7 +162,9 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
                         .withLabels(TestUtils.map("foo", "bar"))
                         .build())
                 .withNewSpec()
-                .withReplicas(REPLICAS)
+                    .withReplicas(REPLICAS)
+                    .withClusters(List.of())
+                    .withMirrors(List.of())
                 .endSpec()
             .build()).create();
 
@@ -190,7 +192,9 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
                         .withAnnotations(singletonMap("strimzi.io/pause-reconciliation", "true"))
                         .build())
                 .withNewSpec()
-                .withReplicas(REPLICAS)
+                    .withReplicas(REPLICAS)
+                    .withClusters(List.of())
+                    .withMirrors(List.of())
                 .endSpec()
                 .build()).create();
 
