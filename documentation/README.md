@@ -6,7 +6,7 @@
 
 Welcome to the Strimzi documentation! 
 
-This repository contains the source files for managing the Strimzi documentation. The documentation is written in AsciiDoc, and it covers guides to help you understand, deploy, and configure Strimzi.
+This folder contains the source files for managing the Strimzi documentation. The documentation is written in AsciiDoc, and it covers guides to help you understand, deploy, and configure Strimzi.
 
 <!-- omit from toc -->
 ## Table of Contents
