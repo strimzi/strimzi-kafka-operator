@@ -264,6 +264,9 @@ class RollingUpdateST extends AbstractST {
         // change broker knp to unreasonable CPU request causing trigger of Rolling update
         modifyNodePoolToUnscheduledAndRecover(brokerPoolName, brokerPoolSelector, testStorage);
 
+        clients = new KafkaClientsBuilder(clients)
+            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
+            .build();
         resourceManager.createResourceWithWait(extensionContext, clients.consumerStrimzi());
         ClientUtils.waitForConsumerClientSuccess(testStorage);
     }
@@ -891,9 +894,9 @@ class RollingUpdateST extends AbstractST {
             },
             testStorage.getNamespaceName());
 
-        PodUtils.waitForPendingPod(testStorage.getNamespaceName(), testStorage.getClusterName(), controllerPoolName);
+        PodUtils.waitForPendingPod(testStorage.getNamespaceName(), KafkaResource.getStrimziPodSetName(testStorage.getClusterName(), controllerPoolName));
         LOGGER.info("Verifying stability of {}/{} Pods except the one, which is in pending phase", controllerPoolName, testStorage.getNamespaceName());
-        PodUtils.verifyThatRunningPodsAreStable(testStorage.getNamespaceName(), testStorage.getClusterName(), controllerPoolName);
+        PodUtils.verifyThatRunningPodsAreStable(testStorage.getNamespaceName(), KafkaResource.getStrimziPodSetName(testStorage.getClusterName(), controllerPoolName));
 
         KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(controllerPoolName,
             knp -> {
