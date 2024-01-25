@@ -584,4 +584,11 @@ public class KafkaUtils {
     public static void removeAnnotation(String clusterName, String namespaceName, String annotationKey) {
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> kafka.getMetadata().getAnnotations().remove(annotationKey), namespaceName);
     }
+
+    public static void waitUntilKafkaStatusContainsKafkaMetadataState(String namespaceName, String clusterName, String desiredKafkaMetadataState) {
+        TestUtils.waitFor(String.join("Kafka status to be contain kafkaMetadataState: %s", desiredKafkaMetadataState), TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_STATUS_TIMEOUT, () -> {
+            Kafka k = KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get();
+            return k.getStatus().getKafkaMetadataState().equals(desiredKafkaMetadataState);
+        });
+    }
 }
