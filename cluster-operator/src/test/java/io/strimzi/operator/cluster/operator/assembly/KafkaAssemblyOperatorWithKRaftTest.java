@@ -17,7 +17,6 @@ import io.strimzi.api.kafka.model.kafka.KafkaList;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.KafkaStatus;
 import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
-import io.strimzi.api.kafka.model.kafka.Storage;
 import io.strimzi.api.kafka.model.kafka.UsedNodePoolStatus;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
@@ -81,7 +80,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.stream.IntStream;
 
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.instanceOf;
@@ -291,9 +289,7 @@ public class KafkaAssemblyOperatorWithKRaftTest {
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 KAFKA,
                 List.of(CONTROLLERS, BROKERS),
-                VERSION_CHANGE,
-                Map.of(),
-                Map.of(),
+                KAFKA_CLUSTER,
                 CLUSTER_CA,
                 CLIENTS_CA);
 
@@ -412,9 +408,7 @@ public class KafkaAssemblyOperatorWithKRaftTest {
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 KAFKA,
                 List.of(CONTROLLERS, BROKERS),
-                VERSION_CHANGE,
-                Map.of(),
-                Map.of(),
+                KAFKA_CLUSTER,
                 CLUSTER_CA,
                 CLIENTS_CA);
 
@@ -512,9 +506,7 @@ public class KafkaAssemblyOperatorWithKRaftTest {
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 KAFKA,
                 List.of(CONTROLLERS, BROKERS),
-                VERSION_CHANGE,
-                Map.of(),
-                Map.of(),
+                KAFKA_CLUSTER,
                 CLUSTER_CA,
                 CLIENTS_CA);
 
@@ -614,9 +606,7 @@ public class KafkaAssemblyOperatorWithKRaftTest {
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 KAFKA,
                 List.of(CONTROLLERS, BROKERS),
-                VERSION_CHANGE,
-                Map.of(),
-                Map.of(),
+                KAFKA_CLUSTER,
                 CLUSTER_CA,
                 CLIENTS_CA);
 
@@ -751,9 +741,7 @@ public class KafkaAssemblyOperatorWithKRaftTest {
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 KAFKA,
                 List.of(CONTROLLERS, BROKERS),
-                VERSION_CHANGE,
-                Map.of(),
-                Map.of(CLUSTER_NAME + "-kafka", IntStream.rangeClosed(0, 4).mapToObj(i -> CLUSTER_NAME + "-kafka-" + i).toList()),
+                KAFKA_CLUSTER,
                 CLUSTER_CA,
                 CLIENTS_CA);
 
@@ -889,6 +877,16 @@ public class KafkaAssemblyOperatorWithKRaftTest {
         ArgumentCaptor<KafkaNodePool> kafkaNodePoolStatusCaptor = ArgumentCaptor.forClass(KafkaNodePool.class);
         when(mockKafkaNodePoolOps.updateStatusAsync(any(), kafkaNodePoolStatusCaptor.capture())).thenReturn(Future.succeededFuture());
 
+        KafkaCluster kafkaCluster = KafkaClusterCreator.createKafkaCluster(
+                new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
+                KAFKA,
+                List.of(CONTROLLERS, BROKERS, newPool),
+                Map.of(),
+                Map.of(),
+                VERSION_CHANGE,
+                true,
+                VERSIONS,
+                supplier.sharedEnvironmentProvider);
         MockKafkaReconciler kr = new MockKafkaReconciler(
                 new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
                 vertx,
@@ -897,9 +895,7 @@ public class KafkaAssemblyOperatorWithKRaftTest {
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 KAFKA,
                 List.of(CONTROLLERS, BROKERS, newPool),
-                VERSION_CHANGE,
-                Map.of(),
-                Map.of(),
+                kafkaCluster,
                 CLUSTER_CA,
                 CLIENTS_CA);
 
@@ -1047,9 +1043,7 @@ public class KafkaAssemblyOperatorWithKRaftTest {
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 KAFKA,
                 List.of(CONTROLLERS, BROKERS),
-                VERSION_CHANGE,
-                Map.of(),
-                Map.of(CLUSTER_NAME + "-kafka", IntStream.rangeClosed(0, 4).mapToObj(i -> CLUSTER_NAME + "-kafka-" + i).toList()),
+                KAFKA_CLUSTER,
                 CLUSTER_CA,
                 CLIENTS_CA);
 
@@ -1248,8 +1242,8 @@ public class KafkaAssemblyOperatorWithKRaftTest {
         int maybeRollKafkaInvocations = 0;
         Function<Pod, RestartReasons> kafkaPodNeedsRestart = null;
 
-        public MockKafkaReconciler(Reconciliation reconciliation, Vertx vertx, ClusterOperatorConfig config, ResourceOperatorSupplier supplier, PlatformFeaturesAvailability pfa, Kafka kafkaAssembly, List<KafkaNodePool> nodePools, KafkaVersionChange versionChange, Map<String, Storage> oldStorage, Map<String, List<String>> currentPods, ClusterCa clusterCa, ClientsCa clientsCa) {
-            super(reconciliation, kafkaAssembly, nodePools, oldStorage, currentPods, clusterCa, clientsCa, versionChange, config, supplier, pfa, vertx);
+        public MockKafkaReconciler(Reconciliation reconciliation, Vertx vertx, ClusterOperatorConfig config, ResourceOperatorSupplier supplier, PlatformFeaturesAvailability pfa, Kafka kafkaAssembly, List<KafkaNodePool> nodePools, KafkaCluster kafkaCluster, ClusterCa clusterCa, ClientsCa clientsCa) {
+            super(reconciliation, kafkaAssembly, nodePools, kafkaCluster, clusterCa, clientsCa, config, supplier, pfa, vertx);
         }
 
         @Override

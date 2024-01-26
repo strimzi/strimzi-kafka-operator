@@ -9,6 +9,7 @@ import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.Storage;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolBuilder;
+import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaPool;
@@ -103,11 +104,12 @@ public class KafkaClusterCreator {
                 .compose(kafka -> {
                     if (scaleDownCheckFailed && tryToFixProblems)   {
                         // We have a failure, and should try to fix issues
+                        // Once we fix it, we call this method again, but this time with tryToFixProblems set to false
                         return revertScaleDown(kafka, kafkaCr, nodePools)
-                                .compose(kafkaAndNodePools -> prepareKafkaCluster(kafkaAndNodePools.kafkaCr(), kafkaAndNodePools.nodePools(), oldStorage, currentPods, versionChange, false));
+                                .compose(kafkaAndNodePools -> prepareKafkaCluster(kafkaAndNodePools.kafkaCr(), kafkaAndNodePools.nodePoolCrs(), oldStorage, currentPods, versionChange, false));
                     } else if (scaleDownCheckFailed) {
                         // We have a failure, but we should not try to fix it
-                        return Future.failedFuture(new InvalidResourceException("Cannot scale-down Kafka brokers because they have assigned partition-replicas."));
+                        return Future.failedFuture(new InvalidResourceException("Cannot scale-down Kafka brokers " + kafka.removedNodes() + " because they have assigned partition-replicas."));
                     } else {
                         // If something else failed, we just re-throw it
                         return Future.succeededFuture(kafka);
@@ -119,7 +121,7 @@ public class KafkaClusterCreator {
      * Creates a new Kafka cluster
      *
      * @param kafkaCr           Kafka custom resource
-     * @param nodePools         List with KafkaNodePool custom resources
+     * @param nodePoolCrs         List with KafkaNodePool custom resources
      * @param oldStorage        Old storage configuration
      * @param currentPods       Current Kafka pods
      * @param versionChange     Version change descriptor containing any upgrade / downgrade changes
@@ -128,12 +130,12 @@ public class KafkaClusterCreator {
      */
     private Future<KafkaCluster> createKafkaCluster(
             Kafka kafkaCr,
-            List<KafkaNodePool> nodePools,
+            List<KafkaNodePool> nodePoolCrs,
             Map<String, Storage> oldStorage,
             Map<String, List<String>> currentPods,
             KafkaVersionChange versionChange
     )   {
-        return Future.succeededFuture(createKafkaCluster(reconciliation, kafkaCr, nodePools, oldStorage, currentPods, versionChange, useKRaftFGEnabled, versions, sharedEnvironmentProvider));
+        return Future.succeededFuture(createKafkaCluster(reconciliation, kafkaCr, nodePoolCrs, oldStorage, currentPods, versionChange, useKRaftFGEnabled, versions, sharedEnvironmentProvider));
     }
 
     /**
@@ -169,12 +171,12 @@ public class KafkaClusterCreator {
      *
      * @param kafka         Instance of the Kafka cluster model that contains information needed to revert the changes
      * @param kafkaCr       Kafka custom resource
-     * @param nodePools     List with KafkaNodePool custom resources
+     * @param nodePoolCrs   List with KafkaNodePool custom resources
      *
      * @return  Future with KafkaAndNodePools record containing the fixed Kafka and KafkaNodePool CRs
      */
-    private Future<KafkaAndNodePools> revertScaleDown(KafkaCluster kafka, Kafka kafkaCr, List<KafkaNodePool> nodePools)   {
-        if (nodePools == null || nodePools.isEmpty())    {
+    private Future<KafkaAndNodePools> revertScaleDown(KafkaCluster kafka, Kafka kafkaCr, List<KafkaNodePool> nodePoolCrs)   {
+        if (nodePoolCrs == null || nodePoolCrs.isEmpty())    {
             // There are no node pools => the Kafka CR is used
             int newReplicasCount = kafkaCr.getSpec().getKafka().getReplicas() + kafka.removedNodes().size();
             LOGGER.warnCr(reconciliation, "Reverting scale-down of Kafka {} by changing number of replicas to {}", kafkaCr.getMetadata().getName(), newReplicasCount);
@@ -187,13 +189,14 @@ public class KafkaClusterCreator {
                     .endSpec()
                     .build();
 
-            return Future.succeededFuture(new KafkaAndNodePools(newKafkaCr, nodePools));
+            return Future.succeededFuture(new KafkaAndNodePools(newKafkaCr, nodePoolCrs));
         } else {
             // Node pools are used -> we have to fix scale down in the KafkaNodePools
             List<KafkaNodePool> newNodePools = new ArrayList<>();
 
-            for (KafkaNodePool nodePool : nodePools)    {
+            for (KafkaNodePool nodePool : nodePoolCrs)    {
                 if (nodePool.getStatus() != null
+                        && nodePool.getStatus().getRoles().contains(ProcessRoles.BROKER)
                         && nodePool.getStatus().getNodeIds() != null
                         && nodePool.getSpec().getReplicas() < nodePool.getStatus().getNodeIds().size())  {
                     int newReplicasCount = nodePool.getStatus().getNodeIds().size();
@@ -230,7 +233,7 @@ public class KafkaClusterCreator {
      *
      * @param reconciliation                Reconciliation marker
      * @param kafkaCr                       Kafka custom resource
-     * @param nodePools                     KafkaNodePool custom resources
+     * @param nodePoolCrs                   KafkaNodePool custom resources
      * @param oldStorage                    Old storage configuration
      * @param currentPods                   List of current Kafka pods
      * @param versionChange                 Version change descriptor containing any upgrade / downgrade changes
@@ -240,10 +243,10 @@ public class KafkaClusterCreator {
      *
      * @return  New KafkaCluster object
      */
-    static KafkaCluster createKafkaCluster(
+    public static KafkaCluster createKafkaCluster(
             Reconciliation reconciliation,
             Kafka kafkaCr,
-            List<KafkaNodePool> nodePools,
+            List<KafkaNodePool> nodePoolCrs,
             Map<String, Storage> oldStorage,
             Map<String, List<String>> currentPods,
             KafkaVersionChange versionChange,
@@ -252,8 +255,8 @@ public class KafkaClusterCreator {
             SharedEnvironmentProvider sharedEnvironmentProvider
     ) {
         boolean isKRaftEnabled = useKRaftEnabled && ReconcilerUtils.kraftEnabled(kafkaCr);
-        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(reconciliation, kafkaCr, nodePools, oldStorage, currentPods, isKRaftEnabled, sharedEnvironmentProvider);
-        String clusterId = isKRaftEnabled ? NodePoolUtils.getOrGenerateKRaftClusterId(kafkaCr, nodePools) : NodePoolUtils.getClusterIdIfSet(kafkaCr, nodePools);
+        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(reconciliation, kafkaCr, nodePoolCrs, oldStorage, currentPods, isKRaftEnabled, sharedEnvironmentProvider);
+        String clusterId = isKRaftEnabled ? NodePoolUtils.getOrGenerateKRaftClusterId(kafkaCr, nodePoolCrs) : NodePoolUtils.getClusterIdIfSet(kafkaCr, nodePoolCrs);
         return KafkaCluster.fromCrd(reconciliation, kafkaCr, pools, versions, versionChange, isKRaftEnabled, clusterId, sharedEnvironmentProvider);
     }
 
@@ -261,7 +264,7 @@ public class KafkaClusterCreator {
      * Utility record to pass fixed custom resources between methods
      *
      * @param kafkaCr       Kafka custom resource
-     * @param nodePools     List of KafkaNodePool resources
+     * @param nodePoolCrs   List of KafkaNodePool resources
      */
-    record KafkaAndNodePools(Kafka kafkaCr, List<KafkaNodePool> nodePools) { }
+    record KafkaAndNodePools(Kafka kafkaCr, List<KafkaNodePool> nodePoolCrs) { }
 }

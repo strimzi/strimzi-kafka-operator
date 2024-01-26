@@ -268,8 +268,21 @@ public class KafkaReconcilerUpgradeDowngradeTest {
 
     static class MockKafkaReconciler extends KafkaReconciler {
         public MockKafkaReconciler(Reconciliation reconciliation, ResourceOperatorSupplier supplier, Kafka kafkaCr, KafkaVersionChange versionChange) {
-            super(reconciliation, kafkaCr, null, Map.of(), Map.of(), CLUSTER_CA, CLIENTS_CA, versionChange, CO_CONFIG, supplier, PFA, vertx);
+            super(reconciliation, kafkaCr, null, createKafkaCluster(reconciliation, supplier, kafkaCr, versionChange), CLUSTER_CA, CLIENTS_CA, CO_CONFIG, supplier, PFA, vertx);
             listenerReconciliationResults = new KafkaListenersReconciler.ReconciliationResult();
+        }
+
+        private static KafkaCluster createKafkaCluster(Reconciliation reconciliation, ResourceOperatorSupplier supplier, Kafka kafkaCr, KafkaVersionChange versionChange)   {
+            return  KafkaClusterCreator.createKafkaCluster(
+                    reconciliation,
+                    kafkaCr,
+                    null,
+                    Map.of(),
+                    Map.of(),
+                    versionChange,
+                    true,
+                    VERSIONS,
+                    supplier.sharedEnvironmentProvider);
         }
 
         @Override

@@ -38,7 +38,6 @@ import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaConfiguration;
 import io.strimzi.operator.cluster.model.KafkaPool;
-import io.strimzi.operator.cluster.model.KafkaVersionChange;
 import io.strimzi.operator.cluster.model.ListenersUtils;
 import io.strimzi.operator.cluster.model.MetricsAndLogging;
 import io.strimzi.operator.cluster.model.NodeRef;
@@ -221,53 +220,6 @@ public class KafkaReconciler {
     }
 
     /**
-     * Constructs the Kafka reconciler
-     *
-     * @param reconciliation            Reconciliation marker
-     * @param kafkaCr                   The Kafka custom resource
-     * @param nodePools                 List of KafkaNodePool resources belonging to this cluster
-     * @param oldStorage                Maps with old storage configurations, where the key is the name of the controller
-     *                                  resource (e.g. my-cluster-pool-a) and the value is the current storage configuration.
-     * @param currentPods               Map with current pods, where the key is the name of the controller resource
-     *                                  (e.g. my-cluster-pool-a) and the value is a list with Pod names
-     * @param clusterCa                 The Cluster CA instance
-     * @param clientsCa                 The Clients CA instance
-     * @param versionChange             Description of Kafka upgrade / downgrade state
-     * @param config                    Cluster Operator Configuration
-     * @param supplier                  Supplier with Kubernetes Resource Operators
-     * @param pfa                       PlatformFeaturesAvailability describing the environment we run in
-     * @param vertx                     Vert.x instance
-     */
-    public KafkaReconciler(
-            Reconciliation reconciliation,
-            Kafka kafkaCr,
-            List<KafkaNodePool> nodePools,
-            Map<String, Storage> oldStorage,
-            Map<String, List<String>> currentPods,
-            ClusterCa clusterCa,
-            ClientsCa clientsCa,
-            KafkaVersionChange versionChange,
-            ClusterOperatorConfig config,
-            ResourceOperatorSupplier supplier,
-            PlatformFeaturesAvailability pfa,
-            Vertx vertx
-    ) {
-        // TODO: This constructor will be removed once tests are fixed
-        this(
-                reconciliation,
-                kafkaCr,
-                nodePools,
-                KafkaClusterCreator.createKafkaCluster(reconciliation, kafkaCr, nodePools, oldStorage, currentPods, versionChange, config.featureGates().useKRaftEnabled(), config.versions(), supplier.sharedEnvironmentProvider),
-                clusterCa,
-                clientsCa,
-                config,
-                supplier,
-                pfa,
-                vertx
-        );
-    }
-
-    /**
      * The main reconciliation method which triggers the whole reconciliation pipeline. This is the method which is
      * expected to be called from the outside to trigger the reconciliation.
      *
@@ -279,7 +231,6 @@ public class KafkaReconciler {
      */
     public Future<Void> reconcile(KafkaStatus kafkaStatus, Clock clock)    {
         return modelWarnings(kafkaStatus)
-                //.compose(i -> brokerScaleDownCheck())
                 .compose(i -> manualPodCleaning())
                 .compose(i -> networkPolicy())
                 .compose(i -> manualRollingUpdate())
@@ -307,11 +258,6 @@ public class KafkaReconciler {
                 .compose(i -> nodePortExternalListenerStatus())
                 .compose(i -> addListenersToKafkaStatus(kafkaStatus))
                 .compose(i -> updateKafkaVersion(kafkaStatus));
-    }
-
-    protected Future<Void> brokerScaleDownCheck() {
-        // TODO: This will be removed once the tests are fixed
-        return Future.succeededFuture();
     }
 
     /**
