@@ -59,9 +59,6 @@ public class MigrationST extends AbstractST {
     private Map<String, String> brokerPodsSnapshot;
     private Map<String, String> controllerPodsSnapshot;
 
-    // for logging purposes - to log the current step number
-    private int stepNum;
-
     /**
      * @description This testcase is focused on migration process from ZK to KRaft.
      * It goes through whole process, together with checking that message transmission throughout the test will not be
