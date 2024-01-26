@@ -498,10 +498,11 @@ public class CruiseControlST extends AbstractST {
 
         // KafkaRebalance with auto-approval
         resourceManager.createResourceWithWait(extensionContext, KafkaRebalanceTemplates.kafkaRebalance(testStorage.getClusterName())
-                .editMetadata()
+            .editMetadata()
                 .addToAnnotations(Annotations.ANNO_STRIMZI_IO_REBALANCE_AUTOAPPROVAL, "true")
-                .endMetadata()
-                .build());
+            .endMetadata()
+            .build()
+        );
 
         KafkaRebalanceUtils.doRebalancingProcessWithAutoApproval(new Reconciliation("test", KafkaRebalance.RESOURCE_KIND,
                 testStorage.getNamespaceName(), testStorage.getClusterName()), testStorage.getNamespaceName(), testStorage.getClusterName());
