@@ -591,4 +591,9 @@ public class KafkaUtils {
             return k.getStatus().getKafkaMetadataState().equals(desiredKafkaMetadataState);
         });
     }
+
+    public static String getKafkaLogFolderNameInPod(String namespaceName, String kafkaPodName) {
+        return ResourceManager.cmdKubeClient().namespace(namespaceName)
+            .execInPod(kafkaPodName, "/bin/bash", "-c", "ls /var/lib/kafka/data | grep \"kafka-log[0-9]\" -o").out().trim();
+    }
 }
