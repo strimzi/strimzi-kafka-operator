@@ -55,9 +55,11 @@ public class CruiseControlConfigurationST extends AbstractST {
         final TestStorage testStorage = storageMap.get(extensionContext);
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Environment.TEST_SUITE_NAMESPACE, extensionContext);
         final String clusterName = testStorage.getClusterName();
+        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaComponentName(clusterName));
 
         // Deploy Cruise Control
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3).build());
+        Map<String, String> kafkaPods = PodUtils.podSnapshot(namespaceName, kafkaSelector);
 
         LOGGER.info("Verifying that configuration of CruiseControl metric reporter is present in Kafka config");
         CruiseControlUtils.verifyCruiseControlMetricReporterConfigurationInKafkaConfigMapIsPresent(CruiseControlUtils.getKafkaCruiseControlMetricsReporterConfiguration(namespaceName, clusterName));
@@ -67,6 +69,7 @@ public class CruiseControlConfigurationST extends AbstractST {
             LOGGER.info("Removing CruiseControl from Kafka");
             kafka.getSpec().setCruiseControl(null);
         }, namespaceName);
+        RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, 3, kafkaPods);
 
         LOGGER.info("Verifying that configuration of CruiseControl metric reporter is not present in Kafka config");
         assertThrows(WaitException.class, () -> CruiseControlUtils.verifyCruiseControlMetricReporterConfigurationInKafkaConfigMapIsPresent(CruiseControlUtils.getKafkaCruiseControlMetricsReporterConfiguration(namespaceName, clusterName)));
