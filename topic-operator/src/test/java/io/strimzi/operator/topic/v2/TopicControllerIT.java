@@ -1188,7 +1188,7 @@ class TopicControllerIT {
         return new TopicOperatorConfig(ns, Labels.fromMap(SELECTOR),
                 kafkaCluster.getBootstrapServers(), TopicControllerIT.class.getSimpleName(), fullReconciliationIntervalMs,
                 false, "", "", "", "", "",
-                false, "", "", "", "",
+                false, "", "", "", "", "",
                 useFinalizer,
                 100, 100, 10, false);
     }
@@ -1919,7 +1919,7 @@ class TopicControllerIT {
         var config = new TopicOperatorConfig(ns, Labels.fromMap(SELECTOR),
                 kafkaCluster.getBootstrapServers(), TopicControllerIT.class.getSimpleName(), 10_000,
                 false, "", "", "", "", "",
-                false, "", "", "", "",
+                false, "", "", "", "", "",
                 true,
                 1, 100, 5_0000, false);
 

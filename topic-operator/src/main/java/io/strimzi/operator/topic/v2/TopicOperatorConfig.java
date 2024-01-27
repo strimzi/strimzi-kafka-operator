@@ -4,6 +4,9 @@
  */
 package io.strimzi.operator.topic.v2;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.model.Labels;
@@ -42,6 +45,7 @@ import static io.strimzi.operator.common.operator.resource.ConfigParameterParser
  * @param sslEndpointIdentificationAlgorithm The SSL endpoint identification algorithm
  * @param saslEnabled                   Whether the Admin client should be configured to use SASL
  * @param saslMechanism                 The SASL mechanism for the Admin client
+ * @param saslCustomConfig              The SASL custom values for the Admin client when using alternate auth mechanisms.
  * @param saslUsername,                 The SASL username for the Admin client
  * @param saslPassword,                 The SASL password for the Admin client
  * @param securityProtocol              The security protocol for the Admin client
@@ -65,6 +69,7 @@ record TopicOperatorConfig(
         String sslEndpointIdentificationAlgorithm,
         boolean saslEnabled,
         String saslMechanism,
+        String saslCustomConfig,
         String saslUsername,
         String saslPassword,
         String securityProtocol,
@@ -91,6 +96,7 @@ record TopicOperatorConfig(
     static final ConfigParameter<String> SSL_ENDPOINT_IDENTIFICATION_ALGORITHM = new ConfigParameter<>("STRIMZI_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM", STRING, "HTTPS", CONFIG_VALUES);
     static final ConfigParameter<Boolean> SASL_ENABLED = new ConfigParameter<>("STRIMZI_SASL_ENABLED", BOOLEAN, "false", CONFIG_VALUES);
     static final ConfigParameter<String> SASL_MECHANISM = new ConfigParameter<>("STRIMZI_SASL_MECHANISM", STRING, "", CONFIG_VALUES);
+    static final ConfigParameter<String> SASL_CUSTOM_CONFIG = new ConfigParameter<>("SASL_CUSTOM_CONFIG", STRING, "", CONFIG_VALUES);
     static final ConfigParameter<String> SASL_USERNAME = new ConfigParameter<>("STRIMZI_SASL_USERNAME", STRING, "", CONFIG_VALUES);
     static final ConfigParameter<String> SASL_PASSWORD = new ConfigParameter<>("STRIMZI_SASL_PASSWORD", STRING, "", CONFIG_VALUES);
     static final ConfigParameter<String> SECURITY_PROTOCOL = new ConfigParameter<>("STRIMZI_SECURITY_PROTOCOL", STRING, "", CONFIG_VALUES);
@@ -135,6 +141,7 @@ record TopicOperatorConfig(
                 get(map, SSL_ENDPOINT_IDENTIFICATION_ALGORITHM),
                 get(map, SASL_ENABLED),
                 get(map, SASL_MECHANISM),
+                get(map, SASL_CUSTOM_CONFIG),
                 get(map, SASL_USERNAME),
                 get(map, SASL_PASSWORD),
                 get(map, SECURITY_PROTOCOL),
@@ -188,10 +195,63 @@ record TopicOperatorConfig(
         if (this.saslEnabled()) {
             putSaslConfigs(kafkaClientProps);
         }
+
         return kafkaClientProps;
     }
 
     private void putSaslConfigs(Map<String, Object> kafkaClientProps) {
+        TopicOperatorConfig config = this;
+        String configSaslMechanism = config.saslMechanism();
+
+        switch (configSaslMechanism) {
+            case "plain":
+            case "scram-sha-256":
+            case "scram-sha-512":
+                setStandardSaslConfigs(kafkaClientProps);
+                break;
+            case "custom":
+                setCustomSaslConfigs(kafkaClientProps);
+                break;
+            default:
+                throw new IllegalArgumentException("Invalid SASL_MECHANISM type: " + configSaslMechanism);
+        }
+    }
+
+    private void setCustomSaslConfigs(Map<String, Object> kafkaClientProps) {
+        TopicOperatorConfig config = this;
+        String configSaslMechanism = config.saslMechanism();
+
+        String customPropsString = config.saslCustomConfig();
+
+        if (customPropsString.isEmpty()) {
+            throw new InvalidConfigurationException("Custom SASL config properties are not set");
+        }
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        try {
+            TypeReference<HashMap<String, String>> typeRef = new TypeReference<HashMap<String, String>>() { };
+            Map<String, String> customProperties = objectMapper.readValue(customPropsString, typeRef);
+
+            if (customProperties.isEmpty()) {
+                throw new InvalidConfigurationException("SASL custom config properties empty");
+            }
+
+            for (var entry : customProperties.entrySet()) {
+                String key = entry.getKey();
+                String value = entry.getValue();
+
+                if (key == null || key.isBlank() || !key.startsWith("sasl.")) {
+                    throw new InvalidConfigurationException("SASL custom config properties not SASL properties. customProperty: '" + key + "' = '" + value + "'");
+                }
+
+                kafkaClientProps.put(key, value);
+            }
+        } catch (JsonProcessingException e) {
+            throw new InvalidConfigurationException("SASL custom config properties deserialize failed. customProperties: '" + customPropsString + "'");
+        }
+    }
+
+    private void setStandardSaslConfigs(Map<String, Object> kafkaClientProps) {
         TopicOperatorConfig config = this;
         String saslMechanism;
         String jaasConfig;
@@ -239,6 +299,7 @@ record TopicOperatorConfig(
                 "\n\tsslEndpointIdentificationAlgorithm='" + sslEndpointIdentificationAlgorithm + '\'' +
                 "\n\tsaslEnabled=" + saslEnabled +
                 "\n\tsaslMechanism='" + saslMechanism + '\'' +
+                "\n\tsaslCustomConfig='" + saslCustomConfig + '\'' +
                 "\n\tsaslUsername='" + saslUsername + '\'' +
                 "\n\tsaslPassword='" + mask + '\'' +
                 "\n\tsecurityProtocol='" + securityProtocol + '\'' +

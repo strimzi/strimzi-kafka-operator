@@ -4,6 +4,9 @@
  */
 package io.strimzi.operator.topic;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Watch;
@@ -34,6 +37,8 @@ import org.apache.logging.log4j.Logger;
 import java.security.Security;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -53,6 +58,7 @@ public class Session extends AbstractVerticle {
     private final static String SASL_TYPE_PLAIN = "plain";
     private final static String SASL_TYPE_SCRAM_SHA_256 = "scram-sha-256";
     private final static String SASL_TYPE_SCRAM_SHA_512 = "scram-sha-512";
+    private final static String SASL_TYPE_CUSTOM = "custom";
 
     private static final int HEALTH_SERVER_PORT = 8080;
 
@@ -406,11 +412,62 @@ public class Session extends AbstractVerticle {
     }
 
     private void setSaslConfigs(Properties kafkaClientProps) {
-        String saslMechanism;
-        String jaasConfig;
+        String configSaslMechanism = config.get(Config.SASL_MECHANISM);
+        
+        switch (configSaslMechanism) {
+            case SASL_TYPE_PLAIN:
+            case SASL_TYPE_SCRAM_SHA_256:
+            case SASL_TYPE_SCRAM_SHA_512:
+                setStandardSaslConfigs(kafkaClientProps);
+                break;
+            case "custom":
+                setCustomSaslConfigs(kafkaClientProps);
+                break;
+            default:
+                throw new IllegalArgumentException("Invalid SASL_MECHANISM: '" + configSaslMechanism + "'");
+        }
+    }
+
+    private void setCustomSaslConfigs(Properties kafkaClientProps) {
+        String customPropsString = config.get(Config.SASL_CUSTOM_CONFIG);
+
+        if (customPropsString.isEmpty()) {
+            throw new InvalidConfigurationException("Custom SASL config properties are not set");
+        }
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        try {
+            TypeReference<HashMap<String, String>> typeRef = new TypeReference<HashMap<String, String>>() { };
+            Map<String, String> customProperties = objectMapper.readValue(customPropsString, typeRef);
+
+            if (customProperties.isEmpty()) {
+                throw new InvalidConfigurationException("SASL custom config properties empty");
+            }
+
+            for (var entry : customProperties.entrySet()) {
+                String key = entry.getKey();
+                String value = entry.getValue();
+
+                if (key == null || key.isBlank() || !key.startsWith("sasl.")) {
+                    throw new InvalidConfigurationException("SASL custom config properties not SASL properties. customProperty: '" + key + "' = '" + value + "'");
+                }
+
+                kafkaClientProps.setProperty(key, value);
+            }
+        } catch (JsonProcessingException e) {
+            throw new InvalidConfigurationException("SASL custom config properties deserialize failed. customProperties: '" + customPropsString + "'");
+        }
+    }
+
+    private void setStandardSaslConfigs(Properties kafkaClientProps) {
+        String saslMechanism = null;
+        String jaasConfig = null;
         String username = config.get(Config.SASL_USERNAME);
         String password = config.get(Config.SASL_PASSWORD);
         String configSaslMechanism = config.get(Config.SASL_MECHANISM);
+
+        LOGGER.error("setStandardSaslConfigs()");
+        LOGGER.error("setStandardSaslConfigs() username: {}, password: {}", username, password);
 
         if (username.isEmpty() || password.isEmpty()) {
             throw new InvalidConfigurationException("SASL credentials are not set");
@@ -427,8 +484,6 @@ public class Session extends AbstractVerticle {
             } else {
                 saslMechanism = "SCRAM-SHA-512";
             }
-        } else {
-            throw new IllegalArgumentException("Invalid SASL_MECHANISM type: " + config.get(Config.SASL_MECHANISM));
         }
 
         kafkaClientProps.setProperty(SaslConfigs.SASL_MECHANISM, saslMechanism);

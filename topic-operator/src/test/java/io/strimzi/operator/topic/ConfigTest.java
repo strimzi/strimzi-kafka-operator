@@ -18,6 +18,7 @@ import java.util.Properties;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -122,17 +123,59 @@ public class ConfigTest {
         Map<String, String> map = new HashMap<>(MANDATORY);
         map.put(Config.SASL_ENABLED.key, "true");
 
-        Config config = new Config(map);
-        Session session = new Session(null, config);
-        assertThrows(InvalidConfigurationException.class, session::adminClientProperties);
+        Config configNoMechanism = new Config(map);
+        Session sessionNoMechanism = new Session(null, configNoMechanism);
+        var noMechanismException =  assertThrows(IllegalArgumentException.class, sessionNoMechanism::adminClientProperties);
+        assertEquals("Invalid SASL_MECHANISM: ''", noMechanismException.getMessage());
+
+        map.put(Config.SASL_MECHANISM.key, "plain");
 
         String username = "admin";
         String password = "password";
-        map.put(Config.SASL_USERNAME.key, username);
+
         map.put(Config.SASL_PASSWORD.key, password);
-        Config configWithCredentials = new Config(map);
-        Session sessionWithCredentials = new Session(null, configWithCredentials);
-        assertThrows(IllegalArgumentException.class, sessionWithCredentials::adminClientProperties);
+        Config configWithoutUsername = new Config(map);
+        Session sessionWithoutUsername = new Session(null, configWithoutUsername);
+        var noUsernameException = assertThrows(InvalidConfigurationException.class, sessionWithoutUsername::adminClientProperties);
+        assertEquals("SASL credentials are not set", noUsernameException.getMessage());
+
+        map.put(Config.SASL_USERNAME.key, password);
+        map.remove(Config.SASL_PASSWORD.key);
+        Config configWithoutPassword = new Config(map);
+        Session sessionWithoutPassword = new Session(null, configWithoutPassword);
+        var noPasswordException = assertThrows(InvalidConfigurationException.class, sessionWithoutPassword::adminClientProperties);
+        assertEquals("SASL credentials are not set", noPasswordException.getMessage());
+
+        map.put(Config.SASL_MECHANISM.key, "custom");
+        map.remove(Config.SASL_USERNAME.key);
+        Config configCustomMechanism = new Config(map);
+        Session sessionCustomMechanism = new Session(null, configCustomMechanism);
+        var customMechanismException = assertThrows(InvalidConfigurationException.class, sessionCustomMechanism::adminClientProperties);
+        assertEquals("Custom SASL config properties are not set", customMechanismException.getMessage());
+
+        map.put(Config.SASL_CUSTOM_CONFIG.key, "{}");
+        Config configCustomProps = new Config(map);
+        Session sessionCustomProps = new Session(null, configCustomProps);
+        var customPropsEmptyException = assertThrows(InvalidConfigurationException.class, sessionCustomProps::adminClientProperties);
+        assertEquals("SASL custom config properties empty", customPropsEmptyException.getMessage());
+
+        map.put(Config.SASL_CUSTOM_CONFIG.key, "{");
+        Config configCustomPropsInvalid = new Config(map);
+        Session sessionCustomPropsInvalid = new Session(null, configCustomPropsInvalid);
+        var customPropsInvalidException = assertThrows(InvalidConfigurationException.class, sessionCustomPropsInvalid::adminClientProperties);
+        assertEquals("SASL custom config properties deserialize failed. customProperties: '{'", customPropsInvalidException.getMessage());
+
+        map.put(Config.SASL_CUSTOM_CONFIG.key, "{ \"a\": \"b\" }");
+        Config configCustomPropsNotSasl = new Config(map);
+        Session sessionCustomPropsNotSasl = new Session(null, configCustomPropsNotSasl);
+        var customPropsNotSaslException = assertThrows(InvalidConfigurationException.class, sessionCustomPropsNotSasl::adminClientProperties);
+        assertEquals("SASL custom config properties not SASL properties. customProperty: 'a' = 'b'", customPropsNotSaslException.getMessage());
+
+        map.put(Config.SASL_CUSTOM_CONFIG.key, "{ \"\": \"b\" }");
+        configCustomPropsNotSasl = new Config(map);
+        sessionCustomPropsNotSasl = new Session(null, configCustomPropsNotSasl);
+        customPropsNotSaslException = assertThrows(InvalidConfigurationException.class, sessionCustomPropsNotSasl::adminClientProperties);
+        assertEquals("SASL custom config properties not SASL properties. customProperty: '' = 'b'", customPropsNotSaslException.getMessage());
     }
 
     @Test
@@ -192,5 +235,29 @@ public class ConfigTest {
         Properties adminClientPropsPlain = sessionPlain.adminClientProperties();
         assertThat(adminClientPropsPlain.getProperty(SaslConfigs.SASL_MECHANISM), is("PLAIN"));
         assertThat(adminClientPropsPlain.getProperty(SaslConfigs.SASL_JAAS_CONFIG), is(plainJaasConfig));
+    }
+
+    @Test
+    public void testCustomSaslConfig() {
+        Map<String, String> map = new HashMap<>(MANDATORY);
+        map.put(Config.SASL_ENABLED.key, "true");
+        map.put(Config.SASL_MECHANISM.key, "custom");
+        map.put(Config.SASL_CUSTOM_CONFIG.key, """
+                    {
+                        "sasl.mechanism": "WAS_SMK_IAM",
+                        "sasl.jaas.config": "some.custom.auth.iam.IAMLoginModule required;",
+                        "sasl.client.callback.handler.class": "some.other.nonstandard.iam.IAMClientCallbackHandler"
+                    }
+                    """);
+
+        String jaasConfig = "some.custom.auth.iam.IAMLoginModule required;";
+
+        Config customSaslconfig = new Config(map);
+        Session customSsession = new Session(null, customSaslconfig);
+
+        Properties adminClientCustomProps = customSsession.adminClientProperties();
+        assertThat(adminClientCustomProps.getProperty(SaslConfigs.SASL_MECHANISM), is("WAS_SMK_IAM"));
+        assertThat(adminClientCustomProps.getProperty(SaslConfigs.SASL_JAAS_CONFIG), is(jaasConfig));
+        assertThat(adminClientCustomProps.getProperty("sasl.client.callback.handler.class"), is("some.other.nonstandard.iam.IAMClientCallbackHandler"));
     }
 }

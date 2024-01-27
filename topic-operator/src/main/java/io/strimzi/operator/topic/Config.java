@@ -121,6 +121,7 @@ public class Config {
 
     protected static final String TC_SASL_ENABLED = "STRIMZI_SASL_ENABLED";
     protected static final String TC_SASL_MECHANISM = "STRIMZI_SASL_MECHANISM";
+    protected static final String TC_SASL_CUSTOM_CONFIG = "STRIMZI_SASL_CUSTOM_CONFIG";
     protected static final String TC_SASL_USERNAME = "STRIMZI_SASL_USERNAME";
     protected static final String TC_SASL_PASSWORD = "STRIMZI_SASL_PASSWORD";
 
@@ -191,6 +192,8 @@ public class Config {
     public static final Value<String> SASL_ENABLED = new Value<>(TC_SASL_ENABLED, STRING, "false");
     /** The SASL mechanism to be used */
     public static final Value<String> SASL_MECHANISM = new Value<>(TC_SASL_MECHANISM, STRING, "");
+    /** The SASL custom config used for authentication */
+    public static final Value<String> SASL_CUSTOM_CONFIG = new Value<>(TC_SASL_CUSTOM_CONFIG, STRING, "");
     /** The SASL username to be used for authentication */
     public static final Value<String> SASL_USERNAME = new Value<>(TC_SASL_USERNAME, STRING, "");
     /** The SASL password to be used for authentication */
@@ -237,6 +240,7 @@ public class Config {
         addConfigValue(configValues, TLS_KEYSTORE_PASSWORD);
         addConfigValue(configValues, SASL_ENABLED);
         addConfigValue(configValues, SASL_MECHANISM);
+        addConfigValue(configValues, SASL_CUSTOM_CONFIG);
         addConfigValue(configValues, SASL_USERNAME);
         addConfigValue(configValues, SASL_PASSWORD);
         addConfigValue(configValues, TLS_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM);

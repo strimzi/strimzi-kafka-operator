@@ -144,6 +144,28 @@ env:
 <3> The keystore contains the private key for mTLS authentication.
 <4> The password for accessing the keystore.
 
+. If you need a custom `SASL` configuration. For example, to access a cluster in a cloud provider with a custom login module, the `custom` `SASL_MECHANISM` allows for `SASL_CUSTOM_CONFIG`. +
+*NOTE:  Only SASL properties can be set with the `custom` mechanism.*
++
+.Example custom SASL configuration
+[source,shell,subs=+quotes]
+----
+# ....
+env:
+  - name: SASL_MECHANISM # <1>
+    value: custom
+  - name: SASL_CUSTOM_CONFIG # <2>
+    value: |
+      {
+        "sasl.mechanism": "AWS_MSK_IAM",
+        "sasl.jaas.config": "software.amazon.msk.auth.iam.IAMLoginModule required;",
+        "sasl.client.callback.handler.class": "software.amazon.msk.auth.iam.IAMClientCallbackHandler"
+      }
+# ...
+----
+<1> Setting the `custom` SASL mechanism. This enables the custom configuration, so the actual `sasl.mechanism` needs to be included in the `SASL_CUSTOM_CONFIG` value.
+<2> JSON with the SASL properties to be set.
+
 . Apply the changes to the `Deployment` configuration to deploy the Topic Operator.
 
 . Check the status of the deployment:
