@@ -259,7 +259,7 @@ public class MigrationST extends AbstractST {
     }
 
     private void doSecondPartOfMigration(ExtensionContext extensionContext, TestStorage testStorage) {
-        LOGGER.info("9. finishing migration - applying the {} annotation with value: {}, controllers should be rolled", Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled");
+        LOGGER.info("Finishing migration - applying the {} annotation with value: {}, controllers should be rolled", Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled");
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(),
             kafka -> kafka.getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled"), testStorage.getNamespaceName());
 
@@ -290,9 +290,12 @@ public class MigrationST extends AbstractST {
     }
 
     private void doRollback(TestStorage testStorage) {
+        LOGGER.info("Checking that __cluster_metadata topic does exist in Kafka Brokers");
+        assertThatClusterMetadataTopicPresentInBrokerPod(testStorage.getNamespaceName(), brokerSelector, true);
+
         LOGGER.info("From {} state we are going to roll back to ZK", KafkaMetadataState.KRaftPostMigration.name());
 
-        LOGGER.info("Rolling migration back - applying {}: rollback annotation", Annotations.ANNO_STRIMZI_IO_KRAFT);
+        LOGGER.info("Rolling migration back - applying the {} annotation with value: {}", Annotations.ANNO_STRIMZI_IO_KRAFT, "rollback");
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(),
             kafka -> kafka.getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_KRAFT, "rollback"), testStorage.getNamespaceName());
 
@@ -306,7 +309,7 @@ public class MigrationST extends AbstractST {
         KafkaNodePool controllerPool = KafkaNodePoolResource.kafkaNodePoolClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getControllerPoolName()).get();
         resourceManager.deleteResource(controllerPool);
 
-        LOGGER.info("Applying {}: disabled annotation", Annotations.ANNO_STRIMZI_IO_KRAFT);
+        LOGGER.info("Finishing the rollback - applying the {} annotation with value: {}", Annotations.ANNO_STRIMZI_IO_KRAFT, "disabled");
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(),
             kafka -> kafka.getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_KRAFT, "disabled"), testStorage.getNamespaceName());
 
@@ -317,7 +320,7 @@ public class MigrationST extends AbstractST {
         KafkaUtils.waitUntilKafkaStatusContainsKafkaMetadataState(testStorage.getNamespaceName(), testStorage.getClusterName(), KafkaMetadataState.ZooKeeper.name());
 
         LOGGER.info("Checking that __cluster_metadata topic does not exist in Kafka Brokers");
-        assertThatClusterMetadataTopicNotPresentInBrokerPod(testStorage.getNamespaceName(), brokerSelector);
+        assertThatClusterMetadataTopicPresentInBrokerPod(testStorage.getNamespaceName(), brokerSelector, false);
 
         LOGGER.info("Rollback completed, waiting until continuous messages transmission is finished");
         ClientUtils.waitForClientsSuccess(continuousClients.getProducerName(), continuousClients.getConsumerName(), testStorage.getNamespaceName(), continuousClients.getMessageCount());
@@ -366,14 +369,14 @@ public class MigrationST extends AbstractST {
 
     private void assertThatTopicIsPresentInKRaftMetadata(String namespaceName, LabelSelector controllerSelector, String topicName) {
         String controllerPodName = kubeClient().namespace(namespaceName).listPods(controllerSelector).get(0).getMetadata().getName();
-        String kafkaLogDirName = cmdKubeClient().namespace(namespaceName).execInPod(controllerPodName, "/bin/bash", "-c", "ls /var/lib/kafka/data | grep \"kafka-log[0-9]\" -o").out().trim();
+        String kafkaLogDirName = cmdKubeClient().namespace(namespaceName).execInPod(controllerPodName, "/bin/bash", "-c", "ls /var/lib/kafka/data | grep \"kafka-log[0-9]\\+\" -o").out().trim();
         String commandOutput = cmdKubeClient().namespace(namespaceName).execInPod(controllerPodName, "/bin/bash", "-c", "./bin/kafka-dump-log.sh --cluster-metadata-decoder --skip-record-metadata" +
             " --files /var/lib/kafka/data/" + kafkaLogDirName + "/__cluster_metadata-0/00000000000000000000.log | grep " + topicName).out().trim();
 
         assertThat(String.join("KafkaTopic: %s is not present KRaft metadata", topicName), commandOutput.contains(topicName), is(true));
     }
 
-    private void assertThatClusterMetadataTopicNotPresentInBrokerPod(String namespaceName, LabelSelector brokerSelector) {
+    private void assertThatClusterMetadataTopicPresentInBrokerPod(String namespaceName, LabelSelector brokerSelector, boolean clusterMetadataShouldExist) {
         List<Pod> brokerPods = kubeClient().namespace(namespaceName).listPods(brokerSelector);
 
         for (Pod brokerPod : brokerPods) {
@@ -382,7 +385,7 @@ public class MigrationST extends AbstractST {
             String commandOutput = cmdKubeClient().namespace(namespaceName).execInPod(brokerPod.getMetadata().getName(), "/bin/bash", "-c", "ls /var/lib/kafka/data/" + kafkaLogDirName).out().trim();
 
             assertThat(String.join("__cluster_metadata topic is present in Kafka Pod: %s, but it shouldn't", brokerPod.getMetadata().getName()),
-                !commandOutput.contains("__cluster_metadata"), is(true));
+                commandOutput.contains("__cluster_metadata"), is(clusterMetadataShouldExist));
         }
     }
 
