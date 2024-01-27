@@ -7,7 +7,6 @@ package io.strimzi.systemtest.utils.specific;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters;
-import io.strimzi.operator.common.model.cruisecontrol.CruiseControlEndpoints;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
@@ -75,7 +74,7 @@ public class CruiseControlUtils {
     }
 
     @SuppressFBWarnings("DM_CONVERT_CASE")
-    public static ApiResult callApi(String namespaceName, HttpMethod method, Scheme scheme, int port, CruiseControlEndpoints endpoint, String endpointParameters, boolean withCredentials) {
+    public static ApiResult callApi(String namespaceName, HttpMethod method, Scheme scheme, int port, String endpoint, String endpointParameters, boolean withCredentials) {
         String ccPodName = PodUtils.getFirstPodNameContaining(namespaceName, CONTAINER_NAME);
         String args = " -k -w \"%{http_code}\" ";
 
@@ -83,7 +82,7 @@ public class CruiseControlUtils {
             args += " --user admin:$(cat /opt/cruise-control/api-auth-config/cruise-control.apiAdminPassword) ";
         }
 
-        String curl = "curl -X " + method.name() + " " + args + " " + scheme + "://localhost:" + port + endpoint.toString() + endpointParameters;
+        String curl = "curl -X " + method.name() + " " + args + " " + scheme + "://localhost:" + port + endpoint + endpointParameters;
         return new ApiResult(cmdKubeClient(namespaceName).execInPodContainer(Level.DEBUG, ccPodName, CONTAINER_NAME, "/bin/bash", "-c", curl));
     }
 

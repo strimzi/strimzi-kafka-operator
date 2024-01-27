@@ -26,7 +26,6 @@ import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalance;
 import io.strimzi.api.kafka.model.user.KafkaUser;
 import io.strimzi.operator.common.Annotations;
-import io.strimzi.operator.common.model.cruisecontrol.CruiseControlEndpoints;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
@@ -602,7 +601,7 @@ public class MetricsST extends AbstractST {
     @ParallelTest
     void testCruiseControlMetrics() {
         String cruiseControlMetrics = CruiseControlUtils.callApi(namespaceFirst, CruiseControlUtils.HttpMethod.GET, CruiseControlUtils.Scheme.HTTP,
-                CruiseControlUtils.CRUISE_CONTROL_METRICS_PORT, CruiseControlEndpoints.METRICS, "", true).getResponseText();
+                CruiseControlUtils.CRUISE_CONTROL_METRICS_PORT, "/metrics", "", true).getResponseText();
         Matcher regex = Pattern.compile("^([^#].*)\\s+([^\\s]*)$", Pattern.MULTILINE).matcher(cruiseControlMetrics);
 
         LOGGER.info("Verifying that we have more than 0 groups");
