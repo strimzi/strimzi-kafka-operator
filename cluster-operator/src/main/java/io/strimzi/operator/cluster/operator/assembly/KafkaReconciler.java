@@ -9,14 +9,12 @@ import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.Node;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.KafkaStatus;
-import io.strimzi.api.kafka.model.kafka.Storage;
 import io.strimzi.api.kafka.model.kafka.UsedNodePoolStatus;
 import io.strimzi.api.kafka.model.kafka.UsedNodePoolStatusBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener;
@@ -1065,44 +1063,5 @@ public class KafkaReconciler {
         } else {
             return Future.succeededFuture();
         }
-    }
-
-    /**
-     * This is used to get the Storage configuration used by the Kafka nodes. The storage configuration is needed by
-     * Cruise Control. But collecting it directly in Cruise Control from the custom resources would be complicated as
-     * it would need to figure out the node pools and the node IDs belonging to them. In addition, the storage
-     * configuration might change (in case of un-allowed changes), but due to the possibility of illegal storage changes
-     * which will be reverted it in the Kafka and Node Pool models.
-     *
-     * @return  Map with the pool names as the keys and storage configuration for given pools as the values
-     */
-    public Map<String, Storage> kafkaStorage()   {
-        // TODO: Remove after fixing the tests
-        return kafka.getStorageByPoolName();
-    }
-
-    /**
-     * This is used to get the resource configuration used by the Kafka brokers. The resource configuration is needed by
-     * Cruise Control. But collecting it directly in Cruise Control from the custom resources would be complicated as
-     * it would need to figure out the node pools and the node IDs belonging to them. This includes only the broker
-     * nodes. Controller nodes are not included in this map.
-     *
-     * @return  Map with the pool names as the keys and resource requirements for given pools as the values
-     */
-    public Map<String, ResourceRequirements> kafkaBrokerResourceRequirements()   {
-        // TODO: Remove after fixing the tests
-        return kafka.getBrokerResourceRequirementsByPoolName();
-    }
-
-    /**
-     * This returns the list of Kafka brokers which will be later used for Cruise Control configuration so that Cruise
-     * Control does not need to collect it itself from the different custom resources. This includes only the broker
-     * nodes. Controller nodes are not included in this set.
-     *
-     * @return  Set with node references for the Kafka nodes
-     */
-    public Set<NodeRef> kafkaBrokerNodes()   {
-        // TODO: Remove after fixing the tests
-        return kafka.brokerNodes();
     }
 }
