@@ -6,7 +6,6 @@ package io.strimzi.systemtest.cruisecontrol;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.LabelSelector;
-import io.fabric8.kubernetes.api.model.Pod;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlSpec;
@@ -15,7 +14,6 @@ import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfiguration
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
-import io.strimzi.systemtest.annotations.KRaftWithoutUTONotSupported;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -36,20 +34,14 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 
 import static io.strimzi.systemtest.TestConstants.CRUISE_CONTROL;
 import static io.strimzi.systemtest.TestConstants.REGRESSION;
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
-import static org.hamcrest.CoreMatchers.hasItem;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasEntry;
@@ -113,107 +105,7 @@ public class CruiseControlConfigurationST extends AbstractST {
     }
 
     @ParallelNamespaceTest
-    @KRaftWithoutUTONotSupported
-    void testConfigurationDiskChangeDoNotTriggersRollingUpdateOfKafkaPods(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(Environment.TEST_SUITE_NAMESPACE, extensionContext);
-        final String clusterName = testStorage.getClusterName();
-        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaComponentName(clusterName));
-
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3).build());
-
-        Map<String, String> kafkaSnapShot = PodUtils.podSnapshot(namespaceName, kafkaSelector);
-        Map<String, String> cruiseControlSnapShot = DeploymentUtils.depSnapshot(namespaceName, CruiseControlResources.componentName(clusterName));
-
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> {
-
-            LOGGER.info("Changing the Broker capacity of the CruiseControl");
-
-            CruiseControlSpec cruiseControl = new CruiseControlSpecBuilder()
-                .withNewBrokerCapacity()
-                    .withOutboundNetwork("20KB/s")
-                .endBrokerCapacity()
-                .build();
-
-            kafka.getSpec().setCruiseControl(cruiseControl);
-        }, namespaceName);
-
-        LOGGER.info("Verifying that CC Pod is rolling, because of change size of disk");
-        DeploymentUtils.waitTillDepHasRolled(namespaceName, CruiseControlResources.componentName(clusterName), 1, cruiseControlSnapShot);
-
-        LOGGER.info("Verifying that Kafka Pods did not roll");
-        RollingUpdateUtils.waitForNoRollingUpdate(namespaceName, kafkaSelector, kafkaSnapShot);
-
-        LOGGER.info("Verifying new configuration in the Kafka CR");
-
-        assertThat(KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get().getSpec()
-            .getCruiseControl().getBrokerCapacity().getOutboundNetwork(), is("20KB/s"));
-
-        // https://github.com/strimzi/strimzi-kafka-operator/issues/8864
-        if (!Environment.isUnidirectionalTopicOperatorEnabled()) {
-            CruiseControlUtils.verifyThatCruiseControlTopicsArePresent(namespaceName);
-        }
-    }
-
-    @ParallelNamespaceTest
-    void testConfigurationReflection(ExtensionContext extensionContext) throws IOException {
-        final TestStorage testStorage = storageMap.get(extensionContext);
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(Environment.TEST_SUITE_NAMESPACE, extensionContext);
-        final String clusterName = testStorage.getClusterName();
-
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3).build());
-
-        Pod cruiseControlPod = kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, clusterName + "-cruise-control-").get(0);
-
-        String cruiseControlPodName = cruiseControlPod.getMetadata().getName();
-
-        String configurationFileContent = cmdKubeClient(namespaceName).execInPod(cruiseControlPodName, "/bin/bash", "-c", "cat " + TestConstants.CRUISE_CONTROL_CONFIGURATION_FILE_PATH).out();
-
-        InputStream configurationFileStream = new ByteArrayInputStream(configurationFileContent.getBytes(StandardCharsets.UTF_8));
-
-        Properties fileConfiguration = new Properties();
-        fileConfiguration.load(configurationFileStream);
-
-        ConfigMap configMap = kubeClient(namespaceName).getConfigMap(namespaceName, CruiseControlResources.configMapName(clusterName));
-
-        InputStream configurationContainerStream = new ByteArrayInputStream(
-                Objects.requireNonNull(configMap.getData().get("cruisecontrol.properties")).getBytes(StandardCharsets.UTF_8));
-        Properties containerConfiguration = new Properties();
-        containerConfiguration.load(configurationContainerStream);
-
-        LOGGER.info("Verifying that all configuration in the CruiseControl container matching the CruiseControl file {} properties", TestConstants.CRUISE_CONTROL_CONFIGURATION_FILE_PATH);
-        List<String> checkCCProperties = Arrays.asList(
-                CruiseControlConfigurationParameters.PARTITION_METRICS_WINDOW_NUM_CONFIG_KEY.getValue(),
-                CruiseControlConfigurationParameters.PARTITION_METRICS_WINDOW_MS_CONFIG_KEY.getValue(),
-                CruiseControlConfigurationParameters.BROKER_METRICS_WINDOW_NUM_CONFIG_KEY.getValue(),
-                CruiseControlConfigurationParameters.BROKER_METRICS_WINDOW_MS_CONFIG_KEY.getValue(),
-                CruiseControlConfigurationParameters.COMPLETED_USER_TASK_RETENTION_MS_CONFIG_KEY.getValue(),
-                CruiseControlConfigurationParameters.CAPACITY_CONFIG_FILE.getValue(),
-                "goals", "default.goals");
-
-        for (String propertyName : checkCCProperties) {
-            assertThat(containerConfiguration.stringPropertyNames(), hasItem(propertyName));
-            assertThat(containerConfiguration.getProperty(propertyName), is(fileConfiguration.getProperty(propertyName)));
-        }
-    }
-
-    @ParallelNamespaceTest
-    void testConfigurationFileIsCreated(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(Environment.TEST_SUITE_NAMESPACE, extensionContext);
-        final String clusterName = testStorage.getClusterName();
-
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3).build());
-
-        String cruiseControlPodName = kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, clusterName + "-cruise-control-").get(0).getMetadata().getName();
-
-        String cruiseControlConfigurationFileContent = cmdKubeClient(namespaceName).execInPod(cruiseControlPodName, "/bin/bash", "-c", "cat " + TestConstants.CRUISE_CONTROL_CONFIGURATION_FILE_PATH).out();
-
-        assertThat(cruiseControlConfigurationFileContent, not(nullValue()));
-    }
-
-    @ParallelNamespaceTest
-    void testConfigurationPerformanceOptions(ExtensionContext extensionContext) throws IOException {
+    void testConfigurationUpdate(ExtensionContext extensionContext) throws IOException {
         final TestStorage testStorage = storageMap.get(extensionContext);
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Environment.TEST_SUITE_NAMESPACE, extensionContext);
         final String clusterName = testStorage.getClusterName();

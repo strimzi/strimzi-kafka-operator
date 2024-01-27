@@ -21,6 +21,7 @@ import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceMode;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceStatus;
 import io.strimzi.api.kafka.model.topic.KafkaTopicSpec;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
@@ -487,6 +488,24 @@ public class CruiseControlST extends AbstractST {
         }
 
         RollingUpdateUtils.waitForComponentScaleUpOrDown(testStorage.getNamespaceName(), testStorage.getKafkaSelector(), initialReplicas);
+    }
+
+    @ParallelNamespaceTest
+    void testKafkaRebalanceAutoApprovalMechanism(ExtensionContext extensionContext) {
+        final TestStorage testStorage = new TestStorage(extensionContext);
+
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaWithCruiseControl(testStorage.getClusterName(), 3, 3).build());
+
+        // KafkaRebalance with auto-approval
+        resourceManager.createResourceWithWait(extensionContext, KafkaRebalanceTemplates.kafkaRebalance(testStorage.getClusterName())
+            .editMetadata()
+                .addToAnnotations(Annotations.ANNO_STRIMZI_IO_REBALANCE_AUTOAPPROVAL, "true")
+            .endMetadata()
+            .build()
+        );
+
+        KafkaRebalanceUtils.doRebalancingProcessWithAutoApproval(new Reconciliation("test", KafkaRebalance.RESOURCE_KIND,
+                testStorage.getNamespaceName(), testStorage.getClusterName()), testStorage.getNamespaceName(), testStorage.getClusterName());
     }
 
     @BeforeAll
