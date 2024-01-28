@@ -7,12 +7,12 @@
 
 [role="_abstract"]
 By default, Strimzi performs a check to ensure that there are no partition replicas on a broker before initiating a scale-down operation on a Kafka cluster. 
-If replicas are found, cluster operations are blocked to prevent potential data loss. 
-To resume cluster operations, no replicas must be left on the broker before trying to scale it down again.
+If replicas are found, the scale-down is not done in order to prevent potential data loss.
+To scale-down the cluster, no replicas must be left on the broker before trying to scale it down again.
 
-However, there may be scenarios where you want to bypass this blocking mechanism.
+However, there may be scenarios where you want to bypass this mechanism.
 Disabling the check might be necessary on busy clusters, for example, because new topics keep generating replicas for the broker.
-This situation can indefinitely block cluster operations, even when brokers are nearly empty. 
+This situation can indefinitely block the scale-down, even when brokers are nearly empty.
 Overriding the blocking mechanism in this way has an impact:
 the presence of topics on the broker being scaled down will likely cause a reconciliation failure for the Kafka cluster. 
 

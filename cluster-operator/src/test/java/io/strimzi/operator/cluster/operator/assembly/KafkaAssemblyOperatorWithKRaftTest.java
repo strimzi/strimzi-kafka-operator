@@ -10,14 +10,12 @@ import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.strimzi.api.kafka.model.kafka.JbodStorageBuilder;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaList;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.KafkaStatus;
 import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
-import io.strimzi.api.kafka.model.kafka.Storage;
 import io.strimzi.api.kafka.model.kafka.UsedNodePoolStatus;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
@@ -81,12 +79,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.stream.IntStream;
 
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -291,9 +287,7 @@ public class KafkaAssemblyOperatorWithKRaftTest {
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 KAFKA,
                 List.of(CONTROLLERS, BROKERS),
-                VERSION_CHANGE,
-                Map.of(),
-                Map.of(),
+                KAFKA_CLUSTER,
                 CLUSTER_CA,
                 CLIENTS_CA);
 
@@ -334,17 +328,6 @@ public class KafkaAssemblyOperatorWithKRaftTest {
                     assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(1).getStatus().getRoles().size(), is(1));
                     assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(1).getStatus().getRoles(), hasItems(ProcessRoles.BROKER));
                     assertThat(kao.state.kafkaStatus.getKafkaNodePools().stream().map(UsedNodePoolStatus::getName).toList(), is(List.of("brokers", "controllers")));
-
-                    // Assert the info passed over for Cruise Control
-                    assertThat(kr.kafkaBrokerNodes().size(), is(3));
-                    assertThat(kr.kafkaBrokerNodes().stream().map(NodeRef::podName).toList(), is(List.of("my-cluster-brokers-3", "my-cluster-brokers-4", "my-cluster-brokers-5")));
-
-                    assertThat(kr.kafkaStorage().size(), is(2));
-                    assertThat(kr.kafkaStorage().get("controllers"), is(new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build()).build()));
-                    assertThat(kr.kafkaStorage().get("brokers"), is(new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("200Gi").build()).build()));
-
-                    assertThat(kr.kafkaBrokerResourceRequirements().size(), is(1));
-                    assertThat(kr.kafkaBrokerResourceRequirements().get("brokers"), is(new ResourceRequirementsBuilder().withRequests(Map.of("cpu", new Quantity("6"))).build()));
 
                     async.flag();
                 })));
@@ -412,9 +395,7 @@ public class KafkaAssemblyOperatorWithKRaftTest {
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 KAFKA,
                 List.of(CONTROLLERS, BROKERS),
-                VERSION_CHANGE,
-                Map.of(),
-                Map.of(),
+                KAFKA_CLUSTER,
                 CLUSTER_CA,
                 CLIENTS_CA);
 
@@ -512,9 +493,7 @@ public class KafkaAssemblyOperatorWithKRaftTest {
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 KAFKA,
                 List.of(CONTROLLERS, BROKERS),
-                VERSION_CHANGE,
-                Map.of(),
-                Map.of(),
+                KAFKA_CLUSTER,
                 CLUSTER_CA,
                 CLIENTS_CA);
 
@@ -614,9 +593,7 @@ public class KafkaAssemblyOperatorWithKRaftTest {
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 KAFKA,
                 List.of(CONTROLLERS, BROKERS),
-                VERSION_CHANGE,
-                Map.of(),
-                Map.of(),
+                KAFKA_CLUSTER,
                 CLUSTER_CA,
                 CLIENTS_CA);
 
@@ -659,17 +636,6 @@ public class KafkaAssemblyOperatorWithKRaftTest {
                     assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(1).getStatus().getRoles().size(), is(1));
                     assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(1).getStatus().getRoles(), hasItems(ProcessRoles.BROKER));
                     assertThat(kao.state.kafkaStatus.getKafkaNodePools().stream().map(UsedNodePoolStatus::getName).toList(), is(List.of("brokers", "controllers")));
-
-                    // Assert the info passed over for Cruise Control
-                    assertThat(kr.kafkaBrokerNodes().size(), is(3));
-                    assertThat(kr.kafkaBrokerNodes().stream().map(NodeRef::podName).toList(), is(List.of("my-cluster-brokers-3", "my-cluster-brokers-4", "my-cluster-brokers-5")));
-
-                    assertThat(kr.kafkaStorage().size(), is(2));
-                    assertThat(kr.kafkaStorage().get("controllers"), is(new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build()).build()));
-                    assertThat(kr.kafkaStorage().get("brokers"), is(new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("200Gi").build()).build()));
-
-                    assertThat(kr.kafkaBrokerResourceRequirements().size(), is(1));
-                    assertThat(kr.kafkaBrokerResourceRequirements().get("brokers"), is(new ResourceRequirementsBuilder().withRequests(Map.of("cpu", new Quantity("6"))).build()));
 
                     async.flag();
                 })));
@@ -751,9 +717,7 @@ public class KafkaAssemblyOperatorWithKRaftTest {
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 KAFKA,
                 List.of(CONTROLLERS, BROKERS),
-                VERSION_CHANGE,
-                Map.of(),
-                Map.of(CLUSTER_NAME + "-kafka", IntStream.rangeClosed(0, 4).mapToObj(i -> CLUSTER_NAME + "-kafka-" + i).toList()),
+                KAFKA_CLUSTER,
                 CLUSTER_CA,
                 CLIENTS_CA);
 
@@ -799,17 +763,6 @@ public class KafkaAssemblyOperatorWithKRaftTest {
                     assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(1).getStatus().getRoles().size(), is(1));
                     assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(1).getStatus().getRoles(), hasItems(ProcessRoles.BROKER));
                     assertThat(kao.state.kafkaStatus.getKafkaNodePools().stream().map(UsedNodePoolStatus::getName).toList(), is(List.of("brokers", "controllers")));
-
-                    // Assert the info passed over for Cruise Control
-                    assertThat(kr.kafkaBrokerNodes().size(), is(3));
-                    assertThat(kr.kafkaBrokerNodes().stream().map(NodeRef::podName).toList(), is(List.of("my-cluster-brokers-3", "my-cluster-brokers-4", "my-cluster-brokers-5")));
-
-                    assertThat(kr.kafkaStorage().size(), is(2));
-                    assertThat(kr.kafkaStorage().get("controllers"), is(new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build()).build()));
-                    assertThat(kr.kafkaStorage().get("brokers"), is(new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("200Gi").build()).build()));
-
-                    assertThat(kr.kafkaBrokerResourceRequirements().size(), is(1));
-                    assertThat(kr.kafkaBrokerResourceRequirements().get("brokers"), is(new ResourceRequirementsBuilder().withRequests(Map.of("cpu", new Quantity("6"))).build()));
 
                     async.flag();
                 })));
@@ -889,6 +842,16 @@ public class KafkaAssemblyOperatorWithKRaftTest {
         ArgumentCaptor<KafkaNodePool> kafkaNodePoolStatusCaptor = ArgumentCaptor.forClass(KafkaNodePool.class);
         when(mockKafkaNodePoolOps.updateStatusAsync(any(), kafkaNodePoolStatusCaptor.capture())).thenReturn(Future.succeededFuture());
 
+        KafkaCluster kafkaCluster = KafkaClusterCreator.createKafkaCluster(
+                new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
+                KAFKA,
+                List.of(CONTROLLERS, BROKERS, newPool),
+                Map.of(),
+                Map.of(),
+                VERSION_CHANGE,
+                true,
+                VERSIONS,
+                supplier.sharedEnvironmentProvider);
         MockKafkaReconciler kr = new MockKafkaReconciler(
                 new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
                 vertx,
@@ -897,9 +860,7 @@ public class KafkaAssemblyOperatorWithKRaftTest {
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 KAFKA,
                 List.of(CONTROLLERS, BROKERS, newPool),
-                VERSION_CHANGE,
-                Map.of(),
-                Map.of(),
+                kafkaCluster,
                 CLUSTER_CA,
                 CLIENTS_CA);
 
@@ -945,19 +906,6 @@ public class KafkaAssemblyOperatorWithKRaftTest {
                     assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(2).getStatus().getRoles().size(), is(1));
                     assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(2).getStatus().getRoles(), hasItems(ProcessRoles.BROKER));
                     assertThat(kao.state.kafkaStatus.getKafkaNodePools().stream().map(UsedNodePoolStatus::getName).toList(), is(List.of("brokers", "controllers", "new")));
-
-                    // Assert the info passed over for Cruise Control
-                    assertThat(kr.kafkaBrokerNodes().size(), is(5));
-                    assertThat(kr.kafkaBrokerNodes().stream().map(NodeRef::podName).toList(), is(List.of("my-cluster-brokers-3", "my-cluster-brokers-4", "my-cluster-brokers-5", "my-cluster-new-6", "my-cluster-new-7")));
-
-                    assertThat(kr.kafkaStorage().size(), is(3));
-                    assertThat(kr.kafkaStorage().get("controllers"), is(new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build()).build()));
-                    assertThat(kr.kafkaStorage().get("brokers"), is(new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("200Gi").build()).build()));
-                    assertThat(kr.kafkaStorage().get("new"), is(new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("300Gi").build()).build()));
-
-                    assertThat(kr.kafkaBrokerResourceRequirements().size(), is(2));
-                    assertThat(kr.kafkaBrokerResourceRequirements().get("brokers"), is(new ResourceRequirementsBuilder().withRequests(Map.of("cpu", new Quantity("6"))).build()));
-                    assertThat(kr.kafkaBrokerResourceRequirements().get("new"), is(nullValue()));
 
                     async.flag();
                 })));
@@ -1047,9 +995,7 @@ public class KafkaAssemblyOperatorWithKRaftTest {
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 KAFKA,
                 List.of(CONTROLLERS, BROKERS),
-                VERSION_CHANGE,
-                Map.of(),
-                Map.of(CLUSTER_NAME + "-kafka", IntStream.rangeClosed(0, 4).mapToObj(i -> CLUSTER_NAME + "-kafka-" + i).toList()),
+                KAFKA_CLUSTER,
                 CLUSTER_CA,
                 CLIENTS_CA);
 
@@ -1094,17 +1040,6 @@ public class KafkaAssemblyOperatorWithKRaftTest {
                     assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(1).getStatus().getRoles().size(), is(1));
                     assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(1).getStatus().getRoles(), hasItems(ProcessRoles.BROKER));
                     assertThat(kao.state.kafkaStatus.getKafkaNodePools().stream().map(UsedNodePoolStatus::getName).toList(), is(List.of("brokers", "controllers")));
-
-                    // Assert the info passed over for Cruise Control
-                    assertThat(kr.kafkaBrokerNodes().size(), is(3));
-                    assertThat(kr.kafkaBrokerNodes().stream().map(NodeRef::podName).toList(), is(List.of("my-cluster-brokers-3", "my-cluster-brokers-4", "my-cluster-brokers-5")));
-
-                    assertThat(kr.kafkaStorage().size(), is(2));
-                    assertThat(kr.kafkaStorage().get("controllers"), is(new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build()).build()));
-                    assertThat(kr.kafkaStorage().get("brokers"), is(new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("200Gi").build()).build()));
-
-                    assertThat(kr.kafkaBrokerResourceRequirements().size(), is(1));
-                    assertThat(kr.kafkaBrokerResourceRequirements().get("brokers"), is(new ResourceRequirementsBuilder().withRequests(Map.of("cpu", new Quantity("6"))).build()));
 
                     async.flag();
                 })));
@@ -1248,8 +1183,8 @@ public class KafkaAssemblyOperatorWithKRaftTest {
         int maybeRollKafkaInvocations = 0;
         Function<Pod, RestartReasons> kafkaPodNeedsRestart = null;
 
-        public MockKafkaReconciler(Reconciliation reconciliation, Vertx vertx, ClusterOperatorConfig config, ResourceOperatorSupplier supplier, PlatformFeaturesAvailability pfa, Kafka kafkaAssembly, List<KafkaNodePool> nodePools, KafkaVersionChange versionChange, Map<String, Storage> oldStorage, Map<String, List<String>> currentPods, ClusterCa clusterCa, ClientsCa clientsCa) {
-            super(reconciliation, kafkaAssembly, nodePools, oldStorage, currentPods, clusterCa, clientsCa, versionChange, config, supplier, pfa, vertx);
+        public MockKafkaReconciler(Reconciliation reconciliation, Vertx vertx, ClusterOperatorConfig config, ResourceOperatorSupplier supplier, PlatformFeaturesAvailability pfa, Kafka kafkaAssembly, List<KafkaNodePool> nodePools, KafkaCluster kafkaCluster, ClusterCa clusterCa, ClientsCa clientsCa) {
+            super(reconciliation, kafkaAssembly, nodePools, kafkaCluster, clusterCa, clientsCa, config, supplier, pfa, vertx);
         }
 
         @Override

@@ -178,9 +178,8 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
                 supplier,
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 kafka,
-                null, VERSION_CHANGE,
-                Map.of(),
-                Map.of(),
+                null,
+                kafkaCluster,
                 null,
                 null);
 
@@ -280,9 +279,8 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
                 supplier,
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 kafka,
-                null, VERSION_CHANGE,
-                Map.of(),
-                Map.of(),
+                null,
+                kafkaCluster,
                 null,
                 null);
 
@@ -396,9 +394,8 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
                 supplier,
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 kafka,
-                null, VERSION_CHANGE,
-                Map.of(),
-                Map.of(),
+                null,
+                kafkaCluster,
                 null,
                 null);
 
@@ -546,9 +543,7 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 kafka,
                 List.of(poolA, poolB),
-                VERSION_CHANGE,
-                Map.of(),
-                Map.of(),
+                kafkaCluster,
                 null,
                 null);
 
@@ -660,8 +655,8 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
         Function<Pod, RestartReasons> kafkaRestartReasons = null;
         List<String> kafkaNodesNeedRestart = new ArrayList<>();
 
-        public MockKafkaReconciler(Reconciliation reconciliation, Vertx vertx, ClusterOperatorConfig config, ResourceOperatorSupplier supplier, PlatformFeaturesAvailability pfa, Kafka kafkaAssembly, List<KafkaNodePool> nodePools, KafkaVersionChange versionChange, Map<String, Storage> oldStorage, Map<String, List<String>> currentPods, ClusterCa clusterCa, ClientsCa clientsCa) {
-            super(reconciliation, kafkaAssembly, nodePools, oldStorage, currentPods, clusterCa, clientsCa, versionChange, config, supplier, pfa, vertx);
+        public MockKafkaReconciler(Reconciliation reconciliation, Vertx vertx, ClusterOperatorConfig config, ResourceOperatorSupplier supplier, PlatformFeaturesAvailability pfa, Kafka kafkaAssembly, List<KafkaNodePool> nodePools, KafkaCluster kafkaCluster, ClusterCa clusterCa, ClientsCa clientsCa) {
+            super(reconciliation, kafkaAssembly, nodePools, kafkaCluster, clusterCa, clientsCa, config, supplier, pfa, vertx);
         }
 
         @Override

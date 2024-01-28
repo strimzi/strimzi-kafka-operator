@@ -9,14 +9,12 @@ import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.Node;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.KafkaStatus;
-import io.strimzi.api.kafka.model.kafka.Storage;
 import io.strimzi.api.kafka.model.kafka.UsedNodePoolStatus;
 import io.strimzi.api.kafka.model.kafka.UsedNodePoolStatusBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener;
@@ -38,14 +36,12 @@ import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaConfiguration;
 import io.strimzi.operator.cluster.model.KafkaPool;
-import io.strimzi.operator.cluster.model.KafkaVersionChange;
 import io.strimzi.operator.cluster.model.ListenersUtils;
 import io.strimzi.operator.cluster.model.MetricsAndLogging;
 import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.cluster.model.RestartReason;
 import io.strimzi.operator.cluster.model.RestartReasons;
-import io.strimzi.operator.cluster.model.nodepools.NodePoolUtils;
 import io.strimzi.operator.cluster.operator.resource.ConcurrentDeletionException;
 import io.strimzi.operator.cluster.operator.resource.KafkaRoller;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
@@ -59,7 +55,6 @@ import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.common.model.ClientsCa;
-import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.NodeUtils;
 import io.strimzi.operator.common.model.StatusDiff;
@@ -110,53 +105,53 @@ import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_SERVER_CERT_HA
 public class KafkaReconciler {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaReconciler.class.getName());
 
-    /* test */ final Reconciliation reconciliation;
-    private final Vertx vertx;
+    // Various settings
     private final long operationTimeoutMs;
-    /* test */ final KafkaCluster kafka;
-    private final List<KafkaNodePool> kafkaNodePoolCrs;
-    private final ClusterCa clusterCa;
-    private final ClientsCa clientsCa;
+    private final boolean isNetworkPolicyGeneration;
+    private final boolean isKafkaNodePoolsEnabled;
     private final List<String> maintenanceWindows;
     private final String operatorNamespace;
     private final Labels operatorNamespaceLabels;
-    private final boolean isNetworkPolicyGeneration;
-    private final boolean isKafkaNodePoolsEnabled;
-    /* test */ final PlatformFeaturesAvailability pfa;
+    private final PlatformFeaturesAvailability pfa;
     private final ImagePullPolicy imagePullPolicy;
     private final List<LocalObjectReference> imagePullSecrets;
 
+    // Objects used during the reconciliation
+    /* test */ final Reconciliation reconciliation;
+    private final KafkaCluster kafka;
+    private final List<KafkaNodePool> kafkaNodePoolCrs;
+    private final ClusterCa clusterCa;
+    private final ClientsCa clientsCa;
+
+    // Tools for operating and managing various resources
+    private final Vertx vertx;
     private final StatefulSetOperator stsOperator;
     private final StrimziPodSetOperator strimziPodSetOperator;
-    /* test */ final SecretOperator secretOperator;
+    private final SecretOperator secretOperator;
     private final ServiceAccountOperator serviceAccountOperator;
-    /* test */ final ServiceOperator serviceOperator;
+    private final ServiceOperator serviceOperator;
     private final PvcOperator pvcOperator;
-    private final PreventBrokerScaleDownCheck brokerScaleDownOperations;
     private final StorageClassOperator storageClassOperator;
     private final ConfigMapOperator configMapOperator;
     private final NetworkPolicyOperator networkPolicyOperator;
     private final PodDisruptionBudgetOperator podDisruptionBudgetOperator;
     private final PodOperator podOperator;
     private final ClusterRoleBindingOperator clusterRoleBindingOperator;
-    /* test */ final RouteOperator routeOperator;
-    /* test */ final IngressOperator ingressOperator;
+    private final RouteOperator routeOperator;
+    private final IngressOperator ingressOperator;
     private final NodeOperator nodeOperator;
     private final CrdOperator<KubernetesClient, KafkaNodePool, KafkaNodePoolList> kafkaNodePoolOperator;
-
     private final KubernetesRestartEventPublisher eventsPublisher;
-
     private final AdminClientProvider adminClientProvider;
 
+    // State of the reconciliation => these objects might change during the reconciliation (the collection objects are
+    // marked as final, but their contents is modified during the reconciliation)
     private final Set<String> fsResizingRestartRequest = new HashSet<>();
     private String logging = "";
     private String loggingHash = "";
-    private final boolean skipBrokerScaleDownCheck;
     private final Map<Integer, String> brokerConfigurationHash = new HashMap<>();
     private final Map<Integer, String> kafkaServerCertificateHash = new HashMap<>();
-
-    // Result of the listener reconciliation with the listener details
-    /* test */ KafkaListenersReconciler.ReconciliationResult listenerReconciliationResults;
+    /* test */ KafkaListenersReconciler.ReconciliationResult listenerReconciliationResults; // Result of the listener reconciliation with the listener details
 
     /**
      * Constructs the Kafka reconciler
@@ -164,13 +159,9 @@ public class KafkaReconciler {
      * @param reconciliation            Reconciliation marker
      * @param kafkaCr                   The Kafka custom resource
      * @param nodePools                 List of KafkaNodePool resources belonging to this cluster
-     * @param oldStorage                Maps with old storage configurations, where the key is the name of the controller
-     *                                  resource (e.g. my-cluster-pool-a) and the value is the current storage configuration.
-     * @param currentPods               Map with current pods, where the key is the name of the controller resource
-     *                                  (e.g. my-cluster-pool-a) and the value is a list with Pod names
+     * @param kafka                     Kafka cluster instance
      * @param clusterCa                 The Cluster CA instance
      * @param clientsCa                 The Clients CA instance
-     * @param versionChange             Description of Kafka upgrade / downgrade state
      * @param config                    Cluster Operator Configuration
      * @param supplier                  Supplier with Kubernetes Resource Operators
      * @param pfa                       PlatformFeaturesAvailability describing the environment we run in
@@ -180,11 +171,9 @@ public class KafkaReconciler {
             Reconciliation reconciliation,
             Kafka kafkaCr,
             List<KafkaNodePool> nodePools,
-            Map<String, Storage> oldStorage,
-            Map<String, List<String>> currentPods,
+            KafkaCluster kafka,
             ClusterCa clusterCa,
             ClientsCa clientsCa,
-            KafkaVersionChange versionChange,
             ClusterOperatorConfig config,
             ResourceOperatorSupplier supplier,
             PlatformFeaturesAvailability pfa,
@@ -194,12 +183,7 @@ public class KafkaReconciler {
         this.vertx = vertx;
         this.operationTimeoutMs = config.getOperationTimeoutMs();
         this.kafkaNodePoolCrs = nodePools;
-
-        boolean isKRaftEnabled = config.featureGates().useKRaftEnabled() && ReconcilerUtils.kraftEnabled(kafkaCr);
-        // We prepare the KafkaPool models and create the KafkaCluster model
-        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(reconciliation, kafkaCr, nodePools, oldStorage, currentPods, isKRaftEnabled, supplier.sharedEnvironmentProvider);
-        String clusterId = isKRaftEnabled ? NodePoolUtils.getOrGenerateKRaftClusterId(kafkaCr, nodePools) : NodePoolUtils.getClusterIdIfSet(kafkaCr, nodePools);
-        this.kafka = KafkaCluster.fromCrd(reconciliation, kafkaCr, pools, config.versions(), versionChange, isKRaftEnabled, clusterId, supplier.sharedEnvironmentProvider);
+        this.kafka = kafka;
 
         this.clusterCa = clusterCa;
         this.clientsCa = clientsCa;
@@ -211,12 +195,10 @@ public class KafkaReconciler {
         this.pfa = pfa;
         this.imagePullPolicy = config.getImagePullPolicy();
         this.imagePullSecrets = config.getImagePullSecrets();
-        this.skipBrokerScaleDownCheck = Annotations.booleanAnnotation(kafkaCr, Annotations.ANNO_STRIMZI_IO_SKIP_BROKER_SCALEDOWN_CHECK, false);
 
         this.stsOperator = supplier.stsOperations;
         this.strimziPodSetOperator = supplier.strimziPodSetOperator;
         this.secretOperator = supplier.secretOperations;
-        this.brokerScaleDownOperations = supplier.brokerScaleDownOperations;
         this.serviceAccountOperator = supplier.serviceAccountOperations;
         this.serviceOperator = supplier.serviceOperations;
         this.pvcOperator = supplier.pvcOperations;
@@ -247,7 +229,6 @@ public class KafkaReconciler {
      */
     public Future<Void> reconcile(KafkaStatus kafkaStatus, Clock clock)    {
         return modelWarnings(kafkaStatus)
-                .compose(i -> brokerScaleDownCheck())
                 .compose(i -> manualPodCleaning())
                 .compose(i -> networkPolicy())
                 .compose(i -> manualRollingUpdate())
@@ -276,22 +257,6 @@ public class KafkaReconciler {
                 .compose(i -> addListenersToKafkaStatus(kafkaStatus))
                 .compose(i -> updateKafkaVersion(kafkaStatus));
     }
-
-    protected Future<Void> brokerScaleDownCheck() {
-        if (skipBrokerScaleDownCheck || kafka.removedNodes().isEmpty()) {
-            return Future.succeededFuture();
-        } else {
-            return brokerScaleDownOperations.canScaleDownBrokers(reconciliation, vertx, kafka.removedNodes(), secretOperator, adminClientProvider)
-                    .compose(brokersContainingPartitions -> {
-                        if (!brokersContainingPartitions.isEmpty()) {
-                            throw new InvalidResourceException("Cannot scale down brokers " + kafka.removedNodes() + " because brokers " + brokersContainingPartitions + " are not empty");
-                        } else {
-                            return Future.succeededFuture();
-                        }
-                    });
-        }
-    }
-
 
     /**
      * Takes the warning conditions from the Model and adds them in the KafkaStatus
@@ -1098,41 +1063,5 @@ public class KafkaReconciler {
         } else {
             return Future.succeededFuture();
         }
-    }
-
-    /**
-     * This is used to get the Storage configuration used by the Kafka nodes. The storage configuration is needed by
-     * Cruise Control. But collecting it directly in Cruise Control from the custom resources would be complicated as
-     * it would need to figure out the node pools and the node IDs belonging to them. In addition, the storage
-     * configuration might change (in case of un-allowed changes), but due to the possibility of illegal storage changes
-     * which will be reverted it in the Kafka and Node Pool models.
-     *
-     * @return  Map with the pool names as the keys and storage configuration for given pools as the values
-     */
-    public Map<String, Storage> kafkaStorage()   {
-        return kafka.getStorageByPoolName();
-    }
-
-    /**
-     * This is used to get the resource configuration used by the Kafka brokers. The resource configuration is needed by
-     * Cruise Control. But collecting it directly in Cruise Control from the custom resources would be complicated as
-     * it would need to figure out the node pools and the node IDs belonging to them. This includes only the broker
-     * nodes. Controller nodes are not included in this map.
-     *
-     * @return  Map with the pool names as the keys and resource requirements for given pools as the values
-     */
-    public Map<String, ResourceRequirements> kafkaBrokerResourceRequirements()   {
-        return kafka.getBrokerResourceRequirementsByPoolName();
-    }
-
-    /**
-     * This returns the list of Kafka brokers which will be later used for Cruise Control configuration so that Cruise
-     * Control does not need to collect it itself from the different custom resources. This includes only the broker
-     * nodes. Controller nodes are not included in this set.
-     *
-     * @return  Set with node references for the Kafka nodes
-     */
-    public Set<NodeRef> kafkaBrokerNodes()   {
-        return kafka.brokerNodes();
     }
 }
