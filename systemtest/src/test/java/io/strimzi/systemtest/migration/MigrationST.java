@@ -149,7 +149,7 @@ public class MigrationST extends AbstractST {
     }
 
     private void setupMigrationTestCase(ExtensionContext extensionContext, TestStorage testStorage) {
-        postMigrationTopicName = testStorage.getTopicName() + "-midstep";
+        postMigrationTopicName = testStorage.getTopicName() + "-post-migration";
         kraftTopicName = testStorage.getTopicName() + "-kraft";
 
         String continuousTopicName = testStorage.getTopicName() + CONTINUOUS_SUFFIX;
@@ -336,7 +336,6 @@ public class MigrationST extends AbstractST {
 
         if (checkZk) {
             LOGGER.info("Checking if metadata about KafkaTopic: {} are in ZK", newTopicName);
-
             assertThatTopicIsPresentInZKMetadata(testStorage.getNamespaceName(), testStorage.getZookeeperSelector(), newTopicName);
         }
 
