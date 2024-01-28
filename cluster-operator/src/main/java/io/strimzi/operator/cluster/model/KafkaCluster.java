@@ -419,7 +419,8 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
 
     /**
      * Generates list of references to Kafka nodes for this Kafka cluster which have the broker role. The references
-     * contain both the pod name and the ID of the Kafka node.
+     * contain both the pod name and the ID of the Kafka node. This includes only the broker nodes. Controller nodes
+     * are not included in this set.
      *
      * @return  Set of Kafka node references with broker role
      */

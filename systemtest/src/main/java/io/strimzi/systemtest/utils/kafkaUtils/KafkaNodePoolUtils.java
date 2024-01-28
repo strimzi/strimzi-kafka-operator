@@ -89,4 +89,19 @@ public class KafkaNodePoolUtils {
         final LabelSelector kNPPodslabelSelector = KafkaNodePoolResource.getLabelSelector(kafkaClusterName, kafkaNodePoolName, processRoles);
         PodUtils.waitForPodsReady(namespaceName, kNPPodslabelSelector, podReplicaCount, false);
     }
+
+    /**
+     * Waits for the KafkaNodePool Status to be updated after changed. It checks the generation and observed generation to
+     * ensure the status is up to date.
+     *
+     * @param namespaceName     Namespace name
+     * @param nodePoolName      Name of the KafkaNodePool cluster which should be checked
+     */
+    public static void waitForKafkaNodePoolStatusUpdate(String namespaceName, String nodePoolName) {
+        LOGGER.info("Waiting for KafkaNodePool status to be updated");
+        TestUtils.waitFor("Kafka status to be updated", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_STATUS_TIMEOUT, () -> {
+            KafkaNodePool k = KafkaNodePoolResource.kafkaNodePoolClient().inNamespace(namespaceName).withName(nodePoolName).get();
+            return k.getMetadata().getGeneration() == k.getStatus().getObservedGeneration();
+        });
+    }
 }

@@ -27,6 +27,7 @@ import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.ClusterCa;
+import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.KafkaVersionChange;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
@@ -861,7 +862,20 @@ public class KafkaReconcilerStatusTest {
         private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(MockKafkaReconcilerStatusTasks.class.getName());
 
         public MockKafkaReconcilerStatusTasks(Reconciliation reconciliation, ResourceOperatorSupplier supplier, Kafka kafkaCr) {
-            super(reconciliation, kafkaCr, null, Map.of(), Map.of(), CLUSTER_CA, CLIENTS_CA, VERSION_CHANGE, CO_CONFIG, supplier, PFA, vertx);
+            super(reconciliation, kafkaCr, null, createKafkaCluster(reconciliation, supplier, kafkaCr), CLUSTER_CA, CLIENTS_CA, CO_CONFIG, supplier, PFA, vertx);
+        }
+
+        private static KafkaCluster createKafkaCluster(Reconciliation reconciliation, ResourceOperatorSupplier supplier, Kafka kafkaCr)   {
+            return  KafkaClusterCreator.createKafkaCluster(
+                    reconciliation,
+                    kafkaCr,
+                    null,
+                    Map.of(),
+                    Map.of(),
+                    VERSION_CHANGE,
+                    true,
+                    VERSIONS,
+                    supplier.sharedEnvironmentProvider);
         }
 
         @Override

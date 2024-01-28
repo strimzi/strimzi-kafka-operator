@@ -72,12 +72,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.stream.IntStream;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -261,9 +259,7 @@ public class KafkaAssemblyOperatorPodSetTest {
                 supplier,
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 KAFKA,
-                VERSION_CHANGE,
-                Map.of(),
-                Map.of(),
+                KAFKA_CLUSTER,
                 CLUSTER_CA,
                 CLIENTS_CA);
 
@@ -378,9 +374,7 @@ public class KafkaAssemblyOperatorPodSetTest {
                 supplier,
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 KAFKA,
-                VERSION_CHANGE,
-                Map.of(),
-                Map.of(),
+                KAFKA_CLUSTER,
                 CLUSTER_CA,
                 CLIENTS_CA);
 
@@ -505,9 +499,7 @@ public class KafkaAssemblyOperatorPodSetTest {
                 supplier,
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 KAFKA,
-                VERSION_CHANGE,
-                Map.of(),
-                Map.of(),
+                KAFKA_CLUSTER,
                 CLUSTER_CA,
                 CLIENTS_CA);
 
@@ -584,6 +576,7 @@ public class KafkaAssemblyOperatorPodSetTest {
         when(mockPodSetOps.reconcile(any(), any(), eq(zkCluster.getComponentName()), zkPodSetCaptor.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.noop(i.getArgument(3))));
         // Zoo
         when(mockPodSetOps.listAsync(any(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenReturn(Future.succeededFuture(List.of(oldKafkaPodSet)));
+        @SuppressWarnings("unchecked")
         ArgumentCaptor<List<StrimziPodSet>> kafkaPodSetBatchCaptor =  ArgumentCaptor.forClass(List.class);
         when(mockPodSetOps.batchReconcile(any(), any(), kafkaPodSetBatchCaptor.capture(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenAnswer(i -> {
             List<StrimziPodSet> podSets = i.getArgument(2);
@@ -632,9 +625,7 @@ public class KafkaAssemblyOperatorPodSetTest {
                 supplier,
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 KAFKA,
-                VERSION_CHANGE,
-                Map.of(),
-                Map.of(),
+                KAFKA_CLUSTER,
                 CLUSTER_CA,
                 CLIENTS_CA);
 
@@ -724,6 +715,7 @@ public class KafkaAssemblyOperatorPodSetTest {
         when(mockPodSetOps.reconcile(any(), any(), eq(zkCluster.getComponentName()), zkPodSetCaptor.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.noop(i.getArgument(3))));
         // Kafka
         when(mockPodSetOps.listAsync(any(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenReturn(Future.succeededFuture(List.of(oldKafkaPodSet)));
+        @SuppressWarnings("unchecked")
         ArgumentCaptor<List<StrimziPodSet>> kafkaPodSetBatchCaptor =  ArgumentCaptor.forClass(List.class);
         when(mockPodSetOps.batchReconcile(any(), any(), kafkaPodSetBatchCaptor.capture(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenAnswer(i -> {
             List<StrimziPodSet> podSets = i.getArgument(2);
@@ -778,9 +770,7 @@ public class KafkaAssemblyOperatorPodSetTest {
                 supplier,
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 KAFKA,
-                VERSION_CHANGE,
-                Map.of(),
-                Map.of(CLUSTER_NAME + "-kafka", IntStream.rangeClosed(0, 4).mapToObj(i -> CLUSTER_NAME + "-kafka-" + i).toList()),
+                KAFKA_CLUSTER,
                 CLUSTER_CA,
                 CLIENTS_CA);
 
@@ -827,46 +817,6 @@ public class KafkaAssemblyOperatorPodSetTest {
     }
 
     @Test
-    public void testScaleDownWithNonEmptyBrokerWithEnabledBrokerScaleDownCheck(VertxTestContext context)  {
-
-        Kafka patchKafka = new KafkaBuilder(KAFKA)
-                .editMetadata()
-                    .addToAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_SKIP_BROKER_SCALEDOWN_CHECK, "false"))
-                .endMetadata()
-                .build();
-
-        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
-
-        ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
-
-        PreventBrokerScaleDownCheck operations = supplier.brokerScaleDownOperations;
-        when(operations.canScaleDownBrokers(any(), any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of(3)));
-
-        MockKafkaReconciler kr = new MockKafkaReconciler(
-                new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
-                vertx,
-                config,
-                supplier,
-                new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
-                patchKafka,
-                VERSION_CHANGE,
-                Map.of(),
-                Map.of(CLUSTER_NAME + "-kafka", IntStream.rangeClosed(0, 4).mapToObj(i -> CLUSTER_NAME + "-kafka-" + i).toList()),
-                CLUSTER_CA,
-                CLIENTS_CA);
-
-        Checkpoint async = context.checkpoint();
-        KafkaStatus status = new KafkaStatus();
-
-        kr.reconcile(status, Clock.systemUTC())
-                .onComplete(context.failing(v -> context.verify(() -> {
-                    verify(operations, times(1)).canScaleDownBrokers(any(), any(), any(), any(), any());
-                    assertEquals(v.getMessage(), "Cannot scale down brokers [3, 4] because brokers [3] are not empty");
-                    async.flag();
-                })));
-    }
-
-    @Test
     public void testScaleDownWithEmptyBrokersWithBrokerScaleDownCheckEnabled(VertxTestContext context)  {
         Kafka oldKafka = new KafkaBuilder(KAFKA)
                 .editSpec()
@@ -907,116 +857,7 @@ public class KafkaAssemblyOperatorPodSetTest {
 
         // Kafka
         when(mockPodSetOps.listAsync(any(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenReturn(Future.succeededFuture(List.of(oldKafkaPodSet)));
-        ArgumentCaptor<List<StrimziPodSet>> kafkaPodSetBatchCaptor =  ArgumentCaptor.forClass(List.class);
-        when(mockPodSetOps.batchReconcile(any(), any(), kafkaPodSetBatchCaptor.capture(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenAnswer(i -> {
-            List<StrimziPodSet> podSets = i.getArgument(2);
-            HashMap<String, ReconcileResult<StrimziPodSet>> result = new HashMap<>();
-
-            for (StrimziPodSet podSet : podSets)    {
-                result.put(podSet.getMetadata().getName(), ReconcileResult.noop(podSet));
-            }
-
-            return Future.succeededFuture(result);
-        });
-        ArgumentCaptor<StrimziPodSet> kafkaPodSetCaptor =  ArgumentCaptor.forClass(StrimziPodSet.class);
-        when(mockPodSetOps.reconcile(any(), any(), eq(KAFKA_CLUSTER.getComponentName()), kafkaPodSetCaptor.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.noop(i.getArgument(3))));
-
-        StatefulSetOperator mockStsOps = supplier.stsOperations;
-        when(mockStsOps.getAsync(any(), eq(KAFKA_CLUSTER.getComponentName()))).thenReturn(Future.succeededFuture(null)); // Kafka STS is queried and deleted if it still exists
-
-        PodOperator mockPodOps = supplier.podOperations;
-        when(mockPodOps.listAsync(any(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenReturn(Future.succeededFuture(Collections.emptyList()));
-        when(mockPodOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(Collections.emptyList()));
-        when(mockPodOps.readiness(any(), any(), any(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockPodOps.waitFor(any(), any(), any(), any(), anyLong(), anyLong(), any())).thenReturn(Future.succeededFuture());
-
-        ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
-
-        PreventBrokerScaleDownCheck operations = supplier.brokerScaleDownOperations;
-        when(operations.canScaleDownBrokers(any(), any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of()));
-
-        KafkaAssemblyOperatorPodSetTest.MockKafkaReconciler kr = new KafkaAssemblyOperatorPodSetTest.MockKafkaReconciler(
-                new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
-                vertx,
-                config,
-                supplier,
-                new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
-                patchKafka,
-                VERSION_CHANGE,
-                Map.of(),
-                Map.of(CLUSTER_NAME + "-kafka", IntStream.rangeClosed(0, 4).mapToObj(i -> CLUSTER_NAME + "-kafka-" + i).toList()),
-                CLUSTER_CA,
-                CLIENTS_CA);
-
-        KafkaStatus status = new KafkaStatus();
-        Checkpoint async = context.checkpoint();
-        kr.reconcile(status, Clock.systemUTC())
-                .onComplete(context.succeeding(v -> context.verify(() -> {
-
-                    verify(operations, times(1)).canScaleDownBrokers(any(), any(), any(), any(), any());
-
-                    // Scale-down of Kafka is done in one go => we should see two invocations (first from scale-down and second from regular patching)
-                    assertThat(kafkaPodSetCaptor.getAllValues().size(), is(1));
-                    assertThat(kafkaPodSetCaptor.getAllValues().get(0).getSpec().getPods().size(), is(3)); // => first capture is from kafkaScaleDown() with new replica count
-                    assertThat(kafkaPodSetBatchCaptor.getAllValues().size(), is(1));
-                    assertThat(kafkaPodSetBatchCaptor.getAllValues().get(0).get(0).getSpec().getPods().size(), is(3)); // => second capture is from kafkaPodSet() again with new replica count
-
-                    // Still one maybe-roll invocation
-                    assertThat(kr.maybeRollKafkaInvocations, is(1));
-
-                    // CMs for all remaining pods + the old shared config CM are reconciled
-                    assertThat(cmReconciliationCaptor.getAllValues().size(), is(4));
-                    assertThat(cmReconciliationCaptor.getAllValues(), is(List.of("my-cluster-kafka-0", "my-cluster-kafka-1", "my-cluster-kafka-2", "my-cluster-kafka-config")));
-
-                    // The  CMs for scaled down pods are deleted
-                    assertThat(cmDeletionCaptor.getAllValues().size(), is(2));
-                    assertThat(cmDeletionCaptor.getAllValues(), is(List.of("my-cluster-kafka-3", "my-cluster-kafka-4")));
-
-                    async.flag();
-                })));
-    }
-
-    @Test
-    public void testScaleDownWithNonEmptyBrokersWithDisabledBrokerScaleDownCheck(VertxTestContext context)  {
-        Kafka oldKafka = new KafkaBuilder(KAFKA)
-                .editSpec()
-                    .editZookeeper()
-                        .withReplicas(5)
-                    .endZookeeper()
-                    .editKafka()
-                        .withReplicas(5)
-                    .endKafka()
-                .endSpec()
-                .build();
-
-        Kafka patchKafka = new KafkaBuilder(KAFKA)
-                .editMetadata()
-                    .addToAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_SKIP_BROKER_SCALEDOWN_CHECK, "true"))
-                .endMetadata()
-                .build();
-
-        List<KafkaPool> oldPools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, oldKafka, null, Map.of(), Map.of(), false, SHARED_ENV_PROVIDER);
-        KafkaCluster oldKafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, oldKafka, oldPools, VERSIONS, KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, false, null, SHARED_ENV_PROVIDER);
-        StrimziPodSet oldKafkaPodSet = oldKafkaCluster.generatePodSets(false, null, null, brokerId -> null).get(0);
-
-
-        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
-
-        SecretOperator secretOps = supplier.secretOperations;
-        when(secretOps.reconcile(any(), any(), any(), any())).thenReturn(Future.succeededFuture());
-        when(secretOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(new Secret()));
-
-        ConfigMapOperator mockCmOps = supplier.configMapOperations;
-        when(mockCmOps.listAsync(any(), eq(oldKafkaCluster.getSelectorLabels()))).thenReturn(Future.succeededFuture(oldKafkaCluster.generatePerBrokerConfigurationConfigMaps(new MetricsAndLogging(null, null), ADVERTISED_HOSTNAMES, ADVERTISED_PORTS)));
-        ArgumentCaptor<String> cmReconciliationCaptor = ArgumentCaptor.forClass(String.class);
-        when(mockCmOps.reconcile(any(), any(), cmReconciliationCaptor.capture(), any())).thenReturn(Future.succeededFuture());
-        ArgumentCaptor<String> cmDeletionCaptor = ArgumentCaptor.forClass(String.class);
-        when(mockCmOps.deleteAsync(any(), any(), cmDeletionCaptor.capture(), anyBoolean())).thenReturn(Future.succeededFuture());
-
-        StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
-
-        // Kafka
-        when(mockPodSetOps.listAsync(any(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenReturn(Future.succeededFuture(List.of(oldKafkaPodSet)));
+        @SuppressWarnings("unchecked")
         ArgumentCaptor<List<StrimziPodSet>> kafkaPodSetBatchCaptor =  ArgumentCaptor.forClass(List.class);
         when(mockPodSetOps.batchReconcile(any(), any(), kafkaPodSetBatchCaptor.capture(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenAnswer(i -> {
             List<StrimziPodSet> podSets = i.getArgument(2);
@@ -1045,27 +886,21 @@ public class KafkaAssemblyOperatorPodSetTest {
         PreventBrokerScaleDownCheck operations = supplier.brokerScaleDownOperations;
         when(operations.canScaleDownBrokers(any(), any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of(3, 4)));
 
-        KafkaAssemblyOperatorPodSetTest.MockKafkaReconciler kr = new KafkaAssemblyOperatorPodSetTest.MockKafkaReconciler(
+        MockKafkaReconciler kr = new MockKafkaReconciler(
                 new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
                 vertx,
                 config,
                 supplier,
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 patchKafka,
-                VERSION_CHANGE,
-                Map.of(),
-                Map.of(CLUSTER_NAME + "-kafka", IntStream.rangeClosed(0, 4).mapToObj(i -> CLUSTER_NAME + "-kafka-" + i).toList()),
+                KAFKA_CLUSTER,
                 CLUSTER_CA,
                 CLIENTS_CA);
-
 
         KafkaStatus status = new KafkaStatus();
         Checkpoint async = context.checkpoint();
         kr.reconcile(status, Clock.systemUTC())
                 .onComplete(context.succeeding(v -> context.verify(() -> {
-
-                    verify(operations, times(0)).canScaleDownBrokers(any(), any(), any(), any(), any());
-
                     // Scale-down of Kafka is done in one go => we should see two invocations (first from scale-down and second from regular patching)
                     assertThat(kafkaPodSetCaptor.getAllValues().size(), is(1));
                     assertThat(kafkaPodSetCaptor.getAllValues().get(0).getSpec().getPods().size(), is(3)); // => first capture is from kafkaScaleDown() with new replica count
@@ -1163,14 +998,13 @@ public class KafkaAssemblyOperatorPodSetTest {
         int maybeRollKafkaInvocations = 0;
         Function<Pod, RestartReasons> kafkaPodNeedsRestart = null;
 
-        public MockKafkaReconciler(Reconciliation reconciliation, Vertx vertx, ClusterOperatorConfig config, ResourceOperatorSupplier supplier, PlatformFeaturesAvailability pfa, Kafka kafkaAssembly, KafkaVersionChange versionChange, Map<String, Storage> oldStorage, Map<String, List<String>> currentPods, ClusterCa clusterCa, ClientsCa clientsCa) {
-            super(reconciliation, kafkaAssembly, null, oldStorage, currentPods, clusterCa, clientsCa, versionChange, config, supplier, pfa, vertx);
+        public MockKafkaReconciler(Reconciliation reconciliation, Vertx vertx, ClusterOperatorConfig config, ResourceOperatorSupplier supplier, PlatformFeaturesAvailability pfa, Kafka kafkaAssembly, KafkaCluster kafkaCluster, ClusterCa clusterCa, ClientsCa clientsCa) {
+            super(reconciliation, kafkaAssembly, null, kafkaCluster, clusterCa, clientsCa, config, supplier, pfa, vertx);
         }
 
         @Override
         public Future<Void> reconcile(KafkaStatus kafkaStatus, Clock clock)    {
-            return brokerScaleDownCheck()
-                    .compose(i -> manualPodCleaning())
+            return manualPodCleaning()
                     .compose(i -> manualRollingUpdate())
                     .compose(i -> scaleDown())
                     .compose(i -> listeners())

@@ -7,6 +7,7 @@
   If needed, `UseKRaft` can be disabled in the feature gates configuration in the Cluster Operator.
 * Fix NullPointerException from missing listenerConfig when using custom auth
 * Added support for Kafka Exporter `offset.show-all` parameter
+* Improve broker scale-down prevention to continue in reconciliation when scale-down cannot be executed
 * Added support for `custom` SASL config in standalone Topic Operator installs to support Cloud Provider alternate access controlles i.e. `IAM` in `AWS`
 
 ### Changes, deprecations and removals

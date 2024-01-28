@@ -35,12 +35,14 @@ import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.ClusterCa;
+import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.KafkaVersionChange;
 import io.strimzi.operator.cluster.model.PodRevision;
 import io.strimzi.operator.cluster.model.RestartReason;
 import io.strimzi.operator.cluster.operator.assembly.CaReconciler;
 import io.strimzi.operator.cluster.operator.assembly.KafkaAssemblyOperator;
+import io.strimzi.operator.cluster.operator.assembly.KafkaClusterCreator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaReconciler;
 import io.strimzi.operator.cluster.operator.assembly.StrimziPodSetController;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
@@ -201,14 +203,21 @@ public class KubernetesRestartEventsMockTest {
                 .endSpec()
                 .build();
 
-        KafkaReconciler lowerVolumes = new KafkaReconciler(reconciliation,
+        KafkaCluster kafkaCluster = KafkaClusterCreator.createKafkaCluster(reconciliation,
                 kafkaWithLessVolumes,
                 null,
                 Map.of(),
                 Map.of(CLUSTER_NAME + "-kafka", List.of(CLUSTER_NAME + "-kafka-0")),
+                VERSION_CHANGE,
+                true,
+                VERSIONS,
+                supplier.sharedEnvironmentProvider);
+        KafkaReconciler lowerVolumes = new KafkaReconciler(reconciliation,
+                kafkaWithLessVolumes,
+                null,
+                kafkaCluster,
                 clusterCa,
                 clientsCa,
-                VERSION_CHANGE,
                 clusterOperatorConfig,
                 supplier,
                 PFA,
@@ -243,14 +252,21 @@ public class KubernetesRestartEventsMockTest {
         Secret patched = modifySecretWithAnnotation(clusterCa.caCertSecret(), Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, "-1");
         ClusterCa oldGenClusterCa = createClusterCaWithSecret(patched);
 
-        KafkaReconciler reconciler = new KafkaReconciler(reconciliation,
+        KafkaCluster kafkaCluster = KafkaClusterCreator.createKafkaCluster(reconciliation,
                 KAFKA,
                 null,
                 Map.of(),
                 Map.of(CLUSTER_NAME + "-kafka", List.of(CLUSTER_NAME + "-kafka-0")),
+                VERSION_CHANGE,
+                true,
+                VERSIONS,
+                supplier.sharedEnvironmentProvider);
+        KafkaReconciler reconciler = new KafkaReconciler(reconciliation,
+                KAFKA,
+                null,
+                kafkaCluster,
                 oldGenClusterCa,
                 clientsCa,
-                VERSION_CHANGE,
                 clusterOperatorConfig,
                 supplier,
                 PFA,
@@ -268,14 +284,21 @@ public class KubernetesRestartEventsMockTest {
             }
         };
 
-        KafkaReconciler reconciler = new KafkaReconciler(reconciliation,
+        KafkaCluster kafkaCluster = KafkaClusterCreator.createKafkaCluster(reconciliation,
                 KAFKA,
                 null,
                 Map.of(),
                 Map.of(CLUSTER_NAME + "-kafka", List.of(CLUSTER_NAME + "-kafka-0")),
+                VERSION_CHANGE,
+                true,
+                VERSIONS,
+                supplier.sharedEnvironmentProvider);
+        KafkaReconciler reconciler = new KafkaReconciler(reconciliation,
+                KAFKA,
+                null,
+                kafkaCluster,
                 ca,
                 clientsCa,
-                VERSION_CHANGE,
                 clusterOperatorConfig,
                 supplier,
                 PFA,
@@ -293,14 +316,21 @@ public class KubernetesRestartEventsMockTest {
             }
         };
 
-        KafkaReconciler reconciler = new KafkaReconciler(reconciliation,
+        KafkaCluster kafkaCluster = KafkaClusterCreator.createKafkaCluster(reconciliation,
                 KAFKA,
                 null,
                 Map.of(),
                 Map.of(CLUSTER_NAME + "-kafka", List.of(CLUSTER_NAME + "-kafka-0")),
+                VERSION_CHANGE,
+                true,
+                VERSIONS,
+                supplier.sharedEnvironmentProvider);
+        KafkaReconciler reconciler = new KafkaReconciler(reconciliation,
+                KAFKA,
+                null,
+                kafkaCluster,
                 ca,
                 clientsCa,
-                VERSION_CHANGE,
                 clusterOperatorConfig,
                 supplier,
                 PFA,
@@ -351,14 +381,21 @@ public class KubernetesRestartEventsMockTest {
         Admin adminClient = withChangedBrokerConf(ResourceUtils.adminClientProvider().createAdminClient(null, null, null, null));
         ResourceOperatorSupplier supplierWithModifiedAdmin = supplierWithAdmin(vertx, () -> adminClient);
 
-        KafkaReconciler reconciler = new KafkaReconciler(reconciliation,
+        KafkaCluster kafkaCluster = KafkaClusterCreator.createKafkaCluster(reconciliation,
                 KAFKA,
                 null,
                 Map.of(),
                 Map.of(CLUSTER_NAME + "-kafka", List.of(CLUSTER_NAME + "-kafka-0")),
+                VERSION_CHANGE,
+                true,
+                VERSIONS,
+                supplier.sharedEnvironmentProvider);
+        KafkaReconciler reconciler = new KafkaReconciler(reconciliation,
+                KAFKA,
+                null,
+                kafkaCluster,
                 clusterCa,
                 clientsCa,
-                VERSION_CHANGE,
                 clusterOperatorConfig,
                 supplierWithModifiedAdmin,
                 PFA,
@@ -404,14 +441,21 @@ public class KubernetesRestartEventsMockTest {
             throw new ConfigException("");
         });
 
-        KafkaReconciler reconciler = new KafkaReconciler(reconciliation,
+        KafkaCluster kafkaCluster = KafkaClusterCreator.createKafkaCluster(reconciliation,
                 KAFKA,
                 null,
                 Map.of(),
                 Map.of(CLUSTER_NAME + "-kafka", List.of(CLUSTER_NAME + "-kafka-0")),
+                VERSION_CHANGE,
+                true,
+                VERSIONS,
+                supplier.sharedEnvironmentProvider);
+        KafkaReconciler reconciler = new KafkaReconciler(reconciliation,
+                KAFKA,
+                null,
+                kafkaCluster,
                 clusterCa,
                 clientsCa,
-                VERSION_CHANGE,
                 clusterOperatorConfig,
                 supplierWithModifiedAdmin,
                 PFA,
@@ -460,7 +504,25 @@ public class KubernetesRestartEventsMockTest {
                 createInitialCaKeySecret(NAMESPACE, CLUSTER_NAME, clusterCaKeySecretName(CLUSTER_NAME), MockCertManager.clusterCaKey())
         );
 
-        KafkaReconciler reconciler = new KafkaReconciler(reconciliation, KAFKA, null, Map.of(), Map.of(CLUSTER_NAME + "-kafka", List.of(CLUSTER_NAME + "-kafka-0")), changedCa, clientsCa, VERSION_CHANGE, clusterOperatorConfig, supplier, PFA, vertx);
+        KafkaCluster kafkaCluster = KafkaClusterCreator.createKafkaCluster(reconciliation,
+                KAFKA,
+                null,
+                Map.of(),
+                Map.of(CLUSTER_NAME + "-kafka", List.of(CLUSTER_NAME + "-kafka-0")),
+                VERSION_CHANGE,
+                true,
+                VERSIONS,
+                supplier.sharedEnvironmentProvider);
+        KafkaReconciler reconciler = new KafkaReconciler(reconciliation,
+                KAFKA,
+                null,
+                kafkaCluster,
+                changedCa,
+                clientsCa,
+                clusterOperatorConfig,
+                supplier,
+                PFA,
+                vertx);
         reconciler.reconcile(ks, Clock.systemUTC()).onComplete(verifyEventPublished(KAFKA_CERTIFICATES_CHANGED, context));
 
     }
@@ -485,7 +547,25 @@ public class KubernetesRestartEventsMockTest {
     }
 
     private KafkaReconciler defaultReconciler(Vertx vertx) {
-        return new KafkaReconciler(reconciliation, KAFKA, null, Map.of(), Map.of(CLUSTER_NAME + "-kafka", List.of(CLUSTER_NAME + "-kafka-0")), clusterCa, clientsCa, VERSION_CHANGE, clusterOperatorConfig, supplier, PFA, vertx);
+        KafkaCluster kafkaCluster = KafkaClusterCreator.createKafkaCluster(reconciliation,
+                KAFKA,
+                null,
+                Map.of(),
+                Map.of(CLUSTER_NAME + "-kafka", List.of(CLUSTER_NAME + "-kafka-0")),
+                VERSION_CHANGE,
+                true,
+                VERSIONS,
+                supplier.sharedEnvironmentProvider);
+        return new KafkaReconciler(reconciliation,
+                KAFKA,
+                null,
+                kafkaCluster,
+                clusterCa,
+                clientsCa,
+                clusterOperatorConfig,
+                supplier,
+                PFA,
+                vertx);
     }
 
     private ResourceOperatorSupplier supplierWithAdmin(Vertx vertx, Supplier<Admin> adminClientSupplier) {

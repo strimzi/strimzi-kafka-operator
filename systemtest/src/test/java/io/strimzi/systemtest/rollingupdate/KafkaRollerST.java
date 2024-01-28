@@ -46,6 +46,7 @@ import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaNodePoolUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StrimziPodSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
@@ -156,12 +157,15 @@ public class KafkaRollerST extends AbstractST {
         LOGGER.info("Scaling down to {}", initialBrokerReplicaCount);
         if (Environment.isKafkaNodePoolsEnabled()) {
             KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(KafkaResource.getNodePoolName(testStorage.getClusterName()), knp -> knp.getSpec().setReplicas(initialBrokerReplicaCount), testStorage.getNamespaceName());
+            KafkaNodePoolUtils.waitForKafkaNodePoolStatusUpdate(testStorage.getNamespaceName(), KafkaResource.getNodePoolName(testStorage.getClusterName()));
+            assertThat("NodePool still has old number of replicas", KafkaNodePoolResource.kafkaNodePoolClient().inNamespace(testStorage.getNamespaceName()).withName(KafkaResource.getNodePoolName(testStorage.getClusterName())).get().getStatus().getReplicas(), is(4));
         } else {
             KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> k.getSpec().getKafka().setReplicas(initialBrokerReplicaCount), testStorage.getNamespaceName());
+            KafkaUtils.waitForKafkaStatusUpdate(testStorage.getNamespaceName(), testStorage.getClusterName());
         }
 
-        LOGGER.info("Waiting for warning regarding preventing Kafka from scaling down when the broker to be scaled down have some partitions");
-        KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(testStorage.getClusterName(), testStorage.getNamespaceName(), "Cannot scale down broker.*");
+        LOGGER.info("Scale-down should have been reverted and the cluster should be still Ready");
+        KafkaUtils.waitForKafkaReady(testStorage.getNamespaceName(), testStorage.getClusterName());
         waitForPodsReady(testStorage.getNamespaceName(), testStorage.getKafkaSelector(), scaledUpBrokerReplicaCount, false);
 
         LOGGER.info("Remove Topic, thereby remove all partitions located on broker to be scaled down");
