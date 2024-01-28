@@ -62,6 +62,7 @@ public class Session extends AbstractVerticle {
 
     private static final int HEALTH_SERVER_PORT = 8080;
 
+    private static final TypeReference<HashMap<String, String>> STRING_HASH_MAP_TYPE_REFERENCE = new TypeReference<HashMap<String, String>>() { };
 
     private final Config config;
     // this field is required to keep the underlying shared worker pool alive
@@ -437,8 +438,7 @@ public class Session extends AbstractVerticle {
 
         ObjectMapper objectMapper = new ObjectMapper();
         try {
-            TypeReference<HashMap<String, String>> typeRef = new TypeReference<HashMap<String, String>>() { };
-            Map<String, String> customProperties = objectMapper.readValue(customPropsString, typeRef);
+            Map<String, String> customProperties = objectMapper.readValue(customPropsString, STRING_HASH_MAP_TYPE_REFERENCE );
 
             if (customProperties.isEmpty()) {
                 throw new InvalidConfigurationException("SASL custom config properties empty");

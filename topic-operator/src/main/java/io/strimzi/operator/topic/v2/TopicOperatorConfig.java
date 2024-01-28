@@ -83,6 +83,8 @@ record TopicOperatorConfig(
 
     private static final Map<String, ConfigParameter<?>> CONFIG_VALUES = new HashMap<>();
 
+    private static final TypeReference<HashMap<String, String>> STRING_HASH_MAP_TYPE_REFERENCE = new TypeReference<HashMap<String, String>>() { };
+
     static final ConfigParameter<String> NAMESPACE = new ConfigParameter<>("STRIMZI_NAMESPACE", NON_EMPTY_STRING, CONFIG_VALUES);
     static final ConfigParameter<Labels> RESOURCE_LABELS = new ConfigParameter<>("STRIMZI_RESOURCE_LABELS", LABEL_PREDICATE, "", CONFIG_VALUES);
     static final ConfigParameter<String> BOOTSTRAP_SERVERS = new ConfigParameter<>("STRIMZI_KAFKA_BOOTSTRAP_SERVERS", NON_EMPTY_STRING, CONFIG_VALUES);
@@ -219,8 +221,6 @@ record TopicOperatorConfig(
 
     private void setCustomSaslConfigs(Map<String, Object> kafkaClientProps) {
         TopicOperatorConfig config = this;
-        String configSaslMechanism = config.saslMechanism();
-
         String customPropsString = config.saslCustomConfig();
 
         if (customPropsString.isEmpty()) {
@@ -229,8 +229,7 @@ record TopicOperatorConfig(
 
         ObjectMapper objectMapper = new ObjectMapper();
         try {
-            TypeReference<HashMap<String, String>> typeRef = new TypeReference<HashMap<String, String>>() { };
-            Map<String, String> customProperties = objectMapper.readValue(customPropsString, typeRef);
+            Map<String, String> customProperties = objectMapper.readValue(customPropsString, STRING_HASH_MAP_TYPE_REFERENCE );
 
             if (customProperties.isEmpty()) {
                 throw new InvalidConfigurationException("SASL custom config properties empty");
