@@ -484,6 +484,8 @@ public class Session extends AbstractVerticle {
             } else {
                 saslMechanism = "SCRAM-SHA-512";
             }
+        } else {
+            throw new IllegalArgumentException("Invalid SASL_MECHANISM type: " + config.get(Config.SASL_MECHANISM));
         }
 
         kafkaClientProps.setProperty(SaslConfigs.SASL_MECHANISM, saslMechanism);
