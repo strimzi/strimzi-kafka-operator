@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
@@ -28,6 +29,7 @@ import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
+import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -43,6 +45,7 @@ import static io.strimzi.systemtest.resources.ResourceManager.cmdKubeClient;
 import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @Tag(MIGRATION)
 public class MigrationST extends AbstractST {
@@ -355,24 +358,40 @@ public class MigrationST extends AbstractST {
 
     private void waitForZooKeeperResourcesDeletion(TestStorage testStorage) {
         cmdKubeClient().namespace(testStorage.getNamespaceName())
-            .execInCurrentNamespace(Level.INFO, "wait", "--for", "delete", "networkpolicy,serviceaccount,service,secret,configmap,pdb,sps,pvc,pod",
+            .execInCurrentNamespace(Level.INFO, "wait", "--for", "delete", "networkpolicy,serviceaccount,service,secret,configmap,poddisruptionbudget,strimzipodset,persistentvolumeclaim,pod",
                 "-l", Labels.STRIMZI_NAME_LABEL + "=" + testStorage.getZookeeperStatefulSetName(), "--timeout=300s");
     }
 
     private void assertThatTopicIsPresentInZKMetadata(String namespaceName, LabelSelector zkSelector, String topicName) {
         String zkPodName = kubeClient().namespace(namespaceName).listPods(zkSelector).get(0).getMetadata().getName();
-        String commandOutput = cmdKubeClient().namespace(namespaceName).execInPod(zkPodName, "./bin/zookeeper-shell.sh", "localhost:12181", "ls", "/brokers/topics").out().trim();
 
-        assertThat(String.join("KafkaTopic: %s is not present ZK metadata", topicName), commandOutput.contains(topicName), is(true));
+        TestUtils.waitFor(String.join("KafkaTopic: %s to be present in ZK metadata"), TestConstants.GLOBAL_POLL_INTERVAL_MEDIUM, TestConstants.GLOBAL_STATUS_TIMEOUT,
+            () -> {
+                try {
+                    String commandOutput = cmdKubeClient().namespace(namespaceName).execInPod(zkPodName, "./bin/zookeeper-shell.sh", "localhost:12181", "ls", "/brokers/topics").out().trim();
+                    return commandOutput.contains(topicName);
+                } catch (Exception e) {
+                    LOGGER.warn("Exception caught during command execution, message: {}", e.getMessage());
+                    return false;
+                }
+            });
     }
 
     private void assertThatTopicIsPresentInKRaftMetadata(String namespaceName, LabelSelector controllerSelector, String topicName) {
         String controllerPodName = kubeClient().namespace(namespaceName).listPods(controllerSelector).get(0).getMetadata().getName();
         String kafkaLogDirName = KafkaUtils.getKafkaLogFolderNameInPod(namespaceName, controllerPodName);
-        String commandOutput = cmdKubeClient().namespace(namespaceName).execInPod(controllerPodName, "/bin/bash", "-c", "./bin/kafka-dump-log.sh --cluster-metadata-decoder --skip-record-metadata" +
-            " --files /var/lib/kafka/data/" + kafkaLogDirName + "/__cluster_metadata-0/00000000000000000000.log | grep " + topicName).out().trim();
 
-        assertThat(String.join("KafkaTopic: %s is not present KRaft metadata", topicName), commandOutput.contains(topicName), is(true));
+        TestUtils.waitFor(String.join("KafkaTopic: %s to be present in KRaft metadata"), TestConstants.GLOBAL_POLL_INTERVAL_MEDIUM, TestConstants.GLOBAL_STATUS_TIMEOUT,
+            () -> {
+                try {
+                    String commandOutput = cmdKubeClient().namespace(namespaceName).execInPod(controllerPodName, "/bin/bash", "-c", "./bin/kafka-dump-log.sh --cluster-metadata-decoder --skip-record-metadata" +
+                        " --files /var/lib/kafka/data/" + kafkaLogDirName + "/__cluster_metadata-0/00000000000000000000.log | grep " + topicName).out().trim();
+                    return commandOutput.contains(topicName);
+                } catch (Exception e) {
+                    LOGGER.warn("Exception caught during command execution, message: {}", e.getMessage());
+                    return false;
+                }
+            });
     }
 
     private void assertThatClusterMetadataTopicPresentInBrokerPod(String namespaceName, LabelSelector brokerSelector, boolean clusterMetadataShouldExist) {
@@ -390,6 +409,7 @@ public class MigrationST extends AbstractST {
 
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
+        assumeTrue(Environment.isKafkaNodePoolsEnabled() && Environment.isKRaftForCOEnabled());
         this.clusterOperator = this.clusterOperator
             .defaultInstallation(extensionContext)
             .createInstallation()
