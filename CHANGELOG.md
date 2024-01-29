@@ -8,7 +8,7 @@
 * Fix NullPointerException from missing listenerConfig when using custom auth
 * Added support for Kafka Exporter `offset.show-all` parameter
 * Improve broker scale-down prevention to continue in reconciliation when scale-down cannot be executed
-* Added support for `custom` SASL config in standalone Topic Operator installs to support Cloud Provider alternate access controlles i.e. `IAM` in `AWS`
+* Added support for `custom` SASL config in standalone Topic Operator deployment to support alternate access controllers (i.e. `AWS_MSK_IAM"`)
 
 ### Changes, deprecations and removals
 
