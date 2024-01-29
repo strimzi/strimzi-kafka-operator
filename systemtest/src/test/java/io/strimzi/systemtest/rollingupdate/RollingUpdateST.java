@@ -97,13 +97,13 @@ class RollingUpdateST extends AbstractST {
      *     - One of Zookeeper Pods is in Pending state
      *  4. - Consume messages from KafkaTopic created previously
      *  5. - Modify Zookeeper to reasonable CPU request
-     *     - Zookeeper Pods are rolled including previously pending Pod.
-     *  6. - Modify Kafka to unreasonable CPU request causing Rolling Update
+     *     - Zookeeper Pods are rolled including previously pending Pod
+     *  6. - Modify Kafka with an unreasonable CPU request to trigger a Rolling Update
      *     - One of Kafka Pods is in Pending state
      *  7. - Consume messages from KafkaTopic created previously
-     *  8. - Modify Kafka to reasonable CPU request
-     *     - Pods are rolled including previously pending Pod.
-     *  9. - Create mew KafkaTopic and transmit messages using this topic
+     *  8. - Modify Kafka to the reasonable CPU request
+     *     - Pods are rolled including previously pending Pod
+     *  9. - Create a new KafkaTopic and transmit messages using this topic
      *     - Topic is created and messages transmitted, verifying both Zookeeper and Kafka works
      *
      * @usecase
@@ -168,6 +168,7 @@ class RollingUpdateST extends AbstractST {
 
         // Kafka recovery
 
+        // change kafka to unreasonable CPU request causing trigger of Rolling update and recover by second modification
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> {
             k.getSpec()
                 .getKafka()
@@ -185,6 +186,7 @@ class RollingUpdateST extends AbstractST {
         resourceManager.createResourceWithWait(extensionContext, clients.consumerStrimzi());
         ClientUtils.waitForConsumerClientSuccess(testStorage);
 
+        LOGGER.info("Recover Kafka {}/{} from pending state by modifying its resource request to realistic value", testStorage.getClusterName(), testStorage.getNamespaceName());
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> {
             k.getSpec()
                 .getKafka()
@@ -216,11 +218,11 @@ class RollingUpdateST extends AbstractST {
      *  3. - Modify controller KafkaNodePool to unreasonable CPU request causing Rolling Update
      *     - One of controller KafkaNodePool Pods is in Pending state
      *  4. - Modify controller KafkaNodePool to som reasonable CPU request
-     *     - Pods are rolled including previously pending Pod.
+     *     - Pods are rolled including previously pending Pod
      *  5. - Modify broker KafkaNodePool to unreasonable CPU request causing Rolling Update
      *     - One of broker KafkaNodePool Pods is in Pending state
      *  6. - Modify broker KafkaNodePool to som reasonable CPU request
-     *     - Pods are rolled including previously pending Pod.
+     *     - Pods are rolled including previously pending Pod
      *  7. - Consume messages from KafkaTopic created previously
      *
      * @usecase
@@ -882,7 +884,7 @@ class RollingUpdateST extends AbstractST {
      * to enter a pending state. Afterward wait for the pod to stabilize before reducing the CPU
      * request back to a reasonable amount, allowing the node pool to recover.
      */
-    private static void modifyNodePoolToUnscheduledAndRecover(String controllerPoolName, LabelSelector controllerPoolSelector, TestStorage testStorage) {
+    private static void modifyNodePoolToUnscheduledAndRecover(final String controllerPoolName, final LabelSelector controllerPoolSelector, final TestStorage testStorage) {
         // change knp to unreasonable CPU request causing trigger of Rolling update
         KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(controllerPoolName,
             knp -> {
