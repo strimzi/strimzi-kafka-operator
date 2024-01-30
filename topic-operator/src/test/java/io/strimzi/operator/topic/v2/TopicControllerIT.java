@@ -49,6 +49,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -726,7 +727,7 @@ class TopicControllerIT {
         assertEquals(Set.of(kt.getSpec().getReplicas()), replicationFactors(topicDescription));
         assertEquals(Map.of(), topicConfigMap(expectedTopicName));
 
-        Map<String, Set<KubeRef>> topics = new HashMap<>(operator.controller.topics);
+        Map<String, List<KubeRef>> topics = new HashMap<>(operator.controller.topics);
         assertFalse(topics.containsKey("foo")
                         || topics.containsKey("FOO"),
                 "Transition to a non-selected resource should result in removal from topics map: " + topics);
@@ -1918,7 +1919,7 @@ class TopicControllerIT {
             TopicOperatorException.Reason.NOT_SUPPORTED.reason,
             "Decreasing partitions not supported"));
     }
-    @Test
+    @RepeatedTest(10)
     public void shouldDetectConflictingKafkaTopicCreations(
             @BrokerConfig(name = "auto.create.topics.enable", value = "false")
             KafkaCluster kafkaCluster) throws ExecutionException, InterruptedException {
