@@ -52,16 +52,16 @@ public class KafkaMetadataStateManagerTest {
             .build();
 
     /**
-     *  Checks the expected transition between two states of the KafkaMetadataStateManager class.
+     *  Computes the next state to which the previous state has transitioned
      *
      * @param kafka The Kafka instance.
      * @param status Status of the Kafka custom resource where warnings about any issues with metadata state will be added
-     * @param useBooleanKraftFeatureEnabled if the UseKRaft feature gate is enabled on the operator
+     * @param isKRaftFeatureGateEnabled if the UseKRaft feature gate is enabled on the operator
      *
      * @return the state to which the previous state has transitioned
      */
-    private KafkaMetadataState checkTransition(Kafka kafka, KafkaStatus status, boolean useBooleanKraftFeatureEnabled) {
-        KafkaMetadataStateManager kafkaMetadataStateManager = new KafkaMetadataStateManager(RECONCILIATION, kafka, useBooleanKraftFeatureEnabled);
+    private KafkaMetadataState checkTransition(Kafka kafka, KafkaStatus status, boolean isKRaftFeatureGateEnabled) {
+        KafkaMetadataStateManager kafkaMetadataStateManager = new KafkaMetadataStateManager(RECONCILIATION, kafka, isKRaftFeatureGateEnabled);
         return kafkaMetadataStateManager.computeNextMetadataState(status);
     }
 
