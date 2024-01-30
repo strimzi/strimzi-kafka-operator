@@ -12,7 +12,7 @@ import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 
