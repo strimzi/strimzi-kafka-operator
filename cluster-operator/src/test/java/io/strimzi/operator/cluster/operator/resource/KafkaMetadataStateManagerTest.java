@@ -63,7 +63,7 @@ public class KafkaMetadataStateManagerTest {
      *
      * @return the state to which the previous state has transitioned
      */
-    private KafkaMetadataState checkTransition(Kafka kafka, KafkaStatus status, boolean isKRaftFeatureGateEnabled) {
+    private KafkaMetadataState computeNextTransition(Kafka kafka, KafkaStatus status, boolean isKRaftFeatureGateEnabled) {
         KafkaMetadataStateManager kafkaMetadataStateManager = new KafkaMetadataStateManager(RECONCILIATION, kafka, isKRaftFeatureGateEnabled);
         return kafkaMetadataStateManager.computeNextMetadataState(status);
     }
@@ -80,7 +80,7 @@ public class KafkaMetadataStateManagerTest {
                 .endStatus()
                 .build();
 
-        assertEquals(checkTransition(kafka, kafka.getStatus(), true), KRaftMigration);
+        assertEquals(computeNextTransition(kafka, kafka.getStatus(), true), KRaftMigration);
     }
 
     @Test
@@ -96,7 +96,7 @@ public class KafkaMetadataStateManagerTest {
                 .build();
 
         var exception = assertThrows(IllegalArgumentException.class, () ->
-                checkTransition(kafka, kafka.getStatus(), false));
+                computeNextTransition(kafka, kafka.getStatus(), false));
 
         assertEquals("Failed to reconcile a KRaft enabled cluster or migration to KRaft because useKRaft feature gate is disabled",
                 exception.getMessage());
@@ -114,7 +114,7 @@ public class KafkaMetadataStateManagerTest {
                 .endStatus()
                 .build();
 
-        assertEquals(checkTransition(kafka, kafka.getStatus(), true), KRaftPostMigration);
+        assertEquals(computeNextTransition(kafka, kafka.getStatus(), true), KRaftPostMigration);
     }
 
     @Test
@@ -129,7 +129,7 @@ public class KafkaMetadataStateManagerTest {
                 .endStatus()
                 .build();
 
-        assertEquals(checkTransition(kafka, kafka.getStatus(), true), PreKRaft);
+        assertEquals(computeNextTransition(kafka, kafka.getStatus(), true), PreKRaft);
     }
 
     @Test
@@ -144,7 +144,7 @@ public class KafkaMetadataStateManagerTest {
                 .endStatus()
                 .build();
 
-        assertEquals(checkTransition(kafka, kafka.getStatus(), true), KRaftDualWriting);
+        assertEquals(computeNextTransition(kafka, kafka.getStatus(), true), KRaftDualWriting);
     }
 
     @Test
@@ -159,7 +159,7 @@ public class KafkaMetadataStateManagerTest {
                 .endStatus()
                 .build();
 
-        assertEquals(checkTransition(kafka, kafka.getStatus(), true), KRaft);
+        assertEquals(computeNextTransition(kafka, kafka.getStatus(), true), KRaft);
     }
 
     @Test
@@ -174,6 +174,6 @@ public class KafkaMetadataStateManagerTest {
                 .endStatus()
                 .build();
 
-        assertEquals(checkTransition(kafka, kafka.getStatus(), true), ZooKeeper);
+        assertEquals(computeNextTransition(kafka, kafka.getStatus(), true), ZooKeeper);
     }
 }
