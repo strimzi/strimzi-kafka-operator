@@ -7,7 +7,7 @@
 |Property |Property type |Description
 |affinity
 |{KubeApiReferenceBase}#affinity-v1-core[Affinity]
-|For more information, see the {KubeApiReferenceBase}#affinity-v1-core[external documentation for core/v1 affinity].
+|
 |arrayOfBoundTypeVar
 |xref:type-Number-{context}[`Number`] array
 |
@@ -43,7 +43,7 @@
 |Example of field property.
 |intProperty
 |integer
-|An example int property. Added in Strimzi 0.0.1.
+|Added in Strimzi 0.0.1. An example int property.
 |listOfArray
 |string array of dimension 2
 |
@@ -101,25 +101,25 @@
 |mapStringString
 |map
 |
-|normalEnum 
+|normalEnum
 |string (one of [BAR, FOO])
 |
 |objectProperty
 |xref:type-ObjectProperty-{context}[`ObjectProperty`]
 |
-|or         
+|or
 |string
 |
 |polymorphicProperty
 |xref:type-PolymorphicLeft-{context}[`PolymorphicLeft`], xref:type-PolymorphicRight-{context}[`PolymorphicRight`]
-|The type depends on the value of the `polymorphicProperty.discrim` property within the given object, which must be one of [left, right].
-|rawList    
+|
+|rawList
 |object array
 |
-|spec       
+|spec
 |object
 |
-|status     
+|status
 |object
 |
 |stringProperty
