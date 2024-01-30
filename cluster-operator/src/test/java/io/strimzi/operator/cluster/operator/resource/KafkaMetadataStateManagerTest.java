@@ -25,6 +25,9 @@ import static io.strimzi.api.kafka.model.kafka.KafkaMetadataState.ZooKeeper;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+/**
+ * Tests the state transitions which happens in the KafkaMetadataStateManager class.
+ */
 public class KafkaMetadataStateManagerTest {
 
     private static final String CLUSTER_NAMESPACE = "my-namespace";
