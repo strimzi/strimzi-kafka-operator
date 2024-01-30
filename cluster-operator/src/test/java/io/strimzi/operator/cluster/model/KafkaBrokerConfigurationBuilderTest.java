@@ -66,6 +66,19 @@ public class KafkaBrokerConfigurationBuilderTest {
 
         assertThat(configuration, isEquivalent("broker.id=2",
                 "node.id=2"));
+
+        configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.KRAFT)
+                .build();
+        // brokers don't have broker.id when in KRaft-mode, only node.id
+        assertThat(configuration, !configuration.contains("broker.id"));
+        assertThat(configuration, configuration.contains("node.id=2"));
+
+        NodeRef controller = new NodeRef("my-cluster-kafka-3", 3, "kafka", true, false);
+        configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, controller, KafkaMetadataConfigurationState.KRAFT)
+                .build();
+        // controllers don't have broker.id at all, only node.id
+        assertThat(configuration, !configuration.contains("broker.id"));
+        assertThat(configuration, configuration.contains("node.id=3"));
     }
 
     @ParallelTest
@@ -2125,6 +2138,128 @@ public class KafkaBrokerConfigurationBuilderTest {
 
         Map<String, String> actualOptions = KafkaBrokerConfigurationBuilder.getOAuthOptions(auth);
         assertThat(actualOptions, is(equalTo(Collections.emptyMap())));
+    }
+
+    @ParallelTest
+    public void testBrokerIdAndNodeIdAndProcessRolesOnMigration() {
+        NodeRef controller = new NodeRef("my-cluster-controllers-1", 1, "controllers", true, false);
+        NodeRef broker = new NodeRef("my-cluster-brokers-0", 0, "brokers", false, true);
+        Set<NodeRef> nodes = Set.of(controller, broker);
+
+        for (KafkaMetadataConfigurationState state : KafkaMetadataConfigurationState.values()) {
+            String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, controller, state)
+                    .withKRaft("my-cluster", "my-namespace", Set.of(ProcessRoles.CONTROLLER), nodes)
+                    .build();
+            // controllers don't have broker.id at all in any migration state, only node.id, but always "controller" role
+            assertThat(configuration, !configuration.contains("broker.id"));
+            assertThat(configuration, configuration.contains("node.id=1"));
+            assertThat(configuration, configuration.contains("process.roles=controller"));
+
+            configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, broker, state)
+                    .withKRaft("my-cluster", "my-namespace", Set.of(ProcessRoles.BROKER), nodes)
+                    .build();
+            // brokers have broker.id (together with node.id) but no role up to the migration step ...
+            if (state.isZooKeeperOrMigration()) {
+                assertThat(configuration, configuration.contains("broker.id=0") && configuration.contains("node.id=0"));
+                assertThat(configuration, !configuration.contains("process.roles"));
+            }
+            // ... from post-migration (to KRaft) they are already in KRaft-mode, so no broker.id anymore, but "broker" role
+            if (state.isPostMigrationOrKRaft()) {
+                assertThat(configuration, !configuration.contains("broker.id"));
+                assertThat(configuration, configuration.contains("node.id=0"));
+                assertThat(configuration, configuration.contains("process.roles=broker"));
+            }
+        }
+    }
+
+    @ParallelTest
+    public void testListenersOnMigration() {
+        NodeRef broker = new NodeRef("my-cluster-brokers-0", 0, "brokers", false, true);
+        NodeRef controller = new NodeRef("my-cluster-controllers-1", 1, "controllers", true, false);
+        Set<NodeRef> nodes = Set.of(broker, controller);
+
+        GenericKafkaListener listener = new GenericKafkaListenerBuilder()
+                .withName("plain")
+                .withPort(9092)
+                .withType(KafkaListenerType.INTERNAL)
+                .withTls(false)
+                .build();
+
+        for (KafkaMetadataConfigurationState state : KafkaMetadataConfigurationState.values()) {
+            // controllers don't make sense in ZooKeeper state, but only from pre-migration to KRaft
+            if (state.isPreMigrationOrKRaft()) {
+                String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, controller, state)
+                        .withKRaft("my-cluster", "my-namespace", Set.of(ProcessRoles.CONTROLLER), nodes)
+                        .withListeners("my-cluster", "my-namespace", controller, singletonList(listener), listenerId -> "my-cluster-controllers-1.my-cluster-kafka-brokers.my-namespace.svc", listenerId -> "9092")
+                        .build();
+
+                // replication listener configured up to post-migration, before being full KRaft
+                if (state.isZooKeeperOrPostMigration()) {
+                    assertThat(configuration, configuration.contains("listener.name.replication-9091"));
+                    assertThat(configuration, configuration.contains("listener.security.protocol.map=CONTROLPLANE-9090:SSL,REPLICATION-9091:SSL"));
+                    assertThat(configuration, configuration.contains("inter.broker.listener.name=REPLICATION-9091"));
+                } else {
+                    assertThat(configuration, !configuration.contains("listener.name.replication-9091"));
+                    assertThat(configuration, configuration.contains("listener.security.protocol.map=CONTROLPLANE-9090:SSL"));
+                    assertThat(configuration, !configuration.contains("inter.broker.listener.name=REPLICATION-9091"));
+                }
+
+                assertThat(configuration, configuration.contains("listener.name.controlplane-9090"));
+                assertThat(configuration, configuration.contains("listeners=CONTROLPLANE-9090://0.0.0.0:9090"));
+                // controllers never advertises listeners
+                assertThat(configuration, !configuration.contains("advertised.listeners"));
+            }
+
+            String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, broker, state)
+                    .withKRaft("my-cluster", "my-namespace", Set.of(ProcessRoles.BROKER), nodes)
+                    .withListeners("my-cluster", "my-namespace", broker, singletonList(listener), listenerId -> "my-cluster-brokers-0.my-cluster-kafka-brokers.my-namespace.svc", listenerId -> "9092")
+                    .build();
+
+            if (state.isZooKeeperOrMigration()) {
+                // control plane is set as listener and advertised up to migration ...
+                assertThat(configuration, configuration.contains("listeners=CONTROLPLANE-9090://0.0.0.0:9090,REPLICATION-9091://0.0.0.0:9091,PLAIN-9092://0.0.0.0:9092"));
+                assertThat(configuration, configuration.contains("advertised.listeners=CONTROLPLANE-9090://my-cluster-brokers-0.my-cluster-kafka-brokers.my-namespace.svc:9090,REPLICATION-9091://my-cluster-brokers-0.my-cluster-kafka-brokers.my-namespace.svc:9091,PLAIN-9092://my-cluster-brokers-0.my-cluster-kafka-brokers.my-namespace.svc:9092"));
+                assertThat(configuration, configuration.contains("control.plane.listener.name=CONTROLPLANE-9090"));
+            } else {
+                // ... it's removed when in post-migration because brokers are full KRaft-mode
+                assertThat(configuration, configuration.contains("listeners=REPLICATION-9091://0.0.0.0:9091,PLAIN-9092://0.0.0.0:9092"));
+                assertThat(configuration, configuration.contains("advertised.listeners=REPLICATION-9091://my-cluster-brokers-0.my-cluster-kafka-brokers.my-namespace.svc:9091,PLAIN-9092://my-cluster-brokers-0.my-cluster-kafka-brokers.my-namespace.svc:9092"));
+                assertThat(configuration, !configuration.contains("control.plane.listener.name=CONTROLPLANE-9090"));
+            }
+            assertThat(configuration, configuration.contains("listener.security.protocol.map=CONTROLPLANE-9090:SSL,REPLICATION-9091:SSL,PLAIN-9092:PLAINTEXT"));
+            assertThat(configuration, configuration.contains("inter.broker.listener.name=REPLICATION-9091"));
+        }
+    }
+
+    @ParallelTest
+    public void testSimpleAuthorizationOnMigration() {
+        NodeRef broker = new NodeRef("my-cluster-brokers-0", 0, "brokers", false, true);
+        NodeRef controller = new NodeRef("my-cluster-controllers-1", 1, "controllers", true, false);
+
+        KafkaAuthorization auth = new KafkaAuthorizationSimpleBuilder()
+                .build();
+
+        for (KafkaMetadataConfigurationState state : KafkaMetadataConfigurationState.values()) {
+            // controllers don't make sense in ZooKeeper state, but only from pre-migration to KRaft
+            if (state.isPreMigrationOrKRaft()) {
+                String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, controller, state)
+                        .withAuthorization("my-cluster", auth)
+                        .build();
+
+                assertThat(configuration, isEquivalent("node.id=1",
+                        "authorizer.class.name=org.apache.kafka.metadata.authorizer.StandardAuthorizer",
+                        "super.users=User:CN=my-cluster-kafka,O=io.strimzi;User:CN=my-cluster-entity-topic-operator,O=io.strimzi;User:CN=my-cluster-entity-user-operator,O=io.strimzi;User:CN=my-cluster-kafka-exporter,O=io.strimzi;User:CN=my-cluster-cruise-control,O=io.strimzi;User:CN=cluster-operator,O=io.strimzi"));
+            }
+
+            String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, broker, state)
+                    .withAuthorization("my-cluster", auth)
+                    .build();
+            if (state.isMigrationOrKRaft()) {
+                assertThat(configuration, configuration.contains("authorizer.class.name=org.apache.kafka.metadata.authorizer.StandardAuthorizer"));
+            } else {
+                assertThat(configuration, configuration.contains("authorizer.class.name=kafka.security.authorizer.AclAuthorizer"));
+            }
+        }
     }
 
     static class IsEquivalent extends TypeSafeMatcher<String> {
