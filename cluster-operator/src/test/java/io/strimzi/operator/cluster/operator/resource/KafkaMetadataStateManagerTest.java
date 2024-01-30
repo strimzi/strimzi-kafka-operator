@@ -76,7 +76,7 @@ public class KafkaMetadataStateManagerTest {
                     .addToAnnotations(Annotations.ANNO_STRIMZI_IO_KRAFT, "migration")
                 .endMetadata()
                 .withNewStatus()
-                    .withKafkaMetadataState("ZooKeeper")
+                    .withKafkaMetadataState(ZooKeeper.name())
                 .endStatus()
                 .build();
 
@@ -91,7 +91,7 @@ public class KafkaMetadataStateManagerTest {
                     .addToAnnotations(Annotations.ANNO_STRIMZI_IO_KRAFT, "migration")
                 .endMetadata()
                 .withNewStatus()
-                    .withKafkaMetadataState("ZooKeeper")
+                    .withKafkaMetadataState(ZooKeeper.name())
                 .endStatus()
                 .build();
 
@@ -110,7 +110,7 @@ public class KafkaMetadataStateManagerTest {
                     .addToAnnotations(Annotations.ANNO_STRIMZI_IO_KRAFT, "migration")
                 .endMetadata()
                 .withNewStatus()
-                    .withKafkaMetadataState("KRaftDualWriting")
+                    .withKafkaMetadataState(KRaftDualWriting.name())
                 .endStatus()
                 .build();
 
@@ -125,7 +125,7 @@ public class KafkaMetadataStateManagerTest {
                     .addToAnnotations(Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled")
                 .endMetadata()
                 .withNewStatus()
-                    .withKafkaMetadataState("KRaftPostMigration")
+                    .withKafkaMetadataState(KRaftPostMigration.name())
                 .endStatus()
                 .build();
 
@@ -140,7 +140,7 @@ public class KafkaMetadataStateManagerTest {
                     .addToAnnotations(Annotations.ANNO_STRIMZI_IO_KRAFT, "rollback")
                 .endMetadata()
                 .withNewStatus()
-                    .withKafkaMetadataState("KRaftPostMigration")
+                    .withKafkaMetadataState(KRaftPostMigration.name())
                 .endStatus()
                 .build();
 
@@ -155,7 +155,7 @@ public class KafkaMetadataStateManagerTest {
                     .addToAnnotations(Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled")
                 .endMetadata()
                 .withNewStatus()
-                    .withKafkaMetadataState("PreKRaft")
+                    .withKafkaMetadataState(PreKRaft.name())
                 .endStatus()
                 .build();
 
@@ -170,7 +170,7 @@ public class KafkaMetadataStateManagerTest {
                     .addToAnnotations(Annotations.ANNO_STRIMZI_IO_KRAFT, "disabled")
                 .endMetadata()
                 .withNewStatus()
-                    .withKafkaMetadataState("KRaftMigration")
+                    .withKafkaMetadataState(KRaftMigration.name())
                 .endStatus()
                 .build();
 
