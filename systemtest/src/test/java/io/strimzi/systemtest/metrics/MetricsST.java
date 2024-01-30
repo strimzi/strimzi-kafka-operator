@@ -305,7 +305,7 @@ public class MetricsST extends AbstractST {
             .withNamespaceName(namespaceFirst)
             .withMessageCount(5000)
             .withProducerName(testStorage.getProducerName())
-            .withConsumerName(testStorage.getClusterName())
+            .withConsumerName(testStorage.getConsumerName())
             .build();
 
         resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());

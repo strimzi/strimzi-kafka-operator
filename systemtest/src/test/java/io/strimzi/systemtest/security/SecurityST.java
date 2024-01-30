@@ -825,7 +825,7 @@ class SecurityST extends AbstractST {
             .endSpec()
             .build());
 
-        PodUtils.waitUntilPodIsPresent(testStorage.getNamespaceName(), testStorage.getKafkaStatefulSetName() + "-connect");
+        PodUtils.waitUntilPodIsPresent(testStorage.getNamespaceName(), testStorage.getClusterName() + "-connect");
 
         String kafkaConnectPodName = kubeClient(testStorage.getNamespaceName()).listPods(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
 

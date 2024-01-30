@@ -196,10 +196,12 @@ class LogSettingST extends AbstractST {
         String kafkaSsName = KafkaResources.kafkaComponentName(LOG_SETTING_CLUSTER_NAME);
         String zkSsName = KafkaResources.zookeeperComponentName(LOG_SETTING_CLUSTER_NAME);
 
+        LabelSelector kafkaSelector = KafkaResource.getLabelSelector(LOG_SETTING_CLUSTER_NAME, kafkaSsName);
+        LabelSelector zkSelector = KafkaResource.getLabelSelector(LOG_SETTING_CLUSTER_NAME, zkSsName);
 
         Map<String, String> eoPods = DeploymentUtils.depSnapshot(Environment.TEST_SUITE_NAMESPACE, eoDepName);
-        Map<String, String> kafkaPods = PodUtils.podSnapshot(Environment.TEST_SUITE_NAMESPACE, testStorage.getKafkaSelector());
-        Map<String, String> zkPods = PodUtils.podSnapshot(Environment.TEST_SUITE_NAMESPACE, testStorage.getZookeeperSelector());
+        Map<String, String> kafkaPods = PodUtils.podSnapshot(Environment.TEST_SUITE_NAMESPACE, kafkaSelector);
+        Map<String, String> zkPods = PodUtils.podSnapshot(Environment.TEST_SUITE_NAMESPACE, zkSelector);
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(LOG_SETTING_CLUSTER_NAME, testStorage.getTopicName(), Environment.TEST_SUITE_NAMESPACE).build());
         resourceManager.createResourceWithWait(extensionContext, KafkaUserTemplates.tlsUser(Environment.TEST_SUITE_NAMESPACE, LOG_SETTING_CLUSTER_NAME, testStorage.getKafkaUsername()).build());
@@ -216,9 +218,9 @@ class LogSettingST extends AbstractST {
         assertThat("User operator's log level is set properly", checkLoggersLevel(Environment.TEST_SUITE_NAMESPACE, OPERATORS_LOGGERS, userOperatorMap), is(true));
 
         LOGGER.info("Checking if Kafka, ZooKeeper, TO and UO of cluster: {} has GC logging enabled in stateful sets/deployments", LOG_SETTING_CLUSTER_NAME);
-        checkGcLoggingPods(Environment.TEST_SUITE_NAMESPACE, testStorage.getKafkaSelector(), true);
+        checkGcLoggingPods(Environment.TEST_SUITE_NAMESPACE, kafkaSelector, true);
         if (!Environment.isKRaftModeEnabled()) {
-            checkGcLoggingPods(Environment.TEST_SUITE_NAMESPACE, testStorage.getZookeeperSelector(), true);
+            checkGcLoggingPods(Environment.TEST_SUITE_NAMESPACE, zkSelector, true);
             assertThat("TO GC logging is enabled", checkGcLoggingDeployments(Environment.TEST_SUITE_NAMESPACE, eoDepName, "topic-operator"), is(true));
         }
         assertThat("UO GC logging is enabled", checkGcLoggingDeployments(Environment.TEST_SUITE_NAMESPACE, eoDepName, "user-operator"), is(true));
@@ -239,23 +241,23 @@ class LogSettingST extends AbstractST {
         }, Environment.TEST_SUITE_NAMESPACE);
 
         if (!Environment.isKRaftModeEnabled()) {
-            RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(Environment.TEST_SUITE_NAMESPACE, testStorage.getZookeeperSelector(), 1, zkPods);
+            RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(Environment.TEST_SUITE_NAMESPACE, zkSelector, 1, zkPods);
         }
-        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(Environment.TEST_SUITE_NAMESPACE, testStorage.getKafkaSelector(), 3, kafkaPods);
+        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(Environment.TEST_SUITE_NAMESPACE, kafkaSelector, 3, kafkaPods);
         DeploymentUtils.waitTillDepHasRolled(Environment.TEST_SUITE_NAMESPACE, eoDepName, 1, eoPods);
 
         LOGGER.info("Checking if Kafka, ZooKeeper, TO and UO of cluster: {} has GC logging disabled in stateful sets/deployments", LOG_SETTING_CLUSTER_NAME);
-        checkGcLoggingPods(Environment.TEST_SUITE_NAMESPACE, testStorage.getKafkaSelector(), false);
+        checkGcLoggingPods(Environment.TEST_SUITE_NAMESPACE, kafkaSelector, false);
         if (!Environment.isKRaftModeEnabled()) {
-            checkGcLoggingPods(Environment.TEST_SUITE_NAMESPACE, testStorage.getZookeeperSelector(), false);
+            checkGcLoggingPods(Environment.TEST_SUITE_NAMESPACE, zkSelector, false);
             assertThat("TO GC logging is disabled", checkGcLoggingDeployments(Environment.TEST_SUITE_NAMESPACE, eoDepName, "topic-operator"), is(false));
         }
         assertThat("UO GC logging is disabled", checkGcLoggingDeployments(Environment.TEST_SUITE_NAMESPACE, eoDepName, "user-operator"), is(false));
 
         LOGGER.info("Checking if Kafka, ZooKeeper, TO and UO of cluster: {} has GC logging disabled in stateful sets/deployments", GC_LOGGING_SET_NAME);
-        checkGcLoggingPods(Environment.TEST_SUITE_NAMESPACE, testStorage.getKafkaSelector(), false);
+        checkGcLoggingPods(Environment.TEST_SUITE_NAMESPACE, kafkaSelector, false);
         if (!Environment.isKRaftModeEnabled()) {
-            checkGcLoggingPods(Environment.TEST_SUITE_NAMESPACE, testStorage.getZookeeperSelector(), false);
+            checkGcLoggingPods(Environment.TEST_SUITE_NAMESPACE, zkSelector, false);
             assertThat("TO GC logging is enabled", checkGcLoggingDeployments(Environment.TEST_SUITE_NAMESPACE, eoDepName, "topic-operator"), is(false));
         }
         assertThat("UO GC logging is enabled", checkGcLoggingDeployments(Environment.TEST_SUITE_NAMESPACE, eoDepName, "user-operator"), is(false));
