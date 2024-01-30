@@ -290,6 +290,17 @@ public class ReconcilerUtilsTest {
                     async.flag();
                 })));
     }
+    
+    @Test
+    public void testHashSecretContent() {
+        Secret secret = new SecretBuilder()
+            .addToData(Map.of("user-password", "changeit"))
+            .addToData(Map.of("userPassword", "changeit"))
+            .addToData(Map.of("PASSWORD", "changeit"))
+            .build();
+        
+        assertThat(ReconcilerUtils.hashSecretContent(secret, "password"), is("F9yAQqlPifM1mCBESPQ7hA=="));
+    }
 
     static class MockJmxCluster implements SupportsJmx {
         private final JmxModel jmx;

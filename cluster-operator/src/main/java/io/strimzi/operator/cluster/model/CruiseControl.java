@@ -415,10 +415,11 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     /**
      * Creates Cruise Control API auth usernames, passwords, and credentials file
      *
+     * @param passwordGenerator The password generator for API users
+     *
      * @return Map containing Cruise Control API auth credentials
      */
-    public static Map<String, String> generateCruiseControlApiCredentials() {
-        PasswordGenerator passwordGenerator = new PasswordGenerator(16);
+    public static Map<String, String> generateCruiseControlApiCredentials(PasswordGenerator passwordGenerator) {
         String apiAdminPassword = passwordGenerator.generate();
         String apiUserPassword = passwordGenerator.generate();
 
@@ -441,10 +442,13 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     /**
      * Generate the Secret containing the Cruise Control API auth credentials.
      *
+     * @param passwordGenerator The password generator for API users
+     * 
      * @return The generated Secret.
      */
-    public Secret generateApiSecret() {
-        return ModelUtils.createSecret(CruiseControlResources.apiSecretName(cluster), namespace, labels, ownerReference, generateCruiseControlApiCredentials(), Collections.emptyMap(), Collections.emptyMap());
+    public Secret generateApiSecret(PasswordGenerator passwordGenerator) {
+        return ModelUtils.createSecret(CruiseControlResources.apiSecretName(cluster), namespace, labels, ownerReference, 
+            generateCruiseControlApiCredentials(passwordGenerator), Collections.emptyMap(), Collections.emptyMap());
     }
 
     /**

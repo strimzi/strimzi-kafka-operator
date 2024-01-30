@@ -26,6 +26,7 @@ import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
@@ -40,7 +41,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 
 /**
  * Class used for reconciliation of Cruise Control. This class contains both the steps of the Cruise Control
@@ -64,12 +64,13 @@ public class CruiseControlReconciler {
     private final ServiceOperator serviceOperator;
     private final NetworkPolicyOperator networkPolicyOperator;
     private final ConfigMapOperator configMapOperator;
+    private final PasswordGenerator passwordGenerator;
 
     private boolean existingCertsChanged = false;
 
     private String serverConfigurationHash = "";
     private String capacityConfigurationHash = "";
-    private String apiCredentialsHash = "";
+    private String apiSecretHash = "";
     
     /**
      * Constructs the Cruise Control reconciler
@@ -83,6 +84,7 @@ public class CruiseControlReconciler {
      * @param kafkaBrokerStorage        A map with storage configuration used by the Kafka cluster and its broker pools
      * @param kafkaBrokerResources      A map with resource configuration used by the Kafka cluster and its broker pools
      * @param clusterCa                 The Cluster CA instance
+     * @param passwordGenerator         The password generator for API users
      */
     @SuppressWarnings({"checkstyle:ParameterNumber"})
     public CruiseControlReconciler(
@@ -94,7 +96,8 @@ public class CruiseControlReconciler {
             Set<NodeRef> kafkaBrokerNodes,
             Map<String, Storage> kafkaBrokerStorage,
             Map<String, ResourceRequirements> kafkaBrokerResources,
-            ClusterCa clusterCa
+            ClusterCa clusterCa,
+            PasswordGenerator passwordGenerator
     ) {
         this.reconciliation = reconciliation;
         this.cruiseControl = CruiseControl.fromCrd(reconciliation, kafkaAssembly, versions, kafkaBrokerNodes, kafkaBrokerStorage, kafkaBrokerResources, supplier.sharedEnvironmentProvider);
@@ -111,6 +114,7 @@ public class CruiseControlReconciler {
         this.serviceOperator = supplier.serviceOperations;
         this.networkPolicyOperator = supplier.networkPolicyOperator;
         this.configMapOperator = supplier.configMapOperations;
+        this.passwordGenerator = passwordGenerator;
     }
 
     /**
@@ -242,7 +246,7 @@ public class CruiseControlReconciler {
         if (cruiseControl != null) {
             return secretOperator.getAsync(reconciliation.namespace(), CruiseControlResources.apiSecretName(reconciliation.name()))
                     .compose(oldSecret -> {
-                        Secret newSecret = cruiseControl.generateApiSecret();
+                        Secret newSecret = cruiseControl.generateApiSecret(passwordGenerator);
 
                         if (oldSecret != null)  {
                             // The credentials should not change with every release
@@ -250,9 +254,9 @@ public class CruiseControlReconciler {
                             // But we use the new secret to update labels etc. if needed
                             newSecret.setData(oldSecret.getData());
                         }
-
-                        this.apiCredentialsHash = String.valueOf(newSecret.hashCode());
-
+                        
+                        this.apiSecretHash = ReconcilerUtils.hashSecretContent(newSecret, "password");
+                        
                         return secretOperator.reconcile(reconciliation, reconciliation.namespace(), CruiseControlResources.apiSecretName(reconciliation.name()), newSecret)
                                 .map((Void) null);
                     });
@@ -289,7 +293,7 @@ public class CruiseControlReconciler {
             podAnnotations.put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, String.valueOf(clusterCa.caKeyGeneration()));
             podAnnotations.put(CruiseControl.ANNO_STRIMZI_SERVER_CONFIGURATION_HASH, serverConfigurationHash);
             podAnnotations.put(CruiseControl.ANNO_STRIMZI_CAPACITY_CONFIGURATION_HASH, capacityConfigurationHash);
-            podAnnotations.put(Annotations.ANNO_STRIMZI_AUTH_HASH, apiCredentialsHash);
+            podAnnotations.put(Annotations.ANNO_STRIMZI_AUTH_HASH, apiSecretHash);
             
             Deployment deployment = cruiseControl.generateDeployment(podAnnotations, isOpenShift, imagePullPolicy, imagePullSecrets);
 

@@ -32,11 +32,15 @@ import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_SERVER_CERT_HASH;
 
@@ -380,5 +384,35 @@ public class ReconcilerUtils {
      */
     public static boolean kraftEnabled(Kafka kafka) {
         return KafkaCluster.ENABLED_VALUE_STRIMZI_IO_KRAFT.equals(Annotations.stringAnnotation(kafka, Annotations.ANNO_STRIMZI_IO_KRAFT, "disabled").toLowerCase(Locale.ENGLISH));
+    }
+
+    /**
+     * Creates a hash from Secret's content.
+     * @param secret Secret with data.
+     * @param keyword String used to find matching keys.
+     * @return Hash of the values whose keys match the keyword.
+     */
+    public static String hashSecretContent(Secret secret, String keyword) {
+        if (secret == null) {
+            return hash("Secret not found");
+        }
+        StringBuilder sb = new StringBuilder();
+        for (String key : secret.getData().keySet()) {
+            if (Pattern.compile(keyword, Pattern.CASE_INSENSITIVE).matcher(key).find()) {
+                sb.append(secret.getData().get(key));
+            }
+        }
+        return sb.toString().length() > 0 
+            ? hash(sb.toString()) 
+            : hash("Keyword not found");
+    }
+    
+    private static String hash(String s) {
+        try {
+            byte[] hash = MessageDigest.getInstance("MD5").digest(s.getBytes());
+            return Base64.getEncoder().encodeToString(hash);
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
