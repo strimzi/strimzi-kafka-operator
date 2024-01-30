@@ -2,91 +2,129 @@
 = `Example` schema reference
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property                       |Description
-|affinity                1.2+<.<a| For more information, see the {KubeApiReferenceBase}#affinity-v1-core[external documentation for core/v1 affinity].
-
-
+|Property |Property type |Description
+|affinity
 |{KubeApiReferenceBase}#affinity-v1-core[Affinity]
-|arrayOfBoundTypeVar     1.2+<.<a|
+|For more information, see the {KubeApiReferenceBase}#affinity-v1-core[external documentation for core/v1 affinity].
+|arrayOfBoundTypeVar
 |xref:type-Number-{context}[`Number`] array
-|arrayOfBoundTypeVar2    1.2+<.<a|
+|
+|arrayOfBoundTypeVar2
 |xref:type-Number-{context}[`Number`] array
-|arrayOfList             1.2+<.<a|
+|
+|arrayOfList
 |string array of dimension 2
-|arrayOfRawList          1.2+<.<a|
+|
+|arrayOfRawList
 |object array of dimension 2
-|arrayOfTypeVar          1.2+<.<a|
+|
+|arrayOfTypeVar
 |object array
-|arrayProperty           1.2+<.<a|
+|
+|arrayProperty
 |string array
-|arrayProperty2          1.2+<.<a|
+|
+|arrayProperty2
 |string array of dimension 2
-|booleanProperty         1.2+<.<a|
+|
+|booleanProperty
 |boolean
-|customisedEnum          1.2+<.<a|
+|
+|customisedEnum
 |string (one of [one, two])
-|either                  1.2+<.<a|
+|
+|either
 |string
-|fieldProperty           1.2+<.<a|Example of field property.
+|
+|fieldProperty
 |string
-|intProperty             1.2+<.<a|An example int property. Added in Strimzi 0.0.1.
+|Example of field property.
+|intProperty
 |integer
-|listOfArray             1.2+<.<a|
+|An example int property. Added in Strimzi 0.0.1.
+|listOfArray
 |string array of dimension 2
-|listOfBoundTypeVar      1.2+<.<a|
+|
+|listOfBoundTypeVar
 |xref:type-Number-{context}[`Number`] array
-|listOfBoundTypeVar2     1.2+<.<a|
+|
+|listOfBoundTypeVar2
 |xref:type-Number-{context}[`Number`] array
-|listOfCustomizedEnum    1.2+<.<a|
+|
+|listOfCustomizedEnum
 |string (one or more of [one, two]) array
-|listOfInts              1.2+<.<a|
+|
+|listOfInts
 |integer array
-|listOfInts2             1.2+<.<a|
+|
+|listOfInts2
 |integer array of dimension 2
-|listOfMaps              1.2+<.<a|
+|
+|listOfMaps
 |map array
-|listOfNormalEnum        1.2+<.<a|
+|
+|listOfNormalEnum
 |string (one or more of [BAR, FOO]) array
-|listOfObjects           1.2+<.<a|
+|
+|listOfObjects
 |xref:type-ObjectProperty-{context}[`ObjectProperty`] array
-|listOfPolymorphic       1.2+<.<a|
+|
+|listOfPolymorphic
 |xref:type-PolymorphicLeft-{context}[`PolymorphicLeft`], xref:type-PolymorphicRight-{context}[`PolymorphicRight`] array
-|listOfRawList           1.2+<.<a|
+|
+|listOfRawList
 |object array of dimension 2
-|listOfTypeVar           1.2+<.<a|
+|
+|listOfTypeVar
 |object array
-|listOfWildcardTypeVar1  1.2+<.<a|
+|
+|listOfWildcardTypeVar1
 |string array
-|listOfWildcardTypeVar2  1.2+<.<a|
+|
+|listOfWildcardTypeVar2
 |xref:type-Number-{context}[`Number`] array
-|listOfWildcardTypeVar3  1.2+<.<a|
+|
+|listOfWildcardTypeVar3
 |xref:type-Number-{context}[`Number`] array
-|listOfWildcardTypeVar4  1.2+<.<a|
+|
+|listOfWildcardTypeVar4
 |xref:type-Number-{context}[`Number`] array of dimension 2
-|longProperty            1.2+<.<a|An example long property.
+|
+|longProperty
 |integer
-|mapStringObject         1.2+<.<a|
+|An example long property.
+|mapStringObject
 |map
-|mapStringString         1.2+<.<a|
+|
+|mapStringString
 |map
-|normalEnum              1.2+<.<a|
+|
+|normalEnum 
 |string (one of [BAR, FOO])
-|objectProperty          1.2+<.<a|
+|
+|objectProperty
 |xref:type-ObjectProperty-{context}[`ObjectProperty`]
-|or                      1.2+<.<a|
+|
+|or         
 |string
-|polymorphicProperty     1.2+<.<a| The type depends on the value of the `polymorphicProperty.discrim` property within the given object, which must be one of [left, right].
+|
+|polymorphicProperty
 |xref:type-PolymorphicLeft-{context}[`PolymorphicLeft`], xref:type-PolymorphicRight-{context}[`PolymorphicRight`]
-|rawList                 1.2+<.<a|
+|The type depends on the value of the `polymorphicProperty.discrim` property within the given object, which must be one of [left, right].
+|rawList    
 |object array
-|spec                    1.2+<.<a|
+|
+|spec       
 |object
-|status                  1.2+<.<a|
+|
+|status     
 |object
-|stringProperty          1.2+<.<a|
+|
+|stringProperty
 |string
+|
 |====
 
 [id='type-Number-{context}']
@@ -95,9 +133,9 @@
 Used in: xref:type-ExampleCrd-{context}[`ExampleCrd`]
 
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property|Description
+|Property |Property type |Description
 |====
 
 [id='type-ObjectProperty-{context}']
@@ -107,13 +145,15 @@ Used in: xref:type-ExampleCrd-{context}[`ExampleCrd`]
 
 Example of complex type.
 
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property    |Description
-|bar  1.2+<.<a|
+|Property |Property type |Description
+|bar
 |string
-|foo  1.2+<.<a|
+|
+|foo
 |string
+|
 |====
 
 [id='type-PolymorphicLeft-{context}']
@@ -124,15 +164,18 @@ Used in: xref:type-ExampleCrd-{context}[`ExampleCrd`]
 
 The `discrim` property is a discriminator that distinguishes use of the `PolymorphicLeft` type from xref:type-PolymorphicRight-{context}[`PolymorphicRight`].
 It must have the value `left` for the type `PolymorphicLeft`.
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property               |Description
-|commonProperty  1.2+<.<a|
+|Property |Property type |Description
+|commonProperty
 |string
-|discrim         1.2+<.<a|
+|
+|discrim
 |string
-|leftProperty    1.2+<.<a|when descrim=left, the left-hand property.
+|
+|leftProperty
 |string
+|when descrim=left, the left-hand property.
 |====
 
 [id='type-PolymorphicRight-{context}']
@@ -143,14 +186,16 @@ Used in: xref:type-ExampleCrd-{context}[`ExampleCrd`]
 
 The `discrim` property is a discriminator that distinguishes use of the `PolymorphicRight` type from xref:type-PolymorphicLeft-{context}[`PolymorphicLeft`].
 It must have the value `right` for the type `PolymorphicRight`.
-[options="header"]
+[cols="2,2,3",options="header"]
 |====
-|Property               |Description
-|commonProperty  1.2+<.<a|
+|Property |Property type |Description
+|commonProperty
 |string
-|discrim         1.2+<.<a|
+|
+|discrim
 |string
-|rightProperty   1.2+<.<a|when descrim=right, the right-hand property.
+|
+|rightProperty
 |string
+|when descrim=right, the right-hand property.
 |====
-
