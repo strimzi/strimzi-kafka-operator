@@ -20,6 +20,7 @@ import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
@@ -68,7 +69,8 @@ public class CruiseControlReconciler {
 
     private String serverConfigurationHash = "";
     private String capacityConfigurationHash = "";
-
+    private String apiCredentialsHash = "";
+    
     /**
      * Constructs the Cruise Control reconciler
      *
@@ -249,6 +251,8 @@ public class CruiseControlReconciler {
                             newSecret.setData(oldSecret.getData());
                         }
 
+                        this.apiCredentialsHash = String.valueOf(newSecret.hashCode());
+
                         return secretOperator.reconcile(reconciliation, reconciliation.namespace(), CruiseControlResources.apiSecretName(reconciliation.name()), newSecret)
                                 .map((Void) null);
                     });
@@ -285,7 +289,8 @@ public class CruiseControlReconciler {
             podAnnotations.put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, String.valueOf(clusterCa.caKeyGeneration()));
             podAnnotations.put(CruiseControl.ANNO_STRIMZI_SERVER_CONFIGURATION_HASH, serverConfigurationHash);
             podAnnotations.put(CruiseControl.ANNO_STRIMZI_CAPACITY_CONFIGURATION_HASH, capacityConfigurationHash);
-
+            podAnnotations.put(Annotations.ANNO_STRIMZI_AUTH_HASH, apiCredentialsHash);
+            
             Deployment deployment = cruiseControl.generateDeployment(podAnnotations, isOpenShift, imagePullPolicy, imagePullSecrets);
 
             return deploymentOperator
