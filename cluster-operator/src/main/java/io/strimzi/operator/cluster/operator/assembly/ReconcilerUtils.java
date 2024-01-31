@@ -383,9 +383,9 @@ public class ReconcilerUtils {
     }
 
     /**
-     * Creates a hash from Secret's content.
+     * Creates a hash from Secret's data.
      * @param secret Secret with data.
-     * @return Hash of the values whose keys match the keyword.
+     * @return Hash of all secret values.
      */
     public static String hashSecretContent(Secret secret) {
         if (secret == null) {
