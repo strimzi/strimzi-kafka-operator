@@ -139,7 +139,7 @@ finish:
 #######################################################################
 
 /smoke:
-  summary: Run smoke strimzi test suite
+  summary: Run smoke strimzi test suite with kraft
   provision:
     hardware:
       memory: ">= 8 GiB"
@@ -150,31 +150,19 @@ finish:
       - smoke
 
 /regression-operators:
-  summary: Run regression strimzi test suite
+  summary: Run regression strimzi test suite with kraft
   discover+:
     test:
       - regression-operators
 
 /regression-components:
-  summary: Run regression strimzi test suite
+  summary: Run regression strimzi test suite with kraft
   discover+:
     test:
       - regression-components
 
-/kraft-operators:
-  summary: Run regression kraft strimzi test suite
-  discover+:
-    test:
-      - kraft-operators
-
-/kraft-components:
-  summary: Run regression kraft strimzi test suite
-  discover+:
-    test:
-      - kraft-components
-
 /acceptance:
-  summary: Run acceptance strimzi test suite
+  summary: Run acceptance strimzi test suite with kraft
   provision:
     hardware:
       memory: ">= 24 GiB"
@@ -185,7 +173,7 @@ finish:
       - acceptance
 
 /sanity:
-  summary: Run sanity strimzi test suite
+  summary: Run sanity strimzi test suite with kraft
   provision:
     hardware:
       memory: ">= 16 GiB"
@@ -196,7 +184,7 @@ finish:
       - sanity
 
 /upgrade:
-  summary: Run upgrade strimzi test suite
+  summary: Run upgrade strimzi test suite with kraft
   provision:
     hardware:
       memory: ">= 8 GiB"
@@ -204,4 +192,4 @@ finish:
         processors: ">= 4"
   discover+:
     test:
-      - upgrade
+      - kraft_upgrade
