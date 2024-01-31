@@ -131,6 +131,7 @@ class RollingUpdateST extends AbstractST {
         // zookeeper recovery
 
         LOGGER.info("Update resources for Pods");
+        // modify zookeeper resource to unreasonable value
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> {
             k.getSpec()
                 .getZookeeper()
@@ -169,13 +170,23 @@ class RollingUpdateST extends AbstractST {
         // Kafka recovery
 
         // change kafka to unreasonable CPU request causing trigger of Rolling update and recover by second modification
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> {
-            k.getSpec()
-                .getKafka()
-                .setResources(new ResourceRequirementsBuilder()
-                    .addToRequests("cpu", new Quantity("100000m"))
-                    .build());
-        }, testStorage.getNamespaceName());
+        // if kafka node pool is enabled change specification directly in KNP CR as changing it in kafka would have no impact in case it is already specified in KNP
+        if (Environment.isKafkaNodePoolsEnabled()) {
+            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getKafkaNodePoolName(), knp -> {
+                knp.getSpec()
+                    .setResources(new ResourceRequirementsBuilder()
+                        .addToRequests("cpu", new Quantity("100000m"))
+                        .build());
+            }, testStorage.getNamespaceName());
+        } else {
+            KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> {
+                k.getSpec()
+                    .getKafka()
+                    .setResources(new ResourceRequirementsBuilder()
+                        .addToRequests("cpu", new Quantity("100000m"))
+                        .build());
+            }, testStorage.getNamespaceName());
+        }
 
         PodUtils.waitForPendingPod(testStorage.getNamespaceName(), testStorage.getKafkaStatefulSetName());
 
@@ -187,13 +198,23 @@ class RollingUpdateST extends AbstractST {
         ClientUtils.waitForConsumerClientSuccess(testStorage);
 
         LOGGER.info("Recover Kafka {}/{} from pending state by modifying its resource request to realistic value", testStorage.getClusterName(), testStorage.getNamespaceName());
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> {
-            k.getSpec()
-                .getKafka()
-                .setResources(new ResourceRequirementsBuilder()
-                    .addToRequests("cpu", new Quantity("200m"))
-                    .build());
-        }, testStorage.getNamespaceName());
+        // if kafka node pool is enabled change specification directly in KNP CR as changing it in kafka would have no impact in case it is already specified in KNP
+        if (Environment.isKafkaNodePoolsEnabled()) {
+            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getKafkaNodePoolName(), knp -> {
+                knp.getSpec()
+                    .setResources(new ResourceRequirementsBuilder()
+                        .addToRequests("cpu", new Quantity("200m"))
+                        .build());
+            }, testStorage.getNamespaceName());
+        } else {
+            KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> {
+                k.getSpec()
+                    .getKafka()
+                    .setResources(new ResourceRequirementsBuilder()
+                        .addToRequests("cpu", new Quantity("200m"))
+                        .build());
+            }, testStorage.getNamespaceName());
+        }
 
         // Create new topic to ensure, that ZK is working properly
         String newTopicName = KafkaTopicUtils.generateRandomNameOfTopic();
