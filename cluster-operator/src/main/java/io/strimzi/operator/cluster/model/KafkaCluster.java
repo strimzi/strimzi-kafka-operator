@@ -1156,7 +1156,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         }
 
         // Replication and user-configured listeners are only on nodes with the broker role (this includes all nodes in ZooKeeper based clusters)
-        // or controllers during the migration because the need to contact brokers
+        // or controllers during the migration because they need to contact brokers
         if (pool.isBroker() || (pool.isController() && kafkaMetadataConfigState.isZooKeeperOrPostMigration())) {
             ports.add(ContainerUtils.createContainerPort(REPLICATION_PORT_NAME, REPLICATION_PORT));
 
@@ -1770,8 +1770,8 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                 // script to generate the node configuration.
                 data.put(BROKER_LISTENERS_FILENAME, node.broker() ? listeners.stream().map(ListenersUtils::envVarIdentifier).collect(Collectors.joining(" ")) : null);
 
-                // controller and broker gets the Cluster ID in different states if during migration
-                // anyway they both get it when in full KRaft-mode
+                // controller and broker gets the Cluster ID in different states during migration
+                // and they both get it when in full KRaft-mode
                 if (this.kafkaMetadataConfigState.isKRaftInConfiguration(node)) {
                     // In KRaft, we need to pass the Kafka CLuster ID and the metadata version
                     data.put(BROKER_CLUSTER_ID_FILENAME, clusterId);

@@ -1153,8 +1153,8 @@ public class KafkaReconciler {
                     metadataVersion.compareTo(logMessageFormatVersion) != 0) {
                 // set warning condition on Kafka CR status that cluster metadata version, inter.broker.protocol.version and/or log.message.format.version need to be fixed
                 kafkaStatus.addCondition(StatusUtils.buildWarningCondition("KafkaMetadataStateWarning",
-                        "Migration cannot be performed. Please make sure Kafka version is higher than 3.4 and having " +
-                                "metadata version, inter.broker.protocol.version and log.message.format.version set to the same value as well."));
+                        "Migration cannot be performed. Please make sure Kafka version is higher than 3.4 and " +
+                                "metadata version, inter.broker.protocol.version and log.message.format.version set to the same value."));
                 LOGGER.errorCr(reconciliation,
                         "Migration cannot be performed with Kafka version {}, metadata version {}, inter.broker.protocol.version {}, log.message.format.version {}",
                         kafkaVersion, metadataVersion, interBrokerProtocolVersion, logMessageFormatVersion);
