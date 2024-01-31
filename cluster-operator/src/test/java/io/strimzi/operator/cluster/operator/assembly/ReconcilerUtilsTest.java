@@ -294,12 +294,23 @@ public class ReconcilerUtilsTest {
     @Test
     public void testHashSecretContent() {
         Secret secret = new SecretBuilder()
-            .addToData(Map.of("user-password", "changeit"))
-            .addToData(Map.of("userPassword", "changeit"))
-            .addToData(Map.of("PASSWORD", "changeit"))
+            .addToData(Map.of("username", "foo"))
+            .addToData(Map.of("password", "changeit"))
             .build();
-        
-        assertThat(ReconcilerUtils.hashSecretContent(secret, "password"), is("F9yAQqlPifM1mCBESPQ7hA=="));
+        assertThat(ReconcilerUtils.hashSecretContent(secret), is("9b583ce9"));
+    }
+
+    @Test
+    public void testHashSecretContentWithNoData() {
+        Secret secret = new SecretBuilder().build();
+        RuntimeException ex = assertThrows(RuntimeException.class, () -> ReconcilerUtils.hashSecretContent(secret));
+        assertThat(ex.getMessage(), is("Empty secret"));
+    }
+
+    @Test
+    public void testHashSecretContentWithNoSecret() {
+        RuntimeException ex = assertThrows(RuntimeException.class, () -> ReconcilerUtils.hashSecretContent(null));
+        assertThat(ex.getMessage(), is("Secret not found"));
     }
 
     static class MockJmxCluster implements SupportsJmx {

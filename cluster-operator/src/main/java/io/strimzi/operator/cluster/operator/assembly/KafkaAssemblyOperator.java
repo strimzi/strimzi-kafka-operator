@@ -699,13 +699,13 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     reconciliation,
                     config,
                     supplier,
+                    passwordGenerator,
                     kafkaAssembly,
                     versions,
                     kafkaBrokerNodes,
                     kafkaBrokerStorage,
                     kafkaBrokerResources,
-                    clusterCa,
-                    new PasswordGenerator(16)
+                    clusterCa
             );
         }
 

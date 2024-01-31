@@ -54,7 +54,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
@@ -80,12 +79,11 @@ public class CruiseControlReconcilerTest {
         ServiceOperator mockServiceOps = supplier.serviceOperations;
         NetworkPolicyOperator mockNetPolicyOps = supplier.networkPolicyOperator;
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
-        PasswordGenerator mockPasswordGenerator = mock(PasswordGenerator.class);
+        PasswordGenerator mockPasswordGenerator = new PasswordGenerator(10, "a", "a");
         
         ArgumentCaptor<ServiceAccount> saCaptor = ArgumentCaptor.forClass(ServiceAccount.class);
         when(mockSaOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.serviceAccountName(NAME)), saCaptor.capture())).thenReturn(Future.succeededFuture());
         
-        when(mockPasswordGenerator.generate()).thenReturn("secret");
         ArgumentCaptor<Secret> secretCaptor = ArgumentCaptor.forClass(Secret.class);
         when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.secretName(NAME)), secretCaptor.capture())).thenReturn(Future.succeededFuture());
         when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.apiSecretName(NAME)), secretCaptor.capture())).thenReturn(Future.succeededFuture());
@@ -123,13 +121,13 @@ public class CruiseControlReconcilerTest {
                 Reconciliation.DUMMY_RECONCILIATION,
                 ResourceUtils.dummyClusterOperatorConfig(),
                 supplier,
+                mockPasswordGenerator,
                 kafka,
                 VERSIONS,
                 NODES,
                 Map.of("kafka", kafka.getSpec().getKafka().getStorage()),
                 Map.of(),
-                clusterCa,
-                mockPasswordGenerator
+                clusterCa
         );
 
         Checkpoint async = context.checkpoint();
@@ -156,7 +154,7 @@ public class CruiseControlReconcilerTest {
                     assertThat(deployCaptor.getValue(), is(notNullValue()));
                     assertThat(deployCaptor.getAllValues().get(0).getSpec().getTemplate().getMetadata().getAnnotations().get(CruiseControl.ANNO_STRIMZI_SERVER_CONFIGURATION_HASH), is("f6dc41c7"));
                     assertThat(deployCaptor.getAllValues().get(0).getSpec().getTemplate().getMetadata().getAnnotations().get(CruiseControl.ANNO_STRIMZI_CAPACITY_CONFIGURATION_HASH), is("1eb49220"));
-                    assertThat(deployCaptor.getAllValues().get(0).getSpec().getTemplate().getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_AUTH_HASH), is("bLEULIBSrWikUZUQPf7GZQ=="));
+                    assertThat(deployCaptor.getAllValues().get(0).getSpec().getTemplate().getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_AUTH_HASH), is("178b8283"));
 
                     async.flag();
                 })));
@@ -208,13 +206,13 @@ public class CruiseControlReconcilerTest {
                 Reconciliation.DUMMY_RECONCILIATION,
                 ResourceUtils.dummyClusterOperatorConfig(),
                 supplier,
+                new PasswordGenerator(16),
                 kafka,
                 VERSIONS,
                 NODES,
                 Map.of(NAME + "-kafka", kafka.getSpec().getKafka().getStorage()),
                 Map.of(),
-                clusterCa,
-                new PasswordGenerator(16)
+                clusterCa
         );
 
         Checkpoint async = context.checkpoint();

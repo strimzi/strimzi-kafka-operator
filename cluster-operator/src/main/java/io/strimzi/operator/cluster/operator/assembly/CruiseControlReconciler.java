@@ -78,26 +78,26 @@ public class CruiseControlReconciler {
      * @param reconciliation            Reconciliation marker
      * @param config                    Cluster Operator Configuration
      * @param supplier                  Supplier with Kubernetes Resource Operators
+     * @param passwordGenerator         The password generator for API users
      * @param kafkaAssembly             The Kafka custom resource
      * @param versions                  The supported Kafka versions
      * @param kafkaBrokerNodes          List of the broker nodes which are part of the Kafka cluster
      * @param kafkaBrokerStorage        A map with storage configuration used by the Kafka cluster and its broker pools
      * @param kafkaBrokerResources      A map with resource configuration used by the Kafka cluster and its broker pools
      * @param clusterCa                 The Cluster CA instance
-     * @param passwordGenerator         The password generator for API users
      */
     @SuppressWarnings({"checkstyle:ParameterNumber"})
     public CruiseControlReconciler(
             Reconciliation reconciliation,
             ClusterOperatorConfig config,
             ResourceOperatorSupplier supplier,
+            PasswordGenerator passwordGenerator,
             Kafka kafkaAssembly,
             KafkaVersion.Lookup versions,
             Set<NodeRef> kafkaBrokerNodes,
             Map<String, Storage> kafkaBrokerStorage,
             Map<String, ResourceRequirements> kafkaBrokerResources,
-            ClusterCa clusterCa,
-            PasswordGenerator passwordGenerator
+            ClusterCa clusterCa
     ) {
         this.reconciliation = reconciliation;
         this.cruiseControl = CruiseControl.fromCrd(reconciliation, kafkaAssembly, versions, kafkaBrokerNodes, kafkaBrokerStorage, kafkaBrokerResources, supplier.sharedEnvironmentProvider);
@@ -107,14 +107,14 @@ public class CruiseControlReconciler {
         this.operatorNamespace = config.getOperatorNamespace();
         this.operatorNamespaceLabels = config.getOperatorNamespaceLabels();
         this.isNetworkPolicyGeneration = config.isNetworkPolicyGeneration();
-
+        this.passwordGenerator = passwordGenerator;
+        
         this.deploymentOperator = supplier.deploymentOperations;
         this.secretOperator = supplier.secretOperations;
         this.serviceAccountOperator = supplier.serviceAccountOperations;
         this.serviceOperator = supplier.serviceOperations;
         this.networkPolicyOperator = supplier.networkPolicyOperator;
         this.configMapOperator = supplier.configMapOperations;
-        this.passwordGenerator = passwordGenerator;
     }
 
     /**
@@ -255,7 +255,7 @@ public class CruiseControlReconciler {
                             newSecret.setData(oldSecret.getData());
                         }
                         
-                        this.apiSecretHash = ReconcilerUtils.hashSecretContent(newSecret, "password");
+                        this.apiSecretHash = ReconcilerUtils.hashSecretContent(newSecret);
                         
                         return secretOperator.reconcile(reconciliation, reconciliation.namespace(), CruiseControlResources.apiSecretName(reconciliation.name()), newSecret)
                                 .map((Void) null);
