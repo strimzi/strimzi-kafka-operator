@@ -403,7 +403,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     }
 
     /**
-     * Generates list of IDs to Kafka node ids going to be removed from the Kafka cluster.
+     * Generates list of Kafka node IDs that are going to be removed from the Kafka cluster.
      *
      * @return  Set of Kafka node IDs which are going to be removed
      */
@@ -418,7 +418,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     }
 
     /**
-     * Generates list of IDs to Kafka nodes that used to have the broker role but do not have it anymore.
+     * Generates list of Kafka node IDs that used to have the broker role but do not have it anymore.
      *
      * @return  Set of Kafka node IDs which are removing the broker role
      */

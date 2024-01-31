@@ -105,13 +105,13 @@ public class KafkaClusterCreator {
         return createKafkaCluster(kafkaCr, nodePools, oldStorage, currentPods, versionChange)
                 .compose(kafka -> brokerRemovalCheck(kafkaCr, kafka))
                 .compose(kafka -> {
-                    if (somethingFailed() && tryToFixProblems)   {
+                    if (checkFailed() && tryToFixProblems)   {
                         // We have a failure, and should try to fix issues
                         // Once we fix it, we call this method again, but this time with tryToFixProblems set to false
                         return revertScaleDown(kafka, kafkaCr, nodePools)
                                 .compose(kafkaAndNodePools -> revertRoleChange(kafkaAndNodePools.kafkaCr(), kafkaAndNodePools.nodePoolCrs()))
                                 .compose(kafkaAndNodePools -> prepareKafkaCluster(kafkaAndNodePools.kafkaCr(), kafkaAndNodePools.nodePoolCrs(), oldStorage, currentPods, versionChange, false));
-                    } else if (somethingFailed()) {
+                    } else if (checkFailed()) {
                         // We have a failure, but we should not try to fix it
                         List<String> errors = new ArrayList<>();
 
@@ -296,7 +296,12 @@ public class KafkaClusterCreator {
         return Annotations.booleanAnnotation(kafkaCr, Annotations.ANNO_STRIMZI_IO_SKIP_BROKER_SCALEDOWN_CHECK, false);
     }
 
-    private boolean somethingFailed()   {
+    /**
+     * Checks if there were any failures during the validation
+     *
+     * @return  True if any checks failed. False otherwise.
+     */
+    private boolean checkFailed()   {
         return scaleDownCheckFailed || usedToBeBrokersCheckFailed;
     }
 

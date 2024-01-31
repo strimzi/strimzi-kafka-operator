@@ -310,7 +310,7 @@ public class KafkaPool extends AbstractModel {
     }
 
     /**
-     * Generates list of IDs to Kafka nodes going to be removed from the Kafka cluster.
+     * Generates set of Kafka node IDs going to be removed from the Kafka cluster.
      *
      * @return  Set of Kafka node IDs which are going to be removed
      */
@@ -319,7 +319,7 @@ public class KafkaPool extends AbstractModel {
     }
 
     /**
-     * Generates list of IDs to Kafka nodes that used to have the broker role but do not have it anymore.
+     * Generates set of Kafka node IDs that used to have the broker role but do not have it anymore.
      *
      * @return  Set of Kafka node IDs which are removing the broker role
      */
