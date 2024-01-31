@@ -384,6 +384,7 @@ public class ReconcilerUtils {
 
     /**
      * Creates a hash from Secret's data.
+     * 
      * @param secret Secret with data.
      * @return Hash of all secret values.
      */
@@ -391,12 +392,12 @@ public class ReconcilerUtils {
         if (secret == null) {
             throw new RuntimeException("Secret not found");
         }
+        if (secret.getData() == null || secret.getData().isEmpty()) {
+            throw new RuntimeException("Empty secret");
+        }
         StringBuilder sb = new StringBuilder();
         for (String key : secret.getData().keySet()) {
             sb.append(secret.getData().get(key));
-        }
-        if (sb.toString().length() == 0) {
-            throw new RuntimeException("Empty secret");
         }
         return Util.hashStub(sb.toString());
     }
