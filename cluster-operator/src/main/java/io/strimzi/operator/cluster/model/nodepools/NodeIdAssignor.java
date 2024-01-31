@@ -5,6 +5,7 @@
 package io.strimzi.operator.cluster.model.nodepools;
 
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
+import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.Reconciliation;
@@ -15,6 +16,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableSet;
+import java.util.Set;
 import java.util.TreeSet;
 
 /**
@@ -60,6 +62,7 @@ public class NodeIdAssignor {
         for (KafkaNodePool pool : nodePools)  {
             TreeSet<Integer> current;
             TreeSet<Integer> desired;
+            TreeSet<Integer> usedToBeBroker;
             TreeSet<Integer> toBeRemoved = new TreeSet<>();
             TreeSet<Integer> toBeAdded = new TreeSet<>();
 
@@ -93,9 +96,12 @@ public class NodeIdAssignor {
                     // We have no change
                     desired = current;
                 }
+
+                usedToBeBroker = brokerNodesBecomingControllerOnlyNodes(pool, current, desired);
             } else {
                 // New pool? It is all scale-up
                 current = new TreeSet<>();
+                usedToBeBroker = new TreeSet<>();
                 desired = new TreeSet<>();
 
                 // Provides the node IDs which the user would like to assign to the next broker(s)
@@ -108,7 +114,7 @@ public class NodeIdAssignor {
                 }
             }
 
-            assignments.put(pool.getMetadata().getName(), new NodeIdAssignment(current, desired, toBeRemoved, toBeAdded));
+            assignments.put(pool.getMetadata().getName(), new NodeIdAssignment(current, desired, toBeRemoved, toBeAdded, usedToBeBroker));
         }
     }
 
@@ -301,6 +307,31 @@ public class NodeIdAssignor {
         } catch (NodeIdRange.InvalidNodeIdRangeException e) {
             LOGGER.warnCr(reconciliation, "Failed to use " + Annotations.ANNO_STRIMZI_IO_REMOVE_NODE_IDS + " " + removeNodeIds + ". Nodes will be scaled down from the highest node ID.", e);
             return null;
+        }
+    }
+
+    /**
+     * Finds any Kafka nodes that used to have the broker role but should not have it anymore. These nodes require a
+     * special treatment - for example they should have a special check for not having any partition replicas assigned.
+     *
+     * @param pool      Node Pool to check for the roles change
+     * @param current   Current node IDs belonging to this node pool
+     * @param desired   Desired node IDs belonging to this node pool
+     *
+     * @return  Set of node IDs that used to have the broker role but will not have it anymore
+     */
+    /* test */ static TreeSet<Integer> brokerNodesBecomingControllerOnlyNodes(KafkaNodePool pool, Set<Integer> current, Set<Integer> desired) {
+        if (pool.getStatus() != null
+                && pool.getSpec().getRoles() != null
+                && pool.getStatus().getRoles() != null
+                && pool.getStatus().getRoles().contains(ProcessRoles.BROKER) // Used to have the broker role
+                && !pool.getSpec().getRoles().contains(ProcessRoles.BROKER)) { // But should not have it anymore
+            // Collect all node IDs that are both current and desired (i.e. we do not care about old nodes being scaled down or new nodes being scaled up)
+            TreeSet<Integer> usedToBeBroker = new TreeSet<>(desired);
+            usedToBeBroker.retainAll(current);
+            return usedToBeBroker;
+        } else {
+            return new TreeSet<>();
         }
     }
 }

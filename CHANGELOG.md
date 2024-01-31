@@ -7,6 +7,7 @@
   If needed, `UseKRaft` can be disabled in the feature gates configuration in the Cluster Operator.
 * Fix NullPointerException from missing listenerConfig when using custom auth
 * Added support for Kafka Exporter `offset.show-all` parameter
+* Prevent removal of the `broker` process role from KRaft mixed-nodes that have assigned partition-replicas
 * Improve broker scale-down prevention to continue in reconciliation when scale-down cannot be executed
 
 ### Changes, deprecations and removals
