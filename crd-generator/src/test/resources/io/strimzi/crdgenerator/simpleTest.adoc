@@ -199,3 +199,4 @@ It must have the value `right` for the type `PolymorphicRight`.
 |string
 |when descrim=right, the right-hand property.
 |====
+
