@@ -62,7 +62,7 @@ public class Session extends AbstractVerticle {
 
     private static final int HEALTH_SERVER_PORT = 8080;
 
-    private static final TypeReference<HashMap<String, String>> STRING_HASH_MAP_TYPE_REFERENCE = new TypeReference<HashMap<String, String>>() { };
+    private static final TypeReference<HashMap<String, String>> STRING_HASH_MAP_TYPE_REFERENCE = new TypeReference<>() { };
 
     private final Config config;
     // this field is required to keep the underlying shared worker pool alive
