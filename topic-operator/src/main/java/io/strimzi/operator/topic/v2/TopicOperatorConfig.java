@@ -98,7 +98,7 @@ record TopicOperatorConfig(
     static final ConfigParameter<String> SSL_ENDPOINT_IDENTIFICATION_ALGORITHM = new ConfigParameter<>("STRIMZI_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM", STRING, "HTTPS", CONFIG_VALUES);
     static final ConfigParameter<Boolean> SASL_ENABLED = new ConfigParameter<>("STRIMZI_SASL_ENABLED", BOOLEAN, "false", CONFIG_VALUES);
     static final ConfigParameter<String> SASL_MECHANISM = new ConfigParameter<>("STRIMZI_SASL_MECHANISM", STRING, "", CONFIG_VALUES);
-    static final ConfigParameter<String> SASL_CUSTOM_CONFIG = new ConfigParameter<>("SASL_CUSTOM_CONFIG", STRING, "", CONFIG_VALUES);
+    static final ConfigParameter<String> SASL_CUSTOM_CONFIG = new ConfigParameter<>("STRIMZI_SASL_CUSTOM_CONFIG", STRING, "", CONFIG_VALUES);
     static final ConfigParameter<String> SASL_USERNAME = new ConfigParameter<>("STRIMZI_SASL_USERNAME", STRING, "", CONFIG_VALUES);
     static final ConfigParameter<String> SASL_PASSWORD = new ConfigParameter<>("STRIMZI_SASL_PASSWORD", STRING, "", CONFIG_VALUES);
     static final ConfigParameter<String> SECURITY_PROTOCOL = new ConfigParameter<>("STRIMZI_SECURITY_PROTOCOL", STRING, "", CONFIG_VALUES);
