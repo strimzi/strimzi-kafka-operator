@@ -297,7 +297,7 @@ public class ReconcilerUtilsTest {
             .addToData(Map.of("username", "foo"))
             .addToData(Map.of("password", "changeit"))
             .build();
-        assertThat(ReconcilerUtils.hashSecretContent(secret), is("9b583ce9"));
+        assertThat(ReconcilerUtils.hashSecretContent(secret), is("756937ae"));
     }
 
     @Test

@@ -383,22 +383,25 @@ public class ReconcilerUtils {
     }
 
     /**
-     * Creates a hash from Secret's data.
+     * Creates a hash from Secret's content.
      * 
-     * @param secret Secret with data.
-     * @return Hash of all secret values.
+     * @param secret Secret with content.
+     * @return Hash of the secret content.
      */
     public static String hashSecretContent(Secret secret) {
         if (secret == null) {
             throw new RuntimeException("Secret not found");
         }
+        
         if (secret.getData() == null || secret.getData().isEmpty()) {
             throw new RuntimeException("Empty secret");
         }
+        
         StringBuilder sb = new StringBuilder();
-        for (String key : secret.getData().keySet()) {
-            sb.append(secret.getData().get(key));
-        }
+        secret.getData().entrySet().stream()
+            .sorted(Map.Entry.comparingByKey())
+            .forEach(entry -> sb.append(entry.getKey()).append(entry.getValue()));
+        
         return Util.hashStub(sb.toString());
     }
 }
