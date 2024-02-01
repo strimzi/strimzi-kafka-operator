@@ -467,9 +467,6 @@ public class Session extends AbstractVerticle {
         String password = config.get(Config.SASL_PASSWORD);
         String configSaslMechanism = config.get(Config.SASL_MECHANISM);
 
-        LOGGER.error("setStandardSaslConfigs()");
-        LOGGER.error("setStandardSaslConfigs() username: {}, password: {}", username, password);
-
         if (username.isEmpty() || password.isEmpty()) {
             throw new InvalidConfigurationException("SASL credentials are not set");
         }
