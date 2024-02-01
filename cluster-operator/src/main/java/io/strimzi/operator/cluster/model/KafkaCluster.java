@@ -1088,6 +1088,10 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         controllerAnnotations.put(ANNO_STRIMZI_IO_KAFKA_VERSION, kafkaVersion.version());
         controllerAnnotations.put(Annotations.ANNO_STRIMZI_IO_STORAGE, ModelUtils.encodeStorageToJson(storage));
 
+        //Take ownership of the rolling update annotation (for SSA) and reset it
+        //as (potential) one-time roll was already ran by reconcile loop run if it was needed.
+        controllerAnnotations.put(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "false");
+
         return controllerAnnotations;
     }
 

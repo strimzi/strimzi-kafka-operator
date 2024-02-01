@@ -52,6 +52,7 @@ import java.security.cert.CertificateFactory;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.TestConstants.INTERNAL_CLIENTS_USED;
@@ -148,10 +149,16 @@ class AlternativeReconcileTriggersST extends AbstractST {
 
         RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, brokerPods);
 
-        // wait when annotation will be removed from kafka
+        // checks that annotation is absent or "false"
+        Function<String, Boolean> annotationAbsentOrFalse = (String resource) -> {
+            var annotationValue = StrimziPodSetUtils
+                    .getAnnotationsOfStrimziPodSet(testStorage.getNamespaceName(), testStorage.getBrokerComponentName())
+                    .getOrDefault(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true");
+            return "false".equalsIgnoreCase(annotationValue);
+        };
+
         TestUtils.waitFor("CO removes rolling update annotation", TestConstants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
-                () -> StrimziPodSetUtils.getAnnotationsOfStrimziPodSet(testStorage.getNamespaceName(), testStorage.getBrokerComponentName()) == null
-                        || !StrimziPodSetUtils.getAnnotationsOfStrimziPodSet(testStorage.getNamespaceName(), testStorage.getBrokerComponentName()).containsKey(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE));
+                () -> annotationAbsentOrFalse.apply(testStorage.getNamespaceName()));
 
         resourceManager.createResourceWithWait(clients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForConsumerClientSuccess(testStorage);
@@ -169,10 +176,9 @@ class AlternativeReconcileTriggersST extends AbstractST {
 
             RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getControllerSelector(), 3, controllerPods);
 
-            // wait when annotation will be removed
+            // wait when annotation will be removed / updated to false
             TestUtils.waitFor("CO removes rolling update annotation", TestConstants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
-                    () -> StrimziPodSetUtils.getAnnotationsOfStrimziPodSet(testStorage.getNamespaceName(), testStorage.getControllerComponentName()) == null
-                            || !StrimziPodSetUtils.getAnnotationsOfStrimziPodSet(testStorage.getNamespaceName(), testStorage.getControllerComponentName()).containsKey(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE));
+                    () -> annotationAbsentOrFalse.apply(testStorage.getNamespaceName()));
         }
 
         clients = new KafkaClientsBuilder(clients)
