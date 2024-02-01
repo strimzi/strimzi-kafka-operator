@@ -175,6 +175,7 @@
         <testcontainer.version>1.19.5</testcontainer.version>
         <docker-java.version>3.3.4</docker-java.version>
         <junit4.version>4.13.2</junit4.version>
+        <jenvtest.version>0.9.7</jenvtest.version>
 
         <!-- properties to skip surefire tests during failsafe execution -->
         <skipTests>false</skipTests>
@@ -775,13 +776,13 @@
             <dependency>
                 <groupId>io.javaoperatorsdk</groupId>
                 <artifactId>jenvtest</artifactId>
-                <version>0.9.5</version>
+                <version>${jenvtest.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>io.javaoperatorsdk</groupId>
                 <artifactId>jenvtest-fabric8-client-support</artifactId>
-                <version>0.9.5</version>
+                <version>${jenvtest.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
