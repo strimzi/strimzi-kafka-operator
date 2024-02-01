@@ -49,6 +49,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -68,7 +69,10 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.Stack;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -80,6 +84,7 @@ import java.util.stream.Collectors;
 
 import static io.strimzi.api.ResourceAnnotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION;
 import static io.strimzi.operator.topic.v2.BatchingTopicController.isPaused;
+import static io.strimzi.operator.topic.v2.TopicOperatorTestUtil.findKafkaTopicByName;
 import static java.lang.String.format;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -476,6 +481,42 @@ class TopicControllerIT {
         return waitUntil(created, condition);
     }
 
+    private List<KafkaTopic> createTopicsConcurrently(KafkaCluster kc, KafkaTopic... kts) throws InterruptedException, ExecutionException {
+        if (kts == null || kts.length == 0) {
+            throw new IllegalArgumentException("You need pass at least one topic to be created");
+        }
+        String ns = namespace(kts[0].getMetadata().getNamespace());
+        maybeStartOperator(topicOperatorConfig(ns, kc));
+        ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+        CountDownLatch latch = new CountDownLatch(kts.length);
+        List<KafkaTopic> result = new ArrayList<>();
+        for (KafkaTopic kt : kts) {
+            executor.submit(() -> {
+                try {
+                    var created = Crds.topicOperation(client).resource(kt).create();
+                    LOGGER.info("Test created KafkaTopic {} with creationTimestamp {}",
+                        created.getMetadata().getName(),
+                        created.getMetadata().getCreationTimestamp());
+                    var reconciled = waitUntil(created, readyIsTrueOrFalse());
+                    result.add(reconciled);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+                latch.countDown();
+            });
+        }
+        latch.await(1, TimeUnit.MINUTES);
+        try {
+            executor.shutdown();
+            executor.awaitTermination(5, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            if (!executor.isTerminated()) {
+                executor.shutdownNow();
+            }
+        }
+        return result;
+    }
+
     private KafkaTopic pauseTopic(String namespace, String topicName) {
         var current = Crds.topicOperation(client).inNamespace(namespace).withName(topicName).get();
         var paused = Crds.topicOperation(client).resource(new KafkaTopicBuilder(current)
@@ -686,7 +727,7 @@ class TopicControllerIT {
         assertEquals(Set.of(kt.getSpec().getReplicas()), replicationFactors(topicDescription));
         assertEquals(Map.of(), topicConfigMap(expectedTopicName));
 
-        Map<String, Set<KubeRef>> topics = new HashMap<>(operator.controller.topics);
+        Map<String, List<KubeRef>> topics = new HashMap<>(operator.controller.topics);
         assertFalse(topics.containsKey("foo")
                         || topics.containsKey("FOO"),
                 "Transition to a non-selected resource should result in removal from topics map: " + topics);
@@ -1834,19 +1875,14 @@ class TopicControllerIT {
 
     @Test
     public void shouldFailIfNumPartitionsDivergedWithConfigChange(@BrokerConfig(name = "auto.create.topics.enable", value = "false")
-                                                  KafkaCluster kafkaCluster) throws ExecutionException, InterruptedException, TimeoutException {
-        // Scenario from https://github.com/strimzi/strimzi-kafka-operator/pull/8627#pullrequestreview-1477513413
-
-        // given
+                                                                  KafkaCluster kafkaCluster) throws ExecutionException, InterruptedException, TimeoutException {
+        // scenario from https://github.com/strimzi/strimzi-kafka-operator/pull/8627#pullrequestreview-1477513413
 
         // create foo
         var topicName = randomTopicName();
         LOGGER.info("Create foo");
         var foo = kafkaTopic(NAMESPACE, "foo", null, null, 1, 1);
         var createdFoo = createTopicAndAssertSuccess(kafkaCluster, foo);
-
-        // TODO remove after fixing https://github.com/strimzi/strimzi-kafka-operator/issues/9270
-        Thread.sleep(1000);
 
         // create conflicting bar
         LOGGER.info("Create conflicting bar");
@@ -1861,29 +1897,72 @@ class TopicControllerIT {
         // increase partitions of foo
         LOGGER.info("Increase partitions of foo");
         var editedFoo = modifyTopicAndAwait(createdFoo, theKt ->
-                        new KafkaTopicBuilder(theKt).editSpec().withPartitions(3).endSpec().build(),
-                readyIsTrue());
+                new KafkaTopicBuilder(theKt).editSpec().withPartitions(3).endSpec().build(),
+            readyIsTrue());
 
         // unmanage foo
         LOGGER.info("Unmanage foo");
         var unmanagedFoo = modifyTopicAndAwait(editedFoo, theKt ->
-                        new KafkaTopicBuilder(theKt).editMetadata().addToAnnotations(BatchingTopicController.MANAGED, "false").endMetadata().build(),
-                readyIsTrue());
+                new KafkaTopicBuilder(theKt).editMetadata().addToAnnotations(BatchingTopicController.MANAGED, "false").endMetadata().build(),
+            readyIsTrue());
 
         // when: delete foo
         LOGGER.info("Delete foo");
         Crds.topicOperation(client).resource(unmanagedFoo).delete();
         LOGGER.info("Test deleted KafkaTopic {} with resourceVersion {}",
-                unmanagedFoo.getMetadata().getName(), BatchingTopicController.resourceVersion(unmanagedFoo));
+            unmanagedFoo.getMetadata().getName(), BatchingTopicController.resourceVersion(unmanagedFoo));
         Resource<KafkaTopic> resource = Crds.topicOperation(client).resource(unmanagedFoo);
         TopicOperatorTestUtil.waitUntilCondition(resource, Objects::isNull);
 
         // then: expect bar's unreadiness to be due to mismatching #partitions
         waitUntil(createdBar, readyIsFalseAndReasonIs(
-                TopicOperatorException.Reason.NOT_SUPPORTED.reason,
-                "Decreasing partitions not supported"));
+            TopicOperatorException.Reason.NOT_SUPPORTED.reason,
+            "Decreasing partitions not supported"));
+    }
+    @RepeatedTest(10)
+    public void shouldDetectConflictingKafkaTopicCreations(
+            @BrokerConfig(name = "auto.create.topics.enable", value = "false")
+            KafkaCluster kafkaCluster) throws ExecutionException, InterruptedException {
+        var foo = kafkaTopic("ns", "foo", null, null, 1, 1);
+        var bar = kafkaTopic("ns", "bar", SELECTOR, null, null, "foo", 1, 1,
+            Map.of(TopicConfig.COMPRESSION_TYPE_CONFIG, "snappy"));
+
+        LOGGER.info("Create conflicting topics: foo and bar");
+        var reconciledTopics = createTopicsConcurrently(kafkaCluster, foo, bar);
+        var reconciledFoo = findKafkaTopicByName(reconciledTopics, "foo");
+        var reconciledBar = findKafkaTopicByName(reconciledTopics, "bar");
+
+        // only one resource with the same topicName should be reconciled
+        var fooFailed = readyIsFalse().test(reconciledFoo);
+        var barFailed = readyIsFalse().test(reconciledBar);
+        assertTrue(fooFailed ^ barFailed);
+
+        if (fooFailed) {
+            assertKafkaTopicConflict(reconciledFoo, reconciledBar);
+        } else {
+            assertKafkaTopicConflict(reconciledBar, reconciledFoo);
+        }
     }
 
+    private void assertKafkaTopicConflict(KafkaTopic failed, KafkaTopic ready) {
+        // the error message should refer to the ready resource name
+        var condition = assertExactlyOneCondition(failed);
+        assertEquals(TopicOperatorException.Reason.RESOURCE_CONFLICT.reason, condition.getReason());
+        assertEquals(format("Managed by Ref{namespace='ns', name='%s'}", ready.getMetadata().getName()), condition.getMessage());
+
+        // the failed resource should become ready after we unmanage and delete the other
+        LOGGER.info("Unmanage {}", ready.getMetadata().getName());
+        var unmanagedBar = modifyTopicAndAwait(ready, theKt -> new KafkaTopicBuilder(theKt)
+                .editMetadata().addToAnnotations(BatchingTopicController.MANAGED, "false").endMetadata().build(),
+            readyIsTrue());
+
+        LOGGER.info("Delete {}", ready.getMetadata().getName());
+        Crds.topicOperation(client).resource(unmanagedBar).delete();
+        Resource<KafkaTopic> resource = Crds.topicOperation(client).resource(unmanagedBar);
+        TopicOperatorTestUtil.waitUntilCondition(resource, Objects::isNull);
+
+        waitUntil(failed, readyIsTrue());
+    }
     private static <T> KafkaFuture<T> failedFuture(Throwable error) {
         var future = new KafkaFutureImpl<T>();
         future.completeExceptionally(error);

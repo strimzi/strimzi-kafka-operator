@@ -44,6 +44,7 @@ import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
 
 import java.io.InterruptedIOException;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -80,7 +81,7 @@ public class BatchingTopicController {
     private final KubernetesClient kubeClient;
 
     // Key: topic name, Value: The KafkaTopics known to manage that topic
-    /* test */ final Map<String, Set<KubeRef>> topics = new HashMap<>();
+    /* test */ final Map<String, List<KubeRef>> topics = new HashMap<>();
 
     private final TopicOperatorMetricsHolder metrics;
     private final String namespace;
@@ -201,9 +202,11 @@ public class BatchingTopicController {
 
     private boolean rememberTopic(ReconcilableTopic reconcilableTopic) {
         String tn = reconcilableTopic.topicName();
-        var existing = topics.computeIfAbsent(tn, k -> new HashSet<>());
+        var existing = topics.computeIfAbsent(tn, k -> new ArrayList<>(1));
         KubeRef thisRef = new KubeRef(reconcilableTopic.kt());
-        existing.add(thisRef);
+        if (!existing.contains(thisRef)) {
+            existing.add(thisRef);
+        }
         return true;
     }
 

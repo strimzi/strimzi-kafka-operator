@@ -191,7 +191,7 @@ class BatchingLoop {
             try {
                 synchronized (BatchingLoop.this) {
                     // remove the old batch from the inflight set and reset the batch
-                    LOGGER.debugOp("[Batch #{}] Removing batch from inflight", batchId - 1);
+                    LOGGER.traceOp("[Batch #{}] Removing batch from inflight", batchId - 1);
                     batch.toUpdate.stream().map(TopicEvent::toRef).forEach(inFlight::remove);
                     batch.toDelete.stream().map(TopicEvent::toRef).forEach(inFlight::remove);
                     batch.clear();
@@ -210,7 +210,7 @@ class BatchingLoop {
                     }
                     LOGGER.debugOp("[Batch #{}] Reconciled batch", batchId);
                 } else {
-                    LOGGER.debugOp("[Batch #{}] Empty batch", batchId);
+                    LOGGER.traceOp("[Batch #{}] Empty batch", batchId);
                 }
             } catch (InterruptedException e) {
                 LOGGER.infoOp("[Batch #{}] Interrupted", batchId);
