@@ -54,7 +54,7 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
      */
     public final static String ANY_NAMESPACE = "*";
 
-    private boolean useServerSideApply;
+    private final boolean useServerSideApply;
 
     /**
      * Constructor.
@@ -114,6 +114,11 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
 
         if (useServerSideApply) {
             if (desired != null) {
+                if (desired.getMetadata().getManagedFields() != null && !desired.getMetadata().getManagedFields().isEmpty()) {
+                    LOGGER.debugCr(reconciliation, "Deleting managedFields from request before pathing resource {} {}/{}", resourceKind, namespace, name);
+                    desired.getMetadata().setManagedFields(null);
+                }
+
                 LOGGER.debugCr(reconciliation, "{} {}/{} desired, patching it", resourceKind, namespace, name);
                 return internalPatch(reconciliation, namespace, name, desired);
             } else {
@@ -277,7 +282,7 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
         try {
             T result = patch(reconciliation, namespace, name, desired);
             LOGGER.debugCr(reconciliation, "{} {} in namespace {} has been patched", resourceKind, name, namespace);
-            return Future.succeededFuture(ReconcileResult.patched(result));
+            return Future.succeededFuture(ReconcileResult.patchedUsingServerSideApply(result));
         } catch (Exception e) {
             LOGGER.debugCr(reconciliation, "Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, e);
             return Future.failedFuture(e);
@@ -310,7 +315,7 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
     protected PatchContext serverSideApplyPatchContext(boolean force) {
         return new PatchContext.Builder()
                 .withPatchType(PatchType.SERVER_SIDE_APPLY)
-                .withFieldManager("strimzi-cluster-operator") //TODO find if/where this is configured for the other operations that strimzi is doing
+                .withFieldManager("strimzi-cluster-operator")
                 .withForce(force)
                 .build();
     }
