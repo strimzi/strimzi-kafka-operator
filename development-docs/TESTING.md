@@ -295,11 +295,16 @@ All available test groups are listed in [Constants](systemtest/src/main/java/io/
 System tests can be configured by several environment variables, which are loaded before test execution.
 
 Variables can be defined via environmental variables or a configuration file; this file can be located anywhere on the file system as long as a path is provided to this file.
-The path is defined by the environmental variable `ST_CONFIG_PATH`; if the `ST_CONFIG_PATH` environmental variable is not defined, the default config file location is used `systemtest/config.json`.
+The path is defined by the environmental variable `ST_CONFIG_PATH`; if the `ST_CONFIG_PATH` environmental variable is not defined, the default config file location is used `systemtest/config.yaml`.
 Loading of system configuration has the following priority order:
 1. Environment variable
 2. Variable defined in the configuration file
 3. Default value
+
+After every systemtest tes run all env variables is automatically stored into $TEST_LOG_DIR/test-run.../config.yaml so it test run can be easily reproduced just by running
+```commandline
+ST_CONFIG_PATH="path/to/config/file/config.yaml" mvn verify ...
+```
 
 All environment variables are defined in [Environment](systemtest/src/main/java/io/strimzi/systemtest/Environment.java) class:
 
@@ -311,6 +316,7 @@ All environment variables are defined in [Environment](systemtest/src/main/java/
 | BRIDGE_IMAGE                           | Specify the Kafka bridge image used in system tests                                                                                                   | quay.io/strimzi/kafka-bridge:latest |
 | TEST_LOG_DIR                           | Directory for storing logs collected during the tests                                                                                                 | ../systemtest/target/logs/          |
 | ST_KAFKA_VERSION                       | Kafka version used in images during the system tests                                                                                                  | 2.3.0                               |
+| ST_CONFIG_PATH                         | Path to file where environment variables are defined in yaml format                                                                                   | ../systemtest/config.yaml           |
 | STRIMZI_LOG_LEVEL                      | Log level for the cluster operator                                                                                                                    | DEBUG                               |
 | STRIMZI_COMPONENTS_LOG_LEVEL           | Log level for the components                                                                                                                          | INFO                                |
 | KUBERNETES_DOMAIN                      | Cluster domain                                                                                                                                        | .nip.io                             |
