@@ -421,7 +421,7 @@ public class Session extends AbstractVerticle {
             case SASL_TYPE_SCRAM_SHA_512:
                 setStandardSaslConfigs(kafkaClientProps);
                 break;
-            case "custom":
+            case SASL_TYPE_CUSTOM:
                 setCustomSaslConfigs(kafkaClientProps);
                 break;
             default:
@@ -455,7 +455,8 @@ public class Session extends AbstractVerticle {
                 kafkaClientProps.setProperty(key, value);
             }
         } catch (JsonProcessingException e) {
-            throw new InvalidConfigurationException("Env var " + Config.SASL_CUSTOM_CONFIG + " could not be parsed as JSON + (e.getMessage() != null ? ": " + e.getMessage() : "."));
+            var message = e.getMessage();
+            throw new InvalidConfigurationException("Env var " + Config.SASL_CUSTOM_CONFIG + " could not be parsed as JSON" + (message != null ? ": " + e.getMessage() : "."));
         }
     }
 
