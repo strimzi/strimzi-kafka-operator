@@ -85,7 +85,12 @@ public class LogHasNoUnexpectedErrors extends BaseMatcher<String> {
         // connected to https://github.com/strimzi/strimzi-kafka-operator/issues/7529 - remove this once the issue will be fixed
         RECONCILIATION_PODSET_ALREADY_EXISTS("ERROR StrimziPodSetController:[0-9]+ - Reconciliation.*[fF]ailed"
             + "(?s)(.*?)"
-            + "io.fabric8.kubernetes.client.KubernetesClientException.*already exists");
+            + "io.fabric8.kubernetes.client.KubernetesClientException.*already exists"),
+        REBALANCE_APPLY("KafkaRebalanceAssemblyOperator:.*Reconciliation.*KafkaRebalance(.*): " +
+                "Status updated to [NotReady] due to error: io.netty.channel.AbstractChannel$AnnotatedConnectException: " +
+                "Connection refused.*"),
+        LEASE_LOCK_EXISTS("LeaderElector:.*Exception occurred while acquiring lock 'LeaseLock.*" +
+                "KubernetesClientException: Failure executing: POST at.*already exists.*");
 
         final String name;
 
