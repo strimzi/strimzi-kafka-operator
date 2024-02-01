@@ -454,7 +454,11 @@ public class EntityOperatorReconciler {
             return deploymentOperator
                     .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.entityOperatorDeploymentName(reconciliation.name()), deployment)
                     .compose(patchResult -> {
-                        if (patchResult instanceof ReconcileResult.Noop)   {
+                        boolean isNoop = patchResult instanceof ReconcileResult.Noop;
+                        boolean patchedUsingServerSideApply = patchResult instanceof ReconcileResult.Patched
+                                && ((ReconcileResult.Patched<Deployment>) patchResult).isUsingServerSideApply();
+
+                        if (isNoop || patchedUsingServerSideApply) {
                             // Deployment needs ot be rolled because the certificate secret changed or older/expired cluster CA removed
                             if (existingEntityTopicOperatorCertsChanged || existingEntityUserOperatorCertsChanged || clusterCa.certsRemoved()) {
                                 LOGGER.infoCr(reconciliation, "Rolling Entity Operator to update or remove certificates");
