@@ -301,7 +301,7 @@ Loading of system configuration has the following priority order:
 2. Variable defined in the configuration file
 3. Default value
 
-After every systemtest tes run all env variables is automatically stored into $TEST_LOG_DIR/test-run.../config.yaml so it test run can be easily reproduced just by running
+After every systemtest test run all env variables are automatically stored into $TEST_LOG_DIR/test-run.../config.yaml so each test run can be easily reproduced just by running
 ```commandline
 ST_CONFIG_PATH="path/to/config/file/config.yaml" mvn verify ...
 ```

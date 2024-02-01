@@ -410,6 +410,7 @@ public class Environment {
     private static boolean isWriteable(String var, String value) {
         return !value.equals("null")
                 && !var.equals(CONFIG_FILE_PATH_ENV)
+                && !var.equals(TEST_LOG_DIR)
                 && !var.equals("USER");
     }
 }
