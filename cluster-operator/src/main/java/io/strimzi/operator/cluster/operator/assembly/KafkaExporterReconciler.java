@@ -132,7 +132,7 @@ public class KafkaExporterReconciler {
                                 .reconcile(reconciliation, reconciliation.namespace(), KafkaExporterResources.secretName(reconciliation.name()),
                                         kafkaExporter.generateSecret(clusterCa, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant())))
                                 .compose(patchResult -> {
-                                    existingKafkaExporterCertsChanged = CertUtils.doExistingCertificatesDiffer(oldSecret, patchResult.resourceOpt().orElse(null));
+                                    existingKafkaExporterCertsChanged = patchResult != null && CertUtils.doExistingCertificatesDiffer(oldSecret, patchResult.resourceOpt().orElse(null));
                                     return Future.succeededFuture();
                                 });
                     });

@@ -231,7 +231,7 @@ public class CruiseControlReconciler {
                                 .reconcile(reconciliation, reconciliation.namespace(), CruiseControlResources.secretName(reconciliation.name()),
                                         cruiseControl.generateCertificatesSecret(reconciliation.namespace(), reconciliation.name(), clusterCa, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant())))
                                 .compose(patchResult -> {
-                                    existingCertsChanged = CertUtils.doExistingCertificatesDiffer(oldSecret, patchResult.resourceOpt().orElse(null));
+                                    existingCertsChanged = patchResult != null && CertUtils.doExistingCertificatesDiffer(oldSecret, patchResult.resourceOpt().orElse(null));
                                     return Future.succeededFuture();
                                 });
                     });

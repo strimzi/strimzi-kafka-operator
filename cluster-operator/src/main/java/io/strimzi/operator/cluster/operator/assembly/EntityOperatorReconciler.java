@@ -378,7 +378,7 @@ public class EntityOperatorReconciler {
                                 .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.entityTopicOperatorSecretName(reconciliation.name()),
                                         entityOperator.topicOperator().generateSecret(clusterCa, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant())))
                                 .compose(patchResult -> {
-                                    existingEntityTopicOperatorCertsChanged = CertUtils.doExistingCertificatesDiffer(oldSecret, patchResult.resourceOpt().orElse(null));
+                                    existingEntityTopicOperatorCertsChanged = patchResult != null && CertUtils.doExistingCertificatesDiffer(oldSecret, patchResult.resourceOpt().orElse(null));
                                     return Future.succeededFuture();
                                 });
                     });
@@ -405,7 +405,7 @@ public class EntityOperatorReconciler {
                                 .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.entityUserOperatorSecretName(reconciliation.name()),
                                         entityOperator.userOperator().generateSecret(clusterCa, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant())))
                                 .compose(patchResult -> {
-                                    existingEntityUserOperatorCertsChanged = CertUtils.doExistingCertificatesDiffer(oldSecret, patchResult.resourceOpt().orElse(null));
+                                    existingEntityUserOperatorCertsChanged = patchResult != null && CertUtils.doExistingCertificatesDiffer(oldSecret, patchResult.resourceOpt().orElse(null));
                                     return Future.succeededFuture();
                                 });
                     });
