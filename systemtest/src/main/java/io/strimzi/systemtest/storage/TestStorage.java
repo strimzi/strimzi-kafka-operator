@@ -257,7 +257,7 @@ final public class TestStorage {
     }
 
     public long getTestExecutionTimeInSeconds() {
-        return Duration.ofMillis(getTestExecutionStartTime() - System.currentTimeMillis()).getSeconds();
+        return Duration.ofMillis(System.currentTimeMillis() - getTestExecutionStartTime()).getSeconds();
     }
 
     public KafkaTracingClients getTracingClients() {
