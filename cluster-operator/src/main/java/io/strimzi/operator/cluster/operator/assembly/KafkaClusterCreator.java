@@ -30,6 +30,8 @@ import io.vertx.core.Vertx;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Utility class to help to create the KafkaCluster model
@@ -47,10 +49,11 @@ public class KafkaClusterCreator {
     private final AdminClientProvider adminClientProvider;
     private final SecretOperator secretOperator;
     private final SharedEnvironmentProvider sharedEnvironmentProvider;
-    private final PreventBrokerScaleDownCheck brokerScaleDownOperations;
+    private final BrokersInUseCheck brokerScaleDownOperations;
 
     // State
     private boolean scaleDownCheckFailed = false;
+    private boolean usedToBeBrokersCheckFailed = false;
 
     /**
      * Constructor
@@ -74,7 +77,7 @@ public class KafkaClusterCreator {
         this.adminClientProvider = supplier.adminClientProvider;
         this.secretOperator = supplier.secretOperations;
         this.sharedEnvironmentProvider = supplier.sharedEnvironmentProvider;
-        this.brokerScaleDownOperations = supplier.brokerScaleDownOperations;
+        this.brokerScaleDownOperations = supplier.brokersInUseCheck;
     }
 
     /**
@@ -100,18 +103,29 @@ public class KafkaClusterCreator {
             boolean tryToFixProblems
     )   {
         return createKafkaCluster(kafkaCr, nodePools, oldStorage, currentPods, versionChange)
-                .compose(kafka -> brokerScaleDownCheck(kafkaCr, kafka))
+                .compose(kafka -> brokerRemovalCheck(kafkaCr, kafka))
                 .compose(kafka -> {
-                    if (scaleDownCheckFailed && tryToFixProblems)   {
+                    if (checkFailed() && tryToFixProblems)   {
                         // We have a failure, and should try to fix issues
                         // Once we fix it, we call this method again, but this time with tryToFixProblems set to false
                         return revertScaleDown(kafka, kafkaCr, nodePools)
+                                .compose(kafkaAndNodePools -> revertRoleChange(kafkaAndNodePools.kafkaCr(), kafkaAndNodePools.nodePoolCrs()))
                                 .compose(kafkaAndNodePools -> prepareKafkaCluster(kafkaAndNodePools.kafkaCr(), kafkaAndNodePools.nodePoolCrs(), oldStorage, currentPods, versionChange, false));
-                    } else if (scaleDownCheckFailed) {
+                    } else if (checkFailed()) {
                         // We have a failure, but we should not try to fix it
-                        return Future.failedFuture(new InvalidResourceException("Cannot scale-down Kafka brokers " + kafka.removedNodes() + " because they have assigned partition-replicas."));
+                        List<String> errors = new ArrayList<>();
+
+                        if (scaleDownCheckFailed)   {
+                            errors.add("Cannot scale-down Kafka brokers " + kafka.removedNodes() + " because they have assigned partition-replicas.");
+                        }
+
+                        if (usedToBeBrokersCheckFailed) {
+                            errors.add("Cannot remove the broker role from nodes " + kafka.usedToBeBrokerNodes() + " because they have assigned partition-replicas.");
+                        }
+
+                        return Future.failedFuture(new InvalidResourceException("Following errors were found when processing the Kafka custom resource: " + errors));
                     } else {
-                        // If something else failed, we just re-throw it
+                        // If everything succeeded, we return the KafkaCluster object
                         return Future.succeededFuture(kafka);
                     }
                 });
@@ -147,24 +161,39 @@ public class KafkaClusterCreator {
      *
      * @return  Future with the Kafka cluster model
      */
-    private Future<KafkaCluster> brokerScaleDownCheck(Kafka kafkaCr, KafkaCluster kafka) {
-        if (skipBrokerScaleDownCheck(kafkaCr) || kafka.removedNodes().isEmpty()) {
+    private Future<KafkaCluster> brokerRemovalCheck(Kafka kafkaCr, KafkaCluster kafka) {
+        if (skipBrokerScaleDownCheck(kafkaCr) // The check was disabled by the user
+                || (kafka.removedNodes().isEmpty() && kafka.usedToBeBrokerNodes().isEmpty())) { // There is no scale-down or role change, so there is nothing to check
             scaleDownCheckFailed = false;
+            usedToBeBrokersCheckFailed = false;
             return Future.succeededFuture(kafka);
         } else {
-            return brokerScaleDownOperations.canScaleDownBrokers(reconciliation, vertx, kafka.removedNodes(), secretOperator, adminClientProvider)
-                    .compose(brokersContainingPartitions -> {
-                        if (!brokersContainingPartitions.isEmpty()) {
-                            LOGGER.warnCr(reconciliation, "Cannot scale down brokers {} because {} have assigned partition-replicas", kafka.removedNodes(), brokersContainingPartitions);
+            return brokerScaleDownOperations.brokersInUse(reconciliation, vertx, secretOperator, adminClientProvider)
+                    .compose(brokersInUse -> {
+                        // Check nodes that are being scaled down
+                        Set<Integer> scaledDownBrokersInUse = kafka.removedNodes().stream().filter(brokersInUse::contains).collect(Collectors.toSet());
+                        if (!scaledDownBrokersInUse.isEmpty()) {
+                            LOGGER.warnCr(reconciliation, "Cannot scale down brokers {} because {} have assigned partition-replicas", kafka.removedNodes(), scaledDownBrokersInUse);
                             scaleDownCheckFailed = true;
                         } else {
                             scaleDownCheckFailed = false;
+                        }
+
+                        // Check nodes that used to have broker role but should not have it anymore
+                        Set<Integer> usedToBeBrokersInUse = kafka.usedToBeBrokerNodes().stream().filter(brokersInUse::contains).collect(Collectors.toSet());
+                        if (!usedToBeBrokersInUse.isEmpty()) {
+                            LOGGER.warnCr(reconciliation, "Cannot remove the broker role from nodes {} because {} have still assigned partition-replicas", kafka.usedToBeBrokerNodes(), usedToBeBrokersInUse);
+                            usedToBeBrokersCheckFailed = true;
+                        } else {
+                            usedToBeBrokersCheckFailed = false;
                         }
 
                         return Future.succeededFuture(kafka);
                     });
         }
     }
+
+
 
     /**
      * Reverts the broker scale down if it is not allowed because the brokers are not empty
@@ -176,35 +205,72 @@ public class KafkaClusterCreator {
      * @return  Future with KafkaAndNodePools record containing the fixed Kafka and KafkaNodePool CRs
      */
     private Future<KafkaAndNodePools> revertScaleDown(KafkaCluster kafka, Kafka kafkaCr, List<KafkaNodePool> nodePoolCrs)   {
-        if (nodePoolCrs == null || nodePoolCrs.isEmpty())    {
-            // There are no node pools => the Kafka CR is used
-            int newReplicasCount = kafkaCr.getSpec().getKafka().getReplicas() + kafka.removedNodes().size();
-            LOGGER.warnCr(reconciliation, "Reverting scale-down of Kafka {} by changing number of replicas to {}", kafkaCr.getMetadata().getName(), newReplicasCount);
+        if (scaleDownCheckFailed) {
+            if (nodePoolCrs == null || nodePoolCrs.isEmpty()) {
+                // There are no node pools => the Kafka CR is used
+                int newReplicasCount = kafkaCr.getSpec().getKafka().getReplicas() + kafka.removedNodes().size();
+                LOGGER.warnCr(reconciliation, "Reverting scale-down of Kafka {} by changing number of replicas to {}", kafkaCr.getMetadata().getName(), newReplicasCount);
 
-            Kafka newKafkaCr = new KafkaBuilder(kafkaCr)
-                    .editSpec()
+                Kafka newKafkaCr = new KafkaBuilder(kafkaCr)
+                        .editSpec()
                         .editKafka()
-                            .withReplicas(newReplicasCount)
+                        .withReplicas(newReplicasCount)
                         .endKafka()
-                    .endSpec()
-                    .build();
+                        .endSpec()
+                        .build();
 
-            return Future.succeededFuture(new KafkaAndNodePools(newKafkaCr, nodePoolCrs));
+                return Future.succeededFuture(new KafkaAndNodePools(newKafkaCr, nodePoolCrs));
+            } else {
+                // Node pools are used -> we have to fix scale down in the KafkaNodePools
+                List<KafkaNodePool> newNodePools = new ArrayList<>();
+
+                for (KafkaNodePool nodePool : nodePoolCrs) {
+                    if (nodePool.getStatus() != null
+                            && nodePool.getStatus().getRoles().contains(ProcessRoles.BROKER)
+                            && nodePool.getStatus().getNodeIds() != null
+                            && nodePool.getSpec().getReplicas() < nodePool.getStatus().getNodeIds().size()) {
+                        int newReplicasCount = nodePool.getStatus().getNodeIds().size();
+                        LOGGER.warnCr(reconciliation, "Reverting scale-down of KafkaNodePool {} by changing number of replicas to {}", nodePool.getMetadata().getName(), newReplicasCount);
+                        newNodePools.add(
+                                new KafkaNodePoolBuilder(nodePool)
+                                        .editSpec()
+                                        .withReplicas(newReplicasCount)
+                                        .endSpec()
+                                        .build());
+                    } else {
+                        newNodePools.add(nodePool);
+                    }
+                }
+
+                return Future.succeededFuture(new KafkaAndNodePools(kafkaCr, newNodePools));
+            }
         } else {
-            // Node pools are used -> we have to fix scale down in the KafkaNodePools
+            // The scale-down check did not fail => return the original resources
+            return Future.succeededFuture(new KafkaAndNodePools(kafkaCr, nodePoolCrs));
+        }
+    }
+
+    /**
+     * Reverts the role change when the broker role is removed from a node that has still assigned partition replicas
+     *
+     * @param kafkaCr       Kafka custom resource
+     * @param nodePoolCrs   List with KafkaNodePool custom resources
+     *
+     * @return  Future with KafkaAndNodePools record containing the fixed Kafka and KafkaNodePool CRs
+     */
+    private Future<KafkaAndNodePools> revertRoleChange(Kafka kafkaCr, List<KafkaNodePool> nodePoolCrs)   {
+        if (usedToBeBrokersCheckFailed) {
             List<KafkaNodePool> newNodePools = new ArrayList<>();
 
-            for (KafkaNodePool nodePool : nodePoolCrs)    {
+            for (KafkaNodePool nodePool : nodePoolCrs) {
                 if (nodePool.getStatus() != null
                         && nodePool.getStatus().getRoles().contains(ProcessRoles.BROKER)
-                        && nodePool.getStatus().getNodeIds() != null
-                        && nodePool.getSpec().getReplicas() < nodePool.getStatus().getNodeIds().size())  {
-                    int newReplicasCount = nodePool.getStatus().getNodeIds().size();
-                    LOGGER.warnCr(reconciliation, "Reverting scale-down of KafkaNodePool {} by changing number of replicas to {}", nodePool.getMetadata().getName(), newReplicasCount);
+                        && !nodePool.getSpec().getRoles().contains(ProcessRoles.BROKER)) {
+                    LOGGER.warnCr(reconciliation, "Reverting role change of KafkaNodePool {} by adding the broker role to it", nodePool.getMetadata().getName());
                     newNodePools.add(
                             new KafkaNodePoolBuilder(nodePool)
                                     .editSpec()
-                                        .withReplicas(newReplicasCount)
+                                    .addToRoles(ProcessRoles.BROKER)
                                     .endSpec()
                                     .build());
                 } else {
@@ -213,6 +279,9 @@ public class KafkaClusterCreator {
             }
 
             return Future.succeededFuture(new KafkaAndNodePools(kafkaCr, newNodePools));
+        } else {
+            // The used-to-be-brokers check did not fail => return the original resources
+            return Future.succeededFuture(new KafkaAndNodePools(kafkaCr, nodePoolCrs));
         }
     }
 
@@ -225,6 +294,15 @@ public class KafkaClusterCreator {
      */
     private static boolean skipBrokerScaleDownCheck(Kafka kafkaCr)  {
         return Annotations.booleanAnnotation(kafkaCr, Annotations.ANNO_STRIMZI_IO_SKIP_BROKER_SCALEDOWN_CHECK, false);
+    }
+
+    /**
+     * Checks if there were any failures during the validation
+     *
+     * @return  True if any checks failed. False otherwise.
+     */
+    private boolean checkFailed()   {
+        return scaleDownCheckFailed || usedToBeBrokersCheckFailed;
     }
 
     /**

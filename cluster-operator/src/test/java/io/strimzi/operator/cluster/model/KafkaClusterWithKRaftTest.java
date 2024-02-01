@@ -108,7 +108,7 @@ public class KafkaClusterWithKRaftTest {
             Reconciliation.DUMMY_RECONCILIATION,
             KAFKA,
             POOL_CONTROLLERS,
-            new NodeIdAssignment(Set.of(0, 1, 2), Set.of(0, 1, 2), Set.of(), Set.of()),
+            new NodeIdAssignment(Set.of(0, 1, 2), Set.of(0, 1, 2), Set.of(), Set.of(), Set.of()),
             null,
             OWNER_REFERENCE,
             SHARED_ENV_PROVIDER
@@ -131,7 +131,7 @@ public class KafkaClusterWithKRaftTest {
             Reconciliation.DUMMY_RECONCILIATION,
             KAFKA,
             POOL_BROKERS,
-            new NodeIdAssignment(Set.of(1000, 1001, 1002), Set.of(1000, 1001, 1002), Set.of(), Set.of()),
+            new NodeIdAssignment(Set.of(1000, 1001, 1002), Set.of(1000, 1001, 1002), Set.of(), Set.of(), Set.of()),
             null,
             OWNER_REFERENCE,
             SHARED_ENV_PROVIDER

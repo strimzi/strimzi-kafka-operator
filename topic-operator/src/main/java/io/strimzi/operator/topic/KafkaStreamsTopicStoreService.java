@@ -18,8 +18,8 @@ import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.Topology;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -36,7 +36,7 @@ import static java.lang.Integer.parseInt;
  * A service to configure and start/stop KafkaStreamsTopicStore.
  */
 public class KafkaStreamsTopicStoreService {
-    private static final Logger LOGGER = LoggerFactory.getLogger(KafkaStreamsTopicStoreService.class);
+    private static final Logger LOGGER = LogManager.getLogger(KafkaStreamsTopicStoreService.class);
 
     private final List<AutoCloseable> closeables = new ArrayList<>();
 

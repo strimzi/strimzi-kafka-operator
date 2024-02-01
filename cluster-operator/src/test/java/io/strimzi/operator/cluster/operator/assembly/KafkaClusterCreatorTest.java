@@ -175,11 +175,22 @@ public class KafkaClusterCreatorTest {
                 .withRoles(ProcessRoles.CONTROLLER, ProcessRoles.BROKER)
             .endSpec()
             .build();
+    private final static KafkaNodePool POOL_MIXED_WITH_STATUS = new KafkaNodePoolBuilder(POOL_MIXED)
+            .withNewStatus()
+                .withRoles(ProcessRoles.CONTROLLER, ProcessRoles.BROKER)
+                .withNodeIds(3000, 3001, 3002)
+            .endStatus()
+            .build();
     private final static KafkaNodePool POOL_MIXED_WITH_STATUS_5_NODES = new KafkaNodePoolBuilder(POOL_MIXED)
             .withNewStatus()
                 .withRoles(ProcessRoles.CONTROLLER, ProcessRoles.BROKER)
                 .withNodeIds(3000, 3001, 3002, 3003, 3004)
             .endStatus()
+            .build();
+    private final static KafkaNodePool POOL_MIXED_NOT_MIXED_ANYMORE = new KafkaNodePoolBuilder(POOL_MIXED_WITH_STATUS)
+            .editSpec()
+                .removeFromRoles(ProcessRoles.BROKER)
+            .endSpec()
             .build();
 
     private final static KafkaNodePool POOL_CONTROLLERS = new KafkaNodePoolBuilder()
@@ -246,7 +257,7 @@ public class KafkaClusterCreatorTest {
                     assertThat(kc.removedNodes(), is(Set.of()));
 
                     // No scale-down => scale-down check is not done
-                    verify(supplier.brokerScaleDownOperations, never()).canScaleDownBrokers(any(), any(), any(), any(), any());
+                    verify(supplier.brokersInUseCheck, never()).brokersInUse(any(), any(), any(), any());
 
                     async.flag();
                 })));
@@ -268,7 +279,7 @@ public class KafkaClusterCreatorTest {
                     assertThat(kc.removedNodes(), is(Set.of()));
 
                     // No scale-down => scale-down check is not done
-                    verify(supplier.brokerScaleDownOperations, never()).canScaleDownBrokers(any(), any(), any(), any(), any());
+                    verify(supplier.brokersInUseCheck, never()).brokersInUse(any(), any(), any(), any());
 
                     async.flag();
                 })));
@@ -278,9 +289,9 @@ public class KafkaClusterCreatorTest {
     public void testRevertScaleDownWithoutNodePools(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
-        // Mock scale-down check
-        PreventBrokerScaleDownCheck scaleDownOps = supplier.brokerScaleDownOperations;
-        when(scaleDownOps.canScaleDownBrokers(any(), any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of(3, 4)));
+        // Mock brokers-in-use check
+        BrokersInUseCheck brokersInUseOps = supplier.brokersInUseCheck;
+        when(brokersInUseOps.brokersInUse(any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of(0, 1, 2, 3, 4)));
 
         KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier);
 
@@ -294,7 +305,7 @@ public class KafkaClusterCreatorTest {
                     assertThat(kc.removedNodes(), is(Set.of()));
 
                     // Scale-down reverted => should be called once
-                    verify(supplier.brokerScaleDownOperations, times(1)).canScaleDownBrokers(any(), any(), any(), any(), any());
+                    verify(supplier.brokersInUseCheck, times(1)).brokersInUse(any(), any(), any(), any());
 
                     async.flag();
                 })));
@@ -304,9 +315,9 @@ public class KafkaClusterCreatorTest {
     public void testCorrectScaleDownWithoutNodePools(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
-        // Mock scale-down check
-        PreventBrokerScaleDownCheck scaleDownOps = supplier.brokerScaleDownOperations;
-        when(scaleDownOps.canScaleDownBrokers(any(), any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of()));
+        // Mock brokers-in-use check
+        BrokersInUseCheck brokersInUseOps = supplier.brokersInUseCheck;
+        when(brokersInUseOps.brokersInUse(any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of(0, 1, 2)));
 
         KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier);
 
@@ -320,7 +331,7 @@ public class KafkaClusterCreatorTest {
                     assertThat(kc.removedNodes(), is(Set.of(3, 4)));
 
                     // Scale-down reverted => should be called once
-                    verify(supplier.brokerScaleDownOperations, times(1)).canScaleDownBrokers(any(), any(), any(), any(), any());
+                    verify(supplier.brokersInUseCheck, times(1)).brokersInUse(any(), any(), any(), any());
 
                     async.flag();
                 })));
@@ -330,9 +341,9 @@ public class KafkaClusterCreatorTest {
     public void testThrowsRevertScaleDownFailsWithoutNodePools(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
-        // Mock scale-down check
-        PreventBrokerScaleDownCheck scaleDownOps = supplier.brokerScaleDownOperations;
-        when(scaleDownOps.canScaleDownBrokers(any(), any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of(3, 4)));
+        // Mock brokers-in-use check
+        BrokersInUseCheck brokersInUseOps = supplier.brokersInUseCheck;
+        when(brokersInUseOps.brokersInUse(any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of(0, 1, 2, 3, 4)));
 
         KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier);
 
@@ -341,10 +352,10 @@ public class KafkaClusterCreatorTest {
                 .onComplete(context.failing(ex -> context.verify(() -> {
                     // Check exception
                     assertThat(ex, instanceOf(InvalidResourceException.class));
-                    assertThat(ex.getMessage(), is("Cannot scale-down Kafka brokers [3, 4] because they have assigned partition-replicas."));
+                    assertThat(ex.getMessage(), is("Following errors were found when processing the Kafka custom resource: [Cannot scale-down Kafka brokers [3, 4] because they have assigned partition-replicas.]"));
 
                     // Scale-down failed => should be called once
-                    verify(supplier.brokerScaleDownOperations, times(1)).canScaleDownBrokers(any(), any(), any(), any(), any());
+                    verify(supplier.brokersInUseCheck, times(1)).brokersInUse(any(), any(), any(), any());
 
                     async.flag();
                 })));
@@ -360,9 +371,9 @@ public class KafkaClusterCreatorTest {
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
-        // Mock scale-down check
-        PreventBrokerScaleDownCheck scaleDownOps = supplier.brokerScaleDownOperations;
-        when(scaleDownOps.canScaleDownBrokers(any(), any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of(3, 4)));
+        // Mock brokers-in-use check
+        BrokersInUseCheck brokersInUseOps = supplier.brokersInUseCheck;
+        when(brokersInUseOps.brokersInUse(any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of(0, 1, 2, 3, 4)));
 
         KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier);
 
@@ -376,7 +387,7 @@ public class KafkaClusterCreatorTest {
                     assertThat(kc.removedNodes(), is(Set.of(3, 4)));
 
                     // Scale-down check skipped => should be never called
-                    verify(supplier.brokerScaleDownOperations, never()).canScaleDownBrokers(any(), any(), any(), any(), any());
+                    verify(supplier.brokersInUseCheck, never()).brokersInUse(any(), any(), any(), any());
 
                     async.flag();
                 })));
@@ -402,7 +413,7 @@ public class KafkaClusterCreatorTest {
                     assertThat(kc.removedNodes(), is(Set.of()));
 
                     // No scale-down => scale-down check is not done
-                    verify(supplier.brokerScaleDownOperations, never()).canScaleDownBrokers(any(), any(), any(), any(), any());
+                    verify(supplier.brokersInUseCheck, never()).brokersInUse(any(), any(), any(), any());
 
                     async.flag();
                 })));
@@ -424,7 +435,7 @@ public class KafkaClusterCreatorTest {
                     assertThat(kc.removedNodes(), is(Set.of()));
 
                     // No scale-down => scale-down check is not done
-                    verify(supplier.brokerScaleDownOperations, never()).canScaleDownBrokers(any(), any(), any(), any(), any());
+                    verify(supplier.brokersInUseCheck, never()).brokersInUse(any(), any(), any(), any());
 
                     async.flag();
                 })));
@@ -434,9 +445,9 @@ public class KafkaClusterCreatorTest {
     public void testRevertScaleDownWithNodePools(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
-        // Mock scale-down check
-        PreventBrokerScaleDownCheck scaleDownOps = supplier.brokerScaleDownOperations;
-        when(scaleDownOps.canScaleDownBrokers(any(), any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of(1003, 2004)));
+        // Mock brokers-in-use check
+        BrokersInUseCheck brokersInUseOps = supplier.brokersInUseCheck;
+        when(brokersInUseOps.brokersInUse(any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of(1000, 1001, 1002, 1003, 2004)));
 
         KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier);
 
@@ -450,7 +461,7 @@ public class KafkaClusterCreatorTest {
                     assertThat(kc.removedNodes(), is(Set.of()));
 
                     // Scale-down reverted => should be called once
-                    verify(supplier.brokerScaleDownOperations, times(1)).canScaleDownBrokers(any(), any(), any(), any(), any());
+                    verify(supplier.brokersInUseCheck, times(1)).brokersInUse(any(), any(), any(), any());
 
                     async.flag();
                 })));
@@ -460,9 +471,9 @@ public class KafkaClusterCreatorTest {
     public void testCorrectScaleDownWithNodePools(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
-        // Mock scale-down check
-        PreventBrokerScaleDownCheck scaleDownOps = supplier.brokerScaleDownOperations;
-        when(scaleDownOps.canScaleDownBrokers(any(), any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of()));
+        // Mock brokers-in-use check
+        BrokersInUseCheck brokersInUseOps = supplier.brokersInUseCheck;
+        when(brokersInUseOps.brokersInUse(any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of(1000, 1001, 1002, 2000, 2001, 2002)));
 
         KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier);
 
@@ -476,7 +487,7 @@ public class KafkaClusterCreatorTest {
                     assertThat(kc.removedNodes(), is(Set.of(1003, 1004, 2003, 2004)));
 
                     // Scale-down reverted => should be called once
-                    verify(supplier.brokerScaleDownOperations, times(1)).canScaleDownBrokers(any(), any(), any(), any(), any());
+                    verify(supplier.brokersInUseCheck, times(1)).brokersInUse(any(), any(), any(), any());
 
                     async.flag();
                 })));
@@ -486,9 +497,9 @@ public class KafkaClusterCreatorTest {
     public void testThrowsRevertScaleDownFailsWithNodePools(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
-        // Mock scale-down check
-        PreventBrokerScaleDownCheck scaleDownOps = supplier.brokerScaleDownOperations;
-        when(scaleDownOps.canScaleDownBrokers(any(), any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of(1003, 1004, 2003, 2004)));
+        // Mock brokers-in-use check
+        BrokersInUseCheck brokersInUseOps = supplier.brokersInUseCheck;
+        when(brokersInUseOps.brokersInUse(any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of(1000, 1001, 1002, 1003, 1004, 2003, 2004)));
 
         KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier);
 
@@ -497,10 +508,10 @@ public class KafkaClusterCreatorTest {
                 .onComplete(context.failing(ex -> context.verify(() -> {
                     // Check exception
                     assertThat(ex, instanceOf(InvalidResourceException.class));
-                    assertThat(ex.getMessage(), is("Cannot scale-down Kafka brokers [1003, 1004, 2003, 2004] because they have assigned partition-replicas."));
+                    assertThat(ex.getMessage(), is("Following errors were found when processing the Kafka custom resource: [Cannot scale-down Kafka brokers [1003, 1004, 2003, 2004] because they have assigned partition-replicas.]"));
 
                     // Scale-down failed => should be called once
-                    verify(supplier.brokerScaleDownOperations, times(1)).canScaleDownBrokers(any(), any(), any(), any(), any());
+                    verify(supplier.brokersInUseCheck, times(1)).brokersInUse(any(), any(), any(), any());
 
                     async.flag();
                 })));
@@ -516,9 +527,9 @@ public class KafkaClusterCreatorTest {
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
-        // Mock scale-down check
-        PreventBrokerScaleDownCheck scaleDownOps = supplier.brokerScaleDownOperations;
-        when(scaleDownOps.canScaleDownBrokers(any(), any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of(1003, 1004, 2003, 2004)));
+        // Mock brokers-in-use check
+        BrokersInUseCheck brokersInUseOps = supplier.brokersInUseCheck;
+        when(brokersInUseOps.brokersInUse(any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of(1000, 1001, 1002, 1003, 1004, 2003, 2004)));
 
         KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier);
 
@@ -532,7 +543,7 @@ public class KafkaClusterCreatorTest {
                     assertThat(kc.removedNodes(), is(Set.of(1003, 1004, 2003, 2004)));
 
                     // Scale-down check skipped => should be never called
-                    verify(supplier.brokerScaleDownOperations, never()).canScaleDownBrokers(any(), any(), any(), any(), any());
+                    verify(supplier.brokersInUseCheck, never()).brokersInUse(any(), any(), any(), any());
 
                     async.flag();
                 })));
@@ -558,7 +569,7 @@ public class KafkaClusterCreatorTest {
                     assertThat(kc.removedNodes(), is(Set.of()));
 
                     // No scale-down => scale-down check is not done
-                    verify(supplier.brokerScaleDownOperations, never()).canScaleDownBrokers(any(), any(), any(), any(), any());
+                    verify(supplier.brokersInUseCheck, never()).brokersInUse(any(), any(), any(), any());
 
                     async.flag();
                 })));
@@ -580,7 +591,7 @@ public class KafkaClusterCreatorTest {
                     assertThat(kc.removedNodes(), is(Set.of()));
 
                     // No scale-down => scale-down check is not done
-                    verify(supplier.brokerScaleDownOperations, never()).canScaleDownBrokers(any(), any(), any(), any(), any());
+                    verify(supplier.brokersInUseCheck, never()).brokersInUse(any(), any(), any(), any());
 
                     async.flag();
                 })));
@@ -590,16 +601,9 @@ public class KafkaClusterCreatorTest {
     public void testRevertScaleDownWithKRaft(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
-        // Mock scale-down check
-        PreventBrokerScaleDownCheck scaleDownOps = supplier.brokerScaleDownOperations;
-        when(scaleDownOps.canScaleDownBrokers(any(), any(), any(), any(), any())).thenAnswer(i -> {
-            Set<Integer> idsToBeRemoved = i.getArgument(2);
-            if (idsToBeRemoved.equals(Set.of(3003, 3004)))  {
-                return Future.succeededFuture(Set.of());
-            } else {
-                return Future.succeededFuture(Set.of(1003, 2004));
-            }
-        });
+        // Mock brokers-in-use check
+        BrokersInUseCheck brokersInUseOps = supplier.brokersInUseCheck;
+        when(brokersInUseOps.brokersInUse(any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of(1000, 1001, 1002, 1003, 2004)));
 
         KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier);
 
@@ -613,7 +617,7 @@ public class KafkaClusterCreatorTest {
                     assertThat(kc.removedNodes(), is(Set.of(3003, 3004))); // Controllers are not affected
 
                     // Scale-down reverted => should be called twice as we still scale down controllers after the revert is done
-                    verify(supplier.brokerScaleDownOperations, times(2)).canScaleDownBrokers(any(), any(), any(), any(), any());
+                    verify(supplier.brokersInUseCheck, times(2)).brokersInUse(any(), any(), any(), any());
 
                     async.flag();
                 })));
@@ -623,9 +627,9 @@ public class KafkaClusterCreatorTest {
     public void testRevertScaleDownWithKRaftMixedNodes(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
-        // Mock scale-down check
-        PreventBrokerScaleDownCheck scaleDownOps = supplier.brokerScaleDownOperations;
-        when(scaleDownOps.canScaleDownBrokers(any(), any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of(3003)));
+        // Mock brokers-in-use check
+        BrokersInUseCheck brokersInUseOps = supplier.brokersInUseCheck;
+        when(brokersInUseOps.brokersInUse(any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of(3000, 3001, 3002, 3003)));
 
         KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier);
 
@@ -639,7 +643,7 @@ public class KafkaClusterCreatorTest {
                     assertThat(kc.removedNodes(), is(Set.of()));
 
                     // Scale-down reverted => should be called twice as we still scale down controllers after the revert is done
-                    verify(supplier.brokerScaleDownOperations, times(1)).canScaleDownBrokers(any(), any(), any(), any(), any());
+                    verify(supplier.brokersInUseCheck, times(1)).brokersInUse(any(), any(), any(), any());
 
                     async.flag();
                 })));
@@ -649,9 +653,9 @@ public class KafkaClusterCreatorTest {
     public void testCorrectScaleDownWithKRaft(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
-        // Mock scale-down check
-        PreventBrokerScaleDownCheck scaleDownOps = supplier.brokerScaleDownOperations;
-        when(scaleDownOps.canScaleDownBrokers(any(), any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of()));
+        // Mock brokers-in-use check
+        BrokersInUseCheck brokersInUseOps = supplier.brokersInUseCheck;
+        when(brokersInUseOps.brokersInUse(any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of(1000, 1001, 1002, 2000, 2001, 2002, 3000, 3001, 3002)));
 
         KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier);
 
@@ -665,7 +669,7 @@ public class KafkaClusterCreatorTest {
                     assertThat(kc.removedNodes(), is(Set.of(1003, 1004, 2003, 2004, 3003, 3004)));
 
                     // Scale-down reverted => should be called once
-                    verify(supplier.brokerScaleDownOperations, times(1)).canScaleDownBrokers(any(), any(), any(), any(), any());
+                    verify(supplier.brokersInUseCheck, times(1)).brokersInUse(any(), any(), any(), any());
 
                     async.flag();
                 })));
@@ -675,9 +679,9 @@ public class KafkaClusterCreatorTest {
     public void testThrowsRevertScaleDownFailsWithKRaft(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
-        // Mock scale-down check
-        PreventBrokerScaleDownCheck scaleDownOps = supplier.brokerScaleDownOperations;
-        when(scaleDownOps.canScaleDownBrokers(any(), any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of(1003, 1004, 2003, 2004)));
+        // Mock brokers-in-use check
+        BrokersInUseCheck brokersInUseOps = supplier.brokersInUseCheck;
+        when(brokersInUseOps.brokersInUse(any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of(1003, 1004, 2003, 2004)));
 
         KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier);
 
@@ -686,17 +690,17 @@ public class KafkaClusterCreatorTest {
                 .onComplete(context.failing(ex -> context.verify(() -> {
                     // Check exception
                     assertThat(ex, instanceOf(InvalidResourceException.class));
-                    assertThat(ex.getMessage(), is("Cannot scale-down Kafka brokers [3003, 3004, 1003, 1004, 2003, 2004] because they have assigned partition-replicas."));
+                    assertThat(ex.getMessage(), is("Following errors were found when processing the Kafka custom resource: [Cannot scale-down Kafka brokers [3003, 3004, 1003, 1004, 2003, 2004] because they have assigned partition-replicas.]"));
 
                     // Scale-down failed => should be called once
-                    verify(supplier.brokerScaleDownOperations, times(1)).canScaleDownBrokers(any(), any(), any(), any(), any());
+                    verify(supplier.brokersInUseCheck, times(1)).brokersInUse(any(), any(), any(), any());
 
                     async.flag();
                 })));
     }
 
     @Test
-    public void tesSkipScaleDownCheckWithKRaft(VertxTestContext context) {
+    public void testSkipScaleDownCheckWithKRaft(VertxTestContext context) {
         Kafka kafka = new KafkaBuilder(KAFKA_WITH_KRAFT)
                 .editMetadata()
                     .addToAnnotations(Annotations.ANNO_STRIMZI_IO_SKIP_BROKER_SCALEDOWN_CHECK, "true")
@@ -704,10 +708,6 @@ public class KafkaClusterCreatorTest {
                 .build();
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
-
-        // Mock scale-down check
-        PreventBrokerScaleDownCheck scaleDownOps = supplier.brokerScaleDownOperations;
-        when(scaleDownOps.canScaleDownBrokers(any(), any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of(1003, 1004, 2003, 2004)));
 
         KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier);
 
@@ -717,11 +717,118 @@ public class KafkaClusterCreatorTest {
                     // Kafka cluster is created
                     assertThat(kc, is(notNullValue()));
                     assertThat(kc.nodes().size(), is(9));
-                    assertThat(kc.nodes().stream().map(n -> n.nodeId()).collect(Collectors.toSet()), is(Set.of(1000, 1001, 1002, 2000, 2001, 2002, 3000, 3001, 3002)));
+                    assertThat(kc.nodes().stream().map(NodeRef::nodeId).collect(Collectors.toSet()), is(Set.of(1000, 1001, 1002, 2000, 2001, 2002, 3000, 3001, 3002)));
                     assertThat(kc.removedNodes(), is(Set.of(1003, 1004, 2003, 2004, 3003, 3004)));
 
                     // Scale-down check skipped => should be never called
-                    verify(supplier.brokerScaleDownOperations, never()).canScaleDownBrokers(any(), any(), any(), any(), any());
+                    verify(supplier.brokersInUseCheck, never()).brokersInUse(any(), any(), any(), any());
+
+                    async.flag();
+                })));
+    }
+
+    @Test
+    public void testRevertRoleChangeWithKRaftMixedNodes(VertxTestContext context) {
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+
+        // Mock brokers-in-use check
+        BrokersInUseCheck brokersInUseOps = supplier.brokersInUseCheck;
+        when(brokersInUseOps.brokersInUse(any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of(1000, 1001, 1002, 2000, 2001, 2002, 3000, 3001, 3002)));
+
+        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier);
+
+        Checkpoint async = context.checkpoint();
+        creator.prepareKafkaCluster(KAFKA_WITH_KRAFT, List.of(POOL_MIXED_NOT_MIXED_ANYMORE, POOL_A_WITH_STATUS, POOL_B_WITH_STATUS), Map.of(), null, VERSION_CHANGE, true)
+                .onComplete(context.succeeding(kc -> context.verify(() -> {
+                    // Kafka cluster is created
+                    assertThat(kc, is(notNullValue()));
+                    assertThat(kc.nodes().size(), is(9));
+                    assertThat(kc.nodes().stream().map(NodeRef::nodeId).collect(Collectors.toSet()), is(Set.of(1000, 1001, 1002, 2000, 2001, 2002, 3000, 3001, 3002)));
+                    assertThat(kc.removedNodes(), is(Set.of()));
+                    assertThat(kc.usedToBeBrokerNodes(), is(Set.of()));
+
+                    // Scale-down reverted => should be called twice as we still scale down controllers after the revert is done
+                    verify(supplier.brokersInUseCheck, times(1)).brokersInUse(any(), any(), any(), any());
+
+                    async.flag();
+                })));
+    }
+
+    @Test
+    public void testCorrectRoleChangeWithKRaft(VertxTestContext context) {
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+
+        // Mock brokers-in-use check
+        BrokersInUseCheck brokersInUseOps = supplier.brokersInUseCheck;
+        when(brokersInUseOps.brokersInUse(any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of(1000, 1001, 1002, 2000, 2001, 20022)));
+
+        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier);
+
+        Checkpoint async = context.checkpoint();
+        creator.prepareKafkaCluster(KAFKA_WITH_KRAFT, List.of(POOL_MIXED_NOT_MIXED_ANYMORE, POOL_A_WITH_STATUS, POOL_B_WITH_STATUS), Map.of(), CURRENT_PODS_5_NODES, VERSION_CHANGE, true)
+                .onComplete(context.succeeding(kc -> context.verify(() -> {
+                    // Kafka cluster is created
+                    assertThat(kc, is(notNullValue()));
+                    assertThat(kc.nodes().size(), is(9));
+                    assertThat(kc.nodes().stream().map(NodeRef::nodeId).collect(Collectors.toSet()), is(Set.of(1000, 1001, 1002, 2000, 2001, 2002, 3000, 3001, 3002)));
+                    assertThat(kc.removedNodes(), is(Set.of()));
+                    assertThat(kc.usedToBeBrokerNodes(), is(Set.of(3000, 3001, 3002)));
+
+                    // Scale-down reverted => should be called once
+                    verify(supplier.brokersInUseCheck, times(1)).brokersInUse(any(), any(), any(), any());
+
+                    async.flag();
+                })));
+    }
+
+    @Test
+    public void testThrowsRevertBrokerChangeFailsWithKRaft(VertxTestContext context) {
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+
+        // Mock brokers-in-use check
+        BrokersInUseCheck brokersInUseOps = supplier.brokersInUseCheck;
+        when(brokersInUseOps.brokersInUse(any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of(3000, 3002)));
+
+        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier);
+
+        Checkpoint async = context.checkpoint();
+        creator.prepareKafkaCluster(KAFKA_WITH_KRAFT, List.of(POOL_MIXED_NOT_MIXED_ANYMORE, POOL_A_WITH_STATUS, POOL_B_WITH_STATUS), Map.of(), null, VERSION_CHANGE, false)
+                .onComplete(context.failing(ex -> context.verify(() -> {
+                    // Check exception
+                    assertThat(ex, instanceOf(InvalidResourceException.class));
+                    assertThat(ex.getMessage(), is("Following errors were found when processing the Kafka custom resource: [Cannot remove the broker role from nodes [3000, 3001, 3002] because they have assigned partition-replicas.]"));
+
+                    // Scale-down failed => should be called once
+                    verify(supplier.brokersInUseCheck, times(1)).brokersInUse(any(), any(), any(), any());
+
+                    async.flag();
+                })));
+    }
+
+    @Test
+    public void testSkipRoleChangeCheckWithKRaft(VertxTestContext context) {
+        Kafka kafka = new KafkaBuilder(KAFKA_WITH_KRAFT)
+                .editMetadata()
+                    .addToAnnotations(Annotations.ANNO_STRIMZI_IO_SKIP_BROKER_SCALEDOWN_CHECK, "true")
+                .endMetadata()
+                .build();
+
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+
+        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier);
+
+        Checkpoint async = context.checkpoint();
+        creator.prepareKafkaCluster(kafka, List.of(POOL_MIXED_NOT_MIXED_ANYMORE, POOL_A_WITH_STATUS, POOL_B_WITH_STATUS), Map.of(), null, VERSION_CHANGE, false)
+                .onComplete(context.succeeding(kc -> context.verify(() -> {
+                    // Kafka cluster is created
+                    assertThat(kc, is(notNullValue()));
+                    assertThat(kc.nodes().size(), is(9));
+                    assertThat(kc.nodes().stream().map(NodeRef::nodeId).collect(Collectors.toSet()), is(Set.of(1000, 1001, 1002, 2000, 2001, 2002, 3000, 3001, 3002)));
+                    assertThat(kc.removedNodes(), is(Set.of()));
+                    assertThat(kc.usedToBeBrokerNodes(), is(Set.of(3000, 3001, 3002)));
+
+                    // Scale-down check skipped => should be never called
+                    verify(supplier.brokersInUseCheck, never()).brokersInUse(any(), any(), any(), any());
 
                     async.flag();
                 })));

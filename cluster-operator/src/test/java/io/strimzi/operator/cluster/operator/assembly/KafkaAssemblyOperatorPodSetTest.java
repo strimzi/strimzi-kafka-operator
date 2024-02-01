@@ -748,9 +748,6 @@ public class KafkaAssemblyOperatorPodSetTest {
 
         ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
 
-        PreventBrokerScaleDownCheck operations = supplier.brokerScaleDownOperations;
-        when(operations.canScaleDownBrokers(any(), any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of()));
-
         MockZooKeeperReconciler zr = new MockZooKeeperReconciler(
                 new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
                 vertx,
@@ -882,9 +879,6 @@ public class KafkaAssemblyOperatorPodSetTest {
         when(mockPodOps.waitFor(any(), any(), any(), any(), anyLong(), anyLong(), any())).thenReturn(Future.succeededFuture());
 
         ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
-
-        PreventBrokerScaleDownCheck operations = supplier.brokerScaleDownOperations;
-        when(operations.canScaleDownBrokers(any(), any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of(3, 4)));
 
         MockKafkaReconciler kr = new MockKafkaReconciler(
                 new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),

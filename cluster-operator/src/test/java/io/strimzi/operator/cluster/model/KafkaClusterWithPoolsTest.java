@@ -92,7 +92,7 @@ public class KafkaClusterWithPoolsTest {
             Reconciliation.DUMMY_RECONCILIATION,
             KAFKA,
             POOL_A,
-            new NodeIdAssignment(Set.of(0, 1, 2), Set.of(0, 1, 2), Set.of(), Set.of()),
+            new NodeIdAssignment(Set.of(0, 1, 2), Set.of(0, 1, 2), Set.of(), Set.of(), Set.of()),
             null,
             OWNER_REFERENCE,
             SHARED_ENV_PROVIDER
@@ -115,7 +115,7 @@ public class KafkaClusterWithPoolsTest {
             Reconciliation.DUMMY_RECONCILIATION,
             KAFKA,
             POOL_B,
-            new NodeIdAssignment(Set.of(10, 11), Set.of(10, 11), Set.of(), Set.of()),
+            new NodeIdAssignment(Set.of(10, 11), Set.of(10, 11), Set.of(), Set.of(), Set.of()),
             null,
             OWNER_REFERENCE,
             SHARED_ENV_PROVIDER
