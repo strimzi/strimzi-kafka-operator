@@ -132,13 +132,7 @@ public class KafkaExporterReconciler {
                                 .reconcile(reconciliation, reconciliation.namespace(), KafkaExporterResources.secretName(reconciliation.name()),
                                         kafkaExporter.generateSecret(clusterCa, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant())))
                                 .compose(patchResult -> {
-                                    if (patchResult instanceof ReconcileResult.Patched) {
-                                        // The secret is patched and some changes to the existing certificates actually occurred
-                                        existingKafkaExporterCertsChanged = CertUtils.doExistingCertificatesDiffer(oldSecret, patchResult.resource());
-                                    } else {
-                                        existingKafkaExporterCertsChanged = false;
-                                    }
-
+                                    existingKafkaExporterCertsChanged = CertUtils.doExistingCertificatesDiffer(oldSecret, patchResult.resourceOpt().orElse(null));
                                     return Future.succeededFuture();
                                 });
                     });
@@ -190,7 +184,13 @@ public class KafkaExporterReconciler {
             return deploymentOperator
                     .reconcile(reconciliation, reconciliation.namespace(), KafkaExporterResources.componentName(reconciliation.name()), deployment)
                     .compose(patchResult -> {
-                        if (patchResult instanceof ReconcileResult.Noop)   {
+                        boolean isNoop = patchResult instanceof ReconcileResult.Noop;
+                        boolean patchedUsingServerSideApply = patchResult instanceof ReconcileResult.Patched
+                                && ((ReconcileResult.Patched<Deployment>) patchResult).isUsingServerSideApply();
+
+                        LOGGER.infoCr(reconciliation, "patchedUsingServerSideApply is {}", patchedUsingServerSideApply);
+
+                        if (isNoop || patchedUsingServerSideApply)   {
                             // Deployment needs ot be rolled because the certificate secret changed or older/expired cluster CA removed
                             if (existingKafkaExporterCertsChanged || clusterCa.certsRemoved()) {
                                 LOGGER.infoCr(reconciliation, "Rolling Kafka Exporter to update or remove certificates");

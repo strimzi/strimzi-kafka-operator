@@ -22,6 +22,7 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static java.util.Collections.emptyMap;
 
@@ -176,6 +177,8 @@ public class CertUtils {
      * changed. This method is used to evaluate whether rolling update of existing brokers is needed when secrets with
      * certificates change. It separates changes for existing certificates with other changes to the Secret such as
      * added or removed certificates (scale-up or scale-down).
+     * <p>
+     * Note: this method checks if secrets differ, not whether secret is being created for first time.
      *
      * @param current   Existing secret
      * @param desired   Desired secret
@@ -183,6 +186,10 @@ public class CertUtils {
      * @return  True if there is a key which exists in the data sections of both secrets and which changed.
      */
     public static boolean doExistingCertificatesDiffer(Secret current, Secret desired) {
+        if (current == null || desired == null) {
+            return false;
+        }
+
         Map<String, String> currentData = current.getData();
         Map<String, String> desiredData = desired.getData();
 
