@@ -47,7 +47,9 @@ public class Kind implements KubeCluster {
     public boolean isClusterUp() {
         List<String> cmd = Arrays.asList("kubectl", "get", "nodes", "-o", "jsonpath='{.items[*].spec.providerID}'");
         try {
-            return Exec.exec(cmd).out().startsWith("kind");
+            String cmdOut = Exec.exec(cmd).out();
+            LOGGER.debug("IsKindUp cmd output: " + cmdOut);
+            return cmdOut.contains("kind");
         } catch (KubeClusterException e) {
             LOGGER.debug("'" + String.join(" ", cmd) + "' failed. Please double check connectivity to your cluster!");
             LOGGER.debug(e);
