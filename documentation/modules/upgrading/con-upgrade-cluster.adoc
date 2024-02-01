@@ -13,7 +13,7 @@ When performing your upgrade, ensure the availability of your Kafka clusters by 
 
 . Configure pod disruption budgets
 . Roll pods using one of these methods:
-.. Use the AMQ Streams Drain Cleaner (recommended)
+.. Use the Strimzi Drain Cleaner (recommended)
 .. Apply an annotation to your pods to roll them manually
 
 When using either of the methods to roll the pods, you must set a pod disruption budget of zero using the `maxUnavailable` property.
