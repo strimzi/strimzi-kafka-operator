@@ -34,7 +34,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -458,12 +457,12 @@ public class UserControllerMockTest {
             return CompletableFuture.completedFuture(status);
         });
 
-        AtomicBoolean statusUpdateInvoked = new AtomicBoolean(false);
+        var statusUpdateInvokedLatch = new CountDownLatch(1);
         var spiedKafkaUserOps = spy(kafkaUserOps);
 
         doAnswer(i -> {
             KubernetesClientException error = new KubernetesClientException(errorDescription + " (expected)", errorCode, null);
-            statusUpdateInvoked.set(true);
+            statusUpdateInvokedLatch.countDown();
             return CompletableFuture.failedStage(error);
         }).when(spiedKafkaUserOps).updateStatusAsync(any(), any());
 
@@ -480,8 +479,14 @@ public class UserControllerMockTest {
 
         // Test
         try {
-            kafkaUserOps.resource(namespace, ResourceUtils.createKafkaUserTls(namespace)).create();
-            kafkaUserOps.resource(namespace, NAME).waitUntilCondition(i -> statusUpdateInvoked.get(), 10_000, TimeUnit.MILLISECONDS);
+            kafkaUserOps.resource(namespace, ResourceUtils.createKafkaUserTls()).create();
+            kafkaUserOps.resource(namespace, NAME).waitUntilCondition(i -> {
+                try {
+                    return statusUpdateInvokedLatch.await(10, TimeUnit.SECONDS);
+                } catch (InterruptedException e) {
+                    return false;
+                }
+            }, 10_000, TimeUnit.MILLISECONDS);
 
             KafkaUser user = kafkaUserOps.get(namespace, NAME);
 
@@ -513,10 +518,10 @@ public class UserControllerMockTest {
         });
 
         var spiedKafkaUserOps = spy(kafkaUserOps);
-        AtomicBoolean statusUpdateInvoked = new AtomicBoolean(false);
+        var statusUpdateInvokedLatch = new CountDownLatch(1);
 
         doAnswer(i -> {
-            statusUpdateInvoked.set(true);
+            statusUpdateInvokedLatch.countDown();
             return CompletableFuture.failedStage(new RuntimeException("Test exception (expected)"));
         }).when(spiedKafkaUserOps).updateStatusAsync(any(), any());
 
@@ -533,8 +538,14 @@ public class UserControllerMockTest {
 
         // Test
         try {
-            kafkaUserOps.resource(namespace, ResourceUtils.createKafkaUserTls(namespace)).create();
-            kafkaUserOps.resource(namespace, NAME).waitUntilCondition(i -> statusUpdateInvoked.get(), 10_000, TimeUnit.MILLISECONDS);
+            kafkaUserOps.resource(namespace, ResourceUtils.createKafkaUserTls()).create();
+            kafkaUserOps.resource(namespace, NAME).waitUntilCondition(i -> {
+                try {
+                    return statusUpdateInvokedLatch.await(10, TimeUnit.SECONDS);
+                } catch (InterruptedException e) {
+                    return false;
+                }
+            }, 10_000, TimeUnit.MILLISECONDS);
 
             KafkaUser user = kafkaUserOps.get(namespace, NAME);
 
