@@ -298,7 +298,7 @@ record TopicOperatorConfig(
                 "\n\tsslEndpointIdentificationAlgorithm='" + sslEndpointIdentificationAlgorithm + '\'' +
                 "\n\tsaslEnabled=" + saslEnabled +
                 "\n\tsaslMechanism='" + saslMechanism + '\'' +
-                "\n\tsaslCustomConfig='" + saslCustomConfig + '\'' +
+                "\n\tsaslCustomConfig='" + (saslCustomConfig == null ? null : mask) + '\'' +
                 "\n\tsaslUsername='" + saslUsername + '\'' +
                 "\n\tsaslPassword='" + mask + '\'' +
                 "\n\tsecurityProtocol='" + securityProtocol + '\'' +
