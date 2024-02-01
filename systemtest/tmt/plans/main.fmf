@@ -142,7 +142,7 @@ finish:
   summary: Run smoke strimzi test suite with kraft
   provision:
     hardware:
-      memory: ">= 8 GiB"
+      memory: ">= 12 GiB"
       cpu:
         processors: ">= 4"
   discover+:
@@ -187,7 +187,7 @@ finish:
   summary: Run upgrade strimzi test suite with kraft
   provision:
     hardware:
-      memory: ">= 8 GiB"
+      memory: ">= 12 GiB"
       cpu:
         processors: ">= 4"
   discover+:
