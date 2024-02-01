@@ -433,7 +433,7 @@ public class Session extends AbstractVerticle {
         String customPropsString = config.get(Config.SASL_CUSTOM_CONFIG);
 
         if (customPropsString.isEmpty()) {
-            throw new InvalidConfigurationException("Custom SASL config properties are not set");
+            throw new InvalidConfigurationException(Config.SASL_MECHANISM + "=custom, but env var " + Config.SASL_CUSTOM_CONFIG + " is not set");
         }
 
         ObjectMapper objectMapper = new ObjectMapper();
