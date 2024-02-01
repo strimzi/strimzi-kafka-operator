@@ -441,7 +441,7 @@ public class Session extends AbstractVerticle {
             Map<String, String> customProperties = objectMapper.readValue(customPropsString, STRING_HASH_MAP_TYPE_REFERENCE);
 
             if (customProperties.isEmpty()) {
-                throw new InvalidConfigurationException("SASL custom config properties empty");
+                throw new InvalidConfigurationException(Config.SASL_MECHANISM + "=custom, but env var " + Config.SASL_CUSTOM_CONFIG + " is empty");
             }
 
             for (var entry : customProperties.entrySet()) {
