@@ -8,6 +8,8 @@ import io.strimzi.operator.common.InvalidConfigurationException;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.common.config.SaslConfigs;
 import org.apache.kafka.common.config.SslConfigs;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
@@ -23,6 +25,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class ConfigTest {
+    private final static Logger LOGGER = LogManager.getLogger(Session.class);
+
     private static final Map<String, String> MANDATORY = new HashMap<>();
 
     static {
@@ -151,31 +155,33 @@ public class ConfigTest {
         Config configCustomMechanism = new Config(map);
         Session sessionCustomMechanism = new Session(null, configCustomMechanism);
         var customMechanismException = assertThrows(InvalidConfigurationException.class, sessionCustomMechanism::adminClientProperties);
-        assertEquals("Custom SASL config properties are not set", customMechanismException.getMessage());
+        assertEquals("SASL_MECHANISM=custom, but env var SASL_CUSTOM_CONFIG is not set", customMechanismException.getMessage());
 
         map.put(Config.SASL_CUSTOM_CONFIG.key, "{}");
         Config configCustomProps = new Config(map);
         Session sessionCustomProps = new Session(null, configCustomProps);
         var customPropsEmptyException = assertThrows(InvalidConfigurationException.class, sessionCustomProps::adminClientProperties);
-        assertEquals("SASL custom config properties empty", customPropsEmptyException.getMessage());
+        assertEquals("SASL_MECHANISM=custom, but env var SASL_CUSTOM_CONFIG is empty", customPropsEmptyException.getMessage());
 
         map.put(Config.SASL_CUSTOM_CONFIG.key, "{");
         Config configCustomPropsInvalid = new Config(map);
         Session sessionCustomPropsInvalid = new Session(null, configCustomPropsInvalid);
         var customPropsInvalidException = assertThrows(InvalidConfigurationException.class, sessionCustomPropsInvalid::adminClientProperties);
-        assertEquals("SASL custom config properties deserialize failed. customProperties: '{'", customPropsInvalidException.getMessage());
+        LOGGER.error(customPropsInvalidException.getMessage());
+        assertEquals("Env var SASL_CUSTOM_CONFIG could not be parsed as JSON: Unexpected end-of-input: expected close marker for Object (start marker at [Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled); line: 1, column: 1])\n" +
+              " at [Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled); line: 1, column: 2]", customPropsInvalidException.getMessage());
 
         map.put(Config.SASL_CUSTOM_CONFIG.key, "{ \"a\": \"b\" }");
         Config configCustomPropsNotSasl = new Config(map);
         Session sessionCustomPropsNotSasl = new Session(null, configCustomPropsNotSasl);
         var customPropsNotSaslException = assertThrows(InvalidConfigurationException.class, sessionCustomPropsNotSasl::adminClientProperties);
-        assertEquals("SASL custom config properties not SASL properties. customProperty: 'a' = 'b'", customPropsNotSaslException.getMessage());
+        assertEquals("SASL custom config property 'a' in env var SASL_CUSTOM_CONFIG does not start with 'sasl.'", customPropsNotSaslException.getMessage());
 
         map.put(Config.SASL_CUSTOM_CONFIG.key, "{ \"\": \"b\" }");
         configCustomPropsNotSasl = new Config(map);
         sessionCustomPropsNotSasl = new Session(null, configCustomPropsNotSasl);
         customPropsNotSaslException = assertThrows(InvalidConfigurationException.class, sessionCustomPropsNotSasl::adminClientProperties);
-        assertEquals("SASL custom config properties not SASL properties. customProperty: '' = 'b'", customPropsNotSaslException.getMessage());
+        assertEquals("SASL custom config property '' in env var SASL_CUSTOM_CONFIG does not start with 'sasl.'", customPropsNotSaslException.getMessage());
     }
 
     @Test
