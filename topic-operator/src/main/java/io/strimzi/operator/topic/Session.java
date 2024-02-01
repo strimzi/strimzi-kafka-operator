@@ -455,7 +455,7 @@ public class Session extends AbstractVerticle {
                 kafkaClientProps.setProperty(key, value);
             }
         } catch (JsonProcessingException e) {
-            throw new InvalidConfigurationException("SASL custom config properties deserialize failed. customProperties: '" + customPropsString + "'");
+            throw new InvalidConfigurationException("Env var " + Config.SASL_CUSTOM_CONFIG + " could not be parsed as JSON + (e.getMessage() != null ? ": " + e.getMessage() : "."));
         }
     }
 
