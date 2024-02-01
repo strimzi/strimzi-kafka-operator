@@ -19,6 +19,7 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
+import java.time.Duration;
 import java.util.Random;
 
 import static io.strimzi.operator.common.Util.hashStub;
@@ -253,6 +254,10 @@ final public class TestStorage {
 
     public long getTestExecutionStartTime() {
         return (long) extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.TEST_EXECUTION_START_TIME_KEY);
+    }
+
+    public long getTestExecutionTimeInSeconds() {
+        return Duration.ofMillis(getTestExecutionStartTime() - System.currentTimeMillis()).getSeconds();
     }
 
     public KafkaTracingClients getTracingClients() {
