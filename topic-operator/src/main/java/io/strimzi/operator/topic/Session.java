@@ -449,7 +449,7 @@ public class Session extends AbstractVerticle {
                 String value = entry.getValue();
 
                 if (key == null || key.isBlank() || !key.startsWith("sasl.")) {
-                    throw new InvalidConfigurationException("SASL custom config properties not SASL properties. customProperty: '" + key + "' = '" + value + "'");
+                    throw new InvalidConfigurationException("SASL custom config property '" + key +"' in env var " + Config.SASL_CUSTOM_CONFIG + " does not start with 'sasl.'");
                 }
 
                 kafkaClientProps.setProperty(key, value);
