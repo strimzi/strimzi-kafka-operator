@@ -20,11 +20,13 @@ import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
@@ -39,7 +41,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 
 /**
  * Class used for reconciliation of Cruise Control. This class contains both the steps of the Cruise Control
@@ -63,18 +64,21 @@ public class CruiseControlReconciler {
     private final ServiceOperator serviceOperator;
     private final NetworkPolicyOperator networkPolicyOperator;
     private final ConfigMapOperator configMapOperator;
+    private final PasswordGenerator passwordGenerator;
 
     private boolean existingCertsChanged = false;
 
     private String serverConfigurationHash = "";
     private String capacityConfigurationHash = "";
-
+    private String apiSecretHash = "";
+    
     /**
      * Constructs the Cruise Control reconciler
      *
      * @param reconciliation            Reconciliation marker
      * @param config                    Cluster Operator Configuration
      * @param supplier                  Supplier with Kubernetes Resource Operators
+     * @param passwordGenerator         The password generator for API users
      * @param kafkaAssembly             The Kafka custom resource
      * @param versions                  The supported Kafka versions
      * @param kafkaBrokerNodes          List of the broker nodes which are part of the Kafka cluster
@@ -87,6 +91,7 @@ public class CruiseControlReconciler {
             Reconciliation reconciliation,
             ClusterOperatorConfig config,
             ResourceOperatorSupplier supplier,
+            PasswordGenerator passwordGenerator,
             Kafka kafkaAssembly,
             KafkaVersion.Lookup versions,
             Set<NodeRef> kafkaBrokerNodes,
@@ -102,7 +107,8 @@ public class CruiseControlReconciler {
         this.operatorNamespace = config.getOperatorNamespace();
         this.operatorNamespaceLabels = config.getOperatorNamespaceLabels();
         this.isNetworkPolicyGeneration = config.isNetworkPolicyGeneration();
-
+        this.passwordGenerator = passwordGenerator;
+        
         this.deploymentOperator = supplier.deploymentOperations;
         this.secretOperator = supplier.secretOperations;
         this.serviceAccountOperator = supplier.serviceAccountOperations;
@@ -240,7 +246,7 @@ public class CruiseControlReconciler {
         if (cruiseControl != null) {
             return secretOperator.getAsync(reconciliation.namespace(), CruiseControlResources.apiSecretName(reconciliation.name()))
                     .compose(oldSecret -> {
-                        Secret newSecret = cruiseControl.generateApiSecret();
+                        Secret newSecret = cruiseControl.generateApiSecret(passwordGenerator);
 
                         if (oldSecret != null)  {
                             // The credentials should not change with every release
@@ -248,7 +254,9 @@ public class CruiseControlReconciler {
                             // But we use the new secret to update labels etc. if needed
                             newSecret.setData(oldSecret.getData());
                         }
-
+                        
+                        this.apiSecretHash = ReconcilerUtils.hashSecretContent(newSecret);
+                        
                         return secretOperator.reconcile(reconciliation, reconciliation.namespace(), CruiseControlResources.apiSecretName(reconciliation.name()), newSecret)
                                 .map((Void) null);
                     });
@@ -285,7 +293,8 @@ public class CruiseControlReconciler {
             podAnnotations.put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, String.valueOf(clusterCa.caKeyGeneration()));
             podAnnotations.put(CruiseControl.ANNO_STRIMZI_SERVER_CONFIGURATION_HASH, serverConfigurationHash);
             podAnnotations.put(CruiseControl.ANNO_STRIMZI_CAPACITY_CONFIGURATION_HASH, capacityConfigurationHash);
-
+            podAnnotations.put(Annotations.ANNO_STRIMZI_AUTH_HASH, apiSecretHash);
+            
             Deployment deployment = cruiseControl.generateDeployment(podAnnotations, isOpenShift, imagePullPolicy, imagePullSecrets);
 
             return deploymentOperator
