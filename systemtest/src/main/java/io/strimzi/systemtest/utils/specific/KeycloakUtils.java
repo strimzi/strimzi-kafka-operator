@@ -42,7 +42,7 @@ public class KeycloakUtils {
                 "--insecure",
                 "-X",
                 "POST",
-                "-d", "client_id=admin-cli&client_secret=Y29uc29sZS1kYXRhZ2VuLXNlY3JldHM=&grant_type=password&username=" + userName + "&password=" + password,
+                "-d", "client_id=admin-cli&client_secret=aGVsbG8td29ybGQtcHJvZHVjZXItc2VjcmV0=&grant_type=password&username=" + userName + "&password=" + password,
                 baseURI + "/realms/master/protocol/openid-connect/token"
             ).out()).getString("access_token");
     }
