@@ -57,7 +57,7 @@ Stable feature gates have reached a beta level of maturity, and are generally en
 Stable feature gates are production-ready, but they can still be disabled.
 
 [id='ref-operator-use-kraft-feature-gate-{context}']
-== UseKRaft feature gate
+=== UseKRaft feature gate
 
 The `UseKRaft` feature gate has a default state of _enabled_.
 
