@@ -164,7 +164,7 @@ env:
 # ...
 ----
 <1> Setting the `custom` SASL mechanism. This enables the custom configuration, so the actual `sasl.mechanism` needs to be included in the `SASL_CUSTOM_CONFIG` value.
-<2> JSON with the SASL properties to be set.
+<2> JSON with the SASL properties to be set. Only properties beginning with `sasl.` are allowed.
 
 . Apply the changes to the `Deployment` configuration to deploy the Topic Operator.
 
