@@ -41,7 +41,7 @@ public class LogHasNoUnexpectedErrors extends BaseMatcher<String> {
                 if (lineLowerCase.contains("error") || lineLowerCase.contains("exception")) {
                     boolean ignoreListResult = false;
                     for (LogIgnoreList value : LogIgnoreList.values()) {
-                        Matcher m = Pattern.compile(value.name).matcher(line);
+                        Matcher m = Pattern.compile(value.name, Pattern.MULTILINE | Pattern.DOTALL).matcher(line);
                         if (m.find()) {
                             ignoreListResult = true;
                             break;
