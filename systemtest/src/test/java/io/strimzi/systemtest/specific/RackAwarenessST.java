@@ -78,7 +78,7 @@ class RackAwarenessST extends AbstractST {
     void testKafkaRackAwareness(ExtensionContext extensionContext) {
         Assumptions.assumeFalse(Environment.isNamespaceRbacScope());
 
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 1, 1)
                 .editSpec()
@@ -90,8 +90,7 @@ class RackAwarenessST extends AbstractST {
                 .build());
 
         LOGGER.info("Kafka cluster deployed successfully");
-        String ssName = testStorage.getKafkaStatefulSetName();
-        String podName = PodUtils.getPodNameByPrefix(testStorage.getNamespaceName(), ssName);
+        String podName = PodUtils.getPodNameByPrefix(testStorage.getNamespaceName(), testStorage.getKafkaStatefulSetName());
         Pod pod = kubeClient().getPod(testStorage.getNamespaceName(), podName);
 
         // check that spec matches the actual pod configuration
@@ -163,7 +162,7 @@ class RackAwarenessST extends AbstractST {
     void testConnectRackAwareness(ExtensionContext extensionContext) {
         Assumptions.assumeFalse(Environment.isNamespaceRbacScope());
 
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
         final String invalidTopologyKey = "invalid-topology-key";
         final String invalidConnectClusterName = testStorage.getClusterName() + "-invalid";
 
@@ -249,7 +248,7 @@ class RackAwarenessST extends AbstractST {
     void testMirrorMaker2RackAwareness(ExtensionContext extensionContext) {
         Assumptions.assumeFalse(Environment.isNamespaceRbacScope());
 
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         resourceManager.createResourceWithWait(extensionContext,
                 KafkaTemplates.kafkaEphemeral(testStorage.getSourceClusterName(), 1, 1).build());
