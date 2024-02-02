@@ -35,8 +35,6 @@ IMPORTANT: **KRaft mode is not ready for production in Apache Kafka or in Strimz
 
 For a deeper understanding of the node pool configuration options, refer to the link:{BookURLConfiguring}[Strimzi Custom Resource API Reference^].
 
-NOTE: Currently, replica and storage configuration properties in the `KafkaNodePool` resource must also be present in the `Kafka` resource. The configuration in the `Kafka` resource is ignored when node pools are used.
-
 .Example configuration for a node pool in a cluster using KRaft mode 
 [source,yaml,subs="+attributes"]
 ----

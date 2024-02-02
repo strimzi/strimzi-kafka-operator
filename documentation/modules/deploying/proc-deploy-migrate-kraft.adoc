@@ -6,7 +6,7 @@
 = Migrating to KRaft mode
 
 [role="_abstract"]
-If you are using ZooKeeper for cluster management of your Kafka cluster, you can migrate to using Kafka in KRaft mode. 
+If you are using ZooKeeper for metadata management in your Kafka cluster, you can migrate to using Kafka in KRaft mode. 
 KRaft mode replaces ZooKeeper for distributed coordination, offering enhanced reliability, scalability, and throughput.
 
 During the migration, you install a quorum of controller nodes as a node pool, which replaces ZooKeeper for management of your cluster. 
@@ -14,12 +14,16 @@ You enable KRaft migration in the cluster configuration by applying the `strimzi
 After the migration is complete, you switch the brokers to using KRaft and the controllers out of migration mode using the `strimzi.io/kraft: enabled` annotation.
 
 Before starting the migration, verify that your environment can support Kafka in KRaft mode, as there are a number of xref:ref-operator-use-kraft-feature-gate-str[limitations].
+Note also, the following:
 
-WARNING: ZooKeeper to KRaft migration is not suitable for production environments.
+* Migration is only supported on dedicated controller nodes, not on nodes with dual roles as brokers and controllers.
+* Throughout the migration process, ZooKeeper and Controller nodes operate in parallel for a period, requiring sufficient compute resources in the cluster.
+
+WARNING: ZooKeeper to KRaft migration is not yet suitable for production environments.
 
 .Prerequisites
 
-* You must be using Strimzi 0.40 (with Kafka 3.7) or newer. If you using an earlier version of AMQ Streams, upgrade before migrating to KRaft mode.
+* You must be using Strimzi 0.40 or newer with Kafka 3.6.1 or newer. If you using an earlier version of Strimzi or APache Kafka, upgrade before migrating to KRaft mode.
 * The Cluster Operator that manages the Kafka cluster is running.
 * The Kafka cluster deployment uses Kafka node pools.
 +
@@ -27,8 +31,6 @@ You can xref:proc-migrating-clusters-node-pools-str[migrate your existing Kafka 
 +
 In the `KafkaNodePool` resource configuration, brokers must be contained in a node pool assigned a `broker` role and with the name `kafka`.
 Support for node pools is enabled in the `Kafka` resource configuration using the `strimzi.io/node-pools: enabled` annotation.
-
-NOTE: Currently, replica and storage configuration properties in the `KafkaNodePool` resource must also be present in the `Kafka` resource. The configuration in the `Kafka` resource is ignored when node pools are used. 
 
 In this procedure, the Kafka cluster name is `my-cluster`, which is located in `my-project`. 
 The name of the controller node pool is `controller`.
@@ -142,7 +144,7 @@ At the start of the migration this is `ZooKeeper`.
 Metadata is managed in Kafka but also replicated in ZooKeeper, so you can xref:proc-deploy-migrate-kraft-rollback-{context}[roll back from this point].
 --
 +
-The migration status is also represented in the `status.KafkaMetadataState` property of the `Kafka` resource. 
+The migration status is also represented in the `status.kafkaMetadataState` property of the `Kafka` resource. 
 
 . Enable KRaft in the `Kafka` resource configuration by setting the `strimzi.io/kraft` annotation to `enabled`:
 +
@@ -163,6 +165,8 @@ metadata:
     strimzi.io/kraft: enabled 
 # ...
 ----
++
+WARNING: Rollback cannot be performed after enabling KRaft.
 
 . Check the status of the move to full KRaft mode:
 +
@@ -203,7 +207,7 @@ For a list of resources created for ZooKeeper, see xref:ref-list-of-kafka-cluste
 [id='proc-deploy-migrate-kraft-rollback-{context}']
 .Performing a rollback on the migration
 
-Before the migration is finalized, you can perform a rollback operation as follows:
+Before the migration is finalized by enabling KRaft in the 'Kafka' resource, you can perform a rollback operation as follows:
 
 . Apply the `strimzi.io/kraft: rollback` annotation to the `Kafka` resource to roll back the brokers and controllers.
 +

@@ -98,7 +98,7 @@ status:
     - lastTransitionTime: '2023-01-20T17:56:29.396588Z'
       status: 'True'
       type: Ready # <3>
-  KafkaMetadataState: KRaft # <4>
+  kafkaMetadataState: KRaft # <4>
   kafkaVersion: {DefaultKafkaVersion} # <5>
   listeners: # <6>
     - addresses:
