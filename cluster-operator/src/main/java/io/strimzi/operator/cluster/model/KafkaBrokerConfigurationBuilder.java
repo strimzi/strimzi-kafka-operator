@@ -268,7 +268,7 @@ public class KafkaBrokerConfigurationBuilder {
         List<String> advertisedListeners = new ArrayList<>();
         List<String> securityProtocol = new ArrayList<>();
 
-        boolean isKraftControllerOnly = kafkaMetadataConfigState.isKRaftInConfiguration(node) && node.controller() && !node.broker();
+        boolean isKraftControllerOnly = node.controller() && !node.broker();
 
         // Control Plane listener is set for pure KRaft controller or combined node, and broker in ZooKeeper mode or in migration state but not when full KRaft.
         if (node.controller() || (node.broker() && kafkaMetadataConfigState.isZooKeeperOrMigration())) {

@@ -50,7 +50,10 @@ import static io.strimzi.operator.cluster.model.KafkaBrokerConfigurationBuilderT
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
+import static org.hamcrest.CoreMatchers.both;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 
@@ -70,15 +73,15 @@ public class KafkaBrokerConfigurationBuilderTest {
         configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.KRAFT)
                 .build();
         // brokers don't have broker.id when in KRaft-mode, only node.id
-        assertThat(configuration, !configuration.contains("broker.id"));
-        assertThat(configuration, configuration.contains("node.id=2"));
+        assertThat(configuration, not(containsString("broker.id")));
+        assertThat(configuration, containsString("node.id=2"));
 
         NodeRef controller = new NodeRef("my-cluster-kafka-3", 3, "kafka", true, false);
         configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, controller, KafkaMetadataConfigurationState.KRAFT)
                 .build();
         // controllers don't have broker.id at all, only node.id
-        assertThat(configuration, !configuration.contains("broker.id"));
-        assertThat(configuration, configuration.contains("node.id=3"));
+        assertThat(configuration, not(containsString("broker.id")));
+        assertThat(configuration, containsString("node.id=3"));
     }
 
     @ParallelTest
@@ -2010,7 +2013,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withListeners("my-cluster", "my-namespace", NODE_REF, singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
-        assertThat(configuration, configuration.contains("listener.security.protocol.map=CONTROLPLANE-9090:SSL,REPLICATION-9091:SSL,CUSTOM-LISTENER-9092:SASL_SSL"));
+        assertThat(configuration, containsString("listener.security.protocol.map=CONTROLPLANE-9090:SSL,REPLICATION-9091:SSL,CUSTOM-LISTENER-9092:SASL_SSL"));
     }
 
     @ParallelTest
@@ -2030,7 +2033,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withListeners("my-cluster", "my-namespace", NODE_REF, singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
-        assertThat(configuration, configuration.contains("listener.security.protocol.map=CONTROLPLANE-9090:SSL,REPLICATION-9091:SSL,CUSTOM-LISTENER-9092:SASL_PLAINTEXT"));
+        assertThat(configuration, containsString("listener.security.protocol.map=CONTROLPLANE-9090:SSL,REPLICATION-9091:SSL,CUSTOM-LISTENER-9092:SASL_PLAINTEXT"));
     }
 
 
@@ -2051,7 +2054,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withListeners("my-cluster", "my-namespace", NODE_REF, singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
-        assertThat(configuration, configuration.contains("listener.security.protocol.map=CONTROLPLANE-9090:SSL,REPLICATION-9091:SSL,CUSTOM-LISTENER-9092:PLAINTEXT"));
+        assertThat(configuration, containsString("listener.security.protocol.map=CONTROLPLANE-9090:SSL,REPLICATION-9091:SSL,CUSTOM-LISTENER-9092:PLAINTEXT"));
     }
 
     @ParallelTest
@@ -2071,7 +2074,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withListeners("my-cluster", "my-namespace", NODE_REF, singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
-        assertThat(configuration, !configuration.contains("ssl.truststore.path"));
+        assertThat(configuration, not(containsString("ssl.truststore.path")));
     }
 
     @ParallelTest
@@ -2151,23 +2154,23 @@ public class KafkaBrokerConfigurationBuilderTest {
                     .withKRaft("my-cluster", "my-namespace", Set.of(ProcessRoles.CONTROLLER), nodes)
                     .build();
             // controllers don't have broker.id at all in any migration state, only node.id, but always "controller" role
-            assertThat(configuration, !configuration.contains("broker.id"));
-            assertThat(configuration, configuration.contains("node.id=1"));
-            assertThat(configuration, configuration.contains("process.roles=controller"));
+            assertThat(configuration, not(containsString("broker.id")));
+            assertThat(configuration, containsString("node.id=1"));
+            assertThat(configuration, containsString("process.roles=controller"));
 
             configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, broker, state)
                     .withKRaft("my-cluster", "my-namespace", Set.of(ProcessRoles.BROKER), nodes)
                     .build();
             // brokers have broker.id (together with node.id) but no role up to the migration step ...
             if (state.isZooKeeperOrMigration()) {
-                assertThat(configuration, configuration.contains("broker.id=0") && configuration.contains("node.id=0"));
-                assertThat(configuration, !configuration.contains("process.roles"));
+                assertThat(configuration, both(containsString("broker.id=0")).and(containsString("node.id=0")));
+                assertThat(configuration, not(containsString("process.roles")));
             }
             // ... from post-migration (to KRaft) they are already in KRaft-mode, so no broker.id anymore, but "broker" role
             if (state.isPostMigrationOrKRaft()) {
-                assertThat(configuration, !configuration.contains("broker.id"));
-                assertThat(configuration, configuration.contains("node.id=0"));
-                assertThat(configuration, configuration.contains("process.roles=broker"));
+                assertThat(configuration, not(containsString("broker.id")));
+                assertThat(configuration, containsString("node.id=0"));
+                assertThat(configuration, containsString("process.roles=broker"));
             }
         }
     }
@@ -2195,19 +2198,19 @@ public class KafkaBrokerConfigurationBuilderTest {
 
                 // replication listener configured up to post-migration, before being full KRaft
                 if (state.isZooKeeperOrPostMigration()) {
-                    assertThat(configuration, configuration.contains("listener.name.replication-9091"));
-                    assertThat(configuration, configuration.contains("listener.security.protocol.map=CONTROLPLANE-9090:SSL,REPLICATION-9091:SSL"));
-                    assertThat(configuration, configuration.contains("inter.broker.listener.name=REPLICATION-9091"));
+                    assertThat(configuration, containsString("listener.name.replication-9091"));
+                    assertThat(configuration, containsString("listener.security.protocol.map=CONTROLPLANE-9090:SSL,REPLICATION-9091:SSL"));
+                    assertThat(configuration, containsString("inter.broker.listener.name=REPLICATION-9091"));
                 } else {
-                    assertThat(configuration, !configuration.contains("listener.name.replication-9091"));
-                    assertThat(configuration, configuration.contains("listener.security.protocol.map=CONTROLPLANE-9090:SSL"));
-                    assertThat(configuration, !configuration.contains("inter.broker.listener.name=REPLICATION-9091"));
+                    assertThat(configuration, not(containsString("listener.name.replication-9091")));
+                    assertThat(configuration, containsString("listener.security.protocol.map=CONTROLPLANE-9090:SSL"));
+                    assertThat(configuration, not(containsString("inter.broker.listener.name=REPLICATION-9091")));
                 }
 
-                assertThat(configuration, configuration.contains("listener.name.controlplane-9090"));
-                assertThat(configuration, configuration.contains("listeners=CONTROLPLANE-9090://0.0.0.0:9090"));
+                assertThat(configuration, containsString("listener.name.controlplane-9090"));
+                assertThat(configuration, containsString("listeners=CONTROLPLANE-9090://0.0.0.0:9090"));
                 // controllers never advertises listeners
-                assertThat(configuration, !configuration.contains("advertised.listeners"));
+                assertThat(configuration, not(containsString("advertised.listeners")));
             }
 
             String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, broker, state)
@@ -2217,17 +2220,17 @@ public class KafkaBrokerConfigurationBuilderTest {
 
             if (state.isZooKeeperOrMigration()) {
                 // control plane is set as listener and advertised up to migration ...
-                assertThat(configuration, configuration.contains("listeners=CONTROLPLANE-9090://0.0.0.0:9090,REPLICATION-9091://0.0.0.0:9091,PLAIN-9092://0.0.0.0:9092"));
-                assertThat(configuration, configuration.contains("advertised.listeners=CONTROLPLANE-9090://my-cluster-brokers-0.my-cluster-kafka-brokers.my-namespace.svc:9090,REPLICATION-9091://my-cluster-brokers-0.my-cluster-kafka-brokers.my-namespace.svc:9091,PLAIN-9092://my-cluster-brokers-0.my-cluster-kafka-brokers.my-namespace.svc:9092"));
-                assertThat(configuration, configuration.contains("control.plane.listener.name=CONTROLPLANE-9090"));
+                assertThat(configuration, containsString("listeners=CONTROLPLANE-9090://0.0.0.0:9090,REPLICATION-9091://0.0.0.0:9091,PLAIN-9092://0.0.0.0:9092"));
+                assertThat(configuration, containsString("advertised.listeners=CONTROLPLANE-9090://my-cluster-brokers-0.my-cluster-kafka-brokers.my-namespace.svc:9090,REPLICATION-9091://my-cluster-brokers-0.my-cluster-kafka-brokers.my-namespace.svc:9091,PLAIN-9092://my-cluster-brokers-0.my-cluster-kafka-brokers.my-namespace.svc:9092"));
+                assertThat(configuration, containsString("control.plane.listener.name=CONTROLPLANE-9090"));
             } else {
                 // ... it's removed when in post-migration because brokers are full KRaft-mode
-                assertThat(configuration, configuration.contains("listeners=REPLICATION-9091://0.0.0.0:9091,PLAIN-9092://0.0.0.0:9092"));
-                assertThat(configuration, configuration.contains("advertised.listeners=REPLICATION-9091://my-cluster-brokers-0.my-cluster-kafka-brokers.my-namespace.svc:9091,PLAIN-9092://my-cluster-brokers-0.my-cluster-kafka-brokers.my-namespace.svc:9092"));
-                assertThat(configuration, !configuration.contains("control.plane.listener.name=CONTROLPLANE-9090"));
+                assertThat(configuration, containsString("listeners=REPLICATION-9091://0.0.0.0:9091,PLAIN-9092://0.0.0.0:9092"));
+                assertThat(configuration, containsString("advertised.listeners=REPLICATION-9091://my-cluster-brokers-0.my-cluster-kafka-brokers.my-namespace.svc:9091,PLAIN-9092://my-cluster-brokers-0.my-cluster-kafka-brokers.my-namespace.svc:9092"));
+                assertThat(configuration, not(containsString("control.plane.listener.name=CONTROLPLANE-9090")));
             }
-            assertThat(configuration, configuration.contains("listener.security.protocol.map=CONTROLPLANE-9090:SSL,REPLICATION-9091:SSL,PLAIN-9092:PLAINTEXT"));
-            assertThat(configuration, configuration.contains("inter.broker.listener.name=REPLICATION-9091"));
+            assertThat(configuration, containsString("listener.security.protocol.map=CONTROLPLANE-9090:SSL,REPLICATION-9091:SSL,PLAIN-9092:PLAINTEXT"));
+            assertThat(configuration, containsString("inter.broker.listener.name=REPLICATION-9091"));
         }
     }
 
@@ -2255,9 +2258,9 @@ public class KafkaBrokerConfigurationBuilderTest {
                     .withAuthorization("my-cluster", auth)
                     .build();
             if (state.isMigrationOrKRaft()) {
-                assertThat(configuration, configuration.contains("authorizer.class.name=org.apache.kafka.metadata.authorizer.StandardAuthorizer"));
+                assertThat(configuration, containsString("authorizer.class.name=org.apache.kafka.metadata.authorizer.StandardAuthorizer"));
             } else {
-                assertThat(configuration, configuration.contains("authorizer.class.name=kafka.security.authorizer.AclAuthorizer"));
+                assertThat(configuration, containsString("authorizer.class.name=kafka.security.authorizer.AclAuthorizer"));
             }
         }
     }
