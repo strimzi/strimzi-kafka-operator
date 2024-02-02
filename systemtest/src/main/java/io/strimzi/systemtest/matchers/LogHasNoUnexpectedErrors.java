@@ -86,11 +86,15 @@ public class LogHasNoUnexpectedErrors extends BaseMatcher<String> {
         RECONCILIATION_PODSET_ALREADY_EXISTS("ERROR StrimziPodSetController:[0-9]+ - Reconciliation.*[fF]ailed"
             + "(?s)(.*?)"
             + "io.fabric8.kubernetes.client.KubernetesClientException.*already exists"),
-        REBALANCE_APPLY("KafkaRebalanceAssemblyOperator:.*Reconciliation.*KafkaRebalance(.*): " +
-                "Status updated to [NotReady] due to error: io.netty.channel.AbstractChannel$AnnotatedConnectException: " +
+        REBALANCE_APPLY("KafkaRebalanceAssemblyOperator:.*Reconciliation.*KafkaRebalance.*: " +
+                "Status updated to \\[NotReady\\] due to error: io.netty.channel.AbstractChannel\\$AnnotatedConnectException: " +
                 "Connection refused.*"),
         LEASE_LOCK_EXISTS("LeaderElector:.*Exception occurred while acquiring lock 'LeaseLock.*" +
-                "KubernetesClientException: Failure executing: POST at.*already exists.*");
+                "KubernetesClientException: Failure executing: POST at.*already exists.*"),
+        ZOOKEEPER_DNS_ERROR("Unable to resolve address:.*zookeeper.*java.net.UnknownHostException.*"),
+        LOGGER_DOES_NOT_EXISTS("Logger paprika does not exist"),
+        // This exception is logged on DEBUG level of the operator, however it is hit when logging is to JSON format where it is hard whitelist without this
+        ZOOKEEPER_END_OF_STREAM("org.apache.zookeeper.ClientCnxn$EndOfStreamException");
 
         final String name;
 
