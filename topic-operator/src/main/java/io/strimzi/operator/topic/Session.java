@@ -433,7 +433,7 @@ public class Session extends AbstractVerticle {
         String customPropsString = config.get(Config.SASL_CUSTOM_CONFIG);
 
         if (customPropsString.isEmpty()) {
-            throw new InvalidConfigurationException("SASL_MECHANISM=custom, but env var SASL_CUSTOM_CONFIG is not set");
+            throw new InvalidConfigurationException(Config.SASL_MECHANISM.key + "=custom, but env var " + Config.SASL_CUSTOM_CONFIG.key + " is not set");
         }
 
         ObjectMapper objectMapper = new ObjectMapper();
@@ -441,7 +441,7 @@ public class Session extends AbstractVerticle {
             Map<String, String> customProperties = objectMapper.readValue(customPropsString, STRING_HASH_MAP_TYPE_REFERENCE);
 
             if (customProperties.isEmpty()) {
-                throw new InvalidConfigurationException("SASL_MECHANISM=custom, but env var SASL_CUSTOM_CONFIG is empty");
+                throw new InvalidConfigurationException(Config.SASL_MECHANISM.key + "=custom, but env var " + Config.SASL_CUSTOM_CONFIG.key + " is empty");
             }
 
             for (var entry : customProperties.entrySet()) {
@@ -449,14 +449,14 @@ public class Session extends AbstractVerticle {
                 String value = entry.getValue();
 
                 if (key == null || key.isBlank() || !key.startsWith("sasl.")) {
-                    throw new InvalidConfigurationException("SASL custom config property '" + key + "' in env var SASL_CUSTOM_CONFIG does not start with 'sasl.'");
+                    throw new InvalidConfigurationException("SASL custom config property '" + key + "' in env var " + Config.SASL_CUSTOM_CONFIG.key + " does not start with 'sasl.'");
                 }
 
                 kafkaClientProps.setProperty(key, value);
             }
         } catch (JsonProcessingException e) {
             var message = e.getMessage();
-            throw new InvalidConfigurationException("Env var SASL_CUSTOM_CONFIG could not be parsed as JSON" + (message != null ? ": " + e.getMessage() : "."));
+            throw new InvalidConfigurationException("Env var " + Config.SASL_CUSTOM_CONFIG.key + " could not be parsed as JSON" + (message != null ? ": " + e.getMessage() : "."));
         }
     }
 
