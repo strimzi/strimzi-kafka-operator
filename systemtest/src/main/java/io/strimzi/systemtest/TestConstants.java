@@ -500,7 +500,7 @@ public interface TestConstants {
     /**
      * KafkaNodePools constants
      */
-    String KAFKA_NODE_POOL_PREFIX = "kafka-pool-";
+    String KAFKA_NODE_POOL_PREFIX = "pool-";
 
     /**
      * Persistent Volume related

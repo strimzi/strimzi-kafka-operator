@@ -6,7 +6,6 @@ package io.strimzi.systemtest.security;
 
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
-import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.strimzi.api.kafka.model.bridge.KafkaBridge;
@@ -24,6 +23,7 @@ import io.strimzi.systemtest.annotations.RequiredMinKubeOrOcpBasedKubeVersion;
 import io.strimzi.systemtest.enums.PodSecurityProfile;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
+import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
@@ -44,7 +44,6 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 import static io.strimzi.systemtest.TestConstants.ACCEPTANCE;
 import static io.strimzi.systemtest.TestConstants.POD_SECURITY_PROFILES_RESTRICTED;
@@ -105,7 +104,9 @@ public class PodSecurityProfilesST extends AbstractST {
         final String mm2SourceMirroredTopicName = testStorage.getClusterName() + "." + testStorage.getTopicName();
         final int messageCount = 100;
 
-        addRestrictedPodSecurityProfileToNamespace(testStorage.getNamespaceName());
+        // Label particular Namespace with pod-security.kubernetes.io/enforce: restricted
+        NamespaceManager.labelNamespace(testStorage.getNamespaceName(),
+            Collections.singletonMap("pod-security.kubernetes.io/enforce", "restricted"));
 
         // 1 source Kafka Cluster, 2 target Kafka Cluster, 1 for MM1 and MM2 each having different target Kafka Cluster,
 
@@ -285,13 +286,5 @@ public class PodSecurityProfilesST extends AbstractST {
         );
 
         ClientUtils.waitForClientsSuccess(testStorage);
-    }
-
-    private void addRestrictedPodSecurityProfileToNamespace(final String namespaceName) {
-        final Namespace namespace = kubeClient().getNamespace(namespaceName);
-        final Map<String, String> namespaceLabels = namespace.getMetadata().getLabels();
-        namespaceLabels.put("pod-security.kubernetes.io/enforce", "restricted");
-        namespace.getMetadata().setLabels(namespaceLabels);
-        kubeClient().updateNamespace(namespace);
     }
 }
