@@ -25,8 +25,9 @@ Note also, the following:
 * The Cluster Operator that manages the Kafka cluster is running.
 * The Kafka cluster deployment uses Kafka node pools.
 +
-You can xref:proc-migrating-clusters-node-pools-str[migrate your existing Kafka cluster to use node pools]. 
-To migrate, the `KafkaNodePool` resource configuration, brokers must be contained in a node pool assigned a `broker` role and with the name `kafka`.
+If your ZooKeeper-based cluster is already using node pools, it is ready to migrate.
+If not, you can xref:proc-migrating-clusters-node-pools-str[migrate the cluster to use node pools]. 
+To migrate, brokers must be contained in a `KafkaNodePool` resource configuration that is assigned a `broker` role and has the name `kafka`.
 Support for node pools is enabled in the `Kafka` resource configuration using the `strimzi.io/node-pools: enabled` annotation.
 
 In this procedure, the Kafka cluster name is `my-cluster`, which is located in `my-project`. 
