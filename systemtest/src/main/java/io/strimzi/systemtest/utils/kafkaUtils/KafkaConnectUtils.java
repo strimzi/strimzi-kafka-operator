@@ -121,4 +121,33 @@ public class KafkaConnectUtils {
                 return false;
             });
     }
+
+    /**
+     * Waits until the Kafka Connect instance contains all specified connector classes, inferring the expected number of plugins from the list size.
+     * @param namespace Namespace name
+     * @param clusterName Cluster name
+     * @param connectorClasses List of connector class names to check for
+     */
+    public static void waitForKafkaConnectConnectorClasses(String namespace, String clusterName, List<String> connectorClasses) {
+        int expectedPluginCount = connectorClasses.size();
+        LOGGER.info("Waiting for Kafka Connect to contain exactly {} plugins and connector classes: {}", expectedPluginCount, connectorClasses);
+        TestUtils.waitFor("Kafka Connect to have specific connector classes", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
+            () -> {
+                KafkaConnect kafkaConnect = KafkaConnectResource.kafkaConnectClient().inNamespace(namespace).withName(clusterName).get();
+                if (kafkaConnect.getStatus().getConnectorPlugins().size() < expectedPluginCount) {
+                    LOGGER.debug("Kafka Connect has fewer than {} plugins", expectedPluginCount);
+                    return false;
+                }
+                boolean allConnectorClassesPresent = connectorClasses.stream().allMatch(connectorClass ->
+                        kafkaConnect.getStatus().getConnectorPlugins().stream().anyMatch(connectorPlugin -> connectorPlugin.getConnectorClass().contains(connectorClass))
+                );
+                if (!allConnectorClassesPresent) {
+                    LOGGER.debug("Not all specified connector classes are present");
+                    return false;
+                }
+                return true;
+            });
+        LOGGER.info("Kafka Connect contains all specified connector classes: {}", connectorClasses);
+    }
+
 }

@@ -53,6 +53,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.stream.Collectors;
@@ -402,13 +403,8 @@ class ConnectBuilderST extends AbstractST {
             .endSpec()
             .build());
 
-        KafkaConnect kafkaConnect = KafkaConnectResource.kafkaConnectClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get();
-
-        LOGGER.info("Checking if both Connectors were created and Connect contains both plugins");
-        assertThat(kafkaConnect.getSpec().getBuild().getPlugins().size(), is(2));
-
-        assertTrue(kafkaConnect.getStatus().getConnectorPlugins().stream().anyMatch(connectorPlugin -> connectorPlugin.getConnectorClass().contains(TestConstants.ECHO_SINK_CLASS_NAME)));
-        assertTrue(kafkaConnect.getStatus().getConnectorPlugins().stream().anyMatch(connectorPlugin -> connectorPlugin.getConnectorClass().contains(CAMEL_CONNECTOR_HTTP_SINK_CLASS_NAME)));
+        KafkaConnectUtils.waitForKafkaConnectConnectorClasses(testStorage.getNamespaceName(), testStorage.getClusterName(),
+                List.of(TestConstants.ECHO_SINK_CLASS_NAME, CAMEL_CONNECTOR_HTTP_SINK_CLASS_NAME));
     }
 
     @ParallelTest
