@@ -33,7 +33,7 @@ public class Microshift implements KubeCluster {
     public boolean isClusterUp() {
         List<String> cmd = Arrays.asList(CMD, "cluster-info");
         try {
-            return Exec.exec(cmd).exitStatus() && Exec.exec(CMD, "api-resources").out().contains("openshift.io");
+            return Exec.exec(cmd).exitStatus() && Exec.exec(CMD, "api-versions").out().contains("openshift.io");
         } catch (KubeClusterException e) {
             LOGGER.debug("'" + String.join(" ", cmd) + "' failed. Please double check connectivity to your cluster!");
             LOGGER.debug(e);
