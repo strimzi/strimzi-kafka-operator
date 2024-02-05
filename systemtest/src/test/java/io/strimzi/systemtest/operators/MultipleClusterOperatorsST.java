@@ -5,7 +5,6 @@
 package io.strimzi.systemtest.operators;
 
 import io.fabric8.kubernetes.api.model.EnvVar;
-import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.strimzi.api.kafka.model.connect.KafkaConnect;
 import io.strimzi.api.kafka.model.connector.KafkaConnector;
@@ -256,7 +255,6 @@ public class MultipleClusterOperatorsST extends AbstractST {
     void testKafkaCCAndRebalanceWithMultipleCOs(ExtensionContext extensionContext) {
         assumeFalse(Environment.isNamespaceRbacScope());
         final TestStorage testStorage = new TestStorage(extensionContext, DEFAULT_NAMESPACE);
-        LabelSelector kafkaSelector = KafkaResource.getLabelSelector(testStorage.getClusterName(), KafkaResources.kafkaComponentName(testStorage.getClusterName()));
 
         int scaleTo = 4;
 
@@ -329,9 +327,9 @@ public class MultipleClusterOperatorsST extends AbstractST {
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> kafka.getMetadata().setLabels(SECOND_CO_SELECTOR), testStorage.getNamespaceName());
 
         LOGGER.info("Waiting for Kafka to scales Pods to {}", scaleTo);
-        RollingUpdateUtils.waitForComponentAndPodsReady(testStorage.getNamespaceName(), kafkaSelector, scaleTo);
+        RollingUpdateUtils.waitForComponentAndPodsReady(testStorage.getNamespaceName(), testStorage.getKafkaSelector(), scaleTo);
 
-        assertThat(PodUtils.podSnapshot(testStorage.getNamespaceName(), kafkaSelector).size(), is(scaleTo));
+        assertThat(PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getKafkaSelector()).size(), is(scaleTo));
 
         KafkaRebalanceUtils.doRebalancingProcess(new Reconciliation("test", KafkaRebalance.RESOURCE_KIND, testStorage.getNamespaceName(), testStorage.getClusterName()), testStorage.getNamespaceName(), testStorage.getClusterName());
 

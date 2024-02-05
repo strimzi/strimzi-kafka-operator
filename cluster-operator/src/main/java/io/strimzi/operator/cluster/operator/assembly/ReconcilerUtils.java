@@ -381,4 +381,27 @@ public class ReconcilerUtils {
     public static boolean kraftEnabled(Kafka kafka) {
         return KafkaCluster.ENABLED_VALUE_STRIMZI_IO_KRAFT.equals(Annotations.stringAnnotation(kafka, Annotations.ANNO_STRIMZI_IO_KRAFT, "disabled").toLowerCase(Locale.ENGLISH));
     }
+
+    /**
+     * Creates a hash from Secret's content.
+     * 
+     * @param secret Secret with content.
+     * @return Hash of the secret content.
+     */
+    public static String hashSecretContent(Secret secret) {
+        if (secret == null) {
+            throw new RuntimeException("Secret not found");
+        }
+        
+        if (secret.getData() == null || secret.getData().isEmpty()) {
+            throw new RuntimeException("Empty secret");
+        }
+        
+        StringBuilder sb = new StringBuilder();
+        secret.getData().entrySet().stream()
+            .sorted(Map.Entry.comparingByKey())
+            .forEach(entry -> sb.append(entry.getKey()).append(entry.getValue()));
+        
+        return Util.hashStub(sb.toString());
+    }
 }

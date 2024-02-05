@@ -6,7 +6,9 @@
 = Skipping checks on scale-down operations
 
 [role="_abstract"]
-By default, Strimzi performs a check to ensure that there are no partition replicas on a broker before initiating a scale-down operation on a Kafka cluster. 
+By default, Strimzi performs a check to ensure that there are no partition replicas on brokers before initiating a scale-down operation on a Kafka cluster.
+The check applies to nodes in node pools that perform the role of broker only or a dual role of broker and controller.
+
 If replicas are found, the scale-down is not done in order to prevent potential data loss.
 To scale-down the cluster, no replicas must be left on the broker before trying to scale it down again.
 

@@ -33,10 +33,8 @@ class NamespaceRbacScopeOperatorST extends AbstractST {
 
     @IsolatedTest("This test case needs own Cluster Operator")
     void testNamespacedRbacScopeDeploysRoles(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
         assumeFalse(Environment.isOlmInstall() || Environment.isHelmInstall());
-
-        String clusterName = testStorage.getClusterName();
 
         this.clusterOperator = this.clusterOperator.defaultInstallation(extensionContext)
             .withClusterOperatorRBACType(ClusterOperatorRBACType.NAMESPACE)
@@ -45,7 +43,7 @@ class NamespaceRbacScopeOperatorST extends AbstractST {
             .createInstallation()
             .runInstallation();
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 3)
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3, 3)
             .editMetadata()
                 .addToLabels("app", "strimzi")
                 .withNamespace(Environment.TEST_SUITE_NAMESPACE)
@@ -53,7 +51,7 @@ class NamespaceRbacScopeOperatorST extends AbstractST {
             .build());
 
         // Wait for Kafka to be Ready to ensure all potentially erroneous ClusterRole applications have happened
-        KafkaUtils.waitForKafkaReady(Environment.TEST_SUITE_NAMESPACE, clusterName);
+        KafkaUtils.waitForKafkaReady(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName());
 
         // Assert that no ClusterRoles are present on the server that have app strimzi
         // Naturally returns false positives if another Strimzi operator has been installed

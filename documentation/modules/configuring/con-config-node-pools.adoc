@@ -27,12 +27,6 @@ When `-Xmx: 1024m` is set in `KafkaNodePool.spec.jvmOptions` and `-Xms: 512m` is
 Properties from `Kafka` and `KafkaNodePool` schemas are not combined.  
 To clarify, if `KafkaNodePool.spec.template` includes only `podSet.metadata.labels`, and `Kafka.spec.kafka.template` includes `podSet.metadata.annotations` and `pod.metadata.labels`, the template values from the Kafka configuration are ignored since there is a template value in the node pool configuration.
 
-Node pools can be used with Kafka clusters that operate in KRaft mode (using Kafka Raft metadata) or use ZooKeeper for cluster management.
-If you are using KRaft mode, you can specify roles for all nodes in the node pool to operate as brokers, controllers, or both.
-If you are using ZooKeeper, nodes must be set as brokers only.
-
-IMPORTANT: **KRaft mode is not ready for production in Apache Kafka or in Strimzi.**
-
 For a deeper understanding of the node pool configuration options, refer to the link:{BookURLConfiguring}[Strimzi Custom Resource API Reference^].
 
 .Example configuration for a node pool in a cluster using KRaft mode 
