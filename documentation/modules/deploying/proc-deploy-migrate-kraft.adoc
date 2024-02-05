@@ -19,17 +19,14 @@ Note also, the following:
 * Migration is only supported on dedicated controller nodes, not on nodes with dual roles as brokers and controllers.
 * Throughout the migration process, ZooKeeper and Controller nodes operate in parallel for a period, requiring sufficient compute resources in the cluster.
 
-WARNING: ZooKeeper to KRaft migration is not yet suitable for production environments.
-
 .Prerequisites
 
-* You must be using Strimzi 0.40 or newer with Kafka 3.6.1 or newer. If you using an earlier version of Strimzi or APache Kafka, upgrade before migrating to KRaft mode.
+* You must be using Strimzi 0.40 or newer with Kafka 3.7.0 or newer. If you using an earlier version of Strimzi or Apache Kafka, upgrade before migrating to KRaft mode.
 * The Cluster Operator that manages the Kafka cluster is running.
 * The Kafka cluster deployment uses Kafka node pools.
 +
 You can xref:proc-migrating-clusters-node-pools-str[migrate your existing Kafka cluster to use node pools]. 
-+
-In the `KafkaNodePool` resource configuration, brokers must be contained in a node pool assigned a `broker` role and with the name `kafka`.
+To migrate, the `KafkaNodePool` resource configuration, brokers must be contained in a node pool assigned a `broker` role and with the name `kafka`.
 Support for node pools is enabled in the `Kafka` resource configuration using the `strimzi.io/node-pools: enabled` annotation.
 
 In this procedure, the Kafka cluster name is `my-cluster`, which is located in `my-project`. 
@@ -128,10 +125,11 @@ kubectl get kafka my-cluster -n my-project -w
 .Updates to the metadata state
 [source,shell]
 ----
-NAME        ...  METADATA STATE   WARNINGS
+NAME        ...  METADATA STATE
 my-cluster  ...  Zookeeper
 my-cluster  ...  KRaftMigration
 my-cluster  ...  KRaftDualWriting
+my-cluster  ...  KRaftPostMigration
 ----
 +
 `METADATA STATE` shows the mechanism used to manage Kafka metadata and coordinate operations.
@@ -139,9 +137,14 @@ At the start of the migration this is `ZooKeeper`.
 +
 --
 * `ZooKeeper` is the initial state when metadata is only stored in ZooKeeper.
-* `KRaftMigration` is the state when the migration is in progress.
-* `KRaftDualWriting` is the state when the migration has ended and the cluster is working as a KRaft cluster. 
-Metadata is managed in Kafka but also replicated in ZooKeeper, so you can xref:proc-deploy-migrate-kraft-rollback-{context}[roll back from this point].
+* `KRaftMigration` is the state when the migration is in progress and brokers are rolled to register with the controllers.
+The migration can take some time at this point depending on the number of topics and partitions in the cluster. 
+* `KRaftDualWriting` is the state when the Kafka cluster is working as a KRaft cluster, 
+but controllers are managing metadata in Kafka and ZooKeeper. 
+Brokers are rolled a second time to remove the ZooKeeper configuration and migration annotation from the `Kafka` resource.
+* `KRaftPostMigration` is the state when KRaft mode is enabled for brokers and there is no ZooKeeper involvement. 
+Controllers are still connected to ZooKeeper.
+You can xref:proc-deploy-migrate-kraft-rollback-{context}[roll back from this point].
 --
 +
 The migration status is also represented in the `status.kafkaMetadataState` property of the `Kafka` resource. 
@@ -178,38 +181,26 @@ kubectl get kafka my-cluster -n my-project -w
 .Updates to the metadata state
 [source,shell]
 ----
-NAME        ...  METADATA STATE        WARNINGS
+NAME        ...  METADATA STATE
 my-cluster  ...  Zookeeper
 my-cluster  ...  KRaftMigration
 my-cluster  ...  KRaftDualWriting
 my-cluster  ...  KRaftPostMigration
-my-cluster  ...  KRaft                 True
+my-cluster  ...  KRaft             
 ----
 +
-`KRaftPostMigration` is the state (after the brokers have rolled) when KRaft mode is enabled and there is no ZooKeeper involvement, though ZooKeeper pods are still running.
-`KRaft` is the final state (after the controllers have rolled) when the KRaft migration has finalized.
+--
+* `KRaft` is the final state (after the controllers have rolled) when the KRaft migration is finalized.
+--
 +
-The warning (`True`) relates to ZooKeeper configuration being present in the `Kafka` resource configuration.
-+
-. Clean up the deployment to remove Zookeeper configuration and resources.
-
-.. Remove `inter.broker.protocol.version`, `log.message.format.version`, and all `spec.zookeeper` configuration properties from the `Kafka` resource.
-.. Apply the changes to the `Kafka` resource configuration.
-.. Delete any resources related to the ZooKeeper deployment:
-+
-[source,shell]
-----
-kubectl delete <resource_type> <resource_name> -n my-project
-----
-+
-For a list of resources created for ZooKeeper, see xref:ref-list-of-kafka-cluster-resources-str[].
+All ZooKeeper-related resources have been automatically deleted.
 
 [id='proc-deploy-migrate-kraft-rollback-{context}']
 .Performing a rollback on the migration
 
-Before the migration is finalized by enabling KRaft in the 'Kafka' resource, you can perform a rollback operation as follows:
+Before the migration is finalized by enabling KRaft in the `Kafka` resource,  and the state has moved to the `KRaft` state, you can perform a rollback operation as follows:
 
-. Apply the `strimzi.io/kraft: rollback` annotation to the `Kafka` resource to roll back the brokers and controllers.
+. Apply the `strimzi.io/kraft: rollback` annotation to the `Kafka` resource to roll back the brokers.
 +
 [source,shell]
 ----
@@ -228,6 +219,8 @@ metadata:
     strimzi.io/kraft: rollback 
 # ...
 ----
++
+The brokers are rolled back so that they can be connected to ZooKeeper again and the state returns to `KRaftDualWriting`.
 
 . Delete the controllers node pool:
 +
