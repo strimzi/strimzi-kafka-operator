@@ -41,7 +41,7 @@ public class LogHasNoUnexpectedErrors extends BaseMatcher<String> {
                 if (lineLowerCase.contains("error") || lineLowerCase.contains("exception")) {
                     boolean ignoreListResult = false;
                     for (LogIgnoreList value : LogIgnoreList.values()) {
-                        Matcher m = Pattern.compile(value.name).matcher(line);
+                        Matcher m = Pattern.compile(value.name, Pattern.MULTILINE | Pattern.DOTALL).matcher(line);
                         if (m.find()) {
                             ignoreListResult = true;
                             break;
@@ -85,7 +85,19 @@ public class LogHasNoUnexpectedErrors extends BaseMatcher<String> {
         // connected to https://github.com/strimzi/strimzi-kafka-operator/issues/7529 - remove this once the issue will be fixed
         RECONCILIATION_PODSET_ALREADY_EXISTS("ERROR StrimziPodSetController:[0-9]+ - Reconciliation.*[fF]ailed"
             + "(?s)(.*?)"
-            + "io.fabric8.kubernetes.client.KubernetesClientException.*already exists");
+            + "io.fabric8.kubernetes.client.KubernetesClientException.*already exists"),
+        REBALANCE_APPLY("KafkaRebalanceAssemblyOperator:.*Reconciliation.*KafkaRebalance.*: " +
+                "Status updated to \\[NotReady\\] due to error: io.netty.channel.AbstractChannel\\$AnnotatedConnectException: " +
+                "Connection refused.*"),
+        LEASE_LOCK_EXISTS("LeaderElector:.*Exception occurred while acquiring lock 'LeaseLock.*" +
+                "KubernetesClientException: Failure executing: POST at.*already exists.*"),
+        ZOOKEEPER_DNS_ERROR("Unable to resolve address:.*zookeeper.*java.net.UnknownHostException.*"),
+        LOGGER_DOES_NOT_EXISTS("Logger paprika does not exist"),
+        // This exception is logged on DEBUG level of the operator, however it is hit when logging is to JSON format where it is hard whitelist without this
+        ZOOKEEPER_END_OF_STREAM("org.apache.zookeeper.ClientCnxn$EndOfStreamException"),
+        // This is expected failure in some cases, so we can whitelist it
+        REBALANCE_NON_JBOD("Status updated to [NotReady] due to error: Cannot set rebalanceDisk=true for Kafka clusters with a non-JBOD storage config");
+
 
         final String name;
 
