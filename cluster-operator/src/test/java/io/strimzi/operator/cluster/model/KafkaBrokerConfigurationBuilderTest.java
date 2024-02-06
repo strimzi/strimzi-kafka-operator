@@ -27,7 +27,6 @@ import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
 import io.strimzi.kafka.oauth.server.ServerConfig;
 import io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlMetricsReporter;
-import io.strimzi.operator.cluster.operator.resource.KafkaMetadataConfigurationState;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.test.annotations.ParallelSuite;
@@ -2257,7 +2256,7 @@ public class KafkaBrokerConfigurationBuilderTest {
             String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, broker, state)
                     .withAuthorization("my-cluster", auth)
                     .build();
-            if (state.isMigrationOrKRaft()) {
+            if (state.isPostMigrationOrKRaft()) {
                 assertThat(configuration, containsString("authorizer.class.name=org.apache.kafka.metadata.authorizer.StandardAuthorizer"));
             } else {
                 assertThat(configuration, containsString("authorizer.class.name=kafka.security.authorizer.AclAuthorizer"));

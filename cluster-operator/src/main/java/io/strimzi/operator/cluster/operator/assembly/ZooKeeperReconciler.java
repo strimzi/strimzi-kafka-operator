@@ -880,18 +880,26 @@ public class ZooKeeperReconciler {
      * @return  Completes when the possible /controller znode deletion is done
      */
     protected Future<Void> maybeDeleteControllerZnode() {
-        return ReconcilerUtils.clientSecrets(reconciliation, secretOperator)
-                .compose(compositeFuture -> {
-                    String zkConnectionString = KafkaResources.zookeeperServiceName(reconciliation.name()) + ":" + ZookeeperCluster.CLIENT_TLS_PORT;
-                    LOGGER.infoCr(reconciliation, "Maybe deleting /controller znode on {}", zkConnectionString);
-                    this.kafkaMetadataStateManager.maybeDeleteZooKeeperControllerZnode(
-                            reconciliation,
-                            compositeFuture.resultAt(0),
-                            compositeFuture.resultAt(1),
-                            operationTimeoutMs,
-                            zkConnectionString
-                    );
-                    return Future.succeededFuture();
-                });
+        // migration rollback process ongoing
+        if (this.kafkaMetadataStateManager.isRollingBack()) {
+            LOGGER.infoCr(reconciliation, "KRaft migration rollback ... going to delete /controller znode");
+            return ReconcilerUtils.clientSecrets(reconciliation, secretOperator)
+                    .compose(compositeFuture -> {
+                        String zkConnectionString = KafkaResources.zookeeperServiceName(reconciliation.name()) + ":" + ZookeeperCluster.CLIENT_TLS_PORT;
+                        LOGGER.infoCr(reconciliation, "Deleting /controller znode on {}", zkConnectionString);
+                        this.kafkaMetadataStateManager.deleteZooKeeperControllerZnode(
+                                reconciliation,
+                                compositeFuture.resultAt(0),
+                                compositeFuture.resultAt(1),
+                                operationTimeoutMs,
+                                zkConnectionString
+                        );
+                        return Future.succeededFuture();
+                    });
+        } else {
+            // TODO: to be removed, just for monitoring/testing
+            LOGGER.infoCr(reconciliation, "No KRaft migration rollback ongoing ... no need to delete /controller znode");
+            return Future.succeededFuture();
+        }
     }
 }

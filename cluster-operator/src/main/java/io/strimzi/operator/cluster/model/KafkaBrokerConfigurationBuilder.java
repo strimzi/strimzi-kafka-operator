@@ -24,7 +24,6 @@ import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
 import io.strimzi.kafka.oauth.server.ServerConfig;
 import io.strimzi.kafka.oauth.server.plain.ServerPlainConfig;
 import io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlMetricsReporter;
-import io.strimzi.operator.cluster.operator.resource.KafkaMetadataConfigurationState;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters;
 
@@ -660,7 +659,10 @@ public class KafkaBrokerConfigurationBuilder {
             superUsers.add(String.format("User:CN=%s,O=io.strimzi", "cluster-operator"));
 
             printSectionHeader("Authorization");
-            configureAuthorization(clusterName, superUsers, authorization, kafkaMetadataConfigState.isKRaftInConfiguration(node));
+            // when the StandardAuthorizer has to replace the AclAuthorizer during the migration depending on nodes in full KRaft
+            boolean isKRaft = (node.controller() && kafkaMetadataConfigState.isPreMigrationOrKRaft()) ||
+                    (node.broker() && kafkaMetadataConfigState.isPostMigrationOrKRaft());
+            configureAuthorization(clusterName, superUsers, authorization, isKRaft);
             writer.println("super.users=" + String.join(";", superUsers));
             writer.println();
         }

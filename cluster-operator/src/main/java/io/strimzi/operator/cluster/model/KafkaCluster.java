@@ -74,7 +74,6 @@ import io.strimzi.operator.cluster.model.metrics.MetricsModel;
 import io.strimzi.operator.cluster.model.metrics.SupportsMetrics;
 import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProviderContextImpl;
 import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderContextImpl;
-import io.strimzi.operator.cluster.operator.resource.KafkaMetadataConfigurationState;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
@@ -198,6 +197,11 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      */
     public static final String BROKER_METADATA_VERSION_FILENAME = "metadata.version";
 
+    /**
+     * Key under which the Kafka metadata state is stored in Config Map
+     */
+    public static final String BROKER_METADATA_STATE_FILENAME = "metadata.state";
+
     // Kafka configuration
     private Rack rack;
     private String initImage;
@@ -268,8 +272,14 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      *
      * @return Kafka cluster instance
      */
-    public static KafkaCluster fromCrd(Reconciliation reconciliation, Kafka kafka, List<KafkaPool> pools, KafkaVersion.Lookup versions, KafkaVersionChange versionChange,
-                                       KafkaMetadataConfigurationState kafkaMetadataConfigState, String clusterId, SharedEnvironmentProvider sharedEnvironmentProvider) {
+    public static KafkaCluster fromCrd(Reconciliation reconciliation,
+                                       Kafka kafka,
+                                       List<KafkaPool> pools,
+                                       KafkaVersion.Lookup versions,
+                                       KafkaVersionChange versionChange,
+                                       KafkaMetadataConfigurationState kafkaMetadataConfigState,
+                                       String clusterId,
+                                       SharedEnvironmentProvider sharedEnvironmentProvider) {
         KafkaSpec kafkaSpec = kafka.getSpec();
         KafkaClusterSpec kafkaClusterSpec = kafkaSpec.getKafka();
 
@@ -1149,14 +1159,14 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     /* test */ List<ContainerPort> getContainerPortList(KafkaPool pool) {
         List<ContainerPort> ports = new ArrayList<>(listeners.size() + 3);
 
-        if ((pool.isBroker() && !pool.isController() && kafkaMetadataConfigState.isZooKeeperOrMigration()) || pool.isController()) {
+        if (kafkaMetadataConfigState.isZooKeeperOrMigration() || pool.isController()) {
             // The control plane listener is on all nodes in ZooKeeper based clusters and on nodes with controller role in KRaft
             // this excludes all the KRaft broker-only nodes even during the migration
             ports.add(ContainerUtils.createContainerPort(CONTROLPLANE_PORT_NAME, CONTROLPLANE_PORT));
         }
 
         // Replication and user-configured listeners are only on nodes with the broker role (this includes all nodes in ZooKeeper based clusters)
-        // or controllers during the migration because they need to contact brokers
+        // or controllers during the migration because they need to be contacted by brokers
         if (pool.isBroker() || (pool.isController() && kafkaMetadataConfigState.isZooKeeperOrPostMigration())) {
             ports.add(ContainerUtils.createContainerPort(REPLICATION_PORT_NAME, REPLICATION_PORT));
 
@@ -1772,12 +1782,13 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
 
                 // controller and broker gets the Cluster ID in different states during migration
                 // and they both get it when in full KRaft-mode
-                if (this.kafkaMetadataConfigState.isKRaftInConfiguration(node)) {
+                if ((node.controller() && this.kafkaMetadataConfigState.isPreMigrationOrKRaft()) ||
+                        (node.broker() && this.kafkaMetadataConfigState.isMigrationOrKRaft())) {
                     // In KRaft, we need to pass the Kafka CLuster ID and the metadata version
                     data.put(BROKER_CLUSTER_ID_FILENAME, clusterId);
                     data.put(BROKER_METADATA_VERSION_FILENAME, metadataVersion);
                 }
-                data.put("metadata.state", String.valueOf(this.kafkaMetadataConfigState.ordinal()));
+                data.put(BROKER_METADATA_STATE_FILENAME, String.valueOf(this.kafkaMetadataConfigState.ordinal()));
 
                 configMaps.add(ConfigMapUtils.createConfigMap(node.podName(), namespace, pool.labels.withStrimziPodName(node.podName()), pool.ownerReference, data));
 
@@ -1813,13 +1824,6 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      */
     public String getMetadataVersion() {
         return metadataVersion;
-    }
-
-    /**
-     * @return  Indicates whether this is a KRaft cluster or not
-     */
-    public boolean usesKRaft() {
-        return kafkaMetadataConfigState.isKRaft();
     }
 
     /**

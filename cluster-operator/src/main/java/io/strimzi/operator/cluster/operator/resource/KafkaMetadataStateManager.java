@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaMetadataState;
 import io.strimzi.api.kafka.model.kafka.KafkaStatus;
+import io.strimzi.operator.cluster.model.KafkaMetadataConfigurationState;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
@@ -199,60 +200,53 @@ public class KafkaMetadataStateManager {
      * @param operationTimeoutMs    Timeout to be set on the ZooKeeper request configuration
      * @param zkConnectionString    Connection string to the ZooKeeper ensemble to connect to
      */
-    public void maybeDeleteZooKeeperControllerZnode(Reconciliation reconciliation, Secret clusterCaCertSecret, Secret coKeySecret, long operationTimeoutMs, String zkConnectionString) {
-        // rollback process ongoing
-        if (metadataState.equals(KafkaMetadataState.KRaftDualWriting) && isKRaftAnnoDisabled()) {
-            LOGGER.infoCr(reconciliation, "KRaft migration rollback ... going to delete /controller znode");
-            // Setup truststore from PEM file in cluster CA secret
-            // We cannot use P12 because of custom CAs which for simplicity provide only PEM
-            PasswordGenerator pg = new PasswordGenerator(12);
-            String trustStorePassword = pg.generate();
-            File trustStoreFile = Util.createFileTrustStore(getClass().getName(), "p12", Ca.certs(clusterCaCertSecret), trustStorePassword.toCharArray());
+    public void deleteZooKeeperControllerZnode(Reconciliation reconciliation, Secret clusterCaCertSecret, Secret coKeySecret, long operationTimeoutMs, String zkConnectionString) {
+        // Setup truststore from PEM file in cluster CA secret
+        // We cannot use P12 because of custom CAs which for simplicity provide only PEM
+        PasswordGenerator pg = new PasswordGenerator(12);
+        String trustStorePassword = pg.generate();
+        File trustStoreFile = Util.createFileTrustStore(getClass().getName(), "p12", Ca.certs(clusterCaCertSecret), trustStorePassword.toCharArray());
 
-            // Setup keystore from PKCS12 in cluster-operator secret
-            String keyStorePassword = new String(Util.decodeFromSecret(coKeySecret, "cluster-operator.password"), StandardCharsets.US_ASCII);
-            File keyStoreFile = Util.createFileStore(getClass().getName(), "p12", Util.decodeFromSecret(coKeySecret, "cluster-operator.p12"));
-            try {
+        // Setup keystore from PKCS12 in cluster-operator secret
+        String keyStorePassword = new String(Util.decodeFromSecret(coKeySecret, "cluster-operator.password"), StandardCharsets.US_ASCII);
+        File keyStoreFile = Util.createFileStore(getClass().getName(), "p12", Util.decodeFromSecret(coKeySecret, "cluster-operator.p12"));
+        try {
 
-                ZKClientConfig clientConfig = new ZKClientConfig();
+            ZKClientConfig clientConfig = new ZKClientConfig();
 
-                clientConfig.setProperty("zookeeper.clientCnxnSocket", "org.apache.zookeeper.ClientCnxnSocketNetty");
-                clientConfig.setProperty("zookeeper.client.secure", "true");
-                clientConfig.setProperty("zookeeper.sasl.client", "false");
-                clientConfig.setProperty("zookeeper.ssl.trustStore.location", trustStoreFile.getAbsolutePath());
-                clientConfig.setProperty("zookeeper.ssl.trustStore.password", trustStorePassword);
-                clientConfig.setProperty("zookeeper.ssl.trustStore.type", "PKCS12");
-                clientConfig.setProperty("zookeeper.ssl.keyStore.location", keyStoreFile.getAbsolutePath());
-                clientConfig.setProperty("zookeeper.ssl.keyStore.password", keyStorePassword);
-                clientConfig.setProperty("zookeeper.ssl.keyStore.type", "PKCS12");
-                clientConfig.setProperty("zookeeper.request.timeout", String.valueOf(operationTimeoutMs));
+            clientConfig.setProperty("zookeeper.clientCnxnSocket", "org.apache.zookeeper.ClientCnxnSocketNetty");
+            clientConfig.setProperty("zookeeper.client.secure", "true");
+            clientConfig.setProperty("zookeeper.sasl.client", "false");
+            clientConfig.setProperty("zookeeper.ssl.trustStore.location", trustStoreFile.getAbsolutePath());
+            clientConfig.setProperty("zookeeper.ssl.trustStore.password", trustStorePassword);
+            clientConfig.setProperty("zookeeper.ssl.trustStore.type", "PKCS12");
+            clientConfig.setProperty("zookeeper.ssl.keyStore.location", keyStoreFile.getAbsolutePath());
+            clientConfig.setProperty("zookeeper.ssl.keyStore.password", keyStorePassword);
+            clientConfig.setProperty("zookeeper.ssl.keyStore.type", "PKCS12");
+            clientConfig.setProperty("zookeeper.request.timeout", String.valueOf(operationTimeoutMs));
 
-                ZooKeeperAdmin admin = new ZooKeeperAdmin(
-                        zkConnectionString,
-                        10000,
-                        watchedEvent -> LOGGER.debugCr(reconciliation, "Received event {} from ZooKeeperAdmin client connected to {}", watchedEvent, zkConnectionString),
-                        clientConfig);
+            ZooKeeperAdmin admin = new ZooKeeperAdmin(
+                    zkConnectionString,
+                    10000,
+                    watchedEvent -> LOGGER.debugCr(reconciliation, "Received event {} from ZooKeeperAdmin client connected to {}", watchedEvent, zkConnectionString),
+                    clientConfig);
 
-                admin.delete("/controller", -1);
-                admin.close();
-                LOGGER.infoCr(reconciliation, "KRaft migration rollback ... /controller znode deleted");
-            } catch (IOException | InterruptedException | KeeperException ex) {
-                LOGGER.warnCr(reconciliation, "Failed to delete /controller znode", ex);
-            } finally {
-                if (trustStoreFile != null) {
-                    if (!trustStoreFile.delete())   {
-                        LOGGER.warnCr(reconciliation, "Failed to delete file {}", trustStoreFile);
-                    }
-                }
-                if (keyStoreFile != null)   {
-                    if (!keyStoreFile.delete())   {
-                        LOGGER.warnCr(reconciliation, "Failed to delete file {}", keyStoreFile);
-                    }
+            admin.delete("/controller", -1);
+            admin.close();
+            LOGGER.infoCr(reconciliation, "KRaft migration rollback ... /controller znode deleted");
+        } catch (IOException | InterruptedException | KeeperException ex) {
+            LOGGER.warnCr(reconciliation, "Failed to delete /controller znode", ex);
+        } finally {
+            if (trustStoreFile != null) {
+                if (!trustStoreFile.delete())   {
+                    LOGGER.warnCr(reconciliation, "Failed to delete file {}", trustStoreFile);
                 }
             }
-        } else {
-            // TODO: to be removed, just for monitoring/testing
-            LOGGER.infoCr(reconciliation, "No KRaft migration rollback ongoing ... no need to delete /controller znode");
+            if (keyStoreFile != null)   {
+                if (!keyStoreFile.delete())   {
+                    LOGGER.warnCr(reconciliation, "Failed to delete file {}", keyStoreFile);
+                }
+            }
         }
     }
 
@@ -424,6 +418,13 @@ public class KafkaMetadataStateManager {
      */
     private boolean isMigrationDone() {
         return this.isMigrationDone;
+    }
+
+    /**
+     * @return if the metadata migration rollback is going on from dual-write to ZooKeeper
+     */
+    public boolean isRollingBack() {
+        return metadataState.equals(KafkaMetadataState.KRaftDualWriting) && isKRaftAnnoDisabled();
     }
 
     /**

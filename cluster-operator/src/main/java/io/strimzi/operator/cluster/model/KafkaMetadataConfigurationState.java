@@ -2,9 +2,7 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.operator.cluster.operator.resource;
-
-import io.strimzi.operator.cluster.model.NodeRef;
+package io.strimzi.operator.cluster.model;
 
 /**
  * Represents a desired configuration state needed on nodes (brokers and/or controllers) when transitioning
@@ -108,16 +106,5 @@ public enum KafkaMetadataConfigurationState {
      */
     public boolean isMigrationOrKRaft() {
         return this.ordinal() >= MIGRATION.ordinal();
-    }
-
-    /**
-     * Checking KRaft configuration needed depending on the node role
-     *
-     * @param node node to check to see if it needs KRaft configuration
-     * @return if KRaft is going to be configured depending on the node role and the Kafka metadata configuration state
-     */
-    public boolean isKRaftInConfiguration(NodeRef node) {
-        return (node.controller() && this.ordinal() >= PRE_MIGRATION.ordinal()) ||
-                (node.broker() && this.ordinal() >= MIGRATION.ordinal());
     }
 }

@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.strimzi.api.kafka.model.kafka.Kafka;
+import io.strimzi.api.kafka.model.kafka.KafkaAuthorizationSimple;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
@@ -17,7 +18,6 @@ import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolBuilder;
 import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.model.nodepools.NodeIdAssignment;
-import io.strimzi.operator.cluster.operator.resource.KafkaMetadataConfigurationState;
 import io.strimzi.operator.common.Reconciliation;
 import org.junit.jupiter.api.Test;
 
@@ -274,7 +274,6 @@ public class KafkaClusterMigrationTest {
                 assertThat(ports.get(1).getContainerPort(), is(9092));
             }
         }
-
     }
 
     @Test
@@ -305,6 +304,86 @@ public class KafkaClusterMigrationTest {
             List<ConfigMap> cms = kc.generatePerBrokerConfigurationConfigMaps(new MetricsAndLogging(null, null), advertisedHostnames, advertisedPorts);
             for (ConfigMap cm : cms)    {
                 assertThat(cm.getData().get("metadata.state"), is(String.valueOf(state.ordinal())));
+            }
+        }
+    }
+
+    @Test
+    public void testBrokerNodeAuthorizerOnMigration() {
+        Kafka kafka = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .editKafka()
+                        .withAuthorization(new KafkaAuthorizationSimple())
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        Map<Integer, Map<String, String>> advertisedHostnames = Map.of(
+                0, Map.of("PLAIN_9092", "my-cluster-brokers-0.my-cluster-kafka-brokers.my-namespace.svc"),
+                1, Map.of("PLAIN_9092", "my-cluster-brokers-1.my-cluster-kafka-brokers.my-namespace.svc"),
+                2, Map.of("PLAIN_9092", "my-cluster-brokers-2.my-cluster-kafka-brokers.my-namespace.svc")
+        );
+        Map<Integer, Map<String, String>> advertisedPorts = Map.of(
+                0, Map.of("PLAIN_9092", "9092"),
+                1, Map.of("PLAIN_9092", "9092"),
+                2, Map.of("PLAIN_9092", "9092")
+        );
+
+        for (KafkaMetadataConfigurationState state : KafkaMetadataConfigurationState.values()) {
+            KafkaCluster kc = KafkaCluster.fromCrd(
+                    Reconciliation.DUMMY_RECONCILIATION,
+                    kafka,
+                    List.of(KAFKA_POOL_CONTROLLERS, KAFKA_POOL_BROKERS),
+                    VERSIONS,
+                    KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE,
+                    state,
+                    null, SHARED_ENV_PROVIDER);
+
+            String configuration = kc.generatePerBrokerConfiguration(0, advertisedHostnames, advertisedPorts);
+
+            if (state.isPostMigrationOrKRaft()) {
+                assertThat(configuration, containsString("authorizer.class.name=org.apache.kafka.metadata.authorizer.StandardAuthorizer"));
+            } else {
+                assertThat(configuration, containsString("authorizer.class.name=kafka.security.authorizer.AclAuthorizer"));
+            }
+        }
+    }
+
+    @Test
+    public void testControllerNodeAuthorizerOnMigration() {
+        Kafka kafka = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .editKafka()
+                        .withAuthorization(new KafkaAuthorizationSimple())
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        Map<Integer, Map<String, String>> advertisedHostnames = Map.of(
+                3, Map.of("PLAIN_9092", "my-cluster-controllers-3.my-cluster-kafka-brokers.my-namespace.svc"),
+                4, Map.of("PLAIN_9092", "my-cluster-controllers-4.my-cluster-kafka-brokers.my-namespace.svc"),
+                5, Map.of("PLAIN_9092", "my-cluster-controllers-5.my-cluster-kafka-brokers.my-namespace.svc")
+        );
+        Map<Integer, Map<String, String>> advertisedPorts = Map.of(
+                3, Map.of("PLAIN_9092", "9092"),
+                4, Map.of("PLAIN_9092", "9092"),
+                5, Map.of("PLAIN_9092", "9092")
+        );
+
+        for (KafkaMetadataConfigurationState state : KafkaMetadataConfigurationState.values()) {
+            // controllers don't make sense in ZooKeeper state, but only from pre-migration to KRaft
+            if (state.isPreMigrationOrKRaft()) {
+                KafkaCluster kc = KafkaCluster.fromCrd(
+                        Reconciliation.DUMMY_RECONCILIATION,
+                        kafka,
+                        List.of(KAFKA_POOL_CONTROLLERS, KAFKA_POOL_BROKERS),
+                        VERSIONS,
+                        KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE,
+                        state,
+                        null, SHARED_ENV_PROVIDER);
+
+                String configuration = kc.generatePerBrokerConfiguration(3, advertisedHostnames, advertisedPorts);
+                assertThat(configuration, containsString("authorizer.class.name=org.apache.kafka.metadata.authorizer.StandardAuthorizer"));
             }
         }
     }
