@@ -22,6 +22,9 @@ Note also, the following:
 .Prerequisites
 
 * You must be using Strimzi 0.40 or newer with Kafka 3.7.0 or newer. If you using an earlier version of Strimzi or Apache Kafka, upgrade before migrating to KRaft mode.
+* Verify that the ZooKeeper-based deployment is operating without the following, as they are not supported in KRaft mode:
+** The Topic Operator running in bidirectional mode. It should either be in unidirectional mode or disabled.
+** JBOD storage. While the `jbod` storage type can be used, the JBOD array must contain only one disk.
 * The Cluster Operator that manages the Kafka cluster is running.
 * The Kafka cluster deployment uses Kafka node pools.
 +
@@ -107,14 +110,16 @@ kubectl get pods -n my-project
 [source,shell]
 ----
 NAME                     READY  STATUS   RESTARTS
-my-cluster-broker-0      1/1    Running  0
-my-cluster-broker-1      1/1    Running  0
-my-cluster-broker-2      1/1    Running  0
+my-cluster-kafka-0       1/1    Running  0
+my-cluster-kafka-1       1/1    Running  0
+my-cluster-kafka-2       1/1    Running  0
 my-cluster-controller-3  1/1    Running  0
 my-cluster-controller-4  1/1    Running  0
 my-cluster-controller-5  1/1    Running  0
 # ...
 ----
++
+Here, the brokers have the name `my-cluster-kafka` as they were contained in a node pool named `kafka` when migrating the cluster to use node pools.
 
 . Check the status of the migration:
 +

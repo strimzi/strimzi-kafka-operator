@@ -8,7 +8,7 @@
 [role="_abstract"]
 If you are using a ZooKeeper-based Kafka cluster, an upgrade requires an update to the Kafka version and the inter-broker protocol version.
 
-If you want to switch a kafka cluster from using a ZooKeeper for metadata management to operating in KRaft mode, the steps must be performed separately from the upgrade. 
+If you want to switch a Kafka cluster from using a ZooKeeper for metadata management to operating in KRaft mode, the steps must be performed separately from the upgrade. 
 For information on migrating to a KRaft-based cluster, see xref:proc-deploy-migrate-kraft-str[].
 
 include::../../modules/upgrading/ref-upgrade-kafka-versions.adoc[leveloffset=+1]
