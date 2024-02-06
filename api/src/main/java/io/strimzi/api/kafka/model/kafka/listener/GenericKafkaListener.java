@@ -78,7 +78,7 @@ public class GenericKafkaListener implements UnknownPropertyPreserving, Serializ
     }
 
     @Description("Type of the listener. " +
-            "Currently the supported types are `internal`, `route`, `loadbalancer`, `nodeport` and `ingress`. \n\n" +
+            "The supported types are as follows: \n\n" +
             "* `internal` type exposes Kafka internally only within the Kubernetes cluster.\n" +
             "* `route` type uses OpenShift Routes to expose Kafka.\n" +
             "* `loadbalancer` type uses LoadBalancer type services to expose Kafka.\n" +

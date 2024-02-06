@@ -140,7 +140,7 @@ class DocGenerator {
         appendDescription(cls);
         appendDiscriminator(crd, cls);
     
-        out.append("[cols=\"2,2,3\",options=\"header\"]").append(NL);
+        out.append("[cols=\"2,2,3a\",options=\"header\"]").append(NL);
         out.append("|====").append(NL);
         out.append("|Property |Property type |Description").append(NL);
     
