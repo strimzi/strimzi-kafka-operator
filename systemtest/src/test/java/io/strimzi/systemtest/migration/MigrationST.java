@@ -8,8 +8,12 @@ import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.strimzi.api.kafka.model.kafka.KafkaMetadataState;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
+import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
 import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
+import io.strimzi.api.kafka.model.user.acl.AclOperation;
+import io.strimzi.api.kafka.model.user.acl.AclResourcePatternType;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
@@ -152,18 +156,24 @@ public class MigrationST extends AbstractST {
     }
 
     private void setupMigrationTestCase(ExtensionContext extensionContext, TestStorage testStorage) {
+        // we assume that users will have broker NodePool named "kafka", so we will name it completely same to follow this use-case
+        String brokerPoolName = "kafka";
+
         postMigrationTopicName = testStorage.getTopicName() + "-post-migration";
         kraftTopicName = testStorage.getTopicName() + "-kraft";
+        String immediateConsumerGroup = ClientUtils.generateRandomConsumerGroup();
 
         String continuousTopicName = testStorage.getTopicName() + CONTINUOUS_SUFFIX;
         String continuousProducerName = testStorage.getProducerName() + CONTINUOUS_SUFFIX;
         String continuousConsumerName = testStorage.getConsumerName() + CONTINUOUS_SUFFIX;
+        String continuousUserName = testStorage.getUsername() + CONTINUOUS_SUFFIX;
+        String continuousConsumerGroupName = ClientUtils.generateRandomConsumerGroup();
         int continuousMessageCount = 500;
 
-        brokerSelector = KafkaNodePoolResource.getLabelSelector(testStorage.getBrokerPoolName(), ProcessRoles.BROKER);
+        brokerSelector = KafkaNodePoolResource.getLabelSelector(brokerPoolName, ProcessRoles.BROKER);
         controllerSelector = KafkaNodePoolResource.getLabelSelector(testStorage.getControllerPoolName(), ProcessRoles.CONTROLLER);
 
-        String clientsAdditionConfiguration = "delivery.timeout.ms=20000\nrequest.timeout.ms=20000\nacks=all";
+        String clientsAdditionConfiguration = "delivery.timeout.ms=20000\nrequest.timeout.ms=20000\nacks=all\n";
 
         immediateClients = new KafkaClientsBuilder()
             .withProducerName(testStorage.getProducerName())
@@ -172,6 +182,7 @@ public class MigrationST extends AbstractST {
             .withTopicName(testStorage.getTopicName())
             .withMessageCount(testStorage.getMessageCount())
             .withUsername(testStorage.getUsername())
+            .withConsumerGroup(immediateConsumerGroup)
             .build();
 
         continuousClients = new KafkaClientsBuilder()
@@ -181,6 +192,8 @@ public class MigrationST extends AbstractST {
             .withTopicName(continuousTopicName)
             .withMessageCount(continuousMessageCount)
             .withDelayMs(1000)
+            .withConsumerGroup(continuousConsumerGroupName)
+            .withUsername(continuousUserName)
             .withAdditionalConfig(clientsAdditionConfiguration)
             .build();
 
@@ -188,7 +201,7 @@ public class MigrationST extends AbstractST {
 
         // create Kafka resource with ZK and Broker NodePool
         resourceManager.createResourceWithWait(extensionContext,
-            KafkaNodePoolTemplates.kafkaNodePoolWithBrokerRoleAndPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
+            KafkaNodePoolTemplates.kafkaNodePoolWithBrokerRoleAndPersistentStorage(testStorage.getNamespaceName(), brokerPoolName, testStorage.getClusterName(), 3).build(),
             KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3, 3)
                 .editMetadata()
                     .addToAnnotations(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled")
@@ -196,6 +209,25 @@ public class MigrationST extends AbstractST {
                 .endMetadata()
                 .editSpec()
                     .editOrNewKafka()
+                    .withListeners(
+                        new GenericKafkaListenerBuilder()
+                            .withName(TestConstants.PLAIN_LISTENER_DEFAULT_NAME)
+                            .withPort(9092)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withTls(false)
+                            .withNewKafkaListenerAuthenticationScramSha512Auth()
+                            .endKafkaListenerAuthenticationScramSha512Auth()
+                            .build(),
+                        new GenericKafkaListenerBuilder()
+                            .withName(TestConstants.TLS_LISTENER_DEFAULT_NAME)
+                            .withPort(9093)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withTls(true)
+                            .withNewKafkaListenerAuthenticationTlsAuth()
+                            .endKafkaListenerAuthenticationTlsAuth()
+                            .build())
+                        .withNewKafkaAuthorizationSimple()
+                        .endKafkaAuthorizationSimple()
                         .addToConfig("default.replication.factor", 3)
                         .addToConfig("min.insync.replicas", 2)
                     .endKafka()
@@ -214,7 +246,46 @@ public class MigrationST extends AbstractST {
         resourceManager.createResourceWithWait(extensionContext,
             KafkaTopicTemplates.topic(testStorage).build(),
             KafkaTopicTemplates.topic(testStorage.getClusterName(), continuousTopicName, 3, 3, 2, testStorage.getNamespaceName()).build(),
-            KafkaUserTemplates.tlsUser(testStorage).build()
+            KafkaUserTemplates.tlsUser(testStorage)
+                .editOrNewSpec()
+                    .withNewKafkaUserAuthorizationSimple()
+                        .addNewAcl()
+                            .withNewAclRuleTopicResource()
+                                .withPatternType(AclResourcePatternType.PREFIX)
+                                .withName(testStorage.getTopicName())
+                            .endAclRuleTopicResource()
+                            .withOperations(AclOperation.READ, AclOperation.WRITE, AclOperation.DESCRIBE, AclOperation.CREATE)
+                        .endAcl()
+                        .addNewAcl()
+                            .withNewAclRuleGroupResource()
+                                .withPatternType(AclResourcePatternType.LITERAL)
+                                .withName(immediateConsumerGroup)
+                            .endAclRuleGroupResource()
+                            .withOperations(AclOperation.READ)
+                        .endAcl()
+                    .endKafkaUserAuthorizationSimple()
+                .endSpec()
+                .build(),
+            KafkaUserTemplates.scramShaUser(testStorage.getNamespaceName(), testStorage.getClusterName(), continuousUserName)
+                .editOrNewSpec()
+                    .withNewKafkaUserAuthorizationSimple()
+                        .addNewAcl()
+                            .withNewAclRuleTopicResource()
+                                .withPatternType(AclResourcePatternType.LITERAL)
+                                .withName(continuousTopicName)
+                            .endAclRuleTopicResource()
+                            .withOperations(AclOperation.READ, AclOperation.WRITE, AclOperation.DESCRIBE, AclOperation.CREATE)
+                        .endAcl()
+                        .addNewAcl()
+                            .withNewAclRuleGroupResource()
+                                .withPatternType(AclResourcePatternType.LITERAL)
+                                .withName(continuousConsumerGroupName)
+                            .endAclRuleGroupResource()
+                            .withOperations(AclOperation.READ)
+                        .endAcl()
+                    .endKafkaUserAuthorizationSimple()
+                .endSpec()
+                .build()
         );
 
         // sanity check that kafkaMetadataState shows ZooKeeper
@@ -222,8 +293,8 @@ public class MigrationST extends AbstractST {
 
         // start continuous clients and do the immediate message transmission
         resourceManager.createResourceWithWait(extensionContext,
-            continuousClients.producerStrimzi(),
-            continuousClients.consumerStrimzi(),
+            continuousClients.producerScramShaPlainStrimzi(),
+            continuousClients.consumerScramShaPlainStrimzi(),
             immediateClients.producerTlsStrimzi(testStorage.getClusterName()),
             immediateClients.consumerTlsStrimzi(testStorage.getClusterName())
         );
