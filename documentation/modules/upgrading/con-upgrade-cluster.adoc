@@ -47,18 +47,12 @@ In a highly available environment, the Cluster Operator maintains a minimum numb
 
 == Rolling pods using the Strimzi Drain Cleaner
 
-You can use the xref:assembly-drain-cleaner-{context}[Strimzi Drain Cleaner] to evict nodes during an upgrade.
-The Strimzi Drain Cleaner annotates pods with a rolling update pod annotation.
-This informs the Cluster Operator to perform a rolling update of an evicted pod.
+When using the Strimzi Drain Cleaner to evict nodes during upgrade, it annotates pods with a rolling update pod annotation to inform the Cluster Operator to perform a rolling update of an evicted pod.
 
-A pod disruption budget allows only a specified number of pods to be unavailable at a given time.
-During planned maintenance of Kafka broker pods, a pod disruption budget ensures Kafka continues to run in a highly available environment.
-
-You specify a pod disruption budget using a `template` customization for a Kafka component.
-By default, pod disruption budgets allow only a single pod to be unavailable at a given time.
-
-In order to use the Drain Cleaner to roll pods, you set `maxUnavailable` to `0` (zero).
-Reducing the pod disruption budget to zero prevents voluntary disruptions, so pods must be evicted manually.
+A pod disruption budget limits the number of unavailable pods and ensures Kafka's availability during planned maintenance. 
+By default, the budget permits only one pod to be unavailable at a given time.
+To be able to use the Drain Cleaner to roll Kafka pods, you must set `maxUnavailable` to `0` (zero) in the template configuration of the `Kafka` resource.
+Reducing the pod disruption budget to zero prevents Kubernetes from evicting pods automatically, so pods must be evicted through Strimzi Drain Cleaner.
 
 .Specifying a pod disruption budget
 [source,yaml,subs=attributes+]
@@ -77,6 +71,8 @@ spec:
 # ...
 ----
 
+For more information, see xref:assembly-drain-cleaner-{context}[].
+
 == Rolling pods manually while keeping topics available
 
 During an upgrade, you can trigger a manual rolling update of pods through the Cluster Operator.
@@ -89,13 +85,13 @@ You then add a pod annotation to make the update.
 Here, the annotation updates a Kafka broker.
 
 .Performing a manual rolling update on a Kafka broker pod
-[source,shell,subs="+quotes,attributes"]
+[source,shell,subs="+quotes"]
 ----
-kubectl annotate pod _<cluster_name>_-kafka-_<index>_ strimzi.io/manual-rolling-update=true
+kubectl annotate pod <cluster_name>-kafka-<index> strimzi.io/manual-rolling-update=true
 ----
 
-You replace _<cluster_name>_ with the name of the cluster.
-Kafka broker pods are named _<cluster-name>_-kafka-_<index>_, where _<index>_ starts at zero and ends at the total number of replicas minus one.
+You replace <cluster_name> with the name of the cluster.
+Kafka broker pods are named <cluster-name>-kafka-<index>, where <index> starts at zero and ends at the total number of replicas minus one.
 For example, `my-cluster-kafka-0`.
 
 [role="_additional-resources"]
