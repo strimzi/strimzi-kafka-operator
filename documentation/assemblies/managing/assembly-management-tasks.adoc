@@ -21,9 +21,6 @@ include::../../modules/managing/proc-pausing-reconciliation.adoc[leveloffset=+1]
 //windows (time) for maintenance
 include::assembly-maintenance-time-windows.adoc[leveloffset=+1]
 
-//using drain cleaner to drain pods
-include::assembly-drain-cleaner.adoc[leveloffset=+1]
-
 //steps to delete kafka nodes using annotations
 include::../../modules/configuring/proc-manual-delete-pod-pvc-kafka.adoc[leveloffset=+1]
 

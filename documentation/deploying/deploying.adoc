@@ -48,6 +48,8 @@ include::assemblies/configuring/assembly-reassign-tool.adoc[leveloffset=+1]
 include::assemblies/metrics/assembly-metrics.adoc[leveloffset=+1]
 //Introduce tracing to your deployment
 include::assemblies/tracing/assembly-distributed-tracing.adoc[leveloffset=+1]
+//using drain cleaner to drain pods
+include::assemblies/deploying/assembly-drain-cleaner.adoc[leveloffset=+1]
 //Upgrading the deployment
 include::assemblies/upgrading/assembly-upgrade.adoc[leveloffset=+1]
 //Downgrading the deployment
