@@ -402,6 +402,8 @@ class ConnectBuilderST extends AbstractST {
             .endSpec()
             .build());
 
+        KafkaConnectUtils.waitForConnectStatusContainsPlugins(testStorage.getNamespaceName(), testStorage.getClusterName());
+
         KafkaConnect kafkaConnect = KafkaConnectResource.kafkaConnectClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get();
 
         LOGGER.info("Checking if both Connectors were created and Connect contains both plugins");

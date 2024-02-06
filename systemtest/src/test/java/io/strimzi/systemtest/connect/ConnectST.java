@@ -604,7 +604,7 @@ class ConnectST extends AbstractST {
 
         final String imageFullPath = Environment.getImageOutputRegistry(testStorage.getNamespaceName(), TestConstants.ST_CONNECT_BUILD_IMAGE_NAME, String.valueOf(new Random().nextInt(Integer.MAX_VALUE)));
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(testStorage).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), 3, 3, testStorage.getNamespaceName()).build());
 
         final Plugin echoSinkPlugin = new PluginBuilder()
             .withName(TestConstants.ECHO_SINK_CONNECTOR_NAME)
@@ -637,6 +637,11 @@ class ConnectST extends AbstractST {
 
         // How many messages should be sent and at what count should the test connector fail
         final int failMessageCount = 5;
+        // For properly committing the records offset, we need to firstly send 4 messages and then 1
+        // The reason is that in case we send all messages at once, the whole batch is processed and the exception is thrown in `put()` method of the EchoSinkTask
+        // But if the exception is thrown inside the `put()` method, it can prevent from committing the offsets, which could end up in infinite restarts of the EchoSink Connector's task
+        final int firstBatchMessageCount = 4;
+        final int secondBatchMessageCount = 1;
 
         Map<String, Object> echoSinkConfig = new HashMap<>();
         echoSinkConfig.put("topics", testStorage.getTopicName());
@@ -653,13 +658,21 @@ class ConnectST extends AbstractST {
             .endSpec()
             .build());
 
-        // Send messages to topic
+        // Send first batch of messages to the topic
         KafkaClients kafkaClients = new KafkaClientsBuilder()
             .withTopicName(testStorage.getTopicName())
-            .withMessageCount(failMessageCount)
+            .withMessageCount(firstBatchMessageCount)
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
             .withProducerName(testStorage.getProducerName())
             .withNamespaceName(testStorage.getNamespaceName())
+            .build();
+
+        resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerStrimzi());
+        ClientUtils.waitForProducerClientSuccess(testStorage);
+
+        // Send second batch of messages to the topic
+        kafkaClients = new KafkaClientsBuilder(kafkaClients)
+            .withMessageCount(secondBatchMessageCount)
             .build();
 
         resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerStrimzi());

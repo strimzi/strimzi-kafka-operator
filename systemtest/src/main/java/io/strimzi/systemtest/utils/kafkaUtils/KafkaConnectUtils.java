@@ -121,4 +121,11 @@ public class KafkaConnectUtils {
                 return false;
             });
     }
+
+    public static void waitForConnectStatusContainsPlugins(String namespaceName, String clusterName) {
+        TestUtils.waitFor(String.join("for Connect: %s/%s contains plugins in its status", namespaceName, clusterName),
+            TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
+            () -> KafkaConnectResource.kafkaConnectClient().inNamespace(namespaceName).withName(clusterName).get().getStatus().getConnectorPlugins() != null
+        );
+    }
 }
