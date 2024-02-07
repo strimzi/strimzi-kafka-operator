@@ -47,7 +47,7 @@ In a highly available environment, the Cluster Operator maintains a minimum numb
 
 == Rolling pods using the Strimzi Drain Cleaner
 
-When using the Strimzi Drain Cleaner to evict nodes during upgrade, it annotates pods with a rolling update pod annotation to inform the Cluster Operator to perform a rolling update of an evicted pod.
+When using the Strimzi Drain Cleaner to evict nodes during upgrade, it annotates pods with a manual rolling update annotation to inform the Cluster Operator to perform a rolling update of an evicted pod.
 
 A pod disruption budget limits the number of unavailable pods and ensures Kafka's availability during planned maintenance. 
 By default, the budget permits only one pod to be unavailable at a given time.
