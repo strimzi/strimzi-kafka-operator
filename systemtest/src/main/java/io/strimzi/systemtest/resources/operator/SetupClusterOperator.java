@@ -551,12 +551,11 @@ public class SetupClusterOperator {
      * specific config files such as ServiceAccount, Roles and CRDs.
      * @param clientNamespace namespace which will be created and used as default by kube client
      * @param namespaces list of namespaces which will be created
-     * @param resources list of path to yaml files with resources specifications
      */
-    public void prepareEnvForOperator(ExtensionContext extensionContext, String clientNamespace, List<String> namespaces, String... resources) {
+    public void prepareEnvForOperator(ExtensionContext extensionContext, String clientNamespace, List<String> namespaces) {
         assumeTrue(!Environment.isHelmInstall() && !Environment.isOlmInstall());
         applyClusterOperatorInstallFiles(clientNamespace);
-        NetworkPolicyResource.applyDefaultNetworkPolicySettings(namespaces);
+        NetworkPolicyResource.applyDefaultNetworkPolicySettings(extensionContext, namespaces);
 
         if (cluster.cluster() instanceof OpenShift) {
             // This is needed in case you are using internal kubernetes registry and you want to pull images from there

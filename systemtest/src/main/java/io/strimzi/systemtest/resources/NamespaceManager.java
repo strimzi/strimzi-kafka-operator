@@ -9,7 +9,6 @@ import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.NamespaceStatus;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
-import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.test.TestUtils;
@@ -18,7 +17,6 @@ import io.strimzi.test.logs.CollectorElement;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -155,7 +153,6 @@ public class NamespaceManager {
      */
     public void createNamespaceAndPrepare(String namespaceName, CollectorElement collectorElement) {
         createNamespaceAndAddToSet(namespaceName, collectorElement);
-        NetworkPolicyResource.applyDefaultNetworkPolicySettings(Collections.singletonList(namespaceName));
         StUtils.copyImagePullSecrets(namespaceName);
     }
 

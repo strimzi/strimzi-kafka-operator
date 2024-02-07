@@ -11,10 +11,7 @@ import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyBuilder;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.strimzi.api.kafka.model.common.Spec;
-import io.strimzi.api.kafka.model.kafka.Kafka;
-import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.Status;
-import io.strimzi.api.kafka.model.kafka.exporter.KafkaExporterResources;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.enums.DefaultNetworkPolicy;
@@ -93,69 +90,6 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
         LOGGER.info("Network policy for LabelSelector {} successfully created", labelSelector);
     }
 
-    public static void allowNetworkPolicySettingsForEntityOperator(ExtensionContext extensionContext, String clusterName, String namespace) {
-        LabelSelector labelSelector = new LabelSelectorBuilder()
-            .addToMatchLabels(TestConstants.SCRAPER_LABEL_KEY, TestConstants.SCRAPER_LABEL_VALUE)
-            .build();
-
-        String eoDeploymentName = KafkaResources.entityOperatorDeploymentName(clusterName);
-
-        LOGGER.info("Apply NetworkPolicy access to {} from Pods with LabelSelector {}", eoDeploymentName, labelSelector);
-
-        NetworkPolicy networkPolicy = NetworkPolicyTemplates.networkPolicyBuilder(namespace, eoDeploymentName, labelSelector)
-            .editSpec()
-                .editFirstIngress()
-                    .addNewPort()
-                        .withNewPort(TestConstants.TOPIC_OPERATOR_METRICS_PORT)
-                        .withProtocol("TCP")
-                    .endPort()
-                    .addNewPort()
-                        .withNewPort(TestConstants.USER_OPERATOR_METRICS_PORT)
-                        .withProtocol("TCP")
-                    .endPort()
-                .endIngress()
-                .withNewPodSelector()
-                    .addToMatchLabels("strimzi.io/cluster", clusterName)
-                    .addToMatchLabels("strimzi.io/kind", Kafka.RESOURCE_KIND)
-                    .addToMatchLabels("strimzi.io/name", eoDeploymentName)
-                .endPodSelector()
-            .endSpec()
-            .build();
-
-        LOGGER.debug("Creating NetworkPolicy: {}", networkPolicy.toString());
-        ResourceManager.getInstance().createResourceWithWait(extensionContext, networkPolicy);
-        LOGGER.info("Network policy for LabelSelector {} successfully created", labelSelector);
-    }
-
-    public static void allowNetworkPolicySettingsForKafkaExporter(ExtensionContext extensionContext, String clusterName, String namespace) {
-        String kafkaExporterDeploymentName = KafkaExporterResources.componentName(clusterName);
-        LabelSelector labelSelector = new LabelSelectorBuilder()
-            .addToMatchLabels(TestConstants.SCRAPER_LABEL_KEY, TestConstants.SCRAPER_LABEL_VALUE)
-            .build();
-
-        LOGGER.info("Apply NetworkPolicy access to {} from Pods with LabelSelector {}", kafkaExporterDeploymentName, labelSelector);
-
-        NetworkPolicy networkPolicy = NetworkPolicyTemplates.networkPolicyBuilder(namespace, kafkaExporterDeploymentName, labelSelector)
-            .editSpec()
-                .editFirstIngress()
-                    .addNewPort()
-                        .withNewPort(TestConstants.COMPONENTS_METRICS_PORT)
-                        .withProtocol("TCP")
-                    .endPort()
-                .endIngress()
-                .withNewPodSelector()
-                    .addToMatchLabels("strimzi.io/cluster", clusterName)
-                    .addToMatchLabels("strimzi.io/kind", Kafka.RESOURCE_KIND)
-                    .addToMatchLabels("strimzi.io/name", kafkaExporterDeploymentName)
-                .endPodSelector()
-            .endSpec()
-            .build();
-
-        LOGGER.debug("Creating NetworkPolicy: {}", networkPolicy.toString());
-        ResourceManager.getInstance().createResourceWithWait(extensionContext, networkPolicy);
-        LOGGER.info("Network policy for LabelSelector {} successfully created", labelSelector);
-    }
-
     /**
      * Method for allowing network policies for Connect
      * @param resource mean Connect resource
@@ -224,13 +158,17 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
         LOGGER.info("Network policy for LabelSelector {} successfully created", labelSelector);
     }
 
-    public static void applyDefaultNetworkPolicySettings(List<String> namespaces) {
+    public static void applyDefaultNetworkPolicySettings(ExtensionContext extensionContext, List<String> namespaces) {
         for (String namespace : namespaces) {
+            NetworkPolicy networkPolicy;
+
             if (Environment.DEFAULT_TO_DENY_NETWORK_POLICIES) {
-                NetworkPolicyTemplates.applyDefaultNetworkPolicy(namespace, DefaultNetworkPolicy.DEFAULT_TO_DENY);
+                networkPolicy = NetworkPolicyTemplates.defaultNetworkPolicy(namespace, DefaultNetworkPolicy.DEFAULT_TO_DENY);
             } else {
-                NetworkPolicyTemplates.applyDefaultNetworkPolicy(namespace, DefaultNetworkPolicy.DEFAULT_TO_ALLOW);
+                networkPolicy = NetworkPolicyTemplates.defaultNetworkPolicy(namespace, DefaultNetworkPolicy.DEFAULT_TO_ALLOW);
             }
+
+            ResourceManager.getInstance().createResourceWithWait(extensionContext, networkPolicy);
             LOGGER.info("NetworkPolicy successfully set to: {} for Namespace: {}", Environment.DEFAULT_TO_DENY_NETWORK_POLICIES, namespace);
         }
     }
