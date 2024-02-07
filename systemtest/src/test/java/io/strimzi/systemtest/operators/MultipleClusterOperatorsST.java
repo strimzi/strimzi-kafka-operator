@@ -148,7 +148,7 @@ public class MultipleClusterOperatorsST extends AbstractST {
         MetricsCollector secondCoMetricsCollector = setupCOMetricsCollectorInNamespace(SECOND_CO_NAME, SECOND_NAMESPACE, secondCOScraper);
 
         LOGGER.info("Deploying Namespace: {} to host all additional operands", testStorage.getNamespaceName());
-        NamespaceManager.getInstance().createNamespaceAndPrepare(testStorage.getNamespaceName());
+        NamespaceManager.getInstance().createNamespaceAndPrepare(extensionContext, testStorage.getNamespaceName());
 
         LOGGER.info("Set cluster namespace to {}, as all operands will be from now on deployd here", testStorage.getNamespaceName());
         cluster.setNamespace(testStorage.getNamespaceName());

@@ -95,8 +95,8 @@ public class StrimziDowngradeST extends AbstractUpgradeST {
     }
 
     @BeforeEach
-    void setupEnvironment() {
-        NamespaceManager.getInstance().createNamespaceAndPrepare(CO_NAMESPACE);
+    void setupEnvironment(ExtensionContext extensionContext) {
+        NamespaceManager.getInstance().createNamespaceAndPrepare(extensionContext, CO_NAMESPACE);
     }
 
     @AfterEach

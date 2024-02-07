@@ -13,11 +13,9 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IPv6NotSupported;
-import io.strimzi.systemtest.enums.DefaultNetworkPolicy;
 import io.strimzi.systemtest.keycloak.KeycloakInstance;
 import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.systemtest.resources.keycloak.SetupKeycloak;
-import io.strimzi.systemtest.templates.kubernetes.NetworkPolicyTemplates;
 import io.strimzi.systemtest.templates.specific.ScraperTemplates;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
@@ -129,7 +127,6 @@ public class OauthAbstractST extends AbstractST {
     protected void setupCoAndKeycloak(ExtensionContext extensionContext, String keycloakNamespace) {
         clusterOperator.defaultInstallation(extensionContext).createInstallation().runInstallation();
 
-        resourceManager.createResourceWithWait(extensionContext, NetworkPolicyTemplates.defaultNetworkPolicy(keycloakNamespace, DefaultNetworkPolicy.DEFAULT_TO_ALLOW));
         resourceManager.createResourceWithoutWait(extensionContext, ScraperTemplates.scraperPod(Environment.TEST_SUITE_NAMESPACE, TestConstants.SCRAPER_NAME).build());
 
         LOGGER.info("Deploying keycloak");
@@ -138,7 +135,7 @@ public class OauthAbstractST extends AbstractST {
         // Keycloak do not support cluster-wide namespace, and thus we need it to deploy in non-OLM cluster wide namespace
         // (f.e., our `infra-namespace`)
         if (kubeClient().getNamespace(Environment.TEST_SUITE_NAMESPACE) == null) {
-            NamespaceManager.getInstance().createNamespaceAndPrepare(Environment.TEST_SUITE_NAMESPACE);
+            NamespaceManager.getInstance().createNamespaceAndPrepare(extensionContext, Environment.TEST_SUITE_NAMESPACE);
         }
 
         SetupKeycloak.deployKeycloakOperator(extensionContext, Environment.TEST_SUITE_NAMESPACE, keycloakNamespace);

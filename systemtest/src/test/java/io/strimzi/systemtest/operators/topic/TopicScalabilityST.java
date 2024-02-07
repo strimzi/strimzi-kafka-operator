@@ -115,7 +115,7 @@ public class TopicScalabilityST extends AbstractST {
 
         LOGGER.info("Deploying shared Kafka across all test cases in Namespace: {}", Environment.TEST_SUITE_NAMESPACE);
 
-        NamespaceManager.getInstance().createNamespaceAndPrepare(Environment.TEST_SUITE_NAMESPACE);
+        NamespaceManager.getInstance().createNamespaceAndPrepare(extensionContext, Environment.TEST_SUITE_NAMESPACE);
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(sharedClusterName, 3, 1)
             .editMetadata()

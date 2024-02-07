@@ -26,7 +26,8 @@ class MultipleNamespaceST extends AbstractNamespaceST {
     private void deployTestSpecificClusterOperator(final ExtensionContext extensionContext) {
         LOGGER.info("Creating Cluster Operator which will watch over multiple Namespaces");
 
-        NamespaceManager.getInstance().createNamespaces(clusterOperator.getDeploymentNamespace(), CollectorElement.createCollectorElement(this.getClass().getName()), Arrays.asList(PRIMARY_KAFKA_WATCHED_NAMESPACE, MAIN_TEST_NAMESPACE));
+        NamespaceManager.getInstance().createNamespaces(extensionContext, clusterOperator.getDeploymentNamespace(),
+            CollectorElement.createCollectorElement(this.getClass().getName()), Arrays.asList(PRIMARY_KAFKA_WATCHED_NAMESPACE, MAIN_TEST_NAMESPACE));
 
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(extensionContext)

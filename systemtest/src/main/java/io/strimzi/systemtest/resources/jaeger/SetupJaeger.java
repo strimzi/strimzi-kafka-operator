@@ -77,7 +77,7 @@ public class SetupJaeger {
      */
     private static void deployCertManager(ExtensionContext extensionContext) {
         // create namespace `cert-manager` and add it to stack, to collect logs from it
-        NamespaceManager.getInstance().createNamespaceAndPrepare(CERT_MANAGER_NAMESPACE, CollectorElement.createCollectorElement(extensionContext.getRequiredTestClass().getName()));
+        NamespaceManager.getInstance().createNamespaceAndPrepare(extensionContext, CERT_MANAGER_NAMESPACE, CollectorElement.createCollectorElement(extensionContext.getRequiredTestClass().getName()));
 
         LOGGER.info("Deploying CertManager from {}", CERT_MANAGER_PATH);
         // because we don't want to apply CertManager's file to specific namespace, passing the empty String will do the trick

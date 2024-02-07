@@ -702,7 +702,7 @@ public class MetricsST extends AbstractST {
     void setupEnvironment(ExtensionContext extensionContext) throws Exception {
         // Metrics tests are not designed to run with namespace RBAC scope.
         assumeFalse(Environment.isNamespaceRbacScope());
-        NamespaceManager.getInstance().createNamespaces(Environment.TEST_SUITE_NAMESPACE, CollectorElement.createCollectorElement(this.getClass().getName()), Arrays.asList(namespaceFirst, namespaceSecond));
+        NamespaceManager.getInstance().createNamespaces(extensionContext, Environment.TEST_SUITE_NAMESPACE, CollectorElement.createCollectorElement(this.getClass().getName()), Arrays.asList(namespaceFirst, namespaceSecond));
 
         clusterOperator = clusterOperator.defaultInstallation(extensionContext)
             .createInstallation()
