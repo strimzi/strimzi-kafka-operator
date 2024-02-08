@@ -442,7 +442,7 @@ class KafkaST extends AbstractST {
                 KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), kafkaReplicas).build()
             )
         );
-        resourceManager.createResourceWithWait(KafkaTemplates.kafkaJBOD(testStorage.getClusterName(), kafkaReplicas, jbodStorage).build());
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaJBOD(testStorage.getClusterName(), kafkaReplicas, 3, jbodStorage).build());
 
         Map<String, String> brokerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
         // kafka cluster already deployed
