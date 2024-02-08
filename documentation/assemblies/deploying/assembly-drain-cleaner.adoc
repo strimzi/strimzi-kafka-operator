@@ -1,20 +1,19 @@
 // This assembly is included in the following assemblies:
 //
-// assembly-management-tasks.adoc
+// main deploying file
 
 [id='assembly-drain-cleaner-{context}']
 = Evicting pods with the Strimzi Drain Cleaner
 
 [role="_abstract"]
 Kafka and ZooKeeper pods might be evicted during Kubernetes upgrades, maintenance, or pod rescheduling.
-If your Kafka broker and ZooKeeper pods were deployed by Strimzi, you can use the Strimzi Drain Cleaner tool to handle the pod evictions.
+If your Kafka and ZooKeeper pods were deployed by Strimzi, you can use the Strimzi Drain Cleaner tool to handle the pod evictions.
 The Strimzi Drain Cleaner handles the eviction instead of Kubernetes.
-You must set the `podDisruptionBudget` for your Kafka deployment to `0` (zero).
-Kubernetes will then no longer be allowed to evict the pod automatically.
+
+To use the Strimzi Drain Cleaner, you must set the `podDisruptionBudget` for your Kafka deployment to `0` (zero) so that Kubernetes is no longer allowed to evict pods automatically.
 
 By deploying the Strimzi Drain Cleaner, you can use the Cluster Operator to move Kafka pods instead of Kubernetes.
-The Cluster Operator ensures that topics are never under-replicated.
-Kafka can remain operational during the eviction process.
+The Cluster Operator ensures that topics are never under-replicated and Kafka can remain operational during the eviction process.
 The Cluster Operator waits for topics to synchronize, as the Kubernetes worker nodes drain consecutively.
 
 An admission webhook notifies the Strimzi Drain Cleaner of pod eviction requests to the Kubernetes API.
@@ -68,16 +67,16 @@ To deploy and use the Strimzi Drain Cleaner, you need to download the deployment
 The Strimzi Drain Cleaner deployment files are available from the link:{ReleaseDownload}.
 
 //steps for deploying drain cleaner
-include::../../modules/managing/proc-drain-cleaner-deploying.adoc[leveloffset=+1]
+include::../../modules/drain-cleaner/proc-drain-cleaner-deploying.adoc[leveloffset=+1]
 ifdef::Section[]
 //deploy using Helm
-include::../../modules/managing/proc-drain-cleaner-deploying-helm-chart.adoc[leveloffset=+1]
+include::../../modules/drain-cleaner/proc-drain-cleaner-deploying-helm-chart.adoc[leveloffset=+1]
 endif::Section[]
 //steps for using drain cleaner
-include::../../modules/managing/proc-drain-cleaner-using.adoc[leveloffset=+1]
+include::../../modules/drain-cleaner/proc-drain-cleaner-using.adoc[leveloffset=+1]
 ifdef::Section[]
 //generate tls certificates when deploying on Kubernetes
-include::../../modules/managing/proc-drain-cleaner-certs.adoc[leveloffset=+1]
+include::../../modules/drain-cleaner/proc-drain-cleaner-certs.adoc[leveloffset=+1]
 endif::Section[]
 //watching TLS certs renewals
-include::../../modules/managing/proc-drain-cleaner-certs-renewals.adoc[leveloffset=+1]
+include::../../modules/drain-cleaner/proc-drain-cleaner-certs-renewals.adoc[leveloffset=+1]
