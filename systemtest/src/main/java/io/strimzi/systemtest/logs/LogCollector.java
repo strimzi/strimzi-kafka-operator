@@ -272,18 +272,20 @@ public class LogCollector {
 
     private void collectConfigMaps(String namespace) {
         Path configMapPath = namespacePath.resolve("configmaps");
-        configMapPath.toFile().mkdirs();
-        LOGGER.info("Collecting ConfigMaps in Namespace: {}", namespace);
-        kubeClient.listConfigMaps(namespace).forEach(configMap ->
-                writeFile(configMapPath.resolve(configMap.getMetadata().getName() + ".log"), configMap.toString()));
+        if (configMapPath.toFile().exists() || configMapPath.toFile().mkdirs()) {
+            LOGGER.info("Collecting ConfigMaps in Namespace: {}", namespace);
+            kubeClient.listConfigMaps(namespace).forEach(configMap ->
+                    writeFile(configMapPath.resolve(configMap.getMetadata().getName() + ".log"), configMap.toString()));
+        }
     }
 
     private void collectSecrets(String namespace) {
         Path secretPath = namespacePath.resolve("secrets");
-        secretPath.toFile().mkdirs();
-        LOGGER.info("Collecting Secrets in Namespace: {}", namespace);
-        kubeClient.listSecrets(namespace).forEach(secret ->
-                writeFile(secretPath.resolve(secret.getMetadata().getName() + ".log"), secret.toString()));
+        if (secretPath.toFile().exists() || secretPath.toFile().mkdirs()) {
+            LOGGER.info("Collecting Secrets in Namespace: {}", namespace);
+            kubeClient.listSecrets(namespace).forEach(secret ->
+                    writeFile(secretPath.resolve(secret.getMetadata().getName() + ".log"), secret.toString()));
+        }
     }
 
     private void collectAllResourcesFromNamespace(String namespace) {
