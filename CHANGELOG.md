@@ -14,6 +14,29 @@
 
 * **From Strimzi 0.40.0 on, we support only Kubernetes 1.23 and newer.**
   Kubernetes 1.21 and 1.22 are not supported anymore.
+* [#9508](https://github.com/strimzi/strimzi-kafka-operator/pull/9508) fixes the Strimzi CRDs and their definitions of labels and annotations.
+  This change brings our CRDs in-sync with the Kubernetes APIs.
+  After this fix, the label and annotation definitions in our CRDs (for example in the `template` sections) cannot contain integer values anymore and have to always use string values.
+  If your custom resources use an integer value, for example:
+  ```
+  template:
+    apiService:
+      metadata:
+        annotations:
+          discovery.myapigateway.io/port: 8080
+  ```
+  You might get an error similar to this when applying the resource:
+  ```
+  * spec.template.apiService.metadata.annotations.discovery.myapigateway.io/port: Invalid value: "integer": spec.template.apiService.metadata.annotations.discovery.myapigateway.io/port in body must be of type string: "integer"
+  ```
+  To fix the issue, just use a string value instead of an integer:
+  ```
+  template:
+    apiService:
+      metadata:
+        annotations:
+          discovery.myapigateway.io/port: "8080"
+  ```
 * Support for the JmxTrans component is now completely removed.
   If you are upgrading from Strimzi 0.34 or earlier and have JmxTrans enabled in `.spec.jmxTrans` of the `Kafka` custom resource, you should disable it before the upgrade or delete it manually after the upgrade is complete.
 * The `api` module was refactored and classes were moved to new packages.
