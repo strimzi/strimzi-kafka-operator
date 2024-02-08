@@ -271,15 +271,19 @@ public class LogCollector {
     }
 
     private void collectConfigMaps(String namespace) {
+        Path configMapPath = namespacePath.resolve("configmaps");
+        configMapPath.toFile().mkdirs();
         LOGGER.info("Collecting ConfigMaps in Namespace: {}", namespace);
         kubeClient.listConfigMaps(namespace).forEach(configMap ->
-                writeFile(namespacePath.resolve(configMap.getMetadata().getName() + "-configmap.log"), configMap.toString()));
+                writeFile(configMapPath.resolve(configMap.getMetadata().getName() + ".log"), configMap.toString()));
     }
 
     private void collectSecrets(String namespace) {
+        Path secretPath = namespacePath.resolve("secrets");
+        secretPath.toFile().mkdirs();
         LOGGER.info("Collecting Secrets in Namespace: {}", namespace);
         kubeClient.listSecrets(namespace).forEach(secret ->
-                writeFile(namespacePath.resolve(secret.getMetadata().getName() + "-secret.log"), secret.toString()));
+                writeFile(secretPath.resolve(secret.getMetadata().getName() + ".log"), secret.toString()));
     }
 
     private void collectAllResourcesFromNamespace(String namespace) {
