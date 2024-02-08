@@ -17,6 +17,7 @@ import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
@@ -39,6 +40,7 @@ public class KafkaTemplates {
     // -------------------------------------------------------------------------------------------
     // Kafka Ephemeral
     // -------------------------------------------------------------------------------------------
+
     public static KafkaBuilder kafkaEphemeral(String clusterName, int kafkaReplicas) {
         return kafkaEphemeral(clusterName, kafkaReplicas, Math.min(kafkaReplicas, 3));
     }
@@ -294,7 +296,6 @@ public class KafkaTemplates {
         applyDefaultConfigurationOfZookeeperKafka(kb, zookeeperReplicas);
         applyDefaultLogging(kb, true);
         applyMemoryRequestsAndLimitsIfNeeded(kb, true);
-        removeFieldsNotRelatedToParticularMode(kb, true);
 
         return kb;
     }
@@ -303,13 +304,14 @@ public class KafkaTemplates {
         KafkaBuilder kb = new KafkaBuilder(kafka)
             .withNewMetadata()
                 .withName(clusterName)
+                .addToAnnotations(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled")
             .endMetadata();
 
         applyDefaultSpecOfKafka(kb, kafkaReplicas);
         applyDefaultConfigurationOfZookeeperKafka(kb, zookeeperReplicas);
         applyDefaultLogging(kb, true);
         applyMemoryRequestsAndLimitsIfNeeded(kb, true);
-        removeFieldsNotRelatedToParticularMode(kb, true);
+        kb = removeFieldsNotRelatedToParticularMode(kb, true);
 
         return kb;
     }
@@ -318,6 +320,8 @@ public class KafkaTemplates {
         KafkaBuilder kb = new KafkaBuilder(kafka)
             .withNewMetadata()
                 .withName(clusterName)
+                .addToAnnotations(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled")
+                .addToAnnotations(Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled")
             .endMetadata()
             .editSpec()
                 .editKafka()
@@ -328,7 +332,7 @@ public class KafkaTemplates {
         applyDefaultSpecOfKafka(kb, kafkaReplicas);
         applyDefaultLogging(kb, false);
         applyMemoryRequestsAndLimitsIfNeeded(kb, false);
-        removeFieldsNotRelatedToParticularMode(kb, false);
+        kb = removeFieldsNotRelatedToParticularMode(kb, false);
 
         return kb;
     }
@@ -462,16 +466,24 @@ public class KafkaTemplates {
             .endSpec();
     }
 
-    private static void removeFieldsNotRelatedToParticularMode(KafkaBuilder kafkaBuilder, boolean withZookeeper) {
+    private static KafkaBuilder removeFieldsNotRelatedToParticularMode(KafkaBuilder kafkaBuilder, boolean withZookeeper) {
+        Kafka kafka = kafkaBuilder.build();
+
         // in case that we are using file that is not customized to usage of NodePools or KRaft, we need to remove all the
         // fields here
         if (!withZookeeper) {
-            kafkaBuilder.getSpec().setZookeeper(null);
+            kafka.getSpec().setZookeeper(null);
+
+            if (!Environment.isUnidirectionalTopicOperatorEnabled()) {
+                kafka.getSpec().getEntityOperator().setTopicOperator(null);
+            }
         }
 
-        kafkaBuilder.getSpec().getKafka().setStorage(null);
+        kafka.getSpec().getKafka().setStorage(null);
         // TODO: currently commented, as we are not able to set null or completely remove the .replicas field
-        // kafkaBuilder.getSpec().getKafka().setReplicas();
+        // kafka.getSpec().getKafka().setReplicas();
+
+        return new KafkaBuilder(kafka);
     }
 
     private static Kafka getKafkaFromYaml(String yamlPath, boolean containsNodePools) {
