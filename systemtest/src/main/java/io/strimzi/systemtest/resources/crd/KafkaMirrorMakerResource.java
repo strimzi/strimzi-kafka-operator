@@ -5,11 +5,14 @@
 package io.strimzi.systemtest.resources.crd;
 
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
+import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.mirrormaker.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.mirrormaker.KafkaMirrorMakerList;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.enums.CustomResourceStatus;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceType;
@@ -54,5 +57,16 @@ public class KafkaMirrorMakerResource implements ResourceType<KafkaMirrorMaker> 
 
     public static void replaceMirrorMakerResourceInSpecificNamespace(String resourceName, Consumer<KafkaMirrorMaker> editor, String namespaceName) {
         ResourceManager.replaceCrdResource(KafkaMirrorMaker.class, KafkaMirrorMakerList.class, resourceName, editor, namespaceName);
+    }
+
+    public static LabelSelector getLabelSelector(String clusterName, String componentName) {
+        java.util.Map<String, String> matchLabels = new java.util.HashMap<>();
+        matchLabels.put(Labels.STRIMZI_CLUSTER_LABEL, clusterName);
+        matchLabels.put(Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker.RESOURCE_KIND);
+        matchLabels.put(Labels.STRIMZI_NAME_LABEL, componentName);
+
+        return new LabelSelectorBuilder()
+            .withMatchLabels(matchLabels)
+            .build();
     }
 }
