@@ -41,7 +41,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
  */
 @Tag(REGRESSION)
 @Tag(INTERNAL_CLIENTS_USED)
-@Tag(ARM64_UNSUPPORTED) // Due to https://github.com/strimzi/strimzi-kafka-operator/issues/9648
+@Tag(ARM64_UNSUPPORTED) // Due to https://github.com/strimzi/test-clients/issues/75
 public class ThrottlingQuotaST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(ThrottlingQuotaST.class);

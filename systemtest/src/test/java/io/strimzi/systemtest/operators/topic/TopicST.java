@@ -141,7 +141,7 @@ public class TopicST extends AbstractST {
         verifyTopicViaKafka(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName(), topicPartitions, KAFKA_CLUSTER_NAME);
     }
 
-    @Tag(ARM64_UNSUPPORTED) // Due to https://github.com/strimzi/strimzi-kafka-operator/issues/9648
+    @Tag(ARM64_UNSUPPORTED) // Due to https://github.com/strimzi/test-clients/issues/75
     @ParallelTest
     void testCreateDeleteCreate(ExtensionContext extensionContext) throws InterruptedException {
         final TestStorage testStorage = new TestStorage(extensionContext);
