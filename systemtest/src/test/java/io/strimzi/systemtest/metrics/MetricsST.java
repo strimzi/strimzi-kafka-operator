@@ -717,6 +717,8 @@ public class MetricsST extends AbstractST {
 
         // create resources without wait to deploy them simultaneously
         resourceManager.createResourceWithoutWait(extensionContext,
+            KafkaTemplates.kafkaMetricsConfigMap(namespaceFirst, kafkaClusterFirstName),
+            KafkaTemplates.cruiseControlMetricsConfigMap(namespaceFirst, kafkaClusterFirstName),
             // Kafka with CruiseControl and metrics
             KafkaTemplates.kafkaWithMetricsAndCruiseControlWithMetrics(kafkaClusterFirstName, namespaceFirst, 3, 3)
                 .editOrNewSpec()
@@ -730,7 +732,8 @@ public class MetricsST extends AbstractST {
                     .endEntityOperator()
                 .endSpec()
                 .build(),
-            KafkaTemplates.kafkaWithMetrics(kafkaClusterSecondName, namespaceSecond, 1, 1).build(),
+            KafkaTemplates.kafkaMetricsConfigMap(namespaceSecond, kafkaClusterSecondName),
+            KafkaTemplates.kafkaWithMetrics(namespaceSecond, kafkaClusterSecondName, 1, 1).build(),
             ScraperTemplates.scraperPod(TestConstants.CO_NAMESPACE, coScraperName).build(),
             ScraperTemplates.scraperPod(Environment.TEST_SUITE_NAMESPACE, testSuiteScraperName).build(),
             ScraperTemplates.scraperPod(namespaceFirst, scraperName).build(),

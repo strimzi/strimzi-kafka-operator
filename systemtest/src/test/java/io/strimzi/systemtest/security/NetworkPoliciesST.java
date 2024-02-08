@@ -268,11 +268,14 @@ public class NetworkPoliciesST extends AbstractST {
 
         cluster.setNamespace(secondNamespace);
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaWithMetrics(testStorage.getClusterName(), secondNamespace, 3, 3)
-            .editMetadata()
-                .addToLabels(labels)
-            .endMetadata()
-            .build());
+        resourceManager.createResourceWithWait(extensionContext,
+            KafkaTemplates.kafkaMetricsConfigMap(secondNamespace, testStorage.getClusterName()),
+            KafkaTemplates.kafkaWithMetrics(secondNamespace, testStorage.getClusterName(), 3, 3)
+                .editMetadata()
+                    .addToLabels(labels)
+                .endMetadata()
+                .build()
+        );
 
         checkNetworkPoliciesInNamespace(testStorage.getClusterName(), secondNamespace);
 

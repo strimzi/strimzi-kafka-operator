@@ -336,6 +336,25 @@ public final class TestUtils {
 
     }
 
+    public static <T> T configFromMultiYamlFile(String yamlFile, String expectedKind, Class<T> kindClass) {
+        return configFromMultiYamlFile(new File(yamlFile), expectedKind, kindClass);
+    }
+
+    public static <T> T configFromMultiYamlFile(File yamlFile, String expectedKind, Class<T> kindClass) {
+        try {
+            YAMLFactory yamlFactory = new YAMLFactory();
+            ObjectMapper mapper = new ObjectMapper();
+            YAMLParser yamlParser = yamlFactory.createParser(yamlFile);
+            List<Map<String, Object>> resources = mapper.readValues(yamlParser, new TypeReference<Map<String, Object>>() { }).readAll();
+
+            return mapper.convertValue(resources.stream().filter(resource -> resource.get("kind").equals(expectedKind)).findFirst().get(), kindClass);
+        } catch (InvalidFormatException e) {
+            throw new IllegalArgumentException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public static <T> T configFromYaml(File yamlFile, Class<T> c) {
         ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
         try {

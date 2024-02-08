@@ -390,7 +390,7 @@ class KafkaST extends AbstractST {
 
         JbodStorage jbodStorage = new JbodStorageBuilder().withVolumes(idZeroVolumeOriginal, idOneVolumeOriginal).build();
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaJBOD(testStorage.getClusterName(), kafkaReplicas, jbodStorage).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaJBOD(testStorage.getClusterName(), kafkaReplicas, 3, jbodStorage).build());
         // kafka cluster already deployed
         verifyVolumeNamesAndLabels(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getKafkaStatefulSetName(), kafkaReplicas, 2, diskSizeGi);
 
