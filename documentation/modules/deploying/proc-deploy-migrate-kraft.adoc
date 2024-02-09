@@ -10,8 +10,8 @@ If you are using ZooKeeper for metadata management in your Kafka cluster, you ca
 KRaft mode replaces ZooKeeper for distributed coordination, offering enhanced reliability, scalability, and throughput.
 
 During the migration, you install a quorum of controller nodes as a node pool, which replaces ZooKeeper for management of your cluster. 
-You enable KRaft migration in the cluster configuration by applying the `strimzi.io/kraft: migration` annotation.  
-After the migration is complete, you switch the brokers to using KRaft and the controllers out of migration mode using the `strimzi.io/kraft: enabled` annotation.
+You enable KRaft migration in the cluster configuration by applying the `strimzi.io/kraft="migration"` annotation.  
+After the migration is complete, you switch the brokers to using KRaft and the controllers out of migration mode using the `strimzi.io/kraft="enabled"` annotation.
 
 Before starting the migration, verify that your environment can support Kafka in KRaft mode, as there are a number of xref:ref-operator-use-kraft-feature-gate-str[limitations].
 Note also, the following:
@@ -76,7 +76,7 @@ NOTE: For the migration, you cannot use a node pool of nodes that share the brok
 
 . Apply the new `KafkaNodePool` resource to create the controllers.
 +
-Errors related to using controllers in a ZooKeeper-based environment are expected.
+Errors related to using controllers in a ZooKeeper-based environment are expected in the Cluster Operator logs.
 
 . Enable KRaft migration in the `Kafka` resource by setting the `strimzi.io/kraft` annotation to `migration`:
 +
@@ -94,7 +94,7 @@ metadata:
   name: my-cluster
   namespace: my-project
   annotations:
-    strimzi.io/kraft: migration 
+    strimzi.io/kraft="migration" 
 # ...
 ----
 +
@@ -154,12 +154,14 @@ You can xref:proc-deploy-migrate-kraft-rollback-{context}[roll back from this po
 --
 +
 The migration status is also represented in the `status.kafkaMetadataState` property of the `Kafka` resource. 
++
+WARNING: The next step is to enable KRaft. Rollback cannot be performed after enabling KRaft.
 
 . Enable KRaft in the `Kafka` resource configuration by setting the `strimzi.io/kraft` annotation to `enabled`:
 +
 [source,shell]
 ----
-kubectl annotate kafka my-cluster strimzi.io/kraft="enabled"
+kubectl annotate kafka my-cluster strimzi.io/kraft="enabled" --overwrite
 ----
 +
 .Enabling KRaft migration
@@ -171,11 +173,9 @@ metadata:
   name: my-cluster
   namespace: my-project
   annotations:
-    strimzi.io/kraft: enabled 
+    strimzi.io/kraft="enabled" 
 # ...
 ----
-+
-WARNING: Rollback cannot be performed after enabling KRaft.
 
 . Check the status of the move to full KRaft mode:
 +
@@ -200,13 +200,16 @@ my-cluster  ...  KRaft
 * `PreKRaft` is the state when all ZooKeeper-related configurations and resources have been automatically deleted.
 * `KRaft` is the final state (after the controllers have rolled) when the KRaft migration is finalized.
 --
++
+NOTE: Depending on how `deleteClaim` is configured for ZooKeeper, its Persistent Volume Claims (PVCs) and persistent volumes (PVs) may not be deleted.
+`deleteClaim` specifies whether the PVC is deleted when the cluster is uninstalled. The default is `false`.
 
 [id='proc-deploy-migrate-kraft-rollback-{context}']
 .Performing a rollback on the migration
 
 Before the migration is finalized by enabling KRaft in the `Kafka` resource,  and the state has moved to the `KRaft` state, you can perform a rollback operation as follows:
 
-. Apply the `strimzi.io/kraft: rollback` annotation to the `Kafka` resource to roll back the brokers.
+. Apply the `strimzi.io/kraft="rollback"` annotation to the `Kafka` resource to roll back the brokers.
 +
 [source,shell]
 ----
@@ -222,7 +225,7 @@ metadata:
   name: my-cluster
   namespace: my-project
   annotations:
-    strimzi.io/kraft: rollback 
+    strimzi.io/kraft="rollback" 
 # ...
 ----
 +
@@ -236,11 +239,11 @@ The brokers are rolled back so that they can be connected to ZooKeeper again and
 kubectl delete KafkaNodePool controller -n my-project
 ----
 
-. Apply the `strimzi.io/kraft: disabled` annotation to the `Kafka` resource to return the metadata state to `ZooKeeper`.
+. Apply the `strimzi.io/kraft="disabled"` annotation to the `Kafka` resource to return the metadata state to `ZooKeeper`.
 +
 [source,shell]
 ----
-kubectl annotate kafka my-cluster strimzi.io/kraft="disabled"
+kubectl annotate kafka my-cluster strimzi.io/kraft="disabled" --overwrite
 ----
 +
 .Switching back to using ZooKeeper
@@ -252,6 +255,6 @@ metadata:
   name: my-cluster
   namespace: my-project
   annotations:
-    strimzi.io/kraft: disabled 
+    strimzi.io/kraft="disabled" 
 # ...
 ----
