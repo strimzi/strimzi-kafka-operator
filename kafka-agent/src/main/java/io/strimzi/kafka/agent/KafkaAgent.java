@@ -112,11 +112,13 @@ public class KafkaAgent {
      * @param brokerState                 Current state of the broker
      * @param remainingLogsToRecover      Number of remaining logs to recover
      * @param remainingSegmentsToRecover  Number of remaining segments to recover
+     * @param zkMigrationState            Current state of the ZooKeeper to KRaft migration
      */
-    /* test */ KafkaAgent(Gauge brokerState, Gauge remainingLogsToRecover, Gauge remainingSegmentsToRecover) {
+    /* test */ KafkaAgent(Gauge brokerState, Gauge remainingLogsToRecover, Gauge remainingSegmentsToRecover, Gauge zkMigrationState) {
         this.brokerState = brokerState;
         this.remainingLogsToRecover = remainingLogsToRecover;
         this.remainingSegmentsToRecover = remainingSegmentsToRecover;
+        this.zkMigrationState = zkMigrationState;
     }
 
     private void run() {
@@ -298,7 +300,7 @@ public class KafkaAgent {
      *
      * @return  Handler
      */
-    private Handler getKRaftMigrationHandler() {
+    /* test */ Handler getKRaftMigrationHandler() {
         return new AbstractHandler() {
             @Override
             public void handle(String s, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException {
