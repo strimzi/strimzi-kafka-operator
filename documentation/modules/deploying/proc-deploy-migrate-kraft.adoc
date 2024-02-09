@@ -150,12 +150,13 @@ but controllers are managing metadata in Kafka and ZooKeeper.
 Brokers are rolled a second time to remove the flag to enable migration.
 * `KRaftPostMigration` is the state when KRaft mode is enabled for brokers and there is no ZooKeeper involvement. 
 Controllers are still managing in Kafka and ZooKeeper.
-You can xref:proc-deploy-migrate-kraft-rollback-{context}[roll back from this point].
 --
 +
 The migration status is also represented in the `status.kafkaMetadataState` property of the `Kafka` resource. 
 +
-WARNING: The next step is to enable KRaft. Rollback cannot be performed after enabling KRaft.
+WARNING: You can xref:proc-deploy-migrate-kraft-rollback-{context}[roll back to using ZooKeeper from this point]. 
+The next step is to enable KRaft. 
+Rollback cannot be performed after enabling KRaft.
 
 . Enable KRaft in the `Kafka` resource configuration by setting the `strimzi.io/kraft` annotation to `enabled`:
 +
@@ -213,7 +214,7 @@ Before the migration is finalized by enabling KRaft in the `Kafka` resource,  an
 +
 [source,shell]
 ----
-kubectl annotate kafka my-cluster strimzi.io/kraft="rollback"
+kubectl annotate kafka my-cluster strimzi.io/kraft="rollback" --overwrite
 ----
 +
 .Rolling back KRaft migration
