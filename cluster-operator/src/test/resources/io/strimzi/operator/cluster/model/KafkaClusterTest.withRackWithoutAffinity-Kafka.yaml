@@ -4,6 +4,7 @@ metadata:
   name: my-cluster
 spec:
   kafka:
+    replicas: 1
     listeners:
       - name: plain
         port: 9092
