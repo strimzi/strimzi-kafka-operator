@@ -25,7 +25,7 @@ kubectl get KafkaConnector
 +
 [source,shell,subs="+quotes"]
 ----
-kubectl annotate KafkaConnector <kafka_connector_name> strimzi.io/restart="true"
+kubectl annotate KafkaConnector <kafka_connector_name> strimzi.io/restart=true
 ----
 +
 The `restart` annotation is set to `true`. 

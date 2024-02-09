@@ -58,13 +58,13 @@ The `<index_number>` assigned to a pod starts at zero and ends at the total numb
 +
 [source,shell,subs=+quotes]
 ----
-kubectl annotate pod <cluster_name>-kafka-<index_number> strimzi.io/manual-rolling-update="true"
+kubectl annotate pod <cluster_name>-kafka-<index_number> strimzi.io/manual-rolling-update=true
 
-kubectl annotate pod <cluster_name>-zookeeper-<index_number> strimzi.io/manual-rolling-update="true"
+kubectl annotate pod <cluster_name>-zookeeper-<index_number> strimzi.io/manual-rolling-update=true
 
-kubectl annotate pod <cluster_name>-connect-<index_number> strimzi.io/manual-rolling-update="true"
+kubectl annotate pod <cluster_name>-connect-<index_number> strimzi.io/manual-rolling-update=true
 
-kubectl annotate pod <cluster_name>-mirrormaker2-<index_number> strimzi.io/manual-rolling-update="true"
+kubectl annotate pod <cluster_name>-mirrormaker2-<index_number> strimzi.io/manual-rolling-update=true
 ----
 
 . Wait for the next reconciliation to occur (every two minutes by default).

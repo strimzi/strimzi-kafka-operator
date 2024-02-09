@@ -26,7 +26,7 @@ You can perform this task if you are using unidirectional topic management.
 +
 [source,shell,subs="+quotes"]
 ----
-kubectl annotate kafkatopic my-topic-1 strimzi.io/managed="false"
+kubectl annotate kafkatopic my-topic-1 strimzi.io/managed=false
 ----
 +
 Specify the `metadata.name` of the topic in your `KafkaTopic` resource, which is `my-topic-1` in this example.

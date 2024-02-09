@@ -27,13 +27,13 @@ And for a MirrorMaker 2 cluster named _my-mm2-cluster_, the corresponding name i
 .Annotating a StrimziPodSet
 [source,shell,subs=+quotes]
 ----
-kubectl annotate strimzipodset <cluster_name>-kafka strimzi.io/manual-rolling-update="true"
+kubectl annotate strimzipodset <cluster_name>-kafka strimzi.io/manual-rolling-update=true
 
-kubectl annotate strimzipodset <cluster_name>-zookeeper strimzi.io/manual-rolling-update="true"
+kubectl annotate strimzipodset <cluster_name>-zookeeper strimzi.io/manual-rolling-update=true
 
-kubectl annotate strimzipodset <cluster_name>-connect strimzi.io/manual-rolling-update="true"
+kubectl annotate strimzipodset <cluster_name>-connect strimzi.io/manual-rolling-update=true
 
-kubectl annotate strimzipodset <cluster_name>-mirrormaker2 strimzi.io/manual-rolling-update="true"
+kubectl annotate strimzipodset <cluster_name>-mirrormaker2 strimzi.io/manual-rolling-update=true
 ----
 
 . Wait for the next reconciliation to occur (every two minutes by default).

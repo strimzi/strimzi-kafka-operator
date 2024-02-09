@@ -71,7 +71,7 @@ Controllers are responsible for coordinating operations and maintaining the clus
 Using the `UseKRaft` feature gate requires the `KafkaNodePools` feature gate to be enabled as well.
 To deploy a Kafka cluster in KRaft mode, you must use the `KafkaNodePool` resources.
 For more details and examples, see xref:deploying-kafka-node-pools-{context}[].
-The `Kafka` custom resource using KRaft mode must also have the annotation `strimzi.io/kraft="enabled"`.
+The `Kafka` custom resource using KRaft mode must also have the annotation `strimzi.io/kraft: enabled`.
 
 Currently, the KRaft mode in Strimzi has the following major limitations:
 

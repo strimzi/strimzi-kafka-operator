@@ -30,12 +30,12 @@ Instead, follow the procedure for xref:renewing-your-own-ca-certificates-{contex
 ¦Annotate command
 
 ¦Cluster CA
-¦<cluster_name>-cluster-ca
-m¦kubectl annotate secret <cluster_name>-cluster-ca strimzi.io/force-replace="true"
+¦_CLUSTER-NAME_-cluster-ca
+m¦kubectl annotate secret _CLUSTER-NAME_-cluster-ca strimzi.io/force-replace=true
 
 ¦Clients CA
-¦<cluster_name>-clients-ca
-m¦kubectl annotate secret <cluster_name>-clients-ca strimzi.io/force-replace="true"
+¦_CLUSTER-NAME_-clients-ca
+m¦kubectl annotate secret _CLUSTER-NAME_-clients-ca strimzi.io/force-replace=true
 
 |===
 

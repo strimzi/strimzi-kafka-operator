@@ -26,6 +26,6 @@ For example, `my-cluster-kafka-0`.
 . Use `kubectl annotate` to annotate the `Pod` resource in Kubernetes:
 +
 [source,shell,subs="+quotes,attributes+"]
-kubectl annotate pod <cluster_name>-kafka-<index_number> strimzi.io/delete-pod-and-pvc="true"
+kubectl annotate pod <cluster_name>-kafka-<index_number> strimzi.io/delete-pod-and-pvc=true
 
 . Wait for the next reconciliation, when the annotated pod with the underlying persistent volume claim will be deleted and then recreated.
