@@ -82,7 +82,7 @@ Errors related to using controllers in a ZooKeeper-based environment are expecte
 +
 [source,shell]
 ----
-kubectl annotate kafka my-cluster strimzi.io/kraft: migration
+kubectl annotate kafka my-cluster strimzi.io/kraft="migration" --overwrite
 ----
 +
 .Enabling KRaft migration
@@ -159,7 +159,7 @@ The migration status is also represented in the `status.kafkaMetadataState` prop
 +
 [source,shell]
 ----
-kubectl annotate kafka my-cluster strimzi.io/kraft: enabled
+kubectl annotate kafka my-cluster strimzi.io/kraft="enabled"
 ----
 +
 .Enabling KRaft migration
@@ -210,7 +210,7 @@ Before the migration is finalized by enabling KRaft in the `Kafka` resource,  an
 +
 [source,shell]
 ----
-kubectl annotate kafka my-cluster strimzi.io/kraft: rollback
+kubectl annotate kafka my-cluster strimzi.io/kraft="rollback"
 ----
 +
 .Rolling back KRaft migration
@@ -240,7 +240,7 @@ kubectl delete KafkaNodePool controller -n my-project
 +
 [source,shell]
 ----
-kubectl annotate kafka my-cluster strimzi.io/kraft: disabled
+kubectl annotate kafka my-cluster strimzi.io/kraft="disabled"
 ----
 +
 .Switching back to using ZooKeeper

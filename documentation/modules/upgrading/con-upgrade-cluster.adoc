@@ -91,7 +91,7 @@ Here, the annotation updates a Kafka broker.
 .Performing a manual rolling update on a Kafka broker pod
 [source,shell,subs="+quotes,attributes"]
 ----
-kubectl annotate pod _<cluster_name>_-kafka-_<index>_ strimzi.io/manual-rolling-update=true
+kubectl annotate pod _<cluster_name>_-kafka-_<index>_ strimzi.io/manual-rolling-update="true"
 ----
 
 You replace _<cluster_name>_ with the name of the cluster.

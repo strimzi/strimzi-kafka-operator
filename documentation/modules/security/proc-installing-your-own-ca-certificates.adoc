@@ -11,11 +11,11 @@ Install your own CA certificates and private keys instead of using the cluster a
 By default, Strimzi uses the following xref:con-certificates-{context}[cluster CA and clients CA secrets], which are renewed automatically.
 
 * Cluster CA secrets
-** `_<cluster_name>_-cluster-ca`
-** `_<cluster_name>_-cluster-ca-cert`
+** `<cluster_name>-cluster-ca`
+** `<cluster_name>-cluster-ca-cert`
 * Clients CA secrets
-** `_<cluster_name>_-clients-ca`
-** `_<cluster_name>_-clients-ca-cert`
+** `<cluster_name>-clients-ca`
+** `<cluster_name>-clients-ca-cert`
 
 To install your own certificates, use the same names.
 
@@ -46,9 +46,9 @@ If you don't have a cluster certificate in PKCS #12 format, use the OpenSSL TLS 
 
 .Example certificate generation command
 [source,shell,subs="+quotes"]
-openssl pkcs12 -export -in ca.crt -nokeys -out ca.p12 -password pass:__<P12_password>__ -caname ca.crt
+openssl pkcs12 -export -in ca.crt -nokeys -out ca.p12 -password pass:<P12_password> -caname ca.crt
 
-Replace _<P12_password>_ with your own password.
+Replace <P12_password> with your own password.
 
 .Procedure
 
@@ -56,53 +56,53 @@ Replace _<P12_password>_ with your own password.
 +
 .Client secret creation with a certificate in PEM format only
 [source,shell,subs="+quotes"]
-kubectl create secret generic _<cluster_name>_-clients-ca-cert --from-file=ca.crt=ca.crt
+kubectl create secret generic <cluster_name>-clients-ca-cert --from-file=ca.crt=ca.crt
 +
 .Cluster secret creation with certificates in PEM and PKCS #12 format
 [source,shell,subs="+quotes"]
 ----
-kubectl create secret generic _<cluster_name>_-cluster-ca-cert \
+kubectl create secret generic <cluster_name>-cluster-ca-cert \
   --from-file=ca.crt=ca.crt \
   --from-file=ca.p12=ca.p12 \
   --from-literal=ca.password=_P12-PASSWORD_
 ----
 +
-Replace _<cluster_name>_ with the name of your Kafka cluster.
+Replace <cluster_name> with the name of your Kafka cluster.
 
 . Create a new secret that contains the private key.
 +
 [source,shell,subs="+quotes"]
-kubectl create secret generic _CA-KEY-SECRET_ --from-file=ca.key=ca.key
+kubectl create secret generic <ca_key_secret> --from-file=ca.key=ca.key
 
 . Label the secrets.
 +
 [source,shell,subs="+quotes"]
 ----
-kubectl label secret _CA-CERTIFICATE-SECRET_ strimzi.io/kind=Kafka strimzi.io/cluster=_<cluster_name>_
+kubectl label secret <ca_certificate_secret> strimzi.io/kind=Kafka strimzi.io/cluster="<cluster_name>"
 ----
 +
 [source,shell,subs="+quotes"]
 ----
-kubectl label secret _CA-KEY-SECRET_ strimzi.io/kind=Kafka strimzi.io/cluster=_<cluster_name>_
+kubectl label secret <ca_key_secret> strimzi.io/kind=Kafka strimzi.io/cluster="<cluster_name>"
 ----
 +
 * Label `strimzi.io/kind=Kafka` identifies the Kafka custom resource.
-* Label `strimzi.io/cluster=_<cluster_name>_` identifies the Kafka cluster.
+* Label `strimzi.io/cluster="<cluster_name>"` identifies the Kafka cluster.
 
 . Annotate the secrets
 +
 [source,shell,subs="+quotes"]
 ----
-kubectl annotate secret _CA-CERTIFICATE-SECRET_ strimzi.io/ca-cert-generation=_CA-CERTIFICATE-GENERATION_
+kubectl annotate secret <ca_certificate_secret> strimzi.io/ca-cert-generation="<ca_certificate_generation>"
 ----
 +
 [source,shell,subs="+quotes"]
 ----
-kubectl annotate secret _CA-KEY-SECRET_ strimzi.io/ca-key-generation=_CA-KEY-GENERATION_
+kubectl annotate secret <ca_key_secret> strimzi.io/ca-key-generation="<ca_key_generation>"
 ----
 +
-* Annotation `strimzi.io/ca-cert-generation=_CA-CERTIFICATE-GENERATION_` defines the generation of a new CA certificate.
-* Annotation `strimzi.io/ca-key-generation=_CA-KEY-GENERATION_` defines the generation of a new CA key.
+* Annotation `strimzi.io/ca-cert-generation="<ca_certificate_generation>"` defines the generation of a new CA certificate.
+* Annotation `strimzi.io/ca-key-generation="<ca_key_generation>"` defines the generation of a new CA key.
 +
 Start from 0 (zero) as the incremental value (`strimzi.io/ca-cert-generation=0`) for your own CA certificate. Set a higher incremental value when you renew the certificates.
 

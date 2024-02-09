@@ -34,7 +34,7 @@ Task IDs are non-negative integers, starting from 0.
 +
 [source,shell,subs="+quotes"]
 ----
-kubectl annotate KafkaConnector <kafka_connector_name> strimzi.io/restart-task=0
+kubectl annotate KafkaConnector <kafka_connector_name> strimzi.io/restart-task="0"
 ----
 +
 In this example, task `0` is restarted. 
