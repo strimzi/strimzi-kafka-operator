@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolTemplateBuilder;
 import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.IntStream;
 
 /**
@@ -48,7 +49,7 @@ public class VirtualNodePoolConverter {
                     .withLabels(kafka.getMetadata().getLabels())
                 .endMetadata()
                 .withNewSpec()
-                    .withReplicas(kafka.getSpec().getKafka().getReplicas())
+                    .withReplicas(Optional.ofNullable(kafka.getSpec().getKafka().getReplicas()).orElse(0))
                     .withStorage(kafka.getSpec().getKafka().getStorage())
                     .withRoles(List.of(ProcessRoles.BROKER)) // We do not need to care about the controller role here since this is only used with ZooKeeper based clusters
                     .withResources(kafka.getSpec().getKafka().getResources())

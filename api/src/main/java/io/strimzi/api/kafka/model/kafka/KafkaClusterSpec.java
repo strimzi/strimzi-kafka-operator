@@ -73,7 +73,7 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, HasConfigurable
     private String brokerRackInitImage;
     private Rack rack;
     private Logging logging;
-    private int replicas;
+    private Integer replicas;
     private String image;
     private ResourceRequirements resources;
     private Probe livenessProbe;
@@ -164,11 +164,11 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, HasConfigurable
     @Description("The number of pods in the cluster. " +
             "This property is required when node pools are not used.")
     @Minimum(1)
-    public int getReplicas() {
+    public Integer getReplicas() {
         return replicas;
     }
 
-    public void setReplicas(int replicas) {
+    public void setReplicas(Integer replicas) {
         this.replicas = replicas;
     }
 
