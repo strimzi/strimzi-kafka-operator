@@ -595,8 +595,8 @@ public abstract class AbstractST implements TestSeparator {
         // it will always execute the second method.
         try {
             assertNoCoErrorsLogged(clusterOperator.getDeploymentNamespace(), storageMap.get(extensionContext).getTestExecutionTimeInSeconds());
-            afterEachMayOverride(extensionContext);
         } finally {
+            afterEachMayOverride(extensionContext);
             afterEachMustExecute(extensionContext);
         }
     }
