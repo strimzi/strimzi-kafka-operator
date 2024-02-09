@@ -30,7 +30,6 @@ import io.vertx.core.Vertx;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -209,7 +208,7 @@ public class KafkaClusterCreator {
         if (scaleDownCheckFailed) {
             if (nodePoolCrs == null || nodePoolCrs.isEmpty()) {
                 // There are no node pools => the Kafka CR is used
-                int newReplicasCount = Optional.ofNullable(kafkaCr.getSpec().getKafka().getReplicas()).orElse(0) + kafka.removedNodes().size();
+                int newReplicasCount = kafkaCr.getSpec().getKafka().getReplicas() + kafka.removedNodes().size();
                 LOGGER.warnCr(reconciliation, "Reverting scale-down of Kafka {} by changing number of replicas to {}", kafkaCr.getMetadata().getName(), newReplicasCount);
 
                 Kafka newKafkaCr = new KafkaBuilder(kafkaCr)

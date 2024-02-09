@@ -232,7 +232,7 @@ public class ResourceUtils {
                 .build();
     }
 
-    public static Kafka createKafka(String namespace, String name, Integer replicas,
+    public static Kafka createKafka(String namespace, String name, int replicas,
                                     String image, int healthDelay, int healthTimeout,
                                     MetricsConfig metricsConfig,
                                     Map<String, Object> kafkaConfigurationJson,
@@ -251,7 +251,7 @@ public class ResourceUtils {
     }
 
     @SuppressWarnings({"checkstyle:ParameterNumber"})
-    public static Kafka createKafka(String namespace, String name, Integer replicas,
+    public static Kafka createKafka(String namespace, String name, int replicas,
                                     String image, int healthDelay, int healthTimeout,
                                     MetricsConfig metricsConfig,
                                     Map<String, Object> kafkaConfiguration,
