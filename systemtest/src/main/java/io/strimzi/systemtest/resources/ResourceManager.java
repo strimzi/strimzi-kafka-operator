@@ -346,6 +346,10 @@ public class ResourceManager {
                 type.delete(resource);
                 assertTrue(waitResourceCondition(resource, ResourceCondition.deletion()),
                         String.format("Timed out deleting %s %s/%s", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()));
+            } catch (NullPointerException e) {
+                // some of the resources may be actually deleted during the test causing extra error logs when trying to delete resource which is no longer present
+                LOGGER.info("Unable to find resource {}/{}, seems to be already deleted ", resource.getKind(), resource.getMetadata().getName());
+                LOGGER.trace(e);
             } catch (Exception e)   {
                 if (resource.getMetadata().getNamespace() == null) {
                     LOGGER.error("Failed to delete {} {}", resource.getKind(), resource.getMetadata().getName(), e);

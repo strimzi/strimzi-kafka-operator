@@ -2085,8 +2085,6 @@ public class ListenersST extends AbstractST {
         }
 
         KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(testStorage.getClusterName(), testStorage.getNamespaceName(), ".*Secret " + nonExistingCertName + " with custom TLS certificate does not exist.*");
-
-        KafkaResource.kafkaClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).delete();
     }
 
     @ParallelNamespaceTest
@@ -2123,8 +2121,6 @@ public class ListenersST extends AbstractST {
 
         KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(testStorage.getClusterName(), testStorage.getNamespaceName(),
                 ".*Secret " + clusterCustomCertServer1 + " does not contain certificate under the key " + nonExistingCertName + ".*");
-
-        KafkaResource.kafkaClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).delete();
     }
 
     @ParallelNamespaceTest
@@ -2161,8 +2157,6 @@ public class ListenersST extends AbstractST {
 
         KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(testStorage.getClusterName(), testStorage.getNamespaceName(),
                 ".*Secret " + clusterCustomCertServer1 + " does not contain custom certificate private key under the key " + nonExistingCertKey + ".*");
-
-        KafkaResource.kafkaClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).delete();
     }
 
     @ParallelNamespaceTest

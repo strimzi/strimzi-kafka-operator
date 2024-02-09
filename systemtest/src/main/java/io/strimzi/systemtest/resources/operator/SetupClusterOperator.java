@@ -101,7 +101,8 @@ public class SetupClusterOperator {
     private int replicas = 1;
 
     private String testClassName;
-    private String testMethodName;
+    // by default, we expect at least empty method name in order to collect logs correctly
+    private String testMethodName = "";
     private List<RoleBinding> roleBindings;
     private List<Role> roles;
     private List<ClusterRole> clusterRoles;
