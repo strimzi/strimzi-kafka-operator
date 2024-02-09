@@ -20,6 +20,8 @@ import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
+import io.strimzi.systemtest.resources.NodePoolsConverter;
+import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -27,6 +29,7 @@ import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectorTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaMirrorMaker2Templates;
+import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
@@ -232,6 +235,12 @@ public abstract class AbstractNamespaceST extends AbstractST {
         final String mirrorMakerName = testStorage.getClusterName() + "-mirror-maker-2";
 
         LOGGER.info("Target Kafka cluster: {} and consequently MirrorMaker2: {} will be created in Namespace: {}", testStorage.getTargetClusterName(), mirrorMakerName, MAIN_TEST_NAMESPACE);
+        resourceManager.createResourceWithWait(
+            NodePoolsConverter.convertNodePoolsIfNeeded(
+                KafkaNodePoolTemplates.brokerPool(MAIN_TEST_NAMESPACE, testStorage.getTargetBrokerPoolName(), testStorage.getTargetClusterName(), 1).build(),
+                KafkaNodePoolTemplates.controllerPool(MAIN_TEST_NAMESPACE, testStorage.getTargetControllerPoolName(), testStorage.getTargetClusterName(), 1).build()
+            )
+        );
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(testStorage.getTargetClusterName(), 1, 1).build());
         resourceManager.createResourceWithWait(KafkaMirrorMaker2Templates.kafkaMirrorMaker2(mirrorMakerName, testStorage.getTargetClusterName(), PRIMARY_KAFKA_NAME, 1, false).build());
 
@@ -342,6 +351,12 @@ public abstract class AbstractNamespaceST extends AbstractST {
 
         cluster.setNamespace(MAIN_TEST_NAMESPACE);
 
+        resourceManager.createResourceWithWait(
+            NodePoolsConverter.convertNodePoolsIfNeeded(
+                KafkaNodePoolTemplates.brokerPool(MAIN_TEST_NAMESPACE, KafkaNodePoolResource.getBrokerPoolName(PRIMARY_KAFKA_NAME), PRIMARY_KAFKA_NAME, 3).build(),
+                KafkaNodePoolTemplates.controllerPool(MAIN_TEST_NAMESPACE, KafkaNodePoolResource.getControllerPoolName(PRIMARY_KAFKA_NAME), PRIMARY_KAFKA_NAME, 3).build()
+            )
+        );
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(PRIMARY_KAFKA_NAME, 3)
             .editMetadata()
                 .withNamespace(MAIN_TEST_NAMESPACE)

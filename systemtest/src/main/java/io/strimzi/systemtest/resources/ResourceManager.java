@@ -24,11 +24,9 @@ import io.strimzi.api.kafka.model.common.Spec;
 import io.strimzi.api.kafka.model.connector.KafkaConnector;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.Status;
-import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.api.kafka.model.user.KafkaUser;
 import io.strimzi.operator.common.Annotations;
-import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.enums.ConditionStatus;
@@ -198,10 +196,6 @@ public class ResourceManager {
                     }
                     resource.getMetadata().setAnnotations(annotations);
                 }
-
-                // in case when Kafka contains "strimzi.io/node-pools: enabled" annotation, we want to create KafkaNodePool
-                // and configure it as Kafka resource
-                createKafkaNodePoolIfNeeded((Kafka) resource);
             }
 
             if (Environment.isKRaftModeEnabled() && !Environment.isUnidirectionalTopicOperatorEnabled()) {
@@ -245,45 +239,6 @@ public class ResourceManager {
                 assertTrue(waitResourceCondition(resource, ResourceCondition.readiness(type)),
                     String.format("Timed out waiting for %s %s/%s to be ready", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()));
             }
-        }
-    }
-
-    private void createKafkaNodePoolIfNeeded(Kafka resource) {
-        Map<String, String> annotations = resource.getMetadata().getAnnotations();
-
-        if (annotations.get(Annotations.ANNO_STRIMZI_IO_NODE_POOLS) != null && annotations.get(Annotations.ANNO_STRIMZI_IO_NODE_POOLS).equals("enabled")) {
-            KafkaNodePool nodePool = KafkaNodePoolResource.convertKafkaResourceToKafkaNodePool(resource);
-
-            setNamespaceInResource(nodePool);
-
-            boolean nodePoolAlreadyExists = KafkaNodePoolResource.kafkaNodePoolClient().inNamespace(resource.getMetadata().getNamespace()).list().getItems()
-                .stream()
-                .anyMatch(knp -> {
-                    Map<String, String> labels = knp.getMetadata().getLabels();
-                    return labels.containsKey(Labels.STRIMZI_CLUSTER_LABEL) && labels.get(Labels.STRIMZI_CLUSTER_LABEL).equals(resource.getMetadata().getName());
-                });
-
-            if (nodePoolAlreadyExists) {
-                LOGGER.info("Node pool will not be created as part of process of creation of Kafka instance as it already exists");
-                return;
-            }
-
-            labelResource(nodePool);
-
-            ResourceType<KafkaNodePool> nodePoolType = findResourceType(nodePool);
-            nodePoolType.create(nodePool);
-
-            // add it to stack
-            synchronized (this) {
-                STORED_RESOURCES.computeIfAbsent(getTestContext().getDisplayName(), k -> new Stack<>());
-                STORED_RESOURCES.get(getTestContext().getDisplayName()).push(
-                    new ResourceItem<>(
-                        () -> deleteResource(nodePool),
-                        nodePool
-                    ));
-            }
-
-            nodePoolType.waitForReadiness(nodePool);
         }
     }
 

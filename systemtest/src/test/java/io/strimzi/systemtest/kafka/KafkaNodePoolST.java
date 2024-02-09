@@ -4,9 +4,6 @@
  */
 package io.strimzi.systemtest.kafka;
 
-
-import io.strimzi.api.kafka.model.kafka.Kafka;
-import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
 import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.operator.common.Annotations;
@@ -14,6 +11,7 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
+import io.strimzi.systemtest.resources.NodePoolsConverter;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -40,7 +38,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-
 @Tag(REGRESSION)
 public class KafkaNodePoolST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(KafkaNodePoolST.class);
@@ -65,35 +62,46 @@ public class KafkaNodePoolST extends AbstractST {
     @ParallelNamespaceTest
     void testKafkaNodePoolBrokerIdsManagementUsingAnnotations() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
-        final String nodePoolNameA = testStorage.getKafkaNodePoolName() + "-a";
-        final String nodePoolNameB = testStorage.getKafkaNodePoolName() + "-b";
-        final String nodePoolNameInitial = testStorage.getKafkaNodePoolName() + "-initial";
-
-        final Kafka kafka = KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 1, 1).build();
+        final String nodePoolNameA = testStorage.getBrokerPoolName() + "-a";
+        final String nodePoolNameB = testStorage.getBrokerPoolName() + "-b";
+        final String nodePoolNameInitial = testStorage.getBrokerPoolName() + "-initial";
 
         // Deploy Initial NodePool (which will hold initial topics and will never be scaled down) with IDs far from those that will be used in the test
-        final KafkaNodePool poolInitial = KafkaNodePoolTemplates.kafkaBasedNodePoolWithFgBasedRole(nodePoolNameInitial, kafka, 2)
-            .editOrNewMetadata()
-                .withAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_NEXT_NODE_IDS, "[91-93]"))
-            .endMetadata()
-            .build();
-        resourceManager.createResourceWithWait(poolInitial, kafka);
+        resourceManager.createResourceWithWait(
+            NodePoolsConverter.convertNodePoolsIfNeeded(
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3)
+                    .editOrNewMetadata()
+                        .withAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_NEXT_NODE_IDS, "[100-103]"))
+                    .endMetadata()
+                    .build()
+            )
+        );
+        resourceManager.createResourceWithWait(
+            KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), nodePoolNameInitial, testStorage.getClusterName(), 2)
+                .editOrNewMetadata()
+                    .withAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_NEXT_NODE_IDS, "[91-93]"))
+                .endMetadata()
+                .build(),
+            KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 1, 1).build()
+        );
+
         PodUtils.waitUntilPodStabilityReplicasCount(testStorage.getNamespaceName(), KafkaResource.getStrimziPodSetName(testStorage.getClusterName(), nodePoolNameInitial), 2);
 
         LOGGER.info("Testing deployment of NodePools with pre-configured annotation: {} is creating Brokers with correct IDs", Annotations.ANNO_STRIMZI_IO_NODE_POOLS);
 
         // Deploy NodePool A with only 1 replica and next ID 4, and NodePool B with 2 replica and next ID 6
-        final KafkaNodePool poolA = KafkaNodePoolTemplates.kafkaBasedNodePoolWithBrokerRole(nodePoolNameA, kafka, 1)
-            .editOrNewMetadata()
-                .withAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_NEXT_NODE_IDS, "[4]"))
-            .endMetadata()
-            .build();
-        final KafkaNodePool poolB = KafkaNodePoolTemplates.kafkaBasedNodePoolWithBrokerRole(nodePoolNameB, kafka, 2)
-            .editOrNewMetadata()
-                .withAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_NEXT_NODE_IDS, "[6]"))
-            .endMetadata()
-            .build();
-        resourceManager.createResourceWithWait(poolA, poolB);
+        resourceManager.createResourceWithWait( KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), nodePoolNameA, testStorage.getClusterName(), 1)
+                .editOrNewMetadata()
+                    .withAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_NEXT_NODE_IDS, "[4]"))
+                .endMetadata()
+                .build(),
+            KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), nodePoolNameB, testStorage.getClusterName(), 2)
+                .editOrNewMetadata()
+                    .withAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_NEXT_NODE_IDS, "[6]"))
+                .endMetadata()
+                .build()
+        );
+
         PodUtils.waitUntilPodStabilityReplicasCount(testStorage.getNamespaceName(), KafkaResource.getStrimziPodSetName(testStorage.getClusterName(), nodePoolNameA), 1);
         PodUtils.waitUntilPodStabilityReplicasCount(testStorage.getNamespaceName(), KafkaResource.getStrimziPodSetName(testStorage.getClusterName(), nodePoolNameB), 2);
 
@@ -109,9 +117,11 @@ public class KafkaNodePoolST extends AbstractST {
         KafkaNodePoolUtils.setKafkaNodePoolAnnotation(testStorage.getNamespaceName(), nodePoolNameA, Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_NEXT_NODE_IDS,  "[20-21]"));
         // Annotate NodePool B for scale down with more IDs than needed - > this should not matter as ID [55] is not present so only ID [6] is removed
         KafkaNodePoolUtils.setKafkaNodePoolAnnotation(testStorage.getNamespaceName(), nodePoolNameB, Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_REMOVE_NODE_IDS, "[6, 55]"));
+
         // Scale NodePool A up + NodePool B down
         KafkaNodePoolUtils.scaleKafkaNodePool(testStorage.getNamespaceName(), nodePoolNameA, 4);
         KafkaNodePoolUtils.scaleKafkaNodePool(testStorage.getNamespaceName(), nodePoolNameB, 1);
+
         PodUtils.waitUntilPodStabilityReplicasCount(testStorage.getNamespaceName(), KafkaResource.getStrimziPodSetName(testStorage.getClusterName(), nodePoolNameA), 4);
         PodUtils.waitUntilPodStabilityReplicasCount(testStorage.getNamespaceName(), KafkaResource.getStrimziPodSetName(testStorage.getClusterName(), nodePoolNameB), 1);
 
@@ -127,8 +137,10 @@ public class KafkaNodePoolST extends AbstractST {
         KafkaNodePoolUtils.setKafkaNodePoolAnnotation(testStorage.getNamespaceName(), nodePoolNameA, Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_REMOVE_NODE_IDS,  "[20]"));
         // Annotate NodePool B for scale up with ID [1] already in use
         KafkaNodePoolUtils.setKafkaNodePoolAnnotation(testStorage.getNamespaceName(), nodePoolNameB, Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_NEXT_NODE_IDS, "[1]"));
+
         KafkaNodePoolUtils.scaleKafkaNodePool(testStorage.getNamespaceName(), nodePoolNameA, 2);
         KafkaNodePoolUtils.scaleKafkaNodePool(testStorage.getNamespaceName(), nodePoolNameB, 4);
+
         PodUtils.waitUntilPodStabilityReplicasCount(testStorage.getNamespaceName(), KafkaResource.getStrimziPodSetName(testStorage.getClusterName(), nodePoolNameA), 2);
         PodUtils.waitUntilPodStabilityReplicasCount(testStorage.getNamespaceName(), KafkaResource.getStrimziPodSetName(testStorage.getClusterName(), nodePoolNameB), 4);
 
@@ -163,29 +175,37 @@ public class KafkaNodePoolST extends AbstractST {
     void testNodePoolsAdditionAndRemoval() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         // node pools name convention is 'A' for all roles (: if possible i.e. based on feature gate) 'B' for broker roles.
-        final String poolAName = testStorage.getKafkaNodePoolName() + "-a";
-        final String poolB1Name = testStorage.getKafkaNodePoolName() + "-b1";
-        final String poolB2NameAdded = testStorage.getKafkaNodePoolName() + "-b2-added";
+        final String poolAName = testStorage.getBrokerPoolName() + "-a";
+        final String poolB1Name = testStorage.getBrokerPoolName() + "-b1";
+        final String poolB2NameAdded = testStorage.getBrokerPoolName() + "-b2-added";
         final int brokerNodePoolReplicaCount = 2;
 
         LOGGER.info("Deploy 2 KafkaNodePools {}, {}, in {}", poolAName, poolB1Name, testStorage.getNamespaceName());
-        final Kafka kafka = KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 1, 3)
-            .editOrNewSpec()
-                .editKafka()
-                    .addToConfig("auto.create.topics.enable", "false")  // topics replica count helps ensure there are enough brokers
-                    .addToConfig("offsets.topic.replication.factor", "3") // as some brokers (2) will be removed, this topic should have more than '1' default replica
-                .endKafka()
-            .endSpec()
-            .build();
-        final KafkaNodePool poolA = KafkaNodePoolTemplates.kafkaBasedNodePoolWithFgBasedRole(poolAName, kafka, 1).build();
-        final KafkaNodePool poolB1 = KafkaNodePoolTemplates.kafkaBasedNodePoolWithBrokerRole(poolB1Name, kafka, brokerNodePoolReplicaCount).build();
-        resourceManager.createResourceWithWait(poolA, poolB1, kafka);
+        resourceManager.createResourceWithWait(
+            NodePoolsConverter.convertNodePoolsIfNeeded(
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
+            )
+        );
+        resourceManager.createResourceWithWait(
+            KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), poolAName, testStorage.getClusterName(), 1).build(),
+            KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), poolB1Name, testStorage.getClusterName(), brokerNodePoolReplicaCount).build(),
+            KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 1, 3)
+                .editOrNewSpec()
+                    .editKafka()
+                        .addToConfig("auto.create.topics.enable", "false")  // topics replica count helps ensure there are enough brokers
+                        .addToConfig("offsets.topic.replication.factor", "3") // as some brokers (2) will be removed, this topic should have more than '1' default replica
+                    .endKafka()
+                .endSpec()
+                .build()
+        );
 
         transmitMessagesWithNewTopicAndClean(testStorage, 3);
 
         LOGGER.info("Add additional KafkaNodePool:  {}/{}", testStorage.getNamespaceName(), poolB2NameAdded);
-        final KafkaNodePool poolB2Added = KafkaNodePoolTemplates.kafkaBasedNodePoolWithBrokerRole(poolB2NameAdded, kafka, brokerNodePoolReplicaCount).build();
-        resourceManager.createResourceWithWait(poolB2Added);
+        resourceManager.createResourceWithWait(
+            KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), poolB2NameAdded, testStorage.getClusterName(), brokerNodePoolReplicaCount).build()
+        );
+
         KafkaNodePoolUtils.waitForKafkaNodePoolPodsReady(testStorage, poolB2NameAdded, ProcessRoles.BROKER, brokerNodePoolReplicaCount);
 
         // replica count of this KafkaTopic will require that new brokers were correctly added into Kafka Cluster
@@ -208,6 +228,7 @@ public class KafkaNodePoolST extends AbstractST {
         KafkaClients kafkaClients = ClientUtils.getDefaultClientBuilder(testStorage)
             .withTopicName(topicName)
             .build();
+
         resourceManager.createResourceWithWait(
             kafkaClients.producerStrimzi(),
             kafkaClients.consumerStrimzi()

@@ -19,9 +19,13 @@ import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaOauthClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaOauthClientsBuilder;
 import io.strimzi.systemtest.keycloak.KeycloakInstance;
+import io.strimzi.systemtest.resources.NodePoolsConverter;
+import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.resources.crd.StrimziPodSetResource;
 import io.strimzi.systemtest.storage.TestStorage;
+import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
@@ -340,7 +344,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
         String teamBConsumerName = TEAM_B_CONSUMER_NAME + "-" + testStorage.getClusterName();
         // only write means that Team A can not create new topic 'x-.*'
         String topicXName = TOPIC_X + testStorage.getTopicName();
-        LabelSelector kafkaSelector = KafkaResource.getLabelSelector(oauthClusterName, KafkaResources.kafkaComponentName(oauthClusterName));
+        LabelSelector brokerSelector = KafkaResource.getLabelSelector(oauthClusterName, StrimziPodSetResource.getBrokerComponentName(oauthClusterName));
 
         resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(oauthClusterName, topicXName, Environment.TEST_SUITE_NAMESPACE).build());
 
@@ -388,7 +392,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
         JobUtils.waitForJobFailure(teamAConsumerName, Environment.TEST_SUITE_NAMESPACE, 30_000);
         JobUtils.deleteJobWithWait(Environment.TEST_SUITE_NAMESPACE, teamAConsumerName);
 
-        Map<String, String> kafkaPods = PodUtils.podSnapshot(Environment.TEST_SUITE_NAMESPACE, kafkaSelector);
+        Map<String, String> brokerPods = PodUtils.podSnapshot(Environment.TEST_SUITE_NAMESPACE, brokerSelector);
 
         KafkaResource.replaceKafkaResourceInSpecificNamespace(oauthClusterName, kafka -> {
 
@@ -399,7 +403,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
             ((KafkaAuthorizationKeycloak) kafka.getSpec().getKafka().getAuthorization()).setSuperUsers(superUsers);
         }, Environment.TEST_SUITE_NAMESPACE);
 
-        RollingUpdateUtils.waitTillComponentHasRolled(Environment.TEST_SUITE_NAMESPACE, kafkaSelector, 1, kafkaPods);
+        RollingUpdateUtils.waitTillComponentHasRolled(Environment.TEST_SUITE_NAMESPACE, brokerSelector, 1, brokerPods);
 
         LOGGER.info("Verifying that team B is able to write to Topic starting with 'x-' and break authorization rule");
 
@@ -597,6 +601,12 @@ public class OauthAuthorizationST extends OauthAbstractST {
             resourceManager.createResourceWithWait(SecretUtils.createCopyOfSecret(Environment.TEST_SUITE_NAMESPACE, testStorage.getNamespaceName(), TEAM_B_CLIENT_SECRET).build());
         }
 
+        resourceManager.createResourceWithWait(
+            NodePoolsConverter.convertNodePoolsIfNeeded(
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 1).build(),
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 1).build()
+            )
+        );
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 1, 1)
             .editMetadata()
                 .withNamespace(testStorage.getNamespaceName())
@@ -659,6 +669,12 @@ public class OauthAuthorizationST extends OauthAbstractST {
 
         keycloakInstance.setRealm(TEST_REALM, true);
 
+        resourceManager.createResourceWithWait(
+            NodePoolsConverter.convertNodePoolsIfNeeded(
+                KafkaNodePoolTemplates.brokerPool(Environment.TEST_SUITE_NAMESPACE, KafkaNodePoolResource.getBrokerPoolName(oauthClusterName), oauthClusterName, 1).build(),
+                KafkaNodePoolTemplates.controllerPool(Environment.TEST_SUITE_NAMESPACE, KafkaNodePoolResource.getControllerPoolName(oauthClusterName), oauthClusterName, 1).build()
+            )
+        );
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(oauthClusterName, 1, 1)
             .editMetadata()
                 .withNamespace(Environment.TEST_SUITE_NAMESPACE)

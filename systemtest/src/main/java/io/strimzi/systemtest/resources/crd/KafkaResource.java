@@ -28,10 +28,10 @@ import org.junit.platform.commons.util.Preconditions;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
-import static io.strimzi.operator.common.Util.hashStub;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 
 public class KafkaResource implements ResourceType<Kafka> {
@@ -131,50 +131,61 @@ public class KafkaResource implements ResourceType<Kafka> {
     }
 
     public static LabelSelector getLabelSelector(String clusterName, String componentName) {
-        Map<String, String> matchLabels = new HashMap<>();
-        matchLabels.put(Labels.STRIMZI_CLUSTER_LABEL, clusterName);
-        matchLabels.put(Labels.STRIMZI_KIND_LABEL, Kafka.RESOURCE_KIND);
-        matchLabels.put(Labels.STRIMZI_NAME_LABEL, componentName);
+        Map<String, String> matchLabels = getCommonKafkaMatchLabels(clusterName);
+
+        if (Environment.isKafkaNodePoolsEnabled() && !componentName.contains("zookeeper")) {
+            matchLabels.put(Labels.STRIMZI_CONTROLLER_NAME_LABEL, componentName);
+        } else {
+            matchLabels.put(Labels.STRIMZI_NAME_LABEL, componentName);
+        }
 
         return new LabelSelectorBuilder()
             .withMatchLabels(matchLabels)
             .build();
     }
 
-    public static String getKafkaNodePoolName(String clusterName) {
-        return TestConstants.KAFKA_NODE_POOL_PREFIX + hashStub(clusterName);
+    public static LabelSelector getLabelSelectorForAllKafkaPods(String clusterName) {
+        Map<String, String> matchLabels = getCommonKafkaMatchLabels(clusterName);
+
+        matchLabels.put(Labels.STRIMZI_NAME_LABEL, KafkaResources.kafkaComponentName(clusterName));
+
+        return new LabelSelectorBuilder()
+            .withMatchLabels(matchLabels)
+            .build();
     }
 
-    public static String getStrimziPodSetName(String clusterName) {
-        return getStrimziPodSetName(clusterName, null);
+    private static Map<String, String> getCommonKafkaMatchLabels(String clusterName) {
+        Map<String, String> labels = new HashMap<>();
+
+        labels.put(Labels.STRIMZI_CLUSTER_LABEL, clusterName);
+        labels.put(Labels.STRIMZI_KIND_LABEL, Kafka.RESOURCE_KIND);
+
+        return labels;
     }
 
     public static String getStrimziPodSetName(String clusterName, String nodePoolName) {
         if (Environment.isKafkaNodePoolsEnabled() && nodePoolName == null) {
-            return String.join("-", clusterName, getKafkaNodePoolName(clusterName));
-        } else if (nodePoolName != null) {
+            return String.join("-", clusterName, KafkaNodePoolResource.getBrokerPoolName(clusterName));
+        } else if (Environment.isKafkaNodePoolsEnabled()) {
             return String.join("-", clusterName, nodePoolName);
         } else {
             return KafkaResources.kafkaComponentName(clusterName);
         }
     }
 
-    public static String getKafkaPodName(String clusterName, int podNum) {
-        return getKafkaPodName(clusterName, null, podNum);
-    }
-
     public static String getKafkaPodName(String clusterName, String nodePoolName, int podNum) {
         if (Environment.isKafkaNodePoolsEnabled()) {
-            if (nodePoolName == null) {
-                return String.join("-", clusterName, getKafkaNodePoolName(clusterName), String.valueOf(podNum));
-            }
-            return String.join("-", clusterName, nodePoolName, String.valueOf(podNum));
+            return String.join("-",
+                clusterName,
+                Objects.requireNonNullElseGet(nodePoolName, () -> KafkaNodePoolResource.getBrokerPoolName(clusterName)),
+                String.valueOf(podNum)
+            );
         }
 
         return KafkaResources.kafkaPodName(clusterName, podNum);
     }
 
-    public static String getNodePoolName(String clusterName) {
-        return TestConstants.KAFKA_NODE_POOL_PREFIX + hashStub(clusterName);
+    public static int getPodNumFromPodName(String componentName, String podName) {
+        return Integer.parseInt(podName.replace(componentName + "-", ""));
     }
 }

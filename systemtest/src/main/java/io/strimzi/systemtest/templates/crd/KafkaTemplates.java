@@ -264,16 +264,22 @@ public class KafkaTemplates {
             .endSpec();
 
         if (!Environment.isSharedMemory()) {
+            // in case that we are using NodePools, the resource limits and requirements are specified in KafkaNodePool resources
+            if (!Environment.isKafkaNodePoolsEnabled()) {
+                kb.editSpec()
+                        .editKafka()
+                            // we use such values, because on environments where it is limited to 7Gi, we are unable to deploy
+                            // Cluster Operator, two Kafka clusters and MirrorMaker/2. Such situation may result in an OOM problem.
+                            // For Kafka using 784Mi is too much and on the other hand 256Mi is causing OOM problem at the start.
+                            .withResources(new ResourceRequirementsBuilder()
+                                .addToLimits("memory", new Quantity("512Mi"))
+                                .addToRequests("memory", new Quantity("512Mi"))
+                                .build())
+                        .endKafka()
+                    .endSpec();
+            }
+
             kb.editSpec()
-                .editKafka()
-                    // we use such values, because on environments where it is limited to 7Gi, we are unable to deploy
-                    // Cluster Operator, two Kafka clusters and MirrorMaker/2. Such situation may result in an OOM problem.
-                    // For Kafka using 784Mi is too much and on the other hand 256Mi is causing OOM problem at the start.
-                    .withResources(new ResourceRequirementsBuilder()
-                        .addToLimits("memory", new Quantity("512Mi"))
-                        .addToRequests("memory", new Quantity("512Mi"))
-                        .build())
-                .endKafka()
                 .editZookeeper()
                     // For ZooKeeper using 512Mi is too much and on the other hand 128Mi is causing OOM problem at the start.
                     .withResources(new ResourceRequirementsBuilder()

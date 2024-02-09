@@ -17,10 +17,14 @@ import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
+import io.strimzi.systemtest.resources.NodePoolsConverter;
+import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.resources.crd.StrimziPodSetResource;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
@@ -128,7 +132,7 @@ public class OauthScopeST extends OauthAbstractST {
 
         // Kafka connect passed the validation process (implicit the KafkaConnect is up)
         // explicitly verifying also logs
-        String kafkaConnectPodName = kubeClient().listPodsByPrefixInName(Environment.TEST_SUITE_NAMESPACE, KafkaResource.getKafkaPodName(oauthClusterName, 0)).get(0).getMetadata().getName();
+        String kafkaConnectPodName = kubeClient().listPodsByPrefixInName(Environment.TEST_SUITE_NAMESPACE, StrimziPodSetResource.getBrokerComponentName(oauthClusterName)).get(0).getMetadata().getName();
 
         String kafkaLog = kubeClient().logsInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, kafkaConnectPodName);
         assertThat(kafkaLog, CoreMatchers.containsString("Access token expires at"));
@@ -170,7 +174,7 @@ public class OauthScopeST extends OauthAbstractST {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final String producerName = OAUTH_PRODUCER_NAME + "-" + testStorage.getClusterName();
         final String consumerName = OAUTH_CONSUMER_NAME + "-" + testStorage.getClusterName();
-        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(oauthClusterName, KafkaResources.kafkaComponentName(oauthClusterName));
+        final LabelSelector brokerSelector = KafkaResource.getLabelSelector(oauthClusterName, StrimziPodSetResource.getBrokerComponentName(oauthClusterName));
 
         KafkaClients oauthInternalClientChecksJob = new KafkaClientsBuilder()
             .withNamespaceName(Environment.TEST_SUITE_NAMESPACE)
@@ -183,7 +187,7 @@ public class OauthScopeST extends OauthAbstractST {
             .withAdditionalConfig(additionalOauthConfig)
             .build();
 
-        Map<String, String> kafkaPods = PodUtils.podSnapshot(Environment.TEST_SUITE_NAMESPACE, kafkaSelector);
+        Map<String, String> brokerPods = PodUtils.podSnapshot(Environment.TEST_SUITE_NAMESPACE, brokerSelector);
 
         // re-configuring Kafka listener to have client scope assigned to null
         KafkaResource.replaceKafkaResourceInSpecificNamespace(oauthClusterName, kafka -> {
@@ -196,7 +200,7 @@ public class OauthScopeST extends OauthAbstractST {
             kafka.getSpec().getKafka().getListeners().set(0, scopeListeners.get(0));
         }, Environment.TEST_SUITE_NAMESPACE);
 
-        kafkaPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(Environment.TEST_SUITE_NAMESPACE, kafkaSelector, 3, kafkaPods);
+        brokerPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(Environment.TEST_SUITE_NAMESPACE, brokerSelector, 3, brokerPods);
 
         // verification phase client should fail here because clientScope is set to 'null'
         resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(oauthClusterName, testStorage.getTopicName(), Environment.TEST_SUITE_NAMESPACE).build());
@@ -220,7 +224,7 @@ public class OauthScopeST extends OauthAbstractST {
             kafka.getSpec().getKafka().getListeners().set(0, scopeListeners.get(0));
         }, Environment.TEST_SUITE_NAMESPACE);
 
-        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(Environment.TEST_SUITE_NAMESPACE, kafkaSelector, 3, kafkaPods);
+        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(Environment.TEST_SUITE_NAMESPACE, brokerSelector, 3, brokerPods);
     }
 
     @BeforeAll
@@ -229,6 +233,12 @@ public class OauthScopeST extends OauthAbstractST {
 
         keycloakInstance.setRealm("scope-test", false);
 
+        resourceManager.createResourceWithWait(
+            NodePoolsConverter.convertNodePoolsIfNeeded(
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(Environment.TEST_SUITE_NAMESPACE, KafkaNodePoolResource.getBrokerPoolName(oauthClusterName), oauthClusterName, 3).build(),
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(Environment.TEST_SUITE_NAMESPACE, KafkaNodePoolResource.getControllerPoolName(oauthClusterName), oauthClusterName, 3).build()
+            )
+        );
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(oauthClusterName, 3)
             .editMetadata()
                 .withNamespace(Environment.TEST_SUITE_NAMESPACE)

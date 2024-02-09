@@ -66,8 +66,8 @@ public class AbstractKRaftUpgradeST extends AbstractUpgradeST {
             // Deploy a Kafka cluster
             if (upgradeData.getFromExamples().equals("HEAD")) {
                 resourceManager.createResourceWithWait(
-                    KafkaNodePoolTemplates.kafkaNodePoolWithControllerRoleAndPersistentStorage(TestConstants.CO_NAMESPACE, CONTROLLER_NODE_NAME, clusterName, 3).build(),
-                    KafkaNodePoolTemplates.kafkaNodePoolWithBrokerRoleAndPersistentStorage(TestConstants.CO_NAMESPACE, BROKER_NODE_NAME, clusterName, 3).build(),
+                    KafkaNodePoolTemplates.controllerPoolPersistentStorage(TestConstants.CO_NAMESPACE, CONTROLLER_NODE_NAME, clusterName, 3).build(),
+                    KafkaNodePoolTemplates.brokerPoolPersistentStorage(TestConstants.CO_NAMESPACE, BROKER_NODE_NAME, clusterName, 3).build(),
                     KafkaTemplates.kafkaPersistentKRaft(clusterName, 3)
                         .editMetadata()
                             .addToAnnotations(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled")

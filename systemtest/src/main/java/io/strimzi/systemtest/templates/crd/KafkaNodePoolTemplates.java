@@ -4,13 +4,14 @@
  */
 package io.strimzi.systemtest.templates.crd;
 
-import io.strimzi.api.kafka.model.kafka.Kafka;
+import io.fabric8.kubernetes.api.model.Quantity;
+import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
+import io.strimzi.api.kafka.model.kafka.EphemeralStorage;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolBuilder;
 import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Environment;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -18,8 +19,8 @@ public class KafkaNodePoolTemplates {
 
     private KafkaNodePoolTemplates() {}
 
-    public static KafkaNodePoolBuilder defaultKafkaNodePool(String namespaceName, String nodePoolName, String kafkaClusterName, int kafkaReplicas) {
-        return new KafkaNodePoolBuilder()
+    public static KafkaNodePoolBuilder defaultKafkaNodePool(String namespaceName, String nodePoolName, String kafkaClusterName, int kafkaReplicas, List<ProcessRoles> processRoles) {
+        KafkaNodePoolBuilder kafkaNodePoolBuilder = new KafkaNodePoolBuilder()
             .withNewMetadata()
                 .withNamespace(namespaceName)
                 .withName(nodePoolName)
@@ -27,122 +28,76 @@ public class KafkaNodePoolTemplates {
             .endMetadata()
             .withNewSpec()
                 .withReplicas(kafkaReplicas)
+                .withStorage(new EphemeralStorage())
+                .withRoles(processRoles)
             .endSpec();
-    }
 
-    public static KafkaNodePoolBuilder kafkaNodePoolWithControllerRole(String namespaceName, String nodePoolName, String kafkaClusterName, int kafkaReplicas) {
-        return defaultKafkaNodePool(namespaceName, nodePoolName, kafkaClusterName, kafkaReplicas)
-            .editOrNewSpec()
-                .addToRoles(ProcessRoles.CONTROLLER)
-            .endSpec();
-    }
-
-    public static KafkaNodePoolBuilder kafkaNodePoolWithControllerRoleAndPersistentStorage(String namespaceName, String nodePoolName, String kafkaClusterName, int kafkaReplicas) {
-        return kafkaNodePoolWithControllerRole(namespaceName, nodePoolName, kafkaClusterName, kafkaReplicas)
-            .editOrNewSpec()
-                .withNewPersistentClaimStorage()
-                    .withSize("1Gi")
-                    .withDeleteClaim(true)
-                .endPersistentClaimStorage()
-            .endSpec();
-    }
-
-    public static KafkaNodePoolBuilder kafkaNodePoolWithBrokerRole(String namespaceName, String nodePoolName, String kafkaClusterName, int kafkaReplicas) {
-        return defaultKafkaNodePool(namespaceName, nodePoolName, kafkaClusterName, kafkaReplicas)
-            .editOrNewSpec()
-                .addToRoles(ProcessRoles.BROKER)
-            .endSpec();
-    }
-
-    public static KafkaNodePoolBuilder kafkaNodePoolWithBrokerRoleAndPersistentStorage(String namespaceName, String nodePoolName, String kafkaClusterName, int kafkaReplicas) {
-        return kafkaNodePoolWithBrokerRole(namespaceName, nodePoolName, kafkaClusterName, kafkaReplicas)
-            .editOrNewSpec()
-                .withNewPersistentClaimStorage()
-                    .withSize("1Gi")
-                    .withDeleteClaim(true)
-                .endPersistentClaimStorage()
-            .endSpec();
-    }
-
-    /**
-     * Creates a KafkaNodePoolBuilder for a Kafka instance (mirroring its mandatory specification) with roles based
-     * on the environment setting (TestConstants.USE_KRAFT_MODE) having BROKER role in Zookeeper and Kraft mode alike
-     * adding CONTROLLER role as well if Kraft is enabled.
-     *
-     * @param nodePoolName The name of the node pool.
-     * @param kafka The Kafka instance (Model of Kafka).
-     * @param kafkaNodePoolReplicas The number of kafka broker replicas for the given node pool.
-     * @return KafkaNodePoolBuilder configured with the appropriate (environment variable based) roles based on.
-     */
-    public static KafkaNodePoolBuilder kafkaBasedNodePoolWithFgBasedRole(String nodePoolName, Kafka kafka, int kafkaNodePoolReplicas) {
-        List<ProcessRoles> roles = new ArrayList<>();
-        roles.add(ProcessRoles.BROKER);
-
-        if (Environment.isKRaftModeEnabled()) {
-            roles.add(ProcessRoles.CONTROLLER);
+        if (!Environment.isSharedMemory()) {
+            if (processRoles.size() == 1 && processRoles.get(0).equals(ProcessRoles.CONTROLLER)) {
+                kafkaNodePoolBuilder
+                    .editSpec()
+                        // For controllers using 512Mi is too much and on the other hand 128Mi is causing OOM problem at the start.
+                        .withResources(new ResourceRequirementsBuilder()
+                            .addToLimits("memory", new Quantity("256Mi"))
+                            .addToRequests("memory", new Quantity("256Mi"))
+                            .build())
+                    .endSpec();
+            } else {
+                kafkaNodePoolBuilder
+                    .editSpec()
+                        // we use such values, because on environments where it is limited to 7Gi, we are unable to deploy
+                        // Cluster Operator, two Kafka clusters and MirrorMaker/2. Such situation may result in an OOM problem.
+                        // For Kafka using 784Mi is too much and on the other hand 256Mi is causing OOM problem at the start.
+                        .withResources(new ResourceRequirementsBuilder()
+                            .addToLimits("memory", new Quantity("512Mi"))
+                            .addToRequests("memory", new Quantity("512Mi"))
+                            .build())
+                    .endSpec();
+            }
         }
-        return kafkaBasedNodePoolWithRole(nodePoolName, kafka, roles, kafkaNodePoolReplicas);
+
+        return kafkaNodePoolBuilder;
     }
 
-    /**
-     * Creates a KafkaNodePoolBuilder for a Kafka instance (mirroring its mandatory specification) with only the BROKER role.
-     *
-     * @param nodePoolName The name of the node pool.
-     * @param kafka The Kafka instance (Model of Kafka).
-     * @param kafkaNodePoolReplicas The number of kafka broker replicas for the given node pool.
-     * @return KafkaNodePoolBuilder configured with the BROKER role.
-     */
-    public static KafkaNodePoolBuilder kafkaBasedNodePoolWithBrokerRole(String nodePoolName, Kafka kafka, int kafkaNodePoolReplicas) {
-        return kafkaBasedNodePoolWithRole(nodePoolName, kafka, List.of(ProcessRoles.BROKER), kafkaNodePoolReplicas);
+    public static KafkaNodePoolBuilder controllerPool(String namespaceName, String nodePoolName, String kafkaClusterName, int kafkaReplicas) {
+        return defaultKafkaNodePool(namespaceName, nodePoolName, kafkaClusterName, kafkaReplicas, List.of(ProcessRoles.CONTROLLER));
     }
 
-    /**
-     * Creates a KafkaNodePoolBuilder for a Kafka instance (mirroring its mandatory specification) with only the CONTROLLER role.
-     *
-     * @param nodePoolName The name of the node pool.
-     * @param kafka The Kafka instance (Model of Kafka).
-     * @param kafkaNodePoolReplicas The number of kafka broker replicas for the given node pool.
-     * @return KafkaNodePoolBuilder configured with the CONTROLLER role.
-     */
-    public static KafkaNodePoolBuilder kafkaBasedNodePoolWithControllerRole(String nodePoolName, Kafka kafka, int kafkaNodePoolReplicas) {
-        return kafkaBasedNodePoolWithRole(nodePoolName, kafka, List.of(ProcessRoles.CONTROLLER), kafkaNodePoolReplicas);
+    public static KafkaNodePoolBuilder controllerPoolPersistentStorage(String namespaceName, String nodePoolName, String kafkaClusterName, int kafkaReplicas) {
+        return controllerPool(namespaceName, nodePoolName, kafkaClusterName, kafkaReplicas)
+            .editOrNewSpec()
+                .withNewPersistentClaimStorage()
+                    .withSize("1Gi")
+                    .withDeleteClaim(true)
+                .endPersistentClaimStorage()
+            .endSpec();
     }
 
-    /**
-     * Creates a KafkaNodePoolBuilder for a Kafka instance (mirroring its mandatory specification) with both BROKER and CONTROLLER roles.
-     *
-     * @param nodePoolName The name of the node pool.
-     * @param kafka The Kafka instance (Model of Kafka).
-     * @param kafkaNodePoolReplicas The number of kafka broker replicas for the given node pool.
-     * @return KafkaNodePoolBuilder configured with both BROKER and CONTROLLER roles.
-     */
-    public static KafkaNodePoolBuilder kafkaBasedNodePoolWithDualRole(String nodePoolName, Kafka kafka, int kafkaNodePoolReplicas) {
-        return kafkaBasedNodePoolWithRole(nodePoolName, kafka, List.of(ProcessRoles.BROKER, ProcessRoles.CONTROLLER), kafkaNodePoolReplicas);
+    public static KafkaNodePoolBuilder brokerPool(String namespaceName, String nodePoolName, String kafkaClusterName, int kafkaReplicas) {
+        return defaultKafkaNodePool(namespaceName, nodePoolName, kafkaClusterName, kafkaReplicas, List.of(ProcessRoles.BROKER));
     }
 
-    /**
-     * Private helper method to create a KafkaNodePoolBuilder with specified roles, besides that completely mirroring all
-     * necessary (mandatory) specification from Kafka Custom Resource.
-     *
-     * @param nodePoolName The name of the node pool.
-     * @param kafka The Kafka instance (Model of Kafka).
-     * @param roles The roles to be assigned to the node pool.
-     * @param kafkaNodePoolReplicas The number of kafka broker replicas for the given node pool.
-     * @return KafkaNodePoolBuilder configured with the given roles and specifications.
-     */
-    private static KafkaNodePoolBuilder kafkaBasedNodePoolWithRole(String nodePoolName, Kafka kafka, List<ProcessRoles> roles, int kafkaNodePoolReplicas) {
-        return new KafkaNodePoolBuilder()
-            .withNewMetadata()
-                .withName(nodePoolName)
-                .withNamespace(kafka.getMetadata().getNamespace())
-                .withLabels(Map.of(Labels.STRIMZI_CLUSTER_LABEL, kafka.getMetadata().getName()))
-            .endMetadata()
-            .withNewSpec()
-                .withRoles(roles)
-                .withReplicas(kafkaNodePoolReplicas)
-                .withStorage(kafka.getSpec().getKafka().getStorage())
-                .withJvmOptions(kafka.getSpec().getKafka().getJvmOptions())
-                .withResources(kafka.getSpec().getKafka().getResources())
+    public static KafkaNodePoolBuilder brokerPoolPersistentStorage(String namespaceName, String nodePoolName, String kafkaClusterName, int kafkaReplicas) {
+        return brokerPool(namespaceName, nodePoolName, kafkaClusterName, kafkaReplicas)
+            .editOrNewSpec()
+                .withNewPersistentClaimStorage()
+                    .withSize("1Gi")
+                    .withDeleteClaim(true)
+                .endPersistentClaimStorage()
+            .endSpec();
+    }
+
+    public static KafkaNodePoolBuilder mixedPool(String namespaceName, String nodePoolName, String kafkaClusterName, int kafkaReplicas) {
+        return defaultKafkaNodePool(namespaceName, nodePoolName, kafkaClusterName, kafkaReplicas, List.of(ProcessRoles.BROKER, ProcessRoles.CONTROLLER));
+    }
+
+    public static KafkaNodePoolBuilder mixedPoolPersistentStorage(String namespaceName, String nodePoolName, String kafkaClusterName, int kafkaReplicas) {
+        return mixedPool(namespaceName, nodePoolName, kafkaClusterName, kafkaReplicas)
+            .editOrNewSpec()
+                .withNewPersistentClaimStorage()
+                    .withSize("1Gi")
+                    .withDeleteClaim(true)
+                .endPersistentClaimStorage()
             .endSpec();
     }
 }

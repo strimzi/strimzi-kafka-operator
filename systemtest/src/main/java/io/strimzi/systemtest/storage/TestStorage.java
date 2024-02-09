@@ -8,12 +8,15 @@ import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Resources;
+import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaTracingClients;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
+import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.resources.crd.StrimziPodSetResource;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
@@ -42,9 +45,15 @@ final public class TestStorage {
     private String testName;
     private String namespaceName;
     private String clusterName;
-    private String kafkaNodePoolName;
+    private String brokerPoolName;
+    private String controllerPoolName;
+    private String mixedPoolName;
     private String sourceClusterName;
+    private String sourceBrokerPoolName;
+    private String sourceControllerPoolName;
     private String targetClusterName;
+    private String targetBrokerPoolName;
+    private String targetControllerPoolName;
     private String topicName;
     private String targetTopicName;
     private String mirroredSourceTopicName;
@@ -58,10 +67,15 @@ final public class TestStorage {
     private String targetUsername;
     private String kafkaUsername;
     private String eoDeploymentName;
-    private String kafkaStatefulSetName;
-    private String zkStatefulSetName;
-    private LabelSelector kafkaSelector;
-    private LabelSelector zkSelector;
+    private String brokerComponentName;
+    private String controllerComponentName;
+    private String mixedComponentName;
+    private LabelSelector brokerSelector;
+    private LabelSelector brokerPoolSelector;
+    private LabelSelector controllerPoolSelector;
+    private LabelSelector mixedPoolSelector;
+    private LabelSelector controllerSelector;
+    private LabelSelector mixedSelector;
     private LabelSelector kafkaConnectSelector;
     private LabelSelector mm2Selector;
     private int messageCount;
@@ -82,9 +96,15 @@ final public class TestStorage {
         this.testName = extensionContext.getTestMethod().isPresent() ? extensionContext.getTestMethod().get().getName() : "null-testname";
         this.namespaceName = StUtils.isParallelNamespaceTest(extensionContext) ? StUtils.getNamespaceBasedOnRbac(namespaceName, extensionContext) : namespaceName;
         this.clusterName = CLUSTER_NAME_PREFIX + hashStub(String.valueOf(RANDOM.nextInt(Integer.MAX_VALUE)));
-        this.kafkaNodePoolName = TestConstants.KAFKA_NODE_POOL_PREFIX + hashStub(clusterName);
+        this.brokerPoolName = TestConstants.BROKER_ROLE_PREFIX + hashStub(clusterName);
+        this.controllerPoolName = TestConstants.CONTROLLER_ROLE_PREFIX + hashStub(clusterName);
+        this.mixedPoolName = TestConstants.MIXED_ROLE_PREFIX + hashStub(clusterName);
         this.sourceClusterName = clusterName + "-source";
+        this.sourceBrokerPoolName = TestConstants.BROKER_ROLE_PREFIX + hashStub(sourceClusterName);
+        this.sourceControllerPoolName = TestConstants.CONTROLLER_ROLE_PREFIX + hashStub(sourceClusterName);
         this.targetClusterName = clusterName + "-target";
+        this.targetBrokerPoolName = TestConstants.BROKER_ROLE_PREFIX + hashStub(targetClusterName);
+        this.targetControllerPoolName = TestConstants.CONTROLLER_ROLE_PREFIX + hashStub(targetClusterName);
         this.topicName = KafkaTopicUtils.generateRandomNameOfTopic();
         this.targetTopicName = topicName + "-target";
         this.mirroredSourceTopicName = sourceClusterName + "." + topicName;
@@ -98,11 +118,15 @@ final public class TestStorage {
         this.targetUsername = username + "-target";
         this.kafkaUsername = KafkaUserUtils.generateRandomNameOfKafkaUser();
         this.eoDeploymentName = KafkaResources.entityOperatorDeploymentName(clusterName);
-        this.kafkaStatefulSetName = Environment.isKafkaNodePoolsEnabled() ?
-            this.clusterName + "-" + this.kafkaNodePoolName : KafkaResources.kafkaComponentName(clusterName);
-        this.zkStatefulSetName = KafkaResources.zookeeperComponentName(clusterName);
-        this.kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaComponentName(clusterName));
-        this.zkSelector = KafkaResource.getLabelSelector(clusterName, this.zkStatefulSetName);
+        this.brokerComponentName = StrimziPodSetResource.getBrokerComponentName(clusterName);
+        this.controllerComponentName = StrimziPodSetResource.getControllerComponentName(clusterName);
+        this.mixedComponentName = KafkaResource.getStrimziPodSetName(clusterName, KafkaNodePoolResource.getMixedPoolName(clusterName));
+        this.brokerSelector = KafkaResource.getLabelSelector(clusterName, brokerComponentName);
+        this.brokerPoolSelector = KafkaNodePoolResource.getLabelSelector(clusterName, this.brokerPoolName, ProcessRoles.BROKER);
+        this.controllerPoolSelector = KafkaNodePoolResource.getLabelSelector(clusterName, this.controllerPoolName, ProcessRoles.CONTROLLER);
+        this.mixedPoolSelector = KafkaNodePoolResource.getLabelSelector(clusterName, this.mixedPoolName, ProcessRoles.CONTROLLER);
+        this.controllerSelector = KafkaResource.getLabelSelector(clusterName, controllerComponentName);
+        this.mixedSelector = KafkaResource.getLabelSelector(clusterName, mixedComponentName);
         this.kafkaConnectSelector = KafkaConnectResource.getLabelSelector(clusterName, KafkaConnectResources.componentName(clusterName));
         this.mm2Selector = KafkaMirrorMaker2Resource.getLabelSelector(clusterName, KafkaMirrorMaker2Resources.componentName(clusterName));
         this.messageCount = messageCount;
@@ -111,9 +135,15 @@ final public class TestStorage {
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.TEST_NAME_KEY, this.testName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.NAMESPACE_KEY, this.namespaceName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.CLUSTER_KEY, this.clusterName);
-        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.KAFKA_NODE_POOL_KEY, this.kafkaNodePoolName);
+        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.BROKER_POOL_KEY, this.brokerPoolName);
+        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.CONTROLLER_POOL_KEY, this.controllerPoolName);
+        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.MIXED_POOL_KEY, this.mixedPoolName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.SOURCE_CLUSTER_KEY, this.sourceClusterName);
+        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.SOURCE_BROKER_POOL_KEY, this.sourceBrokerPoolName);
+        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.SOURCE_CONTROLLER_POOL_KEY, this.sourceControllerPoolName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.TARGET_CLUSTER_KEY, this.targetClusterName);
+        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.TARGET_BROKER_POOL_KEY, this.targetBrokerPoolName);
+        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.TARGET_CONTROLLER_POOL_KEY, this.targetControllerPoolName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.TOPIC_KEY, this.topicName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.TARGET_TOPIC_KEY, this.targetTopicName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.MIRRORED_SOURCE_TOPIC_KEY, this.mirroredSourceTopicName);
@@ -127,10 +157,15 @@ final public class TestStorage {
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.TARGET_USER_NAME_KEY, this.targetUsername);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.KAFKA_USER_NAME_KEY, this.kafkaUsername);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.ENTITY_OPERATOR_NAME_KEY, this.eoDeploymentName);
-        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.KAFKA_STATEFULSET_NAME_KEY, this.kafkaStatefulSetName);
-        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.ZOOKEEPER_STATEFULSET_NAME_KEY, this.zkStatefulSetName);
-        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.KAFKA_SELECTOR_KEY, this.kafkaSelector);
-        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.ZOOKEEPER_SELECTOR_KEY, this.zkSelector);
+        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.BROKER_COMPONENT_NAME_KEY, this.brokerComponentName);
+        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.CONTROLLER_COMPONENT_NAME_KEY, this.controllerComponentName);
+        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.MIXED_COMPONENT_NAME_KEY, this.mixedComponentName);
+        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.BROKER_SELECTOR_KEY, this.brokerSelector);
+        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.BROKER_POOL_SELECTOR_KEY, this.brokerPoolSelector);
+        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.CONTROLLER_POOL_SELECTOR_KEY, this.controllerPoolSelector);
+        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.MIXED_POOL_SELECTOR_KEY, this.mixedPoolSelector);
+        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.CONTROLLER_SELECTOR_KEY, this.controllerSelector);
+        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.MIXED_SELECTOR_KEY, this.mixedSelector);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.KAFKA_CONNECT_SELECTOR_KEY, this.kafkaConnectSelector);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.MM2_SELECTOR_KEY, this.mm2Selector);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.MESSAGE_COUNT_KEY, this.messageCount);
@@ -161,16 +196,41 @@ final public class TestStorage {
         return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.CLUSTER_KEY).toString();
     }
 
-    public String getKafkaNodePoolName() {
-        return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.KAFKA_NODE_POOL_KEY).toString();
+    public String getBrokerPoolName() {
+        return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.BROKER_POOL_KEY).toString();
+    }
+
+    public String getControllerPoolName() {
+        return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.CONTROLLER_POOL_KEY).toString();
+    }
+
+
+    public String getMixedPoolName() {
+        return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.MIXED_POOL_KEY).toString();
     }
 
     public String getSourceClusterName() {
         return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.SOURCE_CLUSTER_KEY).toString();
     }
 
+    public String getSourceBrokerPoolName() {
+        return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.SOURCE_BROKER_POOL_KEY).toString();
+    }
+
+    public String getSourceControllerPoolName() {
+        return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.SOURCE_CONTROLLER_POOL_KEY).toString();
+    }
+
     public String getTargetClusterName() {
         return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.TARGET_CLUSTER_KEY).toString();
+    }
+
+    public String getTargetBrokerPoolName() {
+        return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.TARGET_BROKER_POOL_KEY).toString();
+    }
+
+    public String getTargetControllerPoolName() {
+        return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.TARGET_CONTROLLER_POOL_KEY).toString();
     }
 
     public String getTopicName() {
@@ -225,19 +285,39 @@ final public class TestStorage {
         return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.ENTITY_OPERATOR_NAME_KEY).toString();
     }
 
-    public String getKafkaStatefulSetName() {
-        return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.KAFKA_STATEFULSET_NAME_KEY).toString();
+    public String getBrokerComponentName() {
+        return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.BROKER_COMPONENT_NAME_KEY).toString();
     }
-    public String getZookeeperStatefulSetName() {
-        return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.ZOOKEEPER_STATEFULSET_NAME_KEY).toString();
-    }
-
-    public LabelSelector getKafkaSelector() {
-        return (LabelSelector) extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.KAFKA_SELECTOR_KEY);
+    public String getControllerComponentName() {
+        return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.CONTROLLER_COMPONENT_NAME_KEY).toString();
     }
 
-    public LabelSelector getZookeeperSelector() {
-        return (LabelSelector) extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.ZOOKEEPER_SELECTOR_KEY);
+    public String getMixedComponentName() {
+        return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.MIXED_COMPONENT_NAME_KEY).toString();
+    }
+
+    public LabelSelector getBrokerSelector() {
+        return (LabelSelector) extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.BROKER_SELECTOR_KEY);
+    }
+
+    public LabelSelector getBrokerPoolSelector() {
+        return (LabelSelector) extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.BROKER_POOL_SELECTOR_KEY);
+    }
+
+    public LabelSelector getControllerPoolSelector() {
+        return (LabelSelector) extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.CONTROLLER_POOL_SELECTOR_KEY);
+    }
+
+    public LabelSelector getMixedPoolSelector() {
+        return (LabelSelector) extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.MIXED_POOL_SELECTOR_KEY);
+    }
+
+    public LabelSelector getControllerSelector() {
+        return (LabelSelector) extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.CONTROLLER_SELECTOR_KEY);
+    }
+
+    public LabelSelector getMixedSelector() {
+        return (LabelSelector) extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.MIXED_SELECTOR_KEY);
     }
 
     public LabelSelector getKafkaConnectSelector() {

@@ -18,8 +18,10 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.enums.UserAuthType;
+import io.strimzi.systemtest.resources.NodePoolsConverter;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.storage.TestStorage;
+import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
@@ -37,9 +39,8 @@ import static io.strimzi.systemtest.TestConstants.SCALABILITY;
 @Tag(SCALABILITY)
 public class UserScalabilityST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(UserScalabilityST.class);
-    private static String clusterName;
-    private static String topicName;
-
+    private TestStorage sharedTestStorage;
+    
     @IsolatedTest
     void testCreateAndAlterBigAmountOfScramShaUsers() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
@@ -67,7 +68,7 @@ public class UserScalabilityST extends AbstractST {
         KafkaUserAuthorizationSimple usersAcl = new KafkaUserAuthorizationSimpleBuilder()
             .addNewAcl()
                 .withNewAclRuleTopicResource()
-                    .withName(topicName)
+                    .withName(sharedTestStorage.getTopicName())
                 .endAclRuleTopicResource()
                 .withOperations(AclOperation.WRITE, AclOperation.DESCRIBE)
             .endAcl()
@@ -76,7 +77,7 @@ public class UserScalabilityST extends AbstractST {
         for (int i = 0; i < numberOfUsers; i++) {
             if (userAuthType.equals(UserAuthType.Tls)) {
                 usersList.add(
-                    KafkaUserTemplates.tlsUser(Environment.TEST_SUITE_NAMESPACE, clusterName, userName + "-" + i)
+                    KafkaUserTemplates.tlsUser(Environment.TEST_SUITE_NAMESPACE, sharedTestStorage.getClusterName(), userName + "-" + i)
                         .editOrNewSpec()
                             .withAuthorization(usersAcl)
                         .endSpec()
@@ -84,7 +85,7 @@ public class UserScalabilityST extends AbstractST {
                 );
             } else {
                 usersList.add(
-                    KafkaUserTemplates.scramShaUser(Environment.TEST_SUITE_NAMESPACE, clusterName, userName + "-" + i)
+                    KafkaUserTemplates.scramShaUser(Environment.TEST_SUITE_NAMESPACE, sharedTestStorage.getClusterName(), userName + "-" + i)
                         .editOrNewSpec()
                             .withAuthorization(usersAcl)
                         .endSpec()
@@ -116,7 +117,7 @@ public class UserScalabilityST extends AbstractST {
         KafkaUserAuthorizationSimple updatedAcl = new KafkaUserAuthorizationSimpleBuilder()
             .addNewAcl()
                 .withNewAclRuleTopicResource()
-                    .withName(topicName)
+                    .withName(sharedTestStorage.getTopicName())
                 .endAclRuleTopicResource()
                 .withOperations(AclOperation.READ, AclOperation.DESCRIBE)
             .endAcl()
@@ -139,16 +140,20 @@ public class UserScalabilityST extends AbstractST {
 
     @BeforeAll
     void setup() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
-
-        clusterName = testStorage.getClusterName();
-        topicName = testStorage.getTopicName();
+        sharedTestStorage = new TestStorage(ResourceManager.getTestContext());
 
         clusterOperator.defaultInstallation()
             .createInstallation()
             .runInstallation();
 
-        resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(clusterName, 3)
+        resourceManager.createResourceWithWait(
+            NodePoolsConverter.convertNodePoolsIfNeeded(
+                KafkaNodePoolTemplates.brokerPool(sharedTestStorage.getNamespaceName(), sharedTestStorage.getBrokerPoolName(), sharedTestStorage.getClusterName(), 3).build(),
+                KafkaNodePoolTemplates.controllerPool(sharedTestStorage.getNamespaceName(), sharedTestStorage.getControllerPoolName(), sharedTestStorage.getClusterName(), 1).build()
+            )
+        );
+
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(sharedTestStorage.getClusterName(), 3)
             .editMetadata()
                 .withNamespace(Environment.TEST_SUITE_NAMESPACE)
             .endMetadata()
@@ -175,7 +180,7 @@ public class UserScalabilityST extends AbstractST {
                 .endEntityOperator()
             .endSpec()
             .build(),
-            KafkaTopicTemplates.topic(clusterName, topicName, Environment.TEST_SUITE_NAMESPACE).build()
+            KafkaTopicTemplates.topic(sharedTestStorage.getClusterName(), sharedTestStorage.getTopicName(), Environment.TEST_SUITE_NAMESPACE).build()
         );
     }
 }
