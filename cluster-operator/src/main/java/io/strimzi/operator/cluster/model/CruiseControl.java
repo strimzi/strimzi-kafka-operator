@@ -211,7 +211,10 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
             }
             result.image = image;
 
-            result.updateConfiguration(ccSpec);
+            KafkaConfiguration kafkaConfiguration = new KafkaConfiguration(reconciliation, kafkaClusterSpec.getConfig().entrySet());
+            CruiseControlConfiguration cruiseControlConfiguration = new CruiseControlConfiguration(reconciliation, ccSpec.getConfig().entrySet());
+            result.updateConfigurationWithDefaults(cruiseControlConfiguration, kafkaConfiguration);
+
             CruiseControlConfiguration ccConfiguration = result.configuration;
             result.sslEnabled = ccConfiguration.isApiSslEnabled();
             result.authEnabled = ccConfiguration.isApiAuthEnabled();
@@ -243,16 +246,17 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
         }
     }
 
-    private void updateConfiguration(CruiseControlSpec spec) {
-        CruiseControlConfiguration userConfiguration = new CruiseControlConfiguration(reconciliation, spec.getConfig().entrySet());
-        for (Map.Entry<String, String> defaultEntry : CruiseControlConfiguration.getCruiseControlDefaultPropertiesMap().entrySet()) {
-            if (userConfiguration.getConfigOption(defaultEntry.getKey()) == null) {
-                userConfiguration.setConfigOption(defaultEntry.getKey(), defaultEntry.getValue());
+    private void updateConfigurationWithDefaults(CruiseControlConfiguration cruiseControlConfiguration, KafkaConfiguration kafkaConfiguration) {
+        Map<String, String> defaultCruiseControlProperties = new HashMap<>(CruiseControlConfiguration.getCruiseControlDefaultPropertiesMap());
+        defaultCruiseControlProperties.put(CruiseControlConfigurationParameters.SAMPLE_STORE_TOPIC_REPLICATION_FACTOR.getValue(), kafkaConfiguration.getConfigOption(KafkaConfiguration.DEFAULT_REPLICATION_FACTOR));
+        for (Map.Entry<String, String> defaultEntry : defaultCruiseControlProperties.entrySet()) {
+            if (cruiseControlConfiguration.getConfigOption(defaultEntry.getKey()) == null) {
+                cruiseControlConfiguration.setConfigOption(defaultEntry.getKey(), defaultEntry.getValue());
             }
         }
         // Ensure that the configured anomaly.detection.goals are a sub-set of the default goals
-        checkGoals(userConfiguration);
-        this.configuration = userConfiguration;
+        checkGoals(cruiseControlConfiguration);
+        this.configuration = cruiseControlConfiguration;
     }
 
     /**
