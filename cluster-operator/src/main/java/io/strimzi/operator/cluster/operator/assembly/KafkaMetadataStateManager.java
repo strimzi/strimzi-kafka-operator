@@ -171,13 +171,26 @@ public class KafkaMetadataStateManager {
      * @param controllerPodName Name of the quorum controller leader pod
      */
     public void checkMigrationInProgress(Reconciliation reconciliation, Secret clusterCaCertSecret, Secret coKeySecret, String controllerPodName) {
-        KafkaAgentClient kafkaAgentClient = new KafkaAgentClient(reconciliation, reconciliation.name(), reconciliation.namespace(), clusterCaCertSecret, coKeySecret);
+        KafkaAgentClient kafkaAgentClient = initKafkaAgentClient(reconciliation, clusterCaCertSecret, coKeySecret);
         KRaftMigrationState kraftMigrationState = kafkaAgentClient.getKRaftMigrationState(controllerPodName);
         LOGGER.infoCr(reconciliation, "ZooKeeper to KRaft migration state {} checked on controller {}", kraftMigrationState.state(), controllerPodName);
         if (kraftMigrationState.state() == -1) {
             throw new RuntimeException("Failed to get the ZooKeeper to KRaft migration state");
         }
         this.isMigrationDone = kraftMigrationState.isMigrationDone();
+    }
+
+    /**
+     * Creates the KafkaAgentClient instance
+     *
+     * @param reconciliation    Reconciliation information
+     * @param clusterCaCertSecret   Secret with the Cluster CA public key
+     * @param coKeySecret   Secret with the Cluster CA private key
+     *
+     * @return KafkaAgentClient instance
+     */
+    /* test */ protected KafkaAgentClient initKafkaAgentClient(Reconciliation reconciliation, Secret clusterCaCertSecret, Secret coKeySecret)  {
+        return new KafkaAgentClient(reconciliation, reconciliation.name(), reconciliation.namespace(), clusterCaCertSecret, coKeySecret);
     }
 
     /**
