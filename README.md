@@ -109,7 +109,7 @@ cosign verify-blob --key cosign.pub --bundle <SBOM-file>.bundle --insecure-ignor
 
 ---
 
-Strimzi is a <a href="http://cncf.io">Cloud Native Computing Foundation</a> sandbox project.
+Strimzi is a <a href="http://cncf.io">Cloud Native Computing Foundation</a> incubating project.
 
 ![CNCF ><](./documentation/logo/cncf-color.png)
 
