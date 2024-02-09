@@ -34,7 +34,7 @@ By using a different key to generate a new CA certificate, you retain the curren
 +
 [source,shell,subs="+quotes"]
 ----
-kubectl annotate Kafka _<name_of_custom_resource>_ strimzi.io/pause-reconciliation="true"
+kubectl annotate Kafka <name_of_custom_resource> strimzi.io/pause-reconciliation="true"
 ----
 +
 For example, for a `Kafka` custom resource named `my-cluster`:
@@ -47,7 +47,7 @@ kubectl annotate Kafka my-cluster strimzi.io/pause-reconciliation="true"
 +
 [source,shell,subs="+quotes"]
 ----
-kubectl describe Kafka _<name_of_custom_resource>_
+kubectl describe Kafka <name_of_custom_resource>
 ----
 +
 The `type` condition changes to `ReconciliationPaused` at the `lastTransitionTime`.
@@ -61,7 +61,7 @@ You require this setting if you are using your own certificates.
 +
 [source,shell,subs="+quotes"]
 ----
-kubectl edit Kafka _<name_of_custom_resource>_
+kubectl edit Kafka <name_of_custom_resource>
 ----
 +
 The following example shows a `Kafka` custom resource with both cluster and clients CA certificates generation delegated to the user.
@@ -88,9 +88,9 @@ spec:
 .. Edit the existing secret to add the new CA certificate and update the certificate generation annotation value.
 +
 [source,shell,subs="+quotes"]
-kubectl edit secret _<ca_certificate_secret_name>_
+kubectl edit secret <ca_certificate_secret_name>
 +
-_<ca_certificate_secret_name>_ is the name of the `Secret`, which is `_KAFKA-CLUSTER-NAME_-cluster-ca-cert` for the cluster CA certificate and `_KAFKA-CLUSTER-NAME_-clients-ca-cert` for the clients CA certificate.
+<ca_certificate_secret_name> is the name of the `Secret`, which is `<kafka_cluster_name>-cluster-ca-cert` for the cluster CA certificate and `<kafka_cluster_name>-clients-ca-cert` for the clients CA certificate.
 +
 The following example shows a secret for a cluster CA certificate that's associated with a Kafka cluster named `my-cluster`.
 +
@@ -116,14 +116,14 @@ type: Opaque
 
 .. Rename the current CA certificate to retain it.
 +
-Rename the current `ca.crt` property under `data` as `ca-__<date>__.crt`, where _<date>_ is the certificate expiry date in the format _YEAR-MONTH-DAYTHOUR-MINUTE-SECONDZ_.
+Rename the current `ca.crt` property under `data` as `ca-<date>.crt`, where <date> is the certificate expiry date in the format _YEAR-MONTH-DAYTHOUR-MINUTE-SECONDZ_.
 For example `ca-2023-01-26T17-32-00Z.crt:`.
 Leave the value for the property as it is to retain the current CA certificate.
 
 .. Encode your new CA certificate into base64.
 +
 [source,shell,subs="+quotes"]
-cat _<path_to_new_certificate>_ | base64
+cat <path_to_new_certificate> | base64
 
 .. Update the CA certificate.
 +
@@ -169,9 +169,9 @@ type: Opaque
 .. Edit the existing secret to add the new CA key and update the key generation annotation value.
 +
 [source,shell,subs="+quotes"]
-kubectl edit secret _<ca_key_name>_
-+
-_<ca_key_name>_ is the name of CA key, which is `_<kafka_cluster_name>_-cluster-ca` for the cluster CA key and `_<kafka_cluster_name>_-clients-ca` for the clients CA key.
+kubectl edit secret <ca_key_name>
+
+<ca_key_name> is the name of CA key, which is `<kafka_cluster_name>-cluster-ca` for the cluster CA key and `<kafka_cluster_name>-clients-ca` for the clients CA key.
 +
 The following example shows a secret for a cluster CA key that's associated with a Kafka cluster named `my-cluster`.
 +
@@ -198,7 +198,7 @@ type: Opaque
 .. Encode the CA key into base64.
 +
 [source,shell,subs="+quotes"]
-cat _<path_to_new_key>_ | base64
+cat <path_to_new_key> | base64
 
 .. Update the CA key.
 +
@@ -243,14 +243,14 @@ To resume the `Kafka` custom resource reconciliation, set the `pause-reconciliat
 +
 [source,shell,subs="+quotes"]
 ----
-kubectl annotate --overwrite Kafka _<name_of_custom_resource>_ strimzi.io/pause-reconciliation="false"
+kubectl annotate --overwrite Kafka <name_of_custom_resource> strimzi.io/pause-reconciliation="false"
 ----
 +
 You can also do the same by removing the `pause-reconciliation` annotation.
 +
 [source,shell,subs="+quotes"]
 ----
-kubectl annotate Kafka _<name_of_custom_resource>_ strimzi.io/pause-reconciliation-
+kubectl annotate Kafka <name_of_custom_resource> strimzi.io/pause-reconciliation-
 ----
 +
 On the next reconciliation, the Cluster Operator performs a rolling update of ZooKeeper, Kafka, and other components to trust the new CA certificate.
@@ -263,7 +263,7 @@ If maintenance time windows are configured, the Cluster Operator will roll the p
 .  Remove any outdated certificates from the secret configuration to ensure that the cluster no longer trusts them.
 +
 [source,shell,subs="+quotes"]
-kubectl edit secret _<ca_certificate_secret_name>_
+kubectl edit secret <ca_certificate_secret_name>
 +
 .Example secret configuration with the old certificate removed
 [source,yaml,subs=attributes+]

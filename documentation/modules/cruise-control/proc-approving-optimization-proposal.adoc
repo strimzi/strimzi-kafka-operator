@@ -34,14 +34,14 @@ To do so, refresh the optimization proposal to make sure it uses the latest clus
 +
 [source,shell,subs="+quotes"]
 ----
-kubectl annotate kafkarebalance _<kafka_rebalance_resource_name>_ strimzi.io/rebalance=refresh
+kubectl annotate kafkarebalance <kafka_rebalance_resource_name> strimzi.io/rebalance="refresh"
 ----
 
 . Wait for the status of the optimization proposal to change to `ProposalReady`:
 +
 [source,shell,subs="+quotes"]
 ----
-kubectl get kafkarebalance -o wide -w -n _<namespace>_
+kubectl get kafkarebalance -o wide -w -n <namespace>
 ----
 +
 --
@@ -57,7 +57,7 @@ Annotate the `KafkaRebalance` resource in Kubernetes with `strimzi.io/rebalance=
 +
 [source,shell,subs="+quotes"]
 ----
-kubectl annotate kafkarebalance _<kafka_rebalance_resource_name>_ strimzi.io/rebalance=approve
+kubectl annotate kafkarebalance _<kafka_rebalance_resource_name>_ strimzi.io/rebalance="approve"
 ----
 
 . The Cluster Operator detects the annotated resource and instructs Cruise Control to rebalance the Kafka cluster.

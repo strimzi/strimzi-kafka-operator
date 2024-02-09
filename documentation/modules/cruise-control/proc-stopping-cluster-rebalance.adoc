@@ -27,7 +27,7 @@ NOTE: The performance of the Kafka cluster in the intermediate (stopped) state m
 +
 [source,shell,subs="+quotes"]
 ----
-kubectl annotate kafkarebalance _rebalance-cr-name_ strimzi.io/rebalance=stop
+kubectl annotate kafkarebalance _rebalance-cr-name_ strimzi.io/rebalance="stop"
 ----
 
 . Check the status of the `KafkaRebalance` resource:
