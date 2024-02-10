@@ -96,8 +96,8 @@ public class KRaftStrimziDowngradeST extends AbstractKRaftUpgradeST {
     }
 
     @BeforeEach
-    void setupEnvironment() {
-        NamespaceManager.getInstance().createNamespaceAndPrepare(CO_NAMESPACE);
+    void setupEnvironment(ExtensionContext extensionContext) {
+        NamespaceManager.getInstance().createNamespaceAndPrepare(extensionContext, CO_NAMESPACE);
     }
 
     @AfterEach

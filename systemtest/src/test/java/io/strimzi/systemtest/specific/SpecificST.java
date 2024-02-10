@@ -96,7 +96,8 @@ public class SpecificST extends AbstractST {
         clusterOperator.unInstall();
 
         // create namespace, where we will be able to deploy Custom Resources
-        NamespaceManager.getInstance().createNamespaceAndPrepare(namespaceWhereCreationOfCustomResourcesIsApproved, CollectorElement.createCollectorElement(extensionContext.getRequiredTestClass().getName(), extensionContext.getRequiredTestMethod().getName()));
+        NamespaceManager.getInstance().createNamespaceAndPrepare(extensionContext, namespaceWhereCreationOfCustomResourcesIsApproved,
+            CollectorElement.createCollectorElement(extensionContext.getRequiredTestClass().getName(), extensionContext.getRequiredTestMethod().getName()));
 
         clusterOperator = clusterOperator.defaultInstallation(extensionContext)
             // use our pre-defined Roles

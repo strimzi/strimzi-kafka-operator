@@ -29,7 +29,6 @@ import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.systemtest.resources.ResourceItem;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.kubernetes.ClusterRoleBindingResource;
-import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
 import io.strimzi.systemtest.resources.kubernetes.RoleBindingResource;
 import io.strimzi.systemtest.resources.kubernetes.RoleResource;
 import io.strimzi.systemtest.resources.operator.configuration.OlmConfiguration;
@@ -290,7 +289,7 @@ public class SetupClusterOperator {
         LOGGER.info("Install Cluster Operator via Yaml bundle");
         // check if namespace is already created
         createClusterOperatorNamespaceIfPossible();
-        prepareEnvForOperator(extensionContext, namespaceInstallTo, bindingsNamespaces);
+        prepareEnvForOperator(namespaceInstallTo, bindingsNamespaces);
         // if we manage directly in the individual test one of the Role, ClusterRole, RoleBindings and ClusterRoleBinding we must do it
         // everything by ourselves in scope of RBAC permissions otherwise we apply the default one
         if (this.isRolesAndBindingsManagedByAnUser()) {
@@ -406,7 +405,7 @@ public class SetupClusterOperator {
                     CollectorElement.createCollectorElement(this.testClassName) :
                     CollectorElement.createCollectorElement(this.testClassName, this.testMethodName);
 
-                NamespaceManager.getInstance().createNamespaces(namespaceInstallTo, collectorElement, bindingsNamespaces);
+                NamespaceManager.getInstance().createNamespaces(this.extensionContext, namespaceInstallTo, collectorElement, bindingsNamespaces);
 
                 this.extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo, true);
             }
@@ -551,12 +550,10 @@ public class SetupClusterOperator {
      * specific config files such as ServiceAccount, Roles and CRDs.
      * @param clientNamespace namespace which will be created and used as default by kube client
      * @param namespaces list of namespaces which will be created
-     * @param resources list of path to yaml files with resources specifications
      */
-    public void prepareEnvForOperator(ExtensionContext extensionContext, String clientNamespace, List<String> namespaces, String... resources) {
+    public void prepareEnvForOperator(String clientNamespace, List<String> namespaces) {
         assumeTrue(!Environment.isHelmInstall() && !Environment.isOlmInstall());
         applyClusterOperatorInstallFiles(clientNamespace);
-        NetworkPolicyResource.applyDefaultNetworkPolicySettings(namespaces);
 
         if (cluster.cluster() instanceof OpenShift) {
             // This is needed in case you are using internal kubernetes registry and you want to pull images from there

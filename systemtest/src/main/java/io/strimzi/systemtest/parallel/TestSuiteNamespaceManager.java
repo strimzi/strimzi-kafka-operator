@@ -50,7 +50,7 @@ public class TestSuiteNamespaceManager {
         if (ExecutionListener.hasSuiteParallelOrIsolatedTest(extensionContext)) {
             // if RBAC is enabled we don't run tests in parallel mode and with that said we don't create another namespaces
             if (!Environment.isNamespaceRbacScope()) {
-                NamespaceManager.getInstance().createNamespaceAndPrepare(Environment.TEST_SUITE_NAMESPACE, CollectorElement.createCollectorElement(testSuiteName));
+                NamespaceManager.getInstance().createNamespaceAndPrepare(extensionContext, Environment.TEST_SUITE_NAMESPACE, CollectorElement.createCollectorElement(testSuiteName));
             } else {
                 LOGGER.info("We are not gonna create additional namespace: {}, because test suite: {} does not " +
                         "contains @ParallelTest or @IsolatedTest.", Environment.TEST_SUITE_NAMESPACE, testSuiteName);
@@ -97,7 +97,7 @@ public class TestSuiteNamespaceManager {
                 // create namespace by
                 LOGGER.info("Creating Namespace: {} for TestCase: {}", namespaceTestCase, StUtils.removePackageName(testCaseName));
 
-                NamespaceManager.getInstance().createNamespaceAndPrepare(namespaceTestCase, CollectorElement.createCollectorElement(extensionContext.getRequiredTestClass().getName(), testCaseName));
+                NamespaceManager.getInstance().createNamespaceAndPrepare(extensionContext, namespaceTestCase, CollectorElement.createCollectorElement(extensionContext.getRequiredTestClass().getName(), testCaseName));
             }
         }
     }

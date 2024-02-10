@@ -76,7 +76,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
         // Get list of topics and list of PVC needed for recovery
         List<KafkaTopic> kafkaTopicList = KafkaTopicResource.kafkaTopicClient().inNamespace(testStorage.getNamespaceName()).list().getItems();
         List<PersistentVolumeClaim> persistentVolumeClaimList = kubeClient().getClient().persistentVolumeClaims().list().getItems();
-        deleteAndRecreateNamespace(testStorage.getNamespaceName());
+        deleteAndRecreateNamespace(extensionContext, testStorage.getNamespaceName());
 
         recreatePvcAndUpdatePv(persistentVolumeClaimList, testStorage.getNamespaceName());
         recreateClusterOperator(extensionContext, testStorage.getNamespaceName());
@@ -148,7 +148,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
         }
 
         LOGGER.info("Deleting namespace and recreating for recovery");
-        deleteAndRecreateNamespace(testStorage.getNamespaceName());
+        deleteAndRecreateNamespace(extensionContext, testStorage.getNamespaceName());
 
         LOGGER.info("Recreating PVCs and updating PVs for recovery");
         recreatePvcAndUpdatePv(persistentVolumeClaimList, testStorage.getNamespaceName());
@@ -283,11 +283,11 @@ class NamespaceDeletionRecoveryST extends AbstractST {
             .runInstallation();
     }
 
-    private void deleteAndRecreateNamespace(String namespace) {
+    private void deleteAndRecreateNamespace(ExtensionContext extensionContext, String namespace) {
         NamespaceManager.getInstance().deleteNamespaceWithWait(namespace);
 
         // Recreate namespace
-        NamespaceManager.getInstance().createNamespaceAndPrepare(namespace);
+        NamespaceManager.getInstance().createNamespaceAndPrepare(extensionContext, namespace);
     }
 
     @BeforeAll

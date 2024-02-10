@@ -17,6 +17,7 @@ import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.logs.CollectorElement;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -134,13 +135,13 @@ public class NamespaceManager {
     }
 
     /**
-     * Overloads {@link #createNamespaceAndPrepare(String, CollectorElement)} - with {@code CollectorElement} set to {@code null},
+     * Overloads {@link #createNamespaceAndPrepare(ExtensionContext, String, CollectorElement)} - with {@code CollectorElement} set to {@code null},
      * so the Namespace will not be added into the {@link #MAP_WITH_SUITE_NAMESPACES}.
      *
      * @param namespaceName name of Namespace that should be created
      */
-    public void createNamespaceAndPrepare(String namespaceName) {
-        createNamespaceAndPrepare(namespaceName, null);
+    public void createNamespaceAndPrepare(ExtensionContext extensionContext, String namespaceName) {
+        createNamespaceAndPrepare(extensionContext, namespaceName, null);
     }
 
     /**
@@ -153,9 +154,9 @@ public class NamespaceManager {
      * @param namespaceName name of the Namespace that should be created and prepared
      * @param collectorElement "key" for accessing the particular Set of Namespaces
      */
-    public void createNamespaceAndPrepare(String namespaceName, CollectorElement collectorElement) {
+    public void createNamespaceAndPrepare(ExtensionContext extensionContext, String namespaceName, CollectorElement collectorElement) {
         createNamespaceAndAddToSet(namespaceName, collectorElement);
-        NetworkPolicyResource.applyDefaultNetworkPolicySettings(Collections.singletonList(namespaceName));
+        NetworkPolicyResource.applyDefaultNetworkPolicySettings(extensionContext, Collections.singletonList(namespaceName));
         StUtils.copyImagePullSecrets(namespaceName);
     }
 
@@ -167,8 +168,8 @@ public class NamespaceManager {
      * @param collectorElement "key" for accessing the particular Set of Namespaces
      * @param namespacesToBeCreated list of Namespaces that should be created
      */
-    public void createNamespaces(String useNamespace, CollectorElement collectorElement, List<String> namespacesToBeCreated) {
-        namespacesToBeCreated.forEach(namespaceToBeCreated -> createNamespaceAndPrepare(namespaceToBeCreated, collectorElement));
+    public void createNamespaces(ExtensionContext extensionContext, String useNamespace, CollectorElement collectorElement, List<String> namespacesToBeCreated) {
+        namespacesToBeCreated.forEach(namespaceToBeCreated -> createNamespaceAndPrepare(extensionContext, namespaceToBeCreated, collectorElement));
 
         KubeClusterResource.getInstance().setNamespace(useNamespace);
     }
