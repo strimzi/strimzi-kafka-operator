@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.model.bridge.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeStatus;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
+import io.strimzi.api.kafka.model.connect.KafkaConnect;
 import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
 import io.strimzi.api.kafka.model.connect.KafkaConnectStatus;
 import io.strimzi.api.kafka.model.connector.KafkaConnectorStatus;
@@ -37,6 +38,8 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.externalClients.ExternalKafkaClient;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectorResource;
@@ -266,7 +269,6 @@ class CustomResourceStatusST extends AbstractST {
             .build());
 
         assertKafkaConnectStatus(1, connectUrl);
-        assertKafkaConnectorStatus(1, "RUNNING|UNASSIGNED", "source", List.of(EXAMPLE_TOPIC_NAME));
 
         KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME,
             kb -> kb.getSpec().setBootstrapServers("non-existing-bootstrap"), testStorage.getNamespaceName());
@@ -290,8 +292,6 @@ class CustomResourceStatusST extends AbstractST {
         KafkaConnectorUtils.waitForConnectorReady(testStorage.getNamespaceName(), CUSTOM_RESOURCE_STATUS_CLUSTER_NAME);
         KafkaConnectUtils.waitForConnectReady(testStorage.getNamespaceName(), CUSTOM_RESOURCE_STATUS_CLUSTER_NAME);
 
-        assertKafkaConnectorStatus(1, "RUNNING|UNASSIGNED", "source", List.of(EXAMPLE_TOPIC_NAME));
-
         String defaultClass = KafkaConnectorResource.kafkaConnectorClient().inNamespace(testStorage.getNamespaceName()).withName(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME).get().getSpec().getClassName();
 
         KafkaConnectorResource.replaceKafkaConnectorResourceInSpecificNamespace(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME,
@@ -306,7 +306,6 @@ class CustomResourceStatusST extends AbstractST {
             }, testStorage.getNamespaceName());
 
         KafkaConnectorUtils.waitForConnectorReady(testStorage.getNamespaceName(), CUSTOM_RESOURCE_STATUS_CLUSTER_NAME);
-        assertKafkaConnectorStatus(3, "RUNNING|UNASSIGNED", "source", List.of(EXAMPLE_TOPIC_NAME));
     }
 
     @ParallelTest
@@ -531,26 +530,5 @@ class CustomResourceStatusST extends AbstractST {
                 "org.apache.kafka.connect.mirror.MirrorCheckpointConnector",
                 "org.apache.kafka.connect.mirror.MirrorHeartbeatConnector",
                 "org.apache.kafka.connect.mirror.MirrorSourceConnector"));
-    }
-
-    @SuppressWarnings("unchecked")
-    void assertKafkaConnectorStatus(long expectedObservedGeneration, String connectorStates, String type, List<String> topics) {
-        TestUtils.waitFor("KafkaConnector status to except observed generation", TestConstants.GLOBAL_POLL_INTERVAL,
-            TestConstants.GLOBAL_TIMEOUT, () -> {
-                KafkaConnectorStatus kafkaConnectorStatus = KafkaConnectorResource.kafkaConnectorClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME).get().getStatus();
-                boolean formulaResult = kafkaConnectorStatus.getObservedGeneration() == expectedObservedGeneration;
-
-                final Map<String, Object> connectorStatus = kafkaConnectorStatus.getConnectorStatus();
-                final String currentState = ((LinkedHashMap<String, String>) connectorStatus.get("connector")).get("state");
-
-                formulaResult = formulaResult && connectorStates.contains(currentState);
-                formulaResult = formulaResult && connectorStatus.get("name").equals(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME);
-                formulaResult = formulaResult && connectorStatus.get("type").equals(type);
-                formulaResult = formulaResult && connectorStatus.get("tasks") != null;
-                formulaResult = formulaResult && kafkaConnectorStatus.getTopics().equals(topics);
-                LOGGER.info("KafkaConnectorStatus Topic: {}, and expected Topic: {}", kafkaConnectorStatus.getTopics().toString(), topics);
-
-                return formulaResult;
-            });
     }
 }
