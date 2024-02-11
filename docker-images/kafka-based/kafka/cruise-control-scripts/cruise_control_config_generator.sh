@@ -26,5 +26,6 @@ ssl.truststore.type=PKCS12
 ssl.truststore.location=/tmp/cruise-control/replication.truststore.p12
 ssl.truststore.password=$CERTS_STORE_PASSWORD
 kafka.broker.failure.detection.enable=true
+capacity.config.file=/opt/cruise-control/custom-config/capacity.json
 ${CRUISE_CONTROL_CONFIGURATION}
 EOF
