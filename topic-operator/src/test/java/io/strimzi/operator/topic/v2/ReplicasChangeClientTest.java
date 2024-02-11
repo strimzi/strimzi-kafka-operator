@@ -1,0 +1,427 @@
+/*
+ * Copyright Strimzi authors.
+ * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
+ */
+package io.strimzi.operator.topic.v2;
+
+import io.strimzi.api.kafka.model.common.ConditionBuilder;
+import io.strimzi.api.kafka.model.topic.KafkaTopicBuilder;
+import io.strimzi.api.kafka.model.topic.KafkaTopicStatusBuilder;
+import io.strimzi.api.kafka.model.topic.ReplicasChangeStatusBuilder;
+import io.strimzi.certs.Subject;
+import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.model.StatusUtils;
+import io.strimzi.operator.common.operator.MockCertManager;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.mockserver.integration.ClientAndServer;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+
+import static io.strimzi.api.kafka.model.topic.KafkaTopic.RESOURCE_KIND;
+import static io.strimzi.operator.topic.v2.TopicOperatorConfig.BOOTSTRAP_SERVERS;
+import static io.strimzi.operator.topic.v2.TopicOperatorConfig.CRUISE_CONTROL_API_PASS_PATH;
+import static io.strimzi.operator.topic.v2.TopicOperatorConfig.CRUISE_CONTROL_API_USER_PATH;
+import static io.strimzi.operator.topic.v2.TopicOperatorConfig.CRUISE_CONTROL_AUTH_ENABLED;
+import static io.strimzi.operator.topic.v2.TopicOperatorConfig.CRUISE_CONTROL_CRT_FILE_PATH;
+import static io.strimzi.operator.topic.v2.TopicOperatorConfig.CRUISE_CONTROL_HOSTNAME;
+import static io.strimzi.operator.topic.v2.TopicOperatorConfig.CRUISE_CONTROL_PORT;
+import static io.strimzi.operator.topic.v2.TopicOperatorConfig.CRUISE_CONTROL_RACK_ENABLED;
+import static io.strimzi.operator.topic.v2.TopicOperatorConfig.CRUISE_CONTROL_SSL_ENABLED;
+import static io.strimzi.operator.topic.v2.TopicOperatorConfig.NAMESPACE;
+import static io.strimzi.operator.topic.v2.TopicOperatorConfig.buildFromMap;
+import static io.strimzi.operator.topic.v2.TopicOperatorUtil.topicName;
+import static io.strimzi.test.TestUtils.getFreePort;
+import static java.util.Map.entry;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
+
+public class ReplicasChangeClientTest {
+    private static final String TEST_PREFIX = "cruise-control-";
+    private static final String TEST_NAMESPACE = "replicas-change";
+    private static final String TEST_NAME = "my-topic";
+    
+    private static int serverPort;
+    private static File sslCrtFile;
+    private static File apiUserFile;
+    private static File apiPassFile;
+    private static ClientAndServer server;
+
+    @BeforeAll
+    public static void beforeAll() throws IOException {
+        serverPort = getFreePort();
+
+        MockCertManager certManager = new MockCertManager();
+        File tlsKeyFile = Files.createTempFile(TEST_PREFIX, ".key").toFile();
+        sslCrtFile = Files.createTempFile(TEST_PREFIX, "-valid.crt").toFile();
+        new MockCertManager().generateSelfSignedCert(tlsKeyFile, sslCrtFile, 
+            new Subject.Builder().withCommonName("Trusted Test CA").build(), 365);
+
+        apiUserFile = Files.createTempFile(TEST_PREFIX, ".username").toFile();
+        try (PrintWriter out = new PrintWriter(apiUserFile.getAbsolutePath())) {
+            out.print("toadmin");
+        }
+        apiPassFile = Files.createTempFile(TEST_PREFIX, ".password").toFile();
+        try (PrintWriter out = new PrintWriter(apiPassFile.getAbsolutePath())) {
+            out.print("changeit");
+        }
+        
+        server = MockCruiseControl.server(serverPort, tlsKeyFile, sslCrtFile);
+    }
+
+    @AfterAll
+    public static void afterAll() {
+        if (server != null && server.isRunning()) {
+            server.stop();
+        }
+        
+        for (File f : new File(System.getProperty("java.io.tmpdir")).listFiles()) {
+            if (f.getName().startsWith(TEST_PREFIX)) {
+                f.delete();
+            }
+        }
+    }
+
+    @BeforeEach
+    public void beforeEach() {
+        server.reset();
+    }
+
+    @ParameterizedTest
+    @MethodSource("validConfigs")
+    public void shouldSucceedWithValidConfig(TopicOperatorConfig config) {
+        var client = new ReplicasChangeClient(config);
+
+        MockCruiseControl.expectTopicConfigSuccessResponse(server, apiUserFile, apiPassFile);
+        var pending = buildPendingReconcilableTopics();
+        var pendingAndOngoing = client.requestPendingChanges(pending);
+        assertOngoing(pending, pendingAndOngoing);
+
+        MockCruiseControl.expectUserTasksSuccessResponse(server, apiUserFile, apiPassFile);
+        var ongoing = buildOngoingReconcilableTopics();
+        var completedAndFailed = client.requestOngoingChanges(ongoing);
+        assertCompleted(completedAndFailed);
+    }
+    
+    @Test
+    public void shouldFailWithSslEnabledAndMissingCrtFile() {
+        var config = buildFromMap(Map.ofEntries(
+            entry(BOOTSTRAP_SERVERS.key(), "localhost:9092"),
+            entry(NAMESPACE.key(), TEST_NAMESPACE),
+            entry(CRUISE_CONTROL_HOSTNAME.key(), "localhost"),
+            entry(CRUISE_CONTROL_PORT.key(), String.valueOf(serverPort)),
+            entry(CRUISE_CONTROL_SSL_ENABLED.key(), "true"),
+            entry(CRUISE_CONTROL_CRT_FILE_PATH.key(), "/invalid/ca.crt")
+        ));
+        
+        var client = new ReplicasChangeClient(config);
+        
+        var pending = buildPendingReconcilableTopics();
+        var pendingAndOngoing = client.requestPendingChanges(pending);
+        assertFailedWithMessage(pendingAndOngoing, "Replicas change failed, File not found: /invalid/ca.crt");
+
+        var ongoing = buildOngoingReconcilableTopics();
+        var completedAndFailed = client.requestOngoingChanges(ongoing);
+        assertFailedWithMessage(completedAndFailed, "Replicas change failed, File not found: /invalid/ca.crt");
+    }
+
+    @Test
+    public void shouldFailWithAuthEnabledAndUsernameFileNotFound() {
+        var config = buildFromMap(Map.ofEntries(
+            entry(BOOTSTRAP_SERVERS.key(), "localhost:9092"),
+            entry(NAMESPACE.key(), TEST_NAMESPACE),
+            entry(CRUISE_CONTROL_HOSTNAME.key(), "localhost"),
+            entry(CRUISE_CONTROL_PORT.key(), String.valueOf(serverPort)),
+            entry(CRUISE_CONTROL_AUTH_ENABLED.key(), "true"),
+            entry(CRUISE_CONTROL_API_USER_PATH.key(), "/invalid/username"),
+            entry(CRUISE_CONTROL_API_PASS_PATH.key(), apiPassFile.getAbsolutePath())
+        ));
+        
+        var client = new ReplicasChangeClient(config);
+        
+        var pending = buildPendingReconcilableTopics();
+        var pendingAndOngoing = client.requestPendingChanges(pending);
+        assertFailedWithMessage(pendingAndOngoing, "Replicas change failed, File not found: /invalid/username");
+
+        var ongoing = buildOngoingReconcilableTopics();
+        var completedAndFailed = client.requestOngoingChanges(ongoing);
+        assertFailedWithMessage(completedAndFailed, "Replicas change failed, File not found: /invalid/username");
+    }
+
+    @Test
+    public void shouldFailWithAuthEnabledAndPasswordFileNotFound() {
+        var config = buildFromMap(Map.ofEntries(
+            entry(BOOTSTRAP_SERVERS.key(), "localhost:9092"),
+            entry(NAMESPACE.key(), TEST_NAMESPACE),
+            entry(CRUISE_CONTROL_HOSTNAME.key(), "localhost"),
+            entry(CRUISE_CONTROL_PORT.key(), String.valueOf(serverPort)),
+            entry(CRUISE_CONTROL_AUTH_ENABLED.key(), "true"),
+            entry(CRUISE_CONTROL_API_USER_PATH.key(), apiUserFile.getAbsolutePath()),
+            entry(CRUISE_CONTROL_API_PASS_PATH.key(), "/invalid/password")
+        ));
+        
+        var client = new ReplicasChangeClient(config);
+        
+        var pending = buildPendingReconcilableTopics();
+        var pendingAndOngoing = client.requestPendingChanges(pending);
+        assertFailedWithMessage(pendingAndOngoing, "Replicas change failed, File not found: /invalid/password");
+
+        var ongoing = buildOngoingReconcilableTopics();
+        var completedAndFailed = client.requestOngoingChanges(ongoing);
+        assertFailedWithMessage(completedAndFailed, "Replicas change failed, File not found: /invalid/password");
+    }
+
+    @Test
+    public void shouldFailWhenCruiseControlEndpointNotReachable() {
+        var config = buildFromMap(Map.ofEntries(
+            entry(BOOTSTRAP_SERVERS.key(), "localhost:9092"),
+            entry(NAMESPACE.key(), TEST_NAMESPACE),
+            entry(CRUISE_CONTROL_HOSTNAME.key(), "invalid"),
+            entry(CRUISE_CONTROL_PORT.key(), String.valueOf(serverPort))
+        ));
+        
+        var client = new ReplicasChangeClient(config);
+        
+        var pending = buildPendingReconcilableTopics();
+        var pendingAndOngoing = client.requestPendingChanges(pending);
+        assertFailedWithMessage(pendingAndOngoing, "Replicas change failed, java.net.ConnectException");
+
+        var ongoing = buildOngoingReconcilableTopics();
+        var completedAndFailed = client.requestOngoingChanges(ongoing);
+        assertFailedWithMessage(completedAndFailed, "Replicas change failed, java.net.ConnectException");
+    }
+
+    @Test
+    public void shouldFailWhenCruiseControlReturnsErrorResponse() {
+        var config = buildFromMap(Map.ofEntries(
+            entry(BOOTSTRAP_SERVERS.key(), "localhost:9092"),
+            entry(NAMESPACE.key(), TEST_NAMESPACE),
+            entry(CRUISE_CONTROL_HOSTNAME.key(), "localhost"),
+            entry(CRUISE_CONTROL_PORT.key(), String.valueOf(serverPort)),
+            entry(CRUISE_CONTROL_SSL_ENABLED.key(), "true"),
+            entry(CRUISE_CONTROL_AUTH_ENABLED.key(), "true"),
+            entry(CRUISE_CONTROL_CRT_FILE_PATH.key(), sslCrtFile.getAbsolutePath()),
+            entry(CRUISE_CONTROL_API_USER_PATH.key(), apiUserFile.getAbsolutePath()),
+            entry(CRUISE_CONTROL_API_PASS_PATH.key(), apiPassFile.getAbsolutePath())
+        ));
+
+        var client = new ReplicasChangeClient(config);
+        
+        MockCruiseControl.expectTopicConfigErrorResponse(server, apiUserFile, apiPassFile);
+        var pending = buildPendingReconcilableTopics();
+        var pendingAndOngoing = client.requestPendingChanges(pending);
+        assertFailedWithMessage(pendingAndOngoing, "Replicas change failed (500), Cluster model not ready");
+
+        MockCruiseControl.expectUserTasksErrorResponse(server, apiUserFile, apiPassFile);
+        var ongoing = buildOngoingReconcilableTopics();
+        var completedAndFailed = client.requestOngoingChanges(ongoing);
+        assertFailedWithMessage(completedAndFailed, "Replicas change failed (500), Error processing GET " +
+            "request '/user_tasks' due to: 'Error happened in fetching response for task 9730e4fb-ea41-4e2d-b053-9be2310589b5'.");
+    }
+
+    @Test
+    public void shouldFailWhenTheRequestTimesOut() {
+        var config = buildFromMap(Map.ofEntries(
+            entry(BOOTSTRAP_SERVERS.key(), "localhost:9092"),
+            entry(NAMESPACE.key(), TEST_NAMESPACE),
+            entry(CRUISE_CONTROL_HOSTNAME.key(), "localhost"),
+            entry(CRUISE_CONTROL_PORT.key(), String.valueOf(serverPort)),
+            entry(CRUISE_CONTROL_SSL_ENABLED.key(), "true"),
+            entry(CRUISE_CONTROL_AUTH_ENABLED.key(), "true"),
+            entry(CRUISE_CONTROL_CRT_FILE_PATH.key(), sslCrtFile.getAbsolutePath()),
+            entry(CRUISE_CONTROL_API_USER_PATH.key(), apiUserFile.getAbsolutePath()),
+            entry(CRUISE_CONTROL_API_PASS_PATH.key(), apiPassFile.getAbsolutePath())
+        ));
+
+        var client = new ReplicasChangeClient(config);
+
+        MockCruiseControl.expectTopicConfigRequestTimeout(server, apiUserFile, apiPassFile);
+        var pending = buildPendingReconcilableTopics();
+        var pendingAndOngoing = client.requestPendingChanges(pending);
+        assertFailedWithMessage(pendingAndOngoing, "Replicas change failed (408)");
+
+        MockCruiseControl.expectUserTasksRequestTimeout(server, apiUserFile, apiPassFile);
+        var ongoing = buildOngoingReconcilableTopics();
+        var completedAndFailed = client.requestOngoingChanges(ongoing);
+        assertFailedWithMessage(completedAndFailed, "Replicas change failed (408)");
+    }
+
+    @Test
+    public void shouldFailWhenTheRequestIsUnauthorized() {
+        var config = buildFromMap(Map.ofEntries(
+            entry(BOOTSTRAP_SERVERS.key(), "localhost:9092"),
+            entry(NAMESPACE.key(), TEST_NAMESPACE),
+            entry(CRUISE_CONTROL_HOSTNAME.key(), "localhost"),
+            entry(CRUISE_CONTROL_PORT.key(), String.valueOf(serverPort)),
+            entry(CRUISE_CONTROL_SSL_ENABLED.key(), "true"),
+            entry(CRUISE_CONTROL_AUTH_ENABLED.key(), "true"),
+            entry(CRUISE_CONTROL_CRT_FILE_PATH.key(), sslCrtFile.getAbsolutePath()),
+            entry(CRUISE_CONTROL_API_USER_PATH.key(), apiUserFile.getAbsolutePath()),
+            entry(CRUISE_CONTROL_API_PASS_PATH.key(), apiPassFile.getAbsolutePath())
+        ));
+
+        var client = new ReplicasChangeClient(config);
+
+        MockCruiseControl.expectTopicConfigRequestUnauthorized(server, apiUserFile, apiPassFile);
+        var pending = buildPendingReconcilableTopics();
+        var pendingAndOngoing = client.requestPendingChanges(pending);
+        assertFailedWithMessage(pendingAndOngoing, "Replicas change failed (401)");
+
+        MockCruiseControl.expectUserTasksRequestUnauthorized(server, apiUserFile, apiPassFile);
+        var ongoing = buildOngoingReconcilableTopics();
+        var completedAndFailed = client.requestOngoingChanges(ongoing);
+        assertFailedWithMessage(completedAndFailed, "Replicas change failed (401)");
+    }
+
+    private static void assertOngoing(List<ReconcilableTopic> input, List<ReconcilableTopic> output) {
+        assertThat(output.isEmpty(), is(false));
+        var outputKt = output.stream().findFirst().get().kt();
+        assertThat(outputKt.getStatus().getReplicasChange(), is(notNullValue()));
+        assertThat(outputKt.getStatus().getReplicasChange().getMessage(), is(nullValue()));
+        assertThat(outputKt.getStatus().getReplicasChange().getSessionId(), is(notNullValue()));
+        assertThat(outputKt.getStatus().getReplicasChange().getState(), is("ongoing"));
+        var inputKt = input.stream().findFirst().get().kt();
+        assertThat(outputKt.getStatus().getReplicasChange().getTargetReplicas(), is(inputKt.getSpec().getReplicas()));
+    }
+
+    private static void assertCompleted(List<ReconcilableTopic> output) {
+        assertThat(output.isEmpty(), is(false));
+        var kt = output.stream().findFirst().get().kt();
+        assertThat(kt.getStatus().getReplicasChange(), is(nullValue()));
+    }
+
+    private static void assertFailedWithMessage(List<ReconcilableTopic> output, String message) {
+        assertThat(output.isEmpty(), is(false));
+        var outputKt = output.stream().findFirst().get().kt();
+        assertThat(outputKt.getStatus().getReplicasChange(), is(notNullValue()));
+        assertThat(outputKt.getStatus().getReplicasChange().getMessage(), is(message));
+    }
+
+    private List<ReconcilableTopic> buildPendingReconcilableTopics() {
+        int replicationFactor = 2;
+        var status = new KafkaTopicStatusBuilder()
+            .withConditions(List.of(new ConditionBuilder()
+                .withType("Ready")
+                .withStatus("True")
+                .withLastTransitionTime(StatusUtils.iso8601Now())
+                .build()))
+            .build();
+        var kafkaTopic = new KafkaTopicBuilder()
+            .withNewMetadata()
+            .withName(TEST_NAME)
+            .withNamespace(TEST_NAMESPACE)
+            .addToLabels("key", "VALUE")
+            .endMetadata()
+            .withNewSpec()
+            .withPartitions(25)
+            .withReplicas(++replicationFactor)
+            .endSpec()
+            .withStatus(status)
+            .build();
+        return List.of(new ReconcilableTopic(
+            new Reconciliation("test", RESOURCE_KIND, TEST_NAMESPACE, TEST_NAME), 
+            kafkaTopic, topicName(kafkaTopic)));
+    }
+
+    private List<ReconcilableTopic> buildOngoingReconcilableTopics() {
+        int replicationFactor = 3;
+        var status = new KafkaTopicStatusBuilder()
+            .withConditions(List.of(new ConditionBuilder()
+                .withType("Ready")
+                .withStatus("True")
+                .withLastTransitionTime(StatusUtils.iso8601Now())
+                .build()))
+            .withReplicasChange(new ReplicasChangeStatusBuilder()
+                .withSessionId("8911ca89-351f-888-8d0f-9aade00e098h")
+                .withState("ongoing")
+                .withTargetReplicas(replicationFactor)
+                .build())
+            .build();
+        var kafkaTopic = new KafkaTopicBuilder()
+            .withNewMetadata()
+            .withName(TEST_NAME)
+            .withNamespace(TEST_NAMESPACE)
+            .addToLabels("key", "VALUE")
+            .endMetadata()
+            .withNewSpec()
+            .withPartitions(25)
+            .withReplicas(3)
+            .endSpec()
+            .withStatus(status)
+            .build();
+        return List.of(new ReconcilableTopic(
+            new Reconciliation("test", RESOURCE_KIND, TEST_NAMESPACE, TEST_NAME), 
+            kafkaTopic, topicName(kafkaTopic)));
+    }
+
+    private static List<TopicOperatorConfig> validConfigs() {
+        return Arrays.asList(
+            // encryption and authentication disabled
+            buildFromMap(Map.ofEntries(
+                entry(BOOTSTRAP_SERVERS.key(), "localhost:9092"),
+                entry(NAMESPACE.key(), TEST_NAMESPACE),
+                entry(CRUISE_CONTROL_HOSTNAME.key(), "localhost"),
+                entry(CRUISE_CONTROL_PORT.key(), String.valueOf(serverPort)),
+                entry(CRUISE_CONTROL_SSL_ENABLED.key(), "false"),
+                entry(CRUISE_CONTROL_AUTH_ENABLED.key(), "false")
+            )),
+
+            // encryption and authentication enabled
+            buildFromMap(Map.ofEntries(
+                entry(BOOTSTRAP_SERVERS.key(), "localhost:9092"),
+                entry(NAMESPACE.key(), TEST_NAMESPACE),
+                entry(CRUISE_CONTROL_HOSTNAME.key(), "localhost"),
+                entry(CRUISE_CONTROL_PORT.key(), String.valueOf(serverPort)),
+                entry(CRUISE_CONTROL_SSL_ENABLED.key(), "true"),
+                entry(CRUISE_CONTROL_AUTH_ENABLED.key(), "true"),
+                entry(CRUISE_CONTROL_CRT_FILE_PATH.key(), sslCrtFile.getAbsolutePath()),
+                entry(CRUISE_CONTROL_API_USER_PATH.key(), apiUserFile.getAbsolutePath()),
+                entry(CRUISE_CONTROL_API_PASS_PATH.key(), apiPassFile.getAbsolutePath())
+            )),
+
+            // rack enabled
+            buildFromMap(Map.ofEntries(
+                entry(BOOTSTRAP_SERVERS.key(), "localhost:9092"),
+                entry(NAMESPACE.key(), TEST_NAMESPACE),
+                entry(CRUISE_CONTROL_RACK_ENABLED.key(), "true"),
+                entry(CRUISE_CONTROL_HOSTNAME.key(), "localhost"),
+                entry(CRUISE_CONTROL_PORT.key(), String.valueOf(serverPort))
+            )),
+
+            // encryption only
+            buildFromMap(Map.ofEntries(
+                entry(BOOTSTRAP_SERVERS.key(), "localhost:9092"),
+                entry(NAMESPACE.key(), TEST_NAMESPACE),
+                entry(CRUISE_CONTROL_HOSTNAME.key(), "localhost"),
+                entry(CRUISE_CONTROL_PORT.key(), String.valueOf(serverPort)),
+                entry(CRUISE_CONTROL_SSL_ENABLED.key(), "true"),
+                entry(CRUISE_CONTROL_AUTH_ENABLED.key(), "false"),
+                entry(CRUISE_CONTROL_CRT_FILE_PATH.key(), sslCrtFile.getAbsolutePath())
+            )),
+
+            // authentication only
+            buildFromMap(Map.ofEntries(
+                entry(BOOTSTRAP_SERVERS.key(), "localhost:9092"),
+                entry(NAMESPACE.key(), TEST_NAMESPACE),
+                entry(CRUISE_CONTROL_HOSTNAME.key(), "localhost"),
+                entry(CRUISE_CONTROL_PORT.key(), String.valueOf(serverPort)),
+                entry(CRUISE_CONTROL_SSL_ENABLED.key(), "false"),
+                entry(CRUISE_CONTROL_AUTH_ENABLED.key(), "true"),
+                entry(CRUISE_CONTROL_API_USER_PATH.key(), apiUserFile.getAbsolutePath()),
+                entry(CRUISE_CONTROL_API_PASS_PATH.key(), apiPassFile.getAbsolutePath())
+            ))
+        );
+    }
+}
