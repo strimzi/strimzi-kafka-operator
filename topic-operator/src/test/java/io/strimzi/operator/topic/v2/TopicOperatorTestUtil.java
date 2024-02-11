@@ -29,7 +29,6 @@ import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static org.junit.jupiter.api.Assertions.fail;
 
 class TopicOperatorTestUtil {
-
     private static final Logger LOGGER = LogManager.getLogger(TopicOperatorTestUtil.class);
     private TopicOperatorTestUtil() { }
 
@@ -93,7 +92,7 @@ class TopicOperatorTestUtil {
         }
     }
 
-    private static KafkaTopic modifyTopic(KubernetesClient client, KafkaTopic kt, UnaryOperator<KafkaTopic> changer) {
+    static KafkaTopic modifyTopic(KubernetesClient client, KafkaTopic kt, UnaryOperator<KafkaTopic> changer) {
         String ns = kt.getMetadata().getNamespace();
         String metadataName = kt.getMetadata().getName();
         // Occasionally a single call to edit() will throw with a HTTP 409 (Conflict)

@@ -470,6 +470,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
      * @param passwordGenerator The password generator for API users.
      * @param username Username for the Cruise Control API user.
      * @param password Password for the Cruise Control API user.
+     * 
      * @return The generated Secret.
      */
     public Secret generateApiSecretWithTopicOperatorUser(PasswordGenerator passwordGenerator, String username, String password) {

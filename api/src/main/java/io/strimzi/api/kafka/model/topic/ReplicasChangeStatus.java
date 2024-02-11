@@ -70,7 +70,7 @@ public class ReplicasChangeStatus implements UnknownPropertyPreserving, Serializ
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @Description("Message for the user related to the replicas change request." +
+    @Description("Message for the user related to the replicas change request. " +
         "This may contain transient error messages that would disappear on periodic reconciliations.")
     public String getMessage() {
         return message;

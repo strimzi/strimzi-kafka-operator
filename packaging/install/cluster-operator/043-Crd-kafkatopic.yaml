@@ -118,7 +118,7 @@ spec:
                     description: "Current state of the replicas change operation. This can be pending, when the change has been requested, and ongoing, when the change has been successfully submitted to Cruise control."
                   message:
                     type: string
-                    description: Message for the user related to the replicas change request.This may contain transient error messages that would disappear on periodic reconciliations.
+                    description: Message for the user related to the replicas change request. This may contain transient error messages that would disappear on periodic reconciliations.
                   sessionId:
                     type: string
                     description: The session identifier for replicas change requests pertaining to this KafkaTopic resource. This is used by the Topic Operator to track the status of ongoing replicas change operations.
@@ -222,7 +222,7 @@ spec:
                     description: "Current state of the replicas change operation. This can be pending, when the change has been requested, and ongoing, when the change has been successfully submitted to Cruise control."
                   message:
                     type: string
-                    description: Message for the user related to the replicas change request.This may contain transient error messages that would disappear on periodic reconciliations.
+                    description: Message for the user related to the replicas change request. This may contain transient error messages that would disappear on periodic reconciliations.
                   sessionId:
                     type: string
                     description: The session identifier for replicas change requests pertaining to this KafkaTopic resource. This is used by the Topic Operator to track the status of ongoing replicas change operations.
@@ -326,7 +326,7 @@ spec:
                     description: "Current state of the replicas change operation. This can be pending, when the change has been requested, and ongoing, when the change has been successfully submitted to Cruise control."
                   message:
                     type: string
-                    description: Message for the user related to the replicas change request.This may contain transient error messages that would disappear on periodic reconciliations.
+                    description: Message for the user related to the replicas change request. This may contain transient error messages that would disappear on periodic reconciliations.
                   sessionId:
                     type: string
                     description: The session identifier for replicas change requests pertaining to this KafkaTopic resource. This is used by the Topic Operator to track the status of ongoing replicas change operations.

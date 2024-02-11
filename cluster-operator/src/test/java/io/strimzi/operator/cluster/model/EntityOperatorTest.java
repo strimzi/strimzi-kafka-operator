@@ -125,16 +125,22 @@ public class EntityOperatorTest {
 
     @ParallelTest
     public void testGenerateDeploymentWithBto() {
-        testGenerateDeployment(false);
+        testGenerateDeployment(false, false);
     }
 
     @ParallelTest
     public void testGenerateDeploymentWithUto() {
-        testGenerateDeployment(true);
+        testGenerateDeployment(true, false);
     }
 
-    private void testGenerateDeployment(boolean useUnidirectionalTopicOperator) {
+    @ParallelTest
+    public void testGenerateDeploymentWithUtoAndCc() {
+        testGenerateDeployment(true, true);
+    }
+
+    private void testGenerateDeployment(boolean useUnidirectionalTopicOperator, boolean cruiseControlEnabled) {
         entityOperator.unidirectionalTopicOperator = useUnidirectionalTopicOperator;
+        entityOperator.cruiseControlEnabled = cruiseControlEnabled;
         Deployment dep = entityOperator.generateDeployment(true, null, null);
 
         List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
@@ -172,7 +178,9 @@ public class EntityOperatorTest {
             assertThat(volumes.stream().filter(volume -> volume.getName().equals(EntityOperator.TLS_SIDECAR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME)).findFirst().orElseThrow().getEmptyDir().getSizeLimit(), is(new Quantity("100", "Mi")));
         } else {
             assertThat(volumes.stream().filter(volume -> volume.getName().equals(EntityOperator.TLS_SIDECAR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME)).findFirst().isEmpty(), is(true));
-
+        }
+        if (useUnidirectionalTopicOperator && cruiseControlEnabled) {
+            assertThat(volumes.stream().filter(volume -> volume.getName().equals(EntityOperator.ETO_CC_API_VOLUME_NAME)).findFirst().isEmpty(), is(false));
         }
     }
 

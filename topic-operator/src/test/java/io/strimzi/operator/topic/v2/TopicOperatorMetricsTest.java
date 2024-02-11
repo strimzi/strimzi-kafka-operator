@@ -31,7 +31,6 @@ import org.mockito.Mockito;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import static io.strimzi.api.ResourceAnnotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION;
@@ -157,13 +156,14 @@ public class TopicOperatorMetricsTest {
     }
 
     @Test
-    public void shouldHaveMetricsAfterSomeReconciliations(KafkaCluster cluster) throws ExecutionException, InterruptedException {
+    public void shouldHaveMetricsAfterSomeReconciliations(KafkaCluster cluster) throws InterruptedException {
         Admin admin = Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, cluster.getBootstrapServers()));
         var config = Mockito.mock(TopicOperatorConfig.class);
         Mockito.doReturn(NAMESPACE).when(config).namespace();
         Mockito.doReturn(true).when(config).useFinalizer();
         Mockito.doReturn(false).when(config).enableAdditionalMetrics();
-        BatchingTopicController controller = new BatchingTopicController(config, Map.of("key", "VALUE"), admin, client, metrics);
+        var replicasChangeClient = Mockito.mock(ReplicasChangeClient.class);
+        BatchingTopicController controller = new BatchingTopicController(config, Map.of("key", "VALUE"), admin, client, metrics, replicasChangeClient);
 
         KafkaTopic t1 = createResource(client, "t1", "t1");
         KafkaTopic t2 = createResource(client, "t2", "t1");

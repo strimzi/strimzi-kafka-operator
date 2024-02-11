@@ -86,8 +86,8 @@ public class EntityOperator extends AbstractModel {
     /* test */ String zookeeperConnect;
     private EntityTopicOperator topicOperator;
     private EntityUserOperator userOperator;
-    /* test */  boolean unidirectionalTopicOperator;
-    private boolean cruiseControlEnabled;
+    /* test */ boolean unidirectionalTopicOperator;
+    /* test */ boolean cruiseControlEnabled;
     private TlsSidecar tlsSidecar;
     private String tlsSidecarImage;
 
@@ -303,7 +303,7 @@ public class EntityOperator extends AbstractModel {
             volumeList.addAll(topicOperator.getVolumes());
             volumeList.add(VolumeUtils.createTempDirVolume(TOPIC_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME, templatePod));
             volumeList.add(VolumeUtils.createSecretVolume(ETO_CERTS_VOLUME_NAME, KafkaResources.entityTopicOperatorSecretName(cluster), isOpenShift));
-            if (cruiseControlEnabled) {
+            if (unidirectionalTopicOperator && cruiseControlEnabled) {
                 volumeList.add(VolumeUtils.createSecretVolume(ETO_CC_API_VOLUME_NAME, KafkaResources.entityTopicOperatorCcApiSecretName(cluster), isOpenShift));
             }
         }

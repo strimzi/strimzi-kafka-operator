@@ -101,7 +101,8 @@ public class BatchingTopicController {
                             Map<String, String> selector,
                             Admin admin,
                             KubernetesClient kubeClient,
-                            TopicOperatorMetricsHolder metrics) {
+                            TopicOperatorMetricsHolder metrics, 
+                            ReplicasChangeClient replicasChangeClient) {
         this.config = config;
         this.selector = Objects.requireNonNull(selector);
         this.useFinalizer = config.useFinalizer();
@@ -117,7 +118,7 @@ public class BatchingTopicController {
         this.metrics = metrics;
         this.namespace = config.namespace();
         this.enableAdditionalMetrics = config.enableAdditionalMetrics();
-        this.replicasChangeClient = new ReplicasChangeClient(config);
+        this.replicasChangeClient = replicasChangeClient;
     }
 
     private static Optional<String> getClusterConfig(Admin admin, String name) {
@@ -471,11 +472,87 @@ public class BatchingTopicController {
         var createPartitionsResults = createPartitions(someCreatePartitions);
         var findDifferentRfResults = findDifferentRf(currentStatesOrError);
         
+        // Cruise Control integration
+        maybeResetReplicasChangeStatuses(currentStatesOrError);
+        maybeCheckReplicasChanges(topics, results, findDifferentRfResults);
+        
         accumulateResults(topics, results, alterConfigsResults, createPartitionsResults, findDifferentRfResults);
         updateStatuses(results);
         remainingAfterDeletions.forEach(rt -> stopReconciliationTimer(rt, metrics, namespace));
 
         LOGGER.traceOp("Reconciled batch of {} KafkaTopics", results.size());
+    }
+
+    /* test */ void maybeResetReplicasChangeStatuses(PartitionedByError<ReconcilableTopic, CurrentState> currentStatesOrError) {
+        if (config.cruiseControlEnabled()) {
+            currentStatesOrError.ok().forEach(pair -> {
+                var reconcilableTopic = pair.getKey();
+                var currentState = pair.getValue();
+                if (currentState.uniqueReplicationFactor() == reconcilableTopic.kt().getSpec().getReplicas()
+                    && reconcilableTopic.kt().getStatus() != null && reconcilableTopic.kt().getStatus().getReplicasChange() != null
+                    && reconcilableTopic.kt().getStatus().getReplicasChange().getMessage() != null) {
+                    // the user reverted an invalid replicas value
+                    reconcilableTopic.kt().getStatus().setReplicasChange(null);
+                }
+            });
+        }
+    }
+
+    /* test */ void maybeCheckReplicasChanges(List<ReconcilableTopic> topics,
+                                              Map<ReconcilableTopic, Either<TopicOperatorException, Object>> results,
+                                              PartitionedByError<ReconcilableTopic, CurrentState> differentRfResults) {
+        if (config.cruiseControlEnabled()) {
+            var topicsWithDifferentRf = differentRfResults.ok().map(Pair::getKey).collect(Collectors.toList());
+            requestPendingReplicasChanges(topicsWithDifferentRf, results);
+            checkOngoingReplicasChanges(topics, results);
+        }
+    }
+
+    private void requestPendingReplicasChanges(List<ReconcilableTopic> topicsWithDifferentRf, Map<ReconcilableTopic, Either<TopicOperatorException, Object>> results) {
+        var pending = getReplicasChanges(topicsWithDifferentRf, this::isPendingReplicasChange);
+        checkMinInsyncReplicas(pending);
+        var pendingAndOngoing = replicasChangeClient.requestPendingChanges(pending);
+        pendingAndOngoing.forEach(rt -> putResult(results, rt, Either.ofRight(null)));
+    }
+
+    private void checkOngoingReplicasChanges(List<ReconcilableTopic> topics, Map<ReconcilableTopic, Either<TopicOperatorException, Object>> results) {
+        var ongoing = getReplicasChanges(topics, this::isOngoingReplicasChange);
+        var completedAndFailed = replicasChangeClient.requestOngoingChanges(ongoing);
+        completedAndFailed.forEach(rt -> putResult(results, rt, Either.ofRight(null)));
+    }
+
+    private List<ReconcilableTopic> getReplicasChanges(List<ReconcilableTopic> reconcilableTopics, Predicate<KafkaTopic> status) {
+        return reconcilableTopics.stream().filter(rt -> status.test(rt.kt())).collect(Collectors.toList());
+    }
+
+    private boolean isPendingReplicasChange(KafkaTopic kafkaTopic) {
+        return kafkaTopic.getStatus() != null
+            && (kafkaTopic.getStatus().getReplicasChange() == null
+            || (kafkaTopic.getStatus().getReplicasChange().getState().equals("pending")
+            && kafkaTopic.getStatus().getReplicasChange().getSessionId() == null));
+    }
+
+    private boolean isOngoingReplicasChange(KafkaTopic kafkaTopic) {
+        return kafkaTopic.getStatus() != null
+            && kafkaTopic.getStatus().getReplicasChange() != null
+            && kafkaTopic.getStatus().getReplicasChange().getState().equals("ongoing")
+            && kafkaTopic.getStatus().getReplicasChange().getSessionId() != null;
+    }
+
+    private void checkMinInsyncReplicas(List<ReconcilableTopic> reconcilableTopics) {
+        Optional<String> clusterMinIsr = getClusterConfig(admin, MIN_INSYNC_REPLICAS);
+        for (ReconcilableTopic reconcilableTopic : reconcilableTopics) {
+            var topicConfig = reconcilableTopic.kt().getSpec().getConfig();
+            if (topicConfig != null) {
+                Integer topicMinIsr = (Integer) topicConfig.get(MIN_INSYNC_REPLICAS);
+                int minIsr = topicMinIsr != null ? topicMinIsr : clusterMinIsr.isPresent() ? Integer.parseInt(clusterMinIsr.get()) : 1;
+                int targetRf = reconcilableTopic.kt().getSpec().getReplicas();
+                if (targetRf < minIsr) {
+                    LOGGER.warnCr(reconcilableTopic.reconciliation(),
+                        "The target replication factor ({}) is below the configured {} ({})", targetRf, MIN_INSYNC_REPLICAS, minIsr);
+                }
+            }
+        }
     }
 
     private Predicate<ReconcilableTopic> hasTopicSpec = reconcilableTopic -> {
@@ -553,7 +630,7 @@ public class BatchingTopicController {
         });
         LOGGER.traceOp("Updated status of {} KafkaTopics", results.size());
     }
-    
+
     private void accumulateResults(List<ReconcilableTopic> topics,
                                    Map<ReconcilableTopic, Either<TopicOperatorException, Object>> results,
                                    PartitionedByError<ReconcilableTopic, Void> alterConfigsResults,
@@ -570,20 +647,7 @@ public class BatchingTopicController {
         // handle topics with different replication factor value
         LOGGER.traceOp("Reconciling replicas changes");
         differentRfResults.errors().forEach(pair -> putResult(results, pair.getKey(), Either.ofLeft(pair.getValue())));
-        if (config.cruiseControlEnabled()) {
-            // request pending changes
-            var changes = differentRfResults.ok().map(Pair::getKey).collect(Collectors.toList());
-            var pending = getReplicasChanges(changes, this::isPendingReplicasChange);
-            checkMinInsyncReplicas(pending);
-            var pendingAndOngoing = replicasChangeClient.requestPendingChanges(pending);
-            pendingAndOngoing.forEach(rt -> putResult(results, rt, Either.ofRight(null)));
-            
-            // check ongoing changes
-            var allOngoing = getReplicasChanges(topics, this::isOngoingReplicasChange);
-            var completedAndFailed = replicasChangeClient.checkOngoingChanges(allOngoing);
-            completedAndFailed.forEach(rt -> putResult(results, rt, Either.ofRight(null)));
-            
-        } else if (!config.cruiseControlEnabled()) {
+        if (!config.cruiseControlEnabled()) {
             differentRfResults.ok().forEach(pair -> {
                 var reconcilableTopic = pair.getKey();
                 var specPartitions = partitions(reconcilableTopic.kt());
@@ -591,37 +655,6 @@ public class BatchingTopicController {
                 putResult(results, reconcilableTopic, Either.ofLeft(new TopicOperatorException.NotSupported(
                     "Replication factor change not supported, but required for partitions " + partitions)));
             });
-        }
-    }
-
-    private List<ReconcilableTopic> getReplicasChanges(List<ReconcilableTopic> reconcilableTopics, Predicate<KafkaTopic> status) {
-        return reconcilableTopics.stream().filter(rt -> status.test(rt.kt())).collect(Collectors.toList());
-    }
-    
-    private boolean isPendingReplicasChange(KafkaTopic kafkaTopic) {
-        return kafkaTopic.getStatus() != null
-            && (kafkaTopic.getStatus().getReplicasChange() == null
-            || (kafkaTopic.getStatus().getReplicasChange().getState().equals("pending") 
-                && kafkaTopic.getStatus().getReplicasChange().getSessionId() == null));
-    }
-
-    private boolean isOngoingReplicasChange(KafkaTopic kafkaTopic) {
-        return kafkaTopic.getStatus() != null
-            && kafkaTopic.getStatus().getReplicasChange() != null
-            && kafkaTopic.getStatus().getReplicasChange().getState().equals("ongoing")
-            && kafkaTopic.getStatus().getReplicasChange().getSessionId() != null;
-    }
-    
-    private void checkMinInsyncReplicas(List<ReconcilableTopic> reconcilableTopics) {
-        Optional<String> clusterMinIsr = getClusterConfig(admin, MIN_INSYNC_REPLICAS);
-        for (ReconcilableTopic reconcilableTopic : reconcilableTopics) {
-            Integer topicMinIsr = (Integer) reconcilableTopic.kt().getSpec().getConfig().get(MIN_INSYNC_REPLICAS);
-            int minIsr = topicMinIsr != null ? topicMinIsr : clusterMinIsr.isPresent() ? Integer.parseInt(clusterMinIsr.get()) : 1;
-            int targetRf = reconcilableTopic.kt().getSpec().getReplicas();
-            if (targetRf < minIsr) {
-                LOGGER.warnCr(reconcilableTopic.reconciliation(),
-                    "The target replication factor ({}) is below the configured {} ({})", targetRf, MIN_INSYNC_REPLICAS, minIsr);
-            }
         }
     }
 
@@ -783,12 +816,6 @@ public class BatchingTopicController {
         var apparentlyDifferentRf = currentStatesOrError.ok().filter(pair -> {
             var reconcilableTopic = pair.getKey();
             var currentState = pair.getValue();
-            // this is to trigger the replicas change status update when the user reverts an invalid replicas configuration
-            if (currentState.uniqueReplicationFactor() == reconcilableTopic.kt().getSpec().getReplicas()
-                    && reconcilableTopic.kt().getStatus() != null && reconcilableTopic.kt().getStatus().getReplicasChange() != null
-                    && reconcilableTopic.kt().getStatus().getReplicasChange().getMessage() != null) {
-                reconcilableTopic.kt().getStatus().setReplicasChange(null);
-            }
             return reconcilableTopic.kt().getSpec().getReplicas() != null
                 && currentState.uniqueReplicationFactor() != reconcilableTopic.kt().getSpec().getReplicas();
         }).toList();

@@ -543,7 +543,7 @@ public class Util {
     }
 
     /**
-     * Encodes a String into Base64 using US_ASCII charset.
+     * Encodes a String into Base64.
      *
      * @param data String that should be encoded.
      *
@@ -554,7 +554,7 @@ public class Util {
     }
 
     /**
-     * Decodes a String from Base64 using US_ASCII charset.
+     * Decodes a String from Base64.
      *
      * @param data String that should be decoded.
      *

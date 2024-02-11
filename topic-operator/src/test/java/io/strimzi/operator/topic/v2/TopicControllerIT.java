@@ -3,9 +3,8 @@
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
 package io.strimzi.operator.topic.v2;
-
+    
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.kroxylicious.testing.kafka.api.KafkaCluster;
 import io.kroxylicious.testing.kafka.common.BrokerCluster;
@@ -84,8 +83,6 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
 import static io.strimzi.api.ResourceAnnotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION;
-import static io.strimzi.operator.topic.v2.TopicOperatorTestUtil.findKafkaTopicByName;
-import static io.strimzi.operator.topic.v2.TopicOperatorUtil.isPaused;
 import static java.lang.String.format;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -715,7 +712,7 @@ class TopicControllerIT {
 
             // when
             LOGGER.debug("##Modifying");
-            unmanaged = modifyTopic(kt, theKt -> {
+            unmanaged = TopicOperatorTestUtil.modifyTopic(client, kt, theKt -> {
                 theKt.getMetadata().setLabels(unmatchedLabels);
                 theKt.getSpec().setPartitions(3);
                 return theKt;
@@ -1142,7 +1139,7 @@ class TopicControllerIT {
 
         // when: The finalizer is removed
         LOGGER.debug("Removing finalizer");
-        var postUpdate = modifyTopic(created, theKt1 -> {
+        var postUpdate = TopicOperatorTestUtil.modifyTopic(client, created, theKt1 -> {
             theKt1.getMetadata().getFinalizers().remove(BatchingTopicController.FINALIZER);
             return theKt1;
         });
@@ -1241,7 +1238,7 @@ class TopicControllerIT {
                 false, "", "", "", "",
                 useFinalizer,
                 100, 100, 10, false,
-                false, false, "", 9090, false, false);
+                false, false, "", 9090, false, false, "", "", "");
     }
 
     @ParameterizedTest
@@ -1294,7 +1291,7 @@ class TopicControllerIT {
         int specReplicas = kt.getSpec().getReplicas();
 
         createTopicAndAssertSuccess(kafkaCluster, kt);
-        modifyTopic(kt, theKt -> {
+        TopicOperatorTestUtil.modifyTopic(client, kt, theKt -> {
             return new KafkaTopicBuilder(theKt).editOrNewMetadata().addToAnnotations(TopicOperatorUtil.MANAGED, "false").endMetadata().build();
         });
 
@@ -1325,7 +1322,7 @@ class TopicControllerIT {
         int specReplicas = kt.getSpec().getReplicas();
 
         createTopicAndAssertSuccess(kafkaCluster, kt);
-        modifyTopic(kt, theKt -> {
+        TopicOperatorTestUtil.modifyTopic(client, kt, theKt -> {
             return new KafkaTopicBuilder(theKt).editOrNewMetadata().addToAnnotations(TopicOperatorUtil.MANAGED, "false").endMetadata().build();
         });
 
@@ -1503,41 +1500,20 @@ class TopicControllerIT {
         assertNull(assertExactlyOneCondition(fixed).getReason());
     }
 
-    private KafkaTopic modifyTopic(KafkaTopic kt, UnaryOperator<KafkaTopic> changer) {
-        String ns = kt.getMetadata().getNamespace();
-        String metadataName = kt.getMetadata().getName();
-        // Occasionally a single call to edit() will throw with a HTTP 409 (Conflict)
-        // so let's try up to 3 times
-        int i = 2;
-        while (true) {
-            try {
-                KafkaTopic edited = Crds.topicOperation(client).inNamespace(ns).withName(metadataName).edit(changer);
-                LOGGER.info("Test modified KafkaTopic {} with new resourceVersion {}",
-                        edited.getMetadata().getName(), BatchingTopicController.resourceVersion(edited));
-                return edited;
-            } catch (KubernetesClientException e) {
-                if (i == 0 || e.getCode() != 409 /* conflict */) {
-                    throw e;
-                }
-            }
-            i--;
-        }
-    }
-
     private KafkaTopic modifyTopicAndAwait(KafkaTopic kt, UnaryOperator<KafkaTopic> changer, Predicate<KafkaTopic> predicate) {
-        var edited = modifyTopic(kt, changer);
+        var edited = TopicOperatorTestUtil.modifyTopic(client, kt, changer);
         var postUpdateGeneration = edited.getMetadata().getGeneration();
         Predicate<KafkaTopic> topicWasSyncedAndMatchesPredicate = new Predicate<>() {
             @Override
             public boolean test(KafkaTopic theKt) {
                 return theKt.getStatus() != null
-                        && (theKt.getStatus().getObservedGeneration() >= postUpdateGeneration || isPaused(kt))
+                        && (theKt.getStatus().getObservedGeneration() >= postUpdateGeneration || TopicOperatorUtil.isPaused(kt))
                         && predicate.test(theKt);
             }
 
             @Override
             public String toString() {
-                return "observedGeneration" + (!isPaused(kt) ? " >= " : " == ") + postUpdateGeneration + " and " + predicate;
+                return "observedGeneration" + (!TopicOperatorUtil.isPaused(kt) ? " >= " : " == ") + postUpdateGeneration + " and " + predicate;
             }
         };
         return waitUntil(edited, topicWasSyncedAndMatchesPredicate);
@@ -1929,6 +1905,7 @@ class TopicControllerIT {
             TopicOperatorException.Reason.NOT_SUPPORTED.reason,
             "Decreasing partitions not supported"));
     }
+    
     @RepeatedTest(10)
     public void shouldDetectConflictingKafkaTopicCreations(
             @BrokerConfig(name = "auto.create.topics.enable", value = "false")
@@ -1939,8 +1916,8 @@ class TopicControllerIT {
 
         LOGGER.info("Create conflicting topics: foo and bar");
         var reconciledTopics = createTopicsConcurrently(kafkaCluster, foo, bar);
-        var reconciledFoo = findKafkaTopicByName(reconciledTopics, "foo");
-        var reconciledBar = findKafkaTopicByName(reconciledTopics, "bar");
+        var reconciledFoo = TopicOperatorTestUtil.findKafkaTopicByName(reconciledTopics, "foo");
+        var reconciledBar = TopicOperatorTestUtil.findKafkaTopicByName(reconciledTopics, "bar");
 
         // only one resource with the same topicName should be reconciled
         var fooFailed = readyIsFalse().test(reconciledFoo);
@@ -1973,6 +1950,7 @@ class TopicControllerIT {
 
         waitUntil(failed, readyIsTrue());
     }
+    
     private static <T> KafkaFuture<T> failedFuture(Throwable error) {
         var future = new KafkaFutureImpl<T>();
         future.completeExceptionally(error);
@@ -2011,7 +1989,7 @@ class TopicControllerIT {
                 false, "", "", "", "",
                 true,
                 1, 100, 5_0000, false,
-                false, false, "", 9090, false, false);
+                false, false, "", 9090, false, false, "", "", "");
 
         maybeStartOperator(config);
 
@@ -2085,7 +2063,7 @@ class TopicControllerIT {
         KafkaTopic kt = pauseTopic(NAMESPACE, topicName);
 
         // generation: 3, observedGeneration: 1
-        modifyTopic(kt, theKt -> {
+        TopicOperatorTestUtil.modifyTopic(client, kt, theKt -> {
             theKt.getSpec().setConfig(Map.of(TopicConfig.FLUSH_MS_CONFIG, "1000"));
             return theKt;
         });

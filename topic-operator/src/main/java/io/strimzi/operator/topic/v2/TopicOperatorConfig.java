@@ -56,6 +56,9 @@ import static io.strimzi.operator.common.operator.resource.ConfigParameterParser
  * @param cruiseControlPort             Cruise Control port
  * @param cruiseControlSslEnabled       Whether Cruise Control SSL encryption is enabled
  * @param cruiseControlAuthEnabled      Whether Cruise Control Basic authentication is enabled
+ * @param cruiseControlCrtFilePath      Certificate chain to be trusted
+ * @param cruiseControlApiUserPath      Api admin username file path
+ * @param cruiseControlApiPassPath      Api admin password file path
  */
 public record TopicOperatorConfig(
         String namespace,
@@ -84,7 +87,10 @@ public record TopicOperatorConfig(
         String cruiseControlHostname,
         int cruiseControlPort,
         boolean cruiseControlSslEnabled,
-        boolean cruiseControlAuthEnabled
+        boolean cruiseControlAuthEnabled,
+        String cruiseControlCrtFilePath,
+        String cruiseControlApiUserPath,
+        String cruiseControlApiPassPath
 ) {
     private final static ReconciliationLogger LOGGER = ReconciliationLogger.create(TopicOperatorConfig.class);
 
@@ -115,10 +121,13 @@ public record TopicOperatorConfig(
     // Cruise Control integration
     static final ConfigParameter<Boolean> CRUISE_CONTROL_ENABLED = new ConfigParameter<>("STRIMZI_CRUISE_CONTROL_ENABLED", BOOLEAN, "false", CONFIG_VALUES);
     static final ConfigParameter<Boolean> CRUISE_CONTROL_RACK_ENABLED = new ConfigParameter<>("STRIMZI_CRUISE_CONTROL_RACK_ENABLED", BOOLEAN, "false", CONFIG_VALUES);
-    static final ConfigParameter<String> CRUISE_CONTROL_HOSTNAME = new ConfigParameter<>("STRIMZI_CRUISE_CONTROL_HOSTNAME", STRING, "", CONFIG_VALUES);
+    static final ConfigParameter<String> CRUISE_CONTROL_HOSTNAME = new ConfigParameter<>("STRIMZI_CRUISE_CONTROL_HOSTNAME", STRING, "127.0.0.1", CONFIG_VALUES);
     static final ConfigParameter<Integer> CRUISE_CONTROL_PORT = new ConfigParameter<>("STRIMZI_CRUISE_CONTROL_PORT", strictlyPositive(INTEGER), "9090", CONFIG_VALUES);
     static final ConfigParameter<Boolean> CRUISE_CONTROL_SSL_ENABLED = new ConfigParameter<>("STRIMZI_CRUISE_CONTROL_SSL_ENABLED", BOOLEAN, "false", CONFIG_VALUES);
     static final ConfigParameter<Boolean> CRUISE_CONTROL_AUTH_ENABLED = new ConfigParameter<>("STRIMZI_CRUISE_CONTROL_AUTH_ENABLED", BOOLEAN, "false", CONFIG_VALUES);
+    static final ConfigParameter<String> CRUISE_CONTROL_CRT_FILE_PATH = new ConfigParameter<>("STRIMZI_CRUISE_CONTROL_CRT_FILE_PATH", STRING, "/etc/tls-sidecar/cluster-ca-certs/ca.crt", CONFIG_VALUES);
+    static final ConfigParameter<String> CRUISE_CONTROL_API_USER_PATH = new ConfigParameter<>("STRIMZI_CRUISE_CONTROL_API_USER_PATH", STRING, "/etc/eto-cc-api/topic-operator.apiAdminName", CONFIG_VALUES);
+    static final ConfigParameter<String> CRUISE_CONTROL_API_PASS_PATH = new ConfigParameter<>("STRIMZI_CRUISE_CONTROL_API_PASS_PATH", STRING, "/etc/eto-cc-api/topic-operator.apiAdminPassword", CONFIG_VALUES);
 
     @SuppressWarnings("unchecked")
     private static <T> T get(Map<String, Object> map, ConfigParameter<T> value) {
@@ -177,7 +186,10 @@ public record TopicOperatorConfig(
                 get(map, CRUISE_CONTROL_HOSTNAME),
                 get(map, CRUISE_CONTROL_PORT),
                 get(map, CRUISE_CONTROL_SSL_ENABLED),
-                get(map, CRUISE_CONTROL_AUTH_ENABLED)
+                get(map, CRUISE_CONTROL_AUTH_ENABLED),
+                get(map, CRUISE_CONTROL_CRT_FILE_PATH),
+                get(map, CRUISE_CONTROL_API_USER_PATH),
+                get(map, CRUISE_CONTROL_API_PASS_PATH)
         );
     }
 
@@ -288,6 +300,9 @@ public record TopicOperatorConfig(
                 "\n\tcruiseControlPort=" + cruiseControlPort +
                 "\n\tcruiseControlSslEnabled=" + cruiseControlSslEnabled +
                 "\n\tcruiseControlAuthEnabled=" + cruiseControlAuthEnabled +
+                "\n\tcruiseControlCrtFilePath=" + cruiseControlCrtFilePath +
+                "\n\tcruiseControlApiUserPath=" + cruiseControlApiUserPath +
+                "\n\tcruiseControlApiPassPath=" + cruiseControlApiPassPath +
                 '}';
     }
 }

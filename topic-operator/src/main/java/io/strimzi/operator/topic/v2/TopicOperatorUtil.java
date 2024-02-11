@@ -7,11 +7,18 @@ package io.strimzi.operator.topic.v2;
 import io.micrometer.core.instrument.Timer;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.operator.common.Annotations;
+import io.strimzi.operator.common.Util;
 import io.strimzi.operator.topic.v2.metrics.TopicOperatorMetricsHolder;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import static java.lang.String.format;
+import static java.lang.String.join;
 
 /**
  * Utility class.
@@ -134,5 +141,32 @@ public class TopicOperatorUtil {
      */
     public static boolean isPaused(KafkaTopic kt) {
         return Annotations.isReconciliationPausedWithAnnotation(kt);
+    }
+
+    /**
+     * Get file content.
+     * 
+     * @param filePath Absolute file path.
+     * @return File content.
+     */
+    public static byte[] getFileContent(String filePath) {
+        try {
+            return Files.readAllBytes(Path.of(filePath));
+        } catch (IOException ioe) {
+            throw new RuntimeException(format("File not found: %s", filePath));
+        }
+    }
+    
+    /**
+     * Build Basic HTTP authentication header value.
+     * 
+     * @param username Username.
+     * @param password Password.
+     * 
+     * @return Header value.
+     */
+    public static String buildBasicAuthValue(String username, String password) {
+        String credentials = join(":", username, password);
+        return format("Basic %s", Util.encodeToBase64(credentials));
     }
 }
