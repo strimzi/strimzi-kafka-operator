@@ -91,7 +91,7 @@ public class KRaftUtils {
             }
 
             if (!nodePoolsEnabled)  {
-                if (kafkaSpec.getKafka().getReplicas() == 0)   {
+                if (kafkaSpec.getKafka().getReplicas() == null || kafkaSpec.getKafka().getReplicas() == 0)   {
                     errors.add("The .spec.kafka.replicas property of the Kafka custom resource is missing. " +
                             "This property is required for a ZooKeeper-based Kafka cluster that is not using Node Pools.");
                 }
@@ -136,6 +136,7 @@ public class KRaftUtils {
      */
     public static void nodePoolWarnings(Kafka kafkaCr, KafkaStatus kafkaStatus)   {
         if (kafkaCr.getSpec().getKafka() != null
+                && kafkaCr.getSpec().getKafka().getReplicas() != null
                 && kafkaCr.getSpec().getKafka().getReplicas() > 0) {
             kafkaStatus.addCondition(StatusUtils.buildWarningCondition("UnusedReplicasConfiguration",
                     "The .spec.kafka.replicas property in the Kafka custom resource is ignored when node pools " +
