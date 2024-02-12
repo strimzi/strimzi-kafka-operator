@@ -30,7 +30,7 @@ First sentence of topic.
 The format defined here is recommended because it is the most stable and versatile of anchor formats, and supports variables that enable topics to be reused and cross-referenced properly. Other anchor formats include `\[[anchor-name]]` and `+[#anchor-name]+`, but these formats either do not support variables for content reuse or do not support certain character types, such as periods. These limitations cause errors at build time.
 ====
 
-File names:: Give the module file the same name as the anchor used in it (which is the same as or similar to the module heading), also separated by dashes. Add a prefix with an underscore to the file name to indicate the module type in the format `prefix-file-name`. Use `snip-` for a snippet, `con-` for concept, `ref-` for reference, `proc-` for procedure, `assembly-` for assembly, and `image-` for images and screenshots.
+File names:: Name the module file using the same name as the anchor used in it, which should also align with or resemble the module heading. Separate these elements with dashes. Add a prefix with an underscore to the file name to indicate the module type in the format `prefix-file-name`. Use `snip-` for a snippet, `con-` for concept, `ref-` for reference, `proc-` for procedure, `assembly-` for assembly, and `image-` for images and screenshots.
 +
 .Examples
 * `snip-guided-decision-urls.adoc`  (Snippet of reusable content)
