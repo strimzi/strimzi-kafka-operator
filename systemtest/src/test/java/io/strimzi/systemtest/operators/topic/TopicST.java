@@ -47,6 +47,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.List;
 
+import static io.strimzi.systemtest.TestConstants.ARM64_UNSUPPORTED;
 import static io.strimzi.systemtest.TestConstants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.TestConstants.REGRESSION;
 import static io.strimzi.systemtest.enums.ConditionStatus.False;
@@ -140,6 +141,7 @@ public class TopicST extends AbstractST {
         verifyTopicViaKafka(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName(), topicPartitions, KAFKA_CLUSTER_NAME);
     }
 
+    @Tag(ARM64_UNSUPPORTED) // Due to https://github.com/strimzi/test-clients/issues/75
     @ParallelTest
     void testCreateDeleteCreate(ExtensionContext extensionContext) throws InterruptedException {
         final TestStorage testStorage = new TestStorage(extensionContext);

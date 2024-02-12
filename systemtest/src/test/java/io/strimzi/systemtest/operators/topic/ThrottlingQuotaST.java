@@ -27,6 +27,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
+import static io.strimzi.systemtest.TestConstants.ARM64_UNSUPPORTED;
 import static io.strimzi.systemtest.TestConstants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.TestConstants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -40,6 +41,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
  */
 @Tag(REGRESSION)
 @Tag(INTERNAL_CLIENTS_USED)
+@Tag(ARM64_UNSUPPORTED) // Due to https://github.com/strimzi/test-clients/issues/75
 public class ThrottlingQuotaST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(ThrottlingQuotaST.class);

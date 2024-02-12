@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.AffinityBuilder;
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.NodeSelectorRequirement;
 import io.fabric8.kubernetes.api.model.NodeSelectorRequirementBuilder;
 import io.fabric8.kubernetes.api.model.NodeSelectorTerm;
@@ -28,6 +29,7 @@ import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.operator.common.Annotations;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
@@ -397,11 +399,11 @@ public class KafkaRollerST extends AbstractST {
         // 2nd Rolling update triggered by PodAffinity
 
         // Modify pod affinity settings for the controller node pool
+        // Pod Affinity is expecting a running pod on a node with topologyKey with labels specify by LabelSelector
         PodAffinity podAffinity = new PodAffinityBuilder()
             .addNewRequiredDuringSchedulingIgnoredDuringExecution()
-                .withLabelSelector(controllerPoolSelector)
+                .withLabelSelector(new LabelSelectorBuilder().addToMatchLabels(Labels.STRIMZI_KIND_LABEL, Kafka.RESOURCE_KIND).build())
                 .withTopologyKey("kubernetes.io/hostname")
-                .withNamespaces(testStorage.getNamespaceName())
             .endRequiredDuringSchedulingIgnoredDuringExecution()
             .build();
 
