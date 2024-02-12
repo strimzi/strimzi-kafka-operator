@@ -198,12 +198,23 @@ my-cluster  ...  KRaft
 ----
 +
 --
-* `PreKRaft` is the state when all ZooKeeper-related configurations and resources have been automatically deleted.
+* `PreKRaft` is the state when all ZooKeeper-related resources have been automatically deleted.
 * `KRaft` is the final state (after the controllers have rolled) when the KRaft migration is finalized.
 --
 +
 NOTE: Depending on how `deleteClaim` is configured for ZooKeeper, its Persistent Volume Claims (PVCs) and persistent volumes (PVs) may not be deleted.
 `deleteClaim` specifies whether the PVC is deleted when the cluster is uninstalled. The default is `false`.
+
+. Remove any ZooKeeper-related configuration from the `Kafka` resource.
++
+If present, you can remove the following:
++
+* `log.message.format.version`
+* `inter.broker.protocol.version` 
+* `spec.zookeeper.*` properties 
++
+Removing `log.message.format.version` and `inter.broker.protocol.version` causes the brokers and controllers to roll again.
+Removing ZooKeeper properties removes any warning messages related to ZooKeeper configuration being present in a KRaft-operated cluster.  
 
 [id='proc-deploy-migrate-kraft-rollback-{context}']
 .Performing a rollback on the migration
