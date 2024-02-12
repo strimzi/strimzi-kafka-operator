@@ -128,7 +128,7 @@ cat <path_to_new_certificate> | base64
 .. Update the CA certificate.
 +
 Create a new `ca.crt` property under `data` and copy the base64-encoded CA certificate from the previous step as the value for `ca.crt` property.
-+
+
 .. Increase the value of the CA certificate generation annotation.
 +
 Update the `strimzi.io/ca-cert-generation` annotation with a higher incremental value.
@@ -170,7 +170,7 @@ type: Opaque
 +
 [source,shell,subs="+quotes"]
 kubectl edit secret <ca_key_name>
-
++
 <ca_key_name> is the name of CA key, which is `<kafka_cluster_name>-cluster-ca` for the cluster CA key and `<kafka_cluster_name>-clients-ca` for the clients CA key.
 +
 The following example shows a secret for a cluster CA key that's associated with a Kafka cluster named `my-cluster`.
@@ -203,7 +203,7 @@ cat <path_to_new_key> | base64
 .. Update the CA key.
 +
 Copy the base64-encoded CA key from the previous step as the value for the `ca.key` property under `data`.
-+
+
 .. Increase the value of the CA key generation annotation.
 +
 Update the `strimzi.io/ca-key-generation` annotation with a higher incremental value.
@@ -215,7 +215,7 @@ For your own CA certificates together with a new CA key, set the annotation with
 The annotation needs a higher value than the one from the current secret so that the Cluster Operator can roll the pods and update the certificates and keys.
 The `strimzi.io/ca-key-generation` has to be incremented on each CA certificate renewal.
 
-. Save the secret with the new CA key and key generation annotation value.
+.. Save the secret with the new CA key and key generation annotation value.
 +
 .Example secret configuration updated with a new CA key
 [source,yaml,subs=attributes+]
