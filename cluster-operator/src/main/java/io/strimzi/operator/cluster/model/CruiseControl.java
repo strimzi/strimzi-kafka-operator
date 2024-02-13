@@ -212,8 +212,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
             result.image = image;
 
             KafkaConfiguration kafkaConfiguration = new KafkaConfiguration(reconciliation, kafkaClusterSpec.getConfig().entrySet());
-            CruiseControlConfiguration cruiseControlConfiguration = new CruiseControlConfiguration(reconciliation, ccSpec.getConfig().entrySet());
-            result.updateConfigurationWithDefaults(cruiseControlConfiguration, kafkaConfiguration);
+            result.updateConfigurationWithDefaults(ccSpec, kafkaConfiguration);
 
             CruiseControlConfiguration ccConfiguration = result.configuration;
             result.sslEnabled = ccConfiguration.isApiSslEnabled();
@@ -246,16 +245,15 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
         }
     }
 
-    private void updateConfigurationWithDefaults(CruiseControlConfiguration cruiseControlConfiguration, KafkaConfiguration kafkaConfiguration) {
+    private void updateConfigurationWithDefaults(CruiseControlSpec ccSpec, KafkaConfiguration kafkaConfiguration) {
         Map<String, String> defaultCruiseControlProperties = new HashMap<>(CruiseControlConfiguration.getCruiseControlDefaultPropertiesMap());
-        defaultCruiseControlProperties.put(CruiseControlConfigurationParameters.SAMPLE_STORE_TOPIC_REPLICATION_FACTOR.getValue(), kafkaConfiguration.getConfigOption(KafkaConfiguration.DEFAULT_REPLICATION_FACTOR));
-        for (Map.Entry<String, String> defaultEntry : defaultCruiseControlProperties.entrySet()) {
-            if (cruiseControlConfiguration.getConfigOption(defaultEntry.getKey()) == null) {
-                cruiseControlConfiguration.setConfigOption(defaultEntry.getKey(), defaultEntry.getValue());
-            }
+        if (kafkaConfiguration.getConfigOption(KafkaConfiguration.DEFAULT_REPLICATION_FACTOR) != null)  {
+            defaultCruiseControlProperties.put(CruiseControlConfigurationParameters.SAMPLE_STORE_TOPIC_REPLICATION_FACTOR.getValue(), kafkaConfiguration.getConfigOption(KafkaConfiguration.DEFAULT_REPLICATION_FACTOR));
         }
-        // Ensure that the configured anomaly.detection.goals are a sub-set of the default goals
+
+        CruiseControlConfiguration cruiseControlConfiguration = new CruiseControlConfiguration(reconciliation, ccSpec.getConfig().entrySet(), defaultCruiseControlProperties);
         checkGoals(cruiseControlConfiguration);
+
         this.configuration = cruiseControlConfiguration;
     }
 
