@@ -66,7 +66,6 @@ public class Environment {
      * Specify Kafka client app images used in system tests.
      */
     private static final String TEST_CLIENTS_IMAGE_ENV = "TEST_CLIENTS_IMAGE";
-    private static final String TEST_ADMIN_IMAGE_ENV = "TEST_ADMIN_IMAGE";
     private static final String TEST_CLIENTS_VERSION_ENV = "TEST_CLIENTS_VERSION";
 
     private static final String SCRAPER_IMAGE_ENV = "SCRAPER_IMAGE";
@@ -202,7 +201,6 @@ public class Environment {
     /**
      * Set values
      */
-    private static String config;
     public static final String SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET = getOrDefault(STRIMZI_IMAGE_PULL_SECRET_ENV, "");
     public static final String STRIMZI_ORG = getOrDefault(STRIMZI_ORG_ENV, STRIMZI_ORG_DEFAULT);
     public static final String STRIMZI_TAG = getOrDefault(STRIMZI_TAG_ENV, STRIMZI_TAG_DEFAULT);
@@ -258,7 +256,6 @@ public class Environment {
     static {
         String debugFormat = "{}: {}";
         LOGGER.info("Used environment variables:");
-        LOGGER.info(debugFormat, "CONFIG", config);
         VALUES.entrySet().stream()
                 .sorted(Map.Entry.comparingByKey())
                 .forEach(entry -> LOGGER.info(debugFormat, entry.getKey(), entry.getValue()));
@@ -328,21 +325,26 @@ public class Environment {
         return getOrDefault(varName, String::toString, defaultValue);
     }
 
+    private static <T> T getOrDefault(String var, Function<String, T> converter, T defaultValue) {
+        String value = isEnvVarSet(var) ?
+                System.getenv(var) :
+                (Objects.requireNonNull(YAML_DATA).get(var) != null ?
+                        YAML_DATA.get(var).toString() :
+                        null);
+        T returnValue = defaultValue;
+        if (value != null) {
+            returnValue = converter.apply(value);
+        }
+        VALUES.put(var, String.valueOf(returnValue));
+        return returnValue;
+    }
+
     public static String getImageOutputRegistry() {
         if (KubeClusterResource.getInstance().isOpenShift()) {
             return "image-registry.openshift-image-registry.svc:5000";
         } else if (KubeClusterResource.getInstance().isKind()) {
             // we will need a hostname of machine
-            String hostname = "";
-            try {
-                if (Environment.isIpv4Family() || Environment.isDualStackIpFamily()) {
-                    hostname = InetAddress.getLocalHost().getHostAddress() + ":5001";
-                } else if (Environment.isIpv6Family()) {
-                    hostname = "myregistry.local:5001";
-                }
-            } catch (UnknownHostException e) {
-                throw new RuntimeException(e);
-            }
+            String hostname = getHostname();
             LOGGER.info("Using container registry :{}", hostname);
             return hostname;
         } else {
@@ -357,26 +359,26 @@ public class Environment {
         }
     }
 
+    private static String getHostname() {
+        String hostname = "";
+        try {
+            if (Environment.isIpv4Family() || Environment.isDualStackIpFamily()) {
+                hostname = InetAddress.getLocalHost().getHostAddress() + ":5001";
+            } else if (Environment.isIpv6Family()) {
+                hostname = "myregistry.local:5001";
+            }
+        } catch (UnknownHostException e) {
+            throw new RuntimeException(e);
+        }
+        return hostname;
+    }
+
     public static String getImageOutputRegistry(String namespace, String imageName, String tag) {
         if (!Environment.CONNECT_BUILD_IMAGE_PATH.isEmpty()) {
             return Environment.CONNECT_BUILD_IMAGE_PATH + ":" + tag;
         } else {
             return getImageOutputRegistry() + "/" + namespace + "/" + imageName + ":" + tag;
         }
-    }
-
-    private static <T> T getOrDefault(String var, Function<String, T> converter, T defaultValue) {
-        String value = System.getenv(var) != null ?
-                System.getenv(var) :
-                (Objects.requireNonNull(YAML_DATA).get(var) != null ?
-                        YAML_DATA.get(var).toString() :
-                        null);
-        T returnValue = defaultValue;
-        if (value != null) {
-            returnValue = converter.apply(value);
-        }
-        VALUES.put(var, String.valueOf(returnValue));
-        return returnValue;
     }
 
     private static void saveConfigurationFile() throws IOException {
@@ -412,5 +414,9 @@ public class Environment {
                 && !var.equals(CONFIG_FILE_PATH_ENV)
                 && !var.equals(TEST_LOG_DIR)
                 && !var.equals("USER");
+    }
+
+    public static boolean isEnvVarSet(String envVarName) {
+        return System.getenv(envVarName) != null;
     }
 }
