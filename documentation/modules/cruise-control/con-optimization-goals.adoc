@@ -80,7 +80,7 @@ In your Cruise Control deployment configuration, you can specify which hard goal
 
 * To enforce execution of all hard goals, simply omit the `hard.goals` property."
 
-* To change which hard goals are enforced to execute by Cruise Control, specify the desired goals in the `hard.goals` property, using their fully-qualified domain names.
+* To change which hard goals Cruise Control enforces, specify the required goals in the `hard.goals` property using their fully-qualified domain names.
 
 * To prevent a hard goal from being executed, make sure the goal is not included in the `default.goals` and `hard.goals` list configurations.
 
