@@ -390,7 +390,8 @@ class KafkaST extends AbstractST {
 
         JbodStorage jbodStorage = new JbodStorageBuilder().withVolumes(idZeroVolumeOriginal, idOneVolumeOriginal).build();
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaJBOD(testStorage.getClusterName(), kafkaReplicas, jbodStorage).build());
+        Kafka kafka = KafkaTemplates.kafkaJBOD(testStorage.getClusterName(), kafkaReplicas, jbodStorage).build();
+        resourceManager.createResourceWithWait(extensionContext, kafka);
         // kafka cluster already deployed
         verifyVolumeNamesAndLabels(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getKafkaStatefulSetName(), kafkaReplicas, 2, diskSizeGi);
 
@@ -420,8 +421,7 @@ class KafkaST extends AbstractST {
         final int volumesCount = kubeClient().listPersistentVolumeClaims(testStorage.getNamespaceName(), testStorage.getClusterName()).size();
 
         LOGGER.info("Deleting Kafka: {}/{} cluster", testStorage.getNamespaceName(), testStorage.getClusterName());
-        resourceManager.deleteResource();
-        cmdKubeClient(testStorage.getNamespaceName()).deleteByName("kafka", testStorage.getClusterName());
+        resourceManager.deleteResource(kafka);
         if (Environment.isKafkaNodePoolsEnabled()) {
             cmdKubeClient(testStorage.getNamespaceName()).deleteByName("kafkanodepool", testStorage.getKafkaNodePoolName());
         }
@@ -1000,8 +1000,6 @@ class KafkaST extends AbstractST {
 
         KafkaUtils.waitForKafkaNotReady(testStorage.getNamespaceName(), testStorage.getClusterName());
         KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(testStorage.getClusterName(), testStorage.getNamespaceName(), nonExistingVersionMessage);
-
-        KafkaResource.kafkaClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).delete();
     }
 
     void verifyVolumeNamesAndLabels(String namespaceName, String clusterName, String podSetName, int kafkaReplicas, int diskCountPerReplica, String diskSizeGi) {

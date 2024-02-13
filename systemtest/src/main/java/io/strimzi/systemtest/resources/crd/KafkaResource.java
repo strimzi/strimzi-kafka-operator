@@ -76,18 +76,26 @@ public class KafkaResource implements ResourceType<Kafka> {
                 .allMatch(result -> true);
         }
 
-        // load current Kafka's annotations to obtain information, if KafkaNodePools are used for this Kafka
-        Map<String, String> annotations = kafkaClient().inNamespace(namespaceName)
-            .withName(resource.getMetadata().getName()).get().getMetadata().getAnnotations();
+        // get current Kafka
+        Kafka kafka = kafkaClient().inNamespace(namespaceName)
+            .withName(resource.getMetadata().getName()).get();
 
-        kafkaClient().inNamespace(namespaceName).withName(
-            resource.getMetadata().getName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
+        // proceed only if kafka is still present as Kafka is purposefully deleted in some test cases
+        if (kafka != null) {
+            // load current Kafka's annotations to obtain information, if KafkaNodePools are used for this Kafka
+            Map<String, String> annotations = kafka.getMetadata().getAnnotations();
 
-        if (annotations.get(Annotations.ANNO_STRIMZI_IO_NODE_POOLS) == null
-            || annotations.get(Annotations.ANNO_STRIMZI_IO_NODE_POOLS).equals("disabled")) {
-            // additional deletion of pvcs with specification deleteClaim set to false which were not deleted prior this method
-            PersistentVolumeClaimUtils.deletePvcsByPrefixWithWait(namespaceName, clusterName);
+            kafkaClient().inNamespace(namespaceName).withName(
+                resource.getMetadata().getName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
+
+            if (annotations.get(Annotations.ANNO_STRIMZI_IO_NODE_POOLS) == null
+                || annotations.get(Annotations.ANNO_STRIMZI_IO_NODE_POOLS).equals("disabled")) {
+                // additional deletion of pvcs with specification deleteClaim set to false which were not deleted prior this method
+                PersistentVolumeClaimUtils.deletePvcsByPrefixWithWait(namespaceName, clusterName);
+            }
         }
+
+
     }
 
     @Override
