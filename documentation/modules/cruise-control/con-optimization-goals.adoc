@@ -84,8 +84,8 @@ In your Cruise Control deployment configuration, you can specify which hard goal
 
 * To prevent execution of a specific hard goal, ensure that the goal is not included in both the `default.goals` and `hard.goals` list configurations.
 
-NOTE: We can not configure which goals are _soft goals_ or _hard goals_.
-This is defined by the Cruise Control code.
+NOTE: It is not possible to configure which goals are considered soft or hard goals. 
+This distinction is determined by the Cruise Control code.
 
 .Example `Kafka` configuration for hard optimization goals
 [source,yaml,subs="attributes+"]
