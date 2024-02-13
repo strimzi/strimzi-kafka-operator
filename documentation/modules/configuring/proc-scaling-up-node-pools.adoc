@@ -7,6 +7,7 @@
 
 [role="_abstract"]
 This procedure describes how to scale up a node pool to add new nodes.
+Currently, scale up is only possible for broker-only node pools containing nodes that run as dedicated brokers.
 
 In this procedure, we start with three nodes for node pool `pool-a`:
 
@@ -45,7 +46,7 @@ For example, node pool `pool-a` has three replicas. We add a node by increasing 
 kubectl scale kafkanodepool pool-a --replicas=4
 ----
 
-. Check the status of the deployment and wait for the pods in the node pool to be created and have a status of `READY`.
+. Check the status of the deployment and wait for the pods in the node pool to be created and have a status of `Running`.
 +
 [source,shell]
 ----

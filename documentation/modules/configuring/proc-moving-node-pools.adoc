@@ -42,7 +42,7 @@ For example, node pool `pool-a` has three replicas. We add a node by increasing 
 kubectl scale kafkanodepool pool-a --replicas=4
 ----
 
-. Check the status of the deployment and wait for the pods in the node pool to be created and have a status of `READY`.
+. Check the status of the deployment and wait for the pods in the node pool to be created and have a status of `Running`.
 +
 [source,shell]
 ----
