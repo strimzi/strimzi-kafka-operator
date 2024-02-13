@@ -20,8 +20,9 @@ import lombok.EqualsAndHashCode;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@EqualsAndHashCode
+@EqualsAndHashCode(callSuper = true)
 public class KafkaClientAuthenticationK8sOIDC extends KafkaClientAuthenticationOAuth {
+    private static final long serialVersionUID = 1L;
 
     public static final String TYPE_K8S_OIDC = "k8s-oidc";
 
