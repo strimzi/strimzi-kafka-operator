@@ -3,9 +3,11 @@
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
 
-package io.strimzi.operator.cluster.model;
+package io.strimzi.operator.cluster.model.cruisecontrol;
 
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlSpec;
+import io.strimzi.operator.cluster.model.AbstractConfiguration;
+import io.strimzi.operator.cluster.model.CruiseControl;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlGoals;
@@ -44,7 +46,10 @@ public class CruiseControlConfiguration extends AbstractConfiguration {
             CruiseControlGoals.PREFERRED_LEADER_ELECTION_GOAL.toString()
     );
 
-    protected static final String CRUISE_CONTROL_GOALS = String.join(",", CRUISE_CONTROL_GOALS_LIST);
+    /**
+     * List of supported goals as a String
+     */
+    public static final String CRUISE_CONTROL_GOALS = String.join(",", CRUISE_CONTROL_GOALS_LIST);
 
     /**
      * A list of case insensitive goals that Cruise Control will use as hard goals that must all be met for an optimization
@@ -68,10 +73,13 @@ public class CruiseControlConfiguration extends AbstractConfiguration {
             CruiseControlGoals.DISK_CAPACITY_GOAL.toString()
     );
 
-    protected static final String CRUISE_CONTROL_DEFAULT_ANOMALY_DETECTION_GOALS =
+    /**
+     * List of anomaly detection goals as a String
+     */
+    public static final String CRUISE_CONTROL_DEFAULT_ANOMALY_DETECTION_GOALS =
             String.join(",", CRUISE_CONTROL_DEFAULT_ANOMALY_DETECTION_GOALS_LIST);
 
-    /*
+    /**
     * Map containing default values for required configuration properties. The map needs to be sorted so that the order
     * of the entries in the Cruise Control configuration is deterministic and does not cause unnecessary rolling updates
     * of Cruise Control deployment.
@@ -108,7 +116,10 @@ public class CruiseControlConfiguration extends AbstractConfiguration {
         super(reconciliation, jsonOptions, FORBIDDEN_PREFIXES, FORBIDDEN_PREFIX_EXCEPTIONS, defaults);
     }
 
-    protected static Map<String, String> getCruiseControlDefaultPropertiesMap() {
+    /**
+     * @return Map Cruise Control's default configuration properties
+     */
+    public static Map<String, String> getCruiseControlDefaultPropertiesMap() {
         return CRUISE_CONTROL_DEFAULT_PROPERTIES_MAP;
     }
 

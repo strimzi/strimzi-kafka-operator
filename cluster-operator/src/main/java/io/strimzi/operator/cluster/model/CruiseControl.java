@@ -34,6 +34,7 @@ import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlTemplate;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.cruisecontrol.Capacity;
+import io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlConfiguration;
 import io.strimzi.operator.cluster.model.logging.LoggingModel;
 import io.strimzi.operator.cluster.model.logging.SupportsLogging;
 import io.strimzi.operator.cluster.model.metrics.MetricsModel;
@@ -58,11 +59,11 @@ import java.util.Map;
 import java.util.Set;
 
 import static io.strimzi.api.kafka.model.common.template.DeploymentStrategy.ROLLING_UPDATE;
-import static io.strimzi.operator.cluster.model.CruiseControlConfiguration.CRUISE_CONTROL_DEFAULT_ANOMALY_DETECTION_GOALS;
-import static io.strimzi.operator.cluster.model.CruiseControlConfiguration.CRUISE_CONTROL_GOALS;
 import static io.strimzi.operator.cluster.model.VolumeUtils.createConfigMapVolume;
 import static io.strimzi.operator.cluster.model.VolumeUtils.createSecretVolume;
 import static io.strimzi.operator.cluster.model.VolumeUtils.createVolumeMount;
+import static io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlConfiguration.CRUISE_CONTROL_DEFAULT_ANOMALY_DETECTION_GOALS;
+import static io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlConfiguration.CRUISE_CONTROL_GOALS;
 
 /**
  * Cruise Control model
@@ -104,7 +105,10 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     protected static final String CONFIG_VOLUME_MOUNT = "/opt/cruise-control/custom-config/";
     protected static final String API_AUTH_CONFIG_VOLUME_NAME = "api-auth-config";
     protected static final String API_AUTH_CONFIG_VOLUME_MOUNT = "/opt/cruise-control/api-auth-config/";
-    protected static final String API_AUTH_CREDENTIALS_FILE = API_AUTH_CONFIG_VOLUME_MOUNT + API_AUTH_FILE_KEY;
+    /**
+     * API auth credentials file name
+     */
+    public static final String API_AUTH_CREDENTIALS_FILE = API_AUTH_CONFIG_VOLUME_MOUNT + API_AUTH_FILE_KEY;
 
     protected static final String ENV_VAR_CRUISE_CONTROL_METRICS_ENABLED = "CRUISE_CONTROL_METRICS_ENABLED";
 
