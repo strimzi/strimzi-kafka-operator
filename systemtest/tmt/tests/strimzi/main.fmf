@@ -11,11 +11,11 @@ environment:
   CLUSTER_OPERATOR_INSTALL_TYPE: bundle
   PARALLEL_TEST_COUNT: 2
   RERUN_FAILED_TEST_COUNT: 2
+  # All tests on TF will use KRaft mode because ZK is not working reliably on it's infra
+  STRIMZI_USE_KRAFT_IN_TESTS: "true"
 adjust:
   - environment+:
       EXCLUDED_TEST_GROUPS: "loadbalancer,arm64unsupported"
-      # All tests on TF will use KRaft mode because ZK is not working reliably on it's infra
-      STRIMZI_USE_KRAFT_IN_TESTS: "true"
     when: arch == aarch64, arm64
 
 /smoke:
