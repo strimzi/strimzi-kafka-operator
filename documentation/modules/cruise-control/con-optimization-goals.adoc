@@ -76,7 +76,7 @@ In Cruise Control, the following xref:main-goals[main optimization goals] are ha
 [source]
 RackAwareGoal; ReplicaCapacityGoal; DiskCapacityGoal; NetworkInboundCapacityGoal; NetworkOutboundCapacityGoal; CpuCapacityGoal
 
-You configure which hard goals will be enforced to execute in the Cruise Control deployment configuration, by editing the `hard.goals` property in `Kafka.spec.cruiseControl.config`.
+In your Cruise Control deployment configuration, you can specify which hard goals to enforce using the `hard.goals` property in `Kafka.spec.cruiseControl.config`.
 
 * To enforce that all the hard goals are executed, do not specify the `hard.goals` property in `Kafka.spec.cruiseControl.config`
 
