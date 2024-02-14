@@ -15,6 +15,7 @@ import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.kafkaclients.externalClients.ExternalKafkaClient;
+import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
@@ -31,7 +32,6 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -65,13 +65,13 @@ public class DynamicConfST extends AbstractST {
     private Map<String, Object> kafkaConfig;
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
-    void testSimpleDynamicConfiguration(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+    void testSimpleDynamicConfiguration() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
         Map<String, Object> deepCopyOfShardKafkaConfig = kafkaConfig.entrySet().stream()
-            .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
+            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), KAFKA_REPLICAS, 1)
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), KAFKA_REPLICAS, 1)
             .editMetadata()
                 .withNamespace(Environment.TEST_SUITE_NAMESPACE)
             .endMetadata()
@@ -117,13 +117,13 @@ public class DynamicConfST extends AbstractST {
     @Tag(NODEPORT_SUPPORTED)
     @Tag(ROLLING_UPDATE)
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
-    void testUpdateToExternalListenerCausesRollingRestart(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+    void testUpdateToExternalListenerCausesRollingRestart() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
         Map<String, Object> deepCopyOfShardKafkaConfig = kafkaConfig.entrySet().stream()
-            .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
+            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), KAFKA_REPLICAS, 1)
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), KAFKA_REPLICAS, 1)
             .editMetadata()
                 .withNamespace(Environment.TEST_SUITE_NAMESPACE)
             .endMetadata()
@@ -256,13 +256,13 @@ public class DynamicConfST extends AbstractST {
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     @Tag(ROLLING_UPDATE)
-    void testUpdateToExternalListenerCausesRollingRestartUsingExternalClients(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+    void testUpdateToExternalListenerCausesRollingRestartUsingExternalClients() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
         Map<String, Object> deepCopyOfShardKafkaConfig = kafkaConfig.entrySet().stream()
-            .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
+            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), KAFKA_REPLICAS, 1)
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), KAFKA_REPLICAS, 1)
             .editMetadata()
                 .withNamespace(Environment.TEST_SUITE_NAMESPACE)
             .endMetadata()
@@ -281,8 +281,8 @@ public class DynamicConfST extends AbstractST {
 
         Map<String, String> kafkaPods = PodUtils.podSnapshot(Environment.TEST_SUITE_NAMESPACE, testStorage.getKafkaSelector());
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), Environment.TEST_SUITE_NAMESPACE).build());
-        resourceManager.createResourceWithWait(extensionContext, KafkaUserTemplates.tlsUser(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), testStorage.getKafkaUsername()).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), Environment.TEST_SUITE_NAMESPACE).build());
+        resourceManager.createResourceWithWait(KafkaUserTemplates.tlsUser(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), testStorage.getKafkaUsername()).build());
 
         ExternalKafkaClient externalKafkaClientTls = new ExternalKafkaClient.Builder()
             .withTopicName(testStorage.getTopicName())
@@ -402,9 +402,9 @@ public class DynamicConfST extends AbstractST {
     }
 
     @BeforeAll
-    void setup(ExtensionContext extensionContext) {
+    void setup() {
         this.clusterOperator = this.clusterOperator
-            .defaultInstallation(extensionContext)
+            .defaultInstallation()
             .createInstallation()
             .runInstallation();
     }

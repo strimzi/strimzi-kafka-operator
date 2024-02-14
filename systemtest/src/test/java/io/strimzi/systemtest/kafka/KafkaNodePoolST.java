@@ -14,6 +14,7 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
+import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
@@ -27,7 +28,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -63,8 +63,8 @@ public class KafkaNodePoolST extends AbstractST {
      *  - broker-id-management
      */
     @ParallelNamespaceTest
-    void testKafkaNodePoolBrokerIdsManagementUsingAnnotations(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+    void testKafkaNodePoolBrokerIdsManagementUsingAnnotations() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final String nodePoolNameA = testStorage.getKafkaNodePoolName() + "-a";
         final String nodePoolNameB = testStorage.getKafkaNodePoolName() + "-b";
         final String nodePoolNameInitial = testStorage.getKafkaNodePoolName() + "-initial";
@@ -77,7 +77,7 @@ public class KafkaNodePoolST extends AbstractST {
                 .withAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_NEXT_NODE_IDS, "[91-93]"))
             .endMetadata()
             .build();
-        resourceManager.createResourceWithWait(extensionContext, poolInitial, kafka);
+        resourceManager.createResourceWithWait(poolInitial, kafka);
         PodUtils.waitUntilPodStabilityReplicasCount(testStorage.getNamespaceName(), KafkaResource.getStrimziPodSetName(testStorage.getClusterName(), nodePoolNameInitial), 2);
 
         LOGGER.info("Testing deployment of NodePools with pre-configured annotation: {} is creating Brokers with correct IDs", Annotations.ANNO_STRIMZI_IO_NODE_POOLS);
@@ -93,7 +93,7 @@ public class KafkaNodePoolST extends AbstractST {
                 .withAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_NEXT_NODE_IDS, "[6]"))
             .endMetadata()
             .build();
-        resourceManager.createResourceWithWait(extensionContext, poolA, poolB);
+        resourceManager.createResourceWithWait(poolA, poolB);
         PodUtils.waitUntilPodStabilityReplicasCount(testStorage.getNamespaceName(), KafkaResource.getStrimziPodSetName(testStorage.getClusterName(), nodePoolNameA), 1);
         PodUtils.waitUntilPodStabilityReplicasCount(testStorage.getNamespaceName(), KafkaResource.getStrimziPodSetName(testStorage.getClusterName(), nodePoolNameB), 2);
 
@@ -160,8 +160,8 @@ public class KafkaNodePoolST extends AbstractST {
      *  - kafka-node-pool
      */
     @ParallelNamespaceTest
-    void testNodePoolsAdditionAndRemoval(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+    void testNodePoolsAdditionAndRemoval() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         // node pools name convention is 'A' for all roles (: if possible i.e. based on feature gate) 'B' for broker roles.
         final String poolAName = testStorage.getKafkaNodePoolName() + "-a";
         final String poolB1Name = testStorage.getKafkaNodePoolName() + "-b1";
@@ -179,13 +179,13 @@ public class KafkaNodePoolST extends AbstractST {
             .build();
         final KafkaNodePool poolA = KafkaNodePoolTemplates.kafkaBasedNodePoolWithFgBasedRole(poolAName, kafka, 1).build();
         final KafkaNodePool poolB1 = KafkaNodePoolTemplates.kafkaBasedNodePoolWithBrokerRole(poolB1Name, kafka, brokerNodePoolReplicaCount).build();
-        resourceManager.createResourceWithWait(extensionContext, poolA, poolB1, kafka);
+        resourceManager.createResourceWithWait(poolA, poolB1, kafka);
 
         transmitMessagesWithNewTopicAndClean(testStorage, 3);
 
         LOGGER.info("Add additional KafkaNodePool:  {}/{}", testStorage.getNamespaceName(), poolB2NameAdded);
         final KafkaNodePool poolB2Added = KafkaNodePoolTemplates.kafkaBasedNodePoolWithBrokerRole(poolB2NameAdded, kafka, brokerNodePoolReplicaCount).build();
-        resourceManager.createResourceWithWait(extensionContext, poolB2Added);
+        resourceManager.createResourceWithWait(poolB2Added);
         KafkaNodePoolUtils.waitForKafkaNodePoolPodsReady(testStorage, poolB2NameAdded, ProcessRoles.BROKER, brokerNodePoolReplicaCount);
 
         // replica count of this KafkaTopic will require that new brokers were correctly added into Kafka Cluster
@@ -202,13 +202,13 @@ public class KafkaNodePoolST extends AbstractST {
     private void transmitMessagesWithNewTopicAndClean(TestStorage testStorage, int topicReplicas) {
         final String topicName = testStorage.getTopicName() + "-replicas-" + topicReplicas + "-" + hashStub(String.valueOf(new Random().nextInt(Integer.MAX_VALUE)));
         final KafkaTopic kafkaTopic = KafkaTopicTemplates.topic(testStorage.getClusterName(), topicName, 1, topicReplicas, testStorage.getNamespaceName()).build();
-        resourceManager.createResourceWithWait(testStorage.getExtensionContext(), kafkaTopic);
+        resourceManager.createResourceWithWait(kafkaTopic);
 
         LOGGER.info("Transmit messages with Kafka {}/{} using topic {}", testStorage.getNamespaceName(), testStorage.getClusterName(), topicName);
         KafkaClients kafkaClients = ClientUtils.getDefaultClientBuilder(testStorage)
             .withTopicName(topicName)
             .build();
-        resourceManager.createResourceWithWait(testStorage.getExtensionContext(),
+        resourceManager.createResourceWithWait(
             kafkaClients.producerStrimzi(),
             kafkaClients.consumerStrimzi()
         );
@@ -219,11 +219,11 @@ public class KafkaNodePoolST extends AbstractST {
     }
 
     @BeforeAll
-    void setup(ExtensionContext extensionContext) {
+    void setup() {
         assumeFalse(Environment.isOlmInstall() || Environment.isHelmInstall());
         assumeTrue(Environment.isKafkaNodePoolsEnabled());
 
-        this.clusterOperator = this.clusterOperator.defaultInstallation(extensionContext)
+        this.clusterOperator = this.clusterOperator.defaultInstallation()
             .createInstallation()
             .runInstallation();
     }

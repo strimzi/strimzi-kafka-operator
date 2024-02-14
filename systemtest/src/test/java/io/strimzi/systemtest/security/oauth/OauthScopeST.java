@@ -17,6 +17,7 @@ import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
+import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
@@ -30,12 +31,9 @@ import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.extension.ExtensionContext;
 
-import java.rmi.UnexpectedException;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.TestConstants.ARM64_UNSUPPORTED;
 import static io.strimzi.systemtest.TestConstants.CONNECT;
@@ -60,11 +58,11 @@ public class OauthScopeST extends OauthAbstractST {
 
     @ParallelTest
     @Tag(CONNECT)
-    void testScopeKafkaConnectSetIncorrectly(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+    void testScopeKafkaConnectSetIncorrectly() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
         // SCOPE TESTING
-        resourceManager.createResourceWithoutWait(extensionContext, KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), testStorage.getClusterName(), 1)
+        resourceManager.createResourceWithoutWait(KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), testStorage.getClusterName(), 1)
             .editMetadata()
                 .withNamespace(Environment.TEST_SUITE_NAMESPACE)
             .endMetadata()
@@ -98,11 +96,11 @@ public class OauthScopeST extends OauthAbstractST {
 
     @ParallelTest
     @Tag(CONNECT)
-    void testScopeKafkaConnectSetCorrectly(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+    void testScopeKafkaConnectSetCorrectly() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
         // SCOPE TESTING
-        resourceManager.createResourceWithWait(extensionContext, KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), testStorage.getClusterName(), 1)
+        resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), testStorage.getClusterName(), 1)
             .editMetadata()
                 .withNamespace(Environment.TEST_SUITE_NAMESPACE)
             .endMetadata()
@@ -121,7 +119,7 @@ public class OauthScopeST extends OauthAbstractST {
                         .withSecretName(OAUTH_KAFKA_CLIENT_SECRET)
                         .withKey(OAUTH_KEY)
                     .endClientSecret()
-                    // scope set correctly regarding to the scope-test realm
+                    // scope set correctly regarding the scope-test realm
                     .withScope("test")
                 .endKafkaClientAuthenticationOAuth()
                 .withTls(null)
@@ -141,8 +139,8 @@ public class OauthScopeST extends OauthAbstractST {
     }
 
     @ParallelTest
-    void testClientScopeKafkaSetCorrectly(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+    void testClientScopeKafkaSetCorrectly() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final String producerName = OAUTH_PRODUCER_NAME + "-" + testStorage.getClusterName();
         final String consumerName = OAUTH_CONSUMER_NAME + "-" + testStorage.getClusterName();
 
@@ -160,16 +158,16 @@ public class OauthScopeST extends OauthAbstractST {
         // clientScope is set to 'test' by default
 
         // verification phase the KafkaClient to authenticate.
-        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, testStorage.getTopicName(), Environment.TEST_SUITE_NAMESPACE).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(oauthClusterName, testStorage.getTopicName(), Environment.TEST_SUITE_NAMESPACE).build());
 
-        resourceManager.createResourceWithWait(extensionContext, oauthInternalClientChecksJob.producerStrimzi());
-        // client should succeeded because we set to `clientScope=test` and also Kafka has `scope=test`
+        resourceManager.createResourceWithWait(oauthInternalClientChecksJob.producerStrimzi());
+        // client should succeed because we set to `clientScope=test` and also Kafka has `scope=test`
         ClientUtils.waitForClientSuccess(producerName, Environment.TEST_SUITE_NAMESPACE, testStorage.getMessageCount());
     }
 
     @IsolatedTest("Modification of shared Kafka cluster")
-    void testClientScopeKafkaSetIncorrectly(ExtensionContext extensionContext) throws UnexpectedException {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+    void testClientScopeKafkaSetIncorrectly() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final String producerName = OAUTH_PRODUCER_NAME + "-" + testStorage.getClusterName();
         final String consumerName = OAUTH_CONSUMER_NAME + "-" + testStorage.getClusterName();
         final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(oauthClusterName, KafkaResources.kafkaComponentName(oauthClusterName));
@@ -192,7 +190,7 @@ public class OauthScopeST extends OauthAbstractST {
             List<GenericKafkaListener> scopeListeners = kafka.getSpec().getKafka().getListeners()
                 .stream()
                 .filter(listener -> listener.getName().equals(scopeListener))
-                .collect(Collectors.toList());
+                .toList();
 
             ((KafkaListenerAuthenticationOAuth) scopeListeners.get(0).getAuth()).setClientScope(null);
             kafka.getSpec().getKafka().getListeners().set(0, scopeListeners.get(0));
@@ -201,9 +199,9 @@ public class OauthScopeST extends OauthAbstractST {
         kafkaPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(Environment.TEST_SUITE_NAMESPACE, kafkaSelector, 3, kafkaPods);
 
         // verification phase client should fail here because clientScope is set to 'null'
-        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, testStorage.getTopicName(), Environment.TEST_SUITE_NAMESPACE).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(oauthClusterName, testStorage.getTopicName(), Environment.TEST_SUITE_NAMESPACE).build());
 
-        resourceManager.createResourceWithWait(extensionContext, oauthInternalClientChecksJob.producerStrimzi());
+        resourceManager.createResourceWithWait(oauthInternalClientChecksJob.producerStrimzi());
         // client should fail because the listener requires scope: 'test' in JWT token but was (the listener) temporarily
         // configured without clientScope resulting in a JWT token without the scope claim when using the clientId and
         // secret passed via SASL/PLAIN to obtain an access token in client's name.
@@ -216,7 +214,7 @@ public class OauthScopeST extends OauthAbstractST {
             List<GenericKafkaListener> scopeListeners = kafka.getSpec().getKafka().getListeners()
                 .stream()
                 .filter(listener -> listener.getName().equals(scopeListener))
-                .collect(Collectors.toList());
+                .toList();
 
             ((KafkaListenerAuthenticationOAuth) scopeListeners.get(0).getAuth()).setClientScope("test");
             kafka.getSpec().getKafka().getListeners().set(0, scopeListeners.get(0));
@@ -226,12 +224,12 @@ public class OauthScopeST extends OauthAbstractST {
     }
 
     @BeforeAll
-    void setUp(ExtensionContext extensionContext) {
-        super.setupCoAndKeycloak(extensionContext, Environment.TEST_SUITE_NAMESPACE);
+    void setUp() {
+        super.setupCoAndKeycloak(Environment.TEST_SUITE_NAMESPACE);
 
         keycloakInstance.setRealm("scope-test", false);
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(oauthClusterName, 3)
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(oauthClusterName, 3)
             .editMetadata()
                 .withNamespace(Environment.TEST_SUITE_NAMESPACE)
             .endMetadata()

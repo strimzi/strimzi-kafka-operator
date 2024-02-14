@@ -19,7 +19,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.TestFactory;
-import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -218,16 +217,16 @@ public class DynamicConfSharedST extends AbstractST {
     }
 
     @BeforeAll
-    void setup(ExtensionContext extensionContext) {
+    void setup() {
         this.clusterOperator = this.clusterOperator
-            .defaultInstallation(extensionContext)
+            .defaultInstallation()
             .createInstallation()
             .runInstallation();
 
         String sharedScraperName = dynamicConfigurationSharedClusterName + "-shared";
 
         LOGGER.info("Deploying shared Kafka across all test cases!");
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(dynamicConfigurationSharedClusterName, 3)
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(dynamicConfigurationSharedClusterName, 3)
             .editMetadata()
                 .withNamespace(Environment.TEST_SUITE_NAMESPACE)
             .endMetadata()

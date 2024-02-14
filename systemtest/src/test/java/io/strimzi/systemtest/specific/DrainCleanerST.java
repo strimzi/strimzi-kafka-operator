@@ -13,6 +13,7 @@ import io.strimzi.systemtest.annotations.MicroShiftNotSupported;
 import io.strimzi.systemtest.annotations.RequiredMinKubeApiVersion;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
+import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.draincleaner.SetupDrainCleaner;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
@@ -28,7 +29,6 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -47,12 +47,12 @@ public class DrainCleanerST extends AbstractST {
     @Tag(ACCEPTANCE)
     @IsolatedTest
     @RequiredMinKubeApiVersion(version = 1.17)
-    void testDrainCleanerWithComponents(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext, TestConstants.DRAIN_CLEANER_NAMESPACE);
+    void testDrainCleanerWithComponents() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext(), TestConstants.DRAIN_CLEANER_NAMESPACE);
 
         final int replicas = 3;
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), replicas)
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), replicas)
             .editMetadata()
                 .withNamespace(TestConstants.DRAIN_CLEANER_NAMESPACE)
             .endMetadata()
@@ -74,8 +74,8 @@ public class DrainCleanerST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), TestConstants.DRAIN_CLEANER_NAMESPACE).build());
-        drainCleaner.createDrainCleaner(extensionContext);
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), TestConstants.DRAIN_CLEANER_NAMESPACE).build());
+        drainCleaner.createDrainCleaner();
 
         KafkaClients kafkaBasicExampleClients = new KafkaClientsBuilder()
             .withMessageCount(300)
@@ -87,7 +87,7 @@ public class DrainCleanerST extends AbstractST {
             .withDelayMs(1000)
             .build();
 
-        resourceManager.createResourceWithWait(extensionContext,
+        resourceManager.createResourceWithWait(
             kafkaBasicExampleClients.producerStrimzi(),
             kafkaBasicExampleClients.consumerStrimzi());
 
@@ -125,9 +125,9 @@ public class DrainCleanerST extends AbstractST {
     }
 
     @BeforeAll
-    void setup(ExtensionContext extensionContext) {
+    void setup() {
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(extensionContext)
+            .withExtensionContext(ResourceManager.getTestContext())
             .withNamespace(TestConstants.DRAIN_CLEANER_NAMESPACE)
             .withOperationTimeout(TestConstants.CO_OPERATION_TIMEOUT_DEFAULT)
             .createInstallation()

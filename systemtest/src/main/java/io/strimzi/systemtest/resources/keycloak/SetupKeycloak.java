@@ -19,7 +19,6 @@ import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -48,13 +47,13 @@ public class SetupKeycloak {
 
     private static final Logger LOGGER = LogManager.getLogger(SetupKeycloak.class);
 
-    public static void deployKeycloakOperator(ExtensionContext extensionContext, final String deploymentNamespace, final String watchNamespace) {
+    public static void deployKeycloakOperator(final String deploymentNamespace, final String watchNamespace) {
         LOGGER.info("Preparing Keycloak Operator in Namespace: {} while watching Namespace: {}", deploymentNamespace, watchNamespace);
 
         Exec.exec(Level.INFO, "/bin/bash", PATH_TO_KEYCLOAK_PREPARE_SCRIPT, deploymentNamespace, KeycloakUtils.LATEST_KEYCLOAK_VERSION, watchNamespace);
         DeploymentUtils.waitForDeploymentAndPodsReady(deploymentNamespace, KEYCLOAK_OPERATOR_DEPLOYMENT_NAME, 1);
 
-        ResourceManager.STORED_RESOURCES.get(extensionContext.getDisplayName()).push(new ResourceItem<>(() -> deleteKeycloakOperator(deploymentNamespace, watchNamespace)));
+        ResourceManager.STORED_RESOURCES.get(ResourceManager.getTestContext().getDisplayName()).push(new ResourceItem<>(() -> deleteKeycloakOperator(deploymentNamespace, watchNamespace)));
 
         LOGGER.info("Keycloak Operator in Namespace: {} is ready", deploymentNamespace);
     }
@@ -65,35 +64,35 @@ public class SetupKeycloak {
         DeploymentUtils.waitForDeploymentDeletion(deploymentNamespace, KEYCLOAK_OPERATOR_DEPLOYMENT_NAME);
     }
 
-    public static KeycloakInstance deployKeycloakAndImportRealms(ExtensionContext extensionContext, String namespaceName) {
-        deployPostgres(extensionContext, namespaceName);
-        deployKeycloak(extensionContext, namespaceName);
+    public static KeycloakInstance deployKeycloakAndImportRealms(String namespaceName) {
+        deployPostgres(namespaceName);
+        deployKeycloak(namespaceName);
         KeycloakInstance keycloakInstance = createKeycloakInstance(namespaceName);
         importRealms(namespaceName, keycloakInstance);
 
         return keycloakInstance;
     }
 
-    private static void deployKeycloak(ExtensionContext extensionContext, String namespaceName) {
+    private static void deployKeycloak(String namespaceName) {
         LOGGER.info("Deploying Keycloak instance into Namespace: {}", namespaceName);
         cmdKubeClient(namespaceName).apply(KEYCLOAK_INSTANCE_FILE_PATH);
 
         StatefulSetUtils.waitForAllStatefulSetPodsReady(namespaceName, "keycloak", 1);
 
-        ResourceManager.STORED_RESOURCES.get(extensionContext.getDisplayName()).push(new ResourceItem<>(() -> deleteKeycloak(namespaceName)));
+        ResourceManager.STORED_RESOURCES.get(ResourceManager.getTestContext().getDisplayName()).push(new ResourceItem<>(() -> deleteKeycloak(namespaceName)));
 
         LOGGER.info("Waiting for Keycloak Secret: {}/{} to be present", namespaceName, KEYCLOAK_SECRET_NAME);
         SecretUtils.waitForSecretReady(namespaceName, KEYCLOAK_SECRET_NAME, () -> { });
         LOGGER.info("Keycloak instance and Keycloak Secret are ready");
     }
 
-    private static void deployPostgres(ExtensionContext extensionContext, String namespaceName) {
+    private static void deployPostgres(String namespaceName) {
         LOGGER.info("Deploying Postgres into Namespace: {}", namespaceName);
         cmdKubeClient(namespaceName).apply(POSTGRES_FILE_PATH);
 
         DeploymentUtils.waitForDeploymentAndPodsReady(namespaceName, "postgres", 1);
 
-        ResourceManager.STORED_RESOURCES.get(extensionContext.getDisplayName()).push(new ResourceItem<>(() -> deletePostgres(namespaceName)));
+        ResourceManager.STORED_RESOURCES.get(ResourceManager.getTestContext().getDisplayName()).push(new ResourceItem<>(() -> deletePostgres(namespaceName)));
 
         Secret postgresSecret = new SecretBuilder()
             .withNewMetadata()

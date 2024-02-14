@@ -30,7 +30,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -44,12 +43,12 @@ public class ConfigProviderST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(ConfigProviderST.class);
 
     @ParallelNamespaceTest
-    void testConnectWithConnectorUsingConfigAndEnvProvider(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+    void testConnectWithConnectorUsingConfigAndEnvProvider() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final String producerName = "producer-" + ClientUtils.generateRandomConsumerGroup();
         final String customFileSinkPath = "/tmp/my-own-path.txt";
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3).build());
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3).build());
 
         Map<String, String> configData = new HashMap<>();
         configData.put("topics", testStorage.getTopicName());
@@ -69,7 +68,7 @@ public class ConfigProviderST extends AbstractST {
 
         kubeClient().getClient().configMaps().inNamespace(testStorage.getNamespaceName()).resource(connectorConfig).create();
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getClusterName(), testStorage.getNamespaceName(), 1)
+        resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getClusterName(), testStorage.getNamespaceName(), 1)
             .editOrNewMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
@@ -94,7 +93,7 @@ public class ConfigProviderST extends AbstractST {
 
         LOGGER.info("Creating needed RoleBinding and Role for Kubernetes Config Provider");
 
-        ResourceManager.getInstance().createResourceWithWait(extensionContext,
+        ResourceManager.getInstance().createResourceWithWait(
             new RoleBindingBuilder()
                 .editOrNewMetadata()
                     .withName("connector-config-rb")
@@ -133,7 +132,7 @@ public class ConfigProviderST extends AbstractST {
 
         String configPrefix = "configmaps:" + testStorage.getNamespaceName() + "/connector-config:";
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaConnectorTemplates.kafkaConnector(testStorage.getClusterName())
+        resourceManager.createResourceWithWait(KafkaConnectorTemplates.kafkaConnector(testStorage.getClusterName())
             .editSpec()
                 .withClassName("org.apache.kafka.connect.file.FileStreamSinkConnector")
                 .addToConfig("file", "${env:FILE_SINK_FILE}")
@@ -152,16 +151,16 @@ public class ConfigProviderST extends AbstractST {
             .withNamespaceName(testStorage.getNamespaceName())
             .build();
 
-        resourceManager.createResourceWithWait(extensionContext, kafkaBasicClientJob.producerStrimzi());
+        resourceManager.createResourceWithWait(kafkaBasicClientJob.producerStrimzi());
 
         String kafkaConnectPodName = kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), kafkaConnectPodName, customFileSinkPath, "Hello-world - 99");
     }
 
     @BeforeAll
-    void setup(ExtensionContext extensionContext) {
+    void setup() {
         this.clusterOperator = this.clusterOperator
-                .defaultInstallation(extensionContext)
+                .defaultInstallation()
                 .createInstallation()
                 .runInstallation();
     }

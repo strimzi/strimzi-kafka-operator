@@ -31,7 +31,6 @@ import io.strimzi.test.annotations.IsolatedTest;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -71,14 +70,14 @@ public class FeatureGatesST extends AbstractST {
      */
     @IsolatedTest("Feature Gates test for enabled UseKRaft gate")
     @Tag(INTERNAL_CLIENTS_USED)
-    public void testKRaftMode(ExtensionContext extensionContext) {
+    public void testKRaftMode() {
         assumeFalse(Environment.isOlmInstall() || Environment.isHelmInstall());
 
-        final TestStorage testStorage = new TestStorage(extensionContext);
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final int kafkaReplicas = 3;
 
         // as kraft is included in CO Feature gates, kafka broker can take both roles (Controller and Broker)
-        setupClusterOperatorWithFeatureGate(extensionContext, "+UseKRaft");
+        setupClusterOperatorWithFeatureGate("+UseKRaft");
 
         final Kafka kafkaCr = KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), kafkaReplicas)
             .editOrNewMetadata()
@@ -91,7 +90,7 @@ public class FeatureGatesST extends AbstractST {
 
         final KafkaNodePool kafkaNodePoolCr = KafkaNodePoolTemplates.kafkaBasedNodePoolWithDualRole(testStorage.getKafkaNodePoolName(), kafkaCr, kafkaReplicas).build();
 
-        resourceManager.createResourceWithWait(extensionContext,
+        resourceManager.createResourceWithWait(
             kafkaNodePoolCr,
             kafkaCr
         );
@@ -118,14 +117,14 @@ public class FeatureGatesST extends AbstractST {
      *  - kafka-node-pool
      */
     @IsolatedTest
-    void testKafkaNodePoolFeatureGate(ExtensionContext extensionContext) {
+    void testKafkaNodePoolFeatureGate() {
         assumeFalse(Environment.isOlmInstall() || Environment.isHelmInstall());
 
-        final TestStorage testStorage = new TestStorage(extensionContext);
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final int kafkaReplicas = 3;
 
         // as the only FG set in the CO is 'KafkaNodePools' (kraft not included) Broker role is the only one that kafka broker can take
-        setupClusterOperatorWithFeatureGate(extensionContext, "+KafkaNodePools,-UseKRaft");
+        setupClusterOperatorWithFeatureGate("+KafkaNodePools,-UseKRaft");
 
         LOGGER.info("Deploying Kafka Cluster: {}/{} controlled by KafkaNodePool: {}", testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getKafkaNodePoolName());
         final Kafka kafkaCr = KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), kafkaReplicas, 3)
@@ -137,7 +136,7 @@ public class FeatureGatesST extends AbstractST {
 
         final KafkaNodePool kafkaNodePoolCr = KafkaNodePoolTemplates.kafkaBasedNodePoolWithBrokerRole(testStorage.getKafkaNodePoolName(), kafkaCr, kafkaReplicas).build();
 
-        resourceManager.createResourceWithWait(extensionContext, kafkaNodePoolCr, kafkaCr);
+        resourceManager.createResourceWithWait(kafkaNodePoolCr, kafkaCr);
 
         rollKafkaNodePoolWithActiveProducerConsumer(testStorage, kafkaReplicas);
     }
@@ -166,17 +165,17 @@ public class FeatureGatesST extends AbstractST {
      * - kafka-node-pool
      */
     @IsolatedTest
-    void testKafkaManagementTransferToAndFromKafkaNodePool(ExtensionContext extensionContext) {
+    void testKafkaManagementTransferToAndFromKafkaNodePool() {
         assumeFalse(Environment.isKRaftModeEnabled());
         assumeFalse(Environment.isOlmInstall() || Environment.isHelmInstall());
 
-        final TestStorage testStorage = new TestStorage(extensionContext);
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final int originalKafkaReplicaCount = 3;
         final int nodePoolIncreasedKafkaReplicaCount = 5;
         final String kafkaNodePoolName = "kafka";
 
         // as the only FG set in the CO is 'KafkaNodePools' (kraft not included) Broker role is the only one that kafka broker can take
-        setupClusterOperatorWithFeatureGate(extensionContext, "");
+        setupClusterOperatorWithFeatureGate("");
 
         // setup clients
         final KafkaClients clients = new KafkaClientsBuilder()
@@ -203,15 +202,15 @@ public class FeatureGatesST extends AbstractST {
         // as the only FG set in the CO is 'KafkaNodePools' (kraft is never included) Broker role is the only one that can be taken
         final KafkaNodePool kafkaNodePoolCr = KafkaNodePoolTemplates.kafkaBasedNodePoolWithBrokerRole(kafkaNodePoolName, kafkaCr, 3).build();
 
-        resourceManager.createResourceWithWait(extensionContext,
+        resourceManager.createResourceWithWait(
             kafkaNodePoolCr,
             kafkaCr);
 
         LOGGER.info("Creating KafkaTopic: {}/{}", testStorage.getNamespaceName(), testStorage.getTopicName());
-        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(testStorage).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage).build());
 
         LOGGER.info("Producing and Consuming messages with clients: {}, {} in Namespace {}", testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName());
-        resourceManager.createResourceWithWait(extensionContext,
+        resourceManager.createResourceWithWait(
             clients.producerStrimzi(),
             clients.consumerStrimzi()
         );
@@ -231,7 +230,7 @@ public class FeatureGatesST extends AbstractST {
         );
 
         LOGGER.info("Producing and Consuming messages with clients: {}, {} in Namespace {}", testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName());
-        resourceManager.createResourceWithWait(extensionContext,
+        resourceManager.createResourceWithWait(
             clients.producerStrimzi(),
             clients.consumerStrimzi()
         );
@@ -262,7 +261,7 @@ public class FeatureGatesST extends AbstractST {
         PodUtils.waitUntilPodStabilityReplicasCount(testStorage.getNamespaceName(), KafkaResources.kafkaComponentName(testStorage.getClusterName()), originalKafkaReplicaCount);
 
         LOGGER.info("Producing and Consuming messages with clients: {}, {} in Namespace {}", testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName());
-        resourceManager.createResourceWithWait(extensionContext,
+        resourceManager.createResourceWithWait(
             clients.producerStrimzi(),
             clients.consumerStrimzi()
         );
@@ -294,7 +293,7 @@ public class FeatureGatesST extends AbstractST {
         PodUtils.waitUntilPodStabilityReplicasCount(testStorage.getNamespaceName(), KafkaResources.kafkaComponentName(testStorage.getClusterName()), nodePoolIncreasedKafkaReplicaCount);
 
         LOGGER.info("Producing and Consuming messages with clients: {}, {} in Namespace {}", testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName());
-        resourceManager.createResourceWithWait(extensionContext,
+        resourceManager.createResourceWithWait(
             clients.producerStrimzi(),
             clients.consumerStrimzi()
         );
@@ -304,15 +303,14 @@ public class FeatureGatesST extends AbstractST {
     /**
      * Sets up a Cluster Operator with specified feature gates.
      *
-     * @param extensionContext  Extension context which provides access to the test environment and its state.
      * @param extraFeatureGates A String representing additional feature gates (comma separated) to be
      *                          enabled or disabled for the Cluster Operator.
      */
-    private void setupClusterOperatorWithFeatureGate(ExtensionContext extensionContext, String extraFeatureGates) {
+    private void setupClusterOperatorWithFeatureGate(String extraFeatureGates) {
         List<EnvVar> coEnvVars = new ArrayList<>();
         coEnvVars.add(new EnvVar(Environment.STRIMZI_FEATURE_GATES_ENV, extraFeatureGates, null));
 
-        clusterOperator = this.clusterOperator.defaultInstallation(extensionContext)
+        clusterOperator = this.clusterOperator.defaultInstallation()
             .withExtraEnvVars(coEnvVars)
             // necessary as each isolated test removes TEST_SUITE_NAMESPACE
             .withBindingsNamespaces(Arrays.asList(TestConstants.CO_NAMESPACE, Environment.TEST_SUITE_NAMESPACE))
@@ -343,7 +341,7 @@ public class FeatureGatesST extends AbstractST {
             .build();
 
         LOGGER.info("Producing and Consuming messages with clients: {}, {} in Namespace {}", producerName, consumerName, testStorage.getNamespaceName());
-        resourceManager.createResourceWithWait(testStorage.getExtensionContext(),
+        resourceManager.createResourceWithWait(
             clients.producerStrimzi(),
             clients.consumerStrimzi()
         );

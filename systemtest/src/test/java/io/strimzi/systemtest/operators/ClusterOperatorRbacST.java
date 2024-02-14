@@ -10,6 +10,7 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.enums.ClusterOperatorRBACType;
+import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -21,7 +22,6 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.Arrays;
 
@@ -44,12 +44,12 @@ public class ClusterOperatorRbacST extends AbstractST {
     @IsolatedTest("We need for each test case its own Cluster Operator")
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
-    void testCRBDeletionErrorIsIgnoredWhenRackAwarenessIsNotEnabled(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+    void testCRBDeletionErrorIsIgnoredWhenRackAwarenessIsNotEnabled() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         assumeFalse(Environment.isNamespaceRbacScope());
 
         // 060-Deployment
-        this.clusterOperator = this.clusterOperator.defaultInstallation(extensionContext)
+        this.clusterOperator = this.clusterOperator.defaultInstallation()
             .withClusterOperatorRBACType(ClusterOperatorRBACType.NAMESPACE)
             .withWatchingNamespaces(Environment.TEST_SUITE_NAMESPACE)
             .withBindingsNamespaces(Arrays.asList(TestConstants.CO_NAMESPACE, Environment.TEST_SUITE_NAMESPACE))
@@ -61,13 +61,13 @@ public class ClusterOperatorRbacST extends AbstractST {
         String coPodName = kubeClient().getClusterOperatorPodName(TestConstants.CO_NAMESPACE);
         LOGGER.info("Deploying Kafka: {}, which should be deployed even the CRBs are not present", testStorage.getClusterName());
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3).build());
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3).build());
         LOGGER.info("CO log should contain some information about ignoring forbidden access to CRB for Kafka");
         String log = cmdKubeClient().namespace(TestConstants.CO_NAMESPACE).execInCurrentNamespace(Level.DEBUG, "logs", coPodName).out();
         assertTrue(log.contains("Kafka(" + cmdKubeClient().namespace() + "/" + testStorage.getClusterName() + "): Ignoring forbidden access to ClusterRoleBindings resource which does not seem to be required."));
 
         LOGGER.info("Deploying KafkaConnect: {} without rack awareness, the CR should be deployed without error", testStorage.getClusterName());
-        resourceManager.createResourceWithWait(extensionContext, KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), Environment.TEST_SUITE_NAMESPACE, 1).build());
+        resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), Environment.TEST_SUITE_NAMESPACE, 1).build());
 
         LOGGER.info("CO log should contain some information about ignoring forbidden access to CRB for KafkaConnect");
         log = cmdKubeClient().namespace(TestConstants.CO_NAMESPACE).execInCurrentNamespace(Level.DEBUG, "logs", coPodName).out();
@@ -77,12 +77,12 @@ public class ClusterOperatorRbacST extends AbstractST {
     @IsolatedTest("We need for each test case its own Cluster Operator")
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
-    void testCRBDeletionErrorsWhenRackAwarenessIsEnabled(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+    void testCRBDeletionErrorsWhenRackAwarenessIsEnabled() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         assumeFalse(Environment.isNamespaceRbacScope());
 
         // 060-Deployment
-        this.clusterOperator = this.clusterOperator.defaultInstallation(extensionContext)
+        this.clusterOperator = this.clusterOperator.defaultInstallation()
             .withClusterOperatorRBACType(ClusterOperatorRBACType.NAMESPACE)
             .withWatchingNamespaces(Environment.TEST_SUITE_NAMESPACE)
             .withBindingsNamespaces(Arrays.asList(TestConstants.CO_NAMESPACE, Environment.TEST_SUITE_NAMESPACE))
@@ -92,7 +92,7 @@ public class ClusterOperatorRbacST extends AbstractST {
         String rackKey = "rack-key";
 
         LOGGER.info("Deploying Kafka: {}, which should not be deployed and error should be present in CR status message", testStorage.getClusterName());
-        resourceManager.createResourceWithoutWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3, 3)
+        resourceManager.createResourceWithoutWait(KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3, 3)
             .editMetadata()
                 .withNamespace(Environment.TEST_SUITE_NAMESPACE)
             .endMetadata()
@@ -110,7 +110,7 @@ public class ClusterOperatorRbacST extends AbstractST {
         assertThat(kafkaStatusCondition, is(notNullValue()));
         assertTrue(kafkaStatusCondition.getMessage().contains("code=403"));
 
-        resourceManager.createResourceWithoutWait(extensionContext, KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), 1)
+        resourceManager.createResourceWithoutWait(KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), 1)
             .editSpec()
                 .withNewRack(rackKey)
             .endSpec()

@@ -13,6 +13,7 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
+import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
@@ -25,7 +26,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -51,10 +51,10 @@ public class CruiseControlConfigurationST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(CruiseControlConfigurationST.class);
 
     @ParallelNamespaceTest
-    void testDeployAndUnDeployCruiseControl(ExtensionContext extensionContext) throws IOException {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+    void testDeployAndUnDeployCruiseControl() throws IOException {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaWithCruiseControl(testStorage.getClusterName(), 3, 3).build());
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaWithCruiseControl(testStorage.getClusterName(), 3, 3).build());
 
         Map<String, String> kafkaPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getKafkaSelector());
 
@@ -99,14 +99,14 @@ public class CruiseControlConfigurationST extends AbstractST {
     }
 
     @ParallelNamespaceTest
-    void testConfigurationUpdate(ExtensionContext extensionContext) throws IOException {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+    void testConfigurationUpdate() throws IOException {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaWithCruiseControl(testStorage.getClusterName(), 3, 3).build());
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaWithCruiseControl(testStorage.getClusterName(), 3, 3).build());
 
         Map<String, String> kafkaSnapShot = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getKafkaSelector());
         Map<String, String> cruiseControlSnapShot = DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), CruiseControlResources.componentName(testStorage.getClusterName()));
-        Map<String, Object> performanceTuningOpts = new HashMap<String, Object>() {{
+        Map<String, Object> performanceTuningOpts = new HashMap<>() {{
                 put(CruiseControlConfigurationParameters.CONCURRENT_INTRA_PARTITION_MOVEMENTS.getValue(), 2);
                 put(CruiseControlConfigurationParameters.CONCURRENT_PARTITION_MOVEMENTS.getValue(), 5);
                 put(CruiseControlConfigurationParameters.CONCURRENT_LEADER_MOVEMENTS.getValue(), 1000);
@@ -140,9 +140,9 @@ public class CruiseControlConfigurationST extends AbstractST {
     }
 
     @BeforeAll
-    void setUp(final ExtensionContext extensionContext) {
+    void setUp() {
         this.clusterOperator = this.clusterOperator
-                .defaultInstallation(extensionContext)
+                .defaultInstallation()
                 .createInstallation()
                 .runInstallation();
     }

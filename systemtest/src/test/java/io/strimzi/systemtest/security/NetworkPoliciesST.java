@@ -21,6 +21,7 @@ import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.metrics.MetricsCollector;
 import io.strimzi.systemtest.resources.ComponentType;
+import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -34,7 +35,6 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -83,10 +83,10 @@ public class NetworkPoliciesST extends AbstractST {
     @IsolatedTest("Specific Cluster Operator for test case")
     @Tag(INTERNAL_CLIENTS_USED)
     @SuppressWarnings("checkstyle:MethodLength")
-    void testNetworkPoliciesOnListenersWhenOperatorIsInSameNamespaceAsOperands(ExtensionContext extensionContext) {
+    void testNetworkPoliciesOnListenersWhenOperatorIsInSameNamespaceAsOperands() {
         assumeTrue(!Environment.isHelmInstall() && !Environment.isOlmInstall());
 
-        final TestStorage testStorage = new TestStorage(extensionContext);
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
         final String topicNameAccessedTls = testStorage.getTopicName() + "-accessed-tls";
         final String topicNameAccessedPlain = testStorage.getTopicName() + "-accessed-plain";
@@ -104,12 +104,12 @@ public class NetworkPoliciesST extends AbstractST {
         final String consumerNameDeniedPlain = testStorage.getConsumerName() + "-denied-plain";
 
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(extensionContext)
+            .withExtensionContext(ResourceManager.getTestContext())
             .withNamespace(testStorage.getNamespaceName())
             .createInstallation()
             .runInstallation();
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 1, 1)
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 1, 1)
             .editSpec()
                 .editKafka()
                     .withListeners(
@@ -194,7 +194,7 @@ public class NetworkPoliciesST extends AbstractST {
             .build();
 
         LOGGER.info("Deploy all initialized clients");
-        resourceManager.createResourceWithWait(extensionContext,
+        resourceManager.createResourceWithWait(
             kafkaClientsWithAccessPlain.producerScramShaPlainStrimzi(),
             kafkaClientsWithAccessPlain.consumerScramShaPlainStrimzi(),
             kafkaClientsWithAccessTls.producerScramShaTlsStrimzi(testStorage.getClusterName()),
@@ -236,10 +236,10 @@ public class NetworkPoliciesST extends AbstractST {
     }
 
     @IsolatedTest("Specific Cluster Operator for test case")
-    void testNPWhenOperatorIsInDifferentNamespaceThanOperand(ExtensionContext extensionContext) {
+    void testNPWhenOperatorIsInDifferentNamespaceThanOperand() {
         assumeTrue(!Environment.isHelmInstall() && !Environment.isOlmInstall());
 
-        final TestStorage testStorage = new TestStorage(extensionContext);
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         String secondNamespace = "second-" + Environment.TEST_SUITE_NAMESPACE;
 
         Map<String, String> labels = new HashMap<>();
@@ -251,7 +251,7 @@ public class NetworkPoliciesST extends AbstractST {
                 .build();
 
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(extensionContext)
+            .withExtensionContext(ResourceManager.getTestContext())
             .withNamespace(Environment.TEST_SUITE_NAMESPACE)
             .withWatchingNamespaces(TestConstants.WATCH_ALL_NAMESPACES)
             .withBindingsNamespaces(Arrays.asList(Environment.TEST_SUITE_NAMESPACE, secondNamespace))
@@ -268,7 +268,7 @@ public class NetworkPoliciesST extends AbstractST {
 
         cluster.setNamespace(secondNamespace);
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaWithMetrics(testStorage.getClusterName(), secondNamespace, 3, 3)
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaWithMetrics(testStorage.getClusterName(), secondNamespace, 3, 3)
             .editMetadata()
                 .addToLabels(labels)
             .endMetadata()
@@ -281,10 +281,10 @@ public class NetworkPoliciesST extends AbstractST {
 
     @IsolatedTest("Specific Cluster Operator for test case")
     @Tag(CRUISE_CONTROL)
-    void testNPGenerationEnvironmentVariable(ExtensionContext extensionContext) {
+    void testNPGenerationEnvironmentVariable() {
         assumeTrue(!Environment.isHelmInstall() && !Environment.isOlmInstall());
 
-        final TestStorage testStorage = new TestStorage(extensionContext);
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
         EnvVar networkPolicyGenerationEnv = new EnvVarBuilder()
             .withName("STRIMZI_NETWORK_POLICY_GENERATION")
@@ -292,16 +292,16 @@ public class NetworkPoliciesST extends AbstractST {
             .build();
 
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(extensionContext)
+            .withExtensionContext(ResourceManager.getTestContext())
             .withNamespace(Environment.TEST_SUITE_NAMESPACE)
             .withExtraEnvVars(Collections.singletonList(networkPolicyGenerationEnv))
             .createInstallation()
             .runInstallation();
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaWithCruiseControl(testStorage.getClusterName(), 3, 3)
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaWithCruiseControl(testStorage.getClusterName(), 3, 3)
             .build());
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), Environment.TEST_SUITE_NAMESPACE, 1)
+        resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), Environment.TEST_SUITE_NAMESPACE, 1)
                 .build());
 
         List<NetworkPolicy> networkPolicyList = kubeClient().getClient().network().networkPolicies().list().getItems().stream()

@@ -10,6 +10,7 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
+import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
@@ -19,7 +20,6 @@ import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.Collections;
 
@@ -35,12 +35,12 @@ public class QuotasST extends AbstractST {
      */
     @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
-    void testKafkaQuotasPluginIntegration(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+    void testKafkaQuotasPluginIntegration() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final String producerName = "quotas-producer";
         final String consumerName = "quotas-consumer";
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 1)
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 1)
             .editSpec()
                 .editKafka()
                     .addToConfig("client.quota.callback.class", "io.strimzi.kafka.quotas.StaticQuotaCallback")
@@ -53,7 +53,7 @@ public class QuotasST extends AbstractST {
                 .endKafka()
             .endSpec()
             .build());
-        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), testStorage.getNamespaceName()).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), testStorage.getNamespaceName()).build());
 
         // Send more messages than disk can store to see if the integration works
         KafkaClients basicClients = new KafkaClientsBuilder()
@@ -66,7 +66,7 @@ public class QuotasST extends AbstractST {
             .withMessage(String.join("", Collections.nCopies(1000, "#")))
             .build();
 
-        resourceManager.createResourceWithWait(extensionContext, basicClients.producerStrimzi());
+        resourceManager.createResourceWithWait(basicClients.producerStrimzi());
         // Kafka Quotas Plugin should stop producer in around 10-20 seconds with configured throughput
         assertThrows(WaitException.class, () -> JobUtils.waitForJobFailure(producerName, Environment.TEST_SUITE_NAMESPACE, 120_000));
 
@@ -78,15 +78,15 @@ public class QuotasST extends AbstractST {
     }
 
     @AfterEach
-    void afterEach(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+    void afterEach() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         kubeClient(testStorage.getNamespaceName()).getClient().persistentVolumeClaims().inNamespace(testStorage.getNamespaceName()).delete();
     }
 
     @BeforeAll
-    void setup(ExtensionContext extensionContext) {
+    void setup() {
         this.clusterOperator = this.clusterOperator
-                .defaultInstallation(extensionContext)
+                .defaultInstallation()
                 .createInstallation()
                 .runInstallation();
     }

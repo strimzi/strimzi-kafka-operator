@@ -11,7 +11,6 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
-import org.junit.jupiter.api.extension.ExtensionContext;
 
 import static io.strimzi.systemtest.TestConstants.BRIDGE;
 import static io.strimzi.systemtest.TestConstants.CONNECT;
@@ -35,8 +34,8 @@ public class OlmAllNamespaceST extends OlmAbstractST {
 
     @Test
     @Order(2)
-    void testDeployExampleKafkaUser(ExtensionContext extensionContext) {
-        doTestDeployExampleKafkaUser(extensionContext);
+    void testDeployExampleKafkaUser() {
+        doTestDeployExampleKafkaUser();
     }
 
     @Test
@@ -76,13 +75,13 @@ public class OlmAllNamespaceST extends OlmAbstractST {
     @Test
     @Order(8)
     @Tag(CRUISE_CONTROL)
-    void testDeployExampleKafkaRebalance(ExtensionContext extensionContext) {
-        doTestDeployExampleKafkaRebalance(extensionContext);
+    void testDeployExampleKafkaRebalance() {
+        doTestDeployExampleKafkaRebalance();
     }
 
     @BeforeAll
-    void setup(ExtensionContext extensionContext) {
-        clusterOperator = clusterOperator.defaultInstallation(extensionContext)
+    void setup() {
+        clusterOperator = clusterOperator.defaultInstallation()
             .withWatchingNamespaces(WATCH_ALL_NAMESPACES)
             .createInstallation()
             // run always OLM installation

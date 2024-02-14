@@ -26,6 +26,7 @@ import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.kafkaclients.internalClients.admin.AdminClient;
 import io.strimzi.systemtest.metrics.MetricsCollector;
 import io.strimzi.systemtest.resources.ComponentType;
+import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -43,7 +44,6 @@ import org.apache.logging.log4j.Logger;
 import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.List;
 
@@ -83,13 +83,13 @@ public class TopicST extends AbstractST {
     private static int topicOperatorReconciliationInterval;
 
     @ParallelTest
-    void testMoreReplicasThanAvailableBrokers(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+    void testMoreReplicasThanAvailableBrokers() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         int topicReplicationFactor = 5;
         int topicPartitions = 5;
 
         KafkaTopic kafkaTopic = KafkaTopicTemplates.topic(KAFKA_CLUSTER_NAME, testStorage.getTopicName(), topicPartitions, topicReplicationFactor, 1, Environment.TEST_SUITE_NAMESPACE).build();
-        resourceManager.createResourceWithoutWait(extensionContext, kafkaTopic);
+        resourceManager.createResourceWithoutWait(kafkaTopic);
 
         assertThat("Topic exists in Kafka CR (Kubernetes)", hasTopicInCRK8s(kafkaTopic, testStorage.getTopicName()));
         assertThat("Topic doesn't exists in Kafka itself", !hasTopicInKafka(testStorage.getTopicName(), KAFKA_CLUSTER_NAME));
@@ -112,7 +112,7 @@ public class TopicST extends AbstractST {
         final String newTopicName = "topic-example-new";
 
         kafkaTopic = KafkaTopicTemplates.topic(KAFKA_CLUSTER_NAME, newTopicName, topicPartitions, topicReplicationFactor, Environment.TEST_SUITE_NAMESPACE).build();
-        resourceManager.createResourceWithWait(extensionContext, kafkaTopic);
+        resourceManager.createResourceWithWait(kafkaTopic);
 
         assertThat("Topic exists in Kafka itself", hasTopicInKafka(newTopicName, KAFKA_CLUSTER_NAME));
         assertThat("Topic exists in Kafka CR (Kubernetes)", hasTopicInCRK8s(kafkaTopic, newTopicName));
@@ -120,8 +120,8 @@ public class TopicST extends AbstractST {
 
     @ParallelTest
     @UTONotSupported
-    void testCreateTopicViaKafka(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+    void testCreateTopicViaKafka() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         int topicPartitions = 3;
 
         LOGGER.debug("Creating Topic: {} with {} replicas and {} partitions", testStorage.getTopicName(), 3, topicPartitions);
@@ -143,10 +143,10 @@ public class TopicST extends AbstractST {
 
     @Tag(ARM64_UNSUPPORTED) // Due to https://github.com/strimzi/test-clients/issues/75
     @ParallelTest
-    void testCreateDeleteCreate(ExtensionContext extensionContext) throws InterruptedException {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+    void testCreateDeleteCreate() throws InterruptedException {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
-        resourceManager.createResourceWithWait(extensionContext,
+        resourceManager.createResourceWithWait(
             AdminClientTemplates.defaultAdminClient(testStorage.getNamespaceName(), testStorage.getAdminName(), KafkaResources.plainBootstrapAddress(KAFKA_CLUSTER_NAME)).build()
         );
 
@@ -155,7 +155,7 @@ public class TopicST extends AbstractST {
         AdminClient adminClient = new AdminClient(testStorage.getNamespaceName(), adminClientPodName);
         adminClient.configureFromEnv();
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(KAFKA_CLUSTER_NAME, testStorage.getTopicName(), Environment.TEST_SUITE_NAMESPACE)
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(KAFKA_CLUSTER_NAME, testStorage.getTopicName(), Environment.TEST_SUITE_NAMESPACE)
             .editMetadata()
                 .withNamespace(Environment.TEST_SUITE_NAMESPACE)
             .endMetadata()
@@ -179,7 +179,7 @@ public class TopicST extends AbstractST {
             long t0 = System.currentTimeMillis();
 
             LOGGER.info("Iteration {}: Recreating {}", i, testStorage.getTopicName());
-            resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(KAFKA_CLUSTER_NAME, testStorage.getTopicName(), Environment.TEST_SUITE_NAMESPACE)
+            resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(KAFKA_CLUSTER_NAME, testStorage.getTopicName(), Environment.TEST_SUITE_NAMESPACE)
                 .editSpec()
                     .withReplicas(3)
                 .endSpec()
@@ -192,8 +192,8 @@ public class TopicST extends AbstractST {
     @ParallelTest
     @Tag(INTERNAL_CLIENTS_USED)
     @UTONotSupported
-    void testSendingMessagesToNonExistingTopic(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+    void testSendingMessagesToNonExistingTopic() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
         KafkaClients clients = new KafkaClientsBuilder()
             .withProducerName(testStorage.getProducerName())
@@ -210,7 +210,7 @@ public class TopicST extends AbstractST {
 
         LOGGER.info("Trying to send messages to non-existing Topic: {}", testStorage.getTopicName());
 
-        resourceManager.createResourceWithWait(extensionContext, clients.producerStrimzi(), clients.consumerStrimzi());
+        resourceManager.createResourceWithWait(clients.producerStrimzi(), clients.consumerStrimzi());
         ClientUtils.waitForClientsSuccess(testStorage);
 
         LOGGER.info("Checking if {} is on Topic list", testStorage.getTopicName());
@@ -230,10 +230,10 @@ public class TopicST extends AbstractST {
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(INTERNAL_CLIENTS_USED)
     @UTONotSupported
-    void testDeleteTopicEnableFalse(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+    void testDeleteTopicEnableFalse() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3, 1)
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3, 1)
             .editMetadata()
                 .withNamespace(Environment.TEST_SUITE_NAMESPACE)
             .endMetadata()
@@ -257,7 +257,7 @@ public class TopicST extends AbstractST {
             .withMessageCount(testStorage.getMessageCount())
             .build();
 
-        resourceManager.createResourceWithWait(extensionContext, clients.producerStrimzi());
+        resourceManager.createResourceWithWait(clients.producerStrimzi());
         ClientUtils.waitForProducerClientSuccess(testStorage);
 
         String topicUid = KafkaTopicUtils.topicSnapshot(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName());
@@ -271,12 +271,12 @@ public class TopicST extends AbstractST {
         KafkaTopicUtils.waitForKafkaTopicCreation(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName());
         LOGGER.info("KafkaTopic: {}/{} recreated", Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName());
 
-        resourceManager.createResourceWithWait(extensionContext, clients.consumerStrimzi());
+        resourceManager.createResourceWithWait(clients.consumerStrimzi());
         ClientUtils.waitForConsumerClientSuccess(testStorage);
     }
 
     @ParallelTest
-    void testCreateTopicAfterUnsupportedOperation(ExtensionContext extensionContext) {
+    void testCreateTopicAfterUnsupportedOperation() {
         String topicName = "topic-with-replication-to-change";
         String newTopicName = "another-topic";
 
@@ -287,7 +287,7 @@ public class TopicST extends AbstractST {
             .endSpec()
             .build();
 
-        resourceManager.createResourceWithWait(extensionContext, kafkaTopic);
+        resourceManager.createResourceWithWait(kafkaTopic);
         KafkaTopicUtils.waitForKafkaTopicReady(Environment.TEST_SUITE_NAMESPACE, topicName);
 
         KafkaTopicResource.replaceTopicResourceInSpecificNamespace(topicName, t -> {
@@ -305,7 +305,7 @@ public class TopicST extends AbstractST {
 
         KafkaTopic newKafkaTopic = KafkaTopicTemplates.topic(KAFKA_CLUSTER_NAME, newTopicName, 1, 1, Environment.TEST_SUITE_NAMESPACE).build();
 
-        resourceManager.createResourceWithWait(extensionContext, newKafkaTopic);
+        resourceManager.createResourceWithWait(newKafkaTopic);
 
         assertThat("Topic exists in Kafka itself", hasTopicInKafka(topicName, KAFKA_CLUSTER_NAME));
         assertThat("Topic exists in Kafka CR (Kubernetes)", hasTopicInCRK8s(kafkaTopic, topicName));
@@ -354,13 +354,13 @@ public class TopicST extends AbstractST {
      */
     @IsolatedTest
     @UTONotSupported
-    void testKafkaTopicDifferentStatesInBTOMode(ExtensionContext extensionContext) throws InterruptedException {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+    void testKafkaTopicDifferentStatesInBTOMode() throws InterruptedException {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         int initialReplicas = 1;
         int initialPartitions = 5;
         int decreasePartitions = 1;
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(KAFKA_CLUSTER_NAME, testStorage.getTopicName(), initialPartitions, initialReplicas, Environment.TEST_SUITE_NAMESPACE).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(KAFKA_CLUSTER_NAME, testStorage.getTopicName(), initialPartitions, initialReplicas, Environment.TEST_SUITE_NAMESPACE).build());
         KafkaTopicUtils.waitForKafkaTopicReady(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName());
 
         LOGGER.info("Found the following Topics:");
@@ -482,15 +482,15 @@ public class TopicST extends AbstractST {
     @IsolatedTest
     @KRaftWithoutUTONotSupported
     @BTONotSupported
-    void testKafkaTopicDifferentStatesInUTOMode(ExtensionContext extensionContext) throws InterruptedException {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+    void testKafkaTopicDifferentStatesInUTOMode() throws InterruptedException {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         int initialReplicas = 1;
         int initialPartitions = 5;
         int decreasePartitions = 1;
         int expectedNumOfTopics = 1;
         int expectedObservedGeneration = 1;
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(KAFKA_CLUSTER_NAME, testStorage.getTopicName(), initialPartitions, initialReplicas, Environment.TEST_SUITE_NAMESPACE).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(KAFKA_CLUSTER_NAME, testStorage.getTopicName(), initialPartitions, initialReplicas, Environment.TEST_SUITE_NAMESPACE).build());
         KafkaTopicUtils.waitForKafkaTopicReady(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName());
 
         LOGGER.info("Found the following Topics:");
@@ -570,10 +570,10 @@ public class TopicST extends AbstractST {
     }
 
     @ParallelTest
-    void testKafkaTopicChangingMinInSyncReplicas(ExtensionContext extensionContext) throws InterruptedException {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+    void testKafkaTopicChangingMinInSyncReplicas() throws InterruptedException {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(KAFKA_CLUSTER_NAME, testStorage.getTopicName(), 5, Environment.TEST_SUITE_NAMESPACE).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(KAFKA_CLUSTER_NAME, testStorage.getTopicName(), 5, Environment.TEST_SUITE_NAMESPACE).build());
         KafkaTopicUtils.waitForKafkaTopicReady(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName());
         String invalidValue = "x";
         String reason = Environment.isUnidirectionalTopicOperatorEnabled() ? "KafkaError" : "InvalidConfigurationException";
@@ -617,12 +617,12 @@ public class TopicST extends AbstractST {
      *  - labels
      */
     @ParallelNamespaceTest
-    void testTopicWithoutLabels(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+    void testTopicWithoutLabels() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final int topicOperatorReconciliationSeconds = 10;
 
         // Negative scenario: creating topic without any labels and make sure that TO can't handle this topic
-        resourceManager.createResourceWithWait(extensionContext,
+        resourceManager.createResourceWithWait(
             ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build(),
             KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3)
                 .editSpec()
@@ -637,7 +637,7 @@ public class TopicST extends AbstractST {
         final String scraperPodName =  kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
 
         LOGGER.info("Creating KafkaTopic: {}/{} in without any label", testStorage.getNamespaceName(), testStorage.getTargetTopicName());
-        resourceManager.createResourceWithoutWait(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTargetTopicName(), 1, 1, 1, testStorage.getNamespaceName())
+        resourceManager.createResourceWithoutWait(KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTargetTopicName(), 1, 1, 1, testStorage.getNamespaceName())
             .editMetadata()
                 .withLabels(null)
             .endMetadata().build()
@@ -720,15 +720,15 @@ public class TopicST extends AbstractST {
     }
 
     @BeforeAll
-    void setup(ExtensionContext extensionContext) {
+    void setup() {
         this.clusterOperator = this.clusterOperator
-            .defaultInstallation(extensionContext)
+            .defaultInstallation()
             .createInstallation()
             .runInstallation();
 
         LOGGER.info("Deploying shared Kafka: {}/{} across all test cases", Environment.TEST_SUITE_NAMESPACE, KAFKA_CLUSTER_NAME);
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(KAFKA_CLUSTER_NAME, 3, 1)
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(KAFKA_CLUSTER_NAME, 3, 1)
             .editMetadata()
                 .withNamespace(Environment.TEST_SUITE_NAMESPACE)
             .endMetadata()

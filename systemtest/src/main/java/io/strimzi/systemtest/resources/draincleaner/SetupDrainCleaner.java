@@ -27,7 +27,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.x509.GeneralName;
-import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.io.File;
 import java.util.Arrays;
@@ -35,17 +34,16 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class SetupDrainCleaner {
 
     public static final String PATH_TO_DC_CONFIG = TestUtils.USER_PATH + "/../packaging/install/drain-cleaner/kubernetes";
     private static final Logger LOGGER = LogManager.getLogger(SetupDrainCleaner.class);
 
-    public void applyInstallFiles(ExtensionContext extensionContext) {
+    public void applyInstallFiles() {
         List<File> drainCleanerFiles = Arrays.stream(new File(PATH_TO_DC_CONFIG).listFiles()).sorted()
             .filter(File::isFile)
-            .collect(Collectors.toList());
+            .toList();
 
         // we need to create our own certificates before applying install-files
         final SystemTestCertAndKey drainCleanerKeyPair = SystemTestCertManager
@@ -74,7 +72,7 @@ public class SetupDrainCleaner {
                 switch (resourceType) {
                     case TestConstants.ROLE:
                         Role role = TestUtils.configFromYaml(file, Role.class);
-                        ResourceManager.getInstance().createResourceWithWait(extensionContext, new RoleBuilder(role)
+                        ResourceManager.getInstance().createResourceWithWait(new RoleBuilder(role)
                             .editMetadata()
                                 .withNamespace(TestConstants.DRAIN_CLEANER_NAMESPACE)
                             .endMetadata()
@@ -82,7 +80,7 @@ public class SetupDrainCleaner {
                         break;
                     case TestConstants.ROLE_BINDING:
                         RoleBinding roleBinding = TestUtils.configFromYaml(file, RoleBinding.class);
-                        ResourceManager.getInstance().createResourceWithWait(extensionContext, new RoleBindingBuilder(roleBinding)
+                        ResourceManager.getInstance().createResourceWithWait(new RoleBindingBuilder(roleBinding)
                             .editMetadata()
                                 .withNamespace(TestConstants.DRAIN_CLEANER_NAMESPACE)
                             .endMetadata()
@@ -93,11 +91,11 @@ public class SetupDrainCleaner {
                         break;
                     case TestConstants.CLUSTER_ROLE:
                         ClusterRole clusterRole = TestUtils.configFromYaml(file, ClusterRole.class);
-                        ResourceManager.getInstance().createResourceWithWait(extensionContext, clusterRole);
+                        ResourceManager.getInstance().createResourceWithWait(clusterRole);
                         break;
                     case TestConstants.SERVICE_ACCOUNT:
                         ServiceAccount serviceAccount = TestUtils.configFromYaml(file, ServiceAccount.class);
-                        ResourceManager.getInstance().createResourceWithWait(extensionContext, new ServiceAccountBuilder(serviceAccount)
+                        ResourceManager.getInstance().createResourceWithWait(new ServiceAccountBuilder(serviceAccount)
                             .editMetadata()
                                 .withNamespace(TestConstants.DRAIN_CLEANER_NAMESPACE)
                             .endMetadata()
@@ -105,14 +103,14 @@ public class SetupDrainCleaner {
                         break;
                     case TestConstants.CLUSTER_ROLE_BINDING:
                         ClusterRoleBinding clusterRoleBinding = TestUtils.configFromYaml(file, ClusterRoleBinding.class);
-                        ResourceManager.getInstance().createResourceWithWait(extensionContext, new ClusterRoleBindingBuilder(clusterRoleBinding).build());
+                        ResourceManager.getInstance().createResourceWithWait(new ClusterRoleBindingBuilder(clusterRoleBinding).build());
                         break;
                     case TestConstants.SECRET:
-                        ResourceManager.getInstance().createResourceWithWait(extensionContext, customDrainCleanerSecretBuilder.build());
+                        ResourceManager.getInstance().createResourceWithWait(customDrainCleanerSecretBuilder.build());
                         break;
                     case TestConstants.SERVICE:
                         Service service = TestUtils.configFromYaml(file, Service.class);
-                        ResourceManager.getInstance().createResourceWithWait(extensionContext, service);
+                        ResourceManager.getInstance().createResourceWithWait(service);
                         break;
                     case TestConstants.VALIDATION_WEBHOOK_CONFIG:
                         ValidatingWebhookConfiguration webhookConfiguration = TestUtils.configFromYaml(file, ValidatingWebhookConfiguration.class);
@@ -120,7 +118,7 @@ public class SetupDrainCleaner {
                         // we fetch public key from strimzi-drain-cleaner Secret and then patch ValidationWebhookConfiguration.
                         webhookConfiguration.getWebhooks().stream().findFirst().get().getClientConfig().setCaBundle(customDrainCleanerSecretBuilder.getData().get("tls.crt"));
 
-                        ResourceManager.getInstance().createResourceWithWait(extensionContext, webhookConfiguration);
+                        ResourceManager.getInstance().createResourceWithWait(webhookConfiguration);
                         break;
                     default:
                         LOGGER.error("Unknown installation resource type: {}", resourceType);
@@ -130,8 +128,8 @@ public class SetupDrainCleaner {
         });
     }
 
-    public void createDrainCleaner(ExtensionContext extensionContext) {
-        applyInstallFiles(extensionContext);
-        ResourceManager.getInstance().createResourceWithWait(extensionContext, new DrainCleanerResource().buildDrainCleanerDeployment().build());
+    public void createDrainCleaner() {
+        applyInstallFiles();
+        ResourceManager.getInstance().createResourceWithWait(new DrainCleanerResource().buildDrainCleanerDeployment().build());
     }
 }

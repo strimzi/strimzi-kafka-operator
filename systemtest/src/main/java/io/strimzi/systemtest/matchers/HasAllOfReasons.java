@@ -11,7 +11,6 @@ import org.hamcrest.Description;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * <p>A HasAllOfReasons is custom matcher to check the full matching of reasons for actual events.</p>
@@ -29,11 +28,11 @@ public class HasAllOfReasons extends BaseMatcher<List<Event>> {
     public boolean matches(Object actualValue) {
         List<String> actualReasons = ((List<Event>) actualValue).stream()
                 .map(Event::getReason)
-                .collect(Collectors.toList());
+                .toList();
 
         List<String> expectedReasons = Arrays.stream(eventReasons)
                 .map(Enum::name)
-                .collect(Collectors.toList());
+                .toList();
 
         return actualReasons.containsAll(expectedReasons);
     }

@@ -27,6 +27,7 @@ import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.kafkaclients.externalClients.ExternalKafkaClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
+import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.security.CertAndKeyFiles;
 import io.strimzi.systemtest.security.SystemTestCertAndKey;
@@ -50,7 +51,6 @@ import org.bouncycastle.asn1.x509.GeneralName;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
@@ -121,11 +121,11 @@ public class ListenersST extends AbstractST {
      */
     @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
-    void testSendMessagesPlainAnonymous(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+    void testSendMessagesPlainAnonymous() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3).build());
-        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(testStorage).build());
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage).build());
 
         KafkaClients kafkaClients = new KafkaClientsBuilder()
             .withProducerName(testStorage.getProducerName())
@@ -136,7 +136,7 @@ public class ListenersST extends AbstractST {
             .withTopicName(testStorage.getTopicName())
             .build();
 
-        resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
+        resourceManager.createResourceWithWait(kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
         ClientUtils.waitForClientsSuccess(testStorage);
 
         Service kafkaService = kubeClient(testStorage.getNamespaceName()).getService(testStorage.getNamespaceName(), KafkaResources.bootstrapServiceName(testStorage.getClusterName()));
@@ -150,11 +150,11 @@ public class ListenersST extends AbstractST {
      */
     @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
-    void testSendMessagesTlsAuthenticated(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+    void testSendMessagesTlsAuthenticated() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
         // Use a Kafka with plain listener disabled
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3)
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3)
             .editSpec()
                 .editKafka()
                     .withListeners(
@@ -177,7 +177,7 @@ public class ListenersST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResourceWithWait(extensionContext,
+        resourceManager.createResourceWithWait(
             KafkaTopicTemplates.topic(testStorage).build(),
             KafkaUserTemplates.tlsUser(testStorage).build()
         );
@@ -192,7 +192,7 @@ public class ListenersST extends AbstractST {
             .withTopicName(testStorage.getTopicName())
             .build();
 
-        resourceManager.createResourceWithWait(extensionContext,
+        resourceManager.createResourceWithWait(
             kafkaClients.producerTlsStrimzi(testStorage.getClusterName()),
             kafkaClients.consumerTlsStrimzi(testStorage.getClusterName())
         );
@@ -209,11 +209,11 @@ public class ListenersST extends AbstractST {
      */
     @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
-    void testSendMessagesPlainScramSha(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+    void testSendMessagesPlainScramSha() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
         // Use a Kafka with plain listener disabled
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3)
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3)
             .editSpec()
                 .editKafka()
                     .withListeners(new GenericKafkaListenerBuilder()
@@ -228,7 +228,7 @@ public class ListenersST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResourceWithWait(extensionContext,
+        resourceManager.createResourceWithWait(
             KafkaTopicTemplates.topic(testStorage).build(),
             KafkaUserTemplates.scramShaUser(testStorage).build()
         );
@@ -257,7 +257,7 @@ public class ListenersST extends AbstractST {
             .withTopicName(testStorage.getTopicName())
             .build();
 
-        resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerScramShaPlainStrimzi(), kafkaClients.consumerScramShaPlainStrimzi());
+        resourceManager.createResourceWithWait(kafkaClients.producerScramShaPlainStrimzi(), kafkaClients.consumerScramShaPlainStrimzi());
         ClientUtils.waitForClientsSuccess(testStorage);
 
         Service kafkaService = kubeClient(testStorage.getNamespaceName()).getService(testStorage.getNamespaceName(), KafkaResources.bootstrapServiceName(testStorage.getClusterName()));
@@ -272,12 +272,12 @@ public class ListenersST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(ACCEPTANCE)
     @Tag(INTERNAL_CLIENTS_USED)
-    void testSendMessagesTlsScramSha(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+    void testSendMessagesTlsScramSha() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final int passwordLength = 50;
 
         // Use a Kafka with plain listener disabled
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3)
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3)
             .editSpec()
                 .editKafka()
                     .withListeners(new GenericKafkaListenerBuilder()
@@ -303,7 +303,7 @@ public class ListenersST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResourceWithWait(extensionContext,
+        resourceManager.createResourceWithWait(
             KafkaTopicTemplates.topic(testStorage).build(),
             KafkaUserTemplates.scramShaUser(testStorage).build()
         );
@@ -318,7 +318,7 @@ public class ListenersST extends AbstractST {
             .withConsumerName(testStorage.getConsumerName())
             .build();
 
-        resourceManager.createResourceWithWait(extensionContext,
+        resourceManager.createResourceWithWait(
             kafkaClients.producerScramShaTlsStrimzi(testStorage.getClusterName()),
             kafkaClients.consumerScramShaTlsStrimzi(testStorage.getClusterName())
         );
@@ -342,11 +342,11 @@ public class ListenersST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(ACCEPTANCE)
     @Tag(INTERNAL_CLIENTS_USED)
-    void testSendMessagesCustomListenerTlsScramSha(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+    void testSendMessagesCustomListenerTlsScramSha() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
         // Use a Kafka with plain listener disabled
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3)
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3)
                 .editSpec()
                 .editKafka()
                 .withListeners(new GenericKafkaListenerBuilder()
@@ -365,7 +365,7 @@ public class ListenersST extends AbstractST {
                 .endSpec()
                 .build());
 
-        resourceManager.createResourceWithWait(extensionContext,
+        resourceManager.createResourceWithWait(
             KafkaTopicTemplates.topic(testStorage).build(),
             KafkaUserTemplates.scramShaUser(testStorage).build()
         );
@@ -380,7 +380,7 @@ public class ListenersST extends AbstractST {
             .withConsumerName(testStorage.getConsumerName())
             .build();
 
-        resourceManager.createResourceWithWait(extensionContext,
+        resourceManager.createResourceWithWait(
             kafkaClients.producerScramShaTlsStrimzi(testStorage.getClusterName()),
             kafkaClients.consumerScramShaTlsStrimzi(testStorage.getClusterName())
         );
@@ -390,12 +390,12 @@ public class ListenersST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
-    void testNodePort(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+    void testNodePort() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final Map<String, String> label = Collections.singletonMap("my-label", "value");
         final Map<String, String> anno = Collections.singletonMap("my-annotation", "value");
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3, 1)
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3, 1)
             .editSpec()
                 .editKafka()
                     .withListeners(new GenericKafkaListenerBuilder()
@@ -466,14 +466,14 @@ public class ListenersST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
-    void testOverrideNodePortConfiguration(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+    void testOverrideNodePortConfiguration() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
         final int brokerNodePort = 32000;
         final int brokerId = 0;
         final int clusterBootstrapNodePort = 32100;
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3, 1)
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3, 1)
             .editSpec()
                 .editKafka()
                     .withListeners(new GenericKafkaListenerBuilder()
@@ -527,10 +527,10 @@ public class ListenersST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
-    void testNodePortTls(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+    void testNodePortTls() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3, 1)
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3, 1)
             .editSpec()
                 .editKafka()
                     .withListeners(new GenericKafkaListenerBuilder()
@@ -545,8 +545,8 @@ public class ListenersST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), testStorage.getNamespaceName()).build());
-        resourceManager.createResourceWithWait(extensionContext, KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getKafkaUsername()).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), testStorage.getNamespaceName()).build());
+        resourceManager.createResourceWithWait(KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getKafkaUsername()).build());
 
         ExternalKafkaClient externalKafkaClient = new ExternalKafkaClient.Builder()
             .withTopicName(testStorage.getTopicName())
@@ -567,10 +567,10 @@ public class ListenersST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(LOADBALANCER_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
-    void testLoadBalancer(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+    void testLoadBalancer() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3)
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3)
             .editSpec()
                 .editKafka()
                     .withListeners(new GenericKafkaListenerBuilder()
@@ -608,10 +608,10 @@ public class ListenersST extends AbstractST {
     @Tag(ACCEPTANCE)
     @Tag(LOADBALANCER_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
-    void testLoadBalancerTls(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+    void testLoadBalancerTls() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3)
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3)
             .editSpec()
                 .editKafka()
                     .withListeners(new GenericKafkaListenerBuilder()
@@ -629,7 +629,7 @@ public class ListenersST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getKafkaUsername()).build());
+        resourceManager.createResourceWithWait(KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getKafkaUsername()).build());
 
         ServiceUtils.waitUntilAddressIsReachable(KafkaResource.kafkaClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus().getListeners().get(0).getAddresses().get(0).getHost());
 
@@ -651,10 +651,10 @@ public class ListenersST extends AbstractST {
 
     @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
-    void testClusterIp(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+    void testClusterIp() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3)
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3)
             .editSpec()
                 .editKafka()
                     .withListeners(new GenericKafkaListenerBuilder()
@@ -678,20 +678,20 @@ public class ListenersST extends AbstractST {
                 .withConsumerName(testStorage.getConsumerName())
                 .build();
 
-        resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerStrimzi());
+        resourceManager.createResourceWithWait(kafkaClients.producerStrimzi());
         ClientUtils.waitForClientSuccess(testStorage.getProducerName(), testStorage.getNamespaceName(), testStorage.getMessageCount());
 
-        resourceManager.createResourceWithWait(extensionContext, kafkaClients.consumerStrimzi());
+        resourceManager.createResourceWithWait(kafkaClients.consumerStrimzi());
         ClientUtils.waitForClientSuccess(testStorage.getConsumerName(), testStorage.getNamespaceName(), testStorage.getMessageCount());
 
     }
 
     @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
-    void testClusterIpTls(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+    void testClusterIpTls() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3)
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3)
             .editSpec()
                 .editKafka()
                     .withListeners(new GenericKafkaListenerBuilder()
@@ -706,7 +706,7 @@ public class ListenersST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaUserTemplates.tlsUser(testStorage).build());
+        resourceManager.createResourceWithWait(KafkaUserTemplates.tlsUser(testStorage).build());
 
         KafkaClients kafkaClients = new KafkaClientsBuilder()
                 .withNamespaceName(testStorage.getNamespaceName())
@@ -718,10 +718,10 @@ public class ListenersST extends AbstractST {
                 .withConsumerName(testStorage.getConsumerName())
                 .build();
 
-        resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerTlsStrimzi(testStorage.getClusterName()));
+        resourceManager.createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForProducerClientSuccess(testStorage);
 
-        resourceManager.createResourceWithWait(extensionContext, kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
+        resourceManager.createResourceWithWait(kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForConsumerClientSuccess(testStorage);
 
     }
@@ -734,8 +734,8 @@ public class ListenersST extends AbstractST {
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     @Tag(INTERNAL_CLIENTS_USED)
-    void testCustomSoloCertificatesForNodePort(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+    void testCustomSoloCertificatesForNodePort() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final String clusterCustomCertServer1 = testStorage.getClusterName() + "-" + customCertServer1;
 
         final SystemTestCertAndKey root1 = generateRootCaCertAndKey();
@@ -746,7 +746,7 @@ public class ListenersST extends AbstractST {
 
         SecretUtils.createCustomSecret(clusterCustomCertServer1, testStorage.getClusterName(), testStorage.getNamespaceName(), strimziCertAndKey1);
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3, 3)
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3, 3)
             .editSpec()
                 .editKafka()
                     .withListeners(new GenericKafkaListenerBuilder()
@@ -779,7 +779,7 @@ public class ListenersST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaUserTemplates.tlsUser(testStorage).build());
+        resourceManager.createResourceWithWait(KafkaUserTemplates.tlsUser(testStorage).build());
 
         ExternalKafkaClient externalKafkaClient = new ExternalKafkaClient.Builder()
             .withTopicName(testStorage.getTopicName())
@@ -809,14 +809,14 @@ public class ListenersST extends AbstractST {
             .withCaCertSecretName(clusterCustomCertServer1)
             .build();
 
-        resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerTlsStrimzi(testStorage.getClusterName()));
+        resourceManager.createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForProducerClientSuccess(testStorage);
 
         kafkaClients = new KafkaClientsBuilder(kafkaClients)
             .withMessageCount(2 * testStorage.getMessageCount())
             .build();
 
-        resourceManager.createResourceWithWait(extensionContext, kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
+        resourceManager.createResourceWithWait(kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForConsumerClientSuccess(testStorage);
     }
 
@@ -824,8 +824,8 @@ public class ListenersST extends AbstractST {
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     @Tag(INTERNAL_CLIENTS_USED)
-    void testCustomChainCertificatesForNodePort(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+    void testCustomChainCertificatesForNodePort() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final String clusterCustomCertChain1 = testStorage.getClusterName() + "-" + customCertChain1;
         final String clusterCustomRootCA1 = testStorage.getClusterName() + "-" + customRootCA1;
 
@@ -839,7 +839,7 @@ public class ListenersST extends AbstractST {
         SecretUtils.createCustomSecret(clusterCustomCertChain1, testStorage.getClusterName(), testStorage.getNamespaceName(), chainCertAndKey1);
         SecretUtils.createCustomSecret(clusterCustomRootCA1, testStorage.getClusterName(), testStorage.getNamespaceName(), rootCertAndKey1);
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 1, 1)
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 1, 1)
             .editSpec()
                 .editKafka()
                     .withListeners(new GenericKafkaListenerBuilder()
@@ -872,7 +872,7 @@ public class ListenersST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaUserTemplates.tlsUser(testStorage).build());
+        resourceManager.createResourceWithWait(KafkaUserTemplates.tlsUser(testStorage).build());
 
         ExternalKafkaClient externalKafkaClient = new ExternalKafkaClient.Builder()
             .withTopicName(testStorage.getTopicName())
@@ -902,14 +902,14 @@ public class ListenersST extends AbstractST {
             .withConsumerGroup("consumer-group-certs-2")
             .build();
 
-        resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerTlsStrimzi(testStorage.getClusterName()));
+        resourceManager.createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForProducerClientSuccess(testStorage);
 
         kafkaClients = new KafkaClientsBuilder(kafkaClients)
             .withMessageCount(2 * testStorage.getMessageCount())
             .build();
 
-        resourceManager.createResourceWithWait(extensionContext, kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
+        resourceManager.createResourceWithWait(kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForConsumerClientSuccess(testStorage);
     }
 
@@ -917,13 +917,13 @@ public class ListenersST extends AbstractST {
     @Tag(LOADBALANCER_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     @Tag(INTERNAL_CLIENTS_USED)
-    void testCustomSoloCertificatesForLoadBalancer(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+    void testCustomSoloCertificatesForLoadBalancer() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final String clusterCustomCertServer1 = testStorage.getClusterName() + "-" + customCertServer1;
 
         SecretUtils.createCustomSecret(clusterCustomCertServer1, testStorage.getClusterName(), testStorage.getNamespaceName(), STRIMZI_CERT_AND_KEY_1);
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3)
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3)
             .editSpec()
                 .editKafka()
                     .withListeners(new GenericKafkaListenerBuilder()
@@ -958,7 +958,7 @@ public class ListenersST extends AbstractST {
             .build());
 
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaUserTemplates.tlsUser(testStorage).build());
+        resourceManager.createResourceWithWait(KafkaUserTemplates.tlsUser(testStorage).build());
 
         ExternalKafkaClient externalKafkaClient = new ExternalKafkaClient.Builder()
             .withTopicName(testStorage.getTopicName())
@@ -988,14 +988,14 @@ public class ListenersST extends AbstractST {
             .withCaCertSecretName(clusterCustomCertServer1)
             .build();
 
-        resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerTlsStrimzi(testStorage.getClusterName()));
+        resourceManager.createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForProducerClientSuccess(testStorage);
 
         kafkaClients = new KafkaClientsBuilder(kafkaClients)
             .withMessageCount(2 * testStorage.getMessageCount())
             .build();
 
-        resourceManager.createResourceWithWait(extensionContext, kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
+        resourceManager.createResourceWithWait(kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForConsumerClientSuccess(testStorage);
     }
 
@@ -1003,15 +1003,15 @@ public class ListenersST extends AbstractST {
     @Tag(LOADBALANCER_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     @Tag(INTERNAL_CLIENTS_USED)
-    void testCustomChainCertificatesForLoadBalancer(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+    void testCustomChainCertificatesForLoadBalancer() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final String clusterCustomCertChain1 = testStorage.getClusterName() + "-" + customCertChain1;
         final String clusterCustomRootCA1 = testStorage.getClusterName() + "-" + customRootCA1;
 
         SecretUtils.createCustomSecret(clusterCustomCertChain1, testStorage.getClusterName(), testStorage.getNamespaceName(), CHAIN_CERT_AND_KEY_1);
         SecretUtils.createCustomSecret(clusterCustomRootCA1, testStorage.getClusterName(), testStorage.getNamespaceName(), ROOT_CA_CERT_AND_KEY_1);
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3)
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3)
             .editSpec()
                 .editKafka()
                     .withListeners(new GenericKafkaListenerBuilder()
@@ -1045,7 +1045,7 @@ public class ListenersST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResourceWithWait(extensionContext,
+        resourceManager.createResourceWithWait(
             KafkaTopicTemplates.topic(testStorage).build(),
             KafkaUserTemplates.tlsUser(testStorage).build()
         );
@@ -1078,14 +1078,14 @@ public class ListenersST extends AbstractST {
             .withCaCertSecretName(clusterCustomCertChain1)
             .build();
 
-        resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerTlsStrimzi(testStorage.getClusterName()));
+        resourceManager.createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForProducerClientSuccess(testStorage);
 
         kafkaClients = new KafkaClientsBuilder(kafkaClients)
             .withMessageCount(2 * testStorage.getMessageCount())
             .build();
 
-        resourceManager.createResourceWithWait(extensionContext, kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
+        resourceManager.createResourceWithWait(kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForConsumerClientSuccess(testStorage);
     }
 
@@ -1096,8 +1096,8 @@ public class ListenersST extends AbstractST {
     @Tag(INTERNAL_CLIENTS_USED)
     @Tag(ROUTE)
     @OpenShiftOnly
-    void testCustomSoloCertificatesForRoute(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+    void testCustomSoloCertificatesForRoute() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final String clusterCustomCertServer1 = testStorage.getClusterName() + "-" + customCertServer1;
 
         final SystemTestCertAndKey root1 = generateRootCaCertAndKey();
@@ -1108,7 +1108,7 @@ public class ListenersST extends AbstractST {
 
         SecretUtils.createCustomSecret(clusterCustomCertServer1, testStorage.getClusterName(), testStorage.getNamespaceName(), strimziCertAndKey1);
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3)
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3)
             .editSpec()
                 .editKafka()
                     .withListeners(new GenericKafkaListenerBuilder()
@@ -1141,7 +1141,7 @@ public class ListenersST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaUserTemplates.tlsUser(testStorage).build());
+        resourceManager.createResourceWithWait(KafkaUserTemplates.tlsUser(testStorage).build());
 
         ExternalKafkaClient externalKafkaClient = new ExternalKafkaClient.Builder()
             .withTopicName(testStorage.getTopicName())
@@ -1171,14 +1171,14 @@ public class ListenersST extends AbstractST {
             .withCaCertSecretName(clusterCustomCertServer1)
             .build();
 
-        resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerTlsStrimzi(testStorage.getClusterName()));
+        resourceManager.createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForProducerClientSuccess(testStorage);
 
         kafkaClients = new KafkaClientsBuilder(kafkaClients)
             .withMessageCount(2 * testStorage.getMessageCount())
             .build();
 
-        resourceManager.createResourceWithWait(extensionContext, kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
+        resourceManager.createResourceWithWait(kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForConsumerClientSuccess(testStorage);
     }
 
@@ -1187,8 +1187,8 @@ public class ListenersST extends AbstractST {
     @Tag(INTERNAL_CLIENTS_USED)
     @Tag(ROUTE)
     @OpenShiftOnly
-    void testCustomChainCertificatesForRoute(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+    void testCustomChainCertificatesForRoute() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
         final String clusterCustomCertChain1 = testStorage.getClusterName() + "-" + customCertChain1;
         final String clusterCustomRootCA1 = testStorage.getClusterName() + "-" + customRootCA1;
@@ -1203,7 +1203,7 @@ public class ListenersST extends AbstractST {
         SecretUtils.createCustomSecret(clusterCustomCertChain1, testStorage.getClusterName(), testStorage.getNamespaceName(), chainCertAndKey1);
         SecretUtils.createCustomSecret(clusterCustomRootCA1, testStorage.getClusterName(), testStorage.getNamespaceName(), rootCertAndKey1);
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3)
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3)
             .editSpec()
                 .editKafka()
                     .withListeners(new GenericKafkaListenerBuilder()
@@ -1236,7 +1236,7 @@ public class ListenersST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaUserTemplates.tlsUser(testStorage).build());
+        resourceManager.createResourceWithWait(KafkaUserTemplates.tlsUser(testStorage).build());
 
         ExternalKafkaClient externalKafkaClient = new ExternalKafkaClient.Builder()
             .withTopicName(testStorage.getTopicName())
@@ -1266,14 +1266,14 @@ public class ListenersST extends AbstractST {
             .withCaCertSecretName(clusterCustomCertChain1)
             .build();
 
-        resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerTlsStrimzi(testStorage.getClusterName()));
+        resourceManager.createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForProducerClientSuccess(testStorage);
 
         kafkaClients = new KafkaClientsBuilder(kafkaClients)
             .withMessageCount(2 * testStorage.getMessageCount())
             .build();
 
-        resourceManager.createResourceWithWait(extensionContext, kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
+        resourceManager.createResourceWithWait(kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForConsumerClientSuccess(testStorage);
     }
 
@@ -1283,15 +1283,15 @@ public class ListenersST extends AbstractST {
     @Tag(EXTERNAL_CLIENTS_USED)
     @Tag(INTERNAL_CLIENTS_USED)
     @SuppressWarnings({"checkstyle:MethodLength"})
-    void testCustomCertLoadBalancerAndTlsRollingUpdate(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+    void testCustomCertLoadBalancerAndTlsRollingUpdate() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final String clusterCustomCertServer1 = testStorage.getClusterName() + "-" + customCertServer1;
         final String clusterCustomCertServer2 = testStorage.getClusterName() + "-" + customCertServer2;
 
         SecretUtils.createCustomSecret(clusterCustomCertServer1, testStorage.getClusterName(), testStorage.getNamespaceName(), STRIMZI_CERT_AND_KEY_1);
         SecretUtils.createCustomSecret(clusterCustomCertServer2, testStorage.getClusterName(), testStorage.getNamespaceName(), STRIMZI_CERT_AND_KEY_2);
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3)
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3)
             .editSpec()
                 .editKafka()
                     .withListeners(new GenericKafkaListenerBuilder()
@@ -1313,7 +1313,7 @@ public class ListenersST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaUserTemplates.tlsUser(testStorage).build());
+        resourceManager.createResourceWithWait(KafkaUserTemplates.tlsUser(testStorage).build());
 
         String externalCerts = getKafkaStatusCertificates(TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME, testStorage.getNamespaceName(), testStorage.getClusterName());
         String externalSecretCerts = getKafkaSecretCertificates(testStorage.getNamespaceName(), testStorage.getClusterName() + "-cluster-ca-cert", "ca.crt");
@@ -1412,14 +1412,14 @@ public class ListenersST extends AbstractST {
             .withCaCertSecretName(clusterCustomCertServer2)
             .build();
 
-        resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerTlsStrimzi(testStorage.getClusterName()));
+        resourceManager.createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForProducerClientSuccess(testStorage);
 
         kafkaClients = new KafkaClientsBuilder(kafkaClients)
             .withMessageCount(3 * testStorage.getMessageCount())
             .build();
 
-        resourceManager.createResourceWithWait(extensionContext, kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
+        resourceManager.createResourceWithWait(kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForClientSuccess(testStorage.getConsumerName(), testStorage.getNamespaceName(), testStorage.getMessageCount() * 3);
 
         SecretUtils.createCustomSecret(clusterCustomCertServer1, testStorage.getClusterName(), testStorage.getNamespaceName(), STRIMZI_CERT_AND_KEY_2);
@@ -1452,14 +1452,14 @@ public class ListenersST extends AbstractST {
             .withMessageCount(testStorage.getMessageCount())
             .build();
 
-        resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerTlsStrimzi(testStorage.getClusterName()));
+        resourceManager.createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForProducerClientSuccess(testStorage);
 
         kafkaClients = new KafkaClientsBuilder(kafkaClients)
             .withMessageCount(testStorage.getMessageCount() * 5)
             .build();
 
-        resourceManager.createResourceWithWait(extensionContext, kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
+        resourceManager.createResourceWithWait(kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForClientSuccess(testStorage.getConsumerName(), testStorage.getNamespaceName(), testStorage.getMessageCount() * 5);
 
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> {
@@ -1523,7 +1523,7 @@ public class ListenersST extends AbstractST {
             .withMessageCount(testStorage.getMessageCount() * 6)
             .build();
 
-        resourceManager.createResourceWithWait(extensionContext, kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
+        resourceManager.createResourceWithWait(kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForClientSuccess(testStorage.getConsumerName(), testStorage.getNamespaceName(), testStorage.getMessageCount() * 6);
     }
 
@@ -1532,8 +1532,8 @@ public class ListenersST extends AbstractST {
     @Tag(EXTERNAL_CLIENTS_USED)
     @Tag(INTERNAL_CLIENTS_USED)
     @SuppressWarnings({"checkstyle:MethodLength"})
-    void testCustomCertNodePortAndTlsRollingUpdate(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+    void testCustomCertNodePortAndTlsRollingUpdate() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final String clusterCustomCertServer1 = testStorage.getClusterName() + "-" + customCertServer1;
         final String clusterCustomCertServer2 = testStorage.getClusterName() + "-" + customCertServer2;
 
@@ -1552,7 +1552,7 @@ public class ListenersST extends AbstractST {
         SecretUtils.createCustomSecret(clusterCustomCertServer1, testStorage.getClusterName(), testStorage.getNamespaceName(), strimziCertAndKey1);
         SecretUtils.createCustomSecret(clusterCustomCertServer2, testStorage.getClusterName(), testStorage.getNamespaceName(), strimziCertAndKey2);
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3)
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3)
             .editSpec()
                 .editKafka()
                     .withListeners(new GenericKafkaListenerBuilder()
@@ -1573,7 +1573,7 @@ public class ListenersST extends AbstractST {
 
 
         KafkaUser aliceUser = KafkaUserTemplates.tlsUser(testStorage).build();
-        resourceManager.createResourceWithWait(extensionContext, aliceUser);
+        resourceManager.createResourceWithWait(aliceUser);
 
         StUtils.waitUntilSuppliersAreMatching(
             // external certs
@@ -1673,7 +1673,7 @@ public class ListenersST extends AbstractST {
             .withCaCertSecretName(clusterCustomCertServer2)
             .build();
 
-        resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerTlsStrimzi(testStorage.getClusterName()));
+        resourceManager.createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForProducerClientSuccess(testStorage);
 
         int expectedMessageCountForExternalClient = testStorage.getMessageCount();
@@ -1682,7 +1682,7 @@ public class ListenersST extends AbstractST {
             .withMessageCount(expectedMessageCountForNewGroup)
             .build();
 
-        resourceManager.createResourceWithWait(extensionContext, kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
+        resourceManager.createResourceWithWait(kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForClientSuccess(testStorage.getConsumerName(), testStorage.getNamespaceName(), testStorage.getMessageCount() * 3);
 
         SecretUtils.updateCustomSecret(clusterCustomCertServer1, testStorage.getClusterName(), testStorage.getNamespaceName(), strimziCertAndKey2);
@@ -1712,7 +1712,7 @@ public class ListenersST extends AbstractST {
             .withMessageCount(testStorage.getMessageCount())
             .build();
 
-        resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerTlsStrimzi(testStorage.getClusterName()));
+        resourceManager.createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForProducerClientSuccess(testStorage);
 
         expectedMessageCountForNewGroup += testStorage.getMessageCount();
@@ -1721,7 +1721,7 @@ public class ListenersST extends AbstractST {
             .withMessageCount(expectedMessageCountForNewGroup)
             .build();
 
-        resourceManager.createResourceWithWait(extensionContext, kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
+        resourceManager.createResourceWithWait(kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForConsumerClientSuccess(testStorage);
 
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> {
@@ -1777,7 +1777,7 @@ public class ListenersST extends AbstractST {
             .withMessageCount(expectedMessageCountForNewGroup)
             .build();
 
-        resourceManager.createResourceWithWait(extensionContext, kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
+        resourceManager.createResourceWithWait(kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForConsumerClientSuccess(testStorage);
     }
 
@@ -1787,8 +1787,8 @@ public class ListenersST extends AbstractST {
     @Tag(ROUTE)
     @OpenShiftOnly
     @SuppressWarnings({"checkstyle:MethodLength"})
-    void testCustomCertRouteAndTlsRollingUpdate(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+    void testCustomCertRouteAndTlsRollingUpdate() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final String clusterCustomCertServer1 = testStorage.getClusterName() + "-" + customCertServer1;
         final String clusterCustomCertServer2 = testStorage.getClusterName() + "-" + customCertServer2;
 
@@ -1807,7 +1807,7 @@ public class ListenersST extends AbstractST {
         SecretUtils.createCustomSecret(clusterCustomCertServer1, testStorage.getClusterName(), testStorage.getNamespaceName(), strimziCertAndKey1);
         SecretUtils.createCustomSecret(clusterCustomCertServer2, testStorage.getClusterName(), testStorage.getNamespaceName(), strimziCertAndKey2);
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3)
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3)
             .editSpec()
                 .editKafka()
                     .withListeners(new GenericKafkaListenerBuilder()
@@ -1826,7 +1826,7 @@ public class ListenersST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaUserTemplates.tlsUser(testStorage).build());
+        resourceManager.createResourceWithWait(KafkaUserTemplates.tlsUser(testStorage).build());
 
         LOGGER.info("Check if KafkaStatus certificates are the same as secret certificates");
 
@@ -1931,14 +1931,14 @@ public class ListenersST extends AbstractST {
             .withConsumerGroup("consumer-group-certs-91")
             .build();
 
-        resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerTlsStrimzi(testStorage.getClusterName()));
+        resourceManager.createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForProducerClientSuccess(testStorage);
 
         kafkaClients = new KafkaClientsBuilder(kafkaClients)
             .withMessageCount(testStorage.getMessageCount() * 3)
             .build();
 
-        resourceManager.createResourceWithWait(extensionContext, kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
+        resourceManager.createResourceWithWait(kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForConsumerClientSuccess(testStorage);
 
         // Delete already existing secrets
@@ -1976,14 +1976,14 @@ public class ListenersST extends AbstractST {
             .withMessageCount(testStorage.getMessageCount())
             .build();
 
-        resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerTlsStrimzi(testStorage.getClusterName()));
+        resourceManager.createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForProducerClientSuccess(testStorage);
 
         kafkaClients = new KafkaClientsBuilder(kafkaClients)
             .withMessageCount(testStorage.getMessageCount() * 5)
             .build();
 
-        resourceManager.createResourceWithWait(extensionContext, kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
+        resourceManager.createResourceWithWait(kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForConsumerClientSuccess(testStorage);
 
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> {
@@ -2051,16 +2051,16 @@ public class ListenersST extends AbstractST {
             .withConsumerGroup("consumer-group-certs-93")
             .build();
 
-        resourceManager.createResourceWithWait(extensionContext, kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
+        resourceManager.createResourceWithWait(kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForConsumerClientSuccess(testStorage);
     }
 
     @ParallelNamespaceTest
-    void testNonExistingCustomCertificate(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+    void testNonExistingCustomCertificate() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final String nonExistingCertName = "non-existing-certificate";
 
-        resourceManager.createResourceWithoutWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 1, 1)
+        resourceManager.createResourceWithoutWait(KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 1, 1)
             .editSpec()
                 .editKafka()
                     .withListeners(new GenericKafkaListenerBuilder()
@@ -2088,14 +2088,14 @@ public class ListenersST extends AbstractST {
     }
 
     @ParallelNamespaceTest
-    void testCertificateWithNonExistingDataCrt(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+    void testCertificateWithNonExistingDataCrt() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final String nonExistingCertName = "non-existing-crt";
         final String clusterCustomCertServer1 = testStorage.getClusterName() + "-" + customCertServer1;
 
         SecretUtils.createCustomSecret(clusterCustomCertServer1, testStorage.getClusterName(), testStorage.getNamespaceName(), STRIMZI_CERT_AND_KEY_1);
 
-        resourceManager.createResourceWithoutWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 1, 1)
+        resourceManager.createResourceWithoutWait(KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 1, 1)
             .editSpec()
                 .editKafka()
                     .withListeners(new GenericKafkaListenerBuilder()
@@ -2124,14 +2124,14 @@ public class ListenersST extends AbstractST {
     }
 
     @ParallelNamespaceTest
-    void testCertificateWithNonExistingDataKey(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+    void testCertificateWithNonExistingDataKey() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final String nonExistingCertKey = "non-existing-key";
         final String clusterCustomCertServer1 = testStorage.getClusterName() + "-" + customCertServer1;
 
         SecretUtils.createCustomSecret(clusterCustomCertServer1, testStorage.getClusterName(), testStorage.getNamespaceName(), STRIMZI_CERT_AND_KEY_1);
 
-        resourceManager.createResourceWithoutWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 1, 1)
+        resourceManager.createResourceWithoutWait(KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 1, 1)
             .editSpec()
                 .editKafka()
                     .withListeners(new GenericKafkaListenerBuilder()
@@ -2160,8 +2160,8 @@ public class ListenersST extends AbstractST {
     }
 
     @ParallelNamespaceTest
-    void testMessagesTlsScramShaWithPredefinedPassword(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+    void testMessagesTlsScramShaWithPredefinedPassword() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
         // FIPS needs the passwords at least 32 characters long
         final String firstUnencodedPassword = "completely_secret_password_long_enough_for_fips";
@@ -2195,7 +2195,7 @@ public class ListenersST extends AbstractST {
             .endSpec()
             .build();
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3)
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3)
             .editSpec()
                 .editKafka()
                     .withListeners(new GenericKafkaListenerBuilder()
@@ -2223,7 +2223,7 @@ public class ListenersST extends AbstractST {
             .withConsumerName(testStorage.getConsumerName())
             .build();
 
-        resourceManager.createResourceWithWait(extensionContext,
+        resourceManager.createResourceWithWait(
             kafkaClients.producerScramShaTlsStrimzi(testStorage.getClusterName()),
             kafkaClients.consumerScramShaTlsStrimzi(testStorage.getClusterName())
         );
@@ -2244,7 +2244,7 @@ public class ListenersST extends AbstractST {
             .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
             .build();
 
-        resourceManager.createResourceWithWait(extensionContext,
+        resourceManager.createResourceWithWait(
             kafkaClients.producerScramShaTlsStrimzi(testStorage.getClusterName()),
             kafkaClients.consumerScramShaTlsStrimzi(testStorage.getClusterName())
         );
@@ -2253,8 +2253,8 @@ public class ListenersST extends AbstractST {
 
     @Tag(NODEPORT_SUPPORTED)
     @ParallelNamespaceTest
-    void testAdvertisedHostNamesAppearsInBrokerCerts(ExtensionContext extensionContext) throws CertificateException, CertificateException {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+    void testAdvertisedHostNamesAppearsInBrokerCerts() throws CertificateException, CertificateException {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
         final String advertHostInternal0 = "kafka-test.internal.0.net";
         final String advertHostInternal1 = "kafka-test.internal.1.net";
@@ -2310,7 +2310,7 @@ public class ListenersST extends AbstractST {
                 .withAdvertisedHost(advertHostExternal2)
                 .build();
 
-        resourceManager.createResourceWithWait(extensionContext,
+        resourceManager.createResourceWithWait(
             KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3, 3)
                 .editSpec()
                     .editKafka()
@@ -2358,8 +2358,8 @@ public class ListenersST extends AbstractST {
     }
 
     @AfterEach
-    void afterEach(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+    void afterEach() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         kubeClient(testStorage.getNamespaceName()).getClient().persistentVolumeClaims().inNamespace(testStorage.getNamespaceName()).delete();
     }
 
@@ -2374,9 +2374,9 @@ public class ListenersST extends AbstractST {
     }
 
     @BeforeAll
-    void setup(ExtensionContext extensionContext) {
+    void setup() {
         this.clusterOperator = this.clusterOperator
-                .defaultInstallation(extensionContext)
+                .defaultInstallation()
                 .createInstallation()
                 .runInstallation();
     }

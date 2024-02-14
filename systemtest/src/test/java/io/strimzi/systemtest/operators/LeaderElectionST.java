@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.coordination.v1.Lease;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.operator.BundleResource;
 import io.strimzi.systemtest.resources.operator.specific.HelmResource;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -20,7 +21,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -63,12 +63,12 @@ public class LeaderElectionST extends AbstractST {
 
     @IsolatedTest
     @Tag(ACCEPTANCE)
-    void testLeaderElection(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+    void testLeaderElection() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
         // create CO with 2 replicas, wait for Deployment readiness and leader election
-        clusterOperator = clusterOperator.defaultInstallation(extensionContext)
-            .withExtensionContext(extensionContext)
+        clusterOperator = clusterOperator.defaultInstallation()
+            .withExtensionContext(ResourceManager.getTestContext())
             .withReplicas(2)
             .createInstallation()
             .runInstallation();
@@ -100,15 +100,15 @@ public class LeaderElectionST extends AbstractST {
     }
 
     @IsolatedTest
-    void testLeaderElectionDisabled(ExtensionContext extensionContext) {
+    void testLeaderElectionDisabled() {
         // Currently there is no way how to disable LeaderElection when deploying CO via Helm (duplicated envs)
         assumeTrue(!Environment.isHelmInstall());
 
-        final TestStorage testStorage = new TestStorage(extensionContext);
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
         // create CO with 1 replicas and with disabled leader election, wait for Deployment readiness
-        clusterOperator = clusterOperator.defaultInstallation(extensionContext)
-            .withExtensionContext(extensionContext)
+        clusterOperator = clusterOperator.defaultInstallation()
+            .withExtensionContext(ResourceManager.getTestContext())
             .withExtraEnvVars(Collections.singletonList(LEADER_DISABLED_ENV))
             .createInstallation()
             .runInstallation();
