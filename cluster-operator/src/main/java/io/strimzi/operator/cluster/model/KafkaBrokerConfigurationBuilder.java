@@ -313,9 +313,10 @@ public class KafkaBrokerConfigurationBuilder {
 
                 writer.println();
             }
-
-            configureOAuthPrincipalBuilderIfNeeded(writer, kafkaListeners);
         }
+
+        // configure OAuth principal builder for all the nodes - brokers, controllers, and mixed
+        configureOAuthPrincipalBuilderIfNeeded(writer, kafkaListeners);
 
         printSectionHeader("Common listener configuration");
         writer.println("listener.security.protocol.map=" + String.join(",", securityProtocol));
