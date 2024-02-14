@@ -67,6 +67,7 @@ include::../../modules/configuring/proc-scaling-down-node-pools.adoc[leveloffset
 include::../../modules/configuring/proc-moving-node-pools.adoc[leveloffset=+2]
 include::../../modules/configuring/con-config-node-pool-roles.adoc[leveloffset=+2]
 include::../../modules/configuring/proc-splitting-node-pool-roles.adoc[leveloffset=+2]
+include::../../modules/configuring/proc-joining-node-pool-roles.adoc[leveloffset=+2]
 include::../../modules/configuring/proc-managing-storage-node-pools.adoc[leveloffset=+2]
 include::../../modules/configuring/proc-managing-storage-affinity-node-pools.adoc[leveloffset=+2]
 include::../../modules/configuring/proc-migrating-clusters-node-pools.adoc[leveloffset=+2]
