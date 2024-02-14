@@ -109,7 +109,7 @@ spec:
 ----
 
 . Apply the node pool configuration.
-. Check the status of the deployment and wait for the pods in the node pools to be created and have a status of `Running`.
+. Check the status of the deployment and wait for the pods in the node pools to be created and ready (`1/1`).
 +
 [source,shell]
 ----

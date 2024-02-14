@@ -40,7 +40,22 @@ Otherwise, the node with the highest available ID in the node pool is removed.
 
 . Reassign the partitions before decreasing the number of nodes in the node pool.
 +
-Before scaling down a node pool, you can use the Cruise Control `remove-brokers` mode to move partition replicas off the brokers that are going to be removed.
+Before scaling down a node pool, use the Cruise Control `remove-brokers` mode to move partition replicas off the brokers that are going to be removed.
++
+.Using Cruise Control to reassign partition replicas
+[source,shell,subs="+attributes"]
+----
+apiVersion: {KafkaRebalanceApiVersion}
+kind: KafkaRebalance
+metadata:
+  # ...
+spec:
+  mode: remove-brokers
+  brokers: [3]
+----
++
+We are reassigning partitions from node `my-cluster-pool-a-3`. 
+The reassignment can take some time depending on the number of topics and partitions in the cluster.
 
 . After the reassignment process is complete, and the node being removed has no live partitions, reduce the number of Kafka nodes in the node pool.
 +
