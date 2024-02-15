@@ -160,7 +160,8 @@ public class CruiseControlReconciler {
                             reconciliation,
                             reconciliation.namespace(),
                             CruiseControlResources.networkPolicyName(reconciliation.name()),
-                            cruiseControl != null ? cruiseControl.generateNetworkPolicy(operatorNamespace, operatorNamespaceLabels) : null
+                            cruiseControl != null ? cruiseControl.generateNetworkPolicy(
+                                operatorNamespace, operatorNamespaceLabels, topicOperatorEnabled) : null
                     ).map((Void) null);
         } else {
             return Future.succeededFuture();

@@ -72,6 +72,7 @@ import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiPro
 import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.API_USER_PASSWORD_KEY;
 import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.API_USER_ROLE;
 import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.COMPONENT_TYPE;
+import static java.lang.String.format;
 
 /**
  * Cruise Control model
@@ -510,17 +511,27 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
      *
      * @param operatorNamespace                             Namespace where the Strimzi Cluster Operator runs. Null if not configured.
      * @param operatorNamespaceLabels                       Labels of the namespace where the Strimzi Cluster Operator runs. Null if not configured.
-     *
+     * @param enableEntityOperator                          Whether to also enable access to the Entity Operator.
+     *                                                      
      * @return The network policy.
      */
-    public NetworkPolicy generateNetworkPolicy(String operatorNamespace, Labels operatorNamespaceLabels) {
-        NetworkPolicyPeer clusterOperatorPeer = NetworkPolicyUtils.createPeer(Map.of(Labels.STRIMZI_KIND_LABEL, "cluster-operator"), NetworkPolicyUtils.clusterOperatorNamespaceSelector(namespace, operatorNamespace, operatorNamespaceLabels));
+    public NetworkPolicy generateNetworkPolicy(String operatorNamespace, Labels operatorNamespaceLabels, boolean enableEntityOperator) {
+        List<NetworkPolicyPeer> peers = new ArrayList<>(2);
+        NetworkPolicyPeer clusterOperatorPeer = NetworkPolicyUtils.createPeer(Map.of(Labels.STRIMZI_KIND_LABEL, "cluster-operator"), 
+            NetworkPolicyUtils.clusterOperatorNamespaceSelector(namespace, operatorNamespace, operatorNamespaceLabels));
+        peers.add(clusterOperatorPeer);
+        
+        if (enableEntityOperator) {
+            NetworkPolicyPeer entityOperatorPeer = NetworkPolicyUtils.createPeer(Map.of(Labels.STRIMZI_NAME_LABEL, format("%s-entity-operator", cluster)),
+                NetworkPolicyUtils.clusterOperatorNamespaceSelector(namespace, operatorNamespace, operatorNamespaceLabels));
+            peers.add(entityOperatorPeer);
+        }
 
         // List of network policy rules for all ports
         List<NetworkPolicyIngressRule> rules = new ArrayList<>();
 
-        // CO can access the REST API
-        rules.add(NetworkPolicyUtils.createIngressRule(REST_API_PORT, List.of(clusterOperatorPeer)));
+        // CO and EO can access the REST API
+        rules.add(NetworkPolicyUtils.createIngressRule(REST_API_PORT, peers));
 
         // Everyone can access metrics
         if (metrics.isEnabled()) {

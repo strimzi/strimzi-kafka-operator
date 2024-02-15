@@ -85,6 +85,7 @@ import java.util.Set;
 import static io.strimzi.operator.cluster.model.CruiseControl.API_HEALTHCHECK_PATH;
 import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters.ANOMALY_DETECTION_CONFIG_KEY;
 import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters.DEFAULT_GOALS_CONFIG_KEY;
+import static java.lang.String.format;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.containsString;
@@ -1059,7 +1060,7 @@ public class CruiseControlTest {
                 .withNewNamespaceSelector().endNamespaceSelector()
                 .build();
 
-        NetworkPolicy np = cc.generateNetworkPolicy("operator-namespace", null);
+        NetworkPolicy np = cc.generateNetworkPolicy("operator-namespace", null, false);
 
         assertThat(np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(CruiseControl.REST_API_PORT))).findFirst().orElse(null), is(notNullValue()));
 
@@ -1076,15 +1077,21 @@ public class CruiseControlTest {
                     .withMatchLabels(Collections.singletonMap(Labels.STRIMZI_KIND_LABEL, "cluster-operator"))
                 .endPodSelector()
                 .build();
+        NetworkPolicyPeer entityOperatorPeer = new NetworkPolicyPeerBuilder()
+            .withNewPodSelector()
+            .withMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, format("%s-entity-operator", CLUSTER)))
+            .endPodSelector()
+            .build();
 
-        NetworkPolicy np = cc.generateNetworkPolicy(NAMESPACE, null);
+        NetworkPolicy np = cc.generateNetworkPolicy(NAMESPACE, null, true);
 
         assertThat(np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(CruiseControl.REST_API_PORT))).findFirst().orElse(null), is(notNullValue()));
 
         List<NetworkPolicyPeer> rules = np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(CruiseControl.REST_API_PORT))).map(NetworkPolicyIngressRule::getFrom).findFirst().orElse(null);
 
-        assertThat(rules.size(), is(1));
+        assertThat(rules.size(), is(2));
         assertThat(rules.contains(clusterOperatorPeer), is(true));
+        assertThat(rules.contains(entityOperatorPeer), is(true));
     }
 
     @ParallelTest
@@ -1097,15 +1104,24 @@ public class CruiseControlTest {
                     .withMatchLabels(Collections.singletonMap("nsLabelKey", "nsLabelValue"))
                 .endNamespaceSelector()
                 .build();
+        NetworkPolicyPeer entityOperatorPeer = new NetworkPolicyPeerBuilder()
+            .withNewPodSelector()
+            .withMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, format("%s-entity-operator", CLUSTER)))
+            .endPodSelector()
+            .withNewNamespaceSelector()
+            .withMatchLabels(Collections.singletonMap("nsLabelKey", "nsLabelValue"))
+            .endNamespaceSelector()
+            .build();
 
-        NetworkPolicy np = cc.generateNetworkPolicy(null, Labels.fromMap(Collections.singletonMap("nsLabelKey", "nsLabelValue")));
+        NetworkPolicy np = cc.generateNetworkPolicy(null, Labels.fromMap(Collections.singletonMap("nsLabelKey", "nsLabelValue")), true);
 
         assertThat(np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(CruiseControl.REST_API_PORT))).findFirst().orElse(null), is(notNullValue()));
 
         List<NetworkPolicyPeer> rules = np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(CruiseControl.REST_API_PORT))).map(NetworkPolicyIngressRule::getFrom).findFirst().orElseThrow();
 
-        assertThat(rules.size(), is(1));
+        assertThat(rules.size(), is(2));
         assertThat(rules.contains(clusterOperatorPeer), is(true));
+        assertThat(rules.contains(entityOperatorPeer), is(true));
     }
 
     @ParallelTest
