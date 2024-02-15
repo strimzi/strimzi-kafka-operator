@@ -989,7 +989,7 @@ public class KafkaBrokerConfigurationBuilderTest {
         // Mixed node
         configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "14", true)
             .withKRaft("my-cluster", "my-namespace", Set.of(ProcessRoles.BROKER, ProcessRoles.CONTROLLER), nodes)
-            .withListeners("my-cluster", "my-namespace", new NodeRef("my-cluster-kafka-14", 14, "kafka", false, true), singletonList(listener), listenerId -> "my-cluster-kafka-14.my-cluster-kafka-brokers.my-namespace.svc", listenerId -> "9092")
+            .withListeners("my-cluster", "my-namespace", new NodeRef("my-cluster-kafka-14", 14, "kafka", true, true), singletonList(listener), listenerId -> "my-cluster-kafka-14.my-cluster-kafka-brokers.my-namespace.svc", listenerId -> "9092")
             .build();
 
         assertThat(configuration, isEquivalent("node.id=14",
@@ -1010,7 +1010,7 @@ public class KafkaBrokerConfigurationBuilderTest {
             "listener.name.replication-9091.ssl.truststore.password=${CERTS_STORE_PASSWORD}",
             "listener.name.replication-9091.ssl.truststore.type=PKCS12",
             "listener.name.replication-9091.ssl.client.auth=required",
-            "listeners=REPLICATION-9091://0.0.0.0:9091,PLAIN-9092://0.0.0.0:9092",
+            "listeners=CONTROLPLANE-9090://0.0.0.0:9090,REPLICATION-9091://0.0.0.0:9091,PLAIN-9092://0.0.0.0:9092",
             "advertised.listeners=REPLICATION-9091://my-cluster-kafka-14.my-cluster-kafka-brokers.my-namespace.svc:9091,PLAIN-9092://my-cluster-kafka-14.my-cluster-kafka-brokers.my-namespace.svc:9092",
             "listener.security.protocol.map=CONTROLPLANE-9090:SSL,REPLICATION-9091:SSL,PLAIN-9092:SASL_PLAINTEXT",
             "inter.broker.listener.name=REPLICATION-9091",
