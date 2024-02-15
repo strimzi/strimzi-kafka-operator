@@ -223,7 +223,7 @@ public class KafkaRoller {
         if (this.controllerAdminClient == null) {
             try {
                 // TODO: Currently, when running in KRaft mode Kafka does not support using Kafka Admin API with controller
-                //       nodes. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/8593.
+                //       nodes. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/9692.
                 //       Therefore use broker nodes of the cluster to initialise adminClient for quorum health check.
                 //       Once Kafka Admin API is supported for controllers, nodes.stream().filter(NodeRef:controller)
                 //       can be used here. Until then pass an empty set of nodes so the client is initialized with
@@ -622,7 +622,7 @@ public class KafkaRoller {
 
                 restartContext.quorumCheck = quorumCheck(controllerAdminClient, Long.parseLong(controllerQuorumFetchTimeout));
             } else {
-                //TODO When https://github.com/strimzi/strimzi-kafka-operator/issues/8593 is complete
+                //TODO When https://github.com/strimzi/strimzi-kafka-operator/issues/9692 is complete
                 // we should change this logic to immediately restart this pod because we cannot connect to it.
                 if (nodeRef.broker()) {
                     // If it is a combined node (controller and broker) and the admin client cannot be initialised,
@@ -911,7 +911,7 @@ public class KafkaRoller {
      */
     protected Admin adminClient(Set<NodeRef> nodes, boolean ceShouldBeFatal) throws ForceableProblem, FatalProblem {
         // If no nodes are passed initialize the admin client using the brokers service
-        // TODO when https://github.com/strimzi/strimzi-kafka-operator/issues/8593 is completed review whether
+        // TODO when https://github.com/strimzi/strimzi-kafka-operator/issues/9692 is completed review whether
         //      this function can be reverted to expect nodes to be non empty
         String bootstrapHostnames;
         if (nodes.isEmpty()) {
