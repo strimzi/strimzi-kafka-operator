@@ -24,6 +24,7 @@ import io.strimzi.systemtest.enums.PodSecurityProfile;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.NamespaceManager;
+import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
@@ -40,7 +41,6 @@ import org.apache.logging.log4j.Logger;
 import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.Collections;
 import java.util.List;
@@ -95,9 +95,9 @@ public class PodSecurityProfilesST extends AbstractST {
     @KindIPv6NotSupported("Kafka Connect Build using the Kaniko builder is not available under the restricted security profile")
     @ParallelNamespaceTest
     @RequiredMinKubeOrOcpBasedKubeVersion(kubeVersion = 1.23, ocpBasedKubeVersion = 1.24)
-    void testOperandsWithRestrictedSecurityProfile(ExtensionContext extensionContext) {
+    void testOperandsWithRestrictedSecurityProfile() {
 
-        final TestStorage testStorage = new TestStorage(extensionContext);
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
         final String mm1TargetClusterName = testStorage.getTargetClusterName() + "-mm1";
         final String mm2TargetClusterName = testStorage.getTargetClusterName() + "-mm2";
@@ -111,7 +111,7 @@ public class PodSecurityProfilesST extends AbstractST {
         // 1 source Kafka Cluster, 2 target Kafka Cluster, 1 for MM1 and MM2 each having different target Kafka Cluster,
 
         LOGGER.info("Deploy Kafka Clusters resources");
-        resourceManager.createResourceWithWait(extensionContext,
+        resourceManager.createResourceWithWait(
             KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 1).build(),
             KafkaTemplates.kafkaEphemeral(mm1TargetClusterName, 1).build(),
             KafkaTemplates.kafkaEphemeral(mm2TargetClusterName, 1).build(),
@@ -122,7 +122,7 @@ public class PodSecurityProfilesST extends AbstractST {
         // MM1 and MM2 shares source Kafka Cluster and each have their own target kafka cluster
 
         LOGGER.info("Deploy all additional operands: MM1, MM2, Bridge, KafkaConnect");
-        resourceManager.createResourceWithWait(extensionContext,
+        resourceManager.createResourceWithWait(
             KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getClusterName(), testStorage.getNamespaceName(), 1)
                 .editMetadata()
                     .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
@@ -148,7 +148,7 @@ public class PodSecurityProfilesST extends AbstractST {
                 .build());
 
         LOGGER.info("Deploy File Sink Kafka Connector: {}/{}", testStorage.getNamespaceName(), testStorage.getClusterName());
-        resourceManager.createResourceWithWait(extensionContext, KafkaConnectorTemplates.kafkaConnector(testStorage.getClusterName())
+        resourceManager.createResourceWithWait(KafkaConnectorTemplates.kafkaConnector(testStorage.getClusterName())
             .editSpec()
                 .withClassName("org.apache.kafka.connect.file.FileStreamSinkConnector")
                 .addToConfig("topics", testStorage.getTopicName())
@@ -170,7 +170,7 @@ public class PodSecurityProfilesST extends AbstractST {
             .withUsername(testStorage.getUsername())
             .withPodSecurityPolicy(PodSecurityProfile.RESTRICTED)
             .build();
-        resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerStrimzi());
+        resourceManager.createResourceWithWait(kafkaClients.producerStrimzi());
         ClientUtils.waitForProducerClientSuccess(testStorage);
 
         // verifies that Pods and Containers have proper generated SC
@@ -182,7 +182,7 @@ public class PodSecurityProfilesST extends AbstractST {
         verifyPodAndContainerSecurityContext(podsWithProperlyGeneratedSecurityCOntexts);
 
         LOGGER.info("Verify that Kafka cluster is usable and everything (MM1, MM2, and Connector) is working");
-        verifyStabilityOfKafkaCluster(extensionContext, testStorage);
+        verifyStabilityOfKafkaCluster(testStorage);
 
         // verify KafkaConnect
         final String kafkaConnectPodName = kubeClient(testStorage.getNamespaceName()).listPods(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
@@ -193,7 +193,7 @@ public class PodSecurityProfilesST extends AbstractST {
             .withConsumerName("mm1-consumer")
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(mm1TargetClusterName))
             .build();
-        resourceManager.createResourceWithWait(extensionContext, mm1Client.consumerStrimzi());
+        resourceManager.createResourceWithWait(mm1Client.consumerStrimzi());
         ClientUtils.waitForClientSuccess("mm1-consumer", testStorage.getNamespaceName(), messageCount);
 
         // verify MM2
@@ -202,7 +202,7 @@ public class PodSecurityProfilesST extends AbstractST {
             .withConsumerName("mm2-consumer")
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(mm2TargetClusterName))
             .build();
-        resourceManager.createResourceWithWait(extensionContext, mm2Client.consumerStrimzi());
+        resourceManager.createResourceWithWait(mm2Client.consumerStrimzi());
         ClientUtils.waitForClientSuccess("mm2-consumer", testStorage.getNamespaceName(), messageCount);
 
         // verify that client incorrectly configured Pod Security Profile wont successfully communicate.
@@ -216,16 +216,16 @@ public class PodSecurityProfilesST extends AbstractST {
         // unrestricted capabilities (container "..." must set securityContext.capabilities.drop=["ALL"]),
         // runAsNonRoot != true (pod or container "..." must set securityContext.runAsNonRoot=true),
         // seccompProfile (pod or container "..." must set securityContext.seccompProfile.type to "RuntimeDefault" or "Localhost")
-        resourceManager.createResourceWithoutWait(extensionContext, incorrectKafkaClients.producerStrimzi());
+        resourceManager.createResourceWithoutWait(incorrectKafkaClients.producerStrimzi());
         ClientUtils.waitForProducerClientTimeout(testStorage);
     }
 
     @BeforeAll
-    void beforeAll(ExtensionContext extensionContext) {
+    void beforeAll() {
         // we configure Pod Security via provider class, which sets SecurityContext to all containers (e.g., Kafka, ZooKeeper,
         // Entity Operator, Bridge). Another alternative but more complicated is to set it via .template section inside each CR.
         clusterOperator = clusterOperator
-            .defaultInstallation(extensionContext)
+            .defaultInstallation()
             .withExtraEnvVars(Collections.singletonList(new EnvVarBuilder()
                 .withName("STRIMZI_POD_SECURITY_PROVIDER_CLASS")
                 // default is `baseline` and thus other tests suites are testing it
@@ -269,7 +269,7 @@ public class PodSecurityProfilesST extends AbstractST {
         }
     }
 
-    private void verifyStabilityOfKafkaCluster(final ExtensionContext extensionContext, final TestStorage testStorage) {
+    private void verifyStabilityOfKafkaCluster(final TestStorage testStorage) {
         final KafkaClients kafkaClients = new KafkaClientsBuilder()
             .withTopicName(testStorage.getTopicName())
             .withMessageCount(testStorage.getMessageCount())
@@ -280,7 +280,7 @@ public class PodSecurityProfilesST extends AbstractST {
             .withPodSecurityPolicy(PodSecurityProfile.RESTRICTED)
             .build();
 
-        resourceManager.createResourceWithWait(extensionContext,
+        resourceManager.createResourceWithWait(
             kafkaClients.producerStrimzi(),
             kafkaClients.consumerStrimzi()
         );

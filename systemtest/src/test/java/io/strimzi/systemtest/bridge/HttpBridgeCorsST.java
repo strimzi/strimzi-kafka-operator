@@ -24,7 +24,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -118,14 +117,14 @@ public class HttpBridgeCorsST extends AbstractST {
     }
 
     @BeforeAll
-    void beforeAll(ExtensionContext extensionContext) {
-        clusterOperator = clusterOperator.defaultInstallation(extensionContext)
+    void beforeAll() {
+        clusterOperator = clusterOperator.defaultInstallation()
                 .createInstallation()
                 .runInstallation();
 
         String httpBridgeCorsClusterName = "http-bridge-cors-cluster-name";
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(httpBridgeCorsClusterName, 1, 1)
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(httpBridgeCorsClusterName, 1, 1)
             .editMetadata()
                 .withNamespace(Environment.TEST_SUITE_NAMESPACE)
             .endMetadata()
@@ -133,10 +132,10 @@ public class HttpBridgeCorsST extends AbstractST {
 
         String scraperName = Environment.TEST_SUITE_NAMESPACE + "-shared-" + TestConstants.SCRAPER_NAME;
 
-        resourceManager.createResourceWithWait(extensionContext, ScraperTemplates.scraperPod(Environment.TEST_SUITE_NAMESPACE, scraperName).build());
+        resourceManager.createResourceWithWait(ScraperTemplates.scraperPod(Environment.TEST_SUITE_NAMESPACE, scraperName).build());
         scraperPodName = kubeClient(Environment.TEST_SUITE_NAMESPACE).listPodsByPrefixInName(Environment.TEST_SUITE_NAMESPACE, scraperName).get(0).getMetadata().getName();
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaBridgeTemplates.kafkaBridgeWithCors(httpBridgeCorsClusterName, KafkaResources.plainBootstrapAddress(httpBridgeCorsClusterName),
+        resourceManager.createResourceWithWait(KafkaBridgeTemplates.kafkaBridgeWithCors(httpBridgeCorsClusterName, KafkaResources.plainBootstrapAddress(httpBridgeCorsClusterName),
             1, ALLOWED_ORIGIN, null)
             .editMetadata()
                 .withNamespace(Environment.TEST_SUITE_NAMESPACE)

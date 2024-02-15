@@ -488,26 +488,26 @@ public abstract class AbstractST implements TestSeparator {
         LOGGER.info("Docker images verified");
     }
 
-    private void afterEachMustExecute(ExtensionContext extensionContext) {
+    private void afterEachMustExecute() {
         if (cluster.cluster().isClusterUp()) {
-            if (StUtils.isParallelTest(extensionContext) ||
-                StUtils.isParallelNamespaceTest(extensionContext)) {
-                parallelSuiteController.notifyParallelTestToAllowExecution(extensionContext);
-                parallelSuiteController.removeParallelTest(extensionContext);
+            if (StUtils.isParallelTest(ResourceManager.getTestContext()) ||
+                StUtils.isParallelNamespaceTest(ResourceManager.getTestContext())) {
+                parallelSuiteController.notifyParallelTestToAllowExecution(ResourceManager.getTestContext());
+                parallelSuiteController.removeParallelTest(ResourceManager.getTestContext());
             }
         } else {
             throw new KubernetesClusterUnstableException("Cluster is not responding and its probably un-stable (i.e., caused by network, OOM problem)");
         }
     }
 
-    protected void afterEachMayOverride(ExtensionContext extensionContext) throws Exception {
+    protected void afterEachMayOverride() throws Exception {
         if (!Environment.SKIP_TEARDOWN) {
-            ResourceManager.getInstance().deleteResources(extensionContext);
-            testSuiteNamespaceManager.deleteParallelNamespace(extensionContext);
+            ResourceManager.getInstance().deleteResources();
+            testSuiteNamespaceManager.deleteParallelNamespace();
         }
     }
 
-    private void afterAllMustExecute(ExtensionContext extensionContext)  {
+    private void afterAllMustExecute()  {
         if (cluster.cluster().isClusterUp()) {
             clusterOperator = SetupClusterOperator.getInstance();
         } else {
@@ -515,10 +515,10 @@ public abstract class AbstractST implements TestSeparator {
         }
     }
 
-    protected synchronized void afterAllMayOverride(ExtensionContext extensionContext) {
+    protected synchronized void afterAllMayOverride() {
         if (!Environment.SKIP_TEARDOWN) {
-            ResourceManager.getInstance().deleteResources(extensionContext);
-            testSuiteNamespaceManager.deleteTestSuiteNamespace(extensionContext);
+            ResourceManager.getInstance().deleteResources();
+            testSuiteNamespaceManager.deleteTestSuiteNamespace();
             NamespaceManager.getInstance().deleteAllNamespacesFromSet();
         }
     }
@@ -527,31 +527,30 @@ public abstract class AbstractST implements TestSeparator {
      * BeforeEachMayOverride, is a method, which gives you option to override @BeforeAll in sub-classes and
      * ensure that this is also executed if you call it with super.beforeEachMayOverride(). You can also skip it and
      * you your implementation in sub-class as you want.
-     * @param extensionContext
      */
-    protected void beforeEachMayOverride(ExtensionContext extensionContext) {
+    protected void beforeEachMayOverride() {
         // this is because we need to have different clusterName and kafkaClientsName in each test case without
         // synchronization it can produce `data-race`
         synchronized (LOCK) {
             LOGGER.info("Not first test we are gonna generate cluster name");
-            testSuiteNamespaceManager.createParallelNamespace(extensionContext);
-            storageMap.put(extensionContext, new TestStorage(extensionContext));
+            testSuiteNamespaceManager.createParallelNamespace();
+            storageMap.put(ResourceManager.getTestContext(), new TestStorage(ResourceManager.getTestContext()));
         }
     }
 
-    private void beforeEachMustExecute(ExtensionContext extensionContext) {
+    private void beforeEachMustExecute() {
         if (cluster.cluster().isClusterUp()) {
-            if (StUtils.isParallelNamespaceTest(extensionContext) ||
-                StUtils.isParallelTest(extensionContext)) {
-                parallelSuiteController.addParallelTest(extensionContext);
-                parallelSuiteController.waitUntilAllowedNumberTestCasesParallel(extensionContext);
+            if (StUtils.isParallelNamespaceTest(ResourceManager.getTestContext()) ||
+                StUtils.isParallelTest(ResourceManager.getTestContext())) {
+                parallelSuiteController.addParallelTest(ResourceManager.getTestContext());
+                parallelSuiteController.waitUntilAllowedNumberTestCasesParallel(ResourceManager.getTestContext());
             }
         } else {
             throw new KubernetesClusterUnstableException("Cluster is not responding and its probably un-stable (i.e., caused by network, OOM problem)");
         }
     }
 
-    private void beforeAllMustExecute(ExtensionContext extensionContext) {
+    private void beforeAllMustExecute() {
         if (cluster.cluster().isClusterUp()) {
         } else {
             throw new KubernetesClusterUnstableException("Cluster is not responding and its probably un-stable (i.e., caused by network, OOM problem)");
@@ -562,31 +561,33 @@ public abstract class AbstractST implements TestSeparator {
      * BeforeAllMayOverride, is a method, which gives you option to override @BeforeAll in sub-classes and
      * ensure that this is also executed if you call it with super.beforeAllMayOverride(). You can also skip it and
      * you your implementation in sub-class as you want.
-     * @param extensionContext
      */
-    protected void beforeAllMayOverride(ExtensionContext extensionContext) {
+    protected void beforeAllMayOverride() {
         cluster = KubeClusterResource.getInstance();
-        testSuiteNamespaceManager.createTestSuiteNamespace(extensionContext);
+        testSuiteNamespaceManager.createTestSuiteNamespace();
     }
 
     @BeforeEach
     void setUpTestCase(ExtensionContext extensionContext) {
+        ResourceManager.setTestContext(extensionContext);
         LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
         LOGGER.debug("————————————  {}@Before Each - Setup TestCase environment ———————————— ", StUtils.removePackageName(this.getClass().getName()));
-        beforeEachMustExecute(extensionContext);
-        beforeEachMayOverride(extensionContext);
+        beforeEachMustExecute();
+        beforeEachMayOverride();
     }
 
     @BeforeAll
     void setUpTestSuite(ExtensionContext extensionContext) {
+        ResourceManager.setTestContext(extensionContext);
         LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
         LOGGER.debug("———————————— {}@Before All - Setup TestSuite environment ———————————— ", StUtils.removePackageName(this.getClass().getName()));
-        beforeAllMayOverride(extensionContext);
-        beforeAllMustExecute(extensionContext);
+        beforeAllMayOverride();
+        beforeAllMustExecute();
     }
 
     @AfterEach
     void tearDownTestCase(ExtensionContext extensionContext) throws Exception {
+        ResourceManager.setTestContext(extensionContext);
         LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
         LOGGER.debug("———————————— {}@After Each - Clean up after test ————————————", StUtils.removePackageName(this.getClass().getName()));
         // try with finally is needed because in worst case possible if the Cluster is unable to delete namespaces, which
@@ -596,16 +597,17 @@ public abstract class AbstractST implements TestSeparator {
         try {
             assertNoCoErrorsLogged(clusterOperator.getDeploymentNamespace(), storageMap.get(extensionContext).getTestExecutionTimeInSeconds());
         } finally {
-            afterEachMayOverride(extensionContext);
-            afterEachMustExecute(extensionContext);
+            afterEachMayOverride();
+            afterEachMustExecute();
         }
     }
 
     @AfterAll
     void tearDownTestSuite(ExtensionContext extensionContext) {
+        ResourceManager.setTestContext(extensionContext);
         LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
         LOGGER.debug("———————————— {}@After All - Clean up after TestSuite ———————————— ", StUtils.removePackageName(this.getClass().getName()));
-        afterAllMayOverride(extensionContext);
-        afterAllMustExecute(extensionContext);
+        afterAllMayOverride();
+        afterAllMustExecute();
     }
 }

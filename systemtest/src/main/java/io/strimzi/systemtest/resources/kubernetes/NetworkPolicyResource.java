@@ -24,7 +24,6 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
@@ -63,7 +62,7 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
      * Method for allowing network policies for Cluster Operator
      */
 
-    public static void allowNetworkPolicySettingsForClusterOperator(ExtensionContext extensionContext, String namespace) {
+    public static void allowNetworkPolicySettingsForClusterOperator(String namespace) {
         String clusterOperatorKind = "cluster-operator";
         LabelSelector labelSelector = new LabelSelectorBuilder()
             .addToMatchLabels(TestConstants.SCRAPER_LABEL_KEY, TestConstants.SCRAPER_LABEL_VALUE)
@@ -86,7 +85,7 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
             .build();
 
         LOGGER.debug("Creating NetworkPolicy: {}", networkPolicy.toString());
-        ResourceManager.getInstance().createResourceWithWait(extensionContext, networkPolicy);
+        ResourceManager.getInstance().createResourceWithWait(networkPolicy);
         LOGGER.info("Network policy for LabelSelector {} successfully created", labelSelector);
     }
 
@@ -95,20 +94,20 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
      * @param resource mean Connect resource
      * @param deploymentName name of resource deployment - for setting strimzi.io/name
      */
-    public static void allowNetworkPolicySettingsForResource(ExtensionContext extensionContext, HasMetadata resource, String deploymentName) {
+    public static void allowNetworkPolicySettingsForResource(HasMetadata resource, String deploymentName) {
         LabelSelector labelSelector = new LabelSelectorBuilder()
             .addToMatchLabels(TestConstants.SCRAPER_LABEL_KEY, TestConstants.SCRAPER_LABEL_VALUE)
             .build();
 
-        final String namespaceName = StUtils.isParallelNamespaceTest(extensionContext) && !Environment.isNamespaceRbacScope() ?
+        final String namespaceName = StUtils.isParallelNamespaceTest(ResourceManager.getTestContext()) && !Environment.isNamespaceRbacScope() ?
             // if parallel namespace test use namespace from store and if RBAC is enable we don't run tests in parallel mode and with that said we don't create another namespaces
-            extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.NAMESPACE_KEY).toString() :
+            ResourceManager.getTestContext().getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.NAMESPACE_KEY).toString() :
             // otherwise use resource namespace
             resource.getMetadata().getNamespace();
 
-        if (kubeClient(namespaceName).listPods(namespaceName, labelSelector).size() == 0) {
+        if (kubeClient(namespaceName).listPods(namespaceName, labelSelector).isEmpty()) {
             List<String> pods = kubeClient(namespaceName).listPods(namespaceName).stream()
-                .map(pod -> pod.getMetadata().getName()).collect(Collectors.toList());
+                .map(pod -> pod.getMetadata().getName()).toList();
             LOGGER.error("Pods inside Namespace: {} are: {}", namespaceName, pods.toString());
             throw new RuntimeException("You did not create the Scraper instance(pod) before using the " + resource.getKind() + " in namespace:" + namespaceName);
         }
@@ -154,11 +153,11 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
             .build();
 
         LOGGER.debug("Creating NetworkPolicy: {}", networkPolicy.toString());
-        ResourceManager.getInstance().createResourceWithWait(extensionContext, networkPolicy);
+        ResourceManager.getInstance().createResourceWithWait(networkPolicy);
         LOGGER.info("Network policy for LabelSelector {} successfully created", labelSelector);
     }
 
-    public static void applyDefaultNetworkPolicySettings(ExtensionContext extensionContext, List<String> namespaces) {
+    public static void applyDefaultNetworkPolicySettings(List<String> namespaces) {
         for (String namespace : namespaces) {
             NetworkPolicy networkPolicy;
 
@@ -168,14 +167,14 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
                 networkPolicy = NetworkPolicyTemplates.defaultNetworkPolicy(namespace, DefaultNetworkPolicy.DEFAULT_TO_ALLOW);
             }
 
-            ResourceManager.getInstance().createResourceWithWait(extensionContext, networkPolicy);
+            ResourceManager.getInstance().createResourceWithWait(networkPolicy);
             LOGGER.info("NetworkPolicy successfully set to: {} for Namespace: {}", Environment.DEFAULT_TO_DENY_NETWORK_POLICIES, namespace);
         }
     }
 
-    public static <T extends CustomResource<? extends Spec, ? extends Status>> void deployNetworkPolicyForResource(ExtensionContext extensionContext, T resource, String deploymentName) {
+    public static <T extends CustomResource<? extends Spec, ? extends Status>> void deployNetworkPolicyForResource(T resource, String deploymentName) {
         if (Environment.DEFAULT_TO_DENY_NETWORK_POLICIES) {
-            allowNetworkPolicySettingsForResource(extensionContext, resource, deploymentName);
+            allowNetworkPolicySettingsForResource(resource, deploymentName);
         }
     }
 }

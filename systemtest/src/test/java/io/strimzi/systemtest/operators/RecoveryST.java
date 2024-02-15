@@ -17,6 +17,7 @@ import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
+import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -32,7 +33,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.HashMap;
 import java.util.List;
@@ -87,8 +87,8 @@ class RecoveryST extends AbstractST {
     }
 
     @IsolatedTest("We need for each test case its own Cluster Operator")
-    void testRecoveryFromKafkaServiceDeletion(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+    void testRecoveryFromKafkaServiceDeletion() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
         // kafka cluster already deployed
         LOGGER.info("Running deleteKafkaService with cluster {}", sharedClusterName);
@@ -100,13 +100,13 @@ class RecoveryST extends AbstractST {
 
         LOGGER.info("Waiting for creation {}", kafkaServiceName);
         ServiceUtils.waitForServiceRecovery(Environment.TEST_SUITE_NAMESPACE, kafkaServiceName, kafkaServiceUid);
-        verifyStabilityBySendingAndReceivingMessages(extensionContext, testStorage);
+        verifyStabilityBySendingAndReceivingMessages(testStorage);
     }
 
     @IsolatedTest("We need for each test case its own Cluster Operator")
     @KRaftNotSupported("Zookeeper is not supported by KRaft mode and is used in this test class")
-    void testRecoveryFromZookeeperServiceDeletion(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+    void testRecoveryFromZookeeperServiceDeletion() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
         // kafka cluster already deployed
         LOGGER.info("Running deleteKafkaService with cluster {}", sharedClusterName);
@@ -119,12 +119,12 @@ class RecoveryST extends AbstractST {
         LOGGER.info("Waiting for creation {}", zookeeperServiceName);
         ServiceUtils.waitForServiceRecovery(Environment.TEST_SUITE_NAMESPACE, zookeeperServiceName, zookeeperServiceUid);
 
-        verifyStabilityBySendingAndReceivingMessages(extensionContext, testStorage);
+        verifyStabilityBySendingAndReceivingMessages(testStorage);
     }
 
     @IsolatedTest("We need for each test case its own Cluster Operator")
-    void testRecoveryFromKafkaHeadlessServiceDeletion(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+    void testRecoveryFromKafkaHeadlessServiceDeletion() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
         // kafka cluster already deployed
         LOGGER.info("Running deleteKafkaHeadlessService with cluster {}", sharedClusterName);
@@ -137,13 +137,13 @@ class RecoveryST extends AbstractST {
         LOGGER.info("Waiting for creation {}", kafkaHeadlessServiceName);
         ServiceUtils.waitForServiceRecovery(Environment.TEST_SUITE_NAMESPACE, kafkaHeadlessServiceName, kafkaHeadlessServiceUid);
 
-        verifyStabilityBySendingAndReceivingMessages(extensionContext, testStorage);
+        verifyStabilityBySendingAndReceivingMessages(testStorage);
     }
 
     @IsolatedTest("We need for each test case its own Cluster Operator")
     @KRaftNotSupported("Zookeeper is not supported by KRaft mode and is used in this test class")
-    void testRecoveryFromZookeeperHeadlessServiceDeletion(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+    void testRecoveryFromZookeeperHeadlessServiceDeletion() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
         // kafka cluster already deployed
         LOGGER.info("Running deleteKafkaHeadlessService with cluster {}", sharedClusterName);
@@ -156,7 +156,7 @@ class RecoveryST extends AbstractST {
         LOGGER.info("Waiting for creation {}", zookeeperHeadlessServiceName);
         ServiceUtils.waitForServiceRecovery(Environment.TEST_SUITE_NAMESPACE, zookeeperHeadlessServiceName, zookeeperHeadlessServiceUid);
 
-        verifyStabilityBySendingAndReceivingMessages(extensionContext, testStorage);
+        verifyStabilityBySendingAndReceivingMessages(testStorage);
     }
 
     /**
@@ -200,7 +200,7 @@ class RecoveryST extends AbstractST {
         KafkaUtils.waitForKafkaReady(Environment.TEST_SUITE_NAMESPACE, sharedClusterName);
     }
 
-    private void verifyStabilityBySendingAndReceivingMessages(ExtensionContext extensionContext, TestStorage testStorage) {
+    private void verifyStabilityBySendingAndReceivingMessages(TestStorage testStorage) {
         KafkaClients kafkaClients = new KafkaClientsBuilder()
             .withTopicName(testStorage.getTopicName())
             .withMessageCount(testStorage.getMessageCount())
@@ -211,7 +211,7 @@ class RecoveryST extends AbstractST {
             .withUsername(testStorage.getUsername())
             .build();
 
-        resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
+        resourceManager.createResourceWithWait(kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
         ClientUtils.waitForClientsSuccess(testStorage);
     }
 
@@ -238,8 +238,8 @@ class RecoveryST extends AbstractST {
     }
 
     @BeforeEach
-    void setup(ExtensionContext extensionContext) {
-        this.clusterOperator = this.clusterOperator.defaultInstallation(extensionContext)
+    void setup() {
+        this.clusterOperator = this.clusterOperator.defaultInstallation()
             .withReconciliationInterval(TestConstants.CO_OPERATION_TIMEOUT_SHORT)
             .createInstallation()
             .runInstallation();
@@ -247,7 +247,7 @@ class RecoveryST extends AbstractST {
 
         sharedClusterName = generateRandomNameOfKafka("recovery-cluster");
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(sharedClusterName, KAFKA_REPLICAS).build());
-        resourceManager.createResourceWithWait(extensionContext, KafkaBridgeTemplates.kafkaBridge(sharedClusterName, KafkaResources.plainBootstrapAddress(sharedClusterName), 1).build());
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(sharedClusterName, KAFKA_REPLICAS).build());
+        resourceManager.createResourceWithWait(KafkaBridgeTemplates.kafkaBridge(sharedClusterName, KafkaResources.plainBootstrapAddress(sharedClusterName), 1).build());
     }
 }

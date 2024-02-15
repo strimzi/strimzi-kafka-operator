@@ -17,6 +17,7 @@ import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.kafkaclients.externalClients.ExternalKafkaClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
+import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
@@ -28,7 +29,6 @@ import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -57,16 +57,16 @@ public class MultipleListenersST extends AbstractST {
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
-    void testMultipleNodePorts(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
-        runListenersTest(extensionContext, testCases.get(KafkaListenerType.NODEPORT), testStorage.getClusterName());
+    void testMultipleNodePorts() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        runListenersTest(testCases.get(KafkaListenerType.NODEPORT), testStorage.getClusterName());
     }
 
     @Tag(INTERNAL_CLIENTS_USED)
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
-    void testMultipleInternal(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
-        runListenersTest(extensionContext, testCases.get(KafkaListenerType.INTERNAL), testStorage.getClusterName());
+    void testMultipleInternal() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        runListenersTest(testCases.get(KafkaListenerType.INTERNAL), testStorage.getClusterName());
     }
 
     @Tag(NODEPORT_SUPPORTED)
@@ -74,10 +74,10 @@ public class MultipleListenersST extends AbstractST {
     @Tag(EXTERNAL_CLIENTS_USED)
     @Tag(INTERNAL_CLIENTS_USED)
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
-    void testCombinationOfInternalAndExternalListeners(ExtensionContext extensionContext) {
+    void testCombinationOfInternalAndExternalListeners() {
         // Nodeport needs cluster wide rights to work properly which is not possible with STRIMZI_RBAC_SCOPE=NAMESPACE
         assumeFalse(Environment.isNamespaceRbacScope());
-        final TestStorage testStorage = new TestStorage(extensionContext);
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
         List<GenericKafkaListener> multipleDifferentListeners = new ArrayList<>();
 
@@ -88,23 +88,23 @@ public class MultipleListenersST extends AbstractST {
         multipleDifferentListeners.addAll(nodeportListeners);
 
         // run INTERNAL + NODEPORT listeners
-        runListenersTest(extensionContext, multipleDifferentListeners, testStorage.getClusterName());
+        runListenersTest(multipleDifferentListeners, testStorage.getClusterName());
     }
 
     @Tag(LOADBALANCER_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
-    void testMultipleLoadBalancers(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
-        runListenersTest(extensionContext, testCases.get(KafkaListenerType.LOADBALANCER), testStorage.getClusterName());
+    void testMultipleLoadBalancers() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        runListenersTest(testCases.get(KafkaListenerType.LOADBALANCER), testStorage.getClusterName());
     }
 
     @OpenShiftOnly
     @Tag(EXTERNAL_CLIENTS_USED)
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
-    void testMultipleRoutes(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
-        runListenersTest(extensionContext, testCases.get(KafkaListenerType.ROUTE), testStorage.getClusterName());
+    void testMultipleRoutes() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        runListenersTest(testCases.get(KafkaListenerType.ROUTE), testStorage.getClusterName());
     }
 
     @OpenShiftOnly
@@ -112,8 +112,8 @@ public class MultipleListenersST extends AbstractST {
     @Tag(EXTERNAL_CLIENTS_USED)
     @Tag(INTERNAL_CLIENTS_USED)
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
-    void testMixtureOfExternalListeners(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+    void testMixtureOfExternalListeners() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         List<GenericKafkaListener> multipleDifferentListeners = new ArrayList<>();
 
         List<GenericKafkaListener> routeListeners = testCases.get(KafkaListenerType.ROUTE);
@@ -123,7 +123,7 @@ public class MultipleListenersST extends AbstractST {
         multipleDifferentListeners.addAll(nodeportListeners);
 
         // run ROUTE + NODEPORT listeners
-        runListenersTest(extensionContext, multipleDifferentListeners, testStorage.getClusterName());
+        runListenersTest(multipleDifferentListeners, testStorage.getClusterName());
     }
 
     @OpenShiftOnly
@@ -132,8 +132,8 @@ public class MultipleListenersST extends AbstractST {
     @Tag(EXTERNAL_CLIENTS_USED)
     @Tag(INTERNAL_CLIENTS_USED)
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
-    void testCombinationOfEveryKindOfListener(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+    void testCombinationOfEveryKindOfListener() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
         List<GenericKafkaListener> multipleDifferentListeners = new ArrayList<>();
 
@@ -148,15 +148,15 @@ public class MultipleListenersST extends AbstractST {
         multipleDifferentListeners.addAll(loadbalancersListeners);
 
         // run INTERNAL + NODEPORT + ROUTE + LOADBALANCER listeners
-        runListenersTest(extensionContext, multipleDifferentListeners, testStorage.getClusterName());
+        runListenersTest(multipleDifferentListeners, testStorage.getClusterName());
     }
 
-    private void runListenersTest(ExtensionContext extensionContext, List<GenericKafkaListener> listeners, String clusterName) {
+    private void runListenersTest(List<GenericKafkaListener> listeners, String clusterName) {
         LOGGER.info("These are listeners to be verified: {}", listeners);
-        final TestStorage testStorage = new TestStorage(extensionContext);
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
         // exercise phase
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(clusterName, 3)
             .editMetadata()
                 .withNamespace(Environment.TEST_SUITE_NAMESPACE)
             .endMetadata()
@@ -172,14 +172,14 @@ public class MultipleListenersST extends AbstractST {
             String kafkaUsername = KafkaUserUtils.generateRandomNameOfKafkaUser();
             KafkaUser kafkaUserInstance = KafkaUserTemplates.tlsUser(Environment.TEST_SUITE_NAMESPACE, clusterName, kafkaUsername).build();
 
-            resourceManager.createResourceWithWait(extensionContext, kafkaUserInstance);
+            resourceManager.createResourceWithWait(kafkaUserInstance);
 
             for (GenericKafkaListener listener : listeners) {
                 final String producerName = "producer-" + new Random().nextInt(Integer.MAX_VALUE);
                 final String consumerName = "consumer-" + new Random().nextInt(Integer.MAX_VALUE);
 
                 String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
-                resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName, Environment.TEST_SUITE_NAMESPACE).build());
+                resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(clusterName, topicName, Environment.TEST_SUITE_NAMESPACE).build());
 
                 boolean isTlsEnabled = listener.isTls();
 
@@ -235,12 +235,12 @@ public class MultipleListenersST extends AbstractST {
 
                     if (isTlsEnabled) {
                         // verify phase
-                        resourceManager.createResourceWithWait(extensionContext,
+                        resourceManager.createResourceWithWait(
                             kafkaClients.producerTlsStrimzi(clusterName),
                             kafkaClients.consumerTlsStrimzi(clusterName)
                         );
                     } else {
-                        resourceManager.createResourceWithWait(extensionContext,
+                        resourceManager.createResourceWithWait(
                             kafkaClients.producerStrimzi(),
                             kafkaClients.consumerStrimzi()
                         );
@@ -337,14 +337,14 @@ public class MultipleListenersST extends AbstractST {
     }
 
     @Override
-    protected void beforeAllMayOverride(ExtensionContext extensionContext) {
+    protected void beforeAllMayOverride() {
         // first invoke classic @BeforeAll
-        super.beforeAllMayOverride(extensionContext);
+        super.beforeAllMayOverride();
         // secondly generate test cases
         generateTestCases();
 
         this.clusterOperator = this.clusterOperator
-            .defaultInstallation(extensionContext)
+            .defaultInstallation()
             .createInstallation()
             .runInstallation();
     }

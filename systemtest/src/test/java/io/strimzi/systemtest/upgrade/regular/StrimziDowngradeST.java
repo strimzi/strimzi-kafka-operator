@@ -7,6 +7,7 @@ package io.strimzi.systemtest.upgrade.regular;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.resources.NamespaceManager;
+import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.upgrade.AbstractUpgradeST;
 import io.strimzi.systemtest.upgrade.BundleVersionModificationData;
@@ -20,7 +21,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -47,46 +47,46 @@ public class StrimziDowngradeST extends AbstractUpgradeST {
     @ParameterizedTest(name = "testDowngradeStrimziVersion-{0}-{1}")
     @MethodSource("io.strimzi.systemtest.upgrade.VersionModificationDataLoader#loadYamlDowngradeData")
     @Tag(INTERNAL_CLIENTS_USED)
-    void testDowngradeStrimziVersion(String from, String to, BundleVersionModificationData parameters, ExtensionContext extensionContext) throws Exception {
+    void testDowngradeStrimziVersion(String from, String to, BundleVersionModificationData parameters) throws Exception {
         assumeTrue(StUtils.isAllowOnCurrentEnvironment(parameters.getEnvFlakyVariable()));
         assumeTrue(StUtils.isAllowedOnCurrentK8sVersion(parameters.getEnvMaxK8sVersion()));
 
         LOGGER.debug("Running downgrade test from version {} to {}", from, to);
-        performDowngrade(parameters, extensionContext);
+        performDowngrade(parameters);
     }
 
     @Test
-    void testDowngradeOfKafkaConnectAndKafkaConnector(final ExtensionContext extensionContext) throws IOException {
-        final TestStorage testStorage = new TestStorage(extensionContext, TestConstants.CO_NAMESPACE);
+    void testDowngradeOfKafkaConnectAndKafkaConnector() throws IOException {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext(), TestConstants.CO_NAMESPACE);
         final BundleVersionModificationData bundleDowngradeDataWithFeatureGates = bundleDowngradeMetadata.stream()
                 .filter(bundleMetadata -> bundleMetadata.getFeatureGatesBefore() != null && !bundleMetadata.getFeatureGatesBefore().isEmpty() ||
                         bundleMetadata.getFeatureGatesAfter() != null && !bundleMetadata.getFeatureGatesAfter().isEmpty()).toList().get(0);
         UpgradeKafkaVersion upgradeKafkaVersion = new UpgradeKafkaVersion(bundleDowngradeDataWithFeatureGates.getDeployKafkaVersion());
 
-        doKafkaConnectAndKafkaConnectorUpgradeOrDowngradeProcedure(extensionContext, bundleDowngradeDataWithFeatureGates, testStorage, upgradeKafkaVersion);
+        doKafkaConnectAndKafkaConnectorUpgradeOrDowngradeProcedure(bundleDowngradeDataWithFeatureGates, testStorage, upgradeKafkaVersion);
     }
 
     @SuppressWarnings("MethodLength")
-    private void performDowngrade(BundleVersionModificationData downgradeData, ExtensionContext extensionContext) throws IOException {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+    private void performDowngrade(BundleVersionModificationData downgradeData) throws IOException {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         UpgradeKafkaVersion testUpgradeKafkaVersion = UpgradeKafkaVersion.getKafkaWithVersionFromUrl(downgradeData.getFromKafkaVersionsUrl(), downgradeData.getDeployKafkaVersion());
 
         // Setup env
         // We support downgrade only when you didn't upgrade to new inter.broker.protocol.version and log.message.format.version
         // https://strimzi.io/docs/operators/latest/full/deploying.html#con-target-downgrade-version-str
-        setupEnvAndUpgradeClusterOperator(extensionContext, downgradeData, testStorage, testUpgradeKafkaVersion, TestConstants.CO_NAMESPACE);
+        setupEnvAndUpgradeClusterOperator(downgradeData, testStorage, testUpgradeKafkaVersion, TestConstants.CO_NAMESPACE);
         logPodImages(TestConstants.CO_NAMESPACE);
 
         // Check if UTO is used before changing the CO -> used for check for KafkaTopics
         boolean wasUTOUsedBefore = StUtils.isUnidirectionalTopicOperatorUsed(TestConstants.CO_NAMESPACE, eoSelector);
 
         // Downgrade CO
-        changeClusterOperator(downgradeData, TestConstants.CO_NAMESPACE, extensionContext);
+        changeClusterOperator(downgradeData, TestConstants.CO_NAMESPACE);
         // Wait for Kafka cluster rolling update
         waitForKafkaClusterRollingUpdate();
         logPodImages(TestConstants.CO_NAMESPACE);
         // Downgrade kafka
-        changeKafkaAndLogFormatVersion(downgradeData, extensionContext);
+        changeKafkaAndLogFormatVersion(downgradeData);
         // Verify that pods are stable
         PodUtils.verifyThatRunningPodsAreStable(TestConstants.CO_NAMESPACE, clusterName);
         checkAllImages(downgradeData, TestConstants.CO_NAMESPACE);
@@ -95,8 +95,8 @@ public class StrimziDowngradeST extends AbstractUpgradeST {
     }
 
     @BeforeEach
-    void setupEnvironment(ExtensionContext extensionContext) {
-        NamespaceManager.getInstance().createNamespaceAndPrepare(extensionContext, CO_NAMESPACE);
+    void setupEnvironment() {
+        NamespaceManager.getInstance().createNamespaceAndPrepare(CO_NAMESPACE);
     }
 
     @AfterEach

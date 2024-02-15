@@ -23,7 +23,6 @@ import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.io.File;
 import java.io.IOException;
@@ -192,7 +191,7 @@ public class KafkaUserUtils {
             });
     }
 
-    public static void modifyKafkaUserPasswordWithNewSecret(String ns, String kafkaUserResourceName, String customSecretSource, String customPassword, ExtensionContext extensionContext) {
+    public static void modifyKafkaUserPasswordWithNewSecret(String ns, String kafkaUserResourceName, String customSecretSource, String customPassword) {
 
         Secret userDefinedSecret = new SecretBuilder()
             .withNewMetadata()
@@ -202,7 +201,7 @@ public class KafkaUserUtils {
             .addToData("password", customPassword)
             .build();
 
-        ResourceManager.getInstance().createResourceWithWait(extensionContext, userDefinedSecret);
+        ResourceManager.getInstance().createResourceWithWait(userDefinedSecret);
 
         KafkaUserResource.replaceUserResourceInSpecificNamespace(kafkaUserResourceName, ku -> {
 

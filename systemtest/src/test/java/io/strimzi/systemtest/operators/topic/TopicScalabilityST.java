@@ -18,7 +18,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -40,9 +39,9 @@ public class TopicScalabilityST extends AbstractST {
 
 
     @IsolatedTest("This test needs to run isolated due to access problems in parallel execution - using the same namespace")
-    void testBigAmountOfTopicsCreatingViaK8s(ExtensionContext extensionContext) {
+    void testBigAmountOfTopicsCreatingViaK8s() {
 
-        KafkaTopicScalabilityUtils.createTopicsViaK8s(extensionContext, Environment.TEST_SUITE_NAMESPACE, sharedClusterName, topicPrefix,
+        KafkaTopicScalabilityUtils.createTopicsViaK8s(Environment.TEST_SUITE_NAMESPACE, sharedClusterName, topicPrefix,
                 NUMBER_OF_TOPICS, 4, 3, 2);
         KafkaTopicScalabilityUtils.waitForTopicsReady(Environment.TEST_SUITE_NAMESPACE, topicPrefix, NUMBER_OF_TOPICS);
 
@@ -51,13 +50,13 @@ public class TopicScalabilityST extends AbstractST {
     }
 
     @IsolatedTest
-    void testModifyBigAmountOfTopics(ExtensionContext extensionContext) {
+    void testModifyBigAmountOfTopics() {
         Map<String, Object> modifiedConfig = new HashMap<>();
         final int defaultPartitionCount = 1;
         final int modifiedPartitionCount = defaultPartitionCount + 1;
 
         // Create topics
-        KafkaTopicScalabilityUtils.createTopicsViaK8s(extensionContext, Environment.TEST_SUITE_NAMESPACE, sharedClusterName, topicPrefix,
+        KafkaTopicScalabilityUtils.createTopicsViaK8s(Environment.TEST_SUITE_NAMESPACE, sharedClusterName, topicPrefix,
                 NUMBER_OF_TOPICS, defaultPartitionCount, 3, 1);
         KafkaTopicScalabilityUtils.waitForTopicsReady(Environment.TEST_SUITE_NAMESPACE, topicPrefix, NUMBER_OF_TOPICS);
 
@@ -108,16 +107,16 @@ public class TopicScalabilityST extends AbstractST {
     }
 
     @BeforeAll
-    void setup(ExtensionContext extensionContext) {
-        clusterOperator.defaultInstallation(extensionContext)
+    void setup() {
+        clusterOperator.defaultInstallation()
             .createInstallation()
             .runInstallation();
 
         LOGGER.info("Deploying shared Kafka across all test cases in Namespace: {}", Environment.TEST_SUITE_NAMESPACE);
 
-        NamespaceManager.getInstance().createNamespaceAndPrepare(extensionContext, Environment.TEST_SUITE_NAMESPACE);
+        NamespaceManager.getInstance().createNamespaceAndPrepare(Environment.TEST_SUITE_NAMESPACE);
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(sharedClusterName, 3, 1)
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(sharedClusterName, 3, 1)
             .editMetadata()
                 .withNamespace(Environment.TEST_SUITE_NAMESPACE)
             .endMetadata()
