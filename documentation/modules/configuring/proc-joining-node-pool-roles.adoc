@@ -12,7 +12,7 @@ To do this, add the `broker` role to the controller-only node pool, rebalance th
 
 In this procedure, we start with two node pools `pool-a`, which has only the `controller` role and `pool-b` which has only the `broker` role:
 
-.Dual-role node pool
+.Single role node pools
 [source,yaml,subs="+attributes"]
 ----
 apiVersion: {KafkaNodePoolApiVersion}
@@ -105,8 +105,6 @@ spec:
         deleteClaim: false
   # ...
 ----
-
-. Apply the new `KafkaNodePool` resource to add the `broker` role to the `pool-a` nodes.
 
 . Check the status and wait for the pods in the node pool to be restarted and ready (`1/1`).
 +

@@ -462,8 +462,8 @@ public class KafkaRoller {
 
         // We try to detect the current roles. If we fail to do so, we optimistically assume the roles did not
         // change and the desired roles still apply.
-        boolean isBroker = isAlreadyBroker(pod).orElse(nodeRef.broker());
-        boolean isController = isAlreadyController(pod).orElse(nodeRef.controller());
+        boolean isBroker = isCurrentlyBroker(pod).orElse(nodeRef.broker());
+        boolean isController = isCurrentlyController(pod).orElse(nodeRef.controller());
 
         try {
             checkIfRestartOrReconfigureRequired(nodeRef, isController, isBroker, restartContext);
@@ -1055,44 +1055,44 @@ public class KafkaRoller {
     }
 
     /**
-     * Checks from the Pod labels if the Kafka node is already a broker or not.
+     * Checks from the Pod labels if the Kafka node is currently a broker or not.
      *
      * @param pod   Current Pod
      *
-     * @return  Optional with true if the pod is already a broker, false if it is not broker or empty optional
+     * @return  Optional with true if the pod is currently a broker, false if it is not broker or empty optional
      * if the label is not present.
      */
-    /* test */ static Optional<Boolean> isAlreadyBroker(Pod pod)    {
+    /* test */ static Optional<Boolean> isCurrentlyBroker(Pod pod)    {
         return checkBooleanLabel(pod, Labels.STRIMZI_BROKER_ROLE_LABEL);
     }
 
     /**
-     * Checks from the Pod labels if the Kafka node is already a controller or not.
+     * Checks from the Pod labels if the Kafka node is currently a controller or not.
      *
      * @param pod   Current Pod
      *
-     * @return  Optional with true if the pod is already a controller, false if it is not controller or empty optional
+     * @return  Optional with true if the pod is currently a controller, false if it is not controller or empty optional
      * if the label is not present.
      */
-    /* test */ static Optional<Boolean> isAlreadyController(Pod pod)    {
+    /* test */ static Optional<Boolean> isCurrentlyController(Pod pod)    {
         return checkBooleanLabel(pod, Labels.STRIMZI_CONTROLLER_ROLE_LABEL);
     }
 
     /**
      * Generic method to extract a boolean value from Kubernetes resource labels
      *
-     * @param pod           Kube resource with metadata
-     * @param annotation    Name of the label for which we want to extract the boolean value
+     * @param pod       Kube resource with metadata
+     * @param label     Name of the label for which we want to extract the boolean value
      *
      * @return  Optional with true if the label is present and is set to `true`, false if it is present and not set to
      * `true` or empty optional if the label is not present.
      */
-    private static Optional<Boolean> checkBooleanLabel(HasMetadata pod, String annotation)    {
+    private static Optional<Boolean> checkBooleanLabel(HasMetadata pod, String label)    {
         if (pod != null
                 && pod.getMetadata() != null
                 && pod.getMetadata().getLabels() != null
-                && pod.getMetadata().getLabels().containsKey(annotation))  {
-            return Optional.of("true".equalsIgnoreCase(pod.getMetadata().getLabels().get(annotation)));
+                && pod.getMetadata().getLabels().containsKey(label))  {
+            return Optional.of("true".equalsIgnoreCase(pod.getMetadata().getLabels().get(label)));
         } else {
             return Optional.empty();
         }

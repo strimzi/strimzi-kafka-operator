@@ -709,28 +709,28 @@ public class KafkaRollerTest {
     @Test
     public void testExistingRoles() {
         // No pod
-        assertThat(KafkaRoller.isAlreadyBroker(null), is(Optional.empty()));
-        assertThat(KafkaRoller.isAlreadyController(null), is(Optional.empty()));
+        assertThat(KafkaRoller.isCurrentlyBroker(null), is(Optional.empty()));
+        assertThat(KafkaRoller.isCurrentlyController(null), is(Optional.empty()));
 
         // No annotation
         Pod pod = new PodBuilder().withNewMetadata().withName("my-pod").endMetadata().build();
-        assertThat(KafkaRoller.isAlreadyBroker(pod), is(Optional.empty()));
-        assertThat(KafkaRoller.isAlreadyController(pod), is(Optional.empty()));
-
-        // Annotation set to false
-        pod = new PodBuilder().withNewMetadata().withName("my-pod").withLabels(Map.of(Labels.STRIMZI_BROKER_ROLE_LABEL, "grr", Labels.STRIMZI_CONTROLLER_ROLE_LABEL, "meh")).endMetadata().build();
-        assertThat(KafkaRoller.isAlreadyBroker(pod).orElseThrow(), is(false));
-        assertThat(KafkaRoller.isAlreadyController(pod).orElseThrow(), is(false));
+        assertThat(KafkaRoller.isCurrentlyBroker(pod), is(Optional.empty()));
+        assertThat(KafkaRoller.isCurrentlyController(pod), is(Optional.empty()));
 
         // Annotation set to wrong value
+        pod = new PodBuilder().withNewMetadata().withName("my-pod").withLabels(Map.of(Labels.STRIMZI_BROKER_ROLE_LABEL, "grr", Labels.STRIMZI_CONTROLLER_ROLE_LABEL, "meh")).endMetadata().build();
+        assertThat(KafkaRoller.isCurrentlyBroker(pod).orElseThrow(), is(false));
+        assertThat(KafkaRoller.isCurrentlyController(pod).orElseThrow(), is(false));
+
+        // Annotation set to false
         pod = new PodBuilder().withNewMetadata().withName("my-pod").withLabels(Map.of(Labels.STRIMZI_BROKER_ROLE_LABEL, "false", Labels.STRIMZI_CONTROLLER_ROLE_LABEL, "false")).endMetadata().build();
-        assertThat(KafkaRoller.isAlreadyBroker(pod).orElseThrow(), is(false));
-        assertThat(KafkaRoller.isAlreadyController(pod).orElseThrow(), is(false));
+        assertThat(KafkaRoller.isCurrentlyBroker(pod).orElseThrow(), is(false));
+        assertThat(KafkaRoller.isCurrentlyController(pod).orElseThrow(), is(false));
 
         // Annotation set to true
         pod = new PodBuilder().withNewMetadata().withName("my-pod").withLabels(Map.of(Labels.STRIMZI_BROKER_ROLE_LABEL, "true", Labels.STRIMZI_CONTROLLER_ROLE_LABEL, "true")).endMetadata().build();
-        assertThat(KafkaRoller.isAlreadyBroker(pod).orElseThrow(), is(true));
-        assertThat(KafkaRoller.isAlreadyController(pod).orElseThrow(), is(true));
+        assertThat(KafkaRoller.isCurrentlyBroker(pod).orElseThrow(), is(true));
+        assertThat(KafkaRoller.isCurrentlyController(pod).orElseThrow(), is(true));
     }
 
     private TestingKafkaRoller rollerWithControllers(PodOperator podOps, int... controllers) {
