@@ -6,7 +6,7 @@
 = Transitioning to dual-role nodes
 
 [role="_abstract"]
-This procedure describes how to transition from separate node pools with broker-only and controller-only roles to using a node pool with dual-roles.
+This procedure describes how to transition from separate node pools with broker-only and controller-only roles to using a dual-role node pool.
 If your Kafka cluster is using node pools with dedicated controller and broker nodes, you can transition to using a single node pool with both roles.
 To do this, add the `broker` role to the controller-only node pool, rebalance the cluster to move partition replicas to the dual-role node pool, and then delete the old broker-only node pool.
 
@@ -30,7 +30,7 @@ spec:
     volumes:
       - id: 0
         type: persistent-claim
-        size: 20Gi
+        size: 100Gi
         deleteClaim: false
   # ...
 ---
@@ -49,7 +49,7 @@ spec:
     volumes:
       - id: 0
         type: persistent-claim
-        size: 20Gi
+        size: 100Gi
         deleteClaim: false
   # ...
 ----
@@ -88,7 +88,7 @@ NOTE: During this process, the ID of the node that holds the partition replicas 
 apiVersion: {KafkaNodePoolApiVersion}
 kind: KafkaNodePool
 metadata:
-  name: pool-b
+  name: pool-a
   labels:
     strimzi.io/cluster: my-cluster
 spec:

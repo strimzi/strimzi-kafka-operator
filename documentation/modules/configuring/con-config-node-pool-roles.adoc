@@ -15,8 +15,8 @@ For example, you may have a node pool that contains nodes that perform dual brok
 In this case, you create a new node pool with nodes that act only as brokers, and then reassign partitions from the dual-role nodes to the new brokers.
 You can then switch the old node pool to a controller-only role.
 
-Or the other way around, when you want to move from node pools with controller-only and broker-only roles to a node pool that contains nodes that perform dual broker and controller roles.
-In this case, you can add the `broker` role to the existing controller-only node pool, reassign partitions from the broker-only nodes to the dual-role nodes, and then delete the broker-only node pool.
+You can also perform the reverse operation by moving from node pools with controller-only and broker-only roles to a node pool that contains nodes that perform dual broker and controller roles.
+In this case, you add the `broker` role to the existing controller-only node pool, reassign partitions from the broker-only nodes to the dual-role nodes, and then delete the broker-only node pool.
 
 When removing `broker` roles in the node pool configuration, keep in mind that Kafka does not automatically reassign partitions.
 Before removing the broker role, ensure that nodes changing to controller-only roles do not have any assigned partitions. 
