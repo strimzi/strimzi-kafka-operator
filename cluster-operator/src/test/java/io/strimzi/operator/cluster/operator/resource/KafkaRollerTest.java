@@ -18,6 +18,7 @@ import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.DefaultAdminClientProvider;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -52,6 +53,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -702,6 +704,33 @@ public class KafkaRollerTest {
         doSuccessfulRollingRestart(testContext, kafkaRoller,
                 asList(0, 1, 2, 3, 4, 5, 6, 7, 8), // brokers, combined, controllers
                 asList(7, 4, 3, 5, 6, 8, 1, 0, 2)); //Rolls in order: unready controllers, ready controllers, unready brokers, ready brokers
+    }
+
+    @Test
+    public void testExistingRoles() {
+        // No pod
+        assertThat(KafkaRoller.isCurrentlyBroker(null), is(Optional.empty()));
+        assertThat(KafkaRoller.isCurrentlyController(null), is(Optional.empty()));
+
+        // No annotation
+        Pod pod = new PodBuilder().withNewMetadata().withName("my-pod").endMetadata().build();
+        assertThat(KafkaRoller.isCurrentlyBroker(pod), is(Optional.empty()));
+        assertThat(KafkaRoller.isCurrentlyController(pod), is(Optional.empty()));
+
+        // Annotation set to wrong value
+        pod = new PodBuilder().withNewMetadata().withName("my-pod").withLabels(Map.of(Labels.STRIMZI_BROKER_ROLE_LABEL, "grr", Labels.STRIMZI_CONTROLLER_ROLE_LABEL, "meh")).endMetadata().build();
+        assertThat(KafkaRoller.isCurrentlyBroker(pod).orElseThrow(), is(false));
+        assertThat(KafkaRoller.isCurrentlyController(pod).orElseThrow(), is(false));
+
+        // Annotation set to false
+        pod = new PodBuilder().withNewMetadata().withName("my-pod").withLabels(Map.of(Labels.STRIMZI_BROKER_ROLE_LABEL, "false", Labels.STRIMZI_CONTROLLER_ROLE_LABEL, "false")).endMetadata().build();
+        assertThat(KafkaRoller.isCurrentlyBroker(pod).orElseThrow(), is(false));
+        assertThat(KafkaRoller.isCurrentlyController(pod).orElseThrow(), is(false));
+
+        // Annotation set to true
+        pod = new PodBuilder().withNewMetadata().withName("my-pod").withLabels(Map.of(Labels.STRIMZI_BROKER_ROLE_LABEL, "true", Labels.STRIMZI_CONTROLLER_ROLE_LABEL, "true")).endMetadata().build();
+        assertThat(KafkaRoller.isCurrentlyBroker(pod).orElseThrow(), is(true));
+        assertThat(KafkaRoller.isCurrentlyController(pod).orElseThrow(), is(true));
     }
 
     private TestingKafkaRoller rollerWithControllers(PodOperator podOps, int... controllers) {

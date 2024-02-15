@@ -2,17 +2,17 @@
 //
 // assembly-config.adoc
 
-[id='proc-splitting-node-pools-roles-{context}']
-= Transitioning to separate broker and controller roles
+[id='proc-joining-node-pools-roles-{context}']
+= Transitioning to dual-role nodes
 
 [role="_abstract"]
-This procedure describes how to transition to using node pools with separate roles.
-If your Kafka cluster is using a node pool with combined controller and broker roles, you can transition to using two node pools with separate roles.
-To do this, rebalance the cluster to move partition replicas to a node pool with a broker-only role, and then switch the old node pool to a controller-only role.
+This procedure describes how to transition from separate node pools with broker-only and controller-only roles to using a dual-role node pool.
+If your Kafka cluster is using node pools with dedicated controller and broker nodes, you can transition to using a single node pool with both roles.
+To do this, add the `broker` role to the controller-only node pool, rebalance the cluster to move partition replicas to the dual-role node pool, and then delete the old broker-only node pool.
 
-In this procedure, we start with node pool `pool-a`, which has `controller` and `broker` roles:
+In this procedure, we start with two node pools `pool-a`, which has only the `controller` role and `pool-b` which has only the `broker` role:
 
-.Dual-role node pool
+.Single role node pools
 [source,yaml,subs="+attributes"]
 ----
 apiVersion: {KafkaNodePoolApiVersion}
@@ -25,45 +25,15 @@ spec:
   replicas: 3
   roles:
     - controller
-    - broker
   storage:
     type: jbod
     volumes:
       - id: 0
         type: persistent-claim
-        size: 20Gi
+        size: 100Gi
         deleteClaim: false
   # ...
-----
-
-The node pool has three nodes:
-
-.Kafka nodes in the node pool
-[source,shell]
-----
-NAME                 READY  STATUS   RESTARTS
-my-cluster-pool-a-0  1/1    Running  0
-my-cluster-pool-a-1  1/1    Running  0
-my-cluster-pool-a-2  1/1    Running  0
-----
-
-Each node performs a combined role of broker and controller.
-We create a second node pool called `pool-b`, with three nodes that act as brokers only.
-
-NOTE: During this process, the ID of the node that holds the partition replicas changes. Consider any dependencies that reference the node ID.
-
-.Prerequisites
-
-* xref:deploying-cluster-operator-str[The Cluster Operator must be deployed.]
-* xref:proc-configuring-deploying-cruise-control-str[Cruise Control is deployed with Kafka.]
-
-.Procedure
-
-. Create a node pool with a `broker` role.
-+
-.Example node pool configuration
-[source,yaml,subs="+attributes"]
-----
+---
 apiVersion: {KafkaNodePoolApiVersion}
 kind: KafkaNodePool
 metadata:
@@ -83,13 +53,60 @@ spec:
         deleteClaim: false
   # ...
 ----
+
+The Kafka cluster has six nodes:
+
+.Kafka nodes in the node pools
+[source,shell]
+----
+NAME                 READY  STATUS   RESTARTS
+my-cluster-pool-a-0  1/1    Running  0
+my-cluster-pool-a-1  1/1    Running  0
+my-cluster-pool-a-2  1/1    Running  0
+my-cluster-pool-b-3  1/1    Running  0
+my-cluster-pool-b-4  1/1    Running  0
+my-cluster-pool-b-5  1/1    Running  0
+----
+
+The `pool-a` nodes perform the role of controller.
+The `pool-b` nodes perform the role of broker.
+
+NOTE: During this process, the ID of the node that holds the partition replicas changes. Consider any dependencies that reference the node ID.
+
+.Prerequisites
+
+* xref:deploying-cluster-operator-str[The Cluster Operator must be deployed.]
+* xref:proc-configuring-deploying-cruise-control-str[Cruise Control is deployed with Kafka.]
+
+.Procedure
+
+. Edit the node pool `pool-a` and add the `broker` role to it.
 +
-The new node pool also has three nodes.
-If you already have a broker-only node pool, you can skip this step.
+.Example node pool configuration
+[source,yaml,subs="+attributes"]
+----
+apiVersion: {KafkaNodePoolApiVersion}
+kind: KafkaNodePool
+metadata:
+  name: pool-a
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  replicas: 3
+  roles:
+    - controller
+    - broker
+  storage:
+    type: jbod
+    volumes:
+      - id: 0
+        type: persistent-claim
+        size: 100Gi
+        deleteClaim: false
+  # ...
+----
 
-. Apply the new `KafkaNodePool` resource to create the brokers.
-
-. Check the status of the deployment and wait for the pods in the node pool to be created and ready (`1/1`).
+. Check the status and wait for the pods in the node pool to be restarted and ready (`1/1`).
 +
 [source,shell]
 ----
@@ -110,7 +127,7 @@ my-cluster-pool-b-5  1/1    Running  0
 +
 Node IDs are appended to the name of the node on creation.
 
-. Use the Cruise Control `remove-brokers` mode to reassign partition replicas from the dual-role nodes to the newly added brokers.
+. Use the Cruise Control `remove-brokers` mode to reassign partition replicas from the broker-only nodes to the dual-role nodes.
 +
 .Using Cruise Control to reassign partition replicas
 [source,shell,subs="+attributes"]
@@ -121,37 +138,14 @@ metadata:
   # ...
 spec:
   mode: remove-brokers
-  brokers: [0, 1, 2]
+  brokers: [3, 4, 5]
 ---- 
 +
 The reassignment can take some time depending on the number of topics and partitions in the cluster.
-+
-NOTE: If nodes changing to controller-only roles have any assigned partitions, the change is prevented.
-The `status.conditions` of the `Kafka` resource provide details of events preventing the change.
 
-. Remove the `broker` role from the node pool that originally had a combined role.
+. Remove the `pool-b` node pool that has the old broker-only nodes.
 +
-.Dual-role nodes switched to controllers
-[source,yaml,subs="+attributes"]
+[source,shell]
 ----
-apiVersion: {KafkaNodePoolApiVersion}
-kind: KafkaNodePool
-metadata:
-  name: pool-a
-  labels:
-    strimzi.io/cluster: my-cluster
-spec:
-  replicas: 3
-  roles:
-    - controller
-  storage:
-    type: jbod
-    volumes:
-      - id: 0
-        type: persistent-claim
-        size: 20Gi
-        deleteClaim: false
-  # ...
+kubectl delete kafkanodepool pool-b -n <my_cluster_operator_namespace>
 ----
-
-. Apply the configuration change so that the node pool switches to a controller-only role.
