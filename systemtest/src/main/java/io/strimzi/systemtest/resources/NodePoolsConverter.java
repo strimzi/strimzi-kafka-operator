@@ -28,6 +28,15 @@ import java.util.stream.Collectors;
  */
 public class NodePoolsConverter {
 
+    /**
+     * Method that converts each of the NodePool passed to it, based on the mode.
+     * There are two steps, where are the NodePools changed:
+     *  - change NodePools to mixed based on {@link Environment#isSeparateRolesMode()} and {@link Environment#isKRaftModeEnabled()}
+     *  - filters NodePools that are not relevant to particular mode - ZK mode without NodePools, ZK mode with NodePools, KRaft
+     *
+     * @param nodePoolsToBeConverted NodePools that should be converted
+     * @return array of updated and filtered NodePools
+     */
     public static KafkaNodePool[] convertNodePoolsIfNeeded(KafkaNodePool... nodePoolsToBeConverted) {
         List<KafkaNodePool> nodePools = Arrays.asList(nodePoolsToBeConverted);
 
@@ -36,13 +45,31 @@ public class NodePoolsConverter {
         return removeNodePoolsFromArrayIfNeeded(nodePools).toArray(new KafkaNodePool[0]);
     }
 
+    /**
+     * Method that changes NodePools with broker role to have both roles (broker, controller).
+     * in case that we run in {@link io.strimzi.systemtest.enums.NodePoolsRoleMode#MIXED} mode and {@link Environment#isKRaftModeEnabled()} is true,
+     * it does following:
+     *  - removes all controller NodePools (so we have just one NodePool instead of two - easier handling in STs)
+     *  - for each NodePool that left (broker NodePools) adds {@link ProcessRoles#CONTROLLER} role to its `spec`
+     * @param nodePools
+     */
     private static void changeNodePoolsToHaveMixedRoles(List<KafkaNodePool> nodePools) {
-        if (!Environment.isSeparateRolesMode()) {
-            nodePools
-                .forEach(nodePool -> nodePool.getSpec().setRoles(List.of(ProcessRoles.BROKER, ProcessRoles.CONTROLLER)));
+        if (!Environment.isSeparateRolesMode() && Environment.isKRaftModeEnabled()) {
+            // remove controller NodePools, so we have just one NodePool for the mixed mode
+            nodePools.removeIf(nodePool -> nodePool.getSpec().getRoles().stream().anyMatch(ProcessRoles.CONTROLLER::equals));
+            nodePools.forEach(nodePool -> nodePool.getSpec().setRoles(List.of(ProcessRoles.BROKER, ProcessRoles.CONTROLLER)));
         }
     }
 
+    /**
+     * Method that returns filtered list of NodePools based on the mode.
+     * It does following:
+     *  - ZK mode without NodePools - returns empty list, so nothing is applied
+     *  - ZK mode with NodePools - returns list of NodePools from {@param nodePools}, without NodePools containing {@link ProcessRoles#CONTROLLER} role
+     *  - KRaft mode - returns list of NodePools without any other update
+     * @param nodePools list of NodePools that should be filtered based on mode
+     * @return filtered/empty/full list of NodePools
+     */
     private static List<KafkaNodePool> removeNodePoolsFromArrayIfNeeded(List<KafkaNodePool> nodePools) {
         if (Environment.isKafkaNodePoolsEnabled()) {
             if (Environment.isKRaftModeEnabled()) {
