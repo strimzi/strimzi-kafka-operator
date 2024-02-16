@@ -347,11 +347,11 @@ public class FeatureGatesST extends AbstractST {
 
         // Roll Kafka
         LOGGER.info("Forcing rolling update of Kafka via read-only configuration change");
-        final Map<String, String> brokerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
+        final Map<String, String> brokerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerPoolSelector());
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> k.getSpec().getKafka().getConfig().put("log.retention.hours", 72), testStorage.getNamespaceName());
 
         LOGGER.info("Waiting for the next reconciliation to happen");
-        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), kafkaReplicas, brokerPods);
+        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerPoolSelector(), kafkaReplicas, brokerPods);
 
         LOGGER.info("Waiting for clients to finish sending/receiving messages");
         ClientUtils.waitForClientsSuccess(producerName, consumerName, testStorage.getNamespaceName(), testStorage.getMessageCount());

@@ -442,7 +442,7 @@ class UserST extends AbstractST {
 
     @BeforeAll
     void setup() {
-        sharedTestStorage = new TestStorage(extensionContext);
+        sharedTestStorage = new TestStorage(ResourceManager.getTestContext());
         
         this.clusterOperator = this.clusterOperator
             .defaultInstallation()

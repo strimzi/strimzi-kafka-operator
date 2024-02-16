@@ -43,6 +43,7 @@ import io.strimzi.systemtest.resources.NodePoolsConverter;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.resources.crd.StrimziPodSetResource;
 import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
@@ -297,7 +298,7 @@ public class MetricsST extends AbstractST {
     @Tag(INTERNAL_CLIENTS_USED)
     void testKafkaExporterMetrics() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
-        final String kafkaStrimziPodSetName = KafkaResources.kafkaComponentName(kafkaClusterFirstName);
+        final String kafkaStrimziPodSetName = StrimziPodSetResource.getBrokerComponentName(kafkaClusterFirstName);
         final LabelSelector brokerPodsSelector = KafkaResource.getLabelSelector(kafkaClusterFirstName, kafkaStrimziPodSetName);
 
         KafkaClients kafkaClients = new KafkaClientsBuilder()

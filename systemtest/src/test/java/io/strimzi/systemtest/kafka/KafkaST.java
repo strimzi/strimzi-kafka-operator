@@ -30,6 +30,7 @@ import io.strimzi.api.kafka.model.kafka.entityoperator.EntityUserOperatorSpec;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
+import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.api.kafka.model.topic.KafkaTopicList;
 import io.strimzi.operator.common.model.Labels;
@@ -45,6 +46,7 @@ import io.strimzi.systemtest.resources.NodePoolsConverter;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.resources.crd.StrimziPodSetResource;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
@@ -166,7 +168,7 @@ class KafkaST extends AbstractST {
                     .build()
             )
         );
-        resourceManager.createResourceWithWait( KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 1, 1)
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 1, 1)
             .editSpec()
                 .editKafka()
                     .withResources(brokersResReq)
@@ -439,8 +441,7 @@ class KafkaST extends AbstractST {
                 KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), kafkaReplicas).build()
             )
         );
-        Kafka kafka = KafkaTemplates.kafkaJBOD(testStorage.getClusterName(), kafkaReplicas, jbodStorage).build();
-        resourceManager.createResourceWithWait(kafka);
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaJBOD(testStorage.getClusterName(), kafkaReplicas, jbodStorage).build());
 
         Map<String, String> brokerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
         // kafka cluster already deployed
@@ -472,9 +473,10 @@ class KafkaST extends AbstractST {
         final int volumesCount = kubeClient().listPersistentVolumeClaims(testStorage.getNamespaceName(), testStorage.getClusterName()).size();
 
         LOGGER.info("Deleting Kafka: {}/{} cluster", testStorage.getNamespaceName(), testStorage.getClusterName());
-        resourceManager.deleteResource(kafka);
+        // we cannot use ResourceManager here, as it would delete all the PVCs (part of the KafkaResource#delete method)
+        cmdKubeClient(testStorage.getNamespaceName()).deleteByName(Kafka.RESOURCE_KIND, testStorage.getClusterName());
         if (Environment.isKafkaNodePoolsEnabled()) {
-            cmdKubeClient(testStorage.getNamespaceName()).deleteByName("kafkanodepool", testStorage.getBrokerPoolName());
+            cmdKubeClient(testStorage.getNamespaceName()).deleteByName(KafkaNodePool.RESOURCE_KIND, testStorage.getBrokerPoolName());
         }
 
         LOGGER.info("Waiting for PVCs deletion");
@@ -531,7 +533,7 @@ class KafkaST extends AbstractST {
         Secret secretsWithExt = kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), brokerSecret);
 
         LOGGER.info("Checking Secrets");
-        kubeClient(testStorage.getNamespaceName()).listPodsByPrefixInName(testStorage.getNamespaceName(), KafkaResources.kafkaComponentName(testStorage.getClusterName())).forEach(kafkaPod -> {
+        kubeClient(testStorage.getNamespaceName()).listPodsByPrefixInName(testStorage.getNamespaceName(), StrimziPodSetResource.getBrokerComponentName(testStorage.getClusterName())).forEach(kafkaPod -> {
             String kafkaPodName = kafkaPod.getMetadata().getName();
             assertThat(secretsWithExt.getData().get(kafkaPodName + ".crt"), is(not(secretsWithoutExt.getData().get(kafkaPodName + ".crt"))));
             assertThat(secretsWithExt.getData().get(kafkaPodName + ".key"), is(not(secretsWithoutExt.getData().get(kafkaPodName + ".key"))));
@@ -631,7 +633,7 @@ class KafkaST extends AbstractST {
                     .build()
             )
         );
-        resourceManager.createResourceWithWait( KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3, 1)
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3, 1)
             .editMetadata()
                 .withLabels(customSpecifiedLabels)
             .endMetadata()

@@ -90,7 +90,7 @@ public class KafkaNodePoolST extends AbstractST {
         LOGGER.info("Testing deployment of NodePools with pre-configured annotation: {} is creating Brokers with correct IDs", Annotations.ANNO_STRIMZI_IO_NODE_POOLS);
 
         // Deploy NodePool A with only 1 replica and next ID 4, and NodePool B with 2 replica and next ID 6
-        resourceManager.createResourceWithWait( KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), nodePoolNameA, testStorage.getClusterName(), 1)
+        resourceManager.createResourceWithWait(KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), nodePoolNameA, testStorage.getClusterName(), 1)
                 .editOrNewMetadata()
                     .withAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_NEXT_NODE_IDS, "[4]"))
                 .endMetadata()

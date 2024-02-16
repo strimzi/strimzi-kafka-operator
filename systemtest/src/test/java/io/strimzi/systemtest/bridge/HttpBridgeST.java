@@ -403,7 +403,7 @@ class HttpBridgeST extends AbstractST {
     @BeforeAll
     void createClassResources() {
         final String namespaceToWatch = Environment.isNamespaceRbacScope() ? CO_NAMESPACE : TestConstants.WATCH_ALL_NAMESPACES;
-        suiteTestStorage = new TestStorage(extensionContext);
+        suiteTestStorage = new TestStorage(ResourceManager.getTestContext());
 
         clusterOperator = clusterOperator.defaultInstallation()
                 .withNamespace(CO_NAMESPACE)

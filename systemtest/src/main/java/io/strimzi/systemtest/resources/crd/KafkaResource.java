@@ -133,7 +133,10 @@ public class KafkaResource implements ResourceType<Kafka> {
     public static LabelSelector getLabelSelector(String clusterName, String componentName) {
         Map<String, String> matchLabels = getCommonKafkaMatchLabels(clusterName);
 
-        if (Environment.isKafkaNodePoolsEnabled() && !componentName.contains("zookeeper")) {
+        if (Environment.isKafkaNodePoolsEnabled()
+            && !componentName.contains("zookeeper")
+            && !componentName.contains("entity-operator")
+        ) {
             matchLabels.put(Labels.STRIMZI_CONTROLLER_NAME_LABEL, componentName);
         } else {
             matchLabels.put(Labels.STRIMZI_NAME_LABEL, componentName);

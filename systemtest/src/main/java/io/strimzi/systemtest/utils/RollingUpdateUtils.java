@@ -25,7 +25,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.Map;
-import java.util.Objects;
 import java.util.TreeMap;
 import java.util.function.BooleanSupplier;
 
@@ -72,11 +71,7 @@ public class RollingUpdateUtils {
      * @return The snapshot of the  component (StrimziPodSet, Deployment) after rolling update with Uid for every pod
      */
     public static Map<String, String> waitTillComponentHasRolled(String namespaceName, LabelSelector selector, Map<String, String> snapshot) {
-        String clusterName = selector.getMatchLabels().get(Labels.STRIMZI_CLUSTER_LABEL);
-        String componentName = Objects.requireNonNullElse(selector.getMatchLabels().get(Labels.STRIMZI_NAME_LABEL),
-            selector.getMatchLabels().get(Labels.STRIMZI_CONTROLLER_NAME_LABEL));
-
-        componentName = componentName == null ? clusterName + "-" + selector.getMatchLabels().get(Labels.STRIMZI_POOL_NAME_LABEL) : componentName;
+        String componentName = getComponentNameFromLabelSelector(selector);
 
         LOGGER.info("Waiting for component matching {} -> {}/{} rolling update", selector, namespaceName, componentName);
         TestUtils.waitFor("rolling update of component: " + namespaceName + "/" + componentName,
@@ -95,10 +90,7 @@ public class RollingUpdateUtils {
 
     public static Map<String, String> waitTillComponentHasRolledAndPodsReady(String namespaceName, LabelSelector selector, int expectedPods, Map<String, String> snapshot) {
         String clusterName = selector.getMatchLabels().get(Labels.STRIMZI_CLUSTER_LABEL);
-        String componentName = Objects.requireNonNullElse(selector.getMatchLabels().get(Labels.STRIMZI_NAME_LABEL),
-            selector.getMatchLabels().get(Labels.STRIMZI_CONTROLLER_NAME_LABEL));
-
-        componentName = componentName == null ? clusterName + "-" + selector.getMatchLabels().get(Labels.STRIMZI_POOL_NAME_LABEL) : componentName;
+        String componentName = getComponentNameFromLabelSelector(selector);
 
         waitTillComponentHasRolled(namespaceName, selector, snapshot);
 
@@ -166,10 +158,7 @@ public class RollingUpdateUtils {
 
     public static void waitForComponentAndPodsReady(String namespaceName, LabelSelector selector, int expectedPods) {
         final String clusterName = selector.getMatchLabels().get(Labels.STRIMZI_CLUSTER_LABEL);
-        String componentName = Objects.requireNonNullElse(selector.getMatchLabels().get(Labels.STRIMZI_NAME_LABEL),
-            selector.getMatchLabels().get(Labels.STRIMZI_CONTROLLER_NAME_LABEL));
-
-        componentName = componentName == null ? clusterName + "-" + selector.getMatchLabels().get(Labels.STRIMZI_POOL_NAME_LABEL) : componentName;
+        String componentName = getComponentNameFromLabelSelector(selector);
 
         LOGGER.info("Waiting for {} Pod(s) of {}/{} to be ready", expectedPods, namespaceName, componentName);
 
@@ -241,5 +230,19 @@ public class RollingUpdateUtils {
                 return i[0]++ == TestConstants.GLOBAL_RECONCILIATION_COUNT;
             }
         );
+    }
+
+    private static String getComponentNameFromLabelSelector(LabelSelector labelSelector) {
+        String componentName;
+
+        if (labelSelector.getMatchLabels().get(Labels.STRIMZI_NAME_LABEL) != null) {
+            componentName = labelSelector.getMatchLabels().get(Labels.STRIMZI_NAME_LABEL);
+        } else if (labelSelector.getMatchLabels().get(Labels.STRIMZI_CONTROLLER_NAME_LABEL) != null) {
+            componentName = labelSelector.getMatchLabels().get(Labels.STRIMZI_CONTROLLER_NAME_LABEL);
+        } else {
+            componentName = labelSelector.getMatchLabels().get(Labels.STRIMZI_CLUSTER_LABEL) + "-" + labelSelector.getMatchLabels().get(Labels.STRIMZI_POOL_NAME_LABEL);
+        }
+
+        return componentName;
     }
 }

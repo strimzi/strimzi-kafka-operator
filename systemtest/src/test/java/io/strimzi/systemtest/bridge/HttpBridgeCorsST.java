@@ -139,10 +139,10 @@ public class HttpBridgeCorsST extends AbstractST {
             .endMetadata()
             .build());
 
-        resourceManager.createResourceWithWait( ScraperTemplates.scraperPod(suiteTestStorage.getNamespaceName(), suiteTestStorage.getScraperName()).build());
+        resourceManager.createResourceWithWait(ScraperTemplates.scraperPod(suiteTestStorage.getNamespaceName(), suiteTestStorage.getScraperName()).build());
         suiteTestStorage.addToTestStorage(TestConstants.SCRAPER_POD_KEY, kubeClient().listPodsByPrefixInName(suiteTestStorage.getNamespaceName(), suiteTestStorage.getScraperName()).get(0).getMetadata().getName());
 
-        resourceManager.createResourceWithWait( KafkaBridgeTemplates.kafkaBridgeWithCors(suiteTestStorage.getClusterName(), KafkaResources.plainBootstrapAddress(suiteTestStorage.getClusterName()),
+        resourceManager.createResourceWithWait(KafkaBridgeTemplates.kafkaBridgeWithCors(suiteTestStorage.getClusterName(), KafkaResources.plainBootstrapAddress(suiteTestStorage.getClusterName()),
             1, ALLOWED_ORIGIN, null)
             .editMetadata()
                 .withNamespace(suiteTestStorage.getNamespaceName())

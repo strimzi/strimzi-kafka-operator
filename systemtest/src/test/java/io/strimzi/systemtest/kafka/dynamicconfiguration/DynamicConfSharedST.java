@@ -11,6 +11,7 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.NodePoolsConverter;
 import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.crd.StrimziPodSetResource;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
@@ -73,7 +74,7 @@ public class DynamicConfSharedST extends AbstractST {
                 // verify phase
                 assertThat(KafkaUtils.verifyCrDynamicConfiguration(Environment.TEST_SUITE_NAMESPACE, suiteTestStorage.getClusterName(), key, value), is(true));
                 assertThat(KafkaUtils.verifyPodDynamicConfiguration(Environment.TEST_SUITE_NAMESPACE, scraperPodName,
-                    KafkaResources.plainBootstrapAddress(suiteTestStorage.getClusterName()), KafkaResources.kafkaComponentName(suiteTestStorage.getClusterName()), key, value), is(true));
+                    KafkaResources.plainBootstrapAddress(suiteTestStorage.getClusterName()), StrimziPodSetResource.getBrokerComponentName(suiteTestStorage.getClusterName()), key, value), is(true));
             }));
         }
 
