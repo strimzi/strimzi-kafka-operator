@@ -73,8 +73,6 @@ final public class TestStorage {
     private String controllerComponentName;
     private String mixedComponentName;
     private LabelSelector brokerSelector;
-    private String brokerPoolName;
-    private String controllerPoolName;
     private LabelSelector brokerPoolSelector;
     private LabelSelector controllerPoolSelector;
     private LabelSelector mixedPoolSelector;
@@ -103,8 +101,6 @@ final public class TestStorage {
         this.brokerPoolName = TestConstants.BROKER_ROLE_PREFIX + hashStub(clusterName);
         this.controllerPoolName = TestConstants.CONTROLLER_ROLE_PREFIX + hashStub(clusterName);
         this.mixedPoolName = TestConstants.MIXED_ROLE_PREFIX + hashStub(clusterName);
-        this.brokerPoolName = BROKER_ROLE_PREFIX + hashStub(clusterName);
-        this.controllerPoolName = CONTROLLER_ROLE_PREFIX + hashStub(clusterName);
         this.sourceClusterName = clusterName + "-source";
         this.sourceBrokerPoolName = TestConstants.BROKER_ROLE_PREFIX + hashStub(sourceClusterName);
         this.sourceControllerPoolName = TestConstants.CONTROLLER_ROLE_PREFIX + hashStub(sourceClusterName);
@@ -144,8 +140,6 @@ final public class TestStorage {
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.BROKER_POOL_KEY, this.brokerPoolName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.CONTROLLER_POOL_KEY, this.controllerPoolName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.MIXED_POOL_KEY, this.mixedPoolName);
-        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.BROKER_POOL_KEY, this.brokerPoolName);
-        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.CONTROLLER_POOL_KEY, this.controllerPoolName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.SOURCE_CLUSTER_KEY, this.sourceClusterName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.SOURCE_BROKER_POOL_KEY, this.sourceBrokerPoolName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.SOURCE_CONTROLLER_POOL_KEY, this.sourceControllerPoolName);
