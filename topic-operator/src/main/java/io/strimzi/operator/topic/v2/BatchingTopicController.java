@@ -1188,6 +1188,7 @@ public class BatchingTopicController {
             || !Objects.equals(newCondition.getMessage(), oldCondition.getMessage());
     }
 
+    @SuppressWarnings("BooleanExpressionComplexity")
     private boolean differentReplicasChange(KafkaTopic kt, KafkaTopicStatus oldStatus) {
         return kt.getStatus().getReplicasChange() == null && oldStatus.getReplicasChange() != null
             || kt.getStatus().getReplicasChange() != null && oldStatus.getReplicasChange() == null

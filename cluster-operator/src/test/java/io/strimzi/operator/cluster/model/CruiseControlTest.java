@@ -199,8 +199,8 @@ public class CruiseControlTest {
                 "my-user-label", "cromulent",
                 Labels.STRIMZI_KIND_LABEL, Kafka.RESOURCE_KIND,
                 Labels.STRIMZI_NAME_LABEL, name,
-                Labels.STRIMZI_COMPONENT_TYPE_LABEL, CruiseControlApiProperties.COMPONENT_TYPE,
-                Labels.KUBERNETES_NAME_LABEL, CruiseControlApiProperties.COMPONENT_TYPE,
+                Labels.STRIMZI_COMPONENT_TYPE_LABEL, CruiseControl.COMPONENT_TYPE,
+                Labels.KUBERNETES_NAME_LABEL, CruiseControl.COMPONENT_TYPE,
                 Labels.KUBERNETES_INSTANCE_LABEL, CLUSTER,
                 Labels.KUBERNETES_PART_OF_LABEL, Labels.APPLICATION_NAME + "-" + CLUSTER,
                 Labels.KUBERNETES_MANAGED_BY_LABEL, AbstractModel.STRIMZI_CLUSTER_OPERATOR_NAME);

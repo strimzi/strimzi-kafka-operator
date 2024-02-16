@@ -51,7 +51,7 @@ public class KafkaTopicStatus extends Status {
     }
     
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @Description("Replicas change status.")
+    @Description("Replication factor change status.")
     public ReplicasChangeStatus getReplicasChange() {
         return replicasChange;
     }

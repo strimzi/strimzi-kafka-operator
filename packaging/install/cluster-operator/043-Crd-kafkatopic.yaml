@@ -122,7 +122,7 @@ spec:
                   sessionId:
                     type: string
                     description: The session identifier for replicas change requests pertaining to this KafkaTopic resource. This is used by the Topic Operator to track the status of ongoing replicas change operations.
-                description: Replicas change status.
+                description: Replication factor change status.
             description: The status of the topic.
   - name: v1beta1
     served: true
@@ -226,7 +226,7 @@ spec:
                   sessionId:
                     type: string
                     description: The session identifier for replicas change requests pertaining to this KafkaTopic resource. This is used by the Topic Operator to track the status of ongoing replicas change operations.
-                description: Replicas change status.
+                description: Replication factor change status.
             description: The status of the topic.
   - name: v1alpha1
     served: true
@@ -330,5 +330,5 @@ spec:
                   sessionId:
                     type: string
                     description: The session identifier for replicas change requests pertaining to this KafkaTopic resource. This is used by the Topic Operator to track the status of ongoing replicas change operations.
-                description: Replicas change status.
+                description: Replication factor change status.
             description: The status of the topic.

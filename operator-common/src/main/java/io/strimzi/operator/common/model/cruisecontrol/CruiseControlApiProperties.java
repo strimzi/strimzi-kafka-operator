@@ -9,11 +9,6 @@ package io.strimzi.operator.common.model.cruisecontrol;
  */
 public class CruiseControlApiProperties {
     /**
-     * Properties prefix.
-     */
-    public static final String COMPONENT_TYPE = "cruise-control";
-    
-    /**
      * Admin role.
      */
     public static final String API_ADMIN_ROLE = "ADMIN";
@@ -41,17 +36,17 @@ public class CruiseControlApiProperties {
     /**
      * Secret key for the admin password.
      */
-    public static final String API_ADMIN_PASSWORD_KEY = COMPONENT_TYPE + ".apiAdminPassword";
+    public static final String API_ADMIN_PASSWORD_KEY = "cruise-control.apiAdminPassword";
 
     /**
      * Secret key for the user password.
      */
-    public static final String API_USER_PASSWORD_KEY = COMPONENT_TYPE + ".apiUserPassword";
+    public static final String API_USER_PASSWORD_KEY = "cruise-control.apiUserPassword";
 
     /**
      * Secret key for the Cruise Control auth file.
      */
-    public static final String API_AUTH_FILE_KEY = COMPONENT_TYPE + ".apiAuthFile";
+    public static final String API_AUTH_FILE_KEY = "cruise-control.apiAuthFile";
     
     /**
      * Secret key for the username used by the Topic Operator.
