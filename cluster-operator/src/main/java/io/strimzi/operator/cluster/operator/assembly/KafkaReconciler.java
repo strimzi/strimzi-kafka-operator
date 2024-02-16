@@ -1011,7 +1011,7 @@ public class KafkaReconciler {
     }
 
     // Adds Kafka version to the Kafka Status instance
-    protected Future<Void> updateKafkaVersion(KafkaStatus kafkaStatus) {
+    /* test */ Future<Void> updateKafkaVersion(KafkaStatus kafkaStatus) {
         kafkaStatus.setKafkaVersion(kafka.getKafkaVersion().version());
         return Future.succeededFuture();
     }
