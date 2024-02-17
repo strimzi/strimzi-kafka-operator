@@ -28,6 +28,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import static io.strimzi.api.kafka.model.common.ReplicasChangeState.ONGOING;
 import static io.strimzi.api.kafka.model.topic.KafkaTopic.RESOURCE_KIND;
 import static io.strimzi.operator.topic.v2.TopicOperatorConfig.BOOTSTRAP_SERVERS;
 import static io.strimzi.operator.topic.v2.TopicOperatorConfig.CRUISE_CONTROL_API_PASS_PATH;
@@ -291,7 +292,7 @@ public class ReplicasChangeClientTest {
         assertThat(outputKt.getStatus().getReplicasChange(), is(notNullValue()));
         assertThat(outputKt.getStatus().getReplicasChange().getMessage(), is(nullValue()));
         assertThat(outputKt.getStatus().getReplicasChange().getSessionId(), is(notNullValue()));
-        assertThat(outputKt.getStatus().getReplicasChange().getState(), is("ongoing"));
+        assertThat(outputKt.getStatus().getReplicasChange().getState(), is(ONGOING));
         var inputKt = input.stream().findFirst().get().kt();
         assertThat(outputKt.getStatus().getReplicasChange().getTargetReplicas(), is(inputKt.getSpec().getReplicas()));
     }
@@ -345,7 +346,7 @@ public class ReplicasChangeClientTest {
                 .build()))
             .withReplicasChange(new ReplicasChangeStatusBuilder()
                 .withSessionId("8911ca89-351f-888-8d0f-9aade00e098h")
-                .withState("ongoing")
+                .withState(ONGOING)
                 .withTargetReplicas(replicationFactor)
                 .build())
             .build();
