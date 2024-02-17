@@ -307,28 +307,32 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
 
     /**
      * Creates the Secret containing Cruise Control API auth credentials.
-     *
+     * 
+     * @param oldSecret The old secret.
+     *                           
      * @return The generated Secret.
      */
-    public Secret generateCruiseControlApiSecret() {
+    public Secret generateCruiseControlApiSecret(Secret oldSecret) {
         return ModelUtils.createSecret(KafkaResources.entityTopicOperatorCcApiSecretName(cluster), namespace, labels, ownerReference, 
-            generateCruiseControlApiCredentials(), Collections.emptyMap(), Collections.emptyMap());
+            generateCruiseControlApiCredentials(oldSecret), Collections.emptyMap(), Collections.emptyMap());
     }
+    
+    private static Map<String, String> generateCruiseControlApiCredentials(Secret oldSecret) {
+        if (oldSecret != null) {
+            // The credentials should not change with every release
+            // So if the secret with credentials already exists, we re-use the values
+            // But we use the new secret to update labels etc. if needed
+            return oldSecret.getData();
+        } else {
+            PasswordGenerator passwordGenerator = new PasswordGenerator(16);
+            String apiToAdminPassword = passwordGenerator.generate();
 
-    /**
-     * Creates Cruise Control API auth credentials.
-     *
-     * @return Map containing Cruise Control API auth credentials
-     */
-    public static Map<String, String> generateCruiseControlApiCredentials() {
-        PasswordGenerator passwordGenerator = new PasswordGenerator(16);
-        String apiToAdminPassword = passwordGenerator.generate();
+            Map<String, String> data = new HashMap<>(2);
+            data.put(API_TO_ADMIN_NAME_KEY, Util.encodeToBase64(API_TO_ADMIN_NAME));
+            data.put(API_TO_ADMIN_PASSWORD_KEY, Util.encodeToBase64(apiToAdminPassword));
 
-        Map<String, String> data = new HashMap<>(2);
-        data.put(API_TO_ADMIN_NAME_KEY, Util.encodeToBase64(API_TO_ADMIN_NAME));
-        data.put(API_TO_ADMIN_PASSWORD_KEY, Util.encodeToBase64(apiToAdminPassword));
-
-        return data;
+            return data;
+        }
     }
 
     /**

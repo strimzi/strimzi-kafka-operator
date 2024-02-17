@@ -46,7 +46,6 @@ import java.util.Set;
 import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.API_AUTH_FILE_KEY;
 import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.API_TO_ADMIN_NAME_KEY;
 import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.API_TO_ADMIN_PASSWORD_KEY;
-import static java.lang.String.format;
 
 /**
  * Class used for reconciliation of Cruise Control. This class contains both the steps of the Cruise Control
@@ -253,33 +252,33 @@ public class CruiseControlReconciler {
      */
     protected Future<Void> apiSecret() {
         if (cruiseControl != null) {
-            return secretOperator.getAsync(reconciliation.namespace(), CruiseControlResources.apiSecretName(reconciliation.name()))
+            if (topicOperatorEnabled) {
+                return secretOperator.getAsync(reconciliation.namespace(), CruiseControlResources.apiSecretName(reconciliation.name()))
                     .compose(oldSecret -> {
-                        Secret newSecret = cruiseControl.generateApiSecret(passwordGenerator);
-
-                        if (oldSecret != null)  {
-                            // The credentials should not change with every release
-                            // So if the secret with credentials already exists, we re-use the values
-                            // But we use the new secret to update labels etc. if needed
-                            newSecret.setData(oldSecret.getData());
-                        }
-                        
-                        if (topicOperatorEnabled) {
-                            // if Topic Operator API user changed, generate a new Cruise Control API secret
-                            String cruiseControlAuthFile = Util.decodeFromBase64(newSecret.getData().get(API_AUTH_FILE_KEY));
-                            Secret topicOperatorApiSecret = secretOperator.get(reconciliation.namespace(), KafkaResources.entityTopicOperatorCcApiSecretName(reconciliation.name()));
-                            String username = Util.decodeFromBase64(topicOperatorApiSecret.getData().get(API_TO_ADMIN_NAME_KEY));
-                            String password = Util.decodeFromBase64(topicOperatorApiSecret.getData().get(API_TO_ADMIN_PASSWORD_KEY));
-                            if (!cruiseControlAuthFile.contains(format("%s: %s", username, password))) {
-                                newSecret = cruiseControl.generateApiSecretWithTopicOperatorUser(passwordGenerator, username, password);
-                            }
-                        }
-                        
-                        this.apiSecretHash = ReconcilerUtils.hashSecretContent(newSecret);
-                        
-                        return secretOperator.reconcile(reconciliation, reconciliation.namespace(), CruiseControlResources.apiSecretName(reconciliation.name()), newSecret)
-                                .map((Void) null);
+                        return secretOperator.getAsync(reconciliation.namespace(), KafkaResources.entityTopicOperatorCcApiSecretName(reconciliation.name()))
+                            .compose(topicOperatorApiSecret -> {
+                                String cruiseControlAuthFile = oldSecret != null ? Util.decodeFromBase64(oldSecret.getData().get(API_AUTH_FILE_KEY)) : null;
+                                CruiseControl.AdminUser adminUser = topicOperatorApiSecret != null ? new CruiseControl.AdminUser(
+                                    Util.decodeFromBase64(topicOperatorApiSecret.getData().get(API_TO_ADMIN_NAME_KEY)),
+                                    Util.decodeFromBase64(topicOperatorApiSecret.getData().get(API_TO_ADMIN_PASSWORD_KEY))) : null;
+                                // generate a new CC API secret if there is no CC auth file, or there is no TO API secret, or TO admin password changed
+                                Secret newSecret = cruiseControlAuthFile == null || adminUser == null || !cruiseControlAuthFile.contains(adminUser.password())
+                                    ? cruiseControl.generateApiSecret(passwordGenerator, adminUser)
+                                    : cruiseControl.generateApiSecret(passwordGenerator, oldSecret);
+                                this.apiSecretHash = ReconcilerUtils.hashSecretContent(newSecret);
+                                return secretOperator.reconcile(reconciliation, reconciliation.namespace(), CruiseControlResources.apiSecretName(reconciliation.name()), newSecret)
+                                    .map((Void) null);
+                            });
                     });
+            } else {
+                return secretOperator.getAsync(reconciliation.namespace(), CruiseControlResources.apiSecretName(reconciliation.name()))
+                    .compose(oldSecret -> {
+                        Secret newSecret = cruiseControl.generateApiSecret(passwordGenerator, oldSecret);
+                        this.apiSecretHash = ReconcilerUtils.hashSecretContent(newSecret);
+                        return secretOperator.reconcile(reconciliation, reconciliation.namespace(), CruiseControlResources.apiSecretName(reconciliation.name()), newSecret)
+                            .map((Void) null);
+                    });
+            }
         } else {
             return secretOperator.reconcile(reconciliation, reconciliation.namespace(), CruiseControlResources.apiSecretName(reconciliation.name()), null)
                     .map((Void) null);

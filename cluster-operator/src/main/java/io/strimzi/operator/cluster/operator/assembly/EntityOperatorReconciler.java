@@ -141,17 +141,8 @@ public class EntityOperatorReconciler {
             if (entityOperator != null && entityOperator.topicOperator() != null) {
                 return secretOperator.getAsync(reconciliation.namespace(), ccApiSecretName)
                     .compose(oldSecret -> {
-                        Secret newSecret = entityOperator.topicOperator().generateCruiseControlApiSecret();
-
-                        if (oldSecret != null) {
-                            // The credentials should not change with every release
-                            // So if the secret with credentials already exists, we re-use the values
-                            // But we use the new secret to update labels etc. if needed
-                            newSecret.setData(oldSecret.getData());
-                        }
-
+                        Secret newSecret = entityOperator.topicOperator().generateCruiseControlApiSecret(oldSecret);
                         this.ccApiSecretHash = ReconcilerUtils.hashSecretContent(newSecret);
-
                         return secretOperator.reconcile(reconciliation, reconciliation.namespace(), ccApiSecretName, newSecret)
                             .map((Void) null);
                     });
