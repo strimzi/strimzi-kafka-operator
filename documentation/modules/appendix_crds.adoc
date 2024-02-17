@@ -2950,7 +2950,7 @@ Used in: xref:type-KafkaTopicStatus-{context}[`KafkaTopicStatus`]
 |integer
 |The target replicas value requested by the user. This may be different from .spec.replicas when the state is ongoing.
 |state
-|string
+|string (one of [ongoing, pending])
 |Current state of the replicas change operation. This can be pending, when the change has been requested, and ongoing, when the change has been successfully submitted to Cruise control.
 |message
 |string

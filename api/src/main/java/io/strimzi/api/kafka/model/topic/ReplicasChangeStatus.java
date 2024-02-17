@@ -7,6 +7,7 @@ package io.strimzi.api.kafka.model.topic;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.api.kafka.model.common.Constants;
+import io.strimzi.api.kafka.model.common.ReplicasChangeState;
 import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
@@ -31,7 +32,7 @@ public class ReplicasChangeStatus implements UnknownPropertyPreserving, Serializ
     private static final long serialVersionUID = 1L;
 
     private Integer targetReplicas;
-    private String state;
+    private ReplicasChangeState state;
     private String sessionId;
     private String message;
     private Map<String, Object> additionalProperties;
@@ -50,11 +51,11 @@ public class ReplicasChangeStatus implements UnknownPropertyPreserving, Serializ
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @Description("Current state of the replicas change operation. This can be pending, when the change has been " +
         "requested, and ongoing, when the change has been successfully submitted to Cruise control.")
-    public String getState() {
+    public ReplicasChangeState getState() {
         return state;
     }
 
-    public void setState(String state) {
+    public void setState(ReplicasChangeState state) {
         this.state = state;
     }
     

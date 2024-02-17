@@ -115,6 +115,9 @@ spec:
                     description: The target replicas value requested by the user. This may be different from .spec.replicas when the state is ongoing.
                   state:
                     type: string
+                    enum:
+                    - pending
+                    - ongoing
                     description: "Current state of the replicas change operation. This can be pending, when the change has been requested, and ongoing, when the change has been successfully submitted to Cruise control."
                   message:
                     type: string
@@ -219,6 +222,9 @@ spec:
                     description: The target replicas value requested by the user. This may be different from .spec.replicas when the state is ongoing.
                   state:
                     type: string
+                    enum:
+                    - pending
+                    - ongoing
                     description: "Current state of the replicas change operation. This can be pending, when the change has been requested, and ongoing, when the change has been successfully submitted to Cruise control."
                   message:
                     type: string
@@ -323,6 +329,9 @@ spec:
                     description: The target replicas value requested by the user. This may be different from .spec.replicas when the state is ongoing.
                   state:
                     type: string
+                    enum:
+                    - pending
+                    - ongoing
                     description: "Current state of the replicas change operation. This can be pending, when the change has been requested, and ongoing, when the change has been successfully submitted to Cruise control."
                   message:
                     type: string

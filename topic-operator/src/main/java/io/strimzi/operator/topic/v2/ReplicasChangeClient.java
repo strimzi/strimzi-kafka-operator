@@ -39,6 +39,8 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import static io.strimzi.api.kafka.model.common.ReplicasChangeState.ONGOING;
+import static io.strimzi.api.kafka.model.common.ReplicasChangeState.PENDING;
 import static io.strimzi.operator.topic.v2.TopicOperatorUtil.buildBasicAuthValue;
 import static io.strimzi.operator.topic.v2.TopicOperatorUtil.getFileContent;
 import static io.strimzi.operator.topic.v2.TopicOperatorUtil.topicNames;
@@ -265,14 +267,14 @@ public class ReplicasChangeClient {
         reconcilableTopics.forEach(reconcilableTopic ->
             reconcilableTopic.kt().setStatus(new KafkaTopicStatusBuilder(reconcilableTopic.kt().getStatus())
                 .withReplicasChange(new ReplicasChangeStatusBuilder()
-                    .withState("pending").withTargetReplicas(reconcilableTopic.kt().getSpec().getReplicas()).build()).build()));
+                    .withState(PENDING).withTargetReplicas(reconcilableTopic.kt().getSpec().getReplicas()).build()).build()));
     }
     
     private void updateToOngoing(List<ReconcilableTopic> reconcilableTopics, String message, String userTaskId) {
         LOGGER.infoOp("{}, Topics: {}", message, topicNames(reconcilableTopics));
         reconcilableTopics.forEach(reconcilableTopic ->
             reconcilableTopic.kt().setStatus(new KafkaTopicStatusBuilder(reconcilableTopic.kt().getStatus())
-                .editOrNewReplicasChange().withState("ongoing").withSessionId(userTaskId).endReplicasChange().build()));
+                .editOrNewReplicasChange().withState(ONGOING).withSessionId(userTaskId).endReplicasChange().build()));
     }
     
     private void updateToCompleted(List<ReconcilableTopic> reconcilableTopics, String message) {

@@ -53,6 +53,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
+import static io.strimzi.api.kafka.model.common.ReplicasChangeState.ONGOING;
+import static io.strimzi.api.kafka.model.common.ReplicasChangeState.PENDING;
 import static io.strimzi.api.kafka.model.topic.KafkaTopic.RESOURCE_KIND;
 import static io.strimzi.operator.topic.v2.TopicOperatorUtil.topicName;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -283,7 +285,7 @@ class BatchingTopicControllerTest {
         var status = new KafkaTopicStatusBuilder()
             .withReplicasChange(new ReplicasChangeStatusBuilder()
                 .withMessage("Error message")
-                .withState("pending")
+                .withState(PENDING)
                 .withTargetReplicas(replicationFactor)
                 .build())
             .build();
@@ -358,7 +360,7 @@ class BatchingTopicControllerTest {
         var outputStatus = new KafkaTopicStatusBuilder()
             .withReplicasChange(new ReplicasChangeStatusBuilder()
                 .withSessionId("1aa418ca-53ed-4b93-b0a4-58413c4fc0cb")
-                .withState("ongoing")
+                .withState(ONGOING)
                 .withTargetReplicas(replicationFactor)
                 .build())
             .build();

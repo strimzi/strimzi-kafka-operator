@@ -60,6 +60,8 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static io.strimzi.api.kafka.model.common.ReplicasChangeState.ONGOING;
+import static io.strimzi.api.kafka.model.common.ReplicasChangeState.PENDING;
 import static io.strimzi.operator.topic.v2.TopicOperatorUtil.isManaged;
 import static io.strimzi.operator.topic.v2.TopicOperatorUtil.isPaused;
 import static io.strimzi.operator.topic.v2.TopicOperatorUtil.startOperationTimer;
@@ -528,14 +530,14 @@ public class BatchingTopicController {
     private boolean isPendingReplicasChange(KafkaTopic kafkaTopic) {
         return kafkaTopic.getStatus() != null
             && (kafkaTopic.getStatus().getReplicasChange() == null
-            || (kafkaTopic.getStatus().getReplicasChange().getState().equals("pending")
+            || (kafkaTopic.getStatus().getReplicasChange().getState() == PENDING
             && kafkaTopic.getStatus().getReplicasChange().getSessionId() == null));
     }
 
     private boolean isOngoingReplicasChange(KafkaTopic kafkaTopic) {
         return kafkaTopic.getStatus() != null
             && kafkaTopic.getStatus().getReplicasChange() != null
-            && kafkaTopic.getStatus().getReplicasChange().getState().equals("ongoing")
+            && kafkaTopic.getStatus().getReplicasChange().getState() == ONGOING
             && kafkaTopic.getStatus().getReplicasChange().getSessionId() != null;
     }
 
