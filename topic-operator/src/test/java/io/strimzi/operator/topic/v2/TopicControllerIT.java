@@ -458,6 +458,7 @@ class TopicControllerIT {
         assertNotNull(reconciled.getMetadata().getFinalizers());
         assertEquals(operatorConfig.useFinalizer(), reconciled.getMetadata().getFinalizers().contains(BatchingTopicController.FINALIZER));
         assertEquals(expectedTopicName, reconciled.getStatus().getTopicName());
+        assertNotNull(reconciled.getStatus().getTopicId());
 
         // Check topic in Kafka
         TopicDescription topicDescription = awaitTopicDescription(expectedTopicName);

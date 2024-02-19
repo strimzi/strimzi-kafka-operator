@@ -2877,6 +2877,9 @@ Used in: xref:type-KafkaTopic-{context}[`KafkaTopic`]
 |topicName
 |string
 |Topic name.
+|topicId
+|string
+|Topic id.
 |====
 
 [id='type-KafkaUser-{context}']

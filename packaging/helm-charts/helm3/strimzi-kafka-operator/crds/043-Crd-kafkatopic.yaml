@@ -105,6 +105,9 @@ spec:
                 topicName:
                   type: string
                   description: Topic name.
+                topicId:
+                  type: string
+                  description: Topic id.
               description: The status of the topic.
     - name: v1beta1
       served: true
@@ -190,6 +193,9 @@ spec:
                 topicName:
                   type: string
                   description: Topic name.
+                topicId:
+                  type: string
+                  description: Topic id.
               description: The status of the topic.
     - name: v1alpha1
       served: true
@@ -275,4 +281,7 @@ spec:
                 topicName:
                   type: string
                   description: Topic name.
+                topicId:
+                  type: string
+                  description: Topic id.
               description: The status of the topic.

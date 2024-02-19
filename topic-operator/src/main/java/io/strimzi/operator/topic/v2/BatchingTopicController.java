@@ -12,6 +12,7 @@ import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.common.ConditionBuilder;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.api.kafka.model.topic.KafkaTopicBuilder;
+import io.strimzi.api.kafka.model.topic.KafkaTopicStatusBuilder;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
@@ -285,6 +286,8 @@ public class BatchingTopicController {
         return partitionedByError(kts.stream().map(reconcilableTopic -> {
             try {
                 values.get(reconcilableTopic.topicName()).get();
+                reconcilableTopic.kt().setStatus(new KafkaTopicStatusBuilder()
+                    .withTopicId(ctr.topicId(reconcilableTopic.topicName()).get().toString()).build());
                 return pair(reconcilableTopic, Either.ofRight((null)));
             } catch (ExecutionException e) {
                 if (e.getCause() != null && e.getCause() instanceof TopicExistsException) {
