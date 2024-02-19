@@ -25,6 +25,8 @@ import io.strimzi.test.TestUtils;
 
 import java.util.Collections;
 
+import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
+
 public class KafkaTemplates {
 
     private KafkaTemplates() {}
@@ -285,6 +287,7 @@ public class KafkaTemplates {
         KafkaBuilder kb = new KafkaBuilder(kafka)
             .withNewMetadata()
                 .withName(clusterName)
+                .withNamespace(kubeClient().getNamespace())
             .endMetadata()
             .editSpec()
                 .editKafka()
@@ -304,6 +307,7 @@ public class KafkaTemplates {
         KafkaBuilder kb = new KafkaBuilder(kafka)
             .withNewMetadata()
                 .withName(clusterName)
+                .withNamespace(kubeClient().getNamespace())
                 .addToAnnotations(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled")
             .endMetadata();
 
@@ -320,6 +324,7 @@ public class KafkaTemplates {
         KafkaBuilder kb = new KafkaBuilder(kafka)
             .withNewMetadata()
                 .withName(clusterName)
+                .withNamespace(kubeClient().getNamespace())
                 .addToAnnotations(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled")
                 .addToAnnotations(Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled")
             .endMetadata()
@@ -392,7 +397,7 @@ public class KafkaTemplates {
         if (!Environment.isSharedMemory()) {
             // in case that we are using NodePools, the resource limits and requirements are specified in KafkaNodePool resources
             if (!Environment.isKafkaNodePoolsEnabled()) {
-                kb.editSpec()
+                kafkaBuilder.editSpec()
                         .editKafka()
                             // we use such values, because on environments where it is limited to 7Gi, we are unable to deploy
                             // Cluster Operator, two Kafka clusters and MirrorMaker/2. Such situation may result in an OOM problem.
@@ -405,7 +410,7 @@ public class KafkaTemplates {
                     .endSpec();
             }
 
-            kb.editSpec()
+            kafkaBuilder.editSpec()
                 .editEntityOperator()
                     .editUserOperator()
                         // For User Operator using 512Mi is too much and on the other hand 128Mi is causing OOM problem at the start.
@@ -480,8 +485,7 @@ public class KafkaTemplates {
         }
 
         kafka.getSpec().getKafka().setStorage(null);
-        // TODO: currently commented, as we are not able to set null or completely remove the .replicas field
-        // kafka.getSpec().getKafka().setReplicas();
+        kafka.getSpec().getKafka().setReplicas(null);
 
         return new KafkaBuilder(kafka);
     }
