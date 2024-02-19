@@ -72,7 +72,7 @@ public class ReplicasChangeClientTest {
 
         apiUserFile = Files.createTempFile(TEST_PREFIX, ".username").toFile();
         try (PrintWriter out = new PrintWriter(apiUserFile.getAbsolutePath())) {
-            out.print("toadmin");
+            out.print("topic-operator-admin");
         }
         apiPassFile = Files.createTempFile(TEST_PREFIX, ".password").toFile();
         try (PrintWriter out = new PrintWriter(apiPassFile.getAbsolutePath())) {
