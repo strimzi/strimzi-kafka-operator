@@ -48,7 +48,6 @@ import io.vertx.core.WorkerExecutor;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -56,7 +55,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 
 import java.io.ByteArrayInputStream;
-import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -101,7 +99,6 @@ import static org.mockito.Mockito.when;
 @SuppressWarnings({"checkstyle:ClassFanOutComplexity"})
 @ExtendWith(VertxExtension.class)
 public class CaReconcilerTest {
-    private static final String TEST_PREFIX = "ca-recon-";
     public static final String NAMESPACE = "test";
     public static final String NAME = "my-kafka";
 
@@ -116,11 +113,6 @@ public class CaReconcilerTest {
     private List<Secret> secrets = new ArrayList<>();
     private WorkerExecutor sharedWorkerExecutor;
 
-    @AfterAll
-    public static void  afterAll() {
-        
-    }
-
     @BeforeEach
     public void setup(Vertx vertx) {
         secrets = new ArrayList<>();
@@ -130,12 +122,6 @@ public class CaReconcilerTest {
     @AfterEach
     public void teardown() {
         sharedWorkerExecutor.close();
-        // cleanup temp files
-        for (File f : new File(System.getProperty("java.io.tmpdir")).listFiles()) {
-            if (f.getName().startsWith(TEST_PREFIX)) {
-                f.delete();
-            }
-        }
     }
 
     private Future<ArgumentCaptor<Secret>> reconcileCa(Vertx vertx, CertificateAuthority clusterCa, CertificateAuthority clientsCa) {
@@ -210,9 +196,12 @@ public class CaReconcilerTest {
             throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
         String clusterCaStorePassword = "123456";
 
-        Path clusterCaKeyFile = Files.createTempFile(TEST_PREFIX, "cluster-ca-key");
-        Path clusterCaCertFile = Files.createTempFile(TEST_PREFIX, "cluster-ca-cert");
-        Path clusterCaStoreFile = Files.createTempFile(TEST_PREFIX, "cluster-ca-store");
+        Path clusterCaKeyFile = Files.createTempFile("tls", "cluster-ca-key");
+        clusterCaKeyFile.toFile().deleteOnExit();
+        Path clusterCaCertFile = Files.createTempFile("tls", "cluster-ca-cert");
+        clusterCaCertFile.toFile().deleteOnExit();
+        Path clusterCaStoreFile = Files.createTempFile("tls", "cluster-ca-store");
+        clusterCaStoreFile.toFile().deleteOnExit();
 
         try {
             Subject sbj = new Subject.Builder()

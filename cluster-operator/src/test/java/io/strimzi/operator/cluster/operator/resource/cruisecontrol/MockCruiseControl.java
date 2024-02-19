@@ -45,7 +45,6 @@ import static org.mockserver.model.HttpResponse.response;
 public class MockCruiseControl {
 
     private static final String CC_JSON_ROOT = "io/strimzi/operator/cluster/operator/assembly/CruiseControlJSON/";
-    private static final String TEST_PREFIX = "mock-cc-";
 
     private static final int RESPONSE_DELAY_SEC = 0;
 
@@ -98,8 +97,10 @@ public class MockCruiseControl {
         try {
             ConfigurationProperties.logLevel("WARN");
 
-            File key = Files.createTempFile(TEST_PREFIX, ".key").toFile();
-            File cert = Files.createTempFile(TEST_PREFIX, ".crt").toFile();
+            File key = Files.createTempFile("key-", ".key").toFile();
+            key.deleteOnExit();
+            File cert = Files.createTempFile("crt-", ".crt").toFile();
+            cert.deleteOnExit();
 
             MockCertManager certManager = new MockCertManager();
             certManager.generateSelfSignedCert(key, cert, new Subject.Builder().withCommonName("Test CA").build(), 365);
@@ -128,12 +129,6 @@ public class MockCruiseControl {
     
     public void stop() {
         server.stop();
-        // cleanup temp files
-        for (File f : new File(System.getProperty("java.io.tmpdir")).listFiles()) {
-            if (f.getName().startsWith(TEST_PREFIX)) {
-                f.delete();
-            }
-        }
     }
 
     private static Header convertToHeader(HTTPHeader httpHeader) {
