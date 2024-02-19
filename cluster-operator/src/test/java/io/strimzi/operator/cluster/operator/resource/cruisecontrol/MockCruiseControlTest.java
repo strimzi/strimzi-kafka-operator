@@ -15,7 +15,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockserver.integration.ClientAndServer;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -30,11 +29,11 @@ public class MockCruiseControlTest {
     private static final int PORT = 1080;
     private static final String HOST = "localhost";
 
-    private static ClientAndServer ccServer;
+    private static MockCruiseControl ccServer;
 
     @BeforeAll
-    public static void startUp() throws IOException {
-        ccServer = MockCruiseControl.server(PORT);
+    public static void startUp() {
+        ccServer = new MockCruiseControl(PORT);
     }
 
     @BeforeEach
@@ -54,7 +53,7 @@ public class MockCruiseControlTest {
 
     private void runTest(Vertx vertx, VertxTestContext context, String userTaskID, int pendingCalls) throws IOException, URISyntaxException {
 
-        MockCruiseControl.setupCCUserTasksResponseNoGoals(ccServer, 0, pendingCalls);
+        ccServer.setupCCUserTasksResponseNoGoals(0, pendingCalls);
 
         CruiseControlApi client = cruiseControlClientProvider(vertx);
 
@@ -119,7 +118,7 @@ public class MockCruiseControlTest {
         //for test end to prevent premature test success
         Checkpoint completeTest = context.checkpoint();
 
-        MockCruiseControl.setupCCUserTasksResponseNoGoals(ccServer, 0, pendingCalls1);
+        ccServer.setupCCUserTasksResponseNoGoals(0, pendingCalls1);
 
         Future<CruiseControlResponse> statusFuture = client.getUserTaskStatus(HOST, PORT, userTaskID);
 
@@ -145,7 +144,7 @@ public class MockCruiseControlTest {
         statusFuture = statusFuture.compose(response -> {
             try {
                 ccServer.reset();
-                MockCruiseControl.setupCCUserTasksResponseNoGoals(ccServer, 0, pendingCalls2);
+                ccServer.setupCCUserTasksResponseNoGoals(0, pendingCalls2);
             } catch (IOException | URISyntaxException e) {
                 return Future.failedFuture(e);
             }

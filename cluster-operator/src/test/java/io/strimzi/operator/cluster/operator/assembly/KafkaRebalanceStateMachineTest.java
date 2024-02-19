@@ -39,7 +39,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockserver.integration.ClientAndServer;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -75,11 +74,11 @@ public class KafkaRebalanceStateMachineTest {
                     .withBrokers(3)
                     .build();
 
-    private static ClientAndServer ccServer;
+    private static MockCruiseControl ccServer;
 
     @BeforeAll
     public static void before() throws IOException, URISyntaxException {
-        ccServer = MockCruiseControl.server(CruiseControl.REST_API_PORT);
+        ccServer = new MockCruiseControl(CruiseControl.REST_API_PORT);
     }
 
     @AfterAll
@@ -224,7 +223,7 @@ public class KafkaRebalanceStateMachineTest {
     }
 
     private void krNewToProposalReady(Vertx vertx, VertxTestContext context, int pendingCalls, CruiseControlEndpoints endpoint, KafkaRebalance kcRebalance) throws IOException, URISyntaxException {
-        MockCruiseControl.setupCCRebalanceResponse(ccServer, pendingCalls, endpoint);
+        ccServer.setupCCRebalanceResponse(pendingCalls, endpoint);
 
         checkTransition(vertx, context,
                 KafkaRebalanceState.New, KafkaRebalanceState.ProposalReady,
@@ -247,7 +246,7 @@ public class KafkaRebalanceStateMachineTest {
     private void krNewWithNotEnoughData(Vertx vertx, VertxTestContext context, CruiseControlEndpoints endpoint, KafkaRebalance kcRebalance) throws IOException, URISyntaxException {
         // Test the case where the user asks for a rebalance but there is not enough data, the returned status should
         // not contain an optimisation result
-        MockCruiseControl.setupCCRebalanceNotEnoughDataError(ccServer, endpoint);
+        ccServer.setupCCRebalanceNotEnoughDataError(endpoint);
 
         checkTransition(vertx, context,
                 KafkaRebalanceState.New, KafkaRebalanceState.PendingProposal,
@@ -268,7 +267,7 @@ public class KafkaRebalanceStateMachineTest {
     }
 
     private void krNewToProposalPending(Vertx vertx, VertxTestContext context, int pendingCalls, CruiseControlEndpoints endpoint, KafkaRebalance kcRebalance) throws IOException, URISyntaxException {
-        MockCruiseControl.setupCCRebalanceResponse(ccServer, pendingCalls, endpoint);
+        ccServer.setupCCRebalanceResponse(pendingCalls, endpoint);
 
         checkTransition(vertx, context,
                 KafkaRebalanceState.New, KafkaRebalanceState.PendingProposal,
@@ -307,7 +306,7 @@ public class KafkaRebalanceStateMachineTest {
     private void krNewBadGoalsError(Vertx vertx, VertxTestContext context, CruiseControlEndpoints endpoint, KafkaRebalance kcRebalance) throws IOException, URISyntaxException {
         // Test the case where the user asks for a rebalance with custom goals which do not contain all the configured hard goals
         // In this case the computeNextStatus error will return a failed future with a message containing an illegal argument exception
-        MockCruiseControl.setupCCRebalanceBadGoalsError(ccServer, endpoint);
+        ccServer.setupCCRebalanceBadGoalsError(endpoint);
 
         checkTransition(vertx, context,
                 KafkaRebalanceState.New, KafkaRebalanceState.NotReady,
@@ -354,7 +353,7 @@ public class KafkaRebalanceStateMachineTest {
     private void krNewBadGoalsErrorWithSkipHGCheck(Vertx vertx, VertxTestContext context, CruiseControlEndpoints endpoint, KafkaRebalance kcRebalance) throws IOException, URISyntaxException {
         // Test the case where the user asks for a rebalance with custom goals which do not contain all the configured hard goals
         // But we have set skip hard goals check to true
-        MockCruiseControl.setupCCRebalanceBadGoalsError(ccServer, endpoint);
+        ccServer.setupCCRebalanceBadGoalsError(endpoint);
 
         checkTransition(vertx, context,
                 KafkaRebalanceState.New, KafkaRebalanceState.ProposalReady,
@@ -375,7 +374,7 @@ public class KafkaRebalanceStateMachineTest {
     }
 
     private void krProposalPendingToProposalReady(Vertx vertx, VertxTestContext context, int pendingCalls, CruiseControlEndpoints endpoint, KafkaRebalance kcRebalance) throws IOException, URISyntaxException {
-        MockCruiseControl.setupCCRebalanceResponse(ccServer, pendingCalls, endpoint);
+        ccServer.setupCCRebalanceResponse(pendingCalls, endpoint);
 
         checkTransition(vertx, context,
                 KafkaRebalanceState.PendingProposal, KafkaRebalanceState.ProposalReady,
@@ -396,7 +395,7 @@ public class KafkaRebalanceStateMachineTest {
     }
 
     private void krProposalPendingToProposalReadyWithDelay(Vertx vertx, VertxTestContext context, int pendingCalls, CruiseControlEndpoints endpoint, KafkaRebalance kcRebalance) throws IOException, URISyntaxException {
-        MockCruiseControl.setupCCRebalanceResponse(ccServer, pendingCalls, endpoint);
+        ccServer.setupCCRebalanceResponse(pendingCalls, endpoint);
 
         checkTransition(vertx, context,
                 KafkaRebalanceState.PendingProposal, KafkaRebalanceState.ProposalReady,
@@ -417,7 +416,7 @@ public class KafkaRebalanceStateMachineTest {
     }
 
     private void krProposalPendingToStopped(Vertx vertx, VertxTestContext context, int pendingCalls, CruiseControlEndpoints endpoint, KafkaRebalance kcRebalance) throws IOException, URISyntaxException {
-        MockCruiseControl.setupCCRebalanceResponse(ccServer, pendingCalls, endpoint);
+        ccServer.setupCCRebalanceResponse(pendingCalls, endpoint);
 
         checkTransition(vertx, context,
                 KafkaRebalanceState.PendingProposal, KafkaRebalanceState.Stopped,
@@ -438,7 +437,7 @@ public class KafkaRebalanceStateMachineTest {
     }
 
     private void krProposalReadyNoChange(Vertx vertx, VertxTestContext context, int pendingCalls, CruiseControlEndpoints endpoint, KafkaRebalance kcRebalance) throws IOException, URISyntaxException {
-        MockCruiseControl.setupCCRebalanceResponse(ccServer, pendingCalls, endpoint);
+        ccServer.setupCCRebalanceResponse(pendingCalls, endpoint);
 
         checkTransition(vertx, context,
                 KafkaRebalanceState.ProposalReady, KafkaRebalanceState.ProposalReady,
@@ -459,7 +458,7 @@ public class KafkaRebalanceStateMachineTest {
     }
 
     private void krProposalReadyToRebalancingWithNotEnoughData(Vertx vertx, VertxTestContext context, CruiseControlEndpoints endpoint, KafkaRebalance kcRebalance) throws IOException, URISyntaxException {
-        MockCruiseControl.setupCCRebalanceNotEnoughDataError(ccServer, endpoint);
+        ccServer.setupCCRebalanceNotEnoughDataError(endpoint);
 
         checkTransition(vertx, context,
                 KafkaRebalanceState.ProposalReady, KafkaRebalanceState.PendingProposal,
@@ -480,7 +479,7 @@ public class KafkaRebalanceStateMachineTest {
     }
 
     private void krProposalReadyToRebalancingWithPendingSummary(Vertx vertx, VertxTestContext context, int pendingCalls, CruiseControlEndpoints endpoint, KafkaRebalance kcRebalance) throws IOException, URISyntaxException {
-        MockCruiseControl.setupCCRebalanceResponse(ccServer, pendingCalls, endpoint);
+        ccServer.setupCCRebalanceResponse(pendingCalls, endpoint);
 
         checkTransition(vertx, context,
                 KafkaRebalanceState.ProposalReady, KafkaRebalanceState.Rebalancing,
@@ -501,7 +500,7 @@ public class KafkaRebalanceStateMachineTest {
     }
 
     private void krProposalReadyToRebalancing(Vertx vertx, VertxTestContext context, int pendingCalls, CruiseControlEndpoints endpoint, KafkaRebalance kcRebalance) throws IOException, URISyntaxException {
-        MockCruiseControl.setupCCRebalanceResponse(ccServer, pendingCalls, endpoint);
+        ccServer.setupCCRebalanceResponse(pendingCalls, endpoint);
 
         checkTransition(vertx, context,
                 KafkaRebalanceState.ProposalReady, KafkaRebalanceState.Rebalancing,
@@ -522,7 +521,7 @@ public class KafkaRebalanceStateMachineTest {
     }
 
     private void krAutoApprovalProposalReadyToRebalancing(Vertx vertx, VertxTestContext context, int pendingCalls, CruiseControlEndpoints endpoint, KafkaRebalance kcRebalance) throws IOException, URISyntaxException {
-        MockCruiseControl.setupCCRebalanceResponse(ccServer, pendingCalls, endpoint);
+        ccServer.setupCCRebalanceResponse(pendingCalls, endpoint);
 
         checkTransition(vertx, context,
                 KafkaRebalanceState.ProposalReady, KafkaRebalanceState.Rebalancing,
@@ -543,7 +542,7 @@ public class KafkaRebalanceStateMachineTest {
     }
 
     private void krProposalReadyRefreshNoChange(Vertx vertx, VertxTestContext context, int pendingCalls, CruiseControlEndpoints endpoint, KafkaRebalance kcRebalance) throws IOException, URISyntaxException {
-        MockCruiseControl.setupCCRebalanceResponse(ccServer, pendingCalls, endpoint);
+        ccServer.setupCCRebalanceResponse(pendingCalls, endpoint);
 
         checkTransition(vertx, context,
                 KafkaRebalanceState.ProposalReady, KafkaRebalanceState.ProposalReady,
@@ -564,7 +563,7 @@ public class KafkaRebalanceStateMachineTest {
     }
 
     private void krProposalReadyRefreshToPendingProposal(Vertx vertx, VertxTestContext context, int pendingCalls, CruiseControlEndpoints endpoint, KafkaRebalance kcRebalance) throws IOException, URISyntaxException {
-        MockCruiseControl.setupCCRebalanceResponse(ccServer, pendingCalls, endpoint);
+        ccServer.setupCCRebalanceResponse(pendingCalls, endpoint);
 
         checkTransition(vertx, context,
                 KafkaRebalanceState.ProposalReady, KafkaRebalanceState.PendingProposal,
@@ -585,7 +584,7 @@ public class KafkaRebalanceStateMachineTest {
     }
 
     private void krProposalReadyRefreshToPendingProposalNotEnoughData(Vertx vertx, VertxTestContext context, CruiseControlEndpoints endpoint, KafkaRebalance kcRebalance) throws IOException, URISyntaxException {
-        MockCruiseControl.setupCCRebalanceNotEnoughDataError(ccServer, endpoint);
+        ccServer.setupCCRebalanceNotEnoughDataError(endpoint);
 
         checkTransition(vertx, context,
                 KafkaRebalanceState.ProposalReady, KafkaRebalanceState.PendingProposal,
@@ -606,7 +605,7 @@ public class KafkaRebalanceStateMachineTest {
     }
 
     private void krRebalancingCompleted(Vertx vertx, VertxTestContext context, int activeCalls, int inExecutionCalls, KafkaRebalance kcRebalance) throws IOException, URISyntaxException {
-        MockCruiseControl.setupCCUserTasksResponseNoGoals(ccServer, activeCalls, inExecutionCalls);
+        ccServer.setupCCUserTasksResponseNoGoals(activeCalls, inExecutionCalls);
 
         checkTransition(vertx, context,
                 KafkaRebalanceState.Rebalancing, KafkaRebalanceState.Ready,
@@ -630,7 +629,7 @@ public class KafkaRebalanceStateMachineTest {
         // This tests that the optimization proposal is added correctly if it was not ready when the rebalance(dryrun=false) was called.
         // The first poll should see active and then the second should see in execution and add the optimization and cancel the timer
         // so that the status is updated.
-        MockCruiseControl.setupCCUserTasksResponseNoGoals(ccServer, activeCalls, inExecutionCalls);
+        ccServer.setupCCUserTasksResponseNoGoals(activeCalls, inExecutionCalls);
 
         checkTransition(vertx, context,
                 KafkaRebalanceState.Rebalancing, KafkaRebalanceState.Rebalancing,
@@ -651,8 +650,8 @@ public class KafkaRebalanceStateMachineTest {
     }
 
     private void krRebalancingToStopped(Vertx vertx, VertxTestContext context, int activeCalls, int inExecutionCalls, KafkaRebalance kcRebalance) throws IOException, URISyntaxException {
-        MockCruiseControl.setupCCUserTasksResponseNoGoals(ccServer, activeCalls, inExecutionCalls);
-        MockCruiseControl.setupCCStopResponse(ccServer);
+        ccServer.setupCCUserTasksResponseNoGoals(activeCalls, inExecutionCalls);
+        ccServer.setupCCStopResponse();
 
         checkTransition(vertx, context,
                 KafkaRebalanceState.Rebalancing, KafkaRebalanceState.Stopped,
@@ -673,7 +672,7 @@ public class KafkaRebalanceStateMachineTest {
     }
 
     private void krRebalancingToStopped(Vertx vertx, VertxTestContext context, KafkaRebalance kcRebalance) throws IOException, URISyntaxException {
-        MockCruiseControl.setupCCUserTasksCompletedWithError(ccServer);
+        ccServer.setupCCUserTasksCompletedWithError();
 
         checkTransition(vertx, context,
                 KafkaRebalanceState.Rebalancing, KafkaRebalanceState.NotReady,
@@ -694,7 +693,7 @@ public class KafkaRebalanceStateMachineTest {
     }
 
     private void krStoppedRefreshToPendingProposal(Vertx vertx, VertxTestContext context, int pendingCalls, CruiseControlEndpoints endpoint, KafkaRebalance kcRebalance) throws IOException, URISyntaxException {
-        MockCruiseControl.setupCCRebalanceResponse(ccServer, pendingCalls, endpoint);
+        ccServer.setupCCRebalanceResponse(pendingCalls, endpoint);
 
         checkTransition(vertx, context,
                 KafkaRebalanceState.Stopped, KafkaRebalanceState.PendingProposal,
@@ -715,7 +714,7 @@ public class KafkaRebalanceStateMachineTest {
     }
 
     private void krStoppedRefreshToProposalReady(Vertx vertx, VertxTestContext context, int pendingCalls, CruiseControlEndpoints endpoint, KafkaRebalance kcRebalance) throws IOException, URISyntaxException {
-        MockCruiseControl.setupCCRebalanceResponse(ccServer, pendingCalls, endpoint);
+        ccServer.setupCCRebalanceResponse(pendingCalls, endpoint);
 
         checkTransition(vertx, context,
                 KafkaRebalanceState.Stopped, KafkaRebalanceState.ProposalReady,
@@ -736,7 +735,7 @@ public class KafkaRebalanceStateMachineTest {
     }
 
     private void krStoppedRefreshToPendingProposalNotEnoughData(Vertx vertx, VertxTestContext context, CruiseControlEndpoints endpoint, KafkaRebalance kcRebalance) throws IOException, URISyntaxException {
-        MockCruiseControl.setupCCRebalanceNotEnoughDataError(ccServer, endpoint);
+        ccServer.setupCCRebalanceNotEnoughDataError(endpoint);
 
         checkTransition(vertx, context,
                 KafkaRebalanceState.Stopped, KafkaRebalanceState.PendingProposal,
@@ -757,7 +756,7 @@ public class KafkaRebalanceStateMachineTest {
     }
 
     private void krReadyRefreshToPendingProposal(Vertx vertx, VertxTestContext context, int pendingCalls, CruiseControlEndpoints endpoint, KafkaRebalance kcRebalance) throws IOException, URISyntaxException {
-        MockCruiseControl.setupCCRebalanceResponse(ccServer, pendingCalls, endpoint);
+        ccServer.setupCCRebalanceResponse(pendingCalls, endpoint);
 
         checkTransition(vertx, context,
                 KafkaRebalanceState.Ready, KafkaRebalanceState.PendingProposal,
@@ -778,7 +777,7 @@ public class KafkaRebalanceStateMachineTest {
     }
 
     private void krReadyRefreshToProposalReady(Vertx vertx, VertxTestContext context, int pendingCalls, CruiseControlEndpoints endpoint, KafkaRebalance kcRebalance) throws IOException, URISyntaxException {
-        MockCruiseControl.setupCCRebalanceResponse(ccServer, pendingCalls, endpoint);
+        ccServer.setupCCRebalanceResponse(pendingCalls, endpoint);
 
         checkTransition(vertx, context,
                 KafkaRebalanceState.Ready, KafkaRebalanceState.ProposalReady,
@@ -799,7 +798,7 @@ public class KafkaRebalanceStateMachineTest {
     }
 
     private void krReadyRefreshToPendingProposalNotEnoughData(Vertx vertx, VertxTestContext context, CruiseControlEndpoints endpoint, KafkaRebalance kcRebalance) throws IOException, URISyntaxException {
-        MockCruiseControl.setupCCRebalanceNotEnoughDataError(ccServer, endpoint);
+        ccServer.setupCCRebalanceNotEnoughDataError(endpoint);
 
         checkTransition(vertx, context,
                 KafkaRebalanceState.Ready, KafkaRebalanceState.PendingProposal,
@@ -820,7 +819,7 @@ public class KafkaRebalanceStateMachineTest {
     }
 
     private void krNotReadyRefreshToPendingProposal(Vertx vertx, VertxTestContext context, int pendingCalls, CruiseControlEndpoints endpoint, KafkaRebalance kcRebalance) throws IOException, URISyntaxException {
-        MockCruiseControl.setupCCRebalanceResponse(ccServer, pendingCalls, endpoint);
+        ccServer.setupCCRebalanceResponse(pendingCalls, endpoint);
 
         checkTransition(vertx, context,
                 KafkaRebalanceState.NotReady, KafkaRebalanceState.PendingProposal,
@@ -841,7 +840,7 @@ public class KafkaRebalanceStateMachineTest {
     }
 
     private void krNotReadyRefreshToProposalReady(Vertx vertx, VertxTestContext context, int pendingCalls, CruiseControlEndpoints endpoint, KafkaRebalance kcRebalance) throws IOException, URISyntaxException {
-        MockCruiseControl.setupCCRebalanceResponse(ccServer, pendingCalls, endpoint);
+        ccServer.setupCCRebalanceResponse(pendingCalls, endpoint);
 
         checkTransition(vertx, context,
                 KafkaRebalanceState.NotReady, KafkaRebalanceState.ProposalReady,
@@ -862,7 +861,7 @@ public class KafkaRebalanceStateMachineTest {
     }
 
     private void krNotReadyRefreshToPendingProposalNotEnoughData(Vertx vertx, VertxTestContext context, CruiseControlEndpoints endpoint, KafkaRebalance kcRebalance) throws IOException, URISyntaxException {
-        MockCruiseControl.setupCCRebalanceNotEnoughDataError(ccServer, endpoint);
+        ccServer.setupCCRebalanceNotEnoughDataError(endpoint);
 
         checkTransition(vertx, context,
                 KafkaRebalanceState.NotReady, KafkaRebalanceState.PendingProposal,
@@ -898,7 +897,7 @@ public class KafkaRebalanceStateMachineTest {
                                               int pendingCalls, CruiseControlEndpoints endpoint,
                                               KafkaRebalance kcRebalance, KafkaRebalanceState kafkaRebalanceState,
                                               KafkaRebalanceAnnotation kafkaRebalanceAnnotation) throws IOException, URISyntaxException {
-        MockCruiseControl.setupCCRebalanceResponse(ccServer, pendingCalls, endpoint);
+        ccServer.setupCCRebalanceResponse(pendingCalls, endpoint);
 
         checkTransition(vertx, context,
                 kafkaRebalanceState, kafkaRebalanceState,
@@ -923,7 +922,7 @@ public class KafkaRebalanceStateMachineTest {
                                               int pendingCalls, CruiseControlEndpoints endpoint,
                                               KafkaRebalance kcRebalance, KafkaRebalanceState kafkaRebalanceState,
                                               KafkaRebalanceAnnotation kafkaRebalanceAnnotation) throws IOException, URISyntaxException {
-        MockCruiseControl.setupCCRebalanceResponse(ccServer, pendingCalls, endpoint);
+        ccServer.setupCCRebalanceResponse(pendingCalls, endpoint);
 
         checkTransition(vertx, context,
                 kafkaRebalanceState, KafkaRebalanceState.ProposalReady,

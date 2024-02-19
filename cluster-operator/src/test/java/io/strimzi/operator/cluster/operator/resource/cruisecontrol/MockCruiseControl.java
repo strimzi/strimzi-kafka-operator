@@ -45,6 +45,7 @@ import static org.mockserver.model.HttpResponse.response;
 public class MockCruiseControl {
 
     private static final String CC_JSON_ROOT = "io/strimzi/operator/cluster/operator/assembly/CruiseControlJSON/";
+    private static final String TEST_PREFIX = "mock-cc-";
 
     private static final int RESPONSE_DELAY_SEC = 0;
 
@@ -83,36 +84,56 @@ public class MockCruiseControl {
             CruiseControl.generateCruiseControlApiCredentials(new PasswordGenerator(16)), Collections.emptyMap(), Collections.emptyMap());
 
     private static final Header AUTH_HEADER = convertToHeader(CruiseControlApiImpl.getAuthHttpHeader(true, CC_API_SECRET));
+    
+    private ClientAndServer server;
 
     /**
      * Sets up and returns the Cruise Control MockSever.
      *
-     * @param port The port number the MockServer instance should listen on
-     * @return The configured ClientAndServer instance
-     * @throws IOException If there are issues connecting to the network port
+     * @param port The port number the MockServer instance should listen on.
+     * 
+     * @return The mock CruiseControl instance.
      */
-    public static ClientAndServer server(int port) throws IOException {
-        ConfigurationProperties.logLevel("WARN");
+    public MockCruiseControl(int port)  {
+        try {
+            ConfigurationProperties.logLevel("WARN");
 
-        File key = Files.createTempFile("key-", ".key").toFile();
-        File cert = Files.createTempFile("crt-", ".crt").toFile();
+            File key = Files.createTempFile(TEST_PREFIX, ".key").toFile();
+            File cert = Files.createTempFile(TEST_PREFIX, ".crt").toFile();
 
-        MockCertManager certManager = new MockCertManager();
-        certManager.generateSelfSignedCert(key, cert, new Subject.Builder().withCommonName("Test CA").build(), 365);
+            MockCertManager certManager = new MockCertManager();
+            certManager.generateSelfSignedCert(key, cert, new Subject.Builder().withCommonName("Test CA").build(), 365);
 
-        ConfigurationProperties.certificateAuthorityPrivateKey(key.getAbsolutePath());
-        ConfigurationProperties.certificateAuthorityCertificate(cert.getAbsolutePath());
+            ConfigurationProperties.certificateAuthorityPrivateKey(key.getAbsolutePath());
+            ConfigurationProperties.certificateAuthorityCertificate(cert.getAbsolutePath());
 
-        String loggingConfiguration = "" +
+            String loggingConfiguration = "" +
                 "handlers=org.mockserver.logging.StandardOutConsoleHandler\n" +
                 "org.mockserver.logging.StandardOutConsoleHandler.level=WARNING\n" +
                 "org.mockserver.logging.StandardOutConsoleHandler.formatter=java.util.logging.SimpleFormatter\n" +
                 "java.util.logging.SimpleFormatter.format=%1$tF %1$tT  %3$s  %4$s  %5$s %6$s%n\n" +
                 ".level=" + javaLoggerLogLevel() + "\n" +
                 "io.netty.handler.ssl.SslHandler.level=WARNING";
-        LogManager.getLogManager().readConfiguration(new ByteArrayInputStream(loggingConfiguration.getBytes(UTF_8)));
+            LogManager.getLogManager().readConfiguration(new ByteArrayInputStream(loggingConfiguration.getBytes(UTF_8)));
 
-        return new ClientAndServer(port);
+            this.server = new ClientAndServer(port);
+        } catch (Throwable t) {
+            throw new RuntimeException(t);
+        }
+    }
+
+    public void reset() {
+        server.reset();
+    }
+    
+    public void stop() {
+        server.stop();
+        // cleanup temp files
+        for (File f : new File(System.getProperty("java.io.tmpdir")).listFiles()) {
+            if (f.getName().startsWith(TEST_PREFIX)) {
+                f.delete();
+            }
+        }
     }
 
     private static Header convertToHeader(HTTPHeader httpHeader) {
@@ -123,7 +144,7 @@ public class MockCruiseControl {
         }
     }
 
-    private static JsonBody getJsonFromResource(String resource) throws URISyntaxException, IOException {
+    private JsonBody getJsonFromResource(String resource) throws URISyntaxException, IOException {
 
         URI jsonURI = Objects.requireNonNull(MockCruiseControl.class.getClassLoader().getResource(CC_JSON_ROOT + resource))
                 .toURI();
@@ -141,12 +162,12 @@ public class MockCruiseControl {
     /**
      * Setup state responses in mock server.
      */
-    public static void setupCCStateResponse(ClientAndServer ccServer) throws IOException, URISyntaxException {
+    public void setupCCStateResponse() throws IOException, URISyntaxException {
 
         // Non-verbose response
         JsonBody jsonProposalNotReady = getJsonFromResource("CC-State-proposal-not-ready.json");
 
-        ccServer
+        server
                 .when(
                         request()
                                 .withMethod("GET")
@@ -166,7 +187,7 @@ public class MockCruiseControl {
         // Non-verbose response
         JsonBody json = getJsonFromResource("CC-State.json");
 
-        ccServer
+        server
                 .when(
                         request()
                                 .withMethod("GET")
@@ -184,7 +205,7 @@ public class MockCruiseControl {
         // Verbose response
         JsonBody jsonVerbose = getJsonFromResource("CC-State-verbose.json");
 
-        ccServer
+        server
                 .when(
                         request()
                                 .withMethod("GET")
@@ -206,12 +227,12 @@ public class MockCruiseControl {
     /**
      * Setup NotEnoughValidWindows error rebalance/add/remove broker response.
      */
-    public static void setupCCRebalanceNotEnoughDataError(ClientAndServer ccServer, CruiseControlEndpoints endpoint) throws IOException, URISyntaxException {
+    public void setupCCRebalanceNotEnoughDataError(CruiseControlEndpoints endpoint) throws IOException, URISyntaxException {
 
         // Rebalance response with no goal that returns an error
         JsonBody jsonError = getJsonFromResource("CC-Rebalance-NotEnoughValidWindows-error.json");
 
-        ccServer
+        server
                 .when(
                         request()
                                 .withMethod("POST")
@@ -233,12 +254,12 @@ public class MockCruiseControl {
     /**
      * Setup broker doesn't exist error for add/remove broker response.
      */
-    public static void setupCCBrokerDoesNotExist(ClientAndServer ccServer, CruiseControlEndpoints endpoint) throws IOException, URISyntaxException {
+    public void setupCCBrokerDoesNotExist(CruiseControlEndpoints endpoint) throws IOException, URISyntaxException {
 
         // Add/remove broker response with no goal that returns an error
         JsonBody jsonError = getJsonFromResource("CC-Broker-not-exist.json");
 
-        ccServer
+        server
                 .when(
                         request()
                                 .withMethod("POST")
@@ -261,18 +282,18 @@ public class MockCruiseControl {
     /**
      * Setup rebalance response with no response delay (for quicker tests).
      */
-    public static void setupCCRebalanceResponse(ClientAndServer ccServer, int pendingCalls, CruiseControlEndpoints endpoint) throws IOException, URISyntaxException {
-        setupCCRebalanceResponse(ccServer, pendingCalls, RESPONSE_DELAY_SEC, endpoint);
+    public void setupCCRebalanceResponse(int pendingCalls, CruiseControlEndpoints endpoint) throws IOException, URISyntaxException {
+        setupCCRebalanceResponse(pendingCalls, RESPONSE_DELAY_SEC, endpoint);
     }
 
     /**
      * Setup rebalance response.
      */
-    public static void setupCCRebalanceResponse(ClientAndServer ccServer, int pendingCalls, int responseDelay, CruiseControlEndpoints endpoint) throws IOException, URISyntaxException {
+    public void setupCCRebalanceResponse(int pendingCalls, int responseDelay, CruiseControlEndpoints endpoint) throws IOException, URISyntaxException {
 
         // Rebalance in progress response with no goals set - non-verbose
         JsonBody pendingJson = getJsonFromResource("CC-Rebalance-no-goals-in-progress.json");
-        ccServer
+        server
                 .when(
                         request()
                                 .withMethod("POST")
@@ -294,7 +315,7 @@ public class MockCruiseControl {
         // Rebalance response with no goals set - non-verbose
         JsonBody json = getJsonFromResource("CC-Rebalance-no-goals.json");
 
-        ccServer
+        server
                 .when(
                         request()
                                 .withMethod("POST")
@@ -315,7 +336,7 @@ public class MockCruiseControl {
         // Rebalance response with no goals set - verbose
         JsonBody jsonVerbose = getJsonFromResource("CC-Rebalance-no-goals-verbose.json");
 
-        ccServer
+        server
                 .when(
                         request()
                                 .withMethod("POST")
@@ -337,12 +358,12 @@ public class MockCruiseControl {
     /**
      * Setup responses for various bad goal configurations possible on a rebalance request.
      */
-    public static void setupCCRebalanceBadGoalsError(ClientAndServer ccServer, CruiseControlEndpoints endpoint) throws IOException, URISyntaxException {
+    public void setupCCRebalanceBadGoalsError(CruiseControlEndpoints endpoint) throws IOException, URISyntaxException {
 
         // Response if the user has set custom goals which do not include all configured hard.goals
         JsonBody jsonError = getJsonFromResource("CC-Rebalance-bad-goals-error.json");
 
-        ccServer
+        server
                 .when(
                         request()
                                 .withMethod("POST")
@@ -365,7 +386,7 @@ public class MockCruiseControl {
         // Note: This uses the no-goals example response but the difference between custom goals and default goals is not tested here
         JsonBody jsonSummary = getJsonFromResource("CC-Rebalance-no-goals-verbose.json");
 
-        ccServer
+        server
                 .when(
                         request()
                                 .withMethod("POST")
@@ -389,13 +410,12 @@ public class MockCruiseControl {
      * Sets up the User Tasks endpoint. These endpoints expect the query to contain the user-task-id returned in the header of the response from
      * the rebalance endpoints.
      *
-     * @param ccServer The ClientAndServer instance that this endpoint will be added too.
      * @param activeCalls The number of calls to the User Tasks endpoint that should return "Active" before "inExecution" is returned as the status.
      * @param inExecutionCalls The number of calls to the User Tasks endpoint that should return "InExecution" before "Completed" is returned as the status.
      * @throws IOException If there are issues connecting to the network port.
      * @throws URISyntaxException If any of the configured end points are invalid.
      */
-    public static void setupCCUserTasksResponseNoGoals(ClientAndServer ccServer, int activeCalls, int inExecutionCalls) throws IOException, URISyntaxException {
+    public void setupCCUserTasksResponseNoGoals(int activeCalls, int inExecutionCalls) throws IOException, URISyntaxException {
 
         // User tasks response for the rebalance request with no goals set (non-verbose)
         JsonBody jsonActive = getJsonFromResource("CC-User-task-rebalance-no-goals-Active.json");
@@ -403,7 +423,7 @@ public class MockCruiseControl {
         JsonBody jsonCompleted = getJsonFromResource("CC-User-task-rebalance-no-goals-completed.json");
 
         // The first activeCalls times respond that with a status of "Active"
-        ccServer
+        server
                 .when(
                         request()
                                 .withMethod("GET")
@@ -421,7 +441,7 @@ public class MockCruiseControl {
                                 .withDelay(TimeUnit.SECONDS, RESPONSE_DELAY_SEC));
 
         // The next inExecutionCalls times respond that with a status of "InExecution"
-        ccServer
+        server
                 .when(
                         request()
                                 .withMethod("GET")
@@ -439,7 +459,7 @@ public class MockCruiseControl {
                                 .withDelay(TimeUnit.SECONDS, RESPONSE_DELAY_SEC));
 
         // On the N+1 call, respond with a completed rebalance task.
-        ccServer
+        server
                 .when(
                         request()
                                 .withMethod("GET")
@@ -462,7 +482,7 @@ public class MockCruiseControl {
         JsonBody jsonCompletedVerbose = getJsonFromResource("CC-User-task-rebalance-no-goals-verbose-completed.json");
 
         // The first activeCalls times respond that with a status of "Active"
-        ccServer
+        server
                 .when(
                         request()
                                 .withMethod("GET")
@@ -480,7 +500,7 @@ public class MockCruiseControl {
                                 .withHeaders(header("User-Task-ID", USER_TASK_REBALANCE_NO_GOALS_VERBOSE_RESPONSE_UTID))
                                 .withDelay(TimeUnit.SECONDS, RESPONSE_DELAY_SEC));
 
-        ccServer
+        server
                 .when(
                         request()
                                 .withMethod("GET")
@@ -498,7 +518,7 @@ public class MockCruiseControl {
                                 .withHeaders(header("User-Task-ID", USER_TASK_REBALANCE_NO_GOALS_VERBOSE_RESPONSE_UTID))
                                 .withDelay(TimeUnit.SECONDS, RESPONSE_DELAY_SEC));
 
-        ccServer
+        server
                 .when(
                         request()
                                 .withMethod("GET")
@@ -520,12 +540,12 @@ public class MockCruiseControl {
     /**
      * Setup response of task completed with error.
      */
-    public static void setupCCUserTasksCompletedWithError(ClientAndServer ccServer) throws IOException, URISyntaxException {
+    public void setupCCUserTasksCompletedWithError() throws IOException, URISyntaxException {
 
         // This simulates asking for the status of a task that has Complete with error and fetch_completed_task=true
         JsonBody compWithErrorJson = getJsonFromResource("CC-User-task-status-completed-with-error.json");
 
-        ccServer
+        server
                 .when(
                         request()
                                 .withMethod("GET")
@@ -545,11 +565,11 @@ public class MockCruiseControl {
     /**
      * Setup response of task being stopped.
      */
-    public static void setupCCStopResponse(ClientAndServer ccServer) throws IOException, URISyntaxException {
+    public void setupCCStopResponse() throws IOException, URISyntaxException {
 
         JsonBody jsonStop = getJsonFromResource("CC-Stop.json");
 
-        ccServer
+        server
                 .when(
                         request()
                                 .withMethod("POST")
@@ -565,7 +585,7 @@ public class MockCruiseControl {
 
     }
 
-    private static Parameter buildBrokerIdParameter(CruiseControlEndpoints endpoint) {
+    private Parameter buildBrokerIdParameter(CruiseControlEndpoints endpoint) {
         return CruiseControlEndpoints.ADD_BROKER.equals(endpoint) || CruiseControlEndpoints.REMOVE_BROKER.equals(endpoint) ?
                 Parameter.param(CruiseControlParameters.BROKER_ID.toString(), "[0-9]+(,[0-9]+)*") :
                 null;
