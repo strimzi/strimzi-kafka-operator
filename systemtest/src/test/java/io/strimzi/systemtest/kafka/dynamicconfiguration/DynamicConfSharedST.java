@@ -9,6 +9,11 @@ import io.strimzi.kafka.config.model.ConfigModel;
 import io.strimzi.kafka.config.model.Type;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.resources.NodePoolsConverter;
+import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.crd.StrimziPodSetResource;
+import io.strimzi.systemtest.storage.TestStorage;
+import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.specific.ScraperTemplates;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
@@ -46,7 +51,7 @@ public class DynamicConfSharedST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(DynamicConfSharedST.class);
 
-    private final String dynamicConfigurationSharedClusterName = "dynamic-config-shared";
+    private TestStorage suiteTestStorage;
 
     private String scraperPodName;
     private static Random rng = new Random();
@@ -64,12 +69,12 @@ public class DynamicConfSharedST extends AbstractST {
 
             dynamicTests.add(DynamicTest.dynamicTest("Test " + key + "->" + value, () -> {
                 // exercise phase
-                KafkaUtils.updateConfigurationWithStabilityWait(Environment.TEST_SUITE_NAMESPACE, dynamicConfigurationSharedClusterName, key, value);
+                KafkaUtils.updateConfigurationWithStabilityWait(Environment.TEST_SUITE_NAMESPACE, suiteTestStorage.getClusterName(), key, value);
 
                 // verify phase
-                assertThat(KafkaUtils.verifyCrDynamicConfiguration(Environment.TEST_SUITE_NAMESPACE, dynamicConfigurationSharedClusterName, key, value), is(true));
+                assertThat(KafkaUtils.verifyCrDynamicConfiguration(Environment.TEST_SUITE_NAMESPACE, suiteTestStorage.getClusterName(), key, value), is(true));
                 assertThat(KafkaUtils.verifyPodDynamicConfiguration(Environment.TEST_SUITE_NAMESPACE, scraperPodName,
-                    KafkaResources.plainBootstrapAddress(dynamicConfigurationSharedClusterName), KafkaResources.kafkaComponentName(dynamicConfigurationSharedClusterName), key, value), is(true));
+                    KafkaResources.plainBootstrapAddress(suiteTestStorage.getClusterName()), StrimziPodSetResource.getBrokerComponentName(suiteTestStorage.getClusterName()), key, value), is(true));
             }));
         }
 
@@ -218,22 +223,28 @@ public class DynamicConfSharedST extends AbstractST {
 
     @BeforeAll
     void setup() {
+        suiteTestStorage = new TestStorage(ResourceManager.getTestContext());
+        
         this.clusterOperator = this.clusterOperator
             .defaultInstallation()
             .createInstallation()
             .runInstallation();
 
-        String sharedScraperName = dynamicConfigurationSharedClusterName + "-shared";
-
         LOGGER.info("Deploying shared Kafka across all test cases!");
-        resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(dynamicConfigurationSharedClusterName, 3)
+        resourceManager.createResourceWithWait(
+            NodePoolsConverter.convertNodePoolsIfNeeded(
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(suiteTestStorage.getNamespaceName(), suiteTestStorage.getBrokerPoolName(), suiteTestStorage.getClusterName(), 3).build(),
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(suiteTestStorage.getNamespaceName(), suiteTestStorage.getControllerPoolName(), suiteTestStorage.getClusterName(), 3).build()
+            )
+        );
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(suiteTestStorage.getClusterName(), 3)
             .editMetadata()
                 .withNamespace(Environment.TEST_SUITE_NAMESPACE)
             .endMetadata()
             .build(),
-            ScraperTemplates.scraperPod(Environment.TEST_SUITE_NAMESPACE, sharedScraperName).build()
+            ScraperTemplates.scraperPod(Environment.TEST_SUITE_NAMESPACE, suiteTestStorage.getScraperName()).build()
         );
 
-        scraperPodName = kubeClient().listPodsByPrefixInName(Environment.TEST_SUITE_NAMESPACE, sharedScraperName).get(0).getMetadata().getName();
+        scraperPodName = kubeClient().listPodsByPrefixInName(Environment.TEST_SUITE_NAMESPACE, suiteTestStorage.getScraperName()).get(0).getMetadata().getName();
     }
 }

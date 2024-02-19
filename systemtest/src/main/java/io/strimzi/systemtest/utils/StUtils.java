@@ -22,6 +22,7 @@ import io.strimzi.api.kafka.model.common.ContainerEnvVarBuilder;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.resources.crd.StrimziPodSetResource;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StrimziPodSetUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
@@ -528,20 +529,15 @@ public class StUtils {
      * Returns a list of names of ConfigMaps with broker configuration files.
      * For StrimziPodSets, it should be a ConfigMap per broker.
      *
+     * @param namespaceName  Name of the Namespace where is the Kafka cluster running
      * @param kafkaClusterName  Name of the Kafka cluster
-     * @param replicas          Number of Kafka replicas
      *
      * @return                  List with ConfigMaps containing the configuration
      */
-    public static List<String> getKafkaConfigurationConfigMaps(String kafkaClusterName, int replicas)    {
-        List<String> cmNames = new ArrayList<>(replicas);
-
-        for (int i = 0; i < replicas; i++)  {
-            cmNames.add(KafkaResource.getKafkaPodName(kafkaClusterName, i));
-        }
-
-        return cmNames;
+    public static List<String> getKafkaConfigurationConfigMaps(String namespaceName, String kafkaClusterName) {
+        return kubeClient().listPodNames(namespaceName, KafkaResource.getLabelSelector(kafkaClusterName, StrimziPodSetResource.getBrokerComponentName(kafkaClusterName)));
     }
+
     public static void waitUntilSuppliersAreMatching(final Supplier<?> sup, final Supplier<?> anotherSup) {
         TestUtils.waitFor(sup.get() + " is matching with" + anotherSup.get(), TestConstants.GLOBAL_POLL_INTERVAL,
                 TestConstants.GLOBAL_STATUS_TIMEOUT, () -> sup.get().equals(anotherSup.get()));

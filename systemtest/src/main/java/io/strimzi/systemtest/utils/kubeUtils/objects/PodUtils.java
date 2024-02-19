@@ -316,10 +316,10 @@ public class PodUtils {
      */
     public static List<Pod> getKafkaClusterPods(final TestStorage testStorage) {
         List<Pod> kafkaClusterPods = kubeClient(testStorage.getNamespaceName())
-            .listPodsByPrefixInName(testStorage.getKafkaStatefulSetName());
+            .listPodsByPrefixInName(testStorage.getBrokerComponentName());
         // zk pods
         kafkaClusterPods.addAll(kubeClient(testStorage.getNamespaceName())
-            .listPodsByPrefixInName(testStorage.getZookeeperStatefulSetName()));
+            .listPodsByPrefixInName(testStorage.getControllerComponentName()));
         // eo pod
         kafkaClusterPods.addAll(kubeClient(testStorage.getNamespaceName())
             .listPodsByPrefixInName(testStorage.getEoDeploymentName()));

@@ -17,11 +17,14 @@ import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
+import io.strimzi.systemtest.resources.NodePoolsConverter;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.resources.crd.StrimziPodSetResource;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
@@ -54,7 +57,7 @@ class RecoveryST extends AbstractST {
     @IsolatedTest("We need for each test case its own Cluster Operator")
     void testRecoveryFromKafkaStrimziPodSetDeletion() {
         // kafka cluster already deployed
-        String kafkaName = KafkaResource.getStrimziPodSetName(sharedClusterName);
+        String kafkaName = StrimziPodSetResource.getBrokerComponentName(sharedClusterName);
         String kafkaUid = StrimziPodSetUtils.getStrimziPodSetUID(Environment.TEST_SUITE_NAMESPACE, kafkaName);
 
         kubeClient().getClient().apps().deployments().inNamespace(clusterOperator.getDeploymentNamespace()).withName(clusterOperator.getClusterOperatorName()).withTimeoutInMillis(600_000L).scale(0);
@@ -65,7 +68,7 @@ class RecoveryST extends AbstractST {
 
         LOGGER.info("Waiting for recovery {}", kafkaName);
         StrimziPodSetUtils.waitForStrimziPodSetRecovery(Environment.TEST_SUITE_NAMESPACE, kafkaName, kafkaUid);
-        StrimziPodSetUtils.waitForAllStrimziPodSetAndPodsReady(Environment.TEST_SUITE_NAMESPACE, kafkaName, KafkaResources.kafkaComponentName(sharedClusterName), KAFKA_REPLICAS);
+        StrimziPodSetUtils.waitForAllStrimziPodSetAndPodsReady(Environment.TEST_SUITE_NAMESPACE, sharedClusterName, kafkaName, KAFKA_REPLICAS);
     }
 
     @IsolatedTest("We need for each test case its own Cluster Operator")
@@ -83,7 +86,7 @@ class RecoveryST extends AbstractST {
 
         LOGGER.info("Waiting for recovery {}", zookeeperName);
         StrimziPodSetUtils.waitForStrimziPodSetRecovery(Environment.TEST_SUITE_NAMESPACE, zookeeperName, zookeeperUid);
-        StrimziPodSetUtils.waitForAllStrimziPodSetAndPodsReady(Environment.TEST_SUITE_NAMESPACE, zookeeperName, zookeeperName, ZOOKEEPER_REPLICAS);
+        StrimziPodSetUtils.waitForAllStrimziPodSetAndPodsReady(Environment.TEST_SUITE_NAMESPACE, sharedClusterName, zookeeperName, ZOOKEEPER_REPLICAS);
     }
 
     @IsolatedTest("We need for each test case its own Cluster Operator")
@@ -167,8 +170,8 @@ class RecoveryST extends AbstractST {
      */
     @IsolatedTest("We need for each test case its own Cluster Operator")
     void testRecoveryFromImpossibleMemoryRequest() {
-        final String kafkaSsName = KafkaResource.getStrimziPodSetName(sharedClusterName);
-        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(sharedClusterName, KafkaResources.kafkaComponentName(sharedClusterName));
+        final String kafkaSsName = KafkaResource.getStrimziPodSetName(sharedClusterName, KafkaNodePoolResource.getBrokerPoolName(sharedClusterName));
+        final LabelSelector brokerSelector = KafkaResource.getLabelSelector(sharedClusterName, kafkaSsName);
         final Map<String, Quantity> requests = new HashMap<>(1);
 
         requests.put("memory", new Quantity("465458732Gi"));
@@ -177,7 +180,7 @@ class RecoveryST extends AbstractST {
             .build();
 
         if (Environment.isKafkaNodePoolsEnabled()) {
-            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(KafkaResource.getNodePoolName(sharedClusterName), knp ->
+            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(KafkaNodePoolResource.getBrokerPoolName(sharedClusterName), knp ->
                 knp.getSpec().setResources(resourceReq), Environment.TEST_SUITE_NAMESPACE);
         } else {
             KafkaResource.replaceKafkaResourceInSpecificNamespace(sharedClusterName, k -> k.getSpec().getKafka().setResources(resourceReq), Environment.TEST_SUITE_NAMESPACE);
@@ -190,13 +193,13 @@ class RecoveryST extends AbstractST {
         resourceReq.setRequests(requests);
 
         if (Environment.isKafkaNodePoolsEnabled()) {
-            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(KafkaResource.getNodePoolName(sharedClusterName), knp ->
+            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(KafkaNodePoolResource.getBrokerPoolName(sharedClusterName), knp ->
                 knp.getSpec().setResources(resourceReq), Environment.TEST_SUITE_NAMESPACE);
         } else {
             KafkaResource.replaceKafkaResourceInSpecificNamespace(sharedClusterName, k -> k.getSpec().getKafka().setResources(resourceReq), Environment.TEST_SUITE_NAMESPACE);
         }
 
-        RollingUpdateUtils.waitForComponentAndPodsReady(Environment.TEST_SUITE_NAMESPACE, kafkaSelector, KAFKA_REPLICAS);
+        RollingUpdateUtils.waitForComponentAndPodsReady(Environment.TEST_SUITE_NAMESPACE, brokerSelector, KAFKA_REPLICAS);
         KafkaUtils.waitForKafkaReady(Environment.TEST_SUITE_NAMESPACE, sharedClusterName);
     }
 
@@ -218,22 +221,21 @@ class RecoveryST extends AbstractST {
     @IsolatedTest
     @KRaftNotSupported("Zookeeper is not supported by KRaft mode and is used in this test class")
     void testRecoveryFromKafkaAndZookeeperPodDeletion() {
-        final String kafkaName = KafkaResources.kafkaComponentName(sharedClusterName);
-        final String kafkaStrimziPodSet = KafkaResource.getStrimziPodSetName(sharedClusterName);
+        final String kafkaStrimziPodSet = StrimziPodSetResource.getBrokerComponentName(sharedClusterName);
         final String zkName = KafkaResources.zookeeperComponentName(sharedClusterName);
 
-        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(sharedClusterName, kafkaName);
-        final LabelSelector zkSelector = KafkaResource.getLabelSelector(sharedClusterName, zkName);
+        final LabelSelector brokerSelector = KafkaResource.getLabelSelector(sharedClusterName, kafkaStrimziPodSet);
+        final LabelSelector controllerSelector = KafkaResource.getLabelSelector(sharedClusterName, zkName);
 
         LOGGER.info("Deleting most of the Kafka and ZK Pods");
-        List<Pod> kafkaPodList = kubeClient().listPods(kafkaSelector);
-        List<Pod> zkPodList = kubeClient().listPods(zkSelector);
+        List<Pod> kafkaPodList = kubeClient().listPods(brokerSelector);
+        List<Pod> zkPodList = kubeClient().listPods(controllerSelector);
 
         kafkaPodList.subList(0, kafkaPodList.size() - 1).forEach(pod -> kubeClient().deletePod(pod));
         zkPodList.subList(0, zkPodList.size() - 1).forEach(pod -> kubeClient().deletePod(pod));
 
-        StrimziPodSetUtils.waitForAllStrimziPodSetAndPodsReady(Environment.TEST_SUITE_NAMESPACE, kafkaStrimziPodSet, kafkaName, KAFKA_REPLICAS);
-        StrimziPodSetUtils.waitForAllStrimziPodSetAndPodsReady(Environment.TEST_SUITE_NAMESPACE, zkName, zkName, ZOOKEEPER_REPLICAS);
+        StrimziPodSetUtils.waitForAllStrimziPodSetAndPodsReady(Environment.TEST_SUITE_NAMESPACE, sharedClusterName, kafkaStrimziPodSet, KAFKA_REPLICAS);
+        StrimziPodSetUtils.waitForAllStrimziPodSetAndPodsReady(Environment.TEST_SUITE_NAMESPACE, sharedClusterName, zkName, ZOOKEEPER_REPLICAS);
         KafkaUtils.waitForKafkaReady(Environment.TEST_SUITE_NAMESPACE, sharedClusterName);
     }
 
@@ -247,6 +249,12 @@ class RecoveryST extends AbstractST {
 
         sharedClusterName = generateRandomNameOfKafka("recovery-cluster");
 
+        resourceManager.createResourceWithWait(
+            NodePoolsConverter.convertNodePoolsIfNeeded(
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(Environment.TEST_SUITE_NAMESPACE, KafkaNodePoolResource.getBrokerPoolName(sharedClusterName), sharedClusterName, 3).build(),
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(Environment.TEST_SUITE_NAMESPACE, KafkaNodePoolResource.getControllerPoolName(sharedClusterName), sharedClusterName, 3).build()
+            )
+        );
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(sharedClusterName, KAFKA_REPLICAS).build());
         resourceManager.createResourceWithWait(KafkaBridgeTemplates.kafkaBridge(sharedClusterName, KafkaResources.plainBootstrapAddress(sharedClusterName), 1).build());
     }

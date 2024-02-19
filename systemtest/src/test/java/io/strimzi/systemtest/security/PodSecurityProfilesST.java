@@ -24,13 +24,16 @@ import io.strimzi.systemtest.enums.PodSecurityProfile;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.NamespaceManager;
+import io.strimzi.systemtest.resources.NodePoolsConverter;
 import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectorTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaMirrorMaker2Templates;
 import io.strimzi.systemtest.templates.crd.KafkaMirrorMakerTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
@@ -111,6 +114,18 @@ public class PodSecurityProfilesST extends AbstractST {
         // 1 source Kafka Cluster, 2 target Kafka Cluster, 1 for MM1 and MM2 each having different target Kafka Cluster,
 
         LOGGER.info("Deploy Kafka Clusters resources");
+        resourceManager.createResourceWithWait(
+            NodePoolsConverter.convertNodePoolsIfNeeded(
+                KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 1).build(),
+                KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 1).build(),
+
+                KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), KafkaNodePoolResource.getBrokerPoolName(mm1TargetClusterName), mm1TargetClusterName, 1).build(),
+                KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), KafkaNodePoolResource.getControllerPoolName(mm1TargetClusterName), mm1TargetClusterName, 1).build(),
+
+                KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), KafkaNodePoolResource.getBrokerPoolName(mm2TargetClusterName), mm2TargetClusterName, 1).build(),
+                KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), KafkaNodePoolResource.getControllerPoolName(mm2TargetClusterName), mm2TargetClusterName, 1).build()
+            )
+        );
         resourceManager.createResourceWithWait(
             KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 1).build(),
             KafkaTemplates.kafkaEphemeral(mm1TargetClusterName, 1).build(),
@@ -235,8 +250,8 @@ public class PodSecurityProfilesST extends AbstractST {
             .runInstallation();
     }
 
-    private void verifyPodAndContainerSecurityContext(final Iterable<? extends Pod> kafkaPods) {
-        for (final Pod pod : kafkaPods) {
+    private void verifyPodAndContainerSecurityContext(final Iterable<? extends Pod> brokerPods) {
+        for (final Pod pod : brokerPods) {
             // verify Container SecurityContext
             if (pod.getSpec().getContainers() != null) {
                 verifyContainerSecurityContext(pod.getSpec().getContainers());

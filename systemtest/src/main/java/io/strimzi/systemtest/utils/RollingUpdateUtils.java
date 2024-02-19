@@ -7,7 +7,6 @@ package io.strimzi.systemtest.utils;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.strimzi.api.kafka.model.connect.KafkaConnect;
 import io.strimzi.api.kafka.model.kafka.Kafka;
-import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.TestConstants;
@@ -16,6 +15,7 @@ import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.resources.crd.StrimziPodSetResource;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaMirrorMaker2Utils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
@@ -71,10 +71,7 @@ public class RollingUpdateUtils {
      * @return The snapshot of the  component (StrimziPodSet, Deployment) after rolling update with Uid for every pod
      */
     public static Map<String, String> waitTillComponentHasRolled(String namespaceName, LabelSelector selector, Map<String, String> snapshot) {
-        String clusterName = selector.getMatchLabels().get(Labels.STRIMZI_CLUSTER_LABEL);
-        String componentName = selector.getMatchLabels().get(Labels.STRIMZI_NAME_LABEL);
-
-        componentName = componentName == null ? clusterName + "-" + selector.getMatchLabels().get(Labels.STRIMZI_POOL_NAME_LABEL) : componentName;
+        String componentName = getComponentNameFromLabelSelector(selector);
 
         LOGGER.info("Waiting for component matching {} -> {}/{} rolling update", selector, namespaceName, componentName);
         TestUtils.waitFor("rolling update of component: " + namespaceName + "/" + componentName,
@@ -93,9 +90,7 @@ public class RollingUpdateUtils {
 
     public static Map<String, String> waitTillComponentHasRolledAndPodsReady(String namespaceName, LabelSelector selector, int expectedPods, Map<String, String> snapshot) {
         String clusterName = selector.getMatchLabels().get(Labels.STRIMZI_CLUSTER_LABEL);
-        String componentName = selector.getMatchLabels().get(Labels.STRIMZI_NAME_LABEL);
-
-        componentName = componentName == null ? clusterName + "-" + selector.getMatchLabels().get(Labels.STRIMZI_POOL_NAME_LABEL) : componentName;
+        String componentName = getComponentNameFromLabelSelector(selector);
 
         waitTillComponentHasRolled(namespaceName, selector, snapshot);
 
@@ -163,9 +158,7 @@ public class RollingUpdateUtils {
 
     public static void waitForComponentAndPodsReady(String namespaceName, LabelSelector selector, int expectedPods) {
         final String clusterName = selector.getMatchLabels().get(Labels.STRIMZI_CLUSTER_LABEL);
-        String componentName = selector.getMatchLabels().get(Labels.STRIMZI_NAME_LABEL);
-
-        componentName = componentName == null ? clusterName + "-" + selector.getMatchLabels().get(Labels.STRIMZI_POOL_NAME_LABEL) : componentName;
+        String componentName = getComponentNameFromLabelSelector(selector);
 
         LOGGER.info("Waiting for {} Pod(s) of {}/{} to be ready", expectedPods, namespaceName, componentName);
 
@@ -219,23 +212,37 @@ public class RollingUpdateUtils {
         return PodUtils.podSnapshot(namespaceName, selector);
     }
 
-    public static void waitForNoKafkaAndZKRollingUpdate(String namespaceName, String clusterName, Map<String, String> kafkaPods) {
+    public static void waitForNoKafkaAndZKRollingUpdate(String namespaceName, String clusterName, Map<String, String> brokerPods) {
         int[] i = {0};
 
-        LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaComponentName(clusterName));
+        LabelSelector brokerSelector = KafkaResource.getLabelSelector(clusterName, StrimziPodSetResource.getBrokerComponentName(clusterName));
 
         TestUtils.waitFor("Kafka Pods to remain stable and rolling update not to be triggered", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
             () -> {
-                boolean kafkaRolled = componentHasRolled(namespaceName, kafkaSelector, kafkaPods);
+                boolean kafkaRolled = componentHasRolled(namespaceName, brokerSelector, brokerPods);
 
                 if (!kafkaRolled) {
                     LOGGER.info("Kafka Pods did not roll. Must remain stable for: {} second(s)", TestConstants.GLOBAL_RECONCILIATION_COUNT - i[0]);
                 } else {
-                    throw new RuntimeException(kafkaPods.toString() + " Pods are rolling!");
+                    throw new RuntimeException(brokerPods.toString() + " Pods are rolling!");
                 }
 
                 return i[0]++ == TestConstants.GLOBAL_RECONCILIATION_COUNT;
             }
         );
+    }
+
+    private static String getComponentNameFromLabelSelector(LabelSelector labelSelector) {
+        String componentName;
+
+        if (labelSelector.getMatchLabels().get(Labels.STRIMZI_NAME_LABEL) != null) {
+            componentName = labelSelector.getMatchLabels().get(Labels.STRIMZI_NAME_LABEL);
+        } else if (labelSelector.getMatchLabels().get(Labels.STRIMZI_CONTROLLER_NAME_LABEL) != null) {
+            componentName = labelSelector.getMatchLabels().get(Labels.STRIMZI_CONTROLLER_NAME_LABEL);
+        } else {
+            componentName = labelSelector.getMatchLabels().get(Labels.STRIMZI_CLUSTER_LABEL) + "-" + labelSelector.getMatchLabels().get(Labels.STRIMZI_POOL_NAME_LABEL);
+        }
+
+        return componentName;
     }
 }

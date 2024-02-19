@@ -39,14 +39,18 @@ import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.ComponentType;
 import io.strimzi.systemtest.resources.NamespaceManager;
+import io.strimzi.systemtest.resources.NodePoolsConverter;
 import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.resources.crd.StrimziPodSetResource;
 import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectorTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaMirrorMaker2Templates;
+import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
@@ -186,7 +190,6 @@ public class MetricsST extends AbstractST {
         assertMetricValueCount(kafkaCollector, "kafka_server_replicamanager_leadercount", 3);
         assertMetricCountHigherThan(kafkaCollector, "kafka_server_replicamanager_partitioncount", 2);
         assertMetricValue(kafkaCollector, "kafka_server_replicamanager_underreplicatedpartitions", 0);
-        assertMetricValue(kafkaCollector, "kafka_controller_kafkacontroller_activecontrollercount", 1);
     }
 
     /**
@@ -295,8 +298,8 @@ public class MetricsST extends AbstractST {
     @Tag(INTERNAL_CLIENTS_USED)
     void testKafkaExporterMetrics() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
-        final String kafkaStrimziPodSetName = KafkaResources.kafkaComponentName(kafkaClusterFirstName);
-        final LabelSelector kafkaPodsSelector = KafkaResource.getLabelSelector(kafkaClusterFirstName, kafkaStrimziPodSetName);
+        final String kafkaStrimziPodSetName = StrimziPodSetResource.getBrokerComponentName(kafkaClusterFirstName);
+        final LabelSelector brokerPodsSelector = KafkaResource.getLabelSelector(kafkaClusterFirstName, kafkaStrimziPodSetName);
 
         KafkaClients kafkaClients = new KafkaClientsBuilder()
             .withTopicName(kafkaExporterTopicName)
@@ -318,7 +321,7 @@ public class MetricsST extends AbstractST {
             assertThat(String.format("metric %s doesn't contain correct value", pattern), values.stream().mapToDouble(i -> i).sum(), is(7.0));
         }
 
-        kubeClient().listPods(namespaceFirst, kafkaPodsSelector).forEach(pod -> {
+        kubeClient().listPods(namespaceFirst, brokerPodsSelector).forEach(pod -> {
             String address = pod.getMetadata().getName() + "." + kafkaClusterFirstName + "-kafka-brokers." + namespaceFirst + ".svc";
             Pattern pattern = Pattern.compile("kafka_broker_info\\{address=\"" + address + ".*\",.*} ([\\d])");
             ArrayList<Double> values = kafkaExporterCollector.waitForSpecificMetricAndCollect(pattern);
@@ -401,8 +404,7 @@ public class MetricsST extends AbstractST {
     @ParallelTest
     void testClusterOperatorMetrics() {
         // Expected PodSet counts per component
-        int zooPodSetCount = Environment.isKRaftModeEnabled() ? 0 : 1;
-        int kafkaPodSetCount = 1;
+        int podSetCount = 2;
 
         assertCoMetricResourceNotNull(clusterOperatorCollector, "strimzi_reconciliations_periodical_total", Kafka.RESOURCE_KIND);
         assertCoMetricResourceNotNull(clusterOperatorCollector, "strimzi_reconciliations_duration_seconds_count", Kafka.RESOURCE_KIND);
@@ -425,7 +427,7 @@ public class MetricsST extends AbstractST {
 
         // check StrimziPodSet metrics in CO
         assertMetricCountHigherThan(clusterOperatorCollector, getResourceMetricPattern(StrimziPodSet.RESOURCE_KIND, namespaceFirst), 0);
-        assertCoMetricResources(clusterOperatorCollector, StrimziPodSet.RESOURCE_KIND, namespaceSecond, zooPodSetCount + kafkaPodSetCount);
+        assertCoMetricResources(clusterOperatorCollector, StrimziPodSet.RESOURCE_KIND, namespaceSecond, podSetCount);
 
         assertCoMetricResourceNotNull(clusterOperatorCollector, "strimzi_reconciliations_duration_seconds_bucket", StrimziPodSet.RESOURCE_KIND);
         assertCoMetricResourceNotNull(clusterOperatorCollector, "strimzi_reconciliations_duration_seconds_count", StrimziPodSet.RESOURCE_KIND);
@@ -674,7 +676,7 @@ public class MetricsST extends AbstractST {
 
         PodUtils.verifyThatRunningPodsAreStable(namespaceSecond, kafkaClusterSecondName);
 
-        for (String cmName : StUtils.getKafkaConfigurationConfigMaps(kafkaClusterSecondName, 1)) {
+        for (String cmName : StUtils.getKafkaConfigurationConfigMaps(namespaceSecond, kafkaClusterSecondName)) {
             ConfigMap actualCm = kubeClient(namespaceSecond).getConfigMap(cmName);
             assertThat(actualCm.getData().get(TestConstants.METRICS_CONFIG_JSON_NAME), is(metricsConfigJson));
         }
@@ -691,7 +693,7 @@ public class MetricsST extends AbstractST {
         kubeClient().updateConfigMapInNamespace(namespaceSecond, externalMetricsUpdatedCm);
         PodUtils.verifyThatRunningPodsAreStable(namespaceSecond, kafkaClusterSecondName);
 
-        for (String cmName : StUtils.getKafkaConfigurationConfigMaps(kafkaClusterSecondName, 1)) {
+        for (String cmName : StUtils.getKafkaConfigurationConfigMaps(namespaceSecond, kafkaClusterSecondName)) {
             ConfigMap actualCm = kubeClient(namespaceSecond).getConfigMap(cmName);
             assertThat(actualCm.getData().get(TestConstants.METRICS_CONFIG_JSON_NAME), is(metricsConfigJson.replace("true", "false")));
         }
@@ -715,6 +717,14 @@ public class MetricsST extends AbstractST {
         cluster.setNamespace(namespaceFirst);
 
         // create resources without wait to deploy them simultaneously
+        resourceManager.createResourceWithWait(
+            NodePoolsConverter.convertNodePoolsIfNeeded(
+                KafkaNodePoolTemplates.brokerPool(namespaceFirst, KafkaNodePoolResource.getBrokerPoolName(kafkaClusterFirstName), kafkaClusterFirstName, 3).build(),
+                KafkaNodePoolTemplates.controllerPool(namespaceFirst, KafkaNodePoolResource.getControllerPoolName(kafkaClusterFirstName), kafkaClusterFirstName, 3).build(),
+                KafkaNodePoolTemplates.brokerPool(namespaceSecond, KafkaNodePoolResource.getBrokerPoolName(kafkaClusterSecondName), kafkaClusterSecondName, 1).build(),
+                KafkaNodePoolTemplates.controllerPool(namespaceSecond, KafkaNodePoolResource.getControllerPoolName(kafkaClusterSecondName), kafkaClusterSecondName, 1).build()
+            )
+        );
         resourceManager.createResourceWithoutWait(
             // Kafka with CruiseControl and metrics
             KafkaTemplates.kafkaWithMetricsAndCruiseControlWithMetrics(kafkaClusterFirstName, namespaceFirst, 3, 3)

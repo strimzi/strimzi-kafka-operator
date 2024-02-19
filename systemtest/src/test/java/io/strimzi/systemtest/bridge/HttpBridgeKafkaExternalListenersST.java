@@ -24,11 +24,13 @@ import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClientsBuilder;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
+import io.strimzi.systemtest.resources.NodePoolsConverter;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.kubernetes.ServiceResource;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
@@ -57,7 +59,7 @@ public class HttpBridgeKafkaExternalListenersST extends AbstractST {
 
     @ParallelNamespaceTest("Creating a node port service and thus avoiding 409 error (service already exists)")
     void testScramShaAuthWithWeirdUsername() {
-        final TestStorage ts = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         // Create weird named user with . and more than 64 chars -> SCRAM-SHA
         final String weirdUserName = "jjglmahyijoambryleyxjjglmahy.ijoambryleyxjjglmahyijoambryleyxasd.asdasidioiqweioqiweooioqieioqieoqieooi";
 
@@ -69,7 +71,7 @@ public class HttpBridgeKafkaExternalListenersST extends AbstractST {
         // Initialize CertSecretSource with certificate and secret names for consumer
         CertSecretSource certSecret = new CertSecretSource();
         certSecret.setCertificate("ca.crt");
-        certSecret.setSecretName(KafkaResources.clusterCaCertificateSecretName(ts.getClusterName()));
+        certSecret.setSecretName(KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName()));
 
         KafkaBridgeSpec bridgeSpec = new KafkaBridgeSpecBuilder()
             .withNewKafkaClientAuthenticationScramSha512()
@@ -81,19 +83,19 @@ public class HttpBridgeKafkaExternalListenersST extends AbstractST {
             .endTls()
             .build();
 
-        testWeirdUsername(weirdUserName, new KafkaListenerAuthenticationScramSha512(), bridgeSpec, ts);
+        testWeirdUsername(weirdUserName, new KafkaListenerAuthenticationScramSha512(), bridgeSpec, testStorage);
     }
 
     @ParallelNamespaceTest("Creating a node port service and thus avoiding 409 error")
     void testTlsAuthWithWeirdUsername() {
-        final TestStorage ts = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         // Create weird named user with . and maximum of 64 chars -> TLS
         final String weirdUserName = "jjglmahyijoambryleyxjjglmahy.ijoambryleyxjjglmahyijoambryleyxasd";
 
         // Initialize CertSecretSource with certificate and secret names for consumer
         CertSecretSource certSecret = new CertSecretSource();
         certSecret.setCertificate("ca.crt");
-        certSecret.setSecretName(KafkaResources.clusterCaCertificateSecretName(ts.getClusterName()));
+        certSecret.setSecretName(KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName()));
 
         KafkaBridgeSpec bridgeSpec = new KafkaBridgeSpecBuilder()
             .withNewKafkaClientAuthenticationTls()
@@ -108,15 +110,22 @@ public class HttpBridgeKafkaExternalListenersST extends AbstractST {
             .endTls()
             .build();
 
-        testWeirdUsername(weirdUserName, new KafkaListenerAuthenticationTls(), bridgeSpec, ts);
+        testWeirdUsername(weirdUserName, new KafkaListenerAuthenticationTls(), bridgeSpec, testStorage);
     }
 
     @SuppressWarnings({"checkstyle:MethodLength"})
     private void testWeirdUsername(String weirdUserName, KafkaListenerAuthentication auth,
-                                   KafkaBridgeSpec spec, TestStorage ts) {
-        resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(ts.getClusterName(), 3, 1)
+                                   KafkaBridgeSpec spec, TestStorage testStorage) {
+
+        resourceManager.createResourceWithWait(
+            NodePoolsConverter.convertNodePoolsIfNeeded(
+                KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
+                KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 1).build()
+            )
+        );
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3, 1)
             .editMetadata()
-                .withNamespace(ts.getNamespaceName())
+                .withNamespace(testStorage.getNamespaceName())
             .endMetadata()
             .editSpec()
                 .editKafka()
@@ -139,40 +148,40 @@ public class HttpBridgeKafkaExternalListenersST extends AbstractST {
             .build());
 
         BridgeClients kafkaBridgeClientJob = new BridgeClientsBuilder()
-            .withProducerName(ts.getClusterName() + "-" + producerName)
-            .withConsumerName(ts.getClusterName() + "-" + consumerName)
-            .withBootstrapAddress(KafkaBridgeResources.serviceName(ts.getClusterName()))
-            .withTopicName(ts.getTopicName())
-            .withMessageCount(ts.getMessageCount())
+            .withProducerName(testStorage.getClusterName() + "-" + producerName)
+            .withConsumerName(testStorage.getClusterName() + "-" + consumerName)
+            .withBootstrapAddress(KafkaBridgeResources.serviceName(testStorage.getClusterName()))
+            .withTopicName(testStorage.getTopicName())
+            .withMessageCount(testStorage.getMessageCount())
             .withPort(TestConstants.HTTP_BRIDGE_DEFAULT_PORT)
-            .withNamespaceName(ts.getNamespaceName())
+            .withNamespaceName(testStorage.getNamespaceName())
             .build();
 
         // Create topic
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(ts).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage).build());
 
         // Create user
         if (auth.getType().equals(TestConstants.TLS_LISTENER_DEFAULT_NAME)) {
-            resourceManager.createResourceWithWait(KafkaUserTemplates.tlsUser(ts.getNamespaceName(), ts.getClusterName(), weirdUserName)
+            resourceManager.createResourceWithWait(KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), testStorage.getClusterName(), weirdUserName)
                 .editMetadata()
-                    .withNamespace(ts.getNamespaceName())
+                    .withNamespace(testStorage.getNamespaceName())
                 .endMetadata()
                 .build());
         } else {
-            resourceManager.createResourceWithWait(KafkaUserTemplates.scramShaUser(ts.getNamespaceName(), ts.getClusterName(), weirdUserName)
+            resourceManager.createResourceWithWait(KafkaUserTemplates.scramShaUser(testStorage.getNamespaceName(), testStorage.getClusterName(), weirdUserName)
                 .editMetadata()
-                    .withNamespace(ts.getNamespaceName())
+                    .withNamespace(testStorage.getNamespaceName())
                 .endMetadata()
                 .build());
         }
 
         // Deploy http bridge
-        resourceManager.createResourceWithWait(KafkaBridgeTemplates.kafkaBridge(ts.getClusterName(), KafkaResources.tlsBootstrapAddress(ts.getClusterName()), 1)
+        resourceManager.createResourceWithWait(KafkaBridgeTemplates.kafkaBridge(testStorage.getClusterName(), KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()), 1)
                 .editMetadata()
-                    .withNamespace(ts.getNamespaceName())
+                    .withNamespace(testStorage.getNamespaceName())
                 .endMetadata()
                 .withNewSpecLike(spec)
-                    .withBootstrapServers(KafkaResources.tlsBootstrapAddress(ts.getClusterName()))
+                    .withBootstrapServers(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
                     .withNewHttp(TestConstants.HTTP_BRIDGE_DEFAULT_PORT)
                 .withNewConsumer()
                     .addToConfig(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
@@ -180,14 +189,14 @@ public class HttpBridgeKafkaExternalListenersST extends AbstractST {
             .endSpec()
             .build());
 
-        final Service service = KafkaBridgeUtils.createBridgeNodePortService(ts.getClusterName(), ts.getNamespaceName(), BRIDGE_EXTERNAL_SERVICE);
-        ServiceResource.createServiceResource(service, ts.getNamespaceName());
+        final Service service = KafkaBridgeUtils.createBridgeNodePortService(testStorage.getClusterName(), testStorage.getNamespaceName(), BRIDGE_EXTERNAL_SERVICE);
+        ServiceResource.createServiceResource(service, testStorage.getNamespaceName());
 
         resourceManager.createResourceWithWait(kafkaBridgeClientJob.consumerStrimziBridge());
 
         final String kafkaProducerExternalName = "kafka-producer-external" + new Random().nextInt(Integer.MAX_VALUE);
 
-        final List<ListenerStatus> listenerStatusList = KafkaResource.kafkaClient().inNamespace(ts.getNamespaceName()).withName(ts.getClusterName()).get().getStatus().getListeners();
+        final List<ListenerStatus> listenerStatusList = KafkaResource.kafkaClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus().getListeners();
         final String externalBootstrapServers = listenerStatusList.stream().filter(listener -> listener.getName().equals(TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME))
             .findFirst()
             .orElseThrow(RuntimeException::new)
@@ -196,9 +205,9 @@ public class HttpBridgeKafkaExternalListenersST extends AbstractST {
         final KafkaClients externalKafkaProducer = new KafkaClientsBuilder()
             .withProducerName(kafkaProducerExternalName)
             .withBootstrapAddress(externalBootstrapServers)
-            .withNamespaceName(ts.getNamespaceName())
-            .withTopicName(ts.getTopicName())
-            .withMessageCount(ts.getMessageCount())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
+            .withMessageCount(testStorage.getMessageCount())
             .withUsername(weirdUserName)
             // we disable ssl.endpoint.identification.algorithm for external listener (i.e., NodePort),
             // because TLS hostname verification is not supported on such listener type.
@@ -207,15 +216,15 @@ public class HttpBridgeKafkaExternalListenersST extends AbstractST {
 
         if (auth.getType().equals(TestConstants.TLS_LISTENER_DEFAULT_NAME)) {
             // tls producer
-            resourceManager.createResourceWithWait(externalKafkaProducer.producerTlsStrimzi(ts.getClusterName()));
+            resourceManager.createResourceWithWait(externalKafkaProducer.producerTlsStrimzi(testStorage.getClusterName()));
         } else {
             // scram-sha producer
-            resourceManager.createResourceWithWait(externalKafkaProducer.producerScramShaTlsStrimzi(ts.getClusterName()));
+            resourceManager.createResourceWithWait(externalKafkaProducer.producerScramShaTlsStrimzi(testStorage.getClusterName()));
         }
 
-        ClientUtils.waitForClientSuccess(kafkaProducerExternalName, ts.getNamespaceName(), ts.getMessageCount());
+        ClientUtils.waitForClientSuccess(kafkaProducerExternalName, testStorage.getNamespaceName(), testStorage.getMessageCount());
 
-        ClientUtils.waitForClientSuccess(ts.getClusterName() + "-" + consumerName, ts.getNamespaceName(), ts.getMessageCount());
+        ClientUtils.waitForClientSuccess(testStorage.getClusterName() + "-" + consumerName, testStorage.getNamespaceName(), testStorage.getMessageCount());
     }
 
     @BeforeAll

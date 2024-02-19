@@ -32,6 +32,7 @@ import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectorTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
@@ -85,15 +86,16 @@ public class AbstractUpgradeST extends AbstractST {
     protected File kafkaConnectYaml;
 
     protected final String clusterName = "my-cluster";
+    protected final String poolName = "kafka";
 
-    protected Map<String, String> zkPods;
-    protected Map<String, String> kafkaPods;
+    protected Map<String, String> controllerPods;
+    protected Map<String, String> brokerPods;
     protected Map<String, String> eoPods;
     protected Map<String, String> coPods;
     protected Map<String, String> connectPods;
 
-    protected final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaComponentName(clusterName));
-    protected final LabelSelector zkSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.zookeeperComponentName(clusterName));
+    protected final LabelSelector brokerSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaComponentName(clusterName));
+    protected final LabelSelector controllerSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.zookeeperComponentName(clusterName));
     protected final LabelSelector eoSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.entityOperatorDeploymentName(clusterName));
     protected final LabelSelector coSelector = new LabelSelectorBuilder().withMatchLabels(Map.of(Labels.STRIMZI_KIND_LABEL, "cluster-operator")).build();
     protected final LabelSelector connectLabelSelector = KafkaConnectResource.getLabelSelector(clusterName, KafkaConnectResources.componentName(clusterName));
@@ -126,8 +128,8 @@ public class AbstractUpgradeST extends AbstractST {
 
     protected void makeSnapshots() {
         coPods = DeploymentUtils.depSnapshot(TestConstants.CO_NAMESPACE, ResourceManager.getCoDeploymentName());
-        zkPods = PodUtils.podSnapshot(TestConstants.CO_NAMESPACE, zkSelector);
-        kafkaPods = PodUtils.podSnapshot(TestConstants.CO_NAMESPACE, kafkaSelector);
+        controllerPods = PodUtils.podSnapshot(TestConstants.CO_NAMESPACE, controllerSelector);
+        brokerPods = PodUtils.podSnapshot(TestConstants.CO_NAMESPACE, brokerSelector);
         eoPods = DeploymentUtils.depSnapshot(TestConstants.CO_NAMESPACE, KafkaResources.entityOperatorDeploymentName(clusterName));
         connectPods = PodUtils.podSnapshot(TestConstants.CO_NAMESPACE, connectLabelSelector);
     }
@@ -176,7 +178,7 @@ public class AbstractUpgradeST extends AbstractST {
                 LOGGER.info("Set Kafka version to " + kafkaVersionFromProcedure);
                 cmdKubeClient().patchResource(getResourceApiVersion(Kafka.RESOURCE_PLURAL), clusterName, "/spec/kafka/version", kafkaVersionFromProcedure);
                 LOGGER.info("Waiting for Kafka rolling update to finish");
-                kafkaPods = RollingUpdateUtils.waitTillComponentHasRolled(TestConstants.CO_NAMESPACE, kafkaSelector, 3, kafkaPods);
+                brokerPods = RollingUpdateUtils.waitTillComponentHasRolled(TestConstants.CO_NAMESPACE, brokerSelector, 3, brokerPods);
             }
 
             String logMessageVersion = versionModificationData.getProcedures().getLogMessageVersion();
@@ -197,7 +199,7 @@ public class AbstractUpgradeST extends AbstractST {
                 if ((currentInterBrokerProtocol != null && !currentInterBrokerProtocol.equals(interBrokerProtocolVersion)) ||
                         (currentLogMessageFormat != null && !currentLogMessageFormat.isEmpty() && !currentLogMessageFormat.equals(logMessageVersion))) {
                     LOGGER.info("Waiting for Kafka rolling update to finish");
-                    kafkaPods = RollingUpdateUtils.waitTillComponentHasRolled(TestConstants.CO_NAMESPACE, kafkaSelector, 3, kafkaPods);
+                    brokerPods = RollingUpdateUtils.waitTillComponentHasRolled(TestConstants.CO_NAMESPACE, brokerSelector, 3, brokerPods);
                 }
                 makeSnapshots();
             }
@@ -207,17 +209,17 @@ public class AbstractUpgradeST extends AbstractST {
                 LOGGER.info("Set Kafka version to " + kafkaVersionFromProcedure);
                 cmdKubeClient().patchResource(getResourceApiVersion(Kafka.RESOURCE_PLURAL), clusterName, "/spec/kafka/version", kafkaVersionFromProcedure);
                 LOGGER.info("Waiting for Kafka rolling update to finish");
-                kafkaPods = RollingUpdateUtils.waitTillComponentHasRolled(TestConstants.CO_NAMESPACE, kafkaSelector, kafkaPods);
+                brokerPods = RollingUpdateUtils.waitTillComponentHasRolled(TestConstants.CO_NAMESPACE, brokerSelector, brokerPods);
             }
         }
     }
 
     protected void logPodImages(String namespaceName) {
-        logPodImages(namespaceName, zkSelector, kafkaSelector, eoSelector, coSelector);
+        logPodImages(namespaceName, controllerSelector, brokerSelector, eoSelector, coSelector);
     }
 
     protected void logPodImagesWithConnect(String namespaceName) {
-        logPodImages(namespaceName, zkSelector, kafkaSelector, eoSelector, connectLabelSelector, coSelector);
+        logPodImages(namespaceName, controllerSelector, brokerSelector, eoSelector, connectLabelSelector, coSelector);
     }
 
     protected void logPodImages(String namespaceName, LabelSelector... labelSelectors) {
@@ -235,9 +237,9 @@ public class AbstractUpgradeST extends AbstractST {
 
     protected void waitForKafkaClusterRollingUpdate() {
         LOGGER.info("Waiting for ZK StrimziPodSet roll");
-        zkPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(TestConstants.CO_NAMESPACE, zkSelector, 3, zkPods);
+        controllerPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(TestConstants.CO_NAMESPACE, controllerSelector, 3, controllerPods);
         LOGGER.info("Waiting for Kafka StrimziPodSet roll");
-        kafkaPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(TestConstants.CO_NAMESPACE, kafkaSelector, 3, kafkaPods);
+        brokerPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(TestConstants.CO_NAMESPACE, brokerSelector, 3, brokerPods);
         LOGGER.info("Waiting for EO Deployment roll");
         // Check the TO and UO also got upgraded
         eoPods = DeploymentUtils.waitTillDepHasRolled(TestConstants.CO_NAMESPACE, KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoPods);
@@ -245,9 +247,9 @@ public class AbstractUpgradeST extends AbstractST {
 
     protected void waitForReadinessOfKafkaCluster() {
         LOGGER.info("Waiting for ZooKeeper StrimziPodSet");
-        RollingUpdateUtils.waitForComponentAndPodsReady(TestConstants.CO_NAMESPACE, zkSelector, 3);
+        RollingUpdateUtils.waitForComponentAndPodsReady(TestConstants.CO_NAMESPACE, controllerSelector, 3);
         LOGGER.info("Waiting for Kafka StrimziPodSet");
-        RollingUpdateUtils.waitForComponentAndPodsReady(TestConstants.CO_NAMESPACE, kafkaSelector, 3);
+        RollingUpdateUtils.waitForComponentAndPodsReady(TestConstants.CO_NAMESPACE, brokerSelector, 3);
         LOGGER.info("Waiting for EO Deployment");
         DeploymentUtils.waitForDeploymentAndPodsReady(TestConstants.CO_NAMESPACE, KafkaResources.entityOperatorDeploymentName(clusterName), 1);
     }
@@ -318,8 +320,8 @@ public class AbstractUpgradeST extends AbstractST {
             fail("There are no expected images");
         }
 
-        checkContainerImages(zkSelector, versionModificationData.getZookeeperImage());
-        checkContainerImages(kafkaSelector, versionModificationData.getKafkaImage());
+        checkContainerImages(controllerSelector, versionModificationData.getZookeeperImage());
+        checkContainerImages(brokerSelector, versionModificationData.getKafkaImage());
         checkContainerImages(eoSelector, versionModificationData.getTopicOperatorImage());
         checkContainerImages(eoSelector, 1, versionModificationData.getUserOperatorImage());
     }
@@ -455,6 +457,7 @@ public class AbstractUpgradeST extends AbstractST {
         if (!cmdKubeClient().getResources(getResourceApiVersion(Kafka.RESOURCE_PLURAL)).contains(clusterName)) {
             // Deploy a Kafka cluster
             if (upgradeData.getFromExamples().equals("HEAD")) {
+                resourceManager.createResourceWithWait(KafkaNodePoolTemplates.brokerPoolPersistentStorage(CO_NAMESPACE, poolName, clusterName, 3).build());
                 resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(clusterName, 3, 3)
                     .editSpec()
                         .editKafka()

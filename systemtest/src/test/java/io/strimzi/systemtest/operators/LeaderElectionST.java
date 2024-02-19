@@ -13,7 +13,6 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.operator.BundleResource;
 import io.strimzi.systemtest.resources.operator.specific.HelmResource;
-import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.annotations.IsolatedTest;
@@ -64,8 +63,6 @@ public class LeaderElectionST extends AbstractST {
     @IsolatedTest
     @Tag(ACCEPTANCE)
     void testLeaderElection() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
-
         // create CO with 2 replicas, wait for Deployment readiness and leader election
         clusterOperator = clusterOperator.defaultInstallation()
             .withExtensionContext(ResourceManager.getTestContext())
@@ -103,8 +100,6 @@ public class LeaderElectionST extends AbstractST {
     void testLeaderElectionDisabled() {
         // Currently there is no way how to disable LeaderElection when deploying CO via Helm (duplicated envs)
         assumeTrue(!Environment.isHelmInstall());
-
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
         // create CO with 1 replicas and with disabled leader election, wait for Deployment readiness
         clusterOperator = clusterOperator.defaultInstallation()
