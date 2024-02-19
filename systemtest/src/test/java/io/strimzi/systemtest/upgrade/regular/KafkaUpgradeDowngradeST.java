@@ -13,9 +13,7 @@ import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.StrimziPodSetResource;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
@@ -206,7 +204,7 @@ public class KafkaUpgradeDowngradeST extends AbstractUpgradeST {
                         .endKafka()
                     .endSpec();
             }
-            resourceManager.createResourceWithWait(KafkaNodePoolTemplates.brokerPoolPersistentStorage(TestConstants.CO_NAMESPACE, KafkaNodePoolResource.getBrokerPoolName(clusterName), clusterName, kafkaReplicas).build());
+            resourceManager.createResourceWithWait(KafkaNodePoolTemplates.brokerPoolPersistentStorage(TestConstants.CO_NAMESPACE, poolName, clusterName, kafkaReplicas).build());
             resourceManager.createResourceWithWait(kafka.build());
 
             // ##############################
@@ -302,7 +300,7 @@ public class KafkaUpgradeDowngradeST extends AbstractUpgradeST {
 
         LOGGER.info("Deployment of Kafka (" + newVersion.version() + ") complete");
 
-        PodUtils.verifyThatRunningPodsAreStable(TestConstants.CO_NAMESPACE, StrimziPodSetResource.getBrokerComponentName(clusterName));
+        PodUtils.verifyThatRunningPodsAreStable(TestConstants.CO_NAMESPACE, KafkaResources.kafkaComponentName(clusterName));
 
         // Extract the zookeeper version number from the jars in the lib directory
         zkResult = cmdKubeClient().execInPodContainer(KafkaResources.zookeeperPodName(clusterName, 0),
@@ -313,7 +311,8 @@ public class KafkaUpgradeDowngradeST extends AbstractUpgradeST {
                 " was expected", zkResult, is(newVersion.zookeeperVersion()));
 
         // Extract the Kafka version number from the jars in the lib directory
-        kafkaVersionResult = KafkaUtils.getVersionFromKafkaPodLibs(KafkaResource.getKafkaPodName(clusterName, KafkaNodePoolResource.getBrokerPoolName(clusterName), 0));
+        String brokerPodName = kubeClient().listPods(TestConstants.CO_NAMESPACE, brokerSelector).get(0).getMetadata().getName();
+        kafkaVersionResult = KafkaUtils.getVersionFromKafkaPodLibs(brokerPodName);
         LOGGER.info("Post-change Kafka version query returned: " + kafkaVersionResult);
 
         assertThat("Kafka container had version " + kafkaVersionResult + " where " + newVersion.version() +
@@ -339,7 +338,7 @@ public class KafkaUpgradeDowngradeST extends AbstractUpgradeST {
                 LOGGER.info("Kafka roll (log.message.format.version change) is complete");
             } else {
                 LOGGER.info("Cluster Operator already changed the configuration, there should be no rolling update");
-                PodUtils.verifyThatRunningPodsAreStable(TestConstants.CO_NAMESPACE, StrimziPodSetResource.getBrokerComponentName(clusterName));
+                PodUtils.verifyThatRunningPodsAreStable(TestConstants.CO_NAMESPACE, KafkaResources.kafkaComponentName(clusterName));
                 assertFalse(RollingUpdateUtils.componentHasRolled(TestConstants.CO_NAMESPACE, brokerSelector, brokerPods));
             }
         }
