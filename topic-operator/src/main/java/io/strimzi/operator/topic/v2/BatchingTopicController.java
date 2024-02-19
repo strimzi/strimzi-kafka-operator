@@ -62,6 +62,7 @@ import java.util.stream.Stream;
 
 import static io.strimzi.api.kafka.model.common.ReplicasChangeState.ONGOING;
 import static io.strimzi.api.kafka.model.common.ReplicasChangeState.PENDING;
+import static io.strimzi.operator.topic.v2.TopicOperatorUtil.hasReplicasChange;
 import static io.strimzi.operator.topic.v2.TopicOperatorUtil.isManaged;
 import static io.strimzi.operator.topic.v2.TopicOperatorUtil.isPaused;
 import static io.strimzi.operator.topic.v2.TopicOperatorUtil.startOperationTimer;
@@ -485,6 +486,7 @@ public class BatchingTopicController {
         LOGGER.traceOp("Reconciled batch of {} KafkaTopics", results.size());
     }
 
+    // check if an invalid replicas update was reverted by the user and a status update is required
     /* test */ void maybeResetReplicasChangeStatuses(PartitionedByError<ReconcilableTopic, CurrentState> currentStatesOrError) {
         if (config.cruiseControlEnabled()) {
             currentStatesOrError.ok().forEach(pair -> {
@@ -511,19 +513,19 @@ public class BatchingTopicController {
     }
 
     private void requestPendingReplicasChanges(List<ReconcilableTopic> topicsWithDifferentRf, Map<ReconcilableTopic, Either<TopicOperatorException, Object>> results) {
-        var pending = getReplicasChanges(topicsWithDifferentRf, this::isPendingReplicasChange);
-        checkMinInsyncReplicas(pending);
-        var pendingAndOngoing = replicasChangeClient.requestPendingChanges(pending);
+        var topicsWithPendingRfChange = topicsMatching(topicsWithDifferentRf, this::isPendingReplicasChange);
+        warnTooLargeMinIsr(topicsWithPendingRfChange);
+        var pendingAndOngoing = replicasChangeClient.requestPendingChanges(topicsWithPendingRfChange);
         pendingAndOngoing.forEach(rt -> putResult(results, rt, Either.ofRight(null)));
     }
 
     private void checkOngoingReplicasChanges(List<ReconcilableTopic> topics, Map<ReconcilableTopic, Either<TopicOperatorException, Object>> results) {
-        var ongoing = getReplicasChanges(topics, this::isOngoingReplicasChange);
-        var completedAndFailed = replicasChangeClient.requestOngoingChanges(ongoing);
+        var topicsWithOngoingRfChange = topicsMatching(topics, this::isOngoingReplicasChange);
+        var completedAndFailed = replicasChangeClient.requestOngoingChanges(topicsWithOngoingRfChange);
         completedAndFailed.forEach(rt -> putResult(results, rt, Either.ofRight(null)));
     }
 
-    private List<ReconcilableTopic> getReplicasChanges(List<ReconcilableTopic> reconcilableTopics, Predicate<KafkaTopic> status) {
+    private List<ReconcilableTopic> topicsMatching(List<ReconcilableTopic> reconcilableTopics, Predicate<KafkaTopic> status) {
         return reconcilableTopics.stream().filter(rt -> status.test(rt.kt())).collect(Collectors.toList());
     }
 
@@ -535,13 +537,12 @@ public class BatchingTopicController {
     }
 
     private boolean isOngoingReplicasChange(KafkaTopic kafkaTopic) {
-        return kafkaTopic.getStatus() != null
-            && kafkaTopic.getStatus().getReplicasChange() != null
+        return hasReplicasChange(kafkaTopic.getStatus())
             && kafkaTopic.getStatus().getReplicasChange().getState() == ONGOING
             && kafkaTopic.getStatus().getReplicasChange().getSessionId() != null;
     }
 
-    private void checkMinInsyncReplicas(List<ReconcilableTopic> reconcilableTopics) {
+    private void warnTooLargeMinIsr(List<ReconcilableTopic> reconcilableTopics) {
         Optional<String> clusterMinIsr = getClusterConfig(admin, MIN_INSYNC_REPLICAS);
         for (ReconcilableTopic reconcilableTopic : reconcilableTopics) {
             var topicConfig = reconcilableTopic.kt().getSpec().getConfig();

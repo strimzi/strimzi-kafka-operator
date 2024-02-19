@@ -43,6 +43,7 @@ import static io.strimzi.api.kafka.model.common.ReplicasChangeState.ONGOING;
 import static io.strimzi.api.kafka.model.common.ReplicasChangeState.PENDING;
 import static io.strimzi.operator.topic.v2.TopicOperatorUtil.buildBasicAuthValue;
 import static io.strimzi.operator.topic.v2.TopicOperatorUtil.getFileContent;
+import static io.strimzi.operator.topic.v2.TopicOperatorUtil.hasReplicasChange;
 import static io.strimzi.operator.topic.v2.TopicOperatorUtil.topicNames;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -83,36 +84,37 @@ public class ReplicasChangeClient {
 
     /**
      * Send a topic_configuration request to create a task for replication factor change of one or more topics.
-     * This should be called when one ore more .spec.replicas changes are detected.
+     * This should be called when one or more .spec.replicas changes are detected.
      * 
      * @param reconcilableTopics Pending replicas changes.
      * @return Replicas changes with status update.
      */
     public List<ReconcilableTopic> requestPendingChanges(List<ReconcilableTopic> reconcilableTopics) {
         List<ReconcilableTopic> result = new ArrayList<>();
-        if (reconcilableTopics.isEmpty()) return result;
+        if (reconcilableTopics.isEmpty()) {
+            return result;
+        }
         updateToPending(reconcilableTopics, "Replicas change pending");
         result.addAll(reconcilableTopics);
         
         try {
             LOGGER.debugOp("Sending topic configuration request, topics {}", topicNames(reconcilableTopics));
             HttpClient client = buildHttpClient();
-            Map<Integer, List<ReconcilableTopic>> topicsByReplicas = reconcilableTopics.stream().collect(groupingBy(rt -> rt.kt().getSpec().getReplicas()));
-            client.sendAsync(buildTopicConfigPostRequest(topicsByReplicas), HttpResponse.BodyHandlers.ofString())
+            client.sendAsync(buildTopicConfigPostRequest(reconcilableTopics), HttpResponse.BodyHandlers.ofString())
                 .thenAccept(response -> {
-                    if (response.statusCode() != 200 || response.headers() == null) {
-                        updateToFailed(reconcilableTopics, format("Replicas change failed (%s)", response.statusCode()), response);
+                    if (response.statusCode() != 200) {
+                        updateToFailed(result, format("Replicas change failed (%s)", response.statusCode()), response);
                         return;
                     }
                     try {
                         String userTaskId = response.headers().firstValue(USER_TASK_ID_HEADER).get();
-                        updateToOngoing(reconcilableTopics, "Replicas change ongoing", userTaskId);
+                        updateToOngoing(result, "Replicas change ongoing", userTaskId);
                     } catch (Throwable e) {
-                        updateToFailed(reconcilableTopics, "Failed to get task id header", response);
+                        updateToFailed(result, format("Failed to get %s header", USER_TASK_ID_HEADER), response);
                     }
                 }).join();
         } catch (Throwable t) {
-            updateToFailed(reconcilableTopics, format("Replicas change failed, %s", t.getMessage()), null);
+            updateToFailed(result, format("Replicas change failed, %s", t.getMessage()), null);
         }
         return result;
     }
@@ -126,12 +128,14 @@ public class ReplicasChangeClient {
      */
     public List<ReconcilableTopic> requestOngoingChanges(List<ReconcilableTopic> reconcilableTopics) {
         List<ReconcilableTopic> result = new ArrayList<>();
-        if (reconcilableTopics.isEmpty()) return result;
+        if (reconcilableTopics.isEmpty()) {
+            return result;
+        }
         result.addAll(reconcilableTopics);
         
         Map<String, List<ReconcilableTopic>> groupByUserTaskId = new HashMap<>();
         reconcilableTopics.forEach(rt -> {
-            if (rt.kt().getStatus() != null && rt.kt().getStatus().getReplicasChange() != null && rt.kt().getStatus().getReplicasChange().getSessionId() != null) {
+            if (hasReplicasChange(rt.kt().getStatus()) && rt.kt().getStatus().getReplicasChange().getSessionId() != null) {
                 String userTaskId = rt.kt().getStatus().getReplicasChange().getSessionId();
                 ReconcilableTopic reconcilableTopic = new ReconcilableTopic(new Reconciliation("", KafkaTopic.RESOURCE_KIND, "", ""), rt.kt(), rt.topicName());
                 groupByUserTaskId.computeIfAbsent(userTaskId, k -> new ArrayList<>()).add(reconcilableTopic);
@@ -145,14 +149,14 @@ public class ReplicasChangeClient {
                 .thenAccept(response -> {
                     try {
                         if (response.statusCode() != 200 || response.body() == null) {
-                            updateToFailed(reconcilableTopics, format("Replicas change failed (%s)", response.statusCode()), response);
+                            updateToFailed(result, format("Replicas change failed (%s)", response.statusCode()), response);
                             return;
                         }
                     
                         UserTasksResponse utr = mapper.readValue(response.body(), UserTasksResponse.class);
                         if (utr.userTasks().isEmpty()) {
                             // Cruise Control restarted: reset the state because tasks queue is not persisted
-                            updateToPending(reconcilableTopics, "Task not found, Resetting the state");
+                            updateToPending(result, "Task not found, Resetting the state");
                             return;
                         }
                         
@@ -173,11 +177,11 @@ public class ReplicasChangeClient {
                             }
                         }
                     } catch (Throwable t) {
-                        updateToFailed(reconcilableTopics, format("Failed to parse response, %s", t.getMessage()), null);
+                        updateToFailed(result, format("Failed to parse response, %s", t.getMessage()), null);
                     }
                 }).join();
         } catch (Throwable t) {
-            updateToFailed(reconcilableTopics, format("Replicas change failed, %s", t.getMessage()), null);
+            updateToFailed(result, format("Replicas change failed, %s", t.getMessage()), null);
         }
         return result;
     }
@@ -209,57 +213,62 @@ public class ReplicasChangeClient {
         return builder.build();
     }
 
-    private HttpRequest buildTopicConfigPostRequest(Map<Integer, List<ReconcilableTopic>> rtByReplicas) {
+    private HttpRequest buildTopicConfigPostRequest(List<ReconcilableTopic> reconcilableTopics) {
         StringBuilder url = new StringBuilder(
             format("%s://%s:%d%s?", config.cruiseControlSslEnabled() ? "https" : "http",
                 config.cruiseControlHostname(), config.cruiseControlPort(), CruiseControlEndpoints.TOPIC_CONFIGURATION));
         url.append(format("%s=%s&", CruiseControlParameters.SKIP_RACK_AWARENESS_CHECK, !config.cruiseControlRackEnabled()));
         url.append(format("%s=%s&", CruiseControlParameters.DRY_RUN, "false"));
         url.append(format("%s=%s", CruiseControlParameters.JSON, "true"));
-        Map<Integer, String> topicsByRf = new HashMap<>();
-        rtByReplicas.entrySet().forEach(es -> {
+        
+        Map<Integer, List<ReconcilableTopic>> topicsByReplicas = reconcilableTopics.stream()
+            .collect(groupingBy(rt -> rt.kt().getSpec().getReplicas()));
+        Map<Integer, String> requestPayload = new HashMap<>();
+        topicsByReplicas.entrySet().forEach(es -> {
             int rf = es.getKey();
-            List<String> targetNames = topicNames(rtByReplicas.get(rf));
-            topicsByRf.put(rf, String.join("|", targetNames));
+            List<String> targetNames = topicNames(topicsByReplicas.get(rf));
+            requestPayload.put(rf, String.join("|", targetNames));
         });
         String json;
         try {
             json = mapper.writeValueAsString(
-                new ReplicationFactorChanges(new ReplicationFactor(topicsByRf)));
+                new ReplicationFactorChanges(new ReplicationFactor(requestPayload)));
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Failed to serialize request body");
         }
+        
         LOGGER.traceOp("Request URL: {}, body: {}", url, json);
         HttpRequest.Builder builder = HttpRequest.newBuilder()
             .uri(URI.create(url.toString()))
             .timeout(Duration.of(REQUEST_TIMEOUT_SEC, ChronoUnit.SECONDS))
             .header("Content-Type", "application/json")
             .POST(HttpRequest.BodyPublishers.ofString(json));
-        if (config.cruiseControlAuthEnabled()) {
-            String apiUsername = new String(getFileContent(config.cruiseControlApiUserPath()), UTF_8);
-            String apiPassword = new String(getFileContent(config.cruiseControlApiPassPath()), UTF_8);
-            builder.header("Authorization", buildBasicAuthValue(apiUsername, apiPassword));
-        }
+        maybeAddBasicAuthHeader(builder);
         return builder.build();
     }
-
+    
     private HttpRequest buildUserTasksGetRequest(Set<String> userTaskIds) {
         StringBuilder url = new StringBuilder(
             format("%s://%s:%d%s?", config.cruiseControlSslEnabled() ? "https" : "http",
                 config.cruiseControlHostname(), config.cruiseControlPort(), CruiseControlEndpoints.USER_TASKS));
         url.append(format("%s=%s&", CruiseControlParameters.USER_TASK_IDS, URLEncoder.encode(String.join(",", userTaskIds), UTF_8)));
         url.append(format("%s=%s", CruiseControlParameters.JSON, "true"));
+        
         LOGGER.traceOp("Request URL: {}", url);
         HttpRequest.Builder builder = HttpRequest.newBuilder()
             .uri(URI.create(url.toString()))
             .timeout(Duration.of(REQUEST_TIMEOUT_SEC, ChronoUnit.SECONDS))
             .GET();
+        maybeAddBasicAuthHeader(builder);
+        return builder.build();
+    }
+
+    private void maybeAddBasicAuthHeader(HttpRequest.Builder builder) {
         if (config.cruiseControlAuthEnabled()) {
             String apiUsername = new String(getFileContent(config.cruiseControlApiUserPath()), UTF_8);
             String apiPassword = new String(getFileContent(config.cruiseControlApiPassPath()), UTF_8);
             builder.header("Authorization", buildBasicAuthValue(apiUsername, apiPassword));
         }
-        return builder.build();
     }
 
     private void updateToPending(List<ReconcilableTopic> reconcilableTopics, String message) {
@@ -306,7 +315,7 @@ public class ReplicasChangeClient {
                     return Optional.of(errorResponse.errorMessage());
                 }
             } catch (Throwable t) {
-                // ignore
+                LOGGER.warnOp("Failed to parse error response: {}", t.getMessage());
             }
         }
         return Optional.empty();

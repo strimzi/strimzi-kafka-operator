@@ -6,6 +6,7 @@ package io.strimzi.operator.topic.v2;
 
 import io.micrometer.core.instrument.Timer;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
+import io.strimzi.api.kafka.model.topic.KafkaTopicStatus;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.topic.v2.metrics.TopicOperatorMetricsHolder;
@@ -155,6 +156,17 @@ public class TopicOperatorUtil {
         } catch (IOException ioe) {
             throw new RuntimeException(format("File not found: %s", filePath));
         }
+    }
+
+    /**
+     * Whether the {@link KafkaTopic} status has replicas change.
+     * 
+     * @param status Topic status.
+     *               
+     * @return True if there is replicas change status.
+     */
+    public static boolean hasReplicasChange(KafkaTopicStatus status) {
+        return status != null && status.getReplicasChange() != null;
     }
     
     /**

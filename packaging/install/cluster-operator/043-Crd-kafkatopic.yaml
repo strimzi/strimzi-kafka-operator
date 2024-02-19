@@ -112,7 +112,7 @@ spec:
                 properties:
                   targetReplicas:
                     type: integer
-                    description: The target replicas value requested by the user. This may be different from .spec.replicas when the state is ongoing.
+                    description: The target replicas value requested by the user. This may be different from .spec.replicas when a change is ongoing.
                   state:
                     type: string
                     enum:
@@ -219,7 +219,7 @@ spec:
                 properties:
                   targetReplicas:
                     type: integer
-                    description: The target replicas value requested by the user. This may be different from .spec.replicas when the state is ongoing.
+                    description: The target replicas value requested by the user. This may be different from .spec.replicas when a change is ongoing.
                   state:
                     type: string
                     enum:
@@ -326,7 +326,7 @@ spec:
                 properties:
                   targetReplicas:
                     type: integer
-                    description: The target replicas value requested by the user. This may be different from .spec.replicas when the state is ongoing.
+                    description: The target replicas value requested by the user. This may be different from .spec.replicas when a change is ongoing.
                   state:
                     type: string
                     enum:

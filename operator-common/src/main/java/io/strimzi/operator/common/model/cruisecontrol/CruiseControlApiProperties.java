@@ -31,30 +31,30 @@ public class CruiseControlApiProperties {
     /**
      * Username with admin role.
      */
-    public static final String API_TO_ADMIN_NAME = "toadmin";
+    public static final String API_TO_ADMIN_NAME = "topic-operator-admin";
     
     /**
-     * Secret key for the admin password.
+     * The key, within the data section of a Kubernetes Secret, for the admin password used by the Rebalance Operator.
      */
     public static final String API_ADMIN_PASSWORD_KEY = "cruise-control.apiAdminPassword";
 
     /**
-     * Secret key for the user password.
+     * The key, within the data section of a Kubernetes Secret, for the user password used the Rebalance Operator.
      */
     public static final String API_USER_PASSWORD_KEY = "cruise-control.apiUserPassword";
 
     /**
-     * Secret key for the Cruise Control auth file.
+     * The key, within the data section of a Kubernetes Secret, for the authentication file used by Cruise Control.
      */
     public static final String API_AUTH_FILE_KEY = "cruise-control.apiAuthFile";
     
     /**
-     * Secret key for the username used by the Topic Operator.
+     * The key, within the data section of a Kubernetes Secret, for the admin username used by the Topic Operator.
      */
     public static final String API_TO_ADMIN_NAME_KEY = "topic-operator.apiAdminName";
     
     /**
-     * Secret key for the password for Topic Operator.
+     * The key, within the data section of a Kubernetes Secret, for the admin password used by the Topic Operator.
      */
     public static final String API_TO_ADMIN_PASSWORD_KEY = "topic-operator.apiAdminPassword";
 }

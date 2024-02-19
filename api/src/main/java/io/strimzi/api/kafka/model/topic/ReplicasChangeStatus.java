@@ -39,7 +39,7 @@ public class ReplicasChangeStatus implements UnknownPropertyPreserving, Serializ
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @Description("The target replicas value requested by the user. " +
-        "This may be different from .spec.replicas when the state is ongoing.")
+        "This may be different from .spec.replicas when a change is ongoing.")
     public Integer getTargetReplicas() {
         return targetReplicas;
     }
