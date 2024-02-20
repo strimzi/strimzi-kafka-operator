@@ -295,10 +295,10 @@ public class KafkaTemplates {
                 .endKafka()
             .endSpec();
 
-        applyDefaultSpecOfKafka(kb, kafkaReplicas);
-        applyDefaultConfigurationOfZookeeperKafka(kb, zookeeperReplicas);
-        applyDefaultLogging(kb, true);
-        applyMemoryRequestsAndLimitsIfNeeded(kb, true);
+        setDefaultSpecOfKafka(kb, kafkaReplicas);
+        setDefaultConfigurationOfZookeeperKafka(kb, zookeeperReplicas);
+        setDefaultLogging(kb, true);
+        setMemoryRequestsAndLimitsIfNeeded(kb, true);
 
         return kb;
     }
@@ -311,10 +311,10 @@ public class KafkaTemplates {
                 .addToAnnotations(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled")
             .endMetadata();
 
-        applyDefaultSpecOfKafka(kb, kafkaReplicas);
-        applyDefaultConfigurationOfZookeeperKafka(kb, zookeeperReplicas);
-        applyDefaultLogging(kb, true);
-        applyMemoryRequestsAndLimitsIfNeeded(kb, true);
+        setDefaultSpecOfKafka(kb, kafkaReplicas);
+        setDefaultConfigurationOfZookeeperKafka(kb, zookeeperReplicas);
+        setDefaultLogging(kb, true);
+        setMemoryRequestsAndLimitsIfNeeded(kb, true);
         kb = removeFieldsNotRelatedToParticularMode(kb, true);
 
         return kb;
@@ -334,9 +334,9 @@ public class KafkaTemplates {
                 .endKafka()
             .endSpec();
 
-        applyDefaultSpecOfKafka(kb, kafkaReplicas);
-        applyDefaultLogging(kb, false);
-        applyMemoryRequestsAndLimitsIfNeeded(kb, false);
+        setDefaultSpecOfKafka(kb, kafkaReplicas);
+        setDefaultLogging(kb, false);
+        setMemoryRequestsAndLimitsIfNeeded(kb, false);
         kb = removeFieldsNotRelatedToParticularMode(kb, false);
 
         return kb;
@@ -346,7 +346,7 @@ public class KafkaTemplates {
     // Application of defaults to the builders
     // -------------------------------------------------------------------------------------------
 
-    private static void applyDefaultConfigurationOfZookeeperKafka(KafkaBuilder kafkaBuilder, int zookeeperReplicas) {
+    private static void setDefaultConfigurationOfZookeeperKafka(KafkaBuilder kafkaBuilder, int zookeeperReplicas) {
         kafkaBuilder
             .editSpec()
                 .editKafka()
@@ -359,7 +359,7 @@ public class KafkaTemplates {
             .endSpec();
     }
 
-    private static void applyDefaultLogging(KafkaBuilder kafkaBuilder, boolean withZookeeper) {
+    private static void setDefaultLogging(KafkaBuilder kafkaBuilder, boolean withZookeeper) {
         kafkaBuilder
             .editSpec()
                 .editKafka()
@@ -393,7 +393,7 @@ public class KafkaTemplates {
         }
     }
 
-    private static void applyMemoryRequestsAndLimitsIfNeeded(KafkaBuilder kafkaBuilder, boolean withZookeeper) {
+    private static void setMemoryRequestsAndLimitsIfNeeded(KafkaBuilder kafkaBuilder, boolean withZookeeper) {
         if (!Environment.isSharedMemory()) {
             // in case that we are using NodePools, the resource limits and requirements are specified in KafkaNodePool resources
             if (!Environment.isKafkaNodePoolsEnabled()) {
@@ -444,7 +444,7 @@ public class KafkaTemplates {
         }
     }
 
-    private static void applyDefaultSpecOfKafka(KafkaBuilder kafkaBuilder, int kafkaReplicas) {
+    private static void setDefaultSpecOfKafka(KafkaBuilder kafkaBuilder, int kafkaReplicas) {
         kafkaBuilder
             .editSpec()
                 .editKafka()
