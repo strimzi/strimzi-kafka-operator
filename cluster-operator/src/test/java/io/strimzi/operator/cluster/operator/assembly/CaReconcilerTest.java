@@ -202,26 +202,20 @@ public class CaReconcilerTest {
         clusterCaCertFile.toFile().deleteOnExit();
         Path clusterCaStoreFile = Files.createTempFile("tls", "cluster-ca-store");
         clusterCaStoreFile.toFile().deleteOnExit();
+        
+        Subject sbj = new Subject.Builder()
+                .withOrganizationName("io.strimzi")
+                .withCommonName(commonName).build();
 
-        try {
-            Subject sbj = new Subject.Builder()
-                    .withOrganizationName("io.strimzi")
-                    .withCommonName(commonName).build();
+        certManager.generateSelfSignedCert(clusterCaKeyFile.toFile(), clusterCaCertFile.toFile(), sbj, ModelUtils.getCertificateValidity(certificateAuthority));
 
-            certManager.generateSelfSignedCert(clusterCaKeyFile.toFile(), clusterCaCertFile.toFile(), sbj, ModelUtils.getCertificateValidity(certificateAuthority));
-
-            certManager.addCertToTrustStore(clusterCaCertFile.toFile(), CA_CRT, clusterCaStoreFile.toFile(), clusterCaStorePassword);
-            return new CertAndKey(
-                    Files.readAllBytes(clusterCaKeyFile),
-                    Files.readAllBytes(clusterCaCertFile),
-                    Files.readAllBytes(clusterCaStoreFile),
-                    null,
-                    clusterCaStorePassword);
-        } finally {
-            Files.delete(clusterCaKeyFile);
-            Files.delete(clusterCaCertFile);
-            Files.delete(clusterCaStoreFile);
-        }
+        certManager.addCertToTrustStore(clusterCaCertFile.toFile(), CA_CRT, clusterCaStoreFile.toFile(), clusterCaStorePassword);
+        return new CertAndKey(
+                Files.readAllBytes(clusterCaKeyFile),
+                Files.readAllBytes(clusterCaCertFile),
+                Files.readAllBytes(clusterCaStoreFile),
+                null,
+                clusterCaStorePassword);
     }
 
     private List<Secret> initialClusterCaSecrets(CertificateAuthority certificateAuthority)
@@ -1111,7 +1105,9 @@ public class CaReconcilerTest {
         assertThat(initialClusterCaKeySecret.getData().get(CA_KEY), is(notNullValue()));
         // ... and to the related truststore
         Path certFile = Files.createTempFile("tls", "-cert");
+        certFile.toFile().deleteOnExit();
         Path trustStoreFile = Files.createTempFile("tls", "-truststore");
+        trustStoreFile.toFile().deleteOnExit();
         Files.write(certFile, Base64.getDecoder().decode(initialClusterCaCertSecret.getData().get("ca-2018-07-01T09-00-00.crt")));
         Files.write(trustStoreFile, Base64.getDecoder().decode(initialClusterCaCertSecret.getData().get(CA_STORE)));
         String trustStorePassword = new String(Base64.getDecoder().decode(initialClusterCaCertSecret.getData().get(CA_STORE_PASSWORD)), StandardCharsets.US_ASCII);
@@ -1138,8 +1134,10 @@ public class CaReconcilerTest {
 
         // ... and to the related truststore
         certFile = Files.createTempFile("tls", "-cert");
+        certFile.toFile().deleteOnExit();
         Files.write(certFile, Base64.getDecoder().decode(initialClientsCaCertSecret.getData().get("ca-2018-07-01T09-00-00.crt")));
         trustStoreFile = Files.createTempFile("tls", "-truststore");
+        trustStoreFile.toFile().deleteOnExit();
         Files.write(trustStoreFile, Base64.getDecoder().decode(initialClientsCaCertSecret.getData().get(CA_STORE)));
         trustStorePassword = new String(Base64.getDecoder().decode(initialClientsCaCertSecret.getData().get(CA_STORE_PASSWORD)), StandardCharsets.US_ASCII);
         certManager.addCertToTrustStore(certFile.toFile(), "ca-2018-07-01T09-00-00.crt", trustStoreFile.toFile(), trustStorePassword);
