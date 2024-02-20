@@ -265,7 +265,7 @@ env:
 ----
 
 [id='ref-operator-cluster-periodic-reconciliation-{context}']
-== Configuring periodic reconciliation by the Cluster Operator
+== Setting periodic reconciliation of custom resources
 
 Use the `STRIMZI_FULL_RECONCILIATION_INTERVAL_MS` variable to set the time interval for periodic reconciliations by the Cluster Operator.
 Replace its value with the required interval in milliseconds.

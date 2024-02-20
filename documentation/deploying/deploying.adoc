@@ -54,6 +54,8 @@ include::assemblies/deploying/assembly-drain-cleaner.adoc[leveloffset=+1]
 include::assemblies/upgrading/assembly-upgrade.adoc[leveloffset=+1]
 //Downgrading the deployment
 include::assemblies/upgrading/assembly-downgrade.adoc[leveloffset=+1]
+//uninstalling the product
+include::assemblies/deploying/assembly-uninstalling.adoc[leveloffset=+1]
 //How to monitor restart events
 include::assemblies/deploying/assembly-deploy-restart-events.adoc[leveloffset=+1]
 //tuning configuration

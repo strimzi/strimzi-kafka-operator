@@ -3,23 +3,22 @@
 // managing/assembly-management-tasks.adoc
 
 [id='proc-add-service-discovery-{context}']
-= Discovering services using labels and annotations
+= Returning connection details for services
 
+[role="_abstract"]
 Service discovery makes it easier for client applications running in the same Kubernetes cluster as Strimzi to interact with a Kafka cluster.
 
-A _service discovery_ label and annotation is generated for services used to access the Kafka cluster:
+A _service discovery_ label and annotation are generated for services used to access the Kafka cluster:
 
 * Internal Kafka bootstrap service
-* HTTP Bridge service
+* Kafka Bridge service
 
-The label helps to make the service discoverable, and the annotation provides connection details that a client application can use to make the connection.
+The label helps to make the service discoverable, while the annotation provides connection details for client applications to establish connections.
 
 The service discovery label, `strimzi.io/discovery`, is set as `true` for the `Service` resources.
 The service discovery annotation has the same key, providing connection details in JSON format for each service.
 
-[discrete]
-== Example internal Kafka bootstrap service
-
+.Example internal Kafka bootstrap service
 [source,yaml,subs="attributes+"]
 ----
 apiVersion: v1
@@ -48,8 +47,7 @@ spec:
   #...
 ----
 
-[discrete]
-== Example HTTP Bridge service
+.Example Kafka Bridge service
 
 [source,yaml,subs="attributes+"]
 ----
@@ -71,13 +69,12 @@ metadata:
     strimzi.io/name: my-bridge-bridge-service
 ----
 
-== Returning connection details on services
+Find services by specifying the discovery label when fetching services from the command line or a corresponding API call.
 
-You can find the services by specifying the discovery label when fetching services from the command line or a corresponding API call.
-
+.Returning services using the discovery label
 [source,yaml]
 ----
 kubectl get service -l strimzi.io/discovery=true
 ----
 
-The connection details are returned when retrieving the service discovery label.
+Connection details are returned when retrieving the service discovery label.
