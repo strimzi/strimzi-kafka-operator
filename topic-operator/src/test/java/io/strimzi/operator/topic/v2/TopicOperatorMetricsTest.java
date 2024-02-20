@@ -35,7 +35,7 @@ import java.util.concurrent.TimeUnit;
 
 import static io.strimzi.api.ResourceAnnotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION;
 import static io.strimzi.api.kafka.model.topic.KafkaTopic.RESOURCE_KIND;
-import static io.strimzi.operator.topic.v2.BatchingTopicController.topicName;
+import static io.strimzi.operator.topic.v2.TopicOperatorUtil.topicName;
 import static java.lang.String.format;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -71,8 +71,11 @@ public class TopicOperatorMetricsTest {
 
     @Test
     public void shouldHaveMetricsAfterSomeEvents() throws InterruptedException {
+        var config = TopicOperatorConfig.buildFromMap(Map.of(
+            TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:9092",
+            TopicOperatorConfig.NAMESPACE.key(), NAMESPACE));
         BatchingLoop mockQueue = mock(BatchingLoop.class);
-        TopicOperatorEventHandler eventHandler = new TopicOperatorEventHandler(mockQueue, true, metrics, NAMESPACE);
+        TopicOperatorEventHandler eventHandler = new TopicOperatorEventHandler(config, mockQueue, metrics);
         int numOfTestResources = 100;
         for (int i = 0; i < numOfTestResources; i++) {
             KafkaTopic kt = createKafkaTopic("t" + i, "100100");

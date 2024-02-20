@@ -48,6 +48,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 import static io.strimzi.api.kafka.model.topic.KafkaTopic.RESOURCE_KIND;
+import static io.strimzi.operator.topic.v2.TopicOperatorUtil.topicName;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
@@ -129,7 +130,7 @@ class BatchingTopicControllerTest {
 
     private void assertOnUpdateThrowsInterruptedException(KubernetesClient client, Admin admin, KafkaTopic kt) throws ExecutionException, InterruptedException {
         controller = new BatchingTopicController(Map.of("key", "VALUE"), admin, client, true, metrics, NAMESPACE, false);
-        List<ReconcilableTopic> batch = List.of(new ReconcilableTopic(new Reconciliation("test", "KafkaTopic", NAMESPACE, NAME), kt, BatchingTopicController.topicName(kt)));
+        List<ReconcilableTopic> batch = List.of(new ReconcilableTopic(new Reconciliation("test", "KafkaTopic", NAMESPACE, NAME), kt, topicName(kt)));
         assertThrows(InterruptedException.class, () -> controller.onUpdate(batch));
     }
 

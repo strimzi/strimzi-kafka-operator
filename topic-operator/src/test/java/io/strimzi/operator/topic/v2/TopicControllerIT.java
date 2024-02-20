@@ -978,8 +978,8 @@ class TopicControllerIT {
 
         // when: resync
         try (var logCaptor = LogCaptor.logMessageMatches(BatchingLoop.LoopRunnable.LOGGER,
-                Level.DEBUG,
-                "\\[Batch #[0-9]+\\] Reconciled batch",
+                Level.INFO,
+                "\\[Batch #[0-9]+\\] Batch reconciliation completed",
                 5L,
                 TimeUnit.SECONDS)) {
             LOGGER.debug("Waiting for a full resync");
@@ -1250,8 +1250,8 @@ class TopicControllerIT {
 
         // when
         try (var logCaptor = LogCaptor.logMessageMatches(BatchingLoop.LoopRunnable.LOGGER,
-                Level.DEBUG,
-                "\\[Batch #[0-9]+\\] Reconciled batch",
+                Level.INFO,
+                "\\[Batch #[0-9]+\\] Batch reconciliation completed",
                 5L,
                 TimeUnit.SECONDS)) {
             try (var logCaptor2 = LogCaptor.logMessageMatches(BatchingTopicController.LOGGER,
