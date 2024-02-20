@@ -26,4 +26,5 @@ ifdef::Section[]
 include::../../modules/security/proc-accessing-kafka-using-ingress.adoc[leveloffset=+1]
 endif::Section[]
 include::../../modules/security/proc-accessing-kafka-using-routes.adoc[leveloffset=+1]
-
+//discover internal bootstrap service and Bridge
+include::../../modules/deploying/con-service-discovery.adoc[leveloffset=+1]

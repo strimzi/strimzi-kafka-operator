@@ -4,14 +4,14 @@
 
 [id='proc-pausing-reconciliation-{context}']
 
-= Pausing reconciliation of custom resources
+= Pausing reconciliation of custom resources using annotations
 
-Sometimes it is useful to pause the reconciliation of custom resources managed by Strimzi Operators,
+Sometimes it is useful to pause the reconciliation of custom resources managed by Strimzi operators,
 so that you can perform fixes or make updates.
-If reconciliations are paused, any changes made to custom resources are ignored by the Operators until the pause ends.
+If reconciliations are paused, any changes made to custom resources are ignored by the operators until the pause ends.
 
 If you want to pause reconciliation of a custom resource, set the `strimzi.io/pause-reconciliation` annotation to `true` in its configuration.
-This instructs the appropriate Operator to pause reconciliation of the custom resource.
+This instructs the appropriate operator to pause reconciliation of the custom resource.
 For example, you can apply the annotation to the `KafkaConnect` resource so that reconciliation by the Cluster Operator is paused.
 
 You can also create a custom resource with the pause annotation enabled.
