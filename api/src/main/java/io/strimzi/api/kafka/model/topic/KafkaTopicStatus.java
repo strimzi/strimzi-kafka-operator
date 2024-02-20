@@ -21,13 +21,14 @@ import lombok.ToString;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "conditions", "observedGeneration", "topicName" })
+@JsonPropertyOrder({ "conditions", "observedGeneration", "topicName", "topicId" })
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaTopicStatus extends Status {
     private static final long serialVersionUID = 1L;
 
     private String topicName;
+    private String topicId;
 
     @Description("Topic name")
     public String getTopicName() {
@@ -36,5 +37,15 @@ public class KafkaTopicStatus extends Status {
 
     public void setTopicName(String topicName) {
         this.topicName = topicName;
+    }
+
+    @Description("The topic's id. For a KafkaTopic with the ready condition, " +
+        "this will change only if the topic gets deleted and recreated with the same name.")
+    public String getTopicId() {
+        return topicId;
+    }
+
+    public void setTopicId(String topicId) {
+        this.topicId = topicId;
     }
 }
