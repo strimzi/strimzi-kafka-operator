@@ -106,7 +106,7 @@ spec:
                 description: Topic name.
               topicId:
                 type: string
-                description: Topic id.
+                description: "The topic's id. For a KafkaTopic with the ready condition, this will change only if the topic gets deleted and recreated with the same name."
             description: The status of the topic.
   - name: v1beta1
     served: true
@@ -194,7 +194,7 @@ spec:
                 description: Topic name.
               topicId:
                 type: string
-                description: Topic id.
+                description: "The topic's id. For a KafkaTopic with the ready condition, this will change only if the topic gets deleted and recreated with the same name."
             description: The status of the topic.
   - name: v1alpha1
     served: true
@@ -282,5 +282,5 @@ spec:
                 description: Topic name.
               topicId:
                 type: string
-                description: Topic id.
+                description: "The topic's id. For a KafkaTopic with the ready condition, this will change only if the topic gets deleted and recreated with the same name."
             description: The status of the topic.

@@ -2879,7 +2879,7 @@ Used in: xref:type-KafkaTopic-{context}[`KafkaTopic`]
 |Topic name.
 |topicId
 |string
-|Topic id.
+|The topic's id. For a KafkaTopic with the ready condition, this will change only if the topic gets deleted and recreated with the same name.
 |====
 
 [id='type-KafkaUser-{context}']

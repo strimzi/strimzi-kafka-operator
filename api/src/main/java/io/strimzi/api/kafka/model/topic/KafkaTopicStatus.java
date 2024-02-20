@@ -39,7 +39,8 @@ public class KafkaTopicStatus extends Status {
         this.topicName = topicName;
     }
 
-    @Description("Topic id")
+    @Description("The topic's id. For a KafkaTopic with the ready condition, " +
+        "this will change only if the topic gets deleted and recreated with the same name.")
     public String getTopicId() {
         return topicId;
     }
