@@ -1686,7 +1686,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                         .withAuthorization(cluster, authorization)
                         .withCruiseControl(cluster, ccMetricsReporter, node.broker())
                         .withUserConfiguration(configuration, node.broker() && ccMetricsReporter != null);
-        withZooKeeperOrKRaftConfiguration(node, pool, builder);
+        withZooKeeperOrKRaftConfiguration(node, builder);
         return builder.build().trim();
     }
 
@@ -1716,41 +1716,25 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      * +----------------+--------------+--------------+
      *
      * @param node node on which the configuration is applied
-     * @param pool pool hosting the node
      * @param builder KafkaBrokerConfigurationBuilder instance to use to build the node configuration
      */
-    private void withZooKeeperOrKRaftConfiguration(NodeRef node, KafkaPool pool, KafkaBrokerConfigurationBuilder builder) {
-        if (node.broker()) {
-            if (this.kafkaMetadataConfigState.isZooKeeperToMigration()) {
-                builder.withZookeeper(cluster);
-                LOGGER.infoCr(reconciliation, "withZookeeper on node [{}]", node.podName());
-            }
-
-            if (this.kafkaMetadataConfigState.isMigration()) {
-                builder.withZooKeeperMigration();
-                LOGGER.infoCr(reconciliation, "withZooKeeperMigration on node [{}]", node.podName());
-            }
-
-            if (this.kafkaMetadataConfigState.isMigrationToKRaft()) {
-                builder.withKRaft(cluster, namespace, nodes());
-                LOGGER.infoCr(reconciliation, "withKRaft on node [{}]", node.podName());
-            }
+    private void withZooKeeperOrKRaftConfiguration(NodeRef node, KafkaBrokerConfigurationBuilder builder) {
+        if ((node.broker() && this.kafkaMetadataConfigState.isZooKeeperToMigration()) ||
+                (node.controller() && this.kafkaMetadataConfigState.isPreMigrationToKRaft() && this.kafkaMetadataConfigState.isZooKeeperToPostMigration())) {
+            builder.withZookeeper(cluster);
+            LOGGER.infoCr(reconciliation, "withZookeeper on node [{}]", node.podName());
         }
 
-        if (node.controller()) {
-            if (this.kafkaMetadataConfigState.isPreMigrationToKRaft() && this.kafkaMetadataConfigState.isZooKeeperToPostMigration()) {
-                builder.withZookeeper(cluster);
-                builder.withZooKeeperMigration();
-                LOGGER.infoCr(reconciliation, "withZookeeper on node [{}]", node.podName());
-                LOGGER.infoCr(reconciliation, "withZooKeeperMigration on node [{}]", node.podName());
-            }
+        if ((node.broker() && this.kafkaMetadataConfigState.isMigration()) ||
+                (node.controller() && this.kafkaMetadataConfigState.isPreMigrationToKRaft() && this.kafkaMetadataConfigState.isZooKeeperToPostMigration())) {
+            builder.withZooKeeperMigration();
+            LOGGER.infoCr(reconciliation, "withZooKeeperMigration on node [{}]", node.podName());
+        }
 
-            // additional check not having broker role as well because in mixed mode
-            // (only in KRaft state, migration not supported) it could end to duplicate the configuration
-            if (this.kafkaMetadataConfigState.isPreMigrationToKRaft() && !node.broker()) {
-                builder.withKRaft(cluster, namespace, nodes());
-                LOGGER.infoCr(reconciliation, "withKRaft on node [{}]", node.podName());
-            }
+        if ((node.broker() && this.kafkaMetadataConfigState.isMigrationToKRaft()) ||
+                (node.controller() && this.kafkaMetadataConfigState.isPreMigrationToKRaft())) {
+            builder.withKRaft(cluster, namespace, nodes());
+            LOGGER.infoCr(reconciliation, "withKRaft on node [{}]", node.podName());
         }
     }
 
