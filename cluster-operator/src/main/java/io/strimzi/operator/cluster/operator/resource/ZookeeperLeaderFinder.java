@@ -58,8 +58,8 @@ public class ZookeeperLeaderFinder {
         PemTrustOptions pto = new PemTrustOptions();
         pemTrustSet.trustedCertificatesBytes().forEach(certBytes -> pto.addCertValue(Buffer.buffer(certBytes)));
         PemKeyCertOptions pkco = new PemKeyCertOptions()
-                .setCertValue(Buffer.buffer(pemAuthIdentity.pemCertificateChainBytes()))
-                .setKeyValue(Buffer.buffer(pemAuthIdentity.pemPrivateKey()));
+                .setCertValue(Buffer.buffer(pemAuthIdentity.certificateChainAsPemBytes()))
+                .setKeyValue(Buffer.buffer(pemAuthIdentity.privateKeyAsPemBytes()));
         return new NetClientOptions()
                 .setConnectTimeout(10_000)
                 .setSsl(true)

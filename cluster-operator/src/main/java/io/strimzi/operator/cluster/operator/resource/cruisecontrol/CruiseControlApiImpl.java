@@ -61,7 +61,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
         this.idleTimeout = idleTimeout;
         this.apiSslEnabled = apiSslEnabled;
         this.authHttpHeader = getAuthHttpHeader(apiAuthEnabled, ccApiSecret);
-        this.pto = new PemTrustOptions().addCertValue(Buffer.buffer(Util.decodeFromSecret(ccSecret, "cruise-control.crt")));
+        this.pto = new PemTrustOptions().addCertValue(Buffer.buffer(Util.decodeBase64FieldFromSecret(ccSecret, "cruise-control.crt")));
     }
 
     @Override
@@ -93,7 +93,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
 
     protected static HTTPHeader getAuthHttpHeader(boolean apiAuthEnabled, Secret apiSecret) {
         if (apiAuthEnabled) {
-            String password = Util.decodeFromSecretAsString(apiSecret, CruiseControlApiProperties.API_ADMIN_PASSWORD_KEY);
+            String password = Util.asciiFieldFromSecret(apiSecret, CruiseControlApiProperties.API_ADMIN_PASSWORD_KEY);
             return generateAuthHttpHeader(CruiseControlApiProperties.API_ADMIN_NAME, password);
         } else {
             return null;

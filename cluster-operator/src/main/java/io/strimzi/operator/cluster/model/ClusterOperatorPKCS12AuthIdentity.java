@@ -21,8 +21,8 @@ public class ClusterOperatorPKCS12AuthIdentity {
      * @param secret Kubernetes Secret containing the client authentication identity
      */
     public ClusterOperatorPKCS12AuthIdentity(Secret secret) {
-        keyStore = Util.decodeFromSecret(secret, String.format("%s.p12", SECRET_KEY));
-        password = Util.decodeFromSecretAsString(secret, String.format("%s.password", SECRET_KEY));
+        keyStore = Util.decodeBase64FieldFromSecret(secret, String.format("%s.p12", SECRET_KEY));
+        password = Util.asciiFieldFromSecret(secret, String.format("%s.password", SECRET_KEY));
     }
 
     /**

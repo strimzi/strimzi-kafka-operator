@@ -123,14 +123,14 @@ public class KafkaAgentClient {
     }
 
     private KeyStore getKeyStore() throws KeyStoreException, CertificateException, NoSuchAlgorithmException, InvalidKeySpecException, IOException {
-        byte[] decodedKey = Util.decodePemPrivateKey(pemAuthIdentity.pemPrivateKeyString());
+        byte[] decodedKey = Util.decodePemPrivateKey(pemAuthIdentity.privateKeyAsPem());
         PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(decodedKey);
         final KeyFactory keyFactory = KeyFactory.getInstance("RSA");
         final PrivateKey key = keyFactory.generatePrivate(keySpec);
 
         KeyStore coKeyStore = KeyStore.getInstance(KEYSTORE_TYPE_JKS);
         coKeyStore.load(null);
-        coKeyStore.setKeyEntry("cluster-operator", key, KEYSTORE_PASSWORD, new Certificate[]{pemAuthIdentity.pemCertificateChain()});
+        coKeyStore.setKeyEntry("cluster-operator", key, KEYSTORE_PASSWORD, new Certificate[]{pemAuthIdentity.certificateChain()});
 
         return coKeyStore;
     }

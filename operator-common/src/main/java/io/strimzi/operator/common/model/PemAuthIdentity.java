@@ -15,13 +15,13 @@ import java.util.Optional;
 
 /**
  * Represents the identity used during TLS client authentication.
- * This consists of an X509 end entity certificate, corresponding private key, and a chain of X509 CA certificates, all in PEM format.
+ * This consists of an X509 end-entity certificate, corresponding private key, and a (possibly empty) chain of X509 intermediate CA certificates, all in PEM format.
  */
 public class PemAuthIdentity {
 
-    private final byte[] pemPrivateKey;
-    private final byte[] pemCertificateChainBytes;
-    private final X509Certificate pemCertificateChain;
+    private final byte[] privateKeyAsPemBytes;
+    private final byte[] certificateChainAsPemBytes;
+    private final X509Certificate certificateChain;
     private String secretName;
     private String secretNamespace;
 
@@ -36,13 +36,13 @@ public class PemAuthIdentity {
                     secretName = objectMeta.getName();
                     secretNamespace = objectMeta.getNamespace();
                 });
-        pemPrivateKey = Util.decodeFromSecret(secret, String.format("%s.key", secretKey));
-        pemCertificateChainBytes = Util.decodeFromSecret(secret, String.format("%s.crt", secretKey));
-        pemCertificateChain = validateCertificateChain(secretKey);
+        privateKeyAsPemBytes = Util.decodeBase64FieldFromSecret(secret, String.format("%s.key", secretKey));
+        certificateChainAsPemBytes = Util.decodeBase64FieldFromSecret(secret, String.format("%s.crt", secretKey));
+        certificateChain = validateCertificateChain(secretKey);
     }
 
     /**
-     * Create a new instance of PemAuthIdentity that represents the identity of the
+     * Returns the instance of PemAuthIdentity that represents the identity of the
      * cluster operator during TLS client authentication. This also validates the provided
      * Secret contains a valid certificate chain.
      *
@@ -55,7 +55,7 @@ public class PemAuthIdentity {
     }
 
     /**
-     * Create a new instance of PemAuthIdentity that represents the identity of the
+     * Returns the instance of PemAuthIdentity that represents the identity of the
      * entity (i.e. user or topic) operator during TLS client authentication. This also validates
      * the provided Secret contains a valid certificate chain.
      *
@@ -70,42 +70,42 @@ public class PemAuthIdentity {
     /**
      * @return The certificate chain for this authentication identity as a X509Certificate
      */
-    public X509Certificate pemCertificateChain() {
-        return pemCertificateChain;
+    public X509Certificate certificateChain() {
+        return certificateChain;
     }
 
     /**
      * @return The certificate chain for this authentication identity as a byte array
      */
-    public byte[] pemCertificateChainBytes() {
-        return pemCertificateChainBytes;
+    public byte[] certificateChainAsPemBytes() {
+        return certificateChainAsPemBytes;
     }
 
     /**
      * @return The certificate chain for this authentication identity as a String
      */
-    public String pemCertificateChainString() {
-        return Util.decodeToString(pemCertificateChainBytes);
+    public String certificateChainAsPem() {
+        return Util.fromAsciiBytes(certificateChainAsPemBytes);
     }
 
     /**
      * @return The private key for this authentication identity as a byte array
      */
-    public byte[] pemPrivateKey() {
-        return pemPrivateKey;
+    public byte[] privateKeyAsPemBytes() {
+        return privateKeyAsPemBytes;
     }
 
     /**
      * @return The private key for this authentication identity as a String
      */
-    public String pemPrivateKeyString() {
-        return Util.decodeToString(pemPrivateKey);
+    public String privateKeyAsPem() {
+        return Util.fromAsciiBytes(privateKeyAsPemBytes);
     }
 
     private X509Certificate validateCertificateChain(String secretKey) {
         try {
             final CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
-            return (X509Certificate) certificateFactory.generateCertificate(new ByteArrayInputStream(pemCertificateChainBytes));
+            return (X509Certificate) certificateFactory.generateCertificate(new ByteArrayInputStream(certificateChainAsPemBytes));
         } catch (CertificateException e) {
             throw Util.corruptCertificateException(secretNamespace, secretName, secretKey);
         }

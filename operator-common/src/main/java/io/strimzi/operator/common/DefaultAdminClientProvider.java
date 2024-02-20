@@ -75,8 +75,8 @@ public class DefaultAdminClientProvider implements AdminClientProvider {
         if (pemAuthIdentity != null) {
             config.putIfAbsent(AdminClientConfig.SECURITY_PROTOCOL_CONFIG, "SSL");
             config.setProperty(SslConfigs.SSL_KEYSTORE_TYPE_CONFIG, "PEM");
-            config.setProperty(SslConfigs.SSL_KEYSTORE_CERTIFICATE_CHAIN_CONFIG, pemAuthIdentity.pemCertificateChainString());
-            config.setProperty(SslConfigs.SSL_KEYSTORE_KEY_CONFIG, pemAuthIdentity.pemPrivateKeyString());
+            config.setProperty(SslConfigs.SSL_KEYSTORE_CERTIFICATE_CHAIN_CONFIG, pemAuthIdentity.certificateChainAsPem());
+            config.setProperty(SslConfigs.SSL_KEYSTORE_KEY_CONFIG, pemAuthIdentity.privateKeyAsPem());
         }
 
         config.putIfAbsent(AdminClientConfig.METADATA_MAX_AGE_CONFIG, "30000");

@@ -131,15 +131,15 @@ public class Util {
     }
 
     /**
-     * Returns exception when secret is missing a particular key. This is used from several different methods to provide identical exception.
+     * Returns exception when secret data is missing a particular item. This is used from several different methods to provide identical exception.
      *
      * @param namespace     Namespace of the Secret
      * @param secretName    Name of the Secret
-     * @param keyName       Name of the Secret key
+     * @param dataFieldName Name of the Secret field
      * @return              RuntimeException
      */
-    public static RuntimeException missingSecretKeyException(String namespace, String secretName, String keyName) {
-        return new RuntimeException("The Secret " + namespace + "/" + secretName + " is missing the key " + keyName);
+    public static RuntimeException missingDataInSecretException(String namespace, String secretName, String dataFieldName) {
+        return new RuntimeException("The Secret " + namespace + "/" + secretName + " is missing the field " + dataFieldName);
     }
 
     /**
@@ -185,13 +185,13 @@ public class Util {
      * Decode binary item from Kubernetes Secret from base64 into byte array
      *
      * @param secret    Kubernetes Secret
-     * @param key       Key which should be retrieved and decoded
+     * @param field     Field which should be retrieved and decoded
      * @return          Decoded bytes
      */
-    public static byte[] decodeFromSecret(Secret secret, String key) {
+    public static byte[] decodeBase64FieldFromSecret(Secret secret, String field) {
         return Optional.ofNullable(secret)
                 .map(Secret::getData)
-                .map(data -> data.get(key))
+                .map(data -> data.get(field))
                 .map(value -> Base64.getDecoder().decode(value))
                 .orElseThrow(() -> {
                     String name = Optional.ofNullable(secret)
@@ -202,7 +202,7 @@ public class Util {
                             .map(Secret::getMetadata)
                             .map(ObjectMeta::getNamespace)
                             .orElse("unknown");
-                    return Util.missingSecretKeyException(namespace, name, key);
+                    return Util.missingDataInSecretException(namespace, name, field);
                 });
     }
 
@@ -210,11 +210,11 @@ public class Util {
      * Decode binary item from Kubernetes Secret from base64 into String
      *
      * @param secret    Kubernetes Secret
-     * @param key       Key which should be retrieved and decoded
+     * @param field     Field which should be retrieved and decoded
      * @return          Decoded String
      */
-    public static String decodeFromSecretAsString(Secret secret, String key) {
-        return decodeToString(decodeFromSecret(secret, key));
+    public static String asciiFieldFromSecret(Secret secret, String field) {
+        return fromAsciiBytes(decodeBase64FieldFromSecret(secret, field));
     }
 
     /**
@@ -594,7 +594,7 @@ public class Util {
      * @param bytes Byte array to convert to String
      * @return New String object containing the provided byte array
      */
-    public static String decodeToString(byte[] bytes) {
+    public static String fromAsciiBytes(byte[] bytes) {
         return new String(bytes, StandardCharsets.US_ASCII);
     }
 
