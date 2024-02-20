@@ -29,7 +29,7 @@ NOTE: You can perform the steps outlined here to deploy a new Kafka cluster with
 
 .Procedure
 
-. Deploy a KRaft-based Kafka cluster
+. Deploy a KRaft-based Kafka cluster.
 +
 * To deploy a Kafka cluster in KRaft mode with a single node pool that uses dual-role nodes:
 +

@@ -3,15 +3,13 @@
 // assembly-distributed tracing.adoc
 
 [id='ref-tracing-span-names-{context}']
-= Custom span names
+= Specifying custom span names for OpenTelemetry
 
 [role="_abstract"]
 A tracing __span__ is a logical unit of work in Jaeger, with an operation name, start time, and duration. 
 Spans have built-in names, but you can specify custom span names in your Kafka client instrumentation where used. 
 
 Specifying custom span names is optional and only applies when using a decorator pattern xref:proc-instrumenting-producers-consumers-for-tracing-{context}[in producer and consumer client instrumentation] or xref:proc-instrumenting-kafka-streams-with-tracers-{context}[Kafka Streams instrumentation].
-
-== Specifying span names for OpenTelemetry
 
 Custom span names cannot be specified directly with OpenTelemetry.
 Instead, you retrieve span names by adding code to your client application to extract additional tags and attributes.

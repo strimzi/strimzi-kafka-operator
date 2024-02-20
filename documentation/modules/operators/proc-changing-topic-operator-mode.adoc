@@ -61,7 +61,7 @@ If `KafkaTopic` resources are using finalizers, ensure that you do one of the fo
 Use the same configuration for a Topic Operator running in a Strimzi-managed cluster or as a standalone deployment. 
 +
 .Disabling topic finalizers in a Strimzi-managed cluster
-[source,shell,subs=+quotes]
+[source,shell,subs=+attributes]
 ----
 apiVersion: {KafkaApiVersion}
 kind: Kafka

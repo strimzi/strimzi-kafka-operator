@@ -92,7 +92,7 @@ env:
 ----
 
 `STRIMZI_CUSTOM_<COMPONENT_NAME>_LABELS`:: Optional.
-One or more custom labels to apply to all the pods created by the `{COMPONENT_NAME}` custom resource.
+One or more custom labels to apply to all the pods created by the custom resource of the component.
 The Cluster Operator labels the pods when the custom resource is created or is next reconciled.
 +
 Labels can be applied to the following components:

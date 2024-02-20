@@ -50,4 +50,4 @@ include::assembly-upgrade-zookeeper.adoc[leveloffset=+1]
 //checking the status of an upgrade
 include::../../modules/upgrading/con-upgrade-status.adoc[leveloffset=+1]
 //Using FIPS
-include::../../modules/upgrading/proc-switching-to-FIPS-mode-when-upgrading-Strimzi.adoc[leveloffset=+1]
+include::../../modules/upgrading/proc-switching-to-FIPS-mode-when-upgrading.adoc[leveloffset=+1]
