@@ -71,7 +71,7 @@ public class Main {
 
         // Create and log UserOperatorConfig
         UserOperatorConfig config = UserOperatorConfig.buildFromMap(System.getenv());
-        LOGGER.info("Cluster Operator configuration is {}", config);
+        LOGGER.info("UserOperator configuration is {}", config);
 
         // Create KubernetesClient, AdminClient and KafkaUserOperator classes
         ExecutorService kafkaUserOperatorExecutor = Executors.newFixedThreadPool(config.getUserOperationsThreadPoolSize(), new OperatorWorkThreadFactory());
