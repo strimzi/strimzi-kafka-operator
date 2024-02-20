@@ -448,7 +448,7 @@ public class MigrationST extends AbstractST {
         LOGGER.info("Creating controller NodePool");
         // the controller pods will not be up and running, because we are using the ZK nodes as controllers, they will be created once the migration starts
         // creating it here (before KafkaTopics) to correctly delete KafkaTopics and prevent stuck because UTO cannot connect to controllers
-        resourceManager.createResourceWithoutWait(KafkaNodePoolTemplates.kafkaNodePoolWithControllerRoleAndPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build());
+        resourceManager.createResourceWithoutWait(KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build());
 
         LOGGER.info("Applying the {} annotation with value: {}", Annotations.ANNO_STRIMZI_IO_KRAFT, "migration");
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(),
