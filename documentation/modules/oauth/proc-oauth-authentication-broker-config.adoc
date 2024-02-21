@@ -114,46 +114,46 @@ Depending on how you apply OAuth 2.0 authentication, and the type of authorizati
   authentication:
     type: oauth
     # ...
-    checkIssuer: false # <1>
-    checkAudience: true # <2>
-    fallbackUserNameClaim: client_id # <3>
-    fallbackUserNamePrefix: client-account- # <4>
-    validTokenType: bearer # <5>
-    userInfoEndpointUri: https://<auth_server_address>/auth/realms/external/protocol/openid-connect/userinfo # <6>
-    enableOauthBearer: false # <7>
-    enablePlain: true # <8>
-    tokenEndpointUri: https://<auth_server_address>/auth/realms/external/protocol/openid-connect/token # <9>
-    customClaimCheck: "@.custom == 'custom-value'" # <10>
-    clientAudience: audience # <11>
-    clientScope: scope # <12>
-    connectTimeoutSeconds: 60 # <13>
-    readTimeoutSeconds: 60 # <14>
-    httpRetries: 2 # <15>
-    httpRetryPauseMs: 300 # <16>
-    groupsClaim: "$.groups" # <17>
-    groupsClaimDelimiter: "," # <18>
-    includeAcceptHeader: false # <19>
+    checkIssuer: false # <6>
+    checkAudience: true # <7>
+    fallbackUserNameClaim: client_id # <8>
+    fallbackUserNamePrefix: client-account- # <9>
+    validTokenType: bearer # <10>
+    userInfoEndpointUri: https://<auth_server_address>/auth/realms/external/protocol/openid-connect/userinfo # <11>
+    enableOauthBearer: false # <12>
+    enablePlain: true # <13>
+    tokenEndpointUri: https://<auth_server_address>/auth/realms/external/protocol/openid-connect/token # <14>
+    customClaimCheck: "@.custom == 'custom-value'" # <15>
+    clientAudience: audience # <16>
+    clientScope: scope # <17>
+    connectTimeoutSeconds: 60 # <18>
+    readTimeoutSeconds: 60 # <19>
+    httpRetries: 2 # <20>
+    httpRetryPauseMs: 300 # <21>
+    groupsClaim: "$.groups" # <22>
+    groupsClaimDelimiter: "," # <23>
+    includeAcceptHeader: false # <24>
 ----
-<1> If your authorization server does not provide an `iss` claim, it is not possible to perform an issuer check. In this situation, set `checkIssuer` to `false` and do not specify a `validIssuerUri`. Default is `true`.
-<2> If your authorization server provides an `aud` (audience) claim, and you want to enforce an audience check, set `checkAudience` to `true`. Audience checks identify the intended recipients of tokens. As a result, the Kafka broker will reject tokens that do not have its `clientId` in their `aud` claim. Default is `false`.
-<3> An authorization server may not provide a single attribute to identify both regular users and clients. When a client authenticates in its own name, the server might provide a _client ID_. When a user authenticates using a username and password to obtain a refresh token or an access token, the server might provide a _username_ attribute in addition to a client ID. Use this fallback option to specify the username claim (attribute) to use if a primary user ID attribute is not available. If necessary, a JsonPath expression like `"['client.info'].['client.id']"` can be used to retrieve the fallback username  to retrieve the username from nested JSON attributes within a token.
-<4> In situations where `fallbackUserNameClaim` is applicable, it may also be necessary to prevent name collisions between the values of the username claim, and those of the fallback username claim. Consider a situation where a client called `producer` exists, but also a regular user called `producer` exists. In order to differentiate between the two, you can use this property to add a prefix to the user ID of the client.
-<5> (Only applicable when using `introspectionEndpointUri`) Depending on the authorization server you are using, the introspection endpoint may or may not return the _token type_ attribute, or it may contain different values. You can specify a valid token type value that the response from the introspection endpoint has to contain.
-<6> (Only applicable when using `introspectionEndpointUri`) The authorization server may be configured or implemented in such a way to not provide any identifiable information in an Introspection Endpoint response. In order to obtain the user ID, you can configure the URI of the `userinfo` endpoint as a fallback. The `userNameClaim`, `fallbackUserNameClaim`, and `fallbackUserNamePrefix` settings are applied to the response of `userinfo` endpoint.
-<7> Set this to `false` to disable the OAUTHBEARER mechanism on the listener. At least one of PLAIN or OAUTHBEARER has to be enabled. Default is `true`.
-<8> Set to `true` to enable PLAIN authentication on the listener, which is supported for clients on all platforms.
-<9> Additional configuration for the PLAIN mechanism. If specified, clients can authenticate over PLAIN by passing an access token as the `password` using an `$accessToken:` prefix.
+<6> If your authorization server does not provide an `iss` claim, it is not possible to perform an issuer check. In this situation, set `checkIssuer` to `false` and do not specify a `validIssuerUri`. Default is `true`.
+<7> If your authorization server provides an `aud` (audience) claim, and you want to enforce an audience check, set `checkAudience` to `true`. Audience checks identify the intended recipients of tokens. As a result, the Kafka broker will reject tokens that do not have its `clientId` in their `aud` claim. Default is `false`.
+<8> An authorization server may not provide a single attribute to identify both regular users and clients. When a client authenticates in its own name, the server might provide a _client ID_. When a user authenticates using a username and password to obtain a refresh token or an access token, the server might provide a _username_ attribute in addition to a client ID. Use this fallback option to specify the username claim (attribute) to use if a primary user ID attribute is not available. If necessary, a JsonPath expression like `"['client.info'].['client.id']"` can be used to retrieve the fallback username  to retrieve the username from nested JSON attributes within a token.
+<9> In situations where `fallbackUserNameClaim` is applicable, it may also be necessary to prevent name collisions between the values of the username claim, and those of the fallback username claim. Consider a situation where a client called `producer` exists, but also a regular user called `producer` exists. In order to differentiate between the two, you can use this property to add a prefix to the user ID of the client.
+<10> (Only applicable when using `introspectionEndpointUri`) Depending on the authorization server you are using, the introspection endpoint may or may not return the _token type_ attribute, or it may contain different values. You can specify a valid token type value that the response from the introspection endpoint has to contain.
+<11> (Only applicable when using `introspectionEndpointUri`) The authorization server may be configured or implemented in such a way to not provide any identifiable information in an Introspection Endpoint response. In order to obtain the user ID, you can configure the URI of the `userinfo` endpoint as a fallback. The `userNameClaim`, `fallbackUserNameClaim`, and `fallbackUserNamePrefix` settings are applied to the response of `userinfo` endpoint.
+<12> Set this to `false` to disable the OAUTHBEARER mechanism on the listener. At least one of PLAIN or OAUTHBEARER has to be enabled. Default is `true`.
+<13> Set to `true` to enable PLAIN authentication on the listener, which is supported for clients on all platforms.
+<14> Additional configuration for the PLAIN mechanism. If specified, clients can authenticate over PLAIN by passing an access token as the `password` using an `$accessToken:` prefix.
 For production, always use `https://` urls.
-<10> Additional custom rules can be imposed on the JWT access token during validation by setting this to a JsonPath filter query. If the access token does not contain the necessary data, it is rejected. When using the `introspectionEndpointUri`, the custom check is applied to the introspection endpoint response JSON.
-<11> An `audience` parameter passed to the token endpoint. An _audience_ is used  when obtaining an access token for inter-broker authentication. It is also used in the name of a client for OAuth 2.0 over PLAIN client authentication using a `clientId` and `secret`. This only affects the ability to obtain the token, and the content of the token, depending on the authorization server. It does not affect token validation rules by the listener.
-<12> A `scope` parameter passed to the token endpoint. A _scope_ is used when obtaining an access token for inter-broker authentication. It is also used in the name of a client for OAuth 2.0 over PLAIN client authentication using a `clientId` and `secret`. This only affects the ability to obtain the token, and the content of the token, depending on the authorization server. It does not affect token validation rules by the listener.
-<13> The connect timeout in seconds when connecting to the authorization server. The default value is 60.
-<14> The read timeout in seconds when connecting to the authorization server. The default value is 60.
-<15> The maximum number of times to retry a failed HTTP request to the authorization server. The default value is `0`, meaning that no retries are performed. To use this option effectively, consider reducing the timeout times for the `connectTimeoutSeconds` and `readTimeoutSeconds` options. However, note that retries may prevent the current worker thread from being available to other requests, and if too many requests stall, it could make the Kafka broker unresponsive.
-<16> The time to wait before attempting another retry of a failed HTTP request to the authorization server. By default, this time is set to zero, meaning that no pause is applied. This is because many issues that cause failed requests are per-request network glitches or proxy issues that can be resolved quickly. However, if your authorization server is under stress or experiencing high traffic, you may want to set this option to a value of 100 ms or more to reduce the load on the server and increase the likelihood of successful retries.
-<17> A JsonPath query that is used to extract groups information from either the JWT token or the introspection endpoint response. This option is not set by default. By configuring this option, a custom authorizer can make authorization decisions based on user groups.
-<18> A delimiter used to parse groups information when it is returned as a single delimited string. The default value is ',' (comma).
-<19> Some authorization servers have issues with client sending `Accept: application/json` header. By setting `includeAcceptHeader: false` the header will not be sent. Default is `true`.
+<15> Additional custom rules can be imposed on the JWT access token during validation by setting this to a JsonPath filter query. If the access token does not contain the necessary data, it is rejected. When using the `introspectionEndpointUri`, the custom check is applied to the introspection endpoint response JSON.
+<16> An `audience` parameter passed to the token endpoint. An _audience_ is used  when obtaining an access token for inter-broker authentication. It is also used in the name of a client for OAuth 2.0 over PLAIN client authentication using a `clientId` and `secret`. This only affects the ability to obtain the token, and the content of the token, depending on the authorization server. It does not affect token validation rules by the listener.
+<17> A `scope` parameter passed to the token endpoint. A _scope_ is used when obtaining an access token for inter-broker authentication. It is also used in the name of a client for OAuth 2.0 over PLAIN client authentication using a `clientId` and `secret`. This only affects the ability to obtain the token, and the content of the token, depending on the authorization server. It does not affect token validation rules by the listener.
+<18> The connect timeout in seconds when connecting to the authorization server. The default value is 60.
+<19> The read timeout in seconds when connecting to the authorization server. The default value is 60.
+<20> The maximum number of times to retry a failed HTTP request to the authorization server. The default value is `0`, meaning that no retries are performed. To use this option effectively, consider reducing the timeout times for the `connectTimeoutSeconds` and `readTimeoutSeconds` options. However, note that retries may prevent the current worker thread from being available to other requests, and if too many requests stall, it could make the Kafka broker unresponsive.
+<21> The time to wait before attempting another retry of a failed HTTP request to the authorization server. By default, this time is set to zero, meaning that no pause is applied. This is because many issues that cause failed requests are per-request network glitches or proxy issues that can be resolved quickly. However, if your authorization server is under stress or experiencing high traffic, you may want to set this option to a value of 100 ms or more to reduce the load on the server and increase the likelihood of successful retries.
+<22> A JsonPath query that is used to extract groups information from either the JWT token or the introspection endpoint response. This option is not set by default. By configuring this option, a custom authorizer can make authorization decisions based on user groups.
+<23> A delimiter used to parse groups information when it is returned as a single delimited string. The default value is ',' (comma).
+<24> Some authorization servers have issues with client sending `Accept: application/json` header. By setting `includeAcceptHeader: false` the header will not be sent. Default is `true`.
 
 . Save and exit the editor, then wait for rolling updates to complete.
 

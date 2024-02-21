@@ -90,31 +90,31 @@ spec:
   # ...
   authentication:
     # ...
-    disableTlsHostnameVerification: true <1>
-    checkAccessTokenType: false <2>
-    accessTokenIsJwt: false <3>
-    scope: any <4>
-    audience: kafka <5>
-    connectTimeoutSeconds: 60 <6>
-    readTimeoutSeconds: 60 <7>
-    httpRetries: 2 <8>
-    httpRetryPauseMs: 300 <9>
-    includeAcceptHeader: false <10>
+    disableTlsHostnameVerification: true <4>
+    checkAccessTokenType: false <5>
+    accessTokenIsJwt: false <6>
+    scope: any <7>
+    audience: kafka <8>
+    connectTimeoutSeconds: 60 <9>
+    readTimeoutSeconds: 60 <10>
+    httpRetries: 2 <11>
+    httpRetryPauseMs: 300 <12>
+    includeAcceptHeader: false <13>
 ----
-<1> (Optional) Disable TLS hostname verification. Default is `false`.
-<2> If the authorization server does not return a `typ` (type) claim inside the JWT token, you can apply `checkAccessTokenType: false` to skip the token type check. Default is `true`.
-<3> If you are using opaque tokens, you can apply `accessTokenIsJwt: false` so that access tokens are not treated as JWT tokens.
-<4> (Optional) The `scope` for requesting the token from the token endpoint.
+<4> (Optional) Disable TLS hostname verification. Default is `false`.
+<5> If the authorization server does not return a `typ` (type) claim inside the JWT token, you can apply `checkAccessTokenType: false` to skip the token type check. Default is `true`.
+<6> If you are using opaque tokens, you can apply `accessTokenIsJwt: false` so that access tokens are not treated as JWT tokens.
+<7> (Optional) The `scope` for requesting the token from the token endpoint.
 An authorization server may require a client to specify the scope.
 In this case it is `any`.
-<5> (Optional) The `audience` for requesting the token from the token endpoint.
+<8> (Optional) The `audience` for requesting the token from the token endpoint.
 An authorization server may require a client to specify the audience.
 In this case it is `kafka`.
-<6> (Optional) The connect timeout in seconds when connecting to the authorization server. The default value is 60.
-<7> (Optional) The read timeout in seconds when connecting to the authorization server. The default value is 60.
-<8> (Optional) The maximum number of times to retry a failed HTTP request to the authorization server. The default value is `0`, meaning that no retries are performed. To use this option effectively, consider reducing the timeout times for the `connectTimeoutSeconds` and `readTimeoutSeconds` options. However, note that retries may prevent the current worker thread from being available to other requests, and if too many requests stall, it could make the Kafka broker unresponsive.
-<9> (Optional) The time to wait before attempting another retry of a failed HTTP request to the authorization server. By default, this time is set to zero, meaning that no pause is applied. This is because many issues that cause failed requests are per-request network glitches or proxy issues that can be resolved quickly. However, if your authorization server is under stress or experiencing high traffic, you may want to set this option to a value of 100 ms or more to reduce the load on the server and increase the likelihood of successful retries.
-<10> (Optional) Some authorization servers have issues with client sending `Accept: application/json` header. By setting `includeAcceptHeader: false` the header will not be sent. Default is `true`.
+<9> (Optional) The connect timeout in seconds when connecting to the authorization server. The default value is 60.
+<10> (Optional) The read timeout in seconds when connecting to the authorization server. The default value is 60.
+<11> (Optional) The maximum number of times to retry a failed HTTP request to the authorization server. The default value is `0`, meaning that no retries are performed. To use this option effectively, consider reducing the timeout times for the `connectTimeoutSeconds` and `readTimeoutSeconds` options. However, note that retries may prevent the current worker thread from being available to other requests, and if too many requests stall, it could make the Kafka broker unresponsive.
+<12> (Optional) The time to wait before attempting another retry of a failed HTTP request to the authorization server. By default, this time is set to zero, meaning that no pause is applied. This is because many issues that cause failed requests are per-request network glitches or proxy issues that can be resolved quickly. However, if your authorization server is under stress or experiencing high traffic, you may want to set this option to a value of 100 ms or more to reduce the load on the server and increase the likelihood of successful retries.
+<13> (Optional) Some authorization servers have issues with client sending `Accept: application/json` header. By setting `includeAcceptHeader: false` the header will not be sent. Default is `true`.
 . Apply the changes to the deployment of your Kafka resource.
 +
 [source,yaml,subs="+quotes,attributes"]
