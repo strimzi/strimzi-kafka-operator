@@ -147,13 +147,13 @@ public class ZooKeeperEraserTest {
                 .thenAnswer(invocation -> Future.succeededFuture(zkPvcs.values().stream().toList()));
 
         // test reconcile
-        ZooKeeperEraser rcnclr = new ZooKeeperEraser(
+        ZooKeeperEraser zkEraser = new ZooKeeperEraser(
                 RECONCILIATION,
                 supplier
         );
 
         Checkpoint async = context.checkpoint();
-        rcnclr.reconcile()
+        zkEraser.reconcile()
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     verify(mockCmOps, times(1)).deleteAsync(any(), any(), any(), anyBoolean());
                     verify(mockSaOps, times(1)).deleteAsync(any(), any(), any(), anyBoolean());
@@ -251,13 +251,13 @@ public class ZooKeeperEraserTest {
                 .thenAnswer(invocation -> Future.succeededFuture(zkPvcs.values().stream().toList()));
 
         // test reconcile
-        ZooKeeperEraser rcnclr = new ZooKeeperEraser(
+        ZooKeeperEraser zkEraser = new ZooKeeperEraser(
                 RECONCILIATION,
                 supplier
         );
 
         Checkpoint async = context.checkpoint();
-        rcnclr.reconcile()
+        zkEraser.reconcile()
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     verify(mockCmOps, times(1)).deleteAsync(any(), any(), any(), anyBoolean());
                     verify(mockSaOps, times(1)).deleteAsync(any(), any(), any(), anyBoolean());
@@ -341,13 +341,13 @@ public class ZooKeeperEraserTest {
                 .thenAnswer(invocation -> Future.succeededFuture(zkPvcs.values().stream().toList()));
 
         // test reconcile
-        ZooKeeperEraser rcnclr = new ZooKeeperEraser(
+        ZooKeeperEraser zkEraser = new ZooKeeperEraser(
                 RECONCILIATION,
                 supplier
         );
 
         Checkpoint async = context.checkpoint();
-        rcnclr.reconcile()
+        zkEraser.reconcile()
                 .onComplete(context.failing(v -> context.verify(() -> {
                     verify(mockCmOps, never()).deleteAsync(any(), any(), any(), anyBoolean());
                     verify(mockSaOps, times(1)).deleteAsync(any(), any(), any(), anyBoolean());
