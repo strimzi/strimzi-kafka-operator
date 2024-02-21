@@ -60,7 +60,6 @@ public class KafkaReconcilerKRaftMigrationTest {
 
     private static final String NAMESPACE = "my-namespace";
     private static final String CLUSTER_NAME = "my-cluster";
-
     private static final int REPLICAS = 3;
     private static final Reconciliation RECONCILIATION = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME);
     private static final MockCertManager CERT_MANAGER = new MockCertManager();

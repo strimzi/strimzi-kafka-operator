@@ -284,9 +284,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     class ReconciliationState {
         private final String namespace;
         private final String name;
-        private final Kafka kafkaAssembly;
-        private final Reconciliation reconciliation;
-        private final KafkaMetadataStateManager kafkaMetadataStateManager;
+        /* test */ final Kafka kafkaAssembly;
+        /* test */ final Reconciliation reconciliation;
+        /* test */ final KafkaMetadataStateManager kafkaMetadataStateManager;
 
         /* test */ KafkaVersionChange versionChange;
 
