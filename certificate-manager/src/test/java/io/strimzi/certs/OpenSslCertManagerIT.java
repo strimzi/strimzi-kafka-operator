@@ -68,8 +68,11 @@ public class OpenSslCertManagerIT {
     public void testGenerateRootCaCertWithDays() throws Exception {
 
         File key = Files.createTempFile("key-", ".key").toFile();
+        key.deleteOnExit();
         File cert = Files.createTempFile("crt-", ".crt").toFile();
+        cert.deleteOnExit();
         File store = Files.createTempFile("crt-", ".p12").toFile();
+        store.deleteOnExit();
         Subject sbj = new Subject.Builder().withCommonName("MyCommonName").withOrganizationName("MyOrganization").build();
 
         ((Cmd) () -> ssl.generateSelfSignedCert(key, cert, sbj, 365)).exec();
@@ -263,15 +266,21 @@ public class OpenSslCertManagerIT {
         path.toFile().deleteOnExit();
         long fileCount = Files.list(path).count();
         File caKey = Files.createTempFile("ca-key-", ".key").toFile();
+        caKey.deleteOnExit();
         File caCert = Files.createTempFile("ca-crt-", ".crt").toFile();
+        caCert.deleteOnExit();
         File store = Files.createTempFile("store-", ".p12").toFile();
+        store.deleteOnExit();
 
         Subject caSbj = new Subject.Builder().withCommonName("CACommonName").withOrganizationName("CAOrganizationName").build();
 
         File key = Files.createTempFile("key-", ".key").toFile();
+        key.deleteOnExit();
         File csr = Files.createTempFile("csr-", ".csr").toFile();
+        csr.deleteOnExit();
         Subject sbj = new Subject.Builder().withCommonName("MyCommonName").withOrganizationName("MyOrganization").build();
         File cert = Files.createTempFile("crt-", ".crt").toFile();
+        cert.deleteOnExit();
 
         ssl.generateSelfSignedCert(caKey, caCert, caSbj, 365);
         doGenerateSignedCert(caKey, caCert, caSbj, key, csr, cert, store, "123456", sbj);
@@ -290,13 +299,18 @@ public class OpenSslCertManagerIT {
     public void testGenerateClientCertWithSubjectAndAltNames() throws Exception {
 
         File caKey = Files.createTempFile("ca-key-", ".key").toFile();
+        caKey.deleteOnExit();
         File caCert = Files.createTempFile("ca-crt-", ".crt").toFile();
+        caCert.deleteOnExit();
         File store = Files.createTempFile("store-", ".p12").toFile();
+        store.deleteOnExit();
 
         Subject caSbj = new Subject.Builder().withCommonName("CACommonName").withOrganizationName("CAOrganizationName").build();
 
         File key = Files.createTempFile("key-", ".key").toFile();
+        key.deleteOnExit();
         File csr = Files.createTempFile("csr-", ".csr").toFile();
+        csr.deleteOnExit();
         Subject subject = new Subject.Builder()
                 .withCommonName("MyCommonName")
                 .withOrganizationName("MyOrganization")
@@ -375,8 +389,11 @@ public class OpenSslCertManagerIT {
     public void doRenewSelfSignedCertWithSubject(Subject caSubject) throws Exception {
         // First generate a self-signed cert
         File caKey = Files.createTempFile("key-", ".key").toFile();
+        caKey.deleteOnExit();
         File originalCert = Files.createTempFile("crt-", ".crt").toFile();
+        originalCert.deleteOnExit();
         File originalStore = Files.createTempFile("crt-", ".p12").toFile();
+        originalStore.deleteOnExit();
 
         ((Cmd) () -> ssl.generateSelfSignedCert(caKey, originalCert, caSubject, 365)).exec();
         ssl.addCertToTrustStore(originalCert, "ca", originalStore, "123456");
@@ -442,8 +459,11 @@ public class OpenSslCertManagerIT {
 
         // First generate the CA
         File caKey = Files.createTempFile("ca-", ".key").toFile();
+        caKey.deleteOnExit();
         File caCert = Files.createTempFile("ca-", ".crt").toFile();
+        caCert.deleteOnExit();
         File caStore = Files.createTempFile("ca-", ".p12").toFile();
+        caStore.deleteOnExit();
 
         ssl.generateSelfSignedCert(caKey, caCert, caSubject, 365);
         ssl.addCertToTrustStore(caCert, "ca", caStore, "123456");
