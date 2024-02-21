@@ -258,6 +258,15 @@ public class KafkaBrokerConfigurationBuilderTest {
     }
 
     @ParallelTest
+    public void testZookeeperMigrationConfig() {
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.PRE_MIGRATION)
+                .withZooKeeperMigration()
+                .build();
+
+        assertThat(configuration, containsString("zookeeper.metadata.migration.enable=true"));
+    }
+
+    @ParallelTest
     public void testNoAuthorization()  {
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.ZK)
                 .withAuthorization("my-cluster", null)
