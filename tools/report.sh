@@ -254,7 +254,9 @@ if [[ -n $CO_DEPLOY ]]; then
   if [[ -n $CO_RS ]]; then
     echo "    $CO_RS"
     CO_RS=$(echo "$CO_RS" | cut -d "/" -f 2) && readonly CO_RS
-    $KUBE_CLIENT get rs "$CO_RS" -o yaml -n "$NAMESPACE" > "$OUT_DIR"/reports/replicasets/"$CO_RS".yaml
+    for res in $CO_RS; do
+      $KUBE_CLIENT get rs "$res" -o yaml -n "$NAMESPACE" > "$OUT_DIR"/reports/replicasets/"$res".yaml
+    done
   fi
   mapfile -t CO_PODS < <($KUBE_CLIENT get po -l strimzi.io/kind=cluster-operator -o name -n "$NAMESPACE" --ignore-not-found)
   if [[ ${#CO_PODS[@]} -ne 0 ]]; then
