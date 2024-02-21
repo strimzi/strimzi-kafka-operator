@@ -105,11 +105,6 @@
             <artifactId>mockkube</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.fabric8</groupId>
-            <artifactId>kubernetes-server-mock</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>io.strimzi</groupId>
             <artifactId>operator-common</artifactId>
             <classifier>tests</classifier>

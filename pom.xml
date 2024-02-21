@@ -169,6 +169,10 @@
         <rest-assured-json-path.version>4.4.0</rest-assured-json-path.version>
         <bouncycastle.version>1.76</bouncycastle.version>
         <kroxylicious-testing.version>0.8.1</kroxylicious-testing.version>
+        <kindcontainer.version>1.4.5</kindcontainer.version>
+        <testcontainer.version>1.19.5</testcontainer.version>
+        <docker-java.version>3.3.4</docker-java.version>
+        <junit4.version>4.13.2</junit4.version>
 
         <!-- properties to skip surefire tests during failsafe execution -->
         <skipTests>false</skipTests>
@@ -742,31 +746,6 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>io.fabric8</groupId>
-                <artifactId>kubernetes-server-mock</artifactId>
-                <version>${fabric8.kubernetes-client.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>com.squareup.okhttp3</groupId>
-                <artifactId>mockwebserver</artifactId>
-                <version>${mockwebserver.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <!-- Pin version of transitive junit dependency of the above dependency to avoid CVE-2020-15250 -->
-                <groupId>junit</groupId>
-                <artifactId>junit</artifactId>
-                <version>4.13.2</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>io.fabric8</groupId>
-                <artifactId>openshift-server-mock</artifactId>
-                <version>${fabric8.kubernetes-client.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
                 <groupId>io.strimzi</groupId>
                 <artifactId>strimzi-test-container</artifactId>
                 <version>${strimzi-test-container.version}</version>
@@ -879,6 +858,35 @@
                 <artifactId>testing-impl</artifactId>
                 <version>${kroxylicious-testing.version}</version>
                 <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.dajudge.kindcontainer</groupId>
+                <artifactId>kindcontainer</artifactId>
+                <version>${kindcontainer.version}</version>
+            </dependency>
+            <!-- JUnit dependency is needed at compile time by MockKube because of how Test Containers are designed -->
+            <dependency>
+                <groupId>junit</groupId>
+                <artifactId>junit</artifactId>
+                <version>${junit4.version}</version>
+            </dependency>
+            <!-- TestContainer dependency is needed at compile time by MockKube -->
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>testcontainers</artifactId>
+                <version>${testcontainer.version}</version>
+            </dependency>
+            <!-- Needed to align TestContainer version between different TestContainer implementations -->
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>toxiproxy</artifactId>
+                <version>${testcontainer.version}</version>
+            </dependency>
+            <!-- Needed to align Java Docker API version between different TestContainer implementations -->
+            <dependency>
+                <groupId> com.github.docker-java</groupId>
+                <artifactId>docker-java-api</artifactId>
+                <version>${docker-java.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -1158,6 +1166,7 @@
                                 <ignoredDependency>org.junit.platform</ignoredDependency>
                                 <ignoredUnusedDeclaredDependency>io.micrometer:micrometer-registry-prometheus</ignoredUnusedDeclaredDependency>
                                 <ignoredUnusedDeclaredDependency>org.mockito:mockito-inline</ignoredUnusedDeclaredDependency>
+                                <ignoredUnusedDeclaredDependency>junit:junit</ignoredUnusedDeclaredDependency>
                             </ignoredUnusedDeclaredDependencies>
                             <ignoredUsedUndeclaredDependencies>
                                 <ignoredUsedUndeclaredDependency>org.apache.kafka:kafka-raft:jar</ignoredUsedUndeclaredDependency>

@@ -6,7 +6,6 @@ package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.server.mock.EnableKubernetesMockClient;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.kafka.JbodStorage;
 import io.strimzi.api.kafka.model.kafka.JbodStorageBuilder;
@@ -31,7 +30,7 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.platform.KubernetesVersion;
-import io.strimzi.test.mockkube2.MockKube2;
+import io.strimzi.test.mockkube3.MockKube3;
 import io.vertx.core.Vertx;
 import io.vertx.core.WorkerExecutor;
 import io.vertx.junit5.Checkpoint;
@@ -43,51 +42,69 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@EnableKubernetesMockClient(crud = true)
 @ExtendWith(VertxExtension.class)
 public class JbodStorageMockTest {
-
-    private static final String NAMESPACE = "test-jbod-storage";
     private static final String NAME = "my-kafka";
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
 
     private static Vertx vertx;
     private static WorkerExecutor sharedWorkerExecutor;
+    private static KubernetesClient client;
+    private static MockKube3 mockKube;
+
+    private String namespace = "test-jbod-storage";
     private Kafka kafka;
-    // Injected by Fabric8 Mock Kubernetes Server
-    @SuppressWarnings("unused")
-    private KubernetesClient client;
-    private MockKube2 mockKube;
     private KafkaAssemblyOperator operator;
     private StrimziPodSetController podSetController;
 
     private List<SingleVolumeStorage> volumes;
 
     @BeforeAll
-    public static void before() {
+    public static void beforeAll() {
+        // Configure the Kubernetes Mock
+        mockKube = new MockKube3.MockKube3Builder()
+                .withKafkaNodePoolCrd()
+                .withKafkaCrd()
+                .withKafkaConnectCrd()
+                .withKafkaMirrorMaker2Crd()
+                .withStrimziPodSetCrd()
+                .withDeploymentController()
+                .withPodController()
+                .withServiceController()
+                .withDeletionController()
+                .build();
+        mockKube.start();
+        client = mockKube.client();
+
         vertx = Vertx.vertx();
         sharedWorkerExecutor = vertx.createSharedWorkerExecutor("kubernetes-ops-pool");
     }
 
     @AfterAll
-    public static void after() {
+    public static void afterAll() {
+        mockKube.stop();
         sharedWorkerExecutor.close();
         vertx.close();
     }
 
     @BeforeEach
-    public void init() {
+    public void beforeEach(TestInfo testInfo) {
+        namespace = testInfo.getTestMethod().orElseThrow().getName().toLowerCase(Locale.ROOT);
+        mockKube.prepareNamespace(namespace);
+
         this.volumes = new ArrayList<>(2);
 
         volumes.add(new PersistentClaimStorageBuilder()
@@ -101,7 +118,7 @@ public class JbodStorageMockTest {
 
         this.kafka = new KafkaBuilder()
                 .withNewMetadata()
-                    .withNamespace(NAMESPACE)
+                    .withNamespace(namespace)
                     .withName(NAME)
                 .endMetadata()
                 .withNewSpec()
@@ -119,31 +136,23 @@ public class JbodStorageMockTest {
                     .endKafka()
                     .withNewZookeeper()
                         .withReplicas(1)
+                        .withNewEphemeralStorage()
+                        .endEphemeralStorage()
                     .endZookeeper()
                 .endSpec()
                 .build();
 
-        // Configure the Kubernetes Mock
-        mockKube = new MockKube2.MockKube2Builder(client)
-                .withKafkaNodePoolCrd()
-                .withKafkaCrd()
-                .withInitialKafkas(kafka)
-                .withStrimziPodSetCrd()
-                .withDeploymentController()
-                .withPodController()
-                .withServiceController()
-                .build();
-        mockKube.start();
+        Crds.kafkaOperation(client).inNamespace(namespace).resource(kafka).create();
 
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION);
         // creating the Kafka operator
         ResourceOperatorSupplier ros =
-                new ResourceOperatorSupplier(JbodStorageMockTest.vertx, this.client,
-                        ResourceUtils.zookeeperLeaderFinder(JbodStorageMockTest.vertx, this.client),
+                new ResourceOperatorSupplier(JbodStorageMockTest.vertx, client,
+                        ResourceUtils.zookeeperLeaderFinder(JbodStorageMockTest.vertx, client),
                         ResourceUtils.adminClientProvider(), ResourceUtils.zookeeperScalerProvider(), ResourceUtils.kafkaAgentClientProvider(),
                         ResourceUtils.metricsProvider(), pfa, 60_000L);
 
-        podSetController = new StrimziPodSetController(NAMESPACE, Labels.EMPTY, ros.kafkaOperator, ros.connectOperator, ros.mirrorMaker2Operator, ros.strimziPodSetOperator, ros.podOperations, ros.metricsProvider, Integer.parseInt(ClusterOperatorConfig.POD_SET_CONTROLLER_WORK_QUEUE_SIZE.defaultValue()));
+        podSetController = new StrimziPodSetController(namespace, Labels.EMPTY, ros.kafkaOperator, ros.connectOperator, ros.mirrorMaker2Operator, ros.strimziPodSetOperator, ros.podOperations, ros.metricsProvider, Integer.parseInt(ClusterOperatorConfig.POD_SET_CONTROLLER_WORK_QUEUE_SIZE.defaultValue()));
         podSetController.start();
 
         this.operator = new KafkaAssemblyOperator(JbodStorageMockTest.vertx, pfa, new MockCertManager(),
@@ -154,13 +163,12 @@ public class JbodStorageMockTest {
     @AfterEach
     public void afterEach() {
         podSetController.stop();
-        mockKube.stop();
     }
 
     @Test
-    public void testJbodStorageCreatesPersistentVolumeClaimsMatchingKafkaVolumes(VertxTestContext context) {
+    public void testJbodStorageCreatesPVCsMatchingKafkaVolumes(VertxTestContext context) {
         Checkpoint async = context.checkpoint();
-        operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME))
+        operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, NAME))
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 List<PersistentVolumeClaim> pvcs = getPvcs();
 
@@ -212,16 +220,16 @@ public class JbodStorageMockTest {
         Set<String> expectedPvcsWithNewJbodStorageVolume = expectedPvcs(kafkaWithNewJbodVolume);
 
         // reconcile for kafka cluster creation
-        operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME))
+        operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, NAME))
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 List<PersistentVolumeClaim> pvcs = getPvcs();
                 Set<String> pvcsNames = pvcs.stream().map(pvc -> pvc.getMetadata().getName()).collect(Collectors.toSet());
                 assertThat(pvcsNames, is(expectedPvcs));
             })))
             .compose(v -> {
-                Crds.kafkaOperation(client).inNamespace(NAMESPACE).withName(NAME).patch(kafkaWithNewJbodVolume);
+                Crds.kafkaOperation(client).inNamespace(namespace).withName(NAME).patch(kafkaWithNewJbodVolume);
                 // reconcile kafka cluster with new Jbod storage
-                return operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME));
+                return operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, NAME));
             })
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 List<PersistentVolumeClaim> pvcs = getPvcs();
@@ -252,16 +260,16 @@ public class JbodStorageMockTest {
         Set<String> expectedPvcsWithRemovedJbodStorageVolume = expectedPvcs(kafkaWithRemovedJbodVolume);
 
         // reconcile for kafka cluster creation
-        operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME))
+        operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, NAME))
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 List<PersistentVolumeClaim> pvcs = getPvcs();
                 Set<String> pvcsNames = pvcs.stream().map(pvc -> pvc.getMetadata().getName()).collect(Collectors.toSet());
                 assertThat(pvcsNames, is(expectedPvcs));
             })))
             .compose(v -> {
-                Crds.kafkaOperation(client).inNamespace(NAMESPACE).withName(NAME).patch(kafkaWithRemovedJbodVolume);
+                Crds.kafkaOperation(client).inNamespace(namespace).withName(NAME).patch(kafkaWithRemovedJbodVolume);
                 // reconcile kafka cluster with a Jbod storage volume removed
-                return operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME));
+                return operator.reconcile(new Reconciliation("test-trigger2", Kafka.RESOURCE_KIND, namespace, NAME));
             })
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 List<PersistentVolumeClaim> pvcs = getPvcs();
@@ -289,18 +297,17 @@ public class JbodStorageMockTest {
         Set<String> expectedPvcs = expectedPvcs(kafka);
         Set<String> expectedPvcsWithUpdatedJbodStorageVolume = expectedPvcs(kafkaWithUpdatedJbodVolume);
 
-
         // reconcile for kafka cluster creation
-        operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME))
+        operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, NAME))
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 List<PersistentVolumeClaim> pvcs = getPvcs();
                 Set<String> pvcsNames = pvcs.stream().map(pvc -> pvc.getMetadata().getName()).collect(Collectors.toSet());
                 assertThat(pvcsNames, is(expectedPvcs));
             })))
             .compose(v -> {
-                Crds.kafkaOperation(client).inNamespace(NAMESPACE).withName(NAME).patch(kafkaWithUpdatedJbodVolume);
+                Crds.kafkaOperation(client).inNamespace(namespace).withName(NAME).patch(kafkaWithUpdatedJbodVolume);
                 // reconcile kafka cluster with a Jbod storage volume removed
-                return operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME));
+                return operator.reconcile(new Reconciliation("test-trigger2", Kafka.RESOURCE_KIND, namespace, NAME));
             })
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 List<PersistentVolumeClaim> pvcs = getPvcs();
@@ -327,7 +334,7 @@ public class JbodStorageMockTest {
         String kafkaStsName = KafkaResources.kafkaComponentName(JbodStorageMockTest.NAME);
         Labels pvcSelector = Labels.forStrimziCluster(JbodStorageMockTest.NAME).withStrimziKind(Kafka.RESOURCE_KIND).withStrimziName(kafkaStsName);
         return client.persistentVolumeClaims()
-                .inNamespace(JbodStorageMockTest.NAMESPACE)
+                .inNamespace(namespace)
                 .withLabels(pvcSelector.toMap())
                 .list().getItems();
     }

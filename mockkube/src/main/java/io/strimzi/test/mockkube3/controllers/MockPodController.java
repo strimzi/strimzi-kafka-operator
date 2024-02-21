@@ -2,8 +2,9 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.test.mockkube2.controllers;
+package io.strimzi.test.mockkube3.controllers;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
@@ -36,18 +37,17 @@ public class MockPodController extends AbstractMockController {
 
     /**
      * Constructs the Mock Pod controller
-     *
-     * @param client    Kubernetes client
      */
-    public MockPodController(KubernetesClient client) {
-        super(client);
+    public MockPodController() {
+        super();
     }
 
     /**
      * Starts the watch for new or updated Pods
      */
     @Override
-    public void start() {
+    @SuppressFBWarnings({"SIC_INNER_SHOULD_BE_STATIC_ANON"}) // Just a test util, no need to complicate the code bay factoring the anonymous watcher class out
+    public void start(KubernetesClient client) {
         watch = client.pods().inAnyNamespace().watch(new Watcher<>() {
             @Override
             public void eventReceived(Watcher.Action action, Pod pod) {
@@ -56,13 +56,18 @@ public class MockPodController extends AbstractMockController {
                     case MODIFIED:
                         ObjectMeta podMeta = pod.getMetadata();
                         try {
-                            //For some test cases, a pod always being set to Ready isn't desired
                             Map<String, String> annotations = podMeta.getAnnotations();
-                            if (annotations != null && annotations.containsKey(ANNO_DO_NOT_SET_READY)) {
+
+                            if (podMeta.getDeletionGracePeriodSeconds() != null)    {
+                                // Nothing to do, Pod is being deleted
+                                return;
+                            } else if (annotations != null && annotations.containsKey(ANNO_DO_NOT_SET_READY)) {
+                                // For some test cases, a pod always being set to Ready isn't desired
                                 return;
                             } else {
                                 client.pods().inNamespace(pod.getMetadata().getNamespace()).resource(new PodBuilder(pod)
                                                 .withStatus(new PodStatusBuilder()
+                                                        .withPhase("Running")
                                                         .withConditions(new PodConditionBuilder().withType("Ready").withStatus("True").build())
                                                         .build())
                                                 .build())

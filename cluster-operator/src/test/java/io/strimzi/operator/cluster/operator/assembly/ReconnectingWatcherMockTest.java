@@ -6,17 +6,20 @@ package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.server.mock.EnableKubernetesMockClient;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaList;
+import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
+import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
-import io.strimzi.test.mockkube2.MockKube2;
+import io.strimzi.test.mockkube3.MockKube3;
 import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -28,7 +31,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@EnableKubernetesMockClient(crud = true)
 public class ReconnectingWatcherMockTest {
     private static final Logger LOGGER = LogManager.getLogger(ReconnectingWatcherMockTest.class);
 
@@ -37,26 +39,34 @@ public class ReconnectingWatcherMockTest {
     private static final String CLUSTER_NAME = "my-cluster";
     private static final String CLUSTER_NAME2 = "my-cluster2";
 
+    private static KubernetesClient client;
+    private static MockKube3 mockKube;
+
     private Vertx vertx;
-    // Injected by Fabric8 Mock Kubernetes Server
-    @SuppressWarnings("unused")
-    private KubernetesClient client;
-    private MockKube2 mockKube;
+
+    @BeforeAll
+    public static void beforeAll() {
+        // Configure the Kubernetes Mock
+        mockKube = new MockKube3.MockKube3Builder()
+                .withKafkaCrd()
+                .withNamespaces(NAMESPACE, NAMESPACE2)
+                .build();
+        mockKube.start();
+        client = mockKube.client();
+    }
+
+    @AfterAll
+    public static void afterAll() {
+        mockKube.stop();
+    }
 
     @BeforeEach
     public void beforeEach() {
         vertx = Vertx.vertx();
-
-        // Configure the Kubernetes Mock
-        mockKube = new MockKube2.MockKube2Builder(client)
-                .withKafkaCrd()
-                .build();
-        mockKube.start();
     }
 
     @AfterEach
     public void afterEach() {
-        mockKube.stop();
         vertx.close();
     }
 
@@ -95,6 +105,14 @@ public class ReconnectingWatcherMockTest {
                 .withNewSpec()
                     .withNewKafka()
                         .withReplicas(1)
+                        .withListeners(new GenericKafkaListenerBuilder()
+                                .withName("plain")
+                                .withPort(9092)
+                                .withType(KafkaListenerType.INTERNAL)
+                                .withTls(false)
+                                .build())
+                        .withNewEphemeralStorage()
+                        .endEphemeralStorage()
                     .endKafka()
                 .endSpec()
                 .build();
@@ -154,6 +172,14 @@ public class ReconnectingWatcherMockTest {
                 .withNewSpec()
                     .withNewKafka()
                         .withReplicas(1)
+                        .withListeners(new GenericKafkaListenerBuilder()
+                                .withName("plain")
+                                .withPort(9092)
+                                .withType(KafkaListenerType.INTERNAL)
+                                .withTls(false)
+                                .build())
+                        .withNewEphemeralStorage()
+                        .endEphemeralStorage()
                     .endKafka()
                 .endSpec()
                 .build();
@@ -216,6 +242,14 @@ public class ReconnectingWatcherMockTest {
                 .withNewSpec()
                     .withNewKafka()
                         .withReplicas(1)
+                        .withListeners(new GenericKafkaListenerBuilder()
+                                .withName("plain")
+                                .withPort(9092)
+                                .withType(KafkaListenerType.INTERNAL)
+                                .withTls(false)
+                                .build())
+                        .withNewEphemeralStorage()
+                        .endEphemeralStorage()
                     .endKafka()
                 .endSpec()
                 .build();
@@ -228,6 +262,14 @@ public class ReconnectingWatcherMockTest {
                 .withNewSpec()
                     .withNewKafka()
                         .withReplicas(1)
+                        .withListeners(new GenericKafkaListenerBuilder()
+                                .withName("plain")
+                                .withPort(9092)
+                                .withType(KafkaListenerType.INTERNAL)
+                                .withTls(false)
+                                .build())
+                        .withNewEphemeralStorage()
+                        .endEphemeralStorage()
                     .endKafka()
                 .endSpec()
                 .build();
