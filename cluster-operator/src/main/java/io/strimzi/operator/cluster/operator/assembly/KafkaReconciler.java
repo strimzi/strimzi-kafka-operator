@@ -43,6 +43,7 @@ import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.cluster.model.RestartReason;
 import io.strimzi.operator.cluster.model.RestartReasons;
 import io.strimzi.operator.cluster.operator.resource.ConcurrentDeletionException;
+import io.strimzi.operator.cluster.operator.resource.KafkaAgentClientProvider;
 import io.strimzi.operator.cluster.operator.resource.KafkaRoller;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
@@ -143,6 +144,7 @@ public class KafkaReconciler {
     private final CrdOperator<KubernetesClient, KafkaNodePool, KafkaNodePoolList> kafkaNodePoolOperator;
     private final KubernetesRestartEventPublisher eventsPublisher;
     private final AdminClientProvider adminClientProvider;
+    private final KafkaAgentClientProvider kafkaAgentClientProvider;
 
     // State of the reconciliation => these objects might change during the reconciliation (the collection objects are
     // marked as final, but their contents is modified during the reconciliation)
@@ -215,6 +217,7 @@ public class KafkaReconciler {
         this.eventsPublisher = supplier.restartEventsPublisher;
 
         this.adminClientProvider = supplier.adminClientProvider;
+        this.kafkaAgentClientProvider = supplier.kafkaAgentClientProvider;
     }
 
     /**
@@ -426,6 +429,7 @@ public class KafkaReconciler {
                                 compositeFuture.resultAt(0),
                                 compositeFuture.resultAt(1),
                                 adminClientProvider,
+                                kafkaAgentClientProvider,
                                 brokerId -> kafka.generatePerBrokerConfiguration(brokerId, kafkaAdvertisedHostnames, kafkaAdvertisedPorts),
                                 logging,
                                 kafka.getKafkaVersion(),

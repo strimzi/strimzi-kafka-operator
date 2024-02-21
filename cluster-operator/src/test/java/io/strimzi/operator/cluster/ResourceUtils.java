@@ -48,6 +48,8 @@ import io.strimzi.operator.cluster.ClusterOperatorConfig.ClusterOperatorConfigBu
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.MockSharedEnvironmentProvider;
 import io.strimzi.operator.cluster.operator.assembly.BrokersInUseCheck;
+import io.strimzi.operator.cluster.operator.resource.DefaultKafkaAgentClientProvider;
+import io.strimzi.operator.cluster.operator.resource.KafkaAgentClientProvider;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperLeaderFinder;
@@ -601,6 +603,10 @@ public class ResourceUtils {
         };
     }
 
+    public static KafkaAgentClientProvider kafkaAgentClientProvider() {
+        return new DefaultKafkaAgentClientProvider();
+    }
+
     public static MetricsProvider metricsProvider() {
         return new MicrometerMetricsProvider(new SimpleMeterRegistry());
     }
@@ -641,6 +647,7 @@ public class ResourceUtils {
                 mock(StorageClassOperator.class),
                 mock(NodeOperator.class),
                 zookeeperScalerProvider(),
+                kafkaAgentClientProvider(),
                 metricsProvider(),
                 adminClientProvider(),
                 mock(ZookeeperLeaderFinder.class),

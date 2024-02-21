@@ -125,6 +125,7 @@ public class KafkaRoller {
     private final Supplier<BackOff> backoffSupplier;
     protected String namespace;
     private final AdminClientProvider adminClientProvider;
+    private final KafkaAgentClientProvider kafkaAgentClientProvider;
     private final Function<Integer, String> kafkaConfigProvider;
     private final String kafkaLogging;
     private final KafkaVersion kafkaVersion;
@@ -144,26 +145,27 @@ public class KafkaRoller {
     /**
      * Constructor
      *
-     * @param reconciliation        Reconciliation marker
-     * @param vertx                 Vert.x instance
-     * @param podOperations         Pod operator for managing pods
-     * @param pollingIntervalMs     Polling interval in milliseconds
-     * @param operationTimeoutMs    Operation timeout in milliseconds
-     * @param backOffSupplier       Backoff supplier
-     * @param nodes                 List of Kafka node references to consider rolling
-     * @param clusterCaCertSecret   Secret with the Cluster CA public key
-     * @param coKeySecret           Secret with the Cluster CA private key
-     * @param adminClientProvider   Kafka Admin client provider
-     * @param kafkaConfigProvider   Kafka configuration provider
-     * @param kafkaLogging          Kafka logging configuration
-     * @param kafkaVersion          Kafka version
-     * @param allowReconfiguration  Flag indicting whether reconfiguration is allowed or not
-     * @param eventsPublisher       Kubernetes Events publisher for publishing events about pod restarts
+     * @param reconciliation            Reconciliation marker
+     * @param vertx                     Vert.x instance
+     * @param podOperations             Pod operator for managing pods
+     * @param pollingIntervalMs         Polling interval in milliseconds
+     * @param operationTimeoutMs        Operation timeout in milliseconds
+     * @param backOffSupplier           Backoff supplier
+     * @param nodes                     List of Kafka node references to consider rolling
+     * @param clusterCaCertSecret       Secret with the Cluster CA public key
+     * @param coKeySecret               Secret with the Cluster CA private key
+     * @param adminClientProvider       Kafka Admin client provider
+     * @param kafkaAgentClientProvider  Kafka Agent client provider
+     * @param kafkaConfigProvider       Kafka configuration provider
+     * @param kafkaLogging              Kafka logging configuration
+     * @param kafkaVersion              Kafka version
+     * @param allowReconfiguration      Flag indicting whether reconfiguration is allowed or not
+     * @param eventsPublisher           Kubernetes Events publisher for publishing events about pod restarts
      */
     public KafkaRoller(Reconciliation reconciliation, Vertx vertx, PodOperator podOperations,
                        long pollingIntervalMs, long operationTimeoutMs, Supplier<BackOff> backOffSupplier, Set<NodeRef> nodes,
                        Secret clusterCaCertSecret, Secret coKeySecret,
-                       AdminClientProvider adminClientProvider,
+                       AdminClientProvider adminClientProvider, KafkaAgentClientProvider kafkaAgentClientProvider,
                        Function<Integer, String> kafkaConfigProvider, String kafkaLogging, KafkaVersion kafkaVersion, boolean allowReconfiguration, KubernetesRestartEventPublisher eventsPublisher) {
         this.namespace = reconciliation.namespace();
         this.cluster = reconciliation.name();
@@ -180,6 +182,7 @@ public class KafkaRoller {
         this.podOperations = podOperations;
         this.pollingIntervalMs = pollingIntervalMs;
         this.adminClientProvider = adminClientProvider;
+        this.kafkaAgentClientProvider = kafkaAgentClientProvider;
         this.kafkaConfigProvider = kafkaConfigProvider;
         this.kafkaLogging = kafkaLogging;
         this.kafkaVersion = kafkaVersion;
@@ -520,7 +523,7 @@ public class KafkaRoller {
 
     KafkaAgentClient initKafkaAgentClient() throws FatalProblem {
         try {
-            return new KafkaAgentClient(reconciliation, cluster, namespace, clusterCaCertSecret, coKeySecret);
+            return kafkaAgentClientProvider.createKafkaAgentClient(reconciliation, clusterCaCertSecret, coKeySecret);
         } catch (Exception e) {
             throw new FatalProblem("Failed to initialise KafkaAgentClient", e);
         }

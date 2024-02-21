@@ -169,7 +169,7 @@ public class PartialRollingUpdateMockTest {
         return new ResourceOperatorSupplier(vertx,
                 bootstrapClient,
                 ResourceUtils.zookeeperLeaderFinder(vertx, bootstrapClient),
-                ResourceUtils.adminClientProvider(), ResourceUtils.zookeeperScalerProvider(),
+                ResourceUtils.adminClientProvider(), ResourceUtils.zookeeperScalerProvider(), ResourceUtils.kafkaAgentClientProvider(),
                 ResourceUtils.metricsProvider(),
                 pfa,
                 60_000L);
