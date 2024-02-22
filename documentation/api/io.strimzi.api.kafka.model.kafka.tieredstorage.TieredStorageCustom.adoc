@@ -1,0 +1,20 @@
+To configure the tiered storage feature, set the `type` property to `custom`.
+
+Custom tiered storage allows for custom RemoteStorageManager configuration to be used. By default Strimzi will use the `TopicBasedRemoteLogMetadataManager` for RLMM configuration.
+
+.Example custom tiered storage configuration
+[source,yaml,subs="attributes+"]
+----
+kafka:
+  tieredStorage:
+    type: custom
+    remoteStorageManager:
+      className: com.example.kafka.tiered.storage.s3.S3RemoteStorageManager
+      classPath: /opt/kafka/plugins/tiered-storage-s3/*
+      config:
+        # A map with String keys and String values. Key fields will be automatically prefixed with `rsm.config.` and appended to Kafka broker config.
+        storage.bucket.name: my-bucket
+  config:
+    ...
+    rlmm.config.remote.log.metadata.topic.replication.factor: 1
+----
