@@ -110,7 +110,7 @@ public class ZooKeeperReconciler {
 
     private String loggingHash = "";
 
-    private final boolean isKRaftMigrationRollback;
+    /*test*/ final boolean isKRaftMigrationRollback;
 
     /**
      * Constructs the ZooKeeper reconciler
@@ -207,7 +207,7 @@ public class ZooKeeperReconciler {
                 .compose(i -> serviceEndpointsReady())
                 .compose(i -> headlessServiceEndpointsReady())
                 .compose(i -> deletePersistentClaims())
-                .compose(i -> maybeDeleteControllerZnode());
+                .compose(i -> this.isKRaftMigrationRollback ? maybeDeleteControllerZnode() : Future.succeededFuture());
     }
 
     /**
@@ -880,25 +880,19 @@ public class ZooKeeperReconciler {
      */
     protected Future<Void> maybeDeleteControllerZnode() {
         // migration rollback process ongoing
-        if (this.isKRaftMigrationRollback) {
-            LOGGER.infoCr(reconciliation, "KRaft migration rollback ... going to delete /controller znode");
-            return ReconcilerUtils.clientSecrets(reconciliation, secretOperator)
-                    .compose(compositeFuture -> {
-                        String zkConnectionString = KafkaResources.zookeeperServiceName(reconciliation.name()) + ":" + ZookeeperCluster.CLIENT_TLS_PORT;
-                        LOGGER.infoCr(reconciliation, "Deleting /controller znode on {}", zkConnectionString);
-                        KRaftMigrationUtils.deleteZooKeeperControllerZnode(
-                                reconciliation,
-                                compositeFuture.resultAt(0),
-                                compositeFuture.resultAt(1),
-                                operationTimeoutMs,
-                                zkConnectionString
-                        );
-                        return Future.succeededFuture();
-                    });
-        } else {
-            // TODO: to be removed, just for monitoring/testing
-            LOGGER.infoCr(reconciliation, "No KRaft migration rollback ongoing ... no need to delete /controller znode");
-            return Future.succeededFuture();
-        }
+        LOGGER.infoCr(reconciliation, "KRaft migration rollback ... going to delete /controller znode");
+        return ReconcilerUtils.clientSecrets(reconciliation, secretOperator)
+                .compose(compositeFuture -> {
+                    String zkConnectionString = KafkaResources.zookeeperServiceName(reconciliation.name()) + ":" + ZookeeperCluster.CLIENT_TLS_PORT;
+                    LOGGER.infoCr(reconciliation, "Deleting /controller znode on {}", zkConnectionString);
+                    KRaftMigrationUtils.deleteZooKeeperControllerZnode(
+                            reconciliation,
+                            compositeFuture.resultAt(0),
+                            compositeFuture.resultAt(1),
+                            operationTimeoutMs,
+                            zkConnectionString
+                    );
+                    return Future.succeededFuture();
+                });
     }
 }
