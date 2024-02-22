@@ -346,8 +346,7 @@ public class VerificationUtils {
      *
      * @param clusterName The name of the Kafka cluster
      * @param kafkaNamespaceName The namespace where Kafka is deployed
-     * @param kafkaPods The number of Kafka pods in the cluster
-     * @param zkPods The number of ZooKeeper pods in the cluster
+     * @param controllerPods The number of Kafka pods in the cluster
      * @param rackAwareEnabled Indicates whether rack-aware configuration is enabled
      */
     public static void verifyClusterOperatorKafkaDockerImages(String clusterName, String clusterOperatorNamespaceName, String kafkaNamespaceName, int controllerPods, boolean rackAwareEnabled) {
