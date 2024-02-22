@@ -1680,8 +1680,8 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                         )
                         .withAuthorization(cluster, authorization)
                         .withCruiseControl(cluster, ccMetricsReporter, node.broker())
-                        .withUserConfiguration(configuration, node.broker() && ccMetricsReporter != null)
-                        .withTieredStorage(cluster, tieredStorage);
+                        .withTieredStorage(cluster, tieredStorage)
+                        .withUserConfiguration(configuration, node.broker() && ccMetricsReporter != null);
 
         if (useKRaft) {
             builder.withKRaft(cluster, namespace, pool.processRoles, nodes());

@@ -1847,6 +1847,32 @@ spec:
                               description: Metadata applied to the resource.
                           description: Template for Kafka `StrimziPodSet` resource.
                       description: Template for Kafka cluster resources. The template allows users to specify how the Kubernetes resources are generated.
+                    tieredStorage:
+                      type: object
+                      properties:
+                        remoteStorageManager:
+                          type: object
+                          properties:
+                            className:
+                              type: string
+                              description: The class name for the RSM class.
+                            classPath:
+                              type: string
+                              description: The class path for the RSM class.
+                            configs:
+                              additionalProperties:
+                                type: string
+                              type: object
+                              description: The additional configuration map for the remoteStorageManager.
+                          description: Configuration for the remoteStorageManager.
+                        type:
+                          type: string
+                          enum:
+                            - custom
+                          description: "Storage type, must be either 'custom'."
+                      required:
+                        - type
+                      description: Configure tieredStorage for Kafka brokers.
                   required:
                     - listeners
                   description: Configuration of the Kafka cluster.

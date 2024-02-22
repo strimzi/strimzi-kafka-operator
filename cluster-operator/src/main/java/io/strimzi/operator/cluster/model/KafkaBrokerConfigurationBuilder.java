@@ -859,8 +859,8 @@ public class KafkaBrokerConfigurationBuilder {
         writer.println("rlmm.config.remote.log.metadata.common.client.ssl.keystore.password=${CERTS_STORE_PASSWORD}");
         writer.println("rlmm.config.remote.log.metadata.common.client.ssl.truststore.type=PKCS12");
         writer.println("# RSM configs set by the operator and by the user");
-        if (tieredStorage instanceof TieredStorageCustom) {
-            RemoteStorageManager rsm = ((TieredStorageCustom) tieredStorage).getRemoteStorageManager();
+        if (tieredStorage instanceof TieredStorageCustom customTieredStorage) {
+            RemoteStorageManager rsm = customTieredStorage.getRemoteStorageManager();
             writer.println("remote.log.storage.manager.class.name=" + rsm.getClassName());
             writer.println("remote.log.storage.manager.class.path=" + rsm.getClassPath());
             writer.println("remote.log.storage.manager.impl.prefix=rsm.config.");

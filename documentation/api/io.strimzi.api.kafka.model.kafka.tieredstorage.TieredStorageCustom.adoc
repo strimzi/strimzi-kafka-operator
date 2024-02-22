@@ -1,6 +1,6 @@
 To configure the tiered storage feature, set the `type` property to `custom`.
 
-Custom tiered storage allows for custom RemoteStorageManager configuration to be used. By default Strimzi will use the `TopicBasedRemoteLogMetadataManager` for RLMM configuration.
+Custom tiered storage allows for custom RemoteStorageManager configuration to be used. By default Strimzi will use the `TopicBasedRemoteLogMetadataManager` for RLMM configuration. Users need to add the tiered storage plugin to the image first by building a custom container image.
 
 .Example custom tiered storage configuration
 [source,yaml,subs="attributes+"]
