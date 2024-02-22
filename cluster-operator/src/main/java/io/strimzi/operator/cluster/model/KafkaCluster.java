@@ -1722,19 +1722,19 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         if ((node.broker() && this.kafkaMetadataConfigState.isZooKeeperToMigration()) ||
                 (node.controller() && this.kafkaMetadataConfigState.isPreMigrationToKRaft() && this.kafkaMetadataConfigState.isZooKeeperToPostMigration())) {
             builder.withZookeeper(cluster);
-            LOGGER.infoCr(reconciliation, "withZookeeper on node [{}]", node.podName());
+            LOGGER.debugCr(reconciliation, "withZookeeper on node [{}]", node.podName());
         }
 
         if ((node.broker() && this.kafkaMetadataConfigState.isMigration()) ||
                 (node.controller() && this.kafkaMetadataConfigState.isPreMigrationToKRaft() && this.kafkaMetadataConfigState.isZooKeeperToPostMigration())) {
             builder.withZooKeeperMigration();
-            LOGGER.infoCr(reconciliation, "withZooKeeperMigration on node [{}]", node.podName());
+            LOGGER.debugCr(reconciliation, "withZooKeeperMigration on node [{}]", node.podName());
         }
 
         if ((node.broker() && this.kafkaMetadataConfigState.isMigrationToKRaft()) ||
                 (node.controller() && this.kafkaMetadataConfigState.isPreMigrationToKRaft())) {
             builder.withKRaft(cluster, namespace, nodes());
-            LOGGER.infoCr(reconciliation, "withKRaft on node [{}]", node.podName());
+            LOGGER.debugCr(reconciliation, "withKRaft on node [{}]", node.podName());
         }
     }
 

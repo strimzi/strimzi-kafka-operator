@@ -217,10 +217,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Promise<Void> chainPromise = Promise.promise();
 
         KafkaMetadataConfigurationState kafkaMetadataConfigState = reconcileState.kafkaMetadataStateManager.getMetadataConfigurationState();
-        // since PRE_MIGRATION phase (because it's when controllers are deployed during migration) we need to validate usage of node pools and features for KRaft
-        LOGGER.infoCr(reconcileState.reconciliation, "KafkaMetadataConfigurationState = {}, isPreMigrationOrKRaft = {}", kafkaMetadataConfigState, kafkaMetadataConfigState.isPreMigrationToKRaft());
         boolean nodePoolsEnabled = featureGates.kafkaNodePoolsEnabled() && ReconcilerUtils.nodePoolsEnabled(reconcileState.kafkaAssembly);
 
+        // since PRE_MIGRATION phase (because it's when controllers are deployed during migration) we need to validate usage of node pools and features for KRaft
         if (kafkaMetadataConfigState.isPreMigrationToKRaft()) {
             // Makes sure KRaft is used only with KafkaNodePool custom resources and not with virtual node pools
             if (!nodePoolsEnabled)  {
@@ -252,8 +251,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         // only when cluster is full KRaft we can avoid reconcile ZooKeeper and not having the automatic handling of
         // inter broker protocol and log message format via the version change component
-        LOGGER.infoCr(reconcileState.reconciliation, "KafkaMetadataConfigurationState = {}, isKRaftEnabled = {}", kafkaMetadataConfigState, kafkaMetadataConfigState.isKRaft());
-
         reconcileState.initialStatus()
                 // Preparation steps => prepare cluster descriptions, handle CA creation or changes
                 .compose(state -> state.reconcileCas(clock))

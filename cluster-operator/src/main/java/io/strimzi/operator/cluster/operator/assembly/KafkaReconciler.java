@@ -1075,11 +1075,8 @@ public class KafkaReconciler {
                         }
                         return zkMigrationStateChecked ? Future.succeededFuture() : Future.failedFuture(new Throwable("Impossible to check ZooKeeper migration state"));
                     });
-        } else {
-            // TODO: to be removed, just for monitoring/testing
-            LOGGER.infoCr(reconciliation, "No need to check ZooKeeper to KRaft migration state");
-            return Future.succeededFuture();
         }
+        return Future.succeededFuture();
     }
 
     /**
