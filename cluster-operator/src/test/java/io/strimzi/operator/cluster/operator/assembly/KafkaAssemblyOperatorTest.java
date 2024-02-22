@@ -1091,7 +1091,13 @@ public class KafkaAssemblyOperatorTest {
                 Future.succeededFuture(new Secret())
         );
         when(mockSecretOps.getAsync(clusterNamespace, KafkaResources.secretName(clusterName))).thenReturn(
-                Future.succeededFuture(new Secret())
+                Future.succeededFuture(new SecretBuilder()
+                        .withNewMetadata().withName(KafkaResources.secretName(clusterName)).endMetadata()
+                        .addToData("cluster-operator.key", "key")
+                        .addToData("cluster-operator.crt", "cert")
+                        .addToData("cluster-operator.p12", "p12")
+                        .addToData("cluster-operator.password", "password")
+                        .build())
         );
         when(mockSecretOps.getAsync(clusterNamespace, CruiseControlResources.secretName(clusterName))).thenReturn(
                 Future.succeededFuture()

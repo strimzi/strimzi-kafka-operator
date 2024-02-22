@@ -30,7 +30,8 @@ public class PemTrustSetTest {
                 .endMetadata()
                 .withData(map("ca.crt", "notacert"))
                 .build();
-        Exception e = assertThrows(RuntimeException.class, () -> new PemTrustSet(secretWithBadCertificate));
+        PemTrustSet pemTrustSet = new PemTrustSet(secretWithBadCertificate);
+        Exception e = assertThrows(RuntimeException.class, pemTrustSet::trustedCertificates);
         assertThat(e.getMessage(), is("Bad/corrupt certificate found in data.ca.crt of Secret testcluster-cluster-operator-certs in namespace testns"));
     }
 

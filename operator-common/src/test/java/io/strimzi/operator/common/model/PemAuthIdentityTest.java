@@ -29,7 +29,7 @@ public class PemAuthIdentityTest {
                 .withData(emptyMap())
                 .build();
         Exception e = assertThrows(RuntimeException.class, () -> PemAuthIdentity.clusterOperator(secretWithMissingClusterOperatorKey));
-        assertThat(e.getMessage(), is("The Secret testns/testcluster-cluster-operator-certs is missing the key cluster-operator.key"));
+        assertThat(e.getMessage(), is("The Secret testns/testcluster-cluster-operator-certs is missing the field cluster-operator.key"));
     }
 
     @Test
@@ -42,7 +42,7 @@ public class PemAuthIdentityTest {
                 .withData(map("cluster-operator.key", "key"))
                 .build();
         Exception e = assertThrows(RuntimeException.class, () -> PemAuthIdentity.clusterOperator(secretWithMissingClusterOperatorKey));
-        assertThat(e.getMessage(), is("The Secret testns/testcluster-cluster-operator-certs is missing the key cluster-operator.crt"));
+        assertThat(e.getMessage(), is("The Secret testns/testcluster-cluster-operator-certs is missing the field cluster-operator.crt"));
     }
 
     @Test
@@ -57,7 +57,8 @@ public class PemAuthIdentityTest {
                         "cluster-operator.p12", "notatruststore",
                         "cluster-operator.password", "notapassword"))
                 .build();
-        Exception e = assertThrows(RuntimeException.class, () -> PemAuthIdentity.clusterOperator(secretWithBadCertificate));
+        PemAuthIdentity pemAuthIdentity = PemAuthIdentity.clusterOperator(secretWithBadCertificate);
+        Exception e = assertThrows(RuntimeException.class, pemAuthIdentity::certificateChain);
         assertThat(e.getMessage(), is("Bad/corrupt certificate found in data.cluster-operator.crt of Secret testcluster-cluster-operator-certs in namespace testns"));
     }
 }

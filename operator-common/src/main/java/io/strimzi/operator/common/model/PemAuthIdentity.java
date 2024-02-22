@@ -21,24 +21,24 @@ public class PemAuthIdentity {
 
     private final byte[] privateKeyAsPemBytes;
     private final byte[] certificateChainAsPemBytes;
-    private final X509Certificate certificateChain;
+    private final String secretCertName;
     private String secretName;
     private String secretNamespace;
 
     /**
      * @param secret Kubernetes Secret containing the Cluster Operator public and private key
-     * @param secretKey Key in the Kubernetes Secret that is associated with the requested identity
+     * @param secretCertName Key in the Kubernetes Secret that is associated with the requested identity
      */
-    private PemAuthIdentity(Secret secret, String secretKey) {
+    private PemAuthIdentity(Secret secret, String secretCertName) {
+        this.secretCertName = secretCertName;
         Optional.ofNullable(secret)
                 .map(Secret::getMetadata)
                 .ifPresent(objectMeta -> {
                     secretName = objectMeta.getName();
                     secretNamespace = objectMeta.getNamespace();
                 });
-        privateKeyAsPemBytes = Util.decodeBase64FieldFromSecret(secret, String.format("%s.key", secretKey));
-        certificateChainAsPemBytes = Util.decodeBase64FieldFromSecret(secret, String.format("%s.crt", secretKey));
-        certificateChain = validateCertificateChain(secretKey);
+        privateKeyAsPemBytes = Util.decodeBase64FieldFromSecret(secret, String.format("%s.key", secretCertName));
+        certificateChainAsPemBytes = Util.decodeBase64FieldFromSecret(secret, String.format("%s.crt", secretCertName));
     }
 
     /**
@@ -71,7 +71,12 @@ public class PemAuthIdentity {
      * @return The certificate chain for this authentication identity as a X509Certificate
      */
     public X509Certificate certificateChain() {
-        return certificateChain;
+        try {
+            final CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
+            return (X509Certificate) certificateFactory.generateCertificate(new ByteArrayInputStream(certificateChainAsPemBytes));
+        } catch (CertificateException e) {
+            throw Util.corruptCertificateException(secretNamespace, secretName, secretCertName);
+        }
     }
 
     /**
@@ -100,14 +105,5 @@ public class PemAuthIdentity {
      */
     public String privateKeyAsPem() {
         return Util.fromAsciiBytes(privateKeyAsPemBytes);
-    }
-
-    private X509Certificate validateCertificateChain(String secretKey) {
-        try {
-            final CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
-            return (X509Certificate) certificateFactory.generateCertificate(new ByteArrayInputStream(certificateChainAsPemBytes));
-        } catch (CertificateException e) {
-            throw Util.corruptCertificateException(secretNamespace, secretName, secretKey);
-        }
     }
 }

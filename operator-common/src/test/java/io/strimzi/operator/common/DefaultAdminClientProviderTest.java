@@ -111,8 +111,8 @@ public class DefaultAdminClientProviderTest {
 
     public static PemAuthIdentity mockPemAuthIdentity() {
         PemAuthIdentity mockAuthIdentity = mock(PemAuthIdentity.class);
-        when(mockAuthIdentity.pemCertificateChainString()).thenReturn(USER_CERT);
-        when(mockAuthIdentity.pemPrivateKeyString()).thenReturn(USER_KEY);
+        when(mockAuthIdentity.certificateChainAsPem()).thenReturn(USER_CERT);
+        when(mockAuthIdentity.privateKeyAsPem()).thenReturn(USER_KEY);
         return mockAuthIdentity;
     }
 }

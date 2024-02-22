@@ -22,8 +22,6 @@ import java.util.stream.Collectors;
  */
 public class PemTrustSet {
     private static final String CERT_SUFFIX = ".crt";
-
-    private final Set<X509Certificate> trustedCertificates;
     private final Map<String, byte[]> trustedCertificateMap;
     private String secretName;
     private String secretNamespace;
@@ -43,14 +41,13 @@ public class PemTrustSet {
                     secretNamespace = objectMeta.getNamespace();
                 });
         trustedCertificateMap = extractCerts(secret);
-        trustedCertificates = new HashSet<>(asX509Certificates().values());
     }
 
     /**
      * @return The set of trusted certificates as X509Certificate objects
      */
     public Set<X509Certificate> trustedCertificates() {
-        return trustedCertificates;
+        return new HashSet<>(asX509Certificates().values());
     }
 
     /**
