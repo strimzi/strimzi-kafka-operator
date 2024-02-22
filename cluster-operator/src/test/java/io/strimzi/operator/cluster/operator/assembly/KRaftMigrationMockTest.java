@@ -5,7 +5,6 @@
 package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.server.mock.EnableKubernetesMockClient;
 import io.strimzi.api.kafka.Crds;
@@ -20,20 +19,14 @@ import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolBuilder;
 import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
-import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
-import io.strimzi.operator.cluster.model.ClusterCa;
-import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
-import io.strimzi.operator.cluster.operator.resource.KRaftMigrationState;
-import io.strimzi.operator.cluster.operator.resource.KafkaAgentClient;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.model.ClientsCa;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.operator.MockCertManager;
@@ -62,9 +55,6 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 @EnableKubernetesMockClient(crud = true)
 @ExtendWith(VertxExtension.class)
@@ -178,15 +168,15 @@ public class KRaftMigrationMockTest {
                 .build();
         mockKube.start();
 
-        supplier =  new ResourceOperatorSupplier(vertx, client, ResourceUtils.zookeeperLeaderFinder(vertx, client),
-                ResourceUtils.adminClientProvider(), ResourceUtils.zookeeperScalerProvider(), ResourceUtils.metricsProvider(), PFA, 2_000);
+        supplier =  new ResourceOperatorSupplier(vertx, client, ResourceUtils.zookeeperLeaderFinder(vertx, client), ResourceUtils.adminClientProvider(),
+                ResourceUtils.zookeeperScalerProvider(), ResourceUtils.kafkaAgentClientProvider(), ResourceUtils.metricsProvider(), PFA, 2_000);
 
         podSetController = new StrimziPodSetController(NAMESPACE, Labels.EMPTY, supplier.kafkaOperator, supplier.connectOperator, supplier.mirrorMaker2Operator, supplier.strimziPodSetOperator, supplier.podOperations, supplier.metricsProvider, Integer.parseInt(ClusterOperatorConfig.POD_SET_CONTROLLER_WORK_QUEUE_SIZE.defaultValue()));
         podSetController.start();
 
         ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
 
-        operator = new MockKafkaAssemblyOperator(vertx, PFA, new MockCertManager(),
+        operator = new KafkaAssemblyOperator(vertx, PFA, new MockCertManager(),
                 new PasswordGenerator(10, "a", "a"), supplier, config);
 
         return operator.reconcile(new Reconciliation("initial-reconciliation", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME));
@@ -233,6 +223,12 @@ public class KRaftMigrationMockTest {
                 // 3rd reconcile, Kafka custom resource with the strimzi.io/kraft: migration annotation and in migration
                 .compose(v -> operator.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME), kafkaInMigrationWithMigrationAnno))
                 .onComplete(context.succeeding(status -> context.verify(() -> {
+                    // assert we are still in KRaftMigration ...
+                    assertThat(status.getKafkaMetadataState(), is(KafkaMetadataState.KRaftMigration.name()));
+                })))
+                // 4th reconcile, Kafka custom resource with the strimzi.io/kraft: migration annotation and in migration
+                .compose(v -> operator.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME), kafkaInMigrationWithMigrationAnno))
+                .onComplete(context.succeeding(status -> context.verify(() -> {
                     // assert transition to KRaftDualWriting ...
                     assertThat(status.getKafkaMetadataState(), is(KafkaMetadataState.KRaftDualWriting.name()));
                     // ... and brokers still connected to ZooKeeper, but configured with migration enabled and controllers connection
@@ -247,7 +243,7 @@ public class KRaftMigrationMockTest {
                         assertThat(brokerConfig, containsString("controller.quorum.voters"));
                     }
                 })))
-                // 3rd reconcile, Kafka custom resource with the strimzi.io/kraft: migration annotation and in dual-writing
+                // 5th reconcile, Kafka custom resource with the strimzi.io/kraft: migration annotation and in dual-writing
                 .compose(v -> operator.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME), kafkaInDualWritingWithMigrationAnno))
                 .onComplete(context.succeeding(status -> context.verify(() -> {
                     // assert transition to KRaftPostMigration ...
@@ -264,7 +260,7 @@ public class KRaftMigrationMockTest {
                         assertThat(brokerConfig, containsString("controller.quorum.voters"));
                     }
                 })))
-                // 4th reconcile, Kafka custom resource with the strimzi.io/kraft: enabled annotation and in post-migration
+                // 6th reconcile, Kafka custom resource with the strimzi.io/kraft: enabled annotation and in post-migration
                 .compose(v -> operator.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME), kafkaInPostMigrationWithEnabledAnno))
                 .onComplete(context.succeeding(status -> context.verify(() -> {
                     // assert transition to PreKRaft ...
@@ -279,7 +275,7 @@ public class KRaftMigrationMockTest {
                         assertThat(controllerConfig, not(containsString("zookeeper.connect")));
                     }
                 })))
-                // 5th reconcile, Kafka custom resource with the strimzi.io/kraft: enabled annotation and in pre-kraft
+                // 7th reconcile, Kafka custom resource with the strimzi.io/kraft: enabled annotation and in pre-kraft
                 .compose(v -> operator.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME), kafkaInPreKraftWithEnabledAnno))
                 .onComplete(context.succeeding(status -> context.verify(() -> {
                     // assert transition to KRaft ...
@@ -320,16 +316,22 @@ public class KRaftMigrationMockTest {
                 // 3rd reconcile, Kafka custom resource with the strimzi.io/kraft: migration annotation and in migration
                 .compose(v -> operator.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME), kafkaInMigrationWithMigrationAnno))
                 .onComplete(context.succeeding(status -> context.verify(() -> {
+                    // assert we are still in KRaftMigration ...
+                    assertThat(status.getKafkaMetadataState(), is(KafkaMetadataState.KRaftMigration.name()));
+                })))
+                // 4th reconcile, Kafka custom resource with the strimzi.io/kraft: migration annotation and in migration
+                .compose(v -> operator.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME), kafkaInMigrationWithMigrationAnno))
+                .onComplete(context.succeeding(status -> context.verify(() -> {
                     // assert transition to KRaftDualWriting
                     assertThat(status.getKafkaMetadataState(), is(KafkaMetadataState.KRaftDualWriting.name()));
                 })))
-                // 3rd reconcile, Kafka custom resource with the strimzi.io/kraft: migration annotation and in dual-writing
+                // 5th reconcile, Kafka custom resource with the strimzi.io/kraft: migration annotation and in dual-writing
                 .compose(v -> operator.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME), kafkaInDualWritingWithMigrationAnno))
                 .onComplete(context.succeeding(status -> context.verify(() -> {
                     // assert transition to KRaftPostMigration
                     assertThat(status.getKafkaMetadataState(), is(KafkaMetadataState.KRaftPostMigration.name()));
                 })))
-                // 4th reconcile, Kafka custom resource with the strimzi.io/kraft: rollback annotation and in post-migration
+                // 6th reconcile, Kafka custom resource with the strimzi.io/kraft: rollback annotation and in post-migration
                 .compose(v -> operator.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME), kafkaInPostMigrationWithRollbackAnno))
                 .onComplete(context.succeeding(status -> context.verify(() -> {
                     // assert transition back to KRaftDualWriting ...
@@ -348,7 +350,7 @@ public class KRaftMigrationMockTest {
                     // delete the controllers node pool
                     Crds.kafkaNodePoolOperation(client).inNamespace(NAMESPACE).resource(CONTROLLERS).delete();
                 })))
-                // 5th reconcile, Kafka custom resource with the strimzi.io/kraft: disabled annotation and in dual-writing
+                // 7th reconcile, Kafka custom resource with the strimzi.io/kraft: disabled annotation and in dual-writing
                 .recover(v -> operator.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME), kafkaInDualWritingWithDisabledAnno))
                 .onComplete(context.succeeding(status -> context.verify(() -> {
                     // verify controllers not running anymore
@@ -384,55 +386,4 @@ public class KRaftMigrationMockTest {
                 .endStatus()
                 .build();
     }
-
-    static class MockKafkaAssemblyOperator extends KafkaAssemblyOperator {
-
-        public MockKafkaAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa, CertManager certManager, PasswordGenerator passwordGenerator, ResourceOperatorSupplier supplier, ClusterOperatorConfig config) {
-            super(vertx, pfa, certManager, passwordGenerator, supplier, config);
-        }
-
-        @Override
-        ReconciliationState createReconciliationState(Reconciliation reconciliation, Kafka kafkaAssembly) {
-            return new MockReconciliationState(reconciliation, kafkaAssembly);
-        }
-
-        class MockReconciliationState extends ReconciliationState {
-
-            MockReconciliationState(Reconciliation reconciliation, Kafka kafkaAssembly) {
-                super(reconciliation, kafkaAssembly);
-            }
-
-            @Override
-            KafkaReconciler kafkaReconciler(List<KafkaNodePool> nodePools, KafkaCluster kafkaCluster) {
-                return new MockKafkaReconciler(
-                        reconciliation,
-                        kafkaAssembly,
-                        nodePools,
-                        kafkaCluster,
-                        clusterCa,
-                        clientsCa,
-                        config,
-                        supplier,
-                        pfa,
-                        vertx,
-                        kafkaMetadataStateManager
-                );
-            }
-        }
-    }
-
-    static class MockKafkaReconciler extends KafkaReconciler {
-
-        public MockKafkaReconciler(Reconciliation reconciliation, Kafka kafkaCr, List<KafkaNodePool> nodePools, KafkaCluster kafka, ClusterCa clusterCa, ClientsCa clientsCa, ClusterOperatorConfig config, ResourceOperatorSupplier supplier, PlatformFeaturesAvailability pfa, Vertx vertx, KafkaMetadataStateManager kafkaMetadataStateManager) {
-            super(reconciliation, kafkaCr, nodePools, kafka, clusterCa, clientsCa, config, supplier, pfa, vertx, kafkaMetadataStateManager);
-        }
-
-        @Override
-        protected KafkaAgentClient initKafkaAgentClient(Reconciliation reconciliation, Secret clusterCaCertSecret, Secret coKeySecret) {
-            KafkaAgentClient agentClient = mock(KafkaAgentClient.class);
-            when(agentClient.getKRaftMigrationState(any())).thenReturn(new KRaftMigrationState(KRaftMigrationState.MIGRATION));
-            return agentClient;
-        }
-    }
-
 }
