@@ -15,6 +15,7 @@ import io.strimzi.api.kafka.model.connector.KafkaConnectorStatus;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
+import io.strimzi.operator.cluster.operator.resource.DefaultKafkaAgentClientProvider;
 import io.strimzi.operator.cluster.operator.resource.DefaultZookeeperScalerProvider;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperLeaderFinder;
@@ -145,6 +146,7 @@ public class KafkaConnectorIT {
                         () -> new BackOff(5_000, 2, 4)),
                 new DefaultAdminClientProvider(),
                 new DefaultZookeeperScalerProvider(),
+                new DefaultKafkaAgentClientProvider(),
                 metrics,
                 pfa, 10_000
         );
@@ -215,6 +217,7 @@ public class KafkaConnectorIT {
                         () -> new BackOff(5_000, 2, 4)),
                 new DefaultAdminClientProvider(),
                 new DefaultZookeeperScalerProvider(),
+                new DefaultKafkaAgentClientProvider(),
                 metrics,
                 pfa, 10_000
         );
@@ -264,6 +267,7 @@ public class KafkaConnectorIT {
                         () -> new BackOff(5_000, 2, 4)),
                 new DefaultAdminClientProvider(),
                 new DefaultZookeeperScalerProvider(),
+                new DefaultKafkaAgentClientProvider(),
                 metrics,
                 pfa, 10_000
         );
@@ -324,6 +328,7 @@ public class KafkaConnectorIT {
                 () -> new BackOff(5_000, 2, 4)),
             new DefaultAdminClientProvider(),
             new DefaultZookeeperScalerProvider(),
+            new DefaultKafkaAgentClientProvider(),
             metrics,
             pfa, 10_000
         );
@@ -373,6 +378,7 @@ public class KafkaConnectorIT {
                 () -> new BackOff(5_000, 2, 4)),
             new DefaultAdminClientProvider(),
             new DefaultZookeeperScalerProvider(),
+            new DefaultKafkaAgentClientProvider(),
             metrics,
             pfa, 10_000
         );
