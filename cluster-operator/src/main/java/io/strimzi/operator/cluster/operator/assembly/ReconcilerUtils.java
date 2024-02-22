@@ -12,6 +12,7 @@ import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
+import io.strimzi.operator.cluster.model.ClusterOperatorPKCS12AuthIdentity;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.model.PodRevision;
@@ -33,6 +34,7 @@ import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
+import io.vertx.core.Promise;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -108,10 +110,8 @@ public class ReconcilerUtils {
      */
     public static CompositeFuture pemClientCertificates(Reconciliation reconciliation, SecretOperator secretOperator) {
         return Future.join(
-                getSecret(secretOperator, reconciliation.namespace(), KafkaResources.clusterCaCertificateSecretName(reconciliation.name()))
-                        .compose(secret -> Future.succeededFuture(new PemTrustSet(secret))),
-                getSecret(secretOperator, reconciliation.namespace(), KafkaResources.secretName(reconciliation.name()))
-                        .compose(secret -> Future.succeededFuture(PemAuthIdentity.clusterOperator(secret)))
+                pemTrustSet(reconciliation, secretOperator),
+                clientAuthIdentitySecret(reconciliation, secretOperator).compose(secret -> Future.succeededFuture(PemAuthIdentity.clusterOperator(secret)))
         );
     }
 
@@ -130,6 +130,25 @@ public class ReconcilerUtils {
     }
 
     /**
+     * Utility method which helps to get the set of client auth identities needed to bootstrap different clients used during
+     * the reconciliation.
+     *
+     * @param reconciliation Reconciliation Marker
+     * @param secretOperator Secret operator for working with Kubernetes Secrets that store certificates
+     *
+     * @return  Future containing the Kubernetes Secret with the Cluster Operator public and private key in both PEM and PKCS12 format
+     */
+    public static CompositeFuture clientAuthIdentity(Reconciliation reconciliation, SecretOperator secretOperator) {
+        Promise<PemAuthIdentity> pemAuthIdentity = Promise.promise();
+        Promise<ClusterOperatorPKCS12AuthIdentity> pkcs12AuthIdentity = Promise.promise();
+        clientAuthIdentitySecret(reconciliation, secretOperator).onSuccess(secret -> {
+            pemAuthIdentity.complete(PemAuthIdentity.clusterOperator(secret));
+            pkcs12AuthIdentity.complete(new ClusterOperatorPKCS12AuthIdentity(secret));
+        });
+        return Future.join(pemAuthIdentity.future(), pkcs12AuthIdentity.future());
+    }
+
+    /**
      * Utility method which helps to get the Kubernetes Secret that contains the identities to use for client authentication
      * when bootstrapping different clients used during the reconciliation.
      *
@@ -138,7 +157,7 @@ public class ReconcilerUtils {
      *
      * @return  Future containing the Kubernetes Secret with the Cluster Operator public and private key in both PEM and PKCS12 format
      */
-    public static Future<Secret> clientAuthIdentitySecret(Reconciliation reconciliation, SecretOperator secretOperator) {
+    private static Future<Secret> clientAuthIdentitySecret(Reconciliation reconciliation, SecretOperator secretOperator) {
         return getSecret(secretOperator, reconciliation.namespace(), KafkaResources.secretName(reconciliation.name()));
     }
 

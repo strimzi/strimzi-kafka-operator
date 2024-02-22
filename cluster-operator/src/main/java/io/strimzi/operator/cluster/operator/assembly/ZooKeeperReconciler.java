@@ -237,10 +237,10 @@ public class ZooKeeperReconciler {
         return Future.join(
                 ReconcilerUtils.pemTrustSet(reconciliation, secretOperator)
                         .onSuccess(pemTrustSet -> this.pemTrustSet = pemTrustSet),
-                ReconcilerUtils.clientAuthIdentitySecret(reconciliation, secretOperator)
-                        .onSuccess(secret -> {
-                            this.pemAuthIdentity = PemAuthIdentity.clusterOperator(secret);
-                            this.pkcs12AuthIdentity = new ClusterOperatorPKCS12AuthIdentity(secret);
+                ReconcilerUtils.clientAuthIdentity(reconciliation, secretOperator)
+                        .onSuccess(result -> {
+                            this.pemAuthIdentity = result.resultAt(0);
+                            this.pkcs12AuthIdentity = result.resultAt(1);
                         }))
                 .mapEmpty();
     }
