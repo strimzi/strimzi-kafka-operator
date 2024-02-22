@@ -47,13 +47,14 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
     private Integer jwksExpirySeconds;
     private boolean jwksIgnoreKeyUse = false;
     private String introspectionEndpointUri;
+    private String serverBearerTokenLocation;
     private String userNameClaim;
     private String fallbackUserNameClaim;
     private String fallbackUserNamePrefix;
     private String groupsClaim;
     private String groupsClaimDelimiter;
     private String userInfoEndpointUri;
-    private boolean checkAccessTokenType = true;
+    private Boolean checkAccessTokenType;
     private String validTokenType;
     private boolean accessTokenIsJwt = true;
     private List<CertSecretSource> tlsTrustedCertificates;
@@ -72,7 +73,7 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
     private String clientAudience = null;
     private boolean enableMetrics = false;
     private boolean failFast = true;
-    private boolean includeAcceptHeader = true;
+    private Boolean includeAcceptHeader;
 
     @Description("Must be `" + TYPE_OAUTH + "`")
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -276,6 +277,16 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
         this.introspectionEndpointUri = introspectionEndpointUri;
     }
 
+    @Description("Path to the file on the local filesystem that contains a bearer token to be used instead of client_id and secret when authenticating to authorization server")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public String getServerBearerTokenLocation() {
+        return serverBearerTokenLocation;
+    }
+
+    public void setServerBearerTokenLocation(String serverBearerTokenLocation) {
+        this.serverBearerTokenLocation = serverBearerTokenLocation;
+    }
+
     @Description("Name of the claim from the JWT authentication token, Introspection Endpoint response or User Info Endpoint response " +
             "which will be used to extract the user id. Defaults to `sub`.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -330,11 +341,11 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
     @Description("Configure whether the access token type check is performed or not. This should be set to `false` " +
             "if the authorization server does not include 'typ' claim in JWT token. Defaults to `true`.")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-    public boolean isCheckAccessTokenType() {
+    public Boolean getCheckAccessTokenType() {
         return checkAccessTokenType;
     }
 
-    public void setCheckAccessTokenType(boolean checkAccessTokenType) {
+    public void setCheckAccessTokenType(Boolean checkAccessTokenType) {
         this.checkAccessTokenType = checkAccessTokenType;
     }
 
@@ -474,11 +485,11 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
 
     @Description("Whether the Accept header should be set in requests to the authorization servers. The default value is `true`.")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-    public boolean isIncludeAcceptHeader() {
+    public Boolean getIncludeAcceptHeader() {
         return includeAcceptHeader;
     }
 
-    public void setIncludeAcceptHeader(boolean includeAcceptHeader) {
+    public void setIncludeAcceptHeader(Boolean includeAcceptHeader) {
         this.includeAcceptHeader = includeAcceptHeader;
     }
 }

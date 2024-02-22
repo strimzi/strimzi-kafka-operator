@@ -16,7 +16,7 @@
     </licenses>
 
     <properties>
-        <strimzi-oauth.version>0.14.0</strimzi-oauth.version>
+        <strimzi-oauth.version>1.0.0-SNAPSHOT</strimzi-oauth.version>
         <jayway-json-path.version>2.9.0</jayway-json-path.version>
         <cruise-control.version>2.5.135</cruise-control.version>
         <opa-authorizer.version>1.5.1</opa-authorizer.version>
@@ -36,6 +36,16 @@
         <repository>
             <id>cruise-control</id>
             <url>https://linkedin.jfrog.io/artifactory/cruise-control/</url>
+        </repository>
+        <repository>
+            <id>oauth-pre</id>
+            <url>https://raw.githubusercontent.com/mstruk/strimzi-kafka-oauth/m2repo/m2repo</url>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
         </repository>
     </repositories>
 
@@ -156,23 +166,6 @@
                 <exclusion>
                     <groupId>com.sun.activation</groupId>
                     <artifactId>jakarta.activation</artifactId>
-                </exclusion>
-                <exclusion>
-                    <!-- Excluded because of CVE-2023-51074 and replaced with newer version-->
-                    <groupId>com.jayway.jsonpath</groupId>
-                    <artifactId>json-path</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <!-- Override of OAuth dependency because of CVE-2023-51074 -->
-            <groupId>com.jayway.jsonpath</groupId>
-            <artifactId>json-path</artifactId>
-            <version>${jayway-json-path.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-api</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>

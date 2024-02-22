@@ -146,7 +146,7 @@
         <opentelemetry.alpha-version>1.19.0-alpha</opentelemetry.alpha-version>
         <jetty.version>9.4.53.v20231009</jetty.version>
         <javax-servlet.version>3.1.0</javax-servlet.version>
-        <strimzi-oauth.version>0.14.0</strimzi-oauth.version>
+        <strimzi-oauth.version>1.0.0-SNAPSHOT</strimzi-oauth.version>
         <netty.version>4.1.106.Final</netty.version>
         <micrometer.version>1.12.2</micrometer.version>
         <jayway-jsonpath.version>2.9.0</jayway-jsonpath.version>
@@ -187,6 +187,19 @@
             <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
         </repository>
     </distributionManagement>
+
+    <repositories>
+        <repository>
+            <id>oauth-pre</id>
+            <url>https://raw.githubusercontent.com/mstruk/strimzi-kafka-oauth/m2repo/m2repo</url>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+        </repository>
+    </repositories>
 
     <modules>
         <module>kafka-agent</module>

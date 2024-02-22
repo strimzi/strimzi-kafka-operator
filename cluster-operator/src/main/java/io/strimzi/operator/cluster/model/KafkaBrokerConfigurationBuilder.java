@@ -17,6 +17,7 @@ import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerConfiguration;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthentication;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationCustom;
+import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationK8sOIDC;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationOAuth;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationScramSha512;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationTls;
@@ -457,6 +458,9 @@ public class KafkaBrokerConfigurationBuilder {
                 addOptionIfNotNull(jaasOptions, "oauth.ssl.truststore.location", String.format("/tmp/kafka/oauth-%s.truststore.p12", listenerNameInProperty));
                 addOptionIfNotNull(jaasOptions, "oauth.ssl.truststore.password", PLACEHOLDER_CERT_STORE_PASSWORD);
                 addOptionIfNotNull(jaasOptions, "oauth.ssl.truststore.type", "PKCS12");
+            } else if (auth instanceof KafkaListenerAuthenticationK8sOIDC) {
+                addOptionIfNotNull(jaasOptions, "oauth.ssl.truststore.location", "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt");
+                addOptionIfNotNull(jaasOptions, "oauth.ssl.truststore.type", "PEM");
             }
 
             StringBuilder enabledMechanisms = new StringBuilder();
@@ -555,6 +559,7 @@ public class KafkaBrokerConfigurationBuilder {
         if (oauth.getJwksMinRefreshPauseSeconds() != null && oauth.getJwksMinRefreshPauseSeconds() >= 0) {
             addOptionIfNotNull(options, ServerConfig.OAUTH_JWKS_REFRESH_MIN_PAUSE_SECONDS, String.valueOf(oauth.getJwksMinRefreshPauseSeconds()));
         }
+        addOptionIfNotEmpty(options, ServerConfig.OAUTH_SERVER_BEARER_TOKEN_LOCATION, oauth.getServerBearerTokenLocation());
         addBooleanOptionIfTrue(options, ServerConfig.OAUTH_JWKS_IGNORE_KEY_USE, oauth.getJwksIgnoreKeyUse());
         addOptionIfNotNull(options, ServerConfig.OAUTH_INTROSPECTION_ENDPOINT_URI, oauth.getIntrospectionEndpointUri());
         addOptionIfNotNull(options, ServerConfig.OAUTH_USERINFO_ENDPOINT_URI, oauth.getUserInfoEndpointUri());
@@ -564,7 +569,7 @@ public class KafkaBrokerConfigurationBuilder {
         addOptionIfNotNull(options, ServerConfig.OAUTH_GROUPS_CLAIM, oauth.getGroupsClaim());
         addOptionIfNotNull(options, ServerConfig.OAUTH_GROUPS_CLAIM_DELIMITER, oauth.getGroupsClaimDelimiter());
         addBooleanOptionIfFalse(options, ServerConfig.OAUTH_ACCESS_TOKEN_IS_JWT, oauth.isAccessTokenIsJwt());
-        addBooleanOptionIfFalse(options, ServerConfig.OAUTH_CHECK_ACCESS_TOKEN_TYPE, oauth.isCheckAccessTokenType());
+        addBooleanOptionIfFalse(options, ServerConfig.OAUTH_CHECK_ACCESS_TOKEN_TYPE, getOrDefault(oauth.getCheckAccessTokenType(), true));
         addOptionIfNotNull(options, ServerConfig.OAUTH_VALID_TOKEN_TYPE, oauth.getValidTokenType());
 
         if (oauth.isDisableTlsHostnameVerification()) {
@@ -586,13 +591,19 @@ public class KafkaBrokerConfigurationBuilder {
 
         addBooleanOptionIfTrue(options, ServerConfig.OAUTH_ENABLE_METRICS, oauth.isEnableMetrics());
         addBooleanOptionIfFalse(options, ServerConfig.OAUTH_FAIL_FAST, oauth.getFailFast());
-        addBooleanOptionIfFalse(options, ServerConfig.OAUTH_INCLUDE_ACCEPT_HEADER, oauth.isIncludeAcceptHeader());
+        addBooleanOptionIfFalse(options, ServerConfig.OAUTH_INCLUDE_ACCEPT_HEADER, getOrDefault(oauth.getIncludeAcceptHeader(), true));
 
         return options;
     }
 
     static void addOptionIfNotNull(Map<String, String> options, String option, String value) {
         if (value != null) {
+            options.put(option, value);
+        }
+    }
+
+    static void addOptionIfNotEmpty(Map<String, String> options, String option, String value) {
+        if (value != null && !value.isEmpty()) {
             options.put(option, value);
         }
     }
@@ -613,6 +624,10 @@ public class KafkaBrokerConfigurationBuilder {
         if (value != null) {
             writer.println(name + "=" + value);
         }
+    }
+
+    static <T> T getOrDefault(T option, T value) {
+        return option != null ? option : value;
     }
 
     /**
