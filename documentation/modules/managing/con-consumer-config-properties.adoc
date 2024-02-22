@@ -97,8 +97,8 @@ The *range* assignment strategy assigns a range of partitions to each consumer, 
 Alternatively, opt for a *round robin* assignment strategy for equal partition distribution among consumers, which is ideal for high-throughput scenarios requiring parallel processing.
 
 For more stable partition assignments, consider the *sticky* and *cooperative sticky* strategies. 
-Sticky strategies maintain assigned partitions during rebalances, when possible. 
-If a consumer was previously assigned certain partitions, the sticky strategies aim to reassign those same partitions back to the same consumer after a rebalance.
+Sticky strategies aim to maintain assigned partitions during rebalances, when possible. 
+If a consumer was previously assigned certain partitions, the sticky strategies prioritize retaining those same partitions with the same consumer after a rebalance, while only revoking and reassigning the partitions that are actually moved to another consumer.
 Leaving partition assignments in place reduces the overhead on partition movements.
 The cooperative sticky strategy also supports cooperative rebalances, enabling uninterrupted consumption from partitions that are not reassigned.
 
