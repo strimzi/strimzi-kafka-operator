@@ -39,8 +39,8 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import static io.strimzi.api.kafka.model.common.ReplicasChangeState.ONGOING;
-import static io.strimzi.api.kafka.model.common.ReplicasChangeState.PENDING;
+import static io.strimzi.api.kafka.model.topic.ReplicasChangeState.ONGOING;
+import static io.strimzi.api.kafka.model.topic.ReplicasChangeState.PENDING;
 import static io.strimzi.operator.topic.v2.TopicOperatorUtil.buildBasicAuthValue;
 import static io.strimzi.operator.topic.v2.TopicOperatorUtil.getFileContent;
 import static io.strimzi.operator.topic.v2.TopicOperatorUtil.hasReplicasChange;

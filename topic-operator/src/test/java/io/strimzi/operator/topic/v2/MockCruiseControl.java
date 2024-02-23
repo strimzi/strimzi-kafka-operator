@@ -37,15 +37,19 @@ import static org.mockserver.model.Parameter.param;
  * Mock Cruise Control for topic_configuration and user_tasks endpoints.
  */
 public class MockCruiseControl {
+    private ClientAndServer server;
+
     /**
-     * Creates a mock Cruise Control for topic_configuration and user_tasks endpoints.
+     * Sets up and returns the Cruise Control MockSever.
      *
+     * @param port The port number the MockServer instance should listen on.
      * @param port The port number the mock server instance should listen on.
      * @param tlsKeyFile File containing the CA key.
      * @param tlsCrtFile File containing the CA crt.
-     * @return The configured ClientAndServer instance.
+     *                   
+     * @return The mock CruiseControl instance.
      */
-    public static ClientAndServer server(int port, File tlsKeyFile, File tlsCrtFile) {
+    public MockCruiseControl(int port, File tlsKeyFile, File tlsCrtFile)  {
         try {
             ConfigurationProperties.logLevel("WARN");
             ConfigurationProperties.certificateAuthorityPrivateKey(tlsKeyFile.getAbsolutePath());
@@ -60,14 +64,25 @@ public class MockCruiseControl {
                 "io.netty.handler.ssl.SslHandler.level=WARNING";
             LogManager.getLogManager().readConfiguration(new ByteArrayInputStream(loggingConfiguration.getBytes(UTF_8)));
 
-            ClientAndServer server = new ClientAndServer(port);
-            return server;
+            this.server = new ClientAndServer(port);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
-    public static void expectTopicConfigSuccessResponse(ClientAndServer server, File apiUserFile, File apiPassFile) {
+    public void reset() {
+        server.reset();
+    }
+
+    public void stop() {
+        server.stop();
+    }
+    
+    public boolean isRunning() {
+        return server.isRunning();
+    }
+
+    public void expectTopicConfigSuccessResponse(File apiUserFile, File apiPassFile) {
         // encryption and authentication disabled
         server
             .when(
@@ -141,7 +156,7 @@ public class MockCruiseControl {
                     .withDelay(TimeUnit.SECONDS, 0));
     }
 
-    public static void expectTopicConfigErrorResponse(ClientAndServer server, File apiUserFile, File apiPassFile) {
+    public void expectTopicConfigErrorResponse(File apiUserFile, File apiPassFile) {
         server
             .when(
                 request()
@@ -161,7 +176,7 @@ public class MockCruiseControl {
                     .withDelay(TimeUnit.SECONDS, 0));
     }
 
-    public static void expectTopicConfigRequestTimeout(ClientAndServer server, File apiUserFile, File apiPassFile) {
+    public void expectTopicConfigRequestTimeout(File apiUserFile, File apiPassFile) {
         server
             .when(
                 request()
@@ -179,7 +194,7 @@ public class MockCruiseControl {
                     .withDelay(TimeUnit.SECONDS, 0));
     }
 
-    public static void expectTopicConfigRequestUnauthorized(ClientAndServer server, File apiUserFile, File apiPassFile) {
+    public void expectTopicConfigRequestUnauthorized(File apiUserFile, File apiPassFile) {
         server
             .when(
                 request()
@@ -197,7 +212,7 @@ public class MockCruiseControl {
                     .withDelay(TimeUnit.SECONDS, 0));
     }
 
-    public static void expectUserTasksSuccessResponse(ClientAndServer server, File apiUserFile, File apiPassFile) {
+    public void expectUserTasksSuccessResponse(File apiUserFile, File apiPassFile) {
         // encryption and authentication disabled
         server
             .when(
@@ -259,7 +274,7 @@ public class MockCruiseControl {
                     .withDelay(TimeUnit.SECONDS, 0));
     }
 
-    public static void expectUserTasksErrorResponse(ClientAndServer server, File apiUserFile, File apiPassFile) {
+    public void expectUserTasksErrorResponse(File apiUserFile, File apiPassFile) {
         server
             .when(
                 request()
@@ -276,7 +291,7 @@ public class MockCruiseControl {
                     .withDelay(TimeUnit.SECONDS, 0));
     }
 
-    public static void expectUserTasksRequestTimeout(ClientAndServer server, File apiUserFile, File apiPassFile) {
+    public void expectUserTasksRequestTimeout(File apiUserFile, File apiPassFile) {
         server
             .when(
                 request()
@@ -292,7 +307,7 @@ public class MockCruiseControl {
                     .withDelay(TimeUnit.SECONDS, 0));
     }
 
-    public static void expectUserTasksRequestUnauthorized(ClientAndServer server, File apiUserFile, File apiPassFile) {
+    public void expectUserTasksRequestUnauthorized(File apiUserFile, File apiPassFile) {
         server
             .when(
                 request()

@@ -18,7 +18,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.mockserver.integration.ClientAndServer;
 
 import java.io.File;
 import java.io.IOException;
@@ -28,8 +27,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import static io.strimzi.api.kafka.model.common.ReplicasChangeState.ONGOING;
 import static io.strimzi.api.kafka.model.topic.KafkaTopic.RESOURCE_KIND;
+import static io.strimzi.api.kafka.model.topic.ReplicasChangeState.ONGOING;
 import static io.strimzi.operator.topic.v2.TopicOperatorConfig.BOOTSTRAP_SERVERS;
 import static io.strimzi.operator.topic.v2.TopicOperatorConfig.CRUISE_CONTROL_API_PASS_PATH;
 import static io.strimzi.operator.topic.v2.TopicOperatorConfig.CRUISE_CONTROL_API_USER_PATH;
@@ -58,7 +57,7 @@ public class ReplicasChangeClientTest {
     private static File sslCrtFile;
     private static File apiUserFile;
     private static File apiPassFile;
-    private static ClientAndServer server;
+    private static MockCruiseControl server;
 
     @BeforeAll
     public static void beforeAll() throws IOException {
@@ -67,31 +66,28 @@ public class ReplicasChangeClientTest {
         MockCertManager certManager = new MockCertManager();
         File tlsKeyFile = Files.createTempFile(TEST_PREFIX, ".key").toFile();
         sslCrtFile = Files.createTempFile(TEST_PREFIX, "-valid.crt").toFile();
+        sslCrtFile.deleteOnExit();
         new MockCertManager().generateSelfSignedCert(tlsKeyFile, sslCrtFile, 
             new Subject.Builder().withCommonName("Trusted Test CA").build(), 365);
 
         apiUserFile = Files.createTempFile(TEST_PREFIX, ".username").toFile();
+        apiUserFile.deleteOnExit();
         try (PrintWriter out = new PrintWriter(apiUserFile.getAbsolutePath())) {
             out.print("topic-operator-admin");
         }
         apiPassFile = Files.createTempFile(TEST_PREFIX, ".password").toFile();
+        apiPassFile.deleteOnExit();
         try (PrintWriter out = new PrintWriter(apiPassFile.getAbsolutePath())) {
             out.print("changeit");
         }
         
-        server = MockCruiseControl.server(serverPort, tlsKeyFile, sslCrtFile);
+        server = new MockCruiseControl(serverPort, tlsKeyFile, sslCrtFile);
     }
 
     @AfterAll
     public static void afterAll() {
         if (server != null && server.isRunning()) {
             server.stop();
-        }
-        
-        for (File f : new File(System.getProperty("java.io.tmpdir")).listFiles()) {
-            if (f.getName().startsWith(TEST_PREFIX)) {
-                f.delete();
-            }
         }
     }
 
@@ -105,12 +101,12 @@ public class ReplicasChangeClientTest {
     public void shouldSucceedWithValidConfig(TopicOperatorConfig config) {
         var client = new ReplicasChangeClient(config);
 
-        MockCruiseControl.expectTopicConfigSuccessResponse(server, apiUserFile, apiPassFile);
+        server.expectTopicConfigSuccessResponse(apiUserFile, apiPassFile);
         var pending = buildPendingReconcilableTopics();
         var pendingAndOngoing = client.requestPendingChanges(pending);
         assertOngoing(pending, pendingAndOngoing);
 
-        MockCruiseControl.expectUserTasksSuccessResponse(server, apiUserFile, apiPassFile);
+        server.expectUserTasksSuccessResponse(apiUserFile, apiPassFile);
         var ongoing = buildOngoingReconcilableTopics();
         var completedAndFailed = client.requestOngoingChanges(ongoing);
         assertCompleted(completedAndFailed);
@@ -219,13 +215,13 @@ public class ReplicasChangeClientTest {
         ));
 
         var client = new ReplicasChangeClient(config);
-        
-        MockCruiseControl.expectTopicConfigErrorResponse(server, apiUserFile, apiPassFile);
+
+        server.expectTopicConfigErrorResponse(apiUserFile, apiPassFile);
         var pending = buildPendingReconcilableTopics();
         var pendingAndOngoing = client.requestPendingChanges(pending);
         assertFailedWithMessage(pendingAndOngoing, "Replicas change failed (500), Cluster model not ready");
 
-        MockCruiseControl.expectUserTasksErrorResponse(server, apiUserFile, apiPassFile);
+        server.expectUserTasksErrorResponse(apiUserFile, apiPassFile);
         var ongoing = buildOngoingReconcilableTopics();
         var completedAndFailed = client.requestOngoingChanges(ongoing);
         assertFailedWithMessage(completedAndFailed, "Replicas change failed (500), Error processing GET " +
@@ -248,12 +244,12 @@ public class ReplicasChangeClientTest {
 
         var client = new ReplicasChangeClient(config);
 
-        MockCruiseControl.expectTopicConfigRequestTimeout(server, apiUserFile, apiPassFile);
+        server.expectTopicConfigRequestTimeout(apiUserFile, apiPassFile);
         var pending = buildPendingReconcilableTopics();
         var pendingAndOngoing = client.requestPendingChanges(pending);
         assertFailedWithMessage(pendingAndOngoing, "Replicas change failed (408)");
 
-        MockCruiseControl.expectUserTasksRequestTimeout(server, apiUserFile, apiPassFile);
+        server.expectUserTasksRequestTimeout(apiUserFile, apiPassFile);
         var ongoing = buildOngoingReconcilableTopics();
         var completedAndFailed = client.requestOngoingChanges(ongoing);
         assertFailedWithMessage(completedAndFailed, "Replicas change failed (408)");
@@ -275,12 +271,12 @@ public class ReplicasChangeClientTest {
 
         var client = new ReplicasChangeClient(config);
 
-        MockCruiseControl.expectTopicConfigRequestUnauthorized(server, apiUserFile, apiPassFile);
+        server.expectTopicConfigRequestUnauthorized(apiUserFile, apiPassFile);
         var pending = buildPendingReconcilableTopics();
         var pendingAndOngoing = client.requestPendingChanges(pending);
         assertFailedWithMessage(pendingAndOngoing, "Replicas change failed (401)");
 
-        MockCruiseControl.expectUserTasksRequestUnauthorized(server, apiUserFile, apiPassFile);
+        server.expectUserTasksRequestUnauthorized(apiUserFile, apiPassFile);
         var ongoing = buildOngoingReconcilableTopics();
         var completedAndFailed = client.requestOngoingChanges(ongoing);
         assertFailedWithMessage(completedAndFailed, "Replicas change failed (401)");

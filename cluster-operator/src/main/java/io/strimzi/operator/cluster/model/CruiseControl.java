@@ -413,17 +413,6 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     /**
      * Creates Cruise Control API auth usernames, passwords, and credentials file.
      *
-     * @param passwordGenerator The password generator for API users.
-     *
-     * @return Map containing Cruise Control API auth credentials.
-     */
-    public static Map<String, String> generateCruiseControlApiCredentials(PasswordGenerator passwordGenerator) {
-        return generateCruiseControlApiCredentials(passwordGenerator, null, null);
-    }
-
-    /**
-     * Creates Cruise Control API auth usernames, passwords, and credentials file.
-     *
      * @param passwordGenerator  The password generator for API users.
      * @param oldSecret          The old secret.         
      * @param adminUser          Additional admin user.
@@ -432,12 +421,23 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
      */
     public static Map<String, String> generateCruiseControlApiCredentials(PasswordGenerator passwordGenerator,
                                                                           Secret oldSecret,
-                                                                          AdminUser adminUser) {
+                                                                          CruiseControlUser adminUser) {
         if (oldSecret != null) {
             // The credentials should not change with every release
             // So if the secret with credentials already exists, we re-use the values
             // But we use the new secret to update labels etc. if needed
-            return oldSecret.getData();
+            var data = oldSecret.getData();
+            var adminPassword = data.get(API_ADMIN_PASSWORD_KEY);
+            var userPassword = data.get(API_USER_PASSWORD_KEY);
+            var authFile = data.get(API_AUTH_FILE_KEY);
+            if (adminPassword == null || adminPassword.isBlank() || userPassword == null
+                    || userPassword.isBlank() || authFile == null || authFile.isBlank()) {
+                throw new RuntimeException(format("Secret %s is invalid", oldSecret.getMetadata().getName()));
+            } else if (!Util.decodeFromBase64(authFile).contains(API_ADMIN_NAME) || !Util.decodeFromBase64(authFile).contains(API_USER_NAME)) {
+                throw new RuntimeException(format("Secret %s has invalid authentication file", oldSecret.getMetadata().getName()));
+            } else {
+                return data;
+            }
         } else {
             String apiAdminPassword = passwordGenerator.generate();
             String apiUserPassword = passwordGenerator.generate();
@@ -447,7 +447,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
              *  HashLoginService's file format: username: password [,rolename ...]
              */
             String authCredentialsFile =
-                API_ADMIN_NAME + ": " + apiAdminPassword + "," + API_ADMIN_ROLE + "\n" +
+                API_ADMIN_NAME + ": " + apiAdminPassword + "," + API_ADMIN_ROLE + "\n" + 
                     API_USER_NAME + ": " + apiUserPassword + "," + API_USER_ROLE + "\n";
 
             if (adminUser != null) {
@@ -464,48 +464,22 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     }
 
     /**
-     * Generate the Secret containing the Cruise Control API auth credentials.
-     *
-     * @param passwordGenerator The password generator for API users.
-     *
-     * @return The generated Secret.
-     */
-    public Secret generateApiSecret(PasswordGenerator passwordGenerator) {
-        return generateApiSecret(passwordGenerator, null, null);
-    }
-
-    /**
-     * Admin user credentials.
+     * Cruise Control user credentials.
      * @param username Username.
      * @param password Password.
      */
-    public record AdminUser(String username, String password) { }
+    public record CruiseControlUser(String username, String password) { }
 
     /**
      * Generate the Secret containing the Cruise Control API auth credentials.
      *
      * @param passwordGenerator  The password generator for API users.
      * @param oldSecret          The old secret.
-     *                              
-     * @return The generated Secret.
-     */
-    public Secret generateApiSecret(PasswordGenerator passwordGenerator, Secret oldSecret) {
-        return generateApiSecret(passwordGenerator, oldSecret, null);
-    }
-
-    /**
-     * Generate the Secret containing the Cruise Control API auth credentials.
-     *
-     * @param passwordGenerator  The password generator for API users.
      * @param adminUser          Additional admin user.
      *
      * @return The generated Secret.
      */
-    public Secret generateApiSecret(PasswordGenerator passwordGenerator, AdminUser adminUser) {
-        return generateApiSecret(passwordGenerator, null, adminUser);
-    }
-    
-    private Secret generateApiSecret(PasswordGenerator passwordGenerator, Secret oldSecret, AdminUser adminUser) {
+    public Secret generateApiSecret(PasswordGenerator passwordGenerator, Secret oldSecret, CruiseControlUser adminUser) {
         return ModelUtils.createSecret(CruiseControlResources.apiSecretName(cluster), namespace, labels, ownerReference,
             generateCruiseControlApiCredentials(passwordGenerator, oldSecret, adminUser), Collections.emptyMap(), Collections.emptyMap());
     }

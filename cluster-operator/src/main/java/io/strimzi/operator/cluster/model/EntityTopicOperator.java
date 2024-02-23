@@ -40,6 +40,7 @@ import java.util.Map;
 import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.API_TO_ADMIN_NAME;
 import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.API_TO_ADMIN_NAME_KEY;
 import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.API_TO_ADMIN_PASSWORD_KEY;
+import static java.lang.String.format;
 
 /**
  * Represents the Topic Operator deployment
@@ -322,7 +323,14 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
             // The credentials should not change with every release
             // So if the secret with credentials already exists, we re-use the values
             // But we use the new secret to update labels etc. if needed
-            return oldSecret.getData();
+            var data = oldSecret.getData();
+            var username = data.get(API_TO_ADMIN_NAME_KEY);
+            var password = data.get(API_TO_ADMIN_PASSWORD_KEY);
+            if (username == null || username.isBlank() || password == null || password.isBlank()) {
+                throw new RuntimeException(format("Secret %s is invalid", oldSecret.getMetadata().getName()));
+            } else {
+                return data;
+            }
         } else {
             PasswordGenerator passwordGenerator = new PasswordGenerator(16);
             String apiToAdminPassword = passwordGenerator.generate();

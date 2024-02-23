@@ -136,7 +136,7 @@ public class EntityOperatorReconciler {
      * @return Future which completes when the reconciliation is done.
      */
     protected Future<Void> topicOperatorCruiseControlApiSecret() {
-        if (cruiseControlEnabled) {
+        if (unidirectionalTopicOperator && cruiseControlEnabled) {
             String ccApiSecretName = KafkaResources.entityTopicOperatorCcApiSecretName(reconciliation.name());
             if (entityOperator != null && entityOperator.topicOperator() != null) {
                 return secretOperator.getAsync(reconciliation.namespace(), ccApiSecretName)
@@ -458,7 +458,7 @@ public class EntityOperatorReconciler {
             int caKeyGeneration = clusterCa.caKeyGeneration();
             Annotations.annotations(deployment.getSpec().getTemplate()).put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, String.valueOf(caKeyGeneration));
             
-            if (entityOperator.topicOperator() != null && cruiseControlEnabled) {
+            if (unidirectionalTopicOperator && cruiseControlEnabled && entityOperator.topicOperator() != null) {
                 Annotations.annotations(deployment.getSpec().getTemplate()).put(Annotations.ANNO_STRIMZI_AUTH_HASH, ccApiSecretHash);
             }
 

@@ -545,9 +545,9 @@ public class Util {
     /**
      * Encodes a String into Base64.
      *
-     * @param data String that should be encoded.
+     * @param data    String that should be encoded.
      *
-     * @return Base64 data.
+     * @return        Base64 data.
      */
     public static String encodeToBase64(String data)  {
         return Base64.getEncoder().encodeToString(data.getBytes(StandardCharsets.US_ASCII));
@@ -556,9 +556,9 @@ public class Util {
     /**
      * Decodes a String from Base64.
      *
-     * @param data String that should be decoded.
+     * @param data    String that should be decoded.
      *
-     * @return Plain data.
+     * @return         Plain data.
      */
     public static String decodeFromBase64(String data)  {
         return new String(Base64.getDecoder().decode(data), StandardCharsets.US_ASCII);

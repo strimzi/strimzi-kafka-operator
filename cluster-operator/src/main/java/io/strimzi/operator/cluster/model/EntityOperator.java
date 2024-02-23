@@ -137,7 +137,7 @@ public class EntityOperator extends AbstractModel {
      * @param kafkaAssembly desired resource with cluster configuration containing the Entity Operator one
      * @param versions The versions.
      * @param sharedEnvironmentProvider     Shared environment provider.
-     * @param unidirectionalTopicOperator Indicates whether the UTO should be used.
+     * @param unidirectionalTopicOperator   Whether the Unidirectional Topic Operator should be used.
      *
      * @return Entity Operator instance, null if not configured in the ConfigMap
      */

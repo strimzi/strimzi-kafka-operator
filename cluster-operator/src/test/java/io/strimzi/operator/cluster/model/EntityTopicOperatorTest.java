@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.model;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
+import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.strimzi.api.kafka.model.common.InlineLogging;
 import io.strimzi.api.kafka.model.common.JvmOptions;
@@ -23,6 +24,7 @@ import io.strimzi.api.kafka.model.kafka.entityoperator.EntityTopicOperatorSpec;
 import io.strimzi.api.kafka.model.kafka.entityoperator.EntityTopicOperatorSpecBuilder;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.Util;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
 
@@ -32,10 +34,15 @@ import java.util.List;
 import java.util.Map;
 
 import static io.strimzi.operator.cluster.model.EntityTopicOperator.CRUISE_CONTROL_API_PORT;
+import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.API_TO_ADMIN_NAME;
+import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.API_TO_ADMIN_NAME_KEY;
+import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.API_TO_ADMIN_PASSWORD_KEY;
 import static io.strimzi.test.TestUtils.map;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ParallelSuite
 public class EntityTopicOperatorTest {
@@ -353,5 +360,57 @@ public class EntityTopicOperatorTest {
             EntityOperator.ETO_CERTS_VOLUME_NAME, EntityOperator.ETO_CERTS_VOLUME_MOUNT,
             EntityOperator.ETO_CC_API_VOLUME_NAME, EntityOperator.ETO_CC_API_VOLUME_MOUNT
         )));
+    }
+
+    @ParallelTest
+    public void testGenerateCruiseControlApiSecret() {
+        EntityTopicOperatorSpec entityTopicOperatorSpec = new EntityTopicOperatorSpecBuilder()
+            .build();
+        EntityOperatorSpec entityOperatorSpec = new EntityOperatorSpecBuilder()
+            .withTopicOperator(entityTopicOperatorSpec)
+            .build();
+        Kafka resource =
+            new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                .editSpec()
+                .withEntityOperator(entityOperatorSpec)
+                .withNewCruiseControl()
+                .endCruiseControl()
+                .endSpec()
+                .build();
+        EntityTopicOperator entityTopicOperator = EntityTopicOperator.fromCrd(
+            new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(),
+                resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, true);
+
+        var newSecret = entityTopicOperator.generateCruiseControlApiSecret(null);
+        assertThat(newSecret, is(notNullValue()));
+        assertThat(newSecret.getData(), is(notNullValue()));
+        assertThat(newSecret.getData().size(), is(2));
+        assertThat(newSecret.getData().get(API_TO_ADMIN_NAME_KEY), is(Util.encodeToBase64(API_TO_ADMIN_NAME)));
+        assertThat(newSecret.getData().get(API_TO_ADMIN_NAME_KEY), is(notNullValue()));
+        
+        var name = Util.encodeToBase64(API_TO_ADMIN_NAME);
+        var password = Util.encodeToBase64("changeit");
+        var oldSecret = entityTopicOperator.generateCruiseControlApiSecret(
+            new SecretBuilder().withData(Map.of(API_TO_ADMIN_NAME_KEY, name, API_TO_ADMIN_PASSWORD_KEY, password)).build());
+        assertThat(oldSecret, is(notNullValue()));
+        assertThat(oldSecret.getData(), is(notNullValue()));
+        assertThat(oldSecret.getData().size(), is(2));
+        assertThat(oldSecret.getData().get(API_TO_ADMIN_NAME_KEY), is(name));
+        assertThat(oldSecret.getData().get(API_TO_ADMIN_PASSWORD_KEY), is(password));
+        
+        assertThrows(RuntimeException.class, () -> entityTopicOperator.generateCruiseControlApiSecret(
+            new SecretBuilder().withData(Map.of(API_TO_ADMIN_NAME_KEY, name)).build()));
+        
+        assertThrows(RuntimeException.class, () -> entityTopicOperator.generateCruiseControlApiSecret(
+            new SecretBuilder().withData(Map.of(API_TO_ADMIN_PASSWORD_KEY, password)).build()));
+
+        assertThrows(RuntimeException.class, () -> entityTopicOperator.generateCruiseControlApiSecret(
+            new SecretBuilder().withData(Map.of()).build()));
+
+        assertThrows(RuntimeException.class, () -> entityTopicOperator.generateCruiseControlApiSecret(
+            new SecretBuilder().withData(Map.of(API_TO_ADMIN_NAME_KEY, " ", API_TO_ADMIN_PASSWORD_KEY, password)).build()));
+
+        assertThrows(RuntimeException.class, () -> entityTopicOperator.generateCruiseControlApiSecret(
+            new SecretBuilder().withData(Map.of(API_TO_ADMIN_NAME_KEY, name, API_TO_ADMIN_PASSWORD_KEY, " ")).build()));
     }
 }
