@@ -41,8 +41,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import java.time.Clock;
 import java.util.Map;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -146,8 +144,8 @@ public class ZookeeperReconcilerKRaftMigrationTest {
         Checkpoint async = context.checkpoint();
 
         zookeeperReconciler.reconcile(status, Clock.systemUTC()).onComplete(context.succeeding(v -> context.verify(() -> {
-            assertThat(zookeeperReconciler.isKRaftMigrationRollback, is(true));
             verify(zookeeperReconciler, times(1)).maybeDeleteControllerZnode();
+            verify(zookeeperReconciler, times(1)).deleteControllerZnode();
             async.flag();
         })));
     }
@@ -192,8 +190,8 @@ public class ZookeeperReconcilerKRaftMigrationTest {
         Checkpoint async = context.checkpoint();
 
         zookeeperReconciler.reconcile(status, Clock.systemUTC()).onComplete(context.succeeding(res -> context.verify(() -> {
-            assertThat(zookeeperReconciler.isKRaftMigrationRollback, is(false));
-            verify(zookeeperReconciler, times(0)).maybeDeleteControllerZnode();
+            verify(zookeeperReconciler, times(1)).maybeDeleteControllerZnode();
+            verify(zookeeperReconciler, times(0)).deleteControllerZnode();
             async.flag();
         })));
     }
@@ -205,11 +203,11 @@ public class ZookeeperReconcilerKRaftMigrationTest {
 
         @Override
         public Future<Void> reconcile(KafkaStatus kafkaStatus, Clock clock)    {
-            return super.isKRaftMigrationRollback ? maybeDeleteControllerZnode() : Future.succeededFuture();
+            return maybeDeleteControllerZnode();
         }
 
         @Override
-        protected Future<Void> maybeDeleteControllerZnode() {
+        protected Future<Void> deleteControllerZnode() {
             return Future.succeededFuture();
         }
     }

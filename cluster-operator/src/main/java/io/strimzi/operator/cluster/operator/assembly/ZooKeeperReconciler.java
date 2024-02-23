@@ -110,7 +110,7 @@ public class ZooKeeperReconciler {
 
     private String loggingHash = "";
 
-    /*test*/ final boolean isKRaftMigrationRollback;
+    private final boolean isKRaftMigrationRollback;
 
     /**
      * Constructs the ZooKeeper reconciler
@@ -207,7 +207,7 @@ public class ZooKeeperReconciler {
                 .compose(i -> serviceEndpointsReady())
                 .compose(i -> headlessServiceEndpointsReady())
                 .compose(i -> deletePersistentClaims())
-                .compose(i -> this.isKRaftMigrationRollback ? maybeDeleteControllerZnode() : Future.succeededFuture());
+                .compose(i -> maybeDeleteControllerZnode());
     }
 
     /**
@@ -876,9 +876,19 @@ public class ZooKeeperReconciler {
      * it will delete the /controller znode to allow brokers to elect a new controller among them, now that KRaft
      * controllers are out of the picture.
      *
-     * @return  Completes when the possible /controller znode deletion is done
+     * @return  Completes when the possible /controller znode deletion is done or no deletion is required
      */
     protected Future<Void> maybeDeleteControllerZnode() {
+        return this.isKRaftMigrationRollback ? deleteControllerZnode() : Future.succeededFuture();
+    }
+
+    /**
+     * Deletes the /controller znode to allow brokers to elect a new controller among them, now that KRaft
+     * controllers are out of the picture.
+     *
+     * @return  Completes when the /controller znode deletion is done
+     */
+    protected Future<Void> deleteControllerZnode() {
         // migration rollback process ongoing
         LOGGER.infoCr(reconciliation, "KRaft migration rollback ... going to delete /controller znode");
         return ReconcilerUtils.clientSecrets(reconciliation, secretOperator)
