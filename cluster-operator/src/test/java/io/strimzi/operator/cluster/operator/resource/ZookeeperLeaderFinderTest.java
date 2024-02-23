@@ -4,15 +4,12 @@
  */
 package io.strimzi.operator.cluster.operator.resource;
 
-import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Ca;
-import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -92,6 +89,7 @@ public class ZookeeperLeaderFinderTest {
             return new NetClientOptions()
                     .setKeyCertOptions(coCertificate.keyCertOptions())
                     .setTrustOptions(zkCertificate.trustOptions())
+                    .setHostnameVerificationAlgorithm("")
                     .setSsl(true);
         }
 
@@ -232,7 +230,7 @@ public class ZookeeperLeaderFinderTest {
         int firstPodIndex = 0;
         finder.findZookeeperLeader(Reconciliation.DUMMY_RECONCILIATION, Set.of(createPodWithId(firstPodIndex)), dummySecret(), dummySecret())
             .onComplete(context.succeeding(leader -> {
-                context.verify(() -> assertThat(leader, is("my-cluster-kafka-0")));
+                context.verify(() -> assertThat(leader, is("my-cluster-zookeeper-0")));
                 a.flag();
             }));
     }
@@ -349,7 +347,7 @@ public class ZookeeperLeaderFinderTest {
     @Test
     public void testFinderHandlesFailureByLeaderFoundOnThirdAttempt(VertxTestContext context) throws InterruptedException {
         int desiredLeaderId = 1;
-        String leaderPod = "my-cluster-kafka-1";
+        String leaderPod = "my-cluster-zookeeper-1";
         int succeedOnAttempt = 2;
 
         int[] ports = startMockZks(context, 2, (id, attempt) -> attempt == succeedOnAttempt && id == desiredLeaderId);
@@ -370,7 +368,7 @@ public class ZookeeperLeaderFinderTest {
     @Test
     public void testLeaderFoundFirstAttempt(VertxTestContext context) throws InterruptedException {
         int leader = 1;
-        String leaderPod = "my-cluster-kafka-1";
+        String leaderPod = "my-cluster-zookeeper-1";
 
         int[] ports = startMockZks(context, 2, (id, attempt) -> id == leader);
 
@@ -388,19 +386,11 @@ public class ZookeeperLeaderFinderTest {
     }
 
     String createPodWithId(int id) {
-        return "my-cluster-kafka-" + id;
+        return "my-cluster-zookeeper-" + id;
     }
 
     @Test
     public void testGetHostReturnsCorrectHostForGivenPod() {
-        Pod pod = new PodBuilder()
-                .withNewMetadata()
-                    .withName(KafkaResources.zookeeperPodName("my-cluster", 3))
-                    .withNamespace("myproject")
-                    .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, "my-cluster")
-                .endMetadata()
-            .build();
-
         assertThat(new ZookeeperLeaderFinder(vertx, this::backoff).host(new Reconciliation("test", "Kafka", "myproject", "my-cluster"), KafkaResources.zookeeperPodName("my-cluster", 3)),
                 is("my-cluster-zookeeper-3.my-cluster-zookeeper-nodes.myproject.svc.cluster.local"));
     }
