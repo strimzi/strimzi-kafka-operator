@@ -40,6 +40,8 @@ import java.util.concurrent.TimeUnit;
  * running controllers.
  */
 public class MockKube3 {
+    private final static String ETCD_IMAGE = "registry.k8s.io/etcd:3.5.12-0";
+
     private final ApiServerContainer<?> apiServer;
     private final List<AbstractMockController> controllers = new ArrayList<>();
     private final List<String> crds = new ArrayList<>();
@@ -55,7 +57,7 @@ public class MockKube3 {
      */
     public MockKube3() {
         // Override the Etcd version to get multiplatform support
-        this.apiServer = new ApiServerContainer<>().withEtcdImage(DockerImageName.parse("registry.k8s.io/etcd:3.5.12-0"));
+        this.apiServer = new ApiServerContainer<>().withEtcdImage(DockerImageName.parse(ETCD_IMAGE));
     }
 
     /**

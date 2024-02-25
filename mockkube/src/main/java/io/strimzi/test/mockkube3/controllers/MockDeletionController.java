@@ -32,7 +32,11 @@ import java.util.Set;
  * The MockDeletionController handles deletion of various resources by removing the finalizers otherwise removed by
  * other Kubernetes components. It currently handles:
  *   - Secrets
+ *   - Config Maps
  *   - PVCs
+ *   - Services
+ *   - Pods
+ *   - StrimziPodSet
  */
 public class MockDeletionController extends AbstractMockController {
     private static final Logger LOGGER = LogManager.getLogger(MockDeletionController.class);
@@ -41,7 +45,7 @@ public class MockDeletionController extends AbstractMockController {
     private final List<Watch> watches = new ArrayList<>();
 
     /**
-     * Constructs the Mock PVC controller
+     * Constructs the Mock Deletion Controller
      */
     public MockDeletionController() {
         super();
@@ -167,7 +171,7 @@ public class MockDeletionController extends AbstractMockController {
     }
 
     /**
-     * Stops the watch for PVC resources
+     * Stops the watches for the various resources
      */
     @Override
     public void stop() {
