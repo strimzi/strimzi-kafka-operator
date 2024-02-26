@@ -11,6 +11,9 @@ import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.ServiceAccount;
+import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
+import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watch;
@@ -37,6 +40,9 @@ import java.util.Set;
  *   - Services
  *   - Pods
  *   - StrimziPodSet
+ *   - NetworkPolicy
+ *   - ServiceAccount
+ *   - PodDisruptionBudget
  */
 public class MockDeletionController extends AbstractMockController {
     private static final Logger LOGGER = LogManager.getLogger(MockDeletionController.class);
@@ -147,6 +153,48 @@ public class MockDeletionController extends AbstractMockController {
                 throw e;
             }
         }
+
+        watches.add(client.network().networkPolicies().inAnyNamespace().watch(new Watcher<>() {
+            @Override
+            public void eventReceived(Action action, NetworkPolicy networkPolicy) {
+                if (action == Action.MODIFIED) {
+                    removeFinalizersIfNeeded(client.network().networkPolicies(), networkPolicy);
+                }
+            }
+
+            @Override
+            public void onClose(WatcherException e) {
+                LOGGER.error("Mock NetworkPolicy deletion watch closed", e);
+            }
+        }));
+
+        watches.add(client.serviceAccounts().inAnyNamespace().watch(new Watcher<>() {
+            @Override
+            public void eventReceived(Action action, ServiceAccount serviceAccount) {
+                if (action == Action.MODIFIED) {
+                    removeFinalizersIfNeeded(client.serviceAccounts(), serviceAccount);
+                }
+            }
+
+            @Override
+            public void onClose(WatcherException e) {
+                LOGGER.error("Mock ServiceAccount deletion watch closed", e);
+            }
+        }));
+
+        watches.add(client.policy().v1().podDisruptionBudget().inAnyNamespace().watch(new Watcher<>() {
+            @Override
+            public void eventReceived(Action action, PodDisruptionBudget podDisruptionBudget) {
+                if (action == Action.MODIFIED) {
+                    removeFinalizersIfNeeded(client.policy().v1().podDisruptionBudget(), podDisruptionBudget);
+                }
+            }
+
+            @Override
+            public void onClose(WatcherException e) {
+                LOGGER.error("Mock PodDisruptionBudget deletion watch closed", e);
+            }
+        }));
     }
 
     private <T extends HasMetadata, R extends Resource<T>, L> void removeFinalizersIfNeeded(MixedOperation<T, L, R> op, T resource)    {
