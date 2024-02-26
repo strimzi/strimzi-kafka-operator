@@ -49,7 +49,7 @@ public class ReplicasChangeStatus implements UnknownPropertyPreserving, Serializ
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @Description("Current state of the replicas change operation. This can be pending, when the change has been " +
-        "requested, and ongoing, when the change has been successfully submitted to Cruise control.")
+        "requested, and ongoing, when the change has been successfully submitted to Cruise Control.")
     public ReplicasChangeState getState() {
         return state;
     }

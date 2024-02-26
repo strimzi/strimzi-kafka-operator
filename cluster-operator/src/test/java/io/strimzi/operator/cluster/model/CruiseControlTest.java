@@ -1087,7 +1087,7 @@ public class CruiseControlTest {
                 .build();
         NetworkPolicyPeer entityOperatorPeer = new NetworkPolicyPeerBuilder()
             .withNewPodSelector()
-            .withMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, format("%s-entity-operator", CLUSTER)))
+                .withMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, format("%s-entity-operator", CLUSTER)))
             .endPodSelector()
             .build();
 
@@ -1114,10 +1114,10 @@ public class CruiseControlTest {
                 .build();
         NetworkPolicyPeer entityOperatorPeer = new NetworkPolicyPeerBuilder()
             .withNewPodSelector()
-            .withMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, format("%s-entity-operator", CLUSTER)))
+                .withMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, format("%s-entity-operator", CLUSTER)))
             .endPodSelector()
             .withNewNamespaceSelector()
-            .withMatchLabels(Collections.singletonMap("nsLabelKey", "nsLabelValue"))
+                .withMatchLabels(Collections.singletonMap("nsLabelKey", "nsLabelValue"))
             .endNamespaceSelector()
             .build();
 

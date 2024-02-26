@@ -368,9 +368,9 @@ public class EntityTopicOperatorTest {
         Kafka resource =
             new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                 .editSpec()
-                .withEntityOperator(entityOperatorSpec)
-                .withNewCruiseControl()
-                .endCruiseControl()
+                    .withEntityOperator(entityOperatorSpec)
+                    .withNewCruiseControl()
+                    .endCruiseControl()
                 .endSpec()
                 .build();
         EntityTopicOperator entityTopicOperator = EntityTopicOperator.fromCrd(

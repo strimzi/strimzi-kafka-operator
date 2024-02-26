@@ -118,7 +118,7 @@ spec:
                     enum:
                     - pending
                     - ongoing
-                    description: "Current state of the replicas change operation. This can be pending, when the change has been requested, and ongoing, when the change has been successfully submitted to Cruise control."
+                    description: "Current state of the replicas change operation. This can be pending, when the change has been requested, and ongoing, when the change has been successfully submitted to Cruise Control."
                   message:
                     type: string
                     description: Message for the user related to the replicas change request. This may contain transient error messages that would disappear on periodic reconciliations.
@@ -225,7 +225,7 @@ spec:
                     enum:
                     - pending
                     - ongoing
-                    description: "Current state of the replicas change operation. This can be pending, when the change has been requested, and ongoing, when the change has been successfully submitted to Cruise control."
+                    description: "Current state of the replicas change operation. This can be pending, when the change has been requested, and ongoing, when the change has been successfully submitted to Cruise Control."
                   message:
                     type: string
                     description: Message for the user related to the replicas change request. This may contain transient error messages that would disappear on periodic reconciliations.
@@ -332,7 +332,7 @@ spec:
                     enum:
                     - pending
                     - ongoing
-                    description: "Current state of the replicas change operation. This can be pending, when the change has been requested, and ongoing, when the change has been successfully submitted to Cruise control."
+                    description: "Current state of the replicas change operation. This can be pending, when the change has been requested, and ongoing, when the change has been successfully submitted to Cruise Control."
                   message:
                     type: string
                     description: Message for the user related to the replicas change request. This may contain transient error messages that would disappear on periodic reconciliations.

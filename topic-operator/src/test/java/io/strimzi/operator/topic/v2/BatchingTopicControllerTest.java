@@ -292,13 +292,13 @@ class BatchingTopicControllerTest {
 
         var kafkaTopic = new KafkaTopicBuilder()
             .withNewMetadata()
-            .withName(NAME)
-            .withNamespace(namespace(NAMESPACE))
-            .addToLabels("key", "VALUE")
+                .withName(NAME)
+                .withNamespace(namespace(NAMESPACE))
+                .addToLabels("key", "VALUE")
             .endMetadata()
             .withNewSpec()
-            .withPartitions(2)
-            .withReplicas(replicationFactor)
+                .withPartitions(2)
+                .withReplicas(replicationFactor)
             .endSpec()
             .withStatus(status)
             .build();
@@ -345,13 +345,13 @@ class BatchingTopicControllerTest {
         
         var inputKt = new KafkaTopicBuilder()
             .withNewMetadata()
-            .withName(NAME)
-            .withNamespace(namespace(NAMESPACE))
-            .addToLabels("key", "VALUE")
+                .withName(NAME)
+                .withNamespace(namespace(NAMESPACE))
+                .addToLabels("key", "VALUE")
             .endMetadata()
             .withNewSpec()
-            .withPartitions(2)
-            .withReplicas(++replicationFactor)
+                .withPartitions(2)
+                .withReplicas(++replicationFactor)
             .endSpec()
             .build();
         var inputRt = new ReconcilableTopic(
