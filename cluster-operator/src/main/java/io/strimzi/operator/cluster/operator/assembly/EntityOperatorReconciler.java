@@ -57,7 +57,7 @@ public class EntityOperatorReconciler {
     private final ConfigMapOperator configMapOperator;
     private final NetworkPolicyOperator networkPolicyOperator;
     private final boolean unidirectionalTopicOperator;
-    private final boolean cruiseControlEnabled;
+    private final boolean isCruiseControlEnabled;
     
     private boolean existingEntityTopicOperatorCertsChanged = false;
     private boolean existingEntityUserOperatorCertsChanged = false;
@@ -89,7 +89,7 @@ public class EntityOperatorReconciler {
         this.maintenanceWindows = kafkaAssembly.getSpec().getMaintenanceTimeWindows();
         this.isNetworkPolicyGeneration = config.isNetworkPolicyGeneration();
         this.unidirectionalTopicOperator = config.featureGates().unidirectionalTopicOperatorEnabled();
-        this.cruiseControlEnabled = kafkaAssembly.getSpec().getCruiseControl() != null;
+        this.isCruiseControlEnabled = kafkaAssembly.getSpec().getCruiseControl() != null;
         
         this.deploymentOperator = supplier.deploymentOperations;
         this.secretOperator = supplier.secretOperations;
@@ -136,7 +136,7 @@ public class EntityOperatorReconciler {
      * @return Future which completes when the reconciliation is done.
      */
     protected Future<Void> topicOperatorCruiseControlApiSecret() {
-        if (unidirectionalTopicOperator && cruiseControlEnabled) {
+        if (unidirectionalTopicOperator && isCruiseControlEnabled) {
             String ccApiSecretName = KafkaResources.entityTopicOperatorCcApiSecretName(reconciliation.name());
             if (entityOperator != null && entityOperator.topicOperator() != null) {
                 return secretOperator.getAsync(reconciliation.namespace(), ccApiSecretName)
@@ -458,7 +458,7 @@ public class EntityOperatorReconciler {
             int caKeyGeneration = clusterCa.caKeyGeneration();
             Annotations.annotations(deployment.getSpec().getTemplate()).put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, String.valueOf(caKeyGeneration));
             
-            if (unidirectionalTopicOperator && cruiseControlEnabled && entityOperator.topicOperator() != null) {
+            if (unidirectionalTopicOperator && isCruiseControlEnabled && entityOperator.topicOperator() != null) {
                 Annotations.annotations(deployment.getSpec().getTemplate()).put(Annotations.ANNO_STRIMZI_AUTH_HASH, ccApiSecretHash);
             }
 

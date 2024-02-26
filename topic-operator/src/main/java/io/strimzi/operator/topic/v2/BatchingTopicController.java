@@ -124,6 +124,19 @@ public class BatchingTopicController {
         this.replicasChangeClient = replicasChangeClient;
     }
 
+    /**
+     * Retrieves the specified configuration value for a Kafka cluster.
+     *
+     * This method queries the Kafka cluster to obtain the configuration value associated with the given name.
+     * It iterates through all nodes (brokers) in the cluster, requesting their configurations, and returns the
+     * value of the configuration if found. The search stops at the first occurrence of the configuration name
+     * across all nodes, assuming uniform configuration across the cluster.
+     *
+     * @param admin The {@link Admin} client used to interact with the Kafka cluster.
+     * @param name The name of the configuration to retrieve.
+     * @return An {@link Optional<String>} containing the value of the requested configuration if found, or an empty Optional if not.
+     * @throws RuntimeException if there is an error during the operation. This exception wraps the underlying exception's message.
+     */
     private static Optional<String> getClusterConfig(Admin admin, String name) {
         try {
             DescribeClusterResult describeClusterResult = admin.describeCluster();
@@ -542,6 +555,14 @@ public class BatchingTopicController {
             && kafkaTopic.getStatus().getReplicasChange().getSessionId() != null;
     }
 
+    /**
+     * Cruise Control allows scale down of the replication factor under the min.insync.replicas value, which can cause 
+     * disruption to producers with acks=all. When this happens, the Topic Operator won't block the operation, but will 
+     * just log a warning, because the KafkaRoller ignores topics with RF < minISR, and they don't even show up as under 
+     * replicated in Kafka metrics.
+     * 
+     * @param reconcilableTopics Reconcilable topic.
+     */
     private void warnTooLargeMinIsr(List<ReconcilableTopic> reconcilableTopics) {
         Optional<String> clusterMinIsr = getClusterConfig(admin, MIN_INSYNC_REPLICAS);
         for (ReconcilableTopic reconcilableTopic : reconcilableTopics) {

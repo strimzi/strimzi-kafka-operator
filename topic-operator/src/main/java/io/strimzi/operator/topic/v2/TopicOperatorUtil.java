@@ -22,7 +22,11 @@ import static java.lang.String.format;
 import static java.lang.String.join;
 
 /**
- * Utility class.
+ * Provides utility methods for managing and interacting with KafkaTopic resources within a Topic Operator context. 
+ * This class includes functionalities such as extracting topic names from KafkaTopic resources, managing reconciliation 
+ * and operation timers, determining if a KafkaTopic is managed or paused, and handling common operations like reading 
+ * file content and building HTTP authentication headers. It serves as a central point for operations that are frequently 
+ * performed across different parts of the Topic Operator's codebase, ensuring consistency and reducing code duplication.
  */
 public class TopicOperatorUtil {
     static final String MANAGED = "strimzi.io/managed";

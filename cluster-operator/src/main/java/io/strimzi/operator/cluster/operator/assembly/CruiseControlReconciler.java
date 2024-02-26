@@ -62,7 +62,7 @@ public class CruiseControlReconciler {
     private final String operatorNamespace;
     private final Labels operatorNamespaceLabels;
     private final boolean isNetworkPolicyGeneration;
-    private final boolean topicOperatorEnabled;
+    private final boolean isTopicOperatorEnabled;
 
     private final DeploymentOperator deploymentOperator;
     private final SecretOperator secretOperator;
@@ -115,7 +115,7 @@ public class CruiseControlReconciler {
         this.operatorNamespaceLabels = config.getOperatorNamespaceLabels();
         this.isNetworkPolicyGeneration = config.isNetworkPolicyGeneration();
         this.passwordGenerator = passwordGenerator;
-        this.topicOperatorEnabled = kafkaAssembly.getSpec().getEntityOperator() != null 
+        this.isTopicOperatorEnabled = kafkaAssembly.getSpec().getEntityOperator() != null 
             && kafkaAssembly.getSpec().getEntityOperator().getTopicOperator() != null
             && config.featureGates().unidirectionalTopicOperatorEnabled();
         this.deploymentOperator = supplier.deploymentOperations;
@@ -162,7 +162,7 @@ public class CruiseControlReconciler {
                             reconciliation.namespace(),
                             CruiseControlResources.networkPolicyName(reconciliation.name()),
                             cruiseControl != null ? cruiseControl.generateNetworkPolicy(
-                                operatorNamespace, operatorNamespaceLabels, topicOperatorEnabled) : null
+                                operatorNamespace, operatorNamespaceLabels, isTopicOperatorEnabled) : null
                     ).map((Void) null);
         } else {
             return Future.succeededFuture();
@@ -254,7 +254,7 @@ public class CruiseControlReconciler {
      */
     protected Future<Void> apiSecret() {
         if (cruiseControl != null) {
-            if (topicOperatorEnabled) {
+            if (isTopicOperatorEnabled) {
                 return Future.join(
                     secretOperator.getAsync(reconciliation.namespace(), CruiseControlResources.apiSecretName(reconciliation.name())),
                     secretOperator.getAsync(reconciliation.namespace(), KafkaResources.entityTopicOperatorCcApiSecretName(reconciliation.name()))
