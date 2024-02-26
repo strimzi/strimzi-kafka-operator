@@ -29,6 +29,7 @@ import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.operator.common.operator.MockCertManager;
@@ -102,8 +103,8 @@ public class CruiseControlReconcilerTest {
         
         if (topicOperatorEnabled) {
             Secret topicOperatorApiSecret = mock(Secret.class);
-            doReturn(Map.of(API_TO_ADMIN_NAME_KEY, API_TO_ADMIN_NAME, API_TO_ADMIN_PASSWORD_KEY, "changeit")).when(topicOperatorApiSecret).getData();
-            when(mockSecretOps.get(eq(NAMESPACE), eq(KafkaResources.entityTopicOperatorCcApiSecretName(NAME)))).thenReturn(topicOperatorApiSecret);
+            doReturn(Map.of(API_TO_ADMIN_NAME_KEY, Util.encodeToBase64(API_TO_ADMIN_NAME), API_TO_ADMIN_PASSWORD_KEY, Util.encodeToBase64("changeit"))).when(topicOperatorApiSecret).getData();
+            when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.entityTopicOperatorCcApiSecretName(NAME)))).thenReturn(Future.succeededFuture(topicOperatorApiSecret));
         }
 
         ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
@@ -161,7 +162,7 @@ public class CruiseControlReconcilerTest {
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     assertThat(saCaptor.getAllValues().size(), is(1));
                     assertThat(saCaptor.getValue(), is(notNullValue()));
-
+                    
                     assertThat(secretCaptor.getAllValues().size(), is(2));
                     assertThat(secretCaptor.getAllValues().get(0), is(notNullValue()));
                     assertThat(secretCaptor.getAllValues().get(1), is(notNullValue()));
@@ -181,7 +182,7 @@ public class CruiseControlReconcilerTest {
                     assertThat(deployCaptor.getAllValues().get(0).getSpec().getTemplate().getMetadata().getAnnotations().get(CruiseControl.ANNO_STRIMZI_SERVER_CONFIGURATION_HASH), is("096591fb"));
                     assertThat(deployCaptor.getAllValues().get(0).getSpec().getTemplate().getMetadata().getAnnotations().get(CruiseControl.ANNO_STRIMZI_CAPACITY_CONFIGURATION_HASH), is("1eb49220"));
                     if (topicOperatorEnabled) {
-                        assertThat(deployCaptor.getAllValues().get(0).getSpec().getTemplate().getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_AUTH_HASH), is("27ada64b"));
+                        assertThat(deployCaptor.getAllValues().get(0).getSpec().getTemplate().getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_AUTH_HASH), is("bb8cee33"));
                     } else {
                         assertThat(deployCaptor.getAllValues().get(0).getSpec().getTemplate().getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_AUTH_HASH), is("27ada64b"));
                     }

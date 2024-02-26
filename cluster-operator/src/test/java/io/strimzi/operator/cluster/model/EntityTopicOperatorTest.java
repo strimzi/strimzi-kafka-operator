@@ -142,24 +142,6 @@ public class EntityTopicOperatorTest {
         return expected;
     }
 
-    private List<EnvVar> getExpectedEnvVarsWithCruiseControl() {
-        List<EnvVar> expected = new ArrayList<>();
-        expected.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_RESOURCE_LABELS).withValue(ModelUtils.defaultResourceLabels(cluster)).build());
-        expected.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_KAFKA_BOOTSTRAP_SERVERS).withValue(KafkaResources.bootstrapServiceName(cluster) + ":" + KafkaCluster.REPLICATION_PORT).build());
-        expected.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_WATCHED_NAMESPACE).withValue(namespace).build());
-        expected.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_FULL_RECONCILIATION_INTERVAL_MS).withValue(String.valueOf(toReconciliationInterval * 1000)).build());
-        expected.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_SECURITY_PROTOCOL).withValue(EntityTopicOperatorSpec.DEFAULT_SECURITY_PROTOCOL).build());
-        expected.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_TLS_ENABLED).withValue(Boolean.toString(true)).build());
-        expected.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_STRIMZI_GC_LOG_ENABLED).withValue(Boolean.toString(JvmOptions.DEFAULT_GC_LOGGING_ENABLED)).build());
-        expected.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_CRUISE_CONTROL_ENABLED).withValue(Boolean.toString(true)).build());
-        expected.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_CRUISE_CONTROL_RACK_ENABLED).withValue(Boolean.toString(false)).build());
-        expected.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_CRUISE_CONTROL_HOSTNAME).withValue(String.format("%s-cruise-control.%s.svc", cluster, namespace)).build());
-        expected.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_CRUISE_CONTROL_PORT).withValue(String.valueOf(CRUISE_CONTROL_API_PORT)).build());
-        expected.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_CRUISE_CONTROL_SSL_ENABLED).withValue(Boolean.toString(true)).build());
-        expected.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_CRUISE_CONTROL_AUTH_ENABLED).withValue(Boolean.toString(true)).build());
-        return expected;
-    }
-
     @ParallelTest
     public void testEnvVars()   {
         assertThat(entityTopicOperator.getEnvVars(), is(getExpectedEnvVars()));
@@ -332,7 +314,7 @@ public class EntityTopicOperatorTest {
     }
 
     @ParallelTest
-    public void testFromCrdWithCruiseControl() {
+    public void testSetupWithCruiseControlEnabled() {
         EntityTopicOperatorSpec entityTopicOperatorSpec = new EntityTopicOperatorSpecBuilder()
             .build();
         EntityOperatorSpec entityOperatorSpec = new EntityOperatorSpecBuilder()
@@ -341,16 +323,30 @@ public class EntityTopicOperatorTest {
         Kafka resource =
             new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                 .editSpec()
-                .withEntityOperator(entityOperatorSpec)
-                .withNewCruiseControl()
-                .endCruiseControl()
+                    .withEntityOperator(entityOperatorSpec)
+                    .withNewCruiseControl()
+                    .endCruiseControl()
                 .endSpec()
                 .build();
         EntityTopicOperator entityTopicOperator = EntityTopicOperator.fromCrd(
             new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), 
                 resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, true);
 
-        assertThat(entityTopicOperator.getEnvVars(), is(getExpectedEnvVarsWithCruiseControl()));
+        List<EnvVar> expectedEnvVars = new ArrayList<>();
+        expectedEnvVars.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_RESOURCE_LABELS).withValue(ModelUtils.defaultResourceLabels(cluster)).build());
+        expectedEnvVars.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_KAFKA_BOOTSTRAP_SERVERS).withValue(KafkaResources.bootstrapServiceName(cluster) + ":" + KafkaCluster.REPLICATION_PORT).build());
+        expectedEnvVars.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_WATCHED_NAMESPACE).withValue(namespace).build());
+        expectedEnvVars.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_FULL_RECONCILIATION_INTERVAL_MS).withValue(String.valueOf(toReconciliationInterval * 1000)).build());
+        expectedEnvVars.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_SECURITY_PROTOCOL).withValue(EntityTopicOperatorSpec.DEFAULT_SECURITY_PROTOCOL).build());
+        expectedEnvVars.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_TLS_ENABLED).withValue(Boolean.toString(true)).build());
+        expectedEnvVars.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_STRIMZI_GC_LOG_ENABLED).withValue(Boolean.toString(JvmOptions.DEFAULT_GC_LOGGING_ENABLED)).build());
+        expectedEnvVars.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_CRUISE_CONTROL_ENABLED).withValue(Boolean.toString(true)).build());
+        expectedEnvVars.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_CRUISE_CONTROL_RACK_ENABLED).withValue(Boolean.toString(false)).build());
+        expectedEnvVars.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_CRUISE_CONTROL_HOSTNAME).withValue(String.format("%s-cruise-control.%s.svc", cluster, namespace)).build());
+        expectedEnvVars.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_CRUISE_CONTROL_PORT).withValue(String.valueOf(CRUISE_CONTROL_API_PORT)).build());
+        expectedEnvVars.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_CRUISE_CONTROL_SSL_ENABLED).withValue(Boolean.toString(true)).build());
+        expectedEnvVars.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_CRUISE_CONTROL_AUTH_ENABLED).withValue(Boolean.toString(true)).build());
+        assertThat(entityTopicOperator.getEnvVars(), is(expectedEnvVars));
 
         Container container = entityTopicOperator.createContainer(null);
         assertThat(EntityOperatorTest.volumeMounts(container.getVolumeMounts()), is(map(

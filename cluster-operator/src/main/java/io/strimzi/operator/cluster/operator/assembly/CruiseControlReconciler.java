@@ -62,7 +62,6 @@ public class CruiseControlReconciler {
     private final String operatorNamespace;
     private final Labels operatorNamespaceLabels;
     private final boolean isNetworkPolicyGeneration;
-    private final boolean unidirectionalTopicOperator;
     private final boolean topicOperatorEnabled;
 
     private final DeploymentOperator deploymentOperator;
@@ -116,9 +115,9 @@ public class CruiseControlReconciler {
         this.operatorNamespaceLabels = config.getOperatorNamespaceLabels();
         this.isNetworkPolicyGeneration = config.isNetworkPolicyGeneration();
         this.passwordGenerator = passwordGenerator;
-        this.unidirectionalTopicOperator = config.featureGates().unidirectionalTopicOperatorEnabled();
         this.topicOperatorEnabled = kafkaAssembly.getSpec().getEntityOperator() != null 
-            && kafkaAssembly.getSpec().getEntityOperator().getTopicOperator() != null;
+            && kafkaAssembly.getSpec().getEntityOperator().getTopicOperator() != null
+            && config.featureGates().unidirectionalTopicOperatorEnabled();
         this.deploymentOperator = supplier.deploymentOperations;
         this.secretOperator = supplier.secretOperations;
         this.serviceAccountOperator = supplier.serviceAccountOperations;
@@ -163,7 +162,7 @@ public class CruiseControlReconciler {
                             reconciliation.namespace(),
                             CruiseControlResources.networkPolicyName(reconciliation.name()),
                             cruiseControl != null ? cruiseControl.generateNetworkPolicy(
-                                operatorNamespace, operatorNamespaceLabels, unidirectionalTopicOperator && topicOperatorEnabled) : null
+                                operatorNamespace, operatorNamespaceLabels, topicOperatorEnabled) : null
                     ).map((Void) null);
         } else {
             return Future.succeededFuture();
@@ -255,10 +254,10 @@ public class CruiseControlReconciler {
      */
     protected Future<Void> apiSecret() {
         if (cruiseControl != null) {
-            if (unidirectionalTopicOperator && topicOperatorEnabled) {
+            if (topicOperatorEnabled) {
                 return Future.join(
-                    getSecret(secretOperator, reconciliation.namespace(), CruiseControlResources.apiSecretName(reconciliation.name())),
-                    getSecret(secretOperator, reconciliation.namespace(), KafkaResources.entityTopicOperatorCcApiSecretName(reconciliation.name()))
+                    secretOperator.getAsync(reconciliation.namespace(), CruiseControlResources.apiSecretName(reconciliation.name())),
+                    secretOperator.getAsync(reconciliation.namespace(), KafkaResources.entityTopicOperatorCcApiSecretName(reconciliation.name()))
                 ).compose(
                     compositeFuture -> {
                         Secret oldSecret = compositeFuture.resultAt(0);
@@ -290,16 +289,6 @@ public class CruiseControlReconciler {
             return secretOperator.reconcile(reconciliation, reconciliation.namespace(), CruiseControlResources.apiSecretName(reconciliation.name()), null)
                     .map((Void) null);
         }
-    }
-
-    private static Future<Secret> getSecret(SecretOperator secretOperator, String namespace, String secretName)  {
-        return secretOperator.getAsync(namespace, secretName).compose(secret -> {
-            if (secret != null) {
-                return Future.succeededFuture(secret);
-            } else {
-                return Future.succeededFuture();
-            }
-        });
     }
 
     /**
