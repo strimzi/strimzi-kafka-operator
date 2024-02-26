@@ -28,6 +28,7 @@ import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.annotations.KRaftWithoutUTONotSupported;
+import io.strimzi.systemtest.annotations.MixedRoleNotSupported;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.annotations.UTONotSupported;
 import io.strimzi.systemtest.resources.NodePoolsConverter;
@@ -448,20 +449,23 @@ public class CruiseControlST extends AbstractST {
     }
 
     @IsolatedTest
+    @MixedRoleNotSupported("Scaling a Kafka Node Pool with mixed roles is not supported yet")
     void testCruiseControlDuringBrokerScaleUpAndDown() {
         TestStorage testStorage = new TestStorage(ResourceManager.getTestContext(), TestConstants.CO_NAMESPACE);
         final int initialReplicas = 3;
         final int scaleTo = 5;
 
         resourceManager.createResourceWithWait(
-            // if we run test in kraft mode test makes sense only with separated roles
-            KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), initialReplicas).build(),
-            KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), initialReplicas)
-                .editOrNewMetadata()
-                    // controllers have Ids set in order to keep default ordering for brokers only (once we scale broker KNP)
-                    .withAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_NEXT_NODE_IDS, "[100-103]"))
-                .endMetadata()
-            .build()
+            NodePoolsConverter.convertNodePoolsIfNeeded(
+                KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), initialReplicas).build(),
+                KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), initialReplicas)
+                    .editOrNewMetadata()
+                        // controllers have Ids set in order to keep default ordering for brokers only (once we scale broker KNP)
+                        .withAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_NEXT_NODE_IDS, "[100-103]"))
+                    .endMetadata()
+                .build()
+            )
+
         );
         resourceManager.createResourceWithWait(
             KafkaTemplates.kafkaWithCruiseControl(testStorage.getClusterName(), initialReplicas, initialReplicas).build(),
