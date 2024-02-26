@@ -42,7 +42,7 @@ import java.util.Set;
  *   - StrimziPodSet
  *   - NetworkPolicy
  *   - ServiceAccount
- *   - PodDistruptionBudget
+ *   - PodDisruptionBudget
  */
 public class MockDeletionController extends AbstractMockController {
     private static final Logger LOGGER = LogManager.getLogger(MockDeletionController.class);
@@ -178,7 +178,7 @@ public class MockDeletionController extends AbstractMockController {
 
             @Override
             public void onClose(WatcherException e) {
-                LOGGER.error("Mock NetworkPolicy deletion watch closed", e);
+                LOGGER.error("Mock ServiceAccount deletion watch closed", e);
             }
         }));
 
@@ -192,7 +192,7 @@ public class MockDeletionController extends AbstractMockController {
 
             @Override
             public void onClose(WatcherException e) {
-                LOGGER.error("Mock NetworkPolicy deletion watch closed", e);
+                LOGGER.error("Mock PodDisruptionBudget deletion watch closed", e);
             }
         }));
     }
