@@ -33,7 +33,6 @@ import io.strimzi.operator.common.model.PasswordGenerator;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -334,12 +333,10 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
         } else {
             PasswordGenerator passwordGenerator = new PasswordGenerator(16);
             String apiToAdminPassword = passwordGenerator.generate();
-
-            Map<String, String> data = new HashMap<>(2);
-            data.put(API_TO_ADMIN_NAME_KEY, Util.encodeToBase64(API_TO_ADMIN_NAME));
-            data.put(API_TO_ADMIN_PASSWORD_KEY, Util.encodeToBase64(apiToAdminPassword));
-
-            return data;
+            return Map.of(
+                API_TO_ADMIN_NAME_KEY, Util.encodeToBase64(API_TO_ADMIN_NAME),
+                API_TO_ADMIN_PASSWORD_KEY, Util.encodeToBase64(apiToAdminPassword)
+            );
         }
     }
 

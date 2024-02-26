@@ -454,21 +454,30 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
                 authCredentialsFile += adminUser.username() + ": " + adminUser.password() + "," + API_ADMIN_ROLE + "\n";
             }
 
-            Map<String, String> data = new HashMap<>(3);
-            data.put(API_ADMIN_PASSWORD_KEY, Util.encodeToBase64(apiAdminPassword));
-            data.put(API_USER_PASSWORD_KEY, Util.encodeToBase64(apiUserPassword));
-            data.put(API_AUTH_FILE_KEY, Util.encodeToBase64(authCredentialsFile));
-
-            return data;
+            return Map.of(
+                API_ADMIN_PASSWORD_KEY, Util.encodeToBase64(apiAdminPassword),
+                API_USER_PASSWORD_KEY, Util.encodeToBase64(apiUserPassword),
+                API_AUTH_FILE_KEY, Util.encodeToBase64(authCredentialsFile)
+            );
         }
     }
 
     /**
      * Cruise Control user credentials.
+     * 
      * @param username Username.
      * @param password Password.
      */
-    public record CruiseControlUser(String username, String password) { }
+    public record CruiseControlUser(String username, String password) {
+        @Override
+        public String toString() {
+            String mask = "********";
+            return "CruiseControlUser{" +
+                "username='" + username + '\'' +
+                ", password='" + mask + '\'' +
+                '}';
+        }
+    }
 
     /**
      * Generate the Secret containing the Cruise Control API auth credentials.
@@ -516,7 +525,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
      *
      * @param operatorNamespace                             Namespace where the Strimzi Cluster Operator runs. Null if not configured.
      * @param operatorNamespaceLabels                       Labels of the namespace where the Strimzi Cluster Operator runs. Null if not configured.
-     * @param topicOperatorEnabled                          Whether to also enable access to the Entity Operator.
+     * @param topicOperatorEnabled                          Whether to also enable access to Cruise Control from the Entity Operator.
      *                                                      
      * @return The network policy.
      */
