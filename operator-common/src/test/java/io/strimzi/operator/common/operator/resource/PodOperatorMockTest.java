@@ -4,12 +4,13 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
+import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.server.mock.EnableKubernetesMockClient;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.test.mockkube3.MockKube3;
 import io.vertx.core.Vertx;
 import io.vertx.core.WorkerExecutor;
 import io.vertx.junit5.Checkpoint;
@@ -20,45 +21,60 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import java.util.List;
 import java.util.stream.Collectors;
 
-import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@EnableKubernetesMockClient(crud = true)
 @ExtendWith(VertxExtension.class)
 public class PodOperatorMockTest {
     public static final String RESOURCE_NAME = "my-resource";
     public static final String NAMESPACE = "test";
     private final static Pod POD = new PodBuilder()
-            .withNewMetadata()
-                .withNamespace(NAMESPACE)
-                .withName(RESOURCE_NAME)
-            .endMetadata()
-            .withNewSpec()
-                .withHostname("foo")
-            .endSpec()
-            .build();
+                    .withNewMetadata()
+                        .withName(RESOURCE_NAME)
+                        .withNamespace(NAMESPACE)
+                    .endMetadata()
+                    .withNewSpec()
+                        .withContainers(new ContainerBuilder()
+                                .withName("busybox")
+                                .withImage("my-image:latest")
+                                .withCommand("sleep", "3600")
+                                .withImagePullPolicy("IfNotPresent")
+                                .build())
+                        .withRestartPolicy("Never")
+                        .withTerminationGracePeriodSeconds(1L)
+                    .endSpec()
+                    .build();
+
+    private static KubernetesClient client;
+    private static MockKube3 mockKube;
 
     protected static Vertx vertx;
     private static WorkerExecutor sharedWorkerExecutor;
 
-    // Injected by Fabric8 Mock Kubernetes Server
-    @SuppressWarnings("unused")
-    private KubernetesClient client;
-
     @BeforeAll
-    public static void before() {
+    public static void beforeAll() {
+        mockKube = new MockKube3.MockKube3Builder()
+                .withPodController()
+                .withDeletionController()
+                .withNamespaces(NAMESPACE)
+                .build();
+        mockKube.start();
+        client = mockKube.client();
+
         vertx = Vertx.vertx();
         sharedWorkerExecutor = vertx.createSharedWorkerExecutor("kubernetes-ops-pool");
     }
 
     @AfterAll
-    public static void after() {
+    public static void afterAll() {
         sharedWorkerExecutor.close();
         vertx.close();
+
+        mockKube.stop();
     }
 
     @Test
@@ -66,20 +82,15 @@ public class PodOperatorMockTest {
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool", 10);
         PodOperator pr = new PodOperator(vertx, client);
 
-        pr.list(NAMESPACE, Labels.EMPTY);
-        context.verify(() -> assertThat(pr.list(NAMESPACE, Labels.EMPTY), is(emptyList())));
-
         Checkpoint async = context.checkpoint(1);
-        pr.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, POD).onComplete(createResult -> {
-            context.verify(() -> assertThat(createResult.succeeded(), is(true)));
-            context.verify(() -> assertThat(pr.list(NAMESPACE, Labels.EMPTY).stream()
-                        .map(p -> p.getMetadata().getName())
-                        .collect(Collectors.toList()), is(singletonList(RESOURCE_NAME))));
-
-            pr.reconcile(Reconciliation.DUMMY_RECONCILIATION, NAMESPACE, RESOURCE_NAME, null).onComplete(deleteResult -> {
-                context.verify(() -> assertThat(deleteResult.succeeded(), is(true)));
-                async.flag();
-            });
-        });
+        pr.listAsync(NAMESPACE, Labels.EMPTY);
+        pr.listAsync(NAMESPACE, Labels.EMPTY)
+                .onComplete(context.succeeding(podList -> context.verify(() -> assertThat(podList.stream().map(p -> p.getMetadata().getName()).collect(Collectors.toList()), is(List.of())))))
+                .compose(i -> pr.createOrUpdate(new Reconciliation("test", "kind", NAMESPACE, RESOURCE_NAME), POD))
+                .onComplete(context.succeeding(createResult -> context.verify(() -> { })))
+                .compose(i -> pr.listAsync(NAMESPACE, Labels.EMPTY))
+                .onComplete(context.succeeding(podList -> context.verify(() -> assertThat(podList.stream().map(p -> p.getMetadata().getName()).collect(Collectors.toList()), is(singletonList(RESOURCE_NAME))))))
+                .compose(i -> pr.reconcile(new Reconciliation("test", "kind", NAMESPACE, RESOURCE_NAME), NAMESPACE, RESOURCE_NAME, null))
+                .onComplete(context.succeeding(deleteResult -> context.verify(async::flag)));
     }
 }

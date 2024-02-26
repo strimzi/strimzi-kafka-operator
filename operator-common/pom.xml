@@ -193,8 +193,8 @@
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>io.fabric8</groupId>
-            <artifactId>kubernetes-server-mock</artifactId>
+            <groupId>io.strimzi</groupId>
+            <artifactId>mockkube</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

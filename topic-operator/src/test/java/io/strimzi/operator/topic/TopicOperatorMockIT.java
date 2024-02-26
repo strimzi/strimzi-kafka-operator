@@ -5,7 +5,6 @@
 package io.strimzi.operator.topic;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.server.mock.EnableKubernetesMockClient;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
@@ -13,7 +12,7 @@ import io.strimzi.api.kafka.model.topic.KafkaTopicBuilder;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.container.StrimziKafkaCluster;
-import io.strimzi.test.mockkube2.MockKube2;
+import io.strimzi.test.mockkube3.MockKube3;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
@@ -32,10 +31,12 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
@@ -48,16 +49,14 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.nullValue;
 
-@EnableKubernetesMockClient(crud = true)
 @ExtendWith(VertxExtension.class)
 public class TopicOperatorMockIT {
     private static final Logger LOGGER = LogManager.getLogger(TopicOperatorMockIT.class);
-    private static final String NAMESPACE = "my-namespace";
 
-    // Injected by Fabric8 Mock Kubernetes Server
-    @SuppressWarnings("unused")
-    private KubernetesClient client;
-    private MockKube2 mockKube;
+    private static KubernetesClient client;
+    private static MockKube3 mockKube;
+
+    private String namespace;
     private Session session;
     private StrimziKafkaCluster kafkaCluster;
     private static Vertx vertx;
@@ -72,6 +71,13 @@ public class TopicOperatorMockIT {
 
     @BeforeAll
     public static void beforeAll() {
+        // Configure the Kubernetes Mock
+        mockKube = new MockKube3.MockKube3Builder()
+                .withKafkaTopicCrd()
+                .build();
+        mockKube.start();
+        client = mockKube.client();
+
         VertxOptions options = new VertxOptions().setMetricsOptions(
                 new MicrometerMetricsOptions()
                         .setPrometheusOptions(new VertxPrometheusOptions().setEnabled(true))
@@ -82,10 +88,14 @@ public class TopicOperatorMockIT {
     @AfterAll
     public static void afterAll() throws InterruptedException, ExecutionException {
         vertx.close().toCompletionStage().toCompletableFuture().get();
+        mockKube.stop();
     }
 
     @BeforeEach
-    public void setup(VertxTestContext context) throws Exception {
+    public void beforeEach(TestInfo testInfo, VertxTestContext context) throws Exception {
+        namespace = testInfo.getTestMethod().orElseThrow().getName().toLowerCase(Locale.ROOT);
+        mockKube.prepareNamespace(namespace);
+
         //Create cluster in @BeforeEach instead of @BeforeAll as once the checkpoints causing premature success were fixed,
         //tests were failing due to topic "my-topic" already existing, and trying to delete the topics at the end of the test was timing out occasionally.
         //So works best when the cluster is recreated for each test to avoid shared state
@@ -94,14 +104,8 @@ public class TopicOperatorMockIT {
         kafkaCluster = new StrimziKafkaCluster(1, 1, config);
         kafkaCluster.start();
 
-        // Configure the Kubernetes Mock
-        mockKube = new MockKube2.MockKube2Builder(client)
-                .withKafkaTopicCrd()
-                .build();
-        mockKube.start();
-
         // Configure the namespace
-        client.getConfiguration().setNamespace(NAMESPACE);
+        client.getConfiguration().setNamespace(namespace);
 
         adminClient = AdminClient.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaCluster.getBootstrapServers()));
 
@@ -109,7 +113,7 @@ public class TopicOperatorMockIT {
             Config.KAFKA_BOOTSTRAP_SERVERS.key, kafkaCluster.getBootstrapServers(),
             Config.ZOOKEEPER_CONNECT.key, kafkaCluster.getZookeeper().getHost() + ":" + kafkaCluster.getZookeeper().getFirstMappedPort(),
             Config.ZOOKEEPER_CONNECTION_TIMEOUT_MS.key, "30000",
-            Config.NAMESPACE.key, NAMESPACE,
+            Config.NAMESPACE.key, namespace,
             Config.CLIENT_ID.key, "myproject-client-id",
             Config.FULL_RECONCILIATION_INTERVAL_MS.key, "10000"
         ));
@@ -149,7 +153,6 @@ public class TopicOperatorMockIT {
     public void tearDown(VertxTestContext context) {
         if (vertx != null && deploymentId != null) {
             vertx.undeploy(deploymentId, undeployResult -> {
-                mockKube.stop();
                 topicWatcher.stop();
                 topicsWatcher.stop();
                 topicsConfigWatcher.stop();
@@ -192,7 +195,7 @@ public class TopicOperatorMockIT {
         KafkaTopic kt = new KafkaTopicBuilder()
                 .withNewMetadata()
                     .withName("my-topic")
-                    .withNamespace(NAMESPACE)
+                    .withNamespace(namespace)
                     .addToLabels(Labels.STRIMZI_KIND_LABEL, "topic")
                     .addToLabels(Labels.KUBERNETES_NAME_LABEL, "topic-operator")
                 .endMetadata()
@@ -277,7 +280,7 @@ public class TopicOperatorMockIT {
         KafkaTopic kt = new KafkaTopicBuilder()
                 .withNewMetadata()
                     .withName("my-topic")
-                    .withNamespace(NAMESPACE)
+                    .withNamespace(namespace)
                     .addToLabels(Labels.STRIMZI_KIND_LABEL, "topic")
                 .endMetadata()
                 .withNewSpec()
@@ -296,7 +299,7 @@ public class TopicOperatorMockIT {
         KafkaTopic kt = new KafkaTopicBuilder()
                 .withNewMetadata()
                     .withName("my-topic")
-                    .withNamespace(NAMESPACE)
+                    .withNamespace(namespace)
                     .addToLabels(Labels.STRIMZI_KIND_LABEL, "topic")
                 .endMetadata()
                 .withNewSpec()
@@ -315,7 +318,7 @@ public class TopicOperatorMockIT {
         KafkaTopic kt = new KafkaTopicBuilder()
                 .withNewMetadata()
                     .withName("my-topic")
-                    .withNamespace(NAMESPACE)
+                    .withNamespace(namespace)
                     .addToLabels(Labels.STRIMZI_KIND_LABEL, "topic")
                 .endMetadata()
                 .withNewSpec()
@@ -333,7 +336,7 @@ public class TopicOperatorMockIT {
         KafkaTopic kt = new KafkaTopicBuilder()
                 .withNewMetadata()
                     .withName("my-topic")
-                    .withNamespace(NAMESPACE)
+                    .withNamespace(namespace)
                     .addToLabels(Labels.STRIMZI_KIND_LABEL, "topic")
                     .addToLabels(Labels.KUBERNETES_NAME_LABEL, "topic-operator")
                     .withAnnotations(singletonMap("strimzi.io/pause-reconciliation", "true"))

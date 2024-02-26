@@ -54,8 +54,8 @@ public class KafkaUserModelCertificateHandlingTest {
             "T/DiI+A2t2dGukf5qfzqgiXkq4XqM6+p0zY1Cv0=\n" +
             "-----END CERTIFICATE-----\n";
 
-    private final Secret clientsCaCert = ResourceUtils.createClientsCaCertSecret();
-    private final Secret clientsCaKey = ResourceUtils.createClientsCaKeySecret();
+    private final Secret clientsCaCert = ResourceUtils.createClientsCaCertSecret(ResourceUtils.NAMESPACE);
+    private final Secret clientsCaKey = ResourceUtils.createClientsCaKeySecret(ResourceUtils.NAMESPACE);
     private final CertManager mockCertManager = new MockCertManager();
     private final PasswordGenerator passwordGenerator = new PasswordGenerator(10, "a", "a");
 

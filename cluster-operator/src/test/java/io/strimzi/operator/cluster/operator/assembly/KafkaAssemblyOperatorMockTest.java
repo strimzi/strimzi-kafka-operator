@@ -11,7 +11,6 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.base.PatchContext;
 import io.fabric8.kubernetes.client.dsl.base.PatchType;
-import io.fabric8.kubernetes.client.server.mock.EnableKubernetesMockClient;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
@@ -37,7 +36,7 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.platform.KubernetesVersion;
-import io.strimzi.test.mockkube2.MockKube2;
+import io.strimzi.test.mockkube3.MockKube3;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.WorkerExecutor;
@@ -51,13 +50,17 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -72,27 +75,22 @@ import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-@EnableKubernetesMockClient(crud = true)
 @ExtendWith(VertxExtension.class)
 @SuppressWarnings("checkstyle:ClassFanOutComplexity")
 public class KafkaAssemblyOperatorMockTest {
-
     private static final Logger LOGGER = LogManager.getLogger(KafkaAssemblyOperatorMockTest.class);
 
-    private static final String NAMESPACE = "my-namespace";
     private static final String CLUSTER_NAME = "my-cluster";
-
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
+    private static final int KAFKA_REPLICAS = 3;
+
     private static Vertx vertx;
     private static WorkerExecutor sharedWorkerExecutor;
+    private static KubernetesClient client;
+    private static MockKube3 mockKube;
 
-    private static final int KAFKA_REPLICAS = 3;
+    private String namespace;
     private Storage kafkaStorage;
-
-    // Injected by Fabric8 Mock Kubernetes Server
-    @SuppressWarnings("unused")
-    private KubernetesClient client;
-    private MockKube2 mockKube;
     private ResourceOperatorSupplier supplier;
     private StrimziPodSetController podSetController;
     private KafkaAssemblyOperator operator;
@@ -100,13 +98,28 @@ public class KafkaAssemblyOperatorMockTest {
     private Kafka cluster;
 
     @BeforeAll
-    public static void before() {
+    public static void beforeAll() {
+        // Configure the Kubernetes Mock
+        mockKube = new MockKube3.MockKube3Builder()
+                .withKafkaCrd()
+                .withKafkaConnectCrd()
+                .withKafkaMirrorMaker2Crd()
+                .withStrimziPodSetCrd()
+                .withPodController()
+                .withDeploymentController()
+                .withServiceController()
+                .withDeletionController()
+                .build();
+        mockKube.start();
+        client = mockKube.client();
+
         vertx = Vertx.vertx();
         sharedWorkerExecutor = vertx.createSharedWorkerExecutor("kubernetes-ops-pool");
     }
 
     @AfterAll
-    public static void after() {
+    public static void afterAll() {
+        mockKube.stop();
         sharedWorkerExecutor.close();
         vertx.close();
         ResourceUtils.cleanUpTemporaryTLSFiles();
@@ -119,12 +132,14 @@ public class KafkaAssemblyOperatorMockTest {
      */
 
     @BeforeEach
-    public void init() {
+    public void beforeEach(TestInfo testInfo) {
+        namespace = testInfo.getTestMethod().orElseThrow().getName().toLowerCase(Locale.ROOT);
+        mockKube.prepareNamespace(namespace);
 
         cluster = new KafkaBuilder()
                  .withNewMetadata()
                      .withName(CLUSTER_NAME)
-                     .withNamespace(NAMESPACE)
+                     .withNamespace(namespace)
                  .endMetadata()
                  .withNewSpec()
                      .withNewKafka()
@@ -152,28 +167,25 @@ public class KafkaAssemblyOperatorMockTest {
                      .endZookeeper()
                  .endSpec()
                  .build();
-
         this.kafkaStorage = cluster.getSpec().getKafka().getStorage();
 
-        // Configure the Kubernetes Mock
-        mockKube = new MockKube2.MockKube2Builder(client)
-                .withKafkaCrd()
-                .withInitialKafkas(cluster)
-                .withStrimziPodSetCrd()
-                .withDeploymentController()
-                .withPodController()
-                .withServiceController()
-                .build();
-        mockKube.start();
+        // Create the initial resources
+        Crds.kafkaOperation(client).inNamespace(namespace).resource(cluster).create();
 
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION);
         supplier = supplierWithMocks();
-        podSetController = new StrimziPodSetController(NAMESPACE, Labels.EMPTY, supplier.kafkaOperator, supplier.connectOperator, supplier.mirrorMaker2Operator, supplier.strimziPodSetOperator, supplier.podOperations, supplier.metricsProvider, Integer.parseInt(ClusterOperatorConfig.POD_SET_CONTROLLER_WORK_QUEUE_SIZE.defaultValue()));
+        podSetController = new StrimziPodSetController(namespace, Labels.EMPTY, supplier.kafkaOperator, supplier.connectOperator, supplier.mirrorMaker2Operator, supplier.strimziPodSetOperator, supplier.podOperations, supplier.metricsProvider, Integer.parseInt(ClusterOperatorConfig.POD_SET_CONTROLLER_WORK_QUEUE_SIZE.defaultValue()));
         podSetController.start();
 
         ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
         operator = new KafkaAssemblyOperator(vertx, pfa, new MockCertManager(),
                 new PasswordGenerator(10, "a", "a"), supplier, config);
+    }
+
+    @AfterEach
+    public void afterEach() {
+        podSetController.stop();
+        client.namespaces().withName(namespace).delete();
     }
 
     private ResourceOperatorSupplier supplierWithMocks() {
@@ -185,43 +197,37 @@ public class KafkaAssemblyOperatorMockTest {
 
     private Future<Void> initialReconcile(VertxTestContext context) {
         LOGGER.info("Reconciling initially -> create");
-        return operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME))
+        return operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME))
             .onComplete(context.succeeding(v -> context.verify(() -> {
-                StrimziPodSet sps = supplier.strimziPodSetOperator.client().inNamespace(NAMESPACE).withName(KafkaResources.kafkaComponentName(CLUSTER_NAME)).get();
+                StrimziPodSet sps = supplier.strimziPodSetOperator.client().inNamespace(namespace).withName(KafkaResources.kafkaComponentName(CLUSTER_NAME)).get();
                 assertThat(sps, is(notNullValue()));
 
                 sps.getSpec().getPods().stream().map(PodSetUtils::mapToPod).forEach(pod -> {
                     assertThat(pod.getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, "0"));
                     assertThat(pod.getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "0"));
                     assertThat(pod.getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, "0"));
-                    var brokersSecret = client.secrets().inNamespace(NAMESPACE).withName(KafkaResources.kafkaSecretName(CLUSTER_NAME)).get();
+                    var brokersSecret = client.secrets().inNamespace(namespace).withName(KafkaResources.kafkaSecretName(CLUSTER_NAME)).get();
                     assertThat(pod.getMetadata().getAnnotations(), hasEntry(Annotations.ANNO_STRIMZI_SERVER_CERT_HASH,
                             CertUtils.getCertificateThumbprint(brokersSecret, Ca.SecretEntry.CRT.asKey(pod.getMetadata().getName()))
                     ));
                 });
 
-                StrimziPodSet zkSps = supplier.strimziPodSetOperator.client().inNamespace(NAMESPACE).withName(KafkaResources.zookeeperComponentName(CLUSTER_NAME)).get();
+                StrimziPodSet zkSps = supplier.strimziPodSetOperator.client().inNamespace(namespace).withName(KafkaResources.zookeeperComponentName(CLUSTER_NAME)).get();
                 zkSps.getSpec().getPods().stream().map(PodSetUtils::mapToPod).forEach(pod -> {
                     assertThat(pod.getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "0"));
                     assertThat(pod.getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, "0"));
-                    var zooKeeperSecret = client.secrets().inNamespace(NAMESPACE).withName(KafkaResources.zookeeperSecretName(CLUSTER_NAME)).get();
+                    var zooKeeperSecret = client.secrets().inNamespace(namespace).withName(KafkaResources.zookeeperSecretName(CLUSTER_NAME)).get();
                     assertThat(pod.getMetadata().getAnnotations(), hasEntry(Annotations.ANNO_STRIMZI_SERVER_CERT_HASH,
                             CertUtils.getCertificateThumbprint(zooKeeperSecret, Ca.SecretEntry.CRT.asKey(pod.getMetadata().getName()))
                     ));
                 });
-                assertThat(client.configMaps().inNamespace(NAMESPACE).withName(KafkaResources.zookeeperMetricsAndLogConfigMapName(CLUSTER_NAME)).get(), is(notNullValue()));
-                assertThat(client.secrets().inNamespace(NAMESPACE).withName(KafkaResources.clientsCaKeySecretName(CLUSTER_NAME)).get(), is(notNullValue()));
-                assertThat(client.secrets().inNamespace(NAMESPACE).withName(KafkaResources.clientsCaCertificateSecretName(CLUSTER_NAME)).get(), is(notNullValue()));
-                assertThat(client.secrets().inNamespace(NAMESPACE).withName(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME)).get(), is(notNullValue()));
-                assertThat(client.secrets().inNamespace(NAMESPACE).withName(KafkaResources.kafkaSecretName(CLUSTER_NAME)).get(), is(notNullValue()));
-                assertThat(client.secrets().inNamespace(NAMESPACE).withName(KafkaResources.zookeeperSecretName(CLUSTER_NAME)).get(), is(notNullValue()));
+                assertThat(client.configMaps().inNamespace(namespace).withName(KafkaResources.zookeeperMetricsAndLogConfigMapName(CLUSTER_NAME)).get(), is(notNullValue()));
+                assertThat(client.secrets().inNamespace(namespace).withName(KafkaResources.clientsCaKeySecretName(CLUSTER_NAME)).get(), is(notNullValue()));
+                assertThat(client.secrets().inNamespace(namespace).withName(KafkaResources.clientsCaCertificateSecretName(CLUSTER_NAME)).get(), is(notNullValue()));
+                assertThat(client.secrets().inNamespace(namespace).withName(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME)).get(), is(notNullValue()));
+                assertThat(client.secrets().inNamespace(namespace).withName(KafkaResources.kafkaSecretName(CLUSTER_NAME)).get(), is(notNullValue()));
+                assertThat(client.secrets().inNamespace(namespace).withName(KafkaResources.zookeeperSecretName(CLUSTER_NAME)).get(), is(notNullValue()));
             })));
-    }
-
-    @AfterEach
-    public void afterEach() {
-        podSetController.stop();
-        mockKube.stop();
     }
 
     /** Create a cluster from a Kafka */
@@ -230,7 +236,7 @@ public class KafkaAssemblyOperatorMockTest {
         Checkpoint async = context.checkpoint();
         initialReconcile(context)
             .onComplete(context.succeeding(i -> { }))
-            .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)))
+            .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME)))
             .onComplete(context.succeeding(v -> async.flag()));
     }
 
@@ -254,17 +260,18 @@ public class KafkaAssemblyOperatorMockTest {
         initialReconcile(context)
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 for (String secret: secrets) {
-                    client.secrets().inNamespace(NAMESPACE).withName(secret).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
+                    client.secrets().inNamespace(namespace).withName(secret).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
+                    client.secrets().inNamespace(namespace).withName(secret).waitUntilCondition(Objects::isNull, 10_000, TimeUnit.MILLISECONDS);
                     assertThat("Expected secret " + secret + " to not exist",
-                            client.secrets().inNamespace(NAMESPACE).withName(secret).get(), is(nullValue()));
+                            client.secrets().inNamespace(namespace).withName(secret).get(), is(nullValue()));
                 }
                 LOGGER.info("Reconciling again -> update");
             })))
-            .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)))
+            .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME)))
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 for (String secret: secrets) {
                     assertThat("Expected secret " + secret + " to have been recreated",
-                            client.secrets().inNamespace(NAMESPACE).withName(secret).get(), is(notNullValue()));
+                            client.secrets().inNamespace(namespace).withName(secret).get(), is(notNullValue()));
                 }
                 async.flag();
             })));
@@ -279,17 +286,18 @@ public class KafkaAssemblyOperatorMockTest {
         initialReconcile(context)
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 for (String service : services) {
-                    client.services().inNamespace(NAMESPACE).withName(service).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
+                    client.services().inNamespace(namespace).withName(service).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
+                    client.services().inNamespace(namespace).withName(service).waitUntilCondition(Objects::isNull, 10_000, TimeUnit.MILLISECONDS);
                     assertThat("Expected service " + service + " to be not exist",
-                            client.services().inNamespace(NAMESPACE).withName(service).get(), is(nullValue()));
+                            client.services().inNamespace(namespace).withName(service).get(), is(nullValue()));
                 }
                 LOGGER.info("Reconciling again -> update");
             })))
-            .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)))
+            .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME)))
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 for (String service: services) {
                     assertThat("Expected service " + service + " to have been recreated",
-                            client.services().inNamespace(NAMESPACE).withName(service).get(), is(notNullValue()));
+                            client.services().inNamespace(namespace).withName(service).get(), is(notNullValue()));
                 }
                 async.flag();
             })));
@@ -325,16 +333,17 @@ public class KafkaAssemblyOperatorMockTest {
         Checkpoint async = context.checkpoint();
         initialReconcile(context)
             .onComplete(context.succeeding(v -> context.verify(() -> {
-                supplier.strimziPodSetOperator.client().inNamespace(NAMESPACE).withName(podSetName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
+                supplier.strimziPodSetOperator.client().inNamespace(namespace).withName(podSetName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
+                supplier.strimziPodSetOperator.client().inNamespace(namespace).withName(podSetName).waitUntilCondition(Objects::isNull, 10_000, TimeUnit.MILLISECONDS);
                 assertThat("Expected sts " + podSetName + " should not exist",
-                        supplier.strimziPodSetOperator.client().inNamespace(NAMESPACE).withName(podSetName).get(), is(nullValue()));
+                        supplier.strimziPodSetOperator.client().inNamespace(namespace).withName(podSetName).get(), is(nullValue()));
 
                 LOGGER.info("Reconciling again -> update");
             })))
-            .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)))
+            .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME)))
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 assertThat("Expected sts " + podSetName + " should have been re-created",
-                        supplier.strimziPodSetOperator.client().inNamespace(NAMESPACE).withName(CLUSTER_NAME + "-kafka").get(), is(notNullValue()));
+                        supplier.strimziPodSetOperator.client().inNamespace(namespace).withName(CLUSTER_NAME + "-kafka").get(), is(notNullValue()));
                 async.flag();
             })));
     }
@@ -363,11 +372,11 @@ public class KafkaAssemblyOperatorMockTest {
                             .endKafka()
                         .endSpec()
                         .build();
-                kafkaAssembly(NAMESPACE, CLUSTER_NAME).patch(PatchContext.of(PatchType.JSON), patchedPersistenceKafka);
+                kafkaAssembly(namespace, CLUSTER_NAME).patch(PatchContext.of(PatchType.JSON), patchedPersistenceKafka);
 
                 LOGGER.info("Updating with changed storage class");
             })))
-            .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)))
+            .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME)))
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 // Check the storage class was not changed
                 assertThat(((PersistentClaimStorage) kafkaStorage).getStorageClass(), is(originalStorageClass));
@@ -398,11 +407,11 @@ public class KafkaAssemblyOperatorMockTest {
                 } else {
                     context.failNow(new Exception("If storage is not persistent, something has gone wrong"));
                 }
-                kafkaAssembly(NAMESPACE, CLUSTER_NAME).patch(updatedStorageKafka);
+                kafkaAssembly(namespace, CLUSTER_NAME).patch(updatedStorageKafka);
 
                 LOGGER.info("Updating with changed storage type");
             })))
-            .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)))
+            .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME)))
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 // Check the Volumes and PVCs were not changed
                 assertPVCs(context, CLUSTER_NAME + "-kafka");
@@ -418,7 +427,7 @@ public class KafkaAssemblyOperatorMockTest {
 
         context.verify(() -> {
             List<PersistentVolumeClaim> pvc = new ArrayList<>();
-            client.persistentVolumeClaims().inNamespace(NAMESPACE).list().getItems().forEach(persistentVolumeClaim -> {
+            client.persistentVolumeClaims().inNamespace(namespace).list().getItems().forEach(persistentVolumeClaim -> {
                 if (persistentVolumeClaim.getMetadata().getName().startsWith("data-" + podSetName)) {
                     pvc.add(persistentVolumeClaim);
                     assertThat(persistentVolumeClaim.getSpec().getStorageClassName(), is("foo"));
@@ -432,7 +441,7 @@ public class KafkaAssemblyOperatorMockTest {
 
     private void assertVolumes(VertxTestContext context, String podSetName) {
         context.verify(() -> {
-            StrimziPodSet sps = supplier.strimziPodSetOperator.client().inNamespace(NAMESPACE).withName(podSetName).get();
+            StrimziPodSet sps = supplier.strimziPodSetOperator.client().inNamespace(namespace).withName(podSetName).get();
             assertThat(sps, is(notNullValue()));
             sps.getSpec().getPods().stream().map(PodSetUtils::mapToPod).forEach(pod -> {
                 List<Volume> volumes = pod.getSpec().getVolumes();
@@ -466,12 +475,12 @@ public class KafkaAssemblyOperatorMockTest {
 
         initialReconcile(context)
             .onComplete(context.succeeding(v -> context.verify(() -> {
-                kafkaPvcs.set(client.persistentVolumeClaims().inNamespace(NAMESPACE).withLabels(kafkaLabels).list().getItems()
+                kafkaPvcs.set(client.persistentVolumeClaims().inNamespace(namespace).withLabels(kafkaLabels).list().getItems()
                         .stream()
                         .map(pvc -> pvc.getMetadata().getName())
                         .collect(Collectors.toSet()));
 
-                zkPvcs.set(client.persistentVolumeClaims().inNamespace(NAMESPACE).withLabels(zkLabels).list().getItems()
+                zkPvcs.set(client.persistentVolumeClaims().inNamespace(namespace).withLabels(zkLabels).list().getItems()
                         .stream()
                         .map(pvc -> pvc.getMetadata().getName())
                         .collect(Collectors.toSet()));
@@ -485,21 +494,21 @@ public class KafkaAssemblyOperatorMockTest {
                         .withStorageClass("foo")
                         .withDeleteClaim(!originalKafkaDeleteClaim.get())
                         .endPersistentClaimStorage().endKafka().endSpec().build();
-                kafkaAssembly(NAMESPACE, CLUSTER_NAME).patch(PatchContext.of(PatchType.JSON), updatedStorageKafka);
+                kafkaAssembly(namespace, CLUSTER_NAME).patch(PatchContext.of(PatchType.JSON), updatedStorageKafka);
                 LOGGER.info("Updating with changed delete claim");
             })))
-            .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)))
+            .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME)))
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 // check that the new delete-claim annotation is on the PVCs
                 for (String pvcName: kafkaPvcs.get()) {
-                    assertThat(client.persistentVolumeClaims().inNamespace(NAMESPACE).withName(pvcName).get()
+                    assertThat(client.persistentVolumeClaims().inNamespace(namespace).withName(pvcName).get()
                                     .getMetadata().getAnnotations(),
                             hasEntry(Annotations.ANNO_STRIMZI_IO_DELETE_CLAIM, String.valueOf(!originalKafkaDeleteClaim.get())));
                 }
-                kafkaAssembly(NAMESPACE, CLUSTER_NAME).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
+                kafkaAssembly(namespace, CLUSTER_NAME).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
                 LOGGER.info("Reconciling again -> delete");
             })))
-            .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)))
+            .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME)))
             .onComplete(context.succeeding(v -> async.flag()));
     }
 
@@ -515,11 +524,11 @@ public class KafkaAssemblyOperatorMockTest {
         Checkpoint async = context.checkpoint();
         initialReconcile(context)
             .onComplete(context.succeeding(v -> context.verify(() -> {
-                brokersInternalCertsCount.set(client.secrets().inNamespace(NAMESPACE).withName(KafkaResources.kafkaSecretName(CLUSTER_NAME)).get()
+                brokersInternalCertsCount.set(client.secrets().inNamespace(namespace).withName(KafkaResources.kafkaSecretName(CLUSTER_NAME)).get()
                         .getData()
                         .size());
 
-                assertThat(client.pods().inNamespace(NAMESPACE).withName(deletedPod).get(), is(notNullValue()));
+                assertThat(client.pods().inNamespace(namespace).withName(deletedPod).get(), is(notNullValue()));
 
                 Kafka scaledDownCluster = new KafkaBuilder(cluster)
                         .editSpec()
@@ -528,20 +537,20 @@ public class KafkaAssemblyOperatorMockTest {
                             .endKafka()
                         .endSpec()
                         .build();
-                kafkaAssembly(NAMESPACE, CLUSTER_NAME).patch(PatchContext.of(PatchType.JSON), scaledDownCluster);
+                kafkaAssembly(namespace, CLUSTER_NAME).patch(PatchContext.of(PatchType.JSON), scaledDownCluster);
 
                 LOGGER.info("Scaling down to {} Kafka pods", scaleDownTo);
             })))
-            .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)))
+            .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME)))
             .onComplete(context.succeeding(v -> context.verify(() -> {
-                assertThat(Crds.strimziPodSetOperation(client).inNamespace(NAMESPACE).withName(CLUSTER_NAME + "-kafka").get().getSpec().getPods().size(),
+                assertThat(Crds.strimziPodSetOperation(client).inNamespace(namespace).withName(CLUSTER_NAME + "-kafka").get().getSpec().getPods().size(),
                         is(scaleDownTo));
                 assertThat("Expected pod " + deletedPod + " to have been deleted",
-                        client.pods().inNamespace(NAMESPACE).withName(deletedPod).get(),
+                        client.pods().inNamespace(namespace).withName(deletedPod).get(),
                         is(nullValue()));
 
                 // removing one pod, the related private and public keys, keystore and password (4 entries) should not be in the Secrets
-                assertThat(client.secrets().inNamespace(NAMESPACE).withName(KafkaResources.kafkaSecretName(CLUSTER_NAME)).get()
+                assertThat(client.secrets().inNamespace(namespace).withName(KafkaResources.kafkaSecretName(CLUSTER_NAME)).get()
                                 .getData(),
                         aMapWithSize(brokersInternalCertsCount.get() - 4));
 
@@ -561,11 +570,11 @@ public class KafkaAssemblyOperatorMockTest {
 
         initialReconcile(context)
             .onComplete(context.succeeding(v -> context.verify(() -> {
-                brokersInternalCertsCount.set(client.secrets().inNamespace(NAMESPACE).withName(KafkaResources.kafkaSecretName(CLUSTER_NAME)).get()
+                brokersInternalCertsCount.set(client.secrets().inNamespace(namespace).withName(KafkaResources.kafkaSecretName(CLUSTER_NAME)).get()
                         .getData()
                         .size());
 
-                assertThat(client.pods().inNamespace(NAMESPACE).withName(newPod).get(), is(nullValue()));
+                assertThat(client.pods().inNamespace(namespace).withName(newPod).get(), is(nullValue()));
 
                 Kafka scaledUpKafka = new KafkaBuilder(cluster)
                         .editSpec()
@@ -574,20 +583,20 @@ public class KafkaAssemblyOperatorMockTest {
                             .endKafka()
                         .endSpec()
                         .build();
-                kafkaAssembly(NAMESPACE, CLUSTER_NAME).patch(PatchContext.of(PatchType.JSON), scaledUpKafka);
+                kafkaAssembly(namespace, CLUSTER_NAME).patch(PatchContext.of(PatchType.JSON), scaledUpKafka);
 
                 LOGGER.info("Scaling up to {} Kafka pods", scaleUpTo);
             })))
-            .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)))
+            .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME)))
             .onComplete(context.succeeding(v -> context.verify(() -> {
-                assertThat(supplier.strimziPodSetOperator.client().inNamespace(NAMESPACE).withName(CLUSTER_NAME + "-kafka").get().getSpec().getPods().size(),
+                assertThat(supplier.strimziPodSetOperator.client().inNamespace(namespace).withName(CLUSTER_NAME + "-kafka").get().getSpec().getPods().size(),
                         is(scaleUpTo));
                 assertThat("Expected pod " + newPod + " to have been created",
-                        client.pods().inNamespace(NAMESPACE).withName(newPod).get(),
+                        client.pods().inNamespace(namespace).withName(newPod).get(),
                         is(notNullValue()));
 
                 // adding one pod, the related private and public keys, keystore and password should be added to the Secrets
-                assertThat(client.secrets().inNamespace(NAMESPACE).withName(KafkaResources.kafkaSecretName(CLUSTER_NAME)).get().getData(),
+                assertThat(client.secrets().inNamespace(namespace).withName(KafkaResources.kafkaSecretName(CLUSTER_NAME)).get().getData(),
                         aMapWithSize(brokersInternalCertsCount.get() + 4));
 
                 // TODO assert no rolling update

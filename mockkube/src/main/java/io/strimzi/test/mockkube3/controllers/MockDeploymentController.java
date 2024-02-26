@@ -2,8 +2,9 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.test.mockkube2.controllers;
+package io.strimzi.test.mockkube3.controllers;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.fabric8.kubernetes.api.model.apps.DeploymentStatusBuilder;
@@ -26,18 +27,17 @@ public class MockDeploymentController extends AbstractMockController {
 
     /**
      * Constructs the Mock Deployment controller
-     *
-     * @param client    Kubernetes client
      */
-    public MockDeploymentController(KubernetesClient client) {
-        super(client);
+    public MockDeploymentController() {
+        super();
     }
 
     /**
      * Starts the watch for new or updated Deployments
      */
     @Override
-    public void start() {
+    @SuppressFBWarnings({"SIC_INNER_SHOULD_BE_STATIC_ANON"}) // Just a test util, no need to complicate the code bay factoring the anonymous watcher class out
+    public void start(KubernetesClient client) {
         watch = client.apps().deployments().inAnyNamespace().watch(new Watcher<>() {
             @Override
             public void eventReceived(Action action, Deployment deployment) {
@@ -50,6 +50,7 @@ public class MockDeploymentController extends AbstractMockController {
                                                     .withObservedGeneration(deployment.getMetadata().getGeneration())
                                                     .withReplicas(deployment.getSpec().getReplicas())
                                                     .withAvailableReplicas(deployment.getSpec().getReplicas())
+                                                    .withReadyReplicas(deployment.getSpec().getReplicas())
                                                     .build())
                                             .build())
                                     .updateStatus();

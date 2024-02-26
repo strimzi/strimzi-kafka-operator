@@ -4,14 +4,13 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
-import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.fabric8.kubernetes.client.server.mock.EnableKubernetesMockClient;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Builder;
+import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2ClusterSpecBuilder;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Resources;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
@@ -29,7 +28,7 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.platform.KubernetesVersion;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.mockkube2.MockKube2;
+import io.strimzi.test.mockkube3.MockKube3;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -44,9 +43,11 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.List;
+import java.util.Locale;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonMap;
@@ -61,23 +62,20 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@EnableKubernetesMockClient(crud = true)
 @ExtendWith(VertxExtension.class)
 public class KafkaMirrorMaker2AssemblyOperatorMockTest {
     private static final Logger LOGGER = LogManager.getLogger(KafkaMirrorMaker2AssemblyOperatorMockTest.class);
 
-    private static final String NAMESPACE = "my-namespace";
     private static final String CLUSTER_NAME = "my-mm2-cluster";
     private static final int REPLICAS = 3;
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
     private static final PlatformFeaturesAvailability PFA = new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION);
 
     private static WorkerExecutor sharedWorkerExecutor;
+    private static KubernetesClient client;
+    private static MockKube3 mockKube;
 
-    // Injected by Fabric8 Mock Kubernetes Server
-    @SuppressWarnings("unused")
-    private KubernetesClient client;
-    private MockKube2 mockKube;
+    private String namespace;
     private ResourceOperatorSupplier supplier;
     private StrimziPodSetController podSetController;
 
@@ -85,28 +83,33 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
     private KafkaMirrorMaker2AssemblyOperator kco;
 
     @BeforeAll
-    public static void before() {
-        vertx = Vertx.vertx();
-        sharedWorkerExecutor = vertx.createSharedWorkerExecutor("kubernetes-ops-pool");
-    }
-
-    @AfterAll
-    public static void after() {
-        sharedWorkerExecutor.close();
-        vertx.close();
-    }
-
-    @BeforeEach
-    public void beforeEach() {
+    public static void beforeAll() {
         // Configure the Kubernetes Mock
-        mockKube = new MockKube2.MockKube2Builder(client)
-                .withKafkaConnectCrd()
+        mockKube = new MockKube3.MockKube3Builder()
                 .withKafkaCrd()
+                .withKafkaConnectCrd()
                 .withKafkaMirrorMaker2Crd()
                 .withStrimziPodSetCrd()
                 .withPodController()
                 .build();
         mockKube.start();
+        client = mockKube.client();
+
+        vertx = Vertx.vertx();
+        sharedWorkerExecutor = vertx.createSharedWorkerExecutor("kubernetes-ops-pool");
+    }
+
+    @AfterAll
+    public static void afterAll() {
+        sharedWorkerExecutor.close();
+        vertx.close();
+        mockKube.stop();
+    }
+
+    @BeforeEach
+    public void beforeEach(TestInfo testInfo) {
+        namespace = testInfo.getTestMethod().orElseThrow().getName().toLowerCase(Locale.ROOT);
+        mockKube.prepareNamespace(namespace);
 
         supplier = new ResourceOperatorSupplier(vertx, client,
                 new ZookeeperLeaderFinder(vertx,
@@ -117,14 +120,14 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
                 new DefaultKafkaAgentClientProvider(),
                 ResourceUtils.metricsProvider(),
                 PFA, 60_000L);
-        podSetController = new StrimziPodSetController(NAMESPACE, Labels.EMPTY, supplier.kafkaOperator, supplier.connectOperator, supplier.mirrorMaker2Operator, supplier.strimziPodSetOperator, supplier.podOperations, supplier.metricsProvider, Integer.parseInt(ClusterOperatorConfig.POD_SET_CONTROLLER_WORK_QUEUE_SIZE.defaultValue()));
+        podSetController = new StrimziPodSetController(namespace, Labels.EMPTY, supplier.kafkaOperator, supplier.connectOperator, supplier.mirrorMaker2Operator, supplier.strimziPodSetOperator, supplier.podOperations, supplier.metricsProvider, Integer.parseInt(ClusterOperatorConfig.POD_SET_CONTROLLER_WORK_QUEUE_SIZE.defaultValue()));
         podSetController.start();
     }
 
     @AfterEach
     public void afterEach() {
         podSetController.stop();
-        mockKube.stop();
+        client.namespaces().withName(namespace).delete();
     }
 
     private Future<Void> createMirrorMaker2Cluster(VertxTestContext context, KafkaConnectApi kafkaConnectApi, boolean reconciliationPaused) {
@@ -137,16 +140,16 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
         LOGGER.info("Reconciling initially -> create");
         Promise<Void> created = Promise.promise();
 
-        kco.reconcile(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME))
+        kco.reconcile(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, namespace, CLUSTER_NAME))
             .onComplete(context.succeeding(ar -> context.verify(() -> {
                 if (!reconciliationPaused) {
-                    assertThat(Crds.strimziPodSetOperation(client).inNamespace(NAMESPACE).withName(KafkaMirrorMaker2Resources.componentName(CLUSTER_NAME)).get(), is(notNullValue()));
-                    assertThat(client.apps().deployments().inNamespace(NAMESPACE).withName(KafkaMirrorMaker2Resources.componentName(CLUSTER_NAME)).get(), is(nullValue()));
-                    assertThat(client.configMaps().inNamespace(NAMESPACE).withName(KafkaMirrorMaker2Resources.metricsAndLogConfigMapName(CLUSTER_NAME)).get(), is(notNullValue()));
-                    assertThat(client.services().inNamespace(NAMESPACE).withName(KafkaMirrorMaker2Resources.serviceName(CLUSTER_NAME)).get(), is(notNullValue()));
-                    assertThat(client.policy().v1().podDisruptionBudget().inNamespace(NAMESPACE).withName(KafkaMirrorMaker2Resources.componentName(CLUSTER_NAME)).get(), is(notNullValue()));
+                    assertThat(Crds.strimziPodSetOperation(client).inNamespace(namespace).withName(KafkaMirrorMaker2Resources.componentName(CLUSTER_NAME)).get(), is(notNullValue()));
+                    assertThat(client.apps().deployments().inNamespace(namespace).withName(KafkaMirrorMaker2Resources.componentName(CLUSTER_NAME)).get(), is(nullValue()));
+                    assertThat(client.configMaps().inNamespace(namespace).withName(KafkaMirrorMaker2Resources.metricsAndLogConfigMapName(CLUSTER_NAME)).get(), is(notNullValue()));
+                    assertThat(client.services().inNamespace(namespace).withName(KafkaMirrorMaker2Resources.serviceName(CLUSTER_NAME)).get(), is(notNullValue()));
+                    assertThat(client.policy().v1().podDisruptionBudget().inNamespace(namespace).withName(KafkaMirrorMaker2Resources.componentName(CLUSTER_NAME)).get(), is(notNullValue()));
                 } else {
-                    assertThat(Crds.strimziPodSetOperation(client).inNamespace(NAMESPACE).withName(KafkaMirrorMaker2Resources.componentName(CLUSTER_NAME)).get(), is(nullValue()));
+                    assertThat(Crds.strimziPodSetOperation(client).inNamespace(namespace).withName(KafkaMirrorMaker2Resources.componentName(CLUSTER_NAME)).get(), is(nullValue()));
                 }
 
                 created.complete();
@@ -158,14 +161,16 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
     @Test
     public void testReconcileUpdate(VertxTestContext context) {
         Crds.kafkaMirrorMaker2Operation(client).resource(new KafkaMirrorMaker2Builder()
-                .withMetadata(new ObjectMetaBuilder()
-                        .withName(CLUSTER_NAME)
-                        .withNamespace(NAMESPACE)
-                        .withLabels(TestUtils.map("foo", "bar"))
-                        .build())
+                .withNewMetadata()
+                    .withName(CLUSTER_NAME)
+                    .withNamespace(namespace)
+                    .withLabels(TestUtils.map("foo", "bar"))
+                .endMetadata()
                 .withNewSpec()
                     .withReplicas(REPLICAS)
-                    .withClusters(List.of())
+                    .withConnectCluster("target")
+                    .withClusters(new KafkaMirrorMaker2ClusterSpecBuilder().withAlias("source").withBootstrapServers("source:9092").build(),
+                            new KafkaMirrorMaker2ClusterSpecBuilder().withAlias("target").withBootstrapServers("target:9092").build())
                     .withMirrors(List.of())
                 .endSpec()
             .build()).create();
@@ -179,7 +184,7 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
             .onComplete(context.succeeding(i -> { }))
             .compose(i -> {
                 LOGGER.info("Reconciling again -> update");
-                return kco.reconcile(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME));
+                return kco.reconcile(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, namespace, CLUSTER_NAME));
             })
             .onComplete(context.succeeding(v -> async.flag()));
     }
@@ -187,15 +192,17 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
     @Test
     public void testPauseReconcile(VertxTestContext context) {
         Crds.kafkaMirrorMaker2Operation(client).resource(new KafkaMirrorMaker2Builder()
-                .withMetadata(new ObjectMetaBuilder()
-                        .withName(CLUSTER_NAME)
-                        .withNamespace(NAMESPACE)
-                        .withLabels(TestUtils.map("foo", "bar"))
-                        .withAnnotations(singletonMap("strimzi.io/pause-reconciliation", "true"))
-                        .build())
+                .withNewMetadata()
+                    .withName(CLUSTER_NAME)
+                    .withNamespace(namespace)
+                    .withLabels(TestUtils.map("foo", "bar"))
+                    .withAnnotations(singletonMap("strimzi.io/pause-reconciliation", "true"))
+                .endMetadata()
                 .withNewSpec()
                     .withReplicas(REPLICAS)
-                    .withClusters(List.of())
+                    .withConnectCluster("target")
+                    .withClusters(new KafkaMirrorMaker2ClusterSpecBuilder().withAlias("source").withBootstrapServers("source:9092").build(),
+                            new KafkaMirrorMaker2ClusterSpecBuilder().withAlias("target").withBootstrapServers("target:9092").build())
                     .withMirrors(List.of())
                 .endSpec()
                 .build()).create();
@@ -208,10 +215,10 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
         createMirrorMaker2Cluster(context, mock, true)
                 .onComplete(context.succeeding(v -> {
                     LOGGER.info("Reconciling again -> update");
-                    kco.reconcile(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME));
+                    kco.reconcile(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, namespace, CLUSTER_NAME));
                 }))
                 .onComplete(context.succeeding(v -> context.verify(() -> {
-                    Resource<KafkaMirrorMaker2> resource = Crds.kafkaMirrorMaker2Operation(client).inNamespace(NAMESPACE).withName(CLUSTER_NAME);
+                    Resource<KafkaMirrorMaker2> resource = Crds.kafkaMirrorMaker2Operation(client).inNamespace(namespace).withName(CLUSTER_NAME);
 
                     if (resource.get().getStatus() == null) {
                         context.failNow("Status is null");
@@ -230,5 +237,4 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
                     async.flag();
                 })));
     }
-
 }
