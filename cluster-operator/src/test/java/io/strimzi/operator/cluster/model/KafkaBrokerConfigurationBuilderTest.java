@@ -2271,7 +2271,7 @@ public class KafkaBrokerConfigurationBuilderTest {
         rsm.setClassPath("/opt/kafka/plugins/tiered-storage-s3/*");
         Map<String, String> rsmConfigs = new HashMap<>();
         rsmConfigs.put("storage.bucket.name", "my-bucket");
-        rsm.setConfigs(rsmConfigs);
+        rsm.setConfig(rsmConfigs);
         tieredStorage.setRemoteStorageManager(rsm);
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2", false)
             .withTieredStorage("test-cluster-1", tieredStorage)
@@ -2289,7 +2289,7 @@ public class KafkaBrokerConfigurationBuilderTest {
             "rlmm.config.remote.log.metadata.common.client.ssl.keystore.password=${CERTS_STORE_PASSWORD}",
             "rlmm.config.remote.log.metadata.common.client.ssl.keystore.type=PKCS12",
             "rlmm.config.remote.log.metadata.common.client.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-            "rlmm.config.remote.log.metadata.common.client.ssl.keystore.password=${CERTS_STORE_PASSWORD}",
+            "rlmm.config.remote.log.metadata.common.client.ssl.truststore.password=${CERTS_STORE_PASSWORD}",
             "rlmm.config.remote.log.metadata.common.client.ssl.truststore.type=PKCS12",
             "remote.log.storage.manager.class.name=com.example.kafka.tiered.storage.s3.S3RemoteStorageManager",
             "remote.log.storage.manager.class.path=/opt/kafka/plugins/tiered-storage-s3/*",

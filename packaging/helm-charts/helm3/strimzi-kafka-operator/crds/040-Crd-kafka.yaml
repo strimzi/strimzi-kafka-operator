@@ -1855,16 +1855,16 @@ spec:
                           properties:
                             className:
                               type: string
-                              description: The class name for the RSM class.
+                              description: The class name for the Remote Storage Manager class.
                             classPath:
                               type: string
-                              description: The class path for the RSM class.
-                            configs:
+                              description: The class path for the Remote Storage Manager class.
+                            config:
                               additionalProperties:
                                 type: string
                               type: object
-                              description: The additional configuration map for the remoteStorageManager.
-                          description: Configuration for the remoteStorageManager.
+                              description: The additional configuration map for the Remote Storage Manager.
+                          description: Configuration for the Remote Storage Manager.
                         type:
                           type: string
                           enum:
@@ -1872,7 +1872,7 @@ spec:
                           description: "Storage type, must be either 'custom'."
                       required:
                         - type
-                      description: Configure tieredStorage for Kafka brokers.
+                      description: Configure the tiered storage feature for Kafka brokers.
                   required:
                     - listeners
                   description: Configuration of the Kafka cluster.

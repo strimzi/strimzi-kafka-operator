@@ -15,6 +15,7 @@ import lombok.EqualsAndHashCode;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
+
 /**
  * Configures a RemoteStorageManager in the tiered storage setup.
  */
@@ -29,7 +30,7 @@ public class RemoteStorageManager implements UnknownPropertyPreserving, Serializ
     protected Map<String, Object> additionalProperties;
     private String className;
     private String classPath;
-    private Map<String, String> configs;
+    private Map<String, String> config;
     @Override
     public Map<String, Object> getAdditionalProperties() {
         return this.additionalProperties;
@@ -43,7 +44,7 @@ public class RemoteStorageManager implements UnknownPropertyPreserving, Serializ
         this.additionalProperties.put(name, value);
     }
 
-    @Description("The class name for the RSM class.")
+    @Description("The class name for the Remote Storage Manager class.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public String getClassName() {
         return className;
@@ -53,7 +54,7 @@ public class RemoteStorageManager implements UnknownPropertyPreserving, Serializ
         this.className = className;
     }
 
-    @Description("The class path for the RSM class.")
+    @Description("The class path for the Remote Storage Manager class.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public String getClassPath() {
         return classPath;
@@ -63,13 +64,13 @@ public class RemoteStorageManager implements UnknownPropertyPreserving, Serializ
         this.classPath = classPath;
     }
 
-    @Description("The additional configuration map for the remoteStorageManager.")
+    @Description("The additional configuration map for the Remote Storage Manager.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public Map<String, String> getConfigs() {
-        return this.configs;
+    public Map<String, String> getConfig() {
+        return this.config;
     }
 
-    public void setConfigs(Map<String, String> configs) {
-        this.configs = configs;
+    public void setConfig(Map<String, String> config) {
+        this.config = config;
     }
 }

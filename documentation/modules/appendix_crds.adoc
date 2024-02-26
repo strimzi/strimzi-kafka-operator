@@ -126,7 +126,7 @@ include::../api/io.strimzi.api.kafka.model.kafka.KafkaClusterSpec.adoc[leveloffs
 |Template for Kafka cluster resources. The template allows users to specify how the Kubernetes resources are generated.
 |tieredStorage
 |xref:type-TieredStorageCustom-{context}[`TieredStorageCustom`]
-|Configure tieredStorage for Kafka brokers.
+|Configure the tiered storage feature for Kafka brokers.
 |====
 
 [id='type-GenericKafkaListener-{context}']
@@ -1308,7 +1308,7 @@ It must have the value `custom` for the type `TieredStorageCustom`.
 |Property |Property type |Description
 |remoteStorageManager
 |xref:type-RemoteStorageManager-{context}[`RemoteStorageManager`]
-|Configuration for the remoteStorageManager.
+|Configuration for the Remote Storage Manager.
 |type
 |string
 |Must be `custom`.
@@ -1325,13 +1325,13 @@ Used in: xref:type-TieredStorageCustom-{context}[`TieredStorageCustom`]
 |Property |Property type |Description
 |className
 |string
-|The class name for the RSM class.
+|The class name for the Remote Storage Manager class.
 |classPath
 |string
-|The class path for the RSM class.
-|configs
+|The class path for the Remote Storage Manager class.
+|config
 |map
-|The additional configuration map for the remoteStorageManager.
+|The additional configuration map for the Remote Storage Manager.
 |====
 
 [id='type-ZookeeperClusterSpec-{context}']

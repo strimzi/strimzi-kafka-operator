@@ -36,7 +36,7 @@ public class TieredStorageCustom extends TieredStorage {
         return TYPE_CUSTOM;
     }
 
-    @Description("Configuration for the remoteStorageManager.")
+    @Description("Configuration for the Remote Storage Manager.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public RemoteStorageManager getRemoteStorageManager() {
         return remoteStorageManager;

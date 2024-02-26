@@ -283,7 +283,7 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, HasConfigurable
         this.template = template;
     }
 
-    @Description("Configure tieredStorage for Kafka brokers")
+    @Description("Configure the tiered storage feature for Kafka brokers")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public TieredStorage getTieredStorage() {
         return tieredStorage;
