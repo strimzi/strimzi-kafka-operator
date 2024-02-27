@@ -48,8 +48,8 @@ public class ReplicasChangeStatus implements UnknownPropertyPreserving, Serializ
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @Description("Current state of the replicas change operation. This can be pending, when the change has been " +
-        "requested, and ongoing, when the change has been successfully submitted to Cruise Control.")
+    @Description("Current state of the replicas change operation. This can be `pending`, when the change has been " +
+        "requested, or `ongoing`, when the change has been successfully submitted to Cruise Control.")
     public ReplicasChangeState getState() {
         return state;
     }
@@ -60,7 +60,7 @@ public class ReplicasChangeStatus implements UnknownPropertyPreserving, Serializ
     
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @Description("The session identifier for replicas change requests pertaining to this KafkaTopic resource. " +
-        "This is used by the Topic Operator to track the status of ongoing replicas change operations.")
+        "This is used by the Topic Operator to track the status of `ongoing` replicas change operations.")
     public String getSessionId() {
         return sessionId;
     }

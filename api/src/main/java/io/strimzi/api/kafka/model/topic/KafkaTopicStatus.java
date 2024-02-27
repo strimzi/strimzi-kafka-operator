@@ -39,7 +39,7 @@ public class KafkaTopicStatus extends Status {
     public void setTopicName(String topicName) {
         this.topicName = topicName;
     }
-    
+
     @Description("The topic's id. For a KafkaTopic with the ready condition, " +
         "this will change only if the topic gets deleted and recreated with the same name.")
     public String getTopicId() {
@@ -49,7 +49,7 @@ public class KafkaTopicStatus extends Status {
     public void setTopicId(String topicId) {
         this.topicId = topicId;
     }
-    
+
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @Description("Replication factor change status.")
     public ReplicasChangeStatus getReplicasChange() {

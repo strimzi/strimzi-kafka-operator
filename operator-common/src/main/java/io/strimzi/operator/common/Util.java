@@ -558,7 +558,7 @@ public class Util {
      *
      * @param data    String that should be decoded.
      *
-     * @return         Plain data.
+     * @return        Plain data.
      */
     public static String decodeFromBase64(String data)  {
         return new String(Base64.getDecoder().decode(data), StandardCharsets.US_ASCII);
