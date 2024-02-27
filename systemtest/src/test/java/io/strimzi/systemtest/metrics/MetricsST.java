@@ -729,7 +729,7 @@ public class MetricsST extends AbstractST {
             KafkaTemplates.kafkaMetricsConfigMap(namespaceFirst, kafkaClusterFirstName),
             KafkaTemplates.cruiseControlMetricsConfigMap(namespaceFirst, kafkaClusterFirstName),
             // Kafka with CruiseControl and metrics
-            KafkaTemplates.kafkaWithMetricsAndCruiseControlWithMetrics(kafkaClusterFirstName, namespaceFirst, 3, 3)
+            KafkaTemplates.kafkaWithMetricsAndCruiseControlWithMetrics(namespaceFirst, kafkaClusterFirstName, 3, 3)
                 .editOrNewSpec()
                     .editEntityOperator()
                         .editTopicOperator()
