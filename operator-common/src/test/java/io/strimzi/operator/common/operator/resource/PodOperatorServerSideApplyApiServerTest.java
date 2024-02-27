@@ -6,13 +6,12 @@ package io.strimzi.operator.common.operator.resource;
 
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.ManagedFieldsEntry;
-import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.javaoperatorsdk.jenvtest.junit.EnableKubeAPIServer;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.test.mockkube3.MockKube3;
 import io.vertx.core.Vertx;
 import io.vertx.core.WorkerExecutor;
 import io.vertx.junit5.Checkpoint;
@@ -34,11 +33,10 @@ import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@EnableKubeAPIServer
 @ExtendWith(VertxExtension.class)
 public class PodOperatorServerSideApplyApiServerTest {
     public static final String RESOURCE_NAME = "my-resource";
-    public static final String NAMESPACE = "test";
+    public static final String NAMESPACE = "podoperatorserversideapplyapiservertest";
 
     private final static PodBuilder STARTING_POD = new PodBuilder()
             .withNewSpec()
@@ -48,16 +46,20 @@ public class PodOperatorServerSideApplyApiServerTest {
 
     protected static Vertx vertx;
     private static WorkerExecutor sharedWorkerExecutor;
-
-    // Injected by jenvtest Kubernetes Api Server
-    @SuppressWarnings("unused")
-    static KubernetesClient client;
+    private static KubernetesClient client;
+    private static MockKube3 mockKube;
 
     @BeforeAll
     public static void before() {
+        mockKube = new MockKube3.MockKube3Builder()
+                .withKafkaConnectorCrd()
+                .build();
+        mockKube.start();
+        client = mockKube.client();
+
         vertx = Vertx.vertx();
         sharedWorkerExecutor = vertx.createSharedWorkerExecutor("kubernetes-ops-pool");
-        client.namespaces().create(new NamespaceBuilder().withNewMetadata().withName(NAMESPACE).endMetadata().build());
+        mockKube.prepareNamespace(NAMESPACE);
     }
 
     @BeforeEach

@@ -479,7 +479,7 @@ public class UserControllerMockTest {
 
         // Test
         try {
-            kafkaUserOps.resource(namespace, ResourceUtils.createKafkaUserTls()).create();
+            kafkaUserOps.resource(namespace, ResourceUtils.createKafkaUserTls(namespace)).create();
             kafkaUserOps.resource(namespace, NAME).waitUntilCondition(i -> {
                 try {
                     return statusUpdateInvokedLatch.await(10, TimeUnit.SECONDS);
@@ -538,7 +538,7 @@ public class UserControllerMockTest {
 
         // Test
         try {
-            kafkaUserOps.resource(namespace, ResourceUtils.createKafkaUserTls()).create();
+            kafkaUserOps.resource(namespace, ResourceUtils.createKafkaUserTls(namespace)).create();
             kafkaUserOps.resource(namespace, NAME).waitUntilCondition(i -> {
                 try {
                     return statusUpdateInvokedLatch.await(10, TimeUnit.SECONDS);

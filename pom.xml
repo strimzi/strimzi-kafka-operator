@@ -175,7 +175,6 @@
         <testcontainer.version>1.19.5</testcontainer.version>
         <docker-java.version>3.3.4</docker-java.version>
         <junit4.version>4.13.2</junit4.version>
-        <jenvtest.version>0.9.7</jenvtest.version>
 
         <!-- properties to skip surefire tests during failsafe execution -->
         <skipTests>false</skipTests>
@@ -768,43 +767,6 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>io.fabric8</groupId>
-                <artifactId>kubernetes-server-mock</artifactId>
-                <version>${fabric8.kubernetes-client.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>io.javaoperatorsdk</groupId>
-                <artifactId>jenvtest</artifactId>
-                <version>${jenvtest.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>io.javaoperatorsdk</groupId>
-                <artifactId>jenvtest-fabric8-client-support</artifactId>
-                <version>${jenvtest.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>com.squareup.okhttp3</groupId>
-                <artifactId>mockwebserver</artifactId>
-                <version>${mockwebserver.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <!-- Pin version of transitive junit dependency of the above dependency to avoid CVE-2020-15250 -->
-                <groupId>junit</groupId>
-                <artifactId>junit</artifactId>
-                <version>4.13.2</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>io.fabric8</groupId>
-                <artifactId>openshift-server-mock</artifactId>
-                <version>${fabric8.kubernetes-client.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
                 <groupId>io.strimzi</groupId>
                 <artifactId>strimzi-test-container</artifactId>
                 <version>${strimzi-test-container.version}</version>
@@ -1226,7 +1188,6 @@
                                 <ignoredUnusedDeclaredDependency>io.micrometer:micrometer-registry-prometheus</ignoredUnusedDeclaredDependency>
                                 <ignoredUnusedDeclaredDependency>org.mockito:mockito-inline</ignoredUnusedDeclaredDependency>
                                 <ignoredUnusedDeclaredDependency>junit:junit</ignoredUnusedDeclaredDependency>
-                                <ignoredUnusedDeclaredDependency>io.javaoperatorsdk:jenvtest-fabric8-client-support</ignoredUnusedDeclaredDependency>
                             </ignoredUnusedDeclaredDependencies>
                             <ignoredUsedUndeclaredDependencies>
                                 <ignoredUsedUndeclaredDependency>org.apache.kafka:kafka-raft:jar</ignoredUsedUndeclaredDependency>
