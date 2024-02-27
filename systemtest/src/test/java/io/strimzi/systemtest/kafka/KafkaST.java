@@ -471,7 +471,7 @@ class KafkaST extends AbstractST {
                 .allMatch(volume -> "false".equals(volume.getMetadata().getAnnotations().get("strimzi.io/delete-claim")))
         );
 
-        final int volumesCount = kubeClient().listPersistentVolumeClaims(testStorage.getNamespaceName(), testStorage.getClusterName()).size();
+        final int volumesCount = kubeClient().listPersistentVolumeClaims(testStorage.getNamespaceName(), testStorage.getBrokerComponentName()).size();
 
         LOGGER.info("Deleting Kafka: {}/{} cluster", testStorage.getNamespaceName(), testStorage.getClusterName());
         // we cannot use ResourceManager here, as it would delete all the PVCs (part of the KafkaResource#delete method)
@@ -481,10 +481,10 @@ class KafkaST extends AbstractST {
         }
 
         LOGGER.info("Waiting for PVCs deletion");
-        PersistentVolumeClaimUtils.waitForJbodStorageDeletion(testStorage.getNamespaceName(), volumesCount, testStorage.getClusterName(), List.of(idZeroVolumeModified, idOneVolumeOriginal));
+        PersistentVolumeClaimUtils.waitForJbodStorageDeletion(testStorage.getNamespaceName(), volumesCount, testStorage.getBrokerComponentName(), List.of(idZeroVolumeModified, idOneVolumeOriginal));
 
         LOGGER.info("Verifying that PVC which are supposed to remain, really persist even after Kafka cluster un-deployment");
-        List<String> remainingPVCNames =  kubeClient().listPersistentVolumeClaims(testStorage.getNamespaceName(), testStorage.getClusterName()).stream().map(e -> e.getMetadata().getName()).toList();
+        List<String> remainingPVCNames =  kubeClient().listPersistentVolumeClaims(testStorage.getNamespaceName(), testStorage.getBrokerComponentName()).stream().map(e -> e.getMetadata().getName()).toList();
         brokerPods.keySet().forEach(broker -> assertThat("Kafka Broker: " + broker + " does not preserve its JBOD storage's PVC",
             remainingPVCNames.stream().anyMatch(e -> e.equals("data-0-" + broker))));
     }

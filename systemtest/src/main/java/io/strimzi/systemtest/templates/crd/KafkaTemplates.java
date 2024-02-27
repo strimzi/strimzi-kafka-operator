@@ -37,7 +37,7 @@ public class KafkaTemplates {
     private static final String KAFKA_METRICS_CONFIG_REF_KEY = "kafka-metrics-config.yml";
     private static final String ZOOKEEPER_METRICS_CONFIG_REF_KEY = "zookeeper-metrics-config.yml";
     private static final String METRICS_KAFKA_CONFIG_MAP_SUFFIX = "-kafka-metrics";
-    private static final String METRICS_CC_CONFIG_MAP_SUFFIX = "-kafka-metrics";
+    private static final String METRICS_CC_CONFIG_MAP_SUFFIX = "-cc-metrics";
 
     // -------------------------------------------------------------------------------------------
     // Kafka Ephemeral

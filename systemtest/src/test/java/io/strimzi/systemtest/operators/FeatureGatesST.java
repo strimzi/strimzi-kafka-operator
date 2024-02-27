@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
@@ -200,6 +201,9 @@ public class FeatureGatesST extends AbstractST {
             .endMetadata()
             .build();
 
+        // this is useful so we can copy all the storage configuration during the "transfer replace"
+        final Kafka kafkaCrZKMode = KafkaTemplates.kafkaPersistentWithoutNodePools(testStorage.getClusterName(), originalKafkaReplicaCount, 3).build();
+
         // as the only FG set in the CO is 'KafkaNodePools' (kraft is never included) Broker role is the only one that can be taken
         resourceManager.createResourceWithWait(
             KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), kafkaNodePoolName, testStorage.getClusterName(), 3).build(),
@@ -249,6 +253,14 @@ public class FeatureGatesST extends AbstractST {
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(),
             kafka -> {
                 kafka.getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "disabled");
+                // because Kafka CR with NodePools is missing .spec.kafka.replicas and .spec.kafka.storage, we need to
+                // set those here
+                kafka.getSpec().getKafka().setReplicas(originalKafkaReplicaCount);
+                kafka.getSpec().getKafka().setStorage(new PersistentClaimStorageBuilder()
+                    .withSize("1Gi")
+                    .withDeleteClaim(true)
+                    .build()
+                );
             }, testStorage.getNamespaceName());
 
         StrimziPodSetUtils.waitForAllStrimziPodSetAndPodsReady(
@@ -281,6 +293,8 @@ public class FeatureGatesST extends AbstractST {
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(),
             kafka -> {
                 kafka.getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled");
+                kafka.getSpec().getKafka().setReplicas(null);
+                kafka.getSpec().getKafka().setStorage(null);
             }, testStorage.getNamespaceName());
 
         StrimziPodSetUtils.waitForAllStrimziPodSetAndPodsReady(
