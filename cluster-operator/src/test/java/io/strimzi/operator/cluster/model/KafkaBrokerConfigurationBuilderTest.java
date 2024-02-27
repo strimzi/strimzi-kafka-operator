@@ -2297,6 +2297,7 @@ public class KafkaBrokerConfigurationBuilderTest {
             "rsm.config.storage.bucket.name=my-bucket"
             ));
     }
+
     static class IsEquivalent extends TypeSafeMatcher<String> {
         private final List<String> expectedLines;
 
