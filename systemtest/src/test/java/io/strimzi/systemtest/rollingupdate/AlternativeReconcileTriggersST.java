@@ -123,18 +123,12 @@ class AlternativeReconcileTriggersST extends AbstractST {
 
         resourceManager.createResourceWithWait(KafkaUserTemplates.tlsUser(testStorage).build());
 
-        KafkaClients clients = new KafkaClientsBuilder()
-            .withProducerName(testStorage.getProducerName())
-            .withConsumerName(testStorage.getConsumerName())
-            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
-            .withTopicName(testStorage.getTopicName())
-            .withMessageCount(testStorage.getMessageCount())
-            .withNamespaceName(testStorage.getNamespaceName())
+        KafkaClients clients = ClientUtils.getInstantTlsClientBuilder(testStorage)
             .withUsername(testStorage.getUsername())
             .build();
 
         resourceManager.createResourceWithWait(clients.producerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForProducerClientSuccess(testStorage);
+        ClientUtils.waitForInstantProducerClientSuccess(testStorage);
 
         // rolling update for kafka
         // set annotation to trigger Kafka rolling update
@@ -154,7 +148,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
                         || !StrimziPodSetUtils.getAnnotationsOfStrimziPodSet(testStorage.getNamespaceName(), testStorage.getBrokerComponentName()).containsKey(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE));
 
         resourceManager.createResourceWithWait(clients.consumerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForConsumerClientSuccess(testStorage);
+        ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
 
         if (!Environment.isKRaftModeEnabled()) {
             // rolling update for zookeeper
@@ -175,12 +169,9 @@ class AlternativeReconcileTriggersST extends AbstractST {
                             || !StrimziPodSetUtils.getAnnotationsOfStrimziPodSet(testStorage.getNamespaceName(), testStorage.getControllerComponentName()).containsKey(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE));
         }
 
-        clients = new KafkaClientsBuilder(clients)
-            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
-            .build();
-
+        clients = ClientUtils.generateNewConsumerGroup(clients);
         resourceManager.createResourceWithWait(clients.consumerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForConsumerClientSuccess(testStorage);
+        ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
 
         // Create new topic to ensure, that ZK is working properly
         String newTopicName = KafkaTopicUtils.generateRandomNameOfTopic();
@@ -193,7 +184,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
             .build();
 
         resourceManager.createResourceWithWait(clients.producerTlsStrimzi(testStorage.getClusterName()), clients.consumerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForClientsSuccess(testStorage);
+        ClientUtils.waitForInstantClientSuccess(testStorage);
 
         // ##############################
         // Validate that continuous clients finished successfully
@@ -363,10 +354,6 @@ class AlternativeReconcileTriggersST extends AbstractST {
     void testAddingAndRemovingJbodVolumes() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
-        final String continuousTopicName = "continuous-" + testStorage.getTopicName();
-        final String continuousProducerName = "continuous-" + testStorage.getProducerName();
-        final String continuousConsumerName = "continuous-" + testStorage.getConsumerName();
-
         // 500 messages will take 500 seconds in that case
         final int continuousClientsMessageCount = 500;
 
@@ -394,42 +381,24 @@ class AlternativeReconcileTriggersST extends AbstractST {
         // ##############################
         // Setup topic, which has 3 replicas and 2 min.isr to see if producer will be able to work during rolling update
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getClusterName(), continuousTopicName, 3, 3, 2, testStorage.getNamespaceName()).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getContinuousTopicName(), 3, 3, 2, testStorage.getNamespaceName()).build());
 
         String producerAdditionConfiguration = "delivery.timeout.ms=20000\nrequest.timeout.ms=20000";
         // Add transactional id to make producer transactional
-        producerAdditionConfiguration = producerAdditionConfiguration.concat("\ntransactional.id=" + continuousTopicName + ".1");
+        producerAdditionConfiguration = producerAdditionConfiguration.concat("\ntransactional.id=" + testStorage.getContinuousTopicName() + ".1");
         producerAdditionConfiguration = producerAdditionConfiguration.concat("\nenable.idempotence=true");
 
-        KafkaClients kafkaBasicClientJob = new KafkaClientsBuilder()
-            .withProducerName(continuousProducerName)
-            .withConsumerName(continuousConsumerName)
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
-            .withTopicName(continuousTopicName)
+        KafkaClients kafkaBasicClientJob = ClientUtils.getContinuousPlainClientBuilder(testStorage)
             .withMessageCount(continuousClientsMessageCount)
             .withAdditionalConfig(producerAdditionConfiguration)
-            .withDelayMs(1000)
-            .withNamespaceName(testStorage.getNamespaceName())
             .build();
 
         resourceManager.createResourceWithWait(kafkaBasicClientJob.producerStrimzi(), kafkaBasicClientJob.consumerStrimzi());
 
         // ##############################
-
-        resourceManager.createResourceWithWait(KafkaUserTemplates.tlsUser(testStorage).build());
-
-        KafkaClients clients = new KafkaClientsBuilder()
-            .withProducerName(testStorage.getProducerName())
-            .withConsumerName(testStorage.getConsumerName())
-            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
-            .withTopicName(testStorage.getTopicName())
-            .withMessageCount(testStorage.getMessageCount())
-            .withNamespaceName(testStorage.getNamespaceName())
-            .withUsername(testStorage.getUsername())
-            .build();
-
-        resourceManager.createResourceWithWait(clients.producerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForProducerClientSuccess(testStorage);
+        KafkaClients clients = ClientUtils.getInstantPlainClientBuilder(testStorage).build();
+        resourceManager.createResourceWithWait(clients.producerStrimzi());
+        ClientUtils.waitForInstantProducerClientSuccess(testStorage);
 
         // Add Jbod volume to Kafka => triggers RU
         LOGGER.info("Add JBOD volume to the Kafka cluster {}", testStorage.getBrokerComponentName());
@@ -481,12 +450,12 @@ class AlternativeReconcileTriggersST extends AbstractST {
         assertThat("There are not 3 volumes used by Kafka Cluster", kafkaPvcs.size() == 3);
 
         resourceManager.createResourceWithWait(clients.consumerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForConsumerClientSuccess(testStorage);
+        ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
 
         // ##############################
         // Validate that continuous clients finished successfully
         // ##############################
-        ClientUtils.waitForClientsSuccess(continuousProducerName, continuousConsumerName, testStorage.getNamespaceName(), continuousClientsMessageCount);
+        ClientUtils.waitForContinuousClientSuccess(testStorage, continuousClientsMessageCount);
         // ##############################
     }
 

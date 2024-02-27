@@ -13,7 +13,6 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
-import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -136,17 +135,6 @@ public class FeatureGatesST extends AbstractST {
         // as the only FG set in the CO is 'KafkaNodePools' (kraft not included) Broker role is the only one that kafka broker can take
         setupClusterOperatorWithFeatureGate("");
 
-        // setup clients
-        final KafkaClients clients = new KafkaClientsBuilder()
-            .withProducerName(testStorage.getProducerName())
-            .withConsumerName(testStorage.getConsumerName())
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
-            .withTopicName(testStorage.getTopicName())
-            .withMessageCount(testStorage.getMessageCount())
-            .withDelayMs(200)
-            .withNamespaceName(testStorage.getNamespaceName())
-            .build();
-
         LOGGER.info("Deploying Kafka Cluster: {}/{} controlled by KafkaNodePool: {}", testStorage.getNamespaceName(), testStorage.getClusterName(), kafkaNodePoolName);
 
         final Kafka kafkaCr = KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), originalKafkaReplicaCount, 3)
@@ -165,11 +153,12 @@ public class FeatureGatesST extends AbstractST {
         resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage).build());
 
         LOGGER.info("Producing and Consuming messages with clients: {}, {} in Namespace {}", testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName());
+        final KafkaClients clients = ClientUtils.getInstantPlainClientBuilder(testStorage).build();
         resourceManager.createResourceWithWait(
             clients.producerStrimzi(),
             clients.consumerStrimzi()
         );
-        ClientUtils.waitForClientsSuccess(testStorage);
+        ClientUtils.waitForInstantClientSuccess(testStorage);
 
         // increase number of kafka replicas in KafkaNodePool
         LOGGER.info("Modifying KafkaNodePool: {}/{} by increasing number of Kafka replicas from '3' to '5'", testStorage.getNamespaceName(), kafkaNodePoolName);
@@ -189,7 +178,7 @@ public class FeatureGatesST extends AbstractST {
             clients.producerStrimzi(),
             clients.consumerStrimzi()
         );
-        ClientUtils.waitForClientsSuccess(testStorage);
+        ClientUtils.waitForInstantClientSuccess(testStorage);
 
         LOGGER.info("Disable KafkaNodePool in Kafka Cluster: {}/{}", testStorage.getNamespaceName(), testStorage.getClusterName());
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(),
@@ -218,8 +207,7 @@ public class FeatureGatesST extends AbstractST {
             clients.producerStrimzi(),
             clients.consumerStrimzi()
         );
-
-        ClientUtils.waitForClientsSuccess(testStorage);
+        ClientUtils.waitForInstantClientSuccess(testStorage);
 
         LOGGER.info("Enable KafkaNodePool in Kafka Cluster: {}/{}", testStorage.getNamespaceName(), testStorage.getClusterName());
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(),
@@ -242,7 +230,7 @@ public class FeatureGatesST extends AbstractST {
             clients.producerStrimzi(),
             clients.consumerStrimzi()
         );
-        ClientUtils.waitForClientsSuccess(testStorage);
+        ClientUtils.waitForInstantClientSuccess(testStorage);
     }
 
     /**
@@ -271,21 +259,15 @@ public class FeatureGatesST extends AbstractST {
      *                         if the rolling update has been completed across all replicas     .
      */
     private void rollKafkaNodePoolWithActiveProducerConsumer(TestStorage testStorage, int kafkaReplicas) {
-        final String producerName = testStorage.getProducerName() + "-rolling";
-        final String consumerName = testStorage.getConsumerName() + "-rolling";
 
-        // setup clients
-        KafkaClients clients = new KafkaClientsBuilder()
-            .withProducerName(producerName)
-            .withConsumerName(consumerName)
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
-            .withTopicName(testStorage.getTopicName())
-            .withMessageCount(testStorage.getMessageCount())
-            .withDelayMs(500)
-            .withNamespaceName(testStorage.getNamespaceName())
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getContinuousTopicName(), 3, 3, 2, testStorage.getNamespaceName()).build());
+
+        // setup clients to communicate for ~2 minutes
+        KafkaClients clients = ClientUtils.getContinuousPlainClientBuilder(testStorage)
+            .withMessageCount(120)
             .build();
 
-        LOGGER.info("Producing and Consuming messages with clients: {}, {} in Namespace {}", producerName, consumerName, testStorage.getNamespaceName());
+        LOGGER.info("Producing and Consuming messages with continuous clients: {}, {} in Namespace {}", testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), testStorage.getNamespaceName());
         resourceManager.createResourceWithWait(
             clients.producerStrimzi(),
             clients.consumerStrimzi()
@@ -300,6 +282,6 @@ public class FeatureGatesST extends AbstractST {
         RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerPoolSelector(), kafkaReplicas, brokerPods);
 
         LOGGER.info("Waiting for clients to finish sending/receiving messages");
-        ClientUtils.waitForClientsSuccess(producerName, consumerName, testStorage.getNamespaceName(), testStorage.getMessageCount());
+        ClientUtils.waitForContinuousClientSuccess(testStorage);
     }
 }

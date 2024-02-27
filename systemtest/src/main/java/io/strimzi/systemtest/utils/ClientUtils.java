@@ -6,6 +6,7 @@ package io.strimzi.systemtest.utils;
 
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.systemtest.TestConstants;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
@@ -35,12 +36,19 @@ public class ClientUtils {
     private ClientUtils() {}
 
     // Both clients success
-    public static void waitForClientsSuccess(TestStorage testStorage) {
-        waitForClientsSuccess(testStorage, true);
+    public static void waitForInstantClientSuccess(TestStorage testStorage) {
+        waitForInstantClientSuccess(testStorage, true);
     }
 
-    public static void waitForClientsSuccess(TestStorage testStorage, boolean deleteAfterSuccess) {
+    public static void waitForInstantClientSuccess(TestStorage testStorage, boolean deleteAfterSuccess) {
         waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName(), testStorage.getMessageCount(), deleteAfterSuccess);
+    }
+
+    public static void waitForContinuousClientSuccess(TestStorage testStorage, int messageCount) {
+        waitForClientsSuccess(testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), testStorage.getNamespaceName(), messageCount, true);
+    }
+    public static void waitForContinuousClientSuccess(TestStorage testStorage) {
+        waitForClientsSuccess(testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), testStorage.getNamespaceName(), testStorage.getContinuousMessageCount(), true);
     }
 
     public static void waitForClientsSuccess(String producerName, String consumerName, String namespace, int messageCount) {
@@ -63,11 +71,11 @@ public class ClientUtils {
     }
 
     // Client success
-    public static void waitForConsumerClientSuccess(TestStorage testStorage) {
+    public static void waitForInstantConsumerClientSuccess(TestStorage testStorage) {
         waitForClientSuccess(testStorage.getConsumerName(), testStorage.getNamespaceName(), testStorage.getMessageCount());
     }
 
-    public static void waitForProducerClientSuccess(TestStorage testStorage) {
+    public static void waitForInstantProducerClientSuccess(TestStorage testStorage) {
         waitForClientSuccess(testStorage.getProducerName(), testStorage.getNamespaceName(), testStorage.getMessageCount());
     }
 
@@ -90,19 +98,19 @@ public class ClientUtils {
     }
 
     // Client timeouts
-    public static void waitForProducerClientTimeout(TestStorage testStorage) {
-        waitForProducerClientTimeout(testStorage, true);
+    public static void waitForInstantProducerClientTimeout(TestStorage testStorage) {
+        waitForInstantProducerClientTimeout(testStorage, true);
     }
 
-    public static void waitForProducerClientTimeout(TestStorage testStorage, boolean deleteAfterSuccess) {
+    public static void waitForInstantProducerClientTimeout(TestStorage testStorage, boolean deleteAfterSuccess) {
         waitForClientTimeout(testStorage.getProducerName(), testStorage.getNamespaceName(), testStorage.getMessageCount(), deleteAfterSuccess);
     }
 
-    public static void waitForConsumerClientTimeout(TestStorage testStorage) {
-        waitForConsumerClientTimeout(testStorage, true);
+    public static void waitForInstantConsumerClientTimeout(TestStorage testStorage) {
+        waitForInstantConsumerClientTimeout(testStorage, true);
     }
 
-    public static void waitForConsumerClientTimeout(TestStorage testStorage, boolean deleteAfterSuccess) {
+    public static void waitForInstantConsumerClientTimeout(TestStorage testStorage, boolean deleteAfterSuccess) {
         waitForClientTimeout(testStorage.getConsumerName(), testStorage.getNamespaceName(), testStorage.getMessageCount(), deleteAfterSuccess);
     }
 
@@ -134,7 +142,7 @@ public class ClientUtils {
     }
 
     // Both clients timeouts
-    public static void waitForClientsTimeout(TestStorage testStorage) {
+    public static void waitForInstantClientsTimeout(TestStorage testStorage) {
         waitForClientsTimeout(testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName(), testStorage.getMessageCount());
     }
 
@@ -236,6 +244,15 @@ public class ClientUtils {
         return CONSUMER_GROUP_NAME + salt;
     }
 
+    public static KafkaClients generateNewConsumerGroup(KafkaClients clients) {
+        final String newConsumerGroup = ClientUtils.generateRandomConsumerGroup();
+        LOGGER.info("Regenerating new consumer group {} for clients {} {}", newConsumerGroup, clients.getProducerName(), clients.getConsumerGroup());
+
+        return new KafkaClientsBuilder(clients)
+            .withConsumerGroup(newConsumerGroup)
+            .build();
+    }
+
     public static KafkaClientsBuilder getDefaultClientBuilder(TestStorage testStorage) {
         return new KafkaClientsBuilder()
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
@@ -246,5 +263,51 @@ public class ClientUtils {
             .withProducerName(testStorage.getProducerName())
             .withConsumerName(testStorage.getConsumerName());
     }
+
+    // instant client builders
+
+    private static KafkaClientsBuilder instantClientBuilderBase(TestStorage testStorage) {
+        return new KafkaClientsBuilder()
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withMessageCount(testStorage.getMessageCount()) // default 100
+            .withDelayMs(0)
+            .withTopicName(testStorage.getTopicName())
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName());
+    }
+
+    public static KafkaClientsBuilder getInstantPlainClientBuilder(TestStorage testStorage) {
+        return instantClientBuilderBase(testStorage)
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()));
+    }
+
+    public static KafkaClientsBuilder getInstantTlsClientBuilder(TestStorage testStorage) {
+        return instantClientBuilderBase(testStorage)
+            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()));
+    }
+
+    // continuous client builders
+
+    private static KafkaClientsBuilder continuousClientBuilderBase(TestStorage testStorage) {
+        return new KafkaClientsBuilder()
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withMessageCount(testStorage.getContinuousMessageCount()) // default 300
+            .withDelayMs(1000)
+            .withTopicName(testStorage.getContinuousTopicName())
+            .withProducerName(testStorage.getContinuousProducerName())
+            .withConsumerName(testStorage.getContinuousConsumerName());
+    }
+
+    public static KafkaClientsBuilder getContinuousPlainClientBuilder(TestStorage testStorage) {
+        return continuousClientBuilderBase(testStorage)
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()));
+    }
+
+    public static KafkaClientsBuilder getContinuousTlsClientBuilder(TestStorage testStorage) {
+        return continuousClientBuilderBase(testStorage)
+            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()));
+    }
+
+
 }
 

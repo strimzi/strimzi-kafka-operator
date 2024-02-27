@@ -286,7 +286,7 @@ public class CustomCaST extends AbstractST {
 
         LOGGER.info("Checking produced and consumed messages via TLS");
         resourceManager.createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()), kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForClientsSuccess(testStorage, false);
+        ClientUtils.waitForInstantClientSuccess(testStorage, false);
     }
 
     /** This tests focuses on invoking certificate renewal without renewing the ClusterCA.

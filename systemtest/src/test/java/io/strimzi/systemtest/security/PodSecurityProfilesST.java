@@ -105,7 +105,6 @@ public class PodSecurityProfilesST extends AbstractST {
         final String mm1TargetClusterName = testStorage.getTargetClusterName() + "-mm1";
         final String mm2TargetClusterName = testStorage.getTargetClusterName() + "-mm2";
         final String mm2SourceMirroredTopicName = testStorage.getClusterName() + "." + testStorage.getTopicName();
-        final int messageCount = 100;
 
         // Label particular Namespace with pod-security.kubernetes.io/enforce: restricted
         NamespaceManager.labelNamespace(testStorage.getNamespaceName(),
@@ -174,19 +173,12 @@ public class PodSecurityProfilesST extends AbstractST {
             .build());
 
         // Messages produced to Main Kafka Cluster (source) will be sinked to file, and mirrored into targeted Kafkas to later verify Operands work correctly.
-        LOGGER.info("Deploy producer: {} and produce {} messages into Kafka: {} in Ns: ", testStorage.getProducerName(), testStorage.getClusterName(), messageCount);
-        final KafkaClients kafkaClients = new KafkaClientsBuilder()
-            .withTopicName(testStorage.getTopicName())
-            .withMessageCount(messageCount)
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
-            .withProducerName(testStorage.getProducerName())
-            .withConsumerName(testStorage.getConsumerName())
-            .withNamespaceName(testStorage.getNamespaceName())
-            .withUsername(testStorage.getUsername())
+        LOGGER.info("Deploy producer: {} and produce {} messages into Kafka: {} in Ns: ", testStorage.getProducerName(), testStorage.getClusterName(), testStorage.getMessageCount());
+        final KafkaClients kafkaClients = ClientUtils.getInstantPlainClientBuilder(testStorage)
             .withPodSecurityPolicy(PodSecurityProfile.RESTRICTED)
             .build();
         resourceManager.createResourceWithWait(kafkaClients.producerStrimzi());
-        ClientUtils.waitForProducerClientSuccess(testStorage);
+        ClientUtils.waitForInstantProducerClientSuccess(testStorage);
 
         // verifies that Pods and Containers have proper generated SC
         final List<Pod> podsWithProperlyGeneratedSecurityCOntexts = PodUtils.getKafkaClusterPods(testStorage);
@@ -197,7 +189,17 @@ public class PodSecurityProfilesST extends AbstractST {
         verifyPodAndContainerSecurityContext(podsWithProperlyGeneratedSecurityCOntexts);
 
         LOGGER.info("Verify that Kafka cluster is usable and everything (MM1, MM2, and Connector) is working");
-        verifyStabilityOfKafkaCluster(testStorage);
+
+        // kafka cluster itself
+        final KafkaClients clusterClient = ClientUtils.getInstantPlainClientBuilder(testStorage)
+            .withPodSecurityPolicy(PodSecurityProfile.RESTRICTED)
+            .build();
+
+        resourceManager.createResourceWithWait(
+            clusterClient.producerStrimzi(),
+            clusterClient.consumerStrimzi()
+        );
+        ClientUtils.waitForInstantClientSuccess(testStorage);
 
         // verify KafkaConnect
         final String kafkaConnectPodName = kubeClient(testStorage.getNamespaceName()).listPods(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
@@ -209,7 +211,7 @@ public class PodSecurityProfilesST extends AbstractST {
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(mm1TargetClusterName))
             .build();
         resourceManager.createResourceWithWait(mm1Client.consumerStrimzi());
-        ClientUtils.waitForClientSuccess("mm1-consumer", testStorage.getNamespaceName(), messageCount);
+        ClientUtils.waitForClientSuccess("mm1-consumer", testStorage.getNamespaceName(), testStorage.getMessageCount());
 
         // verify MM2
         final KafkaClients mm2Client = new KafkaClientsBuilder(kafkaClients)
@@ -218,7 +220,7 @@ public class PodSecurityProfilesST extends AbstractST {
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(mm2TargetClusterName))
             .build();
         resourceManager.createResourceWithWait(mm2Client.consumerStrimzi());
-        ClientUtils.waitForClientSuccess("mm2-consumer", testStorage.getNamespaceName(), messageCount);
+        ClientUtils.waitForClientSuccess("mm2-consumer", testStorage.getNamespaceName(), testStorage.getMessageCount());
 
         // verify that client incorrectly configured Pod Security Profile wont successfully communicate.
         final KafkaClients incorrectKafkaClients = new KafkaClientsBuilder(kafkaClients)
@@ -232,7 +234,7 @@ public class PodSecurityProfilesST extends AbstractST {
         // runAsNonRoot != true (pod or container "..." must set securityContext.runAsNonRoot=true),
         // seccompProfile (pod or container "..." must set securityContext.seccompProfile.type to "RuntimeDefault" or "Localhost")
         resourceManager.createResourceWithoutWait(incorrectKafkaClients.producerStrimzi());
-        ClientUtils.waitForProducerClientTimeout(testStorage);
+        ClientUtils.waitForInstantProducerClientTimeout(testStorage);
     }
 
     @BeforeAll
@@ -282,24 +284,5 @@ public class PodSecurityProfilesST extends AbstractST {
             assertThat(sc.getRunAsNonRoot(), CoreMatchers.is(true));
             assertThat(sc.getSeccompProfile().getType(), CoreMatchers.is("RuntimeDefault"));
         }
-    }
-
-    private void verifyStabilityOfKafkaCluster(final TestStorage testStorage) {
-        final KafkaClients kafkaClients = new KafkaClientsBuilder()
-            .withTopicName(testStorage.getTopicName())
-            .withMessageCount(testStorage.getMessageCount())
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
-            .withConsumerName(testStorage.getConsumerName())
-            .withProducerName(testStorage.getProducerName())
-            .withNamespaceName(testStorage.getNamespaceName())
-            .withPodSecurityPolicy(PodSecurityProfile.RESTRICTED)
-            .build();
-
-        resourceManager.createResourceWithWait(
-            kafkaClients.producerStrimzi(),
-            kafkaClients.consumerStrimzi()
-        );
-
-        ClientUtils.waitForClientsSuccess(testStorage);
     }
 }

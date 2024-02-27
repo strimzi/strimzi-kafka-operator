@@ -18,7 +18,6 @@ import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClientsBuilder;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
-import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.NodePoolsConverter;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -28,14 +27,11 @@ import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
-import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
-
-import java.util.Random;
 
 import static io.strimzi.systemtest.TestConstants.BRIDGE;
 import static io.strimzi.systemtest.TestConstants.INTERNAL_CLIENTS_USED;
@@ -52,61 +48,47 @@ class HttpBridgeScramShaST extends AbstractST {
     @ParallelTest
     void testSendSimpleMessageTlsScramSha() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
-        final String producerName = "producer-" + new Random().nextInt(Integer.MAX_VALUE);
-        final String consumerName = "consumer-" + new Random().nextInt(Integer.MAX_VALUE);
 
-        final String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
         final BridgeClients kafkaBridgeClientJb = new BridgeClientsBuilder(kafkaBridgeClientJob)
-            .withTopicName(topicName)
-            .withProducerName(producerName)
+            .withTopicName(testStorage.getTopicName())
+            .withProducerName(testStorage.getProducerName())
             .build();
 
         // Create topic
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(suiteTestStorage.getClusterName(), topicName, Environment.TEST_SUITE_NAMESPACE).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(suiteTestStorage.getClusterName(), testStorage.getTopicName(), testStorage.getNamespaceName()).build());
 
         resourceManager.createResourceWithWait(kafkaBridgeClientJb.producerStrimziBridge());
-        ClientUtils.waitForClientSuccess(producerName, Environment.TEST_SUITE_NAMESPACE, testStorage.getMessageCount());
+        ClientUtils.waitForClientSuccess(testStorage.getProducerName(), testStorage.getNamespaceName(), testStorage.getMessageCount());
 
-        KafkaClients kafkaClients = new KafkaClientsBuilder()
-            .withTopicName(topicName)
-            .withMessageCount(testStorage.getMessageCount())
+        KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage)
             .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(suiteTestStorage.getClusterName()))
-            .withConsumerName(consumerName)
-            .withNamespaceName(Environment.TEST_SUITE_NAMESPACE)
             .withUsername(suiteTestStorage.getUsername())
             .build();
 
         resourceManager.createResourceWithWait(kafkaClients.consumerScramShaTlsStrimzi(suiteTestStorage.getClusterName()));
-        ClientUtils.waitForClientSuccess(consumerName, Environment.TEST_SUITE_NAMESPACE, testStorage.getMessageCount());
+        ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
     }
 
     @ParallelTest
     void testReceiveSimpleMessageTlsScramSha() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
-        final String producerName = "producer-" + new Random().nextInt(Integer.MAX_VALUE);
-        final String consumerName = "consumer-" + new Random().nextInt(Integer.MAX_VALUE);
 
-        final String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
         final BridgeClients kafkaBridgeClientJb = new BridgeClientsBuilder(kafkaBridgeClientJob)
-            .withTopicName(topicName)
-            .withConsumerName(consumerName)
+            .withTopicName(testStorage.getTopicName())
+            .withConsumerName(testStorage.getConsumerName())
             .build();
 
         resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(suiteTestStorage.getClusterName(), testStorage.getTopicName(), Environment.TEST_SUITE_NAMESPACE).build());
         resourceManager.createResourceWithWait(kafkaBridgeClientJb.consumerStrimziBridge());
 
         // Send messages to Kafka
-        KafkaClients kafkaClients = new KafkaClientsBuilder()
-            .withTopicName(topicName)
-            .withMessageCount(testStorage.getMessageCount())
+        KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage)
             .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(suiteTestStorage.getClusterName()))
-            .withProducerName(producerName)
-            .withNamespaceName(Environment.TEST_SUITE_NAMESPACE)
             .withUsername(suiteTestStorage.getUsername())
             .build();
 
         resourceManager.createResourceWithWait(kafkaClients.producerScramShaTlsStrimzi(suiteTestStorage.getClusterName()));
-        ClientUtils.waitForClientsSuccess(producerName, consumerName, Environment.TEST_SUITE_NAMESPACE, testStorage.getMessageCount());
+        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName(), testStorage.getMessageCount());
     }
 
     @BeforeAll

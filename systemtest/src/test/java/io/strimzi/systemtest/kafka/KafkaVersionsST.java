@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest.kafka;
 
-import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.user.KafkaUser;
@@ -160,31 +159,24 @@ public class KafkaVersionsST extends AbstractST {
 
         LOGGER.info("Sending and receiving messages via PLAIN -> SCRAM-SHA");
 
-        KafkaClients kafkaClients = new KafkaClientsBuilder()
-            .withTopicName(testStorage.getTopicName())
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
-            .withNamespaceName(testStorage.getNamespaceName())
-            .withProducerName(testStorage.getProducerName())
-            .withConsumerName(testStorage.getConsumerName())
-            .withMessageCount(testStorage.getMessageCount())
+        KafkaClients kafkaClients = ClientUtils.getInstantPlainClientBuilder(testStorage)
             .withUsername(kafkaUserWrite)
             .withConsumerGroup(readConsumerGroup)
             .build();
 
         resourceManager.createResourceWithWait(kafkaClients.producerScramShaPlainStrimzi());
-        ClientUtils.waitForProducerClientSuccess(testStorage);
+        ClientUtils.waitForInstantProducerClientSuccess(testStorage);
 
         kafkaClients = new KafkaClientsBuilder(kafkaClients)
                 .withUsername(kafkaUserRead)
                 .build();
 
         resourceManager.createResourceWithWait(kafkaClients.consumerScramShaPlainStrimzi());
-        ClientUtils.waitForConsumerClientSuccess(testStorage);
+        ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
 
         LOGGER.info("Sending and receiving messages via TLS");
 
-        kafkaClients = new KafkaClientsBuilder(kafkaClients)
-            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
+        kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage)
             .withUsername(kafkaUserReadWriteTls)
             .build();
 
@@ -193,7 +185,7 @@ public class KafkaVersionsST extends AbstractST {
             kafkaClients.consumerTlsStrimzi(testStorage.getClusterName())
         );
 
-        ClientUtils.waitForClientsSuccess(testStorage);
+        ClientUtils.waitForInstantClientSuccess(testStorage);
     }
 
     @BeforeAll

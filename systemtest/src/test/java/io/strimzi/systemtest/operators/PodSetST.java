@@ -11,7 +11,6 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
-import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.NodePoolsConverter;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -55,14 +54,8 @@ public class PodSetST extends AbstractST {
 
         // setup clients configured to produce/consume data for next 3-4 minutes and configured for resilience against one broker being down.
         String producerAdditionConfiguration = "acks=all\n";
-        KafkaClients clients = new KafkaClientsBuilder()
-            .withProducerName(testStorage.getProducerName())
-            .withConsumerName(testStorage.getConsumerName())
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
-            .withTopicName(testStorage.getTopicName())
+        KafkaClients clients = ClientUtils.getContinuousPlainClientBuilder(testStorage)
             .withMessageCount(200)
-            .withNamespaceName(testStorage.getNamespaceName())
-            .withDelayMs(1000)
             .withAdditionalConfig(producerAdditionConfiguration)
             .build();
 
@@ -90,7 +83,7 @@ public class PodSetST extends AbstractST {
             .build());
 
         resourceManager.createResourceWithWait(
-            KafkaTopicTemplates.topic(testStorage)
+            KafkaTopicTemplates.continuousTopic(testStorage)
                 .editOrNewSpec()
                     .withReplicas(3)
                 .endSpec()
@@ -141,7 +134,7 @@ public class PodSetST extends AbstractST {
         LOGGER.info("Wait till all StrimziPodSet {}/{} status match number of ready pods", testStorage.getNamespaceName(), testStorage.getBrokerComponentName());
         StrimziPodSetUtils.waitForAllStrimziPodSetAndPodsReady(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getBrokerComponentName(), 3);
 
-        ClientUtils.waitForClientsSuccess(testStorage);
+        ClientUtils.waitForContinuousClientSuccess(testStorage);
     }
 
     @BeforeAll
