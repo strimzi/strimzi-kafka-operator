@@ -163,10 +163,10 @@ public class KRaftUtils {
      */
     public static void validateVersionsForKRaftMigration(String kafkaVersionFromCr, String metadataVersionFromCr,
                                                          String interBrokerProtocolVersionFromCr, String logMessageFormatVersionFromCr) {
-        // validate 3.6.1 <= kafka.version && metadataVersion/IBP/LMF == kafka.version
+        // validate 3.7.0 <= kafka.version && metadataVersion/IBP/LMF == kafka.version
 
         MetadataVersion kafkaVersion = MetadataVersion.fromVersionString(kafkaVersionFromCr);
-        // this should check that spec.kafka.version is >= 3.6.1
+        // this should check that spec.kafka.version is >= 3.7.0
         boolean isMigrationSupported = kafkaVersion.isMigrationSupported();
 
         MetadataVersion metadataVersion = MetadataVersion.fromVersionString(metadataVersionFromCr);
@@ -177,7 +177,7 @@ public class KRaftUtils {
                 metadataVersion.compareTo(interBrokerProtocolVersion) != 0 ||
                 metadataVersion.compareTo(logMessageFormatVersion) != 0) {
             String message = String.format("Migration cannot be performed with Kafka version %s, metadata version %s, inter.broker.protocol.version %s, log.message.format.version %s. " +
-                            "Please make sure Kafka version is higher or equal than 3.6.1 and having " +
+                            "Please make sure Kafka version is higher or equal than 3.7.0 and having " +
                             "metadata version, inter.broker.protocol.version and log.message.format.version set to the same value as well.",
                     kafkaVersion, metadataVersion, interBrokerProtocolVersion, logMessageFormatVersion);
             throw new InvalidResourceException(message);

@@ -890,11 +890,9 @@ public class ZooKeeperReconciler {
      */
     protected Future<Void> deleteControllerZnode() {
         // migration rollback process ongoing
-        LOGGER.infoCr(reconciliation, "KRaft migration rollback ... going to delete /controller znode");
         return ReconcilerUtils.clientSecrets(reconciliation, secretOperator)
                 .compose(compositeFuture -> {
                     String zkConnectionString = KafkaResources.zookeeperServiceName(reconciliation.name()) + ":" + ZookeeperCluster.CLIENT_TLS_PORT;
-                    LOGGER.infoCr(reconciliation, "Deleting /controller znode on {}", zkConnectionString);
                     KRaftMigrationUtils.deleteZooKeeperControllerZnode(
                             reconciliation,
                             compositeFuture.resultAt(0),

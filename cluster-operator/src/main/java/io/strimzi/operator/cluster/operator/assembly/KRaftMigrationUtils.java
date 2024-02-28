@@ -54,9 +54,9 @@ public class KRaftMigrationUtils {
                     trustStoreFile, trustStorePassword, keyStoreFile, keyStorePassword);
             admin.delete("/controller", -1);
             admin.close();
-            LOGGER.infoCr(reconciliation, "KRaft migration rollback ... /controller znode deleted");
+            LOGGER.infoCr(reconciliation, "Deleted the '/controller' znode as part of the KRaft migration rollback");
         } catch (IOException | InterruptedException | KeeperException ex) {
-            LOGGER.warnCr(reconciliation, "Failed to delete /controller znode", ex);
+            LOGGER.warnCr(reconciliation, "Failed to delete '/controller' znode", ex);
         } finally {
             if (trustStoreFile != null) {
                 if (!trustStoreFile.delete())   {

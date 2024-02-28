@@ -1055,7 +1055,7 @@ public class KafkaReconciler {
                         boolean zkMigrationStateChecked = false;
                         for (NodeRef controller : kafka.controllerNodes()) {
                             try {
-                                LOGGER.infoCr(reconciliation, "Checking ZooKeeper migration state on controller {}", controller.podName());
+                                LOGGER.debugCr(reconciliation, "Checking ZooKeeper migration state on controller {}", controller.podName());
                                 KafkaAgentClient kafkaAgentClient = kafkaAgentClientProvider.createKafkaAgentClient(
                                         reconciliation,
                                         compositeFuture.resultAt(0),
@@ -1073,7 +1073,7 @@ public class KafkaReconciler {
                                 LOGGER.warnCr(reconciliation, "Error on checking ZooKeeper migration state on controller {}", controller.podName());
                             }
                         }
-                        return zkMigrationStateChecked ? Future.succeededFuture() : Future.failedFuture(new Throwable("Impossible to check ZooKeeper migration state"));
+                        return zkMigrationStateChecked ? Future.succeededFuture() : Future.failedFuture(new Throwable("Failed to check ZooKeeper migration state"));
                     });
         }
         return Future.succeededFuture();

@@ -75,7 +75,7 @@ public class KafkaMetadataStateManager {
             LOGGER.errorCr(reconciliation, "Trying to reconcile a KRaft enabled cluster or migrating to KRaft without the useKRaft feature gate enabled");
             throw new IllegalArgumentException("Failed to reconcile a KRaft enabled cluster or migration to KRaft because useKRaft feature gate is disabled");
         }
-        LOGGER.infoCr(reconciliation, "Loaded metadata state from the Kafka CR [{}] and strimzi.io/kraft [{}]", this.metadataState, this.kraftAnno);
+        LOGGER.infoCr(reconciliation, "Loaded metadata state from the Kafka CR [{}] and strimzi.io/kraft annotation [{}]", this.metadataState, this.kraftAnno);
     }
 
     /**
@@ -178,7 +178,7 @@ public class KafkaMetadataStateManager {
             // set warning condition on Kafka CR status that strimzi.io/kraft: migration|rollback|disabled are not allowed in this state
             kafkaStatus.addCondition(StatusUtils.buildWarningCondition("KafkaMetadataStateWarning",
                     "The strimzi.io/kraft annotation can't be set to migration, rollback or disabled values because the cluster is already KRaft."));
-            LOGGER.warnCr(reconciliation, "Warning strimzi.io/kraft: migration|rollback|disabled is not allowed in this state");
+            LOGGER.warnCr(reconciliation, "The strimzi.io/kraft annotation can't be set to migration, rollback or disabled values because the cluster is already KRaft.");
         }
         return KafkaMetadataState.KRaft;
     }
@@ -197,14 +197,14 @@ public class KafkaMetadataStateManager {
                 kafkaStatus.addCondition(StatusUtils.buildWarningCondition("KafkaMetadataStateWarning",
                         "The strimzi.io/kraft annotation can't be set to enabled because the cluster is ZooKeeper-based." +
                                 "If you want to migrate it to be KRaft-based apply the migration value instead."));
-                LOGGER.warnCr(reconciliation, "Warning strimzi.io/kraft: enabled is not allowed in this state");
+                LOGGER.warnCr(reconciliation, "The strimzi.io/kraft annotation can't be set to enabled because the cluster is ZooKeeper-based.");
             } else if (isKRaftAnnoRollback()) {
                 // set warning condition on Kafka CR status that strimzi.io/kraft: rollback is not allowed in this state
                 kafkaStatus.addCondition(StatusUtils.buildWarningCondition("KafkaMetadataStateWarning",
                         "The strimzi.io/kraft annotation can't be set to rollback because the cluster is already ZooKeeper-based." +
                                 "There is no migration ongoing to rollback." +
                                 "If you want to migrate it to be KRaft-based apply the migration value instead."));
-                LOGGER.warnCr(reconciliation, "Warning strimzi.io/kraft: enabled is not allowed in this state");
+                LOGGER.warnCr(reconciliation, "The strimzi.io/kraft annotation can't be set to rollback because the cluster is already ZooKeeper-based.");
             }
             return KafkaMetadataState.ZooKeeper;
         }
@@ -236,14 +236,14 @@ public class KafkaMetadataStateManager {
             kafkaStatus.addCondition(StatusUtils.buildWarningCondition("KafkaMetadataStateWarning",
                     "The strimzi.io/kraft annotation can't be set to enabled during a migration process." +
                             "It has to be used in post migration to finalize it and move definitely to KRaft."));
-            LOGGER.warnCr(reconciliation, "Warning strimzi.io/kraft: enabled is not allowed in this state");
+            LOGGER.warnCr(reconciliation, "The strimzi.io/kraft annotation can't be set to enabled during a migration process.");
         }
         if (isKRaftAnnoRollback()) {
             // set warning condition on Kafka CR status that strimzi.io/kraft: rollback is not allowed in this state
             kafkaStatus.addCondition(StatusUtils.buildWarningCondition("KafkaMetadataStateWarning",
                     "The strimzi.io/kraft annotation can't be set to rollback during a migration process." +
                             "It can be used in post migration to start rollback process."));
-            LOGGER.warnCr(reconciliation, "Warning strimzi.io/kraft: rollback is not allowed in this state");
+            LOGGER.warnCr(reconciliation, "The strimzi.io/kraft annotation can't be set to rollback during a migration process.");
         }
         return KafkaMetadataState.KRaftMigration;
     }
@@ -268,14 +268,14 @@ public class KafkaMetadataStateManager {
             kafkaStatus.addCondition(StatusUtils.buildWarningCondition("KafkaMetadataStateWarning",
                     "The strimzi.io/kraft annotation can't be set to enabled during a migration process." +
                             "It has to be used in post migration to finalize it and move definitely to KRaft."));
-            LOGGER.warnCr(reconciliation, "Warning strimzi.io/kraft: enabled is not allowed in this state");
+            LOGGER.warnCr(reconciliation, "The strimzi.io/kraft annotation can't be set to enabled during a migration process.");
         }
         if (isKRaftAnnoRollback()) {
             // set warning condition on Kafka CR status that strimzi.io/kraft: rollback is not allowed in this state
             kafkaStatus.addCondition(StatusUtils.buildWarningCondition("KafkaMetadataStateWarning",
                     "The strimzi.io/kraft annotation can't be set to rollback during dual writing." +
                             "It can be used in post migration to start rollback process."));
-            LOGGER.warnCr(reconciliation, "Warning strimzi.io/kraft: rollback is not allowed in this state");
+            LOGGER.warnCr(reconciliation, "The strimzi.io/kraft annotation can't be set to rollback during dual writing.");
         }
         return KafkaMetadataState.KRaftDualWriting;
     }
@@ -299,7 +299,7 @@ public class KafkaMetadataStateManager {
         kafkaStatus.addCondition(StatusUtils.buildWarningCondition("KafkaMetadataStateWarning",
                 "The strimzi.io/kraft annotation can't be set to migration or disabled in the post-migration." +
                         "You can use rollback value to come back to ZooKeeper. Use the enabled value to finalize migration instead."));
-        LOGGER.warnCr(reconciliation, "Warning strimzi.io/kraft: migration|disabled is not allowed in this state");
+        LOGGER.warnCr(reconciliation, "The strimzi.io/kraft annotation can't be set to migration or disabled in the post-migration.");
         return KafkaMetadataState.KRaftPostMigration;
     }
 
@@ -318,7 +318,7 @@ public class KafkaMetadataStateManager {
         kafkaStatus.addCondition(StatusUtils.buildWarningCondition("KafkaMetadataStateWarning",
                 "The strimzi.io/kraft annotation can't be set to migration, disabled or rollback in the pre-kraft." +
                         "Use the enabled value to finalize migration and removing ZooKeeper."));
-        LOGGER.warnCr(reconciliation, "Warning strimzi.io/kraft: migration|disabled|rollback is not allowed in this state");
+        LOGGER.warnCr(reconciliation, "The strimzi.io/kraft annotation can't be set to migration, disabled or rollback in the pre-kraft.");
         return KafkaMetadataState.PreKRaft;
     }
 
