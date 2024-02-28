@@ -104,9 +104,8 @@ public class CruiseControlUtils {
             kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_PASSWORD.getValue()).equals("${CERTS_STORE_PASSWORD}"));
     }
 
-    public static void verifyThatCruiseControlSamplesTopicsArePresent(String namespaceName, long timeout) {
+    public static void verifyThatCruiseControlSamplesTopicsArePresent(String namespaceName, int defaultBrokerReplicaCount, long timeout) {
         final int numberOfPartitionsSamplesTopic = 32;
-        final int numberOfReplicasSamplesTopic = 2;
 
         TestUtils.waitFor("Verify that Kafka contains CruiseControl Topics with related configuration.",
             TestConstants.GLOBAL_POLL_INTERVAL, timeout, () -> {
@@ -119,8 +118,8 @@ public class CruiseControlUtils {
                             partitionsMetricsSamples.getSpec().getPartitions() == numberOfPartitionsSamplesTopic;
 
                     boolean hasTopicCorrectReplicasCount =
-                            modelTrainingSamples.getSpec().getReplicas() == numberOfReplicasSamplesTopic &&
-                            partitionsMetricsSamples.getSpec().getReplicas() == numberOfReplicasSamplesTopic;
+                            modelTrainingSamples.getSpec().getReplicas() == defaultBrokerReplicaCount &&
+                            partitionsMetricsSamples.getSpec().getReplicas() == defaultBrokerReplicaCount;
 
                     return hasTopicCorrectPartitionsCount && hasTopicCorrectReplicasCount;
                 }
@@ -129,9 +128,8 @@ public class CruiseControlUtils {
             });
     }
 
-    public static void verifyThatKafkaCruiseControlMetricReporterTopicIsPresent(String namespaceName, long timeout) {
+    public static void verifyThatKafkaCruiseControlMetricReporterTopicIsPresent(String namespaceName, int defaultBrokerReplicaCount, long timeout) {
         final int numberOfPartitionsMetricTopic = 1;
-        final int numberOfReplicasMetricTopic = 3;
 
         TestUtils.waitFor("Verify that Kafka contains CruiseControl topics with related configuration.",
             TestConstants.GLOBAL_POLL_INTERVAL, timeout, () -> {
@@ -141,15 +139,15 @@ public class CruiseControlUtils {
                     metrics.getSpec().getPartitions() == numberOfPartitionsMetricTopic;
 
                 boolean hasTopicCorrectReplicasCount =
-                    metrics.getSpec().getReplicas() == numberOfReplicasMetricTopic;
+                    metrics.getSpec().getReplicas() == defaultBrokerReplicaCount;
 
                 return hasTopicCorrectPartitionsCount && hasTopicCorrectReplicasCount;
             });
     }
 
-    public static void verifyThatCruiseControlTopicsArePresent(String namespaceName) {
-        verifyThatKafkaCruiseControlMetricReporterTopicIsPresent(namespaceName, TestConstants.GLOBAL_CRUISE_CONTROL_TIMEOUT);
-        verifyThatCruiseControlSamplesTopicsArePresent(namespaceName, TestConstants.GLOBAL_CRUISE_CONTROL_TIMEOUT);
+    public static void verifyThatCruiseControlTopicsArePresent(String namespaceName, int defaultBrokerReplicaCount) {
+        verifyThatKafkaCruiseControlMetricReporterTopicIsPresent(namespaceName, defaultBrokerReplicaCount, TestConstants.GLOBAL_CRUISE_CONTROL_TIMEOUT);
+        verifyThatCruiseControlSamplesTopicsArePresent(namespaceName, defaultBrokerReplicaCount, TestConstants.GLOBAL_CRUISE_CONTROL_TIMEOUT);
     }
 
     public static Properties getKafkaCruiseControlMetricsReporterConfiguration(String namespaceName, String clusterName) throws IOException {

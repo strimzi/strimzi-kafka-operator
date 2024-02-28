@@ -89,19 +89,22 @@ public class CruiseControlST extends AbstractST {
     @UTONotSupported("https://github.com/strimzi/strimzi-kafka-operator/issues/8864")
     void testAutoCreationOfCruiseControlTopicsWithResources() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        // number of brokers to be created and also number of default replica count for each topic created
+        final int defaultBrokerReplicaCount = 3;
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
-                KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
+                KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), defaultBrokerReplicaCount).build(),
+                KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), defaultBrokerReplicaCount).build()
             )
         );
-        resourceManager.createResourceWithWait(KafkaTemplates.kafkaWithCruiseControl(testStorage.getClusterName(), 3, 3)
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaWithCruiseControl(testStorage.getClusterName(), defaultBrokerReplicaCount, defaultBrokerReplicaCount)
             .editMetadata()
                 .withNamespace(Environment.TEST_SUITE_NAMESPACE)
             .endMetadata()
             .editOrNewSpec()
                 .editKafka()
+                    .addToConfig(Map.of("default.replication.factor", defaultBrokerReplicaCount))
                     .addToConfig("auto.create.topics.enable", "false")
                 .endKafka()
                 .editCruiseControl()
@@ -139,15 +142,15 @@ public class CruiseControlST extends AbstractST {
 
         LOGGER.info("Checking partitions and replicas for {}", CRUISE_CONTROL_METRICS_TOPIC);
         assertThat(metricsTopic.getPartitions(), is(1));
-        assertThat(metricsTopic.getReplicas(), is(3));
+        assertThat(metricsTopic.getReplicas(), is(defaultBrokerReplicaCount));
 
         LOGGER.info("Checking partitions and replicas for {}", CRUISE_CONTROL_MODEL_TRAINING_SAMPLES_TOPIC);
         assertThat(modelTrainingTopic.getPartitions(), is(32));
-        assertThat(modelTrainingTopic.getReplicas(), is(2));
+        assertThat(modelTrainingTopic.getReplicas(), is(defaultBrokerReplicaCount));
 
         LOGGER.info("Checking partitions and replicas for {}", CRUISE_CONTROL_PARTITION_METRICS_SAMPLES_TOPIC);
         assertThat(partitionMetricsTopic.getPartitions(), is(32));
-        assertThat(partitionMetricsTopic.getReplicas(), is(2));
+        assertThat(partitionMetricsTopic.getReplicas(), is(defaultBrokerReplicaCount));
     }
 
     @IsolatedTest

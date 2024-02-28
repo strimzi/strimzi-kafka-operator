@@ -55,14 +55,24 @@ public class CruiseControlConfigurationST extends AbstractST {
     @ParallelNamespaceTest
     void testDeployAndUnDeployCruiseControl() throws IOException {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        // number of brokers to be created and also number of default replica count for each topic created
+        final int defaultBrokerReplicaCount = 3;
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
-                KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
+                KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), defaultBrokerReplicaCount).build(),
+                KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), defaultBrokerReplicaCount).build()
             )
         );
-        resourceManager.createResourceWithWait(KafkaTemplates.kafkaWithCruiseControl(testStorage.getClusterName(), 3, 3).build());
+        resourceManager.createResourceWithWait(
+            KafkaTemplates.kafkaWithCruiseControl(testStorage.getClusterName(), defaultBrokerReplicaCount, defaultBrokerReplicaCount)
+                .editSpec()
+                    .editOrNewKafka()
+                        .addToConfig(Map.of("default.replication.factor", defaultBrokerReplicaCount))
+                    .endKafka()
+                .endSpec()
+            .build()
+        );
 
         Map<String, String> brokerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
 
@@ -71,7 +81,7 @@ public class CruiseControlConfigurationST extends AbstractST {
             kafka.getSpec().setCruiseControl(null);
         }, testStorage.getNamespaceName());
 
-        brokerPods = RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, brokerPods);
+        brokerPods = RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), defaultBrokerReplicaCount, brokerPods);
 
         LOGGER.info("Verifying that in {} is not present in the Kafka cluster", TestConstants.CRUISE_CONTROL_NAME);
         assertThat(KafkaResource.kafkaClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getSpec().getCruiseControl(), nullValue());
@@ -85,7 +95,7 @@ public class CruiseControlConfigurationST extends AbstractST {
         // https://github.com/strimzi/strimzi-kafka-operator/issues/8864
         if (!Environment.isKRaftModeEnabled() && !Environment.isUnidirectionalTopicOperatorEnabled()) {
             LOGGER.info("Cruise Control Topics will not be deleted and will stay in the Kafka cluster");
-            CruiseControlUtils.verifyThatCruiseControlTopicsArePresent(testStorage.getNamespaceName());
+            CruiseControlUtils.verifyThatCruiseControlTopicsArePresent(testStorage.getNamespaceName(), defaultBrokerReplicaCount);
         }
 
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> {
@@ -93,7 +103,7 @@ public class CruiseControlConfigurationST extends AbstractST {
             kafka.getSpec().setCruiseControl(new CruiseControlSpec());
         }, testStorage.getNamespaceName());
 
-        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, brokerPods);
+        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), defaultBrokerReplicaCount, brokerPods);
 
         LOGGER.info("Verifying that configuration of CruiseControl metric reporter is present in Kafka ConfigMap");
         CruiseControlUtils.verifyCruiseControlMetricReporterConfigurationInKafkaConfigMapIsPresent(CruiseControlUtils.getKafkaCruiseControlMetricsReporterConfiguration(testStorage.getNamespaceName(), testStorage.getClusterName()));
@@ -102,7 +112,7 @@ public class CruiseControlConfigurationST extends AbstractST {
         if (!Environment.isKRaftModeEnabled() && !Environment.isUnidirectionalTopicOperatorEnabled()) {
             LOGGER.info("Verifying that {} Topics are created after CC is instantiated", TestConstants.CRUISE_CONTROL_NAME);
 
-            CruiseControlUtils.verifyThatCruiseControlTopicsArePresent(testStorage.getNamespaceName());
+            CruiseControlUtils.verifyThatCruiseControlTopicsArePresent(testStorage.getNamespaceName(), defaultBrokerReplicaCount);
         }
     }
 
