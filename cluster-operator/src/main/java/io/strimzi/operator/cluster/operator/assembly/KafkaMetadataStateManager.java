@@ -75,7 +75,7 @@ public class KafkaMetadataStateManager {
             LOGGER.errorCr(reconciliation, "Trying to reconcile a KRaft enabled cluster or migrating to KRaft without the useKRaft feature gate enabled");
             throw new IllegalArgumentException("Failed to reconcile a KRaft enabled cluster or migration to KRaft because useKRaft feature gate is disabled");
         }
-        LOGGER.infoCr(reconciliation, "Loaded metadata state from the Kafka CR [{}] and strimzi.io/kraft annotation [{}]", this.metadataState, this.kraftAnno);
+        LOGGER.debugCr(reconciliation, "Loaded metadata state from the Kafka CR [{}] and strimzi.io/kraft annotation [{}]", this.metadataState, this.kraftAnno);
     }
 
     /**

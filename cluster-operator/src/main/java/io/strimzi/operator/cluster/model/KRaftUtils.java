@@ -154,7 +154,7 @@ public class KRaftUtils {
     /**
      * Validate the Kafka version set in the Kafka custom resource, together with the metadata version and the configured
      * inter.broker.protocol.version and log.message.format.version.
-     * They need to be all aligned and at least 3.6.1 to support ZooKeeper to KRaft migration.
+     * They need to be all aligned and at least 3.7.0 to support ZooKeeper to KRaft migration.
      *
      * @param kafkaVersionFromCr    Kafka version from the custom resource
      * @param metadataVersionFromCr Metadata version from the custom resource
