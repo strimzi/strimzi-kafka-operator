@@ -390,7 +390,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
     }
 
     private Future<Void> updateConnectorLogger(Reconciliation reconciliation, String host, int port, String logger, String level) {
-        String path = "/admin/loggers/" + logger;
+        String path = "/admin/loggers/" + logger + "?scope=cluster";
         JsonObject levelJO = new JsonObject();
         levelJO.put("level", level);
         LOGGER.debugCr(reconciliation, "Making PUT request to {} with body {}", path, levelJO);
