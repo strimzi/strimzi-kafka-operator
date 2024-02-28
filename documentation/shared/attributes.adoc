@@ -23,18 +23,18 @@
 :KubernetesVersion: 1.23 and later
 
 // Kafka upgrade attributes used in kafka upgrades section
-:DefaultKafkaVersion: 3.6.1
-:DefaultKafkaMetadataVersion: 3.6
-:KafkaMetadataVersionLower: 3.5-IV2
-:KafkaMetadataVersionHigher: 3.6-IV2
-:KafkaVersionLower: 3.5.1
-:KafkaVersionHigher: 3.6.1
+:DefaultKafkaVersion: 3.7.0
+:DefaultKafkaMetadataVersion: 3.7
+:KafkaMetadataVersionLower: 3.6-IV2
+:KafkaMetadataVersionHigher: 3.7-IV4
+:KafkaVersionLower: 3.6.1
+:KafkaVersionHigher: 3.7.0
 :ExampleImageTagUpgrades: quay.io/strimzi/kafka:{ProductVersion}-kafka-{KafkaVersionHigher}
 
 //inter-broker protocol and log message version
-:DefaultInterBrokerVersion: 3.6
-:InterBrokerVersionLower: 3.5
-:InterBrokerVersionHigher: 3.6
+:DefaultInterBrokerVersion: 3.7
+:InterBrokerVersionLower: 3.6
+:InterBrokerVersionHigher: 3.7
 
 // Bridge version
 :BridgeVersion: 0.27.0
