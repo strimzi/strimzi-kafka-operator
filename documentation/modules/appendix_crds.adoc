@@ -1325,13 +1325,13 @@ Used in: xref:type-TieredStorageCustom-{context}[`TieredStorageCustom`]
 |Property |Property type |Description
 |className
 |string
-|The class name for the Remote Storage Manager class.
+|The class name for the 'RemoteStorageManager' implementation.
 |classPath
 |string
-|The class path for the Remote Storage Manager class.
+|The class path for the 'RemoteStorageManager' implementation.
 |config
 |map
-|The additional configuration map for the Remote Storage Manager.
+|The additional configuration map for the 'RemoteStorageManager' implementation.Keys will be automatically prefixed with `rsm.config.`, and added to Kafka broker configuration.
 |====
 
 [id='type-ZookeeperClusterSpec-{context}']
