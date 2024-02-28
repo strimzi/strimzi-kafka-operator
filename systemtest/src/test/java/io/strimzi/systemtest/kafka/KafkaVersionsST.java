@@ -177,6 +177,7 @@ public class KafkaVersionsST extends AbstractST {
         LOGGER.info("Sending and receiving messages via TLS");
 
         kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage)
+            .withConsumerGroup(readConsumerGroup)
             .withUsername(kafkaUserReadWriteTls)
             .build();
 
