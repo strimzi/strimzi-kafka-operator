@@ -489,6 +489,9 @@ spec:
                   storage:
                     type: object
                     properties:
+                      accessMode:
+                        type: string
+                        description: The storage access mode to use.
                       class:
                         type: string
                         description: The storage class to use for dynamic volume allocation.
@@ -499,6 +502,9 @@ spec:
                         type: integer
                         minimum: 0
                         description: Storage identification number. It is mandatory only for storage volumes defined in a storage of type 'jbod'.
+                      mountPath:
+                        type: string
+                        description: "The mount path to use, overriding the default /var/lib/kafka/data."
                       overrides:
                         type: array
                         items:
@@ -535,6 +541,9 @@ spec:
                         items:
                           type: object
                           properties:
+                            accessMode:
+                              type: string
+                              description: The storage access mode to use.
                             class:
                               type: string
                               description: The storage class to use for dynamic volume allocation.
@@ -545,6 +554,9 @@ spec:
                               type: integer
                               minimum: 0
                               description: Storage identification number. It is mandatory only for storage volumes defined in a storage of type 'jbod'.
+                            mountPath:
+                              type: string
+                              description: "The mount path to use, overriding the default /var/lib/kafka/data."
                             overrides:
                               type: array
                               items:
@@ -1862,6 +1874,9 @@ spec:
                   storage:
                     type: object
                     properties:
+                      accessMode:
+                        type: string
+                        description: The storage access mode to use.
                       class:
                         type: string
                         description: The storage class to use for dynamic volume allocation.
@@ -1872,6 +1887,9 @@ spec:
                         type: integer
                         minimum: 0
                         description: Storage identification number. It is mandatory only for storage volumes defined in a storage of type 'jbod'.
+                      mountPath:
+                        type: string
+                        description: "The mount path to use, overriding the default /var/lib/kafka/data."
                       overrides:
                         type: array
                         items:

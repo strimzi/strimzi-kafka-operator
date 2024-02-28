@@ -567,7 +567,7 @@ include::../api/io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerCo
 [id='type-EphemeralStorage-{context}']
 = `EphemeralStorage` schema reference
 
-Used in: xref:type-JbodStorage-{context}[`JbodStorage`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaNodePoolSpec-{context}[`KafkaNodePoolSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
+Used in: xref:type-JbodStorage-{context}[`JbodStorage`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaNodePoolSpec-{context}[`KafkaNodePoolSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 
 
 The `type` property is a discriminator that distinguishes use of the `EphemeralStorage` type from xref:type-PersistentClaimStorage-{context}[`PersistentClaimStorage`].
@@ -589,7 +589,7 @@ It must have the value `ephemeral` for the type `EphemeralStorage`.
 [id='type-PersistentClaimStorage-{context}']
 = `PersistentClaimStorage` schema reference
 
-Used in: xref:type-JbodStorage-{context}[`JbodStorage`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaNodePoolSpec-{context}[`KafkaNodePoolSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
+Used in: xref:type-JbodStorage-{context}[`JbodStorage`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaNodePoolSpec-{context}[`KafkaNodePoolSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 
 
 The `type` property is a discriminator that distinguishes use of the `PersistentClaimStorage` type from xref:type-EphemeralStorage-{context}[`EphemeralStorage`].
@@ -608,12 +608,16 @@ It must have the value `persistent-claim` for the type `PersistentClaimStorage`.
 |Specifies a specific persistent volume to use. It contains key:value pairs representing labels for selecting such a volume.
 |deleteClaim
 |boolean
+|accessMode   1.2+<.<a|The storage access mode to use.
+|string
 |Specifies if the persistent volume claim has to be deleted when the cluster is un-deployed.
 |class
 |string
 |The storage class to use for dynamic volume allocation.
 |id
 |integer
+|mountPath    1.2+<.<a|The mount path to use, overriding the default /var/lib/kafka/data.
+|string
 |Storage identification number. It is mandatory only for storage volumes defined in a storage of type 'jbod'.
 |overrides
 |xref:type-PersistentClaimStorageOverride-{context}[`PersistentClaimStorageOverride`] array
@@ -2137,6 +2141,8 @@ include::../api/io.strimzi.api.kafka.model.connect.KafkaConnectSpec.adoc[levelof
 |Template for Kafka Connect and Kafka Mirror Maker 2 resources. The template allows users to specify how the `Pods`, `Service`, and other services are generated.
 |externalConfiguration
 |xref:type-ExternalConfiguration-{context}[`ExternalConfiguration`]
+|storage                1.2+<.<a|Storage configuration (disk). Cannot be updated. The type depends on the value of the `storage.type` property within the given object, which must be one of [ephemeral, persistent-claim].
+|xref:type-EphemeralStorage-{context}[`EphemeralStorage`], xref:type-PersistentClaimStorage-{context}[`PersistentClaimStorage`]
 |Pass data from Secrets or ConfigMaps to the Kafka Connect pods and use them to configure connectors.
 |build
 |xref:type-Build-{context}[`Build`]
@@ -2455,12 +2461,15 @@ Used in: xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-Kaf
 |buildConfig
 |xref:type-BuildConfigTemplate-{context}[`BuildConfigTemplate`]
 |Template for the Kafka Connect BuildConfig used to build new container images. The BuildConfig is used only on OpenShift.
-|buildServiceAccount
+|buildServiceAccount    1.2+<.<a
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |Template for the Kafka Connect Build service account.
-|jmxSecret
+|jmxSecret              1.2+<.<a
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |Template for Secret of the Kafka Connect Cluster JMX authentication.
+|persistentVolumeClaim  1.2+<.<a
+|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|Template for the Kafka Connect Persistent volume claim.
 |====
 
 [id='type-BuildConfigTemplate-{context}']

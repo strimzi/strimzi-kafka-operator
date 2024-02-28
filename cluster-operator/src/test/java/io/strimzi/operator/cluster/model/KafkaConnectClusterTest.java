@@ -31,6 +31,8 @@ import io.fabric8.kubernetes.api.model.TopologySpreadConstraint;
 import io.fabric8.kubernetes.api.model.TopologySpreadConstraintBuilder;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
+import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
+import io.strimzi.api.kafka.model.kafka.PersistentClaimStorage;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
@@ -189,6 +191,45 @@ public class KafkaConnectClusterTest {
         expected.add(new EnvVarBuilder().withName(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS).withValue(kafkaHeapOpts).build());
         expected.add(new EnvVarBuilder().withName("NO_PROXY").withValue("127.0.0.1").build());
         return expected;
+    }
+
+    @ParallelTest
+    public void testGetWarningConditions() {
+        assertThat(kc.getWarningConditions().isEmpty(), is(true));
+    }
+
+    @ParallelTest
+    public void testSetAndGetStorage() {
+        PersistentClaimStorage storage = new PersistentClaimStorage();
+        storage.setSize("1Gi");
+        storage.setStorageClass("standard");
+        storage.setSelector(new HashMap<String, String>() {{
+            put("matchLabel", "test");
+        }});
+        storage.setDeleteClaim(false);
+        storage.setMountPath("/var/lib/kafka/data");
+        storage.setAccessMode("ReadWriteOnce");
+
+        kc.setStorage(storage);
+        assertThat(kc.getStorage(), is(equalTo(storage)));
+    }
+
+    @ParallelTest
+    public void testVolumeClaims() {
+        PersistentClaimStorage storage = new PersistentClaimStorage();
+        storage.setSize("2Gi");
+        storage.setStorageClass("fast");
+        storage.setSelector(new HashMap<String, String>() {{
+            put("matchLabel", "test2");
+        }});
+        storage.setDeleteClaim(true);
+        storage.setMountPath("/var/lib/kafka/data2");
+        storage.setAccessMode("ReadOnly");
+
+        kc.setDataVolumesClaimsAndMountPaths(storage);
+        List<PersistentVolumeClaim> generatedPvcs = kc.generatePersistentVolumeClaims(storage);
+        List<PersistentVolumeClaim> volumeClaims = kc.getVolumeClaims();
+        assertThat(volumeClaims.size(), is(equalTo(generatedPvcs.size())));
     }
 
     @ParallelTest

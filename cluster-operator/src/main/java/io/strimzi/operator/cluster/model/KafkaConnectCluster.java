@@ -16,6 +16,7 @@ import io.fabric8.kubernetes.api.model.EnvVarSource;
 import io.fabric8.kubernetes.api.model.EnvVarSourceBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
+import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.SecretVolumeSource;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServicePort;
@@ -36,6 +37,8 @@ import io.strimzi.api.kafka.model.common.CertSecretSource;
 import io.strimzi.api.kafka.model.common.ClientTls;
 import io.strimzi.api.kafka.model.common.JvmOptions;
 import io.strimzi.api.kafka.model.common.Probe;
+import io.strimzi.api.kafka.model.common.Condition;
+import io.strimzi.api.kafka.model.kafka.Storage;
 import io.strimzi.api.kafka.model.common.ProbeBuilder;
 import io.strimzi.api.kafka.model.common.Rack;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthentication;
@@ -76,7 +79,9 @@ import io.strimzi.operator.common.model.OrderedProperties;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.Map;
 
 import static io.strimzi.api.kafka.model.common.template.DeploymentStrategy.ROLLING_UPDATE;
@@ -100,6 +105,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
     protected static final String OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT = "/opt/kafka/oauth-certs/";
     protected static final String LOG_AND_METRICS_CONFIG_VOLUME_NAME = "kafka-metrics-and-logging";
     protected static final String LOG_AND_METRICS_CONFIG_VOLUME_MOUNT = "/opt/kafka/custom-config/";
+    protected static final String DATA_VOLUME_MOUNT_PATH = "/var/lib/kafka";
 
     // Configuration defaults
     private static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new ProbeBuilder().withInitialDelaySeconds(5).withInitialDelaySeconds(60).build();
@@ -143,6 +149,13 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
     private ClientTls tls;
     private KafkaClientAuthentication authentication;
 
+    /**
+     * Lists with volumes, persistent volume claims and related volume mount paths for the storage
+    */
+    List<Volume> dataVolumes;
+    List<PersistentVolumeClaim> dataPvcs;
+    List<VolumeMount> dataVolumeMountPaths;
+
     // Templates
     protected PodDisruptionBudgetTemplate templatePodDisruptionBudget;
     protected ResourceTemplate templateInitClusterRoleBinding;
@@ -152,6 +165,17 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
     protected InternalServiceTemplate templateService;
     protected InternalServiceTemplate templateHeadlessService;
     protected ContainerTemplate templateInitContainer;
+    protected ResourceTemplate templatePersistentVolumeClaims;
+
+    /**
+     * Storage configuration
+     */
+    protected Storage storage;
+
+    /**
+     * Warning conditions generated from the Custom Resource
+     */
+    protected List<Condition> warningConditions = new ArrayList<>(0);
 
     private static final Map<String, String> DEFAULT_POD_LABELS = new HashMap<>();
     static {
@@ -245,6 +269,9 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
             result.image = versions.kafkaConnectVersion(spec.getImage(), spec.getVersion());
         }
 
+        result.setStorage(spec.getStorage());
+        result.setDataVolumesClaimsAndMountPaths(spec.getStorage());
+
         result.resources = spec.getResources();
         result.gcLoggingEnabled = spec.getJvmOptions() == null ? JvmOptions.DEFAULT_GC_LOGGING_ENABLED : spec.getJvmOptions().isGcLoggingEnabled();
 
@@ -291,6 +318,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
             result.templateServiceAccount = template.getServiceAccount();
             result.templateContainer = template.getConnectContainer();
             result.templateInitContainer = template.getInitContainer();
+            result.templatePersistentVolumeClaims = template.getPersistentVolumeClaim();
         }
 
         if (spec.getExternalConfiguration() != null)    {
@@ -382,6 +410,52 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
         return volumeList;
     }
 
+    /**
+     * Fill the StatefulSet with volumes, persistent volume claims and related volume mount paths for the storage
+     * It's called recursively on the related inner volumes if the storage is of {@link Storage#TYPE_JBOD} type
+     *
+     * @param storage the Storage instance from which building volumes, persistent volume claims and
+     *                related volume mount paths
+     */
+    protected void setDataVolumesClaimsAndMountPaths(Storage storage) {
+        String name = KafkaConnectResources.componentName(cluster);
+        dataVolumes = VolumeUtils.createPodSetVolumes(name, storage, false);
+        dataPvcs = generatePersistentVolumeClaims(storage);
+        dataVolumeMountPaths = VolumeUtils.createVolumeMounts(storage, DATA_VOLUME_MOUNT_PATH, false);
+    }
+
+    /**
+     * Generate the persistent volume claims for the storage It's called recursively on the related inner volumes if the
+     * storage is of {@link Storage#TYPE_JBOD} type.
+     *
+     * @param storage the Storage instance from which building volumes, persistent volume claims and
+     *                related volume mount paths.
+     * @return The PersistentVolumeClaims.
+     */
+    public List<PersistentVolumeClaim> generatePersistentVolumeClaims(Storage storage) {
+        Set<NodeRef> nodes = new LinkedHashSet<>(replicas);
+        for (int nodeId = 0; nodeId < replicas; nodeId++) {
+            nodes.add(new NodeRef(getPodName(nodeId), nodeId, null, false, false));
+        }
+        return PersistentVolumeClaimUtils
+                .createPersistentVolumeClaims(
+                        namespace,
+                        nodes,
+                        storage,
+                        false,
+                        labels,
+                        ownerReference,
+                        templatePersistentVolumeClaims
+                );
+    }
+
+    /* test */
+    List<PersistentVolumeClaim> getVolumeClaims() {
+        List<PersistentVolumeClaim> pvcList = new ArrayList<>();
+        pvcList.addAll(dataPvcs);
+        return pvcList;
+    }
+
     private List<Volume> getExternalConfigurationVolumes(boolean isOpenShift)  {
         int mode = 0444;
         if (isOpenShift) {
@@ -426,7 +500,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
     }
 
     protected List<VolumeMount> getVolumeMounts() {
-        List<VolumeMount> volumeMountList = new ArrayList<>(2);
+        List<VolumeMount> volumeMountList = new ArrayList<>(dataVolumeMountPaths);
         volumeMountList.add(VolumeUtils.createTempDirVolumeMount());
         volumeMountList.add(VolumeUtils.createVolumeMount(LOG_AND_METRICS_CONFIG_VOLUME_NAME, LOG_AND_METRICS_CONFIG_VOLUME_MOUNT));
 
@@ -887,4 +961,29 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
     public DeploymentStrategy deploymentStrategy()  {
         return TemplateUtils.deploymentStrategy(templateDeployment, ROLLING_UPDATE);
     }
+
+    /**
+     * @return The storage.
+     */
+    public Storage getStorage() {
+        return storage;
+    }
+
+    /**
+     * Set the Storage
+     *
+     * @param storage Persistent Storage configuration
+     */
+    protected void setStorage(Storage storage) {
+        this.storage = storage;
+    }
+
+    /**
+     * Returns a list of warning conditions set by the model. Returns an empty list if no warning conditions were set.
+     *
+     * @return  List of warning conditions.
+     */
+    public List<Condition> getWarningConditions() {
+        return warningConditions;
+    };
 }

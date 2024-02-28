@@ -1986,6 +1986,22 @@ spec:
                             description: Annotations added to the Kubernetes resource.
                         description: Metadata applied to the resource.
                     description: Template for Secret of the Kafka Connect Cluster JMX authentication.
+                  persistentVolumeClaim:
+                    type: object
+                    properties:
+                      metadata:
+                        type: object
+                        properties:
+                          labels:
+                            x-kubernetes-preserve-unknown-fields: true
+                            type: object
+                            description: Labels added to the Kubernetes resource.
+                          annotations:
+                            x-kubernetes-preserve-unknown-fields: true
+                            type: object
+                            description: Annotations added to the Kubernetes resource.
+                        description: Metadata applied to the resource.
+                    description: Template for the Kafka Connect Persistent volume claim.
                 description: "Template for Kafka Connect and Kafka Mirror Maker 2 resources. The template allows users to specify how the `Pods`, `Service`, and other services are generated."
               externalConfiguration:
                 type: object
