@@ -222,8 +222,7 @@ public class KafkaMetadataStateManagerTest {
         assertTrue(kafka.getStatus().getConditions().stream().anyMatch(condition -> "KafkaMetadataStateWarning".equals(condition.getReason())));
         assertEquals(kafka.getStatus().getConditions().get(0).getMessage(),
                 "The strimzi.io/kraft annotation can't be set to rollback because the cluster is already ZooKeeper-based." +
-                        "There is no migration ongoing to rollback." +
-                        "If you want to migrate it to be KRaft-based apply the migration value instead.");
+                        "There is no migration ongoing to rollback. If you want to migrate it to be KRaft-based apply the migration value instead.");
         assertEquals(kafka.getStatus().getKafkaMetadataState(), ZooKeeper.name());
     }
 

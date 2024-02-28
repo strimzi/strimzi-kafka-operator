@@ -82,7 +82,7 @@ public class KRaftMigrationUtils {
      */
     public static boolean checkMigrationInProgress(Reconciliation reconciliation, KafkaAgentClient kafkaAgentClient, String controllerPodName) {
         KRaftMigrationState kraftMigrationState = kafkaAgentClient.getKRaftMigrationState(controllerPodName);
-        LOGGER.infoCr(reconciliation, "ZooKeeper to KRaft migration state {} checked on controller {}", kraftMigrationState.state(), controllerPodName);
+        LOGGER.debugCr(reconciliation, "ZooKeeper to KRaft migration state {} checked on controller {}", kraftMigrationState.state(), controllerPodName);
         if (kraftMigrationState.state() == -1) {
             throw new RuntimeException("Failed to get the ZooKeeper to KRaft migration state");
         }

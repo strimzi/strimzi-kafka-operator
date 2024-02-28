@@ -1070,7 +1070,7 @@ public class KafkaReconciler {
                                 zkMigrationStateChecked = true;
                                 break;
                             } catch (RuntimeException e) {
-                                LOGGER.warnCr(reconciliation, "Error on checking ZooKeeper migration state on controller {}", controller.podName());
+                                LOGGER.debugCr(reconciliation, "Error on checking ZooKeeper migration state on controller {}", controller.podName());
                             }
                         }
                         return zkMigrationStateChecked ? Future.succeededFuture() : Future.failedFuture(new Throwable("Failed to check ZooKeeper migration state"));
