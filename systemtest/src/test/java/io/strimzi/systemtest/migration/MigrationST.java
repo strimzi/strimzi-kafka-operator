@@ -4,9 +4,7 @@
  */
 package io.strimzi.systemtest.migration;
 
-import io.fabric8.kubernetes.api.model.LabelSelector;
-import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
-import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.*;
 import io.strimzi.api.kafka.model.kafka.KafkaMetadataState;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
@@ -448,7 +446,15 @@ public class MigrationST extends AbstractST {
         LOGGER.info("Creating controller NodePool");
         // the controller pods will not be up and running, because we are using the ZK nodes as controllers, they will be created once the migration starts
         // creating it here (before KafkaTopics) to correctly delete KafkaTopics and prevent stuck because UTO cannot connect to controllers
-        resourceManager.createResourceWithoutWait(KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build());
+        resourceManager.createResourceWithoutWait(KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3)
+            .editSpec()
+                // for controllers we have 256Mi set in the memory limits/requests, but during migration, more memory is needed
+                .withResources(new ResourceRequirementsBuilder()
+                    .addToLimits("memory", new Quantity("384Mi"))
+                    .addToRequests("memory", new Quantity("384Mi"))
+                    .build())
+            .endSpec()
+            .build());
 
         LOGGER.info("Applying the {} annotation with value: {}", Annotations.ANNO_STRIMZI_IO_KRAFT, "migration");
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(),
