@@ -1,6 +1,9 @@
 To configure the tiered storage feature, set the `type` property to `custom`.
 
-Custom tiered storage allows for custom RemoteStorageManager configuration to be used. By default Strimzi will use the [`TopicBasedRemoteLogMetadataManager`](https://github.com/apache/kafka/blob/trunk/storage/src/main/java/org/apache/kafka/server/log/remote/metadata/storage/TopicBasedRemoteLogMetadataManager.java) for RLMM configuration. Users need to add the tiered storage plugin to the image first by building a custom container image.
+`RemoteStorageManager` is a Kafka interface for managing the interaction between Kafka and remote tiered storage solutions.
+Custom tiered storage enables the use of a custom `RemoteStorageManager` configuration.
+if custom tiered storage is enabled, Strimzi uses the [`TopicBasedRemoteLogMetadataManager`](https://github.com/apache/kafka/blob/trunk/storage/src/main/java/org/apache/kafka/server/log/remote/metadata/storage/TopicBasedRemoteLogMetadataManager.java) for Remote Log Metadata Management (RLMM) configuration. Additional RLMM configuration can be added through the Kafka config under `spec.kafka.config` using the `rlmm.config.` prefix.
+If you want to use custom tiered storage, you must first add the tiered storage plugin to the Strimzi image by building a custom container image.
 
 .Example custom tiered storage configuration
 [source,yaml,subs="attributes+"]
@@ -12,7 +15,8 @@ kafka:
       className: com.example.kafka.tiered.storage.s3.S3RemoteStorageManager
       classPath: /opt/kafka/plugins/tiered-storage-s3/*
       config:
-        # A map with String keys and String values. Key fields will be automatically prefixed with `rsm.config.` and appended to Kafka broker config.
+        # A map with String keys and String values.
+        # Key fields will be automatically prefixed with `rsm.config.` and appended to Kafka broker config.
         storage.bucket.name: my-bucket
   config:
     ...

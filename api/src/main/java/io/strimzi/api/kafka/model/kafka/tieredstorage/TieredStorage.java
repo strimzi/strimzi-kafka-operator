@@ -36,7 +36,7 @@ public abstract class TieredStorage implements UnknownPropertyPreserving, Serial
 
     private final Map<String, Object> additionalProperties = new HashMap<>(0);
 
-    @Description("Storage type, must be either 'custom'.")
+    @Description("Storage type, only 'custom' is supported at the moment.")
     public abstract String getType();
 
     @Override

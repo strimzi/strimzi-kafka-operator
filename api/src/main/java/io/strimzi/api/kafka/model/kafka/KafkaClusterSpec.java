@@ -292,6 +292,7 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, HasConfigurable
     public void setTieredStorage(TieredStorage tieredStorage) {
         this.tieredStorage = tieredStorage;
     }
+
     @Override
     public Map<String, Object> getAdditionalProperties() {
         return this.additionalProperties;

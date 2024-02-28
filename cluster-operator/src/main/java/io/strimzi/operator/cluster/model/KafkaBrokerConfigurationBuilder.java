@@ -832,6 +832,7 @@ public class KafkaBrokerConfigurationBuilder {
 
         return this;
     }
+
     /**
      * Configure the tiered storage configuration for Kafka brokers.
      *
