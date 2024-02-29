@@ -77,6 +77,8 @@ NOTE: For the migration, you cannot use a node pool of nodes that share the brok
 . Apply the new `KafkaNodePool` resource to create the controllers.
 +
 Errors related to using controllers in a ZooKeeper-based environment are expected in the Cluster Operator logs.
+The errors can block reconciliation.
+To prevent this, perform the next step immediately.
 
 . Enable KRaft migration in the `Kafka` resource by setting the `strimzi.io/kraft` annotation to `migration`:
 +
@@ -146,10 +148,10 @@ At the start of the migration this is `ZooKeeper`.
 The flag to enable ZooKeeper to KRaft migration (`zookeeper.metadata.migration.enable`) is added to the brokers and they are rolled to register with the controllers.
 The migration can take some time at this point depending on the number of topics and partitions in the cluster. 
 * `KRaftDualWriting` is the state when the Kafka cluster is working as a KRaft cluster, 
-but controllers are managing metadata in Kafka and ZooKeeper. 
+but metadata are being stored in both Kafka and ZooKeeper. 
 Brokers are rolled a second time to remove the flag to enable migration.
-* `KRaftPostMigration` is the state when KRaft mode is enabled for brokers and there is no ZooKeeper involvement. 
-Controllers are still managing in Kafka and ZooKeeper.
+* `KRaftPostMigration` is the state when KRaft mode is enabled for brokers. 
+Metadata are still being stored in both Kafka and ZooKeeper. 
 --
 +
 The migration status is also represented in the `status.kafkaMetadataState` property of the `Kafka` resource. 
@@ -158,7 +160,7 @@ WARNING: You can xref:proc-deploy-migrate-kraft-rollback-{context}[roll back to 
 The next step is to enable KRaft. 
 Rollback cannot be performed after enabling KRaft.
 
-. Enable KRaft in the `Kafka` resource configuration by setting the `strimzi.io/kraft` annotation to `enabled`:
+. When the metadata state has reached `KRaftPostMigration`, enable KRaft in the `Kafka` resource configuration by setting the `strimzi.io/kraft` annotation to `enabled`:
 +
 [source,shell]
 ----
