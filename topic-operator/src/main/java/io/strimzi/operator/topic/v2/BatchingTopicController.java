@@ -995,7 +995,7 @@ public class BatchingTopicController {
         String message = e.getMessage();
         String reason;
         if (e instanceof TopicOperatorException) {
-            LOGGER.errorCr(reconcilableTopic.reconciliation(), "Reconciliation failed: {}", e.getMessage());
+            LOGGER.warnCr(reconcilableTopic.reconciliation(), "Reconciliation failed: {}", e.getMessage());
             reason = ((TopicOperatorException) e).reason();
         } else {
             LOGGER.errorCr(reconcilableTopic.reconciliation(), "Reconciliation failed with unexpected exception", e);

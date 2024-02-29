@@ -255,7 +255,7 @@ class BatchingLoop {
 
                 long timeoutNs = deadlineNanoTime - System.nanoTime();
                 if (timeoutNs <= 0) {
-                    LOGGER.traceOp("[Batch #{}] {}ms Linger expired", batchId, maxBatchLingerMs);
+                    LOGGER.traceOp("[Batch #{}] {}ms linger expired", batchId, maxBatchLingerMs);
                     break;
                 }
                 LOGGER.traceOp("[Batch #{}] Taking next item from deque head with timeout {}ns", batchId, timeoutNs);
