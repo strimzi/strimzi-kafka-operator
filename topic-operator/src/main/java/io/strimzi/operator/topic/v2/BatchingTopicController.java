@@ -60,6 +60,8 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static io.strimzi.operator.topic.v2.TopicOperatorUtil.topicName;
+
 /**
  * A unidirectional operator
  */
@@ -141,17 +143,6 @@ public class BatchingTopicController {
         } else {
             return false;
         }
-    }
-
-    static String topicName(KafkaTopic kt) {
-        String tn = null;
-        if (kt.getSpec() != null) {
-            tn = kt.getSpec().getTopicName();
-        }
-        if (tn == null) {
-            tn = kt.getMetadata().getName();
-        }
-        return tn;
     }
 
     static String resourceVersion(KafkaTopic kt) {
@@ -1007,10 +998,10 @@ public class BatchingTopicController {
         String message = e.getMessage();
         String reason;
         if (e instanceof TopicOperatorException) {
-            LOGGER.debugCr(reconcilableTopic.reconciliation(), "Updating status for exception {}", e.toString());
+            LOGGER.warnCr(reconcilableTopic.reconciliation(), "Reconciliation failed: {}", e.getMessage());
             reason = ((TopicOperatorException) e).reason();
         } else {
-            LOGGER.warnCr(reconcilableTopic.reconciliation(), "Updating status for unexpected exception", e);
+            LOGGER.errorCr(reconcilableTopic.reconciliation(), "Reconciliation failed with unexpected exception", e);
             reason = e.getClass().getSimpleName();
         }
         Condition condition = new ConditionBuilder()
@@ -1062,16 +1053,16 @@ public class BatchingTopicController {
                         .withTopicName(newTopicName)
                         .withConditions(condition)
                     .endStatus().build();
-            LOGGER.debugCr(reconciliation, "Updating status with {}", updatedTopic.getStatus());
+            LOGGER.debugCr(reconciliation, "Updating status");
             Timer.Sample timerSample = startOperationTimer();
             var got = Crds.topicOperation(kubeClient)
                     .resource(updatedTopic)
                     .updateStatus();
             stopOperationTimer(timerSample, metrics::updateStatusTimer);
-            LOGGER.traceCr(reconciliation, "Updated status to observedGeneration {}, resourceVersion now {}",
-                    got.getStatus().getObservedGeneration());
+            LOGGER.debugCr(reconciliation, "Updated status to observedGeneration {}, resourceVersion {}",
+                    got.getStatus().getObservedGeneration(), got.getMetadata().getResourceVersion());
         } else {
-            LOGGER.traceCr(reconciliation, "Unchanged status of {}", kt.getStatus());
+            LOGGER.debugCr(reconciliation, "Unchanged status");
         }
     }
 

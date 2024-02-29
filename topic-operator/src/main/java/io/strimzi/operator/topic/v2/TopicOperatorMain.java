@@ -37,9 +37,9 @@ import java.util.concurrent.ExecutionException;
  * Entrypoint for unidirectional TO.
  */
 public class TopicOperatorMain implements Liveness, Readiness {
-
     private final static ReconciliationLogger LOGGER = ReconciliationLogger.create(TopicOperatorMain.class);
-
+    private final static long INFORMER_PERIOD_MS = 2_000;
+    
     private final ResourceEventHandler<KafkaTopic> handler;
     private final String namespace;
     private final KubernetesClient client;
@@ -68,14 +68,14 @@ public class TopicOperatorMain implements Liveness, Readiness {
         TopicOperatorMetricsProvider metricsProvider = createMetricsProvider();
         TopicOperatorMetricsHolder metrics = new TopicOperatorMetricsHolder(KafkaTopic.RESOURCE_KIND, Labels.fromMap(selector), metricsProvider);
         this.controller = new BatchingTopicController(selector, admin, client, config.useFinalizer(), metrics, namespace, config.enableAdditionalMetrics());
-        this.itemStore = new BasicItemStore<KafkaTopic>(Cache::metaNamespaceKeyFunc);
+        this.itemStore = new BasicItemStore<>(Cache::metaNamespaceKeyFunc);
         this.queue = new BatchingLoop(config.maxQueueSize(), controller, 1, config.maxBatchSize(), config.maxBatchLingerMs(), itemStore, this::stop, metrics, namespace);
-        this.handler = new TopicOperatorEventHandler(queue, config.useFinalizer(), metrics, namespace);
+        this.handler = new TopicOperatorEventHandler(config, queue, metrics);
         this.healthAndMetricsServer = new HealthCheckAndMetricsServer(8080, this, this, metricsProvider);
     }
 
     synchronized void start() {
-        LOGGER.infoOp("Starting operator");
+        LOGGER.infoOp("TopicOperator {} is starting", TopicOperatorMain.class.getPackage().getImplementationVersion());
         if (shutdownHook != null) {
             throw new IllegalStateException();
         }
@@ -92,11 +92,17 @@ public class TopicOperatorMain implements Liveness, Readiness {
                 // Do NOT use withLabels to filter the informer, since the controller is stateful
                 // (topics need to be added to removed from TopicController.topics if KafkaTopics transition between
                 // selected and unselected).
-                .runnableInformer(resyncIntervalMs)
-                .addEventHandlerWithResyncPeriod(handler, resyncIntervalMs)
+                .runnableInformer(INFORMER_PERIOD_MS)
+                // The informer interval acts like a heartbeat, then each handler interval will cause a resync at 
+                // some interval of the overall heartbeat. The closer these values are together the more likely it 
+                // is that the handler skips one informer intervals. Setting both intervals to the same value generates 
+                // just enough skew that when the informer checks if the handler is ready for resync it sees that 
+                // it still needs another couple of micro-seconds and skips to the next informer level resync.
+                .addEventHandlerWithResyncPeriod(handler, resyncIntervalMs + INFORMER_PERIOD_MS)
                 .itemStore(itemStore);
         LOGGER.infoOp("Starting informer");
         informer.run();
+        LOGGER.infoOp("TopicOperator started");
     }
 
     synchronized void stop() {
@@ -145,7 +151,6 @@ public class TopicOperatorMain implements Liveness, Readiness {
         TopicOperatorConfig topicOperatorConfig = TopicOperatorConfig.buildFromMap(System.getenv());
         TopicOperatorMain operator = operator(topicOperatorConfig, kubeClient(), Admin.create(topicOperatorConfig.adminClientConfig()));
         operator.start();
-        LOGGER.infoOp("Returning from main()");
     }
 
     static TopicOperatorMain operator(TopicOperatorConfig topicOperatorConfig, KubernetesClient client, Admin admin) throws ExecutionException, InterruptedException {

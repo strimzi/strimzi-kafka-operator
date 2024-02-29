@@ -116,7 +116,7 @@ record TopicOperatorConfig(
         Map<String, Object> generatedMap = ConfigParameter.define(envMap, CONFIG_VALUES);
 
         TopicOperatorConfig topicOperatorConfig = new TopicOperatorConfig(generatedMap);
-        LOGGER.infoOp("Configuration {}", topicOperatorConfig);
+        LOGGER.infoOp("TopicOperator configuration is {}", topicOperatorConfig);
         return topicOperatorConfig;
     }
 
