@@ -61,6 +61,7 @@ import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationCustom;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationOAuth;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
+import io.strimzi.api.kafka.model.kafka.tieredstorage.TieredStorage;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolStatus;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.certs.CertAndKey;
@@ -237,6 +238,8 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     private ResourceTemplate templateBootstrapRoute;
     private ResourceTemplate templateBootstrapIngress;
 
+    private TieredStorage tieredStorage;
+
     private static final Map<String, String> DEFAULT_POD_LABELS = new HashMap<>();
     static {
         String value = System.getenv(CO_ENV_VAR_CUSTOM_KAFKA_POD_LABELS);
@@ -379,6 +382,9 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
             result.templateServiceAccount = template.getServiceAccount();
         }
 
+        if (kafkaClusterSpec.getTieredStorage() != null) {
+            result.tieredStorage = kafkaClusterSpec.getTieredStorage();
+        }
         // Should run at the end when everything is set
         KafkaSpecChecker specChecker = new KafkaSpecChecker(kafkaSpec, versions, result);
         result.warningConditions.addAll(specChecker.run(useKRaft));
@@ -1674,6 +1680,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                         )
                         .withAuthorization(cluster, authorization)
                         .withCruiseControl(cluster, ccMetricsReporter, node.broker())
+                        .withTieredStorage(cluster, tieredStorage)
                         .withUserConfiguration(configuration, node.broker() && ccMetricsReporter != null);
 
         if (useKRaft) {

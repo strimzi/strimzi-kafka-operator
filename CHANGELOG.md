@@ -11,6 +11,7 @@
 * Added support for Kafka Exporter `offset.show-all` parameter
 * Prevent removal of the `broker` process role from KRaft mixed-nodes that have assigned partition-replicas
 * Improve broker scale-down prevention to continue in reconciliation when scale-down cannot be executed
+* Added support for Tiered Storage by enabling the configuration of custom storage plugins through the Kafka custom resource.
 
 ### Changes, deprecations and removals
 

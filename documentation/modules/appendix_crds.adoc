@@ -124,6 +124,9 @@ include::../api/io.strimzi.api.kafka.model.kafka.KafkaClusterSpec.adoc[leveloffs
 |template
 |xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`]
 |Template for Kafka cluster resources. The template allows users to specify how the Kubernetes resources are generated.
+|tieredStorage
+|xref:type-TieredStorageCustom-{context}[`TieredStorageCustom`]
+|Configure the tiered storage feature for Kafka brokers.
 |====
 
 [id='type-GenericKafkaListener-{context}']
@@ -1283,6 +1286,52 @@ Used in: xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |value
 |string
 |The environment variable value.
+|====
+
+[id='type-TieredStorageCustom-{context}']
+= `TieredStorageCustom` schema reference
+
+Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
+
+xref:type-TieredStorageCustom-schema-{context}[Full list of `TieredStorageCustom` schema properties]
+
+include::../api/io.strimzi.api.kafka.model.kafka.tieredstorage.TieredStorageCustom.adoc[leveloffset=+1]
+
+[id='type-TieredStorageCustom-schema-{context}']
+== `TieredStorageCustom` schema properties
+
+
+The `type` property is a discriminator that distinguishes use of the `TieredStorageCustom` type from other subtypes which may be added in the future.
+It must have the value `custom` for the type `TieredStorageCustom`.
+[cols="2,2,3a",options="header"]
+|====
+|Property |Property type |Description
+|remoteStorageManager
+|xref:type-RemoteStorageManager-{context}[`RemoteStorageManager`]
+|Configuration for the Remote Storage Manager.
+|type
+|string
+|Must be `custom`.
+|====
+
+[id='type-RemoteStorageManager-{context}']
+= `RemoteStorageManager` schema reference
+
+Used in: xref:type-TieredStorageCustom-{context}[`TieredStorageCustom`]
+
+
+[cols="2,2,3a",options="header"]
+|====
+|Property |Property type |Description
+|className
+|string
+|The class name for the 'RemoteStorageManager' implementation.
+|classPath
+|string
+|The class path for the 'RemoteStorageManager' implementation.
+|config
+|map
+|The additional configuration map for the 'RemoteStorageManager' implementation. Keys will be automatically prefixed with `rsm.config.`, and added to Kafka broker configuration.
 |====
 
 [id='type-ZookeeperClusterSpec-{context}']

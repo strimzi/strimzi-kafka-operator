@@ -24,6 +24,8 @@ import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerConfigurati
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationOAuth;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationOAuthBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
+import io.strimzi.api.kafka.model.kafka.tieredstorage.RemoteStorageManager;
+import io.strimzi.api.kafka.model.kafka.tieredstorage.TieredStorageCustom;
 import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
 import io.strimzi.kafka.oauth.server.ServerConfig;
 import io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlMetricsReporter;
@@ -2259,6 +2261,41 @@ public class KafkaBrokerConfigurationBuilderTest {
 
         Map<String, String> actualOptions = KafkaBrokerConfigurationBuilder.getOAuthOptions(auth);
         assertThat(actualOptions, is(equalTo(Collections.emptyMap())));
+    }
+
+    @ParallelTest
+    public void testWithTieredStorage()  {
+        TieredStorageCustom tieredStorage = new TieredStorageCustom();
+        RemoteStorageManager rsm = new RemoteStorageManager();
+        rsm.setClassName("com.example.kafka.tiered.storage.s3.S3RemoteStorageManager");
+        rsm.setClassPath("/opt/kafka/plugins/tiered-storage-s3/*");
+        Map<String, String> rsmConfigs = new HashMap<>();
+        rsmConfigs.put("storage.bucket.name", "my-bucket");
+        rsm.setConfig(rsmConfigs);
+        tieredStorage.setRemoteStorageManager(rsm);
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2", false)
+            .withTieredStorage("test-cluster-1", tieredStorage)
+            .build();
+
+        assertThat(configuration, isEquivalent("broker.id=2",
+            "node.id=2",
+            "remote.log.storage.system.enable=true",
+            "remote.log.metadata.manager.impl.prefix=rlmm.config.",
+            "remote.log.metadata.manager.class.name=org.apache.kafka.server.log.remote.metadata.storage.TopicBasedRemoteLogMetadataManager",
+            "remote.log.metadata.manager.listener.name=REPLICATION-9091",
+            "rlmm.config.remote.log.metadata.common.client.bootstrap.servers=test-cluster-1-kafka-brokers:9091",
+            "rlmm.config.remote.log.metadata.common.client.security.protocol=SSL",
+            "rlmm.config.remote.log.metadata.common.client.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
+            "rlmm.config.remote.log.metadata.common.client.ssl.keystore.password=${CERTS_STORE_PASSWORD}",
+            "rlmm.config.remote.log.metadata.common.client.ssl.keystore.type=PKCS12",
+            "rlmm.config.remote.log.metadata.common.client.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
+            "rlmm.config.remote.log.metadata.common.client.ssl.truststore.password=${CERTS_STORE_PASSWORD}",
+            "rlmm.config.remote.log.metadata.common.client.ssl.truststore.type=PKCS12",
+            "remote.log.storage.manager.class.name=com.example.kafka.tiered.storage.s3.S3RemoteStorageManager",
+            "remote.log.storage.manager.class.path=/opt/kafka/plugins/tiered-storage-s3/*",
+            "remote.log.storage.manager.impl.prefix=rsm.config.",
+            "rsm.config.storage.bucket.name=my-bucket"
+            ));
     }
 
     static class IsEquivalent extends TypeSafeMatcher<String> {
