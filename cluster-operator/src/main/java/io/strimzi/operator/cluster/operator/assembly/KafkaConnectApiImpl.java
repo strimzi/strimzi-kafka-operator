@@ -405,7 +405,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                                     .write(buffer.toString());
                             request.result().send(response -> {
                                 if (response.succeeded()) {
-                                    if (response.result().statusCode() == 204) {
+                                    if (List.of(200, 204).contains(response.result().statusCode())) {
                                         response.result().bodyHandler(body -> {
                                             LOGGER.debugCr(reconciliation, "Logger {} updated to level {}", logger, level);
                                             result.complete();
