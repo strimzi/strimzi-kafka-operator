@@ -75,9 +75,7 @@ import static org.mockito.Mockito.mock;
 @ExtendWith(KafkaClusterExtension.class)
 class BatchingTopicControllerTest {
     private static final Logger LOGGER = LogManager.getLogger(BatchingTopicControllerTest.class);
-
-    static final String NAMESPACE = "ns";
-    static final String NAME = "foo";
+    private static final String NAMESPACE = "topic-operator-test";
 
     private BatchingTopicController controller;
     private KubernetesClient client;
@@ -102,7 +100,7 @@ class BatchingTopicControllerTest {
     
     private KafkaTopic createResource(int replicas) {
         var kt = Crds.topicOperation(client).resource(new KafkaTopicBuilder().withNewMetadata()
-                .withName(NAME)
+                .withName("my-topic")
                 .withNamespace(namespace(NAMESPACE))
                 .addToLabels("key", "VALUE")
                 .endMetadata()
@@ -152,7 +150,7 @@ class BatchingTopicControllerTest {
         var replicasChangeClient = Mockito.mock(ReplicasChangeClient.class);
         
         controller = new BatchingTopicController(config, Map.of("key", "VALUE"), admin, client, metrics, replicasChangeClient);
-        List<ReconcilableTopic> batch = List.of(new ReconcilableTopic(new Reconciliation("test", "KafkaTopic", NAMESPACE, NAME), kt, topicName(kt)));
+        List<ReconcilableTopic> batch = List.of(new ReconcilableTopic(new Reconciliation("test", "KafkaTopic", NAMESPACE, "my-topic"), kt, topicName(kt)));
         assertThrows(InterruptedException.class, () -> controller.onUpdate(batch));
     }
 
@@ -162,7 +160,7 @@ class BatchingTopicControllerTest {
         Admin adminSpy = Mockito.spy(admin[0]);
         var result = Mockito.mock(DescribeTopicsResult.class);
         Mockito.doReturn(interruptedFuture()).when(result).allTopicNames();
-        Mockito.doReturn(Map.of(NAME, interruptedFuture())).when(result).topicNameValues();
+        Mockito.doReturn(Map.of("my-topic", interruptedFuture())).when(result).topicNameValues();
         Mockito.doReturn(result).when(adminSpy).describeTopics(any(Collection.class));
 
         KafkaTopic kt = createResource();
@@ -183,7 +181,7 @@ class BatchingTopicControllerTest {
     }
 
     private static ConfigResource topicConfigResource() {
-        return new ConfigResource(ConfigResource.Type.TOPIC, NAME);
+        return new ConfigResource(ConfigResource.Type.TOPIC, "my-topic");
     }
 
     @Test
@@ -192,7 +190,7 @@ class BatchingTopicControllerTest {
         Admin adminSpy = Mockito.spy(admin[0]);
         var result = Mockito.mock(CreateTopicsResult.class);
         Mockito.doReturn(interruptedFuture()).when(result).all();
-        Mockito.doReturn(Map.of(NAME, interruptedFuture())).when(result).values();
+        Mockito.doReturn(Map.of("my-topic", interruptedFuture())).when(result).values();
         Mockito.doReturn(result).when(adminSpy).createTopics(any());
 
         KafkaTopic kt = createResource();
@@ -202,7 +200,7 @@ class BatchingTopicControllerTest {
     @Test
     public void shouldHandleInterruptedExceptionFromIncrementalAlterConfigs(KafkaCluster cluster) throws ExecutionException, InterruptedException {
         admin[0] = Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, cluster.getBootstrapServers()));
-        admin[0].createTopics(List.of(new NewTopic(NAME, 1, (short) 1).configs(Map.of(TopicConfig.COMPRESSION_TYPE_CONFIG, "snappy")))).all().get();
+        admin[0].createTopics(List.of(new NewTopic("my-topic", 1, (short) 1).configs(Map.of(TopicConfig.COMPRESSION_TYPE_CONFIG, "snappy")))).all().get();
         Admin adminSpy = Mockito.spy(admin[0]);
         var result = Mockito.mock(AlterConfigsResult.class);
         Mockito.doReturn(interruptedFuture()).when(result).all();
@@ -215,12 +213,12 @@ class BatchingTopicControllerTest {
     @Test
     public void shouldHandleInterruptedExceptionFromCreatePartitions(KafkaCluster cluster) throws ExecutionException, InterruptedException {
         admin[0] = Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, cluster.getBootstrapServers()));
-        admin[0].createTopics(List.of(new NewTopic(NAME, 1, (short) 1))).all().get();
+        admin[0].createTopics(List.of(new NewTopic("my-topic", 1, (short) 1))).all().get();
 
         Admin adminSpy = Mockito.spy(admin[0]);
         var result = Mockito.mock(CreatePartitionsResult.class);
         Mockito.doReturn(interruptedFuture()).when(result).all();
-        Mockito.doReturn(Map.of(NAME, interruptedFuture())).when(result).values();
+        Mockito.doReturn(Map.of("my-topic", interruptedFuture())).when(result).values();
         Mockito.doReturn(result).when(adminSpy).createPartitions(any());
         KafkaTopic kt = createResource();
         assertOnUpdateThrowsInterruptedException(client, adminSpy, kt);
@@ -231,7 +229,7 @@ class BatchingTopicControllerTest {
             @BrokerCluster(numBrokers = 2)
             KafkaCluster cluster) throws ExecutionException, InterruptedException {
         admin[0] = Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, cluster.getBootstrapServers()));
-        admin[0].createTopics(List.of(new NewTopic(NAME, 2, (short) 2))).all().get();
+        admin[0].createTopics(List.of(new NewTopic("my-topic", 2, (short) 2))).all().get();
 
         Admin adminSpy = Mockito.spy(admin[0]);
         var result = Mockito.mock(ListPartitionReassignmentsResult.class);
@@ -244,18 +242,18 @@ class BatchingTopicControllerTest {
     @Test
     public void shouldHandleInterruptedExceptionFromDeleteTopics(KafkaCluster cluster) throws ExecutionException, InterruptedException {
         admin[0] = Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, cluster.getBootstrapServers()));
-        admin[0].createTopics(List.of(new NewTopic(NAME, 1, (short) 1))).all().get();
+        admin[0].createTopics(List.of(new NewTopic("my-topic", 1, (short) 1))).all().get();
         var kt = createResource();
-        var withFinalizer = Crds.topicOperation(client).inNamespace(NAMESPACE).withName(NAME).edit(theKt -> {
+        var withFinalizer = Crds.topicOperation(client).inNamespace(NAMESPACE).withName("my-topic").edit(theKt -> {
             return new KafkaTopicBuilder(theKt).editOrNewMetadata().addToFinalizers(BatchingTopicController.FINALIZER).endMetadata().build();
         });
-        Crds.topicOperation(client).inNamespace(NAMESPACE).withName(NAME).delete();
-        var withDeletionTimestamp = Crds.topicOperation(client).inNamespace(NAMESPACE).withName(NAME).get();
+        Crds.topicOperation(client).inNamespace(NAMESPACE).withName("my-topic").delete();
+        var withDeletionTimestamp = Crds.topicOperation(client).inNamespace(NAMESPACE).withName("my-topic").get();
 
         Admin adminSpy = Mockito.spy(admin[0]);
         var result = Mockito.mock(DeleteTopicsResult.class);
         Mockito.doReturn(interruptedFuture()).when(result).all();
-        Mockito.doReturn(Map.of(NAME, interruptedFuture())).when(result).topicNameValues();
+        Mockito.doReturn(Map.of("my-topic", interruptedFuture())).when(result).topicNameValues();
         Mockito.doReturn(result).when(adminSpy).deleteTopics(any(TopicCollection.TopicNameCollection.class));
         assertOnUpdateThrowsInterruptedException(client, adminSpy, withDeletionTimestamp);
     }
@@ -292,7 +290,7 @@ class BatchingTopicControllerTest {
 
         var kafkaTopic = new KafkaTopicBuilder()
             .withNewMetadata()
-                .withName(NAME)
+                .withName("my-topic")
                 .withNamespace(namespace(NAMESPACE))
                 .addToLabels("key", "VALUE")
             .endMetadata()
@@ -304,7 +302,7 @@ class BatchingTopicControllerTest {
             .build();
 
         var reconcilableTopic = new ReconcilableTopic(
-            new Reconciliation("test", RESOURCE_KIND, NAMESPACE, NAME), kafkaTopic, topicName(kafkaTopic));
+            new Reconciliation("test", RESOURCE_KIND, NAMESPACE, "my-topic"), kafkaTopic, topicName(kafkaTopic));
 
         var replicasChangeClient = Mockito.mock(ReplicasChangeClient.class);
         Mockito.doReturn(List.of()).when(replicasChangeClient).requestPendingChanges(anyList());
@@ -345,7 +343,7 @@ class BatchingTopicControllerTest {
         
         var inputKt = new KafkaTopicBuilder()
             .withNewMetadata()
-                .withName(NAME)
+                .withName("my-topic")
                 .withNamespace(namespace(NAMESPACE))
                 .addToLabels("key", "VALUE")
             .endMetadata()
@@ -355,7 +353,7 @@ class BatchingTopicControllerTest {
             .endSpec()
             .build();
         var inputRt = new ReconcilableTopic(
-            new Reconciliation("test", RESOURCE_KIND, NAMESPACE, NAME), inputKt, topicName(inputKt));
+            new Reconciliation("test", RESOURCE_KIND, NAMESPACE, "my-topic"), inputKt, topicName(inputKt));
 
         var outputStatus = new KafkaTopicStatusBuilder()
             .withReplicasChange(new ReplicasChangeStatusBuilder()
@@ -366,7 +364,7 @@ class BatchingTopicControllerTest {
             .build();
         var outputKt = new KafkaTopicBuilder(inputKt).withStatus(outputStatus).build();
         var outputRt = new ReconcilableTopic(
-            new Reconciliation("test", "KafkaTopic", NAMESPACE, NAME), outputKt, topicName(outputKt));
+            new Reconciliation("test", "KafkaTopic", NAMESPACE, "my-topic"), outputKt, topicName(outputKt));
         
         var replicasChangeClient = Mockito.mock(ReplicasChangeClient.class);
         Mockito.doReturn(List.of(outputRt)).when(replicasChangeClient).requestPendingChanges(anyList());

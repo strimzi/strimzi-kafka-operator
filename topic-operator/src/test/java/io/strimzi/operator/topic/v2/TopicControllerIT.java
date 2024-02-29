@@ -98,20 +98,16 @@ import static org.mockito.Mockito.mock;
 @SuppressWarnings("checkstyle:ClassFanOutComplexity")
 @ExtendWith(KafkaClusterExtension.class)
 class TopicControllerIT {
-
     private static final Logger LOGGER = LogManager.getLogger(TopicControllerIT.class);
+    private static final String NAMESPACE = "topic-operator-test";
     public static final Map<String, String> SELECTOR = Map.of("foo", "FOO", "bar", "BAR");
-    private static final String NAMESPACE = "uto-test";
 
     KubernetesClient client;
-
     Admin[] admin;
-
     Admin[] operatorAdmin;
-
     TopicOperatorMain operator;
-
     Stack<String> namespaces = new Stack<>();
+    
     private TopicOperatorConfig operatorConfig;
 
     @BeforeAll
@@ -382,23 +378,23 @@ class TopicControllerIT {
 
     static KafkaTopic[] managedKafkaTopics() {
         return new KafkaTopic[] {
-                kafkaTopic(NAMESPACE, "foo", true, "foo", 2, 1),
-                kafkaTopic(NAMESPACE, "foo", true, null, 2, 1),
-                kafkaTopic(NAMESPACE, "foo", true, "FOO", 2, 1),
-                kafkaTopic(NAMESPACE, "foo", null, "foo", 2, 1),
-                kafkaTopic(NAMESPACE, "foo", null, null, 2, 1),
-                kafkaTopic(NAMESPACE, "foo", null, "FOO", 2, 1),
+                kafkaTopic(NAMESPACE, "my-topic", true, "my-topic", 2, 1),
+                kafkaTopic(NAMESPACE, "my-topic", true, null, 2, 1),
+                kafkaTopic(NAMESPACE, "my-topic", true, "MY-TOPIC", 2, 1),
+                kafkaTopic(NAMESPACE, "my-topic", null, "my-topic", 2, 1),
+                kafkaTopic(NAMESPACE, "my-topic", null, null, 2, 1),
+                kafkaTopic(NAMESPACE, "my-topic", null, "MY-TOPIC", 2, 1),
                 // With a superset of the selector mappings
-                kafkaTopic(NAMESPACE, "foo", Map.of("foo", "FOO", "bar", "BAR", "quux", "QUUX"), null, true, "foo", 2, 1, null),
+                kafkaTopic(NAMESPACE, "my-topic", Map.of("foo", "FOO", "bar", "BAR", "quux", "QUUX"), null, true, "my-topic", 2, 1, null),
         };
     }
 
     static KafkaTopic[] managedKafkaTopicsWithIllegalTopicNames() {
         return new KafkaTopic[] {
-                kafkaTopic(NAMESPACE, "foo", true, "..", 2, 1),
-                kafkaTopic(NAMESPACE, "foo", true, ".", 2, 1),
-                kafkaTopic(NAMESPACE, "foo", null, "foo{}", 2, 1),
-                kafkaTopic(NAMESPACE, "foo", null, "x".repeat(256), 2, 1),
+                kafkaTopic(NAMESPACE, "my-topic", true, "..", 2, 1),
+                kafkaTopic(NAMESPACE, "my-topic", true, ".", 2, 1),
+                kafkaTopic(NAMESPACE, "my-topic", null, "foo{}", 2, 1),
+                kafkaTopic(NAMESPACE, "my-topic", null, "x".repeat(256), 2, 1),
         };
     }
 
@@ -412,28 +408,28 @@ class TopicControllerIT {
                 TopicConfig.UNCLEAN_LEADER_ELECTION_ENABLE_CONFIG, true // boolean typed
                 );
         return new KafkaTopic[] {
-                kafkaTopic(NAMESPACE, "foo", SELECTOR, null, true, "foo", 2, 1, configs),
-                kafkaTopic(NAMESPACE, "foo", SELECTOR, null, true, null, 2, 1, configs),
-                kafkaTopic(NAMESPACE, "foo", SELECTOR, null, true, "FOO", 2, 1, configs),
-                kafkaTopic(NAMESPACE, "foo", SELECTOR, null, null, "foo", 2, 1, configs),
-                kafkaTopic(NAMESPACE, "foo", SELECTOR, null, null, null, 2, 1, configs),
-                kafkaTopic(NAMESPACE, "foo", SELECTOR, null, null, "FOO", 2, 1, configs),
+                kafkaTopic(NAMESPACE, "my-topic", SELECTOR, null, true, "my-topic", 2, 1, configs),
+                kafkaTopic(NAMESPACE, "my-topic", SELECTOR, null, true, null, 2, 1, configs),
+                kafkaTopic(NAMESPACE, "my-topic", SELECTOR, null, true, "MY-TOPIC", 2, 1, configs),
+                kafkaTopic(NAMESPACE, "my-topic", SELECTOR, null, null, "my-topic", 2, 1, configs),
+                kafkaTopic(NAMESPACE, "my-topic", SELECTOR, null, null, null, 2, 1, configs),
+                kafkaTopic(NAMESPACE, "my-topic", SELECTOR, null, null, "MY-TOPIC", 2, 1, configs),
         };
     }
 
     static KafkaTopic[] unmanagedKafkaTopics() {
         return new KafkaTopic[] {
-                kafkaTopic(NAMESPACE, "foo", false, "foo", 2, 1),
-                kafkaTopic(NAMESPACE, "foo", false, null, 2, 1),
-                kafkaTopic(NAMESPACE, "foo", false, "FOO", 2, 1),
+                kafkaTopic(NAMESPACE, "my-topic", false, "my-topic", 2, 1),
+                kafkaTopic(NAMESPACE, "my-topic", false, null, 2, 1),
+                kafkaTopic(NAMESPACE, "my-topic", false, "MY-TOPIC", 2, 1),
         };
     }
 
     static KafkaTopic[] unselectedKafkaTopics() {
         return new KafkaTopic[] {
-                kafkaTopic(NAMESPACE, "foo", Map.of(), null, true, "FOO", 2, 1, null),
-                kafkaTopic(NAMESPACE, "foo", Map.of("foo", "FOO"), null, true, "foo", 2, 1, null),
-                kafkaTopic(NAMESPACE, "foo", Map.of("quux", "QUUX"), null, true, null, 2, 1, null),
+                kafkaTopic(NAMESPACE, "my-topic", Map.of(), null, true, "my-topic", 2, 1, null),
+                kafkaTopic(NAMESPACE, "my-topic", Map.of("foo", "FOO"), null, true, "my-topic", 2, 1, null),
+                kafkaTopic(NAMESPACE, "my-topic", Map.of("quux", "QUUX"), null, true, null, 2, 1, null),
         };
     }
 
@@ -706,8 +702,8 @@ class TopicControllerIT {
                 5L,
                 TimeUnit.SECONDS)) {
             createTopicAndAssertSuccess(kafkaCluster, kt);
-            assertTrue(operator.controller.topics.containsKey("foo")
-                            || operator.controller.topics.containsKey("FOO"),
+            assertTrue(operator.controller.topics.containsKey("my-topic")
+                            || operator.controller.topics.containsKey("MY-TOPIC"),
                     "Expect selected resource to be present in topics map");
 
             // when
@@ -731,8 +727,8 @@ class TopicControllerIT {
         assertEquals(Map.of(), topicConfigMap(expectedTopicName));
 
         Map<String, List<KubeRef>> topics = new HashMap<>(operator.controller.topics);
-        assertFalse(topics.containsKey("foo")
-                        || topics.containsKey("FOO"),
+        assertFalse(topics.containsKey("my-topic")
+                        || topics.containsKey("MY-TOPIC"),
                 "Transition to a non-selected resource should result in removal from topics map: " + topics);
     }
 
@@ -763,8 +759,8 @@ class TopicControllerIT {
         assertUnknownTopic(expectedTopicName);
         assertNull(created.getStatus(), "Expect status not to be set");
         assertTrue(created.getMetadata().getFinalizers().isEmpty());
-        assertFalse(operator.controller.topics.containsKey("foo")
-                        || operator.controller.topics.containsKey("FOO"),
+        assertFalse(operator.controller.topics.containsKey("my-topic")
+                        || operator.controller.topics.containsKey("MY-TOPIC"),
                 "Expect unselected resource to be absent from topics map");
 
         // when
@@ -777,8 +773,8 @@ class TopicControllerIT {
                 readyIsTrue());
 
         // then
-        assertTrue(operator.controller.topics.containsKey("foo")
-                        || operator.controller.topics.containsKey("FOO"),
+        assertTrue(operator.controller.topics.containsKey("my-topic")
+                        || operator.controller.topics.containsKey("MY-TOPIC"),
                 "Expect selected resource to be present in topics map");
 
         assertNotNull(managed.getMetadata().getFinalizers());
@@ -787,8 +783,8 @@ class TopicControllerIT {
         TopicDescription topicDescription = awaitTopicDescription(expectedTopicName);
         assertEquals(3, numPartitions(topicDescription));
 
-        assertTrue(operator.controller.topics.containsKey("foo")
-                        || operator.controller.topics.containsKey("FOO"),
+        assertTrue(operator.controller.topics.containsKey("my-topic")
+                        || operator.controller.topics.containsKey("MY-TOPIC"),
                 "Expect selected resource to be present in topics map");
 
     }
@@ -1863,45 +1859,46 @@ class TopicControllerIT {
     public void shouldFailIfNumPartitionsDivergedWithConfigChange(@BrokerConfig(name = "auto.create.topics.enable", value = "false")
                                                                   KafkaCluster kafkaCluster) throws ExecutionException, InterruptedException, TimeoutException {
         // scenario from https://github.com/strimzi/strimzi-kafka-operator/pull/8627#pullrequestreview-1477513413
+        var firstTopicName = "first";
+        var secondTopicName = "second"; 
+        
+        // create topic
+        LOGGER.info("Create {}", firstTopicName);
+        var firstTopic = kafkaTopic(NAMESPACE, firstTopicName, null, null, 1, 1);
+        firstTopic = createTopicAndAssertSuccess(kafkaCluster, firstTopic);
 
-        // create foo
-        var topicName = randomTopicName();
-        LOGGER.info("Create foo");
-        var foo = kafkaTopic(NAMESPACE, "foo", null, null, 1, 1);
-        var createdFoo = createTopicAndAssertSuccess(kafkaCluster, foo);
-
-        // create conflicting bar
-        LOGGER.info("Create conflicting bar");
-        var bar = kafkaTopic(NAMESPACE, "bar", SELECTOR, null, null, "foo", 1, 1,
-                Map.of(TopicConfig.COMPRESSION_TYPE_CONFIG, "snappy"));
-        var createdBar = createTopic(kafkaCluster, bar);
-        assertTrue(readyIsFalse().test(createdBar));
-        var condition = assertExactlyOneCondition(createdBar);
+        // create conflicting topic
+        LOGGER.info("Create conflicting {}", secondTopicName);
+        var secondTopic = kafkaTopic(NAMESPACE, secondTopicName, SELECTOR, null, null, firstTopicName, 
+                1, 1, Map.of(TopicConfig.COMPRESSION_TYPE_CONFIG, "snappy"));
+        secondTopic = createTopic(kafkaCluster, secondTopic);
+        assertTrue(readyIsFalse().test(secondTopic));
+        var condition = assertExactlyOneCondition(secondTopic);
         assertEquals(TopicOperatorException.Reason.RESOURCE_CONFLICT.reason, condition.getReason());
-        assertEquals(format("Managed by Ref{namespace='%s', name='%s'}", NAMESPACE, "foo"), condition.getMessage());
+        assertEquals(format("Managed by Ref{namespace='%s', name='%s'}", NAMESPACE, firstTopicName), condition.getMessage());
 
-        // increase partitions of foo
-        LOGGER.info("Increase partitions of foo");
-        var editedFoo = modifyTopicAndAwait(createdFoo, theKt ->
+        // increase partitions of topic
+        LOGGER.info("Increase partitions of {}", firstTopicName);
+        var editedFoo = modifyTopicAndAwait(firstTopic, theKt ->
                 new KafkaTopicBuilder(theKt).editSpec().withPartitions(3).endSpec().build(),
             readyIsTrue());
 
-        // unmanage foo
-        LOGGER.info("Unmanage foo");
+        // unmanage topic
+        LOGGER.info("Unmanage {}", firstTopicName);
         var unmanagedFoo = modifyTopicAndAwait(editedFoo, theKt -> 
                 new KafkaTopicBuilder(theKt).editMetadata().addToAnnotations(TopicOperatorUtil.MANAGED, "false").endMetadata().build(), 
             readyIsTrue());
 
-        // when: delete foo
-        LOGGER.info("Delete foo");
+        // when: delete topic
+        LOGGER.info("Delete {}", firstTopicName);
         Crds.topicOperation(client).resource(unmanagedFoo).delete();
         LOGGER.info("Test deleted KafkaTopic {} with resourceVersion {}",
             unmanagedFoo.getMetadata().getName(), BatchingTopicController.resourceVersion(unmanagedFoo));
         Resource<KafkaTopic> resource = Crds.topicOperation(client).resource(unmanagedFoo);
         TopicOperatorTestUtil.waitUntilCondition(resource, Objects::isNull);
 
-        // then: expect bar's unreadiness to be due to mismatching #partitions
-        waitUntil(createdBar, readyIsFalseAndReasonIs(
+        // then: expect conflicting topic's unreadiness to be due to mismatching #partitions
+        waitUntil(secondTopic, readyIsFalseAndReasonIs(
             TopicOperatorException.Reason.NOT_SUPPORTED.reason,
             "Decreasing partitions not supported"));
     }
@@ -1910,8 +1907,8 @@ class TopicControllerIT {
     public void shouldDetectConflictingKafkaTopicCreations(
             @BrokerConfig(name = "auto.create.topics.enable", value = "false")
             KafkaCluster kafkaCluster) throws ExecutionException, InterruptedException {
-        var foo = kafkaTopic("ns", "foo", null, null, 1, 1);
-        var bar = kafkaTopic("ns", "bar", SELECTOR, null, null, "foo", 1, 1,
+        var foo = kafkaTopic(NAMESPACE, "foo", null, null, 1, 1);
+        var bar = kafkaTopic(NAMESPACE, "bar", SELECTOR, null, null, "foo", 1, 1,
             Map.of(TopicConfig.COMPRESSION_TYPE_CONFIG, "snappy"));
 
         LOGGER.info("Create conflicting topics: foo and bar");
@@ -1935,7 +1932,8 @@ class TopicControllerIT {
         // the error message should refer to the ready resource name
         var condition = assertExactlyOneCondition(failed);
         assertEquals(TopicOperatorException.Reason.RESOURCE_CONFLICT.reason, condition.getReason());
-        assertEquals(format("Managed by Ref{namespace='ns', name='%s'}", ready.getMetadata().getName()), condition.getMessage());
+        assertEquals(format("Managed by Ref{namespace='%s', name='%s'}", 
+            ready.getMetadata().getNamespace(), ready.getMetadata().getName()), condition.getMessage());
 
         // the failed resource should become ready after we unmanage and delete the other
         LOGGER.info("Unmanage {}", ready.getMetadata().getName());

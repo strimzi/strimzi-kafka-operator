@@ -45,7 +45,7 @@ import static org.mockito.Mockito.mock;
 
 @ExtendWith(KafkaClusterExtension.class)
 public class TopicOperatorMetricsTest {
-    private static final String NAMESPACE = "ns";
+    private static final String NAMESPACE = "topic-operator-test";
     private static final int MAX_QUEUE_SIZE = 200;
     private static final int MAX_BATCH_SIZE = 10;
     private static final int MAX_THREADS = 2;
@@ -90,11 +90,11 @@ public class TopicOperatorMetricsTest {
         }
         assertMetricMatches("strimzi.resources", tags, "gauge", is(0.0));
 
-        KafkaTopic foo1 = createKafkaTopic("foo", "100100");
+        KafkaTopic foo1 = createKafkaTopic("my-topic", "100100");
         eventHandler.onAdd(foo1);
         assertMetricMatches("strimzi.resources.paused", tags, "gauge", is(0.0));
 
-        KafkaTopic foo2 = createKafkaTopic("foo", "100100");
+        KafkaTopic foo2 = createKafkaTopic("my-topic", "100100");
         foo2.getMetadata().setAnnotations(Map.of(ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true"));
         eventHandler.onUpdate(foo1, foo2);
         assertMetricMatches("strimzi.resources.paused", tags, "gauge", is(1.0));
@@ -102,7 +102,7 @@ public class TopicOperatorMetricsTest {
         eventHandler.onUpdate(foo1, foo1);
         assertMetricMatches("strimzi.resources.paused", tags, "gauge", is(1.0));
 
-        KafkaTopic foo3 = createKafkaTopic("foo", "100100");
+        KafkaTopic foo3 = createKafkaTopic("my-topic", "100100");
         foo3.getMetadata().setAnnotations(Map.of(ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "false"));
         eventHandler.onUpdate(foo2, foo3);
         assertMetricMatches("strimzi.resources.paused", tags, "gauge", is(0.0));
