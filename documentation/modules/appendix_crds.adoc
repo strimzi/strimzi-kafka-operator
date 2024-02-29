@@ -1331,7 +1331,7 @@ Used in: xref:type-TieredStorageCustom-{context}[`TieredStorageCustom`]
 |The class path for the 'RemoteStorageManager' implementation.
 |config
 |map
-|The additional configuration map for the 'RemoteStorageManager' implementation.Keys will be automatically prefixed with `rsm.config.`, and added to Kafka broker configuration.
+|The additional configuration map for the 'RemoteStorageManager' implementation. Keys will be automatically prefixed with `rsm.config.`, and added to Kafka broker configuration.
 |====
 
 [id='type-ZookeeperClusterSpec-{context}']

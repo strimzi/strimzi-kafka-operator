@@ -65,7 +65,7 @@ public class RemoteStorageManager implements UnknownPropertyPreserving, Serializ
         this.classPath = classPath;
     }
 
-    @Description("The additional configuration map for the 'RemoteStorageManager' implementation." +
+    @Description("The additional configuration map for the 'RemoteStorageManager' implementation. " +
         "Keys will be automatically prefixed with `rsm.config.`, and added to Kafka broker configuration.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public Map<String, String> getConfig() {

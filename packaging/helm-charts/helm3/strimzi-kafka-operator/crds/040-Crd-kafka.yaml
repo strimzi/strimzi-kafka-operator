@@ -1863,7 +1863,7 @@ spec:
                               additionalProperties:
                                 type: string
                               type: object
-                              description: "The additional configuration map for the 'RemoteStorageManager' implementation.Keys will be automatically prefixed with `rsm.config.`, and added to Kafka broker configuration."
+                              description: "The additional configuration map for the 'RemoteStorageManager' implementation. Keys will be automatically prefixed with `rsm.config.`, and added to Kafka broker configuration."
                           description: Configuration for the Remote Storage Manager.
                         type:
                           type: string
