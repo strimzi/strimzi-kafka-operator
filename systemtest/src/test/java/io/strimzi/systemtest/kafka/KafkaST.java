@@ -31,8 +31,6 @@ import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
-import io.strimzi.api.kafka.model.topic.KafkaTopic;
-import io.strimzi.api.kafka.model.topic.KafkaTopicList;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
@@ -487,6 +485,10 @@ class KafkaST extends AbstractST {
         List<String> remainingPVCNames =  kubeClient().listPersistentVolumeClaims(testStorage.getNamespaceName(), testStorage.getClusterName()).stream().map(e -> e.getMetadata().getName()).toList();
         brokerPods.keySet().forEach(broker -> assertThat("Kafka Broker: " + broker + " does not preserve its JBOD storage's PVC",
             remainingPVCNames.stream().anyMatch(e -> e.equals("data-0-" + broker))));
+
+        // Delete PVCs
+        kubeClient().getClient().persistentVolumeClaims().inNamespace(testStorage.getNamespaceName()).list();
+        kubeClient().getClient().persistentVolumeClaims().inNamespace(testStorage.getNamespaceName()).delete();
     }
 
     @ParallelNamespaceTest
@@ -867,6 +869,9 @@ class KafkaST extends AbstractST {
             kafkaClients.consumerStrimzi()
         );
         ClientUtils.waitForClientsSuccess(testStorage);
+        // Delete pvcs
+        kubeClient().getClient().persistentVolumeClaims().inNamespace(testStorage.getNamespaceName()).list();
+        kubeClient().getClient().persistentVolumeClaims().inNamespace(testStorage.getNamespaceName()).delete();
     }
 
     /**
@@ -1189,20 +1194,6 @@ class KafkaST extends AbstractST {
 
     protected void afterEachMayOverride() {
         resourceManager.deleteResources();
-
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
-
-        if (KafkaResource.kafkaClient().inNamespace(testStorage.getNamespaceName()).withName(OPENSHIFT_CLUSTER_NAME).get() != null) {
-            cmdKubeClient(testStorage.getNamespaceName()).deleteByName(Kafka.RESOURCE_KIND, OPENSHIFT_CLUSTER_NAME);
-        }
-
-        kubeClient(testStorage.getNamespaceName()).listPods(testStorage.getNamespaceName()).stream()
-            .filter(p -> p.getMetadata().getName().startsWith(OPENSHIFT_CLUSTER_NAME))
-            .forEach(p -> PodUtils.deletePodWithWait(p.getMetadata().getNamespace(), p.getMetadata().getName()));
-
-        kubeClient(testStorage.getNamespaceName()).getClient().resources(KafkaTopic.class, KafkaTopicList.class).inNamespace(testStorage.getNamespaceName()).delete();
-        kubeClient(testStorage.getNamespaceName()).getClient().persistentVolumeClaims().inNamespace(testStorage.getNamespaceName()).delete();
-
         testSuiteNamespaceManager.deleteParallelNamespace();
     }
 

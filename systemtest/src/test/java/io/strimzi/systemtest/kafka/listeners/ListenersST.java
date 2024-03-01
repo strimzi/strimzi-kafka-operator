@@ -51,7 +51,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.x509.GeneralName;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 
@@ -2515,12 +2514,6 @@ public class ListenersST extends AbstractST {
             assertThat(certificate.toString(), containsString(advertHostInternalList.get(index)));
             assertThat(certificate.toString(), containsString(advertHostExternalList.get(index++)));
         }
-    }
-
-    @AfterEach
-    void afterEach() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
-        kubeClient(testStorage.getNamespaceName()).getClient().persistentVolumeClaims().inNamespace(testStorage.getNamespaceName()).delete();
     }
 
     private ASN1Encodable[] retrieveKafkaBrokerSANs(final TestStorage testStorage) {
