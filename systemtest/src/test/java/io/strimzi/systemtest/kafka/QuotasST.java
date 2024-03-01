@@ -16,6 +16,7 @@ import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
+import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
 import io.strimzi.test.WaitException;
 import org.hamcrest.CoreMatchers;
@@ -87,8 +88,8 @@ public class QuotasST extends AbstractST {
 
     @AfterEach
     void afterEach() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
-        kubeClient(testStorage.getNamespaceName()).getClient().persistentVolumeClaims().inNamespace(testStorage.getNamespaceName()).delete();
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(Environment.TEST_SUITE_NAMESPACE, ResourceManager.getTestContext());
+        kubeClient().getClient().persistentVolumeClaims().inNamespace(namespaceName).delete();
     }
 
     @BeforeAll
