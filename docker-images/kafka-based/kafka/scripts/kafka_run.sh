@@ -57,7 +57,7 @@ echo ""
 
 STRIMZI_KAFKA_METADATA_CONFIG_STATE=$(cat "$KAFKA_HOME"/custom-config/metadata.state)
 echo "Kafka metadata config state [${STRIMZI_KAFKA_METADATA_CONFIG_STATE}]"
-echo $STRIMZI_KAFKA_METADATA_CONFIG_STATE > /tmp/kafka/strimzi.kafka.metadata.config.state
+echo "$STRIMZI_KAFKA_METADATA_CONFIG_STATE" > /tmp/kafka/strimzi.kafka.metadata.config.state
 
 source ./kraft_utils.sh
 USE_KRAFT=$(useKRaft)
