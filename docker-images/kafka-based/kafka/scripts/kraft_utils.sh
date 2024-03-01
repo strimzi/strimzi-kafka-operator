@@ -8,7 +8,7 @@ set -e
 # It returns "true" if the current node is using KRaft, "false" otherwise
 #
 function useKRaft {
-  STRIMZI_KAFKA_METADATA_CONFIG_STATE=$(cat /tmp/strimzi.kafka.metadata.config.state)
+  STRIMZI_KAFKA_METADATA_CONFIG_STATE=$(cat /tmp/kafka/strimzi.kafka.metadata.config.state)
 
   file=/tmp/strimzi.properties
   test -f $file
