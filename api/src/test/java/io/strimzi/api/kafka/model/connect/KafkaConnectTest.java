@@ -3,19 +3,19 @@
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
 package io.strimzi.api.kafka.model.connect;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
 
-import io.strimzi.api.kafka.model.AbstractCrdTest;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
-
+import io.strimzi.api.kafka.model.AbstractCrdTest;
 import io.strimzi.api.kafka.model.common.template.MetadataTemplate;
 import io.strimzi.api.kafka.model.common.template.ResourceTemplate;
 import io.strimzi.api.kafka.model.kafka.SingleVolumeStorage;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 /**
  * The purpose of this test is to ensure:
  *
