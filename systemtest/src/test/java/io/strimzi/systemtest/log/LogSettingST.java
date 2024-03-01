@@ -237,8 +237,8 @@ class LogSettingST extends AbstractST {
 
         KafkaResource.replaceKafkaResourceInSpecificNamespace(LOG_SETTING_CLUSTER_NAME, kafka -> {
             kafka.getSpec().getKafka().setJvmOptions(JVM_OPTIONS);
-            kafka.getSpec().getZookeeper().setJvmOptions(JVM_OPTIONS);
             if (!Environment.isKRaftModeEnabled()) {
+                kafka.getSpec().getZookeeper().setJvmOptions(JVM_OPTIONS);
                 kafka.getSpec().getEntityOperator().getTopicOperator().setJvmOptions(JVM_OPTIONS);
             }
             kafka.getSpec().getEntityOperator().getUserOperator().setJvmOptions(JVM_OPTIONS);
