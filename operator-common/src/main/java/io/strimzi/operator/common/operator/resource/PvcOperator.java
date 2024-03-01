@@ -28,6 +28,8 @@ public class PvcOperator extends AbstractNamespacedResourceOperator<KubernetesCl
                     "|/metadata/annotations/volume.kubernetes.io~1.*" +
                     "|/metadata/finalizers" +
                     "|/metadata/creationTimestamp" +
+                    "|/metadata/deletionTimestamp" +
+                    "|/metadata/deletionGracePeriodSeconds" +
                     "|/metadata/resourceVersion" +
                     "|/metadata/generation" +
                     "|/metadata/uid" +
