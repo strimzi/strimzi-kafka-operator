@@ -748,6 +748,7 @@ public class OauthPlainST extends OauthAbstractST {
             .withNamespaceName(Environment.TEST_SUITE_NAMESPACE)
             .withProducerName(bridgeProducerName)
             .withBootstrapAddress(KafkaBridgeResources.serviceName(oauthClusterName))
+            .withComponentName(KafkaBridgeResources.componentName(oauthClusterName))
             .withTopicName(testStorage.getTopicName())
             .withMessageCount(testStorage.getMessageCount())
             .withPort(HTTP_BRIDGE_DEFAULT_PORT)

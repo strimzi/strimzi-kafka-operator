@@ -483,6 +483,7 @@ public class OauthPasswordGrantsST extends OauthAbstractST {
         BridgeClients kafkaBridgeClientJob = new BridgeClientsBuilder()
             .withProducerName(producerName)
             .withBootstrapAddress(KafkaBridgeResources.serviceName(oauthClusterName))
+            .withComponentName(KafkaBridgeResources.componentName(oauthClusterName))
             .withTopicName(testStorage.getTopicName())
             .withMessageCount(testStorage.getMessageCount())
             .withPort(HTTP_BRIDGE_DEFAULT_PORT)

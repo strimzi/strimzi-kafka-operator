@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyBuilder;
 import io.fabric8.kubernetes.client.CustomResource;
+import io.strimzi.api.kafka.model.bridge.KafkaBridge;
 import io.strimzi.api.kafka.model.common.Spec;
 import io.strimzi.api.kafka.model.kafka.Status;
 import io.strimzi.systemtest.Environment;
@@ -25,6 +26,8 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.List;
 
+import static io.strimzi.api.ResourceLabels.STRIMZI_KIND_LABEL;
+import static io.strimzi.api.ResourceLabels.STRIMZI_NAME_LABEL;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
@@ -87,6 +90,44 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
         LOGGER.debug("Creating NetworkPolicy: {}", networkPolicy.toString());
         ResourceManager.getInstance().createResourceWithWait(networkPolicy);
         LOGGER.info("Network policy for LabelSelector {} successfully created", labelSelector);
+    }
+
+    public static void allowNetworkPolicySettingsForBridgeClients(String namespace, String clientName, LabelSelector clientLabelSelector, String componentName) {
+        LOGGER.info("Apply NetworkPolicy access to Kafka Bridge {} from client Pods with LabelSelector {}", componentName, clientLabelSelector);
+
+        NetworkPolicy networkPolicy = NetworkPolicyTemplates.networkPolicyBuilder(namespace, clientName, clientLabelSelector)
+            .editSpec()
+                .withNewPodSelector()
+                    .addToMatchLabels(STRIMZI_KIND_LABEL, KafkaBridge.RESOURCE_KIND)
+                    .addToMatchLabels(STRIMZI_NAME_LABEL, componentName)
+                .endPodSelector()
+            .endSpec()
+            .build();
+
+        LOGGER.debug("Creating NetworkPolicy: {}", networkPolicy.toString());
+        ResourceManager.getInstance().createResourceWithWait(networkPolicy);
+        LOGGER.info("Network policy for LabelSelector {} successfully created", clientLabelSelector);
+    }
+
+    public static void allowNetworkPolicySettingsForBridgeScraper(String namespace, String scraperPodName, String componentName) {
+        LabelSelector scraperLabelSelector = new LabelSelectorBuilder()
+                    .addToMatchLabels(TestConstants.SCRAPER_LABEL_KEY, TestConstants.SCRAPER_LABEL_VALUE)
+                    .build();
+
+        LOGGER.info("Apply NetworkPolicy access to Kafka Bridge {} from scraper Pods with LabelSelector {}", componentName, scraperLabelSelector);
+
+        NetworkPolicy networkPolicy = NetworkPolicyTemplates.networkPolicyBuilder(namespace, scraperPodName, scraperLabelSelector)
+            .editSpec()
+                .withNewPodSelector()
+                    .addToMatchLabels(STRIMZI_KIND_LABEL, KafkaBridge.RESOURCE_KIND)
+                    .addToMatchLabels(STRIMZI_NAME_LABEL, componentName)
+                .endPodSelector()
+            .endSpec()
+            .build();
+
+        LOGGER.debug("Creating NetworkPolicy: {}", networkPolicy.toString());
+        ResourceManager.getInstance().createResourceWithWait(networkPolicy);
+        LOGGER.info("Network policy for LabelSelector {} successfully created", scraperLabelSelector);
     }
 
     /**

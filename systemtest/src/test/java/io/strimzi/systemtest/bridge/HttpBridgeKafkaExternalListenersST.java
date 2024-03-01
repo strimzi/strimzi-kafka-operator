@@ -151,6 +151,7 @@ public class HttpBridgeKafkaExternalListenersST extends AbstractST {
             .withProducerName(testStorage.getClusterName() + "-" + producerName)
             .withConsumerName(testStorage.getClusterName() + "-" + consumerName)
             .withBootstrapAddress(KafkaBridgeResources.serviceName(testStorage.getClusterName()))
+            .withComponentName(KafkaBridgeResources.componentName(testStorage.getClusterName()))
             .withTopicName(testStorage.getTopicName())
             .withMessageCount(testStorage.getMessageCount())
             .withPort(TestConstants.HTTP_BRIDGE_DEFAULT_PORT)

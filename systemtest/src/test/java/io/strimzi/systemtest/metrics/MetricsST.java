@@ -550,6 +550,9 @@ public class MetricsST extends AbstractST {
                     .endMetadata()
                     .build());
 
+        // Allow connections from scraper to Bridge pods when NetworkPolicies are set to denied by default
+        NetworkPolicyResource.allowNetworkPolicySettingsForBridgeScraper(namespaceFirst, scraperPodName, KafkaBridgeResources.componentName(bridgeClusterName));
+
         MetricsCollector bridgeCollector = kafkaCollector.toBuilder()
             .withComponentName(bridgeClusterName)
             .withComponentType(ComponentType.KafkaBridge)
@@ -561,6 +564,7 @@ public class MetricsST extends AbstractST {
             .withProducerName(testStorage.getProducerName())
             .withConsumerName(testStorage.getConsumerName())
             .withBootstrapAddress(KafkaBridgeResources.serviceName(bridgeClusterName))
+            .withComponentName(KafkaBridgeResources.componentName(bridgeClusterName))
             .withTopicName(bridgeTopicName)
             .withMessageCount(testStorage.getMessageCount())
             .withPort(TestConstants.HTTP_BRIDGE_DEFAULT_PORT)
