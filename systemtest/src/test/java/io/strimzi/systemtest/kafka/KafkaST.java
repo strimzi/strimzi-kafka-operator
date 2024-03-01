@@ -169,7 +169,8 @@ class KafkaST extends AbstractST {
                     .build()
             )
         );
-        resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 1, 1)
+
+        Kafka kafka = KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 1, 1)
             .editSpec()
                 .editKafka()
                     .withResources(brokersResReq)
@@ -210,7 +211,16 @@ class KafkaST extends AbstractST {
                     .endUserOperator()
                 .endEntityOperator()
             .endSpec()
-            .build());
+            .build();
+
+        if (Environment.isKRaftModeEnabled()) {
+            kafka.getSpec().setZookeeper(null);
+            if (!Environment.isUnidirectionalTopicOperatorEnabled()) {
+                kafka.getSpec().getEntityOperator().setTopicOperator(null);
+            }
+        }
+
+        resourceManager.createResourceWithWait(kafka);
 
         // Make snapshots for Kafka cluster to make sure that there is no rolling update after CO reconciliation
         final String eoDepName = KafkaResources.entityOperatorDeploymentName(testStorage.getClusterName());
@@ -1052,7 +1062,10 @@ class KafkaST extends AbstractST {
                 .build();
 
         if (Environment.isKRaftModeEnabled()) {
-            kafka.getSpec().getEntityOperator().getTemplate().setTopicOperatorContainer(null);
+            kafka.getSpec().setZookeeper(null);
+            if (!Environment.isUnidirectionalTopicOperatorEnabled()) {
+                kafka.getSpec().getEntityOperator().getTemplate().setTopicOperatorContainer(null);
+            }
         }
 
         resourceManager.createResourceWithWait(

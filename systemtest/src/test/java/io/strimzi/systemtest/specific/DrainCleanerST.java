@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.specific;
 
+import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
@@ -60,7 +61,7 @@ public class DrainCleanerST extends AbstractST {
                 KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), replicas).build()
             )
         );
-        resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), replicas)
+        Kafka kafka = KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), replicas)
             .editMetadata()
                 .withNamespace(TestConstants.DRAIN_CLEANER_NAMESPACE)
             .endMetadata()
@@ -80,8 +81,13 @@ public class DrainCleanerST extends AbstractST {
                     .endTemplate()
                 .endZookeeper()
             .endSpec()
-            .build());
+            .build();
 
+        if (Environment.isKRaftModeEnabled()) {
+            kafka.getSpec().setZookeeper(null);
+        }
+
+        resourceManager.createResourceWithWait(kafka);
         resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), TestConstants.DRAIN_CLEANER_NAMESPACE).build());
         drainCleaner.createDrainCleaner();
 

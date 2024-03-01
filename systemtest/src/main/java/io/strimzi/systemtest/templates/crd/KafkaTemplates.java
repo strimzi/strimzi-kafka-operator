@@ -60,7 +60,7 @@ public class KafkaTemplates {
 
     public static KafkaBuilder kafkaEphemeralWithoutNodePools(String clusterName, int kafkaReplicas, int zookeeperReplicas) {
         Kafka kafka = getKafkaFromYaml(TestConstants.PATH_TO_KAFKA_EPHEMERAL_CONFIG, false);
-        return defaultKafka(kafka, clusterName, kafkaReplicas, zookeeperReplicas);
+        return defaultKafkaWithoutNodePools(kafka, clusterName, kafkaReplicas, zookeeperReplicas);
     }
 
     public static KafkaBuilder kafkaEphemeralNodePools(String clusterName, int kafkaReplicas, int zookeeperReplicas) {
@@ -106,7 +106,7 @@ public class KafkaTemplates {
     public static KafkaBuilder kafkaPersistentWithoutNodePools(String clusterName, int kafkaReplicas, int zookeeperReplicas) {
         Kafka kafka = getKafkaFromYaml(TestConstants.PATH_TO_KAFKA_EPHEMERAL_CONFIG, false);
 
-        return defaultKafka(kafka, clusterName, kafkaReplicas, zookeeperReplicas)
+        return defaultKafkaWithoutNodePools(kafka, clusterName, kafkaReplicas, zookeeperReplicas)
             .editSpec()
                 .editKafka()
                     .withNewPersistentClaimStorage()
@@ -168,7 +168,7 @@ public class KafkaTemplates {
         Kafka kafka = getKafkaFromYaml(TestConstants.PATH_TO_KAFKA_METRICS_CONFIG, false);
         String configMapName = clusterName + METRICS_KAFKA_CONFIG_MAP_SUFFIX;
 
-        return defaultKafka(kafka, clusterName, kafkaReplicas, zookeeperReplicas)
+        KafkaBuilder kafkaBuilder = defaultKafka(kafka, clusterName, kafkaReplicas, zookeeperReplicas)
             .editMetadata()
                 .withNamespace(namespaceName)
             .endMetadata()
@@ -182,14 +182,22 @@ public class KafkaTemplates {
                         .endValueFrom()
                     .endJmxPrometheusExporterMetricsConfig()
                 .endKafka()
-                .editZookeeper()
-                    .withNewJmxPrometheusExporterMetricsConfig()
-                        .withNewValueFrom()
-                            .withNewConfigMapKeyRef(ZOOKEEPER_METRICS_CONFIG_REF_KEY, configMapName, false)
-                        .endValueFrom()
-                    .endJmxPrometheusExporterMetricsConfig()
-                .endZookeeper()
             .endSpec();
+
+        if (!Environment.isKRaftModeEnabled()) {
+            kafkaBuilder
+                .editSpec()
+                    .editZookeeper()
+                        .withNewJmxPrometheusExporterMetricsConfig()
+                            .withNewValueFrom()
+                                .withNewConfigMapKeyRef(ZOOKEEPER_METRICS_CONFIG_REF_KEY, configMapName, false)
+                            .endValueFrom()
+                        .endJmxPrometheusExporterMetricsConfig()
+                    .endZookeeper()
+                .endSpec();
+        }
+
+        return kafkaBuilder;
     }
 
     public static KafkaBuilder kafkaWithMetricsAndCruiseControlWithMetrics(String namespaceName, String clusterName, int kafkaReplicas, int zookeeperReplicas) {

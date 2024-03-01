@@ -128,10 +128,9 @@ public class FeatureGatesST extends AbstractST {
         setupClusterOperatorWithFeatureGate("+KafkaNodePools,-UseKRaft");
 
         LOGGER.info("Deploying Kafka Cluster: {}/{} controlled by KafkaNodePool: {}", testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getBrokerPoolName());
-        final Kafka kafkaCr = KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), kafkaReplicas, 3)
+        final Kafka kafkaCr = KafkaTemplates.kafkaPersistentNodePools(testStorage.getClusterName(), kafkaReplicas, 3)
             .editOrNewMetadata()
                 .withNamespace(testStorage.getNamespaceName())
-                .addToAnnotations(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled")
             .endMetadata()
             .build();
         
