@@ -1841,6 +1841,22 @@ spec:
                             description: Annotations added to the Kubernetes resource.
                         description: Metadata applied to the resource.
                     description: Template for Secret of the Kafka Connect Cluster JMX authentication.
+                  persistentVolumeClaim:
+                    type: object
+                    properties:
+                      metadata:
+                        type: object
+                        properties:
+                          labels:
+                            x-kubernetes-preserve-unknown-fields: true
+                            type: object
+                            description: Labels added to the Kubernetes resource.
+                          annotations:
+                            x-kubernetes-preserve-unknown-fields: true
+                            type: object
+                            description: Annotations added to the Kubernetes resource.
+                        description: Metadata applied to the resource.
+                    description: Template for the Kafka Connect Persistent volume claim.
                 description: "Template for Kafka Connect and Kafka Mirror Maker 2 resources. The template allows users to specify how the `Pods`, `Service`, and other services are generated."
               externalConfiguration:
                 type: object
@@ -1935,6 +1951,57 @@ spec:
                       - name
                     description: Makes data from a Secret or ConfigMap available in the Kafka Connect pods as volumes.
                 description: Pass data from Secrets or ConfigMaps to the Kafka Connect pods and use them to configure connectors.
+              storage:
+                type: object
+                properties:
+                  accessMode:
+                    type: string
+                    description: The storage access mode to use.
+                  class:
+                    type: string
+                    description: The storage class to use for dynamic volume allocation.
+                  deleteClaim:
+                    type: boolean
+                    description: Specifies if the persistent volume claim has to be deleted when the cluster is un-deployed.
+                  id:
+                    type: integer
+                    minimum: 0
+                    description: Storage identification number. It is mandatory only for storage volumes defined in a storage of type 'jbod'.
+                  mountPath:
+                    type: string
+                    description: "The mount path to use, overriding the default /var/lib/kafka/data."
+                  overrides:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        class:
+                          type: string
+                          description: The storage class to use for dynamic volume allocation for this broker.
+                        broker:
+                          type: integer
+                          description: Id of the kafka broker (broker identifier).
+                    description: Overrides for individual brokers. The `overrides` field allows to specify a different configuration for different brokers.
+                  selector:
+                    x-kubernetes-preserve-unknown-fields: true
+                    type: object
+                    description: Specifies a specific persistent volume to use. It contains key:value pairs representing labels for selecting such a volume.
+                  size:
+                    type: string
+                    description: "When type=persistent-claim, defines the size of the persistent volume claim (i.e 1Gi). Mandatory when type=persistent-claim."
+                  sizeLimit:
+                    type: string
+                    pattern: "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"
+                    description: "When type=ephemeral, defines the total amount of local storage required for this EmptyDir volume (for example 1Gi)."
+                  type:
+                    type: string
+                    enum:
+                    - ephemeral
+                    - persistent-claim
+                    description: "Storage type, must be either 'ephemeral' or 'persistent-claim'."
+                required:
+                - type
+                description: Storage configuration (disk). Cannot be updated.
               build:
                 type: object
                 properties:
@@ -2066,6 +2133,7 @@ spec:
                 description: Metrics configuration.
             required:
             - bootstrapServers
+            - storage
             description: The specification of the Kafka Connect cluster.
           status:
             type: object

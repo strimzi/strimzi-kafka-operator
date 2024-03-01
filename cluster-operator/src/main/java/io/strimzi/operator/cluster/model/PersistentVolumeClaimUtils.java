@@ -54,6 +54,35 @@ public class PersistentVolumeClaimUtils {
             OwnerReference ownerReference,
             ResourceTemplate template
     )   {
+            return createPersistentVolumeClaims(namespace, nodes, storage, jbod, labels, ownerReference, template, "ReadWriteOnce");
+        }
+
+        /**
+         * Creates list of PersistentVolumeClaims required by stateful deployments (Kafka and Zoo). This method calls itself
+         * recursively to handle volumes inside JBOD storage. When it calls itself to handle the volumes inside JBOD array,
+         * the {@code jbod} flag should be set to {@code true}. When called from outside, it should be set to {@code false}.
+         *
+         * @param namespace         Namespace of the PVC
+         * @param nodes             List of node references for which the PCX should be generated
+         * @param storage           The user supplied configuration of the PersistentClaimStorage
+         * @param jbod              Indicator whether the {@code storage} is part of JBOD array or not
+         * @param labels            Labels of the PVC
+         * @param ownerReference    OwnerReference of the PVC
+         * @param template          PVC template with user's custom configuration
+         * @param accessMode        Access Mode
+         *
+         * @return  List with Persistent Volume Claims
+         */
+        public static List<PersistentVolumeClaim> createPersistentVolumeClaims(
+                String namespace,
+                Set<NodeRef> nodes,
+                Storage storage,
+                boolean jbod,
+                Labels labels,
+                OwnerReference ownerReference,
+                ResourceTemplate template,
+                String accessMode
+    )   {
         List<PersistentVolumeClaim> pvcs = new ArrayList<>();
 
         if (storage != null) {
@@ -61,12 +90,12 @@ public class PersistentVolumeClaimUtils {
                 String namePrefix = VolumeUtils.createVolumePrefix(persistentStorage.getId(), jbod);
 
                 for (NodeRef node : nodes) {
-                    pvcs.add(createPersistentVolumeClaim(namePrefix + "-" + node.podName(), namespace, node.nodeId(), persistentStorage, labels, ownerReference, template));
+                    pvcs.add(createPersistentVolumeClaim(namePrefix + "-" + node.podName(), namespace, node.nodeId(), persistentStorage, labels, ownerReference, template, accessMode));
                 }
             } else if (storage instanceof JbodStorage jbodStorage) {
                 for (SingleVolumeStorage volume : jbodStorage.getVolumes()) {
                     // it's called recursively for setting the information from the current volume
-                    pvcs.addAll(createPersistentVolumeClaims(namespace, nodes, volume, true, labels, ownerReference, template));
+                    pvcs.addAll(createPersistentVolumeClaims(namespace, nodes, volume, true, labels, ownerReference, template, accessMode));
                 }
             }
         }
@@ -124,7 +153,8 @@ public class PersistentVolumeClaimUtils {
             PersistentClaimStorage storage,
             Labels labels,
             OwnerReference ownerReference,
-            ResourceTemplate template
+            ResourceTemplate template,
+            String accessMode
     ) {
         Map<String, Quantity> requests = new HashMap<>(1);
         requests.put("storage", new Quantity(storage.getSize(), null));
@@ -142,7 +172,7 @@ public class PersistentVolumeClaimUtils {
                     .withAnnotations(Util.mergeLabelsOrAnnotations(Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_DELETE_CLAIM, Boolean.toString(storage.isDeleteClaim())), TemplateUtils.annotations(template)))
                 .endMetadata()
                 .withNewSpec()
-                    .withAccessModes("ReadWriteOnce")
+                    .withAccessModes(accessMode)
                     .withNewResources()
                         .withRequests(requests)
                     .endResources()

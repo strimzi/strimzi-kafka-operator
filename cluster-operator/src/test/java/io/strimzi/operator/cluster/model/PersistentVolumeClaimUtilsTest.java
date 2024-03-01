@@ -66,6 +66,39 @@ public class PersistentVolumeClaimUtilsTest {
         THREE_NODES.add(new NodeRef(NAME + "-" + 1, 1, null, false, true));
         THREE_NODES.add(new NodeRef(NAME + "-" + 2, 2, null, false, true));
     }
+    
+    @ParallelTest
+    public void testCreatePersistentVolumeClaimsWithAccessMode() {
+      // Arrange
+      String namespace = "test-namespace";
+      Set < NodeRef > nodes = new LinkedHashSet < > ();
+      nodes.add(new NodeRef("test-node", 0, null, false, true));
+      Storage storage = new PersistentClaimStorageBuilder()
+        .withStorageClass("test-storage-class")
+        .withSize("100Gi")
+        .build();
+      boolean jbod = false;
+      Labels labels = Labels.forStrimziKind("test-kind");
+      OwnerReference ownerReference = new OwnerReferenceBuilder()
+        .withApiVersion("v1")
+        .withKind("test-kind")
+        .withName("test-cluster")
+        .withUid("test-uid")
+        .withBlockOwnerDeletion(false)
+        .withController(false)
+        .build();
+      ResourceTemplate template = new ResourceTemplateBuilder().build();
+      String accessMode = "ReadWriteMany";
+
+      // Act
+      List < PersistentVolumeClaim > pvcs = PersistentVolumeClaimUtils.createPersistentVolumeClaims(
+        namespace, nodes, storage, jbod, labels, ownerReference, template, accessMode);
+
+      // Assert
+      assertThat(pvcs.size(), is(1));
+      PersistentVolumeClaim pvc = pvcs.get(0);
+      assertThat(pvc.getSpec().getAccessModes().get(0), is(accessMode));
+    }
 
     @ParallelTest
     public void testEphemeralStorage()  {

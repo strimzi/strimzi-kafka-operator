@@ -35,6 +35,8 @@ public class PersistentClaimStorage extends SingleVolumeStorage {
     private Map<String, String> selector;
     private boolean deleteClaim;
     private List<PersistentClaimStorageOverride> overrides;
+    private String mountPath;
+    private String accessMode;
 
     private Integer id;
 
@@ -108,5 +110,23 @@ public class PersistentClaimStorage extends SingleVolumeStorage {
 
     public void setOverrides(List<PersistentClaimStorageOverride> overrides) {
         this.overrides = overrides;
+    }
+
+    @Description("The mount path to use, overriding the default /var/lib/kafka/data.")
+    public String getMountPath() {
+        return mountPath;
+    }
+
+    public void setMountPath(String mountPath) {
+        this.mountPath = mountPath;
+    }
+
+    @Description("The storage access mode to use.")
+    public String getAccessMode() {
+        return accessMode;
+    }
+
+    public void setAccessMode(String accessMode) {
+        this.accessMode = accessMode;
     }
 }
