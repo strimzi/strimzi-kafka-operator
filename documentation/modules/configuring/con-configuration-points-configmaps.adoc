@@ -27,14 +27,14 @@ You add the reference to the `logging` configuration.
 .Example ConfigMap for logging
 [source,shell,subs="+quotes,attributes"]
 ----
-spec:
-  # ...
-  logging:
-    type: external
-    valueFrom:
-      configMapKeyRef:
-        name: my-config-map
-        key: my-config-map-key
+# ...
+logging:
+  type: external
+  valueFrom:
+    configMapKeyRef:
+      name: my-config-map
+      key: my-config-map-key
+# ...
 ----
 
 To use a ConfigMap for metrics configuration, you add a reference to the `metricsConfig` configuration of the component in the same way.

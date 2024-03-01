@@ -56,14 +56,14 @@ kafka.root.logger.level="INFO"
 +
 [source,shell,subs="+quotes,attributes"]
 ----
-spec:
-  # ...
-  logging:
-    type: external
-    valueFrom:
-      configMapKeyRef:
-        name: logging-configmap
-        key: log4j.properties
+# ...
+logging:
+  type: external
+  valueFrom:
+    configMapKeyRef:
+      name: logging-configmap
+      key: log4j.properties
+# ...
 ----
 
 . Create or update the resource.
