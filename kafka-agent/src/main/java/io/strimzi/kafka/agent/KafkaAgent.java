@@ -61,6 +61,7 @@ public class KafkaAgent {
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaAgent.class);
     private static final String BROKER_STATE_PATH = "/v1/broker-state";
     private static final String READINESS_ENDPOINT_PATH = "/v1/ready";
+    private static final String KRAFT_MIGRATION_PATH = "/v1/kraft-migration";
     private static final int HTTPS_PORT = 8443;
     private static final int HTTP_PORT = 8080;
     private static final long GRACEFUL_SHUTDOWN_TIMEOUT_MS = 30 * 1000;
@@ -83,6 +84,7 @@ public class KafkaAgent {
     private Gauge remainingSegmentsToRecover;
     private MetricName sessionStateName;
     private Gauge sessionState;
+    private Gauge zkMigrationState;
     private boolean pollerRunning;
 
     /**
@@ -110,11 +112,13 @@ public class KafkaAgent {
      * @param brokerState                 Current state of the broker
      * @param remainingLogsToRecover      Number of remaining logs to recover
      * @param remainingSegmentsToRecover  Number of remaining segments to recover
+     * @param zkMigrationState            Current state of the ZooKeeper to KRaft migration
      */
-    /* test */ KafkaAgent(Gauge brokerState, Gauge remainingLogsToRecover, Gauge remainingSegmentsToRecover) {
+    /* test */ KafkaAgent(Gauge brokerState, Gauge remainingLogsToRecover, Gauge remainingSegmentsToRecover, Gauge zkMigrationState) {
         this.brokerState = brokerState;
         this.remainingLogsToRecover = remainingLogsToRecover;
         this.remainingSegmentsToRecover = remainingSegmentsToRecover;
+        this.zkMigrationState = zkMigrationState;
     }
 
     private void run() {
@@ -151,6 +155,8 @@ public class KafkaAgent {
                         && metric instanceof Gauge) {
                     sessionStateName = metricName;
                     sessionState = (Gauge) metric;
+                } else if (isZkMigrationState(metricName) && metric instanceof Gauge) {
+                    zkMigrationState = (Gauge) metric;
                 }
 
                 // starting the poller to create the broker ready and ZooKeeper session connected files on if not KRaft mode
@@ -217,6 +223,12 @@ public class KafkaAgent {
                 && "SessionExpireListener".equals(name.getType());
     }
 
+    private boolean isZkMigrationState(MetricName name) {
+        return "ZkMigrationState".equals(name.getName())
+                && "kafka.controller".equals(name.getGroup())
+                && "KafkaController".equals(name.getType());
+    }
+
     private void startHttpServer() throws Exception {
         Server server = new Server();
 
@@ -236,8 +248,11 @@ public class KafkaAgent {
         ContextHandler readinessContext = new ContextHandler(READINESS_ENDPOINT_PATH);
         readinessContext.setHandler(getReadinessHandler());
 
+        ContextHandler kraftMigrationContext = new ContextHandler(KRAFT_MIGRATION_PATH);
+        kraftMigrationContext.setHandler(getKRaftMigrationHandler());
+
         server.setConnectors(new Connector[] {httpsConn, httpConn});
-        server.setHandler(new ContextHandlerCollection(brokerStateContext, readinessContext));
+        server.setHandler(new ContextHandlerCollection(brokerStateContext, readinessContext, kraftMigrationContext));
 
         server.setStopTimeout(GRACEFUL_SHUTDOWN_TIMEOUT_MS);
         server.setStopAtShutdown(true);
@@ -275,6 +290,33 @@ public class KafkaAgent {
                 } else {
                     response.setStatus(HttpServletResponse.SC_NOT_FOUND);
                     response.getWriter().print("Broker state metric not found");
+                }
+            }
+        };
+    }
+
+    /**
+     * Creates a Handler instance to handle incoming HTTP requests for the ZooKeeper to KRaft migration state
+     *
+     * @return  Handler
+     */
+    /* test */ Handler getKRaftMigrationHandler() {
+        return new AbstractHandler() {
+            @Override
+            public void handle(String s, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException {
+                response.setContentType("application/json");
+                response.setCharacterEncoding("UTF-8");
+                baseRequest.setHandled(true);
+
+                if (zkMigrationState != null) {
+                    Map<String, Object> migrationResponse = new HashMap<>();
+                    migrationResponse.put("state", zkMigrationState.value());
+                    response.setStatus(HttpServletResponse.SC_OK);
+                    String json = new ObjectMapper().writeValueAsString(migrationResponse);
+                    response.getWriter().print(json);
+                } else {
+                    response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+                    response.getWriter().print("ZooKeeper migration state metric not found");
                 }
             }
         };
