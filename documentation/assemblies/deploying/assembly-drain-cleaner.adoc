@@ -10,8 +10,6 @@ Kafka and ZooKeeper pods might be evicted during Kubernetes upgrades, maintenanc
 If your Kafka and ZooKeeper pods were deployed by Strimzi, you can use the Strimzi Drain Cleaner tool to handle the pod evictions.
 The Strimzi Drain Cleaner handles the eviction instead of Kubernetes.
 
-To use the Strimzi Drain Cleaner, you must set the `podDisruptionBudget` for your Kafka deployment to `0` (zero) so that Kubernetes is no longer allowed to evict pods automatically.
-
 By deploying the Strimzi Drain Cleaner, you can use the Cluster Operator to move Kafka pods instead of Kubernetes.
 The Cluster Operator ensures that topics are never under-replicated and Kafka can remain operational during the eviction process.
 The Cluster Operator waits for topics to synchronize, as the Kubernetes worker nodes drain consecutively.

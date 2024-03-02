@@ -44,6 +44,11 @@
 * Support for the JmxTrans component is now completely removed.
   If you are upgrading from Strimzi 0.34 or earlier and have JmxTrans enabled in `.spec.jmxTrans` of the `Kafka` custom resource, you should disable it before the upgrade or delete it manually after the upgrade is complete.
 * The `api` module was refactored and classes were moved to new packages.
+* Strimzi Drain Cleaner 1.1.0 (included in the Strimzi 0.40.0 installation files) changes the way it handles Kubernetes eviction requests.
+  It denies them instead of allowing them.
+  This new behavior does not require the `PodDisruptionBudget` to be set to `maxUnavailable: 0`.
+  We expect this to improve the compatibility with various tools used for scaling Kubernetes clusters such as [Karpenter](https://karpenter.sh/).
+  If you observe any problems with your toolchain or just want to stick with the previous behavior, you can use the `STRIMZI_DENY_EVICTION` environment variable and set it to `false` to switch back to the old (legacy) mode.
 
 ## 0.39.0
 
