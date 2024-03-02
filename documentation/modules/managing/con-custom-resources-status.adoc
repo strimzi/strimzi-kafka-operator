@@ -98,11 +98,12 @@ status:
     - lastTransitionTime: '2023-01-20T17:56:29.396588Z'
       status: 'True'
       type: Ready # <3>
-  kafkaVersion: {DefaultKafkaVersion} # <4>
-  kafkaNodePools: # <5>
+  kafkaMetadataState: KRaft # <4>
+  kafkaVersion: {DefaultKafkaVersion} # <5>
+  kafkaNodePools: # <6>
     - name: broker
     - name: controller
-  listeners: # <6>
+  listeners: # <7>
     - addresses:
         - host: my-cluster-kafka-bootstrap.prm-project.svc
           port: 9092
@@ -140,16 +141,17 @@ status:
           
           -----END CERTIFICATE-----
       name: external4
-  observedGeneration: 3 # <7>
-  operatorLastSuccessfulVersion: {ProductVersion} # <8>
+  observedGeneration: 3 # <8>
+  operatorLastSuccessfulVersion: {ProductVersion} # <9>
 ----
 <1> The Kafka cluster ID.
 <2> Status `conditions` describe the current state of the Kafka cluster.
 <3> The `Ready` condition indicates that the Cluster Operator considers the Kafka cluster able to handle traffic.
-<4> The version of Kafka being used by the Kafka cluster.
-<5> The node pools belonging to the Kafka cluster.
-<6> The `listeners` describe Kafka bootstrap addresses by type.
-<7> The `observedGeneration` value indicates the last reconciliation of the `Kafka` custom resource by the Cluster Operator.
-<8> The version of the operator that successfully completed the last reconciliation. 
+<4> Kafka metadata state that shows the mechanism used (KRaft or ZooKeeper) to manage Kafka metadata and coordinate operations. 
+<5> The version of Kafka being used by the Kafka cluster.
+<6> The node pools belonging to the Kafka cluster.
+<7> The `listeners` describe Kafka bootstrap addresses by type.
+<8> The `observedGeneration` value indicates the last reconciliation of the `Kafka` custom resource by the Cluster Operator.
+<9> The version of the operator that successfully completed the last reconciliation. 
 
 NOTE: The Kafka bootstrap addresses listed in the status do not signify that those endpoints or the Kafka cluster is in a `Ready` state.
