@@ -283,7 +283,10 @@ public class KafkaRollerST extends AbstractST {
 
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> {
             kafka.getSpec().getKafka().setImage("quay.io/strimzi/kafka:not-existent-tag");
-            kafka.getSpec().getZookeeper().setImage(kafkaImage);
+
+            if (!Environment.isKRaftModeEnabled()) {
+                kafka.getSpec().getZookeeper().setImage(kafkaImage);
+            }
         }, testStorage.getNamespaceName());
 
         KafkaUtils.waitForKafkaNotReady(testStorage.getNamespaceName(), testStorage.getClusterName());

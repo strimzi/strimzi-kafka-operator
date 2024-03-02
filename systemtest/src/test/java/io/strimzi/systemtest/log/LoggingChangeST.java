@@ -15,6 +15,7 @@ import io.strimzi.api.kafka.model.common.ExternalLoggingBuilder;
 import io.strimzi.api.kafka.model.common.InlineLogging;
 import io.strimzi.api.kafka.model.connect.KafkaConnect;
 import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
+import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2;
 import io.strimzi.operator.common.Annotations;
@@ -204,7 +205,7 @@ class LoggingChangeST extends AbstractST {
                 KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
             )
         );
-        resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3, 3)
+        Kafka kafka = KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3, 3)
             .editOrNewSpec()
                 .editKafka()
                     //.withLogging(new ExternalLoggingBuilder().withName(configMapKafkaName).build())
@@ -238,7 +239,16 @@ class LoggingChangeST extends AbstractST {
                     .endUserOperator()
                 .endEntityOperator()
             .endSpec()
-            .build());
+            .build();
+
+        if (Environment.isKRaftModeEnabled()) {
+            kafka.getSpec().setZookeeper(null);
+            if (!Environment.isUnidirectionalTopicOperatorEnabled()) {
+                kafka.getSpec().getEntityOperator().setTopicOperator(null);
+            }
+        }
+
+        resourceManager.createResourceWithWait(kafka);
 
         Map<String, String> controllerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getControllerSelector());
         Map<String, String> brokerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());

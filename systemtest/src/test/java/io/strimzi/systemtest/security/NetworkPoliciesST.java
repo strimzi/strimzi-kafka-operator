@@ -282,11 +282,14 @@ public class NetworkPoliciesST extends AbstractST {
                 KafkaNodePoolTemplates.controllerPoolPersistentStorage(secondNamespace, testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
             )
         );
-        resourceManager.createResourceWithWait(KafkaTemplates.kafkaWithMetrics(testStorage.getClusterName(), secondNamespace, 3, 3)
+        resourceManager.createResourceWithWait(
+            KafkaTemplates.kafkaMetricsConfigMap(secondNamespace, testStorage.getClusterName()),
+            KafkaTemplates.kafkaWithMetrics(secondNamespace, testStorage.getClusterName(), 3, 3)
             .editMetadata()
                 .addToLabels(labels)
             .endMetadata()
-            .build());
+            .build()
+        );
 
         checkNetworkPoliciesInNamespace(testStorage.getClusterName(), secondNamespace);
 

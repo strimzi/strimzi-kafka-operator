@@ -169,7 +169,8 @@ class KafkaST extends AbstractST {
                     .build()
             )
         );
-        resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 1, 1)
+
+        Kafka kafka = KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 1, 1)
             .editSpec()
                 .editKafka()
                     .withResources(brokersResReq)
@@ -210,7 +211,16 @@ class KafkaST extends AbstractST {
                     .endUserOperator()
                 .endEntityOperator()
             .endSpec()
-            .build());
+            .build();
+
+        if (Environment.isKRaftModeEnabled()) {
+            kafka.getSpec().setZookeeper(null);
+            if (!Environment.isUnidirectionalTopicOperatorEnabled()) {
+                kafka.getSpec().getEntityOperator().setTopicOperator(null);
+            }
+        }
+
+        resourceManager.createResourceWithWait(kafka);
 
         // Make snapshots for Kafka cluster to make sure that there is no rolling update after CO reconciliation
         final String eoDepName = KafkaResources.entityOperatorDeploymentName(testStorage.getClusterName());
@@ -442,7 +452,7 @@ class KafkaST extends AbstractST {
                 KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), kafkaReplicas).build()
             )
         );
-        resourceManager.createResourceWithWait(KafkaTemplates.kafkaJBOD(testStorage.getClusterName(), kafkaReplicas, jbodStorage).build());
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaJBOD(testStorage.getClusterName(), kafkaReplicas, 3, jbodStorage).build());
 
         Map<String, String> brokerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
         // kafka cluster already deployed
@@ -471,7 +481,7 @@ class KafkaST extends AbstractST {
                 .allMatch(volume -> "false".equals(volume.getMetadata().getAnnotations().get("strimzi.io/delete-claim")))
         );
 
-        final int volumesCount = kubeClient().listPersistentVolumeClaims(testStorage.getNamespaceName(), testStorage.getClusterName()).size();
+        final int volumesCount = kubeClient().listPersistentVolumeClaims(testStorage.getNamespaceName(), testStorage.getBrokerComponentName()).size();
 
         LOGGER.info("Deleting Kafka: {}/{} cluster", testStorage.getNamespaceName(), testStorage.getClusterName());
         // we cannot use ResourceManager here, as it would delete all the PVCs (part of the KafkaResource#delete method)
@@ -481,10 +491,10 @@ class KafkaST extends AbstractST {
         }
 
         LOGGER.info("Waiting for PVCs deletion");
-        PersistentVolumeClaimUtils.waitForJbodStorageDeletion(testStorage.getNamespaceName(), volumesCount, testStorage.getClusterName(), List.of(idZeroVolumeModified, idOneVolumeOriginal));
+        PersistentVolumeClaimUtils.waitForJbodStorageDeletion(testStorage.getNamespaceName(), volumesCount, testStorage.getBrokerComponentName(), List.of(idZeroVolumeModified, idOneVolumeOriginal));
 
         LOGGER.info("Verifying that PVC which are supposed to remain, really persist even after Kafka cluster un-deployment");
-        List<String> remainingPVCNames =  kubeClient().listPersistentVolumeClaims(testStorage.getNamespaceName(), testStorage.getClusterName()).stream().map(e -> e.getMetadata().getName()).toList();
+        List<String> remainingPVCNames =  kubeClient().listPersistentVolumeClaims(testStorage.getNamespaceName(), testStorage.getBrokerComponentName()).stream().map(e -> e.getMetadata().getName()).toList();
         brokerPods.keySet().forEach(broker -> assertThat("Kafka Broker: " + broker + " does not preserve its JBOD storage's PVC",
             remainingPVCNames.stream().anyMatch(e -> e.equals("data-0-" + broker))));
     }
@@ -1052,7 +1062,10 @@ class KafkaST extends AbstractST {
                 .build();
 
         if (Environment.isKRaftModeEnabled()) {
-            kafka.getSpec().getEntityOperator().getTemplate().setTopicOperatorContainer(null);
+            kafka.getSpec().setZookeeper(null);
+            if (!Environment.isUnidirectionalTopicOperatorEnabled()) {
+                kafka.getSpec().getEntityOperator().getTemplate().setTopicOperatorContainer(null);
+            }
         }
 
         resourceManager.createResourceWithWait(

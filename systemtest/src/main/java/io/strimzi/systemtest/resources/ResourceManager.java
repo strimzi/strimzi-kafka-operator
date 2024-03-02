@@ -22,11 +22,9 @@ import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.common.Spec;
 import io.strimzi.api.kafka.model.connector.KafkaConnector;
-import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.Status;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.api.kafka.model.user.KafkaUser;
-import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.enums.ConditionStatus;
@@ -185,24 +183,7 @@ public class ResourceManager {
                         resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName());
             }
 
-            if (resource.getKind().equals(Kafka.RESOURCE_KIND)) {
-                // in case we want to run tests with KafkaNodePools enabled, we want to use it for all the Kafka resources
-                if (Environment.isKafkaNodePoolsEnabled()) {
-                    Map<String, String> annotations = resource.getMetadata().getAnnotations();
-                    annotations.put(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled");
-                    // if the tests are running with UseKRaft enabled, the corresponding annotation is needed for all the Kafka resources
-                    if (Environment.isKRaftModeEnabled()) {
-                        annotations.put(Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled");
-                    }
-                    resource.getMetadata().setAnnotations(annotations);
-                }
-            }
-
             if (Environment.isKRaftModeEnabled() && !Environment.isUnidirectionalTopicOperatorEnabled()) {
-                if (Objects.equals(resource.getKind(), Kafka.RESOURCE_KIND)) {
-                    // Remove TO when KRaft mode is enabled, because it is not supported
-                    ((Kafka) resource).getSpec().getEntityOperator().setTopicOperator(null);
-                }
                 if (Objects.equals(resource.getKind(), KafkaTopic.RESOURCE_KIND)) {
                     // Do not create KafkaTopic when KRaft is enabled
                     LOGGER.warn("KafkaTopic: {}/{} will not be created, because Topic Operator is not enabled with KRaft mode", resource.getMetadata().getNamespace(), resource.getMetadata().getName());

@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.model.common.InlineLogging;
 import io.strimzi.api.kafka.model.common.JvmOptions;
 import io.strimzi.api.kafka.model.common.JvmOptionsBuilder;
 import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
+import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.mirrormaker.KafkaMirrorMakerResources;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Resources;
@@ -236,8 +237,8 @@ class LogSettingST extends AbstractST {
 
         KafkaResource.replaceKafkaResourceInSpecificNamespace(LOG_SETTING_CLUSTER_NAME, kafka -> {
             kafka.getSpec().getKafka().setJvmOptions(JVM_OPTIONS);
-            kafka.getSpec().getZookeeper().setJvmOptions(JVM_OPTIONS);
             if (!Environment.isKRaftModeEnabled()) {
+                kafka.getSpec().getZookeeper().setJvmOptions(JVM_OPTIONS);
                 kafka.getSpec().getEntityOperator().getTopicOperator().setJvmOptions(JVM_OPTIONS);
             }
             kafka.getSpec().getEntityOperator().getUserOperator().setJvmOptions(JVM_OPTIONS);
@@ -567,10 +568,23 @@ class LogSettingST extends AbstractST {
                             .withGcLoggingEnabled(true)
                         .endJvmOptions()
                     .endSpec()
+                    .build(),
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(Environment.TEST_SUITE_NAMESPACE, KafkaNodePoolResource.getBrokerPoolName(GC_LOGGING_SET_NAME), GC_LOGGING_SET_NAME, 1)
+                    .editSpec()
+                        .withNewJvmOptions()
+                        .endJvmOptions()
+                    .endSpec()
+                    .build(),
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(Environment.TEST_SUITE_NAMESPACE, KafkaNodePoolResource.getControllerPoolName(GC_LOGGING_SET_NAME), GC_LOGGING_SET_NAME, 1)
+                    .editSpec()
+                        .withNewJvmOptions()
+                        .endJvmOptions()
+                    .endSpec()
                     .build()
             )
         );
-        resourceManager.createResourceWithoutWait(KafkaTemplates.kafkaPersistent(LOG_SETTING_CLUSTER_NAME, 3, 1)
+
+        Kafka logSettingKafka = KafkaTemplates.kafkaPersistent(LOG_SETTING_CLUSTER_NAME, 3, 1)
             .editMetadata()
                 .withNamespace(Environment.TEST_SUITE_NAMESPACE)
             .endMetadata()
@@ -614,26 +628,10 @@ class LogSettingST extends AbstractST {
                 .withNewKafkaExporter()
                 .endKafkaExporter()
             .endSpec()
-            .build());
+            .build();
 
 //         deploying second Kafka here because of MM and MM2 tests
-        resourceManager.createResourceWithWait(
-            NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPoolPersistentStorage(Environment.TEST_SUITE_NAMESPACE, KafkaNodePoolResource.getBrokerPoolName(GC_LOGGING_SET_NAME), GC_LOGGING_SET_NAME, 1)
-                    .editSpec()
-                        .withNewJvmOptions()
-                        .endJvmOptions()
-                    .endSpec()
-                    .build(),
-                KafkaNodePoolTemplates.controllerPoolPersistentStorage(Environment.TEST_SUITE_NAMESPACE, KafkaNodePoolResource.getControllerPoolName(GC_LOGGING_SET_NAME), GC_LOGGING_SET_NAME, 1)
-                    .editSpec()
-                        .withNewJvmOptions()
-                        .endJvmOptions()
-                    .endSpec()
-                    .build()
-            )
-        );
-        resourceManager.createResourceWithoutWait(KafkaTemplates.kafkaPersistent(GC_LOGGING_SET_NAME, 1, 1)
+        Kafka gcLoggingKafka = KafkaTemplates.kafkaPersistent(GC_LOGGING_SET_NAME, 1, 1)
             .editMetadata()
                 .withNamespace(Environment.TEST_SUITE_NAMESPACE)
             .endMetadata()
@@ -657,7 +655,18 @@ class LogSettingST extends AbstractST {
                     .endUserOperator()
                 .endEntityOperator()
             .endSpec()
-            .build());
+            .build();
+
+        if (Environment.isKRaftModeEnabled()) {
+            logSettingKafka.getSpec().setZookeeper(null);
+            gcLoggingKafka.getSpec().setZookeeper(null);
+
+            if (!Environment.isUnidirectionalTopicOperatorEnabled()) {
+                logSettingKafka.getSpec().getEntityOperator().setTopicOperator(null);
+                gcLoggingKafka.getSpec().getEntityOperator().setTopicOperator(null);
+            }
+        }
+        resourceManager.createResourceWithoutWait(logSettingKafka, gcLoggingKafka);
 
         // sync point wait for all resources
         KafkaUtils.waitForKafkaReady(Environment.TEST_SUITE_NAMESPACE, LOG_SETTING_CLUSTER_NAME);
