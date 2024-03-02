@@ -98,14 +98,14 @@ public class BatchingTopicController {
 
     private final TopicOperatorMetricsHolder metrics;
     private final String namespace;
-    private final ReplicasChangeClient replicasChangeClient;
+    private final ReplicasChangeHandler replicasChangeHandler;
 
     BatchingTopicController(TopicOperatorConfig config,
                             Map<String, String> selector,
                             Admin admin,
                             KubernetesClient kubeClient,
                             TopicOperatorMetricsHolder metrics, 
-                            ReplicasChangeClient replicasChangeClient) {
+                            ReplicasChangeHandler replicasChangeHandler) {
         this.config = config;
         this.selector = Objects.requireNonNull(selector);
         this.useFinalizer = config.useFinalizer();
@@ -121,7 +121,7 @@ public class BatchingTopicController {
         this.metrics = metrics;
         this.namespace = config.namespace();
         this.enableAdditionalMetrics = config.enableAdditionalMetrics();
-        this.replicasChangeClient = replicasChangeClient;
+        this.replicasChangeHandler = replicasChangeHandler;
     }
 
     /**
@@ -499,22 +499,26 @@ public class BatchingTopicController {
         LOGGER.traceOp("Reconciled batch of {} KafkaTopics", results.size());
     }
 
-    // check if an invalid replicas update was reverted by the user and a status update is required
+    /**
+     * Check if an invalid replicas update was reverted by the user and update the status accordingly.
+     */
     /* test */ void maybeResetReplicasChangeStatuses(PartitionedByError<ReconcilableTopic, CurrentState> currentStatesOrError) {
         if (config.cruiseControlEnabled()) {
             currentStatesOrError.ok().forEach(pair -> {
                 var reconcilableTopic = pair.getKey();
                 var currentState = pair.getValue();
                 if (currentState.uniqueReplicationFactor() == reconcilableTopic.kt().getSpec().getReplicas()
-                    && reconcilableTopic.kt().getStatus() != null && reconcilableTopic.kt().getStatus().getReplicasChange() != null
-                    && reconcilableTopic.kt().getStatus().getReplicasChange().getMessage() != null) {
-                    // the user reverted an invalid replicas value
+                        && reconcilableTopic.kt().getStatus() != null && reconcilableTopic.kt().getStatus().getReplicasChange() != null
+                        && reconcilableTopic.kt().getStatus().getReplicasChange().getMessage() != null) {
                     reconcilableTopic.kt().getStatus().setReplicasChange(null);
                 }
             });
         }
     }
 
+    /**
+     * Check pending and ongoing replicas changes.
+     */
     /* test */ void maybeCheckReplicasChanges(List<ReconcilableTopic> topics,
                                               Map<ReconcilableTopic, Either<TopicOperatorException, Object>> results,
                                               PartitionedByError<ReconcilableTopic, CurrentState> differentRfResults) {
@@ -528,13 +532,13 @@ public class BatchingTopicController {
     private void requestPendingReplicasChanges(List<ReconcilableTopic> topicsWithDifferentRf, Map<ReconcilableTopic, Either<TopicOperatorException, Object>> results) {
         var topicsWithPendingRfChange = topicsMatching(topicsWithDifferentRf, this::isPendingReplicasChange);
         warnTooLargeMinIsr(topicsWithPendingRfChange);
-        var pendingAndOngoing = replicasChangeClient.requestPendingChanges(topicsWithPendingRfChange);
+        var pendingAndOngoing = replicasChangeHandler.requestPendingChanges(topicsWithPendingRfChange);
         pendingAndOngoing.forEach(rt -> putResult(results, rt, Either.ofRight(null)));
     }
 
     private void checkOngoingReplicasChanges(List<ReconcilableTopic> topics, Map<ReconcilableTopic, Either<TopicOperatorException, Object>> results) {
         var topicsWithOngoingRfChange = topicsMatching(topics, this::isOngoingReplicasChange);
-        var completedAndFailed = replicasChangeClient.requestOngoingChanges(topicsWithOngoingRfChange);
+        var completedAndFailed = replicasChangeHandler.requestOngoingChanges(topicsWithOngoingRfChange);
         completedAndFailed.forEach(rt -> putResult(results, rt, Either.ofRight(null)));
     }
 
@@ -1179,7 +1183,7 @@ public class BatchingTopicController {
         return oldStatusOrTopicNameMissing(oldStatus)
             || nonPausedAndDifferentGenerations(kt, oldStatus)
             || differentConditions(kt.getStatus().getConditions(), oldStatus.getConditions())
-            || differentReplicasChange(kt, oldStatus);
+            || replicasChangesDiffer(kt, oldStatus);
     }
 
     private boolean oldStatusOrTopicNameMissing(KafkaTopicStatus oldStatus) {
@@ -1197,7 +1201,7 @@ public class BatchingTopicController {
             return true;
         } else {
             for (int i = 0; i < newConditions.size(); i++) {
-                if (differentCondition(newConditions.get(i), oldConditions.get(i))) {
+                if (conditionsDiffer(newConditions.get(i), oldConditions.get(i))) {
                     return true;
                 }
             }
@@ -1205,7 +1209,7 @@ public class BatchingTopicController {
         return false;
     }
 
-    private boolean differentCondition(Condition newCondition, Condition oldCondition) {
+    private boolean conditionsDiffer(Condition newCondition, Condition oldCondition) {
         return !Objects.equals(newCondition.getType(), oldCondition.getType())
             || !Objects.equals(newCondition.getStatus(), oldCondition.getStatus())
             || !Objects.equals(newCondition.getReason(), oldCondition.getReason())
@@ -1213,7 +1217,7 @@ public class BatchingTopicController {
     }
 
     @SuppressWarnings("BooleanExpressionComplexity")
-    private boolean differentReplicasChange(KafkaTopic kt, KafkaTopicStatus oldStatus) {
+    private boolean replicasChangesDiffer(KafkaTopic kt, KafkaTopicStatus oldStatus) {
         return kt.getStatus().getReplicasChange() == null && oldStatus.getReplicasChange() != null
             || kt.getStatus().getReplicasChange() != null && oldStatus.getReplicasChange() == null
             || (kt.getStatus().getReplicasChange() != null && oldStatus.getReplicasChange() != null 

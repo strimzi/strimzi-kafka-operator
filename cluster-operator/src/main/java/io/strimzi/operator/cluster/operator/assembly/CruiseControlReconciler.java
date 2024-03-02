@@ -248,9 +248,18 @@ public class CruiseControlReconciler {
     }
 
     /**
-     * Manages the Cruise Control API keys secret.
+     * Cruise Control API secret contains REST API credentials and the authentication file, while the Topic Operator API secret only contains its admin user's credentials.
+     * That way, each component is responsible for managing its credentials, and this method is responsible for keeping the Cruise Control's authentication file in sync.
      *
-     * @return  Future which completes when the reconciliation is done
+     * If Cruise Control secret is present and there are no changes to the Topic Operator's secret content, we reuse the old Cruise Control secret's content.
+     * If Cruise Control secret is not present or there are changes in the Topic Operator's secret content, we generate a new Cruise Control secret, which includes the Topic Operator's credentials.
+     * 
+     * If the Topic Operator component is not enabled and Cruise Control's secret is present, we reuse the old Cruise Control secret's content. 
+     * If the Topic Operator component is not enabled and Cruise Control's secret is not present, we generate a new Cruise Control secret.
+     * 
+     * In any case, we generate the Cruise Control secret's content hash, that is later used to detect changes that require a pod restart.
+     *
+     * @return Future which completes when the reconciliation is done.
      */
     protected Future<Void> apiSecret() {
         if (cruiseControl != null) {

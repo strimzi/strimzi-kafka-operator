@@ -38,6 +38,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 
 import static io.strimzi.api.kafka.model.topic.ReplicasChangeState.ONGOING;
 import static io.strimzi.api.kafka.model.topic.ReplicasChangeState.PENDING;
@@ -50,7 +51,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.groupingBy;
 
 /**
- * Replicas change client for Cruise Control API.
+ * Replicas change handler that interacts with Cruise Control REST API.
  * <br/><br/>
  * The REST endpoints are {@code topic_configuration} to request replication factor changes and {@code user_tasks} 
  * to check the asynchronous execution result. Cruise Control runs one task execution at a time, additional requests 
@@ -62,8 +63,8 @@ import static java.util.stream.Collectors.groupingBy;
  * <li>Ongoing: In Cruise Control's task queue, but execution not started, or not completed.</li>
  * <li>Completed: Cruise Control's task execution completed (target replication factor reconciled).</li></ul>
  */
-public class ReplicasChangeClient {
-    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(ReplicasChangeClient.class);
+public class ReplicasChangeHandler {
+    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(ReplicasChangeHandler.class);
     private static final String USER_TASK_ID_HEADER = "User-Task-ID";
     private static final long REQUEST_TIMEOUT_SEC = 60;
     
@@ -76,7 +77,7 @@ public class ReplicasChangeClient {
      * 
      * @param config Topic Operator configuration.
      */
-    public ReplicasChangeClient(TopicOperatorConfig config) {
+    public ReplicasChangeHandler(TopicOperatorConfig config) {
         this.config = config;
         this.httpClientExecutor = Executors.newCachedThreadPool();
         this.mapper = new ObjectMapper();
@@ -85,6 +86,7 @@ public class ReplicasChangeClient {
     /**
      * Send a topic_configuration request to create a task for replication factor change of one or more topics.
      * This should be called when one or more .spec.replicas changes are detected.
+     * Note that this method also updates the KafkaTopic status.
      * 
      * @param reconcilableTopics Pending replicas changes.
      * @return Replicas changes with status update.
@@ -100,7 +102,7 @@ public class ReplicasChangeClient {
         try {
             LOGGER.debugOp("Sending topic configuration request, topics {}", topicNames(reconcilableTopics));
             HttpClient client = buildHttpClient();
-            client.sendAsync(buildTopicConfigPostRequest(reconcilableTopics), HttpResponse.BodyHandlers.ofString())
+            client.sendAsync(buildPostTopicConfigRequest(reconcilableTopics), HttpResponse.BodyHandlers.ofString())
                 .thenAccept(response -> {
                     if (response.statusCode() != 200) {
                         updateToFailed(result, format("Replicas change failed (%s)", response.statusCode()), response);
@@ -122,6 +124,7 @@ public class ReplicasChangeClient {
     /**
      * Send a user_tasks request to check the state of ongoing replication factor changes.
      * This should be called periodically to update the active tasks cache and KafkaTopic status.
+     * Note that this method also updates the KafkaTopic status.
      *
      * @param reconcilableTopics Ongoing replicas changes.
      * @return Replicas changes with status update.
@@ -133,19 +136,15 @@ public class ReplicasChangeClient {
         }
         result.addAll(reconcilableTopics);
         
-        Map<String, List<ReconcilableTopic>> groupByUserTaskId = new HashMap<>();
-        reconcilableTopics.forEach(rt -> {
-            if (hasReplicasChange(rt.kt().getStatus()) && rt.kt().getStatus().getReplicasChange().getSessionId() != null) {
-                String userTaskId = rt.kt().getStatus().getReplicasChange().getSessionId();
-                ReconcilableTopic reconcilableTopic = new ReconcilableTopic(new Reconciliation("", KafkaTopic.RESOURCE_KIND, "", ""), rt.kt(), rt.topicName());
-                groupByUserTaskId.computeIfAbsent(userTaskId, k -> new ArrayList<>()).add(reconcilableTopic);
-            }
-        });
-        
+        Map<String, List<ReconcilableTopic>> groupByUserTaskId = reconcilableTopics.stream()
+            .filter(rt -> hasReplicasChange(rt.kt().getStatus()) && rt.kt().getStatus().getReplicasChange().getSessionId() != null)
+            .map(rt -> new ReconcilableTopic(new Reconciliation("", KafkaTopic.RESOURCE_KIND, "", ""), rt.kt(), rt.topicName()))
+            .collect(Collectors.groupingBy(rt -> rt.kt().getStatus().getReplicasChange().getSessionId(), HashMap::new, Collectors.toList()));
+
         try {
             LOGGER.debugOp("Sending user tasks request, Tasks {}", groupByUserTaskId.keySet());
             HttpClient client = buildHttpClient();
-            client.sendAsync(buildUserTasksGetRequest(groupByUserTaskId.keySet()), HttpResponse.BodyHandlers.ofString())
+            client.sendAsync(buildGetUserTasksRequest(groupByUserTaskId.keySet()), HttpResponse.BodyHandlers.ofString())
                 .thenAccept(response -> {
                     try {
                         if (response.statusCode() != 200 || response.body() == null) {
@@ -213,7 +212,7 @@ public class ReplicasChangeClient {
         return builder.build();
     }
 
-    private HttpRequest buildTopicConfigPostRequest(List<ReconcilableTopic> reconcilableTopics) {
+    private HttpRequest buildPostTopicConfigRequest(List<ReconcilableTopic> reconcilableTopics) {
         StringBuilder url = new StringBuilder(
             format("%s://%s:%d%s?", config.cruiseControlSslEnabled() ? "https" : "http",
                 config.cruiseControlHostname(), config.cruiseControlPort(), CruiseControlEndpoints.TOPIC_CONFIGURATION));
@@ -247,7 +246,7 @@ public class ReplicasChangeClient {
         return builder.build();
     }
     
-    private HttpRequest buildUserTasksGetRequest(Set<String> userTaskIds) {
+    private HttpRequest buildGetUserTasksRequest(Set<String> userTaskIds) {
         StringBuilder url = new StringBuilder(
             format("%s://%s:%d%s?", config.cruiseControlSslEnabled() ? "https" : "http",
                 config.cruiseControlHostname(), config.cruiseControlPort(), CruiseControlEndpoints.USER_TASKS));

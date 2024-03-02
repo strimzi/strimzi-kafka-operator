@@ -147,7 +147,7 @@ class BatchingTopicControllerTest {
         Mockito.doReturn(NAMESPACE).when(config).namespace();
         Mockito.doReturn(true).when(config).useFinalizer();
         Mockito.doReturn(false).when(config).enableAdditionalMetrics();
-        var replicasChangeClient = Mockito.mock(ReplicasChangeClient.class);
+        var replicasChangeClient = Mockito.mock(ReplicasChangeHandler.class);
         
         controller = new BatchingTopicController(config, Map.of("key", "VALUE"), admin, client, metrics, replicasChangeClient);
         List<ReconcilableTopic> batch = List.of(new ReconcilableTopic(new Reconciliation("test", "KafkaTopic", NAMESPACE, "my-topic"), kt, topicName(kt)));
@@ -304,7 +304,7 @@ class BatchingTopicControllerTest {
         var reconcilableTopic = new ReconcilableTopic(
             new Reconciliation("test", RESOURCE_KIND, NAMESPACE, "my-topic"), kafkaTopic, topicName(kafkaTopic));
 
-        var replicasChangeClient = Mockito.mock(ReplicasChangeClient.class);
+        var replicasChangeClient = Mockito.mock(ReplicasChangeHandler.class);
         Mockito.doReturn(List.of()).when(replicasChangeClient).requestPendingChanges(anyList());
         Mockito.doReturn(List.of()).when(replicasChangeClient).requestOngoingChanges(anyList());
 
@@ -366,7 +366,7 @@ class BatchingTopicControllerTest {
         var outputRt = new ReconcilableTopic(
             new Reconciliation("test", "KafkaTopic", NAMESPACE, "my-topic"), outputKt, topicName(outputKt));
         
-        var replicasChangeClient = Mockito.mock(ReplicasChangeClient.class);
+        var replicasChangeClient = Mockito.mock(ReplicasChangeHandler.class);
         Mockito.doReturn(List.of(outputRt)).when(replicasChangeClient).requestPendingChanges(anyList());
         Mockito.doReturn(List.of(outputRt)).when(replicasChangeClient).requestOngoingChanges(anyList());
         

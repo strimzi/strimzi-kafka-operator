@@ -162,7 +162,7 @@ public class TopicOperatorMetricsTest {
         Mockito.doReturn(NAMESPACE).when(config).namespace();
         Mockito.doReturn(true).when(config).useFinalizer();
         Mockito.doReturn(false).when(config).enableAdditionalMetrics();
-        var replicasChangeClient = Mockito.mock(ReplicasChangeClient.class);
+        var replicasChangeClient = Mockito.mock(ReplicasChangeHandler.class);
         BatchingTopicController controller = new BatchingTopicController(config, Map.of("key", "VALUE"), admin, client, metrics, replicasChangeClient);
 
         KafkaTopic t1 = createResource(client, "t1", "t1");

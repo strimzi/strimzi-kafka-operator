@@ -131,7 +131,8 @@ public class EntityOperatorReconciler {
     }
 
     /**
-     * Manages the Cruise Control API keys secret used by the Topic Operator.
+     * If not present, we generate a new Topic Operator secret containing its admin credentials for the Cruise Control API secret.
+     * We also generate the secret's content hash, that is later used to detect changes that require a pod restart.
      *
      * @return Future which completes when the reconciliation is done.
      */
@@ -458,7 +459,7 @@ public class EntityOperatorReconciler {
             int caKeyGeneration = clusterCa.caKeyGeneration();
             Annotations.annotations(deployment.getSpec().getTemplate()).put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, String.valueOf(caKeyGeneration));
             
-            if (unidirectionalTopicOperator && isCruiseControlEnabled && entityOperator.topicOperator() != null) {
+            if (entityOperator.topicOperator() != null && unidirectionalTopicOperator && isCruiseControlEnabled) {
                 Annotations.annotations(deployment.getSpec().getTemplate()).put(Annotations.ANNO_STRIMZI_AUTH_HASH, ccApiSecretHash);
             }
 

@@ -48,7 +48,7 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-public class ReplicasChangeClientTest {
+public class ReplicasChangeHandlerTest {
     private static final String TEST_PREFIX = "cruise-control-";
     private static final String TEST_NAMESPACE = "replicas-change";
     private static final String TEST_NAME = "my-topic";
@@ -99,16 +99,16 @@ public class ReplicasChangeClientTest {
     @ParameterizedTest
     @MethodSource("validConfigs")
     public void shouldSucceedWithValidConfig(TopicOperatorConfig config) {
-        var client = new ReplicasChangeClient(config);
+        var handler = new ReplicasChangeHandler(config);
 
         server.expectTopicConfigSuccessResponse(apiUserFile, apiPassFile);
         var pending = buildPendingReconcilableTopics();
-        var pendingAndOngoing = client.requestPendingChanges(pending);
+        var pendingAndOngoing = handler.requestPendingChanges(pending);
         assertOngoing(pending, pendingAndOngoing);
 
         server.expectUserTasksSuccessResponse(apiUserFile, apiPassFile);
         var ongoing = buildOngoingReconcilableTopics();
-        var completedAndFailed = client.requestOngoingChanges(ongoing);
+        var completedAndFailed = handler.requestOngoingChanges(ongoing);
         assertCompleted(completedAndFailed);
     }
     
@@ -123,14 +123,14 @@ public class ReplicasChangeClientTest {
             entry(CRUISE_CONTROL_CRT_FILE_PATH.key(), "/invalid/ca.crt")
         ));
         
-        var client = new ReplicasChangeClient(config);
+        var handler = new ReplicasChangeHandler(config);
         
         var pending = buildPendingReconcilableTopics();
-        var pendingAndOngoing = client.requestPendingChanges(pending);
+        var pendingAndOngoing = handler.requestPendingChanges(pending);
         assertFailedWithMessage(pendingAndOngoing, "Replicas change failed, File not found: /invalid/ca.crt");
 
         var ongoing = buildOngoingReconcilableTopics();
-        var completedAndFailed = client.requestOngoingChanges(ongoing);
+        var completedAndFailed = handler.requestOngoingChanges(ongoing);
         assertFailedWithMessage(completedAndFailed, "Replicas change failed, File not found: /invalid/ca.crt");
     }
 
@@ -146,14 +146,14 @@ public class ReplicasChangeClientTest {
             entry(CRUISE_CONTROL_API_PASS_PATH.key(), apiPassFile.getAbsolutePath())
         ));
         
-        var client = new ReplicasChangeClient(config);
+        var handler = new ReplicasChangeHandler(config);
         
         var pending = buildPendingReconcilableTopics();
-        var pendingAndOngoing = client.requestPendingChanges(pending);
+        var pendingAndOngoing = handler.requestPendingChanges(pending);
         assertFailedWithMessage(pendingAndOngoing, "Replicas change failed, File not found: /invalid/username");
 
         var ongoing = buildOngoingReconcilableTopics();
-        var completedAndFailed = client.requestOngoingChanges(ongoing);
+        var completedAndFailed = handler.requestOngoingChanges(ongoing);
         assertFailedWithMessage(completedAndFailed, "Replicas change failed, File not found: /invalid/username");
     }
 
@@ -169,14 +169,14 @@ public class ReplicasChangeClientTest {
             entry(CRUISE_CONTROL_API_PASS_PATH.key(), "/invalid/password")
         ));
         
-        var client = new ReplicasChangeClient(config);
+        var handler = new ReplicasChangeHandler(config);
         
         var pending = buildPendingReconcilableTopics();
-        var pendingAndOngoing = client.requestPendingChanges(pending);
+        var pendingAndOngoing = handler.requestPendingChanges(pending);
         assertFailedWithMessage(pendingAndOngoing, "Replicas change failed, File not found: /invalid/password");
 
         var ongoing = buildOngoingReconcilableTopics();
-        var completedAndFailed = client.requestOngoingChanges(ongoing);
+        var completedAndFailed = handler.requestOngoingChanges(ongoing);
         assertFailedWithMessage(completedAndFailed, "Replicas change failed, File not found: /invalid/password");
     }
 
@@ -189,14 +189,14 @@ public class ReplicasChangeClientTest {
             entry(CRUISE_CONTROL_PORT.key(), String.valueOf(serverPort))
         ));
         
-        var client = new ReplicasChangeClient(config);
+        var handler = new ReplicasChangeHandler(config);
         
         var pending = buildPendingReconcilableTopics();
-        var pendingAndOngoing = client.requestPendingChanges(pending);
+        var pendingAndOngoing = handler.requestPendingChanges(pending);
         assertFailedWithMessage(pendingAndOngoing, "Replicas change failed, java.net.ConnectException");
 
         var ongoing = buildOngoingReconcilableTopics();
-        var completedAndFailed = client.requestOngoingChanges(ongoing);
+        var completedAndFailed = handler.requestOngoingChanges(ongoing);
         assertFailedWithMessage(completedAndFailed, "Replicas change failed, java.net.ConnectException");
     }
 
@@ -214,16 +214,16 @@ public class ReplicasChangeClientTest {
             entry(CRUISE_CONTROL_API_PASS_PATH.key(), apiPassFile.getAbsolutePath())
         ));
 
-        var client = new ReplicasChangeClient(config);
+        var handler = new ReplicasChangeHandler(config);
 
         server.expectTopicConfigErrorResponse(apiUserFile, apiPassFile);
         var pending = buildPendingReconcilableTopics();
-        var pendingAndOngoing = client.requestPendingChanges(pending);
+        var pendingAndOngoing = handler.requestPendingChanges(pending);
         assertFailedWithMessage(pendingAndOngoing, "Replicas change failed (500), Cluster model not ready");
 
         server.expectUserTasksErrorResponse(apiUserFile, apiPassFile);
         var ongoing = buildOngoingReconcilableTopics();
-        var completedAndFailed = client.requestOngoingChanges(ongoing);
+        var completedAndFailed = handler.requestOngoingChanges(ongoing);
         assertFailedWithMessage(completedAndFailed, "Replicas change failed (500), Error processing GET " +
             "request '/user_tasks' due to: 'Error happened in fetching response for task 9730e4fb-ea41-4e2d-b053-9be2310589b5'.");
     }
@@ -242,16 +242,16 @@ public class ReplicasChangeClientTest {
             entry(CRUISE_CONTROL_API_PASS_PATH.key(), apiPassFile.getAbsolutePath())
         ));
 
-        var client = new ReplicasChangeClient(config);
+        var handler = new ReplicasChangeHandler(config);
 
         server.expectTopicConfigRequestTimeout(apiUserFile, apiPassFile);
         var pending = buildPendingReconcilableTopics();
-        var pendingAndOngoing = client.requestPendingChanges(pending);
+        var pendingAndOngoing = handler.requestPendingChanges(pending);
         assertFailedWithMessage(pendingAndOngoing, "Replicas change failed (408)");
 
         server.expectUserTasksRequestTimeout(apiUserFile, apiPassFile);
         var ongoing = buildOngoingReconcilableTopics();
-        var completedAndFailed = client.requestOngoingChanges(ongoing);
+        var completedAndFailed = handler.requestOngoingChanges(ongoing);
         assertFailedWithMessage(completedAndFailed, "Replicas change failed (408)");
     }
 
@@ -269,16 +269,16 @@ public class ReplicasChangeClientTest {
             entry(CRUISE_CONTROL_API_PASS_PATH.key(), apiPassFile.getAbsolutePath())
         ));
 
-        var client = new ReplicasChangeClient(config);
+        var handler = new ReplicasChangeHandler(config);
 
         server.expectTopicConfigRequestUnauthorized(apiUserFile, apiPassFile);
         var pending = buildPendingReconcilableTopics();
-        var pendingAndOngoing = client.requestPendingChanges(pending);
+        var pendingAndOngoing = handler.requestPendingChanges(pending);
         assertFailedWithMessage(pendingAndOngoing, "Replicas change failed (401)");
 
         server.expectUserTasksRequestUnauthorized(apiUserFile, apiPassFile);
         var ongoing = buildOngoingReconcilableTopics();
-        var completedAndFailed = client.requestOngoingChanges(ongoing);
+        var completedAndFailed = handler.requestOngoingChanges(ongoing);
         assertFailedWithMessage(completedAndFailed, "Replicas change failed (401)");
     }
 

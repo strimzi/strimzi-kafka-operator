@@ -173,10 +173,7 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
             }
             
             result.cruiseControlEnabled = kafkaAssembly.getSpec().getCruiseControl() != null;
-            if (result.cruiseControlEnabled) {
-                result.rackAwarenessEnabled = kafkaAssembly.getSpec().getKafka().getReplicas() > 1
-                    && kafkaAssembly.getSpec().getKafka().getRack() != null;
-            }
+            result.rackAwarenessEnabled = result.cruiseControlEnabled && kafkaAssembly.getSpec().getKafka().getRack() != null;
 
             return result;
         } else {
