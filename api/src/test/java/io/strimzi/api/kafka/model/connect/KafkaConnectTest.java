@@ -8,11 +8,10 @@ import io.strimzi.api.kafka.model.AbstractCrdTest;
 import io.strimzi.api.kafka.model.common.template.MetadataTemplate;
 import io.strimzi.api.kafka.model.common.template.ResourceTemplate;
 import io.strimzi.api.kafka.model.kafka.SingleVolumeStorage;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.Map;
-
-import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
