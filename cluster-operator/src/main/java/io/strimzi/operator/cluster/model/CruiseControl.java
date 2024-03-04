@@ -423,7 +423,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
                                                                           Secret oldSecret,
                                                                           CruiseControlUser adminUser) {
         if (oldSecret != null) {
-            // The credentials should not change with every release
+            // The credentials should not change with every reconciliation
             // So if the secret with credentials already exists, we re-use the values
             // But we use the new secret to update labels etc. if needed
             var data = oldSecret.getData();

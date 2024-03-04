@@ -216,8 +216,8 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_GC_LOG_ENABLED, Boolean.toString(gcLoggingEnabled)));
         
         // Add environment variables required for Cruise Control integration
-        varList.add(ContainerUtils.createEnvVar(ENV_VAR_CRUISE_CONTROL_ENABLED, Boolean.toString(cruiseControlEnabled)));
         if (this.unidirectionalTopicOperator && this.cruiseControlEnabled) {
+            varList.add(ContainerUtils.createEnvVar(ENV_VAR_CRUISE_CONTROL_ENABLED, Boolean.toString(cruiseControlEnabled)));
             varList.add(ContainerUtils.createEnvVar(ENV_VAR_CRUISE_CONTROL_RACK_ENABLED, Boolean.toString(rackAwarenessEnabled)));
             varList.add(ContainerUtils.createEnvVar(ENV_VAR_CRUISE_CONTROL_HOSTNAME, String.format("%s-cruise-control.%s.svc", cluster, namespace)));
             varList.add(ContainerUtils.createEnvVar(ENV_VAR_CRUISE_CONTROL_PORT, String.valueOf(CRUISE_CONTROL_API_PORT)));
@@ -246,7 +246,7 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
         result.add(VolumeUtils.createVolumeMount(LOG_AND_METRICS_CONFIG_VOLUME_NAME, LOG_AND_METRICS_CONFIG_VOLUME_MOUNT));
         result.add(VolumeUtils.createVolumeMount(EntityOperator.ETO_CERTS_VOLUME_NAME, EntityOperator.ETO_CERTS_VOLUME_MOUNT));
         result.add(VolumeUtils.createVolumeMount(EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_NAME, EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT));
-        if (cruiseControlEnabled) {
+        if (this.unidirectionalTopicOperator && this.cruiseControlEnabled) {
             result.add(VolumeUtils.createVolumeMount(EntityOperator.ETO_CC_API_VOLUME_NAME, EntityOperator.ETO_CC_API_VOLUME_MOUNT));
         }
         return Collections.unmodifiableList(result);
@@ -316,7 +316,7 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
     
     private static Map<String, String> generateCruiseControlApiCredentials(Secret oldSecret) {
         if (oldSecret != null) {
-            // The credentials should not change with every release
+            // The credentials should not change with every reconciliation
             // So if the secret with credentials already exists, we re-use the values
             // But we use the new secret to update labels etc. if needed
             var data = oldSecret.getData();
