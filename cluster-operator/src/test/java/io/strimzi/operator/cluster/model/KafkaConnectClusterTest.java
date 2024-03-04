@@ -15,6 +15,7 @@ import io.fabric8.kubernetes.api.model.HostAliasBuilder;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
+import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
@@ -31,8 +32,6 @@ import io.fabric8.kubernetes.api.model.TopologySpreadConstraint;
 import io.fabric8.kubernetes.api.model.TopologySpreadConstraintBuilder;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
-import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
-import io.strimzi.api.kafka.model.kafka.PersistentClaimStorage;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
@@ -59,6 +58,7 @@ import io.strimzi.api.kafka.model.connect.ExternalConfigurationVolumeSourceBuild
 import io.strimzi.api.kafka.model.connect.KafkaConnect;
 import io.strimzi.api.kafka.model.connect.KafkaConnectBuilder;
 import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
+import io.strimzi.api.kafka.model.kafka.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.kafka.oauth.client.ClientConfig;
 import io.strimzi.kafka.oauth.server.ServerConfig;
@@ -204,8 +204,8 @@ public class KafkaConnectClusterTest {
         storage.setSize("1Gi");
         storage.setStorageClass("standard");
         storage.setSelector(new HashMap<String, String>() {{
-            put("matchLabel", "test");
-        }});
+                put("matchLabel", "test");
+            }});
         storage.setDeleteClaim(false);
         storage.setMountPath("/var/lib/kafka/data");
         storage.setAccessMode("ReadWriteOnce");
@@ -220,8 +220,8 @@ public class KafkaConnectClusterTest {
         storage.setSize("2Gi");
         storage.setStorageClass("fast");
         storage.setSelector(new HashMap<String, String>() {{
-            put("matchLabel", "test2");
-        }});
+                put("matchLabel", "test2");
+            }});
         storage.setDeleteClaim(true);
         storage.setMountPath("/var/lib/kafka/data2");
         storage.setAccessMode("ReadOnly");

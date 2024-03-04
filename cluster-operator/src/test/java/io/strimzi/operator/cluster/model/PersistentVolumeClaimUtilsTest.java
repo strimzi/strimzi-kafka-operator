@@ -77,27 +77,27 @@ public class PersistentVolumeClaimUtilsTest {
         .withStorageClass("test-storage-class")
         .withSize("100Gi")
         .build();
-      boolean jbod = false;
-      Labels labels = Labels.forStrimziKind("test-kind");
-      OwnerReference ownerReference = new OwnerReferenceBuilder()
-        .withApiVersion("v1")
-        .withKind("test-kind")
-        .withName("test-cluster")
-        .withUid("test-uid")
-        .withBlockOwnerDeletion(false)
-        .withController(false)
-        .build();
-      ResourceTemplate template = new ResourceTemplateBuilder().build();
-      String accessMode = "ReadWriteMany";
+        boolean jbod = false;
+        Labels labels = Labels.forStrimziKind("test-kind");
+        OwnerReference ownerReference = new OwnerReferenceBuilder()
+          .withApiVersion("v1")
+          .withKind("test-kind")
+          .withName("test-cluster")
+          .withUid("test-uid")
+          .withBlockOwnerDeletion(false)
+          .withController(false)
+          .build();
+        ResourceTemplate template = new ResourceTemplateBuilder().build();
+        String accessMode = "ReadWriteMany";
 
-      // Act
-      List < PersistentVolumeClaim > pvcs = PersistentVolumeClaimUtils.createPersistentVolumeClaims(
-        namespace, nodes, storage, jbod, labels, ownerReference, template, accessMode);
+        // Act
+        List<PersistentVolumeClaim> pvcs = PersistentVolumeClaimUtils.createPersistentVolumeClaims(
+          namespace, nodes, storage, jbod, labels, ownerReference, template, accessMode);
 
-      // Assert
-      assertThat(pvcs.size(), is(1));
-      PersistentVolumeClaim pvc = pvcs.get(0);
-      assertThat(pvc.getSpec().getAccessModes().get(0), is(accessMode));
+        // Assert
+        assertThat(pvcs.size(), is(1));
+        PersistentVolumeClaim pvc = pvcs.get(0);
+        assertThat(pvc.getSpec().getAccessModes().get(0), is(accessMode));
     }
 
     @ParallelTest

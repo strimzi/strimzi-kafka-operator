@@ -54,8 +54,8 @@ public class PersistentVolumeClaimUtils {
             OwnerReference ownerReference,
             ResourceTemplate template
     )   {
-            return createPersistentVolumeClaims(namespace, nodes, storage, jbod, labels, ownerReference, template, "ReadWriteOnce");
-        }
+        return createPersistentVolumeClaims(namespace, nodes, storage, jbod, labels, ownerReference, template, "ReadWriteOnce");
+    }
 
         /**
          * Creates list of PersistentVolumeClaims required by stateful deployments (Kafka and Zoo). This method calls itself
@@ -73,7 +73,7 @@ public class PersistentVolumeClaimUtils {
          *
          * @return  List with Persistent Volume Claims
          */
-        public static List<PersistentVolumeClaim> createPersistentVolumeClaims(
+    public static List<PersistentVolumeClaim> createPersistentVolumeClaims(
                 String namespace,
                 Set<NodeRef> nodes,
                 Storage storage,
