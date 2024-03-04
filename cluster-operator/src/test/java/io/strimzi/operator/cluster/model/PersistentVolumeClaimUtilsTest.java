@@ -74,9 +74,9 @@ public class PersistentVolumeClaimUtilsTest {
         Set<NodeRef> nodes = new LinkedHashSet<>();
         nodes.add(new NodeRef("test-node", 0, null, false, true));
         Storage storage = new PersistentClaimStorageBuilder()
-          .withStorageClass("test-storage-class")
-          .withSize("100Gi")
-          .build();
+            .withStorageClass("test-storage-class")
+            .withSize("100Gi")
+            .build();
         boolean jbod = false;
         Labels labels = Labels.forStrimziKind("test-kind");
         OwnerReference ownerReference = new OwnerReferenceBuilder()
