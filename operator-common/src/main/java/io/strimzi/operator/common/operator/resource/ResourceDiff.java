@@ -27,6 +27,8 @@ public class ResourceDiff<T extends HasMetadata> extends AbstractJsonDiff {
     public static final Pattern DEFAULT_IGNORABLE_PATHS = Pattern.compile(
             "^(/metadata/managedFields" +
                     "|/metadata/creationTimestamp" +
+                    "|/metadata/deletionTimestamp" +
+                    "|/metadata/deletionGracePeriodSeconds" +
                     "|/metadata/resourceVersion" +
                     "|/metadata/generation" +
                     "|/metadata/uid" +
