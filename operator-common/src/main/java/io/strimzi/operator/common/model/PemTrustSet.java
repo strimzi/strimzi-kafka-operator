@@ -91,10 +91,10 @@ public class PemTrustSet {
     /**
      * Extract all public keys (all .crt records) from a secret.
      */
-    private static Map<String, byte[]> extractCerts(Secret secret)  {
+    private Map<String, byte[]> extractCerts(Secret secret)  {
         Base64.Decoder decoder = Base64.getDecoder();
 
-        return secret
+        Map<String, byte[]> certs = secret
                 .getData()
                 .entrySet()
                 .stream()
@@ -103,6 +103,10 @@ public class PemTrustSet {
                         entry -> stripCertKeySuffix(entry.getKey()),
                         entry -> decoder.decode(entry.getValue()))
                 );
+        if (certs.isEmpty()) {
+            throw Util.missingDataInSecretException(secretNamespace, secretName, "with suffix .crt");
+        }
+        return certs;
     }
 
     private static String stripCertKeySuffix(String key) {

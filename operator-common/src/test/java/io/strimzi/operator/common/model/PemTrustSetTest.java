@@ -13,7 +13,6 @@ import java.util.Map;
 
 import static io.strimzi.test.TestUtils.map;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -55,7 +54,7 @@ public class PemTrustSetTest {
     }
 
     @Test
-    public void testHandlesEmptySecretData() {
+    public void testEmptySecretData() {
         Secret secretWithEmptyData = new SecretBuilder()
                 .withNewMetadata()
                 .withName(KafkaResources.secretName(CLUSTER))
@@ -63,7 +62,20 @@ public class PemTrustSetTest {
                 .endMetadata()
                 .withData(Map.of())
                 .build();
-        PemTrustSet pemTrustSet = new PemTrustSet(secretWithEmptyData);
-        assertThat(pemTrustSet.trustedCertificates(), hasSize(0));
+        Exception e = assertThrows(RuntimeException.class,  () -> new PemTrustSet(secretWithEmptyData));
+        assertThat(e.getMessage(), is("The Secret testns/testcluster-cluster-operator-certs is missing the field with suffix .crt"));
+    }
+
+    @Test
+    public void testNoCertsInSecretData() {
+        Secret secretWithNoCerts = new SecretBuilder()
+                .withNewMetadata()
+                .withName(KafkaResources.secretName(CLUSTER))
+                .withNamespace(NAMESPACE)
+                .endMetadata()
+                .withData(Map.of("ca.txt", "not-a-cert"))
+                .build();
+        Exception e = assertThrows(RuntimeException.class, () -> new PemTrustSet(secretWithNoCerts));
+        assertThat(e.getMessage(), is("The Secret testns/testcluster-cluster-operator-certs is missing the field with suffix .crt"));
     }
 }
