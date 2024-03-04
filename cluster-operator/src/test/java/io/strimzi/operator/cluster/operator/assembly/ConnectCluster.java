@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class ConnectCluster {
@@ -60,6 +61,7 @@ public class ConnectCluster {
                 try {
                     ConnectDistributed connectDistributed = new ConnectDistributed();
                     Connect connect = connectDistributed.startConnect(workerProps);
+                    waitConnectRunning(connect);
                     connectInstances.add(connect);
                     connectPorts.add(port);
                     l.countDown();
@@ -78,6 +80,20 @@ public class ConnectCluster {
                 // If the Kafka Connect node failed to start (i.e. raised an exception during the start), we should throw an exception to fail the tests
                 throw new RuntimeException("Failed to start node " + i + " of the Kafka Connect cluster", startupException.get());
             }
+        }
+    }
+
+    private static void waitConnectRunning(Connect connect) {
+        int counter = 30;
+        while (!connect.isRunning() && counter-- > 0) {
+            try {
+                TimeUnit.MILLISECONDS.sleep(100);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        if (!connect.isRunning()) {
+            throw new RuntimeException("Connect failed to start after 3 seconds.");
         }
     }
 
