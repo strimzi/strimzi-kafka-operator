@@ -9,10 +9,10 @@
 Deploy the Strimzi Drain Cleaner to the Kubernetes cluster where the Cluster Operator and Kafka cluster are running.
 
 Strimzi Drain Cleaner can run in two different modes.
-By default, it denies (blocks) the Kubernetes eviction request to prevent Kubernetes from evicting the Pods and instead uses the Strimzi Cluster Operator to move the Pod.
+By default, the Drain Cleaner denies (blocks) the Kubernetes eviction request to prevent Kubernetes from evicting the pods and instead uses the Cluster Operator to move the pod.
 This mode has better compatibility with various cluster autoscaling tools and does not require any specific `PodDisuptionBudget` configuration.
-Alternatively, you can enable the legacy mode where it allows the eviction request while also instructing the Strimzi Cluster Operator to move the Pod.
-For the legacy mode to work, you have to configure the `PodDisruptionBudget` to not allow any Pod evictions by setting the `maxUnavailable` option to `0`.
+Alternatively, you can enable the legacy mode where it allows the eviction request while also instructing the Cluster Operator to move the pod.
+For the legacy mode to work, you have to configure the `PodDisruptionBudget` to not allow any pod evictions by setting the `maxUnavailable` option to `0`.
 
 .Prerequisites
 
@@ -42,7 +42,7 @@ spec:
 
 .Excluding Kafka or ZooKeeper
 
-If you don't want to include Kafka or ZooKeeper pods in Drain Cleaner operations, change the default environment variables in the Drain Cleaner `Deployment` configuration file.
+If you don't want to include Kafka or ZooKeeper pods in Drain Cleaner operations, or if you prefer to use the Drain Cleaner in legacy mode, change the default environment variables in the Drain Cleaner `Deployment` configuration file:
 
 * Set `STRIMZI_DENY_EVICTION` to `false` to use the legacy mode relying on the `PodDisruptionBudget` configuration
 * Set `STRIMZI_DRAIN_KAFKA` to `false` to exclude Kafka pods
@@ -73,7 +73,7 @@ spec:
 
 .Procedure
 
-. If you use the legacy mode activated by setting the `STRIMZI_DENY_EVICTION` environment variable to `false`, you have to configure the `PodDisruptionBudget` resource.
+. If you are using the legacy mode activated by setting the `STRIMZI_DENY_EVICTION` environment variable to `false`, you must also configure the `PodDisruptionBudget` resource.
   Set `maxUnavailable` to `0` (zero) in the Kafka and ZooKeeper sections of the `Kafka` resource using `template` settings.
 +
 .Specifying a pod disruption budget
