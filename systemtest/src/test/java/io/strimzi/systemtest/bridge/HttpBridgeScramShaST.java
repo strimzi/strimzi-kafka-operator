@@ -183,6 +183,7 @@ class HttpBridgeScramShaST extends AbstractST {
 
         kafkaBridgeClientJob = new BridgeClientsBuilder()
             .withBootstrapAddress(KafkaBridgeResources.serviceName(suiteTestStorage.getClusterName()))
+            .withComponentName(KafkaBridgeResources.componentName(suiteTestStorage.getClusterName()))
             .withTopicName(suiteTestStorage.getTopicName())
             .withMessageCount(suiteTestStorage.getMessageCount())
             .withPort(TestConstants.HTTP_BRIDGE_DEFAULT_PORT)
