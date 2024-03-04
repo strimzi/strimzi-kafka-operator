@@ -86,7 +86,7 @@
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-sdk-extension-autoconfigure</artifactId>
-            <version>${opentelemetry.alpha-version}</version>
+            <version>${opentelemetry-alpha.version}</version>
         </dependency>
         <dependency>
             <groupId>io.opentelemetry.instrumentation</groupId>
