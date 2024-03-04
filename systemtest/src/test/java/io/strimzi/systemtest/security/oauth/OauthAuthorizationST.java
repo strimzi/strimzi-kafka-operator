@@ -146,6 +146,8 @@ public class OauthAuthorizationST extends OauthAbstractST {
             .withOauthClientId(TEAM_A_CLIENT)
             .withOauthClientSecret(TEAM_A_CLIENT_SECRET)
             .withOauthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
+            // by default it's set to 1000, which makes the job longer to fail
+            .withAdditionalConfig("retry.backoff.max.ms=100\n")
             .build();
 
         LOGGER.info("Sending {} messages to Broker with Topic name {}", testStorage.getMessageCount(), testStorage.getTopicName());
@@ -258,6 +260,8 @@ public class OauthAuthorizationST extends OauthAbstractST {
             .withOauthClientId(TEAM_B_CLIENT)
             .withOauthClientSecret(TEAM_B_CLIENT_SECRET)
             .withOauthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
+            // by default it's set to 1000, which makes the job longer to fail
+            .withAdditionalConfig("retry.backoff.max.ms=100\n")
             .build();
 
         LOGGER.info("Sending {} messages to Broker with Topic name {}", testStorage.getMessageCount(), testStorage.getTopicName());
