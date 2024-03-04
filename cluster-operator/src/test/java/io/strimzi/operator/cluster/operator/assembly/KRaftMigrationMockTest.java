@@ -204,7 +204,7 @@ public class KRaftMigrationMockTest {
                     // assert metadata is ZooKeeper-based
                     KafkaStatus status = Crds.kafkaOperation(client).inNamespace(namespace).withName(CLUSTER_NAME).get()
                             .getStatus();
-                    assertThat(status.getKafkaMetadataState(), is(KafkaMetadataState.ZooKeeper.name()));
+                    assertThat(status.getKafkaMetadataState(), is(KafkaMetadataState.ZooKeeper));
                     // deploying the controllers node pool
                     Crds.kafkaNodePoolOperation(client).inNamespace(namespace).resource(CONTROLLERS).create();
                 })))
@@ -324,7 +324,7 @@ public class KRaftMigrationMockTest {
                     // assert metadata is ZooKeeper-based
                     KafkaStatus status = Crds.kafkaOperation(client).inNamespace(namespace).withName(CLUSTER_NAME).get()
                             .getStatus();
-                    assertThat(status.getKafkaMetadataState(), is(KafkaMetadataState.ZooKeeper.name()));
+                    assertThat(status.getKafkaMetadataState(), is(KafkaMetadataState.ZooKeeper));
                     // deploying the controllers node pool
                     Crds.kafkaNodePoolOperation(client).inNamespace(namespace).resource(CONTROLLERS).create();
                 })))
@@ -429,6 +429,6 @@ public class KRaftMigrationMockTest {
 
     private void assertMetadataStateInKafkaStatus(KafkaMetadataState metadataState) {
         KafkaStatus status = Crds.kafkaOperation(client).inNamespace(namespace).withName(CLUSTER_NAME).get().getStatus();
-        assertThat(status.getKafkaMetadataState(), is(metadataState.name()));
+        assertThat(status.getKafkaMetadataState(), is(metadataState));
     }
 }

@@ -69,7 +69,7 @@ public class KafkaMetadataStateManagerTest {
                     .addToAnnotations(Annotations.ANNO_STRIMZI_IO_KRAFT, "migration")
                 .endMetadata()
                 .withNewStatus()
-                    .withKafkaMetadataState(ZooKeeper.name())
+                    .withKafkaMetadataState(ZooKeeper)
                 .endStatus()
                 .build();
 
@@ -84,7 +84,7 @@ public class KafkaMetadataStateManagerTest {
                     .addToAnnotations(Annotations.ANNO_STRIMZI_IO_KRAFT, "migration")
                 .endMetadata()
                 .withNewStatus()
-                    .withKafkaMetadataState(ZooKeeper.name())
+                    .withKafkaMetadataState(ZooKeeper)
                 .endStatus()
                 .build();
 
@@ -102,7 +102,7 @@ public class KafkaMetadataStateManagerTest {
                     .addToAnnotations(Annotations.ANNO_STRIMZI_IO_KRAFT, "migration")
                 .endMetadata()
                 .withNewStatus()
-                    .withKafkaMetadataState(KRaftMigration.name())
+                    .withKafkaMetadataState(KRaftMigration)
                 .endStatus()
                 .build();
 
@@ -121,7 +121,7 @@ public class KafkaMetadataStateManagerTest {
                     .addToAnnotations(Annotations.ANNO_STRIMZI_IO_KRAFT, "migration")
                 .endMetadata()
                 .withNewStatus()
-                    .withKafkaMetadataState(KRaftDualWriting.name())
+                    .withKafkaMetadataState(KRaftDualWriting)
                 .endStatus()
                 .build();
 
@@ -136,7 +136,7 @@ public class KafkaMetadataStateManagerTest {
                     .addToAnnotations(Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled")
                 .endMetadata()
                 .withNewStatus()
-                    .withKafkaMetadataState(KRaftPostMigration.name())
+                    .withKafkaMetadataState(KRaftPostMigration)
                 .endStatus()
                 .build();
 
@@ -151,7 +151,7 @@ public class KafkaMetadataStateManagerTest {
                     .addToAnnotations(Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled")
                 .endMetadata()
                 .withNewStatus()
-                    .withKafkaMetadataState(PreKRaft.name())
+                    .withKafkaMetadataState(PreKRaft)
                 .endStatus()
                 .build();
 
@@ -166,7 +166,7 @@ public class KafkaMetadataStateManagerTest {
                     .addToAnnotations(Annotations.ANNO_STRIMZI_IO_KRAFT, "rollback")
                 .endMetadata()
                 .withNewStatus()
-                    .withKafkaMetadataState(KRaftPostMigration.name())
+                    .withKafkaMetadataState(KRaftPostMigration)
                 .endStatus()
                 .build();
 
@@ -181,7 +181,7 @@ public class KafkaMetadataStateManagerTest {
                     .addToAnnotations(Annotations.ANNO_STRIMZI_IO_KRAFT, "disabled")
                 .endMetadata()
                 .withNewStatus()
-                    .withKafkaMetadataState(KRaftDualWriting.name())
+                    .withKafkaMetadataState(KRaftDualWriting)
                 .endStatus()
                 .build();
 
@@ -196,7 +196,7 @@ public class KafkaMetadataStateManagerTest {
                     .addToAnnotations(Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled")
                 .endMetadata()
                 .withNewStatus()
-                    .withKafkaMetadataState(ZooKeeper.name())
+                    .withKafkaMetadataState(ZooKeeper)
                 .endStatus()
                 .build();
 
@@ -204,16 +204,16 @@ public class KafkaMetadataStateManagerTest {
         kafkaMetadataStateManager.computeNextMetadataState(kafka.getStatus());
         assertTrue(kafka.getStatus().getConditions().stream().anyMatch(condition -> "KafkaMetadataStateWarning".equals(condition.getReason())));
         assertEquals(kafka.getStatus().getConditions().get(0).getMessage(),
-                "The strimzi.io/kraft annotation can't be set to enabled because the cluster is ZooKeeper-based." +
-                        "If you want to migrate it to be KRaft-based apply the migration value instead.");
-        assertEquals(kafka.getStatus().getKafkaMetadataState(), ZooKeeper.name());
+                "The strimzi.io/kraft annotation can't be set to 'enabled' because the cluster is ZooKeeper-based. " +
+                        "If you want to migrate it to be KRaft-based apply the 'migration' value instead.");
+        assertEquals(kafka.getStatus().getKafkaMetadataState(), ZooKeeper);
 
         kafka = new KafkaBuilder(KAFKA)
                 .editMetadata()
                     .addToAnnotations(Annotations.ANNO_STRIMZI_IO_KRAFT, "rollback")
                 .endMetadata()
                 .withNewStatus()
-                    .withKafkaMetadataState(ZooKeeper.name())
+                    .withKafkaMetadataState(ZooKeeper)
                 .endStatus()
                 .build();
 
@@ -221,9 +221,9 @@ public class KafkaMetadataStateManagerTest {
         kafkaMetadataStateManager.computeNextMetadataState(kafka.getStatus());
         assertTrue(kafka.getStatus().getConditions().stream().anyMatch(condition -> "KafkaMetadataStateWarning".equals(condition.getReason())));
         assertEquals(kafka.getStatus().getConditions().get(0).getMessage(),
-                "The strimzi.io/kraft annotation can't be set to rollback because the cluster is already ZooKeeper-based." +
-                        "There is no migration ongoing to rollback. If you want to migrate it to be KRaft-based apply the migration value instead.");
-        assertEquals(kafka.getStatus().getKafkaMetadataState(), ZooKeeper.name());
+                "The strimzi.io/kraft annotation can't be set to 'rollback' because the cluster is already ZooKeeper-based. " +
+                        "There is no migration ongoing to rollback. If you want to migrate it to be KRaft-based apply the 'migration' value instead.");
+        assertEquals(kafka.getStatus().getKafkaMetadataState(), ZooKeeper);
     }
 
     @Test
@@ -233,7 +233,7 @@ public class KafkaMetadataStateManagerTest {
                     .addToAnnotations(Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled")
                 .endMetadata()
                 .withNewStatus()
-                    .withKafkaMetadataState(KRaftMigration.name())
+                    .withKafkaMetadataState(KRaftMigration)
                 .endStatus()
                 .build();
 
@@ -241,7 +241,7 @@ public class KafkaMetadataStateManagerTest {
         kafkaMetadataStateManager.computeNextMetadataState(kafka.getStatus());
         assertTrue(kafka.getStatus().getConditions().stream().anyMatch(condition -> "KafkaMetadataStateWarning".equals(condition.getReason())));
         assertEquals(kafka.getStatus().getConditions().get(0).getMessage(),
-                "The strimzi.io/kraft annotation can't be set to enabled during a migration process." +
+                "The strimzi.io/kraft annotation can't be set to 'enabled' during a migration process. " +
                         "It has to be used in post migration to finalize it and move definitely to KRaft.");
 
         kafka = new KafkaBuilder(KAFKA)
@@ -249,7 +249,7 @@ public class KafkaMetadataStateManagerTest {
                     .addToAnnotations(Annotations.ANNO_STRIMZI_IO_KRAFT, "rollback")
                 .endMetadata()
                 .withNewStatus()
-                    .withKafkaMetadataState(KRaftMigration.name())
+                    .withKafkaMetadataState(KRaftMigration)
                 .endStatus()
                 .build();
 
@@ -257,7 +257,7 @@ public class KafkaMetadataStateManagerTest {
         kafkaMetadataStateManager.computeNextMetadataState(kafka.getStatus());
         assertTrue(kafka.getStatus().getConditions().stream().anyMatch(condition -> "KafkaMetadataStateWarning".equals(condition.getReason())));
         assertEquals(kafka.getStatus().getConditions().get(0).getMessage(),
-                "The strimzi.io/kraft annotation can't be set to rollback during a migration process." +
+                "The strimzi.io/kraft annotation can't be set to 'rollback' during a migration process. " +
                         "It can be used in post migration to start rollback process.");
     }
 
@@ -268,7 +268,7 @@ public class KafkaMetadataStateManagerTest {
                     .addToAnnotations(Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled")
                 .endMetadata()
                 .withNewStatus()
-                    .withKafkaMetadataState(KRaftDualWriting.name())
+                    .withKafkaMetadataState(KRaftDualWriting)
                 .endStatus()
                 .build();
 
@@ -276,7 +276,7 @@ public class KafkaMetadataStateManagerTest {
         kafkaMetadataStateManager.computeNextMetadataState(kafka.getStatus());
         assertTrue(kafka.getStatus().getConditions().stream().anyMatch(condition -> "KafkaMetadataStateWarning".equals(condition.getReason())));
         assertEquals(kafka.getStatus().getConditions().get(0).getMessage(),
-                "The strimzi.io/kraft annotation can't be set to enabled during a migration process." +
+                "The strimzi.io/kraft annotation can't be set to 'enabled' during a migration process. " +
                         "It has to be used in post migration to finalize it and move definitely to KRaft.");
 
         kafka = new KafkaBuilder(KAFKA)
@@ -284,7 +284,7 @@ public class KafkaMetadataStateManagerTest {
                     .addToAnnotations(Annotations.ANNO_STRIMZI_IO_KRAFT, "rollback")
                 .endMetadata()
                 .withNewStatus()
-                    .withKafkaMetadataState(KRaftDualWriting.name())
+                    .withKafkaMetadataState(KRaftDualWriting)
                 .endStatus()
                 .build();
 
@@ -292,7 +292,7 @@ public class KafkaMetadataStateManagerTest {
         kafkaMetadataStateManager.computeNextMetadataState(kafka.getStatus());
         assertTrue(kafka.getStatus().getConditions().stream().anyMatch(condition -> "KafkaMetadataStateWarning".equals(condition.getReason())));
         assertEquals(kafka.getStatus().getConditions().get(0).getMessage(),
-                "The strimzi.io/kraft annotation can't be set to rollback during dual writing." +
+                "The strimzi.io/kraft annotation can't be set to 'rollback' during dual writing. " +
                         "It can be used in post migration to start rollback process.");
     }
 
@@ -303,7 +303,7 @@ public class KafkaMetadataStateManagerTest {
                     .addToAnnotations(Annotations.ANNO_STRIMZI_IO_KRAFT, "disabled")
                 .endMetadata()
                 .withNewStatus()
-                    .withKafkaMetadataState(KRaftPostMigration.name())
+                    .withKafkaMetadataState(KRaftPostMigration)
                 .endStatus()
                 .build();
 
@@ -311,8 +311,8 @@ public class KafkaMetadataStateManagerTest {
         kafkaMetadataStateManager.computeNextMetadataState(kafka.getStatus());
         assertTrue(kafka.getStatus().getConditions().stream().anyMatch(condition -> "KafkaMetadataStateWarning".equals(condition.getReason())));
         assertEquals(kafka.getStatus().getConditions().get(0).getMessage(),
-                "The strimzi.io/kraft annotation can't be set to migration or disabled in the post-migration." +
-                        "You can use rollback value to come back to ZooKeeper. Use the enabled value to finalize migration instead.");
+                "The strimzi.io/kraft annotation can't be set to 'migration' or 'disabled' in the post-migration. " +
+                        "You can use 'rollback' value to come back to ZooKeeper. Use the 'enabled' value to finalize migration instead.");
     }
 
     @Test
@@ -324,7 +324,7 @@ public class KafkaMetadataStateManagerTest {
                         .addToAnnotations(Annotations.ANNO_STRIMZI_IO_KRAFT, annotation)
                     .endMetadata()
                     .withNewStatus()
-                        .withKafkaMetadataState(PreKRaft.name())
+                        .withKafkaMetadataState(PreKRaft)
                     .endStatus()
                     .build();
 
@@ -332,9 +332,9 @@ public class KafkaMetadataStateManagerTest {
             kafkaMetadataStateManager.computeNextMetadataState(kafka.getStatus());
             assertTrue(kafka.getStatus().getConditions().stream().anyMatch(condition -> "KafkaMetadataStateWarning".equals(condition.getReason())));
             assertEquals(kafka.getStatus().getConditions().get(0).getMessage(),
-                    "The strimzi.io/kraft annotation can't be set to migration, disabled or rollback in the pre-kraft." +
-                            "Use the enabled value to finalize migration and removing ZooKeeper.");
-            assertEquals(kafka.getStatus().getKafkaMetadataState(), PreKRaft.name());
+                    "The strimzi.io/kraft annotation can't be set to 'migration', 'disabled' or 'rollback' in the pre-kraft. " +
+                            "Use the 'enabled' value to finalize migration and removing ZooKeeper.");
+            assertEquals(kafka.getStatus().getKafkaMetadataState(), PreKRaft);
         }
     }
 
@@ -347,7 +347,7 @@ public class KafkaMetadataStateManagerTest {
                         .addToAnnotations(Annotations.ANNO_STRIMZI_IO_KRAFT, annotation)
                     .endMetadata()
                     .withNewStatus()
-                        .withKafkaMetadataState(KRaft.name())
+                        .withKafkaMetadataState(KRaft)
                     .endStatus()
                     .build();
 
@@ -355,8 +355,8 @@ public class KafkaMetadataStateManagerTest {
             kafkaMetadataStateManager.computeNextMetadataState(kafka.getStatus());
             assertTrue(kafka.getStatus().getConditions().stream().anyMatch(condition -> "KafkaMetadataStateWarning".equals(condition.getReason())));
             assertEquals(kafka.getStatus().getConditions().get(0).getMessage(),
-                    "The strimzi.io/kraft annotation can't be set to migration, rollback or disabled values because the cluster is already KRaft.");
-            assertEquals(kafka.getStatus().getKafkaMetadataState(), KRaft.name());
+                    "The strimzi.io/kraft annotation can't be set to 'migration', 'rollback' or 'disabled' because the cluster is already KRaft.");
+            assertEquals(kafka.getStatus().getKafkaMetadataState(), KRaft);
         }
     }
 }

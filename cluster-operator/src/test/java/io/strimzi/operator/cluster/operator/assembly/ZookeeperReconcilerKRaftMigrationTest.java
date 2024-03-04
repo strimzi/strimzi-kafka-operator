@@ -112,7 +112,7 @@ public class ZookeeperReconcilerKRaftMigrationTest {
                     .addToAnnotations(Annotations.ANNO_STRIMZI_IO_KRAFT, "disabled")
                 .endMetadata()
                 .withNewStatus()
-                    .withKafkaMetadataState(KafkaMetadataState.KRaftDualWriting.name())
+                    .withKafkaMetadataState(KafkaMetadataState.KRaftDualWriting)
                 .endStatus()
                 .build();
 
@@ -158,7 +158,7 @@ public class ZookeeperReconcilerKRaftMigrationTest {
                     .addToAnnotations(Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled")
                 .endMetadata()
                 .withNewStatus()
-                    .withKafkaMetadataState(KafkaMetadataState.KRaft.name())
+                    .withKafkaMetadataState(KafkaMetadataState.KRaft)
                 .endStatus()
                 .build();
 

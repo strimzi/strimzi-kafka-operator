@@ -36,7 +36,7 @@ public class KafkaStatus extends Status {
     private String operatorLastSuccessfulVersion;
     private String kafkaVersion;
     private String kafkaMetadataVersion;
-    private String kafkaMetadataState;
+    private KafkaMetadataState kafkaMetadataState;
 
     @Description("Addresses of the internal and external listeners")
     public List<ListenerStatus> getListeners() {
@@ -97,12 +97,13 @@ public class KafkaStatus extends Status {
             "KRaftMigration if the controllers are connected to ZooKeeper, brokers are being rolled with Zookeeper migration enabled and connection information to controllers, and the metadata migration process is running; " +
             "KRaftDualWriting if the metadata migration process finished and the cluster is in dual-write mode; " +
             "KRaftPostMigration if the brokers are fully KRaft-based but controllers being rolled to disconnect from ZooKeeper; " +
+            "PreKRaft if brokers and controller are fully KRaft-based, metadata are stored in KRaft, but ZooKeeper must be deleted; " +
             "KRaft if the metadata are stored in KRaft.")
-    public String getKafkaMetadataState() {
+    public KafkaMetadataState getKafkaMetadataState() {
         return kafkaMetadataState;
     }
 
-    public void setKafkaMetadataState(String metadataState) {
+    public void setKafkaMetadataState(KafkaMetadataState metadataState) {
         this.kafkaMetadataState = metadataState;
     }
 }
