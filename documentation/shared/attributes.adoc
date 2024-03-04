@@ -39,6 +39,9 @@
 // Bridge version
 :BridgeVersion: 0.27.0
 
+// Drain Cleaner Version
+:DrainCleanerVersion: 1.1.0
+
 // Source and download links
 :ReleaseDownload: https://github.com/strimzi/strimzi-kafka-operator/releases[GitHub releases page^]
 :supported-configurations: https://strimzi.io/downloads/
@@ -135,7 +138,7 @@
 :DockerOrg: quay.io/strimzi
 :DockerTag: {ProductVersion}
 :BridgeDockerTag: {BridgeVersion}
-:DrainCleanerDockerTag: 1.0.1
+:DrainCleanerDockerTag: {DrainCleanerVersion}
 :DockerRepository: https://quay.io/organization/strimzi[Container Registry^]
 :DockerZookeeper: quay.io/strimzi/kafka:{DockerTag}-kafka-{DefaultKafkaVersion}
 :DockerKafkaImageCurrent: quay.io/strimzi/kafka:{DockerTag}-kafka-{KafkaVersionHigher}

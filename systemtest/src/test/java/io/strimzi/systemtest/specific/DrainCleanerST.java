@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.specific;
 
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
@@ -65,22 +66,6 @@ public class DrainCleanerST extends AbstractST {
             .editMetadata()
                 .withNamespace(TestConstants.DRAIN_CLEANER_NAMESPACE)
             .endMetadata()
-            .editSpec()
-                .editKafka()
-                    .editOrNewTemplate()
-                        .editOrNewPodDisruptionBudget()
-                            .withMaxUnavailable(0)
-                        .endPodDisruptionBudget()
-                    .endTemplate()
-                .endKafka()
-                .editZookeeper()
-                    .editOrNewTemplate()
-                        .editOrNewPodDisruptionBudget()
-                            .withMaxUnavailable(0)
-                        .endPodDisruptionBudget()
-                    .endTemplate()
-                .endZookeeper()
-            .endSpec()
             .build();
 
         if (Environment.isKRaftModeEnabled()) {
@@ -121,10 +106,29 @@ public class DrainCleanerST extends AbstractST {
 
             if (!Environment.isKRaftModeEnabled()) {
                 LOGGER.info("Evicting Pods: {}", zkPodName);
-                kubeClient().getClient().pods().inNamespace(TestConstants.DRAIN_CLEANER_NAMESPACE).withName(zkPodName).evict();
+
+                try {
+                    kubeClient().getClient().pods().inNamespace(TestConstants.DRAIN_CLEANER_NAMESPACE).withName(zkPodName).evict();
+                } catch (KubernetesClientException e)   {
+                    if (e.getCode() == 500 && e.getMessage().contains("The pod will be rolled by the Strimzi Cluster Operator"))    {
+                        LOGGER.info("Eviction request for pod {} was denied by the Drain Cleaner", zkPodName);
+                    } else {
+                        throw e;
+                    }
+                }
             }
+
             LOGGER.info("Evicting Pods: {}", kafkaPodName);
-            kubeClient().getClient().pods().inNamespace(TestConstants.DRAIN_CLEANER_NAMESPACE).withName(kafkaPodName).evict();
+
+            try {
+                kubeClient().getClient().pods().inNamespace(TestConstants.DRAIN_CLEANER_NAMESPACE).withName(kafkaPodName).evict();
+            } catch (KubernetesClientException e)   {
+                if (e.getCode() == 500 && e.getMessage().contains("The pod will be rolled by the Strimzi Cluster Operator"))    {
+                    LOGGER.info("Eviction request for pod {} was denied by the Drain Cleaner", kafkaPodName);
+                } else {
+                    throw e;
+                }
+            }
 
             if (!Environment.isKRaftModeEnabled()) {
                 RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(TestConstants.DRAIN_CLEANER_NAMESPACE, testStorage.getControllerSelector(), replicas, zkPod);
