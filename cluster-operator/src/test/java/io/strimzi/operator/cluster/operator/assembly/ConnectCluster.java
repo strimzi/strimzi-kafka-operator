@@ -17,6 +17,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static java.lang.String.format;
+
 public class ConnectCluster {
     private int numNodes;
     private String brokerList;
@@ -61,7 +63,7 @@ public class ConnectCluster {
                 try {
                     ConnectDistributed connectDistributed = new ConnectDistributed();
                     Connect connect = connectDistributed.startConnect(workerProps);
-                    waitConnectRunning(connect);
+                    waitForAllServicesToStart(connect, 120);
                     connectInstances.add(connect);
                     connectPorts.add(port);
                     l.countDown();
@@ -83,17 +85,16 @@ public class ConnectCluster {
         }
     }
 
-    private static void waitConnectRunning(Connect connect) {
-        int counter = 30;
-        while (!connect.isRunning() && counter-- > 0) {
+    private static void waitForAllServicesToStart(Connect connect, int seconds) {
+        while (!connect.isRunning() && seconds-- > 0) {
             try {
-                TimeUnit.MILLISECONDS.sleep(100);
+                TimeUnit.SECONDS.sleep(1);
             } catch (InterruptedException e) {
-                throw new RuntimeException(e);
+                throw new ConnectException(e);
             }
         }
         if (!connect.isRunning()) {
-            throw new RuntimeException("Connect failed to start after 3 seconds.");
+            throw new ConnectException(format("Connect failed to start."));
         }
     }
 
