@@ -23,7 +23,7 @@ In each client application add the dependencies for the tracer:
 <dependency>
     <groupId>io.opentelemetry</groupId>
     <artifactId>opentelemetry-sdk-extension-autoconfigure</artifactId>
-    <version>{OpenTelemetryAlphaVersion}</version>
+    <version>{OpenTelemetryVersion}</version>
 </dependency>
 <dependency>
   <groupId>io.opentelemetry.instrumentation</groupId>
