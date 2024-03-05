@@ -463,8 +463,8 @@ public class KafkaMirrorMaker2ConnectorsTest {
         expected.put("groups", "my-group-.*");
         expected.put("groups.exclude", "exclude-group-.*");
         expected.put("consumer.client.rack", "${file:/tmp/strimzi-connect.properties:consumer.client.rack}");
-        expected.put("consumer.interceptor.classes", "io.opentelemetry.instrumentation.kafkaclients.TracingConsumerInterceptor");
-        expected.put("producer.interceptor.classes", "io.opentelemetry.instrumentation.kafkaclients.TracingProducerInterceptor");
+        expected.put("consumer.interceptor.classes", "io.opentelemetry.instrumentation.kafkaclients.v2_6.TracingConsumerInterceptor");
+        expected.put("producer.interceptor.classes", "io.opentelemetry.instrumentation.kafkaclients.v2_6.TracingProducerInterceptor");
 
         assertThat(new TreeMap<>(config), is(expected));
     }
