@@ -1088,7 +1088,10 @@ public class KafkaAssemblyOperatorTest {
                 Future.succeededFuture()
         );
         when(mockSecretOps.getAsync(clusterNamespace, KafkaResources.clusterCaCertificateSecretName(clusterName))).thenReturn(
-                Future.succeededFuture(new Secret())
+                Future.succeededFuture(new SecretBuilder()
+                        .withNewMetadata().withName(KafkaResources.clusterCaCertificateSecretName(clusterName)).endMetadata()
+                        .addToData("ca-cert.crt", "cert")
+                        .build())
         );
         when(mockSecretOps.getAsync(clusterNamespace, KafkaResources.secretName(clusterName))).thenReturn(
                 Future.succeededFuture(new SecretBuilder()
