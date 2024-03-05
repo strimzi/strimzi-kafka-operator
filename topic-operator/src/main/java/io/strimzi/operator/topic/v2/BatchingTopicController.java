@@ -510,6 +510,7 @@ public class BatchingTopicController {
                 if (currentState.uniqueReplicationFactor() == reconcilableTopic.kt().getSpec().getReplicas()
                         && reconcilableTopic.kt().getStatus() != null && reconcilableTopic.kt().getStatus().getReplicasChange() != null
                         && reconcilableTopic.kt().getStatus().getReplicasChange().getMessage() != null) {
+                    LOGGER.infoCr(reconcilableTopic.reconciliation(), "No replicas change required, resetting the state");
                     reconcilableTopic.kt().getStatus().setReplicasChange(null);
                 }
             });
