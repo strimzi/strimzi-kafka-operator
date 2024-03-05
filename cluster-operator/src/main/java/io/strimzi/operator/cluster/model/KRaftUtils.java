@@ -180,7 +180,7 @@ public class KRaftUtils {
                 metadataVersion.compareTo(logMessageFormatVersion) != 0) {
             String message = String.format("Migration cannot be performed with Kafka version %s, metadata version %s, inter.broker.protocol.version %s, log.message.format.version %s. " +
                             "Please make sure the Kafka version, metadata version, inter.broker.protocol.version and log.message.format.version " +
-                            "are all set the same value, which must be equal to, or higher than 3.7.0",
+                            "are all set to the same value, which must be equal to, or higher than 3.7.0",
                     kafkaVersion, metadataVersion, interBrokerProtocolVersion, logMessageFormatVersion);
             throw new InvalidResourceException(message);
         }
