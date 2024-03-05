@@ -127,9 +127,9 @@ public class PodSecurityProfilesST extends AbstractST {
             )
         );
         resourceManager.createResourceWithWait(
-            KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 1).build(),
-            KafkaTemplates.kafkaEphemeral(mm1TargetClusterName, 1).build(),
-            KafkaTemplates.kafkaEphemeral(mm2TargetClusterName, 1).build(),
+            KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 1).build(),
+            KafkaTemplates.kafkaPersistent(mm1TargetClusterName, 1).build(),
+            KafkaTemplates.kafkaPersistent(mm2TargetClusterName, 1).build(),
             KafkaTopicTemplates.topic(testStorage).build()
         );
 

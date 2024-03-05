@@ -293,7 +293,7 @@ public class OauthTlsST extends OauthAbstractST {
                 KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getTargetControllerPoolName(), targetKafkaCluster, 1).build()
             )
         );
-        resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(targetKafkaCluster, 1, 1)
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(targetKafkaCluster, 1, 1)
             .editMetadata()
                 .withNamespace(Environment.TEST_SUITE_NAMESPACE)
             .endMetadata()
@@ -434,7 +434,7 @@ public class OauthTlsST extends OauthAbstractST {
                 KafkaNodePoolTemplates.controllerPool(Environment.TEST_SUITE_NAMESPACE, KafkaNodePoolResource.getControllerPoolName(introspectionKafka), introspectionKafka, 1).build()
             )
         );
-        resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(introspectionKafka, 1)
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(introspectionKafka, 1)
             .editMetadata()
                 .withNamespace(Environment.TEST_SUITE_NAMESPACE)
             .endMetadata()
