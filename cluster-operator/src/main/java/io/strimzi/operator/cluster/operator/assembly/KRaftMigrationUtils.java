@@ -29,9 +29,8 @@ public class KRaftMigrationUtils {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KRaftMigrationUtils.class.getName());
 
     /**
-     * If the KRaft migration process is in the rollback phase, this method deletes the /controller znode from ZooKeeper
-     * to allow the brokers, which are now in ZooKeeper mode again, to elect a new controller among them taking the
-     * KRaft controllers out of the picture
+     * This method deletes the /controller znode from ZooKeeper to allow the brokers, which are now in ZooKeeper mode again,
+     * to elect a new controller among them taking the KRaft controllers out of the picture.
      *
      * @param reconciliation    Reconciliation information
      * @param clusterCaCertSecret   Secret with the Cluster CA public key

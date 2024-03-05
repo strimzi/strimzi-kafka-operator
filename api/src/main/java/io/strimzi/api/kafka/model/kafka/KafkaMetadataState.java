@@ -4,6 +4,9 @@
  */
 package io.strimzi.api.kafka.model.kafka;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
+
 /**
  * Represents where metadata are stored for the current cluster (ZooKeeper or KRaft)
  * or if a migration from ZooKeeper to KRaft is in progress and in which phase
@@ -83,5 +86,45 @@ public enum KafkaMetadataState {
      *     <dt>KRaft</dt><dd>If the user sets strimzi.io/kraft: rollback or disabled annotation which can't be used to rollback to be ZooKeeper-based from this state.</dd>
      * </dl>
      */
-    KRaft
+    KRaft;
+
+    @JsonCreator
+    public static KafkaMetadataState forValue(String value) {
+        switch (value) {
+            case "ZooKeeper":
+                return ZooKeeper;
+            case "KRaftMigration":
+                return KRaftMigration;
+            case "KRaftDualWriting":
+                return KRaftDualWriting;
+            case "KRaftPostMigration":
+                return KRaftPostMigration;
+            case "PreKRaft":
+                return PreKRaft;
+            case "KRaft":
+                return KRaft;
+            default:
+                return null;
+        }
+    }
+
+    @JsonValue
+    public String toValue() {
+        switch (this) {
+            case ZooKeeper:
+                return "ZooKeeper";
+            case KRaftMigration:
+                return "KRaftMigration";
+            case KRaftDualWriting:
+                return "KRaftDualWriting";
+            case KRaftPostMigration:
+                return "KRaftPostMigration";
+            case PreKRaft:
+                return "PreKRaft";
+            case KRaft:
+                return "KRaft";
+            default:
+                return null;
+        }
+    }
 }

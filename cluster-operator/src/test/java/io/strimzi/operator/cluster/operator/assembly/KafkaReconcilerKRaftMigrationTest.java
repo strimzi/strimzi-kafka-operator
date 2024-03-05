@@ -163,7 +163,7 @@ public class KafkaReconcilerKRaftMigrationTest {
                     .addToAnnotations(Annotations.ANNO_STRIMZI_IO_KRAFT, "migration")
                 .endMetadata()
                 .withNewStatus()
-                    .withKafkaMetadataState(KafkaMetadataState.ZooKeeper.name())
+                    .withKafkaMetadataState(KafkaMetadataState.ZooKeeper)
                 .endStatus()
                 .build();
 
@@ -191,14 +191,14 @@ public class KafkaReconcilerKRaftMigrationTest {
         Checkpoint async = context.checkpoint();
         kr.reconcile(status, Clock.systemUTC()).onComplete(res -> context.verify(() -> {
             assertThat(res.succeeded(), is(true));
-            assertEquals(status.getKafkaMetadataState(), KafkaMetadataState.KRaftMigration.name());
+            assertEquals(status.getKafkaMetadataState(), KafkaMetadataState.KRaftMigration);
         })).compose(v -> kr.reconcile(status, Clock.systemUTC())).onComplete(context.succeeding(v -> {
             // Migration not completed so still in KraftMigration state
-            assertEquals(status.getKafkaMetadataState(), KafkaMetadataState.KRaftMigration.name());
+            assertEquals(status.getKafkaMetadataState(), KafkaMetadataState.KRaftMigration);
         })).compose(v -> kr.reconcile(status, Clock.systemUTC())).onComplete(context.succeeding(v -> {
-            assertEquals(status.getKafkaMetadataState(), KafkaMetadataState.KRaftDualWriting.name());
+            assertEquals(status.getKafkaMetadataState(), KafkaMetadataState.KRaftDualWriting);
         })).compose(v -> kr.reconcile(status, Clock.systemUTC())).onComplete(context.succeeding(v -> {
-            assertEquals(status.getKafkaMetadataState(), KafkaMetadataState.KRaftPostMigration.name());
+            assertEquals(status.getKafkaMetadataState(), KafkaMetadataState.KRaftPostMigration);
             async.flag();
         }));
     }
@@ -210,7 +210,7 @@ public class KafkaReconcilerKRaftMigrationTest {
                     .addToAnnotations(Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled")
                 .endMetadata()
                 .withNewStatus()
-                    .withKafkaMetadataState(KafkaMetadataState.KRaftPostMigration.name())
+                    .withKafkaMetadataState(KafkaMetadataState.KRaftPostMigration)
                 .endStatus()
                 .build();
 
@@ -238,9 +238,9 @@ public class KafkaReconcilerKRaftMigrationTest {
         Checkpoint async = context.checkpoint();
         kr.reconcile(status, Clock.systemUTC()).onComplete(res -> context.verify(() -> {
             assertThat(res.succeeded(), is(true));
-            assertEquals(status.getKafkaMetadataState(), KafkaMetadataState.PreKRaft.name());
+            assertEquals(status.getKafkaMetadataState(), KafkaMetadataState.PreKRaft);
         })).compose(v -> kr.reconcile(status, Clock.systemUTC())).onComplete(context.succeeding(v -> {
-            assertEquals(status.getKafkaMetadataState(), KafkaMetadataState.KRaft.name());
+            assertEquals(status.getKafkaMetadataState(), KafkaMetadataState.KRaft);
             async.flag();
         }));
     }
@@ -252,7 +252,7 @@ public class KafkaReconcilerKRaftMigrationTest {
                 .addToAnnotations(Annotations.ANNO_STRIMZI_IO_KRAFT, "rollback")
                 .endMetadata()
                 .withNewStatus()
-                .withKafkaMetadataState(KafkaMetadataState.KRaftPostMigration.name())
+                .withKafkaMetadataState(KafkaMetadataState.KRaftPostMigration)
                 .endStatus()
                 .build();
 
@@ -279,7 +279,7 @@ public class KafkaReconcilerKRaftMigrationTest {
 
         Checkpoint async = context.checkpoint();
         kr.reconcile(status, Clock.systemUTC()).onComplete(res -> context.verify(() -> {
-            assertEquals(status.getKafkaMetadataState(), KafkaMetadataState.KRaftDualWriting.name());
+            assertEquals(status.getKafkaMetadataState(), KafkaMetadataState.KRaftDualWriting);
             async.flag();
         }));
     }
@@ -291,7 +291,7 @@ public class KafkaReconcilerKRaftMigrationTest {
                     .addToAnnotations(Annotations.ANNO_STRIMZI_IO_KRAFT, "disabled")
                 .endMetadata()
                 .withNewStatus()
-                    .withKafkaMetadataState(KafkaMetadataState.KRaftDualWriting.name())
+                    .withKafkaMetadataState(KafkaMetadataState.KRaftDualWriting)
                 .endStatus()
                 .build();
 
@@ -318,7 +318,7 @@ public class KafkaReconcilerKRaftMigrationTest {
 
         Checkpoint async = context.checkpoint();
         kr.reconcile(status, Clock.systemUTC()).onComplete(res -> context.verify(() -> {
-            assertEquals(status.getKafkaMetadataState(), KafkaMetadataState.ZooKeeper.name());
+            assertEquals(status.getKafkaMetadataState(), KafkaMetadataState.ZooKeeper);
             async.flag();
         }));
     }

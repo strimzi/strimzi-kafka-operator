@@ -152,9 +152,11 @@ public class KRaftUtils {
     }
 
     /**
-     * Validate the Kafka version set in the Kafka custom resource, together with the metadata version and the configured
-     * inter.broker.protocol.version and log.message.format.version.
-     * They need to be all aligned and at least 3.7.0 to support ZooKeeper to KRaft migration.
+     * Validate the Kafka version set in the Kafka custom resource (in spec.kafka.version), together with the
+     * metadata version (in spec.kafka.metadataVersion) and the configured inter.broker.protocol.version
+     * and log.message.format.version. (in spec.kafka.config).
+     * They need to be all aligned and at least 3.7.0 to support ZooKeeper to KRaft migration, otherwise the check
+     * throws an {@code InvalidResourceException}.
      *
      * @param kafkaVersionFromCr    Kafka version from the custom resource
      * @param metadataVersionFromCr Metadata version from the custom resource
@@ -177,8 +179,8 @@ public class KRaftUtils {
                 metadataVersion.compareTo(interBrokerProtocolVersion) != 0 ||
                 metadataVersion.compareTo(logMessageFormatVersion) != 0) {
             String message = String.format("Migration cannot be performed with Kafka version %s, metadata version %s, inter.broker.protocol.version %s, log.message.format.version %s. " +
-                            "Please make sure Kafka version is higher or equal than 3.7.0 and having " +
-                            "metadata version, inter.broker.protocol.version and log.message.format.version set to the same value as well.",
+                            "Please make sure the Kafka version, metadata version, inter.broker.protocol.version and log.message.format.version " +
+                            "are all set to the same value, which must be equal to, or higher than 3.7.0",
                     kafkaVersion, metadataVersion, interBrokerProtocolVersion, logMessageFormatVersion);
             throw new InvalidResourceException(message);
         }

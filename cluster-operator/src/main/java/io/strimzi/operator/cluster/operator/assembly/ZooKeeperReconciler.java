@@ -872,7 +872,7 @@ public class ZooKeeperReconciler {
     }
 
     /**
-     * Defers to the Kafka metadata state manager if there is a KRaft migration rollback ongoing and in such case,
+     * Defers to the Kafka metadata state manager to determine if there is a KRaft migration rollback ongoing and in such case,
      * it will delete the /controller znode to allow brokers to elect a new controller among them, now that KRaft
      * controllers are out of the picture.
      *

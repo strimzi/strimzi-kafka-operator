@@ -73,14 +73,14 @@ public class ZooKeeperEraser {
     public Future<Void> reconcile()    {
         LOGGER.infoCr(reconciliation, "Deleting all the ZooKeeper related resources");
         return jmxSecret()
-                .compose(i -> networkPolicy())
-                .compose(i -> serviceAccount())
-                .compose(i -> service())
-                .compose(i -> headlessService())
-                .compose(i -> certificateSecret())
-                .compose(i -> loggingAndMetricsConfigMap())
-                .compose(i -> podDisruptionBudget())
-                .compose(i -> podSet())
+                .compose(i -> deleteNetworkPolicy())
+                .compose(i -> deleteServiceAccount())
+                .compose(i -> deleteService())
+                .compose(i -> deleteHeadlessService())
+                .compose(i -> deleteCertificateSecret())
+                .compose(i -> deleteLoggingAndMetricsConfigMap())
+                .compose(i -> deletePodDisruptionBudget())
+                .compose(i -> deletePodSet())
                 .compose(i -> deletePersistentClaims());
     }
 
@@ -98,7 +98,7 @@ public class ZooKeeperEraser {
      *
      * @return  Completes when the network policy is successfully deleted
      */
-    protected Future<Void> networkPolicy() {
+    protected Future<Void> deleteNetworkPolicy() {
         return networkPolicyOperator.deleteAsync(reconciliation, reconciliation.namespace(), KafkaResources.zookeeperNetworkPolicyName(reconciliation.name()), true);
     }
 
@@ -107,7 +107,7 @@ public class ZooKeeperEraser {
      *
      * @return  Completes when the service account was successfully deleted
      */
-    protected Future<Void> serviceAccount() {
+    protected Future<Void> deleteServiceAccount() {
         return serviceAccountOperator.deleteAsync(reconciliation, reconciliation.namespace(), KafkaResources.zookeeperComponentName(reconciliation.name()), true);
     }
 
@@ -116,7 +116,7 @@ public class ZooKeeperEraser {
      *
      * @return  Completes when the service was successfully deleted
      */
-    protected Future<Void> service() {
+    protected Future<Void> deleteService() {
         return serviceOperator.deleteAsync(reconciliation, reconciliation.namespace(), KafkaResources.zookeeperServiceName(reconciliation.name()), true);
     }
 
@@ -125,7 +125,7 @@ public class ZooKeeperEraser {
      *
      * @return  Completes when the service was successfully deleted
      */
-    protected Future<Void> headlessService() {
+    protected Future<Void> deleteHeadlessService() {
         return serviceOperator.deleteAsync(reconciliation, reconciliation.namespace(), KafkaResources.zookeeperHeadlessServiceName(reconciliation.name()), true);
     }
 
@@ -134,7 +134,7 @@ public class ZooKeeperEraser {
      *
      * @return      Completes when the Secret was successfully deleted
      */
-    protected Future<Void> certificateSecret() {
+    protected Future<Void> deleteCertificateSecret() {
         return secretOperator.deleteAsync(reconciliation, reconciliation.namespace(), KafkaResources.zookeeperSecretName(reconciliation.name()), true);
     }
 
@@ -143,7 +143,7 @@ public class ZooKeeperEraser {
      *
      * @return  Completes when the ConfigMap was successfully deleted
      */
-    protected Future<Void> loggingAndMetricsConfigMap() {
+    protected Future<Void> deleteLoggingAndMetricsConfigMap() {
         return configMapOperator.deleteAsync(reconciliation, reconciliation.namespace(), KafkaResources.zookeeperMetricsAndLogConfigMapName(reconciliation.name()), true);
     }
 
@@ -152,7 +152,7 @@ public class ZooKeeperEraser {
      *
      * @return  Completes when the PDB was successfully deleted
      */
-    protected Future<Void> podDisruptionBudget() {
+    protected Future<Void> deletePodDisruptionBudget() {
         return podDisruptionBudgetOperator.deleteAsync(reconciliation, reconciliation.namespace(), KafkaResources.zookeeperComponentName(reconciliation.name()), true);
     }
 
@@ -161,7 +161,7 @@ public class ZooKeeperEraser {
      *
      * @return  Future which completes when the PodSet is deleted
      */
-    protected Future<Void> podSet() {
+    protected Future<Void> deletePodSet() {
         return strimziPodSetOperator.deleteAsync(reconciliation, reconciliation.namespace(), KafkaResources.zookeeperComponentName(reconciliation.name()), true);
     }
 
