@@ -2,7 +2,6 @@
 
 ## 0.40.0
 
-* Migrate from OpenTelemetry tracing from using OkHttp sender to the JDK sender or GRPC sender thus remove the kotlin dependency. 
 * Add support for Apache Kafka 3.7.0.
   Remove support for Apache Kafka 3.5.0, 3.5.1, and 3.5.2.
 * The `UseKRaft` feature gate moves to beta stage and is enabled by default.
@@ -50,14 +49,6 @@
   This new behavior does not require the `PodDisruptionBudget` to be set to `maxUnavailable: 0`.
   We expect this to improve the compatibility with various tools used for scaling Kubernetes clusters such as [Karpenter](https://karpenter.sh/).
   If you observe any problems with your toolchain or just want to stick with the previous behavior, you can use the `STRIMZI_DENY_EVICTION` environment variable and set it to `false` to switch back to the old (legacy) mode.
-* The following dependencies have been removed from the third-party libs.
-  * `com.squareup.okhttp3:okhttp:jar:4.10.0`
-  * `com.squareup.okio:okio-jvm:jar:3.0.0`
-  * `org.jetbrains.kotlin:kotlin-stdlib-jdk8:jar:1.5.31`
-  * `org.jetbrains.kotlin:kotlin-stdlib-jdk7:jar:1.5.31`
-  * `org.jetbrains.kotlin:kotlin-stdlib-common:jar:1.5.31`
-  * `org.jetbrains.kotlin:kotlin-stdlib:jar:1.6.20`
-  * `org.jetbrains:annotations:jar:13.0`
 
 ## 0.39.0
 
