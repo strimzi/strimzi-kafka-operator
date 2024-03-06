@@ -6,16 +6,20 @@
 = Tuning Kafka configuration
 
 [role="_abstract"]
-Use configuration properties to optimize the performance of Kafka brokers, producers and consumers.
+Fine-tuning the performance of your Kafka deployment involves optimizing various configuration properties according to your specific requirements.
+This section provides an introduction to common configuration options available for Kafka brokers, producers, and consumers. 
 
-A minimum set of configuration properties is required,
-but you can add or adjust properties to change how producers and consumers interact with Kafka brokers.
-For example, you can tune latency and throughput of messages so that clients can respond to data in real time.
+While a minimum set of configurations is necessary for Kafka to function, Kafka properties allow for extensive adjustments. 
+Through configuration properties, you can enhance latency, throughput, and overall efficiency, ensuring that your Kafka deployment meets the demands of your applications.
 
-You might start by analyzing metrics to gauge where to make your initial configurations,
-then make incremental changes and further comparisons of metrics until you have the configuration you need.
+For effective tuning, take a methodical approach. 
+Begin by analyzing relevant metrics to identify potential bottlenecks or areas for improvement. 
+Adjust configuration parameters iteratively, monitoring the impact on performance metrics, and then refine your settings accordingly.
 
 For more information about Apache Kafka configuration properties, see the {kafkaDoc}.
+
+NOTE: The guidance provided here offers a starting point for tuning your Kafka deployment. 
+Finding the optimal configuration depends on factors such as workload, infrastructure, and performance objectives.
 
 == Tools that help with tuning
 
@@ -31,3 +35,4 @@ include::../../modules/managing/con-broker-config-properties.adoc[leveloffset=+1
 include::../../modules/managing/con-producer-config-properties.adoc[leveloffset=+1]
 include::../../modules/managing/con-consumer-config-properties.adoc[leveloffset=+1]
 include::../../modules/configuring/con-config-high-volume-messages.adoc[leveloffset=+1]
+include::../../modules/configuring/con-config-large-messages.adoc[leveloffset=+1]
