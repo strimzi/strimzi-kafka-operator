@@ -6,7 +6,6 @@ package io.strimzi.operator.common;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LabelSelector;
-import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
@@ -37,7 +36,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
+import java.util.Objects;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
@@ -131,31 +130,6 @@ public class Util {
     }
 
     /**
-     * Returns exception when secret data is missing a particular item. This is used from several different methods to provide identical exception.
-     *
-     * @param namespace     Namespace of the Secret
-     * @param secretName    Name of the Secret
-     * @param dataFieldName Name of the Secret field
-     * @return              RuntimeException
-     */
-    public static RuntimeException missingDataInSecretException(String namespace, String secretName, String dataFieldName) {
-        return new RuntimeException("The Secret " + namespace + "/" + secretName + " is missing the field " + dataFieldName);
-    }
-
-    /**
-     * Returns exception when certificate is corrupt. This is used from several different methods to provide identical exception.
-     *
-     * @param namespace     Namespace of the Secret
-     * @param secretName    Name of the Secret
-     * @param keyName       Name of the Secret key
-     * @return              RuntimeException
-     */
-    public static RuntimeException corruptCertificateException(String namespace, String secretName, String keyName) {
-        return new RuntimeException("Bad/corrupt certificate found in data." + keyName + ".crt of Secret "
-                + secretName + " in namespace " + namespace);
-    }
-
-    /**
      * Create a file with Keystore or Truststore from the given {@code bytes}.
      * The file will be set to get deleted when the JVM exist.
      *
@@ -189,21 +163,16 @@ public class Util {
      * @return          Decoded bytes
      */
     public static byte[] decodeBase64FieldFromSecret(Secret secret, String field) {
-        return Optional.ofNullable(secret)
-                .map(Secret::getData)
-                .map(data -> data.get(field))
-                .map(value -> Base64.getDecoder().decode(value))
-                .orElseThrow(() -> {
-                    String name = Optional.ofNullable(secret)
-                            .map(Secret::getMetadata)
-                            .map(ObjectMeta::getName)
-                            .orElse("unknown");
-                    String namespace = Optional.ofNullable(secret)
-                            .map(Secret::getMetadata)
-                            .map(ObjectMeta::getNamespace)
-                            .orElse("unknown");
-                    return Util.missingDataInSecretException(namespace, name, field);
-                });
+        Objects.requireNonNull(secret);
+        String data = secret.getData().get(field);
+        if (data != null) {
+            return Base64.getDecoder().decode(data);
+        } else {
+            throw new RuntimeException(String.format("The Secret %s/%s is missing the field %s",
+                    secret.getMetadata().getNamespace(),
+                    secret.getMetadata().getName(),
+                    field));
+        }
     }
 
     /**

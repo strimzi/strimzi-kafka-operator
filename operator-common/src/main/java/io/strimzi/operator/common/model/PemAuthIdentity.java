@@ -11,7 +11,7 @@ import java.io.ByteArrayInputStream;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
-import java.util.Optional;
+import java.util.Objects;
 
 /**
  * Represents the identity used during TLS client authentication.
@@ -22,21 +22,18 @@ public class PemAuthIdentity {
     private final byte[] privateKeyAsPemBytes;
     private final byte[] certificateChainAsPemBytes;
     private final String secretCertName;
-    private String secretName;
-    private String secretNamespace;
+    private final String secretName;
+    private final String secretNamespace;
 
     /**
      * @param secret Kubernetes Secret containing the Cluster Operator public and private key
      * @param secretCertName Key in the Kubernetes Secret that is associated with the requested identity
      */
     private PemAuthIdentity(Secret secret, String secretCertName) {
+        Objects.requireNonNull(secret, "Cannot extract auth identity from null secret.");
         this.secretCertName = secretCertName;
-        Optional.ofNullable(secret)
-                .map(Secret::getMetadata)
-                .ifPresent(objectMeta -> {
-                    secretName = objectMeta.getName();
-                    secretNamespace = objectMeta.getNamespace();
-                });
+        this.secretName = secret.getMetadata().getName();
+        this.secretNamespace = secret.getMetadata().getNamespace();
         privateKeyAsPemBytes = Util.decodeBase64FieldFromSecret(secret, String.format("%s.key", secretCertName));
         certificateChainAsPemBytes = Util.decodeBase64FieldFromSecret(secret, String.format("%s.crt", secretCertName));
     }
@@ -75,7 +72,8 @@ public class PemAuthIdentity {
             final CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
             return (X509Certificate) certificateFactory.generateCertificate(new ByteArrayInputStream(certificateChainAsPemBytes));
         } catch (CertificateException e) {
-            throw Util.corruptCertificateException(secretNamespace, secretName, secretCertName);
+            throw new RuntimeException("Bad/corrupt certificate found in data." + secretCertName + ".crt of Secret "
+                    + secretName + " in namespace " + secretNamespace);
         }
     }
 

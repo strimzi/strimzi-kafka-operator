@@ -56,11 +56,19 @@ public class ZookeeperScalerTest {
     String dummyBase64Value = Base64.getEncoder().encodeToString("dummy".getBytes(StandardCharsets.US_ASCII));
     PemTrustSet dummyPemTrustSet = new PemTrustSet(
             new SecretBuilder()
+                    .withNewMetadata()
+                        .withName("cluster-ca-cert")
+                        .withNamespace("myproject")
+                    .endMetadata()
                     .addToData(Ca.CA_CRT, MockCertManager.clusterCaCert())
                     .build()
     );
     ClusterOperatorPKCS12AuthIdentity dummyPKSC12AuthIdentity = new ClusterOperatorPKCS12AuthIdentity(
             new SecretBuilder()
+                    .withNewMetadata()
+                        .withName("cluster-operator-certs")
+                        .withNamespace("myproject")
+                    .endMetadata()
                     .addToData("cluster-operator.password", dummyBase64Value)
                     .addToData("cluster-operator.p12", dummyBase64Value)
                     .build()

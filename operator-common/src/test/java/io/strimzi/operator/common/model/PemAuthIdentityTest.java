@@ -61,4 +61,10 @@ public class PemAuthIdentityTest {
         Exception e = assertThrows(RuntimeException.class, pemAuthIdentity::certificateChain);
         assertThat(e.getMessage(), is("Bad/corrupt certificate found in data.cluster-operator.crt of Secret testcluster-cluster-operator-certs in namespace testns"));
     }
+
+    @Test
+    public void testMissingSecret() {
+        Exception e = assertThrows(NullPointerException.class, () -> PemAuthIdentity.clusterOperator(null));
+        assertThat(e.getMessage(), is("Cannot extract auth identity from null secret."));
+    }
 }

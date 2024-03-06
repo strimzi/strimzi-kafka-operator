@@ -5,7 +5,6 @@
 package io.strimzi.operator.common.model;
 
 import io.fabric8.kubernetes.api.model.Secret;
-import io.strimzi.operator.common.Util;
 
 import java.nio.charset.StandardCharsets;
 import java.security.cert.CertificateException;
@@ -13,7 +12,7 @@ import java.security.cert.X509Certificate;
 import java.util.Base64;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Optional;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -23,23 +22,17 @@ import java.util.stream.Collectors;
 public class PemTrustSet {
     private static final String CERT_SUFFIX = ".crt";
     private final Map<String, byte[]> trustedCertificateMap;
-    private String secretName;
-    private String secretNamespace;
+    private final String secretName;
+    private final String secretNamespace;
 
     /**
      * Constructs the PemTrustSet. This also validates the provided Secret contains valid certificates.
      * @param secret Kubernetes Secret containing the trusted certificates
      */
     public PemTrustSet(Secret secret) {
-        if (secret == null || secret.getData() == null) {
-            throw new RuntimeException("Cannot extract trust set from null secret");
-        }
-        Optional.of(secret)
-                .map(Secret::getMetadata)
-                .ifPresent(objectMeta -> {
-                    secretName = objectMeta.getName();
-                    secretNamespace = objectMeta.getNamespace();
-                });
+        Objects.requireNonNull(secret, "Cannot extract trust set from null secret.");
+        this.secretName = secret.getMetadata().getName();
+        this.secretNamespace = secret.getMetadata().getNamespace();
         trustedCertificateMap = extractCerts(secret);
     }
 
@@ -81,8 +74,8 @@ public class PemTrustSet {
                             try {
                                 return Ca.x509Certificate(entry.getValue());
                             } catch (CertificateException e) {
-                                String key = entry.getKey();
-                                throw Util.corruptCertificateException(secretNamespace, secretName, key);
+                                throw new RuntimeException("Bad/corrupt certificate found in data." + entry.getKey() + ".crt of Secret "
+                                        + secretName + " in namespace " + secretNamespace);
                             }
                         }
                 ));
@@ -104,7 +97,7 @@ public class PemTrustSet {
                         entry -> decoder.decode(entry.getValue()))
                 );
         if (certs.isEmpty()) {
-            throw Util.missingDataInSecretException(secretNamespace, secretName, "with suffix .crt");
+            throw new RuntimeException("The Secret " + secretNamespace + "/" + secretName + " does not contain any fields with the suffix .crt");
         }
         return certs;
     }

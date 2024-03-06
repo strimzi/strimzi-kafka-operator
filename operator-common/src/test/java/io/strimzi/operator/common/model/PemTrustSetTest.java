@@ -36,21 +36,8 @@ public class PemTrustSetTest {
 
     @Test
     public void testMissingSecret() {
-        Exception e = assertThrows(RuntimeException.class, () -> new PemTrustSet(null));
-        assertThat(e.getMessage(), is("Cannot extract trust set from null secret"));
-    }
-
-    @Test
-    public void testMissingSecretData() {
-        Secret secretWithMissingData = new SecretBuilder()
-                .withNewMetadata()
-                    .withName(KafkaResources.secretName(CLUSTER))
-                    .withNamespace(NAMESPACE)
-                .endMetadata()
-                .withData(null)
-                .build();
-        Exception e = assertThrows(RuntimeException.class, () -> new PemTrustSet(secretWithMissingData));
-        assertThat(e.getMessage(), is("Cannot extract trust set from null secret"));
+        Exception e = assertThrows(NullPointerException.class, () -> new PemTrustSet(null));
+        assertThat(e.getMessage(), is("Cannot extract trust set from null secret."));
     }
 
     @Test
@@ -63,7 +50,7 @@ public class PemTrustSetTest {
                 .withData(Map.of())
                 .build();
         Exception e = assertThrows(RuntimeException.class,  () -> new PemTrustSet(secretWithEmptyData));
-        assertThat(e.getMessage(), is("The Secret testns/testcluster-cluster-operator-certs is missing the field with suffix .crt"));
+        assertThat(e.getMessage(), is("The Secret testns/testcluster-cluster-operator-certs does not contain any fields with the suffix .crt"));
     }
 
     @Test
@@ -76,6 +63,6 @@ public class PemTrustSetTest {
                 .withData(Map.of("ca.txt", "not-a-cert"))
                 .build();
         Exception e = assertThrows(RuntimeException.class, () -> new PemTrustSet(secretWithNoCerts));
-        assertThat(e.getMessage(), is("The Secret testns/testcluster-cluster-operator-certs is missing the field with suffix .crt"));
+        assertThat(e.getMessage(), is("The Secret testns/testcluster-cluster-operator-certs does not contain any fields with the suffix .crt"));
     }
 }

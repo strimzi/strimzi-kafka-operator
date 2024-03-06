@@ -669,6 +669,10 @@ public class ResourceUtils {
         when(supplier.secretOperations.getAsync(any(), any())).thenReturn(Future.succeededFuture());
         when(supplier.secretOperations.getAsync(any(), or(endsWith("ca-cert"), endsWith("certs")))).thenReturn(Future.succeededFuture(
                 new SecretBuilder()
+                        .withNewMetadata()
+                            .withName("cert-secret")
+                            .withNamespace("namespace")
+                        .endMetadata()
                         .addToData("cluster-operator.key", "key")
                         .addToData("cluster-operator.crt", "cert")
                         .build()));
