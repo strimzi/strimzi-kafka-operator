@@ -56,6 +56,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -70,6 +71,7 @@ import static io.strimzi.operator.topic.v2.TopicOperatorUtil.startReconciliation
 import static io.strimzi.operator.topic.v2.TopicOperatorUtil.stopOperationTimer;
 import static io.strimzi.operator.topic.v2.TopicOperatorUtil.stopReconciliationTimer;
 import static io.strimzi.operator.topic.v2.TopicOperatorUtil.topicName;
+import static io.strimzi.operator.topic.v2.TopicOperatorUtil.topicNames;
 
 /**
  * A unidirectional operator.
@@ -489,8 +491,7 @@ public class BatchingTopicController {
         var findDifferentRfResults = findDifferentRf(currentStatesOrError);
         
         // Cruise Control integration
-        maybeResetReplicasChangeStatuses(currentStatesOrError);
-        maybeCheckReplicasChanges(topics, results, findDifferentRfResults);
+        maybeCheckReplicasChanges(topics, findDifferentRfResults, results);
         
         accumulateResults(topics, results, alterConfigsResults, createPartitionsResults, findDifferentRfResults);
         updateStatuses(results);
@@ -500,64 +501,70 @@ public class BatchingTopicController {
     }
 
     /**
-     * Check if an invalid replicas update was reverted by the user and update the status accordingly.
+     * Check replicas changes when CruiseControl integration is enabled. 
+     * <br/><br/>
+     * 
+     * It runs the following operations in order:
+     * 
+     * <ol>
+     *     <li>Request new and pending changes</li>
+     *     <li>Check the state of ongoing changes</li>
+     *     <li>Complete pending but completed changes (*)</li>
+     * </ol>
+     * 
+     * (*) A pending change needs to be completed by the reconciliation when it is unknown to Cruise Control 
+     * due to a restart, but the task actually completed successfully (i.e. the new replication factor 
+     * was applied), or when the user reverts an invalid replicas change to the previous value.
+     * 
+     * @param reconcilableTopics Reconcilable topics
+     * @param differentRfResults Topics with different RF
+     * @param results Topics with updated status
      */
-    /* test */ void maybeResetReplicasChangeStatuses(PartitionedByError<ReconcilableTopic, CurrentState> currentStatesOrError) {
+    /* test */ void maybeCheckReplicasChanges(List<ReconcilableTopic> reconcilableTopics,
+                                              PartitionedByError<ReconcilableTopic, CurrentState> differentRfResults,
+                                              Map<ReconcilableTopic, Either<TopicOperatorException, Object>> results) {
         if (config.cruiseControlEnabled()) {
-            currentStatesOrError.ok().forEach(pair -> {
-                var reconcilableTopic = pair.getKey();
-                var currentState = pair.getValue();
-                if (currentState.uniqueReplicationFactor() == reconcilableTopic.kt().getSpec().getReplicas()
-                        && reconcilableTopic.kt().getStatus() != null && reconcilableTopic.kt().getStatus().getReplicasChange() != null
-                        && reconcilableTopic.kt().getStatus().getReplicasChange().getMessage() != null) {
-                    LOGGER.infoCr(reconcilableTopic.reconciliation(), "No replicas change required, resetting the state");
-                    reconcilableTopic.kt().getStatus().setReplicasChange(null);
-                }
-            });
+            var differentRfMap = differentRfResults.ok().map(Pair::getKey).collect(Collectors.toList())
+                .stream().collect(Collectors.toMap(ReconcilableTopic::topicName, Function.identity()));
+            
+            var pending = topicsMatching(reconcilableTopics, this::isPendingReplicasChange);
+            var brandNew = differentRfMap.values().stream()
+                .filter(rt -> !isPendingReplicasChange(rt.kt()) && !isOngoingReplicasChange(rt.kt()))
+                .collect(Collectors.toList());
+            pending.addAll(brandNew);
+            requestPendingReplicasChanges(pending, results);
+
+            var ongoing = topicsMatching(reconcilableTopics, this::isOngoingReplicasChange);
+            checkOngoingReplicasChanges(ongoing, results);
+            
+            var completed = pending.stream()
+                .filter(rt -> !differentRfMap.containsKey(rt.topicName()) && !isFailedReplicasChange(rt.kt()))
+                .collect(Collectors.toList());
+            var reverted = pending.stream()
+                .filter(rt -> !differentRfMap.containsKey(rt.topicName()) && isFailedReplicasChange(rt.kt()))
+                .collect(Collectors.toList());
+            completed.addAll(reverted);
+            LOGGER.debugOp("Pending but completed replicas changes, Topics: {}", topicNames(completed));
+            completeReplicasChanges(completed, results);
         }
     }
 
-    /**
-     * Check pending and ongoing replicas changes.
-     */
-    /* test */ void maybeCheckReplicasChanges(List<ReconcilableTopic> topics,
-                                              Map<ReconcilableTopic, Either<TopicOperatorException, Object>> results,
-                                              PartitionedByError<ReconcilableTopic, CurrentState> differentRfResults) {
-        if (config.cruiseControlEnabled()) {
-            var topicsWithDifferentRf = differentRfResults.ok().map(Pair::getKey).collect(Collectors.toList());
-            requestPendingReplicasChanges(topicsWithDifferentRf, results);
-            checkOngoingReplicasChanges(topics, results);
-        }
-    }
-
-    private void requestPendingReplicasChanges(List<ReconcilableTopic> topicsWithDifferentRf, Map<ReconcilableTopic, Either<TopicOperatorException, Object>> results) {
-        var topicsWithPendingRfChange = topicsMatching(topicsWithDifferentRf, this::isPendingReplicasChange);
-        warnTooLargeMinIsr(topicsWithPendingRfChange);
-        var pendingAndOngoing = replicasChangeHandler.requestPendingChanges(topicsWithPendingRfChange);
+    private void requestPendingReplicasChanges(List<ReconcilableTopic> pending, Map<ReconcilableTopic, Either<TopicOperatorException, Object>> results) {
+        warnTooLargeMinIsr(pending);
+        var pendingAndOngoing = replicasChangeHandler.requestPendingChanges(pending);
         pendingAndOngoing.forEach(rt -> putResult(results, rt, Either.ofRight(null)));
     }
 
-    private void checkOngoingReplicasChanges(List<ReconcilableTopic> topics, Map<ReconcilableTopic, Either<TopicOperatorException, Object>> results) {
-        var topicsWithOngoingRfChange = topicsMatching(topics, this::isOngoingReplicasChange);
-        var completedAndFailed = replicasChangeHandler.requestOngoingChanges(topicsWithOngoingRfChange);
+    private void checkOngoingReplicasChanges(List<ReconcilableTopic> ongoing, Map<ReconcilableTopic, Either<TopicOperatorException, Object>> results) {
+        var completedAndFailed = replicasChangeHandler.requestOngoingChanges(ongoing);
         completedAndFailed.forEach(rt -> putResult(results, rt, Either.ofRight(null)));
     }
 
-    private List<ReconcilableTopic> topicsMatching(List<ReconcilableTopic> reconcilableTopics, Predicate<KafkaTopic> status) {
-        return reconcilableTopics.stream().filter(rt -> status.test(rt.kt())).collect(Collectors.toList());
-    }
-
-    private boolean isPendingReplicasChange(KafkaTopic kafkaTopic) {
-        return kafkaTopic.getStatus() != null
-            && (kafkaTopic.getStatus().getReplicasChange() == null
-            || (kafkaTopic.getStatus().getReplicasChange().getState() == PENDING
-            && kafkaTopic.getStatus().getReplicasChange().getSessionId() == null));
-    }
-
-    private boolean isOngoingReplicasChange(KafkaTopic kafkaTopic) {
-        return hasReplicasChange(kafkaTopic.getStatus())
-            && kafkaTopic.getStatus().getReplicasChange().getState() == ONGOING
-            && kafkaTopic.getStatus().getReplicasChange().getSessionId() != null;
+    private void completeReplicasChanges(List<ReconcilableTopic> toReset, Map<ReconcilableTopic, Either<TopicOperatorException, Object>> results) {
+        toReset.forEach(reconcilableTopic -> {
+            reconcilableTopic.kt().getStatus().setReplicasChange(null);
+            putResult(results, reconcilableTopic, Either.ofRight(null));
+        });
     }
 
     /**
@@ -565,7 +572,7 @@ public class BatchingTopicController {
      * disruption to producers with acks=all. When this happens, the Topic Operator won't block the operation, but will 
      * just log a warning, because the KafkaRoller ignores topics with RF < minISR, and they don't even show up as under 
      * replicated in Kafka metrics.
-     * 
+     *
      * @param reconcilableTopics Reconcilable topic.
      */
     private void warnTooLargeMinIsr(List<ReconcilableTopic> reconcilableTopics) {
@@ -582,6 +589,28 @@ public class BatchingTopicController {
                 }
             }
         }
+    }
+
+    private List<ReconcilableTopic> topicsMatching(List<ReconcilableTopic> reconcilableTopics, Predicate<KafkaTopic> status) {
+        return reconcilableTopics.stream().filter(rt -> status.test(rt.kt())).collect(Collectors.toList());
+    }
+
+    private boolean isPendingReplicasChange(KafkaTopic kafkaTopic) {
+        return hasReplicasChange(kafkaTopic.getStatus())
+            && kafkaTopic.getStatus().getReplicasChange().getState() == PENDING
+            && kafkaTopic.getStatus().getReplicasChange().getSessionId() == null;
+    }
+
+    private boolean isOngoingReplicasChange(KafkaTopic kafkaTopic) {
+        return hasReplicasChange(kafkaTopic.getStatus())
+            && kafkaTopic.getStatus().getReplicasChange().getState() == ONGOING
+            && kafkaTopic.getStatus().getReplicasChange().getSessionId() != null;
+    }
+
+    private boolean isFailedReplicasChange(KafkaTopic kafkaTopic) {
+        return hasReplicasChange(kafkaTopic.getStatus())
+            && kafkaTopic.getStatus().getReplicasChange().getState() == PENDING
+            && kafkaTopic.getStatus().getReplicasChange().getMessage() != null;
     }
 
     private Predicate<ReconcilableTopic> hasTopicSpec = reconcilableTopic -> {

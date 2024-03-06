@@ -154,7 +154,7 @@ public class ReplicasChangeHandler {
                     
                         UserTasksResponse utr = mapper.readValue(response.body(), UserTasksResponse.class);
                         if (utr.userTasks().isEmpty()) {
-                            // Cruise Control restarted: reset the state because tasks queue is not persisted
+                            // Cruise Control restarted: reset the state because the tasks queue is not persisted
                             updateToPending(result, "Task not found, Resetting the state");
                             return;
                         }
