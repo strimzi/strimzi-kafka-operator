@@ -19,21 +19,21 @@ public interface AdminClientProvider {
      * Create a Kafka Admin interface instance
      *
      * @param bootstrapHostnames Kafka hostname to connect to for administration operations
-     * @param pemTrustSet Trust set for TLS encryption
-     * @param pemAuthIdentity Identity for TLS client authentication
+     * @param kafkaCaTrustSet Trust set for connecting to Kafka
+     * @param authIdentity Identity for TLS client authentication for connecting to Kafka
      * @return Instance of Kafka Admin interface
      */
-    Admin createAdminClient(String bootstrapHostnames, PemTrustSet pemTrustSet, PemAuthIdentity pemAuthIdentity);
+    Admin createAdminClient(String bootstrapHostnames, PemTrustSet kafkaCaTrustSet, PemAuthIdentity authIdentity);
 
     /**
      * Create a Kafka Admin interface instance
      *
      * @param bootstrapHostnames Kafka hostname to connect to for administration operations
-     * @param pemTrustSet Trust set for TLS encryption
-     * @param pemAuthIdentity Identity for TLS client authentication
+     * @param kafkaCaTrustSet Trust set for connecting to Kafka
+     * @param authIdentity Identity for TLS client authentication for connecting to Kafka
      * @param config Additional configuration for the Kafka Admin Client
      *
      * @return Instance of Kafka Admin interface
      */
-    Admin createAdminClient(String bootstrapHostnames, PemTrustSet pemTrustSet, PemAuthIdentity pemAuthIdentity, Properties config);
+    Admin createAdminClient(String bootstrapHostnames, PemTrustSet kafkaCaTrustSet, PemAuthIdentity authIdentity, Properties config);
 }

@@ -14,7 +14,7 @@ import io.strimzi.operator.common.model.PemTrustSet;
 public class DefaultKafkaAgentClientProvider implements KafkaAgentClientProvider {
 
     @Override
-    public KafkaAgentClient createKafkaAgentClient(Reconciliation reconciliation, PemTrustSet pemTrustSet, PemAuthIdentity pemAuthIdentity) {
-        return new KafkaAgentClient(reconciliation, reconciliation.name(), reconciliation.namespace(), pemTrustSet, pemAuthIdentity);
+    public KafkaAgentClient createKafkaAgentClient(Reconciliation reconciliation, PemTrustSet kafkaCaTrustSet, PemAuthIdentity coAuthIdentity) {
+        return new KafkaAgentClient(reconciliation, reconciliation.name(), reconciliation.namespace(), kafkaCaTrustSet, coAuthIdentity);
     }
 }

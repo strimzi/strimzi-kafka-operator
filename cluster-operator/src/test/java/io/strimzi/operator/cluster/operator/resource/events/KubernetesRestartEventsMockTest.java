@@ -596,12 +596,12 @@ public class KubernetesRestartEventsMockTest {
     private ResourceOperatorSupplier supplierWithAdmin(Vertx vertx, Supplier<Admin> adminClientSupplier) {
         AdminClientProvider adminClientProvider = new AdminClientProvider() {
             @Override
-            public Admin createAdminClient(String bootstrapHostnames, PemTrustSet trustSet, PemAuthIdentity clientAuthIdentity) {
+            public Admin createAdminClient(String bootstrapHostnames, PemTrustSet kafkaCaTrustSet, PemAuthIdentity authIdentity) {
                 return adminClientSupplier.get();
             }
 
             @Override
-            public Admin createAdminClient(String bootstrapHostnames, PemTrustSet trustSet, PemAuthIdentity clientAuthIdentity, Properties config) {
+            public Admin createAdminClient(String bootstrapHostnames, PemTrustSet kafkaCaTrustSet, PemAuthIdentity authIdentity, Properties config) {
                 return adminClientSupplier.get();
             }
         };

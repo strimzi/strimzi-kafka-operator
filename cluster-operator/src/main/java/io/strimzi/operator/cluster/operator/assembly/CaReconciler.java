@@ -380,12 +380,12 @@ public class CaReconciler {
         }
 
         if (podRollReasons.shouldRestart()) {
-            PemTrustSet pemTrustSet = new PemTrustSet(clusterCa.caCertSecret());
-            PemAuthIdentity pemAuthIdentity = PemAuthIdentity.clusterOperator(coSecret);
+            PemTrustSet clusterCaTrustSet = new PemTrustSet(clusterCa.caCertSecret());
+            PemAuthIdentity coAuthIdentity = PemAuthIdentity.clusterOperator(coSecret);
             return getZooKeeperReplicas()
-                    .compose(replicas -> maybeRollZookeeper(replicas, podRollReasons, pemTrustSet, pemAuthIdentity))
+                    .compose(replicas -> maybeRollZookeeper(replicas, podRollReasons, clusterCaTrustSet, coAuthIdentity))
                     .compose(i -> getKafkaReplicas())
-                    .compose(nodes -> rollKafkaBrokers(nodes, podRollReasons, pemTrustSet, pemAuthIdentity))
+                    .compose(nodes -> rollKafkaBrokers(nodes, podRollReasons, clusterCaTrustSet, coAuthIdentity))
                     .compose(i -> maybeRollDeploymentIfExists(KafkaResources.entityOperatorDeploymentName(reconciliation.name()), podRollReasons))
                     .compose(i -> maybeRollDeploymentIfExists(KafkaExporterResources.componentName(reconciliation.name()), podRollReasons))
                     .compose(i -> maybeRollDeploymentIfExists(CruiseControlResources.componentName(reconciliation.name()), podRollReasons));
@@ -492,13 +492,13 @@ public class CaReconciler {
      *
      * @param replicas              Current number of ZooKeeper replicas
      * @param podRestartReasons     List of reasons to restart the pods
-     * @param pemTrustSet           Trust set for connecting to ZooKeeper
-     * @param pemAuthIdentity       Identity for TLS client authentication for connecting to ZooKeeper
+     * @param zkCaTrustSet          Trust set for connecting to ZooKeeper
+     * @param coAuthIdentity        Cluster Operator identity for TLS client authentication for connecting to ZooKeeper
      *
      * @return  Future which completes when this step is done either by rolling the ZooKeeper cluster or by deciding
      *          that no rolling is needed.
      */
-    /* test */ Future<Void> maybeRollZookeeper(int replicas, RestartReasons podRestartReasons, PemTrustSet pemTrustSet, PemAuthIdentity pemAuthIdentity) {
+    /* test */ Future<Void> maybeRollZookeeper(int replicas, RestartReasons podRestartReasons, PemTrustSet zkCaTrustSet, PemAuthIdentity coAuthIdentity) {
         if (podRestartReasons.contains(RestartReason.CLUSTER_CA_CERT_KEY_REPLACED)) {
             Labels zkSelectorLabels = Labels.EMPTY
                     .withStrimziKind(reconciliation.kind())
@@ -511,7 +511,7 @@ public class CaReconciler {
                 return reason;
             };
             return new ZooKeeperRoller(podOperator, zookeeperLeaderFinder, operationTimeoutMs)
-                    .maybeRollingUpdate(reconciliation, replicas, zkSelectorLabels, rollZkPodAndLogReason, pemTrustSet, pemAuthIdentity);
+                    .maybeRollingUpdate(reconciliation, replicas, zkSelectorLabels, rollZkPodAndLogReason, zkCaTrustSet, coAuthIdentity);
         } else {
             return Future.succeededFuture();
         }
@@ -537,7 +537,7 @@ public class CaReconciler {
                 });
     }
 
-    /* test */ Future<Void> rollKafkaBrokers(Set<NodeRef> nodes, RestartReasons podRollReasons, PemTrustSet pemTrustSet, PemAuthIdentity pemAuthIdentity) {
+    /* test */ Future<Void> rollKafkaBrokers(Set<NodeRef> nodes, RestartReasons podRollReasons, PemTrustSet kafkaCaTrustSet, PemAuthIdentity coAuthIdentity) {
         return new KafkaRoller(
                 reconciliation,
                 vertx,
@@ -546,8 +546,8 @@ public class CaReconciler {
                 operationTimeoutMs,
                 () -> new BackOff(250, 2, 10),
                 nodes,
-                pemTrustSet,
-                pemAuthIdentity,
+                kafkaCaTrustSet,
+                coAuthIdentity,
                 adminClientProvider,
                 kafkaAgentClientProvider,
                 brokerId -> null,

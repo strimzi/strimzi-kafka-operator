@@ -577,12 +577,12 @@ public class ResourceUtils {
     public static AdminClientProvider adminClientProvider(Admin mockAdminClient) {
         return new AdminClientProvider() {
             @Override
-            public Admin createAdminClient(String bootstrapHostnames, PemTrustSet pemTrustSet, PemAuthIdentity pemAuthIdentity) {
-                return createAdminClient(bootstrapHostnames, pemTrustSet, pemAuthIdentity, new Properties());
+            public Admin createAdminClient(String bootstrapHostnames, PemTrustSet kafkaCaTrustSet, PemAuthIdentity authIdentity) {
+                return createAdminClient(bootstrapHostnames, kafkaCaTrustSet, authIdentity, new Properties());
             }
 
             @Override
-            public Admin createAdminClient(String bootstrapHostnames, PemTrustSet pemTrustSet, PemAuthIdentity pemAuthIdentity, Properties config) {
+            public Admin createAdminClient(String bootstrapHostnames, PemTrustSet kafkaCaTrustSet, PemAuthIdentity authIdentity, Properties config) {
                 return mockAdminClient;
             }
         };
@@ -612,7 +612,7 @@ public class ResourceUtils {
     public static KafkaAgentClientProvider kafkaAgentClientProvider(KafkaAgentClient mockKafkaAgentClient) {
         return new KafkaAgentClientProvider() {
             @Override
-            public KafkaAgentClient createKafkaAgentClient(Reconciliation reconciliation, PemTrustSet pemTrustSet, PemAuthIdentity pemAuthIdentity) {
+            public KafkaAgentClient createKafkaAgentClient(Reconciliation reconciliation, PemTrustSet kafkaCaTrustSet, PemAuthIdentity coAuthIdentity) {
                 return mockKafkaAgentClient;
             }
         };

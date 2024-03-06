@@ -1670,7 +1670,7 @@ public class CaReconcilerTest {
         }
 
         @Override
-        Future<Void> maybeRollZookeeper(int replicas, RestartReasons podRestartReasons, PemTrustSet pemTrustSet, PemAuthIdentity pemAuthIdentity) {
+        Future<Void> maybeRollZookeeper(int replicas, RestartReasons podRestartReasons, PemTrustSet zkCaTrustSet, PemAuthIdentity coAuthIdentity) {
             this.zkPodRestartReasons = podRestartReasons;
             return Future.succeededFuture();
         }
@@ -1685,7 +1685,7 @@ public class CaReconcilerTest {
         }
 
         @Override
-        Future<Void> rollKafkaBrokers(Set<NodeRef> nodes, RestartReasons podRollReasons, PemTrustSet pemTrustSet, PemAuthIdentity pemAuthIdentity) {
+        Future<Void> rollKafkaBrokers(Set<NodeRef> nodes, RestartReasons podRollReasons, PemTrustSet kafkaCaTrustSet, PemAuthIdentity coAuthIdentity) {
             this.kPodRollReasons = podRollReasons;
             return Future.succeededFuture();
         }

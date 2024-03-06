@@ -76,7 +76,7 @@ public class ZookeeperLeaderFinderTest {
         }
 
         @Override
-        NetClientOptions clientOptions(PemTrustSet pemTrustSet, PemAuthIdentity pemAuthIdentity) {
+        NetClientOptions clientOptions(PemTrustSet zkCaTrustSet, PemAuthIdentity coAuthIdentity) {
             return new NetClientOptions()
                     .setKeyCertOptions(coCertificate.keyCertOptions())
                     .setTrustOptions(zkCertificate.trustOptions())

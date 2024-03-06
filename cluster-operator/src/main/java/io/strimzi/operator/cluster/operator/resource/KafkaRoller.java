@@ -153,8 +153,8 @@ public class KafkaRoller {
      * @param operationTimeoutMs        Operation timeout in milliseconds
      * @param backOffSupplier           Backoff supplier
      * @param nodes                     List of Kafka node references to consider rolling
-     * @param pemTrustSet               Trust set to use in KafkaAgentClient
-     * @param pemAuthIdentity           Identity for TLS client authentication to use in KafkaAgentClient
+     * @param kafkaCaTrustSet           Trust set to use in KafkaAgentClient
+     * @param coAuthIdentity            Cluster Operator identity for TLS client authentication to use in KafkaAgentClient
      * @param adminClientProvider       Kafka Admin client provider
      * @param kafkaAgentClientProvider  Kafka Agent client provider
      * @param kafkaConfigProvider       Kafka configuration provider
@@ -165,7 +165,7 @@ public class KafkaRoller {
      */
     public KafkaRoller(Reconciliation reconciliation, Vertx vertx, PodOperator podOperations,
                        long pollingIntervalMs, long operationTimeoutMs, Supplier<BackOff> backOffSupplier, Set<NodeRef> nodes,
-                       PemTrustSet pemTrustSet, PemAuthIdentity pemAuthIdentity,
+                       PemTrustSet kafkaCaTrustSet, PemAuthIdentity coAuthIdentity,
                        AdminClientProvider adminClientProvider, KafkaAgentClientProvider kafkaAgentClientProvider,
                        Function<Integer, String> kafkaConfigProvider, String kafkaLogging, KafkaVersion kafkaVersion, boolean allowReconfiguration, KubernetesRestartEventPublisher eventsPublisher) {
         this.namespace = reconciliation.namespace();
@@ -176,8 +176,8 @@ public class KafkaRoller {
             throw new IllegalArgumentException();
         }
         this.backoffSupplier = backOffSupplier;
-        this.pemTrustSet = pemTrustSet;
-        this.pemAuthIdentity = pemAuthIdentity;
+        this.pemTrustSet = kafkaCaTrustSet;
+        this.pemAuthIdentity = coAuthIdentity;
         this.vertx = vertx;
         this.operationTimeoutMs = operationTimeoutMs;
         this.podOperations = podOperations;

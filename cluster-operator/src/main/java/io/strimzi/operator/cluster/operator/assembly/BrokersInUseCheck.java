@@ -38,18 +38,18 @@ public class BrokersInUseCheck {
      *
      * @param reconciliation        Reconciliation marker
      * @param vertx                 Vert.x instance
-     * @param pemTrustSet           Trust set for connecting to the Kafka cluster
-     * @param pemAuthIdentity       Identity for TLS client authentication for connecting to the Kafka cluster
+     * @param kafkaCaTrustSet       Trust set for connecting to the Kafka cluster
+     * @param coAuthIdentity        Cluster Operator identity for TLS client authentication for connecting to the Kafka cluster
      * @param adminClientProvider   Used to create the Admin client instance
      *
      * @return returns future set of node ids containing partition replicas based on the outcome of the check
      */
-    public Future<Set<Integer>> brokersInUse(Reconciliation reconciliation, Vertx vertx, PemTrustSet pemTrustSet,
-                                             PemAuthIdentity pemAuthIdentity, AdminClientProvider adminClientProvider) {
+    public Future<Set<Integer>> brokersInUse(Reconciliation reconciliation, Vertx vertx, PemTrustSet kafkaCaTrustSet,
+                                             PemAuthIdentity coAuthIdentity, AdminClientProvider adminClientProvider) {
         try {
             String bootstrapHostname = KafkaResources.bootstrapServiceName(reconciliation.name()) + "." + reconciliation.namespace() + ".svc:" + KafkaCluster.REPLICATION_PORT;
             LOGGER.debugCr(reconciliation, "Creating AdminClient for Kafka cluster in namespace {}", reconciliation.namespace());
-            Admin kafkaAdmin = adminClientProvider.createAdminClient(bootstrapHostname, pemTrustSet, pemAuthIdentity);
+            Admin kafkaAdmin = adminClientProvider.createAdminClient(bootstrapHostname, kafkaCaTrustSet, coAuthIdentity);
 
             return topicNames(reconciliation, vertx, kafkaAdmin)
                     .compose(names -> describeTopics(reconciliation, vertx, kafkaAdmin, names))

@@ -22,14 +22,14 @@ public interface ZookeeperScalerProvider {
      * @param vertx                         Vertx instance
      * @param zookeeperConnectionString     Connection string to connect to the right Zookeeper
      * @param zkNodeAddress                 Function for generating the Zookeeper node addresses
-     * @param pemTrustSet                   Trust set for connecting to Zookeeper
-     * @param pksc12AuthIdentity            Identity for TLS client authentication for connecting to Zookeeper
+     * @param zkCaTrustSet                  Trust set for connecting to Zookeeper
+     * @param coAuthIdentity                Cluster Operator identity for TLS client authentication for connecting to Zookeeper
      * @param operationTimeoutMs            Operation timeout
      * @param zkAdminSessionTimeoutMs       Zookeeper Admin client session timeout
      *
      * @return  ZookeeperScaler instance
      */
     ZookeeperScaler createZookeeperScaler(Reconciliation reconciliation, Vertx vertx, String zookeeperConnectionString,
-                                          Function<Integer, String> zkNodeAddress, PemTrustSet pemTrustSet,
-                                          ClusterOperatorPKCS12AuthIdentity pksc12AuthIdentity, long operationTimeoutMs, int zkAdminSessionTimeoutMs);
+                                          Function<Integer, String> zkNodeAddress, PemTrustSet zkCaTrustSet,
+                                          ClusterOperatorPKCS12AuthIdentity coAuthIdentity, long operationTimeoutMs, int zkAdminSessionTimeoutMs);
 }

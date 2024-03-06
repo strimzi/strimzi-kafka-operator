@@ -646,7 +646,7 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
         }
 
         @Override
-        Future<Void> maybeRollZooKeeper(Function<Pod, List<String>> podNeedsRestart, PemTrustSet pemTrustSet, PemAuthIdentity pemAuthIdentity) {
+        Future<Void> maybeRollZooKeeper(Function<Pod, List<String>> podNeedsRestart, PemTrustSet zkCaTrustSet, PemAuthIdentity coAuthIdentity) {
             maybeRollZooKeeperInvocations++;
             zooPodNeedsRestart = podNeedsRestart;
             return Future.succeededFuture();

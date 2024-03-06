@@ -157,8 +157,8 @@ public class KafkaReconciler {
     private String loggingHash = "";
     private final Map<Integer, String> brokerConfigurationHash = new HashMap<>();
     private final Map<Integer, String> kafkaServerCertificateHash = new HashMap<>();
-    private PemTrustSet pemTrustSet;
-    private PemAuthIdentity pemAuthIdentity;
+    private PemTrustSet kafkaCaTrustSet;
+    private PemAuthIdentity coAuthIdentity;
     /* test */ KafkaListenersReconciler.ReconciliationResult listenerReconciliationResults; // Result of the listener reconciliation with the listener details
 
     private final KafkaMetadataStateManager kafkaMetadataStateManager;
@@ -298,8 +298,8 @@ public class KafkaReconciler {
     protected Future<Void> initClientAuthenticationCertificates() {
         return ReconcilerUtils.pemClientCertificates(reconciliation, secretOperator)
                 .compose(res -> {
-                    this.pemTrustSet = res.resultAt(0);
-                    this.pemAuthIdentity = res.resultAt(1);
+                    this.kafkaCaTrustSet = res.resultAt(0);
+                    this.coAuthIdentity = res.resultAt(1);
                     return Future.succeededFuture();
                 });
     }
@@ -452,8 +452,8 @@ public class KafkaReconciler {
                     operationTimeoutMs,
                     () -> new BackOff(250, 2, 10),
                     nodes,
-                    this.pemTrustSet,
-                    this.pemAuthIdentity,
+                    this.kafkaCaTrustSet,
+                    this.coAuthIdentity,
                     adminClientProvider,
                     kafkaAgentClientProvider,
                     brokerId -> kafka.generatePerBrokerConfiguration(brokerId, kafkaAdvertisedHostnames, kafkaAdvertisedPorts),
@@ -890,7 +890,7 @@ public class KafkaReconciler {
                     try {
                         String bootstrapHostname = KafkaResources.bootstrapServiceName(reconciliation.name()) + "." + reconciliation.namespace() + ".svc:" + KafkaCluster.REPLICATION_PORT;
                         LOGGER.debugCr(reconciliation, "Creating AdminClient for clusterId using {}", bootstrapHostname);
-                        kafkaAdmin = adminClientProvider.createAdminClient(bootstrapHostname, this.pemTrustSet, this.pemAuthIdentity);
+                        kafkaAdmin = adminClientProvider.createAdminClient(bootstrapHostname, this.kafkaCaTrustSet, this.coAuthIdentity);
                         kafkaStatus.setClusterId(kafkaAdmin.describeCluster().clusterId().get());
                     } catch (KafkaException e) {
                         LOGGER.warnCr(reconciliation, "Kafka exception getting clusterId {}", e.getMessage());
@@ -915,7 +915,7 @@ public class KafkaReconciler {
      */
     protected Future<Void> metadataVersion(KafkaStatus kafkaStatus) {
         if (kafkaMetadataStateManager.getMetadataConfigurationState().isKRaft()) {
-            return KRaftMetadataManager.maybeUpdateMetadataVersion(reconciliation, vertx, this.pemTrustSet, this.pemAuthIdentity, adminClientProvider, kafka.getMetadataVersion(), kafkaStatus);
+            return KRaftMetadataManager.maybeUpdateMetadataVersion(reconciliation, vertx, this.kafkaCaTrustSet, this.coAuthIdentity, adminClientProvider, kafka.getMetadataVersion(), kafkaStatus);
         } else {
             return Future.succeededFuture();
         }
@@ -1070,8 +1070,8 @@ public class KafkaReconciler {
                     LOGGER.debugCr(reconciliation, "Checking ZooKeeper migration state on controller {}", controller.podName());
                     KafkaAgentClient kafkaAgentClient = kafkaAgentClientProvider.createKafkaAgentClient(
                             reconciliation,
-                            this.pemTrustSet,
-                            this.pemAuthIdentity
+                            this.kafkaCaTrustSet,
+                            this.coAuthIdentity
                     );
                     this.kafkaMetadataStateManager.setMigrationDone(
                             KRaftMigrationUtils.checkMigrationInProgress(

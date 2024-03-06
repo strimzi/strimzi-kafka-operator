@@ -51,8 +51,8 @@ public class KafkaAgentClient {
     private final String namespace;
     private final Reconciliation reconciliation;
     private final String cluster;
-    private PemTrustSet pemTrustSet;
-    private PemAuthIdentity pemAuthIdentity;
+    private PemTrustSet kafkaCaTrustSet;
+    private PemAuthIdentity coAuthIdentity;
     private HttpClient httpClient;
 
     /**
@@ -61,15 +61,15 @@ public class KafkaAgentClient {
      * @param reconciliation    Reconciliation marker
      * @param cluster   Cluster name
      * @param namespace Cluster namespace
-     * @param pemTrustSet Trust set for TLS encryption
-     * @param pemAuthIdentity Identity for TLS client authentication
+     * @param kafkaCaTrustSet Trust set for connecting to the Kafka Agent
+     * @param coAuthIdentity Cluster Operator identity for TLS client authentication for connecting to the Kafka Agent
      */
-    public KafkaAgentClient(Reconciliation reconciliation, String cluster, String namespace, PemTrustSet pemTrustSet, PemAuthIdentity pemAuthIdentity) {
+    public KafkaAgentClient(Reconciliation reconciliation, String cluster, String namespace, PemTrustSet kafkaCaTrustSet, PemAuthIdentity coAuthIdentity) {
         this.reconciliation = reconciliation;
         this.cluster = cluster;
         this.namespace = namespace;
-        this.pemTrustSet = pemTrustSet;
-        this.pemAuthIdentity = pemAuthIdentity;
+        this.kafkaCaTrustSet = kafkaCaTrustSet;
+        this.coAuthIdentity = coAuthIdentity;
         this.httpClient = createHttpClient();
     }
 
@@ -87,7 +87,7 @@ public class KafkaAgentClient {
     }
 
     private HttpClient createHttpClient() {
-        if (pemTrustSet == null || pemAuthIdentity == null) {
+        if (kafkaCaTrustSet == null || coAuthIdentity == null) {
             throw new RuntimeException("Missing cluster CA and operator certificates required to create connection to Kafka Agent");
         }
 
@@ -115,7 +115,7 @@ public class KafkaAgentClient {
         KeyStore trustStore = KeyStore.getInstance(KEYSTORE_TYPE_JKS);
         trustStore.load(null);
         int aliasIndex = 0;
-        for (X509Certificate certificate : pemTrustSet.trustedCertificates()) {
+        for (X509Certificate certificate : kafkaCaTrustSet.trustedCertificates()) {
             trustStore.setEntry(certificate.getSubjectX500Principal().getName() + "-" + aliasIndex, new KeyStore.TrustedCertificateEntry(certificate), null);
             aliasIndex++;
         }
@@ -123,14 +123,14 @@ public class KafkaAgentClient {
     }
 
     private KeyStore getKeyStore() throws KeyStoreException, CertificateException, NoSuchAlgorithmException, InvalidKeySpecException, IOException {
-        byte[] decodedKey = Util.decodePemPrivateKey(pemAuthIdentity.privateKeyAsPem());
+        byte[] decodedKey = Util.decodePemPrivateKey(coAuthIdentity.privateKeyAsPem());
         PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(decodedKey);
         final KeyFactory keyFactory = KeyFactory.getInstance("RSA");
         final PrivateKey key = keyFactory.generatePrivate(keySpec);
 
         KeyStore coKeyStore = KeyStore.getInstance(KEYSTORE_TYPE_JKS);
         coKeyStore.load(null);
-        coKeyStore.setKeyEntry("cluster-operator", key, KEYSTORE_PASSWORD, new Certificate[]{pemAuthIdentity.certificateChain()});
+        coKeyStore.setKeyEntry("cluster-operator", key, KEYSTORE_PASSWORD, new Certificate[]{coAuthIdentity.certificateChain()});
 
         return coKeyStore;
     }
