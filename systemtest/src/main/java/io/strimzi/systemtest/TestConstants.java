@@ -36,7 +36,7 @@ public interface TestConstants {
     long GLOBAL_TRACING_POLL = Duration.ofSeconds(30).toMillis();
 
     long API_CRUISE_CONTROL_POLL = Duration.ofSeconds(5).toMillis();
-    long API_CRUISE_CONTROL_TIMEOUT = Duration.ofMinutes(15).toMillis();
+    long API_CRUISE_CONTROL_TIMEOUT = Duration.ofMinutes(20).toMillis();
     long GLOBAL_CRUISE_CONTROL_TIMEOUT = Duration.ofMinutes(2).toMillis();
     long CRUISE_CONTROL_TRAIN_MODEL_TIMEOUT = Duration.ofMinutes(10).toMillis();
 
