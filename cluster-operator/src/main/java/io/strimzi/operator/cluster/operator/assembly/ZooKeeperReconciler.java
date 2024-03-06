@@ -238,9 +238,9 @@ public class ZooKeeperReconciler {
                 ReconcilerUtils.clusterCaPemTrustSet(reconciliation, secretOperator)
                         .onSuccess(pemTrustSet -> this.zkCaTrustSet = pemTrustSet),
                 ReconcilerUtils.coClientAuthIdentity(reconciliation, secretOperator)
-                        .onSuccess(result -> {
-                            this.coPemAuthIdentity = result.resultAt(0);
-                            this.coPKCS12AuthIdentity = result.resultAt(1);
+                        .onSuccess(coAuthIdentity -> {
+                            this.coPemAuthIdentity = coAuthIdentity.pemAuthIdentity();
+                            this.coPKCS12AuthIdentity = coAuthIdentity.pkcs12AuthIdentity();
                         }))
                 .mapEmpty();
     }

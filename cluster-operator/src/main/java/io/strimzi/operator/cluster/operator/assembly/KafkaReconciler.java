@@ -296,12 +296,12 @@ public class KafkaReconciler {
      * @return Completes when the TrustStore and PemAuthIdentity have been created
      */
     protected Future<Void> initClientAuthenticationCertificates() {
-        return ReconcilerUtils.pemClientCertificates(reconciliation, secretOperator)
-                .compose(res -> {
-                    this.kafkaCaTrustSet = res.resultAt(0);
-                    this.coAuthIdentity = res.resultAt(1);
-                    return Future.succeededFuture();
-                });
+        return Future.join(
+                ReconcilerUtils.clusterCaPemTrustSet(reconciliation, secretOperator)
+                        .onSuccess(clusterCaPemTrustSet -> this.kafkaCaTrustSet = clusterCaPemTrustSet),
+                ReconcilerUtils.coPemAuthIdentity(reconciliation, secretOperator)
+                        .onSuccess(coPemAuthIdentity -> this.coAuthIdentity = coPemAuthIdentity)
+        ).mapEmpty();
     }
 
     /**

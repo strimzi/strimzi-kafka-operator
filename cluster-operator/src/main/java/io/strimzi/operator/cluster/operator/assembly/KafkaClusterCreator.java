@@ -180,7 +180,10 @@ public class KafkaClusterCreator {
             usedToBeBrokersCheckFailed = false;
             return Future.succeededFuture(kafka);
         } else {
-            return ReconcilerUtils.pemClientCertificates(reconciliation, secretOperator)
+            return Future.join(
+                        ReconcilerUtils.clusterCaPemTrustSet(reconciliation, secretOperator),
+                        ReconcilerUtils.coPemAuthIdentity(reconciliation, secretOperator)
+                    )
                     .compose(res -> brokerScaleDownOperations.brokersInUse(reconciliation, vertx, res.resultAt(0), res.resultAt(1), adminClientProvider))
                     .compose(brokersInUse -> {
                         // Check nodes that are being scaled down
