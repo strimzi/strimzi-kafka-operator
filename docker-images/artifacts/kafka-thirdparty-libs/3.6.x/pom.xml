@@ -115,6 +115,7 @@
             <artifactId>opentelemetry-exporter-sender-grpc-managed-channel</artifactId>
             <version>${opentelemetry.version}</version>
             <scope>runtime</scope>
+            <!-- excluded as we end up with conflicting copies in the image detected by find-classpath-collision.sh -->
             <exclusions>
                 <exclusion>
                     <groupId>com.google.errorprone</groupId>
@@ -127,6 +128,7 @@
             <artifactId>grpc-netty-shaded</artifactId>
             <version>${grpc-netty-shaded.version}</version>
             <scope>runtime</scope>
+            <!-- excluded as we end up with conflicting copies in the image detected by find-classpath-collision.sh -->
             <exclusions>
                 <exclusion>
                     <groupId>org.checkerframework</groupId>
