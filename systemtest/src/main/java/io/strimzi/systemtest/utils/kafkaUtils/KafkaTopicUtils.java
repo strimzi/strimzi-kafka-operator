@@ -62,6 +62,27 @@ public class KafkaTopicUtils {
         return KafkaTopicResource.kafkaTopicClient().inNamespace(namespaceName).withName(topicName).get().getMetadata().getUid();
     }
 
+    public static void waitUntilTopicObservationGenerationIsPresent(final String namespaceName, final String topicName) {
+        LOGGER.info("Waiting for KafkaTopic: {}/{} observation generation", namespaceName, topicName);
+        TestUtils.waitFor("KafkaTopic: " + namespaceName + "/" + topicName + " observation generation",
+                TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
+                () -> KafkaTopicResource.kafkaTopicClient().inNamespace(namespaceName).withName(topicName).get()
+                        .getStatus().getObservedGeneration() >= 0.0,
+                () -> LOGGER.info("KafkaTopic: {}/{} observation generation", namespaceName, topicName)
+        );
+    }
+
+    public static long topicObservationGeneration(final String namespaceName, final String topicName) {
+        return KafkaTopicResource.kafkaTopicClient().inNamespace(namespaceName).withName(topicName).get().getStatus().getObservedGeneration();
+    }
+
+    public static long waitTopicHasRolled(final String namespaceName, final String topicName, final long oldTopicObservation) {
+        TestUtils.waitFor("Topic: " + namespaceName + "/" + topicName + " has rolled", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
+                // new observation has to be always higher number
+                () -> oldTopicObservation < topicObservationGeneration(namespaceName, topicName));
+        return topicObservationGeneration(namespaceName, topicName);
+    }
+
     /**
      * Method which wait until topic has rolled form one generation to another.
      * @param namespaceName name of the namespace
@@ -284,5 +305,106 @@ public class KafkaTopicUtils {
             () -> KafkaTopicResource.kafkaTopicClient().inNamespace(namespaceName).withName(topicName).get()
                 .getStatus().getConditions().stream().anyMatch(condition -> condition.getMessage().contains(message))
         );
+    }
+
+    public static boolean hasTopicInKafka(final String topicName, final String clusterName, final String scraperPodName) {
+        LOGGER.info("Checking Topic: {} in Kafka", topicName);
+        return KafkaCmdClient.listTopicsUsingPodCli(Environment.TEST_SUITE_NAMESPACE, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName)).contains(topicName);
+    }
+
+    public static boolean hasTopicInCRK8s(final KafkaTopic kafkaTopic, final String topicName) {
+        LOGGER.info("Checking in KafkaTopic CR that Topic: {} exists", topicName);
+        return kafkaTopic.getMetadata().getName().equals(topicName);
+    }
+
+    public static void waitForReplicaChangeFailureDueToInsufficientBrokers(String namespaceName, String topicName, int targetReplicas) {
+        LOGGER.info("Waiting for KafkaTopic: {}/{} replica change to fail due to insufficient brokers", namespaceName, topicName);
+
+        TestUtils.waitFor("Replica change failure due to insufficient brokers for KafkaTopic: " + namespaceName + "/" + topicName,
+                TestConstants.POLL_INTERVAL_FOR_RESOURCE_READINESS, TestConstants.API_CRUISE_CONTROL_TIMEOUT,
+                () -> {
+                    KafkaTopic kafkaTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(namespaceName).withName(topicName).get();
+                    LOGGER.debug("KafkaTopic: {}", kafkaTopic);
+                    if (kafkaTopic != null && kafkaTopic.getStatus() != null && kafkaTopic.getStatus().getReplicasChange() != null) {
+                        String message = kafkaTopic.getStatus().getReplicasChange().getMessage();
+                        return message != null &&
+                                message.contains("Replicas change failed (500), Error processing POST request") &&
+                                message.contains("Unable to change replication factor (RF) of topics") &&
+                                message.contains("Requested RF cannot be more than number of alive brokers") &&
+                                kafkaTopic.getStatus().getReplicasChange().getState().toValue().equals("pending") &&
+                                kafkaTopic.getStatus().getReplicasChange().getTargetReplicas() == targetReplicas;
+                    }
+                    return false;
+                },
+                () -> LOGGER.info("KafkaTopic: {}/{} failed to change replicas due to insufficient brokers", namespaceName, topicName)
+        );
+    }
+
+    public static void waitForReplicaChangeStatusNotPresent(String namespaceName, String topicName) {
+        final int[] successCounter = {0};
+
+        TestUtils.waitFor("replica change status not present for KafkaTopic: " + namespaceName + "/" + topicName,
+                TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.API_CRUISE_CONTROL_TIMEOUT,
+                () -> {
+                    LOGGER.debug("Counter is: {}", successCounter[0]);
+
+                    KafkaTopic kafkaTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(namespaceName).withName(topicName).get();
+
+                    if (kafkaTopic != null && kafkaTopic.getStatus() != null && kafkaTopic.getStatus().getReplicasChange() == null) {
+                        successCounter[0]++;
+
+                        return successCounter[0] == 10;
+                    }
+                    // resting counter
+                    successCounter[0] = 0;
+                    return false;
+                });
+    }
+
+    public static void waitForReplicaChangeOngoing(String namespaceName, String topicName) {
+        LOGGER.info("Starting to wait for the replicaChange ongoing for KafkaTopic: {}/{}", namespaceName, topicName);
+
+        TestUtils.waitFor("replicaChange change ongoing for KafkaTopic: " + namespaceName + "/" + topicName,
+            TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.API_CRUISE_CONTROL_TIMEOUT,
+            () -> {
+                KafkaTopic kafkaTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(namespaceName).withName(topicName).get();
+
+                LOGGER.debug(kafkaTopic);
+
+                return kafkaTopic != null &&
+                        kafkaTopic.getStatus() != null &&
+                        kafkaTopic.getStatus().getReplicasChange() != null &&
+                        kafkaTopic.getStatus().getReplicasChange().getState().toValue().equals("ongoing");
+            });
+    }
+
+    public static void waitUntilReplicaChangeResolved(String namespaceName, String topicName) {
+        LOGGER.info("Waiting for the resolution of replica change for KafkaTopic: {}/{}", namespaceName, topicName);
+
+        int[] successCounter = {0};
+
+        TestUtils.waitFor("resolution of replica change for KafkaTopic: " + namespaceName + "/" + topicName,
+                TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.API_CRUISE_CONTROL_TIMEOUT,
+                () -> {
+                    LOGGER.debug("Counter is: {}", successCounter[0]);
+                    KafkaTopic kafkaTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(namespaceName).withName(topicName).get();
+                    // Check if the kafkaTopic and necessary fields are not null
+                    if (kafkaTopic != null && kafkaTopic.getStatus() != null && kafkaTopic.getStatus().getReplicasChange() != null) {
+                        String message = kafkaTopic.getStatus().getReplicasChange().getMessage();
+                        // Condition to proceed: either message is null, empty, or specifically does not contain the problematic phrase
+                        LOGGER.debug(message);
+                        if (message == null || !message.contains("Replicas change failed (500)")) {
+                            successCounter[0]++;
+                            return successCounter[0] == 10;
+                        } else {
+                            // reset counter
+                            successCounter[0] = 0;
+                        }
+                    }
+                    // reset counter
+                    successCounter[0] = 0;
+                    return false;
+                });
+        LOGGER.info("Replica change resolved for KafkaTopic: {}/{}", namespaceName, topicName);
     }
 }

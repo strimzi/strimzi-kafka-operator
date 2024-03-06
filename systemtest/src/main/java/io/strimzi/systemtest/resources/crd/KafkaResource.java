@@ -147,6 +147,26 @@ public class KafkaResource implements ResourceType<Kafka> {
             .build();
     }
 
+    public static LabelSelector getEntityOperatorLabelSelector(final String clusterName) {
+        final Map<String, String> matchLabels = getCommonKafkaMatchLabels(clusterName);
+
+        matchLabels.put(Labels.STRIMZI_COMPONENT_TYPE_LABEL, "entity-operator");
+
+        return new LabelSelectorBuilder()
+                .withMatchLabels(matchLabels)
+                .build();
+    }
+
+    public static LabelSelector getCruiseControlLabelSelector(final String clusterName) {
+        final Map<String, String> matchLabels = getCommonKafkaMatchLabels(clusterName);
+
+        matchLabels.put(Labels.STRIMZI_COMPONENT_TYPE_LABEL, "cruise-control");
+
+        return new LabelSelectorBuilder()
+                .withMatchLabels(matchLabels)
+                .build();
+    }
+
     public static LabelSelector getLabelSelectorForAllKafkaPods(String clusterName) {
         Map<String, String> matchLabels = getCommonKafkaMatchLabels(clusterName);
 

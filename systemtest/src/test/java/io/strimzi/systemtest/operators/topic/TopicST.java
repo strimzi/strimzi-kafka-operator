@@ -82,42 +82,6 @@ public class TopicST extends AbstractST {
     private static int topicOperatorReconciliationInterval;
 
     @ParallelTest
-    void testMoreReplicasThanAvailableBrokers() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
-        int topicReplicationFactor = 5;
-        int topicPartitions = 5;
-
-        KafkaTopic kafkaTopic = KafkaTopicTemplates.topic(sharedTestStorage.getClusterName(), testStorage.getTopicName(), topicPartitions, topicReplicationFactor, 1, Environment.TEST_SUITE_NAMESPACE).build();
-        resourceManager.createResourceWithoutWait(kafkaTopic);
-
-        assertThat("Topic exists in Kafka CR (Kubernetes)", hasTopicInCRK8s(kafkaTopic, testStorage.getTopicName()));
-        assertThat("Topic doesn't exists in Kafka itself", !hasTopicInKafka(testStorage.getTopicName(), sharedTestStorage.getClusterName()));
-
-        String errorMessage = Environment.isUnidirectionalTopicOperatorEnabled() && Environment.isKRaftModeEnabled() ?
-            "org.apache.kafka.common.errors.InvalidReplicationFactorException: Unable to replicate the partition 5 time(s): The target replication factor of 5 cannot be reached because only 3 broker(s) are registered." :
-            "org.apache.kafka.common.errors.InvalidReplicationFactorException: Replication factor: 5 larger than available brokers: 3";
-
-        KafkaTopicUtils.waitForKafkaTopicNotReady(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName());
-        KafkaTopicStatus kafkaTopicStatus = KafkaTopicResource.kafkaTopicClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(testStorage.getTopicName()).get().getStatus();
-
-        assertThat(kafkaTopicStatus.getConditions().get(0).getMessage(), containsString(errorMessage));
-        assertThat(kafkaTopicStatus.getConditions().get(0).getReason(), containsString(Environment.isUnidirectionalTopicOperatorEnabled() ? "KafkaError" : "CompletionException"));
-
-        LOGGER.info("Delete Topic: {}", testStorage.getTopicName());
-        cmdKubeClient(Environment.TEST_SUITE_NAMESPACE).deleteByName("kafkatopic", testStorage.getTopicName());
-        KafkaTopicUtils.waitForKafkaTopicDeletion(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName());
-
-        topicReplicationFactor = 3;
-        final String newTopicName = "topic-example-new";
-
-        kafkaTopic = KafkaTopicTemplates.topic(sharedTestStorage.getClusterName(), newTopicName, topicPartitions, topicReplicationFactor, Environment.TEST_SUITE_NAMESPACE).build();
-        resourceManager.createResourceWithWait(kafkaTopic);
-
-        assertThat("Topic exists in Kafka itself", hasTopicInKafka(newTopicName, sharedTestStorage.getClusterName()));
-        assertThat("Topic exists in Kafka CR (Kubernetes)", hasTopicInCRK8s(kafkaTopic, newTopicName));
-    }
-
-    @ParallelTest
     @UTONotSupported
     void testCreateTopicViaKafka() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
@@ -204,7 +168,7 @@ public class TopicST extends AbstractST {
             .build();
 
         LOGGER.info("Checking if {} is on Topic list", testStorage.getTopicName());
-        assertFalse(hasTopicInKafka(testStorage.getTopicName(), sharedTestStorage.getClusterName()));
+        assertFalse(KafkaTopicUtils.hasTopicInKafka(testStorage.getTopicName(), sharedTestStorage.getClusterName(), scraperPodName));
         LOGGER.info("Topic with name {} is not created yet", testStorage.getTopicName());
 
         LOGGER.info("Trying to send messages to non-existing Topic: {}", testStorage.getTopicName());
@@ -213,7 +177,7 @@ public class TopicST extends AbstractST {
         ClientUtils.waitForClientsSuccess(testStorage);
 
         LOGGER.info("Checking if {} is on Topic list", testStorage.getTopicName());
-        assertTrue(hasTopicInKafka(testStorage.getTopicName(), sharedTestStorage.getClusterName()));
+        assertTrue(KafkaTopicUtils.hasTopicInKafka(testStorage.getTopicName(), sharedTestStorage.getClusterName(), scraperPodName));
 
         KafkaTopicUtils.waitForKafkaTopicCreation(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName());
         KafkaTopic kafkaTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(testStorage.getTopicName()).get();
@@ -312,10 +276,10 @@ public class TopicST extends AbstractST {
 
         resourceManager.createResourceWithWait(newKafkaTopic);
 
-        assertThat("Topic exists in Kafka itself", hasTopicInKafka(topicName, sharedTestStorage.getClusterName()));
-        assertThat("Topic exists in Kafka CR (Kubernetes)", hasTopicInCRK8s(kafkaTopic, topicName));
-        assertThat("Topic exists in Kafka itself", hasTopicInKafka(newTopicName, sharedTestStorage.getClusterName()));
-        assertThat("Topic exists in Kafka CR (Kubernetes)", hasTopicInCRK8s(newKafkaTopic, newTopicName));
+        assertThat("Topic exists in Kafka itself", KafkaTopicUtils.hasTopicInKafka(topicName, sharedTestStorage.getClusterName(), scraperPodName));
+        assertThat("Topic exists in Kafka CR (Kubernetes)", KafkaTopicUtils.hasTopicInCRK8s(kafkaTopic, topicName));
+        assertThat("Topic exists in Kafka itself", KafkaTopicUtils.hasTopicInKafka(newTopicName, sharedTestStorage.getClusterName(), scraperPodName));
+        assertThat("Topic exists in Kafka CR (Kubernetes)", KafkaTopicUtils.hasTopicInCRK8s(newKafkaTopic, newTopicName));
 
         cmdKubeClient(Environment.TEST_SUITE_NAMESPACE).deleteByName(KafkaTopic.RESOURCE_SINGULAR, topicName);
         KafkaTopicUtils.waitForKafkaTopicDeletion(Environment.TEST_SUITE_NAMESPACE, topicName);
@@ -693,16 +657,6 @@ public class TopicST extends AbstractST {
             assertThat(kafkaTopicStatus.getConditions().stream()
                     .anyMatch(condition -> condition.getMessage().contains(message)), CoreMatchers.is(true));
         }
-    }
-
-    boolean hasTopicInKafka(String topicName, String clusterName) {
-        LOGGER.info("Checking Topic: {} in Kafka", topicName);
-        return KafkaCmdClient.listTopicsUsingPodCli(Environment.TEST_SUITE_NAMESPACE, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName)).contains(topicName);
-    }
-
-    boolean hasTopicInCRK8s(KafkaTopic kafkaTopic, String topicName) {
-        LOGGER.info("Checking in KafkaTopic CR that Topic: {} exists", topicName);
-        return kafkaTopic.getMetadata().getName().equals(topicName);
     }
 
     void verifyTopicViaKafka(final String namespaceName, String topicName, int topicPartitions, String clusterName) {
