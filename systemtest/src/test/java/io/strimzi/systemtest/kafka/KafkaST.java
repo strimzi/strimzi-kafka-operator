@@ -1203,18 +1203,17 @@ class KafkaST extends AbstractST {
     protected void afterEachMayOverride() {
         resourceManager.deleteResources();
 
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
-
-        if (KafkaResource.kafkaClient().inNamespace(testStorage.getNamespaceName()).withName(OPENSHIFT_CLUSTER_NAME).get() != null) {
-            cmdKubeClient(testStorage.getNamespaceName()).deleteByName(Kafka.RESOURCE_KIND, OPENSHIFT_CLUSTER_NAME);
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(Environment.TEST_SUITE_NAMESPACE, ResourceManager.getTestContext());
+        if (KafkaResource.kafkaClient().inNamespace(namespaceName).withName(OPENSHIFT_CLUSTER_NAME).get() != null) {
+            cmdKubeClient(namespaceName).deleteByName(Kafka.RESOURCE_KIND, OPENSHIFT_CLUSTER_NAME);
         }
 
-        kubeClient(testStorage.getNamespaceName()).listPods(testStorage.getNamespaceName()).stream()
+        kubeClient(namespaceName).listPods(namespaceName).stream()
             .filter(p -> p.getMetadata().getName().startsWith(OPENSHIFT_CLUSTER_NAME))
             .forEach(p -> PodUtils.deletePodWithWait(p.getMetadata().getNamespace(), p.getMetadata().getName()));
 
-        kubeClient(testStorage.getNamespaceName()).getClient().resources(KafkaTopic.class, KafkaTopicList.class).inNamespace(testStorage.getNamespaceName()).delete();
-        kubeClient(testStorage.getNamespaceName()).getClient().persistentVolumeClaims().inNamespace(testStorage.getNamespaceName()).delete();
+        kubeClient(namespaceName).getClient().resources(KafkaTopic.class, KafkaTopicList.class).inNamespace(namespaceName).delete();
+        kubeClient().getClient().persistentVolumeClaims().inNamespace(namespaceName).delete();
 
         testSuiteNamespaceManager.deleteParallelNamespace();
     }

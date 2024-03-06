@@ -2519,8 +2519,8 @@ public class ListenersST extends AbstractST {
 
     @AfterEach
     void afterEach() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
-        kubeClient(testStorage.getNamespaceName()).getClient().persistentVolumeClaims().inNamespace(testStorage.getNamespaceName()).delete();
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(Environment.TEST_SUITE_NAMESPACE, ResourceManager.getTestContext());
+        kubeClient(namespaceName).getClient().persistentVolumeClaims().inNamespace(namespaceName).delete();
     }
 
     private ASN1Encodable[] retrieveKafkaBrokerSANs(final TestStorage testStorage) {
