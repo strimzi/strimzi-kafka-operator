@@ -195,8 +195,8 @@ public class Environment {
     private static final String RESOURCE_ALLOCATION_STRATEGY_DEFAULT = "SHARE_MEMORY_FOR_ALL_COMPONENTS";
 
     private static final String ST_KAFKA_VERSION_DEFAULT = TestKafkaVersion.getDefaultSupportedKafkaVersion();
-    private static final String ST_CLIENTS_KAFKA_VERSION_DEFAULT = "3.6.0";
-    public static final String TEST_CLIENTS_VERSION_DEFAULT = "0.6.0";
+    private static final String ST_CLIENTS_KAFKA_VERSION_DEFAULT = "3.7.0";
+    public static final String TEST_CLIENTS_VERSION_DEFAULT = "0.7.0";
     public static final String ST_FILE_PLUGIN_URL_DEFAULT = "https://repo1.maven.org/maven2/org/apache/kafka/connect-file/" + ST_KAFKA_VERSION_DEFAULT + "/connect-file-" + ST_KAFKA_VERSION_DEFAULT + ".jar";
     public static final String OLM_OPERATOR_VERSION_DEFAULT = "0.38.0";
 
