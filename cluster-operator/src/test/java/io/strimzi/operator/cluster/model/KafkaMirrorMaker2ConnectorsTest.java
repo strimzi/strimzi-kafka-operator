@@ -5,6 +5,7 @@
 package io.strimzi.operator.cluster.model;
 
 import io.strimzi.api.kafka.model.common.CertAndKeySecretSourceBuilder;
+import io.strimzi.api.kafka.model.common.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.common.ConnectorState;
 import io.strimzi.api.kafka.model.connector.KafkaConnector;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2;
@@ -615,6 +616,7 @@ public class KafkaMirrorMaker2ConnectorsTest {
                         .withKey("refreshTokenKey")
                         .withSecretName("refreshTokenSecretName")
                     .endRefreshToken()
+                    .withTlsTrustedCertificates(new CertSecretSourceBuilder().withCertificate("ca.crt").withSecretName("my-oauth-secret").build())
                 .endKafkaClientAuthenticationOAuth()
                 .build();
 
@@ -627,7 +629,10 @@ public class KafkaMirrorMaker2ConnectorsTest {
                 is(Map.of("oauth.client.secret", "${file:/tmp/strimzi-mirrormaker2-connector.properties:sourceClusterAlias.oauth.client.secret}",
                         "oauth.access.token", "${file:/tmp/strimzi-mirrormaker2-connector.properties:sourceClusterAlias.oauth.access.token}",
                         "oauth.refresh.token", "${file:/tmp/strimzi-mirrormaker2-connector.properties:sourceClusterAlias.oauth.refresh.token}",
-                        "oauth.password.grant.password", "${file:/tmp/strimzi-mirrormaker2-connector.properties:sourceClusterAlias.oauth.password.grant.password}")));
+                        "oauth.password.grant.password", "${file:/tmp/strimzi-mirrormaker2-connector.properties:sourceClusterAlias.oauth.password.grant.password}",
+                        "oauth.ssl.truststore.location", "/tmp/kafka/clusters/sourceClusterAlias-oauth.truststore.p12",
+                        "oauth.ssl.truststore.type", "PKCS12",
+                        "oauth.ssl.truststore.password", "${file:/tmp/strimzi-mirrormaker2-connector.properties:oauth.ssl.truststore.password}")));
 
         assertThat(config,
                 is(Map.of("prefix.alias", "sourceClusterAlias",
