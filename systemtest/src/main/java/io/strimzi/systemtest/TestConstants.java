@@ -118,6 +118,7 @@ public interface TestConstants {
      * Deployment labels related constants
      */
     String APP_POD_LABEL = "app";
+    String APP_KUBERNETES_INSTANCE_LABEL = "app.kubernetes.io/instance";
 
     /**
      * Label selectors for our resources

@@ -11,6 +11,7 @@ import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.systemtest.resources.ResourceItem;
 import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.logs.CollectorElement;
@@ -20,6 +21,7 @@ import org.apache.logging.log4j.Logger;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Map;
 import java.util.Stack;
 
 import static io.strimzi.systemtest.TestConstants.JAEGER_DEPLOYMENT_POLL;
@@ -43,6 +45,8 @@ public class SetupJaeger {
     private static final String CERT_MANAGER_PATH = TestUtils.USER_PATH + "/../systemtest/src/test/resources/tracing/cert-manager.yaml";
     private static final String JAEGER_INSTANCE_PATH = TestUtils.USER_PATH + "/../systemtest/src/test/resources/tracing/jaeger-instance.yaml";
     private static final String JAEGER_OPERATOR_PATH = TestUtils.USER_PATH + "/../systemtest/src/test/resources/tracing/jaeger-operator.yaml";
+    private static final String CERT_MANAGER = "cert-manager";
+    private static final String JAEGER = "jaeger";
 
     /**
      * Delete Jaeger instance
@@ -56,7 +60,17 @@ public class SetupJaeger {
      */
     public static void deployJaegerOperatorAndCertManager() {
         deployAndWaitForCertManager();
+        allowNetworkPolicySettingsForCertManagerWebhook();
         deployJaegerOperator();
+        allowNetworkPolicySettingsForJaegerOperator();
+    }
+
+    public static void allowNetworkPolicySettingsForJaegerOperator() {
+        NetworkPolicyResource.allowNetworkPolicySettingsForWebhook(Environment.TEST_SUITE_NAMESPACE, JAEGER_OPERATOR_DEPLOYMENT_NAME, Map.of("name", JAEGER_OPERATOR_DEPLOYMENT_NAME));
+    }
+
+    public static void allowNetworkPolicySettingsForCertManagerWebhook() {
+        NetworkPolicyResource.allowNetworkPolicySettingsForWebhook(CERT_MANAGER_NAMESPACE, CERT_MANAGER, Map.of(TestConstants.APP_KUBERNETES_INSTANCE_LABEL, CERT_MANAGER));
     }
 
     /**
@@ -165,5 +179,8 @@ public class SetupJaeger {
         ResourceManager.STORED_RESOURCES.get(ResourceManager.getTestContext().getDisplayName()).push(new ResourceItem<>(() -> cmdKubeClient(namespaceName).deleteContent(instanceYamlContent)));
 
         DeploymentUtils.waitForDeploymentAndPodsReady(namespaceName, JAEGER_INSTANCE_NAME, 1);
+
+        NetworkPolicyResource.allowNetworkPolicyBetweenScraperPodAndMatchingLabel(namespaceName, JAEGER_INSTANCE_NAME + "-allow", Map.of(TestConstants.APP_POD_LABEL, JAEGER));
+        NetworkPolicyResource.allowNetworkPolicyAllIngressForMatchingLabel(namespaceName, JAEGER_INSTANCE_NAME + "-traces-allow", Map.of(TestConstants.APP_POD_LABEL, JAEGER));
     }
 }

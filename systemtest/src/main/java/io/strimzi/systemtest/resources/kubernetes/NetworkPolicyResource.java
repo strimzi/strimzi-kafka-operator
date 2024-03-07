@@ -25,6 +25,7 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.List;
+import java.util.Map;
 
 import static io.strimzi.api.ResourceLabels.STRIMZI_KIND_LABEL;
 import static io.strimzi.api.ResourceLabels.STRIMZI_NAME_LABEL;
@@ -128,6 +129,79 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
         LOGGER.debug("Creating NetworkPolicy: {}", networkPolicy.toString());
         ResourceManager.getInstance().createResourceWithWait(networkPolicy);
         LOGGER.info("Network policy for LabelSelector {} successfully created", scraperLabelSelector);
+    }
+
+    public static void allowNetworkPolicyBetweenScraperPodAndMatchingLabel(String namespaceName, String policyName, Map<String, String> matchLabels) {
+        if (Environment.DEFAULT_TO_DENY_NETWORK_POLICIES) {
+            LabelSelector scraperLabelSelector = new LabelSelectorBuilder()
+                .addToMatchLabels(TestConstants.SCRAPER_LABEL_KEY, TestConstants.SCRAPER_LABEL_VALUE)
+                .build();
+
+            LOGGER.info("Apply NetworkPolicy access to matching Pods: {} from Scraper Pod", matchLabels.toString());
+
+            NetworkPolicy networkPolicy = NetworkPolicyTemplates.networkPolicyBuilder(namespaceName, policyName, scraperLabelSelector)
+                .editSpec()
+                    .withNewPodSelector()
+                        .addToMatchLabels(matchLabels)
+                    .endPodSelector()
+                .endSpec()
+                .build();
+
+            ResourceManager.getInstance().createResourceWithWait(networkPolicy);
+        }
+    }
+
+    public static void allowNetworkPolicyAllIngressForMatchingLabel(String namespaceName, String policyName, Map<String, String> matchLabels) {
+        if (Environment.DEFAULT_TO_DENY_NETWORK_POLICIES) {
+            LOGGER.info("Apply NetworkPolicy with Ingress to accept all connections to the Pods matching labels: {}", matchLabels.toString());
+
+            NetworkPolicy networkPolicy = new NetworkPolicyBuilder()
+                .withApiVersion("networking.k8s.io/v1")
+                .withKind(TestConstants.NETWORK_POLICY)
+                .withNewMetadata()
+                    .withName(policyName)
+                    .withNamespace(namespaceName)
+                .endMetadata()
+                .editSpec()
+                    // keeping ingress empty to allow all connections
+                    .addNewIngress()
+                    .endIngress()
+                    .withNewPodSelector()
+                        .addToMatchLabels(matchLabels)
+                    .endPodSelector()
+                .endSpec()
+                .build();
+
+            ResourceManager.getInstance().createResourceWithWait(networkPolicy);
+        }
+    }
+
+    public static void allowNetworkPolicySettingsForWebhook(String namespaceName, String name, Map<String, String> matchLabels) {
+        if (Environment.DEFAULT_TO_DENY_NETWORK_POLICIES) {
+            LOGGER.info("Apply NetworkPolicy access to {} from all Pods", matchLabels.toString());
+
+            NetworkPolicy networkPolicy = new NetworkPolicyBuilder()
+                .withApiVersion("networking.k8s.io/v1")
+                .withKind(TestConstants.NETWORK_POLICY)
+                .withNewMetadata()
+                    .withName(name)
+                    .withNamespace(namespaceName)
+                .endMetadata()
+                .editSpec()
+                    // keeping ingress empty to allow all connections to the Keycloak Pod
+                    .addNewIngress()
+                        .addNewFrom()
+                            .withNamespaceSelector(new LabelSelector())
+                        .endFrom()
+                    .endIngress()
+                    .withNewPodSelector()
+                        .addToMatchLabels(matchLabels)
+                    .endPodSelector()
+                    .endSpec()
+                .build();
+
+            ResourceManager.getInstance().createResourceWithWait(networkPolicy);
+        }
     }
 
     /**

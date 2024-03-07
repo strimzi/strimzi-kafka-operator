@@ -9,12 +9,12 @@ import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
-import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyBuilder;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.keycloak.KeycloakInstance;
 import io.strimzi.systemtest.resources.ResourceItem;
 import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
 import io.strimzi.systemtest.templates.kubernetes.NetworkPolicyTemplates;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
@@ -33,6 +33,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -80,7 +81,7 @@ public class SetupKeycloak {
         deployKeycloak(namespaceName);
 
         KeycloakInstance keycloakInstance = createKeycloakInstance(namespaceName);
-        allowNetworkPolicySettingsForKeycloak(namespaceName);
+        NetworkPolicyResource.allowNetworkPolicyAllIngressForMatchingLabel(namespaceName, KEYCLOAK + "-allow", Map.of(TestConstants.APP_POD_LABEL, KEYCLOAK));
         importRealms(namespaceName, keycloakInstance);
 
         return keycloakInstance;
@@ -169,31 +170,6 @@ public class SetupKeycloak {
                 .editSpec()
                     .withNewPodSelector()
                        .addToMatchLabels(TestConstants.APP_POD_LABEL, POSTGRES)
-                    .endPodSelector()
-                .endSpec()
-                .build();
-
-            ResourceManager.getInstance().createResourceWithWait(networkPolicy);
-        }
-    }
-
-    public static void allowNetworkPolicySettingsForKeycloak(String namespaceName) {
-        if (Environment.DEFAULT_TO_DENY_NETWORK_POLICIES) {
-            LOGGER.info("Apply NetworkPolicy access to {} from all Pods", KEYCLOAK);
-
-            NetworkPolicy networkPolicy = new NetworkPolicyBuilder()
-                .withApiVersion("networking.k8s.io/v1")
-                .withKind(TestConstants.NETWORK_POLICY)
-                .withNewMetadata()
-                    .withName(KEYCLOAK + "-allow")
-                    .withNamespace(namespaceName)
-                .endMetadata()
-                .editSpec()
-                    // keeping ingress empty to allow all connections to the Keycloak Pod
-                    .addNewIngress()
-                    .endIngress()
-                    .withNewPodSelector()
-                        .addToMatchLabels(TestConstants.APP_POD_LABEL, KEYCLOAK)
                     .endPodSelector()
                 .endSpec()
                 .build();
