@@ -170,6 +170,8 @@ public abstract class AbstractST implements TestSeparator {
         // does not proceed with the next method (i.e., afterEachMustExecute()). This ensures that if such problem happen
         // it will always execute the second method.
         try {
+            // This method needs to be disabled for the moment, as it brings flakiness and is unstable due to regexes and current matcher checks.
+            // Needs to be reworked on what errors to ignore. Better error logging should be added.
             //assertNoCoErrorsLogged(clusterOperator.getDeploymentNamespace(), storageMap.get(extensionContext).getTestExecutionTimeInSeconds());
         } finally {
             afterEachMayOverride();
