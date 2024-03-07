@@ -209,9 +209,13 @@ public class SecretUtils {
     }
 
     public static String annotateSecret(String namespaceName, String secretName, String annotationKey, String annotationValue) {
+        return annotateSecret(namespaceName, secretName, annotationKey, annotationValue, false);
+    }
+
+    public static String annotateSecret(String namespaceName, String secretName, String annotationKey, String annotationValue, boolean force) {
         LOGGER.info("Annotating Secret: {}/{} with annotation {}={}", namespaceName, secretName, annotationKey, annotationValue);
         return ResourceManager.cmdKubeClient().namespace(namespaceName)
-                .execInCurrentNamespace("annotate", "secret", secretName, annotationKey + "=" + annotationValue)
+                .execInCurrentNamespace("annotate", force ? "--overwrite" : "", "secret", secretName, annotationKey + "=" + annotationValue)
                 .out()
                 .trim();
     }
