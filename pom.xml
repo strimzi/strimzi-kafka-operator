@@ -148,7 +148,7 @@
         <opentelemetry-alpha.version>${opentelemetry.version}-alpha</opentelemetry-alpha.version>
         <jetty.version>9.4.53.v20231009</jetty.version>
         <javax-servlet.version>3.1.0</javax-servlet.version>
-        <strimzi-oauth.version>0.14.0</strimzi-oauth.version>
+        <strimzi-oauth.version>0.15.0</strimzi-oauth.version>
         <netty.version>4.1.107.Final</netty.version>
         <micrometer.version>1.12.3</micrometer.version>
         <jayway-jsonpath.version>2.9.0</jayway-jsonpath.version>
@@ -193,7 +193,7 @@
             <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
         </repository>
     </distributionManagement>
-
+    
     <modules>
         <module>kafka-agent</module>
         <module>mirror-maker-agent</module>

@@ -16,7 +16,7 @@
     </licenses>
 
     <properties>
-        <strimzi-oauth.version>0.14.0</strimzi-oauth.version>
+        <strimzi-oauth.version>0.15.0</strimzi-oauth.version>
         <jayway-json-path.version>2.9.0</jayway-json-path.version>
         <cruise-control.version>2.5.137</cruise-control.version>
         <opa-authorizer.version>1.5.1</opa-authorizer.version>
