@@ -237,8 +237,8 @@ public abstract class AbstractNamespaceST extends AbstractST {
         LOGGER.info("Target Kafka cluster: {} and consequently MirrorMaker2: {} will be created in Namespace: {}", testStorage.getTargetClusterName(), mirrorMakerName, MAIN_TEST_NAMESPACE);
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPool(MAIN_TEST_NAMESPACE, testStorage.getTargetBrokerPoolName(), testStorage.getTargetClusterName(), 1).build(),
-                KafkaNodePoolTemplates.controllerPool(MAIN_TEST_NAMESPACE, testStorage.getTargetControllerPoolName(), testStorage.getTargetClusterName(), 1).build()
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(MAIN_TEST_NAMESPACE, testStorage.getTargetBrokerPoolName(), testStorage.getTargetClusterName(), 1).build(),
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(MAIN_TEST_NAMESPACE, testStorage.getTargetControllerPoolName(), testStorage.getTargetClusterName(), 1).build()
             )
         );
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(testStorage.getTargetClusterName(), 1, 1).build());

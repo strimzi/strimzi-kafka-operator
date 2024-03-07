@@ -116,14 +116,14 @@ public class PodSecurityProfilesST extends AbstractST {
         LOGGER.info("Deploy Kafka Clusters resources");
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 1).build(),
-                KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 1).build(),
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 1).build(),
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 1).build(),
 
-                KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), KafkaNodePoolResource.getBrokerPoolName(mm1TargetClusterName), mm1TargetClusterName, 1).build(),
-                KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), KafkaNodePoolResource.getControllerPoolName(mm1TargetClusterName), mm1TargetClusterName, 1).build(),
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), KafkaNodePoolResource.getBrokerPoolName(mm1TargetClusterName), mm1TargetClusterName, 1).build(),
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), KafkaNodePoolResource.getControllerPoolName(mm1TargetClusterName), mm1TargetClusterName, 1).build(),
 
-                KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), KafkaNodePoolResource.getBrokerPoolName(mm2TargetClusterName), mm2TargetClusterName, 1).build(),
-                KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), KafkaNodePoolResource.getControllerPoolName(mm2TargetClusterName), mm2TargetClusterName, 1).build()
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), KafkaNodePoolResource.getBrokerPoolName(mm2TargetClusterName), mm2TargetClusterName, 1).build(),
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), KafkaNodePoolResource.getControllerPoolName(mm2TargetClusterName), mm2TargetClusterName, 1).build()
             )
         );
         resourceManager.createResourceWithWait(
