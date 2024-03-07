@@ -46,6 +46,21 @@ import static org.hamcrest.Matchers.containsString;
 
 @Tag(REGRESSION)
 @Tag(CRUISE_CONTROL)
+/**
+ * This class contains system tests for KafkaTopic resource changes, specifically focusing on testing replication factor adjustments
+ * under various conditions. It simulates real-world scenarios such as insufficient brokers for the desired replication factor,
+ * positive and negative replication factor changes, and recovery from failure states in the Kafka cluster or related components.
+ *
+ * The tests are structured to validate:
+ * - The ability to handle KafkaTopic creation with a replication factor higher than available brokers, including error handling and retries.
+ * - Positive testing scenarios where replication factors are increased and decreased successfully, ensuring the system correctly applies these changes.
+ * - Negative testing scenarios where replication factor changes to a value higher than available brokers are attempted, verifying the system's response and error handling.
+ * - Recovery of replication factor changes during crashes or restarts of critical components like Cruise Control and the Entity Operator, ensuring the system's resilience and fault tolerance.
+ *
+ * Each test case follows a specific scenario, with steps to manipulate the KafkaTopic's replication factor and validate the system's response and state transitions.
+ * These tests ensure the robustness of KafkaTopic management and the system's ability to handle configuration changes and recover from errors.
+ */
+
 public class TopicReplicationFactorChangeST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(TopicST.class);
@@ -54,19 +69,21 @@ public class TopicReplicationFactorChangeST extends AbstractST {
     private String scraperPodName;
 
     /**
-     * Tests the behavior of creating a KafkaTopic with a higher replication factor than available brokers.
-     * This test simulates a scenario where, for a freshly created KafkaTopic, the ReplicationChange
-     * status will be empty because the update to Kafka will fail on reconciliation due to an insufficient number of brokers.
+     * @description Verifies the system's handling of a KafkaTopic with a replication factor higher than the number of available brokers.
+     * It tests the system's error recognition and handling capabilities, the ability to adjust to a valid replication factor,
+     * and the successful creation and operational status of the topic.
      *
-     * Note:
-     * For an already created KafkaTopic, attempting to increase the replication factor beyond available
-     * brokers will append a ReplicationChange error message inside the status, which is not part of this test case.
+     * @steps
+     *  1. - Create a KafkaTopic with more replicas than available brokers to induce a configuration error.
+     *     - The topic exists in Kubernetes but not in Kafka, indicating a configuration error.
+     *  2. - Check for specific error messages indicating the cause of the failure.
+     *     - Specific error messages related to the replication factor issue are present.
+     *  3. - Correct the issue by setting a valid replication factor and ensure changes are applied successfully.
+     *     - Topic's replication factor is adjusted, and the topic becomes operational.
      *
-     * Steps:
-     *  1. Create a KafkaTopic with more replicas than available brokers to induce a configuration error.
-     *  2. Validate that the topic is recognized in the Kubernetes CRD but not actually created in Kafka.
-     *  3. Check for specific error messages indicating the cause of the failure.
-     *  4. Attempt to correct the issue by setting a valid replication factor and ensure that the changes are applied successfully.
+     * @usecase
+     *  - Replication factor management
+     *  - Error handling and recovery
      */
     @ParallelTest
     void testMoreReplicasThanAvailableBrokersWithFreshKafkaTopic() {
@@ -74,7 +91,7 @@ public class TopicReplicationFactorChangeST extends AbstractST {
         final int topicPartitions = 5;
         final int topicReplicationFactor = 5; // Intentionally set higher than available brokers to induce failure
 
-        // Create a KafkaTopic with more replicas than available brokers
+        // Create and attempt to deploy a KafkaTopic with an invalid replication factor
         KafkaTopic kafkaTopic = KafkaTopicTemplates.topic(this.sharedTestStorage.getClusterName(), testStorage.getTopicName(), topicPartitions, topicReplicationFactor, 1, this.sharedTestStorage.getNamespaceName()).build();
         resourceManager.createResourceWithoutWait(kafkaTopic);
 
@@ -104,17 +121,31 @@ public class TopicReplicationFactorChangeST extends AbstractST {
                 testStorage.getTopicName(),
                 topic -> topic.getSpec().setReplicas(newTopicReplicationFactor), this.sharedTestStorage.getNamespaceName());
 
-        // then KafkaTopic replicaChange status should disappear
+        // then KafkaTopic replicaChange status should disappear after task is completed by CC
         KafkaTopicUtils.waitForReplicaChangeStatusNotPresent(this.sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
 
-        KafkaTopicUtils.waitTopicHasRolled(this.sharedTestStorage.getNamespaceName(), testStorage.getTopicName(), topicObservationGeneration);
-        KafkaTopicUtils.waitForKafkaTopicReady(this.sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
-        KafkaTopicUtils.waitForKafkaTopicReplicasChange(this.sharedTestStorage.getNamespaceName(), testStorage.getTopicName(), newTopicReplicationFactor);
+        verifyKafkaTopicAfterReplicationChange(testStorage, topicObservationGeneration, newTopicReplicationFactor);
 
         // exchange messages within such Topic to prove that its operative
         sendAndRecvMessages(testStorage);
     }
 
+    /**
+     * @description Tests the ability to change a KafkaTopic's replication factor positively through increasing and decreasing,
+     * verifying the system applies these changes correctly and maintains the topic's operational status.
+     *
+     * @steps
+     *  1. - Increase the KafkaTopic's replication factor and verify the change is applied.
+     *     - Replication factor is increased, and the topic remains operational.
+     *  2. - Decrease the KafkaTopic's replication factor and again verify the change.
+     *     - Replication factor is decreased, with the topic staying operational.
+     *  3. - Return the replication factor to its original value and ensure the topic's functionality.
+     *     - Topic's replication factor is reset, and it remains fully functional.
+     *
+     * @usecase
+     *  - Dynamic replication factor adjustments
+     *  - KafkaTopic status monitoring
+     */
     @ParallelTest
     void testKafkaTopicReplicaChangePositiveRoundTrip() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
@@ -139,13 +170,10 @@ public class TopicReplicationFactorChangeST extends AbstractST {
 
         KafkaTopicUtils.waitUntilReplicaChangeResolved(this.sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
 
-        // then KafkaTopic replicaChange status should disappear
+        // then KafkaTopic replicaChange status should disappear after task is completed by CC
         KafkaTopicUtils.waitForReplicaChangeStatusNotPresent(this.sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
 
-        // topic has rolled because of change in configuration
-        KafkaTopicUtils.waitTopicHasRolled(this.sharedTestStorage.getNamespaceName(), testStorage.getTopicName(), topicObservationGeneration);
-        KafkaTopicUtils.waitForKafkaTopicReady(this.sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
-        KafkaTopicUtils.waitForKafkaTopicReplicasChange(this.sharedTestStorage.getNamespaceName(), testStorage.getTopicName(), increasedTopicReplicationFactor);
+        verifyKafkaTopicAfterReplicationChange(testStorage, topicObservationGeneration, increasedTopicReplicationFactor);
 
         // ----- 3rd stage (decreasing to 1 replicas)
         final int decreasedTopicReplicationFactor = 1;
@@ -156,15 +184,12 @@ public class TopicReplicationFactorChangeST extends AbstractST {
                 testStorage.getTopicName(),
                 topic -> topic.getSpec().setReplicas(decreasedTopicReplicationFactor), testStorage.getNamespaceName());
 
-        // ongoing
+        // replicaChange state should be in ongoing, because UTO does a POST request to CC
         KafkaTopicUtils.waitUntilReplicaChangeOngoing(this.sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
-        // then KafkaTopic replicaChange status should disappear
+        // then KafkaTopic replicaChange status should disappear after task is completed by CC
         KafkaTopicUtils.waitForReplicaChangeStatusNotPresent(this.sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
 
-        // topic has rolled because of change in configuration
-        KafkaTopicUtils.waitTopicHasRolled(this.sharedTestStorage.getNamespaceName(), testStorage.getTopicName(), topicObservationGeneration);
-        KafkaTopicUtils.waitForKafkaTopicReady(this.sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
-        KafkaTopicUtils.waitForKafkaTopicReplicasChange(this.sharedTestStorage.getNamespaceName(), testStorage.getTopicName(), decreasedTopicReplicationFactor);
+        verifyKafkaTopicAfterReplicationChange(testStorage, topicObservationGeneration, decreasedTopicReplicationFactor);
 
         // --- 4th stage (go back to 2 replicas)
         topicObservationGeneration = KafkaTopicUtils.topicObservationGeneration(this.sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
@@ -173,20 +198,31 @@ public class TopicReplicationFactorChangeST extends AbstractST {
                 testStorage.getTopicName(),
                 topic -> topic.getSpec().setReplicas(startingTopicReplicationFactor), testStorage.getNamespaceName());
 
-        // ongoing
+        //  replicaChange state should be in ongoing, because UTO does a POST request to CC
         KafkaTopicUtils.waitUntilReplicaChangeOngoing(this.sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
-        // then KafkaTopic replicaChange status should disappear
+        // then KafkaTopic replicaChange status should disappear after task is completed by CC
         KafkaTopicUtils.waitForReplicaChangeStatusNotPresent(this.sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
 
-        // topic has rolled because of change in configuration
-        KafkaTopicUtils.waitTopicHasRolled(this.sharedTestStorage.getNamespaceName(), testStorage.getTopicName(), topicObservationGeneration);
-        KafkaTopicUtils.waitForKafkaTopicReady(this.sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
-        KafkaTopicUtils.waitForKafkaTopicReplicasChange(this.sharedTestStorage.getNamespaceName(), testStorage.getTopicName(), startingTopicReplicationFactor);
+        verifyKafkaTopicAfterReplicationChange(testStorage, topicObservationGeneration, startingTopicReplicationFactor);
 
         // exchange messages within such Topic to prove that its operative
         sendAndRecvMessages(testStorage);
     }
 
+    /**
+     * @description Simulates an attempt to increase a KafkaTopic's replication factor beyond the number of available brokers,
+     * followed by a correction to a valid replication factor, to test system's error handling and recovery mechanisms.
+     *
+     * @steps
+     *  1. - Incorrectly increase the KafkaTopic's replication factor beyond available brokers.
+     *     - System identifies and reports the error due to insufficient brokers.
+     *  2. - Correct the replication factor to a valid number.
+     *     - System successfully applies the correction, and the topic becomes operational.
+     *
+     * @usecase
+     *  - Error handling for invalid replication factor increases
+     *  - Recovery from configuration errors
+     */
     @ParallelTest
     void testKafkaTopicReplicaChangeNegativeRoundTrip() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
@@ -225,19 +261,32 @@ public class TopicReplicationFactorChangeST extends AbstractST {
                 testStorage.getTopicName(),
                 topic -> topic.getSpec().setReplicas(startingTopicReplicationFactor), testStorage.getNamespaceName());
 
-        // then KafkaTopic replicaChange status should disappear because
-        // replicationChange with ongoing state? (or I would simply have replicationChange not present because there is no need to call POST request to CC because we already have KT 3 replicas?
+        // then KafkaTopic replicaChange status should disappear after task is completed by CC
+        // replicationChange not present because there is no need to call POST request via UTO to CC because we already have KT 3 replicas
         KafkaTopicUtils.waitForReplicaChangeStatusNotPresent(this.sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
 
-        // topic has rolled because of change in configuration
-        KafkaTopicUtils.waitTopicHasRolled(this.sharedTestStorage.getNamespaceName(), testStorage.getTopicName(), topicObservationGeneration);
-        KafkaTopicUtils.waitForKafkaTopicReady(this.sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
-        KafkaTopicUtils.waitForKafkaTopicReplicasChange(this.sharedTestStorage.getNamespaceName(), testStorage.getTopicName(), startingTopicReplicationFactor);
+        verifyKafkaTopicAfterReplicationChange(testStorage, topicObservationGeneration, startingTopicReplicationFactor);
 
         // exchange messages within such Topic to prove that its operative
         sendAndRecvMessages(testStorage);
     }
 
+    /**
+     * @description Tests the system's resilience and fault tolerance by simulating a replication factor change
+     * during a Cruise Control crash, verifying the change continues as expected once Cruise Control recovers.
+     *
+     * @steps
+     *  1. - Initiate a replication factor change for a KafkaTopic.
+     *     - Replication change is ongoing.
+     *  2. - Simulate a Cruise Control crash during the replication factor change.
+     *     - Cruise Control crashes but is then recovered.
+     *  3. - Verify the replication factor change completes successfully after recovery.
+     *     - The replication factor change is successful, ensuring system resilience.
+     *
+     * @usecase
+     *  - Handling component crashes
+     *  - Ensuring replication factor changes under failure conditions
+     */
     @IsolatedTest
     void testRecoveryOfReplicationChangeDuringCcCrash() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
@@ -247,6 +296,7 @@ public class TopicReplicationFactorChangeST extends AbstractST {
         final String ccPodName = kubeClient().listPodsByPrefixInName(this.sharedTestStorage.getNamespaceName(), CruiseControlResources.componentName(this.sharedTestStorage.getClusterName())).get(0).getMetadata().getName();
         final KafkaTopic kafkaTopic = KafkaTopicTemplates.topic(this.sharedTestStorage.getClusterName(), testStorage.getTopicName(), topicPartitions, startingTopicReplicationFactor, 1, this.sharedTestStorage.getNamespaceName()).build();
 
+        // -- 1st stage (start with 2 replicas)
         resourceManager.createResourceWithWait(kafkaTopic);
 
         // --- 2nd stage (increasing to 3 replicas)
@@ -266,26 +316,40 @@ public class TopicReplicationFactorChangeST extends AbstractST {
 
         final Map<String, String> ccPod = DeploymentUtils.depSnapshot(this.sharedTestStorage.getNamespaceName(), CruiseControlResources.componentName(this.sharedTestStorage.getClusterName()));
 
-        // here we should delete CruiseControl
+        // --- 3rd stage (during ongoing replicaChange task we induce chaos and delete CruiseControl Pod)
         kubeClient().deletePodWithName(this.sharedTestStorage.getNamespaceName(), ccPodName);
 
         // we should see that KafkaTopic is ongoing
         KafkaTopicUtils.waitUntilReplicaChangeOngoing(this.sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
 
-        // then KafkaTopic replicaChange status should disappear
+        // then KafkaTopic replicaChange status should disappear after task is completed by CC
         KafkaTopicUtils.waitForReplicaChangeStatusNotPresent(this.sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
 
         // cc should roll
         DeploymentUtils.waitTillDepHasRolled(this.sharedTestStorage.getNamespaceName(), CruiseControlResources.componentName(this.sharedTestStorage.getClusterName()), 1, ccPod);
 
-        KafkaTopicUtils.waitTopicHasRolled(this.sharedTestStorage.getNamespaceName(), testStorage.getTopicName(), topicObservationGeneration);
-        KafkaTopicUtils.waitForKafkaTopicReady(this.sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
-        KafkaTopicUtils.waitForKafkaTopicReplicasChange(this.sharedTestStorage.getNamespaceName(), testStorage.getTopicName(), increasedTopicReplicationFactor);
+        verifyKafkaTopicAfterReplicationChange(testStorage, topicObservationGeneration, increasedTopicReplicationFactor);
 
         // exchange messages within such Topic to prove that its operative
         sendAndRecvMessages(testStorage);
     }
 
+    /**
+     * @description Evaluates the system's ability to recover from a replication factor change operation during an unexpected
+     * Entity Operator crash, ensuring that KafkaTopic changes are successfully applied and the system remains operational.
+     *
+     * @steps
+     *  1. - Initiate a replication factor change for a KafkaTopic.
+     *     - Replication change is in progress.
+     *  2. - Simulate an Entity Operator crash during the replication factor change process.
+     *     - Entity Operator crashes but is subsequently recovered.
+     *  3. - Confirm that the replication factor change is successfully completed after the recovery.
+     *     - The replication factor change is completed successfully, demonstrating system robustness.
+     *
+     * @usecase
+     *  - Robustness in handling component failures
+     *  - Successful application of KafkaTopic changes post-recovery
+     */
     @IsolatedTest
     void testRecoveryOfReplicationChangeDuringEoCrash() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
@@ -300,7 +364,6 @@ public class TopicReplicationFactorChangeST extends AbstractST {
 
         resourceManager.createResourceWithWait(kafkaTopic);
 
-        // --- 2nd stage (increasing to 3 replicas)
         final int decreasedTopicReplicationFactor = 2;
 
         KafkaTopicUtils.waitUntilTopicObservationGenerationIsPresent(this.sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
@@ -326,19 +389,43 @@ public class TopicReplicationFactorChangeST extends AbstractST {
         // we should see that KafkaTopic is ongoing
         KafkaTopicUtils.waitUntilReplicaChangeOngoing(this.sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
 
+        // then KafkaTopic replicaChange status should disappear after task is completed by CC
         KafkaTopicUtils.waitForReplicaChangeStatusNotPresent(this.sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
 
         // eo should roll
         DeploymentUtils.waitTillDepHasRolled(this.sharedTestStorage.getNamespaceName(), KafkaResources.entityOperatorDeploymentName(this.sharedTestStorage.getClusterName()), 1, eoPods);
 
-        KafkaTopicUtils.waitTopicHasRolled(this.sharedTestStorage.getNamespaceName(), testStorage.getTopicName(), topicObservationGeneration);
-        KafkaTopicUtils.waitForKafkaTopicReady(this.sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
-        KafkaTopicUtils.waitForKafkaTopicReplicasChange(this.sharedTestStorage.getNamespaceName(), testStorage.getTopicName(), decreasedTopicReplicationFactor);
+        verifyKafkaTopicAfterReplicationChange(testStorage, topicObservationGeneration, decreasedTopicReplicationFactor);
 
         // exchange messages within such Topic to prove that its operative
         sendAndRecvMessages(testStorage);
     }
 
+    /**
+     * Verifies the successful update and readiness of a KafkaTopic after a replication factor change.
+     * Ensures the KafkaTopic has rolled to apply the new configuration, is in a ready state, and confirms
+     * the replication factor matches the expected value.
+     *
+     * @param testStorage                The test storage containing context for the test execution.
+     * @param topicObservationGeneration The generation of the KafkaTopic at the time of the update request.
+     * @param expectedTopicReplicationFactor The expected replication factor for the KafkaTopic after the update.
+     */
+    private void verifyKafkaTopicAfterReplicationChange(final TestStorage testStorage,
+                                                        final long topicObservationGeneration,
+                                                        final int expectedTopicReplicationFactor) {
+        KafkaTopicUtils.waitTopicHasRolled(this.sharedTestStorage.getNamespaceName(), testStorage.getTopicName(), topicObservationGeneration);
+        KafkaTopicUtils.waitForKafkaTopicReady(this.sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
+        KafkaTopicUtils.waitForKafkaTopicReplicasChange(this.sharedTestStorage.getNamespaceName(), testStorage.getTopicName(), expectedTopicReplicationFactor);
+    }
+
+    /**
+     * Facilitates the sending and receiving of messages to verify the operational status of a Kafka topic.
+     * Constructs Kafka clients configured with the necessary details from the provided test storage instance,
+     * including topic name, cluster connection details, and client specifics. It then initiates the message
+     * exchange process and waits for the operation to complete successfully.
+     *
+     * @param testStorage The test storage instance providing details for message exchange, including topic and client information.
+     */
     private void sendAndRecvMessages(final TestStorage testStorage) {
         KafkaClients kafkaClients = new KafkaClientsBuilder()
                 .withTopicName(testStorage.getTopicName())
