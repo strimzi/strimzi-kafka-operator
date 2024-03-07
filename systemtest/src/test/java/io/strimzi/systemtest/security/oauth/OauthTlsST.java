@@ -67,6 +67,7 @@ import static io.strimzi.systemtest.TestConstants.CONNECT;
 import static io.strimzi.systemtest.TestConstants.CONNECT_COMPONENTS;
 import static io.strimzi.systemtest.TestConstants.HTTP_BRIDGE_DEFAULT_PORT;
 import static io.strimzi.systemtest.TestConstants.MIRROR_MAKER;
+import static io.strimzi.systemtest.TestConstants.MIRROR_MAKER2;
 import static io.strimzi.systemtest.TestConstants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.TestConstants.OAUTH;
 import static io.strimzi.systemtest.TestConstants.REGRESSION;
@@ -425,7 +426,7 @@ public class OauthTlsST extends OauthAbstractST {
 
     @Description("As a OAuth MirrorMaker 2, I am able to replicate Topic data using using encrypted communication")
     @IsolatedTest("Using more tha one Kafka cluster in one Namespace")
-    @Tag(MIRROR_MAKER)
+    @Tag(MIRROR_MAKER2)
     @Tag(NODEPORT_SUPPORTED)
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testMirrorMaker2() {
