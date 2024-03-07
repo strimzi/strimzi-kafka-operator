@@ -379,6 +379,7 @@ class SecurityST extends AbstractST {
                 false);
     }
 
+    // TODO flaky fail from time to time on client timeouts
     @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
     @Tag(ROLLING_UPDATE)
