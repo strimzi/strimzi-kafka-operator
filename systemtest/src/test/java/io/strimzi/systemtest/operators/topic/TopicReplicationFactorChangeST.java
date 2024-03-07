@@ -138,11 +138,6 @@ public class TopicReplicationFactorChangeST extends AbstractST {
                 topic -> topic.getSpec().setReplicas(increasedTopicReplicationFactor), testStorage.getNamespaceName());
 
         KafkaTopicUtils.waitUntilReplicaChangeResolved(this.sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
-        // TOOD: I am not sure we want to monitor or check this transition? because It could lead in lot of race conditions I think
-        // I would be fine to just check change of replicationFactor and topicUid change
-        // replicaChangeState in ongoing
-        // replicaChangeState in running
-        // replicaChange is not present (task is already done)
 
         // then KafkaTopic replicaChange status should disappear
         KafkaTopicUtils.waitForReplicaChangeStatusNotPresent(this.sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
@@ -160,7 +155,6 @@ public class TopicReplicationFactorChangeST extends AbstractST {
         KafkaTopicResource.replaceTopicResourceInSpecificNamespace(
                 testStorage.getTopicName(),
                 topic -> topic.getSpec().setReplicas(decreasedTopicReplicationFactor), testStorage.getNamespaceName());
-
 
         // ongoing
         KafkaTopicUtils.waitUntilReplicaChangeOngoing(this.sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
@@ -332,8 +326,6 @@ public class TopicReplicationFactorChangeST extends AbstractST {
         // we should see that KafkaTopic is ongoing
         KafkaTopicUtils.waitUntilReplicaChangeOngoing(this.sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
 
-        // TODO: race condition?? <--
-        // then KafkaTopic replicaChange status should disappear
         KafkaTopicUtils.waitForReplicaChangeStatusNotPresent(this.sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
 
         // eo should roll
