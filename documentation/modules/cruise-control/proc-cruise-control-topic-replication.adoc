@@ -11,12 +11,12 @@ You can adjust the replication factor for specific purposes, such as:
 
 The Topic Operator uses Cruise Control to make the necessary changes, so Cruise Control must be deployed with Strimzi.
 
-The Topic Operator watches and periodically reconciles all managed and unpaused `KafkaTopic` resources to detect changes to `.spec.replicas` configuration by comparing the replication factor of the Kafka topic in Kafka.
+The Topic Operator watches and periodically reconciles all managed and unpaused `KafkaTopic` resources to detect changes to `.spec.replicas` configuration by comparing the replication factor of the topic in Kafka.
 One or more replication factor updates are then sent to Cruise Control for processing in a single request.
 
 Progress is reflected in the status of the `KafkaTopic` resource.
 
-NOTE: This operation requires the Topic Operator to be working in unidirectional mode. It does not work when using the Topic Operator in bidrectional mode.
+NOTE: This operation requires the unidirectional Topic Operator. It does not work when using the bidirectional Topic Operator.
 
 .Prerequisites
 
