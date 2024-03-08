@@ -149,14 +149,6 @@ spec:
       annotations:
         summary: 'Container user-operator in Entity Operator pod down or in CrashLookBackOff status'
         description: 'Container user-operator in Entity Operator pod have been down or in CrashLookBackOff status for 3 minutes'
-    - alert: EntityOperatorTlsSidecarContainerDown
-      expr: absent(container_last_seen{container="tls-sidecar",pod=~".+-entity-operator-.+"})
-      for: 3m
-      labels:
-        severity: major
-      annotations:
-        summary: 'Container tls-sidecar Entity Operator pod down or in CrashLookBackOff status'
-        description: 'Container tls-sidecar in Entity Operator pod have been down or in CrashLookBackOff status for 3 minutes'
   - name: connect
     rules:
     - alert: ConnectContainersDown
