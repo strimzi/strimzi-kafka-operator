@@ -14,6 +14,7 @@ import io.strimzi.api.kafka.model.topic.KafkaTopicStatus;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
+import io.strimzi.systemtest.annotations.BTONotSupported;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
@@ -46,6 +47,7 @@ import static org.hamcrest.Matchers.containsString;
 
 @Tag(REGRESSION)
 @Tag(CRUISE_CONTROL)
+@BTONotSupported
 /**
  * This class contains system tests for KafkaTopic resource changes, specifically focusing on testing replication factor adjustments
  * under various conditions. It simulates real-world scenarios such as insufficient brokers for the desired replication factor,
