@@ -95,7 +95,7 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
         // Verify that Pods are stable
         PodUtils.verifyThatRunningPodsAreStable(TestConstants.CO_NAMESPACE, clusterName);
         // Verify upgrade
-        verifyProcedure(acrossUpgradeData, testStorage.getProducerName(), testStorage.getConsumerName(), TestConstants.CO_NAMESPACE, wasUTOUsedBefore);
+        verifyProcedure(acrossUpgradeData, testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), TestConstants.CO_NAMESPACE, wasUTOUsedBefore);
 
         String controllerPodName = kubeClient().listPodsByPrefixInName(TestConstants.CO_NAMESPACE, KafkaResource.getStrimziPodSetName(clusterName, CONTROLLER_NODE_NAME)).get(0).getMetadata().getName();
         String brokerPodName = kubeClient().listPodsByPrefixInName(TestConstants.CO_NAMESPACE, KafkaResource.getStrimziPodSetName(clusterName, BROKER_NODE_NAME)).get(0).getMetadata().getName();
@@ -136,7 +136,7 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
         PodUtils.verifyThatRunningPodsAreStable(TestConstants.CO_NAMESPACE, clusterName);
 
         // Verify upgrade
-        verifyProcedure(acrossUpgradeData, testStorage.getProducerName(), testStorage.getConsumerName(), TestConstants.CO_NAMESPACE, wasUTOUsedBefore);
+        verifyProcedure(acrossUpgradeData, testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), TestConstants.CO_NAMESPACE, wasUTOUsedBefore);
     }
 
     @IsolatedTest
@@ -171,7 +171,7 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
         PodUtils.verifyThatRunningPodsAreStable(TestConstants.CO_NAMESPACE, clusterName);
 
         // Verify upgrade
-        verifyProcedure(acrossUpgradeData, testStorage.getProducerName(), testStorage.getConsumerName(), TestConstants.CO_NAMESPACE, wasUTOUsedBefore);
+        verifyProcedure(acrossUpgradeData, testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), TestConstants.CO_NAMESPACE, wasUTOUsedBefore);
     }
 
     @IsolatedTest
@@ -216,7 +216,7 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
         PodUtils.verifyThatRunningPodsAreStable(TestConstants.CO_NAMESPACE, clusterName);
 
         // Verify upgrade
-        verifyProcedure(upgradeData, testStorage.getProducerName(), testStorage.getConsumerName(), TestConstants.CO_NAMESPACE, wasUTOUsedBefore);
+        verifyProcedure(upgradeData, testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), TestConstants.CO_NAMESPACE, wasUTOUsedBefore);
     }
 
     @BeforeEach

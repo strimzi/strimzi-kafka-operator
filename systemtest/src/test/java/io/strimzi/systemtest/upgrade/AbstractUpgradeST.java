@@ -378,7 +378,7 @@ public class AbstractUpgradeST extends AbstractST {
                 ResourceManager.waitForResourceReadiness(getResourceApiVersion(KafkaTopic.RESOURCE_PLURAL), testStorage.getTopicName());
             }
 
-            String producerAdditionConfiguration = "delivery.timeout.ms=20000\nrequest.timeout.ms=20000";
+            String producerAdditionConfiguration = "delivery.timeout.ms=35000\nrequest.timeout.ms=35000";
 
             KafkaClients kafkaBasicClientJob = ClientUtils.getContinuousPlainClientBuilder(testStorage)
                 .withBootstrapAddress(KafkaResources.plainBootstrapAddress(clusterName))

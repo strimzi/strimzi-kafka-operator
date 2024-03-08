@@ -92,7 +92,7 @@ public class KRaftStrimziDowngradeST extends AbstractKRaftUpgradeST {
         checkAllImages(downgradeData, TestConstants.CO_NAMESPACE);
 
         // Verify upgrade
-        verifyProcedure(downgradeData, testStorage.getProducerName(), testStorage.getConsumerName(), TestConstants.CO_NAMESPACE, wasUTOUsedBefore);
+        verifyProcedure(downgradeData, testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), TestConstants.CO_NAMESPACE, wasUTOUsedBefore);
     }
 
     @BeforeEach
