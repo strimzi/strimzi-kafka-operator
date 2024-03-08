@@ -13,10 +13,6 @@ The Topic Operator uses Cruise Control to make the necessary changes, so Cruise 
 
 The Topic Operator watches and periodically reconciles all managed and unpaused `KafkaTopic` resources to detect changes to `.spec.replicas` configuration by comparing the replication factor of the Kafka topic in Kafka.
 One or more replication factor updates are then sent to Cruise Control for processing in a single request.
-Replication factor changes are handled by the following Cruise Control operations:
-
-* Requests to modify the replication factor are made through Cruise Control's `/topic_configuration` endpoint
-* Checks on the progress of the changes are made through Cruise Control's `/user_tasks` endpoint
 
 Progress is reflected in the status of the `KafkaTopic` resource.
 
@@ -68,7 +64,7 @@ metadata:
     strimzi.io/cluster: my-cluster
 spec:
   partitions: 1
-  replicas: 1
+  replicas: 3
   # ...
 
 # ...
@@ -121,7 +117,7 @@ spec:
             - name: STRIMZI_CRUISE_CONTROL_RACK_ENABLED # <2>
               value: false
             - name: STRIMZI_CRUISE_CONTROL_HOSTNAME # <3>
-              value: localhost
+              value: cruise-control-api.namespace.svc
             - name: STRIMZI_CRUISE_CONTROL_PORT # <4>
               value: 9090
             - name: STRIMZI_CRUISE_CONTROL_SSL_ENABLED # <5>

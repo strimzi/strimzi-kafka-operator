@@ -12,7 +12,7 @@ You can use the `kafka-reassign-partitions.sh` tool for the following:
 * Reassigning partitions across brokers
 * Changing the replication factor of topics 
 
-However, it is recommended to use Cruise Control for these operations. 
+However, while `kafka-reassign-partitions.sh` supports these operations, it is generally easier with Cruise Control. 
 Cruise Control can move topics from one broker to another without any downtime, and it is the most efficient way to reassign partitions.
 
 To use the `kafka-reassign-partitions.sh` tool, run it as a separate interactive pod rather than within the broker container.
