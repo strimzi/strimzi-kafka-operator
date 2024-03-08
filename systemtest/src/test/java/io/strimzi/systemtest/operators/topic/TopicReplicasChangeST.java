@@ -61,7 +61,7 @@ import static org.hamcrest.Matchers.containsString;
  * These tests ensure the robustness of KafkaTopic management and the system's ability to handle configuration changes and recover from errors.
  */
 
-public class TopicReplicationFactorChangeST extends AbstractST {
+public class TopicReplicasChangeST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(TopicST.class);
 
