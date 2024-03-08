@@ -80,7 +80,7 @@ spec:
             - name: STRIMZI_DEFAULT_KAFKA_INIT_IMAGE
               value: quay.io/strimzi/operator:latest
             - name: STRIMZI_DEFAULT_KAFKA_BRIDGE_IMAGE
-              value: quay.io/strimzi/kafka-bridge:0.28.0-rc2
+              value: quay.io/strimzi/kafka-bridge:0.28.0
             - name: STRIMZI_DEFAULT_KANIKO_EXECUTOR_IMAGE
               value: quay.io/strimzi/kaniko-executor:latest
             - name: STRIMZI_DEFAULT_MAVEN_BUILDER
