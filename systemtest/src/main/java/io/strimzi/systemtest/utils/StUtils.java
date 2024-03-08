@@ -404,6 +404,12 @@ public class StUtils {
         return CONTAINS_ANNOTATION.apply(TestConstants.PARALLEL_NAMESPACE, annotationHolder);
     }
 
+    /**
+     * Checking if test case contains annotation {@link io.strimzi.systemtest.annotations.SkipDefaultNetworkPolicyCreation}
+     * @param annotationHolder context of the test case
+     * @return true if test case contains annotation {@link io.strimzi.systemtest.annotations.SkipDefaultNetworkPolicyCreation},
+     * otherwise false
+     */
     public static boolean shouldSkipNetworkPoliciesCreation(Object annotationHolder) {
         return CONTAINS_ANNOTATION.apply(SkipDefaultNetworkPolicyCreation.class.getName().toLowerCase(Locale.ROOT), annotationHolder);
     }
