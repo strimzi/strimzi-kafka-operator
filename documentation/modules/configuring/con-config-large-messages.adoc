@@ -8,11 +8,11 @@
 Kafka's default batch size for messages is 1MB, which is optimal for maximum throughput in most use cases.
 Kafka can accommodate larger batches at a reduced throughput, assuming adequate disk capacity.
 
-Large message sizes are handled in four ways:
+Large message sizes can be handled in four ways:
 
 . Brokers, producers, and consumers are configured to accommodate larger message sizes.
 . xref:con-producer-config-properties-throughput-{context}[Producer-side message compression] writes compressed messages to the log.
-. Reference-based messaging sends only a reference to data stored in some other system in the message’s value.
+. Reference-based messaging sends only a reference to data stored in some other system in the message’s payload.
 . Inline messaging splits messages into chunks that use the same key, which are then combined on output using a stream-processor like Kafka Streams.
 
 Unless you are handling very large messages, the configuration approach is recommended.
@@ -57,18 +57,31 @@ max.partition.fetch.bytes: 10485760
 
 It's also possible to configure the producers and consumers used by other Kafka components like Kafka Bridge, Kafka Connect, and MirrorMaker 2 to handle larger messages more effectively.
 
-Kafka Bridge:: Configure the Kafka Bridge, like any other Kafka client, using prefixes for producer and consumer configuration properties:
+Kafka Bridge:: Configure the Kafka Bridge using specific producer and consumer configuration properties:
 +
-* `kafka.producer` for producers
-* `kafka.consumer` for consumers
+--
+* `producer.config` for producers
+* `consumer.config` for consumers
+--
 +
 .Example Kafka Bridge configuration
-[source,yaml]
+[source,yaml,subs="+attributes"]
 ----
-kafka.producer.batch.size: 327680
-kafka.producer.max.request.size: 10000000
-kafka.consumer.fetch.max.bytes: 10000000
-kafka.consumer.max.partition.fetch.bytes: 10485760
+apiVersion: {KafkaBridgeApiVersion}
+kind: KafkaBridge
+metadata:
+  name: my-bridge
+spec:
+  # ...
+  producer:
+    config:
+      batch.size: 327680
+      max.request.size: 10000000
+  consumer:
+    config:
+      fetch.max.bytes: 10000000
+      max.partition.fetch.bytes: 10485760 
+      # ...
 ----
 
 Kafka Connect:: For Kafka Connect, configure the source and sink connectors responsible for sending and retrieving messages using prefixes for producer and consumer configuration properties:
@@ -79,17 +92,37 @@ Kafka Connect:: For Kafka Connect, configure the source and sink connectors resp
 -- 
 +
 .Example Kafka Connect source connector configuration
-[source,yaml]
+[source,yaml,subs="+attributes"]
 ----
-producer.override.batch.size: 327680
-producer.override.max.request.size: 10000000
+apiVersion: {KafkaConnectorApiVersion}
+kind: KafkaConnector
+metadata:
+  name: my-source-connector
+  labels:
+    strimzi.io/cluster: my-connect-cluster
+spec:
+  # ...
+  config:
+    producer.override.batch.size: 327680
+    producer.override.max.request.size: 10000000
+    # ...  
 ----
 +
 .Example Kafka Connect sink connector configuration
-[source,yaml]
+[source,yaml,subs="+attributes"]
 ----
-consumer.fetch.max.bytes: 10000000
-consumer.max.partition.fetch.bytes: 10485760
+apiVersion: {KafkaConnectorApiVersion}
+kind: KafkaConnector
+metadata:
+  name: my-sink-connector
+  labels:
+    strimzi.io/cluster: my-connect-cluster
+spec:
+  # ...
+  config:
+    consumer.fetch.max.bytes: 10000000
+    consumer.max.partition.fetch.bytes: 10485760
+    # ...  
 ----
 
 MirrorMaker 2:: For MirrorMaker 2, configure the source connector responsible for retrieving messages from the source Kafka cluster using prefixes for producer and consumer configuration properties:
@@ -100,12 +133,25 @@ MirrorMaker 2:: For MirrorMaker 2, configure the source connector responsible fo
 -- 
 +
 .Example MirrorMaker 2 source connector configuration
-[source,yaml]
+[source,yaml,subs="+attributes"]
 ----
-producer.override.batch.size: 327680
-producer.override.max.request.size: 10000000
-consumer.fetch.max.bytes: 10000000
-consumer.max.partition.fetch.bytes: 10485760
+apiVersion: {KafkaMirrorMaker2ApiVersion}
+kind: KafkaMirrorMaker2
+metadata:
+  name: my-mirror-maker2
+spec:
+  # ...
+  mirrors:
+  - sourceCluster: "my-cluster-source"
+    targetCluster: "my-cluster-target"
+    sourceConnector:
+      tasksMax: 2
+      config:
+        producer.override.batch.size: 327680
+        producer.override.max.request.size: 10000000
+        consumer.fetch.max.bytes: 10000000
+        consumer.max.partition.fetch.bytes: 10485760
+        # ...     
 ----
 
 == Producer-side compression
