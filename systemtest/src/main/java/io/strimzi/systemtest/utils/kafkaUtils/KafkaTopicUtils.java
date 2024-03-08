@@ -319,7 +319,7 @@ public class KafkaTopicUtils {
     public static void waitForCondition(String waitDescription, String namespaceName, String topicName, Predicate<KafkaTopic> condition) {
         LOGGER.info("Starting wait for condition: {}", waitDescription);
         TestUtils.waitFor(waitDescription,
-                TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.API_CRUISE_CONTROL_TIMEOUT,
+                TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.CRUISE_CONTROL_TRAIN_MODEL_TIMEOUT,
                 () -> {
                     KafkaTopic kafkaTopic = getKafkaTopic(namespaceName, topicName);
                     return condition.test(kafkaTopic);
