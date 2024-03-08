@@ -273,17 +273,19 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
     }
 
     public static void applyDefaultNetworkPolicySettings(List<String> namespaces) {
-        for (String namespace : namespaces) {
-            NetworkPolicy networkPolicy;
+        if (!StUtils.shouldSkipNetworkPoliciesCreation(ResourceManager.getTestContext())) {
+            for (String namespace : namespaces) {
+                NetworkPolicy networkPolicy;
 
-            if (Environment.DEFAULT_TO_DENY_NETWORK_POLICIES) {
-                networkPolicy = NetworkPolicyTemplates.defaultNetworkPolicy(namespace, DefaultNetworkPolicy.DEFAULT_TO_DENY);
-            } else {
-                networkPolicy = NetworkPolicyTemplates.defaultNetworkPolicy(namespace, DefaultNetworkPolicy.DEFAULT_TO_ALLOW);
+                if (Environment.DEFAULT_TO_DENY_NETWORK_POLICIES) {
+                    networkPolicy = NetworkPolicyTemplates.defaultNetworkPolicy(namespace, DefaultNetworkPolicy.DEFAULT_TO_DENY);
+                } else {
+                    networkPolicy = NetworkPolicyTemplates.defaultNetworkPolicy(namespace, DefaultNetworkPolicy.DEFAULT_TO_ALLOW);
+                }
+
+                ResourceManager.getInstance().createResourceWithWait(networkPolicy);
+                LOGGER.info("NetworkPolicy successfully set to: {} for Namespace: {}", Environment.DEFAULT_TO_DENY_NETWORK_POLICIES, namespace);
             }
-
-            ResourceManager.getInstance().createResourceWithWait(networkPolicy);
-            LOGGER.info("NetworkPolicy successfully set to: {} for Namespace: {}", Environment.DEFAULT_TO_DENY_NETWORK_POLICIES, namespace);
         }
     }
 

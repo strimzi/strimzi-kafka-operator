@@ -21,6 +21,7 @@ import io.strimzi.api.kafka.model.common.ContainerEnvVar;
 import io.strimzi.api.kafka.model.common.ContainerEnvVarBuilder;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
+import io.strimzi.systemtest.annotations.SkipDefaultNetworkPolicyCreation;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.StrimziPodSetResource;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StrimziPodSetUtils;
@@ -401,6 +402,10 @@ public class StUtils {
      */
     public static boolean isParallelNamespaceTest(Object annotationHolder) {
         return CONTAINS_ANNOTATION.apply(TestConstants.PARALLEL_NAMESPACE, annotationHolder);
+    }
+
+    public static boolean shouldSkipNetworkPoliciesCreation(Object annotationHolder) {
+        return CONTAINS_ANNOTATION.apply(SkipDefaultNetworkPolicyCreation.class.getName().toLowerCase(Locale.ROOT), annotationHolder);
     }
 
     /**

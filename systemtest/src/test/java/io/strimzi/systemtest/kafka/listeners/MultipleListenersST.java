@@ -45,6 +45,7 @@ import static io.strimzi.systemtest.TestConstants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.TestConstants.LOADBALANCER_SUPPORTED;
 import static io.strimzi.systemtest.TestConstants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.TestConstants.REGRESSION;
+import static io.strimzi.systemtest.TestConstants.ROUTE;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 @Tag(REGRESSION)
@@ -103,6 +104,7 @@ public class MultipleListenersST extends AbstractST {
 
     @OpenShiftOnly
     @Tag(EXTERNAL_CLIENTS_USED)
+    @Tag(ROUTE)
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testMultipleRoutes() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
