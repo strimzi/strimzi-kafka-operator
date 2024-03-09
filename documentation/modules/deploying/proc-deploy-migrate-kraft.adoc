@@ -212,7 +212,7 @@ NOTE: Depending on how `deleteClaim` is configured for ZooKeeper, its Persistent
 Remove the following section:
 +
 --
-* `spec.zookeeper` properties
+* `spec.zookeeper`
 --
 +
 If present, you can also remove the following options from the `.spec.kafka.config` section:
