@@ -26,7 +26,6 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -55,27 +54,27 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
     @ParameterizedTest(name = "from: {0} (using FG <{2}>) to: {1} (using FG <{3}>) ")
     @MethodSource("io.strimzi.systemtest.upgrade.VersionModificationDataLoader#loadYamlUpgradeData")
     @Tag(INTERNAL_CLIENTS_USED)
-    void testUpgradeStrimziVersion(String fromVersion, String toVersion, String fgBefore, String fgAfter, BundleVersionModificationData upgradeData, ExtensionContext extensionContext) throws Exception {
+    void testUpgradeStrimziVersion(String fromVersion, String toVersion, String fgBefore, String fgAfter, BundleVersionModificationData upgradeData) throws Exception {
         assumeTrue(StUtils.isAllowOnCurrentEnvironment(upgradeData.getEnvFlakyVariable()));
         assumeTrue(StUtils.isAllowedOnCurrentK8sVersion(upgradeData.getEnvMaxK8sVersion()));
 
         LOGGER.debug("Running upgrade test from version {} to {} (FG: {} -> {})",
                 fromVersion, toVersion, fgBefore, fgAfter);
-        performUpgrade(upgradeData, extensionContext);
+        performUpgrade(upgradeData);
     }
 
     @Test
-    void testUpgradeKafkaWithoutVersion(ExtensionContext extensionContext) throws IOException {
+    void testUpgradeKafkaWithoutVersion() throws IOException {
         UpgradeKafkaVersion upgradeKafkaVersion = UpgradeKafkaVersion.getKafkaWithVersionFromUrl(acrossUpgradeData.getFromKafkaVersionsUrl(), acrossUpgradeData.getStartingKafkaVersion());
         upgradeKafkaVersion.setVersion(null);
 
-        final TestStorage testStorage = new TestStorage(extensionContext);
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
         // Setup env
-        setupEnvAndUpgradeClusterOperator(extensionContext, acrossUpgradeData, testStorage, upgradeKafkaVersion, TestConstants.CO_NAMESPACE);
+        setupEnvAndUpgradeClusterOperator(acrossUpgradeData, testStorage, upgradeKafkaVersion, TestConstants.CO_NAMESPACE);
 
-        Map<String, String> zooSnapshot = PodUtils.podSnapshot(TestConstants.CO_NAMESPACE, zkSelector);
-        Map<String, String> kafkaSnapshot = PodUtils.podSnapshot(TestConstants.CO_NAMESPACE, kafkaSelector);
+        Map<String, String> zooSnapshot = PodUtils.podSnapshot(TestConstants.CO_NAMESPACE, controllerSelector);
+        Map<String, String> kafkaSnapshot = PodUtils.podSnapshot(TestConstants.CO_NAMESPACE, brokerSelector);
         Map<String, String> eoSnapshot = DeploymentUtils.depSnapshot(TestConstants.CO_NAMESPACE, KafkaResources.entityOperatorDeploymentName(clusterName));
 
         // Make snapshots of all Pods
@@ -85,12 +84,12 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
         boolean wasUTOUsedBefore = StUtils.isUnidirectionalTopicOperatorUsed(TestConstants.CO_NAMESPACE, eoSelector);
 
         // Upgrade CO
-        changeClusterOperator(acrossUpgradeData, TestConstants.CO_NAMESPACE, extensionContext);
+        changeClusterOperator(acrossUpgradeData, TestConstants.CO_NAMESPACE);
 
         logPodImages(TestConstants.CO_NAMESPACE);
 
-        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(TestConstants.CO_NAMESPACE, zkSelector, 3, zooSnapshot);
-        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(TestConstants.CO_NAMESPACE, kafkaSelector, 3, kafkaSnapshot);
+        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(TestConstants.CO_NAMESPACE, controllerSelector, 3, zooSnapshot);
+        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(TestConstants.CO_NAMESPACE, brokerSelector, 3, kafkaSnapshot);
         DeploymentUtils.waitTillDepHasRolled(TestConstants.CO_NAMESPACE, KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoSnapshot);
 
         logPodImages(TestConstants.CO_NAMESPACE);
@@ -104,12 +103,12 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
     }
 
     @Test
-    void testUpgradeAcrossVersionsWithUnsupportedKafkaVersion(ExtensionContext extensionContext) throws IOException {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+    void testUpgradeAcrossVersionsWithUnsupportedKafkaVersion() throws IOException {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         UpgradeKafkaVersion upgradeKafkaVersion = UpgradeKafkaVersion.getKafkaWithVersionFromUrl(acrossUpgradeData.getFromKafkaVersionsUrl(), acrossUpgradeData.getStartingKafkaVersion());
 
         // Setup env
-        setupEnvAndUpgradeClusterOperator(extensionContext, acrossUpgradeData, testStorage, upgradeKafkaVersion, TestConstants.CO_NAMESPACE);
+        setupEnvAndUpgradeClusterOperator(acrossUpgradeData, testStorage, upgradeKafkaVersion, TestConstants.CO_NAMESPACE);
 
         // Make snapshots of all Pods
         makeSnapshots();
@@ -118,10 +117,10 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
         boolean wasUTOUsedBefore = StUtils.isUnidirectionalTopicOperatorUsed(TestConstants.CO_NAMESPACE, eoSelector);
 
         // Upgrade CO
-        changeClusterOperator(acrossUpgradeData, TestConstants.CO_NAMESPACE, extensionContext);
+        changeClusterOperator(acrossUpgradeData, TestConstants.CO_NAMESPACE);
         logPodImages(TestConstants.CO_NAMESPACE);
         //  Upgrade kafka
-        changeKafkaAndLogFormatVersion(acrossUpgradeData, extensionContext);
+        changeKafkaAndLogFormatVersion(acrossUpgradeData);
         logPodImages(TestConstants.CO_NAMESPACE);
         checkAllImages(acrossUpgradeData, TestConstants.CO_NAMESPACE);
         // Verify that Pods are stable
@@ -131,25 +130,25 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
     }
 
     @Test
-    void testUpgradeAcrossVersionsWithNoKafkaVersion(ExtensionContext extensionContext) throws IOException {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+    void testUpgradeAcrossVersionsWithNoKafkaVersion() throws IOException {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         // Setup env
-        setupEnvAndUpgradeClusterOperator(extensionContext, acrossUpgradeData, testStorage, null, TestConstants.CO_NAMESPACE);
+        setupEnvAndUpgradeClusterOperator(acrossUpgradeData, testStorage, null, TestConstants.CO_NAMESPACE);
 
         // Check if UTO is used before changing the CO -> used for check for KafkaTopics
         boolean wasUTOUsedBefore = StUtils.isUnidirectionalTopicOperatorUsed(TestConstants.CO_NAMESPACE, eoSelector);
 
         // Upgrade CO
-        changeClusterOperator(acrossUpgradeData, TestConstants.CO_NAMESPACE, extensionContext);
+        changeClusterOperator(acrossUpgradeData, TestConstants.CO_NAMESPACE);
         // Wait till first upgrade finished
-        zkPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(TestConstants.CO_NAMESPACE, zkSelector, 3, zkPods);
-        kafkaPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(TestConstants.CO_NAMESPACE, kafkaSelector, 3, kafkaPods);
+        controllerPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(TestConstants.CO_NAMESPACE, controllerSelector, 3, controllerPods);
+        brokerPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(TestConstants.CO_NAMESPACE, brokerSelector, 3, brokerPods);
         eoPods = DeploymentUtils.waitTillDepHasRolled(TestConstants.CO_NAMESPACE, KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoPods);
 
         LOGGER.info("Rolling to new images has finished!");
         logPodImages(TestConstants.CO_NAMESPACE);
         //  Upgrade kafka
-        changeKafkaAndLogFormatVersion(acrossUpgradeData, extensionContext);
+        changeKafkaAndLogFormatVersion(acrossUpgradeData);
         logPodImages(TestConstants.CO_NAMESPACE);
         checkAllImages(acrossUpgradeData, TestConstants.CO_NAMESPACE);
         // Verify that Pods are stable
@@ -159,20 +158,20 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
     }
 
     @Test
-    void testUpgradeOfKafkaConnectAndKafkaConnector(final ExtensionContext extensionContext) throws IOException {
-        final TestStorage testStorage = new TestStorage(extensionContext, TestConstants.CO_NAMESPACE);
+    void testUpgradeOfKafkaConnectAndKafkaConnector() throws IOException {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext(), TestConstants.CO_NAMESPACE);
         final UpgradeKafkaVersion upgradeKafkaVersion = new UpgradeKafkaVersion(acrossUpgradeData.getDefaultKafka());
 
-        doKafkaConnectAndKafkaConnectorUpgradeOrDowngradeProcedure(extensionContext, acrossUpgradeData, testStorage, upgradeKafkaVersion);
+        doKafkaConnectAndKafkaConnectorUpgradeOrDowngradeProcedure(acrossUpgradeData, testStorage, upgradeKafkaVersion);
     }
 
-    private void performUpgrade(BundleVersionModificationData upgradeData, ExtensionContext extensionContext) throws IOException {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+    private void performUpgrade(BundleVersionModificationData upgradeData) throws IOException {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         // leave empty, so the original Kafka version from appropriate Strimzi's yaml will be used
         UpgradeKafkaVersion upgradeKafkaVersion = new UpgradeKafkaVersion();
 
         // Setup env
-        setupEnvAndUpgradeClusterOperator(extensionContext, upgradeData, testStorage, upgradeKafkaVersion, TestConstants.CO_NAMESPACE);
+        setupEnvAndUpgradeClusterOperator(upgradeData, testStorage, upgradeKafkaVersion, TestConstants.CO_NAMESPACE);
 
         // Upgrade CO to HEAD
         logPodImages(TestConstants.CO_NAMESPACE);
@@ -180,7 +179,7 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
         // Check if UTO is used before changing the CO -> used for check for KafkaTopics
         boolean wasUTOUsedBefore = StUtils.isUnidirectionalTopicOperatorUsed(TestConstants.CO_NAMESPACE, eoSelector);
 
-        changeClusterOperator(upgradeData, TestConstants.CO_NAMESPACE, extensionContext);
+        changeClusterOperator(upgradeData, TestConstants.CO_NAMESPACE);
 
         if (TestKafkaVersion.supportedVersionsContainsVersion(upgradeData.getDefaultKafkaVersionPerStrimzi())) {
             waitForKafkaClusterRollingUpdate();
@@ -188,7 +187,7 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
 
         logPodImages(TestConstants.CO_NAMESPACE);
         // Upgrade kafka
-        changeKafkaAndLogFormatVersion(upgradeData, extensionContext);
+        changeKafkaAndLogFormatVersion(upgradeData);
         logPodImages(TestConstants.CO_NAMESPACE);
         checkAllImages(upgradeData, TestConstants.CO_NAMESPACE);
 
@@ -203,9 +202,9 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
         NamespaceManager.getInstance().createNamespaceAndPrepare(CO_NAMESPACE);
     }
 
-    protected void afterEachMayOverride(ExtensionContext extensionContext) {
+    protected void afterEachMayOverride() {
         cleanUpKafkaTopics();
-        ResourceManager.getInstance().deleteResources(extensionContext);
+        ResourceManager.getInstance().deleteResources();
         NamespaceManager.getInstance().deleteNamespaceWithWait(CO_NAMESPACE);
     }
 }

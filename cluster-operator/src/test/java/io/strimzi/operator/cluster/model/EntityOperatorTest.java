@@ -54,6 +54,8 @@ import io.strimzi.test.TestUtils;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -75,7 +77,7 @@ import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasProperty;
 
-@SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling"})
+@SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
 @ParallelSuite
 public class EntityOperatorTest {
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
@@ -123,18 +125,20 @@ public class EntityOperatorTest {
 
     private final EntityOperator entityOperator = EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS, SHARED_ENV_PROVIDER);
 
-    @ParallelTest
-    public void testGenerateDeploymentWithBto() {
-        testGenerateDeployment(false);
+    record SetupFlags(boolean useUnidirectionalTopicOperator, boolean cruiseControlEnabled) { }
+    private static List<SetupFlags> provideConfigurationFlags() {
+        return List.of(
+            new SetupFlags(false, false),
+            new SetupFlags(true, false),
+            new SetupFlags(true, true)
+        );
     }
-
-    @ParallelTest
-    public void testGenerateDeploymentWithUto() {
-        testGenerateDeployment(true);
-    }
-
-    private void testGenerateDeployment(boolean useUnidirectionalTopicOperator) {
-        entityOperator.unidirectionalTopicOperator = useUnidirectionalTopicOperator;
+    
+    @ParameterizedTest
+    @MethodSource("provideConfigurationFlags")
+    public void testGenerateDeployment(SetupFlags flags) {
+        entityOperator.unidirectionalTopicOperator = flags.useUnidirectionalTopicOperator;
+        entityOperator.cruiseControlEnabled = flags.cruiseControlEnabled;
         Deployment dep = entityOperator.generateDeployment(true, null, null);
 
         List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
@@ -144,12 +148,12 @@ public class EntityOperatorTest {
         assertThat(dep.getSpec().getReplicas(), is(1));
         TestUtils.checkOwnerReference(dep, resource);
 
-        assertThat(containers.size(), is(useUnidirectionalTopicOperator ? 2 : 3));
+        assertThat(containers.size(), is(flags.useUnidirectionalTopicOperator ? 2 : 3));
         // just check names of topic and user operators (their containers are tested in the related unit test classes)
         assertThat(containers.get(0).getName(), is(EntityTopicOperator.TOPIC_OPERATOR_CONTAINER_NAME));
         assertThat(containers.get(1).getName(), is(EntityUserOperator.USER_OPERATOR_CONTAINER_NAME));
         // checks on the TLS sidecar container
-        if (!useUnidirectionalTopicOperator) {
+        if (!flags.useUnidirectionalTopicOperator) {
             Container tlsSidecarContainer = containers.get(2);
             assertThat(tlsSidecarContainer.getImage(), is(image));
             assertThat(io.strimzi.operator.cluster.TestUtils.containerEnvVars(tlsSidecarContainer).get(EntityOperator.ENV_VAR_ZOOKEEPER_CONNECT), is(KafkaResources.zookeeperServiceName(cluster) + ":" + ZookeeperCluster.CLIENT_TLS_PORT));
@@ -168,11 +172,13 @@ public class EntityOperatorTest {
         assertThat(volumes.stream().filter(volume -> volume.getName().equals(EntityUserOperator.USER_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME)).findFirst().orElseThrow().getEmptyDir().getSizeLimit(), is(new Quantity("100", "Mi")));
         assertThat(volumes.stream().filter(volume -> volume.getName().equals(EntityTopicOperator.TOPIC_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME)).findFirst().orElseThrow().getEmptyDir().getSizeLimit(), is(new Quantity("100", "Mi")));
         assertThat(volumes.stream().filter(volume -> volume.getName().equals(EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_NAME)).findFirst().isEmpty(), is(false));
-        if (!useUnidirectionalTopicOperator) {
+        if (!flags.useUnidirectionalTopicOperator) {
             assertThat(volumes.stream().filter(volume -> volume.getName().equals(EntityOperator.TLS_SIDECAR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME)).findFirst().orElseThrow().getEmptyDir().getSizeLimit(), is(new Quantity("100", "Mi")));
         } else {
             assertThat(volumes.stream().filter(volume -> volume.getName().equals(EntityOperator.TLS_SIDECAR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME)).findFirst().isEmpty(), is(true));
-
+        }
+        if (flags.useUnidirectionalTopicOperator && flags.cruiseControlEnabled) {
+            assertThat(volumes.stream().filter(volume -> volume.getName().equals(EntityOperator.ETO_CC_API_VOLUME_NAME)).findFirst().isEmpty(), is(false));
         }
     }
 

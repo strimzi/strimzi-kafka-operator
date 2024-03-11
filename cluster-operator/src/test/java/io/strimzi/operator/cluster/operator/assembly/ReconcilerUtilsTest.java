@@ -290,6 +290,28 @@ public class ReconcilerUtilsTest {
                     async.flag();
                 })));
     }
+    
+    @Test
+    public void testHashSecretContent() {
+        Secret secret = new SecretBuilder()
+            .addToData(Map.of("username", "foo"))
+            .addToData(Map.of("password", "changeit"))
+            .build();
+        assertThat(ReconcilerUtils.hashSecretContent(secret), is("756937ae"));
+    }
+
+    @Test
+    public void testHashSecretContentWithNoData() {
+        Secret secret = new SecretBuilder().build();
+        RuntimeException ex = assertThrows(RuntimeException.class, () -> ReconcilerUtils.hashSecretContent(secret));
+        assertThat(ex.getMessage(), is("Empty secret"));
+    }
+
+    @Test
+    public void testHashSecretContentWithNoSecret() {
+        RuntimeException ex = assertThrows(RuntimeException.class, () -> ReconcilerUtils.hashSecretContent(null));
+        assertThat(ex.getMessage(), is("Secret not found"));
+    }
 
     static class MockJmxCluster implements SupportsJmx {
         private final JmxModel jmx;

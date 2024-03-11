@@ -40,5 +40,3 @@ spec:
         size: 100Gi
         deleteClaim: false
 ---- 
-
-IMPORTANT: **KRaft mode is not ready for production in Apache Kafka or in Strimzi.**

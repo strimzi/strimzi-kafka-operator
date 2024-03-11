@@ -59,7 +59,6 @@ public class MetricsUtils {
     }
 
     public static MetricsCollector setupCOMetricsCollectorInNamespace(String coName, String coNamespace, String coScraperName) {
-
         LabelSelector scraperDeploymentPodLabel = new LabelSelector(null, Map.of(TestConstants.APP_POD_LABEL, coScraperName));
         String coScraperPodName = ResourceManager.kubeClient().listPods(coNamespace, scraperDeploymentPodLabel).get(0).getMetadata().getName();
 

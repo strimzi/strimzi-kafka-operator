@@ -7,10 +7,12 @@ package io.strimzi.operator.cluster.model;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
+import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.strimzi.api.kafka.model.common.InlineLogging;
 import io.strimzi.api.kafka.model.common.JvmOptions;
 import io.strimzi.api.kafka.model.common.Probe;
+import io.strimzi.api.kafka.model.common.RackBuilder;
 import io.strimzi.api.kafka.model.common.SystemProperty;
 import io.strimzi.api.kafka.model.common.SystemPropertyBuilder;
 import io.strimzi.api.kafka.model.kafka.Kafka;
@@ -23,6 +25,7 @@ import io.strimzi.api.kafka.model.kafka.entityoperator.EntityTopicOperatorSpec;
 import io.strimzi.api.kafka.model.kafka.entityoperator.EntityTopicOperatorSpecBuilder;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.Util;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
 
@@ -31,10 +34,16 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import static io.strimzi.operator.cluster.model.EntityTopicOperator.CRUISE_CONTROL_API_PORT;
+import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.API_TO_ADMIN_NAME;
+import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.API_TO_ADMIN_NAME_KEY;
+import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.API_TO_ADMIN_PASSWORD_KEY;
 import static io.strimzi.test.TestUtils.map;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ParallelSuite
 public class EntityTopicOperatorTest {
@@ -302,5 +311,106 @@ public class EntityTopicOperatorTest {
 
         assertThat(binding.getRoleRef().getKind(), is("Role"));
         assertThat(binding.getRoleRef().getName(), is("foo-entity-operator"));
+    }
+
+    @ParallelTest
+    public void testSetupWithCruiseControlEnabled() {
+        EntityTopicOperatorSpec entityTopicOperatorSpec = new EntityTopicOperatorSpecBuilder()
+            .build();
+        EntityOperatorSpec entityOperatorSpec = new EntityOperatorSpecBuilder()
+            .withTopicOperator(entityTopicOperatorSpec)
+            .build();
+        Kafka resource =
+            new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                .editSpec()
+                    .editKafka().withRack(new RackBuilder()
+                        .withTopologyKey("foo")
+                        .build())
+                    .endKafka()
+                    .withEntityOperator(entityOperatorSpec)
+                    .withNewCruiseControl()
+                    .endCruiseControl()
+                .endSpec()
+                .build();
+        EntityTopicOperator entityTopicOperator = EntityTopicOperator.fromCrd(
+            new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), 
+                resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, true);
+
+        List<EnvVar> expectedEnvVars = new ArrayList<>();
+        expectedEnvVars.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_RESOURCE_LABELS).withValue(ModelUtils.defaultResourceLabels(cluster)).build());
+        expectedEnvVars.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_KAFKA_BOOTSTRAP_SERVERS).withValue(KafkaResources.bootstrapServiceName(cluster) + ":" + KafkaCluster.REPLICATION_PORT).build());
+        expectedEnvVars.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_WATCHED_NAMESPACE).withValue(namespace).build());
+        expectedEnvVars.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_FULL_RECONCILIATION_INTERVAL_MS).withValue(String.valueOf(toReconciliationInterval * 1000)).build());
+        expectedEnvVars.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_SECURITY_PROTOCOL).withValue(EntityTopicOperatorSpec.DEFAULT_SECURITY_PROTOCOL).build());
+        expectedEnvVars.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_TLS_ENABLED).withValue(Boolean.toString(true)).build());
+        expectedEnvVars.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_STRIMZI_GC_LOG_ENABLED).withValue(Boolean.toString(JvmOptions.DEFAULT_GC_LOGGING_ENABLED)).build());
+        expectedEnvVars.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_CRUISE_CONTROL_ENABLED).withValue(Boolean.toString(true)).build());
+        expectedEnvVars.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_CRUISE_CONTROL_RACK_ENABLED).withValue(Boolean.toString(true)).build());
+        expectedEnvVars.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_CRUISE_CONTROL_HOSTNAME).withValue(String.format("%s-cruise-control.%s.svc", cluster, namespace)).build());
+        expectedEnvVars.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_CRUISE_CONTROL_PORT).withValue(String.valueOf(CRUISE_CONTROL_API_PORT)).build());
+        expectedEnvVars.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_CRUISE_CONTROL_SSL_ENABLED).withValue(Boolean.toString(true)).build());
+        expectedEnvVars.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_CRUISE_CONTROL_AUTH_ENABLED).withValue(Boolean.toString(true)).build());
+        assertThat(entityTopicOperator.getEnvVars(), is(expectedEnvVars));
+
+        Container container = entityTopicOperator.createContainer(null);
+        assertThat(EntityOperatorTest.volumeMounts(container.getVolumeMounts()), is(map(
+            EntityTopicOperator.TOPIC_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME, VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH,
+            "entity-topic-operator-metrics-and-logging", "/opt/topic-operator/custom-config/",
+            EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_NAME, EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT,
+            EntityOperator.ETO_CERTS_VOLUME_NAME, EntityOperator.ETO_CERTS_VOLUME_MOUNT,
+            EntityOperator.ETO_CC_API_VOLUME_NAME, EntityOperator.ETO_CC_API_VOLUME_MOUNT
+        )));
+    }
+
+    @ParallelTest
+    public void testGenerateCruiseControlApiSecret() {
+        EntityTopicOperatorSpec entityTopicOperatorSpec = new EntityTopicOperatorSpecBuilder()
+            .build();
+        EntityOperatorSpec entityOperatorSpec = new EntityOperatorSpecBuilder()
+            .withTopicOperator(entityTopicOperatorSpec)
+            .build();
+        Kafka resource =
+            new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                .editSpec()
+                    .withEntityOperator(entityOperatorSpec)
+                    .withNewCruiseControl()
+                    .endCruiseControl()
+                .endSpec()
+                .build();
+        EntityTopicOperator entityTopicOperator = EntityTopicOperator.fromCrd(
+            new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(),
+                resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, true);
+
+        var newSecret = entityTopicOperator.generateCruiseControlApiSecret(null);
+        assertThat(newSecret, is(notNullValue()));
+        assertThat(newSecret.getData(), is(notNullValue()));
+        assertThat(newSecret.getData().size(), is(2));
+        assertThat(newSecret.getData().get(API_TO_ADMIN_NAME_KEY), is(Util.encodeToBase64(API_TO_ADMIN_NAME)));
+        assertThat(newSecret.getData().get(API_TO_ADMIN_NAME_KEY), is(notNullValue()));
+        
+        var name = Util.encodeToBase64(API_TO_ADMIN_NAME);
+        var password = Util.encodeToBase64("changeit");
+        var oldSecret = entityTopicOperator.generateCruiseControlApiSecret(
+            new SecretBuilder().withData(Map.of(API_TO_ADMIN_NAME_KEY, name, API_TO_ADMIN_PASSWORD_KEY, password)).build());
+        assertThat(oldSecret, is(notNullValue()));
+        assertThat(oldSecret.getData(), is(notNullValue()));
+        assertThat(oldSecret.getData().size(), is(2));
+        assertThat(oldSecret.getData().get(API_TO_ADMIN_NAME_KEY), is(name));
+        assertThat(oldSecret.getData().get(API_TO_ADMIN_PASSWORD_KEY), is(password));
+        
+        assertThrows(RuntimeException.class, () -> entityTopicOperator.generateCruiseControlApiSecret(
+            new SecretBuilder().withData(Map.of(API_TO_ADMIN_NAME_KEY, name)).build()));
+        
+        assertThrows(RuntimeException.class, () -> entityTopicOperator.generateCruiseControlApiSecret(
+            new SecretBuilder().withData(Map.of(API_TO_ADMIN_PASSWORD_KEY, password)).build()));
+
+        assertThrows(RuntimeException.class, () -> entityTopicOperator.generateCruiseControlApiSecret(
+            new SecretBuilder().withData(Map.of()).build()));
+
+        assertThrows(RuntimeException.class, () -> entityTopicOperator.generateCruiseControlApiSecret(
+            new SecretBuilder().withData(Map.of(API_TO_ADMIN_NAME_KEY, " ", API_TO_ADMIN_PASSWORD_KEY, password)).build()));
+
+        assertThrows(RuntimeException.class, () -> entityTopicOperator.generateCruiseControlApiSecret(
+            new SecretBuilder().withData(Map.of(API_TO_ADMIN_NAME_KEY, name, API_TO_ADMIN_PASSWORD_KEY, " ")).build()));
     }
 }

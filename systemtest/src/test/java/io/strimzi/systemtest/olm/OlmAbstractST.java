@@ -28,7 +28,6 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.extension.ExtensionContext;
 
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 
@@ -40,10 +39,10 @@ public class OlmAbstractST extends AbstractST {
         KafkaUtils.waitForKafkaReady(Environment.TEST_SUITE_NAMESPACE, kafkaResource.getJsonObject("metadata").getString("name"));
     }
 
-    void doTestDeployExampleKafkaUser(ExtensionContext extensionContext) {
+    void doTestDeployExampleKafkaUser() {
         String userKafkaName = "user-kafka";
         // KafkaUser example needs Kafka with authorization
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(userKafkaName, 1, 1)
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(userKafkaName, 1, 1)
             .editSpec()
                 .editKafka()
                     .withNewKafkaAuthorizationSimple()
@@ -91,9 +90,9 @@ public class OlmAbstractST extends AbstractST {
         KafkaMirrorMaker2Utils.waitForKafkaMirrorMaker2Ready(Environment.TEST_SUITE_NAMESPACE, kafkaMirrorMaker2Resource.getJsonObject("metadata").getString("name"));
     }
 
-    void doTestDeployExampleKafkaRebalance(ExtensionContext extensionContext) {
+    void doTestDeployExampleKafkaRebalance() {
         String cruiseControlClusterName = "cruise-control";
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaWithCruiseControl(cruiseControlClusterName, 3, 3).build());
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaWithCruiseControl(cruiseControlClusterName, 3, 3).build());
         JsonObject kafkaRebalanceResource = OlmResource.getExampleResources().get(KafkaRebalance.RESOURCE_KIND);
         kafkaRebalanceResource.getJsonObject("metadata").getJsonObject("labels").put(Labels.STRIMZI_CLUSTER_LABEL, cruiseControlClusterName);
         cmdKubeClient().applyContent(kafkaRebalanceResource.toString());
@@ -101,7 +100,7 @@ public class OlmAbstractST extends AbstractST {
     }
 
     @AfterAll
-    void teardown(ExtensionContext extensionContext) {
+    void teardown() {
         cmdKubeClient().deleteContent(OlmResource.getExampleResources().get(KafkaRebalance.RESOURCE_KIND).toString());
         cmdKubeClient().deleteContent(OlmResource.getExampleResources().get(KafkaMirrorMaker2.RESOURCE_KIND).toString());
         cmdKubeClient().deleteContent(OlmResource.getExampleResources().get(KafkaMirrorMaker.RESOURCE_KIND).toString());

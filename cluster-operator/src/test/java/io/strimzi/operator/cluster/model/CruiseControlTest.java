@@ -19,6 +19,7 @@ import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
+import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.fabric8.kubernetes.api.model.SecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.Service;
@@ -59,7 +60,10 @@ import io.strimzi.operator.cluster.model.cruisecontrol.BrokerCapacity;
 import io.strimzi.operator.cluster.model.cruisecontrol.Capacity;
 import io.strimzi.operator.cluster.model.cruisecontrol.CpuCapacity;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.model.PasswordGenerator;
+import io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.platform.KubernetesVersion;
 import io.strimzi.plugin.security.profiles.impl.RestrictedPodSecurityProvider;
@@ -71,17 +75,23 @@ import io.vertx.core.json.JsonObject;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterAll;
 
+import java.io.IOException;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 
 import static io.strimzi.operator.cluster.model.CruiseControl.API_HEALTHCHECK_PATH;
-import static io.strimzi.operator.cluster.model.CruiseControl.API_USER_NAME;
+import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.API_ADMIN_PASSWORD_KEY;
+import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.API_AUTH_FILE_KEY;
+import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.API_USER_PASSWORD_KEY;
 import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters.ANOMALY_DETECTION_CONFIG_KEY;
 import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters.DEFAULT_GOALS_CONFIG_KEY;
+import static java.lang.String.format;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.containsString;
@@ -96,6 +106,8 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.hasProperty;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SuppressWarnings({
     "checkstyle:ClassDataAbstractionCoupling",
@@ -116,16 +128,16 @@ public class CruiseControlTest {
     private static final String IMAGE = "my-image:latest";
     private static final int HEALTH_DELAY = 120;
     private static final int HEALTH_TIMEOUT = 30;
+    private static final String REPLICATION_FACTOR = "3";
     private static final String MIN_INSYNC_REPLICAS = "2";
     private static final String BROKER_CAPACITY_CPU = "6.0";
     private static final String BROKER_CAPACITY_OVERRIDE_CPU = "2.0";
     private static final String RESOURCE_LIMIT_CPU = "3.0";
     private static final String RESOURCE_REQUESTS_CPU = "4.0";
 
-    private final Map<String, Object> kafkaConfig = singletonMap(CruiseControl.MIN_INSYNC_REPLICAS, MIN_INSYNC_REPLICAS);
-    private final Map<String, Object> ccConfig = new HashMap<>() {{
-            putAll(CruiseControlConfiguration.getCruiseControlDefaultPropertiesMap());
-            put("num.partition.metrics.windows", "2");
+    private final Map<String, Object> kafkaConfig = new HashMap<>() {{
+            put(CruiseControl.MIN_INSYNC_REPLICAS, MIN_INSYNC_REPLICAS);
+            put(KafkaConfiguration.DEFAULT_REPLICATION_FACTOR, REPLICATION_FACTOR);
         }};
 
     private final Storage kafkaStorage = new EphemeralStorage();
@@ -141,7 +153,6 @@ public class CruiseControlTest {
 
     private final CruiseControlSpec cruiseControlSpec = new CruiseControlSpecBuilder()
             .withImage(ccImage)
-            .withConfig(ccConfig)
             .withNewTemplate()
                 .withNewPod()
                     .withTmpDirSizeLimit("100Mi")
@@ -218,7 +229,7 @@ public class CruiseControlTest {
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED).withValue(Boolean.toString(JvmOptions.DEFAULT_GC_LOGGING_ENABLED)).build());
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_API_SSL_ENABLED).withValue(Boolean.toString(CruiseControlConfigurationParameters.DEFAULT_WEBSERVER_SSL_ENABLED)).build());
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_API_AUTH_ENABLED).withValue(Boolean.toString(CruiseControlConfigurationParameters.DEFAULT_WEBSERVER_SECURITY_ENABLED)).build());
-        expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_API_USER).withValue(API_USER_NAME).build());
+        expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_API_USER).withValue(CruiseControlApiProperties.API_USER_NAME).build());
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_API_PORT).withValue(Integer.toString(CruiseControl.REST_API_PORT)).build());
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_API_HEALTHCHECK_PATH).withValue(API_HEALTHCHECK_PATH).build());
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_KAFKA_HEAP_OPTS).withValue("-Xms" + JvmOptionUtils.DEFAULT_JVM_XMS).build());
@@ -227,17 +238,6 @@ public class CruiseControlTest {
 
     private static boolean isJBOD(Object diskCapacity) {
         return diskCapacity instanceof JsonObject;
-    }
-
-    public Kafka kafkaSpec(CruiseControlSpec cruiseControlSpec, ResourceRequirements resourceRequirements) {
-        return new KafkaBuilder()
-                .withNewSpec()
-                    .withNewKafka()
-                        .withResources(resourceRequirements)
-                    .endKafka()
-                    .withCruiseControl(cruiseControlSpec)
-                .endSpec()
-                .build();
     }
 
     @ParallelTest
@@ -272,6 +272,7 @@ public class CruiseControlTest {
             .editSpec()
                 .editKafka()
                     .withVersion(KafkaVersionTestUtils.DEFAULT_KAFKA_VERSION)
+                    .withConfig(kafkaConfig)
                     .withStorage(jbodStorage)
                     .withResources(new ResourceRequirementsBuilder().withRequests(requests).withLimits(limits).build())
                 .endKafka()
@@ -366,6 +367,7 @@ public class CruiseControlTest {
                 .withVersion(KafkaVersionTestUtils.DEFAULT_KAFKA_VERSION)
                 .withStorage(jbodStorage)
                 .withResources(new ResourceRequirementsBuilder().withRequests(requests).withLimits(limits).build())
+                .withConfig(kafkaConfig)
             .endKafka()
             .withCruiseControl(cruiseControlSpec)
             .endSpec()
@@ -387,12 +389,6 @@ public class CruiseControlTest {
 
     @ParallelTest
     public void testBrokerCapacitiesWithPools() {
-        Kafka kafka = new KafkaBuilder(ResourceUtils.createKafka(NAMESPACE, CLUSTER, REPLICAS, IMAGE, HEALTH_DELAY, HEALTH_TIMEOUT))
-                .editSpec()
-                    .withCruiseControl(cruiseControlSpec)
-                .endSpec()
-                .build();
-
         Set<NodeRef> nodes = Set.of(
                 new NodeRef("foo-pool1-0", 0, "pool1", false, true),
                 new NodeRef("foo-pool1-1", 1, "pool1", false, true),
@@ -867,7 +863,17 @@ public class CruiseControlTest {
                 .withBrokerCapacity(brokerCapacity)
                 .build();
 
-        CruiseControl cc = CruiseControl.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaSpec(cruiseControlSpec, resourceRequirements), VERSIONS, nodes, storage, resources, SHARED_ENV_PROVIDER);
+        Kafka kafka = new KafkaBuilder()
+                .withNewSpec()
+                    .withNewKafka()
+                        .withResources(resourceRequirements)
+                        .withConfig(kafkaConfig)
+                    .endKafka()
+                    .withCruiseControl(cruiseControlSpec)
+                .endSpec()
+                .build();
+
+        CruiseControl cc = CruiseControl.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS, nodes, storage, resources, SHARED_ENV_PROVIDER);
         ConfigMap configMap = cc.generateConfigMap(new MetricsAndLogging(null, null));
         JsonObject capacity = new JsonObject(configMap.getData().get(CruiseControl.CAPACITY_CONFIG_FILENAME));
         JsonArray brokerEntries = capacity.getJsonArray(Capacity.CAPACITIES_KEY);
@@ -894,7 +900,7 @@ public class CruiseControlTest {
         String e2Value = apiSslEnabled.toString();
         EnvVar e2 = new EnvVar(e2Key, e2Value, null);
 
-        Map<String, Object> config = ccConfig;
+        Map<String, Object> config = new HashMap<>();
         config.put(CruiseControlConfigurationParameters.WEBSERVER_SECURITY_ENABLE.getValue(), apiAuthEnabled);
         config.put(CruiseControlConfigurationParameters.WEBSERVER_SSL_ENABLE.getValue(), apiSslEnabled);
 
@@ -950,7 +956,6 @@ public class CruiseControlTest {
     public void testSecurityContext() {
         CruiseControlSpec cruiseControlSpec = new CruiseControlSpecBuilder()
                 .withImage(ccImage)
-                .withConfig(ccConfig)
                 .withNewTemplate()
                     .withNewPod()
                         .withSecurityContext(new PodSecurityContextBuilder().withFsGroup(123L).withRunAsGroup(456L).withRunAsUser(789L).build())
@@ -1034,7 +1039,6 @@ public class CruiseControlTest {
 
         CruiseControlSpec cruiseControlSpec = new CruiseControlSpecBuilder()
                 .withImage(ccImage)
-                .withConfig(ccConfig)
                 .withNewTemplate()
                     .withNewCruiseControlContainer()
                         .withSecurityContext(securityContext)
@@ -1064,7 +1068,7 @@ public class CruiseControlTest {
                 .withNewNamespaceSelector().endNamespaceSelector()
                 .build();
 
-        NetworkPolicy np = cc.generateNetworkPolicy("operator-namespace", null);
+        NetworkPolicy np = cc.generateNetworkPolicy("operator-namespace", null, false);
 
         assertThat(np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(CruiseControl.REST_API_PORT))).findFirst().orElse(null), is(notNullValue()));
 
@@ -1081,15 +1085,21 @@ public class CruiseControlTest {
                     .withMatchLabels(Collections.singletonMap(Labels.STRIMZI_KIND_LABEL, "cluster-operator"))
                 .endPodSelector()
                 .build();
+        NetworkPolicyPeer entityOperatorPeer = new NetworkPolicyPeerBuilder()
+            .withNewPodSelector()
+                .withMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, format("%s-entity-operator", CLUSTER)))
+            .endPodSelector()
+            .build();
 
-        NetworkPolicy np = cc.generateNetworkPolicy(NAMESPACE, null);
+        NetworkPolicy np = cc.generateNetworkPolicy(NAMESPACE, null, true);
 
         assertThat(np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(CruiseControl.REST_API_PORT))).findFirst().orElse(null), is(notNullValue()));
 
         List<NetworkPolicyPeer> rules = np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(CruiseControl.REST_API_PORT))).map(NetworkPolicyIngressRule::getFrom).findFirst().orElse(null);
 
-        assertThat(rules.size(), is(1));
+        assertThat(rules.size(), is(2));
         assertThat(rules.contains(clusterOperatorPeer), is(true));
+        assertThat(rules.contains(entityOperatorPeer), is(true));
     }
 
     @ParallelTest
@@ -1102,15 +1112,24 @@ public class CruiseControlTest {
                     .withMatchLabels(Collections.singletonMap("nsLabelKey", "nsLabelValue"))
                 .endNamespaceSelector()
                 .build();
+        NetworkPolicyPeer entityOperatorPeer = new NetworkPolicyPeerBuilder()
+            .withNewPodSelector()
+                .withMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, format("%s-entity-operator", CLUSTER)))
+            .endPodSelector()
+            .withNewNamespaceSelector()
+                .withMatchLabels(Collections.singletonMap("nsLabelKey", "nsLabelValue"))
+            .endNamespaceSelector()
+            .build();
 
-        NetworkPolicy np = cc.generateNetworkPolicy(null, Labels.fromMap(Collections.singletonMap("nsLabelKey", "nsLabelValue")));
+        NetworkPolicy np = cc.generateNetworkPolicy(null, Labels.fromMap(Collections.singletonMap("nsLabelKey", "nsLabelValue")), true);
 
         assertThat(np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(CruiseControl.REST_API_PORT))).findFirst().orElse(null), is(notNullValue()));
 
         List<NetworkPolicyPeer> rules = np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(CruiseControl.REST_API_PORT))).map(NetworkPolicyIngressRule::getFrom).findFirst().orElseThrow();
 
-        assertThat(rules.size(), is(1));
+        assertThat(rules.size(), is(2));
         assertThat(rules.contains(clusterOperatorPeer), is(true));
+        assertThat(rules.contains(entityOperatorPeer), is(true));
     }
 
     @ParallelTest
@@ -1119,7 +1138,7 @@ public class CruiseControlTest {
         String customGoals = "com.linkedin.kafka.cruisecontrol.analyzer.goals.RackAwareGoal," +
                 "com.linkedin.kafka.cruisecontrol.analyzer.goals.ReplicaCapacityGoal";
 
-        Map<String, Object> customGoalConfig = ccConfig;
+        Map<String, Object> customGoalConfig = new HashMap<>();
         customGoalConfig.put(DEFAULT_GOALS_CONFIG_KEY.getValue(), customGoals);
 
         CruiseControlSpec cruiseControlSpec = new CruiseControlSpecBuilder()
@@ -1176,12 +1195,9 @@ public class CruiseControlTest {
         topicConfigs.put(CruiseControlConfigurationParameters.PARTITION_METRIC_TOPIC_NAME.getValue(), CruiseControlConfigurationParameters.DEFAULT_PARTITION_METRIC_TOPIC_NAME);
         topicConfigs.put(CruiseControlConfigurationParameters.BROKER_METRIC_TOPIC_NAME.getValue(), CruiseControlConfigurationParameters.DEFAULT_BROKER_METRIC_TOPIC_NAME);
         topicConfigs.put(CruiseControlConfigurationParameters.METRIC_REPORTER_TOPIC_NAME.getValue(), CruiseControlConfigurationParameters.DEFAULT_METRIC_REPORTER_TOPIC_NAME);
-        Map<String, Object> customConfig = ccConfig;
-        customConfig.putAll(topicConfigs);
 
         CruiseControlSpec cruiseControlSpec = new CruiseControlSpecBuilder()
                 .withImage(ccImage)
-                .withConfig(ccConfig)
                 .build();
 
         Kafka resource = createKafka(cruiseControlSpec);
@@ -1195,7 +1211,7 @@ public class CruiseControlTest {
         topicConfigs.put(CruiseControlConfigurationParameters.PARTITION_METRIC_TOPIC_NAME.getValue(), "partition-topic");
         topicConfigs.put(CruiseControlConfigurationParameters.BROKER_METRIC_TOPIC_NAME.getValue(), "broker-topic");
         topicConfigs.put(CruiseControlConfigurationParameters.METRIC_REPORTER_TOPIC_NAME.getValue(), "metric-reporter-topic");
-        Map<String, Object> customConfig = ccConfig;
+        Map<String, Object> customConfig = new HashMap<>();
         customConfig.putAll(topicConfigs);
 
         CruiseControlSpec cruiseControlSpec = new CruiseControlSpecBuilder()
@@ -1206,6 +1222,116 @@ public class CruiseControlTest {
         Kafka resource = createKafka(cruiseControlSpec);
         CruiseControl cc = createCruiseControl(resource);
         topicConfigs.forEach((configParam, name) -> assertThat(cc.configuration.getConfiguration(), containsString(String.format("%s=%s", configParam, name))));
+    }
+
+    private Properties getCcProperties(Kafka resource) {
+        CruiseControl cc = createCruiseControl(resource);
+        ConfigMap configMap = cc.generateConfigMap(new MetricsAndLogging(null, null));
+        return parsePropertiesString(configMap.getData().get(CruiseControl.SERVER_CONFIG_FILENAME));
+    }
+
+    private static Properties parsePropertiesString(String kafkaPropertiesString) {
+        Properties properties = new Properties();
+        try (StringReader reader = new StringReader(kafkaPropertiesString)) {
+            properties.load(reader);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return properties;
+    }
+
+    @ParallelTest
+    public void testSampleStoreTopicReplicationFactorConfig() {
+        // Test that the replication factor of Cruise Control's sample store topic is set to Kafka cluster's `default.replication.factor`
+        // when not explicitly set in Cruise Control config
+        Properties properties = getCcProperties(kafka);
+        assertThat(properties.getProperty(CruiseControlConfigurationParameters.SAMPLE_STORE_TOPIC_REPLICATION_FACTOR.getValue()), is(REPLICATION_FACTOR));
+
+        // Test that the replication factor of Cruise Control's sample store topic is set to value set in Cruise Control config
+        String replicationFactor = "1";
+        CruiseControlSpec cruiseControlSpec = new CruiseControlSpecBuilder()
+                .withImage(ccImage)
+                .withConfig(Map.of(CruiseControlConfigurationParameters.SAMPLE_STORE_TOPIC_REPLICATION_FACTOR.getValue(), replicationFactor))
+                .build();
+
+        properties = getCcProperties(createKafka(cruiseControlSpec));
+        assertThat(properties.getProperty(CruiseControlConfigurationParameters.SAMPLE_STORE_TOPIC_REPLICATION_FACTOR.getValue()), is(replicationFactor));
+    }
+
+    @ParallelTest
+    public void testGenerateApiSecret() {
+        PasswordGenerator passwordGenerator = new PasswordGenerator(10, "a", "a");
+        var newSecret = cc.generateApiSecret(passwordGenerator, null, null);
+        assertThat(newSecret, is(notNullValue()));
+        assertThat(newSecret.getData(), is(notNullValue()));
+        assertThat(newSecret.getData().size(), is(3));
+        assertThat(newSecret.getData().get(API_ADMIN_PASSWORD_KEY), is(notNullValue()));
+        assertThat(newSecret.getData().get(API_USER_PASSWORD_KEY), is(notNullValue()));
+        assertThat(newSecret.getData().get(API_AUTH_FILE_KEY), is(notNullValue()));
+        assertTrue(Util.decodeFromBase64(newSecret.getData().get(API_AUTH_FILE_KEY)).contains("admin"));
+        assertTrue(Util.decodeFromBase64(newSecret.getData().get(API_AUTH_FILE_KEY)).contains("user"));
+
+        var secretWithAdditionalUser = cc.generateApiSecret(passwordGenerator, null, 
+            new CruiseControl.CruiseControlUser("foo", "changeit"));
+        assertThat(secretWithAdditionalUser, is(notNullValue()));
+        assertThat(secretWithAdditionalUser.getData(), is(notNullValue()));
+        assertThat(secretWithAdditionalUser.getData().size(), is(3));
+        assertThat(secretWithAdditionalUser.getData().get(API_ADMIN_PASSWORD_KEY), is(notNullValue()));
+        assertThat(secretWithAdditionalUser.getData().get(API_USER_PASSWORD_KEY), is(notNullValue()));
+        assertThat(secretWithAdditionalUser.getData().get(API_AUTH_FILE_KEY), is(notNullValue()));
+        assertTrue(Util.decodeFromBase64(secretWithAdditionalUser.getData().get(API_AUTH_FILE_KEY)).contains("foo"));
+        assertTrue(Util.decodeFromBase64(secretWithAdditionalUser.getData().get(API_AUTH_FILE_KEY)).contains("changeit"));
+
+        var password = Util.encodeToBase64("changeit");
+        var auth = Util.encodeToBase64("admin:changeit,ADMIN\nuser:changeit,USER\n");
+        var oldSecret = cc.generateApiSecret(passwordGenerator, new SecretBuilder().withData(Map.of(
+            API_ADMIN_PASSWORD_KEY, password, API_USER_PASSWORD_KEY, password, API_AUTH_FILE_KEY, auth
+        )).build(), null);
+        assertThat(oldSecret, is(notNullValue()));
+        assertThat(oldSecret.getData(), is(notNullValue()));
+        assertThat(oldSecret.getData().size(), is(3));
+        assertThat(oldSecret.getData().get(API_ADMIN_PASSWORD_KEY), is(password));
+        assertThat(oldSecret.getData().get(API_USER_PASSWORD_KEY), is(password));
+        assertThat(oldSecret.getData().get(API_AUTH_FILE_KEY), is(auth));
+
+        assertThrows(RuntimeException.class, () -> cc.generateApiSecret(passwordGenerator,
+            new SecretBuilder().withData(Map.of(API_ADMIN_PASSWORD_KEY, password)).build(), null));
+
+        assertThrows(RuntimeException.class, () -> cc.generateApiSecret(passwordGenerator,
+            new SecretBuilder().withData(Map.of(API_USER_PASSWORD_KEY, password)).build(), null));
+
+        assertThrows(RuntimeException.class, () -> cc.generateApiSecret(passwordGenerator,
+            new SecretBuilder().withData(Map.of(API_AUTH_FILE_KEY, auth)).build(), null));
+
+        assertThrows(RuntimeException.class, () -> cc.generateApiSecret(passwordGenerator,
+            new SecretBuilder().withData(Map.of()).build(), null));
+        
+        assertThrows(RuntimeException.class, () -> cc.generateApiSecret(passwordGenerator,
+            new SecretBuilder().withData(Map.of(
+                API_ADMIN_PASSWORD_KEY, password, API_USER_PASSWORD_KEY, password, API_AUTH_FILE_KEY, 
+                    Util.encodeToBase64("admin:changeit,ADMIN\n")
+            )).build(), null));
+        
+        assertThrows(RuntimeException.class, () -> cc.generateApiSecret(passwordGenerator,
+            new SecretBuilder().withData(Map.of(
+                API_ADMIN_PASSWORD_KEY, password, API_USER_PASSWORD_KEY, password, API_AUTH_FILE_KEY, 
+                    Util.encodeToBase64("user:changeit,USER\n")
+            )).build(), null));
+
+        assertThrows(RuntimeException.class, () -> cc.generateApiSecret(passwordGenerator,
+            new SecretBuilder().withData(Map.of(
+                API_ADMIN_PASSWORD_KEY, " ", API_USER_PASSWORD_KEY, password, API_AUTH_FILE_KEY, auth
+            )).build(), null));
+
+        assertThrows(RuntimeException.class, () -> cc.generateApiSecret(passwordGenerator,
+            new SecretBuilder().withData(Map.of(
+                API_ADMIN_PASSWORD_KEY, password, API_USER_PASSWORD_KEY, " ", API_AUTH_FILE_KEY, auth
+            )).build(), null));
+
+        assertThrows(RuntimeException.class, () -> cc.generateApiSecret(passwordGenerator,
+            new SecretBuilder().withData(Map.of(
+                API_ADMIN_PASSWORD_KEY, password, API_USER_PASSWORD_KEY, password, API_AUTH_FILE_KEY, " "
+            )).build(), null));
     }
 
     @AfterAll

@@ -15,7 +15,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockserver.integration.ClientAndServer;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -40,11 +39,11 @@ public class CruiseControlClientTest {
     private static final boolean API_AUTH_ENABLED = true;
     private static final boolean API_SSL_ENABLED = true;
 
-    private static ClientAndServer ccServer;
+    private static MockCruiseControl ccServer;
 
     @BeforeAll
     public static void setupServer() throws IOException {
-        ccServer = MockCruiseControl.server(PORT);
+        ccServer = new MockCruiseControl(PORT);
     }
 
     @AfterAll
@@ -63,7 +62,7 @@ public class CruiseControlClientTest {
 
     @Test
     public void testGetCCState(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
-        MockCruiseControl.setupCCStateResponse(ccServer);
+        ccServer.setupCCStateResponse();
 
         CruiseControlApi client = cruiseControlClientProvider(vertx);
 
@@ -115,7 +114,7 @@ public class CruiseControlClientTest {
     @Test
     public void testCCGetRebalanceUserTask(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
 
-        MockCruiseControl.setupCCUserTasksResponseNoGoals(ccServer, 0, 0);
+        ccServer.setupCCUserTasksResponseNoGoals(0, 0);
 
         CruiseControlApi client = cruiseControlClientProvider(vertx);
         String userTaskID = MockCruiseControl.REBALANCE_NO_GOALS_RESPONSE_UTID;
@@ -243,7 +242,7 @@ public class CruiseControlClientTest {
     }
 
     private void ccRebalance(Vertx vertx, VertxTestContext context, int pendingCalls, AbstractRebalanceOptions options, CruiseControlEndpoints endpoint, Consumer<CruiseControlRebalanceResponse> assertion) throws IOException, URISyntaxException {
-        MockCruiseControl.setupCCRebalanceResponse(ccServer, pendingCalls, endpoint);
+        ccServer.setupCCRebalanceResponse(pendingCalls, endpoint);
 
         CruiseControlApi client = cruiseControlClientProvider(vertx);
 
@@ -274,7 +273,7 @@ public class CruiseControlClientTest {
     }
 
     private void ccRebalanceVerbose(Vertx vertx, VertxTestContext context, int pendingCalls, AbstractRebalanceOptions options, CruiseControlEndpoints endpoint, Consumer<CruiseControlRebalanceResponse> assertion) throws IOException, URISyntaxException {
-        MockCruiseControl.setupCCRebalanceResponse(ccServer, pendingCalls, endpoint);
+        ccServer.setupCCRebalanceResponse(pendingCalls, endpoint);
 
         CruiseControlApi client = cruiseControlClientProvider(vertx);
 
@@ -305,7 +304,7 @@ public class CruiseControlClientTest {
     }
 
     private void ccRebalanceNotEnoughValidWindowsException(Vertx vertx, VertxTestContext context, AbstractRebalanceOptions options, CruiseControlEndpoints endpoint, Consumer<CruiseControlRebalanceResponse> assertion) throws IOException, URISyntaxException {
-        MockCruiseControl.setupCCRebalanceNotEnoughDataError(ccServer, endpoint);
+        ccServer.setupCCRebalanceNotEnoughDataError(endpoint);
 
         CruiseControlApi client = cruiseControlClientProvider(vertx);
 
@@ -336,7 +335,7 @@ public class CruiseControlClientTest {
     }
 
     private void ccRebalanceProposalNotReady(Vertx vertx, VertxTestContext context, int pendingCalls, AbstractRebalanceOptions options, CruiseControlEndpoints endpoint, Consumer<CruiseControlRebalanceResponse> assertion) throws IOException, URISyntaxException {
-        MockCruiseControl.setupCCRebalanceResponse(ccServer, pendingCalls, endpoint);
+        ccServer.setupCCRebalanceResponse(pendingCalls, endpoint);
 
         CruiseControlApi client = cruiseControlClientProvider(vertx);
 
@@ -367,7 +366,7 @@ public class CruiseControlClientTest {
     }
 
     private void ccBrokerDoesNotExist(Vertx vertx, VertxTestContext context, AbstractRebalanceOptions options, CruiseControlEndpoints endpoint, Consumer<Throwable> assertion) throws IOException, URISyntaxException {
-        MockCruiseControl.setupCCBrokerDoesNotExist(ccServer, endpoint);
+        ccServer.setupCCBrokerDoesNotExist(endpoint);
 
         CruiseControlApi client = cruiseControlClientProvider(vertx);
 

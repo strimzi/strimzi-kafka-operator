@@ -184,8 +184,7 @@ class TopicOperatorConfigTest {
                 "sasl.mechanism", "SCRAM-SHA-" + bits,
                 "sasl.jaas.config", "org.apache.kafka.common.security.scram.ScramLoginModule required username=\"foo\" password=\"pa55word\";"), adminConfig);
     }
-
-
+    
     @Test
     void shouldThrowIfSecurityProtocolInconsistentWithTls() {
         // given

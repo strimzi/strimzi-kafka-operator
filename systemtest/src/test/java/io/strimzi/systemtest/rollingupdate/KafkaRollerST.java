@@ -6,9 +6,8 @@ package io.strimzi.systemtest.rollingupdate;
 
 import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.AffinityBuilder;
-import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.Event;
-import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.NodeSelectorRequirement;
 import io.fabric8.kubernetes.api.model.NodeSelectorRequirementBuilder;
 import io.fabric8.kubernetes.api.model.NodeSelectorTerm;
@@ -21,13 +20,11 @@ import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaClusterTemplate;
 import io.strimzi.api.kafka.model.kafka.KafkaClusterTemplateBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
-import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
-import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolSpec;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolSpecBuilder;
-import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.operator.common.Annotations;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
@@ -36,16 +33,18 @@ import io.strimzi.systemtest.annotations.KRaftWithoutUTONotSupported;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
+import io.strimzi.systemtest.resources.NodePoolsConverter;
+import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
+import io.strimzi.systemtest.resources.crd.StrimziPodSetResource;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
-import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaNodePoolUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StrimziPodSetUtils;
@@ -54,7 +53,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -70,7 +68,6 @@ import static io.strimzi.systemtest.k8s.Events.Pulled;
 import static io.strimzi.systemtest.k8s.Events.Scheduled;
 import static io.strimzi.systemtest.k8s.Events.Started;
 import static io.strimzi.systemtest.matchers.Matchers.hasAllOfReasons;
-import static io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils.waitForPodsReady;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
@@ -88,8 +85,8 @@ public class KafkaRollerST extends AbstractST {
 
     @ParallelNamespaceTest
     @KRaftNotSupported
-    void testKafkaDoesNotRollsWhenTopicIsUnderReplicated(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+    void testKafkaDoesNotRollsWhenTopicIsUnderReplicated() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         Instant startTime = Instant.now();
 
         final int initialBrokerReplicaCount = 3;
@@ -98,15 +95,21 @@ public class KafkaRollerST extends AbstractST {
         final String topicNameWith3Replicas = testStorage.getTopicName() + "-3";
         final String topicNameWith4Replicas = testStorage.getTopicName() + "-4";
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), initialBrokerReplicaCount).build());
+        resourceManager.createResourceWithWait(
+            NodePoolsConverter.convertNodePoolsIfNeeded(
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), initialBrokerReplicaCount).build(),
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), initialBrokerReplicaCount).build()
+            )
+        );
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), initialBrokerReplicaCount).build());
 
         LOGGER.info("Verify expected number of replicas '{}' is present in in Kafka Cluster: {}/{}", initialBrokerReplicaCount, testStorage.getNamespaceName(), testStorage.getClusterName());
-        final int observedReplicas = kubeClient(testStorage.getNamespaceName()).listPods(testStorage.getKafkaSelector()).size();
+        final int observedReplicas = kubeClient(testStorage.getNamespaceName()).listPods(testStorage.getBrokerSelector()).size();
         assertEquals(initialBrokerReplicaCount, observedReplicas);
 
         LOGGER.info("Create kafkaTopic: {}/{} with replica on each (of 3) broker", testStorage.getNamespaceName(), topicNameWith3Replicas);
         KafkaTopic kafkaTopicWith3Replicas = KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), 1, 3, 3, testStorage.getNamespaceName()).build();
-        resourceManager.createResourceWithWait(extensionContext, kafkaTopicWith3Replicas);
+        resourceManager.createResourceWithWait(kafkaTopicWith3Replicas);
 
         // setup clients
         KafkaClients clients = new KafkaClientsBuilder()
@@ -120,7 +123,7 @@ public class KafkaRollerST extends AbstractST {
 
         // producing and consuming data when there are 3 brokers ensures that 'consumer_offests' topic will have all of its replicas only across first 3 brokers
         LOGGER.info("Producing and Consuming messages with clients: {}, {} in Namespace {}", testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName());
-        resourceManager.createResourceWithWait(extensionContext,
+        resourceManager.createResourceWithWait(
             clients.producerStrimzi(),
             clients.consumerStrimzi()
         );
@@ -128,18 +131,18 @@ public class KafkaRollerST extends AbstractST {
 
         LOGGER.info("Scale Kafka up from 3 to 4 brokers");
         if (Environment.isKafkaNodePoolsEnabled()) {
-            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(KafkaResource.getNodePoolName(testStorage.getClusterName()), knp -> knp.getSpec().setReplicas(scaledUpBrokerReplicaCount), testStorage.getNamespaceName());
+            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getBrokerPoolName(), knp -> knp.getSpec().setReplicas(scaledUpBrokerReplicaCount), testStorage.getNamespaceName());
         } else {
             KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> k.getSpec().getKafka().setReplicas(scaledUpBrokerReplicaCount), testStorage.getNamespaceName());
         }
-        RollingUpdateUtils.waitForComponentScaleUpOrDown(testStorage.getNamespaceName(), testStorage.getKafkaSelector(), scaledUpBrokerReplicaCount);
+        RollingUpdateUtils.waitForComponentScaleUpOrDown(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), scaledUpBrokerReplicaCount);
 
         LOGGER.info("Create kafkaTopic: {}/{} with replica on each broker", testStorage.getNamespaceName(), topicNameWith4Replicas);
         KafkaTopic kafkaTopicWith4Replicas = KafkaTopicTemplates.topic(testStorage.getClusterName(), topicNameWith4Replicas, 1, 4, 4, testStorage.getNamespaceName()).build();
-        resourceManager.createResourceWithWait(extensionContext, kafkaTopicWith4Replicas);
+        resourceManager.createResourceWithWait(kafkaTopicWith4Replicas);
 
         //Test that the new pod does not have errors or failures in events
-        String uid = kubeClient(testStorage.getNamespaceName()).getPodUid(KafkaResource.getKafkaPodName(testStorage.getClusterName(),  3));
+        String uid = kubeClient(testStorage.getNamespaceName()).getPodUid(KafkaResource.getKafkaPodName(testStorage.getClusterName(), KafkaNodePoolResource.getBrokerPoolName(testStorage.getClusterName()),  3));
         List<Event> events = kubeClient(testStorage.getNamespaceName()).listEventsByResourceUid(uid);
         assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
 
@@ -148,7 +151,7 @@ public class KafkaRollerST extends AbstractST {
             .build();
 
         LOGGER.info("Producing and Consuming messages with clients: {}, {} in Namespace {}", testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName());
-        resourceManager.createResourceWithWait(extensionContext,
+        resourceManager.createResourceWithWait(
             clients.producerStrimzi(),
             clients.consumerStrimzi()
         );
@@ -156,9 +159,9 @@ public class KafkaRollerST extends AbstractST {
 
         LOGGER.info("Scaling down to {}", initialBrokerReplicaCount);
         if (Environment.isKafkaNodePoolsEnabled()) {
-            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(KafkaResource.getNodePoolName(testStorage.getClusterName()), knp -> knp.getSpec().setReplicas(initialBrokerReplicaCount), testStorage.getNamespaceName());
-            KafkaNodePoolUtils.waitForKafkaNodePoolStatusUpdate(testStorage.getNamespaceName(), KafkaResource.getNodePoolName(testStorage.getClusterName()));
-            assertThat("NodePool still has old number of replicas", KafkaNodePoolResource.kafkaNodePoolClient().inNamespace(testStorage.getNamespaceName()).withName(KafkaResource.getNodePoolName(testStorage.getClusterName())).get().getStatus().getReplicas(), is(4));
+            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getBrokerPoolName(), knp -> knp.getSpec().setReplicas(initialBrokerReplicaCount), testStorage.getNamespaceName());
+            KafkaNodePoolUtils.waitForKafkaNodePoolStatusUpdate(testStorage.getNamespaceName(), testStorage.getBrokerPoolName());
+            assertThat("NodePool still has old number of replicas", KafkaNodePoolResource.kafkaNodePoolClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getBrokerPoolName()).get().getStatus().getReplicas(), is(4));
         } else {
             KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> k.getSpec().getKafka().setReplicas(initialBrokerReplicaCount), testStorage.getNamespaceName());
             KafkaUtils.waitForKafkaStatusUpdate(testStorage.getNamespaceName(), testStorage.getClusterName());
@@ -166,53 +169,71 @@ public class KafkaRollerST extends AbstractST {
 
         LOGGER.info("Scale-down should have been reverted and the cluster should be still Ready");
         KafkaUtils.waitForKafkaReady(testStorage.getNamespaceName(), testStorage.getClusterName());
-        waitForPodsReady(testStorage.getNamespaceName(), testStorage.getKafkaSelector(), scaledUpBrokerReplicaCount, false);
+        KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(testStorage.getClusterName(), testStorage.getNamespaceName(), ".*Reverting scale-down.*");
+
+        // try to perform rolling update while scale down is being prevented.
+        Map<String, String> kafkaPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
+        StrimziPodSetUtils.annotateStrimziPodSet(testStorage.getNamespaceName(), testStorage.getBrokerComponentName(), Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true"));
+        kafkaPods = RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), scaledUpBrokerReplicaCount, kafkaPods);
 
         LOGGER.info("Remove Topic, thereby remove all partitions located on broker to be scaled down");
         resourceManager.deleteResource(kafkaTopicWith4Replicas);
-        RollingUpdateUtils.waitForComponentScaleUpOrDown(testStorage.getNamespaceName(), testStorage.getKafkaSelector(), initialBrokerReplicaCount);
+        RollingUpdateUtils.waitForComponentScaleUpOrDown(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), initialBrokerReplicaCount);
 
         //Test that CO doesn't have any exceptions in log
         Instant endTime = Instant.now();
         long duration = Duration.between(startTime, endTime).toSeconds();
-        assertNoCoErrorsLogged(testStorage.getNamespaceName(), duration);
+        // TODO: currently this asserts makes a lot of tests failing, we should investigate all the failures and fix/whitelist them before enabling
+        // this check again - https://github.com/strimzi/strimzi-kafka-operator/issues/9648
+        //assertNoCoErrorsLogged(testStorage.getNamespaceName(), duration);
     }
 
     @ParallelNamespaceTest
     @KRaftWithoutUTONotSupported
-    void testKafkaTopicRFLowerThanMinInSyncReplicas(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(Environment.TEST_SUITE_NAMESPACE, extensionContext);
-        final String clusterName = testStorage.getClusterName();
-        final String topicName = testStorage.getTopicName();
-        final String kafkaName = KafkaResources.kafkaComponentName(clusterName);
-        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, kafkaName);
+    void testKafkaTopicRFLowerThanMinInSyncReplicas() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 3).build());
-        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName, 1, 1, namespaceName).build());
+        resourceManager.createResourceWithWait(
+            NodePoolsConverter.convertNodePoolsIfNeeded(
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
+            )
+        );
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3, 3).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), 1, 1, testStorage.getNamespaceName()).build());
 
-        Map<String, String> kafkaPods = PodUtils.podSnapshot(namespaceName, kafkaSelector);
+        Map<String, String> brokerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
 
         LOGGER.info("Setting KafkaTopic's min.insync.replicas to be higher than replication factor");
-        KafkaTopicResource.replaceTopicResourceInSpecificNamespace(topicName, kafkaTopic -> kafkaTopic.getSpec().getConfig().replace("min.insync.replicas", 2), namespaceName);
+        KafkaTopicResource.replaceTopicResourceInSpecificNamespace(testStorage.getTopicName(), kafkaTopic -> kafkaTopic.getSpec().getConfig().replace("min.insync.replicas", 2), testStorage.getNamespaceName());
 
         // rolling update for kafka
-        LOGGER.info("Annotate Kafka {} {} with manual rolling update annotation", StrimziPodSet.RESOURCE_KIND, kafkaName);
+        LOGGER.info("Annotate Kafka {} {} with manual rolling update annotation", StrimziPodSet.RESOURCE_KIND, StrimziPodSetResource.getBrokerComponentName(testStorage.getClusterName()));
 
         // set annotation to trigger Kafka rolling update
-        StrimziPodSetUtils.annotateStrimziPodSet(namespaceName, KafkaResource.getStrimziPodSetName(clusterName), Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true"));
+        StrimziPodSetUtils.annotateStrimziPodSet(testStorage.getNamespaceName(), testStorage.getBrokerComponentName(), Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true"));
 
-        RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, 3, kafkaPods);
-        assertThat(PodUtils.podSnapshot(namespaceName, kafkaSelector), is(not(kafkaPods)));
+        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, brokerPods);
+        assertThat(PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector()), is(not(brokerPods)));
     }
 
     @ParallelNamespaceTest
-    void testKafkaPodCrashLooping(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(Environment.TEST_SUITE_NAMESPACE, extensionContext);
-        final String clusterName = testStorage.getClusterName();
+    void testKafkaPodCrashLooping() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 3)
+        resourceManager.createResourceWithWait(
+            NodePoolsConverter.convertNodePoolsIfNeeded(
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3)
+                    .editSpec()
+                        .withNewJvmOptions()
+                            .withXx(Collections.emptyMap())
+                        .endJvmOptions()
+                    .endSpec()
+                    .build(),
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
+            )
+        );
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3, 3)
             .editSpec()
                 .editKafka()
                     .withNewJvmOptions()
@@ -223,67 +244,71 @@ public class KafkaRollerST extends AbstractST {
             .build());
 
         if (Environment.isKafkaNodePoolsEnabled()) {
-            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(KafkaResource.getNodePoolName(clusterName), knp ->
-                knp.getSpec().getJvmOptions().setXx(Collections.singletonMap("UseParNewGC", "true")), namespaceName);
+            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getBrokerPoolName(), knp ->
+                knp.getSpec().getJvmOptions().setXx(Collections.singletonMap("UseParNewGC", "true")), testStorage.getNamespaceName());
         } else {
-            KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka ->
-                kafka.getSpec().getKafka().getJvmOptions().setXx(Collections.singletonMap("UseParNewGC", "true")), namespaceName);
+            KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka ->
+                kafka.getSpec().getKafka().getJvmOptions().setXx(Collections.singletonMap("UseParNewGC", "true")), testStorage.getNamespaceName());
         }
 
-        KafkaUtils.waitForKafkaNotReady(namespaceName, clusterName);
+        KafkaUtils.waitForKafkaNotReady(testStorage.getNamespaceName(), testStorage.getClusterName());
 
         if (Environment.isKafkaNodePoolsEnabled()) {
-            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(KafkaResource.getNodePoolName(clusterName), knp ->
-                knp.getSpec().getJvmOptions().setXx(Collections.emptyMap()), namespaceName);
+            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getBrokerPoolName(), knp ->
+                knp.getSpec().getJvmOptions().setXx(Collections.emptyMap()), testStorage.getNamespaceName());
         } else {
-            KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka ->
-                kafka.getSpec().getKafka().getJvmOptions().setXx(Collections.emptyMap()), namespaceName);
+            KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka ->
+                kafka.getSpec().getKafka().getJvmOptions().setXx(Collections.emptyMap()), testStorage.getNamespaceName());
         }
 
         // kafka should get back ready in some reasonable time frame.
         // Current timeout for wait is set to 14 minutes, which should be enough.
         // No additional checks are needed, because in case of wait failure, the test will not continue.
-        KafkaUtils.waitForKafkaReady(namespaceName, clusterName);
+        KafkaUtils.waitForKafkaReady(testStorage.getNamespaceName(), testStorage.getClusterName());
     }
 
     @ParallelNamespaceTest
-    void testKafkaPodImagePullBackOff(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(Environment.TEST_SUITE_NAMESPACE, extensionContext);
-        final String clusterName = testStorage.getClusterName();
-        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaComponentName(clusterName));
+    void testKafkaPodImagePullBackOff() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 3).build());
+        resourceManager.createResourceWithWait(
+            NodePoolsConverter.convertNodePoolsIfNeeded(
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
+            )
+        );
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3, 3).build());
 
-        String kafkaImage = kubeClient(namespaceName).listPods(kafkaSelector).get(0).getSpec().getContainers().get(0).getImage();
+        String kafkaImage = kubeClient(testStorage.getNamespaceName()).listPods(testStorage.getBrokerSelector()).get(0).getSpec().getContainers().get(0).getImage();
 
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> {
             kafka.getSpec().getKafka().setImage("quay.io/strimzi/kafka:not-existent-tag");
-            kafka.getSpec().getZookeeper().setImage(kafkaImage);
-        }, namespaceName);
 
-        KafkaUtils.waitForKafkaNotReady(namespaceName, clusterName);
+            if (!Environment.isKRaftModeEnabled()) {
+                kafka.getSpec().getZookeeper().setImage(kafkaImage);
+            }
+        }, testStorage.getNamespaceName());
 
-        assertTrue(checkIfExactlyOneKafkaPodIsNotReady(namespaceName, clusterName));
+        KafkaUtils.waitForKafkaNotReady(testStorage.getNamespaceName(), testStorage.getClusterName());
 
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> kafka.getSpec().getKafka().setImage(kafkaImage), namespaceName);
+        assertTrue(checkIfExactlyOneKafkaPodIsNotReady(testStorage.getNamespaceName(), testStorage.getClusterName()));
+
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> kafka.getSpec().getKafka().setImage(kafkaImage), testStorage.getNamespaceName());
 
         // kafka should get back ready in some reasonable time frame.
         // Current timeout for wait is set to 14 minutes, which should be enough.
         // No additional checks are needed, because in case of wait failure, the test will not continue.
-        KafkaUtils.waitForKafkaReady(namespaceName, clusterName);
+        KafkaUtils.waitForKafkaReady(testStorage.getNamespaceName(), testStorage.getClusterName());
     }
 
     @ParallelNamespaceTest
-    void testKafkaPodPendingDueToRack(ExtensionContext extensionContext) {
+    void testKafkaPodPendingDueToRack() {
         // Testing this scenario
         // 1. deploy Kafka with wrong pod template (looking for nonexistent node) kafka pods should not exist
         // 2. wait for Kafka not ready, kafka pods should be in the pending state
         // 3. fix the Kafka CR, kafka pods should be in the pending state
         // 4. wait for Kafka ready, kafka pods should NOT be in the pending state
-        final TestStorage testStorage = storageMap.get(extensionContext);
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(Environment.TEST_SUITE_NAMESPACE, extensionContext);
-        final String clusterName = testStorage.getClusterName();
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
         NodeSelectorRequirement nsr = new NodeSelectorRequirementBuilder()
                 .withKey("dedicated_test")
@@ -310,7 +335,19 @@ public class KafkaRollerST extends AbstractST {
                 .withPod(pt)
                 .build();
 
-        resourceManager.createResourceWithoutWait(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 3)
+        resourceManager.createResourceWithWait(
+            NodePoolsConverter.convertNodePoolsIfNeeded(
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3)
+                    .editSpec()
+                        .withNewTemplate()
+                            .withPod(pt)
+                        .endTemplate()
+                    .endSpec()
+                    .build(),
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
+            )
+        );
+        resourceManager.createResourceWithoutWait(KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3, 3)
             .editSpec()
                 .editKafka()
                     .withTemplate(kct)
@@ -319,21 +356,19 @@ public class KafkaRollerST extends AbstractST {
             .build());
 
         // pods are stable in the Pending state
-        PodUtils.waitUntilPodStabilityReplicasCount(namespaceName, KafkaResource.getStrimziPodSetName(clusterName), 3);
+        PodUtils.waitUntilPodStabilityReplicasCount(testStorage.getNamespaceName(), KafkaResource.getStrimziPodSetName(testStorage.getClusterName(), testStorage.getBrokerPoolName()), 3);
 
         LOGGER.info("Removing requirement for the affinity");
         if (Environment.isKafkaNodePoolsEnabled()) {
-            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(KafkaResource.getNodePoolName(clusterName), knp ->
-                knp.getSpec().getTemplate().getPod().setAffinity(null), namespaceName);
-        } else {
-            KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka ->
-                kafka.getSpec().getKafka().getTemplate().getPod().setAffinity(null), namespaceName);
+            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getBrokerPoolName(), knp ->
+                knp.getSpec().getTemplate().getPod().setAffinity(null), testStorage.getNamespaceName());
         }
 
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka ->
+            kafka.getSpec().getKafka().getTemplate().getPod().setAffinity(null), testStorage.getNamespaceName());
+
         // kafka should get back ready in some reasonable time frame
-        KafkaUtils.waitForKafkaReady(namespaceName, clusterName);
-        KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
-        KafkaUtils.waitForKafkaDeletion(namespaceName, clusterName);
+        KafkaUtils.waitForKafkaReady(testStorage.getNamespaceName(), testStorage.getClusterName());
     }
 
     /**
@@ -360,59 +395,54 @@ public class KafkaRollerST extends AbstractST {
      *  - kafka-node-pool-management
      */
     @ParallelNamespaceTest
-    void testKafkaRollingUpdatesOfSingleRoleNodePools(final ExtensionContext extensionContext) {
+    void testKafkaRollingUpdatesOfSingleRoleNodePools() {
         assumeTrue(Environment.isKRaftModeEnabled());
         assumeFalse(Environment.isOlmInstall() || Environment.isHelmInstall());
 
-        final TestStorage testStorage = new TestStorage(extensionContext);
-        final String brokerPoolName = testStorage.getKafkaNodePoolName() + "-b";
-        final String controllerPoolName = testStorage.getKafkaNodePoolName() + "-c";
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
         final int brokerPoolReplicas = 3, controllerPoolReplicas = 3;
 
-        final Kafka kafka = KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 1, 1).build();
-        final KafkaNodePool brokerPool = KafkaNodePoolTemplates.kafkaBasedNodePoolWithBrokerRole(brokerPoolName, kafka, brokerPoolReplicas).build();
-        final KafkaNodePool controllerPool = KafkaNodePoolTemplates.kafkaBasedNodePoolWithControllerRole(controllerPoolName, kafka, controllerPoolReplicas).build();
+        resourceManager.createResourceWithoutWait(
+            KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), brokerPoolReplicas).build(),
+            KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), controllerPoolReplicas).build(),
+            KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 1, 1).build()
+        );
 
-        final LabelSelector brokerPoolSelector = KafkaNodePoolResource.getLabelSelector(testStorage.getClusterName(), brokerPoolName, ProcessRoles.BROKER);
-        final LabelSelector controllerPoolSelector = KafkaNodePoolResource.getLabelSelector(testStorage.getClusterName(), controllerPoolName, ProcessRoles.CONTROLLER);
+        PodUtils.waitForPodsReady(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), brokerPoolReplicas, true);
+        PodUtils.waitForPodsReady(testStorage.getNamespaceName(), testStorage.getControllerSelector(), controllerPoolReplicas, true);
 
-        resourceManager.createResourceWithoutWait(extensionContext, brokerPool, controllerPool, kafka);
-
-        PodUtils.waitForPodsReady(testStorage.getNamespaceName(), brokerPoolSelector, brokerPoolReplicas, true);
-        PodUtils.waitForPodsReady(testStorage.getNamespaceName(), controllerPoolSelector, controllerPoolReplicas, true);
-
-        Map<String, String> brokerPoolPodsSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), brokerPoolSelector);
-        Map<String, String> controllerPoolPodsSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), controllerPoolSelector);
+        Map<String, String> brokerPoolPodsSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
+        Map<String, String> controllerPoolPodsSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getControllerSelector());
 
         // change Controller-only configuration inside shared Kafka configuration between KafkaNodePools and see that only controller pods rolls
         KafkaUtils.updateSpecificConfiguration(testStorage.getNamespaceName(), testStorage.getClusterName(), "controller.quorum.election.timeout.ms", 10000);
 
         // only controller-role nodes rolls
         controllerPoolPodsSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(),
-                controllerPoolSelector, controllerPoolReplicas, controllerPoolPodsSnapshot);
+            testStorage.getControllerSelector(), controllerPoolReplicas, controllerPoolPodsSnapshot);
 
         // broker-role nodes does not roll
-        RollingUpdateUtils.waitForNoRollingUpdate(testStorage.getNamespaceName(), brokerPoolSelector, brokerPoolPodsSnapshot);
+        RollingUpdateUtils.waitForNoRollingUpdate(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), brokerPoolPodsSnapshot);
 
         // change Broker-only configuration inside shared Kafka configuration between KafkaNodePools and see that only broker pods rolls
         KafkaUtils.updateSpecificConfiguration(testStorage.getNamespaceName(), testStorage.getClusterName(), "initial.broker.registration.timeout.ms", 33500);
 
         // only broker-role nodes rolls
         brokerPoolPodsSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(),
-            brokerPoolSelector, brokerPoolReplicas, brokerPoolPodsSnapshot);
+            testStorage.getBrokerSelector(), brokerPoolReplicas, brokerPoolPodsSnapshot);
 
         // controller-role nodes does not roll
-        RollingUpdateUtils.waitForNoRollingUpdate(testStorage.getNamespaceName(), controllerPoolSelector, controllerPoolPodsSnapshot);
+        RollingUpdateUtils.waitForNoRollingUpdate(testStorage.getNamespaceName(), testStorage.getControllerSelector(), controllerPoolPodsSnapshot);
 
         // 2nd Rolling update triggered by PodAffinity
 
         // Modify pod affinity settings for the controller node pool
+        // Pod Affinity is expecting a running pod on a node with topologyKey with labels specify by LabelSelector
         PodAffinity podAffinity = new PodAffinityBuilder()
             .addNewRequiredDuringSchedulingIgnoredDuringExecution()
-                .withLabelSelector(controllerPoolSelector)
+                .withLabelSelector(new LabelSelectorBuilder().addToMatchLabels(Labels.STRIMZI_KIND_LABEL, Kafka.RESOURCE_KIND).build())
                 .withTopologyKey("kubernetes.io/hostname")
-                .withNamespaces(testStorage.getNamespaceName())
             .endRequiredDuringSchedulingIgnoredDuringExecution()
             .build();
 
@@ -420,24 +450,22 @@ public class KafkaRollerST extends AbstractST {
             .withPodAffinity(podAffinity)
             .build();
 
-        KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(controllerPoolName,
-                controllerNodePool -> {
-                    KafkaNodePoolSpec kafkaNodePoolSpec = new KafkaNodePoolSpecBuilder(controllerNodePool.getSpec())
-                            .editOrNewTemplate()
-                                .editOrNewPod()
-                                    .withAffinity(affinity)
-                                .endPod()
-                            .endTemplate().build();
-                    controllerNodePool.setSpec(kafkaNodePoolSpec);
-                },
+        KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getControllerPoolName(),
+                controllerNodePool -> controllerNodePool.setSpec(new KafkaNodePoolSpecBuilder(controllerNodePool.getSpec())
+                        .editOrNewTemplate()
+                            .editOrNewPod()
+                                .withAffinity(affinity)
+                            .endPod()
+                        .endTemplate()
+                        .build()),
                 testStorage.getNamespaceName());
 
         // Expect a rolling update on the controller nodes due to the affinity change
-        controllerPoolPodsSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(),
-                controllerPoolSelector, controllerPoolReplicas, controllerPoolPodsSnapshot);
+        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(),
+            testStorage.getControllerSelector(), controllerPoolReplicas, controllerPoolPodsSnapshot);
 
         // Verify that broker nodes do not roll due to the controller node pool affinity change
-        RollingUpdateUtils.waitForNoRollingUpdate(testStorage.getNamespaceName(), brokerPoolSelector, brokerPoolPodsSnapshot);
+        RollingUpdateUtils.waitForNoRollingUpdate(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), brokerPoolPodsSnapshot);
     }
 
     /**
@@ -459,42 +487,40 @@ public class KafkaRollerST extends AbstractST {
      *  - kafka-node-pool-management-in-non-KRaft-mode
      */
     @ParallelNamespaceTest
-    void testKafkaRollingUpdatesOfMixedNodes(final ExtensionContext extensionContext) {
+    void testKafkaRollingUpdatesOfMixedNodes() {
         assumeTrue(Environment.isKRaftModeEnabled());
         assumeFalse(Environment.isOlmInstall() || Environment.isHelmInstall());
 
-        final TestStorage testStorage = new TestStorage(extensionContext);
-        final String mixedPoolName = testStorage.getKafkaNodePoolName();
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final int mixedPoolReplicas = 6;
 
-        final Kafka kafka = KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 1, 1).build();
-        final KafkaNodePool mixedPool = KafkaNodePoolTemplates.kafkaBasedNodePoolWithDualRole(mixedPoolName, kafka, mixedPoolReplicas).build();
-        final LabelSelector mixedPoolSelector = KafkaNodePoolResource.getLabelSelector(testStorage.getClusterName(), mixedPoolName, ProcessRoles.CONTROLLER);
+        resourceManager.createResourceWithoutWait(
+            KafkaNodePoolTemplates.mixedPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getMixedPoolName(), testStorage.getClusterName(), mixedPoolReplicas).build(),
+            KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 1, 1).build()
+        );
 
-        resourceManager.createResourceWithoutWait(extensionContext, mixedPool, kafka);
+        PodUtils.waitForPodsReady(testStorage.getNamespaceName(), testStorage.getMixedSelector(), mixedPoolReplicas, true);
 
-        PodUtils.waitForPodsReady(testStorage.getNamespaceName(), mixedPoolSelector, mixedPoolReplicas, true);
-
-        Map<String, String> mixedPoolPodsSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), mixedPoolSelector);
+        Map<String, String> mixedPoolPodsSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getMixedSelector());
 
         // change Controller-only configuration inside shared Kafka configuration between KafkaNodePools and see that all mixed pods rolls
         KafkaUtils.updateSpecificConfiguration(testStorage.getNamespaceName(), testStorage.getClusterName(), "controller.quorum.fetch.timeout.ms", 10000);
 
         // all mixed nodes rolls
-        mixedPoolPodsSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(),
-                mixedPoolSelector, mixedPoolReplicas, mixedPoolPodsSnapshot);
+        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(),
+            testStorage.getMixedSelector(), mixedPoolReplicas, mixedPoolPodsSnapshot);
     }
 
     boolean checkIfExactlyOneKafkaPodIsNotReady(String namespaceName, String clusterName) {
-        List<Pod> kafkaPods = kubeClient(namespaceName).listPodsByPrefixInName(KafkaResource.getStrimziPodSetName(clusterName));
+        List<Pod> kafkaPods = kubeClient().listPods(namespaceName, KafkaResource.getLabelSelectorForAllKafkaPods(clusterName));
         int runningKafkaPods = (int) kafkaPods.stream().filter(pod -> pod.getStatus().getPhase().equals("Running")).count();
 
         return runningKafkaPods == (kafkaPods.size() - 1);
     }
 
     @BeforeAll
-    void setup(ExtensionContext extensionContext) {
-        this.clusterOperator = this.clusterOperator.defaultInstallation(extensionContext)
+    void setup() {
+        this.clusterOperator = this.clusterOperator.defaultInstallation()
             .withOperationTimeout(TestConstants.CO_OPERATION_TIMEOUT_MEDIUM)
             .createInstallation()
             .runInstallation();

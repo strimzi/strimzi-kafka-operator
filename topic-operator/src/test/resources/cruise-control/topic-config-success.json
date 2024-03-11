@@ -1,0 +1,857 @@
+{
+  "summary": {
+    "numIntraBrokerReplicaMovements": 0,
+    "numReplicaMovements": 25,
+    "onDemandBalancednessScoreAfter": 100.0,
+    "intraBrokerDataToMoveMB": 0,
+    "monitoredPartitionsPercentage": 100.0,
+    "provisionRecommendation": "",
+    "excludedBrokersForReplicaMove": [],
+    "excludedBrokersForLeadership": [],
+    "provisionStatus": "RIGHT_SIZED",
+    "onDemandBalancednessScoreBefore": 92.12014398282543,
+    "recentWindows": 1,
+    "dataToMoveMB": 4826,
+    "excludedTopics": [],
+    "numLeaderMovements": 0
+  },
+  "goalSummary": [
+    {
+      "clusterModelStats": {
+        "statistics": {
+          "AVG": {
+            "disk": 3225.4710286458335,
+            "replicas": 59.666666666666664,
+            "leaderReplicas": 30.0,
+            "cpu": 0.3636057774225871,
+            "networkOutbound": 0.1519565557440122,
+            "networkInbound": 23844.958333333332,
+            "topicReplicas": 14.916666666666668,
+            "potentialNwOut": 0.17583627067506313
+          },
+          "STD": {
+            "disk": 363.8072564958781,
+            "replicas": 1.247219128924647,
+            "leaderReplicas": 0.816496580927726,
+            "cpu": 0.0,
+            "networkOutbound": 5.551115123125783E-17,
+            "networkInbound": 0.0,
+            "topicReplicas": 0.8249579113843054,
+            "potentialNwOut": 0.18764610190655337
+          },
+          "MIN": {
+            "disk": 2710.970947265625,
+            "replicas": 58,
+            "leaderReplicas": 29,
+            "cpu": 1.0908173322677612,
+            "networkOutbound": 0.4558696672320366,
+            "networkInbound": 71534.875,
+            "topicReplicas": 0,
+            "potentialNwOut": 0.028655657544732094
+          },
+          "MAX": {
+            "disk": 3483.560302734375,
+            "replicas": 61,
+            "leaderReplicas": 31,
+            "cpu": 1.0908173322677612,
+            "networkOutbound": 0.4558696672320366,
+            "networkInbound": 71534.875,
+            "topicReplicas": 22,
+            "potentialNwOut": 0.44065939262509346
+          }
+        },
+        "metadata": {
+          "topics": 4,
+          "replicas": 179,
+          "brokers": 3
+        }
+      },
+      "optimizationTimeMs": 1,
+      "status": "NO-ACTION",
+      "goal": "ReplicaCapacityGoal"
+    },
+    {
+      "clusterModelStats": {
+        "statistics": {
+          "AVG": {
+            "disk": 3225.4710286458335,
+            "replicas": 59.666666666666664,
+            "leaderReplicas": 30.0,
+            "cpu": 0.3636057774225871,
+            "networkOutbound": 0.1519565557440122,
+            "networkInbound": 23844.958333333332,
+            "topicReplicas": 14.916666666666668,
+            "potentialNwOut": 0.17583627067506313
+          },
+          "STD": {
+            "disk": 363.8072564958781,
+            "replicas": 1.247219128924647,
+            "leaderReplicas": 0.816496580927726,
+            "cpu": 0.0,
+            "networkOutbound": 5.551115123125783E-17,
+            "networkInbound": 0.0,
+            "topicReplicas": 0.8249579113843054,
+            "potentialNwOut": 0.18764610190655337
+          },
+          "MIN": {
+            "disk": 2710.970947265625,
+            "replicas": 58,
+            "leaderReplicas": 29,
+            "cpu": 1.0908173322677612,
+            "networkOutbound": 0.4558696672320366,
+            "networkInbound": 71534.875,
+            "topicReplicas": 0,
+            "potentialNwOut": 0.028655657544732094
+          },
+          "MAX": {
+            "disk": 3483.560302734375,
+            "replicas": 61,
+            "leaderReplicas": 31,
+            "cpu": 1.0908173322677612,
+            "networkOutbound": 0.4558696672320366,
+            "networkInbound": 71534.875,
+            "topicReplicas": 22,
+            "potentialNwOut": 0.44065939262509346
+          }
+        },
+        "metadata": {
+          "topics": 4,
+          "replicas": 179,
+          "brokers": 3
+        }
+      },
+      "optimizationTimeMs": 0,
+      "status": "NO-ACTION",
+      "goal": "DiskCapacityGoal"
+    },
+    {
+      "clusterModelStats": {
+        "statistics": {
+          "AVG": {
+            "disk": 3225.4710286458335,
+            "replicas": 59.666666666666664,
+            "leaderReplicas": 30.0,
+            "cpu": 0.3636057774225871,
+            "networkOutbound": 0.1519565557440122,
+            "networkInbound": 23844.958333333332,
+            "topicReplicas": 14.916666666666668,
+            "potentialNwOut": 0.17583627067506313
+          },
+          "STD": {
+            "disk": 363.8072564958781,
+            "replicas": 1.247219128924647,
+            "leaderReplicas": 0.816496580927726,
+            "cpu": 0.0,
+            "networkOutbound": 5.551115123125783E-17,
+            "networkInbound": 0.0,
+            "topicReplicas": 0.8249579113843054,
+            "potentialNwOut": 0.18764610190655337
+          },
+          "MIN": {
+            "disk": 2710.970947265625,
+            "replicas": 58,
+            "leaderReplicas": 29,
+            "cpu": 1.0908173322677612,
+            "networkOutbound": 0.4558696672320366,
+            "networkInbound": 71534.875,
+            "topicReplicas": 0,
+            "potentialNwOut": 0.028655657544732094
+          },
+          "MAX": {
+            "disk": 3483.560302734375,
+            "replicas": 61,
+            "leaderReplicas": 31,
+            "cpu": 1.0908173322677612,
+            "networkOutbound": 0.4558696672320366,
+            "networkInbound": 71534.875,
+            "topicReplicas": 22,
+            "potentialNwOut": 0.44065939262509346
+          }
+        },
+        "metadata": {
+          "topics": 4,
+          "replicas": 179,
+          "brokers": 3
+        }
+      },
+      "optimizationTimeMs": 1,
+      "status": "NO-ACTION",
+      "goal": "NetworkInboundCapacityGoal"
+    },
+    {
+      "clusterModelStats": {
+        "statistics": {
+          "AVG": {
+            "disk": 3225.4710286458335,
+            "replicas": 59.666666666666664,
+            "leaderReplicas": 30.0,
+            "cpu": 0.3636057774225871,
+            "networkOutbound": 0.1519565557440122,
+            "networkInbound": 23844.958333333332,
+            "topicReplicas": 14.916666666666668,
+            "potentialNwOut": 0.17583627067506313
+          },
+          "STD": {
+            "disk": 363.8072564958781,
+            "replicas": 1.247219128924647,
+            "leaderReplicas": 0.816496580927726,
+            "cpu": 0.0,
+            "networkOutbound": 5.551115123125783E-17,
+            "networkInbound": 0.0,
+            "topicReplicas": 0.8249579113843054,
+            "potentialNwOut": 0.18764610190655337
+          },
+          "MIN": {
+            "disk": 2710.970947265625,
+            "replicas": 58,
+            "leaderReplicas": 29,
+            "cpu": 1.0908173322677612,
+            "networkOutbound": 0.4558696672320366,
+            "networkInbound": 71534.875,
+            "topicReplicas": 0,
+            "potentialNwOut": 0.028655657544732094
+          },
+          "MAX": {
+            "disk": 3483.560302734375,
+            "replicas": 61,
+            "leaderReplicas": 31,
+            "cpu": 1.0908173322677612,
+            "networkOutbound": 0.4558696672320366,
+            "networkInbound": 71534.875,
+            "topicReplicas": 22,
+            "potentialNwOut": 0.44065939262509346
+          }
+        },
+        "metadata": {
+          "topics": 4,
+          "replicas": 179,
+          "brokers": 3
+        }
+      },
+      "optimizationTimeMs": 0,
+      "status": "NO-ACTION",
+      "goal": "NetworkOutboundCapacityGoal"
+    },
+    {
+      "clusterModelStats": {
+        "statistics": {
+          "AVG": {
+            "disk": 3225.4710286458335,
+            "replicas": 59.666666666666664,
+            "leaderReplicas": 30.0,
+            "cpu": 0.3636057774225871,
+            "networkOutbound": 0.1519565557440122,
+            "networkInbound": 23844.958333333332,
+            "topicReplicas": 14.916666666666668,
+            "potentialNwOut": 0.17583627067506313
+          },
+          "STD": {
+            "disk": 363.8072564958781,
+            "replicas": 1.247219128924647,
+            "leaderReplicas": 0.816496580927726,
+            "cpu": 0.0,
+            "networkOutbound": 5.551115123125783E-17,
+            "networkInbound": 0.0,
+            "topicReplicas": 0.8249579113843054,
+            "potentialNwOut": 0.18764610190655337
+          },
+          "MIN": {
+            "disk": 2710.970947265625,
+            "replicas": 58,
+            "leaderReplicas": 29,
+            "cpu": 1.0908173322677612,
+            "networkOutbound": 0.4558696672320366,
+            "networkInbound": 71534.875,
+            "topicReplicas": 0,
+            "potentialNwOut": 0.028655657544732094
+          },
+          "MAX": {
+            "disk": 3483.560302734375,
+            "replicas": 61,
+            "leaderReplicas": 31,
+            "cpu": 1.0908173322677612,
+            "networkOutbound": 0.4558696672320366,
+            "networkInbound": 71534.875,
+            "topicReplicas": 22,
+            "potentialNwOut": 0.44065939262509346
+          }
+        },
+        "metadata": {
+          "topics": 4,
+          "replicas": 179,
+          "brokers": 3
+        }
+      },
+      "optimizationTimeMs": 0,
+      "status": "NO-ACTION",
+      "goal": "CpuCapacityGoal"
+    },
+    {
+      "clusterModelStats": {
+        "statistics": {
+          "AVG": {
+            "disk": 3225.4710286458335,
+            "replicas": 59.666666666666664,
+            "leaderReplicas": 30.0,
+            "cpu": 0.3636057774225871,
+            "networkOutbound": 0.1519565557440122,
+            "networkInbound": 23844.958333333332,
+            "topicReplicas": 14.916666666666668,
+            "potentialNwOut": 0.17583627067506313
+          },
+          "STD": {
+            "disk": 363.8072564958781,
+            "replicas": 1.247219128924647,
+            "leaderReplicas": 0.816496580927726,
+            "cpu": 0.0,
+            "networkOutbound": 5.551115123125783E-17,
+            "networkInbound": 0.0,
+            "topicReplicas": 0.8249579113843054,
+            "potentialNwOut": 0.18764610190655337
+          },
+          "MIN": {
+            "disk": 2710.970947265625,
+            "replicas": 58,
+            "leaderReplicas": 29,
+            "cpu": 1.0908173322677612,
+            "networkOutbound": 0.4558696672320366,
+            "networkInbound": 71534.875,
+            "topicReplicas": 0,
+            "potentialNwOut": 0.028655657544732094
+          },
+          "MAX": {
+            "disk": 3483.560302734375,
+            "replicas": 61,
+            "leaderReplicas": 31,
+            "cpu": 1.0908173322677612,
+            "networkOutbound": 0.4558696672320366,
+            "networkInbound": 71534.875,
+            "topicReplicas": 22,
+            "potentialNwOut": 0.44065939262509346
+          }
+        },
+        "metadata": {
+          "topics": 4,
+          "replicas": 179,
+          "brokers": 3
+        }
+      },
+      "optimizationTimeMs": 1,
+      "status": "NO-ACTION",
+      "goal": "ReplicaDistributionGoal"
+    },
+    {
+      "clusterModelStats": {
+        "statistics": {
+          "AVG": {
+            "disk": 3225.4710286458335,
+            "replicas": 59.666666666666664,
+            "leaderReplicas": 30.0,
+            "cpu": 0.3636057774225871,
+            "networkOutbound": 0.1519565557440122,
+            "networkInbound": 23844.958333333332,
+            "topicReplicas": 14.916666666666668,
+            "potentialNwOut": 0.17583627067506313
+          },
+          "STD": {
+            "disk": 363.8072564958781,
+            "replicas": 1.247219128924647,
+            "leaderReplicas": 0.816496580927726,
+            "cpu": 0.0,
+            "networkOutbound": 5.551115123125783E-17,
+            "networkInbound": 0.0,
+            "topicReplicas": 0.8249579113843054,
+            "potentialNwOut": 0.18764610190655337
+          },
+          "MIN": {
+            "disk": 2710.970947265625,
+            "replicas": 58,
+            "leaderReplicas": 29,
+            "cpu": 1.0908173322677612,
+            "networkOutbound": 0.4558696672320366,
+            "networkInbound": 71534.875,
+            "topicReplicas": 0,
+            "potentialNwOut": 0.028655657544732094
+          },
+          "MAX": {
+            "disk": 3483.560302734375,
+            "replicas": 61,
+            "leaderReplicas": 31,
+            "cpu": 1.0908173322677612,
+            "networkOutbound": 0.4558696672320366,
+            "networkInbound": 71534.875,
+            "topicReplicas": 22,
+            "potentialNwOut": 0.44065939262509346
+          }
+        },
+        "metadata": {
+          "topics": 4,
+          "replicas": 179,
+          "brokers": 3
+        }
+      },
+      "optimizationTimeMs": 1,
+      "status": "NO-ACTION",
+      "goal": "PotentialNwOutGoal"
+    },
+    {
+      "clusterModelStats": {
+        "statistics": {
+          "AVG": {
+            "disk": 3225.4710286458335,
+            "replicas": 59.666666666666664,
+            "leaderReplicas": 30.0,
+            "cpu": 0.3636057774225871,
+            "networkOutbound": 0.1519565557440122,
+            "networkInbound": 23844.958333333332,
+            "topicReplicas": 14.916666666666668,
+            "potentialNwOut": 0.17583627067506313
+          },
+          "STD": {
+            "disk": 87.56588532015483,
+            "replicas": 0.4714045207910317,
+            "leaderReplicas": 0.816496580927726,
+            "cpu": 0.0,
+            "networkOutbound": 5.551115123125783E-17,
+            "networkInbound": 0.0,
+            "topicReplicas": 0.4714045207910317,
+            "potentialNwOut": 0.18764610190655337
+          },
+          "MIN": {
+            "disk": 3101.63818359375,
+            "replicas": 59,
+            "leaderReplicas": 29,
+            "cpu": 1.0908173322677612,
+            "networkOutbound": 0.4558696672320366,
+            "networkInbound": 71534.875,
+            "topicReplicas": 0,
+            "potentialNwOut": 0.028655657544732094
+          },
+          "MAX": {
+            "disk": 3288.23388671875,
+            "replicas": 60,
+            "leaderReplicas": 31,
+            "cpu": 1.0908173322677612,
+            "networkOutbound": 0.4558696672320366,
+            "networkInbound": 71534.875,
+            "topicReplicas": 22,
+            "potentialNwOut": 0.44065939262509346
+          }
+        },
+        "metadata": {
+          "topics": 4,
+          "replicas": 179,
+          "brokers": 3
+        }
+      },
+      "optimizationTimeMs": 2,
+      "status": "FIXED",
+      "goal": "DiskUsageDistributionGoal"
+    },
+    {
+      "clusterModelStats": {
+        "statistics": {
+          "AVG": {
+            "disk": 3225.4710286458335,
+            "replicas": 59.666666666666664,
+            "leaderReplicas": 30.0,
+            "cpu": 0.3636057774225871,
+            "networkOutbound": 0.1519565557440122,
+            "networkInbound": 23844.958333333332,
+            "topicReplicas": 14.916666666666668,
+            "potentialNwOut": 0.17583627067506313
+          },
+          "STD": {
+            "disk": 87.56588532015483,
+            "replicas": 0.4714045207910317,
+            "leaderReplicas": 0.816496580927726,
+            "cpu": 0.0,
+            "networkOutbound": 5.551115123125783E-17,
+            "networkInbound": 0.0,
+            "topicReplicas": 0.4714045207910317,
+            "potentialNwOut": 0.18764610190655337
+          },
+          "MIN": {
+            "disk": 3101.63818359375,
+            "replicas": 59,
+            "leaderReplicas": 29,
+            "cpu": 1.0908173322677612,
+            "networkOutbound": 0.4558696672320366,
+            "networkInbound": 71534.875,
+            "topicReplicas": 0,
+            "potentialNwOut": 0.028655657544732094
+          },
+          "MAX": {
+            "disk": 3288.23388671875,
+            "replicas": 60,
+            "leaderReplicas": 31,
+            "cpu": 1.0908173322677612,
+            "networkOutbound": 0.4558696672320366,
+            "networkInbound": 71534.875,
+            "topicReplicas": 22,
+            "potentialNwOut": 0.44065939262509346
+          }
+        },
+        "metadata": {
+          "topics": 4,
+          "replicas": 179,
+          "brokers": 3
+        }
+      },
+      "optimizationTimeMs": 0,
+      "status": "NO-ACTION",
+      "goal": "NetworkInboundUsageDistributionGoal"
+    },
+    {
+      "clusterModelStats": {
+        "statistics": {
+          "AVG": {
+            "disk": 3225.4710286458335,
+            "replicas": 59.666666666666664,
+            "leaderReplicas": 30.0,
+            "cpu": 0.3636057774225871,
+            "networkOutbound": 0.1519565557440122,
+            "networkInbound": 23844.958333333332,
+            "topicReplicas": 14.916666666666668,
+            "potentialNwOut": 0.17583627067506313
+          },
+          "STD": {
+            "disk": 87.56588532015483,
+            "replicas": 0.4714045207910317,
+            "leaderReplicas": 0.816496580927726,
+            "cpu": 0.0,
+            "networkOutbound": 5.551115123125783E-17,
+            "networkInbound": 0.0,
+            "topicReplicas": 0.4714045207910317,
+            "potentialNwOut": 0.18764610190655337
+          },
+          "MIN": {
+            "disk": 3101.63818359375,
+            "replicas": 59,
+            "leaderReplicas": 29,
+            "cpu": 1.0908173322677612,
+            "networkOutbound": 0.4558696672320366,
+            "networkInbound": 71534.875,
+            "topicReplicas": 0,
+            "potentialNwOut": 0.028655657544732094
+          },
+          "MAX": {
+            "disk": 3288.23388671875,
+            "replicas": 60,
+            "leaderReplicas": 31,
+            "cpu": 1.0908173322677612,
+            "networkOutbound": 0.4558696672320366,
+            "networkInbound": 71534.875,
+            "topicReplicas": 22,
+            "potentialNwOut": 0.44065939262509346
+          }
+        },
+        "metadata": {
+          "topics": 4,
+          "replicas": 179,
+          "brokers": 3
+        }
+      },
+      "optimizationTimeMs": 0,
+      "status": "NO-ACTION",
+      "goal": "NetworkOutboundUsageDistributionGoal"
+    },
+    {
+      "clusterModelStats": {
+        "statistics": {
+          "AVG": {
+            "disk": 3225.4710286458335,
+            "replicas": 59.666666666666664,
+            "leaderReplicas": 30.0,
+            "cpu": 0.3636057774225871,
+            "networkOutbound": 0.1519565557440122,
+            "networkInbound": 23844.958333333332,
+            "topicReplicas": 14.916666666666668,
+            "potentialNwOut": 0.17583627067506313
+          },
+          "STD": {
+            "disk": 87.56588532015483,
+            "replicas": 0.4714045207910317,
+            "leaderReplicas": 0.816496580927726,
+            "cpu": 0.0,
+            "networkOutbound": 5.551115123125783E-17,
+            "networkInbound": 0.0,
+            "topicReplicas": 0.4714045207910317,
+            "potentialNwOut": 0.18764610190655337
+          },
+          "MIN": {
+            "disk": 3101.63818359375,
+            "replicas": 59,
+            "leaderReplicas": 29,
+            "cpu": 1.0908173322677612,
+            "networkOutbound": 0.4558696672320366,
+            "networkInbound": 71534.875,
+            "topicReplicas": 0,
+            "potentialNwOut": 0.028655657544732094
+          },
+          "MAX": {
+            "disk": 3288.23388671875,
+            "replicas": 60,
+            "leaderReplicas": 31,
+            "cpu": 1.0908173322677612,
+            "networkOutbound": 0.4558696672320366,
+            "networkInbound": 71534.875,
+            "topicReplicas": 22,
+            "potentialNwOut": 0.44065939262509346
+          }
+        },
+        "metadata": {
+          "topics": 4,
+          "replicas": 179,
+          "brokers": 3
+        }
+      },
+      "optimizationTimeMs": 1,
+      "status": "NO-ACTION",
+      "goal": "CpuUsageDistributionGoal"
+    },
+    {
+      "clusterModelStats": {
+        "statistics": {
+          "AVG": {
+            "disk": 3225.4710286458335,
+            "replicas": 59.666666666666664,
+            "leaderReplicas": 30.0,
+            "cpu": 0.3636057774225871,
+            "networkOutbound": 0.1519565557440122,
+            "networkInbound": 23844.958333333332,
+            "topicReplicas": 14.916666666666668,
+            "potentialNwOut": 0.17583627067506313
+          },
+          "STD": {
+            "disk": 87.56588532015483,
+            "replicas": 0.4714045207910317,
+            "leaderReplicas": 0.816496580927726,
+            "cpu": 0.0,
+            "networkOutbound": 5.551115123125783E-17,
+            "networkInbound": 0.0,
+            "topicReplicas": 0.4714045207910317,
+            "potentialNwOut": 0.18764610190655337
+          },
+          "MIN": {
+            "disk": 3101.63818359375,
+            "replicas": 59,
+            "leaderReplicas": 29,
+            "cpu": 1.0908173322677612,
+            "networkOutbound": 0.4558696672320366,
+            "networkInbound": 71534.875,
+            "topicReplicas": 0,
+            "potentialNwOut": 0.028655657544732094
+          },
+          "MAX": {
+            "disk": 3288.23388671875,
+            "replicas": 60,
+            "leaderReplicas": 31,
+            "cpu": 1.0908173322677612,
+            "networkOutbound": 0.4558696672320366,
+            "networkInbound": 71534.875,
+            "topicReplicas": 22,
+            "potentialNwOut": 0.44065939262509346
+          }
+        },
+        "metadata": {
+          "topics": 4,
+          "replicas": 179,
+          "brokers": 3
+        }
+      },
+      "optimizationTimeMs": 1,
+      "status": "NO-ACTION",
+      "goal": "TopicReplicaDistributionGoal"
+    },
+    {
+      "clusterModelStats": {
+        "statistics": {
+          "AVG": {
+            "disk": 3225.4710286458335,
+            "replicas": 59.666666666666664,
+            "leaderReplicas": 30.0,
+            "cpu": 0.3636057774225871,
+            "networkOutbound": 0.1519565557440122,
+            "networkInbound": 23844.958333333332,
+            "topicReplicas": 14.916666666666668,
+            "potentialNwOut": 0.17583627067506313
+          },
+          "STD": {
+            "disk": 87.56588532015483,
+            "replicas": 0.4714045207910317,
+            "leaderReplicas": 0.816496580927726,
+            "cpu": 0.0,
+            "networkOutbound": 5.551115123125783E-17,
+            "networkInbound": 0.0,
+            "topicReplicas": 0.4714045207910317,
+            "potentialNwOut": 0.18764610190655337
+          },
+          "MIN": {
+            "disk": 3101.63818359375,
+            "replicas": 59,
+            "leaderReplicas": 29,
+            "cpu": 1.0908173322677612,
+            "networkOutbound": 0.4558696672320366,
+            "networkInbound": 71534.875,
+            "topicReplicas": 0,
+            "potentialNwOut": 0.028655657544732094
+          },
+          "MAX": {
+            "disk": 3288.23388671875,
+            "replicas": 60,
+            "leaderReplicas": 31,
+            "cpu": 1.0908173322677612,
+            "networkOutbound": 0.4558696672320366,
+            "networkInbound": 71534.875,
+            "topicReplicas": 22,
+            "potentialNwOut": 0.44065939262509346
+          }
+        },
+        "metadata": {
+          "topics": 4,
+          "replicas": 179,
+          "brokers": 3
+        }
+      },
+      "optimizationTimeMs": 0,
+      "status": "NO-ACTION",
+      "goal": "LeaderReplicaDistributionGoal"
+    },
+    {
+      "clusterModelStats": {
+        "statistics": {
+          "AVG": {
+            "disk": 3225.4710286458335,
+            "replicas": 59.666666666666664,
+            "leaderReplicas": 30.0,
+            "cpu": 0.3636057774225871,
+            "networkOutbound": 0.1519565557440122,
+            "networkInbound": 23844.958333333332,
+            "topicReplicas": 14.916666666666668,
+            "potentialNwOut": 0.17583627067506313
+          },
+          "STD": {
+            "disk": 87.56588532015483,
+            "replicas": 0.4714045207910317,
+            "leaderReplicas": 0.0,
+            "cpu": 0.0,
+            "networkOutbound": 5.551115123125783E-17,
+            "networkInbound": 0.0,
+            "topicReplicas": 0.4714045207910317,
+            "potentialNwOut": 0.18764610190655337
+          },
+          "MIN": {
+            "disk": 3101.63818359375,
+            "replicas": 59,
+            "leaderReplicas": 30,
+            "cpu": 1.0908173322677612,
+            "networkOutbound": 0.4558696672320366,
+            "networkInbound": 71534.875,
+            "topicReplicas": 0,
+            "potentialNwOut": 0.028655657544732094
+          },
+          "MAX": {
+            "disk": 3288.23388671875,
+            "replicas": 60,
+            "leaderReplicas": 30,
+            "cpu": 1.0908173322677612,
+            "networkOutbound": 0.4558696672320366,
+            "networkInbound": 71534.875,
+            "topicReplicas": 22,
+            "potentialNwOut": 0.44065939262509346
+          }
+        },
+        "metadata": {
+          "topics": 4,
+          "replicas": 179,
+          "brokers": 3
+        }
+      },
+      "optimizationTimeMs": 1,
+      "status": "FIXED",
+      "goal": "LeaderBytesInDistributionGoal"
+    }
+  ],
+  "loadAfterOptimization": {
+    "brokers": [
+      {
+        "FollowerNwInRate": 12397.5166015625,
+        "BrokerState": "ALIVE",
+        "Broker": 2,
+        "NwOutRate": 0.038025688380002975,
+        "NumCore": 1.0,
+        "Host": "localhost",
+        "CpuPct": 0.39342060685157776,
+        "Replicas": 59,
+        "NetworkInCapacity": 500000.0,
+        "Rack": "localhost",
+        "Leaders": 30,
+        "DiskCapacityMB": 1000000.0,
+        "DiskMB": 3286.54150390625,
+        "PnwOutRate": 0.058193761855363846,
+        "NetworkOutCapacity": 500000.0,
+        "LeaderNwInRate": 10669.2958984375,
+        "DiskPct": 0.328654150390625
+      },
+      {
+        "FollowerNwInRate": 9915.3984375,
+        "BrokerState": "ALIVE",
+        "Broker": 3,
+        "NwOutRate": 0.4178439788520336,
+        "NumCore": 1.0,
+        "Host": "localhost",
+        "CpuPct": 0.3808901607990265,
+        "Replicas": 60,
+        "NetworkInCapacity": 500000.0,
+        "Rack": "localhost",
+        "Leaders": 30,
+        "DiskCapacityMB": 1000000.0,
+        "DiskMB": 3101.63818359375,
+        "PnwOutRate": 0.44065939262509346,
+        "NetworkOutCapacity": 500000.0,
+        "LeaderNwInRate": 12852.228515625,
+        "DiskPct": 0.310163818359375
+      },
+      {
+        "FollowerNwInRate": 13454.466796875,
+        "BrokerState": "ALIVE",
+        "Broker": 4,
+        "NwOutRate": 0.0,
+        "NumCore": 1.0,
+        "Host": "localhost",
+        "CpuPct": 0.3165065348148346,
+        "Replicas": 60,
+        "NetworkInCapacity": 500000.0,
+        "Rack": "localhost",
+        "Leaders": 30,
+        "DiskCapacityMB": 1000000.0,
+        "DiskMB": 3288.23388671875,
+        "PnwOutRate": 0.028655657544732094,
+        "NetworkOutCapacity": 500000.0,
+        "LeaderNwInRate": 12245.966796875,
+        "DiskPct": 0.328823388671875
+      }
+    ],
+    "hosts": [
+      {
+        "FollowerNwInRate": 35767.3818359375,
+        "NwOutRate": 0.4558696672320366,
+        "NumCore": 3.0,
+        "Host": "localhost",
+        "CpuPct": 1.0908173024654388,
+        "Replicas": 179,
+        "NetworkInCapacity": 1500000.0,
+        "Rack": "localhost",
+        "Leaders": 90,
+        "DiskCapacityMB": 3000000.0,
+        "DiskMB": 9676.41357421875,
+        "PnwOutRate": 0.5275088120251894,
+        "NetworkOutCapacity": 1500000.0,
+        "LeaderNwInRate": 35767.4912109375,
+        "DiskPct": 0.322547119140625
+      }
+    ]
+  },
+  "version": 1
+}

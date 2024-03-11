@@ -14,8 +14,6 @@ The deployment uses a YAML file to provide the specification to create a `KafkaN
 You can use node pools with Kafka clusters that use KRaft (Kafka Raft metadata) mode or ZooKeeper for cluster management.
 To deploy a Kafka cluster in KRaft mode, you must use the `KafkaNodePool` resources.
 
-IMPORTANT: **KRaft mode is not ready for production in Apache Kafka or in Strimzi.**
-
 Strimzi provides the following xref:config-examples-{context}[example files] that you can use to create a Kafka cluster that uses node pools:
 
 `kafka-with-dual-role-kraft-nodes.yaml`:: Deploys a Kafka cluster with one pool of KRaft nodes that share the broker and controller roles.
@@ -31,7 +29,7 @@ NOTE: You can perform the steps outlined here to deploy a new Kafka cluster with
 
 .Procedure
 
-. Deploy a KRaft-based Kafka cluster
+. Deploy a KRaft-based Kafka cluster.
 +
 * To deploy a Kafka cluster in KRaft mode with a single node pool that uses dual-role nodes:
 +

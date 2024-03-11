@@ -16,6 +16,7 @@ import io.strimzi.systemtest.resources.ComponentType;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.resources.crd.StrimziPodSetResource;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.executor.Exec;
 import org.apache.logging.log4j.LogManager;
@@ -165,7 +166,7 @@ public class MetricsCollector {
     private LabelSelector getLabelSelectorForResource() {
         switch (this.componentType) {
             case Kafka:
-                return KafkaResource.getLabelSelector(componentName, KafkaResources.kafkaComponentName(componentName));
+                return KafkaResource.getLabelSelector(componentName, StrimziPodSetResource.getBrokerComponentName(componentName));
             case Zookeeper:
                 return KafkaResource.getLabelSelector(componentName, KafkaResources.zookeeperComponentName(componentName));
             case KafkaConnect:

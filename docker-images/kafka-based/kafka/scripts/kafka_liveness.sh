@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 set -e
 
-if [ "$STRIMZI_KRAFT_ENABLED" = "true" ]; then
+source ./kraft_utils.sh
+USE_KRAFT=$(useKRaft)
+
+if [ "$USE_KRAFT" == "true" ]; then
   for proc in /proc/*[0-9];
     do if readlink -f "$proc"/exe | grep -q java; then exit 0; fi;
   done

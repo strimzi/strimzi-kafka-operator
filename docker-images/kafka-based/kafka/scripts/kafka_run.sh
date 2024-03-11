@@ -55,8 +55,16 @@ echo ""
 # Configure heap based on the available resources if needed
 . ./dynamic_resources.sh
 
+STRIMZI_KAFKA_METADATA_CONFIG_STATE=$(cat "$KAFKA_HOME"/custom-config/metadata.state)
+echo "Kafka metadata config state [${STRIMZI_KAFKA_METADATA_CONFIG_STATE}]"
+echo "$STRIMZI_KAFKA_METADATA_CONFIG_STATE" > /tmp/kafka/strimzi.kafka.metadata.config.state
+
+source ./kraft_utils.sh
+USE_KRAFT=$(useKRaft)
+echo "Using KRaft [${USE_KRAFT}]"
+
 # Prepare for Kraft
-if [ "$STRIMZI_KRAFT_ENABLED" = "true" ]; then
+if [ "$USE_KRAFT" == "true" ]; then
   KRAFT_LOG_DIR=$(grep "log\.dirs=" /tmp/strimzi.properties | sed "s/log\.dirs=*//")
 
   if [ ! -f "$KRAFT_LOG_DIR/meta.properties" ]; then
@@ -81,6 +89,15 @@ if [ "$STRIMZI_KRAFT_ENABLED" = "true" ]; then
   KAFKA_READY=
   ZK_CONNECTED=
 else
+  KRAFT_LOG_DIR=$(grep "log\.dirs=" /tmp/strimzi.properties | sed "s/log\.dirs=*//")
+
+  # when in ZooKeeper mode, the __cluster_metadata folder should not exist.
+  # if it does, it means a KRaft migration rollback is ongoing and it has to be removed.
+  if [ -d "$KRAFT_LOG_DIR/__cluster_metadata-0" ]; then
+    echo "Removing __cluster_metadata folder"
+    rm -rf "$KRAFT_LOG_DIR/__cluster_metadata-0"
+  fi
+
   # when in ZooKeeper mode, the Kafka ready and ZooKeeper connected file paths are defined because used by the agent
   KAFKA_READY=/var/opt/kafka/kafka-ready
   ZK_CONNECTED=/var/opt/kafka/zk-connected

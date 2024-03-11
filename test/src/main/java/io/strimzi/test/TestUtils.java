@@ -24,22 +24,19 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.StringWriter;
-import java.io.Writer;
 import java.net.ServerSocket;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.AbstractMap;
@@ -339,6 +336,25 @@ public final class TestUtils {
 
     }
 
+    public static <T> T configFromMultiYamlFile(String yamlFile, String expectedKind, Class<T> kindClass) {
+        return configFromMultiYamlFile(new File(yamlFile), expectedKind, kindClass);
+    }
+
+    public static <T> T configFromMultiYamlFile(File yamlFile, String expectedKind, Class<T> kindClass) {
+        try {
+            YAMLFactory yamlFactory = new YAMLFactory();
+            ObjectMapper mapper = new ObjectMapper();
+            YAMLParser yamlParser = yamlFactory.createParser(yamlFile);
+            List<Map<String, Object>> resources = mapper.readValues(yamlParser, new TypeReference<Map<String, Object>>() { }).readAll();
+
+            return mapper.convertValue(resources.stream().filter(resource -> resource.get("kind").equals(expectedKind)).findFirst().get(), kindClass);
+        } catch (InvalidFormatException e) {
+            throw new IllegalArgumentException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public static <T> T configFromYaml(File yamlFile, Class<T> c) {
         ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
         try {
@@ -366,23 +382,22 @@ public final class TestUtils {
     }
 
     /** Method to create and write file */
-    public static void writeFile(String filePath, String text) {
-        Writer writer = null;
+    public static void writeFile(Path filePath, String text) {
         try {
-            writer = new BufferedWriter(new OutputStreamWriter(
-                    new FileOutputStream(filePath), StandardCharsets.UTF_8));
-            writer.write(text);
+            Files.writeString(filePath, text, StandardCharsets.UTF_8);
         } catch (IOException e) {
             LOGGER.info("Exception during writing text in file");
             e.printStackTrace();
-        } finally {
-            try {
-                if (writer != null) {
-                    writer.close();
-                }
-            } catch (Exception ex) {
-                ex.printStackTrace();
-            }
+        }
+    }
+
+    /** Method to create and write file */
+    public static void writeFile(String filePath, String text) {
+        try {
+            Files.writeString(Paths.get(filePath), text, StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            LOGGER.info("Exception during writing text in file");
+            e.printStackTrace();
         }
     }
 

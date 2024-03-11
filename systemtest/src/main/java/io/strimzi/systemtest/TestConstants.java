@@ -118,12 +118,23 @@ public interface TestConstants {
      * Deployment labels related constants
      */
     String APP_POD_LABEL = "app";
+    String APP_KUBERNETES_INSTANCE_LABEL = "app.kubernetes.io/instance";
 
     /**
      * Label selectors for our resources
      */
     LabelSelector ADMIN_CLIENT_LABEL_SELECTOR = new LabelSelector(null, Map.of(APP_POD_LABEL, ADMIN_CLIENT_NAME));
 
+    /**
+     * Cluster operator config images
+     */
+    String KAFKA_IMAGE_MAP = "STRIMZI_KAFKA_IMAGES";
+    String TO_IMAGE = "STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE";
+    String UO_IMAGE = "STRIMZI_DEFAULT_USER_OPERATOR_IMAGE";
+    String KAFKA_INIT_IMAGE = "STRIMZI_DEFAULT_KAFKA_INIT_IMAGE";
+    String TLS_SIDECAR_EO_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE";
+    String KAFKA_MIRROR_MAKER_2_IMAGE_MAP = "STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES";
+    String KAFKA_CONNECT_IMAGE_MAP = "STRIMZI_KAFKA_CONNECT_IMAGES";
     /**
      * Constants for specific ports
      */
@@ -388,6 +399,12 @@ public interface TestConstants {
      */
     String ROUTE = "route";
 
+
+    /**
+     * Tag for tests that focus on migration from ZK to KRaft
+     */
+    String MIGRATION = "migration";
+
     /**
      * Tag for tests, without ARM,AARCH64 support
      */
@@ -444,9 +461,15 @@ public interface TestConstants {
 
     String TEST_NAME_KEY = "TEST_NAME";
     String CLUSTER_KEY = "CLUSTER_NAME";
-    String KAFKA_NODE_POOL_KEY = "KAFKA_NODE_POOL";
+    String BROKER_POOL_KEY = "BROKER_POOL";
+    String CONTROLLER_POOL_KEY = "CONTROLLER_POOL";
+    String MIXED_POOL_KEY = "MIXED_POOL";
     String SOURCE_CLUSTER_KEY = "SOURCE_CLUSTER_NAME";
+    String SOURCE_BROKER_POOL_KEY = "SOURCE_BROKER_POOL";
+    String SOURCE_CONTROLLER_POOL_KEY = "SOURCE_CONTROLLER_POOL";
     String TARGET_CLUSTER_KEY = "TARGET_CLUSTER_NAME";
+    String TARGET_BROKER_POOL_KEY = "TARGET_BROKER_POOL";
+    String TARGET_CONTROLLER_POOL_KEY = "TARGET_CONTROLLER_POOL";
     String TOPIC_KEY = "TOPIC_NAME";
     String TARGET_TOPIC_KEY = "TARGET_TOPIC_NAME";
     String MIRRORED_SOURCE_TOPIC_KEY = "MIRRORED_SOURCE_TOPIC_NAME";
@@ -460,12 +483,17 @@ public interface TestConstants {
     String TARGET_USER_NAME_KEY = "TARGET_USER_NAME";
     String KAFKA_USER_NAME_KEY = "KAFKA_USER_NAME";
     String ENTITY_OPERATOR_NAME_KEY = "ENTITY_OPERATOR_NAME";
-    String KAFKA_STATEFULSET_NAME_KEY = "KAFKA_STATEFULSET_NAME";
-    String ZOOKEEPER_STATEFULSET_NAME_KEY = "ZOOKEEPER_STATEFULSET_NAME";
+    String BROKER_COMPONENT_NAME_KEY = "BROKER_COMPONENT_NAME";
+    String CONTROLLER_COMPONENT_NAME_KEY = "CONTROLLER_COMPONENT_NAME";
+    String MIXED_COMPONENT_NAME_KEY = "MIXED_COMPONENT_NAME";
     String SCRAPER_POD_KEY = "SCRAPER_POD_NAME";
     String KAFKA_TRACING_CLIENT_KEY = "KAFKA_TRACING_CLIENT";
-    String KAFKA_SELECTOR_KEY = "KAFKA_SELECTOR";
-    String ZOOKEEPER_SELECTOR_KEY = "ZOOKEEPER_SELECTOR";
+    String BROKER_SELECTOR_KEY = "BROKER_SELECTOR";
+    String BROKER_POOL_SELECTOR_KEY = "BROKER_POOL_SELECTOR";
+    String CONTROLLER_POOL_SELECTOR_KEY = "CONTROLLER_POOL_SELECTOR";
+    String MIXED_POOL_SELECTOR_KEY = "MIXED_POOL_SELECTOR";
+    String CONTROLLER_SELECTOR_KEY = "CONTROLLER_SELECTOR";
+    String MIXED_SELECTOR_KEY = "MIXED_SELECTOR";
     String KAFKA_CONNECT_SELECTOR_KEY = "KAFKA_CONNECT_SELECTOR";
     String MM2_SELECTOR_KEY = "MM2_SELECTOR";
     String MESSAGE_COUNT_KEY = "MESSAGE_COUNT";
@@ -498,12 +526,14 @@ public interface TestConstants {
     String ST_CONNECT_BUILD_IMAGE_NAME = "strimzi-sts-connect-build";
 
     /**
-     * KafkaNodePools constants
-     */
-    String KAFKA_NODE_POOL_PREFIX = "kafka-pool-";
-
-    /**
      * Persistent Volume related
      */
     String PVC_PHASE_BOUND = "Bound";
+
+    /**
+     * NodePool's name prefix based on role
+     */
+    String MIXED_ROLE_PREFIX = "m-";
+    String BROKER_ROLE_PREFIX = "b-";
+    String CONTROLLER_ROLE_PREFIX = "c-";
 }

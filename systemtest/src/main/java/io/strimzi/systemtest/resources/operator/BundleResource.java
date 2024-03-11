@@ -200,7 +200,10 @@ public class BundleResource implements ResourceType<Deployment> {
                     envVar.setValue(Long.toString(operationTimeout));
                     break;
                 case "STRIMZI_FEATURE_GATES":
-                    envVar.setValue(Environment.STRIMZI_FEATURE_GATES);
+                    if (!envVar.getValue().equals(Environment.STRIMZI_FEATURE_GATES)) {
+                        envVar.setValue(Environment.STRIMZI_FEATURE_GATES);
+                    }
+                    break;
                 default:
                     if (envVar.getName().contains("KAFKA_BRIDGE_IMAGE")) {
                         envVar.setValue(Environment.useLatestReleasedBridge() ? envVar.getValue() : Environment.BRIDGE_IMAGE);

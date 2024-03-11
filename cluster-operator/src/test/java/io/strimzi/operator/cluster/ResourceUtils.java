@@ -47,7 +47,10 @@ import io.strimzi.api.kafka.model.zookeeper.ZookeeperClusterSpec;
 import io.strimzi.operator.cluster.ClusterOperatorConfig.ClusterOperatorConfigBuilder;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.MockSharedEnvironmentProvider;
-import io.strimzi.operator.cluster.operator.assembly.PreventBrokerScaleDownCheck;
+import io.strimzi.operator.cluster.operator.assembly.BrokersInUseCheck;
+import io.strimzi.operator.cluster.operator.resource.KRaftMigrationState;
+import io.strimzi.operator.cluster.operator.resource.KafkaAgentClient;
+import io.strimzi.operator.cluster.operator.resource.KafkaAgentClientProvider;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperLeaderFinder;
@@ -601,6 +604,28 @@ public class ResourceUtils {
         };
     }
 
+    public static KafkaAgentClient kafkaAgentClient() {
+        KafkaAgentClient mock = mock(KafkaAgentClient.class);
+        // simulating a longer KRaft migration, returning it's ended on the second call
+        when(mock.getKRaftMigrationState(any()))
+                .thenReturn(new KRaftMigrationState(KRaftMigrationState.PRE_MIGRATION))
+                .thenReturn(new KRaftMigrationState(KRaftMigrationState.MIGRATION));
+        return mock;
+    }
+
+    public static KafkaAgentClientProvider kafkaAgentClientProvider() {
+        return kafkaAgentClientProvider(kafkaAgentClient());
+    }
+
+    public static KafkaAgentClientProvider kafkaAgentClientProvider(KafkaAgentClient mockKafkaAgentClient) {
+        return new KafkaAgentClientProvider() {
+            @Override
+            public KafkaAgentClient createKafkaAgentClient(Reconciliation reconciliation, Secret clusterCaCertSecret, Secret coKeySecret) {
+                return mockKafkaAgentClient;
+            }
+        };
+    }
+
     public static MetricsProvider metricsProvider() {
         return new MicrometerMetricsProvider(new SimpleMeterRegistry());
     }
@@ -641,12 +666,13 @@ public class ResourceUtils {
                 mock(StorageClassOperator.class),
                 mock(NodeOperator.class),
                 zookeeperScalerProvider(),
+                kafkaAgentClientProvider(),
                 metricsProvider(),
                 adminClientProvider(),
                 mock(ZookeeperLeaderFinder.class),
                 mock(KubernetesRestartEventPublisher.class),
                 new MockSharedEnvironmentProvider(),
-                mock(PreventBrokerScaleDownCheck.class));
+                mock(BrokersInUseCheck.class));
 
         when(supplier.secretOperations.getAsync(any(), any())).thenReturn(Future.succeededFuture());
         when(supplier.serviceAccountOperations.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());

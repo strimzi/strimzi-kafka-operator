@@ -1,0 +1,151 @@
+// Module included in the following assemblies:
+//
+// assembly-config.adoc
+
+[id='proc-joining-node-pools-roles-{context}']
+= Transitioning to dual-role nodes
+
+[role="_abstract"]
+This procedure describes how to transition from separate node pools with broker-only and controller-only roles to using a dual-role node pool.
+If your Kafka cluster is using node pools with dedicated controller and broker nodes, you can transition to using a single node pool with both roles.
+To do this, add the `broker` role to the controller-only node pool, rebalance the cluster to move partition replicas to the dual-role node pool, and then delete the old broker-only node pool.
+
+In this procedure, we start with two node pools `pool-a`, which has only the `controller` role and `pool-b` which has only the `broker` role:
+
+.Single role node pools
+[source,yaml,subs="+attributes"]
+----
+apiVersion: {KafkaNodePoolApiVersion}
+kind: KafkaNodePool
+metadata:
+  name: pool-a
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  replicas: 3
+  roles:
+    - controller
+  storage:
+    type: jbod
+    volumes:
+      - id: 0
+        type: persistent-claim
+        size: 100Gi
+        deleteClaim: false
+  # ...
+---
+apiVersion: {KafkaNodePoolApiVersion}
+kind: KafkaNodePool
+metadata:
+  name: pool-b
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  replicas: 3
+  roles:
+    - broker
+  storage:
+    type: jbod
+    volumes:
+      - id: 0
+        type: persistent-claim
+        size: 100Gi
+        deleteClaim: false
+  # ...
+----
+
+The Kafka cluster has six nodes:
+
+.Kafka nodes in the node pools
+[source,shell]
+----
+NAME                 READY  STATUS   RESTARTS
+my-cluster-pool-a-0  1/1    Running  0
+my-cluster-pool-a-1  1/1    Running  0
+my-cluster-pool-a-2  1/1    Running  0
+my-cluster-pool-b-3  1/1    Running  0
+my-cluster-pool-b-4  1/1    Running  0
+my-cluster-pool-b-5  1/1    Running  0
+----
+
+The `pool-a` nodes perform the role of controller.
+The `pool-b` nodes perform the role of broker.
+
+NOTE: During this process, the ID of the node that holds the partition replicas changes. Consider any dependencies that reference the node ID.
+
+.Prerequisites
+
+* xref:deploying-cluster-operator-str[The Cluster Operator must be deployed.]
+* xref:proc-configuring-deploying-cruise-control-str[Cruise Control is deployed with Kafka.]
+
+.Procedure
+
+. Edit the node pool `pool-a` and add the `broker` role to it.
++
+.Example node pool configuration
+[source,yaml,subs="+attributes"]
+----
+apiVersion: {KafkaNodePoolApiVersion}
+kind: KafkaNodePool
+metadata:
+  name: pool-a
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  replicas: 3
+  roles:
+    - controller
+    - broker
+  storage:
+    type: jbod
+    volumes:
+      - id: 0
+        type: persistent-claim
+        size: 100Gi
+        deleteClaim: false
+  # ...
+----
+
+. Check the status and wait for the pods in the node pool to be restarted and ready (`1/1`).
++
+[source,shell]
+----
+kubectl get pods -n <my_cluster_operator_namespace>
+----
++
+.Output shows pods running in two node pools
+[source,shell]
+----
+NAME                 READY  STATUS   RESTARTS
+my-cluster-pool-a-0  1/1    Running  0
+my-cluster-pool-a-1  1/1    Running  0
+my-cluster-pool-a-2  1/1    Running  0
+my-cluster-pool-b-3  1/1    Running  0
+my-cluster-pool-b-4  1/1    Running  0
+my-cluster-pool-b-5  1/1    Running  0
+---- 
++
+Node IDs are appended to the name of the node on creation.
+
+. Use the Cruise Control `remove-brokers` mode to reassign partition replicas from the broker-only nodes to the dual-role nodes.
++
+.Using Cruise Control to reassign partition replicas
+[source,shell,subs="+attributes"]
+----
+apiVersion: {KafkaRebalanceApiVersion}
+kind: KafkaRebalance
+metadata:
+  # ...
+spec:
+  mode: remove-brokers
+  brokers: [3, 4, 5]
+---- 
++
+The reassignment can take some time depending on the number of topics and partitions in the cluster.
+
+. Remove the `pool-b` node pool that has the old broker-only nodes.
++
+[source,shell]
+----
+kubectl delete kafkanodepool pool-b -n <my_cluster_operator_namespace>
+----

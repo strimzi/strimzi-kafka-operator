@@ -26,8 +26,8 @@ public class OpenTelemetryTracing extends Tracing {
 
     public static final String TYPE_OPENTELEMETRY = "opentelemetry";
 
-    public static final String CONSUMER_INTERCEPTOR_CLASS_NAME = "io.opentelemetry.instrumentation.kafkaclients.TracingConsumerInterceptor";
-    public static final String PRODUCER_INTERCEPTOR_CLASS_NAME = "io.opentelemetry.instrumentation.kafkaclients.TracingProducerInterceptor";
+    public static final String CONSUMER_INTERCEPTOR_CLASS_NAME = "io.opentelemetry.instrumentation.kafkaclients.v2_6.TracingConsumerInterceptor";
+    public static final String PRODUCER_INTERCEPTOR_CLASS_NAME = "io.opentelemetry.instrumentation.kafkaclients.v2_6.TracingProducerInterceptor";
 
     @Description("Must be `" + TYPE_OPENTELEMETRY + "`")
     @JsonInclude(JsonInclude.Include.NON_NULL)

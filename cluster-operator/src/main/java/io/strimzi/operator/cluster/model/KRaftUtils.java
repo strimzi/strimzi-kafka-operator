@@ -91,7 +91,7 @@ public class KRaftUtils {
             }
 
             if (!nodePoolsEnabled)  {
-                if (kafkaSpec.getKafka().getReplicas() == 0)   {
+                if (kafkaSpec.getKafka().getReplicas() == null || kafkaSpec.getKafka().getReplicas() == 0)   {
                     errors.add("The .spec.kafka.replicas property of the Kafka custom resource is missing. " +
                             "This property is required for a ZooKeeper-based Kafka cluster that is not using Node Pools.");
                 }
@@ -136,6 +136,7 @@ public class KRaftUtils {
      */
     public static void nodePoolWarnings(Kafka kafkaCr, KafkaStatus kafkaStatus)   {
         if (kafkaCr.getSpec().getKafka() != null
+                && kafkaCr.getSpec().getKafka().getReplicas() != null
                 && kafkaCr.getSpec().getKafka().getReplicas() > 0) {
             kafkaStatus.addCondition(StatusUtils.buildWarningCondition("UnusedReplicasConfiguration",
                     "The .spec.kafka.replicas property in the Kafka custom resource is ignored when node pools " +
@@ -147,6 +148,41 @@ public class KRaftUtils {
             kafkaStatus.addCondition(StatusUtils.buildWarningCondition("UnusedStorageConfiguration",
                     "The .spec.kafka.storage section in the Kafka custom resource is ignored when node pools " +
                             "are used and should be removed from the custom resource."));
+        }
+    }
+
+    /**
+     * Validate the Kafka version set in the Kafka custom resource (in spec.kafka.version), together with the
+     * metadata version (in spec.kafka.metadataVersion) and the configured inter.broker.protocol.version
+     * and log.message.format.version. (in spec.kafka.config).
+     * They need to be all aligned and at least 3.7.0 to support ZooKeeper to KRaft migration, otherwise the check
+     * throws an {@code InvalidResourceException}.
+     *
+     * @param kafkaVersionFromCr    Kafka version from the custom resource
+     * @param metadataVersionFromCr Metadata version from the custom resource
+     * @param interBrokerProtocolVersionFromCr  Inter broker protocol version from the configuration of the Kafka custom resource
+     * @param logMessageFormatVersionFromCr Log message format version from the configuration of the Kafka custom resource
+     */
+    public static void validateVersionsForKRaftMigration(String kafkaVersionFromCr, String metadataVersionFromCr,
+                                                         String interBrokerProtocolVersionFromCr, String logMessageFormatVersionFromCr) {
+        // validate 3.7.0 <= kafka.version && metadataVersion/IBP/LMF == kafka.version
+
+        MetadataVersion kafkaVersion = MetadataVersion.fromVersionString(kafkaVersionFromCr);
+        // this should check that spec.kafka.version is >= 3.7.0
+        boolean isMigrationSupported = kafkaVersion.isMigrationSupported();
+
+        MetadataVersion metadataVersion = MetadataVersion.fromVersionString(metadataVersionFromCr);
+        MetadataVersion interBrokerProtocolVersion = MetadataVersion.fromVersionString(interBrokerProtocolVersionFromCr);
+        MetadataVersion logMessageFormatVersion = MetadataVersion.fromVersionString(logMessageFormatVersionFromCr);
+
+        if (!isMigrationSupported ||
+                metadataVersion.compareTo(interBrokerProtocolVersion) != 0 ||
+                metadataVersion.compareTo(logMessageFormatVersion) != 0) {
+            String message = String.format("Migration cannot be performed with Kafka version %s, metadata version %s, inter.broker.protocol.version %s, log.message.format.version %s. " +
+                            "Please make sure the Kafka version, metadata version, inter.broker.protocol.version and log.message.format.version " +
+                            "are all set to the same value, which must be equal to, or higher than 3.7.0",
+                    kafkaVersion, metadataVersion, interBrokerProtocolVersion, logMessageFormatVersion);
+            throw new InvalidResourceException(message);
         }
     }
 }

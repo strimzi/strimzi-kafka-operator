@@ -26,7 +26,6 @@ import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.io.File;
 import java.io.IOException;
@@ -59,16 +58,16 @@ public class AbstractKRaftUpgradeST extends AbstractUpgradeST {
     }
 
     @Override
-    protected void deployKafkaClusterWithWaitForReadiness(final ExtensionContext extensionContext, final BundleVersionModificationData upgradeData,
+    protected void deployKafkaClusterWithWaitForReadiness(final BundleVersionModificationData upgradeData,
                                                           final UpgradeKafkaVersion upgradeKafkaVersion) {
         LOGGER.info("Deploying Kafka: {} in Namespace: {}", clusterName, kubeClient().getNamespace());
 
         if (!cmdKubeClient().getResources(getResourceApiVersion(Kafka.RESOURCE_PLURAL)).contains(clusterName)) {
             // Deploy a Kafka cluster
             if (upgradeData.getFromExamples().equals("HEAD")) {
-                resourceManager.createResourceWithWait(extensionContext,
-                    KafkaNodePoolTemplates.kafkaNodePoolWithControllerRoleAndPersistentStorage(TestConstants.CO_NAMESPACE, CONTROLLER_NODE_NAME, clusterName, 3).build(),
-                    KafkaNodePoolTemplates.kafkaNodePoolWithBrokerRoleAndPersistentStorage(TestConstants.CO_NAMESPACE, BROKER_NODE_NAME, clusterName, 3).build(),
+                resourceManager.createResourceWithWait(
+                    KafkaNodePoolTemplates.controllerPoolPersistentStorage(TestConstants.CO_NAMESPACE, CONTROLLER_NODE_NAME, clusterName, 3).build(),
+                    KafkaNodePoolTemplates.brokerPoolPersistentStorage(TestConstants.CO_NAMESPACE, BROKER_NODE_NAME, clusterName, 3).build(),
                     KafkaTemplates.kafkaPersistentKRaft(clusterName, 3)
                         .editMetadata()
                             .addToAnnotations(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled")
@@ -117,8 +116,8 @@ public class AbstractKRaftUpgradeST extends AbstractUpgradeST {
         DeploymentUtils.waitForDeploymentAndPodsReady(TestConstants.CO_NAMESPACE, KafkaResources.entityOperatorDeploymentName(clusterName), 1);
     }
 
-    protected void changeKafkaAndMetadataVersion(CommonVersionModificationData versionModificationData, ExtensionContext extensionContext) throws IOException {
-        changeKafkaAndMetadataVersion(versionModificationData, false, extensionContext);
+    protected void changeKafkaAndMetadataVersion(CommonVersionModificationData versionModificationData) throws IOException {
+        changeKafkaAndMetadataVersion(versionModificationData, false);
     }
 
     /**
@@ -127,11 +126,10 @@ public class AbstractKRaftUpgradeST extends AbstractUpgradeST {
      * @param replaceEvenIfMissing current workaround for the situation when `metadataVersion` is not set in Kafka CR -> that's because previous version of operator
      *     doesn't contain this kind of field, so even if we set this field in the Kafka CR, it is removed by the operator
      *     this is needed for correct functionality of the `testUpgradeAcrossVersionsWithUnsupportedKafkaVersion` test
-     * @param extensionContext context of the test
      * @throws IOException exception during application of YAML files
      */
     @SuppressWarnings("CyclomaticComplexity")
-    protected void changeKafkaAndMetadataVersion(CommonVersionModificationData versionModificationData, boolean replaceEvenIfMissing, ExtensionContext extensionContext) throws IOException {
+    protected void changeKafkaAndMetadataVersion(CommonVersionModificationData versionModificationData, boolean replaceEvenIfMissing) throws IOException {
         // Get Kafka version
         String kafkaVersionFromCR = cmdKubeClient().getResourceJsonPath(getResourceApiVersion(Kafka.RESOURCE_PLURAL), clusterName, ".spec.kafka.version");
         kafkaVersionFromCR = kafkaVersionFromCR.equals("") ? null : kafkaVersionFromCR;

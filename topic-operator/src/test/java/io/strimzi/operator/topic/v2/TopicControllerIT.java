@@ -3,9 +3,8 @@
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
 package io.strimzi.operator.topic.v2;
-
+    
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.kroxylicious.testing.kafka.api.KafkaCluster;
 import io.kroxylicious.testing.kafka.common.BrokerCluster;
@@ -18,6 +17,7 @@ import io.strimzi.api.kafka.model.topic.KafkaTopicBuilder;
 import io.strimzi.api.kafka.model.topic.KafkaTopicStatus;
 import io.strimzi.operator.common.model.Labels;
 import org.apache.kafka.clients.admin.Admin;
+import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.AlterConfigOp;
 import org.apache.kafka.clients.admin.AlterConfigsResult;
 import org.apache.kafka.clients.admin.Config;
@@ -49,6 +49,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -68,7 +69,10 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.Stack;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -79,7 +83,6 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
 import static io.strimzi.api.ResourceAnnotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION;
-import static io.strimzi.operator.topic.v2.BatchingTopicController.isPaused;
 import static java.lang.String.format;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -95,30 +98,26 @@ import static org.mockito.Mockito.mock;
 @SuppressWarnings("checkstyle:ClassFanOutComplexity")
 @ExtendWith(KafkaClusterExtension.class)
 class TopicControllerIT {
-
     private static final Logger LOGGER = LogManager.getLogger(TopicControllerIT.class);
+    private static final String NAMESPACE = "topic-operator-test";
     public static final Map<String, String> SELECTOR = Map.of("foo", "FOO", "bar", "BAR");
-    private static final String NAMESPACE = "uto-test";
 
     KubernetesClient client;
-
     Admin[] admin;
-
     Admin[] operatorAdmin;
-
     TopicOperatorMain operator;
-
     Stack<String> namespaces = new Stack<>();
+    
     private TopicOperatorConfig operatorConfig;
 
     @BeforeAll
-    public static void setupKubeCluster() {
-        TopicOperatorTestUtil.setupKubeCluster(NAMESPACE);
+    public static void setupKubeCluster(TestInfo testInfo) {
+        TopicOperatorTestUtil.setupKubeCluster(testInfo, NAMESPACE);
     }
 
     @AfterAll
     public static void teardownKubeCluster() {
-        TopicOperatorTestUtil.teardownKubeCluster2(NAMESPACE);
+        TopicOperatorTestUtil.teardownKubeCluster(NAMESPACE);
     }
 
     @BeforeEach
@@ -251,10 +250,14 @@ class TopicControllerIT {
 
     private void maybeStartOperator(TopicOperatorConfig config) throws ExecutionException, InterruptedException {
         if (admin == null) {
-            admin = new Admin[]{Admin.create(config.adminClientConfig())};
+            Map<String, Object> testConfig = config.adminClientConfig();
+            testConfig.replace(AdminClientConfig.CLIENT_ID_CONFIG, config.clientId() + "-test");
+            admin = new Admin[]{Admin.create(testConfig)};
         }
         if (operatorAdmin == null) {
-            operatorAdmin = new Admin[]{Admin.create(config.adminClientConfig())};
+            Map<String, Object> adminConfig = config.adminClientConfig();
+            adminConfig.replace(AdminClientConfig.CLIENT_ID_CONFIG, config.clientId() + "-operator");
+            operatorAdmin = new Admin[]{Admin.create(adminConfig)};
         }
         if (operator == null) {
             this.operatorConfig = config;
@@ -346,7 +349,7 @@ class TopicControllerIT {
                 .withLabels(labels)
                 .withAnnotations(annotations);
         if (managed != null) {
-            metadataBuilder = metadataBuilder.addToAnnotations(BatchingTopicController.MANAGED, managed.toString());
+            metadataBuilder = metadataBuilder.addToAnnotations(TopicOperatorUtil.MANAGED, managed.toString());
         }
         var kt = metadataBuilder.endMetadata()
                 .withNewSpec()
@@ -365,7 +368,7 @@ class TopicControllerIT {
             .withName(metadataName)
             .withNamespace(ns)
             .withLabels(SELECTOR)
-            .addToAnnotations(BatchingTopicController.MANAGED, "true")
+            .addToAnnotations(TopicOperatorUtil.MANAGED, "true")
             .endMetadata();
         if (spec) {
             builder = builder.editOrNewSpec().endSpec();
@@ -375,23 +378,23 @@ class TopicControllerIT {
 
     static KafkaTopic[] managedKafkaTopics() {
         return new KafkaTopic[] {
-                kafkaTopic(NAMESPACE, "foo", true, "foo", 2, 1),
-                kafkaTopic(NAMESPACE, "foo", true, null, 2, 1),
-                kafkaTopic(NAMESPACE, "foo", true, "FOO", 2, 1),
-                kafkaTopic(NAMESPACE, "foo", null, "foo", 2, 1),
-                kafkaTopic(NAMESPACE, "foo", null, null, 2, 1),
-                kafkaTopic(NAMESPACE, "foo", null, "FOO", 2, 1),
+                kafkaTopic(NAMESPACE, "my-topic", true, "my-topic", 2, 1),
+                kafkaTopic(NAMESPACE, "my-topic", true, null, 2, 1),
+                kafkaTopic(NAMESPACE, "my-topic", true, "MY-TOPIC", 2, 1),
+                kafkaTopic(NAMESPACE, "my-topic", null, "my-topic", 2, 1),
+                kafkaTopic(NAMESPACE, "my-topic", null, null, 2, 1),
+                kafkaTopic(NAMESPACE, "my-topic", null, "MY-TOPIC", 2, 1),
                 // With a superset of the selector mappings
-                kafkaTopic(NAMESPACE, "foo", Map.of("foo", "FOO", "bar", "BAR", "quux", "QUUX"), null, true, "foo", 2, 1, null),
+                kafkaTopic(NAMESPACE, "my-topic", Map.of("foo", "FOO", "bar", "BAR", "quux", "QUUX"), null, true, "my-topic", 2, 1, null),
         };
     }
 
     static KafkaTopic[] managedKafkaTopicsWithIllegalTopicNames() {
         return new KafkaTopic[] {
-                kafkaTopic(NAMESPACE, "foo", true, "..", 2, 1),
-                kafkaTopic(NAMESPACE, "foo", true, ".", 2, 1),
-                kafkaTopic(NAMESPACE, "foo", null, "foo{}", 2, 1),
-                kafkaTopic(NAMESPACE, "foo", null, "x".repeat(256), 2, 1),
+                kafkaTopic(NAMESPACE, "my-topic", true, "..", 2, 1),
+                kafkaTopic(NAMESPACE, "my-topic", true, ".", 2, 1),
+                kafkaTopic(NAMESPACE, "my-topic", null, "foo{}", 2, 1),
+                kafkaTopic(NAMESPACE, "my-topic", null, "x".repeat(256), 2, 1),
         };
     }
 
@@ -405,28 +408,28 @@ class TopicControllerIT {
                 TopicConfig.UNCLEAN_LEADER_ELECTION_ENABLE_CONFIG, true // boolean typed
                 );
         return new KafkaTopic[] {
-                kafkaTopic(NAMESPACE, "foo", SELECTOR, null, true, "foo", 2, 1, configs),
-                kafkaTopic(NAMESPACE, "foo", SELECTOR, null, true, null, 2, 1, configs),
-                kafkaTopic(NAMESPACE, "foo", SELECTOR, null, true, "FOO", 2, 1, configs),
-                kafkaTopic(NAMESPACE, "foo", SELECTOR, null, null, "foo", 2, 1, configs),
-                kafkaTopic(NAMESPACE, "foo", SELECTOR, null, null, null, 2, 1, configs),
-                kafkaTopic(NAMESPACE, "foo", SELECTOR, null, null, "FOO", 2, 1, configs),
+                kafkaTopic(NAMESPACE, "my-topic", SELECTOR, null, true, "my-topic", 2, 1, configs),
+                kafkaTopic(NAMESPACE, "my-topic", SELECTOR, null, true, null, 2, 1, configs),
+                kafkaTopic(NAMESPACE, "my-topic", SELECTOR, null, true, "MY-TOPIC", 2, 1, configs),
+                kafkaTopic(NAMESPACE, "my-topic", SELECTOR, null, null, "my-topic", 2, 1, configs),
+                kafkaTopic(NAMESPACE, "my-topic", SELECTOR, null, null, null, 2, 1, configs),
+                kafkaTopic(NAMESPACE, "my-topic", SELECTOR, null, null, "MY-TOPIC", 2, 1, configs),
         };
     }
 
     static KafkaTopic[] unmanagedKafkaTopics() {
         return new KafkaTopic[] {
-                kafkaTopic(NAMESPACE, "foo", false, "foo", 2, 1),
-                kafkaTopic(NAMESPACE, "foo", false, null, 2, 1),
-                kafkaTopic(NAMESPACE, "foo", false, "FOO", 2, 1),
+                kafkaTopic(NAMESPACE, "my-topic", false, "my-topic", 2, 1),
+                kafkaTopic(NAMESPACE, "my-topic", false, null, 2, 1),
+                kafkaTopic(NAMESPACE, "my-topic", false, "MY-TOPIC", 2, 1),
         };
     }
 
     static KafkaTopic[] unselectedKafkaTopics() {
         return new KafkaTopic[] {
-                kafkaTopic(NAMESPACE, "foo", Map.of(), null, true, "FOO", 2, 1, null),
-                kafkaTopic(NAMESPACE, "foo", Map.of("foo", "FOO"), null, true, "foo", 2, 1, null),
-                kafkaTopic(NAMESPACE, "foo", Map.of("quux", "QUUX"), null, true, null, 2, 1, null),
+                kafkaTopic(NAMESPACE, "my-topic", Map.of(), null, true, "my-topic", 2, 1, null),
+                kafkaTopic(NAMESPACE, "my-topic", Map.of("foo", "FOO"), null, true, "my-topic", 2, 1, null),
+                kafkaTopic(NAMESPACE, "my-topic", Map.of("quux", "QUUX"), null, true, null, 2, 1, null),
         };
     }
 
@@ -453,6 +456,7 @@ class TopicControllerIT {
         assertNotNull(reconciled.getMetadata().getFinalizers());
         assertEquals(operatorConfig.useFinalizer(), reconciled.getMetadata().getFinalizers().contains(BatchingTopicController.FINALIZER));
         assertEquals(expectedTopicName, reconciled.getStatus().getTopicName());
+        assertNotNull(reconciled.getStatus().getTopicId());
 
         // Check topic in Kafka
         TopicDescription topicDescription = awaitTopicDescription(expectedTopicName);
@@ -474,6 +478,42 @@ class TopicControllerIT {
         LOGGER.info("Test created KafkaTopic {} with resourceVersion {}",
                 created.getMetadata().getName(), BatchingTopicController.resourceVersion(created));
         return waitUntil(created, condition);
+    }
+
+    private List<KafkaTopic> createTopicsConcurrently(KafkaCluster kc, KafkaTopic... kts) throws InterruptedException, ExecutionException {
+        if (kts == null || kts.length == 0) {
+            throw new IllegalArgumentException("You need pass at least one topic to be created");
+        }
+        String ns = namespace(kts[0].getMetadata().getNamespace());
+        maybeStartOperator(topicOperatorConfig(ns, kc));
+        ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+        CountDownLatch latch = new CountDownLatch(kts.length);
+        List<KafkaTopic> result = new ArrayList<>();
+        for (KafkaTopic kt : kts) {
+            executor.submit(() -> {
+                try {
+                    var created = Crds.topicOperation(client).resource(kt).create();
+                    LOGGER.info("Test created KafkaTopic {} with creationTimestamp {}",
+                        created.getMetadata().getName(),
+                        created.getMetadata().getCreationTimestamp());
+                    var reconciled = waitUntil(created, readyIsTrueOrFalse());
+                    result.add(reconciled);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+                latch.countDown();
+            });
+        }
+        latch.await(1, TimeUnit.MINUTES);
+        try {
+            executor.shutdown();
+            executor.awaitTermination(5, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            if (!executor.isTerminated()) {
+                executor.shutdownNow();
+            }
+        }
+        return result;
     }
 
     private KafkaTopic pauseTopic(String namespace, String topicName) {
@@ -662,13 +702,13 @@ class TopicControllerIT {
                 5L,
                 TimeUnit.SECONDS)) {
             createTopicAndAssertSuccess(kafkaCluster, kt);
-            assertTrue(operator.controller.topics.containsKey("foo")
-                            || operator.controller.topics.containsKey("FOO"),
+            assertTrue(operator.controller.topics.containsKey("my-topic")
+                            || operator.controller.topics.containsKey("MY-TOPIC"),
                     "Expect selected resource to be present in topics map");
 
             // when
             LOGGER.debug("##Modifying");
-            unmanaged = modifyTopic(kt, theKt -> {
+            unmanaged = TopicOperatorTestUtil.modifyTopic(client, kt, theKt -> {
                 theKt.getMetadata().setLabels(unmatchedLabels);
                 theKt.getSpec().setPartitions(3);
                 return theKt;
@@ -686,9 +726,9 @@ class TopicControllerIT {
         assertEquals(Set.of(kt.getSpec().getReplicas()), replicationFactors(topicDescription));
         assertEquals(Map.of(), topicConfigMap(expectedTopicName));
 
-        Map<String, Set<KubeRef>> topics = new HashMap<>(operator.controller.topics);
-        assertFalse(topics.containsKey("foo")
-                        || topics.containsKey("FOO"),
+        Map<String, List<KubeRef>> topics = new HashMap<>(operator.controller.topics);
+        assertFalse(topics.containsKey("my-topic")
+                        || topics.containsKey("MY-TOPIC"),
                 "Transition to a non-selected resource should result in removal from topics map: " + topics);
     }
 
@@ -719,8 +759,8 @@ class TopicControllerIT {
         assertUnknownTopic(expectedTopicName);
         assertNull(created.getStatus(), "Expect status not to be set");
         assertTrue(created.getMetadata().getFinalizers().isEmpty());
-        assertFalse(operator.controller.topics.containsKey("foo")
-                        || operator.controller.topics.containsKey("FOO"),
+        assertFalse(operator.controller.topics.containsKey("my-topic")
+                        || operator.controller.topics.containsKey("MY-TOPIC"),
                 "Expect unselected resource to be absent from topics map");
 
         // when
@@ -733,8 +773,8 @@ class TopicControllerIT {
                 readyIsTrue());
 
         // then
-        assertTrue(operator.controller.topics.containsKey("foo")
-                        || operator.controller.topics.containsKey("FOO"),
+        assertTrue(operator.controller.topics.containsKey("my-topic")
+                        || operator.controller.topics.containsKey("MY-TOPIC"),
                 "Expect selected resource to be present in topics map");
 
         assertNotNull(managed.getMetadata().getFinalizers());
@@ -743,8 +783,8 @@ class TopicControllerIT {
         TopicDescription topicDescription = awaitTopicDescription(expectedTopicName);
         assertEquals(3, numPartitions(topicDescription));
 
-        assertTrue(operator.controller.topics.containsKey("foo")
-                        || operator.controller.topics.containsKey("FOO"),
+        assertTrue(operator.controller.topics.containsKey("my-topic")
+                        || operator.controller.topics.containsKey("MY-TOPIC"),
                 "Expect selected resource to be present in topics map");
 
     }
@@ -937,8 +977,8 @@ class TopicControllerIT {
 
         // when: resync
         try (var logCaptor = LogCaptor.logMessageMatches(BatchingLoop.LoopRunnable.LOGGER,
-                Level.DEBUG,
-                "\\[Batch #[0-9]+\\] Reconciled batch",
+                Level.INFO,
+                "\\[Batch #[0-9]+\\] Batch reconciliation completed",
                 5L,
                 TimeUnit.SECONDS)) {
             LOGGER.debug("Waiting for a full resync");
@@ -1054,7 +1094,7 @@ class TopicControllerIT {
         // when
         var unmanaged = modifyTopicAndAwait(kt, theKt -> {
             return new KafkaTopicBuilder(theKt)
-                    .editOrNewMetadata().addToAnnotations(BatchingTopicController.MANAGED, "false").endMetadata()
+                    .editOrNewMetadata().addToAnnotations(TopicOperatorUtil.MANAGED, "false").endMetadata()
                     .editOrNewSpec().withPartitions(3).endSpec()
                     .build();
         },
@@ -1089,13 +1129,13 @@ class TopicControllerIT {
             KafkaCluster kafkaCluster) throws ExecutionException, InterruptedException, TimeoutException {
         // given
         var created = createTopic(kafkaCluster, kt);
-        if (BatchingTopicController.isManaged(kt)) {
+        if (TopicOperatorUtil.isManaged(kt)) {
             assertCreateSuccess(kt, created);
         }
 
         // when: The finalizer is removed
         LOGGER.debug("Removing finalizer");
-        var postUpdate = modifyTopic(created, theKt1 -> {
+        var postUpdate = TopicOperatorTestUtil.modifyTopic(client, created, theKt1 -> {
             theKt1.getMetadata().getFinalizers().remove(BatchingTopicController.FINALIZER);
             return theKt1;
         });
@@ -1185,12 +1225,16 @@ class TopicControllerIT {
     }
 
     private static TopicOperatorConfig topicOperatorConfig(String ns, KafkaCluster kafkaCluster, boolean useFinalizer, long fullReconciliationIntervalMs) {
-        return new TopicOperatorConfig(ns, Labels.fromMap(SELECTOR),
-                kafkaCluster.getBootstrapServers(), TopicControllerIT.class.getSimpleName(), fullReconciliationIntervalMs,
+        return new TopicOperatorConfig(ns, 
+                Labels.fromMap(SELECTOR),
+                kafkaCluster.getBootstrapServers(), 
+                TopicControllerIT.class.getSimpleName(), 
+                fullReconciliationIntervalMs,
                 false, "", "", "", "", "",
                 false, "", "", "", "",
                 useFinalizer,
-                100, 100, 10, false);
+                100, 100, 10, false,
+                false, false, "", 9090, false, false, "", "", "");
     }
 
     @ParameterizedTest
@@ -1209,8 +1253,8 @@ class TopicControllerIT {
 
         // when
         try (var logCaptor = LogCaptor.logMessageMatches(BatchingLoop.LoopRunnable.LOGGER,
-                Level.DEBUG,
-                "\\[Batch #[0-9]+\\] Reconciled batch",
+                Level.INFO,
+                "\\[Batch #[0-9]+\\] Batch reconciliation completed",
                 5L,
                 TimeUnit.SECONDS)) {
             try (var logCaptor2 = LogCaptor.logMessageMatches(BatchingTopicController.LOGGER,
@@ -1243,8 +1287,8 @@ class TopicControllerIT {
         int specReplicas = kt.getSpec().getReplicas();
 
         createTopicAndAssertSuccess(kafkaCluster, kt);
-        modifyTopic(kt, theKt -> {
-            return new KafkaTopicBuilder(theKt).editOrNewMetadata().addToAnnotations(BatchingTopicController.MANAGED, "false").endMetadata().build();
+        TopicOperatorTestUtil.modifyTopic(client, kt, theKt -> {
+            return new KafkaTopicBuilder(theKt).editOrNewMetadata().addToAnnotations(TopicOperatorUtil.MANAGED, "false").endMetadata().build();
         });
 
         // when
@@ -1274,8 +1318,8 @@ class TopicControllerIT {
         int specReplicas = kt.getSpec().getReplicas();
 
         createTopicAndAssertSuccess(kafkaCluster, kt);
-        modifyTopic(kt, theKt -> {
-            return new KafkaTopicBuilder(theKt).editOrNewMetadata().addToAnnotations(BatchingTopicController.MANAGED, "false").endMetadata().build();
+        TopicOperatorTestUtil.modifyTopic(client, kt, theKt -> {
+            return new KafkaTopicBuilder(theKt).editOrNewMetadata().addToAnnotations(TopicOperatorUtil.MANAGED, "false").endMetadata().build();
         });
 
         Crds.topicOperation(client).resource(kt).delete();
@@ -1452,41 +1496,20 @@ class TopicControllerIT {
         assertNull(assertExactlyOneCondition(fixed).getReason());
     }
 
-    private KafkaTopic modifyTopic(KafkaTopic kt, UnaryOperator<KafkaTopic> changer) {
-        String ns = kt.getMetadata().getNamespace();
-        String metadataName = kt.getMetadata().getName();
-        // Occasionally a single call to edit() will throw with a HTTP 409 (Conflict)
-        // so let's try up to 3 times
-        int i = 2;
-        while (true) {
-            try {
-                KafkaTopic edited = Crds.topicOperation(client).inNamespace(ns).withName(metadataName).edit(changer);
-                LOGGER.info("Test modified KafkaTopic {} with new resourceVersion {}",
-                        edited.getMetadata().getName(), BatchingTopicController.resourceVersion(edited));
-                return edited;
-            } catch (KubernetesClientException e) {
-                if (i == 0 || e.getCode() != 409 /* conflict */) {
-                    throw e;
-                }
-            }
-            i--;
-        }
-    }
-
     private KafkaTopic modifyTopicAndAwait(KafkaTopic kt, UnaryOperator<KafkaTopic> changer, Predicate<KafkaTopic> predicate) {
-        var edited = modifyTopic(kt, changer);
+        var edited = TopicOperatorTestUtil.modifyTopic(client, kt, changer);
         var postUpdateGeneration = edited.getMetadata().getGeneration();
         Predicate<KafkaTopic> topicWasSyncedAndMatchesPredicate = new Predicate<>() {
             @Override
             public boolean test(KafkaTopic theKt) {
                 return theKt.getStatus() != null
-                        && (theKt.getStatus().getObservedGeneration() >= postUpdateGeneration || isPaused(kt))
+                        && (theKt.getStatus().getObservedGeneration() >= postUpdateGeneration || TopicOperatorUtil.isPaused(kt))
                         && predicate.test(theKt);
             }
 
             @Override
             public String toString() {
-                return "observedGeneration" + (!isPaused(kt) ? " >= " : " == ") + postUpdateGeneration + " and " + predicate;
+                return "observedGeneration" + (!TopicOperatorUtil.isPaused(kt) ? " >= " : " == ") + postUpdateGeneration + " and " + predicate;
             }
         };
         return waitUntil(edited, topicWasSyncedAndMatchesPredicate);
@@ -1834,56 +1857,98 @@ class TopicControllerIT {
 
     @Test
     public void shouldFailIfNumPartitionsDivergedWithConfigChange(@BrokerConfig(name = "auto.create.topics.enable", value = "false")
-                                                  KafkaCluster kafkaCluster) throws ExecutionException, InterruptedException, TimeoutException {
-        // Scenario from https://github.com/strimzi/strimzi-kafka-operator/pull/8627#pullrequestreview-1477513413
+                                                                  KafkaCluster kafkaCluster) throws ExecutionException, InterruptedException, TimeoutException {
+        // scenario from https://github.com/strimzi/strimzi-kafka-operator/pull/8627#pullrequestreview-1477513413
+        var firstTopicName = "first";
+        var secondTopicName = "second"; 
+        
+        // create topic
+        LOGGER.info("Create {}", firstTopicName);
+        var firstTopic = kafkaTopic(NAMESPACE, firstTopicName, null, null, 1, 1);
+        firstTopic = createTopicAndAssertSuccess(kafkaCluster, firstTopic);
 
-        // given
-
-        // create foo
-        var topicName = randomTopicName();
-        LOGGER.info("Create foo");
-        var foo = kafkaTopic(NAMESPACE, "foo", null, null, 1, 1);
-        var createdFoo = createTopicAndAssertSuccess(kafkaCluster, foo);
-
-        // TODO remove after fixing https://github.com/strimzi/strimzi-kafka-operator/issues/9270
-        Thread.sleep(1000);
-
-        // create conflicting bar
-        LOGGER.info("Create conflicting bar");
-        var bar = kafkaTopic(NAMESPACE, "bar", SELECTOR, null, null, "foo", 1, 1,
-                Map.of(TopicConfig.COMPRESSION_TYPE_CONFIG, "snappy"));
-        var createdBar = createTopic(kafkaCluster, bar);
-        assertTrue(readyIsFalse().test(createdBar));
-        var condition = assertExactlyOneCondition(createdBar);
+        // create conflicting topic
+        LOGGER.info("Create conflicting {}", secondTopicName);
+        var secondTopic = kafkaTopic(NAMESPACE, secondTopicName, SELECTOR, null, null, firstTopicName, 
+                1, 1, Map.of(TopicConfig.COMPRESSION_TYPE_CONFIG, "snappy"));
+        secondTopic = createTopic(kafkaCluster, secondTopic);
+        assertTrue(readyIsFalse().test(secondTopic));
+        var condition = assertExactlyOneCondition(secondTopic);
         assertEquals(TopicOperatorException.Reason.RESOURCE_CONFLICT.reason, condition.getReason());
-        assertEquals(format("Managed by Ref{namespace='%s', name='%s'}", NAMESPACE, "foo"), condition.getMessage());
+        assertEquals(format("Managed by Ref{namespace='%s', name='%s'}", NAMESPACE, firstTopicName), condition.getMessage());
 
-        // increase partitions of foo
-        LOGGER.info("Increase partitions of foo");
-        var editedFoo = modifyTopicAndAwait(createdFoo, theKt ->
-                        new KafkaTopicBuilder(theKt).editSpec().withPartitions(3).endSpec().build(),
-                readyIsTrue());
+        // increase partitions of topic
+        LOGGER.info("Increase partitions of {}", firstTopicName);
+        var editedFoo = modifyTopicAndAwait(firstTopic, theKt ->
+                new KafkaTopicBuilder(theKt).editSpec().withPartitions(3).endSpec().build(),
+            readyIsTrue());
 
-        // unmanage foo
-        LOGGER.info("Unmanage foo");
-        var unmanagedFoo = modifyTopicAndAwait(editedFoo, theKt ->
-                        new KafkaTopicBuilder(theKt).editMetadata().addToAnnotations(BatchingTopicController.MANAGED, "false").endMetadata().build(),
-                readyIsTrue());
+        // unmanage topic
+        LOGGER.info("Unmanage {}", firstTopicName);
+        var unmanagedFoo = modifyTopicAndAwait(editedFoo, theKt -> 
+                new KafkaTopicBuilder(theKt).editMetadata().addToAnnotations(TopicOperatorUtil.MANAGED, "false").endMetadata().build(), 
+            readyIsTrue());
 
-        // when: delete foo
-        LOGGER.info("Delete foo");
+        // when: delete topic
+        LOGGER.info("Delete {}", firstTopicName);
         Crds.topicOperation(client).resource(unmanagedFoo).delete();
         LOGGER.info("Test deleted KafkaTopic {} with resourceVersion {}",
-                unmanagedFoo.getMetadata().getName(), BatchingTopicController.resourceVersion(unmanagedFoo));
+            unmanagedFoo.getMetadata().getName(), BatchingTopicController.resourceVersion(unmanagedFoo));
         Resource<KafkaTopic> resource = Crds.topicOperation(client).resource(unmanagedFoo);
         TopicOperatorTestUtil.waitUntilCondition(resource, Objects::isNull);
 
-        // then: expect bar's unreadiness to be due to mismatching #partitions
-        waitUntil(createdBar, readyIsFalseAndReasonIs(
-                TopicOperatorException.Reason.NOT_SUPPORTED.reason,
-                "Decreasing partitions not supported"));
+        // then: expect conflicting topic's unreadiness to be due to mismatching #partitions
+        waitUntil(secondTopic, readyIsFalseAndReasonIs(
+            TopicOperatorException.Reason.NOT_SUPPORTED.reason,
+            "Decreasing partitions not supported"));
+    }
+    
+    @RepeatedTest(10)
+    public void shouldDetectConflictingKafkaTopicCreations(
+            @BrokerConfig(name = "auto.create.topics.enable", value = "false")
+            KafkaCluster kafkaCluster) throws ExecutionException, InterruptedException {
+        var foo = kafkaTopic(NAMESPACE, "foo", null, null, 1, 1);
+        var bar = kafkaTopic(NAMESPACE, "bar", SELECTOR, null, null, "foo", 1, 1,
+            Map.of(TopicConfig.COMPRESSION_TYPE_CONFIG, "snappy"));
+
+        LOGGER.info("Create conflicting topics: foo and bar");
+        var reconciledTopics = createTopicsConcurrently(kafkaCluster, foo, bar);
+        var reconciledFoo = TopicOperatorTestUtil.findKafkaTopicByName(reconciledTopics, "foo");
+        var reconciledBar = TopicOperatorTestUtil.findKafkaTopicByName(reconciledTopics, "bar");
+
+        // only one resource with the same topicName should be reconciled
+        var fooFailed = readyIsFalse().test(reconciledFoo);
+        var barFailed = readyIsFalse().test(reconciledBar);
+        assertTrue(fooFailed ^ barFailed);
+
+        if (fooFailed) {
+            assertKafkaTopicConflict(reconciledFoo, reconciledBar);
+        } else {
+            assertKafkaTopicConflict(reconciledBar, reconciledFoo);
+        }
     }
 
+    private void assertKafkaTopicConflict(KafkaTopic failed, KafkaTopic ready) {
+        // the error message should refer to the ready resource name
+        var condition = assertExactlyOneCondition(failed);
+        assertEquals(TopicOperatorException.Reason.RESOURCE_CONFLICT.reason, condition.getReason());
+        assertEquals(format("Managed by Ref{namespace='%s', name='%s'}", 
+            ready.getMetadata().getNamespace(), ready.getMetadata().getName()), condition.getMessage());
+
+        // the failed resource should become ready after we unmanage and delete the other
+        LOGGER.info("Unmanage {}", ready.getMetadata().getName());
+        var unmanagedBar = modifyTopicAndAwait(ready, theKt -> new KafkaTopicBuilder(theKt)
+                .editMetadata().addToAnnotations(TopicOperatorUtil.MANAGED, "false").endMetadata().build(),
+            readyIsTrue());
+
+        LOGGER.info("Delete {}", ready.getMetadata().getName());
+        Crds.topicOperation(client).resource(unmanagedBar).delete();
+        Resource<KafkaTopic> resource = Crds.topicOperation(client).resource(unmanagedBar);
+        TopicOperatorTestUtil.waitUntilCondition(resource, Objects::isNull);
+
+        waitUntil(failed, readyIsTrue());
+    }
+    
     private static <T> KafkaFuture<T> failedFuture(Throwable error) {
         var future = new KafkaFutureImpl<T>();
         future.completeExceptionally(error);
@@ -1921,7 +1986,8 @@ class TopicControllerIT {
                 false, "", "", "", "", "",
                 false, "", "", "", "",
                 true,
-                1, 100, 5_0000, false);
+                1, 100, 5_0000, false,
+                false, false, "", 9090, false, false, "", "", "");
 
         maybeStartOperator(config);
 
@@ -1995,7 +2061,7 @@ class TopicControllerIT {
         KafkaTopic kt = pauseTopic(NAMESPACE, topicName);
 
         // generation: 3, observedGeneration: 1
-        modifyTopic(kt, theKt -> {
+        TopicOperatorTestUtil.modifyTopic(client, kt, theKt -> {
             theKt.getSpec().setConfig(Map.of(TopicConfig.FLUSH_MS_CONFIG, "1000"));
             return theKt;
         });

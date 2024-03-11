@@ -13,7 +13,6 @@ import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,13 +28,13 @@ public class KafkaTopicScalabilityUtils {
     private static final Logger LOGGER = LogManager.getLogger(KafkaTopicUtils.class);
     private KafkaTopicScalabilityUtils() {}
 
-    public static void createTopicsViaK8s(ExtensionContext extensionContext, String namespaceName, String clusterName, String topicPrefix,
+    public static void createTopicsViaK8s(String namespaceName, String clusterName, String topicPrefix,
                                           int numberOfTopics, int numberOfPartitions, int numberOfReplicas, int minInSyncReplicas) {
         LOGGER.info("Creating {} Topics via Kubernetes", numberOfTopics);
 
         for (int i = 0; i < numberOfTopics; i++) {
             String currentTopicName = topicPrefix + i;
-            ResourceManager.getInstance().createResourceWithoutWait(extensionContext, KafkaTopicTemplates.topic(
+            ResourceManager.getInstance().createResourceWithoutWait(KafkaTopicTemplates.topic(
                             clusterName, currentTopicName, numberOfPartitions, numberOfReplicas, minInSyncReplicas, namespaceName).build());
         }
     }

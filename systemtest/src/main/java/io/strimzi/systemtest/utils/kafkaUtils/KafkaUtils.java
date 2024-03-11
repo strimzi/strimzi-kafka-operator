@@ -15,6 +15,7 @@ import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.kafka.Kafka;
+import io.strimzi.api.kafka.model.kafka.KafkaMetadataState;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.kafka.listener.ListenerStatus;
@@ -180,28 +181,25 @@ public class KafkaUtils {
 
     @SuppressWarnings("unchecked")
     public static void waitForClusterStability(String namespaceName, String clusterName) {
-        LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, kafkaComponentName(clusterName));
-        LabelSelector zkSelector = KafkaResource.getLabelSelector(clusterName, zookeeperComponentName(clusterName));
+        LabelSelector brokerSelector = KafkaResource.getLabelSelector(clusterName, kafkaComponentName(clusterName));
+        LabelSelector controllerSelector = KafkaResource.getLabelSelector(clusterName, zookeeperComponentName(clusterName));
 
-        Map<String, String>[] zkPods = new Map[1];
-        Map<String, String>[] kafkaPods = new Map[1];
+        Map<String, String>[] controllerPods = new Map[1];
+        Map<String, String>[] brokerPods = new Map[1];
         Map<String, String>[] eoPods = new Map[1];
 
         LOGGER.info("Waiting for cluster stability");
 
         int[] count = {0};
 
-        kafkaPods[0] = PodUtils.podSnapshot(namespaceName, kafkaSelector);
-
-        if (!Environment.isKRaftModeEnabled()) {
-            zkPods[0] = PodUtils.podSnapshot(namespaceName, zkSelector);
-        }
+        brokerPods[0] = PodUtils.podSnapshot(namespaceName, brokerSelector);
+        controllerPods[0] = PodUtils.podSnapshot(namespaceName, controllerSelector);
         eoPods[0] = DeploymentUtils.depSnapshot(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName));
 
         TestUtils.waitFor("Cluster to be stable and ready", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.TIMEOUT_FOR_CLUSTER_STABLE, () -> {
-            Map<String, String> kafkaSnapshot = PodUtils.podSnapshot(namespaceName, kafkaSelector);
+            Map<String, String> kafkaSnapshot = PodUtils.podSnapshot(namespaceName, brokerSelector);
             Map<String, String> eoSnapshot = DeploymentUtils.depSnapshot(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName));
-            boolean kafkaSameAsLast = kafkaSnapshot.equals(kafkaPods[0]);
+            boolean kafkaSameAsLast = kafkaSnapshot.equals(brokerPods[0]);
             boolean eoSameAsLast = eoSnapshot.equals(eoPods[0]);
 
             if (!kafkaSameAsLast) {
@@ -212,9 +210,9 @@ public class KafkaUtils {
             }
 
             if (!Environment.isKRaftModeEnabled()) {
-                Map<String, String> zkSnapshot = PodUtils.podSnapshot(namespaceName, zkSelector);
+                Map<String, String> zkSnapshot = PodUtils.podSnapshot(namespaceName, controllerSelector);
 
-                boolean zkSameAsLast = zkSnapshot.equals(zkPods[0]);
+                boolean zkSameAsLast = zkSnapshot.equals(controllerPods[0]);
 
                 if (!zkSameAsLast) {
                     LOGGER.warn("ZK Cluster not stable");
@@ -228,7 +226,7 @@ public class KafkaUtils {
                     }
                     return false;
                 }
-                zkPods[0] = zkSnapshot;
+                controllerPods[0] = zkSnapshot;
             } else {
                 if (kafkaSameAsLast && eoSameAsLast) {
                     int c = count[0]++;
@@ -240,7 +238,7 @@ public class KafkaUtils {
                     return false;
                 }
             }
-            kafkaPods[0] = kafkaSnapshot;
+            brokerPods[0] = kafkaSnapshot;
             eoPods[0] = eoSnapshot;
 
             count[0] = 0;
@@ -306,10 +304,10 @@ public class KafkaUtils {
      */
     public synchronized static boolean verifyPodDynamicConfiguration(final String namespaceName, String scraperPodName, String bootstrapServer, String kafkaPodNamePrefix, String brokerConfigName, Object value) {
 
-        List<Pod> kafkaPods = kubeClient().listPodsByPrefixInName(namespaceName, kafkaPodNamePrefix);
+        List<Pod> brokerPods = kubeClient().listPodsByPrefixInName(namespaceName, kafkaPodNamePrefix);
         int[] brokerId = {0};
 
-        for (Pod pod : kafkaPods) {
+        for (Pod pod : brokerPods) {
 
             TestUtils.waitFor("dyn.configuration to change", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.RECONCILIATION_INTERVAL + Duration.ofSeconds(10).toMillis(),
                 () -> {
@@ -583,5 +581,17 @@ public class KafkaUtils {
 
     public static void removeAnnotation(String clusterName, String namespaceName, String annotationKey) {
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> kafka.getMetadata().getAnnotations().remove(annotationKey), namespaceName);
+    }
+
+    public static void waitUntilKafkaStatusContainsKafkaMetadataState(String namespaceName, String clusterName, KafkaMetadataState desiredKafkaMetadataState) {
+        TestUtils.waitFor(String.join("Kafka status to be contain kafkaMetadataState: %s", desiredKafkaMetadataState.name()), TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_STATUS_TIMEOUT, () -> {
+            Kafka k = KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get();
+            return k.getStatus().getKafkaMetadataState().equals(desiredKafkaMetadataState);
+        });
+    }
+
+    public static String getKafkaLogFolderNameInPod(String namespaceName, String kafkaPodName) {
+        return ResourceManager.cmdKubeClient().namespace(namespaceName)
+            .execInPod(kafkaPodName, "/bin/bash", "-c", "ls /var/lib/kafka/data | grep \"kafka-log[0-9]\\+\" -o").out().trim();
     }
 }

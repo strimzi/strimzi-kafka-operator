@@ -31,14 +31,14 @@ In this procedure, we use a Kafka cluster named `my-cluster` within the `my-proj
 .Renewing the Cluster CA secret
 [source,shell]
 ----
-kubectl annotate secret my-cluster-cluster-ca-cert -n my-project strimzi.io/force-renew=true
+kubectl annotate secret my-cluster-cluster-ca-cert -n my-project strimzi.io/force-renew="true"
 
 ----
 +
 .Renewing the Clients CA secret
 [source,shell]
 ----
-kubectl annotate secret my-cluster-clients-ca-cert -n my-project strimzi.io/force-renew=true
+kubectl annotate secret my-cluster-clients-ca-cert -n my-project strimzi.io/force-renew="true"
 ----
 
 . At the next reconciliation, the Cluster Operator generates new certificates. 

@@ -1,21 +1,59 @@
 # CHANGELOG
 
+## 0.41.0
+
+* Added support for topic replication factor change to the Unidirectional Topic Operator when Cruise Control integration is enabled.
+
 ## 0.40.0
 
-* Remove support for Apache Kafka 3.5.0 and 3.5.1
+* Add support for Apache Kafka 3.7.0.
+  Remove support for Apache Kafka 3.5.0, 3.5.1, and 3.5.2.
 * The `UseKRaft` feature gate moves to beta stage and is enabled by default.
   If needed, `UseKRaft` can be disabled in the feature gates configuration in the Cluster Operator.
+* Add support for ZooKeeper to KRaft migration by enabling the users to move from using ZooKeeper to store metadata to use KRaft.
+* Add support for moving from dedicated controller-only KRaft nodes to mixed KRaft nodes
 * Fix NullPointerException from missing listenerConfig when using custom auth
 * Added support for Kafka Exporter `offset.show-all` parameter
+* Prevent removal of the `broker` process role from KRaft mixed-nodes that have assigned partition-replicas
 * Improve broker scale-down prevention to continue in reconciliation when scale-down cannot be executed
+* Added support for Tiered Storage by enabling the configuration of custom storage plugins through the Kafka custom resource.
+* Update HTTP bridge to latest 0.28.0 release
 
 ### Changes, deprecations and removals
 
 * **From Strimzi 0.40.0 on, we support only Kubernetes 1.23 and newer.**
   Kubernetes 1.21 and 1.22 are not supported anymore.
+* [#9508](https://github.com/strimzi/strimzi-kafka-operator/pull/9508) fixes the Strimzi CRDs and their definitions of labels and annotations.
+  This change brings our CRDs in-sync with the Kubernetes APIs.
+  After this fix, the label and annotation definitions in our CRDs (for example in the `template` sections) cannot contain integer values anymore and have to always use string values.
+  If your custom resources use an integer value, for example:
+  ```
+  template:
+    apiService:
+      metadata:
+        annotations:
+          discovery.myapigateway.io/port: 8080
+  ```
+  You might get an error similar to this when applying the resource:
+  ```
+  * spec.template.apiService.metadata.annotations.discovery.myapigateway.io/port: Invalid value: "integer": spec.template.apiService.metadata.annotations.discovery.myapigateway.io/port in body must be of type string: "integer"
+  ```
+  To fix the issue, just use a string value instead of an integer:
+  ```
+  template:
+    apiService:
+      metadata:
+        annotations:
+          discovery.myapigateway.io/port: "8080"
+  ```
 * Support for the JmxTrans component is now completely removed.
   If you are upgrading from Strimzi 0.34 or earlier and have JmxTrans enabled in `.spec.jmxTrans` of the `Kafka` custom resource, you should disable it before the upgrade or delete it manually after the upgrade is complete.
 * The `api` module was refactored and classes were moved to new packages.
+* Strimzi Drain Cleaner 1.1.0 (included in the Strimzi 0.40.0 installation files) changes the way it handles Kubernetes eviction requests.
+  It denies them instead of allowing them.
+  This new behavior does not require the `PodDisruptionBudget` to be set to `maxUnavailable: 0`.
+  We expect this to improve the compatibility with various tools used for scaling Kubernetes clusters such as [Karpenter](https://karpenter.sh/).
+  If you observe any problems with your toolchain or just want to stick with the previous behavior, you can use the `STRIMZI_DENY_EVICTION` environment variable and set it to `false` to switch back to the old (legacy) mode.
 
 ## 0.39.0
 

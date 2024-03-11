@@ -54,12 +54,12 @@ public class KafkaConnectApiIT {
 
     @BeforeEach
     public void beforeEach() throws InterruptedException {
-        // Start a 3 node connect cluster
+        // Start a 1 node connect cluster
         connectCluster = new ConnectCluster()
                 .usingBrokers(cluster.getBootstrapServers())
-                .addConnectNodes(3);
+                .addConnectNodes(1);
         connectCluster.startup();
-        port = connectCluster.getPort(2);
+        port = connectCluster.getPort(0);
     }
 
     @AfterEach

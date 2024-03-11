@@ -7,6 +7,7 @@
 
 [role="_abstract"]
 This procedure describes how to scale up a node pool to add new nodes.
+Currently, scale up is only possible for broker-only node pools containing nodes that run as dedicated brokers.
 
 In this procedure, we start with three nodes for node pool `pool-a`:
 
@@ -45,7 +46,7 @@ For example, node pool `pool-a` has three replicas. We add a node by increasing 
 kubectl scale kafkanodepool pool-a --replicas=4
 ----
 
-. Check the status of the deployment and wait for the pods in the node pool to be created and have a status of `READY`.
+. Check the status of the deployment and wait for the pods in the node pool to be created and ready (`1/1`).
 +
 [source,shell]
 ----
@@ -64,4 +65,19 @@ my-cluster-pool-a-3  1/1    Running  0
 
 . Reassign the partitions after increasing the number of nodes in the node pool.
 +
-After scaling up a node pool, you can use the Cruise Control `add-brokers` mode to move partition replicas from existing brokers to the newly added brokers.
+After scaling up a node pool, use the Cruise Control `add-brokers` mode to move partition replicas from existing brokers to the newly added brokers.
++
+.Using Cruise Control to reassign partition replicas
+[source,shell,subs="+attributes"]
+----
+apiVersion: {KafkaRebalanceApiVersion}
+kind: KafkaRebalance
+metadata:
+  # ...
+spec:
+  mode: add-brokers
+  brokers: [3]
+----
++
+We are reassigning partitions to node `my-cluster-pool-a-3`. 
+The reassignment can take some time depending on the number of topics and partitions in the cluster.

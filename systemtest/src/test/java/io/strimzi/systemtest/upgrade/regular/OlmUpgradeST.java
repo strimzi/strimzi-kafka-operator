@@ -31,7 +31,6 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.io.File;
 import java.io.IOException;
@@ -57,8 +56,8 @@ public class OlmUpgradeST extends AbstractUpgradeST {
     private static final Logger LOGGER = LogManager.getLogger(OlmUpgradeST.class);
     private final OlmVersionModificationData olmUpgradeData = new VersionModificationDataLoader(ModificationType.OLM_UPGRADE).getOlmUpgradeData();
     @Test
-    void testStrimziUpgrade(ExtensionContext extensionContext) throws IOException {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+    void testStrimziUpgrade() throws IOException {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final String toVersion = olmUpgradeData.getToVersion();
         final String fromVersion = olmUpgradeData.getFromVersion();
 
@@ -99,7 +98,7 @@ public class OlmUpgradeST extends AbstractUpgradeST {
             .endSpec()
             .build();
 
-        resourceManager.createResourceWithWait(extensionContext, kafkaUpgradeTopic);
+        resourceManager.createResourceWithWait(kafkaUpgradeTopic);
 
         KafkaClients kafkaBasicClientJob = new KafkaClientsBuilder()
             .withProducerName(testStorage.getProducerName())
@@ -111,7 +110,7 @@ public class OlmUpgradeST extends AbstractUpgradeST {
             .withDelayMs(1000)
             .build();
 
-        resourceManager.createResourceWithWait(extensionContext, kafkaBasicClientJob.producerStrimzi(), kafkaBasicClientJob.consumerStrimzi());
+        resourceManager.createResourceWithWait(kafkaBasicClientJob.producerStrimzi(), kafkaBasicClientJob.consumerStrimzi());
 
         String clusterOperatorDeploymentName = ResourceManager.kubeClient().getDeploymentNameByPrefix(Environment.OLM_OPERATOR_DEPLOYMENT_NAME);
         LOGGER.info("Old deployment name of Cluster Operator is {}", clusterOperatorDeploymentName);
@@ -136,14 +135,14 @@ public class OlmUpgradeST extends AbstractUpgradeST {
         assertThat(afterUpgradeVersionOfCo, is(toVersion));
 
         // Wait for Rolling Update to finish
-        zkPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(TestConstants.CO_NAMESPACE, zkSelector, 3, zkPods);
-        kafkaPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(TestConstants.CO_NAMESPACE, kafkaSelector, 3, kafkaPods);
+        controllerPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(TestConstants.CO_NAMESPACE, controllerSelector, 3, controllerPods);
+        brokerPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(TestConstants.CO_NAMESPACE, brokerSelector, 3, brokerPods);
         eoPods = DeploymentUtils.waitTillDepHasRolled(TestConstants.CO_NAMESPACE, KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoPods);
         // ======== Cluster Operator upgrade ends ========
 
         // ======== Kafka upgrade starts ========
         logPodImages(TestConstants.CO_NAMESPACE);
-        changeKafkaAndLogFormatVersion(olmUpgradeData, extensionContext);
+        changeKafkaAndLogFormatVersion(olmUpgradeData);
         logPodImages(TestConstants.CO_NAMESPACE);
         // ======== Kafka upgrade ends ========
 
@@ -152,8 +151,8 @@ public class OlmUpgradeST extends AbstractUpgradeST {
     }
 
     @BeforeAll
-    void setup(final ExtensionContext extensionContext) {
-        clusterOperator = clusterOperator.defaultInstallation(extensionContext)
+    void setup() {
+        clusterOperator = clusterOperator.defaultInstallation()
             .withNamespace(CO_NAMESPACE)
             .withBindingsNamespaces(Collections.singletonList(CO_NAMESPACE))
             .withWatchingNamespaces(CO_NAMESPACE)

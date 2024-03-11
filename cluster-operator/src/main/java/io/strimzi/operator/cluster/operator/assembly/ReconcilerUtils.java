@@ -373,12 +373,25 @@ public class ReconcilerUtils {
     }
 
     /**
-     * Checks whether the KRaft mode is enabled for given Kafka custom resource using the strimzi.io/kraft annotation
-     *
-     * @param kafka Tha Kafka custom resource which might have the node-pools annotation
-     * @return True when the KRaft mode is enabled. False otherwise (using ZooKeeper mode).
+     * Creates a hash from Secret's content.
+     * 
+     * @param secret Secret with content.
+     * @return Hash of the secret content.
      */
-    public static boolean kraftEnabled(Kafka kafka) {
-        return KafkaCluster.ENABLED_VALUE_STRIMZI_IO_KRAFT.equals(Annotations.stringAnnotation(kafka, Annotations.ANNO_STRIMZI_IO_KRAFT, "disabled").toLowerCase(Locale.ENGLISH));
+    public static String hashSecretContent(Secret secret) {
+        if (secret == null) {
+            throw new RuntimeException("Secret not found");
+        }
+        
+        if (secret.getData() == null || secret.getData().isEmpty()) {
+            throw new RuntimeException("Empty secret");
+        }
+        
+        StringBuilder sb = new StringBuilder();
+        secret.getData().entrySet().stream()
+            .sorted(Map.Entry.comparingByKey())
+            .forEach(entry -> sb.append(entry.getKey()).append(entry.getValue()));
+        
+        return Util.hashStub(sb.toString());
     }
 }

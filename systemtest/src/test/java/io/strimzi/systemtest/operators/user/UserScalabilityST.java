@@ -18,7 +18,10 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.enums.UserAuthType;
+import io.strimzi.systemtest.resources.NodePoolsConverter;
+import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.storage.TestStorage;
+import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
@@ -27,7 +30,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,28 +39,27 @@ import static io.strimzi.systemtest.TestConstants.SCALABILITY;
 @Tag(SCALABILITY)
 public class UserScalabilityST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(UserScalabilityST.class);
-    private static String clusterName;
-    private static String topicName;
-
+    private TestStorage sharedTestStorage;
+    
     @IsolatedTest
-    void testCreateAndAlterBigAmountOfScramShaUsers(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
-        testCreateAndAlterBigAmountOfUsers(extensionContext, testStorage, UserAuthType.ScramSha);
+    void testCreateAndAlterBigAmountOfScramShaUsers() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        testCreateAndAlterBigAmountOfUsers(testStorage, UserAuthType.ScramSha);
     }
 
     @IsolatedTest
-    void testCreateAndAlterBigAmountOfTlsUsers(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
-        testCreateAndAlterBigAmountOfUsers(extensionContext, testStorage, UserAuthType.Tls);
+    void testCreateAndAlterBigAmountOfTlsUsers() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        testCreateAndAlterBigAmountOfUsers(testStorage, UserAuthType.Tls);
     }
 
-    void testCreateAndAlterBigAmountOfUsers(ExtensionContext extensionContext, final TestStorage testStorage, final UserAuthType authType) {
+    void testCreateAndAlterBigAmountOfUsers(final TestStorage testStorage, final UserAuthType authType) {
         int numberOfUsers = 1000;
 
         List<KafkaUser> usersList = getListOfKafkaUsers(testStorage.getUsername(), numberOfUsers, authType);
 
-        createAllUsersInList(extensionContext, usersList, testStorage.getUsername());
-        alterAllUsersInList(extensionContext, usersList, testStorage.getUsername());
+        createAllUsersInList(usersList, testStorage.getUsername());
+        alterAllUsersInList(usersList, testStorage.getUsername());
     }
 
     private List<KafkaUser> getListOfKafkaUsers(final String userName, final int numberOfUsers, UserAuthType userAuthType) {
@@ -67,7 +68,7 @@ public class UserScalabilityST extends AbstractST {
         KafkaUserAuthorizationSimple usersAcl = new KafkaUserAuthorizationSimpleBuilder()
             .addNewAcl()
                 .withNewAclRuleTopicResource()
-                    .withName(topicName)
+                    .withName(sharedTestStorage.getTopicName())
                 .endAclRuleTopicResource()
                 .withOperations(AclOperation.WRITE, AclOperation.DESCRIBE)
             .endAcl()
@@ -76,7 +77,7 @@ public class UserScalabilityST extends AbstractST {
         for (int i = 0; i < numberOfUsers; i++) {
             if (userAuthType.equals(UserAuthType.Tls)) {
                 usersList.add(
-                    KafkaUserTemplates.tlsUser(Environment.TEST_SUITE_NAMESPACE, clusterName, userName + "-" + i)
+                    KafkaUserTemplates.tlsUser(Environment.TEST_SUITE_NAMESPACE, sharedTestStorage.getClusterName(), userName + "-" + i)
                         .editOrNewSpec()
                             .withAuthorization(usersAcl)
                         .endSpec()
@@ -84,7 +85,7 @@ public class UserScalabilityST extends AbstractST {
                 );
             } else {
                 usersList.add(
-                    KafkaUserTemplates.scramShaUser(Environment.TEST_SUITE_NAMESPACE, clusterName, userName + "-" + i)
+                    KafkaUserTemplates.scramShaUser(Environment.TEST_SUITE_NAMESPACE, sharedTestStorage.getClusterName(), userName + "-" + i)
                         .editOrNewSpec()
                             .withAuthorization(usersAcl)
                         .endSpec()
@@ -96,14 +97,14 @@ public class UserScalabilityST extends AbstractST {
         return usersList;
     }
 
-    private void createAllUsersInList(ExtensionContext extensionContext, List<KafkaUser> listOfUsers, String usersPrefix) {
+    private void createAllUsersInList(List<KafkaUser> listOfUsers, String usersPrefix) {
         LOGGER.info("Creating {} KafkaUsers", listOfUsers.size());
 
-        resourceManager.createResourceWithoutWait(extensionContext, listOfUsers.toArray(new KafkaUser[listOfUsers.size()]));
+        resourceManager.createResourceWithoutWait(listOfUsers.toArray(new KafkaUser[listOfUsers.size()]));
         KafkaUserUtils.waitForAllUsersWithPrefixReady(Environment.TEST_SUITE_NAMESPACE, usersPrefix);
     }
 
-    private void alterAllUsersInList(ExtensionContext extensionContext, List<KafkaUser> listOfUsers, String usersPrefix) {
+    private void alterAllUsersInList(List<KafkaUser> listOfUsers, String usersPrefix) {
         LOGGER.info("Altering {} KafkaUsers", listOfUsers.size());
 
         KafkaUserQuotas kafkaUserQuotas = new KafkaUserQuotasBuilder()
@@ -116,7 +117,7 @@ public class UserScalabilityST extends AbstractST {
         KafkaUserAuthorizationSimple updatedAcl = new KafkaUserAuthorizationSimpleBuilder()
             .addNewAcl()
                 .withNewAclRuleTopicResource()
-                    .withName(topicName)
+                    .withName(sharedTestStorage.getTopicName())
                 .endAclRuleTopicResource()
                 .withOperations(AclOperation.READ, AclOperation.DESCRIBE)
             .endAcl()
@@ -138,17 +139,21 @@ public class UserScalabilityST extends AbstractST {
     }
 
     @BeforeAll
-    void setup(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+    void setup() {
+        sharedTestStorage = new TestStorage(ResourceManager.getTestContext());
 
-        clusterName = testStorage.getClusterName();
-        topicName = testStorage.getTopicName();
-
-        clusterOperator.defaultInstallation(extensionContext)
+        clusterOperator.defaultInstallation()
             .createInstallation()
             .runInstallation();
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
+        resourceManager.createResourceWithWait(
+            NodePoolsConverter.convertNodePoolsIfNeeded(
+                KafkaNodePoolTemplates.brokerPool(sharedTestStorage.getNamespaceName(), sharedTestStorage.getBrokerPoolName(), sharedTestStorage.getClusterName(), 3).build(),
+                KafkaNodePoolTemplates.controllerPool(sharedTestStorage.getNamespaceName(), sharedTestStorage.getControllerPoolName(), sharedTestStorage.getClusterName(), 1).build()
+            )
+        );
+
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(sharedTestStorage.getClusterName(), 3)
             .editMetadata()
                 .withNamespace(Environment.TEST_SUITE_NAMESPACE)
             .endMetadata()
@@ -175,7 +180,7 @@ public class UserScalabilityST extends AbstractST {
                 .endEntityOperator()
             .endSpec()
             .build(),
-            KafkaTopicTemplates.topic(clusterName, topicName, Environment.TEST_SUITE_NAMESPACE).build()
+            KafkaTopicTemplates.topic(sharedTestStorage.getClusterName(), sharedTestStorage.getTopicName(), Environment.TEST_SUITE_NAMESPACE).build()
         );
     }
 }

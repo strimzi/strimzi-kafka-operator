@@ -20,6 +20,8 @@ import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 
+import static io.strimzi.operator.topic.v2.TopicOperatorUtil.topicName;
+
 /**
  * Encapsulates a queue (actually a deque) of {@link TopicEvent}s and a pool of threads (see {@link LoopRunnable}) servicing
  * the reconciliation of those events using a {@link BatchingTopicController}.
@@ -191,7 +193,7 @@ class BatchingLoop {
             try {
                 synchronized (BatchingLoop.this) {
                     // remove the old batch from the inflight set and reset the batch
-                    LOGGER.debugOp("[Batch #{}] Removing batch from inflight", batchId - 1);
+                    LOGGER.traceOp("[Batch #{}] Removing batch from inflight", batchId - 1);
                     batch.toUpdate.stream().map(TopicEvent::toRef).forEach(inFlight::remove);
                     batch.toDelete.stream().map(TopicEvent::toRef).forEach(inFlight::remove);
                     batch.clear();
@@ -200,17 +202,18 @@ class BatchingLoop {
                 }
 
                 if (batch.size() > 0) {
-                    LOGGER.debugOp("[Batch #{}] Reconciling {} topics", batchId, batch.size());
+                    LOGGER.infoOp("[Batch #{}] Reconciling batch of {} topics", batchId, batch.size());
                     // perform reconciliation on new batch
                     if (!batch.toUpdate.isEmpty()) {
                         controller.onUpdate(batch.toUpdate.stream().map(upsert -> lookup(batchId, upsert)).filter(Objects::nonNull).toList());
                     }
                     if (!batch.toDelete.isEmpty()) {
-                        controller.onDelete(batch.toDelete.stream().map(td -> new ReconcilableTopic(new Reconciliation("delete", "KafkaTopic", td.namespace(), td.name()), td.topic(), BatchingTopicController.topicName(td.topic()))).toList());
+                        controller.onDelete(batch.toDelete.stream().map(td -> new ReconcilableTopic(
+                            new Reconciliation("delete", "KafkaTopic", td.namespace(), td.name()), td.topic(), topicName(td.topic()))).toList());
                     }
-                    LOGGER.debugOp("[Batch #{}] Reconciled batch", batchId);
+                    LOGGER.infoOp("[Batch #{}] Batch reconciliation completed", batchId);
                 } else {
-                    LOGGER.debugOp("[Batch #{}] Empty batch", batchId);
+                    LOGGER.traceOp("[Batch #{}] Empty batch", batchId);
                 }
             } catch (InterruptedException e) {
                 LOGGER.infoOp("[Batch #{}] Interrupted", batchId);
@@ -228,8 +231,8 @@ class BatchingLoop {
                 LOGGER.traceOp("[Batch #{}] Lookup from item store for {} yielded KafkaTopic with resourceVersion {}",
                         batchId, topicUpsert, BatchingTopicController.resourceVersion(kt));
                 var r = new Reconciliation("upsert", "KafkaTopic", topicUpsert.namespace(), topicUpsert.name());
-                LOGGER.debugOp("[Batch #{}] contains {}", batchId, r);
-                return new ReconcilableTopic(r, kt, BatchingTopicController.topicName(kt));
+                LOGGER.debugOp("[Batch #{}] Contains {}", batchId, r);
+                return new ReconcilableTopic(r, kt, topicName(kt));
             } else {
                 // Null can happen if the KafkaTopic has been deleted from Kube and we've not yet processed
                 // the corresponding delete event
@@ -246,7 +249,7 @@ class BatchingLoop {
             final long deadlineNanoTime = System.nanoTime() + maxBatchLingerMs * 1_000_000;
             while (true) {
                 if (batch.size() >= maxBatchSize) {
-                    LOGGER.traceOp("[Batch #{}] reached maxBatchSize, batch complete", batchId, maxBatchSize);
+                    LOGGER.traceOp("[Batch #{}] Reached maxBatchSize, batch complete", batchId, maxBatchSize);
                     break;
                 }
 
@@ -259,7 +262,7 @@ class BatchingLoop {
                 TopicEvent topicEvent = queue.pollFirst(timeoutNs, TimeUnit.NANOSECONDS);
 
                 if (topicEvent == null) {
-                    LOGGER.traceOp("[Batch #{}] linger expired, batch complete", batchId);
+                    LOGGER.traceOp("[Batch #{}] Linger expired, batch complete", batchId);
                     break;
                 }
                 addToBatch(batchId, batch, rejected, topicEvent);

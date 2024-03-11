@@ -7,14 +7,16 @@ package io.strimzi.systemtest.cruisecontrol;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlEndpoints;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
+import io.strimzi.systemtest.resources.NodePoolsConverter;
+import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.storage.TestStorage;
+import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.utils.specific.CruiseControlUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -34,17 +36,22 @@ public class CruiseControlApiST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(CruiseControlApiST.class);
     private static final String CRUISE_CONTROL_NAME = "Cruise Control";
-    private final String cruiseControlApiClusterName = "cruise-control-api-cluster-name";
 
     @ParallelNamespaceTest
-    void testCruiseControlBasicAPIRequestsWithSecurityDisabled(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+    void testCruiseControlBasicAPIRequestsWithSecurityDisabled() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
         Map<String, Object> config = new HashMap<>();
         config.put("webserver.security.enable", "false");
         config.put("webserver.ssl.enable", "false");
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaWithCruiseControl(cruiseControlApiClusterName, 3, 3)
+        resourceManager.createResourceWithWait(
+            NodePoolsConverter.convertNodePoolsIfNeeded(
+                KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
+                KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
+            )
+        );
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaWithCruiseControl(testStorage.getClusterName(), 3, 3)
             .editOrNewSpec()
                 .withNewCruiseControl()
                     .withConfig(config)
@@ -65,9 +72,9 @@ public class CruiseControlApiST extends AbstractST {
     }
 
     @BeforeAll
-    void setUp(final ExtensionContext extensionContext) {
+    void setUp() {
         this.clusterOperator = this.clusterOperator
-            .defaultInstallation(extensionContext)
+            .defaultInstallation()
             .createInstallation()
             .runInstallation();
     }

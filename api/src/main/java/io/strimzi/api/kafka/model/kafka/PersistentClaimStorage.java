@@ -58,8 +58,8 @@ public class PersistentClaimStorage extends SingleVolumeStorage {
         super.setId(id);
     }
 
-    @Description("When type=persistent-claim, defines the size of the persistent volume claim (i.e 1Gi). " +
-            "Mandatory when type=persistent-claim.")
+    @Description("When `type=persistent-claim`, defines the size of the persistent volume claim, such as 100Gi. " +
+            "Mandatory when `type=persistent-claim`.")
     public String getSize() {
         return size;
     }

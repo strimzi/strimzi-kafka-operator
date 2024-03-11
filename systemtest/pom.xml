@@ -5,7 +5,7 @@
     <parent>
         <artifactId>strimzi</artifactId>
         <groupId>io.strimzi</groupId>
-        <version>0.40.0-SNAPSHOT</version>
+        <version>0.41.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>systemtest</artifactId>
@@ -565,6 +565,14 @@
                 <it.test>
                     !olm/**/*ST,
                 </it.test>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>azp_migration</id>
+            <properties>
+                <skipTests>false</skipTests>
+                <groups>migration</groups>
             </properties>
         </profile>
 

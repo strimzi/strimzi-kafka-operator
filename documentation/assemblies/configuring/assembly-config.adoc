@@ -58,6 +58,10 @@ include::../../modules/configuring/con-config-kafka.adoc[leveloffset=+1]
 include::../../modules/managing/proc-setting-broker-limits.adoc[leveloffset=+2]
 //Zookeeper's default configuration
 include::../../modules/configuring/con-zookeeper-default-config.adoc[leveloffset=+2]
+//steps to delete kafka nodes using annotations
+include::../../modules/configuring/proc-manual-delete-pod-pvc-kafka.adoc[leveloffset=+2]
+//steps to delete zookeeper nodes using annotations
+include::../../modules/configuring/proc-manual-delete-pod-pvc-zookeeper.adoc[leveloffset=+2]
 
 //configuring node pools
 include::../../modules/configuring/con-config-node-pools.adoc[leveloffset=+1]
@@ -65,6 +69,9 @@ include::../../modules/configuring/proc-managing-node-pools-ids.adoc[leveloffset
 include::../../modules/configuring/proc-scaling-up-node-pools.adoc[leveloffset=+2]
 include::../../modules/configuring/proc-scaling-down-node-pools.adoc[leveloffset=+2]
 include::../../modules/configuring/proc-moving-node-pools.adoc[leveloffset=+2]
+include::../../modules/configuring/con-config-node-pool-roles.adoc[leveloffset=+2]
+include::../../modules/configuring/proc-splitting-node-pool-roles.adoc[leveloffset=+2]
+include::../../modules/configuring/proc-joining-node-pool-roles.adoc[leveloffset=+2]
 include::../../modules/configuring/proc-managing-storage-node-pools.adoc[leveloffset=+2]
 include::../../modules/configuring/proc-managing-storage-affinity-node-pools.adoc[leveloffset=+2]
 include::../../modules/configuring/proc-migrating-clusters-node-pools.adoc[leveloffset=+2]
@@ -78,6 +85,8 @@ include::../../modules/configuring/con-configuring-user-operator.adoc[leveloffse
 
 //cluster operator config env vars
 include::../../modules/operators/con-configuring-cluster-operator.adoc[leveloffset=+1]
+//pausing reconciliation of custom resources
+include::../../modules/operators/proc-pausing-reconciliation.adoc[leveloffset=+2]
 //enabling leader election
 include::../../assemblies/operators/assembly-using-multiple-cluster-operators.adoc[leveloffset=+2]
 //cluster operator proxy config

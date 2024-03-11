@@ -22,26 +22,25 @@ You specify a logging `type` in your logging specification:
 .Example `inline` logging configuration
 [source,shell,subs="+quotes,attributes"]
 ----
-spec:
-  # ...
-  logging:
-    type: inline
-    loggers:
-      kafka.root.logger.level: INFO
+# ...
+logging:
+  type: inline
+  loggers:
+    kafka.root.logger.level: INFO
+# ...
 ----
-
 
 .Example `external` logging configuration
 [source,shell,subs="+quotes,attributes"]
 ----
-spec:
-  # ...
-  logging:
-    type: external
-    valueFrom:
-      configMapKeyRef:
-        name: my-config-map
-        key: my-config-map-key
+# ...
+logging:
+  type: external
+  valueFrom:
+    configMapKeyRef:
+      name: my-config-map
+      key: my-config-map-key
+# ...
 ----
 
 Values for the `name` and `key` of the ConfigMap are mandatory.

@@ -108,7 +108,7 @@ public class KafkaClusterWithKRaftTest {
             Reconciliation.DUMMY_RECONCILIATION,
             KAFKA,
             POOL_CONTROLLERS,
-            new NodeIdAssignment(Set.of(0, 1, 2), Set.of(0, 1, 2), Set.of(), Set.of()),
+            new NodeIdAssignment(Set.of(0, 1, 2), Set.of(0, 1, 2), Set.of(), Set.of(), Set.of()),
             null,
             OWNER_REFERENCE,
             SHARED_ENV_PROVIDER
@@ -131,7 +131,7 @@ public class KafkaClusterWithKRaftTest {
             Reconciliation.DUMMY_RECONCILIATION,
             KAFKA,
             POOL_BROKERS,
-            new NodeIdAssignment(Set.of(1000, 1001, 1002), Set.of(1000, 1001, 1002), Set.of(), Set.of()),
+            new NodeIdAssignment(Set.of(1000, 1001, 1002), Set.of(1000, 1001, 1002), Set.of(), Set.of(), Set.of()),
             null,
             OWNER_REFERENCE,
             SHARED_ENV_PROVIDER
@@ -145,7 +145,7 @@ public class KafkaClusterWithKRaftTest {
                 List.of(KAFKA_POOL_CONTROLLERS, KAFKA_POOL_BROKERS),
                 VERSIONS,
                 KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE,
-                true,
+                KafkaMetadataConfigurationState.KRAFT,
                 null, SHARED_ENV_PROVIDER
         );
 
@@ -194,7 +194,7 @@ public class KafkaClusterWithKRaftTest {
                 List.of(KAFKA_POOL_CONTROLLERS, KAFKA_POOL_BROKERS),
                 VERSIONS,
                 KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE,
-                true,
+                KafkaMetadataConfigurationState.KRAFT,
                 null,
                 SHARED_ENV_PROVIDER
         );
@@ -220,7 +220,7 @@ public class KafkaClusterWithKRaftTest {
                 List.of(KAFKA_POOL_CONTROLLERS, KAFKA_POOL_BROKERS),
                 VERSIONS,
                 KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE,
-                true,
+                KafkaMetadataConfigurationState.KRAFT,
                 null,
                 SHARED_ENV_PROVIDER
         );
@@ -246,7 +246,7 @@ public class KafkaClusterWithKRaftTest {
                 List.of(KAFKA_POOL_CONTROLLERS, KAFKA_POOL_BROKERS),
                 VERSIONS,
                 KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE,
-                true,
+                KafkaMetadataConfigurationState.KRAFT,
                 null,
                 SHARED_ENV_PROVIDER
         );
@@ -285,7 +285,7 @@ public class KafkaClusterWithKRaftTest {
                 List.of(KAFKA_POOL_CONTROLLERS, KAFKA_POOL_BROKERS),
                 VERSIONS,
                 KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE,
-                true,
+                KafkaMetadataConfigurationState.KRAFT,
                 null,
                 SHARED_ENV_PROVIDER
         );
@@ -315,7 +315,7 @@ public class KafkaClusterWithKRaftTest {
                 List.of(KAFKA_POOL_CONTROLLERS, KAFKA_POOL_BROKERS),
                 VERSIONS,
                 KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE,
-                true,
+                KafkaMetadataConfigurationState.KRAFT,
                 null,
                 SHARED_ENV_PROVIDER
         );
@@ -348,7 +348,7 @@ public class KafkaClusterWithKRaftTest {
                 List.of(KAFKA_POOL_CONTROLLERS, KAFKA_POOL_BROKERS),
                 VERSIONS,
                 KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE,
-                true,
+                KafkaMetadataConfigurationState.KRAFT,
                 "my-cluster-id",
                 SHARED_ENV_PROVIDER
         );
@@ -384,7 +384,7 @@ public class KafkaClusterWithKRaftTest {
                 List.of(KAFKA_POOL_CONTROLLERS, KAFKA_POOL_BROKERS),
                 VERSIONS,
                 KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE,
-                true,
+                KafkaMetadataConfigurationState.KRAFT,
                 null, SHARED_ENV_PROVIDER
         );
 
@@ -426,7 +426,7 @@ public class KafkaClusterWithKRaftTest {
         // Test exception being raised when only one broker is present
         InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> {
             List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, List.of(POOL_CONTROLLERS, poolBrokers), Map.of(), Map.of(), true, SHARED_ENV_PROVIDER);
-            KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, null, SHARED_ENV_PROVIDER);
+            KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
         });
 
         assertThat(ex.getMessage(), is("Kafka " + NAMESPACE + "/" + CLUSTER_NAME + " has invalid configuration. " +
@@ -436,7 +436,7 @@ public class KafkaClusterWithKRaftTest {
         // Test if works fine with controller pool and broker pool with more than 1 node
         assertDoesNotThrow(() -> {
             List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, List.of(POOL_CONTROLLERS, POOL_BROKERS), Map.of(), Map.of(), true, SHARED_ENV_PROVIDER);
-            KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, null, SHARED_ENV_PROVIDER);
+            KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
         });
     }
 
@@ -453,7 +453,7 @@ public class KafkaClusterWithKRaftTest {
                 List.of(KAFKA_POOL_CONTROLLERS, KAFKA_POOL_BROKERS),
                 VERSIONS,
                 KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE,
-                true,
+                KafkaMetadataConfigurationState.KRAFT,
                 null, SHARED_ENV_PROVIDER
         );
 
@@ -525,7 +525,7 @@ public class KafkaClusterWithKRaftTest {
                 List.of(KAFKA_POOL_CONTROLLERS, KAFKA_POOL_BROKERS),
                 VERSIONS,
                 KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE,
-                true,
+                KafkaMetadataConfigurationState.KRAFT,
                 null,
                 SHARED_ENV_PROVIDER
         );
@@ -568,7 +568,7 @@ public class KafkaClusterWithKRaftTest {
                 List.of(KAFKA_POOL_CONTROLLERS, KAFKA_POOL_BROKERS),
                 VERSIONS,
                 KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE,
-                true,
+                KafkaMetadataConfigurationState.KRAFT,
                 "dummy-cluster-id",
                 SHARED_ENV_PROVIDER
         );
@@ -580,20 +580,22 @@ public class KafkaClusterWithKRaftTest {
         for (ConfigMap cm : cms)    {
             if (cm.getMetadata().getName().contains("-controllers-"))   {
                 // Controllers
-                assertThat(cm.getData().size(), is(5));
+                assertThat(cm.getData().size(), is(6));
                 assertThat(cm.getData().get(LoggingModel.LOG4J1_CONFIG_MAP_KEY), is(notNullValue()));
                 assertThat(cm.getData().get(KafkaCluster.BROKER_CONFIGURATION_FILENAME), is(notNullValue()));
                 assertThat(cm.getData().get(KafkaCluster.BROKER_CLUSTER_ID_FILENAME), is(notNullValue()));
                 assertThat(cm.getData().get(KafkaCluster.BROKER_METADATA_VERSION_FILENAME), is(notNullValue()));
                 assertThat(cm.getData().get(KafkaCluster.BROKER_LISTENERS_FILENAME), is(nullValue()));
+                assertThat(cm.getData().get(KafkaCluster.BROKER_METADATA_STATE_FILENAME), is(notNullValue()));
             } else {
                 // Brokers
-                assertThat(cm.getData().size(), is(5));
+                assertThat(cm.getData().size(), is(6));
                 assertThat(cm.getData().get(LoggingModel.LOG4J1_CONFIG_MAP_KEY), is(notNullValue()));
                 assertThat(cm.getData().get(KafkaCluster.BROKER_CONFIGURATION_FILENAME), is(notNullValue()));
                 assertThat(cm.getData().get(KafkaCluster.BROKER_CLUSTER_ID_FILENAME), is(notNullValue()));
                 assertThat(cm.getData().get(KafkaCluster.BROKER_METADATA_VERSION_FILENAME), is(notNullValue()));
                 assertThat(cm.getData().get(KafkaCluster.BROKER_LISTENERS_FILENAME), is(notNullValue()));
+                assertThat(cm.getData().get(KafkaCluster.BROKER_METADATA_STATE_FILENAME), is(notNullValue()));
             }
         }
     }
@@ -620,7 +622,7 @@ public class KafkaClusterWithKRaftTest {
                 List.of(KAFKA_POOL_CONTROLLERS, KAFKA_POOL_BROKERS),
                 VERSIONS,
                 KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE,
-                true,
+                KafkaMetadataConfigurationState.KRAFT,
                 null,
                 SHARED_ENV_PROVIDER
         );
@@ -657,7 +659,7 @@ public class KafkaClusterWithKRaftTest {
                         List.of(KAFKA_POOL_CONTROLLERS, KAFKA_POOL_BROKERS),
                         VERSIONS,
                         new KafkaVersionChange(VERSIONS.defaultVersion(), VERSIONS.defaultVersion(), null, null, "3.6-IV9"),
-                        true,
+                        KafkaMetadataConfigurationState.KRAFT,
                         null,
                         SHARED_ENV_PROVIDER));
         assertThat(ex.getMessage(), containsString("Metadata version 3.6-IV9 is invalid"));
@@ -679,7 +681,7 @@ public class KafkaClusterWithKRaftTest {
                 List.of(KAFKA_POOL_CONTROLLERS, KAFKA_POOL_BROKERS),
                 VERSIONS,
                 new KafkaVersionChange(VERSIONS.defaultVersion(), VERSIONS.defaultVersion(), null, null, "3.5-IV1"),
-                true,
+                KafkaMetadataConfigurationState.KRAFT,
                 null,
                 SHARED_ENV_PROVIDER);
 

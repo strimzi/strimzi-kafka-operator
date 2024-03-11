@@ -18,7 +18,7 @@ spec:
       serviceAccountName: strimzi-drain-cleaner
       containers:
         - name: strimzi-drain-cleaner
-          image: quay.io/strimzi/drain-cleaner:1.0.1
+          image: quay.io/strimzi/drain-cleaner:1.1.0
           ports:
             - containerPort: 8080
               name: http
@@ -28,6 +28,8 @@ spec:
             - name: STRIMZI_DRAIN_KAFKA
               value: "true"
             - name: STRIMZI_DRAIN_ZOOKEEPER
+              value: "true"
+            - name: STRIMZI_DENY_EVICTION
               value: "true"
             - name: STRIMZI_CERTIFICATE_WATCH_ENABLED
               value: "true"

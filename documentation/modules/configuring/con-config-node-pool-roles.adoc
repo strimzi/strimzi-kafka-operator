@@ -1,0 +1,26 @@
+// Module included in the following assemblies:
+//
+// assembly-config.adoc
+
+[id='config-node-pools-roles-{context}']
+= Changing node pool roles
+
+[role="_abstract"]
+Node pools can be used with Kafka clusters that operate in KRaft mode (using Kafka Raft metadata) or use ZooKeeper for metadata management.
+If you are using KRaft mode, you can specify roles for all nodes in the node pool to operate as brokers, controllers, or both.
+If you are using ZooKeeper, nodes must be set as brokers only.
+
+In certain circumstances you might want to change the roles assigned to a node pool.
+For example, you may have a node pool that contains nodes that perform dual broker and controller roles, and then decide to split the roles between two node pools.
+In this case, you create a new node pool with nodes that act only as brokers, and then reassign partitions from the dual-role nodes to the new brokers.
+You can then switch the old node pool to a controller-only role.
+
+You can also perform the reverse operation by moving from node pools with controller-only and broker-only roles to a node pool that contains nodes that perform dual broker and controller roles.
+In this case, you add the `broker` role to the existing controller-only node pool, reassign partitions from the broker-only nodes to the dual-role nodes, and then delete the broker-only node pool.
+
+When removing `broker` roles in the node pool configuration, keep in mind that Kafka does not automatically reassign partitions.
+Before removing the broker role, ensure that nodes changing to controller-only roles do not have any assigned partitions. 
+If partitions are assigned, the change is prevented.
+No replicas must be left on the node before removing the broker role.
+The best way to reassign partitions before changing roles is to apply a Cruise Control optimization proposal in `remove-brokers` mode.
+For more information, see xref:proc-generating-optimization-proposals-str[].

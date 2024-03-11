@@ -22,6 +22,7 @@ import io.strimzi.api.kafka.model.common.jmx.HasJmxOptions;
 import io.strimzi.api.kafka.model.common.jmx.KafkaJmxOptions;
 import io.strimzi.api.kafka.model.common.metrics.MetricsConfig;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener;
+import io.strimzi.api.kafka.model.kafka.tieredstorage.TieredStorage;
 import io.strimzi.crdgenerator.annotations.AddedIn;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.DescriptionFile;
@@ -39,7 +40,7 @@ import java.util.Map;
 /**
  * Representation of a Strimzi-managed Kafka "cluster".
  */
-@DescriptionFile 
+@DescriptionFile
 @Buildable(
         editableEnabled = false,
         builderPackage = Constants.FABRIC8_KUBERNETES_API
@@ -56,14 +57,14 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, HasConfigurable
     public static final String FORBIDDEN_PREFIXES = "listeners, advertised., broker., listener., host.name, port, "
             + "inter.broker.listener.name, sasl., ssl., security., password., log.dir, "
             + "zookeeper.connect, zookeeper.set.acl, zookeeper.ssl, zookeeper.clientCnxnSocket, authorizer., super.user, "
-            + "cruise.control.metrics.topic, cruise.control.metrics.reporter.bootstrap.servers,"
-            + "node.id, process.roles, controller., metadata.log.dir"; // KRaft options
+            + "cruise.control.metrics.topic, cruise.control.metrics.reporter.bootstrap.servers, "
+            + "node.id, process.roles, controller., metadata.log.dir, zookeeper.metadata.migration.enable"; // KRaft options
 
-    public static final String FORBIDDEN_PREFIX_EXCEPTIONS = "zookeeper.connection.timeout.ms, sasl.server.max.receive.size,"
-            + "ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols, ssl.secure.random.implementation,"
-            + "cruise.control.metrics.topic.num.partitions, cruise.control.metrics.topic.replication.factor, cruise.control.metrics.topic.retention.ms,"
-            + "cruise.control.metrics.topic.auto.create.retries, cruise.control.metrics.topic.auto.create.timeout.ms,"
-            + "cruise.control.metrics.topic.min.insync.replicas,"
+    public static final String FORBIDDEN_PREFIX_EXCEPTIONS = "zookeeper.connection.timeout.ms, sasl.server.max.receive.size, "
+            + "ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols, ssl.secure.random.implementation, "
+            + "cruise.control.metrics.topic.num.partitions, cruise.control.metrics.topic.replication.factor, cruise.control.metrics.topic.retention.ms, "
+            + "cruise.control.metrics.topic.auto.create.retries, cruise.control.metrics.topic.auto.create.timeout.ms, "
+            + "cruise.control.metrics.topic.min.insync.replicas, "
             + "controller.quorum.election.backoff.max.ms, controller.quorum.election.timeout.ms, controller.quorum.fetch.timeout.ms"; // KRaft options
 
     protected Storage storage;
@@ -73,7 +74,7 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, HasConfigurable
     private String brokerRackInitImage;
     private Rack rack;
     private Logging logging;
-    private int replicas;
+    private Integer replicas;
     private String image;
     private ResourceRequirements resources;
     private Probe livenessProbe;
@@ -84,6 +85,7 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, HasConfigurable
     private List<GenericKafkaListener> listeners;
     private KafkaAuthorization authorization;
     private KafkaClusterTemplate template;
+    private TieredStorage tieredStorage;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("The Kafka broker version. Defaults to the latest version. " +
@@ -164,16 +166,16 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, HasConfigurable
     @Description("The number of pods in the cluster. " +
             "This property is required when node pools are not used.")
     @Minimum(1)
-    public int getReplicas() {
+    public Integer getReplicas() {
         return replicas;
     }
 
-    public void setReplicas(int replicas) {
+    public void setReplicas(Integer replicas) {
         this.replicas = replicas;
     }
 
     @Description("The container image used for Kafka pods. "
-        + "If the property is not set, the default Kafka image version is determined based on the `version` configuration. "  
+        + "If the property is not set, the default Kafka image version is determined based on the `version` configuration. "
         + "The image names are specifically mapped to corresponding versions in the Cluster Operator configuration. "
         + "Changing the Kafka image version does not automatically update the image versions for other components, such as Kafka Exporter. ")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
@@ -279,6 +281,16 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, HasConfigurable
 
     public void setTemplate(KafkaClusterTemplate template) {
         this.template = template;
+    }
+
+    @Description("Configure the tiered storage feature for Kafka brokers")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public TieredStorage getTieredStorage() {
+        return tieredStorage;
+    }
+
+    public void setTieredStorage(TieredStorage tieredStorage) {
+        this.tieredStorage = tieredStorage;
     }
 
     @Override

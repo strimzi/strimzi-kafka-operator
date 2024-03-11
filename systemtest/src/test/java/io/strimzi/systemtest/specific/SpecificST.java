@@ -14,9 +14,12 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.resources.NamespaceManager;
+import io.strimzi.systemtest.resources.NodePoolsConverter;
+import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
+import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.kubernetes.ClusterRoleBindingTemplates;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
@@ -27,7 +30,6 @@ import org.apache.logging.log4j.Logger;
 import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.io.File;
 import java.util.Arrays;
@@ -44,10 +46,10 @@ public class SpecificST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(SpecificST.class);
 
     @IsolatedTest
-    void testClusterWideOperatorWithLimitedAccessToSpecificNamespaceViaRbacRole(final ExtensionContext extensionContext) {
+    void testClusterWideOperatorWithLimitedAccessToSpecificNamespaceViaRbacRole() {
         assumeFalse(Environment.isNamespaceRbacScope());
 
-        final TestStorage testStorage = new TestStorage(extensionContext);
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final String namespaceWhereCreationOfCustomResourcesIsApproved = "example-1";
 
         // --- a) defining Role and ClusterRoles
@@ -96,9 +98,10 @@ public class SpecificST extends AbstractST {
         clusterOperator.unInstall();
 
         // create namespace, where we will be able to deploy Custom Resources
-        NamespaceManager.getInstance().createNamespaceAndPrepare(namespaceWhereCreationOfCustomResourcesIsApproved, CollectorElement.createCollectorElement(extensionContext.getRequiredTestClass().getName(), extensionContext.getRequiredTestMethod().getName()));
+        NamespaceManager.getInstance().createNamespaceAndPrepare(namespaceWhereCreationOfCustomResourcesIsApproved,
+            CollectorElement.createCollectorElement(ResourceManager.getTestContext().getRequiredTestClass().getName(), ResourceManager.getTestContext().getRequiredTestMethod().getName()));
 
-        clusterOperator = clusterOperator.defaultInstallation(extensionContext)
+        clusterOperator = clusterOperator.defaultInstallation()
             // use our pre-defined Roles
             .withRoles(roles)
             // use our pre-defined RoleBindings
@@ -110,7 +113,13 @@ public class SpecificST extends AbstractST {
             .createInstallation()
             .runBundleInstallation();
 
-        resourceManager.createResourceWithoutWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3)
+        resourceManager.createResourceWithoutWait(
+            NodePoolsConverter.convertNodePoolsIfNeeded(
+                KafkaNodePoolTemplates.brokerPool(Environment.TEST_SUITE_NAMESPACE, testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
+                KafkaNodePoolTemplates.controllerPool(Environment.TEST_SUITE_NAMESPACE, testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
+            )
+        );
+        resourceManager.createResourceWithoutWait(KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3)
                 .editMetadata()
                 // this should not work
                     .withNamespace(Environment.TEST_SUITE_NAMESPACE)
@@ -119,7 +128,13 @@ public class SpecificST extends AbstractST {
 
         // implicit verification that a user is able to deploy Kafka cluster in namespace <example-1>, where we are allowed
         // to create Custom Resources because of `*-namespaced Role`
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3)
+        resourceManager.createResourceWithoutWait(
+            NodePoolsConverter.convertNodePoolsIfNeeded(
+                KafkaNodePoolTemplates.brokerPool(namespaceWhereCreationOfCustomResourcesIsApproved, testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
+                KafkaNodePoolTemplates.controllerPool(namespaceWhereCreationOfCustomResourcesIsApproved, testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
+            )
+        );
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3)
                 .editMetadata()
                 // this should work
                     .withNamespace(namespaceWhereCreationOfCustomResourcesIsApproved)
@@ -137,10 +152,9 @@ public class SpecificST extends AbstractST {
     }
 
     @BeforeAll
-    void setUp(final ExtensionContext extensionContext) {
+    void setUp() {
         this.clusterOperator = this.clusterOperator
-            .defaultInstallation(extensionContext)
-            .createInstallation()
-            .runInstallation();
+            .defaultInstallation()
+            .createInstallation();
     }
 }

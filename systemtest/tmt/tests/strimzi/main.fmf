@@ -11,6 +11,8 @@ environment:
   CLUSTER_OPERATOR_INSTALL_TYPE: bundle
   PARALLEL_TEST_COUNT: 2
   RERUN_FAILED_TEST_COUNT: 2
+  # All tests on TF will use KRaft mode because ZK is not working reliably on it's infra
+  STRIMZI_USE_KRAFT_IN_TESTS: "true"
 adjust:
   - environment+:
       EXCLUDED_TEST_GROUPS: "loadbalancer,arm64unsupported"
@@ -18,7 +20,7 @@ adjust:
 
 /smoke:
   summary: Run smoke strimzi test suite
-  tags: [smoke]
+  tags: [strimzi, kafka, kraft, smoke]
   duration: 40m
   tier: 1
   environment+:
@@ -26,7 +28,7 @@ adjust:
 
 /upgrade:
   summary: Run upgrade strimzi test suite
-  tags: [strimzi, kafka, upgrade]
+  tags: [strimzi, kafka, kraft, upgrade]
   duration: 5h
   tier: 2
   environment+:
@@ -34,7 +36,7 @@ adjust:
 
 /regression-operators:
   summary: Run regression strimzi test suite
-  tags: [strimzi, kafka, regression, operators]
+  tags: [strimzi, kafka, kraft, regression, operators]
   duration: 10h
   tier: 2
   environment+:
@@ -42,31 +44,15 @@ adjust:
 
 /regression-components:
   summary: Run regression strimzi test suite
-  tags: [strimzi, kafka, regression, components]
+  tags: [strimzi, kafka, kraft, regression, components]
   duration: 12h
-  tier: 2
-  environment+:
-    TEST_PROFILE: components
-
-/kraft-operators:
-  summary: Run regression kraft strimzi test suite
-  tags: [strimzi, kafka, kraft, operators]
-  duration: 8h
-  tier: 2
-  environment+:
-    TEST_PROFILE: operators
-
-/kraft-components:
-  summary: Run regression kraft strimzi test suite
-  tags: [strimzi, kafka, kraft, components]
-  duration: 8h
   tier: 2
   environment+:
     TEST_PROFILE: components
 
 /acceptance:
   summary: Run acceptance strimzi test suite
-  tags: [strimzi, kafka, acceptance]
+  tags: [strimzi, kafka, kraft, acceptance]
   duration: 5h
   tier: 2
   environment+:
@@ -74,7 +60,7 @@ adjust:
 
 /sanity:
   summary: Run sanity strimzi test suite
-  tags: [strimzi, kafka, sanity]
+  tags: [strimzi, kafka, kraft, sanity]
   duration: 5h
   tier: 2
   environment+:

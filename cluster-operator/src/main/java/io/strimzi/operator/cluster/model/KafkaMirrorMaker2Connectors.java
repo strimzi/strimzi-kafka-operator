@@ -282,8 +282,8 @@ public class KafkaMirrorMaker2Connectors {
         }
 
         if (oauth.getTlsTrustedCertificates() != null && !oauth.getTlsTrustedCertificates().isEmpty()) {
-            jaasOptions.put("oauth.ssl.truststore.location", "/tmp/kafka/clusters/\"" + cluster.getAlias() + "\"-oauth.truststore.p12");
-            jaasOptions.put("oauth.ssl.truststore.password", "\"${file:" + CONNECTORS_CONFIG_FILE + ":oauth.ssl.truststore.password}\"");
+            jaasOptions.put("oauth.ssl.truststore.location", "/tmp/kafka/clusters/" + cluster.getAlias() + "-oauth.truststore.p12");
+            jaasOptions.put("oauth.ssl.truststore.password", "${file:" + CONNECTORS_CONFIG_FILE + ":oauth.ssl.truststore.password}");
             jaasOptions.put("oauth.ssl.truststore.type", "PKCS12");
         }
 
