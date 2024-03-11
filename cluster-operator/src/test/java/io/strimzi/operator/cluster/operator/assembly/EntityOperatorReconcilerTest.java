@@ -14,6 +14,7 @@ import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlSpecBuilder;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
@@ -37,6 +38,8 @@ import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 
 import java.time.Clock;
@@ -283,8 +286,9 @@ public class EntityOperatorReconcilerTest {
                 })));
     }
 
-    @Test
-    public void reconcileWithToOnly(VertxTestContext context) {
+    @ParameterizedTest
+    @ValueSource(booleans = { true, false })
+    public void reconcileWithToOnly(boolean cruiseControlEnabled, VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
         SecretOperator mockSecretOps = supplier.secretOperations;
@@ -301,6 +305,9 @@ public class EntityOperatorReconcilerTest {
         when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorSecretName(NAME)), operatorSecretCaptor.capture())).thenReturn(Future.succeededFuture());
         ArgumentCaptor<Secret> toSecretCaptor = ArgumentCaptor.forClass(Secret.class);
         when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityTopicOperatorSecretName(NAME)), toSecretCaptor.capture())).thenReturn(Future.succeededFuture());
+        if (cruiseControlEnabled) {
+            when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityTopicOperatorCcApiSecretName(NAME)), toSecretCaptor.capture())).thenReturn(Future.succeededFuture());
+        }
         ArgumentCaptor<Secret> uoSecretCaptor = ArgumentCaptor.forClass(Secret.class);
         when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityUserOperatorSecretName(NAME)), uoSecretCaptor.capture())).thenReturn(Future.succeededFuture());
 
@@ -334,6 +341,10 @@ public class EntityOperatorReconcilerTest {
                 .endSpec()
                 .build();
 
+        if (cruiseControlEnabled) {
+            kafka.getSpec().setCruiseControl(new CruiseControlSpecBuilder().build());
+        }
+
         EntityOperatorReconciler rcnclr = new EntityOperatorReconciler(
                 Reconciliation.DUMMY_RECONCILIATION,
                 ResourceUtils.dummyClusterOperatorConfig(),
@@ -351,8 +362,14 @@ public class EntityOperatorReconcilerTest {
 
                     assertThat(operatorSecretCaptor.getAllValues().size(), is(1));
                     assertThat(operatorSecretCaptor.getAllValues().get(0), is(nullValue()));
-                    assertThat(toSecretCaptor.getAllValues().size(), is(1));
-                    assertThat(toSecretCaptor.getAllValues().get(0), is(notNullValue()));
+                    if (cruiseControlEnabled) {
+                        assertThat(toSecretCaptor.getAllValues().size(), is(2));
+                        assertThat(toSecretCaptor.getAllValues().get(0), is(notNullValue()));
+                        assertThat(toSecretCaptor.getAllValues().get(1), is(notNullValue()));
+                    } else {
+                        assertThat(toSecretCaptor.getAllValues().size(), is(1));
+                        assertThat(toSecretCaptor.getAllValues().get(0), is(notNullValue()));
+                    }
                     assertThat(uoSecretCaptor.getAllValues().size(), is(1));
                     assertThat(uoSecretCaptor.getAllValues().get(0), is(nullValue()));
 

@@ -19,6 +19,7 @@ import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
+import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.fabric8.kubernetes.api.model.SecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.Service;
@@ -59,7 +60,10 @@ import io.strimzi.operator.cluster.model.cruisecontrol.BrokerCapacity;
 import io.strimzi.operator.cluster.model.cruisecontrol.Capacity;
 import io.strimzi.operator.cluster.model.cruisecontrol.CpuCapacity;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.model.PasswordGenerator;
+import io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.platform.KubernetesVersion;
 import io.strimzi.plugin.security.profiles.impl.RestrictedPodSecurityProvider;
@@ -82,9 +86,12 @@ import java.util.Properties;
 import java.util.Set;
 
 import static io.strimzi.operator.cluster.model.CruiseControl.API_HEALTHCHECK_PATH;
-import static io.strimzi.operator.cluster.model.CruiseControl.API_USER_NAME;
+import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.API_ADMIN_PASSWORD_KEY;
+import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.API_AUTH_FILE_KEY;
+import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.API_USER_PASSWORD_KEY;
 import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters.ANOMALY_DETECTION_CONFIG_KEY;
 import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters.DEFAULT_GOALS_CONFIG_KEY;
+import static java.lang.String.format;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.containsString;
@@ -99,6 +106,8 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.hasProperty;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SuppressWarnings({
     "checkstyle:ClassDataAbstractionCoupling",
@@ -220,7 +229,7 @@ public class CruiseControlTest {
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED).withValue(Boolean.toString(JvmOptions.DEFAULT_GC_LOGGING_ENABLED)).build());
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_API_SSL_ENABLED).withValue(Boolean.toString(CruiseControlConfigurationParameters.DEFAULT_WEBSERVER_SSL_ENABLED)).build());
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_API_AUTH_ENABLED).withValue(Boolean.toString(CruiseControlConfigurationParameters.DEFAULT_WEBSERVER_SECURITY_ENABLED)).build());
-        expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_API_USER).withValue(API_USER_NAME).build());
+        expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_API_USER).withValue(CruiseControlApiProperties.API_USER_NAME).build());
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_API_PORT).withValue(Integer.toString(CruiseControl.REST_API_PORT)).build());
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_API_HEALTHCHECK_PATH).withValue(API_HEALTHCHECK_PATH).build());
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_KAFKA_HEAP_OPTS).withValue("-Xms" + JvmOptionUtils.DEFAULT_JVM_XMS).build());
@@ -1059,7 +1068,7 @@ public class CruiseControlTest {
                 .withNewNamespaceSelector().endNamespaceSelector()
                 .build();
 
-        NetworkPolicy np = cc.generateNetworkPolicy("operator-namespace", null);
+        NetworkPolicy np = cc.generateNetworkPolicy("operator-namespace", null, false);
 
         assertThat(np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(CruiseControl.REST_API_PORT))).findFirst().orElse(null), is(notNullValue()));
 
@@ -1076,15 +1085,21 @@ public class CruiseControlTest {
                     .withMatchLabels(Collections.singletonMap(Labels.STRIMZI_KIND_LABEL, "cluster-operator"))
                 .endPodSelector()
                 .build();
+        NetworkPolicyPeer entityOperatorPeer = new NetworkPolicyPeerBuilder()
+            .withNewPodSelector()
+                .withMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, format("%s-entity-operator", CLUSTER)))
+            .endPodSelector()
+            .build();
 
-        NetworkPolicy np = cc.generateNetworkPolicy(NAMESPACE, null);
+        NetworkPolicy np = cc.generateNetworkPolicy(NAMESPACE, null, true);
 
         assertThat(np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(CruiseControl.REST_API_PORT))).findFirst().orElse(null), is(notNullValue()));
 
         List<NetworkPolicyPeer> rules = np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(CruiseControl.REST_API_PORT))).map(NetworkPolicyIngressRule::getFrom).findFirst().orElse(null);
 
-        assertThat(rules.size(), is(1));
+        assertThat(rules.size(), is(2));
         assertThat(rules.contains(clusterOperatorPeer), is(true));
+        assertThat(rules.contains(entityOperatorPeer), is(true));
     }
 
     @ParallelTest
@@ -1097,15 +1112,24 @@ public class CruiseControlTest {
                     .withMatchLabels(Collections.singletonMap("nsLabelKey", "nsLabelValue"))
                 .endNamespaceSelector()
                 .build();
+        NetworkPolicyPeer entityOperatorPeer = new NetworkPolicyPeerBuilder()
+            .withNewPodSelector()
+                .withMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, format("%s-entity-operator", CLUSTER)))
+            .endPodSelector()
+            .withNewNamespaceSelector()
+                .withMatchLabels(Collections.singletonMap("nsLabelKey", "nsLabelValue"))
+            .endNamespaceSelector()
+            .build();
 
-        NetworkPolicy np = cc.generateNetworkPolicy(null, Labels.fromMap(Collections.singletonMap("nsLabelKey", "nsLabelValue")));
+        NetworkPolicy np = cc.generateNetworkPolicy(null, Labels.fromMap(Collections.singletonMap("nsLabelKey", "nsLabelValue")), true);
 
         assertThat(np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(CruiseControl.REST_API_PORT))).findFirst().orElse(null), is(notNullValue()));
 
         List<NetworkPolicyPeer> rules = np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(CruiseControl.REST_API_PORT))).map(NetworkPolicyIngressRule::getFrom).findFirst().orElseThrow();
 
-        assertThat(rules.size(), is(1));
+        assertThat(rules.size(), is(2));
         assertThat(rules.contains(clusterOperatorPeer), is(true));
+        assertThat(rules.contains(entityOperatorPeer), is(true));
     }
 
     @ParallelTest
@@ -1232,6 +1256,82 @@ public class CruiseControlTest {
 
         properties = getCcProperties(createKafka(cruiseControlSpec));
         assertThat(properties.getProperty(CruiseControlConfigurationParameters.SAMPLE_STORE_TOPIC_REPLICATION_FACTOR.getValue()), is(replicationFactor));
+    }
+
+    @ParallelTest
+    public void testGenerateApiSecret() {
+        PasswordGenerator passwordGenerator = new PasswordGenerator(10, "a", "a");
+        var newSecret = cc.generateApiSecret(passwordGenerator, null, null);
+        assertThat(newSecret, is(notNullValue()));
+        assertThat(newSecret.getData(), is(notNullValue()));
+        assertThat(newSecret.getData().size(), is(3));
+        assertThat(newSecret.getData().get(API_ADMIN_PASSWORD_KEY), is(notNullValue()));
+        assertThat(newSecret.getData().get(API_USER_PASSWORD_KEY), is(notNullValue()));
+        assertThat(newSecret.getData().get(API_AUTH_FILE_KEY), is(notNullValue()));
+        assertTrue(Util.decodeFromBase64(newSecret.getData().get(API_AUTH_FILE_KEY)).contains("admin"));
+        assertTrue(Util.decodeFromBase64(newSecret.getData().get(API_AUTH_FILE_KEY)).contains("user"));
+
+        var secretWithAdditionalUser = cc.generateApiSecret(passwordGenerator, null, 
+            new CruiseControl.CruiseControlUser("foo", "changeit"));
+        assertThat(secretWithAdditionalUser, is(notNullValue()));
+        assertThat(secretWithAdditionalUser.getData(), is(notNullValue()));
+        assertThat(secretWithAdditionalUser.getData().size(), is(3));
+        assertThat(secretWithAdditionalUser.getData().get(API_ADMIN_PASSWORD_KEY), is(notNullValue()));
+        assertThat(secretWithAdditionalUser.getData().get(API_USER_PASSWORD_KEY), is(notNullValue()));
+        assertThat(secretWithAdditionalUser.getData().get(API_AUTH_FILE_KEY), is(notNullValue()));
+        assertTrue(Util.decodeFromBase64(secretWithAdditionalUser.getData().get(API_AUTH_FILE_KEY)).contains("foo"));
+        assertTrue(Util.decodeFromBase64(secretWithAdditionalUser.getData().get(API_AUTH_FILE_KEY)).contains("changeit"));
+
+        var password = Util.encodeToBase64("changeit");
+        var auth = Util.encodeToBase64("admin:changeit,ADMIN\nuser:changeit,USER\n");
+        var oldSecret = cc.generateApiSecret(passwordGenerator, new SecretBuilder().withData(Map.of(
+            API_ADMIN_PASSWORD_KEY, password, API_USER_PASSWORD_KEY, password, API_AUTH_FILE_KEY, auth
+        )).build(), null);
+        assertThat(oldSecret, is(notNullValue()));
+        assertThat(oldSecret.getData(), is(notNullValue()));
+        assertThat(oldSecret.getData().size(), is(3));
+        assertThat(oldSecret.getData().get(API_ADMIN_PASSWORD_KEY), is(password));
+        assertThat(oldSecret.getData().get(API_USER_PASSWORD_KEY), is(password));
+        assertThat(oldSecret.getData().get(API_AUTH_FILE_KEY), is(auth));
+
+        assertThrows(RuntimeException.class, () -> cc.generateApiSecret(passwordGenerator,
+            new SecretBuilder().withData(Map.of(API_ADMIN_PASSWORD_KEY, password)).build(), null));
+
+        assertThrows(RuntimeException.class, () -> cc.generateApiSecret(passwordGenerator,
+            new SecretBuilder().withData(Map.of(API_USER_PASSWORD_KEY, password)).build(), null));
+
+        assertThrows(RuntimeException.class, () -> cc.generateApiSecret(passwordGenerator,
+            new SecretBuilder().withData(Map.of(API_AUTH_FILE_KEY, auth)).build(), null));
+
+        assertThrows(RuntimeException.class, () -> cc.generateApiSecret(passwordGenerator,
+            new SecretBuilder().withData(Map.of()).build(), null));
+        
+        assertThrows(RuntimeException.class, () -> cc.generateApiSecret(passwordGenerator,
+            new SecretBuilder().withData(Map.of(
+                API_ADMIN_PASSWORD_KEY, password, API_USER_PASSWORD_KEY, password, API_AUTH_FILE_KEY, 
+                    Util.encodeToBase64("admin:changeit,ADMIN\n")
+            )).build(), null));
+        
+        assertThrows(RuntimeException.class, () -> cc.generateApiSecret(passwordGenerator,
+            new SecretBuilder().withData(Map.of(
+                API_ADMIN_PASSWORD_KEY, password, API_USER_PASSWORD_KEY, password, API_AUTH_FILE_KEY, 
+                    Util.encodeToBase64("user:changeit,USER\n")
+            )).build(), null));
+
+        assertThrows(RuntimeException.class, () -> cc.generateApiSecret(passwordGenerator,
+            new SecretBuilder().withData(Map.of(
+                API_ADMIN_PASSWORD_KEY, " ", API_USER_PASSWORD_KEY, password, API_AUTH_FILE_KEY, auth
+            )).build(), null));
+
+        assertThrows(RuntimeException.class, () -> cc.generateApiSecret(passwordGenerator,
+            new SecretBuilder().withData(Map.of(
+                API_ADMIN_PASSWORD_KEY, password, API_USER_PASSWORD_KEY, " ", API_AUTH_FILE_KEY, auth
+            )).build(), null));
+
+        assertThrows(RuntimeException.class, () -> cc.generateApiSecret(passwordGenerator,
+            new SecretBuilder().withData(Map.of(
+                API_ADMIN_PASSWORD_KEY, password, API_USER_PASSWORD_KEY, password, API_AUTH_FILE_KEY, " "
+            )).build(), null));
     }
 
     @AfterAll

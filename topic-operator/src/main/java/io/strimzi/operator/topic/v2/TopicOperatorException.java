@@ -70,5 +70,4 @@ public abstract class TopicOperatorException extends Exception {
             super(Reason.NOT_SUPPORTED, message);
         }
     }
-
 }

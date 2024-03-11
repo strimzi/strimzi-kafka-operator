@@ -26,11 +26,11 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mockito;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import static io.strimzi.api.ResourceAnnotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION;
@@ -45,7 +45,7 @@ import static org.mockito.Mockito.mock;
 
 @ExtendWith(KafkaClusterExtension.class)
 public class TopicOperatorMetricsTest {
-    private static final String NAMESPACE = "ns";
+    private static final String NAMESPACE = "topic-operator-test";
     private static final int MAX_QUEUE_SIZE = 200;
     private static final int MAX_BATCH_SIZE = 10;
     private static final int MAX_THREADS = 2;
@@ -55,8 +55,8 @@ public class TopicOperatorMetricsTest {
     private static TopicOperatorMetricsHolder metrics;
 
     @BeforeAll
-    public static void beforeAll() {
-        TopicOperatorTestUtil.setupKubeCluster(NAMESPACE);
+    public static void beforeAll(TestInfo testInfo) {
+        TopicOperatorTestUtil.setupKubeCluster(testInfo, NAMESPACE);
         client = new KubernetesClientBuilder().build();
         TopicOperatorMetricsProvider metricsProvider = new TopicOperatorMetricsProvider(new SimpleMeterRegistry());
         metrics = new TopicOperatorMetricsHolder(RESOURCE_KIND, null, metricsProvider);
@@ -65,7 +65,7 @@ public class TopicOperatorMetricsTest {
     @AfterAll
     public static void afterAll(TestInfo testInfo) {
         TopicOperatorTestUtil.cleanupNamespace(client, testInfo, NAMESPACE);
-        TopicOperatorTestUtil.teardownKubeCluster2(NAMESPACE);
+        TopicOperatorTestUtil.teardownKubeCluster(NAMESPACE);
         client.close();
     }
 
@@ -90,11 +90,11 @@ public class TopicOperatorMetricsTest {
         }
         assertMetricMatches("strimzi.resources", tags, "gauge", is(0.0));
 
-        KafkaTopic foo1 = createKafkaTopic("foo", "100100");
+        KafkaTopic foo1 = createKafkaTopic("my-topic", "100100");
         eventHandler.onAdd(foo1);
         assertMetricMatches("strimzi.resources.paused", tags, "gauge", is(0.0));
 
-        KafkaTopic foo2 = createKafkaTopic("foo", "100100");
+        KafkaTopic foo2 = createKafkaTopic("my-topic", "100100");
         foo2.getMetadata().setAnnotations(Map.of(ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true"));
         eventHandler.onUpdate(foo1, foo2);
         assertMetricMatches("strimzi.resources.paused", tags, "gauge", is(1.0));
@@ -102,7 +102,7 @@ public class TopicOperatorMetricsTest {
         eventHandler.onUpdate(foo1, foo1);
         assertMetricMatches("strimzi.resources.paused", tags, "gauge", is(1.0));
 
-        KafkaTopic foo3 = createKafkaTopic("foo", "100100");
+        KafkaTopic foo3 = createKafkaTopic("my-topic", "100100");
         foo3.getMetadata().setAnnotations(Map.of(ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "false"));
         eventHandler.onUpdate(foo2, foo3);
         assertMetricMatches("strimzi.resources.paused", tags, "gauge", is(0.0));
@@ -156,9 +156,14 @@ public class TopicOperatorMetricsTest {
     }
 
     @Test
-    public void shouldHaveMetricsAfterSomeReconciliations(KafkaCluster cluster) throws ExecutionException, InterruptedException {
+    public void shouldHaveMetricsAfterSomeReconciliations(KafkaCluster cluster) throws InterruptedException {
         Admin admin = Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, cluster.getBootstrapServers()));
-        BatchingTopicController controller = new BatchingTopicController(Map.of("key", "VALUE"), admin, client, true, metrics, NAMESPACE, true);
+        var config = Mockito.mock(TopicOperatorConfig.class);
+        Mockito.doReturn(NAMESPACE).when(config).namespace();
+        Mockito.doReturn(true).when(config).useFinalizer();
+        Mockito.doReturn(false).when(config).enableAdditionalMetrics();
+        var replicasChangeClient = Mockito.mock(ReplicasChangeHandler.class);
+        BatchingTopicController controller = new BatchingTopicController(config, Map.of("key", "VALUE"), admin, client, metrics, replicasChangeClient);
 
         KafkaTopic t1 = createResource(client, "t1", "t1");
         KafkaTopic t2 = createResource(client, "t2", "t1");

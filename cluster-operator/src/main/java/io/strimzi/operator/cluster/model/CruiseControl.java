@@ -64,6 +64,14 @@ import static io.strimzi.operator.cluster.model.VolumeUtils.createSecretVolume;
 import static io.strimzi.operator.cluster.model.VolumeUtils.createVolumeMount;
 import static io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlConfiguration.CRUISE_CONTROL_DEFAULT_ANOMALY_DETECTION_GOALS;
 import static io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlConfiguration.CRUISE_CONTROL_GOALS;
+import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.API_ADMIN_NAME;
+import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.API_ADMIN_PASSWORD_KEY;
+import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.API_ADMIN_ROLE;
+import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.API_AUTH_FILE_KEY;
+import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.API_USER_NAME;
+import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.API_USER_PASSWORD_KEY;
+import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.API_USER_ROLE;
+import static java.lang.String.format;
 
 /**
  * Cruise Control model
@@ -72,23 +80,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     protected static final String COMPONENT_TYPE = "cruise-control";
     protected static final String CRUISE_CONTROL_CONTAINER_NAME = "cruise-control";
 
-    // Fields used for Cruise Control API authentication
-    /**
-     * Name of the admin user
-     */
-    public static final String API_ADMIN_NAME = "admin";
-    private static final String API_ADMIN_ROLE = "ADMIN";
-    protected static final String API_USER_NAME = "user";
-    private static final String API_USER_ROLE = "USER";
-
-    /**
-     * Key for the admin user password
-     */
-    public static final String API_ADMIN_PASSWORD_KEY = COMPONENT_TYPE + ".apiAdminPassword";
-    private static final String API_USER_PASSWORD_KEY = COMPONENT_TYPE + ".apiUserPassword";
-    private static final String API_AUTH_FILE_KEY = COMPONENT_TYPE + ".apiAuthFile";
     protected static final String API_HEALTHCHECK_PATH = "/kafkacruisecontrol/state";
-
     protected static final String TLS_CC_CERTS_VOLUME_NAME = "cc-certs";
     protected static final String TLS_CC_CERTS_VOLUME_MOUNT = "/etc/cruise-control/cc-certs/";
     protected static final String TLS_CA_CERTS_VOLUME_NAME = "cluster-ca-certs";
@@ -402,8 +394,8 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
 
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_SSL_ENABLED,  String.valueOf(this.sslEnabled)));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_AUTH_ENABLED,  String.valueOf(this.authEnabled)));
-        varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_USER,  API_USER_NAME));
-        varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_PORT,  String.valueOf(REST_API_PORT)));
+        varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_USER, API_USER_NAME));
+        varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_PORT, String.valueOf(REST_API_PORT)));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_HEALTHCHECK_PATH, API_HEALTHCHECK_PATH));
 
         JvmOptionUtils.heapOptions(varList, 75, 0L, jvmOptions, resources);
@@ -419,42 +411,86 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     }
 
     /**
-     * Creates Cruise Control API auth usernames, passwords, and credentials file
+     * Creates Cruise Control API auth usernames, passwords, and credentials file.
      *
-     * @param passwordGenerator The password generator for API users
-     *
-     * @return Map containing Cruise Control API auth credentials
+     * @param passwordGenerator  The password generator for API users.
+     * @param oldSecret          The old secret.         
+     * @param adminUser          Additional admin user.
+     *                 
+     * @return Map containing Cruise Control API auth credentials.
      */
-    public static Map<String, String> generateCruiseControlApiCredentials(PasswordGenerator passwordGenerator) {
-        String apiAdminPassword = passwordGenerator.generate();
-        String apiUserPassword = passwordGenerator.generate();
+    public static Map<String, String> generateCruiseControlApiCredentials(PasswordGenerator passwordGenerator,
+                                                                          Secret oldSecret,
+                                                                          CruiseControlUser adminUser) {
+        if (oldSecret != null) {
+            // The credentials should not change with every reconciliation
+            // So if the secret with credentials already exists, we re-use the values
+            // But we use the new secret to update labels etc. if needed
+            var data = oldSecret.getData();
+            var adminPassword = data.get(API_ADMIN_PASSWORD_KEY);
+            var userPassword = data.get(API_USER_PASSWORD_KEY);
+            var authFile = data.get(API_AUTH_FILE_KEY);
+            if (adminPassword == null || adminPassword.isBlank() || userPassword == null
+                    || userPassword.isBlank() || authFile == null || authFile.isBlank()) {
+                throw new RuntimeException(format("Secret %s is invalid", oldSecret.getMetadata().getName()));
+            } else if (!Util.decodeFromBase64(authFile).contains(API_ADMIN_NAME) || !Util.decodeFromBase64(authFile).contains(API_USER_NAME)) {
+                throw new RuntimeException(format("Secret %s has invalid authentication file", oldSecret.getMetadata().getName()));
+            } else {
+                return data;
+            }
+        } else {
+            String apiAdminPassword = passwordGenerator.generate();
+            String apiUserPassword = passwordGenerator.generate();
 
-        /*
-         * Create Cruise Control API auth credentials file following Jetty's
-         *  HashLoginService's file format: username: password [,rolename ...]
-         */
-        String authCredentialsFile =
-                API_ADMIN_NAME + ": " + apiAdminPassword + "," + API_ADMIN_ROLE + "\n" +
-                API_USER_NAME + ": " + apiUserPassword + "," + API_USER_ROLE + "\n";
+            /*
+             * Create Cruise Control API auth credentials file following Jetty's
+             *  HashLoginService's file format: username: password [,rolename ...]
+             */
+            String authCredentialsFile =
+                API_ADMIN_NAME + ": " + apiAdminPassword + "," + API_ADMIN_ROLE + "\n" + 
+                    API_USER_NAME + ": " + apiUserPassword + "," + API_USER_ROLE + "\n";
 
-        Map<String, String> data = new HashMap<>(3);
-        data.put(API_ADMIN_PASSWORD_KEY, Util.encodeToBase64(apiAdminPassword));
-        data.put(API_USER_PASSWORD_KEY, Util.encodeToBase64(apiUserPassword));
-        data.put(API_AUTH_FILE_KEY, Util.encodeToBase64(authCredentialsFile));
+            if (adminUser != null) {
+                authCredentialsFile += adminUser.username() + ": " + adminUser.password() + "," + API_ADMIN_ROLE + "\n";
+            }
 
-        return data;
+            return Map.of(
+                API_ADMIN_PASSWORD_KEY, Util.encodeToBase64(apiAdminPassword),
+                API_USER_PASSWORD_KEY, Util.encodeToBase64(apiUserPassword),
+                API_AUTH_FILE_KEY, Util.encodeToBase64(authCredentialsFile)
+            );
+        }
+    }
+
+    /**
+     * Cruise Control user credentials.
+     * 
+     * @param username Username.
+     * @param password Password.
+     */
+    public record CruiseControlUser(String username, String password) {
+        @Override
+        public String toString() {
+            String mask = "********";
+            return "CruiseControlUser{" +
+                "username='" + username + '\'' +
+                ", password='" + mask + '\'' +
+                '}';
+        }
     }
 
     /**
      * Generate the Secret containing the Cruise Control API auth credentials.
      *
-     * @param passwordGenerator The password generator for API users
-     * 
+     * @param passwordGenerator  The password generator for API users.
+     * @param oldSecret          The old secret.
+     * @param adminUser          Additional admin user.
+     *
      * @return The generated Secret.
      */
-    public Secret generateApiSecret(PasswordGenerator passwordGenerator) {
-        return ModelUtils.createSecret(CruiseControlResources.apiSecretName(cluster), namespace, labels, ownerReference, 
-            generateCruiseControlApiCredentials(passwordGenerator), Collections.emptyMap(), Collections.emptyMap());
+    public Secret generateApiSecret(PasswordGenerator passwordGenerator, Secret oldSecret, CruiseControlUser adminUser) {
+        return ModelUtils.createSecret(CruiseControlResources.apiSecretName(cluster), namespace, labels, ownerReference,
+            generateCruiseControlApiCredentials(passwordGenerator, oldSecret, adminUser), Collections.emptyMap(), Collections.emptyMap());
     }
 
     /**
@@ -489,17 +525,27 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
      *
      * @param operatorNamespace                             Namespace where the Strimzi Cluster Operator runs. Null if not configured.
      * @param operatorNamespaceLabels                       Labels of the namespace where the Strimzi Cluster Operator runs. Null if not configured.
-     *
+     * @param topicOperatorEnabled                          Whether to also enable access to Cruise Control from the Entity Operator.
+     *                                                      
      * @return The network policy.
      */
-    public NetworkPolicy generateNetworkPolicy(String operatorNamespace, Labels operatorNamespaceLabels) {
-        NetworkPolicyPeer clusterOperatorPeer = NetworkPolicyUtils.createPeer(Map.of(Labels.STRIMZI_KIND_LABEL, "cluster-operator"), NetworkPolicyUtils.clusterOperatorNamespaceSelector(namespace, operatorNamespace, operatorNamespaceLabels));
+    public NetworkPolicy generateNetworkPolicy(String operatorNamespace, Labels operatorNamespaceLabels, boolean topicOperatorEnabled) {
+        List<NetworkPolicyPeer> peers = new ArrayList<>(2);
+        NetworkPolicyPeer clusterOperatorPeer = NetworkPolicyUtils.createPeer(Map.of(Labels.STRIMZI_KIND_LABEL, "cluster-operator"), 
+            NetworkPolicyUtils.clusterOperatorNamespaceSelector(namespace, operatorNamespace, operatorNamespaceLabels));
+        peers.add(clusterOperatorPeer);
+        
+        if (topicOperatorEnabled) {
+            NetworkPolicyPeer entityOperatorPeer = NetworkPolicyUtils.createPeer(Map.of(Labels.STRIMZI_NAME_LABEL, format("%s-entity-operator", cluster)),
+                NetworkPolicyUtils.clusterOperatorNamespaceSelector(namespace, operatorNamespace, operatorNamespaceLabels));
+            peers.add(entityOperatorPeer);
+        }
 
         // List of network policy rules for all ports
         List<NetworkPolicyIngressRule> rules = new ArrayList<>();
 
-        // CO can access the REST API
-        rules.add(NetworkPolicyUtils.createIngressRule(REST_API_PORT, List.of(clusterOperatorPeer)));
+        // CO and EO can access the REST API
+        rules.add(NetworkPolicyUtils.createIngressRule(REST_API_PORT, peers));
 
         // Everyone can access metrics
         if (metrics.isEnabled()) {

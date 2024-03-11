@@ -318,6 +318,17 @@ public class KafkaResources {
     }
 
     /**
+     * Returns the name of the Cruise Control API auth {@code Secret} used by the Topic Operator in a {@code Kafka} cluster of the given name.
+     * This {@code Secret} will only exist if {@code Kafka.spec.cruiseControl} is configured in the {@code Kafka} resource with the given name.
+     *
+     * @param clusterName The {@code metadata.name} of the {@code Kafka} resource.
+     * @return The name of the corresponding {@code Secret}.
+     */
+    public static String entityTopicOperatorCcApiSecretName(String clusterName) {
+        return clusterName + "-entity-topic-operator-cc-api";
+    }
+
+    /**
      * Returns the name of the Entity Topic Operator logging {@code ConfigMap} for a {@code Kafka} cluster of the given name.
      *
      * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.

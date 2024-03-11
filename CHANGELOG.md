@@ -2,6 +2,7 @@
 
 ## 0.41.0
 
+* Added support for topic replication factor change to the Unidirectional Topic Operator when Cruise Control integration is enabled.
 
 ## 0.40.0
 

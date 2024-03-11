@@ -6,9 +6,9 @@ package io.strimzi.operator.cluster.operator.resource.cruisecontrol;
 
 import io.fabric8.kubernetes.api.model.HTTPHeader;
 import io.fabric8.kubernetes.api.model.Secret;
-import io.strimzi.operator.cluster.model.CruiseControl;
 import io.strimzi.operator.cluster.operator.resource.HttpClientUtils;
 import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlEndpoints;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlParameters;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlRebalanceKeys;
@@ -94,8 +94,8 @@ public class CruiseControlApiImpl implements CruiseControlApi {
 
     protected static HTTPHeader getAuthHttpHeader(boolean apiAuthEnabled, Secret apiSecret) {
         if (apiAuthEnabled) {
-            String password = new String(Util.decodeFromSecret(apiSecret, CruiseControl.API_ADMIN_PASSWORD_KEY), StandardCharsets.US_ASCII);
-            return generateAuthHttpHeader(CruiseControl.API_ADMIN_NAME, password);
+            String password = new String(Util.decodeFromSecret(apiSecret, CruiseControlApiProperties.API_ADMIN_PASSWORD_KEY), StandardCharsets.US_ASCII);
+            return generateAuthHttpHeader(CruiseControlApiProperties.API_ADMIN_NAME, password);
         } else {
             return null;
         }

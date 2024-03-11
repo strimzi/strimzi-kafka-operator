@@ -231,7 +231,7 @@ class BatchingLoop {
                 LOGGER.traceOp("[Batch #{}] Lookup from item store for {} yielded KafkaTopic with resourceVersion {}",
                         batchId, topicUpsert, BatchingTopicController.resourceVersion(kt));
                 var r = new Reconciliation("upsert", "KafkaTopic", topicUpsert.namespace(), topicUpsert.name());
-                LOGGER.debugOp("[Batch #{}] contains {}", batchId, r);
+                LOGGER.debugOp("[Batch #{}] Contains {}", batchId, r);
                 return new ReconcilableTopic(r, kt, topicName(kt));
             } else {
                 // Null can happen if the KafkaTopic has been deleted from Kube and we've not yet processed
