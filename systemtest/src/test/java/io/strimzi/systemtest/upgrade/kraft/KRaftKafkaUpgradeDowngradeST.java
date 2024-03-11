@@ -121,7 +121,7 @@ public class KRaftKafkaUpgradeDowngradeST extends AbstractKRaftUpgradeST {
     void setupEnvironment() {
         List<EnvVar> coEnvVars = new ArrayList<>();
         coEnvVars.add(new EnvVar(Environment.STRIMZI_FEATURE_GATES_ENV, String.join(",",
-            TestConstants.USE_KRAFT_MODE, TestConstants.USE_KAFKA_NODE_POOLS, TestConstants.USE_UNIDIRECTIONAL_TOPIC_OPERATOR), null));
+            TestConstants.USE_KRAFT_MODE, TestConstants.USE_UNIDIRECTIONAL_TOPIC_OPERATOR), null));
 
         clusterOperator
             .defaultInstallation()

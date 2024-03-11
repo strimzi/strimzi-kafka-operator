@@ -117,14 +117,12 @@ public class ClusterOperator extends AbstractVerticle {
                 }));
             }
 
-            if (config.featureGates().kafkaNodePoolsEnabled())  {
-                // When node pools are enabled, we create the NodePool watch
-                startFutures.add(kafkaAssemblyOperator.createNodePoolWatch(namespace).compose(w -> {
-                    LOGGER.info("Opened watch for {} operator", KafkaNodePool.RESOURCE_KIND);
-                    watchByKind.put(KafkaNodePool.RESOURCE_KIND, w);
-                    return Future.succeededFuture();
-                }));
-            }
+            // Start the NodePool watch
+            startFutures.add(kafkaAssemblyOperator.createNodePoolWatch(namespace).compose(w -> {
+                LOGGER.info("Opened watch for {} operator", KafkaNodePool.RESOURCE_KIND);
+                watchByKind.put(KafkaNodePool.RESOURCE_KIND, w);
+                return Future.succeededFuture();
+            }));
 
             // Start connector watch and add it to the map as well
             startFutures.add(kafkaConnectAssemblyOperator.createConnectorWatch(namespace).compose(w -> {

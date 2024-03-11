@@ -5,7 +5,6 @@
 package io.strimzi.systemtest.operators;
 
 import io.fabric8.kubernetes.api.model.EnvVar;
-import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
@@ -24,7 +23,6 @@ import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
-import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StrimziPodSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.annotations.IsolatedTest;
@@ -39,7 +37,6 @@ import java.util.Map;
 
 import static io.strimzi.systemtest.TestConstants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.TestConstants.REGRESSION;
-import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
@@ -104,45 +101,6 @@ public class FeatureGatesST extends AbstractST {
     }
 
     /**
-     * @description This test case verifies basic working of Kafka Cluster managed by Cluster Operator with kafkaNodePool feature gate enabled.
-     *
-     * @steps
-     *  1. - Deploy Kafka with annotated to enable management by KafkaNodePool, and KafkaNodePool targeting given Kafka Cluster.
-     *     - Kafka is deployed, KafkaNodePool custom resource is targeting Kafka Cluster as expected.
-     *  2. - Produce and consume messages in given Kafka Cluster.
-     *     - Clients can produce and consume messages.
-     *  3. - Trigger manual Rolling Update.
-     *     - Rolling update is triggered and completed shortly after.
-     *
-     * @usecase
-     *  - kafka-node-pool
-     */
-    @IsolatedTest
-    void testKafkaNodePoolFeatureGate() {
-        assumeFalse(Environment.isOlmInstall() || Environment.isHelmInstall());
-
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
-        final int kafkaReplicas = 3;
-
-        // as the only FG set in the CO is 'KafkaNodePools' (kraft not included) Broker role is the only one that kafka broker can take
-        setupClusterOperatorWithFeatureGate("+KafkaNodePools,-UseKRaft");
-
-        LOGGER.info("Deploying Kafka Cluster: {}/{} controlled by KafkaNodePool: {}", testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getBrokerPoolName());
-        final Kafka kafkaCr = KafkaTemplates.kafkaPersistentNodePools(testStorage.getClusterName(), kafkaReplicas, 3)
-            .editOrNewMetadata()
-                .withNamespace(testStorage.getNamespaceName())
-            .endMetadata()
-            .build();
-        
-        resourceManager.createResourceWithWait(
-            KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), kafkaReplicas).build(),
-            kafkaCr
-        );
-
-        rollKafkaNodePoolWithActiveProducerConsumer(testStorage, kafkaReplicas);
-    }
-
-    /**
      * @description This test case verifies transfer of Kafka Cluster from and to management by KafkaNodePool, by creating corresponding Kafka and KafkaNodePool custom resources
      * and manipulating according kafka annotation.
      *
@@ -189,8 +147,6 @@ public class FeatureGatesST extends AbstractST {
             .withNamespaceName(testStorage.getNamespaceName())
             .build();
 
-        Map<String, String> coPod = DeploymentUtils.depSnapshot(clusterOperator.getDeploymentNamespace(), ResourceManager.getCoDeploymentName());
-
         LOGGER.info("Deploying Kafka Cluster: {}/{} controlled by KafkaNodePool: {}", testStorage.getNamespaceName(), testStorage.getClusterName(), kafkaNodePoolName);
 
         final Kafka kafkaCr = KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), originalKafkaReplicaCount, 3)
@@ -199,9 +155,6 @@ public class FeatureGatesST extends AbstractST {
                 .withNamespace(testStorage.getNamespaceName())
             .endMetadata()
             .build();
-
-        // this is useful so we can copy all the storage configuration during the "transfer replace"
-        final Kafka kafkaCrZKMode = KafkaTemplates.kafkaPersistentWithoutNodePools(testStorage.getClusterName(), originalKafkaReplicaCount, 3).build();
 
         // as the only FG set in the CO is 'KafkaNodePools' (kraft is never included) Broker role is the only one that can be taken
         resourceManager.createResourceWithWait(
@@ -238,16 +191,6 @@ public class FeatureGatesST extends AbstractST {
         );
         ClientUtils.waitForClientsSuccess(testStorage);
 
-        LOGGER.info("Changing FG env variable to disable Kafka Node Pools");
-        List<EnvVar> coEnvVars = kubeClient().getDeployment(clusterOperator.getDeploymentNamespace(), TestConstants.STRIMZI_DEPLOYMENT_NAME).getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
-        coEnvVars.stream().filter(env -> env.getName().equals(Environment.STRIMZI_FEATURE_GATES_ENV)).findFirst().get().setValue("-KafkaNodePools,-UseKRaft");
-
-        Deployment coDep = kubeClient().getDeployment(clusterOperator.getDeploymentNamespace(), TestConstants.STRIMZI_DEPLOYMENT_NAME);
-        coDep.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(coEnvVars);
-        kubeClient().getClient().apps().deployments().inNamespace(clusterOperator.getDeploymentNamespace()).resource(coDep).update();
-
-        coPod = DeploymentUtils.waitTillDepHasRolled(clusterOperator.getDeploymentNamespace(), TestConstants.STRIMZI_DEPLOYMENT_NAME, 1, coPod);
-
         LOGGER.info("Disable KafkaNodePool in Kafka Cluster: {}/{}", testStorage.getNamespaceName(), testStorage.getClusterName());
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(),
             kafka -> {
@@ -277,16 +220,6 @@ public class FeatureGatesST extends AbstractST {
         );
 
         ClientUtils.waitForClientsSuccess(testStorage);
-
-        LOGGER.info("Changing FG env variable to enable Kafka Node Pools");
-        coEnvVars = kubeClient().getDeployment(clusterOperator.getDeploymentNamespace(), TestConstants.STRIMZI_DEPLOYMENT_NAME).getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
-        coEnvVars.stream().filter(env -> env.getName().equals(Environment.STRIMZI_FEATURE_GATES_ENV)).findFirst().get().setValue("+KafkaNodePools");
-
-        coDep = kubeClient().getDeployment(clusterOperator.getDeploymentNamespace(), TestConstants.STRIMZI_DEPLOYMENT_NAME);
-        coDep.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(coEnvVars);
-        kubeClient().getClient().apps().deployments().inNamespace(clusterOperator.getDeploymentNamespace()).resource(coDep).update();
-
-        DeploymentUtils.waitTillDepHasRolled(clusterOperator.getDeploymentNamespace(), TestConstants.STRIMZI_DEPLOYMENT_NAME, 1, coPod);
 
         LOGGER.info("Enable KafkaNodePool in Kafka Cluster: {}/{}", testStorage.getNamespaceName(), testStorage.getClusterName());
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(),
