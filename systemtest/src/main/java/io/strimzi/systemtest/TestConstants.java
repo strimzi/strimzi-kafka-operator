@@ -399,11 +399,15 @@ public interface TestConstants {
      */
     String ROUTE = "route";
 
-
     /**
      * Tag for tests that focus on migration from ZK to KRaft
      */
     String MIGRATION = "migration";
+
+    /**
+     * Tag for tests that uses Strimzi quotas plugin
+     */
+    String QUOTAS_PLUGIN = "quotasplugin";
 
     /**
      * Tag for tests, without ARM,AARCH64 support
