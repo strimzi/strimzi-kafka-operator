@@ -96,7 +96,7 @@ metadata:
   name: my-cluster
   namespace: my-project
   annotations:
-    strimzi.io/kraft="migration" 
+    strimzi.io/kraft: migration
 # ...
 ----
 +
@@ -176,7 +176,7 @@ metadata:
   name: my-cluster
   namespace: my-project
   annotations:
-    strimzi.io/kraft="enabled" 
+    strimzi.io/kraft: enabled
 # ...
 ----
 
@@ -209,17 +209,24 @@ NOTE: Depending on how `deleteClaim` is configured for ZooKeeper, its Persistent
 
 . Remove any ZooKeeper-related configuration from the `Kafka` resource.
 +
-If present, you can remove the following:
+Remove the following section:
 +
+--
+* `spec.zookeeper`
+--
++
+If present, you can also remove the following options from the `.spec.kafka.config` section:
++
+--
 * `log.message.format.version`
-* `inter.broker.protocol.version` 
-* `spec.zookeeper.*` properties 
+* `inter.broker.protocol.version`
+--
 +
 Removing `log.message.format.version` and `inter.broker.protocol.version` causes the brokers and controllers to roll again.
 Removing ZooKeeper properties removes any warning messages related to ZooKeeper configuration being present in a KRaft-operated cluster.  
 
 [id='proc-deploy-migrate-kraft-rollback-{context}']
-.Performing a rollback on the migration
+== Performing a rollback on the migration
 
 Before the migration is finalized by enabling KRaft in the `Kafka` resource,  and the state has moved to the `KRaft` state, you can perform a rollback operation as follows:
 
@@ -239,7 +246,7 @@ metadata:
   name: my-cluster
   namespace: my-project
   annotations:
-    strimzi.io/kraft="rollback" 
+    strimzi.io/kraft: rollback
 # ...
 ----
 +
@@ -269,6 +276,6 @@ metadata:
   name: my-cluster
   namespace: my-project
   annotations:
-    strimzi.io/kraft="disabled" 
+    strimzi.io/kraft: disabled
 # ...
 ----
