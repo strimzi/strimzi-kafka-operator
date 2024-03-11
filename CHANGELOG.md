@@ -2,6 +2,7 @@
 
 ## 0.41.0
 
+* Added support for topic replication factor change to the Unidirectional Topic Operator when Cruise Control integration is enabled.
 
 ## 0.40.0
 
@@ -17,7 +18,6 @@
 * Improve broker scale-down prevention to continue in reconciliation when scale-down cannot be executed
 * Added support for Tiered Storage by enabling the configuration of custom storage plugins through the Kafka custom resource.
 * Update HTTP bridge to latest 0.28.0 release
-* Added support for topic replication factor change to the Unidirectional Topic Operator when Cruise Control integration is enabled.
 
 ### Changes, deprecations and removals
 
