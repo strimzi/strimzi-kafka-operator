@@ -16,6 +16,7 @@ import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -32,6 +33,7 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @JsonPropertyOrder({ "image", "outputDefinitions", "logLevel", "kafkaQueries", "resources", "template" })
 @EqualsAndHashCode
+@ToString
 @Deprecated
 @DeprecatedType(replacedWithType = void.class)
 public class JmxTransSpec implements UnknownPropertyPreserving, Serializable {

@@ -5,10 +5,12 @@
 package io.strimzi.api.kafka.model.topic;
 
 import io.fabric8.kubernetes.api.model.DefaultKubernetesResourceList;
+import lombok.ToString;
 
 /**
  * A {@code DefaultKubernetesResourceList<Topic>} required for using Fabric8 CRD support.
  */
+@ToString(callSuper = true)
 public class KafkaTopicList extends DefaultKubernetesResourceList<KafkaTopic> {
     private static final long serialVersionUID = 1L;
 }

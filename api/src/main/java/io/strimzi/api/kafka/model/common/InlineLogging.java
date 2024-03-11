@@ -8,6 +8,8 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 import java.util.Map;
 
@@ -20,6 +22,8 @@ import java.util.Map;
 )
 @JsonPropertyOrder({"type", "loggers"})
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@EqualsAndHashCode(callSuper = true)
+@ToString(callSuper = true)
 public class InlineLogging extends Logging {
 
     private static final long serialVersionUID = 1L;

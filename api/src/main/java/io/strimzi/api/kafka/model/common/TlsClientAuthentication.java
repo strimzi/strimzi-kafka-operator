@@ -7,6 +7,7 @@ package io.strimzi.api.kafka.model.common;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -18,6 +19,7 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @EqualsAndHashCode
+@ToString
 public class TlsClientAuthentication implements UnknownPropertyPreserving, Serializable {
 
     private static final long serialVersionUID = 1L;

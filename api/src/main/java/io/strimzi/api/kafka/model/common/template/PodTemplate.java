@@ -22,6 +22,7 @@ import io.strimzi.crdgenerator.annotations.Minimum;
 import io.strimzi.crdgenerator.annotations.Pattern;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -39,6 +40,7 @@ import java.util.Map;
 @JsonPropertyOrder({"metadata", "imagePullSecrets", "securityContext", "terminationGracePeriodSeconds", "affinity",
     "tolerations", "topologySpreadConstraint", "priorityClassName", "schedulerName", "hostAliases", "tmpDirSizeLimit"})
 @EqualsAndHashCode
+@ToString
 @DescriptionFile
 public class PodTemplate implements HasMetadataTemplate, Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;

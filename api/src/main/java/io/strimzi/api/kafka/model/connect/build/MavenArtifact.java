@@ -11,6 +11,7 @@ import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 /**
  * Maven artifact represents an artifact which is downloaded from Maven repository
@@ -22,6 +23,7 @@ import lombok.EqualsAndHashCode;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "repository", "group", "artifact", "version" })
 @EqualsAndHashCode(callSuper = true)
+@ToString(callSuper = true)
 public class MavenArtifact extends Artifact {
     private static final long serialVersionUID = 1L;
     public static final String DEFAULT_REPOSITORY = "https://repo1.maven.org/maven2/";

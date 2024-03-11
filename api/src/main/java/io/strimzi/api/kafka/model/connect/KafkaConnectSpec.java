@@ -15,6 +15,7 @@ import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -31,6 +32,7 @@ import java.util.Map;
     "logging", "clientRackInitImage", "rack", "metrics", "tracing",
     "template", "externalConfiguration" })
 @EqualsAndHashCode(callSuper = true, doNotUseGetters = true)
+@ToString(callSuper = true)
 public class KafkaConnectSpec extends AbstractKafkaConnectSpec {
 
     private static final long serialVersionUID = 1L;

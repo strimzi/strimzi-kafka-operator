@@ -11,6 +11,7 @@ import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 import java.util.Map;
 
@@ -22,6 +23,7 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "bootstrapServers", "abortOnSendFailure", "logging"})
 @EqualsAndHashCode(callSuper = true)
+@ToString(callSuper = true)
 public class KafkaMirrorMakerProducerSpec extends KafkaMirrorMakerClientSpec {
     private static final long serialVersionUID = 1L;
 

@@ -9,6 +9,8 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.sundr.builder.annotations.Buildable;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 /**
  * Logging config comes from an existing, user-supplied config map
@@ -20,6 +22,8 @@ import io.sundr.builder.annotations.Buildable;
 @JsonPropertyOrder({"type", "valueFrom"})
 @JsonInclude(JsonInclude.Include.NON_NULL)
 // TODO remove this Note OneOf constraint declared on superclass
+@EqualsAndHashCode(callSuper = true)
+@ToString(callSuper = true)
 public class ExternalLogging extends Logging {
 
     private static final long serialVersionUID = 1L;
