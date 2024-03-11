@@ -415,7 +415,7 @@ public class MirrorMakerST extends AbstractST {
             KafkaTopicTemplates.topic(testStorage.getSourceClusterName(), topicNotIncluded, testStorage.getNamespaceName()).build()
         );
 
-        KafkaClients clients = ClientUtils.getDefaultClientBuilder(testStorage)
+        KafkaClients clients = ClientUtils.getInstantPlainClientBuilder(testStorage)
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getSourceClusterName()))
             .withTopicName(topicName)
             .build();

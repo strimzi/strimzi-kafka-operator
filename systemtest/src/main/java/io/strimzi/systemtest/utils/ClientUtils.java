@@ -253,17 +253,6 @@ public class ClientUtils {
             .build();
     }
 
-    public static KafkaClientsBuilder getDefaultClientBuilder(TestStorage testStorage) {
-        return new KafkaClientsBuilder()
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
-            .withNamespaceName(testStorage.getNamespaceName())
-            .withMessageCount(testStorage.getMessageCount())
-            .withUsername(testStorage.getUsername())
-            .withTopicName(testStorage.getTopicName())
-            .withProducerName(testStorage.getProducerName())
-            .withConsumerName(testStorage.getConsumerName());
-    }
-
     // instant client builders
 
     private static KafkaClientsBuilder instantClientBuilderBase(TestStorage testStorage) {
