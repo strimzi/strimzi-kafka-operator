@@ -285,9 +285,9 @@ public class CruiseControlST extends AbstractST {
         if (Environment.isKafkaNodePoolsEnabled()) {
             KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getBrokerPoolName(), knp ->
                 knp.getSpec().setReplicas(scaleTo), testStorage.getNamespaceName());
+        } else {
+            KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> kafka.getSpec().getKafka().setReplicas(3), testStorage.getNamespaceName());
         }
-        // should be moved to else block once the issue - https://github.com/strimzi/strimzi-kafka-operator/issues/8770 - will be fixed
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> kafka.getSpec().getKafka().setReplicas(3), testStorage.getNamespaceName());
         KafkaUtils.waitForKafkaReady(testStorage.getNamespaceName(), testStorage.getClusterName());
 
         kafkaStatus = KafkaResource.kafkaClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus();
