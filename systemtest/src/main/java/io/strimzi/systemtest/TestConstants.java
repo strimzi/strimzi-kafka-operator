@@ -533,7 +533,7 @@ public interface TestConstants {
     /**
      * NodePool's name prefix based on role
      */
-    String MIXED_ROLE_PREFIX = "mixed-";
-    String BROKER_ROLE_PREFIX = "broker-";
-    String CONTROLLER_ROLE_PREFIX = "control-";
+    String MIXED_ROLE_PREFIX = "m-";
+    String BROKER_ROLE_PREFIX = "b-";
+    String CONTROLLER_ROLE_PREFIX = "c-";
 }

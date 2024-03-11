@@ -28,6 +28,7 @@ import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
 import io.strimzi.systemtest.resources.crd.KafkaRebalanceResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectorTemplates;
@@ -147,6 +148,10 @@ public class MultipleClusterOperatorsST extends AbstractST {
         MetricsCollector firstCoMetricsCollector = setupCOMetricsCollectorInNamespace(FIRST_CO_NAME, FIRST_NAMESPACE, firstCOScraper);
         String secondCOScraper = SECOND_NAMESPACE + "-" + TestConstants.SCRAPER_NAME;
         MetricsCollector secondCoMetricsCollector = setupCOMetricsCollectorInNamespace(SECOND_CO_NAME, SECOND_NAMESPACE, secondCOScraper);
+
+        // allowing NetworkPolicies for all scraper Pods to all CO Pods
+        NetworkPolicyResource.allowNetworkPolicySettingsForClusterOperator(FIRST_NAMESPACE);
+        NetworkPolicyResource.allowNetworkPolicySettingsForClusterOperator(SECOND_NAMESPACE);
 
         LOGGER.info("Deploying Namespace: {} to host all additional operands", testStorage.getNamespaceName());
         NamespaceManager.getInstance().createNamespaceAndPrepare(testStorage.getNamespaceName());
@@ -277,6 +282,8 @@ public class MultipleClusterOperatorsST extends AbstractST {
         LOGGER.info("Setting up metric collectors targeting Cluster Operator: {}", SECOND_CO_NAME);
         String coScraperName = testStorage.getNamespaceName() + "-" + TestConstants.SCRAPER_NAME;
         MetricsCollector secondCoMetricsCollector = setupCOMetricsCollectorInNamespace(SECOND_CO_NAME, testStorage.getNamespaceName(), coScraperName);
+        // allowing NetworkPolicies for all scraper Pods to all CO Pods
+        NetworkPolicyResource.allowNetworkPolicySettingsForClusterOperator(testStorage.getNamespaceName());
 
         LOGGER.info("Deploying Kafka with {} selector of {}", FIRST_CO_NAME, FIRST_CO_SELECTOR);
         resourceManager.createResourceWithWait(
