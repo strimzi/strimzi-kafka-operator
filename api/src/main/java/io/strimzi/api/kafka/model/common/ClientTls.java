@@ -15,6 +15,7 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyMap;
@@ -59,6 +60,7 @@ public class ClientTls implements UnknownPropertyPreserving, Serializable {
     }
 
     public String toVarString() {
+        Objects.requireNonNull(this.trustedCertificates, "trustedCertificates cannot be null");
         return this.trustedCertificates.stream()
                 .map(certSecretSource -> certSecretSource.getSecretName() + "/" + certSecretSource.getCertificate())
                 .collect(Collectors.joining(";"));

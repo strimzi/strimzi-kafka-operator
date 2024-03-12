@@ -31,6 +31,8 @@ import static java.util.Collections.emptyMap;
 @ToString
 public class KafkaBridgeConsumerEnablement implements UnknownPropertyPreserving, Serializable {
 
+    private static final long serialVersionUID = 1L;
+
     private boolean enabled = true;
     private Map<String, Object> additionalProperties;
 
