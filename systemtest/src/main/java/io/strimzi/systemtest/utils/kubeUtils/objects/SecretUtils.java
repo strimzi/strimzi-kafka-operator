@@ -28,10 +28,12 @@ import java.nio.file.Paths;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
@@ -214,8 +216,9 @@ public class SecretUtils {
 
     public static String annotateSecret(String namespaceName, String secretName, String annotationKey, String annotationValue, boolean force) {
         LOGGER.info("Annotating Secret: {}/{} with annotation {}={}", namespaceName, secretName, annotationKey, annotationValue);
+        String[] cmd = {"annotate", force ? "--overwrite" : null, "secret", secretName, annotationKey + "=" + annotationValue};
         return ResourceManager.cmdKubeClient().namespace(namespaceName)
-                .execInCurrentNamespace("annotate", force ? "--overwrite" : "", "secret", secretName, annotationKey + "=" + annotationValue)
+                .execInCurrentNamespace(Arrays.stream(cmd).filter(Objects::nonNull).toArray(String[]::new))
                 .out()
                 .trim();
     }
