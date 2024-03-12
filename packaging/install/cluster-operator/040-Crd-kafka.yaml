@@ -324,6 +324,11 @@ spec:
                                 loadBalancerIP:
                                   type: string
                                   description: The loadbalancer is requested with the IP address specified in this field. This feature depends on whether the underlying cloud provider supports specifying the `loadBalancerIP` when a load balancer is created. This field is ignored if the cloud provider does not support the feature.This field can be used only with `loadbalancer` type listener.
+                                externalIPs:
+                                  type: array
+                                  items:
+                                    type: string
+                                  description: "External IPs associated to the nodeport service. These IPs are uesd by clients external to the cluster to access the kafka brokers. This field is helpful when `nodeport` without `externalIP` is not sufficient eg: bare-metal Kubernetes cluster with Calico that doesn't support Loadbalancer service types. This field can only be used with `nodeport` type listener."
                                 annotations:
                                   additionalProperties:
                                     type: string
@@ -358,6 +363,11 @@ spec:
                                   loadBalancerIP:
                                     type: string
                                     description: The loadbalancer is requested with the IP address specified in this field. This feature depends on whether the underlying cloud provider supports specifying the `loadBalancerIP` when a load balancer is created. This field is ignored if the cloud provider does not support the feature.This field can be used only with `loadbalancer` type listener.
+                                  externalIPs:
+                                    type: array
+                                    items:
+                                      type: string
+                                    description: "External IPs associated to the nodeport service. These IPs are uesd by clients external to the cluster to access the kafka brokers. This field is helpful when `nodeport` without `externalIP` is not sufficient eg: bare-metal Kubernetes cluster with Calico that doesn't support Loadbalancer service types. This field can only be used with `nodeport` type listener."
                                   annotations:
                                     additionalProperties:
                                       type: string

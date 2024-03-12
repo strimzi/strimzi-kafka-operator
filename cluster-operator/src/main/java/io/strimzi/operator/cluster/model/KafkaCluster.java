@@ -713,6 +713,13 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                 }
             }
 
+            if (KafkaListenerType.NODEPORT == listener.getType()) {
+            	List<String> eips = ListenersUtils.bootstrapExternalIPs(listener);
+                if (eips != null && !eips.isEmpty()) {
+                    service.getSpec().setExternalIPs(eips);
+                }
+            }
+
             if (KafkaListenerType.LOADBALANCER == listener.getType() || KafkaListenerType.NODEPORT == listener.getType()) {
                 ExternalTrafficPolicy etp = ListenersUtils.externalTrafficPolicy(listener);
                 if (etp != null) {
@@ -788,6 +795,13 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                             String loadBalancerClass = ListenersUtils.controllerClass(listener);
                             if (loadBalancerClass != null) {
                                 service.getSpec().setLoadBalancerClass(loadBalancerClass);
+                            }
+                        }
+
+                        if (KafkaListenerType.NODEPORT == listener.getType()) {
+                        	List<String> eips = ListenersUtils.brokerExternalIPs(listener, node.nodeId());
+                            if (eips != null && !eips.isEmpty()) {
+                                service.getSpec().setExternalIPs(eips);
                             }
                         }
 

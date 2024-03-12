@@ -22,7 +22,7 @@ import java.util.Map;
  * Configures listener bootstrap configuration
  */
 @DescriptionFile
-@JsonPropertyOrder({"alternativeNames", "host", "dnsAnnotations", "nodePort", "loadBalancerIP"})
+@JsonPropertyOrder({"alternativeNames", "host", "dnsAnnotations", "nodePort", "loadBalancerIP", "externalIPs"})
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Buildable(
     editableEnabled = false,
@@ -38,6 +38,7 @@ public class GenericKafkaListenerConfigurationBootstrap implements Serializable,
     private Map<String, String> labels = new HashMap<>(0);
     private Integer nodePort;
     private String loadBalancerIP;
+    private List<String> externalIPs;
 
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
@@ -109,6 +110,19 @@ public class GenericKafkaListenerConfigurationBootstrap implements Serializable,
 
     public void setLoadBalancerIP(String loadBalancerIP) {
         this.loadBalancerIP = loadBalancerIP;
+    }
+
+    @Description("External IPs associated to the nodeport service. " + 
+            "These IPs are uesd by clients external to the cluster to access the kafka brokers. " +
+            "This field is helpful when `nodeport` without `externalIP` is not sufficient eg: bare-metal Kubernetes cluster with Calico that doesn't support Loadbalancer service types. " +
+            "This field can only be used with `nodeport` type listener.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public List<String> getExternalIPs() {
+        return externalIPs;
+    }
+
+    public void setExternalIPs(List<String> externalIPs) {
+        this.externalIPs = externalIPs;
     }
 
     @Override
