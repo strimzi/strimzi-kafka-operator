@@ -29,7 +29,7 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"port", "cors"})
+@JsonPropertyOrder({"host", "port", "cors", "timeoutSeconds", "producer", "consumer"})
 @EqualsAndHashCode
 @ToString
 public class KafkaBridgeHttpConfig implements UnknownPropertyPreserving, Serializable {
@@ -38,8 +38,14 @@ public class KafkaBridgeHttpConfig implements UnknownPropertyPreserving, Seriali
 
     public static final int HTTP_DEFAULT_PORT = 8080;
     public static final String HTTP_DEFAULT_HOST = "0.0.0.0";
+    public static final long HTTP_DEFAULT_TIMEOUT = -1L;
+
+    private String host = HTTP_DEFAULT_HOST;
     private int port = HTTP_DEFAULT_PORT;
     private KafkaBridgeHttpCors cors;
+    private long timeoutSeconds = HTTP_DEFAULT_TIMEOUT;
+    private KafkaBridgeProducerEnablement producer = new KafkaBridgeProducerEnablement();
+    private KafkaBridgeConsumerEnablement consumer = new KafkaBridgeConsumerEnablement();
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     public KafkaBridgeHttpConfig() {
@@ -49,8 +55,18 @@ public class KafkaBridgeHttpConfig implements UnknownPropertyPreserving, Seriali
         this.port = port;
     }
 
+    @Description("The host which is the server listening on.")
+    @JsonProperty(defaultValue = HTTP_DEFAULT_HOST)
+    public String getHost() {
+        return host;
+    }
+
+    public void setHost(String host) {
+        this.host = host;
+    }
+
     @Description("The port which is the server listening on.")
-    @JsonProperty(defaultValue = "8080")
+    @JsonProperty(defaultValue = HTTP_DEFAULT_PORT + "")
     @Minimum(1023)
     public int getPort() {
         return port;
@@ -58,6 +74,33 @@ public class KafkaBridgeHttpConfig implements UnknownPropertyPreserving, Seriali
 
     public void setPort(int port) {
         this.port = port;
+    }
+
+    @Description("The timeout in seconds for deleting inactive consumers.")
+    public long getTimeoutSeconds() {
+        return timeoutSeconds;
+    }
+
+    public void setTimeoutSeconds(long timeoutSeconds) {
+        this.timeoutSeconds = timeoutSeconds;
+    }
+
+    @Description("Configurations for the HTTP Producer.")
+    public KafkaBridgeProducerEnablement getProducer() {
+        return producer;
+    }
+
+    public void setProducer(KafkaBridgeProducerEnablement producer) {
+        this.producer = producer;
+    }
+
+    @Description("Configurations for the HTTP Consumer.")
+    public KafkaBridgeConsumerEnablement getConsumer() {
+        return consumer;
+    }
+
+    public void setConsumer(KafkaBridgeConsumerEnablement consumer) {
+        this.consumer = consumer;
     }
 
     @Description("CORS configuration for the HTTP Bridge.")

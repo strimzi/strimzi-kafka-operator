@@ -231,6 +231,9 @@ spec:
               http:
                 type: object
                 properties:
+                  host:
+                    type: string
+                    description: The host which is the server listening on.
                   port:
                     type: integer
                     minimum: 1023
@@ -252,6 +255,23 @@ spec:
                     - allowedOrigins
                     - allowedMethods
                     description: CORS configuration for the HTTP Bridge.
+                  timeoutSeconds:
+                    type: integer
+                    description: The timeout in seconds for deleting inactive consumers.
+                  producer:
+                    type: object
+                    properties:
+                      enabled:
+                        type: boolean
+                        description: Whether the HTTP producer should be enabled or disabled.
+                    description: Configurations for the HTTP Producer.
+                  consumer:
+                    type: object
+                    properties:
+                      enabled:
+                        type: boolean
+                        description: Whether the HTTP consumer should be enabled or disabled.
+                    description: Configurations for the HTTP Consumer.
                 description: The HTTP related configuration.
               adminClient:
                 type: object
