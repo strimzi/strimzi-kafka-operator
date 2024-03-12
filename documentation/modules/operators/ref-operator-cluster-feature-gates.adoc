@@ -58,7 +58,7 @@ The `KafkaNodePools` feature gate introduced a new `KafkaNodePool` custom resour
 
 A node pool refers to a distinct group of Kafka nodes within a Kafka cluster.
 Each pool has its own unique configuration, which includes mandatory settings such as the number of replicas, storage configuration, and a list of assigned roles.
-You can assign the _controller_ role, _broker_ role, or both roles to all nodes in the pool in the `.spec.roles` field.
+You can assign the _controller_ role, _broker_ role, or both roles to all nodes in the pool using the `.spec.roles` property.
 When used with a ZooKeeper-based Apache Kafka cluster, it must be set to the `broker` role.
 When used with the `UseKRaft` feature gate, it can be set to `broker`, `controller`, or both.
 
