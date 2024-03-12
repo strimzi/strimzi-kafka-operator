@@ -6,7 +6,9 @@ package io.strimzi.operator.cluster.leaderelection;
 
 import io.fabric8.kubernetes.api.model.coordination.v1.Lease;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.server.mock.EnableKubernetesMockClient;
+import io.strimzi.test.mockkube3.MockKube3;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
@@ -19,14 +21,27 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@EnableKubernetesMockClient(crud = true)
 public class LeaderElectionManagerMockTest {
     private final static String NAMESPACE = "my-le-namespace";
     private final static String LEASE_NAME = "my-lease";
 
-    // Injected by Fabric8 Mock Kubernetes Server
-    @SuppressWarnings("unused")
-    private KubernetesClient client;
+    private static KubernetesClient client;
+    private static MockKube3 mockKube;
+
+    @BeforeAll
+    public static void beforeAll() {
+        // Configure the Kubernetes Mock
+        mockKube = new MockKube3.MockKube3Builder()
+                .withNamespaces(NAMESPACE)
+                .build();
+        mockKube.start();
+        client = mockKube.client();
+    }
+
+    @AfterAll
+    public static void afterAll() {
+        mockKube.stop();
+    }
 
     @Test
     public void testLeaderElectionManager() throws InterruptedException {

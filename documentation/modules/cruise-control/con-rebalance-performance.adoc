@@ -7,7 +7,7 @@
 = Rebalance performance tuning overview
 
 You can adjust several performance tuning options for cluster rebalances.
-These options control how partition replica and leadership movements in a rebalance are executed, as well as the bandwidth that is allocated to a rebalance operation.
+These options control how partition replicas and leadership movements in a rebalance are executed, as well as the bandwidth that is allocated to a rebalance operation.
 
 == Partition reassignment commands
 

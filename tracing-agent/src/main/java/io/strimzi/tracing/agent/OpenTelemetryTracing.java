@@ -20,7 +20,8 @@ public class OpenTelemetryTracing implements Tracing {
         String serviceName = System.getenv("OTEL_SERVICE_NAME");
         if (serviceName != null) {
             LOGGER.info("Initializing OpenTelemetry tracing with service name {}", serviceName);
-            System.setProperty("otel.metrics.exporter", "none"); // disable metrics
+            System.setProperty("otel.metrics.exporter", "none"); // disable otel metrics exporter. This has no effect on metrics in Strimzi.
+            System.setProperty("otel.logs.exporter", "none"); // disable otel logs exporter. This has no effect on logging in Strimzi.
             AutoConfiguredOpenTelemetrySdk.initialize();
         } else {
             LOGGER.error("OpenTelemetry tracing cannot be initialized because OTEL_SERVICE_NAME environment variable is not defined");

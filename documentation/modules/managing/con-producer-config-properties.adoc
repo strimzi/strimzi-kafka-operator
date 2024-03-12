@@ -6,10 +6,18 @@
 = Kafka producer configuration tuning
 
 [role="_abstract"]
-Use a basic producer configuration with optional properties that are tailored to specific use cases.
-
+Use configuration properties to optimize the performance of Kafka producers.
+You can use standard Kafka producer configuration options.
 Adjusting your configuration to maximize throughput might increase latency or vice versa.
 You will need to experiment and tune your producer configuration to get the balance you need.
+
+When configuring a producer, consider the following aspects carefully, as they significantly impact its performance and behavior:
+
+Compression:: 
+By compressing messages before they are sent over the network, you can conserve network bandwidth and reduce disk storage requirements, but with the additional cost of increased CPU utilization due to the compression and decompression processes.
+Batching:: Adjusting the batch size and time intervals when the producer sends messages can affect throughput and latency. 
+Partitioning:: Partitioning strategies in the Kafka cluster can support producers through parallelism and load balancing, whereby producers can write to multiple partitions concurrently and each partition receives an equal share of messages. Other strategies might include topic replication for fault tolerance.
+Securing access:: Implement security measures for authentication, encryption, and authorization by setting up user accounts to xref:assembly-securing-access-{context}[manage secure access to Kafka].
 
 == Basic producer configuration
 
@@ -45,18 +53,23 @@ Compression is useful for improving throughput and reducing the load on storage,
 == Data durability
 
 Message delivery acknowledgments minimize the likelihood that messages are lost.
-Acknowledgments are enabled by default with the `acks` property set at `acks=all`.
+By default, acknowledgments are enabled with the acks property set to `acks=all`. 
+To control the maximum time the producer waits for acknowledgments from the broker and handle potential delays in sending messages, you can use the `delivery.timeout.ms` property.
 
 .Acknowledging message delivery
 [source,env]
 ----
 # ...
 acks=all <1>
+delivery.timeout.ms=120000 <2>
 # ...
 ----
 
 <1> `acks=all` forces a leader replica to replicate messages to a certain number of followers before
 acknowledging that the message request was successfully received. 
+<2> The maximum time in milliseconds to wait for a complete send request. 
+You can set the value to `MAX_LONG` to delegate to Kafka an indefinite number of retries.
+The default is `120000` or 2 minutes.
 
 The `acks=all` setting offers the strongest guarantee of delivery, but it will increase the latency between the producer sending a message and receiving acknowledgment.
 If you don't require such strong guarantees, a setting of `acks=0` or `acks=1` provides either no delivery guarantees or only acknowledgment that the leader replica has written the record to its log.
@@ -214,29 +227,26 @@ such as worse batching, start to counteract the effect on throughput.
 
 .Lowering latency
 
-When your application calls `KafkaProducer.send()` the messages are:
+When your application calls the `KafkaProducer.send()` method, messages undergo a series of operations before being sent:
 
-* Processed by any interceptors
-* Serialized
-* Assigned to a partition
-* Compressed
-* Added to a batch of messages in a per-partition queue
+* Interception: Messages are processed by any configured interceptors.
+* Serialization: Messages are serialized into the appropriate format.
+* Partition assignment: Each message is assigned to a specific partition.
+* Compression: Messages are compressed to conserve network bandwidth.
+* Batching: Compressed messages are added to a batch in a partition-specific queue.
 
-At which point the `send()` method returns.
-So the time `send()` is blocked is determined by:
-
-* The time spent in the interceptors, serializers and partitioner
-* The compression algorithm used
-* The time spent waiting for a buffer to use for compression
+During these operations, the `send()` method is momentarily blocked. 
+It also remains blocked if the `buffer.memory` is full or if metadata is unavailable.
 
 Batches will remain in the queue until one of the following occurs:
 
-* The batch is full (according to `batch.size`)
-* The delay introduced by `linger.ms` has passed
-* The sender is about to send message batches for other partitions to the same broker, and it is possible to add this batch too
-* The producer is being flushed or closed
+* The batch is full (according to `batch.size`).
+* The delay introduced by `linger.ms` has passed.
+* The sender is ready to dispatch batches for other partitions to the same broker and can include this batch.
+* The producer is being flushed or closed.
 
-Look at the configuration for batching and buffering to mitigate the impact of `send()` blocking on latency.
+To minimize the impact of `send()` blocking on latency, optimize batching and buffering configurations. 
+Use the `linger.ms` and `batch.size` properties to batch more messages into a single produce request for higher throughput.
 
 [source,env]
 ----
@@ -246,25 +256,20 @@ batch.size=16384 <2>
 buffer.memory=33554432 <3>
 # ...
 ----
-<1> The `linger` property adds a delay in milliseconds so that larger batches of messages are accumulated and sent in a request. The default is `0'.`
+<1> The `linger.ms` property adds a delay in milliseconds so that larger batches of messages are accumulated and sent in a request. The default is `0`.
 <2> If a maximum `batch.size` in bytes is used, a request is sent when the maximum is reached, or messages have been queued for longer than `linger.ms` (whichever comes sooner).
 Adding the delay allows batches to accumulate messages up to the batch size.
-<3> The buffer size must be at least as big as the batch size, and be able to accommodate buffering, compression and in-flight requests.
+<3> The buffer size must be at least as big as the batch size, and be able to accommodate buffering, compression, and in-flight requests.
 
 .Increasing throughput
 
-Improve throughput of your message requests by adjusting the maximum time to wait before a message is delivered and completes a send request.
-
-You can also direct messages to a specified partition by writing a custom partitioner to replace the default.
+You can improve throughput of your message requests by directing messages to a specified partition using a custom partitioner to replace the default.
 
 [source,env]
 ----
 # ...
-delivery.timeout.ms=120000 <1>
-partitioner.class=my-custom-partitioner <2>
+partitioner.class=my-custom-partitioner <1>
 
 # ...
 ----
-<1> The maximum time in milliseconds to wait for a complete send request. You can set the value to `MAX_LONG` to delegate to Kafka an indefinite number of retries.
-The default is `120000` or 2 minutes.
-<2> Specify the class name of the custom partitioner.
+<1> Specify the class name of your custom partitioner.

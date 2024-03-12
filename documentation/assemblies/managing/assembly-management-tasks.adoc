@@ -9,35 +9,14 @@
 Managing Strimzi requires performing various tasks to keep the Kafka clusters and associated resources running smoothly. 
 Use `kubectl` commands to check the status of resources, configure maintenance windows for rolling updates, and leverage tools such as the Strimzi Drain Cleaner and Kafka Static Quota plugin to manage your deployment effectively.
 
-//discover internal bootstrap service and HTTP Bridge
-include::../../modules/managing/con-service-discovery.adoc[leveloffset=+1]
-
-//connecting to ZooKeeper from terminal
-include::../../modules/configuring/proc-connecting-to-zookeeper.adoc[leveloffset=+1]
-
-//pausing reconciliation of custom resources
-include::../../modules/managing/proc-pausing-reconciliation.adoc[leveloffset=+1]
-
 //windows (time) for maintenance
 include::assembly-maintenance-time-windows.adoc[leveloffset=+1]
-
-//using drain cleaner to drain pods
-include::assembly-drain-cleaner.adoc[leveloffset=+1]
-
-//steps to delete kafka nodes using annotations
-include::../../modules/configuring/proc-manual-delete-pod-pvc-kafka.adoc[leveloffset=+1]
-
-//steps to delete zookeeper nodes using annotations
-include::../../modules/configuring/proc-manual-delete-pod-pvc-zookeeper.adoc[leveloffset=+1]
 
 //performing manual rolling updates
 include::assembly-rolling-updates.adoc[leveloffset=+1]
 
 //recover a cluster from a PV
 include::assembly-cluster-recovery-volume.adoc[leveloffset=+1]
-
-//uninstalling the product
-include::assembly-uninstalling.adoc[leveloffset=+1]
 
 //faqs for cluster operator
 include::../../modules/managing/con-cluster-operator-faqs.adoc[leveloffset=+1]

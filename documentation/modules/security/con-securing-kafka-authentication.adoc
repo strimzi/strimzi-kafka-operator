@@ -23,6 +23,7 @@ Supported authentication options:
 . SCRAM-SHA-512 authentication
 . xref:assembly-oauth-authentication_str[OAuth 2.0 token-based authentication]
 . link:{BookURLConfiguring}#type-KafkaListenerAuthenticationCustom-reference[Custom authentication^]
+. link:{BookURLConfiguring}#con-common-configuration-ssl-reference[TLS versions and cipher suites^]
 
 The authentication option you choose depends on how you wish to authenticate client access to Kafka brokers.
 

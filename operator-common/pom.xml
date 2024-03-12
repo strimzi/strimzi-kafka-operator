@@ -4,7 +4,7 @@
     <parent>
         <groupId>io.strimzi</groupId>
         <artifactId>strimzi</artifactId>
-        <version>0.40.0-SNAPSHOT</version>
+        <version>0.41.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>operator-common</artifactId>
@@ -193,8 +193,8 @@
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>io.fabric8</groupId>
-            <artifactId>kubernetes-server-mock</artifactId>
+            <groupId>io.strimzi</groupId>
+            <artifactId>mockkube</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

@@ -9,30 +9,33 @@ import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.metrics.MetricsHolder;
 
+import java.util.Objects;
+
 import static io.strimzi.operator.common.Annotations.isReconciliationPausedWithAnnotation;
+import static io.strimzi.operator.topic.v2.TopicOperatorUtil.topicName;
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 class TopicOperatorEventHandler implements ResourceEventHandler<KafkaTopic> {
-
     private final static ReconciliationLogger LOGGER = ReconciliationLogger.create(TopicOperatorEventHandler.class);
 
+    private final TopicOperatorConfig config;
     private final BatchingLoop queue;
-    private final boolean useFinalizer;
     private final MetricsHolder metrics;
-    private final String namespace;
+    
+    private long lastPeriodicTimestampMs;
 
-    public TopicOperatorEventHandler(BatchingLoop queue, boolean useFinalizer, MetricsHolder metrics, String namespace) {
+    public TopicOperatorEventHandler(TopicOperatorConfig config, BatchingLoop queue, MetricsHolder metrics) {
+        this.config = config;
         this.queue = queue;
-        this.useFinalizer = useFinalizer;
         this.metrics = metrics;
-        this.namespace = namespace;
     }
 
     @Override
     public void onAdd(KafkaTopic obj) {
-        LOGGER.debugOp("Informed of add {}", obj);
-        metrics.resourceCounter(namespace).incrementAndGet();
+        LOGGER.debugOp("Informed about add event for topic {}", topicName(obj));
+        metrics.resourceCounter(config.namespace()).incrementAndGet();
         if (isReconciliationPausedWithAnnotation(obj)) {
-            metrics.pausedResourceCounter(namespace).incrementAndGet();
+            metrics.pausedResourceCounter(config.namespace()).incrementAndGet();
         }
         queue.offer(new TopicUpsert(System.nanoTime(), obj.getMetadata().getNamespace(),
                 obj.getMetadata().getName(),
@@ -41,12 +44,18 @@ class TopicOperatorEventHandler implements ResourceEventHandler<KafkaTopic> {
 
     @Override
     public void onUpdate(KafkaTopic oldObj, KafkaTopic newObj) {
-        String trigger = oldObj.equals(newObj) ? "resync" : "update";
-        LOGGER.debugOp("Informed of {} {}", trigger, newObj);
+        String trigger = Objects.equals(oldObj, newObj) ? "resync" : "update";
+        if (trigger.equals("resync") && (NANOSECONDS.toMillis(System.nanoTime()) - lastPeriodicTimestampMs) > config.fullReconciliationIntervalMs()) {
+            LOGGER.infoOp("Triggering periodic reconciliation of {} resources for namespace {}", KafkaTopic.RESOURCE_KIND, config.namespace());
+            this.lastPeriodicTimestampMs = NANOSECONDS.toMillis(System.nanoTime());
+        }
+        if (trigger.equals("update")) {
+            LOGGER.debugOp("Informed about update event for topic {}", topicName(newObj));
+        }
         if (isReconciliationPausedWithAnnotation(oldObj) && !isReconciliationPausedWithAnnotation(newObj)) {
-            metrics.pausedResourceCounter(namespace).decrementAndGet();
+            metrics.pausedResourceCounter(config.namespace()).decrementAndGet();
         } else if (!isReconciliationPausedWithAnnotation(oldObj) && isReconciliationPausedWithAnnotation(newObj)) {
-            metrics.pausedResourceCounter(namespace).incrementAndGet();
+            metrics.pausedResourceCounter(config.namespace()).incrementAndGet();
         }
         queue.offer(new TopicUpsert(System.nanoTime(), newObj.getMetadata().getNamespace(),
                 newObj.getMetadata().getName(),
@@ -55,14 +64,14 @@ class TopicOperatorEventHandler implements ResourceEventHandler<KafkaTopic> {
 
     @Override
     public void onDelete(KafkaTopic obj, boolean deletedFinalStateUnknown) {
-        metrics.resourceCounter(namespace).decrementAndGet();
+        LOGGER.debugOp("Informed about delete event for topic {}", topicName(obj));
+        metrics.resourceCounter(config.namespace()).decrementAndGet();
         if (isReconciliationPausedWithAnnotation(obj)) {
-            metrics.pausedResourceCounter(namespace).decrementAndGet();
+            metrics.pausedResourceCounter(config.namespace()).decrementAndGet();
         }
-        if (useFinalizer) {
-            LOGGER.debugOp("Ignoring of delete {} (using finalizers)", obj);
+        if (config.useFinalizer()) {
+            LOGGER.debugOp("Ignoring deletion of {} (using finalizers)", topicName(obj));
         } else {
-            LOGGER.debugOp("Informed of delete {}", obj);
             queue.offer(new TopicDelete(System.nanoTime(), obj));
         }
     }

@@ -11,20 +11,15 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
-import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolBuilder;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolList;
 import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceType;
-import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PersistentVolumeClaimUtils;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
@@ -81,46 +76,10 @@ public class KafkaNodePoolResource implements ResourceType<KafkaNodePool> {
         ResourceManager.replaceCrdResource(KafkaNodePool.class, KafkaNodePoolList.class, resourceName, editor, namespaceName);
     }
 
-    public static KafkaNodePool convertKafkaResourceToKafkaNodePool(Kafka resource) {
-        List<ProcessRoles> nodeRoles = new ArrayList<>();
-        nodeRoles.add(ProcessRoles.BROKER);
-
-        if (Environment.isKRaftModeEnabled()) {
-            nodeRoles.add(ProcessRoles.CONTROLLER);
-        }
-
-        String nodePoolName = TestConstants.KAFKA_NODE_POOL_PREFIX + hashStub(resource.getMetadata().getName());
-
-        KafkaNodePoolBuilder builder = KafkaNodePoolTemplates.defaultKafkaNodePool(resource.getMetadata().getNamespace(), nodePoolName, resource.getMetadata().getName(), resource.getSpec().getKafka().getReplicas())
-            .editOrNewMetadata()
-                .withNamespace(resource.getMetadata().getNamespace())
-                .addToLabels(resource.getMetadata().getLabels())
-            .endMetadata()
-            .editOrNewSpec()
-                .withRoles(nodeRoles)
-                .withStorage(resource.getSpec().getKafka().getStorage())
-                .withJvmOptions(resource.getSpec().getKafka().getJvmOptions())
-                .withResources(resource.getSpec().getKafka().getResources())
-            .endSpec();
-
-        if (resource.getSpec().getKafka().getTemplate() != null) {
-            builder = builder
-                .editOrNewSpec()
-                    .editOrNewTemplate()
-                        .withPersistentVolumeClaim(resource.getSpec().getKafka().getTemplate().getPersistentVolumeClaim())
-                        .withPod(resource.getSpec().getKafka().getTemplate().getPod())
-                    .endTemplate()
-                .endSpec();
-        }
-
-        return builder.build();
-    }
-
     public static LabelSelector getLabelSelector(String clusterName, String poolName, ProcessRoles processRole) {
         Map<String, String> matchLabels = new HashMap<>();
-        if (clusterName != null) {
-            matchLabels.put(Labels.STRIMZI_CLUSTER_LABEL, clusterName);
-        }
+
+        matchLabels.put(Labels.STRIMZI_CLUSTER_LABEL, clusterName);
         matchLabels.put(Labels.STRIMZI_KIND_LABEL, Kafka.RESOURCE_KIND);
         matchLabels.put(Labels.STRIMZI_POOL_NAME_LABEL, poolName);
 
@@ -135,12 +94,15 @@ public class KafkaNodePoolResource implements ResourceType<KafkaNodePool> {
             .build();
     }
 
-    public static LabelSelector getLabelSelector(final String poolName, final ProcessRoles processRoles) {
-        return getLabelSelector(null, poolName, processRoles);
+    public static String getBrokerPoolName(String clusterName) {
+        return TestConstants.BROKER_ROLE_PREFIX + hashStub(clusterName);
     }
 
-    public static String getStrimziPodSetName(String kafkaClusterName, String kafkaNodePoolName) {
-        return kafkaClusterName + "-" + kafkaNodePoolName;
+    public static String getControllerPoolName(String clusterName) {
+        return TestConstants.CONTROLLER_ROLE_PREFIX + hashStub(clusterName);
     }
 
+    public static String getMixedPoolName(String clusterName) {
+        return TestConstants.MIXED_ROLE_PREFIX + hashStub(clusterName);
+    }
 }

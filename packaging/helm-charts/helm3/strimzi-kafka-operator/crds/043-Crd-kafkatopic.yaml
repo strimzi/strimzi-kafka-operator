@@ -105,6 +105,28 @@ spec:
                 topicName:
                   type: string
                   description: Topic name.
+                topicId:
+                  type: string
+                  description: "The topic's id. For a KafkaTopic with the ready condition, this will change only if the topic gets deleted and recreated with the same name."
+                replicasChange:
+                  type: object
+                  properties:
+                    targetReplicas:
+                      type: integer
+                      description: The target replicas value requested by the user. This may be different from .spec.replicas when a change is ongoing.
+                    state:
+                      type: string
+                      enum:
+                        - pending
+                        - ongoing
+                      description: "Current state of the replicas change operation. This can be `pending`, when the change has been requested, or `ongoing`, when the change has been successfully submitted to Cruise Control."
+                    message:
+                      type: string
+                      description: Message for the user related to the replicas change request. This may contain transient error messages that would disappear on periodic reconciliations.
+                    sessionId:
+                      type: string
+                      description: The session identifier for replicas change requests pertaining to this KafkaTopic resource. This is used by the Topic Operator to track the status of `ongoing` replicas change operations.
+                  description: Replication factor change status.
               description: The status of the topic.
     - name: v1beta1
       served: true
@@ -190,6 +212,28 @@ spec:
                 topicName:
                   type: string
                   description: Topic name.
+                topicId:
+                  type: string
+                  description: "The topic's id. For a KafkaTopic with the ready condition, this will change only if the topic gets deleted and recreated with the same name."
+                replicasChange:
+                  type: object
+                  properties:
+                    targetReplicas:
+                      type: integer
+                      description: The target replicas value requested by the user. This may be different from .spec.replicas when a change is ongoing.
+                    state:
+                      type: string
+                      enum:
+                        - pending
+                        - ongoing
+                      description: "Current state of the replicas change operation. This can be `pending`, when the change has been requested, or `ongoing`, when the change has been successfully submitted to Cruise Control."
+                    message:
+                      type: string
+                      description: Message for the user related to the replicas change request. This may contain transient error messages that would disappear on periodic reconciliations.
+                    sessionId:
+                      type: string
+                      description: The session identifier for replicas change requests pertaining to this KafkaTopic resource. This is used by the Topic Operator to track the status of `ongoing` replicas change operations.
+                  description: Replication factor change status.
               description: The status of the topic.
     - name: v1alpha1
       served: true
@@ -275,4 +319,26 @@ spec:
                 topicName:
                   type: string
                   description: Topic name.
+                topicId:
+                  type: string
+                  description: "The topic's id. For a KafkaTopic with the ready condition, this will change only if the topic gets deleted and recreated with the same name."
+                replicasChange:
+                  type: object
+                  properties:
+                    targetReplicas:
+                      type: integer
+                      description: The target replicas value requested by the user. This may be different from .spec.replicas when a change is ongoing.
+                    state:
+                      type: string
+                      enum:
+                        - pending
+                        - ongoing
+                      description: "Current state of the replicas change operation. This can be `pending`, when the change has been requested, or `ongoing`, when the change has been successfully submitted to Cruise Control."
+                    message:
+                      type: string
+                      description: Message for the user related to the replicas change request. This may contain transient error messages that would disappear on periodic reconciliations.
+                    sessionId:
+                      type: string
+                      description: The session identifier for replicas change requests pertaining to this KafkaTopic resource. This is used by the Topic Operator to track the status of `ongoing` replicas change operations.
+                  description: Replication factor change status.
               description: The status of the topic.

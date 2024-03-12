@@ -35,7 +35,7 @@ public interface KubeCluster {
     KubeCmdClient defaultCmdClient();
 
     default KubeClient defaultClient() {
-        return new KubeClient(new KubernetesClientBuilder().withConfig(CONFIG).build().adapt(OpenShiftClient.class), "myproject");
+        return new KubeClient(new KubernetesClientBuilder().withConfig(CONFIG).build().adapt(OpenShiftClient.class), "default");
     }
 
     /**

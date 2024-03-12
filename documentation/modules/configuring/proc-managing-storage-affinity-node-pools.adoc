@@ -109,17 +109,17 @@ spec:
 ----
 
 . Apply the node pool configuration.
-. Check the status of the deployment and wait for the pods in the node pools to be created and have a status of `READY`.
+. Check the status of the deployment and wait for the pods in the node pools to be created and ready (`1/1`).
 +
 [source,shell]
 ----
 kubectl get pods -n <my_cluster_operator_namespace>
 ----
 +
-.Output shows 3 Kafka nodes in `pool-zone-1` and 4 Kafka nodes in `pool-zone-2`:
+.Output shows 3 Kafka nodes in `pool-zone-1` and 4 Kafka nodes in `pool-zone-2`
 [source,shell]
 ----
-NAME                       READY  STATUS   RESTARTS
+NAME                            READY  STATUS   RESTARTS
 my-cluster-pool-zone-1-kafka-0  1/1    Running  0
 my-cluster-pool-zone-1-kafka-1  1/1    Running  0
 my-cluster-pool-zone-1-kafka-2  1/1    Running  0

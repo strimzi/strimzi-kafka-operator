@@ -15,7 +15,10 @@ import io.strimzi.systemtest.annotations.KRaftWithoutUTONotSupported;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.annotations.UTONotSupported;
 import io.strimzi.systemtest.kafkaclients.internalClients.admin.AdminClient;
+import io.strimzi.systemtest.resources.NodePoolsConverter;
+import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.storage.TestStorage;
+import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
 import io.strimzi.systemtest.templates.specific.AdminClientTemplates;
@@ -25,8 +28,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.extension.ExtensionContext;
 
+import static io.strimzi.systemtest.TestConstants.ARM64_UNSUPPORTED;
 import static io.strimzi.systemtest.TestConstants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.TestConstants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -40,6 +43,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
  */
 @Tag(REGRESSION)
 @Tag(INTERNAL_CLIENTS_USED)
+@Tag(ARM64_UNSUPPORTED) // Due to https://github.com/strimzi/test-clients/issues/75
 public class ThrottlingQuotaST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(ThrottlingQuotaST.class);
@@ -54,8 +58,8 @@ public class ThrottlingQuotaST extends AbstractST {
     @ParallelTest
     @KRaftWithoutUTONotSupported
     @UTONotSupported("https://github.com/strimzi/strimzi-kafka-operator/issues/8864")
-    void testThrottlingQuotasDuringAllTopicOperations(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext, Environment.TEST_SUITE_NAMESPACE);
+    void testThrottlingQuotasDuringAllTopicOperations() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
         int numOfTopics = 25;
         int numOfPartitions = 100;
@@ -124,17 +128,23 @@ public class ThrottlingQuotaST extends AbstractST {
     }
 
     @BeforeAll
-    void setup(ExtensionContext extensionContext) {
+    void setup() {
         this.clusterOperator = this.clusterOperator
-            .defaultInstallation(extensionContext)
+            .defaultInstallation()
             .createInstallation()
             .runInstallation();
 
-        sharedTestStorage = new TestStorage(extensionContext, Environment.TEST_SUITE_NAMESPACE);
+        sharedTestStorage = new TestStorage(ResourceManager.getTestContext(), Environment.TEST_SUITE_NAMESPACE);
 
+        resourceManager.createResourceWithWait(
+            NodePoolsConverter.convertNodePoolsIfNeeded(
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(sharedTestStorage.getNamespaceName(), sharedTestStorage.getBrokerPoolName(), sharedTestStorage.getClusterName(), 3).build(),
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(sharedTestStorage.getNamespaceName(), sharedTestStorage.getControllerPoolName(), sharedTestStorage.getClusterName(), 3).build()
+            )
+        );
         // Deploy kafka with ScramSHA512
         LOGGER.info("Deploying shared Kafka across all test cases in {} Namespace", sharedTestStorage.getNamespaceName());
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(sharedTestStorage.getClusterName(), 3)
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(sharedTestStorage.getClusterName(), 3)
             .editMetadata()
                 .withNamespace(sharedTestStorage.getNamespaceName())
             .endMetadata()
@@ -162,7 +172,7 @@ public class ThrottlingQuotaST extends AbstractST {
             .build()
         );
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaUserTemplates.defaultUser(sharedTestStorage.getNamespaceName(), sharedTestStorage.getClusterName(), sharedTestStorage.getUsername())
+        resourceManager.createResourceWithWait(KafkaUserTemplates.defaultUser(sharedTestStorage.getNamespaceName(), sharedTestStorage.getClusterName(), sharedTestStorage.getUsername())
             .editOrNewSpec()
                 .withNewQuotas()
                     .withControllerMutationRate(1.0)
@@ -171,7 +181,7 @@ public class ThrottlingQuotaST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResourceWithWait(extensionContext,
+        resourceManager.createResourceWithWait(
             AdminClientTemplates.scramShaAdminClient(sharedTestStorage.getNamespaceName(),
                 sharedTestStorage.getUsername(),
                 sharedTestStorage.getAdminName(),

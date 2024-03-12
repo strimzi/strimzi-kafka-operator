@@ -79,7 +79,9 @@ The examples here show the configuration options as configured for external list
 <8> The duration the JWKS certificates are considered valid before they expire. Default is `360` seconds. If you specify a longer time, consider the risk of allowing access to revoked certificates.
 <9> The period between refreshes of JWKS certificates. The interval must be at least 60 seconds shorter than the expiry interval. Default is `300` seconds.
 <10> The minimum pause in seconds between consecutive attempts to refresh JWKS public keys. When an unknown signing key is encountered, the JWKS keys refresh is scheduled outside the regular periodic schedule with at least the specified pause since the last refresh attempt. The refreshing of keys follows the rule of exponential backoff, retrying on unsuccessful refreshes with ever increasing pause, until it reaches `jwksRefreshSeconds`. The default value is 1.
-
+--
++
+--
 [[example-2]]
 .Example 2: Configuring token validation using an introspection endpoint
 [source,yaml,subs="+quotes,attributes"]
@@ -99,15 +101,16 @@ The examples here show the configuration options as configured for external list
     userNameClaim: preferred_username # <4>
     maxSecondsWithoutReauthentication: 3600 # <5>
 ----
---
 <1> URI of the token introspection endpoint.
 <2> Client ID to identify the client.
 <3> Client Secret and client ID is used for authentication.
 <4> The token claim (or key) that contains the actual username used to identify the user. Its value depends on the authorization server. If necessary, a JsonPath expression like `"['user.info'].['user.id']"` can be used to retrieve the username from nested JSON attributes within a token. 
 <5> (Optional) Activates the Kafka re-authentication mechanism that enforces session expiry to the same length of time as the access token. If the specified value is less than the time left for the access token to expire, then the client will have to re-authenticate before the actual token expiry. By default, the session does not expire when the access token expires, and the client does not attempt re-authentication.
+--
 +
 Depending on how you apply OAuth 2.0 authentication, and the type of authorization server, there are additional (optional) configuration settings you can use:
 +
+--
 [source,yaml,subs="+quotes,attributes"]
 ----
   # ...
@@ -154,6 +157,7 @@ For production, always use `https://` urls.
 <17> A JsonPath query that is used to extract groups information from either the JWT token or the introspection endpoint response. This option is not set by default. By configuring this option, a custom authorizer can make authorization decisions based on user groups.
 <18> A delimiter used to parse groups information when it is returned as a single delimited string. The default value is ',' (comma).
 <19> Some authorization servers have issues with client sending `Accept: application/json` header. By setting `includeAcceptHeader: false` the header will not be sent. Default is `true`.
+--
 
 . Save and exit the editor, then wait for rolling updates to complete.
 

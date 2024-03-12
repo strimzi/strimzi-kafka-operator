@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import io.fabric8.kubernetes.api.model.Service;
 import io.strimzi.systemtest.enums.ClusterOperatorInstallType;
+import io.strimzi.systemtest.enums.NodePoolsRoleMode;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
@@ -66,7 +67,6 @@ public class Environment {
      * Specify Kafka client app images used in system tests.
      */
     private static final String TEST_CLIENTS_IMAGE_ENV = "TEST_CLIENTS_IMAGE";
-    private static final String TEST_ADMIN_IMAGE_ENV = "TEST_ADMIN_IMAGE";
     private static final String TEST_CLIENTS_VERSION_ENV = "TEST_CLIENTS_VERSION";
 
     private static final String SCRAPER_IMAGE_ENV = "SCRAPER_IMAGE";
@@ -143,6 +143,11 @@ public class Environment {
     public static final String STRIMZI_USE_KRAFT_IN_TESTS_ENV = "STRIMZI_USE_KRAFT_IN_TESTS";
 
     /**
+     * Switch for changing NodePool roles in STs - separate roles or mixed roles
+     */
+    public static final String STRIMZI_NODE_POOLS_ROLE_MODE_ENV = "STRIMZI_NODE_POOLS_ROLE_MODE";
+
+    /**
      * CO PodSet-only reconciliation env variable <br>
      * Only SPS will be reconciled, when this env variable will be true
      */
@@ -190,8 +195,8 @@ public class Environment {
     private static final String RESOURCE_ALLOCATION_STRATEGY_DEFAULT = "SHARE_MEMORY_FOR_ALL_COMPONENTS";
 
     private static final String ST_KAFKA_VERSION_DEFAULT = TestKafkaVersion.getDefaultSupportedKafkaVersion();
-    private static final String ST_CLIENTS_KAFKA_VERSION_DEFAULT = "3.6.0";
-    public static final String TEST_CLIENTS_VERSION_DEFAULT = "0.6.0";
+    private static final String ST_CLIENTS_KAFKA_VERSION_DEFAULT = "3.7.0";
+    public static final String TEST_CLIENTS_VERSION_DEFAULT = "0.7.0";
     public static final String ST_FILE_PLUGIN_URL_DEFAULT = "https://repo1.maven.org/maven2/org/apache/kafka/connect-file/" + ST_KAFKA_VERSION_DEFAULT + "/connect-file-" + ST_KAFKA_VERSION_DEFAULT + ".jar";
     public static final String OLM_OPERATOR_VERSION_DEFAULT = "0.38.0";
 
@@ -202,7 +207,6 @@ public class Environment {
     /**
      * Set values
      */
-    private static String config;
     public static final String SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET = getOrDefault(STRIMZI_IMAGE_PULL_SECRET_ENV, "");
     public static final String STRIMZI_ORG = getOrDefault(STRIMZI_ORG_ENV, STRIMZI_ORG_DEFAULT);
     public static final String STRIMZI_TAG = getOrDefault(STRIMZI_TAG_ENV, STRIMZI_TAG_DEFAULT);
@@ -215,6 +219,7 @@ public class Environment {
     public static final String STRIMZI_RBAC_SCOPE = getOrDefault(STRIMZI_RBAC_SCOPE_ENV, STRIMZI_RBAC_SCOPE_DEFAULT);
     public static final String STRIMZI_FEATURE_GATES = getOrDefault(STRIMZI_FEATURE_GATES_ENV, STRIMZI_FEATURE_GATES_DEFAULT);
     public static final boolean STRIMZI_USE_KRAFT_IN_TESTS = getOrDefault(STRIMZI_USE_KRAFT_IN_TESTS_ENV, Boolean::parseBoolean, false);
+    public static final NodePoolsRoleMode STRIMZI_NODE_POOLS_ROLE_MODE = getOrDefault(STRIMZI_NODE_POOLS_ROLE_MODE_ENV, value -> NodePoolsRoleMode.valueOf(value.toUpperCase(Locale.ENGLISH)), NodePoolsRoleMode.SEPARATE);
 
     // variables for kafka client app images
     private static final String TEST_CLIENTS_VERSION = getOrDefault(TEST_CLIENTS_VERSION_ENV, TEST_CLIENTS_VERSION_DEFAULT);
@@ -258,7 +263,6 @@ public class Environment {
     static {
         String debugFormat = "{}: {}";
         LOGGER.info("Used environment variables:");
-        LOGGER.info(debugFormat, "CONFIG", config);
         VALUES.entrySet().stream()
                 .sorted(Map.Entry.comparingByKey())
                 .forEach(entry -> LOGGER.info(debugFormat, entry.getKey(), entry.getValue()));
@@ -286,7 +290,11 @@ public class Environment {
      * @return true if KRaft mode is enabled, otherwise false
      */
     public static boolean isKRaftModeEnabled() {
-        return !STRIMZI_FEATURE_GATES.contains(TestConstants.DONT_USE_KRAFT_MODE) && STRIMZI_USE_KRAFT_IN_TESTS;
+        return isKRaftForCOEnabled() && STRIMZI_USE_KRAFT_IN_TESTS;
+    }
+
+    public static boolean isKRaftForCOEnabled() {
+        return !STRIMZI_FEATURE_GATES.contains(TestConstants.DONT_USE_KRAFT_MODE);
     }
 
     public static boolean isKafkaNodePoolsEnabled() {
@@ -295,6 +303,13 @@ public class Environment {
 
     public static boolean isUnidirectionalTopicOperatorEnabled() {
         return !STRIMZI_FEATURE_GATES.contains(TestConstants.DONT_USE_UNIDIRECTIONAL_TOPIC_OPERATOR);
+    }
+
+    /**
+     * Determine whether separate roles mode for KafkaNodePools is used or not
+     */
+    public static boolean isSeparateRolesMode() {
+        return STRIMZI_NODE_POOLS_ROLE_MODE.equals(NodePoolsRoleMode.SEPARATE);
     }
 
     /**
@@ -328,21 +343,26 @@ public class Environment {
         return getOrDefault(varName, String::toString, defaultValue);
     }
 
+    private static <T> T getOrDefault(String var, Function<String, T> converter, T defaultValue) {
+        String value = isEnvVarSet(var) ?
+                System.getenv(var) :
+                (Objects.requireNonNull(YAML_DATA).get(var) != null ?
+                        YAML_DATA.get(var).toString() :
+                        null);
+        T returnValue = defaultValue;
+        if (value != null) {
+            returnValue = converter.apply(value);
+        }
+        VALUES.put(var, String.valueOf(returnValue));
+        return returnValue;
+    }
+
     public static String getImageOutputRegistry() {
         if (KubeClusterResource.getInstance().isOpenShift()) {
             return "image-registry.openshift-image-registry.svc:5000";
         } else if (KubeClusterResource.getInstance().isKind()) {
             // we will need a hostname of machine
-            String hostname = "";
-            try {
-                if (Environment.isIpv4Family() || Environment.isDualStackIpFamily()) {
-                    hostname = InetAddress.getLocalHost().getHostAddress() + ":5001";
-                } else if (Environment.isIpv6Family()) {
-                    hostname = "myregistry.local:5001";
-                }
-            } catch (UnknownHostException e) {
-                throw new RuntimeException(e);
-            }
+            String hostname = getHostname();
             LOGGER.info("Using container registry :{}", hostname);
             return hostname;
         } else {
@@ -357,26 +377,26 @@ public class Environment {
         }
     }
 
+    private static String getHostname() {
+        String hostname = "";
+        try {
+            if (Environment.isIpv4Family() || Environment.isDualStackIpFamily()) {
+                hostname = InetAddress.getLocalHost().getHostAddress() + ":5001";
+            } else if (Environment.isIpv6Family()) {
+                hostname = "myregistry.local:5001";
+            }
+        } catch (UnknownHostException e) {
+            throw new RuntimeException(e);
+        }
+        return hostname;
+    }
+
     public static String getImageOutputRegistry(String namespace, String imageName, String tag) {
         if (!Environment.CONNECT_BUILD_IMAGE_PATH.isEmpty()) {
             return Environment.CONNECT_BUILD_IMAGE_PATH + ":" + tag;
         } else {
             return getImageOutputRegistry() + "/" + namespace + "/" + imageName + ":" + tag;
         }
-    }
-
-    private static <T> T getOrDefault(String var, Function<String, T> converter, T defaultValue) {
-        String value = System.getenv(var) != null ?
-                System.getenv(var) :
-                (Objects.requireNonNull(YAML_DATA).get(var) != null ?
-                        YAML_DATA.get(var).toString() :
-                        null);
-        T returnValue = defaultValue;
-        if (value != null) {
-            returnValue = converter.apply(value);
-        }
-        VALUES.put(var, String.valueOf(returnValue));
-        return returnValue;
     }
 
     private static void saveConfigurationFile() throws IOException {
@@ -412,5 +432,9 @@ public class Environment {
                 && !var.equals(CONFIG_FILE_PATH_ENV)
                 && !var.equals(TEST_LOG_DIR)
                 && !var.equals("USER");
+    }
+
+    public static boolean isEnvVarSet(String envVarName) {
+        return System.getenv(envVarName) != null;
     }
 }

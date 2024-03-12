@@ -10,6 +10,7 @@ import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfiguration
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
+import io.strimzi.systemtest.resources.crd.StrimziPodSetResource;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.executor.ExecResult;
@@ -103,9 +104,8 @@ public class CruiseControlUtils {
             kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_PASSWORD.getValue()).equals("${CERTS_STORE_PASSWORD}"));
     }
 
-    public static void verifyThatCruiseControlSamplesTopicsArePresent(String namespaceName, long timeout) {
+    public static void verifyThatCruiseControlSamplesTopicsArePresent(String namespaceName, int defaultReplicaCount, long timeout) {
         final int numberOfPartitionsSamplesTopic = 32;
-        final int numberOfReplicasSamplesTopic = 2;
 
         TestUtils.waitFor("Verify that Kafka contains CruiseControl Topics with related configuration.",
             TestConstants.GLOBAL_POLL_INTERVAL, timeout, () -> {
@@ -118,8 +118,8 @@ public class CruiseControlUtils {
                             partitionsMetricsSamples.getSpec().getPartitions() == numberOfPartitionsSamplesTopic;
 
                     boolean hasTopicCorrectReplicasCount =
-                            modelTrainingSamples.getSpec().getReplicas() == numberOfReplicasSamplesTopic &&
-                            partitionsMetricsSamples.getSpec().getReplicas() == numberOfReplicasSamplesTopic;
+                            modelTrainingSamples.getSpec().getReplicas() == defaultReplicaCount &&
+                            partitionsMetricsSamples.getSpec().getReplicas() == defaultReplicaCount;
 
                     return hasTopicCorrectPartitionsCount && hasTopicCorrectReplicasCount;
                 }
@@ -128,9 +128,8 @@ public class CruiseControlUtils {
             });
     }
 
-    public static void verifyThatKafkaCruiseControlMetricReporterTopicIsPresent(String namespaceName, long timeout) {
+    public static void verifyThatKafkaCruiseControlMetricReporterTopicIsPresent(String namespaceName, int defaultReplicaCount, long timeout) {
         final int numberOfPartitionsMetricTopic = 1;
-        final int numberOfReplicasMetricTopic = 3;
 
         TestUtils.waitFor("Verify that Kafka contains CruiseControl topics with related configuration.",
             TestConstants.GLOBAL_POLL_INTERVAL, timeout, () -> {
@@ -140,19 +139,19 @@ public class CruiseControlUtils {
                     metrics.getSpec().getPartitions() == numberOfPartitionsMetricTopic;
 
                 boolean hasTopicCorrectReplicasCount =
-                    metrics.getSpec().getReplicas() == numberOfReplicasMetricTopic;
+                    metrics.getSpec().getReplicas() == defaultReplicaCount;
 
                 return hasTopicCorrectPartitionsCount && hasTopicCorrectReplicasCount;
             });
     }
 
-    public static void verifyThatCruiseControlTopicsArePresent(String namespaceName) {
-        verifyThatKafkaCruiseControlMetricReporterTopicIsPresent(namespaceName, TestConstants.GLOBAL_CRUISE_CONTROL_TIMEOUT);
-        verifyThatCruiseControlSamplesTopicsArePresent(namespaceName, TestConstants.GLOBAL_CRUISE_CONTROL_TIMEOUT);
+    public static void verifyThatCruiseControlTopicsArePresent(String namespaceName, int defaultReplicaCount) {
+        verifyThatKafkaCruiseControlMetricReporterTopicIsPresent(namespaceName, defaultReplicaCount, TestConstants.GLOBAL_CRUISE_CONTROL_TIMEOUT);
+        verifyThatCruiseControlSamplesTopicsArePresent(namespaceName, defaultReplicaCount, TestConstants.GLOBAL_CRUISE_CONTROL_TIMEOUT);
     }
 
     public static Properties getKafkaCruiseControlMetricsReporterConfiguration(String namespaceName, String clusterName) throws IOException {
-        String cmName = KafkaResource.getKafkaPodName(clusterName, 0);
+        String cmName = kubeClient().listPods(namespaceName, KafkaResource.getLabelSelector(clusterName, StrimziPodSetResource.getBrokerComponentName(clusterName))).get(0).getMetadata().getName();
 
         InputStream configurationFileStream = new ByteArrayInputStream(kubeClient(namespaceName).getConfigMap(namespaceName, cmName)
                 .getData().get("server.config").getBytes(StandardCharsets.UTF_8));

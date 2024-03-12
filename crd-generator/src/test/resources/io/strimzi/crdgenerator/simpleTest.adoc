@@ -2,7 +2,7 @@
 = `Example` schema reference
 
 
-[cols="2,2,3",options="header"]
+[cols="2,2,3a",options="header"]
 |====
 |Property |Property type |Description
 |affinity
@@ -133,7 +133,7 @@
 Used in: xref:type-ExampleCrd-{context}[`ExampleCrd`]
 
 
-[cols="2,2,3",options="header"]
+[cols="2,2,3a",options="header"]
 |====
 |Property |Property type |Description
 |====
@@ -145,7 +145,7 @@ Used in: xref:type-ExampleCrd-{context}[`ExampleCrd`]
 
 Example of complex type.
 
-[cols="2,2,3",options="header"]
+[cols="2,2,3a",options="header"]
 |====
 |Property |Property type |Description
 |bar
@@ -164,7 +164,7 @@ Used in: xref:type-ExampleCrd-{context}[`ExampleCrd`]
 
 The `discrim` property is a discriminator that distinguishes use of the `PolymorphicLeft` type from xref:type-PolymorphicRight-{context}[`PolymorphicRight`].
 It must have the value `left` for the type `PolymorphicLeft`.
-[cols="2,2,3",options="header"]
+[cols="2,2,3a",options="header"]
 |====
 |Property |Property type |Description
 |commonProperty
@@ -186,7 +186,7 @@ Used in: xref:type-ExampleCrd-{context}[`ExampleCrd`]
 
 The `discrim` property is a discriminator that distinguishes use of the `PolymorphicRight` type from xref:type-PolymorphicLeft-{context}[`PolymorphicLeft`].
 It must have the value `right` for the type `PolymorphicRight`.
-[cols="2,2,3",options="header"]
+[cols="2,2,3a",options="header"]
 |====
 |Property |Property type |Description
 |commonProperty

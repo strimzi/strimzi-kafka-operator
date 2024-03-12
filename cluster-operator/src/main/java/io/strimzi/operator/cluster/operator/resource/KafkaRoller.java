@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.operator.resource;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.ContainerStateWaiting;
 import io.fabric8.kubernetes.api.model.ContainerStatus;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClientException;
@@ -24,6 +25,7 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.VertxUtil;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.vertx.core.Future;
@@ -123,6 +125,7 @@ public class KafkaRoller {
     private final Supplier<BackOff> backoffSupplier;
     protected String namespace;
     private final AdminClientProvider adminClientProvider;
+    private final KafkaAgentClientProvider kafkaAgentClientProvider;
     private final Function<Integer, String> kafkaConfigProvider;
     private final String kafkaLogging;
     private final KafkaVersion kafkaVersion;
@@ -142,26 +145,27 @@ public class KafkaRoller {
     /**
      * Constructor
      *
-     * @param reconciliation        Reconciliation marker
-     * @param vertx                 Vert.x instance
-     * @param podOperations         Pod operator for managing pods
-     * @param pollingIntervalMs     Polling interval in milliseconds
-     * @param operationTimeoutMs    Operation timeout in milliseconds
-     * @param backOffSupplier       Backoff supplier
-     * @param nodes                 List of Kafka node references to consider rolling
-     * @param clusterCaCertSecret   Secret with the Cluster CA public key
-     * @param coKeySecret           Secret with the Cluster CA private key
-     * @param adminClientProvider   Kafka Admin client provider
-     * @param kafkaConfigProvider   Kafka configuration provider
-     * @param kafkaLogging          Kafka logging configuration
-     * @param kafkaVersion          Kafka version
-     * @param allowReconfiguration  Flag indicting whether reconfiguration is allowed or not
-     * @param eventsPublisher       Kubernetes Events publisher for publishing events about pod restarts
+     * @param reconciliation            Reconciliation marker
+     * @param vertx                     Vert.x instance
+     * @param podOperations             Pod operator for managing pods
+     * @param pollingIntervalMs         Polling interval in milliseconds
+     * @param operationTimeoutMs        Operation timeout in milliseconds
+     * @param backOffSupplier           Backoff supplier
+     * @param nodes                     List of Kafka node references to consider rolling
+     * @param clusterCaCertSecret       Secret with the Cluster CA public key
+     * @param coKeySecret               Secret with the Cluster CA private key
+     * @param adminClientProvider       Kafka Admin client provider
+     * @param kafkaAgentClientProvider  Kafka Agent client provider
+     * @param kafkaConfigProvider       Kafka configuration provider
+     * @param kafkaLogging              Kafka logging configuration
+     * @param kafkaVersion              Kafka version
+     * @param allowReconfiguration      Flag indicting whether reconfiguration is allowed or not
+     * @param eventsPublisher           Kubernetes Events publisher for publishing events about pod restarts
      */
     public KafkaRoller(Reconciliation reconciliation, Vertx vertx, PodOperator podOperations,
                        long pollingIntervalMs, long operationTimeoutMs, Supplier<BackOff> backOffSupplier, Set<NodeRef> nodes,
                        Secret clusterCaCertSecret, Secret coKeySecret,
-                       AdminClientProvider adminClientProvider,
+                       AdminClientProvider adminClientProvider, KafkaAgentClientProvider kafkaAgentClientProvider,
                        Function<Integer, String> kafkaConfigProvider, String kafkaLogging, KafkaVersion kafkaVersion, boolean allowReconfiguration, KubernetesRestartEventPublisher eventsPublisher) {
         this.namespace = reconciliation.namespace();
         this.cluster = reconciliation.name();
@@ -178,6 +182,7 @@ public class KafkaRoller {
         this.podOperations = podOperations;
         this.pollingIntervalMs = pollingIntervalMs;
         this.adminClientProvider = adminClientProvider;
+        this.kafkaAgentClientProvider = kafkaAgentClientProvider;
         this.kafkaConfigProvider = kafkaConfigProvider;
         this.kafkaLogging = kafkaLogging;
         this.kafkaVersion = kafkaVersion;
@@ -223,7 +228,7 @@ public class KafkaRoller {
         if (this.controllerAdminClient == null) {
             try {
                 // TODO: Currently, when running in KRaft mode Kafka does not support using Kafka Admin API with controller
-                //       nodes. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/8593.
+                //       nodes. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/9692.
                 //       Therefore use broker nodes of the cluster to initialise adminClient for quorum health check.
                 //       Once Kafka Admin API is supported for controllers, nodes.stream().filter(NodeRef:controller)
                 //       can be used here. Until then pass an empty set of nodes so the client is initialized with
@@ -458,8 +463,13 @@ public class KafkaRoller {
 
         restartContext.restartReasons = podNeedsRestart.apply(pod);
 
+        // We try to detect the current roles. If we fail to do so, we optimistically assume the roles did not
+        // change and the desired roles still apply.
+        boolean isBroker = isCurrentlyBroker(pod).orElse(nodeRef.broker());
+        boolean isController = isCurrentlyController(pod).orElse(nodeRef.controller());
+
         try {
-            checkIfRestartOrReconfigureRequired(nodeRef, restartContext);
+            checkIfRestartOrReconfigureRequired(nodeRef, isController, isBroker, restartContext);
             if (restartContext.forceRestart) {
                 LOGGER.debugCr(reconciliation, "Pod {} can be rolled now", nodeRef);
                 restartAndAwaitReadiness(pod, operationTimeoutMs, TimeUnit.MILLISECONDS, restartContext);
@@ -467,7 +477,7 @@ public class KafkaRoller {
                 if (deferController(nodeRef, restartContext)) {
                     LOGGER.debugCr(reconciliation, "Pod {} is the active controller and there are other pods to verify first.", nodeRef);
                     throw new ForceableProblem("Pod " + nodeRef.podName() + " is the active controller and there are other pods to verify first");
-                } else if (!canRoll(nodeRef, 60, TimeUnit.SECONDS, false, restartContext)) {
+                } else if (!canRoll(nodeRef.nodeId(), isController, isBroker, 60, TimeUnit.SECONDS, false, restartContext)) {
                     LOGGER.debugCr(reconciliation, "Pod {} cannot be updated right now", nodeRef);
                     throw new UnforceableProblem("Pod " + nodeRef.podName() + " cannot be updated right now.");
                 } else {
@@ -491,7 +501,7 @@ public class KafkaRoller {
         } catch (ForceableProblem e) {
             if (restartContext.podStuck || restartContext.backOff.done() || e.forceNow) {
 
-                if (canRoll(nodeRef, 60_000, TimeUnit.MILLISECONDS, true, restartContext)) {
+                if (canRoll(nodeRef.nodeId(), isController, isBroker, 60_000, TimeUnit.MILLISECONDS, true, restartContext)) {
                     String errorMsg = e.getMessage();
 
                     if (e.getCause() != null) {
@@ -513,7 +523,7 @@ public class KafkaRoller {
 
     KafkaAgentClient initKafkaAgentClient() throws FatalProblem {
         try {
-            return new KafkaAgentClient(reconciliation, cluster, namespace, clusterCaCertSecret, coKeySecret);
+            return kafkaAgentClientProvider.createKafkaAgentClient(reconciliation, clusterCaCertSecret, coKeySecret);
         } catch (Exception e) {
             throw new FatalProblem("Failed to initialise KafkaAgentClient", e);
         }
@@ -589,7 +599,7 @@ public class KafkaRoller {
      * Determine whether the pod should be restarted, or the broker reconfigured.
      */
     @SuppressWarnings("checkstyle:CyclomaticComplexity")
-    private void checkIfRestartOrReconfigureRequired(NodeRef nodeRef, RestartContext restartContext) throws ForceableProblem, InterruptedException, FatalProblem, UnforceableProblem {
+    private void checkIfRestartOrReconfigureRequired(NodeRef nodeRef, boolean isController, boolean isBroker, RestartContext restartContext) throws ForceableProblem, InterruptedException, FatalProblem, UnforceableProblem {
         RestartReasons reasonToRestartPod = restartContext.restartReasons;
         if (restartContext.podStuck && !reasonToRestartPod.contains(RestartReason.POD_HAS_OLD_REVISION)) {
             // If the pod is unschedulable then deleting it, or trying to open an Admin client to it will make no difference
@@ -609,8 +619,8 @@ public class KafkaRoller {
         KafkaBrokerConfigurationDiff brokerConfigDiff = null;
         KafkaBrokerLoggingConfigurationDiff brokerLoggingDiff = null;
         boolean needsReconfig = false;
-        if (nodeRef.controller()) {
 
+        if (isController) {
             if (maybeInitControllerAdminClient()) {
                 String controllerQuorumFetchTimeout = CONTROLLER_QUORUM_FETCH_TIMEOUT_MS_CONFIG_DEFAULT;
                 String desiredConfig = kafkaConfigProvider.apply(nodeRef.nodeId());
@@ -622,9 +632,9 @@ public class KafkaRoller {
 
                 restartContext.quorumCheck = quorumCheck(controllerAdminClient, Long.parseLong(controllerQuorumFetchTimeout));
             } else {
-                //TODO When https://github.com/strimzi/strimzi-kafka-operator/issues/8593 is complete
+                //TODO When https://github.com/strimzi/strimzi-kafka-operator/issues/9692 is complete
                 // we should change this logic to immediately restart this pod because we cannot connect to it.
-                if (nodeRef.broker()) {
+                if (isBroker) {
                     // If it is a combined node (controller and broker) and the admin client cannot be initialised,
                     // restart this pod. There is no reason to continue as we won't be able to
                     // connect an admin client to this pod for other checks later.
@@ -641,8 +651,7 @@ public class KafkaRoller {
             }
         }
 
-        if (nodeRef.broker()) {
-
+        if (isBroker) {
             if (!maybeInitBrokerAdminClient()) {
                 LOGGER.infoCr(reconciliation, "Pod {} needs to be restarted, because it does not seem to responding to connection attempts", nodeRef);
                 reasonToRestartPod.add(RestartReason.POD_UNRESPONSIVE);
@@ -700,7 +709,7 @@ public class KafkaRoller {
      * @param nodeRef The reference of the broker.
      * @return a Future which completes with the config of the given broker.
      */
-    protected Config brokerConfig(NodeRef nodeRef) throws ForceableProblem, InterruptedException {
+    /* test */ Config brokerConfig(NodeRef nodeRef) throws ForceableProblem, InterruptedException {
         ConfigResource resource = new ConfigResource(ConfigResource.Type.BROKER, String.valueOf(nodeRef.nodeId()));
         return await(VertxUtil.kafkaFutureToVertxFuture(reconciliation, vertx, brokerAdminClient.describeConfigs(singletonList(resource)).values().get(resource)),
             30, TimeUnit.SECONDS,
@@ -713,7 +722,7 @@ public class KafkaRoller {
      * @param brokerId The id of the broker.
      * @return a Future which completes with the logging of the given broker.
      */
-    protected Config brokerLogging(int brokerId) throws ForceableProblem, InterruptedException {
+    /* test */ Config brokerLogging(int brokerId) throws ForceableProblem, InterruptedException {
         ConfigResource resource = Util.getBrokersLogging(brokerId);
         return await(VertxUtil.kafkaFutureToVertxFuture(reconciliation, vertx, brokerAdminClient.describeConfigs(singletonList(resource)).values().get(resource)),
                 30, TimeUnit.SECONDS,
@@ -721,7 +730,7 @@ public class KafkaRoller {
         );
     }
 
-    protected void dynamicUpdateBrokerConfig(NodeRef nodeRef, Admin ac, KafkaBrokerConfigurationDiff configurationDiff, KafkaBrokerLoggingConfigurationDiff logDiff)
+    /* test */ void dynamicUpdateBrokerConfig(NodeRef nodeRef, Admin ac, KafkaBrokerConfigurationDiff configurationDiff, KafkaBrokerLoggingConfigurationDiff logDiff)
             throws ForceableProblem, InterruptedException {
         Map<ConfigResource, Collection<AlterConfigOp>> updatedConfig = new HashMap<>(2);
         var podId = nodeRef.nodeId();
@@ -804,20 +813,20 @@ public class KafkaRoller {
         }
     }
 
-    private boolean canRoll(NodeRef nodeRef, long timeout, TimeUnit unit, boolean ignoreSslError, RestartContext restartContext)
+    private boolean canRoll(int nodeId, boolean isController, boolean isBroker, long timeout, TimeUnit unit, boolean ignoreSslError, RestartContext restartContext)
             throws ForceableProblem, InterruptedException, UnforceableProblem {
         try {
-            if (nodeRef.broker() && nodeRef.controller()) {
-                boolean canRollController = await(restartContext.quorumCheck.canRollController(nodeRef.nodeId()), timeout, unit,
+            if (isBroker && isController) {
+                boolean canRollController = await(restartContext.quorumCheck.canRollController(nodeId), timeout, unit,
                         t -> new UnforceableProblem("An error while trying to determine the possibility of updating Kafka controller pods", t));
-                boolean canRollBroker = await(availability(brokerAdminClient).canRoll(nodeRef.nodeId()), timeout, unit,
+                boolean canRollBroker = await(availability(brokerAdminClient).canRoll(nodeId), timeout, unit,
                         t -> new ForceableProblem("An error while trying to determine the possibility of updating Kafka broker pods", t));
                 return canRollController && canRollBroker;
-            } else if (nodeRef.controller()) {
-                return await(restartContext.quorumCheck.canRollController(nodeRef.nodeId()), timeout, unit,
+            } else if (isController) {
+                return await(restartContext.quorumCheck.canRollController(nodeId), timeout, unit,
                         t -> new UnforceableProblem("An error while trying to determine the possibility of updating Kafka controller pods", t));
             } else {
-                return await(availability(brokerAdminClient).canRoll(nodeRef.nodeId()), timeout, unit,
+                return await(availability(brokerAdminClient).canRoll(nodeId), timeout, unit,
                         t -> new ForceableProblem("An error while trying to determine the possibility of updating Kafka broker pods", t));
             }
         } catch (ForceableProblem | UnforceableProblem e) {
@@ -909,9 +918,9 @@ public class KafkaRoller {
      * Returns an AdminClient instance bootstrapped from the given nodes. If nodes is an
      * empty set, use the brokers service to bootstrap the client.
      */
-    protected Admin adminClient(Set<NodeRef> nodes, boolean ceShouldBeFatal) throws ForceableProblem, FatalProblem {
+    /* test */ Admin adminClient(Set<NodeRef> nodes, boolean ceShouldBeFatal) throws ForceableProblem, FatalProblem {
         // If no nodes are passed initialize the admin client using the brokers service
-        // TODO when https://github.com/strimzi/strimzi-kafka-operator/issues/8593 is completed review whether
+        // TODO when https://github.com/strimzi/strimzi-kafka-operator/issues/9692 is completed review whether
         //      this function can be reverted to expect nodes to be non empty
         String bootstrapHostnames;
         if (nodes.isEmpty()) {
@@ -935,11 +944,11 @@ public class KafkaRoller {
         }
     }
 
-    protected KafkaQuorumCheck quorumCheck(Admin ac, long controllerQuorumFetchTimeoutMs) {
+    /* test */ KafkaQuorumCheck quorumCheck(Admin ac, long controllerQuorumFetchTimeoutMs) {
         return new KafkaQuorumCheck(reconciliation, ac, vertx, controllerQuorumFetchTimeoutMs);
     }
 
-    protected KafkaAvailability availability(Admin ac) {
+    /* test */ KafkaAvailability availability(Admin ac) {
         return new KafkaAvailability(reconciliation, ac);
     }
     
@@ -1046,6 +1055,50 @@ public class KafkaRoller {
                 LOGGER.warnCr(reconciliation, "Error waiting for pod {}/{} to become ready: {}", namespace, podName, error);
                 return Future.failedFuture(error);
             });
+    }
+
+    /**
+     * Checks from the Pod labels if the Kafka node is currently a broker or not.
+     *
+     * @param pod   Current Pod
+     *
+     * @return  Optional with true if the pod is currently a broker, false if it is not broker or empty optional
+     * if the label is not present.
+     */
+    /* test */ static Optional<Boolean> isCurrentlyBroker(Pod pod)    {
+        return checkBooleanLabel(pod, Labels.STRIMZI_BROKER_ROLE_LABEL);
+    }
+
+    /**
+     * Checks from the Pod labels if the Kafka node is currently a controller or not.
+     *
+     * @param pod   Current Pod
+     *
+     * @return  Optional with true if the pod is currently a controller, false if it is not controller or empty optional
+     * if the label is not present.
+     */
+    /* test */ static Optional<Boolean> isCurrentlyController(Pod pod)    {
+        return checkBooleanLabel(pod, Labels.STRIMZI_CONTROLLER_ROLE_LABEL);
+    }
+
+    /**
+     * Generic method to extract a boolean value from Kubernetes resource labels
+     *
+     * @param pod       Kube resource with metadata
+     * @param label     Name of the label for which we want to extract the boolean value
+     *
+     * @return  Optional with true if the label is present and is set to `true`, false if it is present and not set to
+     * `true` or empty optional if the label is not present.
+     */
+    private static Optional<Boolean> checkBooleanLabel(HasMetadata pod, String label)    {
+        if (pod != null
+                && pod.getMetadata() != null
+                && pod.getMetadata().getLabels() != null
+                && pod.getMetadata().getLabels().containsKey(label))  {
+            return Optional.of("true".equalsIgnoreCase(pod.getMetadata().getLabels().get(label)));
+        } else {
+            return Optional.empty();
+        }
     }
 }
 

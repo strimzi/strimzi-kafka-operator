@@ -24,6 +24,8 @@ include::modules/deploying/proc-deploy-cluster-operator-helm-chart.adoc[leveloff
 include::modules/operators/ref-operator-cluster-feature-gates.adoc[leveloffset=+1]
 //feature gate release lifecycle
 include::modules/operators/ref-operator-cluster-feature-gate-releases.adoc[leveloffset=+2]
+//migrating to KRaft
+include::modules/deploying/proc-deploy-migrate-kraft.adoc[leveloffset=+1]
 //configuration of components
 include::assemblies/configuring/assembly-config.adoc[leveloffset=+1]
 //creating topics
@@ -48,10 +50,14 @@ include::assemblies/configuring/assembly-reassign-tool.adoc[leveloffset=+1]
 include::assemblies/metrics/assembly-metrics.adoc[leveloffset=+1]
 //Introduce tracing to your deployment
 include::assemblies/tracing/assembly-distributed-tracing.adoc[leveloffset=+1]
+//using drain cleaner to drain pods
+include::assemblies/deploying/assembly-drain-cleaner.adoc[leveloffset=+1]
 //Upgrading the deployment
 include::assemblies/upgrading/assembly-upgrade.adoc[leveloffset=+1]
 //Downgrading the deployment
 include::assemblies/upgrading/assembly-downgrade.adoc[leveloffset=+1]
+//uninstalling the product
+include::assemblies/deploying/assembly-uninstalling.adoc[leveloffset=+1]
 //How to monitor restart events
 include::assemblies/deploying/assembly-deploy-restart-events.adoc[leveloffset=+1]
 //tuning configuration

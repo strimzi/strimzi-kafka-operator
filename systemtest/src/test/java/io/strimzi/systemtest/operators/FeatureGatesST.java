@@ -8,7 +8,7 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
-import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
+import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
@@ -31,7 +31,6 @@ import io.strimzi.test.annotations.IsolatedTest;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -71,14 +70,14 @@ public class FeatureGatesST extends AbstractST {
      */
     @IsolatedTest("Feature Gates test for enabled UseKRaft gate")
     @Tag(INTERNAL_CLIENTS_USED)
-    public void testKRaftMode(ExtensionContext extensionContext) {
+    public void testKRaftMode() {
         assumeFalse(Environment.isOlmInstall() || Environment.isHelmInstall());
 
-        final TestStorage testStorage = new TestStorage(extensionContext);
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final int kafkaReplicas = 3;
 
         // as kraft is included in CO Feature gates, kafka broker can take both roles (Controller and Broker)
-        setupClusterOperatorWithFeatureGate(extensionContext, "+UseKRaft");
+        setupClusterOperatorWithFeatureGate("+UseKRaft");
 
         final Kafka kafkaCr = KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), kafkaReplicas)
             .editOrNewMetadata()
@@ -87,17 +86,18 @@ public class FeatureGatesST extends AbstractST {
                 .withNamespace(testStorage.getNamespaceName())
             .endMetadata()
             .build();
+
         kafkaCr.getSpec().getEntityOperator().setTopicOperator(null); // The builder cannot disable the EO. It has to be done this way.
 
-        final KafkaNodePool kafkaNodePoolCr = KafkaNodePoolTemplates.kafkaBasedNodePoolWithDualRole(testStorage.getKafkaNodePoolName(), kafkaCr, kafkaReplicas).build();
-
-        resourceManager.createResourceWithWait(extensionContext,
-            kafkaNodePoolCr,
+        resourceManager.createResourceWithWait(
+            KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), kafkaReplicas).build(),
+            KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), kafkaReplicas).build(),
             kafkaCr
         );
 
         // Check that there is no ZooKeeper
-        Map<String, String> zkPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getZookeeperSelector());
+        Map<String, String> zkPods = PodUtils.podSnapshot(testStorage.getNamespaceName(),
+            KafkaResource.getLabelSelector(testStorage.getClusterName(), KafkaResources.zookeeperComponentName(testStorage.getClusterName())));
         assertThat("No ZooKeeper Pods should exist", zkPods.size(), is(0));
 
         rollKafkaNodePoolWithActiveProducerConsumer(testStorage, kafkaReplicas);
@@ -118,26 +118,26 @@ public class FeatureGatesST extends AbstractST {
      *  - kafka-node-pool
      */
     @IsolatedTest
-    void testKafkaNodePoolFeatureGate(ExtensionContext extensionContext) {
+    void testKafkaNodePoolFeatureGate() {
         assumeFalse(Environment.isOlmInstall() || Environment.isHelmInstall());
 
-        final TestStorage testStorage = new TestStorage(extensionContext);
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final int kafkaReplicas = 3;
 
         // as the only FG set in the CO is 'KafkaNodePools' (kraft not included) Broker role is the only one that kafka broker can take
-        setupClusterOperatorWithFeatureGate(extensionContext, "+KafkaNodePools,-UseKRaft");
+        setupClusterOperatorWithFeatureGate("+KafkaNodePools,-UseKRaft");
 
-        LOGGER.info("Deploying Kafka Cluster: {}/{} controlled by KafkaNodePool: {}", testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getKafkaNodePoolName());
-        final Kafka kafkaCr = KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), kafkaReplicas, 3)
+        LOGGER.info("Deploying Kafka Cluster: {}/{} controlled by KafkaNodePool: {}", testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getBrokerPoolName());
+        final Kafka kafkaCr = KafkaTemplates.kafkaPersistentNodePools(testStorage.getClusterName(), kafkaReplicas, 3)
             .editOrNewMetadata()
                 .withNamespace(testStorage.getNamespaceName())
-                .addToAnnotations(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled")
             .endMetadata()
             .build();
-
-        final KafkaNodePool kafkaNodePoolCr = KafkaNodePoolTemplates.kafkaBasedNodePoolWithBrokerRole(testStorage.getKafkaNodePoolName(), kafkaCr, kafkaReplicas).build();
-
-        resourceManager.createResourceWithWait(extensionContext, kafkaNodePoolCr, kafkaCr);
+        
+        resourceManager.createResourceWithWait(
+            KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), kafkaReplicas).build(),
+            kafkaCr
+        );
 
         rollKafkaNodePoolWithActiveProducerConsumer(testStorage, kafkaReplicas);
     }
@@ -166,17 +166,17 @@ public class FeatureGatesST extends AbstractST {
      * - kafka-node-pool
      */
     @IsolatedTest
-    void testKafkaManagementTransferToAndFromKafkaNodePool(ExtensionContext extensionContext) {
+    void testKafkaManagementTransferToAndFromKafkaNodePool() {
         assumeFalse(Environment.isKRaftModeEnabled());
         assumeFalse(Environment.isOlmInstall() || Environment.isHelmInstall());
 
-        final TestStorage testStorage = new TestStorage(extensionContext);
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final int originalKafkaReplicaCount = 3;
         final int nodePoolIncreasedKafkaReplicaCount = 5;
         final String kafkaNodePoolName = "kafka";
 
         // as the only FG set in the CO is 'KafkaNodePools' (kraft not included) Broker role is the only one that kafka broker can take
-        setupClusterOperatorWithFeatureGate(extensionContext, "");
+        setupClusterOperatorWithFeatureGate("");
 
         // setup clients
         final KafkaClients clients = new KafkaClientsBuilder()
@@ -200,18 +200,19 @@ public class FeatureGatesST extends AbstractST {
             .endMetadata()
             .build();
 
-        // as the only FG set in the CO is 'KafkaNodePools' (kraft is never included) Broker role is the only one that can be taken
-        final KafkaNodePool kafkaNodePoolCr = KafkaNodePoolTemplates.kafkaBasedNodePoolWithBrokerRole(kafkaNodePoolName, kafkaCr, 3).build();
+        // this is useful so we can copy all the storage configuration during the "transfer replace"
+        final Kafka kafkaCrZKMode = KafkaTemplates.kafkaPersistentWithoutNodePools(testStorage.getClusterName(), originalKafkaReplicaCount, 3).build();
 
-        resourceManager.createResourceWithWait(extensionContext,
-            kafkaNodePoolCr,
+        // as the only FG set in the CO is 'KafkaNodePools' (kraft is never included) Broker role is the only one that can be taken
+        resourceManager.createResourceWithWait(
+            KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), kafkaNodePoolName, testStorage.getClusterName(), 3).build(),
             kafkaCr);
 
         LOGGER.info("Creating KafkaTopic: {}/{}", testStorage.getNamespaceName(), testStorage.getTopicName());
-        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(testStorage).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage).build());
 
         LOGGER.info("Producing and Consuming messages with clients: {}, {} in Namespace {}", testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName());
-        resourceManager.createResourceWithWait(extensionContext,
+        resourceManager.createResourceWithWait(
             clients.producerStrimzi(),
             clients.consumerStrimzi()
         );
@@ -225,13 +226,13 @@ public class FeatureGatesST extends AbstractST {
 
         StrimziPodSetUtils.waitForAllStrimziPodSetAndPodsReady(
             testStorage.getNamespaceName(),
+            testStorage.getClusterName(),
             KafkaResource.getStrimziPodSetName(testStorage.getClusterName(), kafkaNodePoolName),
-            KafkaResources.kafkaComponentName(testStorage.getClusterName()),
             nodePoolIncreasedKafkaReplicaCount
         );
 
         LOGGER.info("Producing and Consuming messages with clients: {}, {} in Namespace {}", testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName());
-        resourceManager.createResourceWithWait(extensionContext,
+        resourceManager.createResourceWithWait(
             clients.producerStrimzi(),
             clients.consumerStrimzi()
         );
@@ -251,18 +252,26 @@ public class FeatureGatesST extends AbstractST {
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(),
             kafka -> {
                 kafka.getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "disabled");
+                // because Kafka CR with NodePools is missing .spec.kafka.replicas and .spec.kafka.storage, we need to
+                // set those here
+                kafka.getSpec().getKafka().setReplicas(originalKafkaReplicaCount);
+                kafka.getSpec().getKafka().setStorage(new PersistentClaimStorageBuilder()
+                    .withSize("1Gi")
+                    .withDeleteClaim(true)
+                    .build()
+                );
             }, testStorage.getNamespaceName());
 
         StrimziPodSetUtils.waitForAllStrimziPodSetAndPodsReady(
             testStorage.getNamespaceName(),
-            KafkaResources.kafkaComponentName(testStorage.getClusterName()),
-            KafkaResources.kafkaComponentName(testStorage.getClusterName()),
+            testStorage.getClusterName(),
+            KafkaResource.getStrimziPodSetName(testStorage.getClusterName(), kafkaNodePoolName),
             originalKafkaReplicaCount
         );
         PodUtils.waitUntilPodStabilityReplicasCount(testStorage.getNamespaceName(), KafkaResources.kafkaComponentName(testStorage.getClusterName()), originalKafkaReplicaCount);
 
         LOGGER.info("Producing and Consuming messages with clients: {}, {} in Namespace {}", testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName());
-        resourceManager.createResourceWithWait(extensionContext,
+        resourceManager.createResourceWithWait(
             clients.producerStrimzi(),
             clients.consumerStrimzi()
         );
@@ -283,18 +292,20 @@ public class FeatureGatesST extends AbstractST {
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(),
             kafka -> {
                 kafka.getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled");
+                kafka.getSpec().getKafka().setReplicas(null);
+                kafka.getSpec().getKafka().setStorage(null);
             }, testStorage.getNamespaceName());
 
         StrimziPodSetUtils.waitForAllStrimziPodSetAndPodsReady(
             testStorage.getNamespaceName(),
+            testStorage.getClusterName(),
             KafkaResource.getStrimziPodSetName(testStorage.getClusterName(), kafkaNodePoolName),
-            KafkaResources.kafkaComponentName(testStorage.getClusterName()),
             nodePoolIncreasedKafkaReplicaCount
         );
         PodUtils.waitUntilPodStabilityReplicasCount(testStorage.getNamespaceName(), KafkaResources.kafkaComponentName(testStorage.getClusterName()), nodePoolIncreasedKafkaReplicaCount);
 
         LOGGER.info("Producing and Consuming messages with clients: {}, {} in Namespace {}", testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName());
-        resourceManager.createResourceWithWait(extensionContext,
+        resourceManager.createResourceWithWait(
             clients.producerStrimzi(),
             clients.consumerStrimzi()
         );
@@ -304,15 +315,14 @@ public class FeatureGatesST extends AbstractST {
     /**
      * Sets up a Cluster Operator with specified feature gates.
      *
-     * @param extensionContext  Extension context which provides access to the test environment and its state.
      * @param extraFeatureGates A String representing additional feature gates (comma separated) to be
      *                          enabled or disabled for the Cluster Operator.
      */
-    private void setupClusterOperatorWithFeatureGate(ExtensionContext extensionContext, String extraFeatureGates) {
+    private void setupClusterOperatorWithFeatureGate(String extraFeatureGates) {
         List<EnvVar> coEnvVars = new ArrayList<>();
         coEnvVars.add(new EnvVar(Environment.STRIMZI_FEATURE_GATES_ENV, extraFeatureGates, null));
 
-        clusterOperator = this.clusterOperator.defaultInstallation(extensionContext)
+        clusterOperator = this.clusterOperator.defaultInstallation()
             .withExtraEnvVars(coEnvVars)
             // necessary as each isolated test removes TEST_SUITE_NAMESPACE
             .withBindingsNamespaces(Arrays.asList(TestConstants.CO_NAMESPACE, Environment.TEST_SUITE_NAMESPACE))
@@ -343,18 +353,18 @@ public class FeatureGatesST extends AbstractST {
             .build();
 
         LOGGER.info("Producing and Consuming messages with clients: {}, {} in Namespace {}", producerName, consumerName, testStorage.getNamespaceName());
-        resourceManager.createResourceWithWait(testStorage.getExtensionContext(),
+        resourceManager.createResourceWithWait(
             clients.producerStrimzi(),
             clients.consumerStrimzi()
         );
 
         // Roll Kafka
         LOGGER.info("Forcing rolling update of Kafka via read-only configuration change");
-        final Map<String, String> kafkaPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getKafkaSelector());
+        final Map<String, String> brokerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerPoolSelector());
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> k.getSpec().getKafka().getConfig().put("log.retention.hours", 72), testStorage.getNamespaceName());
 
         LOGGER.info("Waiting for the next reconciliation to happen");
-        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getKafkaSelector(), kafkaReplicas, kafkaPods);
+        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerPoolSelector(), kafkaReplicas, brokerPods);
 
         LOGGER.info("Waiting for clients to finish sending/receiving messages");
         ClientUtils.waitForClientsSuccess(producerName, consumerName, testStorage.getNamespaceName(), testStorage.getMessageCount());

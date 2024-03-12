@@ -4,11 +4,18 @@
  */
 package io.strimzi.systemtest.resources.keycloak;
 
+import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
+import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
+import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.keycloak.KeycloakInstance;
 import io.strimzi.systemtest.resources.ResourceItem;
 import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
+import io.strimzi.systemtest.templates.kubernetes.NetworkPolicyTemplates;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
@@ -19,7 +26,6 @@ import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -27,6 +33,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -46,15 +53,18 @@ public class SetupKeycloak {
     public final static String PATH_TO_KEYCLOAK_PREPARE_SCRIPT = "../systemtest/src/test/resources/oauth2/prepare_keycloak_operator.sh";
     public final static String PATH_TO_KEYCLOAK_TEARDOWN_SCRIPT = "../systemtest/src/test/resources/oauth2/teardown_keycloak_operator.sh";
 
+    private static final String KEYCLOAK = "keycloak";
+    private static final String POSTGRES = "postgres";
+
     private static final Logger LOGGER = LogManager.getLogger(SetupKeycloak.class);
 
-    public static void deployKeycloakOperator(ExtensionContext extensionContext, final String deploymentNamespace, final String watchNamespace) {
+    public static void deployKeycloakOperator(final String deploymentNamespace, final String watchNamespace) {
         LOGGER.info("Preparing Keycloak Operator in Namespace: {} while watching Namespace: {}", deploymentNamespace, watchNamespace);
 
         Exec.exec(Level.INFO, "/bin/bash", PATH_TO_KEYCLOAK_PREPARE_SCRIPT, deploymentNamespace, KeycloakUtils.LATEST_KEYCLOAK_VERSION, watchNamespace);
         DeploymentUtils.waitForDeploymentAndPodsReady(deploymentNamespace, KEYCLOAK_OPERATOR_DEPLOYMENT_NAME, 1);
 
-        ResourceManager.STORED_RESOURCES.get(extensionContext.getDisplayName()).push(new ResourceItem<>(() -> deleteKeycloakOperator(deploymentNamespace, watchNamespace)));
+        ResourceManager.STORED_RESOURCES.get(ResourceManager.getTestContext().getDisplayName()).push(new ResourceItem<>(() -> deleteKeycloakOperator(deploymentNamespace, watchNamespace)));
 
         LOGGER.info("Keycloak Operator in Namespace: {} is ready", deploymentNamespace);
     }
@@ -65,35 +75,38 @@ public class SetupKeycloak {
         DeploymentUtils.waitForDeploymentDeletion(deploymentNamespace, KEYCLOAK_OPERATOR_DEPLOYMENT_NAME);
     }
 
-    public static KeycloakInstance deployKeycloakAndImportRealms(ExtensionContext extensionContext, String namespaceName) {
-        deployPostgres(extensionContext, namespaceName);
-        deployKeycloak(extensionContext, namespaceName);
+    public static KeycloakInstance deployKeycloakAndImportRealms(String namespaceName) {
+        deployPostgres(namespaceName);
+        allowNetworkPolicyBetweenKeycloakAndPostgres(namespaceName);
+        deployKeycloak(namespaceName);
+
         KeycloakInstance keycloakInstance = createKeycloakInstance(namespaceName);
+        NetworkPolicyResource.allowNetworkPolicyAllIngressForMatchingLabel(namespaceName, KEYCLOAK + "-allow", Map.of(TestConstants.APP_POD_LABEL, KEYCLOAK));
         importRealms(namespaceName, keycloakInstance);
 
         return keycloakInstance;
     }
 
-    private static void deployKeycloak(ExtensionContext extensionContext, String namespaceName) {
+    private static void deployKeycloak(String namespaceName) {
         LOGGER.info("Deploying Keycloak instance into Namespace: {}", namespaceName);
         cmdKubeClient(namespaceName).apply(KEYCLOAK_INSTANCE_FILE_PATH);
 
         StatefulSetUtils.waitForAllStatefulSetPodsReady(namespaceName, "keycloak", 1);
 
-        ResourceManager.STORED_RESOURCES.get(extensionContext.getDisplayName()).push(new ResourceItem<>(() -> deleteKeycloak(namespaceName)));
+        ResourceManager.STORED_RESOURCES.get(ResourceManager.getTestContext().getDisplayName()).push(new ResourceItem<>(() -> deleteKeycloak(namespaceName)));
 
         LOGGER.info("Waiting for Keycloak Secret: {}/{} to be present", namespaceName, KEYCLOAK_SECRET_NAME);
         SecretUtils.waitForSecretReady(namespaceName, KEYCLOAK_SECRET_NAME, () -> { });
         LOGGER.info("Keycloak instance and Keycloak Secret are ready");
     }
 
-    private static void deployPostgres(ExtensionContext extensionContext, String namespaceName) {
+    private static void deployPostgres(String namespaceName) {
         LOGGER.info("Deploying Postgres into Namespace: {}", namespaceName);
         cmdKubeClient(namespaceName).apply(POSTGRES_FILE_PATH);
 
         DeploymentUtils.waitForDeploymentAndPodsReady(namespaceName, "postgres", 1);
 
-        ResourceManager.STORED_RESOURCES.get(extensionContext.getDisplayName()).push(new ResourceItem<>(() -> deletePostgres(namespaceName)));
+        ResourceManager.STORED_RESOURCES.get(ResourceManager.getTestContext().getDisplayName()).push(new ResourceItem<>(() -> deletePostgres(namespaceName)));
 
         Secret postgresSecret = new SecretBuilder()
             .withNewMetadata()
@@ -143,6 +156,26 @@ public class SetupKeycloak {
                 throw new RuntimeException(String.format("Unable to load file with path: %s due to exception: %n", path) + e);
             }
         });
+    }
+
+    public static void allowNetworkPolicyBetweenKeycloakAndPostgres(String namespaceName) {
+        if (Environment.DEFAULT_TO_DENY_NETWORK_POLICIES) {
+            LabelSelector labelSelector = new LabelSelectorBuilder()
+                .addToMatchLabels(TestConstants.APP_POD_LABEL, KEYCLOAK)
+                .build();
+
+            LOGGER.info("Apply NetworkPolicy access to {} from Pods with LabelSelector {}", KEYCLOAK, labelSelector);
+
+            NetworkPolicy networkPolicy = NetworkPolicyTemplates.networkPolicyBuilder(namespaceName, KEYCLOAK + "-" + POSTGRES, labelSelector)
+                .editSpec()
+                    .withNewPodSelector()
+                       .addToMatchLabels(TestConstants.APP_POD_LABEL, POSTGRES)
+                    .endPodSelector()
+                .endSpec()
+                .build();
+
+            ResourceManager.getInstance().createResourceWithWait(networkPolicy);
+        }
     }
 
     private static void deleteKeycloak(String namespaceName) {

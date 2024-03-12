@@ -1,0 +1,12 @@
+{
+  "userTasks": [
+    {
+      "Status": "Completed",
+      "ClientIdentity": "127.0.0.1",
+      "RequestURL": "POST /kafkacruisecontrol/topic_configuration?topic=my-topic&replication_factor=3&skip_rack_awareness_check=true&dryrun=false&json=true",
+      "UserTaskId": "8911ca89-351f-888-8d0f-9aade00e098h",
+      "StartMs": "1701961136014"
+    }
+  ],
+  "version": 1
+}

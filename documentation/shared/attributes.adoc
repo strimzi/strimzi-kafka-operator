@@ -13,7 +13,7 @@
 :toclevels: 3
 
 //Latest Strimzi version
-:ProductVersion: 0.40.0
+:ProductVersion: 0.41.0
 //Strimzi versions used in upgrades sections
 :ConvertAfterProductVersion: 0.22
 :LastReleaseWithCRDUpgrade: 0.24
@@ -23,21 +23,24 @@
 :KubernetesVersion: 1.23 and later
 
 // Kafka upgrade attributes used in kafka upgrades section
-:DefaultKafkaVersion: 3.6.1
-:DefaultKafkaMetadataVersion: 3.6
-:KafkaMetadataVersionLower: 3.5-IV2
-:KafkaMetadataVersionHigher: 3.6-IV2
-:KafkaVersionLower: 3.5.1
-:KafkaVersionHigher: 3.6.1
+:DefaultKafkaVersion: 3.7.0
+:DefaultKafkaMetadataVersion: 3.7
+:KafkaMetadataVersionLower: 3.6-IV2
+:KafkaMetadataVersionHigher: 3.7-IV4
+:KafkaVersionLower: 3.6.1
+:KafkaVersionHigher: 3.7.0
 :ExampleImageTagUpgrades: quay.io/strimzi/kafka:{ProductVersion}-kafka-{KafkaVersionHigher}
 
 //inter-broker protocol and log message version
-:DefaultInterBrokerVersion: 3.6
-:InterBrokerVersionLower: 3.5
-:InterBrokerVersionHigher: 3.6
+:DefaultInterBrokerVersion: 3.7
+:InterBrokerVersionLower: 3.6
+:InterBrokerVersionHigher: 3.7
 
 // Bridge version
-:BridgeVersion: 0.27.0
+:BridgeVersion: 0.28.0
+
+// Drain Cleaner Version
+:DrainCleanerVersion: 1.1.0
 
 // Source and download links
 :ReleaseDownload: https://github.com/strimzi/strimzi-kafka-operator/releases[GitHub releases page^]
@@ -55,7 +58,7 @@
 :keycloak-server-install-doc: link:https://www.keycloak.org/operator/installation[Installing the Keycloak Operator^]
 :keycloak-authorization-services: link:https://www.keycloak.org/docs/latest/authorization_services/index.html[Keycloak Authorization Services^]
 :oauth-blog: link:https://strimzi.io/2019/10/25/kafka-authentication-using-oauth-2.0.html[Kafka authentication using OAuth 2.0^]
-:OAuthVersion: 0.14.0
+:OAuthVersion: 0.15.0
 :oauth-demo-keycloak: link:https://github.com/strimzi/strimzi-kafka-oauth/tree/{OAuthVersion}/examples[Using Keycloak as the OAuth 2.0 authorization server^]
 :oauth-demo-hydra: link:https://github.com/strimzi/strimzi-kafka-oauth/tree/{OAuthVersion}/examples/docker#running-with-hydra-using-ssl-and-opaque-tokens[Using Hydra as the OAuth 2.0 authorization server^]
 
@@ -135,7 +138,7 @@
 :DockerOrg: quay.io/strimzi
 :DockerTag: {ProductVersion}
 :BridgeDockerTag: {BridgeVersion}
-:DrainCleanerDockerTag: 1.0.1
+:DrainCleanerDockerTag: {DrainCleanerVersion}
 :DockerRepository: https://quay.io/organization/strimzi[Container Registry^]
 :DockerZookeeper: quay.io/strimzi/kafka:{DockerTag}-kafka-{DefaultKafkaVersion}
 :DockerKafkaImageCurrent: quay.io/strimzi/kafka:{DockerTag}-kafka-{KafkaVersionHigher}

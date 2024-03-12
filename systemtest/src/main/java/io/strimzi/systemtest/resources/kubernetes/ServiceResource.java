@@ -10,7 +10,6 @@ import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.extension.ExtensionContext;
 
 public class ServiceResource implements ResourceType<Service> {
 
@@ -44,9 +43,9 @@ public class ServiceResource implements ResourceType<Service> {
         return resource != null;
     }
 
-    public static Service createServiceResource(ExtensionContext extensionContext, Service service, String clientNamespace) {
+    public static Service createServiceResource(Service service, String clientNamespace) {
         LOGGER.info("Creating Service: {}/{}", clientNamespace, service.getMetadata().getName());
-        ResourceManager.getInstance().createResourceWithWait(extensionContext, service);
+        ResourceManager.getInstance().createResourceWithWait(service);
         return service;
     }
 }

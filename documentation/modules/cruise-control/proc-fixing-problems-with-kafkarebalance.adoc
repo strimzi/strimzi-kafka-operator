@@ -41,7 +41,7 @@ kubectl describe kafkarebalance _rebalance-cr-name_
 +
 [source,shell,subs="+quotes"]
 ----
-kubectl annotate kafkarebalance _rebalance-cr-name_ strimzi.io/rebalance=refresh
+kubectl annotate kafkarebalance _rebalance-cr-name_ strimzi.io/rebalance="refresh"
 ----
 
 . Check the status of the `KafkaRebalance` resource:

@@ -8,6 +8,7 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.listeners.ExecutionListener;
 import io.strimzi.systemtest.resources.NamespaceManager;
+import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.logs.CollectorElement;
 import org.apache.logging.log4j.LogManager;
@@ -42,12 +43,11 @@ public class TestSuiteNamespaceManager {
      *  {@link io.strimzi.systemtest.annotations.ParallelNamespaceTest}, which creates its own namespace it does not
      *  make sense to provide another auxiliary namespace (because it will be not used) and thus we are skip such creation.
      *
-     * @param extensionContext      extension context for test class
      */
-    public void createTestSuiteNamespace(ExtensionContext extensionContext) {
-        final String testSuiteName = extensionContext.getRequiredTestClass().getName();
+    public void createTestSuiteNamespace() {
+        final String testSuiteName = ResourceManager.getTestContext().getRequiredTestClass().getName();
 
-        if (ExecutionListener.hasSuiteParallelOrIsolatedTest(extensionContext)) {
+        if (ExecutionListener.hasSuiteParallelOrIsolatedTest(ResourceManager.getTestContext())) {
             // if RBAC is enabled we don't run tests in parallel mode and with that said we don't create another namespaces
             if (!Environment.isNamespaceRbacScope()) {
                 NamespaceManager.getInstance().createNamespaceAndPrepare(Environment.TEST_SUITE_NAMESPACE, CollectorElement.createCollectorElement(testSuiteName));
@@ -59,15 +59,14 @@ public class TestSuiteNamespaceManager {
     }
 
     /**
-     * Analogically, inverse method to {@link #createTestSuiteNamespace(ExtensionContext)}.
+     * Analogically, inverse method to {@link #createTestSuiteNamespace()}.
      *
-     * @param extensionContext      extension context for test class
      */
-    public void deleteTestSuiteNamespace(ExtensionContext extensionContext) {
-        if (ExecutionListener.hasSuiteParallelOrIsolatedTest(extensionContext)) {
+    public void deleteTestSuiteNamespace() {
+        if (ExecutionListener.hasSuiteParallelOrIsolatedTest(ResourceManager.getTestContext())) {
             // if RBAC is enabled we don't run tests in parallel mode and with that said we don't create another namespaces
             if (!Environment.isNamespaceRbacScope()) {
-                final String testSuiteName = extensionContext.getRequiredTestClass().getName();
+                final String testSuiteName = ResourceManager.getTestContext().getRequiredTestClass().getName();
 
                 LOGGER.info("Deleting Namespace: {} for TestSuite: {}", Environment.TEST_SUITE_NAMESPACE, StUtils.removePackageName(testSuiteName));
                 NamespaceManager.getInstance().deleteNamespaceWithWaitAndRemoveFromSet(Environment.TEST_SUITE_NAMESPACE, CollectorElement.createCollectorElement(testSuiteName));
@@ -80,44 +79,42 @@ public class TestSuiteNamespaceManager {
      * In test cases, where Kafka cluster is deployed we always create another namespace. Such test case is then
      * annotated as @ParallelNamespaceTest. This method creates from @code{extensionContext} this type of namespace
      * and store it to the @code{KubeClusterResource} instance, which then it will be needed in the @AfterEach phase.
-     * The inverse operation to this one is implement in {@link #deleteParallelNamespace(ExtensionContext)}.
+     * The inverse operation to this one is implement in {@link #deleteParallelNamespace()}.
      *
-     * @param extensionContext unifier (id), which distinguished all other test cases
      */
-    public void createParallelNamespace(ExtensionContext extensionContext) {
-        final String testCaseName = extensionContext.getRequiredTestMethod().getName();
+    public void createParallelNamespace() {
+        final String testCaseName = ResourceManager.getTestContext().getRequiredTestMethod().getName();
 
         // if 'parallel namespace test' we are gonna create namespace
-        if (StUtils.isParallelNamespaceTest(extensionContext)) {
+        if (StUtils.isParallelNamespaceTest(ResourceManager.getTestContext())) {
             // if RBAC is enable we don't run tests in parallel mode and with that said we don't create another namespaces
             if (!Environment.isNamespaceRbacScope()) {
                 final String namespaceTestCase = "namespace-" + counterOfNamespaces.getAndIncrement();
 
-                extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.NAMESPACE_KEY, namespaceTestCase);
+                ResourceManager.getTestContext().getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.NAMESPACE_KEY, namespaceTestCase);
                 // create namespace by
                 LOGGER.info("Creating Namespace: {} for TestCase: {}", namespaceTestCase, StUtils.removePackageName(testCaseName));
 
-                NamespaceManager.getInstance().createNamespaceAndPrepare(namespaceTestCase, CollectorElement.createCollectorElement(extensionContext.getRequiredTestClass().getName(), testCaseName));
+                NamespaceManager.getInstance().createNamespaceAndPrepare(namespaceTestCase, CollectorElement.createCollectorElement(ResourceManager.getTestContext().getRequiredTestClass().getName(), testCaseName));
             }
         }
     }
 
     /**
-     * Analogically to the {@link #createParallelNamespace(ExtensionContext)}.
+     * Analogically to the {@link #createParallelNamespace()}.
      *
-     * @param extensionContext unifier (id), which distinguished all other test cases
      */
-    public void deleteParallelNamespace(ExtensionContext extensionContext) {
+    public void deleteParallelNamespace() {
         // if 'parallel namespace test' we are gonna delete namespace
-        if (StUtils.isParallelNamespaceTest(extensionContext)) {
+        if (StUtils.isParallelNamespaceTest(ResourceManager.getTestContext())) {
             // if RBAC is enable we don't run tests in parallel mode and with that said we don't create another namespaces
             if (!Environment.isNamespaceRbacScope()) {
-                final String namespaceToDelete = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.NAMESPACE_KEY).toString();
-                final String testCaseName = extensionContext.getRequiredTestMethod().getName();
+                final String namespaceToDelete = ResourceManager.getTestContext().getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.NAMESPACE_KEY).toString();
+                final String testCaseName = ResourceManager.getTestContext().getRequiredTestMethod().getName();
 
                 LOGGER.info("Deleting Namespace: {} for TestCase: {}", namespaceToDelete, StUtils.removePackageName(testCaseName));
 
-                NamespaceManager.getInstance().deleteNamespaceWithWaitAndRemoveFromSet(namespaceToDelete, CollectorElement.createCollectorElement(extensionContext.getRequiredTestClass().getName(), testCaseName));
+                NamespaceManager.getInstance().deleteNamespaceWithWaitAndRemoveFromSet(namespaceToDelete, CollectorElement.createCollectorElement(ResourceManager.getTestContext().getRequiredTestClass().getName(), testCaseName));
             }
         }
     }

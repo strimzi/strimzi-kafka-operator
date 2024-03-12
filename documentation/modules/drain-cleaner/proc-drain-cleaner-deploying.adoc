@@ -1,0 +1,144 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-drain-cleaner.adoc
+
+[id='proc-drain-cleaner-deploying-{context}']
+= Deploying the Strimzi Drain Cleaner using installation files
+
+[role="_abstract"] 
+Deploy the Strimzi Drain Cleaner to the Kubernetes cluster where the Cluster Operator and Kafka cluster are running.
+
+Strimzi Drain Cleaner can run in two different modes.
+By default, the Drain Cleaner denies (blocks) the Kubernetes eviction request to prevent Kubernetes from evicting the pods and instead uses the Cluster Operator to move the pod.
+This mode has better compatibility with various cluster autoscaling tools and does not require any specific `PodDisuptionBudget` configuration.
+Alternatively, you can enable the legacy mode where it allows the eviction request while also instructing the Cluster Operator to move the pod.
+For the legacy mode to work, you have to configure the `PodDisruptionBudget` to not allow any pod evictions by setting the `maxUnavailable` option to `0`.
+
+.Prerequisites
+
+* You have xref:drain-cleaner-prereqs-str[downloaded the Strimzi Drain Cleaner deployment files].
+* You have a highly available Kafka cluster deployment running with Kubernetes worker nodes that you would like to update.
+* Topics are replicated for high availability.
++
+Topic configuration specifies a replication factor of at least 3 and a minimum number of in-sync replicas to 1 less than the replication factor.
++
+.Kafka topic replicated for high availability
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaTopicApiVersion}
+kind: KafkaTopic
+metadata:
+  name: my-topic
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  partitions: 1
+  replicas: 3
+  config:
+    # ...
+    min.insync.replicas: 2
+    # ...
+----
+
+.Excluding Kafka or ZooKeeper
+
+If you don't want to include Kafka or ZooKeeper pods in Drain Cleaner operations, or if you prefer to use the Drain Cleaner in legacy mode, change the default environment variables in the Drain Cleaner `Deployment` configuration file:
+
+* Set `STRIMZI_DENY_EVICTION` to `false` to use the legacy mode relying on the `PodDisruptionBudget` configuration
+* Set `STRIMZI_DRAIN_KAFKA` to `false` to exclude Kafka pods
+* Set `STRIMZI_DRAIN_ZOOKEEPER` to `false` to exclude ZooKeeper pods
+
+.Example configuration to exclude ZooKeeper pods
+[source,yaml,subs="attributes+"]
+----
+apiVersion: apps/v1
+kind: Deployment
+spec:
+  # ...
+  template:
+    spec:
+      serviceAccountName: strimzi-drain-cleaner
+      containers:
+        - name: strimzi-drain-cleaner
+          # ...
+          env:
+            - name: STRIMZI_DENY_EVICTION
+              value: "true"
+            - name: STRIMZI_DRAIN_KAFKA
+              value: "true"
+            - name: STRIMZI_DRAIN_ZOOKEEPER
+              value: "false"
+          # ...
+----
+
+.Procedure
+
+. If you are using the legacy mode activated by setting the `STRIMZI_DENY_EVICTION` environment variable to `false`, you must also configure the `PodDisruptionBudget` resource.
+  Set `maxUnavailable` to `0` (zero) in the Kafka and ZooKeeper sections of the `Kafka` resource using `template` settings.
++
+.Specifying a pod disruption budget
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+  namespace: myproject
+spec:
+  kafka:
+    template:
+      podDisruptionBudget:
+        maxUnavailable: 0
+
+  # ...
+  zookeeper:
+    template:
+      podDisruptionBudget:
+        maxUnavailable: 0
+  # ...
+----
++
+This setting prevents the automatic eviction of pods in case of planned disruptions,
+leaving the Strimzi Drain Cleaner and Cluster Operator to roll the pods on different worker nodes.
++
+Add the same configuration for ZooKeeper if you want to use Strimzi Drain Cleaner to drain ZooKeeper nodes.
+
+. Update the `Kafka` resource:
++
+[source,shell,subs=+quotes]
+kubectl apply -f <kafka_configuration_file>
+
+. Deploy the Strimzi Drain Cleaner.
++
+--
+ifdef::Section[]
+* If you are using `cert-manager` with Kubernetes, apply the resources in the `/install/drain-cleaner/certmanager` directory.
++
+[source,shell,subs="attributes+"]
+----
+kubectl apply -f ./install/drain-cleaner/certmanager
+----
++
+The TLS certificates for the webhook are generated automatically and injected into the webhook configuration.
++
+* If you are not using `cert-manager` with Kubernetes, do the following:
++
+.. xref:proc-drain-cleaner-certs-{context}[Add TLS certificates to use in the deployment].
++
+Any certificates you add must be renewed before they expire. 
++
+.. Apply the resources in the `/install/drain-cleaner/kubernetes` directory.
++
+[source,shell,subs="attributes+"]
+----
+kubectl apply -f ./install/drain-cleaner/kubernetes
+----
+endif::Section[]
+--
++
+* To run the Drain Cleaner on OpenShift, apply the resources in the `/install/drain-cleaner/openshift` directory.
++
+[source,shell,subs="attributes+"]
+----
+kubectl apply -f ./install/drain-cleaner/openshift
+----

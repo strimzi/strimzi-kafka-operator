@@ -14,6 +14,7 @@ import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
+import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
@@ -28,7 +29,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -52,7 +52,7 @@ public class KRaftKafkaUpgradeDowngradeST extends AbstractKRaftUpgradeST {
     private final int continuousClientsMessageCount = 1000;
 
     @IsolatedTest
-    void testKafkaClusterUpgrade(ExtensionContext testContext) {
+    void testKafkaClusterUpgrade() {
         List<TestKafkaVersion> sortedVersions = TestKafkaVersion.getSupportedKafkaVersions();
 
         String producerName = clusterName + "-producer";
@@ -65,7 +65,7 @@ public class KRaftKafkaUpgradeDowngradeST extends AbstractKRaftUpgradeST {
             // If it is an upgrade test we keep the metadata version as the lower version number
             String metadataVersion = initialVersion.metadataVersion();
 
-            runVersionChange(initialVersion, newVersion, producerName, consumerName, metadataVersion, 3, 3, testContext);
+            runVersionChange(initialVersion, newVersion, producerName, consumerName, metadataVersion, 3, 3);
         }
 
         // ##############################
@@ -76,13 +76,9 @@ public class KRaftKafkaUpgradeDowngradeST extends AbstractKRaftUpgradeST {
     }
 
     @IsolatedTest
-    void testKafkaClusterDowngrade(ExtensionContext testContext) {
-        final TestStorage testStorage = storageMap.get(testContext);
+    void testKafkaClusterDowngrade() {
+        final TestStorage testStorage = storageMap.get(ResourceManager.getTestContext());
         List<TestKafkaVersion> sortedVersions = TestKafkaVersion.getSupportedKafkaVersions();
-
-        String clusterName = testStorage.getClusterName();
-        String producerName = clusterName + "-producer";
-        String consumerName = clusterName + "-consumer";
 
         for (int x = sortedVersions.size() - 1; x > 0; x--) {
             TestKafkaVersion initialVersion = sortedVersions.get(x);
@@ -90,18 +86,18 @@ public class KRaftKafkaUpgradeDowngradeST extends AbstractKRaftUpgradeST {
 
             // If it is a downgrade then we make sure that we are using the lowest metadataVersion from the whole list
             String metadataVersion = sortedVersions.get(0).metadataVersion();
-            runVersionChange(initialVersion, newVersion, producerName, consumerName, metadataVersion, 3, 3, testContext);
+            runVersionChange(initialVersion, newVersion, testStorage.getProducerName(), testStorage.getConsumerName(), metadataVersion, 3, 3);
         }
 
         // ##############################
         // Validate that continuous clients finished successfully
         // ##############################
-        ClientUtils.waitForClientsSuccess(producerName, consumerName, TestConstants.CO_NAMESPACE, continuousClientsMessageCount);
+        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), TestConstants.CO_NAMESPACE, continuousClientsMessageCount);
         // ##############################
     }
 
     @IsolatedTest
-    void testUpgradeWithNoMetadataVersionSet(ExtensionContext testContext) {
+    void testUpgradeWithNoMetadataVersionSet() {
         List<TestKafkaVersion> sortedVersions = TestKafkaVersion.getSupportedKafkaVersions();
 
         String producerName = clusterName + "-producer";
@@ -111,7 +107,7 @@ public class KRaftKafkaUpgradeDowngradeST extends AbstractKRaftUpgradeST {
             TestKafkaVersion initialVersion = sortedVersions.get(x);
             TestKafkaVersion newVersion = sortedVersions.get(x + 1);
 
-            runVersionChange(initialVersion, newVersion, producerName, consumerName, null, 3, 3, testContext);
+            runVersionChange(initialVersion, newVersion, producerName, consumerName, null, 3, 3);
         }
 
         // ##############################
@@ -122,20 +118,20 @@ public class KRaftKafkaUpgradeDowngradeST extends AbstractKRaftUpgradeST {
     }
 
     @BeforeAll
-    void setupEnvironment(final ExtensionContext extensionContext) {
+    void setupEnvironment() {
         List<EnvVar> coEnvVars = new ArrayList<>();
         coEnvVars.add(new EnvVar(Environment.STRIMZI_FEATURE_GATES_ENV, String.join(",",
             TestConstants.USE_KRAFT_MODE, TestConstants.USE_KAFKA_NODE_POOLS, TestConstants.USE_UNIDIRECTIONAL_TOPIC_OPERATOR), null));
 
         clusterOperator
-            .defaultInstallation(extensionContext)
+            .defaultInstallation()
             .withExtraEnvVars(coEnvVars)
             .createInstallation()
             .runInstallation();
     }
 
     @SuppressWarnings({"checkstyle:MethodLength"})
-    void runVersionChange(TestKafkaVersion initialVersion, TestKafkaVersion newVersion, String producerName, String consumerName, String initMetadataVersion, int controllerReplicas, int brokerReplicas, ExtensionContext testContext) {
+    void runVersionChange(TestKafkaVersion initialVersion, TestKafkaVersion newVersion, String producerName, String consumerName, String initMetadataVersion, int controllerReplicas, int brokerReplicas) {
         boolean isUpgrade = initialVersion.isUpgrade(newVersion);
         Map<String, String> controllerPods;
         Map<String, String> brokerPods;
@@ -167,9 +163,9 @@ public class KRaftKafkaUpgradeDowngradeST extends AbstractKRaftUpgradeST {
                     .endSpec();
             }
 
-            resourceManager.createResourceWithWait(testContext,
-                KafkaNodePoolTemplates.kafkaNodePoolWithControllerRoleAndPersistentStorage(TestConstants.CO_NAMESPACE, CONTROLLER_NODE_NAME, clusterName, controllerReplicas).build(),
-                KafkaNodePoolTemplates.kafkaNodePoolWithBrokerRoleAndPersistentStorage(TestConstants.CO_NAMESPACE, BROKER_NODE_NAME, clusterName, brokerReplicas).build(),
+            resourceManager.createResourceWithWait(
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(TestConstants.CO_NAMESPACE, CONTROLLER_NODE_NAME, clusterName, controllerReplicas).build(),
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(TestConstants.CO_NAMESPACE, BROKER_NODE_NAME, clusterName, brokerReplicas).build(),
                 kafka.build()
             );
 
@@ -177,7 +173,7 @@ public class KRaftKafkaUpgradeDowngradeST extends AbstractKRaftUpgradeST {
             // Attach clients which will continuously produce/consume messages to/from Kafka brokers during rolling update
             // ##############################
             // Setup topic, which has 3 replicas and 2 min.isr to see if producer will be able to work during rolling update
-            resourceManager.createResourceWithWait(testContext, KafkaTopicTemplates.topic(clusterName, continuousTopicName, 3, 3, 2, TestConstants.CO_NAMESPACE).build());
+            resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(clusterName, continuousTopicName, 3, 3, 2, TestConstants.CO_NAMESPACE).build());
             String producerAdditionConfiguration = "delivery.timeout.ms=20000\nrequest.timeout.ms=20000";
 
             KafkaClients kafkaBasicClientJob = new KafkaClientsBuilder()
@@ -190,8 +186,8 @@ public class KRaftKafkaUpgradeDowngradeST extends AbstractKRaftUpgradeST {
                 .withDelayMs(1000)
                 .build();
 
-            resourceManager.createResourceWithWait(testContext, kafkaBasicClientJob.producerStrimzi());
-            resourceManager.createResourceWithWait(testContext, kafkaBasicClientJob.consumerStrimzi());
+            resourceManager.createResourceWithWait(kafkaBasicClientJob.producerStrimzi());
+            resourceManager.createResourceWithWait(kafkaBasicClientJob.consumerStrimzi());
             // ##############################
         }
 

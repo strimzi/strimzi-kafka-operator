@@ -390,7 +390,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
     }
 
     private Future<Void> updateConnectorLogger(Reconciliation reconciliation, String host, int port, String logger, String level) {
-        String path = "/admin/loggers/" + logger;
+        String path = "/admin/loggers/" + logger + "?scope=cluster";
         JsonObject levelJO = new JsonObject();
         levelJO.put("level", level);
         LOGGER.debugCr(reconciliation, "Making PUT request to {} with body {}", path, levelJO);
@@ -405,7 +405,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                                     .write(buffer.toString());
                             request.result().send(response -> {
                                 if (response.succeeded()) {
-                                    if (response.result().statusCode() == 200) {
+                                    if (List.of(200, 204).contains(response.result().statusCode())) {
                                         response.result().bodyHandler(body -> {
                                             LOGGER.debugCr(reconciliation, "Logger {} updated to level {}", logger, level);
                                             result.complete();
@@ -443,11 +443,13 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                                             Map<String, Map<String, String>> fetchedLoggers = mapper.readValue(buffer.getBytes(), MAP_OF_MAP_OF_STRINGS);
                                             Map<String, String> loggerMap = new HashMap<>(fetchedLoggers.size());
                                             for (var e : fetchedLoggers.entrySet()) {
-                                                String level = e.getValue().get("level");
-                                                if (level != null && e.getValue().size() == 1) {
-                                                    loggerMap.put(e.getKey(), level);
+                                                if (Set.of("level", "last_modified").containsAll(e.getValue().keySet()))   {
+                                                    String level = e.getValue().get("level");
+                                                    if (level != null) {
+                                                        loggerMap.put(e.getKey(), level);
+                                                    }
                                                 } else {
-                                                    result.tryFail("Inner map has unexpected keys " + e.getValue().keySet());
+                                                    result.tryFail(new RuntimeException("Inner map has unexpected keys " + e.getValue().keySet()));
                                                     break;
                                                 }
                                             }

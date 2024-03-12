@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.resources;
 
 import io.fabric8.kubernetes.api.model.Namespace;
+import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.NamespaceStatus;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
@@ -285,5 +286,36 @@ public class NamespaceManager {
      */
     public static Map<CollectorElement, Set<String>> getMapWithSuiteNamespaces() {
         return MAP_WITH_SUITE_NAMESPACES;
+    }
+
+    public static void labelNamespace(String namespaceName, Map<String, String> labels) {
+        TestUtils.waitFor(
+            String.join("%s will be updated with %s and the labels will be present", namespaceName, labels.toString()),
+            TestConstants.GLOBAL_POLL_INTERVAL,
+            TestConstants.GLOBAL_STATUS_TIMEOUT,
+            () -> {
+                try {
+                    kubeClient().getClient().namespaces().withName(namespaceName).edit(namespace ->
+                        new NamespaceBuilder(namespace)
+                            .editOrNewMetadata()
+                            .addToLabels("pod-security.kubernetes.io/enforce", "restricted")
+                            .endMetadata()
+                            .build()
+                    );
+                } catch (Exception e) {
+                    LOGGER.warn("Failed to put labels to Namespace: {} due to {}, trying again", namespaceName, e.getMessage());
+                    return false;
+                }
+
+                Namespace namespace = kubeClient().getNamespace(namespaceName);
+
+                if (namespace != null) {
+                    Map<String, String> namespaceLabels = namespace.getMetadata().getLabels();
+
+                    return namespaceLabels.entrySet().containsAll(labels.entrySet());
+                }
+
+                return false;
+            });
     }
 }

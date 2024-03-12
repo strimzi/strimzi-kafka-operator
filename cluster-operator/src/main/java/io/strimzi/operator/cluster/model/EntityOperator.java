@@ -58,6 +58,9 @@ public class EntityOperator extends AbstractModel {
     // Certificates for the Entity Topic Operator
     protected static final String ETO_CERTS_VOLUME_NAME = "eto-certs";
     protected static final String ETO_CERTS_VOLUME_MOUNT = "/etc/eto-certs/";
+    // Cruise Control API credentials for the Entity Topic Operator
+    protected static final String ETO_CC_API_VOLUME_NAME = "eto-cc-api";
+    protected static final String ETO_CC_API_VOLUME_MOUNT = "/etc/eto-cc-api/";
     // Certificates for the Entity User Operator
     protected static final String EUO_CERTS_VOLUME_NAME = "euo-certs";
     protected static final String EUO_CERTS_VOLUME_MOUNT = "/etc/euo-certs/";
@@ -83,7 +86,8 @@ public class EntityOperator extends AbstractModel {
     /* test */ String zookeeperConnect;
     private EntityTopicOperator topicOperator;
     private EntityUserOperator userOperator;
-    /* test */  boolean unidirectionalTopicOperator;
+    /* test */ boolean unidirectionalTopicOperator;
+    /* test */ boolean cruiseControlEnabled;
     private TlsSidecar tlsSidecar;
     private String tlsSidecarImage;
 
@@ -133,7 +137,7 @@ public class EntityOperator extends AbstractModel {
      * @param kafkaAssembly desired resource with cluster configuration containing the Entity Operator one
      * @param versions The versions.
      * @param sharedEnvironmentProvider     Shared environment provider.
-     * @param unidirectionalTopicOperator Indicates whether the UTO should be used.
+     * @param unidirectionalTopicOperator   Whether the Unidirectional Topic Operator should be used.
      *
      * @return Entity Operator instance, null if not configured in the ConfigMap
      */
@@ -154,6 +158,7 @@ public class EntityOperator extends AbstractModel {
             result.tlsSidecar = entityOperatorSpec.getTlsSidecar();
             result.topicOperator = topicOperator;
             result.unidirectionalTopicOperator = unidirectionalTopicOperator;
+            result.cruiseControlEnabled = kafkaAssembly.getSpec().getCruiseControl() != null;
             result.userOperator = userOperator;
 
             String tlsSideCarImage = entityOperatorSpec.getTlsSidecar() != null ? entityOperatorSpec.getTlsSidecar().getImage() : null;
@@ -298,6 +303,9 @@ public class EntityOperator extends AbstractModel {
             volumeList.addAll(topicOperator.getVolumes());
             volumeList.add(VolumeUtils.createTempDirVolume(TOPIC_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME, templatePod));
             volumeList.add(VolumeUtils.createSecretVolume(ETO_CERTS_VOLUME_NAME, KafkaResources.entityTopicOperatorSecretName(cluster), isOpenShift));
+            if (unidirectionalTopicOperator && cruiseControlEnabled) {
+                volumeList.add(VolumeUtils.createSecretVolume(ETO_CC_API_VOLUME_NAME, KafkaResources.entityTopicOperatorCcApiSecretName(cluster), isOpenShift));
+            }
         }
 
         if (userOperator != null) {

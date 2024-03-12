@@ -20,7 +20,9 @@ import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationCust
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationOAuth;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationScramSha512;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationTls;
-import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
+import io.strimzi.api.kafka.model.kafka.tieredstorage.RemoteStorageManager;
+import io.strimzi.api.kafka.model.kafka.tieredstorage.TieredStorage;
+import io.strimzi.api.kafka.model.kafka.tieredstorage.TieredStorageCustom;
 import io.strimzi.kafka.oauth.server.ServerConfig;
 import io.strimzi.kafka.oauth.server.plain.ServerPlainConfig;
 import io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlMetricsReporter;
@@ -69,21 +71,21 @@ public class KafkaBrokerConfigurationBuilder {
     private final StringWriter stringWriter = new StringWriter();
     private final PrintWriter writer = new PrintWriter(stringWriter);
     private final Reconciliation reconciliation;
-    private final String brokerId;
-    private final boolean useKRaft;
+    private final KafkaMetadataConfigurationState kafkaMetadataConfigState;
+    private final NodeRef node;
 
     /**
      * Broker configuration template constructor
      *
      * @param reconciliation    The reconciliation
-     * @param brokerId          The ID of the broker
-     * @param useKRaft          Indicates whether KRaft is used or not
+     * @param node              NodeRef instance
+     * @param kafkaMetadataConfigState  Represents the state of the Kafka metadata configuration
      */
-    public KafkaBrokerConfigurationBuilder(Reconciliation reconciliation, String brokerId, boolean useKRaft) {
+    public KafkaBrokerConfigurationBuilder(Reconciliation reconciliation, NodeRef node, KafkaMetadataConfigurationState kafkaMetadataConfigState) {
         printHeader();
         this.reconciliation = reconciliation;
-        this.brokerId = brokerId;
-        this.useKRaft = useKRaft;
+        this.node = node;
+        this.kafkaMetadataConfigState = kafkaMetadataConfigState;
 
         // Render the node/broker ID into the config file
         configureNodeOrBrokerId();
@@ -95,13 +97,12 @@ public class KafkaBrokerConfigurationBuilder {
     private void configureNodeOrBrokerId()   {
         printSectionHeader("Node / Broker ID");
 
-        if (useKRaft) {
-            writer.println("node.id=" + brokerId);
-        } else {
-            writer.println("broker.id=" + brokerId);
-            // Node ID is ignored when not using Kraft mode => but it defaults to broker ID when not set.
-            // We set it here in the configuration explicitly to avoid never ending rolling updates.
-            writer.println("node.id=" + brokerId);
+        // Node ID is ignored when not using Kraft mode => but it defaults to broker ID when not set.
+        // We set it here in the configuration explicitly to avoid never ending rolling updates.
+        writer.println("node.id=" + node.nodeId());
+        // only broker in ZooKeeper-mode or during migration needs the Broker ID to be set
+        if (node.broker() && kafkaMetadataConfigState.isZooKeeperToMigration()) {
+            writer.println("broker.id=" + node.nodeId());
         }
 
         writer.println();
@@ -194,19 +195,39 @@ public class KafkaBrokerConfigurationBuilder {
     }
 
     /**
+     * Enable the ZooKeeper migration by setting the corresponding flag to true
+     *
+     * @return the builder instance
+     */
+    public KafkaBrokerConfigurationBuilder withZooKeeperMigration() {
+        printSectionHeader("Zookeeper migration");
+        writer.println("zookeeper.metadata.migration.enable=true");
+        writer.println();
+
+        return this;
+    }
+
+    /**
      * Adds the KRaft configuration for ZooKeeper-less Kafka. This includes the roles of the broker, the controller
      * listener name and the list of all controllers for quorum voting.
      *
      * @param clusterName   Name of the cluster (important for the advertised hostnames)
      * @param namespace     Namespace (important for generating the advertised hostname)
-     * @param kraftRoles    KRaft process roles which this node will take
      * @param nodes         Set of node references for configuring the KRaft quorum
      *
      * @return Returns the builder instance
      */
-    public KafkaBrokerConfigurationBuilder withKRaft(String clusterName, String namespace, Set<ProcessRoles> kraftRoles, Set<NodeRef> nodes)   {
+    public KafkaBrokerConfigurationBuilder withKRaft(String clusterName, String namespace, Set<NodeRef> nodes)   {
         printSectionHeader("KRaft configuration");
-        writer.println("process.roles=" + kraftRoles.stream().map(role -> role.toValue()).sorted().collect(Collectors.joining(",")));
+        if (node.controller() || (node.broker() && kafkaMetadataConfigState.isPostMigrationToKRaft())) {
+            String roles = "broker,controller";
+            if (node.broker() && !node.controller()) {
+                roles = "broker";
+            } else if (!node.broker()) {
+                roles = "controller";
+            }
+            writer.println("process.roles=" + roles);
+        }
         writer.println("controller.listener.names=" + CONTROL_PLANE_LISTENER_NAME);
 
         // Generates the controllers quorum list
@@ -230,7 +251,6 @@ public class KafkaBrokerConfigurationBuilder {
      *
      * @param clusterName                Name of the cluster (important for the advertised hostnames)
      * @param namespace                  Namespace (important for generating the advertised hostname)
-     * @param node                       Node reference describing the node for which we generate the configuration
      * @param kafkaListeners             The listeners configuration from the Kafka CR
      * @param advertisedHostnameProvider Lambda method which provides the advertised hostname for given listener and
      *                                   broker. This is used to configure the user-configurable listeners.
@@ -239,10 +259,10 @@ public class KafkaBrokerConfigurationBuilder {
      *
      * @return Returns the builder instance
      */
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity"})
     public KafkaBrokerConfigurationBuilder withListeners(
             String clusterName,
             String namespace,
-            NodeRef node,
             List<GenericKafkaListener> kafkaListeners,
             Function<String, String> advertisedHostnameProvider,
             Function<String, String> advertisedPortProvider
@@ -251,14 +271,14 @@ public class KafkaBrokerConfigurationBuilder {
         List<String> advertisedListeners = new ArrayList<>();
         List<String> securityProtocol = new ArrayList<>();
 
-        boolean isKraftControllerOnly = useKRaft && node.controller() && !node.broker();
-        boolean isKraftBrokerOnly = useKRaft && node.broker() && !node.controller();
+        boolean isKraftControllerOnly = node.controller() && !node.broker();
 
-        // Control Plane listener => ZooKeeper based brokers and KRaft controllers (including mixed nodes). But not on KRaft broker only nodes
-        if (!isKraftBrokerOnly) {
+        // Control Plane listener is set for pure KRaft controller or combined node, and broker in ZooKeeper mode or in migration state but not when full KRaft.
+        if (node.controller() || (node.broker() && kafkaMetadataConfigState.isZooKeeperToMigration())) {
             listeners.add(CONTROL_PLANE_LISTENER_NAME + "://0.0.0.0:9090");
 
-            if (!useKRaft) {
+            // Control Plane listener to be advertised only with broker in ZooKeeper-based or migration but NOT when full KRaft only or mixed
+            if (node.broker() && kafkaMetadataConfigState.isZooKeeperToMigration()) {
                 advertisedListeners.add(String.format("%s://%s:9090",
                         CONTROL_PLANE_LISTENER_NAME,
                         // Pod name constructed to be templatable for each individual ordinal
@@ -278,6 +298,12 @@ public class KafkaBrokerConfigurationBuilder {
         // so that brokers are able to connect to controllers as TLS clients
         configureControlPlaneListener();
 
+        // Replication Listener to be configured on brokers and KRaft controllers only but until post-migration
+        if (node.broker() || node.controller() && kafkaMetadataConfigState.isZooKeeperToPostMigration()) {
+            securityProtocol.add(REPLICATION_LISTENER_NAME + ":SSL");
+            configureReplicationListener();
+        }
+
         // Non-controller listeners are used only on ZooKeeper based brokers or KRaft brokers (including mixed nodes)
         if (!isKraftControllerOnly) {
             // Replication listener
@@ -287,8 +313,6 @@ public class KafkaBrokerConfigurationBuilder {
                     // Pod name constructed to be templatable for each individual ordinal
                     DnsNameGenerator.podDnsNameWithoutClusterDomain(namespace, KafkaResources.brokersServiceName(clusterName), node.podName())
             ));
-            securityProtocol.add(REPLICATION_LISTENER_NAME + ":SSL");
-            configureReplicationListener();
 
             for (GenericKafkaListener listener : kafkaListeners) {
                 int port = listener.getPort();
@@ -313,9 +337,10 @@ public class KafkaBrokerConfigurationBuilder {
 
                 writer.println();
             }
-
-            configureOAuthPrincipalBuilderIfNeeded(writer, kafkaListeners);
         }
+
+        // configure OAuth principal builder for all the nodes - brokers, controllers, and mixed
+        configureOAuthPrincipalBuilderIfNeeded(writer, kafkaListeners);
 
         printSectionHeader("Common listener configuration");
         writer.println("listener.security.protocol.map=" + String.join(",", securityProtocol));
@@ -325,10 +350,13 @@ public class KafkaBrokerConfigurationBuilder {
         if (!isKraftControllerOnly) {
             writer.println("advertised.listeners=" + String.join(",", advertisedListeners));
             writer.println("inter.broker.listener.name=" + REPLICATION_LISTENER_NAME);
+        } else if (node.controller() && kafkaMetadataConfigState.isZooKeeperToPostMigration()) {
+            // needed for KRaft controller only as well until post-migration because it needs to contact brokers
+            writer.println("inter.broker.listener.name=" + REPLICATION_LISTENER_NAME);
         }
 
-        // Control plane listener is on all ZooKeeper based brokers, it's not supported in KRaft mode
-        if (!useKRaft) {
+        // Control plane listener is on all ZooKeeper based brokers, needed during migration as well, when broker still using ZooKeeper but KRaft controllers are ready
+        if (node.broker() && kafkaMetadataConfigState.isZooKeeperToMigration()) {
             writer.println("control.plane.listener.name=" + CONTROL_PLANE_LISTENER_NAME);
         }
 
@@ -636,6 +664,9 @@ public class KafkaBrokerConfigurationBuilder {
             superUsers.add(String.format("User:CN=%s,O=io.strimzi", "cluster-operator"));
 
             printSectionHeader("Authorization");
+            // when the StandardAuthorizer has to replace the AclAuthorizer during the migration depending on nodes in full KRaft
+            boolean useKRaft = (node.controller() && kafkaMetadataConfigState.isPreMigrationToKRaft()) ||
+                    (node.broker() && kafkaMetadataConfigState.isPostMigrationToKRaft());
             configureAuthorization(clusterName, superUsers, authorization, useKRaft);
             writer.println("super.users=" + String.join(";", superUsers));
             writer.println();
@@ -820,10 +851,58 @@ public class KafkaBrokerConfigurationBuilder {
     public KafkaBrokerConfigurationBuilder withLogDirs(List<VolumeMount> mounts)  {
         // We take all the data mount points and add the broker specific path
         String logDirs = mounts.stream()
-                .map(volumeMount -> volumeMount.getMountPath() + "/kafka-log" + brokerId).collect(Collectors.joining(","));
+                .map(volumeMount -> volumeMount.getMountPath() + "/kafka-log" + node.nodeId()).collect(Collectors.joining(","));
 
         printSectionHeader("Kafka message logs configuration");
         writer.println("log.dirs=" + logDirs);
+        writer.println();
+
+        return this;
+    }
+
+    /**
+     * Configure the tiered storage configuration for Kafka brokers.
+     *
+     * @param clusterName     Name of the cluster
+     * @param tieredStorage   TieredStorage configuration.
+     *
+     * @return  Returns the builder instance
+     */
+    public KafkaBrokerConfigurationBuilder withTieredStorage(String clusterName, TieredStorage tieredStorage)  {
+        if (tieredStorage == null) {
+            return this;
+        }
+
+        printSectionHeader("Kafka tiered storage configuration");
+        writer.println("# RLMM configuration generated by Strimzi");
+
+        writer.println("remote.log.storage.system.enable=true");
+        writer.println("remote.log.metadata.manager.impl.prefix=rlmm.config.");
+        writer.println("remote.log.metadata.manager.class.name=org.apache.kafka.server.log.remote.metadata.storage.TopicBasedRemoteLogMetadataManager");
+        writer.println("remote.log.metadata.manager.listener.name=" + REPLICATION_LISTENER_NAME);
+        writer.println("rlmm.config.remote.log.metadata.common.client.bootstrap.servers="
+            + clusterName + "-kafka-brokers:9091");
+        writer.println("rlmm.config.remote.log.metadata.common.client.security.protocol=SSL");
+        writer.println("rlmm.config.remote.log.metadata.common.client.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12");
+        writer.println("rlmm.config.remote.log.metadata.common.client.ssl.keystore.password=${CERTS_STORE_PASSWORD}");
+        writer.println("rlmm.config.remote.log.metadata.common.client.ssl.keystore.type=PKCS12");
+        writer.println("rlmm.config.remote.log.metadata.common.client.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12");
+        writer.println("rlmm.config.remote.log.metadata.common.client.ssl.truststore.password=${CERTS_STORE_PASSWORD}");
+        writer.println("rlmm.config.remote.log.metadata.common.client.ssl.truststore.type=PKCS12");
+
+        writer.println("# RSM configs set by the operator and by the user");
+
+        if (tieredStorage instanceof TieredStorageCustom customTieredStorage) {
+            RemoteStorageManager rsm = customTieredStorage.getRemoteStorageManager();
+            writer.println("remote.log.storage.manager.class.name=" + rsm.getClassName());
+            writer.println("remote.log.storage.manager.class.path=" + rsm.getClassPath());
+            writer.println("remote.log.storage.manager.impl.prefix=rsm.config.");
+
+            for (Map.Entry<String, String> config : rsm.getConfig().entrySet()) {
+                writer.println(String.format("rsm.config.%s=%s", config.getKey(), config.getValue()));
+            }
+        }
+
         writer.println();
 
         return this;

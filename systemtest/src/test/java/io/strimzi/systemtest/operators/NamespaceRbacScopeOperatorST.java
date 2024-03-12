@@ -10,11 +10,13 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.enums.ClusterOperatorRBACType;
+import io.strimzi.systemtest.resources.NodePoolsConverter;
+import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.storage.TestStorage;
+import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -32,20 +34,24 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 class NamespaceRbacScopeOperatorST extends AbstractST {
 
     @IsolatedTest("This test case needs own Cluster Operator")
-    void testNamespacedRbacScopeDeploysRoles(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
+    void testNamespacedRbacScopeDeploysRoles() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         assumeFalse(Environment.isOlmInstall() || Environment.isHelmInstall());
 
-        String clusterName = testStorage.getClusterName();
-
-        this.clusterOperator = this.clusterOperator.defaultInstallation(extensionContext)
+        this.clusterOperator = this.clusterOperator.defaultInstallation()
             .withClusterOperatorRBACType(ClusterOperatorRBACType.NAMESPACE)
             .withWatchingNamespaces(Environment.TEST_SUITE_NAMESPACE)
             .withBindingsNamespaces(Arrays.asList(TestConstants.CO_NAMESPACE, Environment.TEST_SUITE_NAMESPACE))
             .createInstallation()
             .runInstallation();
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 3)
+        resourceManager.createResourceWithWait(
+            NodePoolsConverter.convertNodePoolsIfNeeded(
+                KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
+                KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
+            )
+        );
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3, 3)
             .editMetadata()
                 .addToLabels("app", "strimzi")
                 .withNamespace(Environment.TEST_SUITE_NAMESPACE)
@@ -53,7 +59,7 @@ class NamespaceRbacScopeOperatorST extends AbstractST {
             .build());
 
         // Wait for Kafka to be Ready to ensure all potentially erroneous ClusterRole applications have happened
-        KafkaUtils.waitForKafkaReady(Environment.TEST_SUITE_NAMESPACE, clusterName);
+        KafkaUtils.waitForKafkaReady(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName());
 
         // Assert that no ClusterRoles are present on the server that have app strimzi
         // Naturally returns false positives if another Strimzi operator has been installed

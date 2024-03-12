@@ -227,6 +227,12 @@ public class KubeClient {
         return listPods(getNamespace(), clusterName, key, value);
     }
 
+    public List<String> listPodNames(String namespaceName, LabelSelector labelSelector) {
+        return listPods(namespaceName, labelSelector).stream()
+            .map(pod -> pod.getMetadata().getName())
+            .collect(Collectors.toList());
+    }
+
     public List<String> listPodNames(String key, String value) {
         return listPods(Collections.singletonMap(key, value)).stream()
                 .map(pod -> pod.getMetadata().getName())

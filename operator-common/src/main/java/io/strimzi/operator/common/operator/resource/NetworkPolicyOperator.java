@@ -20,6 +20,8 @@ public class NetworkPolicyOperator extends AbstractNamespacedResourceOperator<Ku
     private static final Pattern IGNORABLE_PATHS = Pattern.compile(
             "^(/metadata/managedFields" +
                     "|/metadata/creationTimestamp" +
+                    "|/metadata/deletionTimestamp" +
+                    "|/metadata/deletionGracePeriodSeconds" +
                     "|/metadata/resourceVersion" +
                     "|/metadata/generation" +
                     "|/metadata/uid" +

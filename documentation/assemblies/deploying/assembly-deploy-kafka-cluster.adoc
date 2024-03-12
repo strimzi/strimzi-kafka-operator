@@ -34,5 +34,7 @@ include::../../modules/deploying/proc-deploy-kafka-cluster.adoc[leveloffset=+1]
 include::../../modules/deploying/proc-deploy-topic-operator-with-cluster-operator.adoc[leveloffset=+1]
 //Include User Operator in deployment
 include::../../modules/deploying/proc-deploy-user-operator-with-cluster-operator.adoc[leveloffset=+1]
+//Connecting to ZooKeeper from terminal
+include::../../modules/configuring/proc-connecting-to-zookeeper.adoc[leveloffset=+1]
 //Kafka cluster resources created
 include::../../modules/configuring/ref-list-of-kafka-cluster-resources.adoc[leveloffset=+1]

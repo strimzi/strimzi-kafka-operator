@@ -10,6 +10,10 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.BTONotSupported;
 import io.strimzi.systemtest.annotations.KRaftWithoutUTONotSupported;
 import io.strimzi.systemtest.resources.NamespaceManager;
+import io.strimzi.systemtest.resources.NodePoolsConverter;
+import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.storage.TestStorage;
+import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicScalabilityUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
@@ -18,7 +22,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -35,14 +38,14 @@ public class TopicScalabilityST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(TopicScalabilityST.class);
     private static final int NUMBER_OF_TOPICS = 200;
-    private final String sharedClusterName = "topic-scalability-shared-cluster-name";
+    private TestStorage sharedTestStorage;
     final String topicPrefix = "example-topic";
 
 
     @IsolatedTest("This test needs to run isolated due to access problems in parallel execution - using the same namespace")
-    void testBigAmountOfTopicsCreatingViaK8s(ExtensionContext extensionContext) {
+    void testBigAmountOfTopicsCreatingViaK8s() {
 
-        KafkaTopicScalabilityUtils.createTopicsViaK8s(extensionContext, Environment.TEST_SUITE_NAMESPACE, sharedClusterName, topicPrefix,
+        KafkaTopicScalabilityUtils.createTopicsViaK8s(Environment.TEST_SUITE_NAMESPACE, sharedTestStorage.getClusterName(), topicPrefix,
                 NUMBER_OF_TOPICS, 4, 3, 2);
         KafkaTopicScalabilityUtils.waitForTopicsReady(Environment.TEST_SUITE_NAMESPACE, topicPrefix, NUMBER_OF_TOPICS);
 
@@ -51,13 +54,13 @@ public class TopicScalabilityST extends AbstractST {
     }
 
     @IsolatedTest
-    void testModifyBigAmountOfTopics(ExtensionContext extensionContext) {
+    void testModifyBigAmountOfTopics() {
         Map<String, Object> modifiedConfig = new HashMap<>();
         final int defaultPartitionCount = 1;
         final int modifiedPartitionCount = defaultPartitionCount + 1;
 
         // Create topics
-        KafkaTopicScalabilityUtils.createTopicsViaK8s(extensionContext, Environment.TEST_SUITE_NAMESPACE, sharedClusterName, topicPrefix,
+        KafkaTopicScalabilityUtils.createTopicsViaK8s(Environment.TEST_SUITE_NAMESPACE, sharedTestStorage.getClusterName(), topicPrefix,
                 NUMBER_OF_TOPICS, defaultPartitionCount, 3, 1);
         KafkaTopicScalabilityUtils.waitForTopicsReady(Environment.TEST_SUITE_NAMESPACE, topicPrefix, NUMBER_OF_TOPICS);
 
@@ -108,8 +111,10 @@ public class TopicScalabilityST extends AbstractST {
     }
 
     @BeforeAll
-    void setup(ExtensionContext extensionContext) {
-        clusterOperator.defaultInstallation(extensionContext)
+    void setup() {
+        sharedTestStorage = new TestStorage(ResourceManager.getTestContext(), Environment.TEST_SUITE_NAMESPACE);
+
+        clusterOperator.defaultInstallation()
             .createInstallation()
             .runInstallation();
 
@@ -117,7 +122,14 @@ public class TopicScalabilityST extends AbstractST {
 
         NamespaceManager.getInstance().createNamespaceAndPrepare(Environment.TEST_SUITE_NAMESPACE);
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(sharedClusterName, 3, 1)
+        resourceManager.createResourceWithWait(
+            NodePoolsConverter.convertNodePoolsIfNeeded(
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(sharedTestStorage.getNamespaceName(), sharedTestStorage.getBrokerPoolName(), sharedTestStorage.getClusterName(), 3).build(),
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(sharedTestStorage.getNamespaceName(), sharedTestStorage.getControllerPoolName(), sharedTestStorage.getClusterName(), 1).build()
+            )
+        );
+
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(sharedTestStorage.getClusterName(), 3, 1)
             .editMetadata()
                 .withNamespace(Environment.TEST_SUITE_NAMESPACE)
             .endMetadata()

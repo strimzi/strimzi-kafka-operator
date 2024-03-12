@@ -5,7 +5,7 @@
     <groupId>io.strimzi</groupId>
     <artifactId>strimzi</artifactId>
     <packaging>pom</packaging>
-    <version>0.40.0-SNAPSHOT</version>
+    <version>0.41.0-SNAPSHOT</version>
 
     <licenses>
         <license>
@@ -134,21 +134,23 @@
         <fasterxml.jackson-annotations.version>2.16.1</fasterxml.jackson-annotations.version>
         <fasterxml.jackson-datatype.version>2.16.1</fasterxml.jackson-datatype.version>
         <fasterxml.jackson-jaxrs.version>2.16.1</fasterxml.jackson-jaxrs.version>
-        <vertx.version>4.5.2</vertx.version>
-        <vertx-junit5.version>4.5.2</vertx-junit5.version>
-        <kafka.version>3.6.1</kafka.version>
+        <vertx.version>4.5.4</vertx.version>
+        <vertx-junit5.version>4.5.4</vertx-junit5.version>
+        <kafka.version>3.7.0</kafka.version>
         <yammer-metrics.version>2.2.0</yammer-metrics.version>
         <zookeeper.version>3.8.3</zookeeper.version>
+        <snappy.version>1.1.10.5</snappy.version>
         <zkclient.version>0.11</zkclient.version>
         <slf4j.version>1.7.36</slf4j.version>
         <log4j.version>2.17.2</log4j.version>
         <quartz.version>2.3.2</quartz.version>
-        <opentelemetry.alpha-version>1.19.0-alpha</opentelemetry.alpha-version>
+        <opentelemetry.version>1.34.1</opentelemetry.version>
+        <opentelemetry-alpha.version>${opentelemetry.version}-alpha</opentelemetry-alpha.version>
         <jetty.version>9.4.53.v20231009</jetty.version>
         <javax-servlet.version>3.1.0</javax-servlet.version>
-        <strimzi-oauth.version>0.14.0</strimzi-oauth.version>
-        <netty.version>4.1.106.Final</netty.version>
-        <micrometer.version>1.12.2</micrometer.version>
+        <strimzi-oauth.version>0.15.0</strimzi-oauth.version>
+        <netty.version>4.1.107.Final</netty.version>
+        <micrometer.version>1.12.3</micrometer.version>
         <jayway-jsonpath.version>2.9.0</jayway-jsonpath.version>
         <registry.version>1.3.2.Final</registry.version>
         <commons-codec.version>1.13</commons-codec.version>
@@ -160,7 +162,7 @@
         <junit-platform-surefire-provider.version>1.3.2</junit-platform-surefire-provider.version>
         <opentest4j.version>1.2.0</opentest4j.version>
         <jupiter.version>5.8.2</jupiter.version>
-        <strimzi-test-container.version>0.105.0</strimzi-test-container.version>
+        <strimzi-test-container.version>0.106.0</strimzi-test-container.version>
         <mockserver.version>5.13.2</mockserver.version>
         <mockwebserver.version>3.14.7</mockwebserver.version>
         <valid4j.version>1.1</valid4j.version>
@@ -169,6 +171,10 @@
         <rest-assured-json-path.version>4.4.0</rest-assured-json-path.version>
         <bouncycastle.version>1.76</bouncycastle.version>
         <kroxylicious-testing.version>0.8.1</kroxylicious-testing.version>
+        <kindcontainer.version>1.4.5</kindcontainer.version>
+        <testcontainer.version>1.19.5</testcontainer.version>
+        <docker-java.version>3.3.4</docker-java.version>
+        <junit4.version>4.13.2</junit4.version>
 
         <!-- properties to skip surefire tests during failsafe execution -->
         <skipTests>false</skipTests>
@@ -187,7 +193,7 @@
             <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
         </repository>
     </distributionManagement>
-
+    
     <modules>
         <module>kafka-agent</module>
         <module>mirror-maker-agent</module>
@@ -420,6 +426,12 @@
             </dependency>
             <dependency>
                 <groupId>org.apache.kafka</groupId>
+                <artifactId>kafka-tools</artifactId>
+                <version>${kafka.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.kafka</groupId>
                 <artifactId>kafka_2.13</artifactId>
                 <version>${kafka.version}</version>
             </dependency>
@@ -479,6 +491,13 @@
                         <artifactId>slf4j-api</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+            <dependency>
+                <!-- Required for TO tests using ZooKeeper -->
+                <groupId>org.xerial.snappy</groupId>
+                <artifactId>snappy-java</artifactId>
+                <version>${snappy.version}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.apache.zookeeper</groupId>
@@ -676,6 +695,12 @@
                 <classifier>linux-x86_64</classifier>
             </dependency>
             <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-transport-native-epoll</artifactId>
+                <version>${netty.version}</version>
+                <classifier>linux-aarch_64</classifier>
+            </dependency>
+            <dependency>
                 <groupId>org.quartz-scheduler</groupId>
                 <artifactId>quartz</artifactId>
                 <version>${quartz.version}</version>
@@ -704,7 +729,7 @@
             <dependency>
                 <groupId>io.opentelemetry</groupId>
                 <artifactId>opentelemetry-sdk-extension-autoconfigure</artifactId>
-                <version>${opentelemetry.alpha-version}</version>
+                <version>${opentelemetry.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.jayway.jsonpath</groupId>
@@ -739,31 +764,6 @@
                 <version>${project.version}</version>
                 <classifier>tests</classifier>
                 <type>test-jar</type>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>io.fabric8</groupId>
-                <artifactId>kubernetes-server-mock</artifactId>
-                <version>${fabric8.kubernetes-client.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>com.squareup.okhttp3</groupId>
-                <artifactId>mockwebserver</artifactId>
-                <version>${mockwebserver.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <!-- Pin version of transitive junit dependency of the above dependency to avoid CVE-2020-15250 -->
-                <groupId>junit</groupId>
-                <artifactId>junit</artifactId>
-                <version>4.13.2</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>io.fabric8</groupId>
-                <artifactId>openshift-server-mock</artifactId>
-                <version>${fabric8.kubernetes-client.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
@@ -879,6 +879,35 @@
                 <artifactId>testing-impl</artifactId>
                 <version>${kroxylicious-testing.version}</version>
                 <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.dajudge.kindcontainer</groupId>
+                <artifactId>kindcontainer</artifactId>
+                <version>${kindcontainer.version}</version>
+            </dependency>
+            <!-- JUnit dependency is needed at compile time by MockKube because of how Test Containers are designed -->
+            <dependency>
+                <groupId>junit</groupId>
+                <artifactId>junit</artifactId>
+                <version>${junit4.version}</version>
+            </dependency>
+            <!-- TestContainer dependency is needed at compile time by MockKube -->
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>testcontainers</artifactId>
+                <version>${testcontainer.version}</version>
+            </dependency>
+            <!-- Needed to align TestContainer version between different TestContainer implementations -->
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>toxiproxy</artifactId>
+                <version>${testcontainer.version}</version>
+            </dependency>
+            <!-- Needed to align Java Docker API version between different TestContainer implementations -->
+            <dependency>
+                <groupId> com.github.docker-java</groupId>
+                <artifactId>docker-java-api</artifactId>
+                <version>${docker-java.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -1158,6 +1187,7 @@
                                 <ignoredDependency>org.junit.platform</ignoredDependency>
                                 <ignoredUnusedDeclaredDependency>io.micrometer:micrometer-registry-prometheus</ignoredUnusedDeclaredDependency>
                                 <ignoredUnusedDeclaredDependency>org.mockito:mockito-inline</ignoredUnusedDeclaredDependency>
+                                <ignoredUnusedDeclaredDependency>junit:junit</ignoredUnusedDeclaredDependency>
                             </ignoredUnusedDeclaredDependencies>
                             <ignoredUsedUndeclaredDependencies>
                                 <ignoredUsedUndeclaredDependency>org.apache.kafka:kafka-raft:jar</ignoredUsedUndeclaredDependency>

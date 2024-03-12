@@ -23,6 +23,7 @@ import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.model.RestartReason;
 import io.strimzi.operator.cluster.model.RestartReasons;
+import io.strimzi.operator.cluster.operator.resource.KafkaAgentClientProvider;
 import io.strimzi.operator.cluster.operator.resource.KafkaRoller;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.ZooKeeperRoller;
@@ -72,6 +73,7 @@ public class CaReconciler {
     private final SecretOperator secretOperator;
     private final PodOperator podOperator;
     private final AdminClientProvider adminClientProvider;
+    private final KafkaAgentClientProvider kafkaAgentClientProvider;
     private final ZookeeperLeaderFinder zookeeperLeaderFinder;
     private final CertManager certManager;
     private final PasswordGenerator passwordGenerator;
@@ -125,6 +127,7 @@ public class CaReconciler {
         this.podOperator = supplier.podOperations;
 
         this.adminClientProvider = supplier.adminClientProvider;
+        this.kafkaAgentClientProvider = supplier.kafkaAgentClientProvider;
         this.zookeeperLeaderFinder = supplier.zookeeperLeaderFinder;
         this.certManager = certManager;
         this.passwordGenerator = passwordGenerator;
@@ -531,6 +534,7 @@ public class CaReconciler {
                 clusterCa.caCertSecret(),
                 oldCoSecret,
                 adminClientProvider,
+                kafkaAgentClientProvider,
                 brokerId -> null,
                 null,
                 null,

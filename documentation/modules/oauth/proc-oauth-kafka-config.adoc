@@ -58,6 +58,7 @@ For OAuth 2.0 authentication, you can use the following options:
 +
 For example, here OAuth 2.0 is assigned to the Kafka Bridge client using a client ID and secret, and TLS:
 +
+--
 [source,yaml,subs="+quotes,attributes"]
 ----
 apiVersion: {KafkaApiVersion}
@@ -80,9 +81,11 @@ spec:
 <1> Authentication type set to `oauth`.
 <2> URI of the token endpoint for authentication.
 <3> Trusted certificates for TLS connection to the authorization server.
+--
 +
 Depending on how you apply OAuth 2.0 authentication, and the type of authorization server, there are additional configuration options you can use:
 +
+--
 [source,yaml,subs="+quotes,attributes"]
 ----
 # ...
@@ -115,6 +118,8 @@ In this case it is `kafka`.
 <8> (Optional) The maximum number of times to retry a failed HTTP request to the authorization server. The default value is `0`, meaning that no retries are performed. To use this option effectively, consider reducing the timeout times for the `connectTimeoutSeconds` and `readTimeoutSeconds` options. However, note that retries may prevent the current worker thread from being available to other requests, and if too many requests stall, it could make the Kafka broker unresponsive.
 <9> (Optional) The time to wait before attempting another retry of a failed HTTP request to the authorization server. By default, this time is set to zero, meaning that no pause is applied. This is because many issues that cause failed requests are per-request network glitches or proxy issues that can be resolved quickly. However, if your authorization server is under stress or experiencing high traffic, you may want to set this option to a value of 100 ms or more to reduce the load on the server and increase the likelihood of successful retries.
 <10> (Optional) Some authorization servers have issues with client sending `Accept: application/json` header. By setting `includeAcceptHeader: false` the header will not be sent. Default is `true`.
+--
+
 . Apply the changes to the deployment of your Kafka resource.
 +
 [source,yaml,subs="+quotes,attributes"]

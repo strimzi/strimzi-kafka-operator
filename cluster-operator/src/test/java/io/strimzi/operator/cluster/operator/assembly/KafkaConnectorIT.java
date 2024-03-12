@@ -5,7 +5,6 @@
 package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.server.mock.EnableKubernetesMockClient;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.common.Condition;
@@ -15,6 +14,7 @@ import io.strimzi.api.kafka.model.connector.KafkaConnectorStatus;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
+import io.strimzi.operator.cluster.operator.resource.DefaultKafkaAgentClientProvider;
 import io.strimzi.operator.cluster.operator.resource.DefaultZookeeperScalerProvider;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperLeaderFinder;
@@ -25,7 +25,7 @@ import io.strimzi.operator.common.MicrometerMetricsProvider;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.platform.KubernetesVersion;
 import io.strimzi.test.container.StrimziKafkaCluster;
-import io.strimzi.test.mockkube2.MockKube2;
+import io.strimzi.test.mockkube3.MockKube3;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -42,12 +42,14 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -61,16 +63,14 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 
-@EnableKubernetesMockClient(crud = true)
 @ExtendWith(VertxExtension.class)
 public class KafkaConnectorIT {
     private static StrimziKafkaCluster cluster;
     private static Vertx vertx;
+    private static KubernetesClient client;
+    private static MockKube3 mockKube;
 
-    // Injected by Fabric8 Mock Kubernetes Server
-    @SuppressWarnings("unused")
-    private KubernetesClient client;
-    private MockKube2 mockKube;
+    private String namespace;
     private ConnectCluster connectCluster;
 
     @BeforeAll
@@ -79,25 +79,31 @@ public class KafkaConnectorIT {
         kafkaClusterConfiguration.put("zookeeper.connect", "zookeeper:2181");
         cluster = new StrimziKafkaCluster(3, 1, kafkaClusterConfiguration);
         cluster.start();
+
+        // Configure the Kubernetes Mock
+        mockKube = new MockKube3.MockKube3Builder()
+                .withKafkaConnectorCrd()
+                .build();
+        mockKube.start();
+        client = mockKube.client();
     }
 
     @AfterAll
     public static void after() {
         cluster.stop();
+        mockKube.stop();
     }
 
     @BeforeEach
-    public void beforeEach() throws InterruptedException {
+    public void beforeEach(TestInfo testInfo) throws InterruptedException {
+        namespace = testInfo.getTestMethod().orElseThrow().getName().toLowerCase(Locale.ROOT);
+        mockKube.prepareNamespace(namespace);
+
         vertx = Vertx.vertx(new VertxOptions().setMetricsOptions(
                 new MicrometerMetricsOptions()
                         .setPrometheusOptions(new VertxPrometheusOptions().setEnabled(true))
                         .setEnabled(true)
         ));
-        // Configure the Kubernetes Mock
-        mockKube = new MockKube2.MockKube2Builder(client)
-                .withKafkaConnectorCrd()
-                .build();
-        mockKube.start();
 
         // Start a 3 node connect cluster
         connectCluster = new ConnectCluster()
@@ -109,7 +115,7 @@ public class KafkaConnectorIT {
     @AfterEach
     public void afterEach() {
         vertx.close();
-        mockKube.stop();
+        client.namespaces().withName(namespace).delete();
 
         if (connectCluster != null) {
             connectCluster.shutdown();
@@ -122,7 +128,6 @@ public class KafkaConnectorIT {
 
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION);
 
-        String namespace = "ns";
         String connectorName = "my-connector";
 
         LinkedHashMap<String, Object> config = new LinkedHashMap<>();
@@ -145,6 +150,7 @@ public class KafkaConnectorIT {
                         () -> new BackOff(5_000, 2, 4)),
                 new DefaultAdminClientProvider(),
                 new DefaultZookeeperScalerProvider(),
+                new DefaultKafkaAgentClientProvider(),
                 metrics,
                 pfa, 10_000
         );
@@ -191,7 +197,6 @@ public class KafkaConnectorIT {
 
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION);
 
-        String namespace = "ns";
         String connectorName = "my-connector-2";
 
         LinkedHashMap<String, Object> config = new LinkedHashMap<>();
@@ -215,6 +220,7 @@ public class KafkaConnectorIT {
                         () -> new BackOff(5_000, 2, 4)),
                 new DefaultAdminClientProvider(),
                 new DefaultZookeeperScalerProvider(),
+                new DefaultKafkaAgentClientProvider(),
                 metrics,
                 pfa, 10_000
         );
@@ -240,7 +246,6 @@ public class KafkaConnectorIT {
 
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION);
 
-        String namespace = "ns";
         String connectorName = "my-connector-3";
 
         LinkedHashMap<String, Object> config = new LinkedHashMap<>();
@@ -264,6 +269,7 @@ public class KafkaConnectorIT {
                         () -> new BackOff(5_000, 2, 4)),
                 new DefaultAdminClientProvider(),
                 new DefaultZookeeperScalerProvider(),
+                new DefaultKafkaAgentClientProvider(),
                 metrics,
                 pfa, 10_000
         );
@@ -300,7 +306,6 @@ public class KafkaConnectorIT {
 
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION);
 
-        String namespace = "ns";
         String connectorName = "my-connector-4";
 
         LinkedHashMap<String, Object> config = new LinkedHashMap<>();
@@ -324,6 +329,7 @@ public class KafkaConnectorIT {
                 () -> new BackOff(5_000, 2, 4)),
             new DefaultAdminClientProvider(),
             new DefaultZookeeperScalerProvider(),
+            new DefaultKafkaAgentClientProvider(),
             metrics,
             pfa, 10_000
         );
@@ -349,7 +355,6 @@ public class KafkaConnectorIT {
 
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION);
 
-        String namespace = "ns";
         String connectorName = "my-connector-5";
 
         LinkedHashMap<String, Object> config = new LinkedHashMap<>();
@@ -373,6 +378,7 @@ public class KafkaConnectorIT {
                 () -> new BackOff(5_000, 2, 4)),
             new DefaultAdminClientProvider(),
             new DefaultZookeeperScalerProvider(),
+            new DefaultKafkaAgentClientProvider(),
             metrics,
             pfa, 10_000
         );
@@ -459,7 +465,7 @@ public class KafkaConnectorIT {
                 .map(KafkaConnectorStatus::getConnectorStatus)
                 .orElseGet(HashMap::new);
         Object tasks = connectorStatus.get("tasks");
-        return tasks instanceof ArrayList && ((ArrayList<?>) tasks).size() > 0;
+        return tasks instanceof ArrayList && !((ArrayList<?>) tasks).isEmpty();
     }
 
     private void assertConnectorTaskIsNotReady(VertxTestContext context, KubernetesClient client, String namespace, String connectorName) {

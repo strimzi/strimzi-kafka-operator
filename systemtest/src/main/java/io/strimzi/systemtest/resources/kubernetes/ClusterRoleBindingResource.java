@@ -13,7 +13,6 @@ import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.extension.ExtensionContext;
 
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
@@ -50,22 +49,22 @@ public class ClusterRoleBindingResource implements ResourceType<ClusterRoleBindi
         return resource != null;
     }
 
-    public static ClusterRoleBinding clusterRoleBinding(ExtensionContext extensionContext, String yamlPath, String namespace) {
+    public static ClusterRoleBinding clusterRoleBinding(String yamlPath, String namespace) {
         LOGGER.info("Creating ClusterRoleBinding in test case {} from {} in Namespace: {}",
-            extensionContext.getDisplayName(), yamlPath, namespace);
+            ResourceManager.getTestContext().getDisplayName(), yamlPath, namespace);
         ClusterRoleBinding clusterRoleBinding = getClusterRoleBindingFromYaml(yamlPath);
         clusterRoleBinding = new ClusterRoleBindingBuilder(clusterRoleBinding)
             .editFirstSubject()
             .withNamespace(namespace)
             .endSubject().build();
 
-        ResourceManager.getInstance().createResourceWithWait(extensionContext, clusterRoleBinding);
+        ResourceManager.getInstance().createResourceWithWait(clusterRoleBinding);
 
         return clusterRoleBinding;
     }
 
-    public static ClusterRoleBinding clusterRoleBinding(ExtensionContext extensionContext, ClusterRoleBinding clusterRoleBinding) {
-        ResourceManager.getInstance().createResourceWithWait(extensionContext, clusterRoleBinding);
+    public static ClusterRoleBinding clusterRoleBinding(ClusterRoleBinding clusterRoleBinding) {
+        ResourceManager.getInstance().createResourceWithWait(clusterRoleBinding);
         return clusterRoleBinding;
     }
 

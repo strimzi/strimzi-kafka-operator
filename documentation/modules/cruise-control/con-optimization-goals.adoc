@@ -61,7 +61,7 @@ Resource distribution goals are subject to link:{BookURLConfiguring}#property-cr
 == Hard and soft optimization goals
 
 Hard goals are goals that _must_ be satisfied in optimization proposals.
-Goals that are not configured as hard goals are known as _soft goals_.
+Goals that are not defined as _hard goals_ in the Cruise Control code are known as _soft goals_.
 You can think of soft goals as _best effort_ goals: they do _not_ need to be satisfied in optimization proposals, but are included in optimization calculations.
 An optimization proposal that violates one or more soft goals, but satisfies all hard goals, is valid.
 
@@ -71,16 +71,20 @@ An optimization proposal that does _not_ satisfy all the hard goals is rejected 
 NOTE: For example, you might have a soft goal to distribute a topic's replicas evenly across the cluster (the topic replica distribution goal).
 Cruise Control will ignore this goal if doing so enables all the configured hard goals to be met.
 
-In Cruise Control, the following xref:main-goals[main optimization goals] are preset as hard goals:
+In Cruise Control, the following xref:main-goals[main optimization goals] are hard goals:
 
 [source]
 RackAwareGoal; ReplicaCapacityGoal; DiskCapacityGoal; NetworkInboundCapacityGoal; NetworkOutboundCapacityGoal; CpuCapacityGoal
 
-You configure hard goals in the Cruise Control deployment configuration, by editing the `hard.goals` property in `Kafka.spec.cruiseControl.config`.
+In your Cruise Control deployment configuration, you can specify which hard goals to enforce using the `hard.goals` property in `Kafka.spec.cruiseControl.config`.
 
-* To inherit the preset hard goals from Cruise Control, do not specify the `hard.goals` property in `Kafka.spec.cruiseControl.config`
+* To enforce execution of all hard goals, simply omit the `hard.goals` property.
 
-* To change the preset hard goals, specify the desired goals in the `hard.goals` property, using their fully-qualified domain names.
+* To change which hard goals Cruise Control enforces, specify the required goals in the `hard.goals` property using their fully-qualified domain names.
+* To prevent execution of a specific hard goal, ensure that the goal is not included in both the `default.goals` and `hard.goals` list configurations.
+
+NOTE: It is not possible to configure which goals are considered soft or hard goals. 
+This distinction is determined by the Cruise Control code.
 
 .Example `Kafka` configuration for hard optimization goals
 [source,yaml,subs="attributes+"]

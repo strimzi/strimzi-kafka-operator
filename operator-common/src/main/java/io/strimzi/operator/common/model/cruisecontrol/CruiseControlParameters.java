@@ -85,7 +85,17 @@ public enum CruiseControlParameters {
     /**
      * Broker ID
      */
-    BROKER_ID("brokerid");
+    BROKER_ID("brokerid"),
+
+    /**
+     * Substates filter
+     */
+    SUBSTATES("substates"),
+
+    /**
+     * Skip rack awareness check
+     */
+    SKIP_RACK_AWARENESS_CHECK("skip_rack_awareness_check");
 
     private final String key;
 

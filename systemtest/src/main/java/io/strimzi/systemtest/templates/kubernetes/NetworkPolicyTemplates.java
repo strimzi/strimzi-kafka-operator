@@ -34,7 +34,7 @@ public class NetworkPolicyTemplates {
                     .endSpec();
     }
 
-    public static NetworkPolicy applyDefaultNetworkPolicy(String namespace, DefaultNetworkPolicy policy) {
+    public static NetworkPolicy defaultNetworkPolicy(String namespace, DefaultNetworkPolicy policy) {
         NetworkPolicy networkPolicy = new NetworkPolicyBuilder()
             .withApiVersion("networking.k8s.io/v1")
             .withKind(TestConstants.NETWORK_POLICY)
@@ -57,8 +57,6 @@ public class NetworkPolicyTemplates {
                 .endSpec()
                 .build();
         }
-
-        LOGGER.debug("Creating NetworkPolicy: {}", networkPolicy.toString());
 
         return networkPolicy;
     }

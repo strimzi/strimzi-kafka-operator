@@ -1,0 +1,107 @@
+// Module included in the following assemblies:
+//
+// deploying/assembly_deploy-cluster-operator.adoc
+
+[id='deploying-drain-cleaner-helm-chart-{context}']
+= Deploying the Strimzi Drain Cleaner using Helm
+
+[role="_abstract"]
+link:https://helm.sh/[Helm] charts are used to package, configure, and deploy Kubernetes resources.
+Strimzi provides a Helm chart to deploy the Strimzi Drain Cleaner.
+
+The Drain Cleaner is deployed on the Kubernetes cluster with the default chart configuration, which assumes that `cert-manager` issues the TLS certificates required by the Drain Cleaner.
+
+You can install the Drain Cleaner with `cert-manager` support or provide your own TLS certificates.
+
+.Prerequisites
+
+* The Helm client must be installed on a local machine.
+
+.Default configuration values
+Default configuration values are passed into the chart using parameters defined in a `values.yaml` file.  
+If you don't want to use the default configuration, you can override the defaults when you install the chart using the `--set` argument.
+You specify values in the format `--set key=value[,key=value]`.
+The `values.yaml` file supplied with the Helm deployment files describes the available configuration parameters, including those shown in the following table. 
+
+You can override the default image settings.
+You can also set `secret.create` as `true` and add your own TLS certificates instead of using `cert-manager` to generate the certificates. 
+For information on using OpenSSL to generate certificates, see xref:proc-drain-cleaner-certs-{context}[].
+
+Any certificates you add must be renewed before they expire. 
+You can use the configuration to control how certificates are watched for updates using environment variables.
+For more information on how the environment variables work, see xref:proc-drain-cleaner-certs-renewing-{context}[].
+
+.Chart configuration options
+[cols="5m,4,2m",options="header"]
+|===
+
+| Parameter             
+| Description                                                                               
+| Default
+
+| replicaCount
+| Number of replicas of the Drain Cleaner webhook	
+| 1
+| image.registry	
+| Drain Cleaner image registry	
+| quay.io
+| image.repository	
+| Drain Cleaner image repository	
+| strimzi
+| image.name	
+| Drain Cleaner image name	
+| drain-cleaner
+| image.tag	
+| Drain Cleaner image tag	
+| latest
+| image.imagePullPolicy	
+| Image pull policy for all pods deployed by the Drain Cleaner	
+| nil
+| secret.create
+| Set to `true` and add certificates when not using `cert-manager` 
+| false
+| namespace.name
+| Default namespace for the Drain Cleaner deployment.
+| strimzi-drain-cleaner
+| resources	
+| Configures resources for the Drain Cleaner pod	
+| []
+| nodeSelector	
+| Add a node selector to the Drain Cleaner pod	
+| {} 
+| tolerations	
+| Add tolerations to the Drain Cleaner pod	
+| []
+| topologySpreadConstraints	
+| Add topology spread constraints to the Drain Cleaner pod	
+| {} 
+| affinity	
+| Add affinities to the Drain Cleaner pod	
+| {}
+ 
+
+|===
+
+.Procedure
+
+. Deploy the Drain Cleaner:
++
+[source,shell]
+----
+helm install strimzi-drain-cleaner oci://quay.io/strimzi-helm/strimzi-drain-cleaner
+----
++
+Alternatively, you can use parameter values to install a specific version of the Drain Cleaner or specify any changes to the default configuration.
++
+.Example configuration that installs a specific version of the Drain Cleaner and changes the number of replicas
+[source,shell,subs="attributes+"]
+----
+helm install strimzi-drain-cleaner --set replicaCount=2 --version {DrainCleanerVersion} oci://quay.io/strimzi-helm/strimzi-drain-cleaner
+----
+
+. Verify that the Drain Cleaner has been deployed successfully:
++
+[source,shell]
+----
+helm ls
+----

@@ -6,7 +6,6 @@ package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.server.mock.EnableKubernetesMockClient;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
@@ -28,7 +27,7 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.platform.KubernetesVersion;
-import io.strimzi.test.mockkube2.MockKube2;
+import io.strimzi.test.mockkube3.MockKube3;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.WorkerExecutor;
@@ -40,27 +39,27 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import java.util.Locale;
 import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@EnableKubernetesMockClient(crud = true)
 @ExtendWith(VertxExtension.class)
 public class KafkaUpgradeDowngradeMockTest {
     private static final Logger LOGGER = LogManager.getLogger(KafkaUpgradeDowngradeMockTest.class);
 
-    private static final String NAMESPACE = "my-namespace";
     private static final String CLUSTER_NAME = "my-cluster";
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
     private static final PlatformFeaturesAvailability PFA = new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION);
     private static final Kafka KAFKA = new KafkaBuilder()
                 .withNewMetadata()
                     .withName(CLUSTER_NAME)
-                    .withNamespace(NAMESPACE)
                 .endMetadata()
                 .withNewSpec()
                     .withNewKafka()
@@ -90,10 +89,10 @@ public class KafkaUpgradeDowngradeMockTest {
 
     private static Vertx vertx;
     private static WorkerExecutor sharedWorkerExecutor;
-    // Injected by Fabric8 Mock Kubernetes Server
-    @SuppressWarnings("unused")
-    private KubernetesClient client;
-    private MockKube2 mockKube;
+    private static KubernetesClient client;
+    private static MockKube3 mockKube;
+
+    private String namespace;
     private ResourceOperatorSupplier supplier;
     private StrimziPodSetController podSetController;
     private KafkaAssemblyOperator operator;
@@ -103,40 +102,51 @@ public class KafkaUpgradeDowngradeMockTest {
      */
 
     @BeforeAll
-    public static void before() {
+    public static void beforeAll() {
+        // Configure the Kubernetes Mock
+        mockKube = new MockKube3.MockKube3Builder()
+                .withKafkaCrd()
+                .withKafkaNodePoolCrd()
+                .withKafkaConnectCrd()
+                .withKafkaMirrorMaker2Crd()
+                .withStrimziPodSetCrd()
+                .withDeploymentController()
+                .withPodController()
+                .withServiceController()
+                .withDeletionController()
+                .build();
+        mockKube.start();
+        client = mockKube.client();
+
         vertx = Vertx.vertx();
         sharedWorkerExecutor = vertx.createSharedWorkerExecutor("kubernetes-ops-pool");
     }
 
     @AfterAll
-    public static void after() {
+    public static void afterAll() {
         sharedWorkerExecutor.close();
         vertx.close();
+        mockKube.stop();
         ResourceUtils.cleanUpTemporaryTLSFiles();
+    }
+
+    @BeforeEach
+    public void beforeEach(TestInfo testInfo)   {
+        namespace = testInfo.getTestMethod().orElseThrow().getName().toLowerCase(Locale.ROOT);
+        mockKube.prepareNamespace(namespace);
     }
 
     @AfterEach
     public void afterEach() {
         podSetController.stop();
-        mockKube.stop();
+        client.namespaces().withName(namespace).delete();
     }
 
-    private Future<Void> initialize(Kafka initialKafka)   {
-        // Configure the Kubernetes Mock
-        mockKube = new MockKube2.MockKube2Builder(client)
-                .withKafkaCrd()
-                .withInitialKafkas(initialKafka)
-                .withStrimziPodSetCrd()
-                .withPodController()
-                .withServiceController()
-                .withDeploymentController()
-                .build();
-        mockKube.start();
+    private Future<Void> initialize()   {
+        supplier =  new ResourceOperatorSupplier(vertx, client, ResourceUtils.zookeeperLeaderFinder(vertx, client), ResourceUtils.adminClientProvider(),
+                ResourceUtils.zookeeperScalerProvider(), ResourceUtils.kafkaAgentClientProvider(), ResourceUtils.metricsProvider(), PFA, 2_000);
 
-        supplier =  new ResourceOperatorSupplier(vertx, client, ResourceUtils.zookeeperLeaderFinder(vertx, client),
-                ResourceUtils.adminClientProvider(), ResourceUtils.zookeeperScalerProvider(), ResourceUtils.metricsProvider(), PFA, 2_000);
-
-        podSetController = new StrimziPodSetController(NAMESPACE, Labels.EMPTY, supplier.kafkaOperator, supplier.connectOperator, supplier.mirrorMaker2Operator, supplier.strimziPodSetOperator, supplier.podOperations, supplier.metricsProvider, Integer.parseInt(ClusterOperatorConfig.POD_SET_CONTROLLER_WORK_QUEUE_SIZE.defaultValue()));
+        podSetController = new StrimziPodSetController(namespace, Labels.EMPTY, supplier.kafkaOperator, supplier.connectOperator, supplier.mirrorMaker2Operator, supplier.strimziPodSetOperator, supplier.podOperations, supplier.metricsProvider, Integer.parseInt(ClusterOperatorConfig.POD_SET_CONTROLLER_WORK_QUEUE_SIZE.defaultValue()));
         podSetController.start();
 
         ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
@@ -145,7 +155,7 @@ public class KafkaUpgradeDowngradeMockTest {
                 new PasswordGenerator(10, "a", "a"), supplier, config);
 
         LOGGER.info("Reconciling initially -> create");
-        return operator.reconcile(new Reconciliation("initial-reconciliation", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME));
+        return operator.reconcile(new Reconciliation("initial-reconciliation", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME));
     }
 
     private Kafka kafkaWithVersions(String kafkaVersion, String messageFormatVersion, String protocolVersion)   {
@@ -168,20 +178,17 @@ public class KafkaUpgradeDowngradeMockTest {
                         .withVersion(kafkaVersion)
                     .endKafka()
                 .endSpec()
-                .withNewStatus()
-                    .withOperatorLastSuccessfulVersion("old")
-                    .withKafkaVersion(kafkaVersion)
-                .endStatus()
                 .build();
     }
 
-    private void assertVersionsInKafkaStatus(KafkaStatus status, String operatorVersion, String kafkaVersion) {
+    private void assertVersionsInKafkaStatus(String operatorVersion, String kafkaVersion) {
+        KafkaStatus status = Crds.kafkaOperation(client).inNamespace(namespace).withName(CLUSTER_NAME).get().getStatus();
         assertThat(status.getOperatorLastSuccessfulVersion(), is(operatorVersion));
         assertThat(status.getKafkaVersion(), is(kafkaVersion));
     }
 
     private void assertVersionsInStrimziPodSet(String kafkaVersion, String messageFormatVersion, String protocolVersion, String image)  {
-        StrimziPodSet sps = supplier.strimziPodSetOperator.client().inNamespace(NAMESPACE).withName(CLUSTER_NAME + "-kafka").get();
+        StrimziPodSet sps = supplier.strimziPodSetOperator.client().inNamespace(namespace).withName(CLUSTER_NAME + "-kafka").get();
         assertThat(sps.getMetadata().getAnnotations().get(KafkaCluster.ANNO_STRIMZI_IO_KAFKA_VERSION), is(kafkaVersion));
 
         sps.getSpec().getPods().stream().map(PodSetUtils::mapToPod).forEach(pod -> {
@@ -192,7 +199,7 @@ public class KafkaUpgradeDowngradeMockTest {
         });
 
         for (int i = 0; i < 3; i++) {
-            Pod pod = client.pods().inNamespace(NAMESPACE).withName(CLUSTER_NAME + "-kafka-" + i).get();
+            Pod pod = client.pods().inNamespace(namespace).withName(CLUSTER_NAME + "-kafka-" + i).get();
             assertThat(pod.getSpec().getContainers().get(0).getImage(), is(image));
             assertThat(pod.getMetadata().getAnnotations().get(KafkaCluster.ANNO_STRIMZI_IO_KAFKA_VERSION), is(kafkaVersion));
             assertThat(pod.getMetadata().getAnnotations().get(KafkaCluster.ANNO_STRIMZI_IO_LOG_MESSAGE_FORMAT_VERSION), is(messageFormatVersion));
@@ -209,33 +216,34 @@ public class KafkaUpgradeDowngradeMockTest {
     @Test
     public void testUpgradeWithoutMessageAndProtocolVersions(VertxTestContext context)  {
         Kafka initialKafka = kafkaWithVersions(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION);
-
-        Kafka updatedKafka = kafkaWithVersions(KafkaVersionTestUtils.LATEST_KAFKA_VERSION);
+        Crds.kafkaOperation(client).inNamespace(namespace).resource(initialKafka).create();
 
         Checkpoint reconciliation = context.checkpoint();
-        initialize(initialKafka)
-                .onComplete(context.succeeding(v -> {
-                    context.verify(() -> {
-                        KafkaStatus status = Crds.kafkaOperation(client).inNamespace(NAMESPACE).withName(CLUSTER_NAME).get()
-                                .getStatus();
-                        assertVersionsInKafkaStatus(status, KafkaAssemblyOperator.OPERATOR_VERSION, KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION);
-                        assertVersionsInStrimziPodSet(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION,
-                                KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION,
-                                KafkaVersionTestUtils.PREVIOUS_PROTOCOL_VERSION,
-                                KafkaVersionTestUtils.PREVIOUS_KAFKA_IMAGE);
-                    });
-                }))
-                .compose(v -> operator.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME), updatedKafka))
-                .onComplete(context.succeeding(status -> context.verify(() -> {
-                    assertVersionsInKafkaStatus(status, KafkaAssemblyOperator.OPERATOR_VERSION, KafkaVersionTestUtils.LATEST_KAFKA_VERSION);
+        initialize()
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    assertVersionsInKafkaStatus(KafkaAssemblyOperator.OPERATOR_VERSION, KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION);
+                    assertVersionsInStrimziPodSet(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION,
+                            KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION,
+                            KafkaVersionTestUtils.PREVIOUS_PROTOCOL_VERSION,
+                            KafkaVersionTestUtils.PREVIOUS_KAFKA_IMAGE);
+                })))
+                .compose(i -> {
+                    // Update Kafka
+                    Kafka updatedKafka = kafkaWithVersions(KafkaVersionTestUtils.LATEST_KAFKA_VERSION);
+                    Crds.kafkaOperation(client).inNamespace(namespace).resource(updatedKafka).update();
+                    return Future.succeededFuture();
+                })
+                .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME)))
+                .onComplete(context.succeeding(i -> context.verify(() -> {
+                    assertVersionsInKafkaStatus(KafkaAssemblyOperator.OPERATOR_VERSION, KafkaVersionTestUtils.LATEST_KAFKA_VERSION);
                     assertVersionsInStrimziPodSet(KafkaVersionTestUtils.LATEST_KAFKA_VERSION,
                             KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION,
                             KafkaVersionTestUtils.PREVIOUS_PROTOCOL_VERSION,
                             KafkaVersionTestUtils.LATEST_KAFKA_IMAGE);
                 })))
-                .compose(v -> operator.createOrUpdate(new Reconciliation("test-trigger2", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME), updatedKafka))
-                .onComplete(context.succeeding(status -> context.verify(() -> {
-                    assertVersionsInKafkaStatus(status, KafkaAssemblyOperator.OPERATOR_VERSION, KafkaVersionTestUtils.LATEST_KAFKA_VERSION);
+                .compose(v -> operator.reconcile(new Reconciliation("test-trigger2", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME)))
+                .onComplete(context.succeeding(i -> context.verify(() -> {
+                    assertVersionsInKafkaStatus(KafkaAssemblyOperator.OPERATOR_VERSION, KafkaVersionTestUtils.LATEST_KAFKA_VERSION);
                     assertVersionsInStrimziPodSet(KafkaVersionTestUtils.LATEST_KAFKA_VERSION,
                             KafkaVersionTestUtils.LATEST_FORMAT_VERSION,
                             KafkaVersionTestUtils.LATEST_PROTOCOL_VERSION,
@@ -253,35 +261,36 @@ public class KafkaUpgradeDowngradeMockTest {
         Kafka initialKafka = kafkaWithVersions(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION,
                 KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION,
                 KafkaVersionTestUtils.PREVIOUS_PROTOCOL_VERSION);
-
-        Kafka updatedKafka = kafkaWithVersions(KafkaVersionTestUtils.LATEST_KAFKA_VERSION,
-                KafkaVersionTestUtils.LATEST_FORMAT_VERSION,
-                KafkaVersionTestUtils.LATEST_PROTOCOL_VERSION);
+        Crds.kafkaOperation(client).inNamespace(namespace).resource(initialKafka).create();
 
         Checkpoint reconciliation = context.checkpoint();
-        initialize(initialKafka)
-                .onComplete(context.succeeding(v -> {
-                    context.verify(() -> {
-                        KafkaStatus status = Crds.kafkaOperation(client).inNamespace(NAMESPACE).withName(CLUSTER_NAME).get()
-                                .getStatus();
-                        assertVersionsInKafkaStatus(status, KafkaAssemblyOperator.OPERATOR_VERSION, KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION);
-                        assertVersionsInStrimziPodSet(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION,
-                                KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION,
-                                KafkaVersionTestUtils.PREVIOUS_PROTOCOL_VERSION,
-                                KafkaVersionTestUtils.PREVIOUS_KAFKA_IMAGE);
-                    });
-                }))
-                .compose(v -> operator.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME), updatedKafka))
-                .onComplete(context.succeeding(status -> context.verify(() -> {
-                    assertVersionsInKafkaStatus(status, KafkaAssemblyOperator.OPERATOR_VERSION, KafkaVersionTestUtils.LATEST_KAFKA_VERSION);
+        initialize()
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    assertVersionsInKafkaStatus(KafkaAssemblyOperator.OPERATOR_VERSION, KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION);
+                    assertVersionsInStrimziPodSet(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION,
+                            KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION,
+                            KafkaVersionTestUtils.PREVIOUS_PROTOCOL_VERSION,
+                            KafkaVersionTestUtils.PREVIOUS_KAFKA_IMAGE);
+                })))
+                .compose(i -> {
+                    // Update Kafka
+                    Kafka updatedKafka = kafkaWithVersions(KafkaVersionTestUtils.LATEST_KAFKA_VERSION,
+                            KafkaVersionTestUtils.LATEST_FORMAT_VERSION,
+                            KafkaVersionTestUtils.LATEST_PROTOCOL_VERSION);
+                    Crds.kafkaOperation(client).inNamespace(namespace).resource(updatedKafka).update();
+                    return Future.succeededFuture();
+                })
+                .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME)))
+                .onComplete(context.succeeding(i -> context.verify(() -> {
+                    assertVersionsInKafkaStatus(KafkaAssemblyOperator.OPERATOR_VERSION, KafkaVersionTestUtils.LATEST_KAFKA_VERSION);
                     assertVersionsInStrimziPodSet(KafkaVersionTestUtils.LATEST_KAFKA_VERSION,
                             KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION,
                             KafkaVersionTestUtils.PREVIOUS_PROTOCOL_VERSION,
                             KafkaVersionTestUtils.LATEST_KAFKA_IMAGE);
                 })))
-                .compose(v -> operator.createOrUpdate(new Reconciliation("test-trigger2", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME), updatedKafka))
-                .onComplete(context.succeeding(status -> context.verify(() -> {
-                    assertVersionsInKafkaStatus(status, KafkaAssemblyOperator.OPERATOR_VERSION, KafkaVersionTestUtils.LATEST_KAFKA_VERSION);
+                .compose(v -> operator.reconcile(new Reconciliation("test-trigger2", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME)))
+                .onComplete(context.succeeding(i -> context.verify(() -> {
+                    assertVersionsInKafkaStatus(KafkaAssemblyOperator.OPERATOR_VERSION, KafkaVersionTestUtils.LATEST_KAFKA_VERSION);
                     assertVersionsInStrimziPodSet(KafkaVersionTestUtils.LATEST_KAFKA_VERSION,
                             KafkaVersionTestUtils.LATEST_FORMAT_VERSION,
                             KafkaVersionTestUtils.LATEST_PROTOCOL_VERSION,
@@ -298,41 +307,44 @@ public class KafkaUpgradeDowngradeMockTest {
         Kafka initialKafka = kafkaWithVersions(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION,
                 KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION,
                 KafkaVersionTestUtils.PREVIOUS_PROTOCOL_VERSION);
-
-        Kafka updatedKafka1 = kafkaWithVersions(KafkaVersionTestUtils.LATEST_KAFKA_VERSION,
-                KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION,
-                KafkaVersionTestUtils.PREVIOUS_PROTOCOL_VERSION);
-
-        Kafka updatedKafka2 = kafkaWithVersions(KafkaVersionTestUtils.LATEST_KAFKA_VERSION,
-                KafkaVersionTestUtils.LATEST_FORMAT_VERSION,
-                KafkaVersionTestUtils.LATEST_PROTOCOL_VERSION);
+        Crds.kafkaOperation(client).inNamespace(namespace).resource(initialKafka).create();
 
         Checkpoint reconciliation = context.checkpoint();
-        initialize(initialKafka)
-                .onComplete(context.succeeding(v -> {
-                    context.verify(() -> {
-                        KafkaStatus status = Crds.kafkaOperation(client).inNamespace(NAMESPACE).withName(CLUSTER_NAME).get()
-                                .getStatus();
-                        assertVersionsInKafkaStatus(status, KafkaAssemblyOperator.OPERATOR_VERSION, KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION);
-                        assertVersionsInStrimziPodSet(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION,
-                                KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION,
-                                KafkaVersionTestUtils.PREVIOUS_PROTOCOL_VERSION,
-                                KafkaVersionTestUtils.PREVIOUS_KAFKA_IMAGE);
-                    });
-                }))
-                .compose(v -> operator.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME), updatedKafka1))
-                .onComplete(context.succeeding(status -> context.verify(() -> {
-                    assertThat(status.getKafkaVersion(), is(KafkaVersionTestUtils.LATEST_KAFKA_VERSION));
-                    assertThat(status.getOperatorLastSuccessfulVersion(), is(KafkaAssemblyOperator.OPERATOR_VERSION));
+        initialize()
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    assertVersionsInKafkaStatus(KafkaAssemblyOperator.OPERATOR_VERSION, KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION);
+                    assertVersionsInStrimziPodSet(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION,
+                            KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION,
+                            KafkaVersionTestUtils.PREVIOUS_PROTOCOL_VERSION,
+                            KafkaVersionTestUtils.PREVIOUS_KAFKA_IMAGE);
+                })))
+                .compose(i -> {
+                    // Update Kafka
+                    Kafka updatedKafka = kafkaWithVersions(KafkaVersionTestUtils.LATEST_KAFKA_VERSION,
+                            KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION,
+                            KafkaVersionTestUtils.PREVIOUS_PROTOCOL_VERSION);
+                    Crds.kafkaOperation(client).inNamespace(namespace).resource(updatedKafka).update();
+                    return Future.succeededFuture();
+                })
+                .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME)))
+                .onComplete(context.succeeding(i -> context.verify(() -> {
+                    assertVersionsInKafkaStatus(KafkaAssemblyOperator.OPERATOR_VERSION, KafkaVersionTestUtils.LATEST_KAFKA_VERSION);
                     assertVersionsInStrimziPodSet(KafkaVersionTestUtils.LATEST_KAFKA_VERSION,
                             KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION,
                             KafkaVersionTestUtils.PREVIOUS_PROTOCOL_VERSION,
                             KafkaVersionTestUtils.LATEST_KAFKA_IMAGE);
                 })))
-                .compose(v -> operator.createOrUpdate(new Reconciliation("test-trigger2", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME), updatedKafka2))
-                .onComplete(context.succeeding(status -> context.verify(() -> {
-                    assertThat(status.getKafkaVersion(), is(KafkaVersionTestUtils.LATEST_KAFKA_VERSION));
-                    assertThat(status.getOperatorLastSuccessfulVersion(), is(KafkaAssemblyOperator.OPERATOR_VERSION));
+                .compose(i -> {
+                    // Update Kafka
+                    Kafka updatedKafka = kafkaWithVersions(KafkaVersionTestUtils.LATEST_KAFKA_VERSION,
+                            KafkaVersionTestUtils.LATEST_FORMAT_VERSION,
+                            KafkaVersionTestUtils.LATEST_PROTOCOL_VERSION);
+                    Crds.kafkaOperation(client).inNamespace(namespace).resource(updatedKafka).update();
+                    return Future.succeededFuture();
+                })
+                .compose(v -> operator.reconcile(new Reconciliation("test-trigger2", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME)))
+                .onComplete(context.succeeding(i -> context.verify(() -> {
+                    assertVersionsInKafkaStatus(KafkaAssemblyOperator.OPERATOR_VERSION, KafkaVersionTestUtils.LATEST_KAFKA_VERSION);
                     assertVersionsInStrimziPodSet(KafkaVersionTestUtils.LATEST_KAFKA_VERSION,
                             KafkaVersionTestUtils.LATEST_FORMAT_VERSION,
                             KafkaVersionTestUtils.LATEST_PROTOCOL_VERSION,
@@ -346,33 +358,34 @@ public class KafkaUpgradeDowngradeMockTest {
     @Test
     public void testUpgradeWithoutAnyVersions(VertxTestContext context)  {
         Kafka initialKafka = kafkaWithVersions(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION);
-
-        Kafka updatedKafka = new KafkaBuilder(KAFKA).build();
+        Crds.kafkaOperation(client).inNamespace(namespace).resource(initialKafka).create();
 
         Checkpoint reconciliation = context.checkpoint();
-        initialize(initialKafka)
+        initialize()
                 .onComplete(context.succeeding(v -> {
-                    KafkaStatus status = Crds.kafkaOperation(client).inNamespace(NAMESPACE).withName(CLUSTER_NAME).get()
-                            .getStatus();
-                    assertVersionsInKafkaStatus(status, KafkaAssemblyOperator.OPERATOR_VERSION, KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION);
-                    context.verify(() -> {
-                        assertVersionsInStrimziPodSet(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION,
-                                KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION,
-                                KafkaVersionTestUtils.PREVIOUS_PROTOCOL_VERSION,
-                                KafkaVersionTestUtils.PREVIOUS_KAFKA_IMAGE);
-                    });
+                    assertVersionsInKafkaStatus(KafkaAssemblyOperator.OPERATOR_VERSION, KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION);
+                    context.verify(() -> assertVersionsInStrimziPodSet(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION,
+                            KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION,
+                            KafkaVersionTestUtils.PREVIOUS_PROTOCOL_VERSION,
+                            KafkaVersionTestUtils.PREVIOUS_KAFKA_IMAGE));
                 }))
-                .compose(v -> operator.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME), updatedKafka))
-                .onComplete(context.succeeding(status -> context.verify(() -> {
-                    assertVersionsInKafkaStatus(status, KafkaAssemblyOperator.OPERATOR_VERSION, KafkaVersionTestUtils.LATEST_KAFKA_VERSION);
+                .compose(i -> {
+                    // Update Kafka
+                    Kafka updatedKafka = new KafkaBuilder(KAFKA).build();
+                    Crds.kafkaOperation(client).inNamespace(namespace).resource(updatedKafka).update();
+                    return Future.succeededFuture();
+                })
+                .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME)))
+                .onComplete(context.succeeding(i -> context.verify(() -> {
+                    assertVersionsInKafkaStatus(KafkaAssemblyOperator.OPERATOR_VERSION, KafkaVersionTestUtils.LATEST_KAFKA_VERSION);
                     assertVersionsInStrimziPodSet(KafkaVersionTestUtils.LATEST_KAFKA_VERSION,
                             KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION,
                             KafkaVersionTestUtils.PREVIOUS_PROTOCOL_VERSION,
                             KafkaVersionTestUtils.LATEST_KAFKA_IMAGE);
                 })))
-                .compose(v -> operator.createOrUpdate(new Reconciliation("test-trigger2", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME), updatedKafka))
-                .onComplete(context.succeeding(status -> context.verify(() -> {
-                    assertVersionsInKafkaStatus(status, KafkaAssemblyOperator.OPERATOR_VERSION, KafkaVersionTestUtils.LATEST_KAFKA_VERSION);
+                .compose(v -> operator.reconcile(new Reconciliation("test-trigger2", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME)))
+                .onComplete(context.succeeding(i -> context.verify(() -> {
+                    assertVersionsInKafkaStatus(KafkaAssemblyOperator.OPERATOR_VERSION, KafkaVersionTestUtils.LATEST_KAFKA_VERSION);
                     assertVersionsInStrimziPodSet(KafkaVersionTestUtils.LATEST_KAFKA_VERSION,
                             KafkaVersionTestUtils.LATEST_FORMAT_VERSION,
                             KafkaVersionTestUtils.LATEST_PROTOCOL_VERSION,
@@ -393,27 +406,28 @@ public class KafkaUpgradeDowngradeMockTest {
         Kafka initialKafka = kafkaWithVersions(KafkaVersionTestUtils.LATEST_KAFKA_VERSION,
                 KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION,
                 KafkaVersionTestUtils.PREVIOUS_PROTOCOL_VERSION);
-
-        Kafka updatedKafka = kafkaWithVersions(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION,
-                KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION,
-                KafkaVersionTestUtils.PREVIOUS_PROTOCOL_VERSION);
+        Crds.kafkaOperation(client).inNamespace(namespace).resource(initialKafka).create();
 
         Checkpoint reconciliation = context.checkpoint();
-        initialize(initialKafka)
-                .onComplete(context.succeeding(v -> {
-                    context.verify(() -> {
-                        KafkaStatus status = Crds.kafkaOperation(client).inNamespace(NAMESPACE).withName(CLUSTER_NAME).get()
-                                .getStatus();
-                        assertVersionsInKafkaStatus(status, KafkaAssemblyOperator.OPERATOR_VERSION, KafkaVersionTestUtils.LATEST_KAFKA_VERSION);
-                        assertVersionsInStrimziPodSet(KafkaVersionTestUtils.LATEST_KAFKA_VERSION,
-                                KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION,
-                                KafkaVersionTestUtils.PREVIOUS_PROTOCOL_VERSION,
-                                KafkaVersionTestUtils.LATEST_KAFKA_IMAGE);
-                    });
-                }))
-                .compose(v -> operator.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME), updatedKafka))
-                .onComplete(context.succeeding(status -> context.verify(() -> {
-                    assertVersionsInKafkaStatus(status, KafkaAssemblyOperator.OPERATOR_VERSION, KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION);
+        initialize()
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    assertVersionsInKafkaStatus(KafkaAssemblyOperator.OPERATOR_VERSION, KafkaVersionTestUtils.LATEST_KAFKA_VERSION);
+                    assertVersionsInStrimziPodSet(KafkaVersionTestUtils.LATEST_KAFKA_VERSION,
+                            KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION,
+                            KafkaVersionTestUtils.PREVIOUS_PROTOCOL_VERSION,
+                            KafkaVersionTestUtils.LATEST_KAFKA_IMAGE);
+                })))
+                .compose(i -> {
+                    // Update Kafka
+                    Kafka updatedKafka = kafkaWithVersions(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION,
+                            KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION,
+                            KafkaVersionTestUtils.PREVIOUS_PROTOCOL_VERSION);
+                    Crds.kafkaOperation(client).inNamespace(namespace).resource(updatedKafka).update();
+                    return Future.succeededFuture();
+                })
+                .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME)))
+                .onComplete(context.succeeding(i -> context.verify(() -> {
+                    assertVersionsInKafkaStatus(KafkaAssemblyOperator.OPERATOR_VERSION, KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION);
                     assertVersionsInStrimziPodSet(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION,
                             KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION,
                             KafkaVersionTestUtils.PREVIOUS_PROTOCOL_VERSION,
