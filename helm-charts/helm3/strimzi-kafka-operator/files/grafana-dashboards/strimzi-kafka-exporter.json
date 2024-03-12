@@ -1556,7 +1556,7 @@
         "useTags": false
       },
       {
-        "allValue": ".*",
+        "allValue": null,
         "current": {
           "text": "All",
           "value": [
@@ -1584,7 +1584,7 @@
         "useTags": false
       },
       {
-        "allValue": ".*",
+        "allValue": null,
         "current": {
           "text": "All",
           "value": [
