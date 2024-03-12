@@ -15,6 +15,7 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyMap;
 
@@ -55,5 +56,11 @@ public class ClientTls implements UnknownPropertyPreserving, Serializable {
             this.additionalProperties = new HashMap<>(1);
         }
         this.additionalProperties.put(name, value);
+    }
+
+    public String toVarString() {
+        return this.trustedCertificates.stream()
+                .map(certSecretSource -> certSecretSource.getSecretName() + "/" + certSecretSource.getCertificate())
+                .collect(Collectors.joining(";"));
     }
 }

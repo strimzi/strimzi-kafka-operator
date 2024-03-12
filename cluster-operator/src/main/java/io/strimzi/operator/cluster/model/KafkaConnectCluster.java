@@ -634,18 +634,8 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_CONNECT_TLS, "true"));
 
         List<CertSecretSource> trustedCertificates = tls.getTrustedCertificates();
-
-        if (trustedCertificates != null && trustedCertificates.size() > 0) {
-            StringBuilder sb = new StringBuilder();
-            boolean separator = false;
-            for (CertSecretSource certSecretSource : trustedCertificates) {
-                if (separator) {
-                    sb.append(";");
-                }
-                sb.append(certSecretSource.getSecretName()).append("/").append(certSecretSource.getCertificate());
-                separator = true;
-            }
-            varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_CONNECT_TRUSTED_CERTS, sb.toString()));
+        if (trustedCertificates != null && !trustedCertificates.isEmpty()) {
+            varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_CONNECT_TRUSTED_CERTS, tls.toVarString()));
         }
     }
 
