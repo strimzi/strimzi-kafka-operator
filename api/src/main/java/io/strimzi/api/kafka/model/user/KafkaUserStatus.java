@@ -22,7 +22,7 @@ import lombok.ToString;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "conditions", "observedGeneration", "username", "secret" })
-@EqualsAndHashCode
+@EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaUserStatus extends Status {
     private static final long serialVersionUID = 1L;

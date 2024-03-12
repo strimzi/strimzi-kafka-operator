@@ -10,6 +10,7 @@ import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 /**
  * TGZ artifact represents an artifact which is downloaded and unpacked using TAR (with GZIP decompression)
@@ -21,6 +22,7 @@ import lombok.EqualsAndHashCode;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "url", "sha512sum", "insecure" })
 @EqualsAndHashCode(callSuper = true)
+@ToString(callSuper = true)
 public class TgzArtifact extends DownloadableArtifact {
     private static final long serialVersionUID = 1L;
 

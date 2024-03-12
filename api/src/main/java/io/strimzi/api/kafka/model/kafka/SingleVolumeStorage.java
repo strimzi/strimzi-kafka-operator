@@ -10,6 +10,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 @JsonTypeInfo(
         use = JsonTypeInfo.Id.NAME,
@@ -21,7 +22,8 @@ import lombok.EqualsAndHashCode;
     @JsonSubTypes.Type(value = PersistentClaimStorage.class, name = Storage.TYPE_PERSISTENT_CLAIM)}
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@EqualsAndHashCode
+@EqualsAndHashCode(callSuper = true)
+@ToString(callSuper = true)
 public abstract class SingleVolumeStorage extends Storage {
 
     private static final long serialVersionUID = 1L;

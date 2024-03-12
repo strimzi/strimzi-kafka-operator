@@ -10,13 +10,15 @@ import io.strimzi.api.kafka.model.common.Password;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 @Buildable(
         editableEnabled = false,
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@EqualsAndHashCode
+@EqualsAndHashCode(callSuper = true)
+@ToString(callSuper = true)
 public class KafkaUserScramSha512ClientAuthentication extends KafkaUserAuthentication {
     private static final long serialVersionUID = 1L;
 

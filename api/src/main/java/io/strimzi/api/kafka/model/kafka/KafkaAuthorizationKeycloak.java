@@ -14,6 +14,7 @@ import io.strimzi.crdgenerator.annotations.Example;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 import java.util.List;
 
@@ -31,6 +32,7 @@ import java.util.List;
     "grantsMaxIdleSeconds", "grantsGcPeriodSeconds", "grantsAlwaysLatest", "superUsers",
     "connectTimeoutSeconds", "readTimeoutSeconds", "httpRetries", "enableMetrics", "includeAcceptHeader"})
 @EqualsAndHashCode(callSuper = true)
+@ToString(callSuper = true)
 public class KafkaAuthorizationKeycloak extends KafkaAuthorization {
     private static final long serialVersionUID = 1L;
 
