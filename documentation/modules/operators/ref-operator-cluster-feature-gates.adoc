@@ -97,7 +97,6 @@ The `Kafka` custom resource using KRaft mode must also have the annotation `stri
 
 Currently, the KRaft mode in Strimzi has the following major limitations:
 
-* Moving from Kafka clusters with ZooKeeper to KRaft clusters or the other way around is not supported.
 * Only the _Unidirectional_ Topic Operator is supported in KRaft mode.
   The _Bidirectional_ Topic Operator is not supported and when the `UnidirectionalTopicOperator` feature gate is disabled, the `spec.entityOperator.topicOperator` property *must be removed* from the `Kafka` custom resource.
 * JBOD storage is not supported. 
