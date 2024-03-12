@@ -23,6 +23,7 @@ import io.strimzi.crdgenerator.annotations.Minimum;
 import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -42,6 +43,7 @@ import java.util.Map;
     "secretPrefix", "livenessProbe", "readinessProbe",
     "resources", "logging", "jvmOptions"})
 @EqualsAndHashCode
+@ToString
 public class EntityUserOperatorSpec implements HasConfigurableLogging, HasLivenessProbe, HasReadinessProbe, UnknownPropertyPreserving, Serializable {
 
     private static final long serialVersionUID = 1L;

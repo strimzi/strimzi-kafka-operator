@@ -11,6 +11,7 @@ import io.strimzi.crdgenerator.annotations.Minimum;
 import io.strimzi.crdgenerator.annotations.Pattern;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 /**
  * Representation for ephemeral storage.
@@ -20,7 +21,8 @@ import lombok.EqualsAndHashCode;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@EqualsAndHashCode
+@EqualsAndHashCode(callSuper = true)
+@ToString(callSuper = true)
 public class EphemeralStorage extends SingleVolumeStorage {
 
     private static final long serialVersionUID = 1L;

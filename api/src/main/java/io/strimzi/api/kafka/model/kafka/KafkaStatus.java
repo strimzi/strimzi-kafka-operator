@@ -24,7 +24,7 @@ import java.util.List;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "conditions", "observedGeneration", "listeners", "kafkaNodePools", "clusterId", "operatorLastSuccessfulVersion", "kafkaVersion", "kafkaMetadataVersion", "kafkaMetadataState" })
-@EqualsAndHashCode
+@EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaStatus extends Status {
     private static final long serialVersionUID = 1L;

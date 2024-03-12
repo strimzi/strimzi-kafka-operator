@@ -11,6 +11,7 @@ import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 /**
  * Configures the tracing using the Jaeger OpenTracing implementation
@@ -21,7 +22,8 @@ import lombok.EqualsAndHashCode;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"type"})
-@EqualsAndHashCode
+@EqualsAndHashCode(callSuper = true)
+@ToString(callSuper = true)
 @Deprecated
 @DeprecatedType(replacedWithType = void.class)
 public class JaegerTracing extends Tracing {

@@ -24,7 +24,7 @@ import java.util.List;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "conditions", "observedGeneration", "url", "connectorPlugins" })
-@EqualsAndHashCode
+@EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaConnectStatus extends Status {
     private static final long serialVersionUID = 1L;

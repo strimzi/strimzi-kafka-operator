@@ -29,7 +29,7 @@ import static java.util.Collections.emptyMap;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "address", "host", "port" })
 @EqualsAndHashCode
-@ToString(callSuper = true)
+@ToString
 public class ListenerAddress implements UnknownPropertyPreserving, Serializable {
     private static final long serialVersionUID = 1L;
 

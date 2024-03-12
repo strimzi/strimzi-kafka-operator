@@ -22,6 +22,7 @@ import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -41,6 +42,7 @@ import java.util.Map;
     "startupProbe", "livenessProbe", "readinessProbe",
     "resources", "topicMetadataMaxAttempts", "logging", "jvmOptions"})
 @EqualsAndHashCode
+@ToString
 public class EntityTopicOperatorSpec implements HasConfigurableLogging, HasLivenessProbe, HasReadinessProbe, HasStartupProbe, UnknownPropertyPreserving, Serializable {
 
     private static final long serialVersionUID = 1L;

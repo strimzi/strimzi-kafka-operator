@@ -12,6 +12,7 @@ import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -28,6 +29,7 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"enabled", "maxRestarts"})
 @EqualsAndHashCode
+@ToString
 public class AutoRestart implements UnknownPropertyPreserving, Serializable {
     private static final long serialVersionUID = 1L;
 

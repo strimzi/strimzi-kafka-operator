@@ -4,10 +4,13 @@
  */
 package io.strimzi.api.kafka.model.connect;
 
+import lombok.ToString;
+
 /**
  * Encapsulates the naming scheme used for the resources which the Cluster Operator manages for a
  * {@code KafkaConnect} cluster.
  */
+@ToString
 public class KafkaConnectResources {
     protected KafkaConnectResources() { }
 

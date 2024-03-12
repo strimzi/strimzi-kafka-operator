@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticatio
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -26,6 +27,7 @@ import static java.util.Collections.emptyMap;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @EqualsAndHashCode
+@ToString
 public class KafkaMirrorMakerClientSpec implements UnknownPropertyPreserving, Serializable {
 
     private static final long serialVersionUID = 1L;

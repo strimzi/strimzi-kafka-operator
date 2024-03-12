@@ -11,6 +11,7 @@ import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 /**
  * Represents Docker output from the build
@@ -21,7 +22,8 @@ import lombok.EqualsAndHashCode;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "image" })
-@EqualsAndHashCode
+@EqualsAndHashCode(callSuper = true)
+@ToString(callSuper = true)
 public class ImageStreamOutput extends Output {
     private static final long serialVersionUID = 1L;
 

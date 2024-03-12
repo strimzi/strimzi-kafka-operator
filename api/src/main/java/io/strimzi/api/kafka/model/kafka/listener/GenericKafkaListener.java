@@ -17,6 +17,7 @@ import io.strimzi.crdgenerator.annotations.Minimum;
 import io.strimzi.crdgenerator.annotations.Pattern;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -34,6 +35,7 @@ import java.util.Map;
 @JsonPropertyOrder({"name", "port", "type", "tls", "authentication", "configuration", "networkPolicyPeers"})
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @EqualsAndHashCode
+@ToString
 public class GenericKafkaListener implements UnknownPropertyPreserving, Serializable {
     private static final long serialVersionUID = 1L;
 

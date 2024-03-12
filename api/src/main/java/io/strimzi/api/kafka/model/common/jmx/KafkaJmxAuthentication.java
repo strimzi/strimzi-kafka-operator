@@ -10,6 +10,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -26,6 +27,7 @@ import java.util.Map;
 @JsonSubTypes({
     @JsonSubTypes.Type(name = KafkaJmxAuthenticationPassword.TYPE_PASSWORD, value = KafkaJmxAuthenticationPassword.class)
 })
+@ToString
 public abstract class KafkaJmxAuthentication implements UnknownPropertyPreserving, Serializable {
     private static final long serialVersionUID = 1L;
     private Map<String, Object> additionalProperties = new HashMap<>(0);

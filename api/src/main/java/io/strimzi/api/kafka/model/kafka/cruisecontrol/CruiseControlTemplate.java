@@ -18,6 +18,7 @@ import io.strimzi.api.kafka.model.common.template.ResourceTemplate;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -35,6 +36,7 @@ import java.util.Map;
 @JsonPropertyOrder({
     "deployment", "pod", "apiService", "podDisruptionBudget", "cruiseControlContainer", "tlsSidecarContainer", "serviceAccount"})
 @EqualsAndHashCode
+@ToString
 public class CruiseControlTemplate implements Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
 

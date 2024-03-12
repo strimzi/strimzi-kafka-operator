@@ -16,6 +16,7 @@ import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -35,6 +36,7 @@ import java.util.Map;
     "resources", "logging",
     "enableSaramaLogging", "showAllOffsets", "template"})
 @EqualsAndHashCode
+@ToString
 public class KafkaExporterSpec implements HasLivenessProbe, HasReadinessProbe, UnknownPropertyPreserving, Serializable {
     private static final long serialVersionUID = 1L;
 

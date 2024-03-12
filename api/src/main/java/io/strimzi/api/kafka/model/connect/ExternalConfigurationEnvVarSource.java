@@ -13,6 +13,7 @@ import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -27,6 +28,7 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @EqualsAndHashCode
+@ToString
 public class ExternalConfigurationEnvVarSource implements Serializable, UnknownPropertyPreserving {
 
     private static final long serialVersionUID = 1L;

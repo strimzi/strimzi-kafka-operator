@@ -79,8 +79,8 @@ import static java.util.Collections.emptyMap;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec", "status"})
-@EqualsAndHashCode
-@ToString
+@EqualsAndHashCode(callSuper = true)
+@ToString(callSuper = true)
 @Version(Constants.V1BETA2)
 @Group(Constants.RESOURCE_GROUP_NAME)
 public class KafkaConnector extends CustomResource<KafkaConnectorSpec, KafkaConnectorStatus> implements Namespaced, UnknownPropertyPreserving {

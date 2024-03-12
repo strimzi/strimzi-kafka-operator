@@ -11,6 +11,7 @@ import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 import java.util.List;
 
@@ -23,7 +24,8 @@ import java.util.List;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "image", "pushSecret" })
-@EqualsAndHashCode
+@EqualsAndHashCode(callSuper = true)
+@ToString(callSuper = true)
 public class DockerOutput extends Output {
     private static final long serialVersionUID = 1L;
 
