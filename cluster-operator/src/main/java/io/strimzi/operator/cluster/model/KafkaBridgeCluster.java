@@ -110,6 +110,9 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
 
     protected static final String ENV_VAR_KAFKA_BRIDGE_HTTP_HOST = "KAFKA_BRIDGE_HTTP_HOST";
     protected static final String ENV_VAR_KAFKA_BRIDGE_HTTP_PORT = "KAFKA_BRIDGE_HTTP_PORT";
+    protected static final String ENV_VAR_KAFKA_BRIDGE_HTTP_CONSUMER_TIMEOUT = "KAFKA_BRIDGE_HTTP_CONSUMER_TIMEOUT";
+    protected static final String ENV_VAR_KAFKA_BRIDGE_CONSUMER_ENABLED = "KAFKA_BRIDGE_CONSUMER_ENABLED";
+    protected static final String ENV_VAR_KAFKA_BRIDGE_PRODUCER_ENABLED = "KAFKA_BRIDGE_PRODUCER_ENABLED";
     protected static final String ENV_VAR_KAFKA_BRIDGE_CORS_ENABLED = "KAFKA_BRIDGE_CORS_ENABLED";
     protected static final String ENV_VAR_KAFKA_BRIDGE_CORS_ALLOWED_ORIGINS = "KAFKA_BRIDGE_CORS_ALLOWED_ORIGINS";
     protected static final String ENV_VAR_KAFKA_BRIDGE_CORS_ALLOWED_METHODS = "KAFKA_BRIDGE_CORS_ALLOWED_METHODS";
@@ -395,64 +398,86 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
 
     protected List<EnvVar> getEnvVars() {
         List<EnvVar> varList = new ArrayList<>();
+        addCommonEnvVars(varList);
+        addTlsEnvVars(varList);
+        addHttpEnvVars(varList);
+        addAuthenticationEnvVars(varList);
+        addTracingEnvVars(varList);
+        addSharedEnvVars(varList);
+        addContainerEnvs(varList);
+        return varList;
+    }
+
+    private void addCommonEnvVars(List<EnvVar> varList) {
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BRIDGE_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
         JvmOptionUtils.javaOptions(varList, jvmOptions);
-
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BRIDGE_BOOTSTRAP_SERVERS, bootstrapServers));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BRIDGE_ADMIN_CLIENT_CONFIG, kafkaBridgeAdminClient == null ? "" : new KafkaBridgeAdminClientConfiguration(reconciliation, kafkaBridgeAdminClient.getConfig().entrySet()).getConfiguration()));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BRIDGE_CONSUMER_CONFIG, kafkaBridgeConsumer == null ? "" : new KafkaBridgeConsumerConfiguration(reconciliation, kafkaBridgeConsumer.getConfig().entrySet()).getConfiguration()));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BRIDGE_PRODUCER_CONFIG, kafkaBridgeProducer == null ? "" : new KafkaBridgeProducerConfiguration(reconciliation, kafkaBridgeProducer.getConfig().entrySet()).getConfiguration()));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BRIDGE_ID, cluster));
+    }
 
-        varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BRIDGE_HTTP_HOST, KafkaBridgeHttpConfig.HTTP_DEFAULT_HOST));
-        varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BRIDGE_HTTP_PORT, String.valueOf(http != null ? http.getPort() : KafkaBridgeHttpConfig.HTTP_DEFAULT_PORT)));
+    private void addTlsEnvVars(List<EnvVar> varList) {
+        if (tls != null) {
+            varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BRIDGE_TLS, "true"));
+            List<CertSecretSource> trustedCertificates = tls.getTrustedCertificates();
+            if (trustedCertificates != null && !trustedCertificates.isEmpty()) {
+                varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BRIDGE_TRUSTED_CERTS, tls.toVarString()));
+            }
+        }
+    }
 
-        if (http != null && http.getCors() != null) {
+    private void addHttpEnvVars(List<EnvVar> varList) {
+        if (http != null) {
+            varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BRIDGE_HTTP_HOST, http.getHost()));
+            varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BRIDGE_HTTP_PORT, String.valueOf(http.getPort())));
+            varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BRIDGE_CONSUMER_ENABLED, String.valueOf(http.getConsumer().isEnabled())));
+            varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BRIDGE_PRODUCER_ENABLED, String.valueOf(http.getProducer().isEnabled())));
+
+            if (http.getTimeoutSeconds() != -1) {
+                varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BRIDGE_HTTP_CONSUMER_TIMEOUT, String.valueOf(http.getTimeoutSeconds())));
+            }
+
+            addCorsEnvVars(varList);
+        } else {
+            varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BRIDGE_HTTP_HOST, KafkaBridgeHttpConfig.HTTP_DEFAULT_HOST));
+            varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BRIDGE_HTTP_PORT, String.valueOf(KafkaBridgeHttpConfig.HTTP_DEFAULT_PORT)));
+        }
+    }
+
+    private void addCorsEnvVars(List<EnvVar> varList) {
+        if (http.getCors() != null) {
             varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BRIDGE_CORS_ENABLED, "true"));
-
             if (http.getCors().getAllowedOrigins() != null) {
                 varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BRIDGE_CORS_ALLOWED_ORIGINS, String.join(",", http.getCors().getAllowedOrigins())));
             }
-
             if (http.getCors().getAllowedMethods() != null) {
                 varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BRIDGE_CORS_ALLOWED_METHODS, String.join(",", http.getCors().getAllowedMethods())));
             }
         } else {
             varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BRIDGE_CORS_ENABLED, "false"));
         }
+    }
 
-        if (tls != null) {
-            varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BRIDGE_TLS, "true"));
-
-            List<CertSecretSource> trustedCertificates = tls.getTrustedCertificates();
-
-            if (trustedCertificates != null && trustedCertificates.size() > 0) {
-                StringBuilder sb = new StringBuilder();
-                boolean separator = false;
-                for (CertSecretSource certSecretSource : trustedCertificates) {
-                    if (separator) {
-                        sb.append(";");
-                    }
-                    sb.append(certSecretSource.getSecretName() + "/" + certSecretSource.getCertificate());
-                    separator = true;
-                }
-                varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BRIDGE_TRUSTED_CERTS, sb.toString()));
-            }
-        }
-
+    private void addAuthenticationEnvVars(List<EnvVar> varList) {
         AuthenticationUtils.configureClientAuthenticationEnvVars(authentication, varList, name -> ENV_VAR_PREFIX + name);
+    }
 
+    private void addTracingEnvVars(List<EnvVar> varList) {
         if (tracing != null) {
             varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_TRACING, tracing.getType()));
         }
+    }
 
+    private void addSharedEnvVars(List<EnvVar> varList) {
         // Add shared environment variables used for all containers
         varList.addAll(sharedEnvironmentProvider.variables());
+    }
 
+    private void addContainerEnvs(List<EnvVar> varList) {
         ContainerUtils.addContainerEnvsToExistingEnvs(reconciliation, varList, templateContainer);
-
-        return varList;
     }
 
     /**
