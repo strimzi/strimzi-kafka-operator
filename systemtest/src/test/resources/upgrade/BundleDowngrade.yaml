@@ -39,8 +39,8 @@
   fromKafkaVersionsUrl: HEAD
   additionalTopics: 2
   imagesAfterOperations:
-    zookeeper: strimzi/kafka:0.40.0-kafka-3.6.1
-    kafka: strimzi/kafka:0.40.0-kafka-3.6.1
+    zookeeper: strimzi/kafka:0.40.0-kafka-3.6.0
+    kafka: strimzi/kafka:0.40.0-kafka-3.6.0
     topicOperator: strimzi/operator:0.40.0
     userOperator: strimzi/operator:0.40.0
   deployKafkaVersion: 3.7.0
@@ -57,7 +57,7 @@
     kafkaBefore: "/examples/kafka/kafka-persistent.yaml"
     kafkaAfter: "/examples/kafka/kafka-persistent.yaml"
     kafkaKRaftBefore: "/examples/kafka/kraft/kafka.yaml"
-    kafkaKRaftAfter: "/examples/kafka/nodepools/kafka-with-kraft.yaml"
+    kafkaKRaftAfter: "/examples/kafka/kraft/kafka.yaml"
 - fromVersion: HEAD
   toVersion: 0.40.0
   fromExamples: HEAD
@@ -67,8 +67,8 @@
   fromKafkaVersionsUrl: HEAD
   additionalTopics: 2
   imagesAfterOperations:
-    zookeeper: strimzi/kafka:0.40.0-kafka-3.6.1
-    kafka: strimzi/kafka:0.40.0-kafka-3.6.1
+    zookeeper: strimzi/kafka:0.40.0-kafka-3.6.0
+    kafka: strimzi/kafka:0.40.0-kafka-3.6.0
     topicOperator: strimzi/operator:0.40.0
     userOperator: strimzi/operator:0.40.0
   deployKafkaVersion: 3.7.0
@@ -85,4 +85,4 @@
     kafkaBefore: "/examples/kafka/kafka-persistent.yaml"
     kafkaAfter: "/examples/kafka/kafka-persistent.yaml"
     kafkaKRaftBefore: "/examples/kafka/kraft/kafka.yaml"
-    kafkaKRaftAfter: "/examples/kafka/nodepools/kafka-with-kraft.yaml"
+    kafkaKRaftAfter: "/examples/kafka/kraft/kafka.yaml"

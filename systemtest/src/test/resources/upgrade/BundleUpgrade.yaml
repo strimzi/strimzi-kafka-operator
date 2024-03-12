@@ -52,7 +52,7 @@
   filePaths:
     kafkaBefore: "/examples/kafka/kafka-persistent.yaml"
     kafkaAfter: "/examples/kafka/kafka-persistent.yaml"
-    kafkaKRaftBefore: "/examples/kafka/nodepools/kafka-with-kraft.yaml"
+    kafkaKRaftBefore: "/examples/kafka/kraft/kafka.yaml"
     kafkaKRaftAfter: "/examples/kafka/kraft/kafka.yaml"
 - fromVersion: 0.40.0
   fromExamples: strimzi-0.40.0
@@ -77,5 +77,5 @@
   filePaths:
     kafkaBefore: "/examples/kafka/kafka-persistent.yaml"
     kafkaAfter: "/examples/kafka/kafka-persistent.yaml"
-    kafkaKRaftBefore: "/examples/kafka/nodepools/kafka-with-kraft.yaml"
+    kafkaKRaftBefore: "/examples/kafka/kraft/kafka.yaml"
     kafkaKRaftAfter: "/examples/kafka/kraft/kafka.yaml"
