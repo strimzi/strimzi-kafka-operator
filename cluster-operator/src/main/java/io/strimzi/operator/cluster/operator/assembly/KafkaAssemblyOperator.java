@@ -217,7 +217,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Promise<Void> chainPromise = Promise.promise();
 
         KafkaMetadataConfigurationState kafkaMetadataConfigState = reconcileState.kafkaMetadataStateManager.getMetadataConfigurationState();
-        boolean nodePoolsEnabled = featureGates.kafkaNodePoolsEnabled() && ReconcilerUtils.nodePoolsEnabled(reconcileState.kafkaAssembly);
+        boolean nodePoolsEnabled = ReconcilerUtils.nodePoolsEnabled(reconcileState.kafkaAssembly);
 
         // since PRE_MIGRATION phase (because it's when controllers are deployed during migration) we need to validate usage of node pools and features for KRaft
         if (kafkaMetadataConfigState.isPreMigrationToKRaft()) {
@@ -634,8 +634,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     .withStrimziName(KafkaResources.kafkaComponentName(reconciliation.name()));
 
             Future<List<KafkaNodePool>> nodePoolFuture;
-            if (featureGates.kafkaNodePoolsEnabled()
-                    && ReconcilerUtils.nodePoolsEnabled(kafkaAssembly)) {
+            if (ReconcilerUtils.nodePoolsEnabled(kafkaAssembly)) {
                 // Node Pools are enabled
                 nodePoolFuture = nodePoolOperator.listAsync(namespace, Labels.fromMap(Map.of(Labels.STRIMZI_CLUSTER_LABEL, name)));
             } else {
@@ -651,8 +650,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         List<StrimziPodSet> podSets = res.resultAt(1);
                         List<KafkaNodePool> nodePools = res.resultAt(2);
 
-                        if (config.featureGates().kafkaNodePoolsEnabled()
-                                && ReconcilerUtils.nodePoolsEnabled(kafkaAssembly)
+                        if (ReconcilerUtils.nodePoolsEnabled(kafkaAssembly)
                                 && (nodePools == null || nodePools.isEmpty())) {
                             throw new InvalidConfigurationException("KafkaNodePools are enabled, but no KafkaNodePools found for Kafka cluster " + name);
                         }

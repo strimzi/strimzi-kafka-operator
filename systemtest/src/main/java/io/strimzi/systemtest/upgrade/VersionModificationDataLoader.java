@@ -34,7 +34,7 @@ public class VersionModificationDataLoader {
     private static final Logger LOGGER = LogManager.getLogger(VersionModificationDataLoader.class);
     private OlmVersionModificationData olmUpgradeData;
     private List<BundleVersionModificationData> bundleVersionModificationDataList;
-    private static final String KRAFT_UPGRADE_FEATURE_GATES = String.join(",", TestConstants.USE_KRAFT_MODE, TestConstants.USE_KAFKA_NODE_POOLS, TestConstants.USE_UNIDIRECTIONAL_TOPIC_OPERATOR);
+    private static final String KRAFT_UPGRADE_FEATURE_GATES = String.join(",", TestConstants.USE_KRAFT_MODE, TestConstants.USE_UNIDIRECTIONAL_TOPIC_OPERATOR);
 
     public VersionModificationDataLoader(ModificationType upgradeType) {
         if (upgradeType == ModificationType.OLM_UPGRADE) {

@@ -60,13 +60,16 @@ public class FeatureGatesTest {
     @ParallelTest
     public void testFeatureGatesParsing() {
         assertThat(new FeatureGates("+UseKRaft").useKRaftEnabled(), is(true));
-        assertThat(new FeatureGates("+KafkaNodePools").kafkaNodePoolsEnabled(), is(true));
-        assertThat(new FeatureGates("-UseKRaft,-KafkaNodePools").useKRaftEnabled(), is(false));
-        assertThat(new FeatureGates("-UseKRaft,-KafkaNodePools").kafkaNodePoolsEnabled(), is(false));
-        assertThat(new FeatureGates("  +UseKRaft    ,    +KafkaNodePools").useKRaftEnabled(), is(true));
-        assertThat(new FeatureGates("  -UseKRaft    ,    -KafkaNodePools").kafkaNodePoolsEnabled(), is(false));
-        assertThat(new FeatureGates("+KafkaNodePools,-UseKRaft").useKRaftEnabled(), is(false));
-        assertThat(new FeatureGates("+KafkaNodePools,-UseKRaft").kafkaNodePoolsEnabled(), is(true));
+        assertThat(new FeatureGates("-UseKRaft").useKRaftEnabled(), is(false));
+        assertThat(new FeatureGates("  -UseKRaft    ").useKRaftEnabled(), is(false));
+        // TODO: Add more tests with various feature gate combinations once we have multiple feature gates again.
+        //       The commented out code below shows the tests we used to have with multiple feature gates.
+        //assertThat(new FeatureGates("-UseKRaft,-KafkaNodePools").useKRaftEnabled(), is(false));
+        //assertThat(new FeatureGates("-UseKRaft,-KafkaNodePools").kafkaNodePoolsEnabled(), is(false));
+        //assertThat(new FeatureGates("  +UseKRaft    ,    +KafkaNodePools").useKRaftEnabled(), is(true));
+        //assertThat(new FeatureGates("  -UseKRaft    ,    -KafkaNodePools").kafkaNodePoolsEnabled(), is(false));
+        //assertThat(new FeatureGates("+KafkaNodePools,-UseKRaft").useKRaftEnabled(), is(false));
+        //assertThat(new FeatureGates("+KafkaNodePools,-UseKRaft").kafkaNodePoolsEnabled(), is(true));
     }
 
     @ParallelTest
@@ -107,17 +110,5 @@ public class FeatureGatesTest {
     public void testNonExistingGate() {
         InvalidConfigurationException e = assertThrows(InvalidConfigurationException.class, () -> new FeatureGates("+RandomGate"));
         assertThat(e.getMessage(), containsString("Unknown feature gate RandomGate found in the configuration"));
-    }
-
-    @ParallelTest
-    public void testKraftAndKafkaNOdePoolsNotFulfilled() {
-        InvalidConfigurationException e = assertThrows(InvalidConfigurationException.class, () -> new FeatureGates("+UseKRaft,-KafkaNodePools"));
-        assertThat(e.getMessage(), containsString("The UseKRaft feature gate can be enabled only together with the KafkaNodePools feature gate."));
-    }
-
-    @ParallelTest
-    public void testKraftAndKafkaNodePoolsFulfilled() {
-        assertThat(new FeatureGates("+UseKRaft,+KafkaNodePools").useKRaftEnabled(), is(true));
-        assertThat(new FeatureGates("+UseKRaft").useKRaftEnabled(), is(true));
     }
 }
