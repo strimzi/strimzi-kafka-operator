@@ -430,8 +430,9 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
     }
 
     private void addHttpEnvVars(List<EnvVar> varList) {
+        varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BRIDGE_HTTP_HOST, KafkaBridgeHttpConfig.HTTP_DEFAULT_HOST));
+
         if (http != null) {
-            varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BRIDGE_HTTP_HOST, http.getHost()));
             varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BRIDGE_HTTP_PORT, String.valueOf(http.getPort())));
             varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BRIDGE_CONSUMER_ENABLED, String.valueOf(http.getConsumer().isEnabled())));
             varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BRIDGE_PRODUCER_ENABLED, String.valueOf(http.getProducer().isEnabled())));
@@ -442,7 +443,6 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
 
             addCorsEnvVars(varList);
         } else {
-            varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BRIDGE_HTTP_HOST, KafkaBridgeHttpConfig.HTTP_DEFAULT_HOST));
             varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BRIDGE_HTTP_PORT, String.valueOf(KafkaBridgeHttpConfig.HTTP_DEFAULT_PORT)));
         }
     }

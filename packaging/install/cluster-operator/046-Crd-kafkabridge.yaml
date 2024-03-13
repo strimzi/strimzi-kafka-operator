@@ -231,9 +231,6 @@ spec:
               http:
                 type: object
                 properties:
-                  host:
-                    type: string
-                    description: The host which is the server listening on.
                   port:
                     type: integer
                     minimum: 1023

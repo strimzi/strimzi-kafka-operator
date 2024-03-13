@@ -40,7 +40,6 @@ public class KafkaBridgeHttpConfig implements UnknownPropertyPreserving, Seriali
     public static final String HTTP_DEFAULT_HOST = "0.0.0.0";
     public static final long HTTP_DEFAULT_TIMEOUT = -1L;
 
-    private String host = HTTP_DEFAULT_HOST;
     private int port = HTTP_DEFAULT_PORT;
     private KafkaBridgeHttpCors cors;
     private long timeoutSeconds = HTTP_DEFAULT_TIMEOUT;
@@ -53,16 +52,6 @@ public class KafkaBridgeHttpConfig implements UnknownPropertyPreserving, Seriali
 
     public KafkaBridgeHttpConfig(int port) {
         this.port = port;
-    }
-
-    @Description("The host which is the server listening on.")
-    @JsonProperty(defaultValue = HTTP_DEFAULT_HOST)
-    public String getHost() {
-        return host;
-    }
-
-    public void setHost(String host) {
-        this.host = host;
     }
 
     @Description("The port which is the server listening on.")
