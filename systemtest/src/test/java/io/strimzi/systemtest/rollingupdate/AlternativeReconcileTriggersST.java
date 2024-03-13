@@ -169,7 +169,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
                             || !StrimziPodSetUtils.getAnnotationsOfStrimziPodSet(testStorage.getNamespaceName(), testStorage.getControllerComponentName()).containsKey(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE));
         }
 
-        clients = ClientUtils.generateNewConsumerGroup(clients);
+        clients.generateNewConsumerGroup();
         resourceManager.createResourceWithWait(clients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
 

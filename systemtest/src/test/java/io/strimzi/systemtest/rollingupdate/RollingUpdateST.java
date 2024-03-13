@@ -164,7 +164,7 @@ class RollingUpdateST extends AbstractST {
         RollingUpdateUtils.waitForComponentAndPodsReady(testStorage.getNamespaceName(), testStorage.getControllerSelector(), 3);
 
         // consume messages with newly generated consumer group
-        clients = ClientUtils.generateNewConsumerGroup(clients);
+        clients.generateNewConsumerGroup();
         resourceManager.createResourceWithWait(clients.consumerStrimzi());
         ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
 
@@ -192,7 +192,7 @@ class RollingUpdateST extends AbstractST {
         PodUtils.waitForPendingPod(testStorage.getNamespaceName(), testStorage.getBrokerComponentName());
 
         // consume messages with newly generated consumer group
-        clients = ClientUtils.generateNewConsumerGroup(clients);
+        clients.generateNewConsumerGroup();
         resourceManager.createResourceWithWait(clients.consumerStrimzi());
         ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
 
@@ -277,7 +277,7 @@ class RollingUpdateST extends AbstractST {
         // change broker knp to unreasonable CPU request causing trigger of Rolling update
         modifyNodePoolToUnscheduledAndRecover(testStorage.getBrokerPoolName(), testStorage.getBrokerSelector(), testStorage);
 
-        clients = ClientUtils.generateNewConsumerGroup(clients);
+        clients.generateNewConsumerGroup();
         resourceManager.createResourceWithWait(clients.consumerStrimzi());
         ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
     }
@@ -381,9 +381,7 @@ class RollingUpdateST extends AbstractST {
         // consuming data from original topic after scaling up
 
         LOGGER.info("Consume data produced before scaling up");
-        clients = new KafkaClientsBuilder(clients)
-            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
-            .build();
+        clients.generateNewConsumerGroup();
 
         resourceManager.createResourceWithWait(clients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
@@ -563,9 +561,7 @@ class RollingUpdateST extends AbstractST {
 
         RollingUpdateUtils.waitForComponentAndPodsReady(testStorage.getNamespaceName(), testStorage.getControllerSelector(), initialZkReplicas);
 
-        clients = new KafkaClientsBuilder(clients)
-            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
-            .build();
+        clients.generateNewConsumerGroup();
 
         // Wait for one zk pods will became leader and others follower state
         KafkaUtils.waitForZkMntr(testStorage.getNamespaceName(), testStorage.getClusterName(), ZK_SERVER_STATE, 0, 1, 2);

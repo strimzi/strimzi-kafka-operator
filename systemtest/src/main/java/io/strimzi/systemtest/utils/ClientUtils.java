@@ -6,7 +6,6 @@ package io.strimzi.systemtest.utils;
 
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.systemtest.TestConstants;
-import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
@@ -323,15 +322,6 @@ public class ClientUtils {
         int salt = rng.nextInt(Integer.MAX_VALUE);
 
         return CONSUMER_GROUP_NAME + salt;
-    }
-
-    public static KafkaClients generateNewConsumerGroup(KafkaClients clients) {
-        final String newConsumerGroup = ClientUtils.generateRandomConsumerGroup();
-        LOGGER.info("Regenerating new consumer group {} for clients {} {}", newConsumerGroup, clients.getProducerName(), clients.getConsumerGroup());
-
-        return new KafkaClientsBuilder(clients)
-            .withConsumerGroup(newConsumerGroup)
-            .build();
     }
 
     // instant client builders

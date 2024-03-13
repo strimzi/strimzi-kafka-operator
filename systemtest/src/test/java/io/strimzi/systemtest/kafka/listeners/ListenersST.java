@@ -2316,9 +2316,7 @@ public class ListenersST extends AbstractST {
 
         LOGGER.info("Receiving messages with new password");
 
-        kafkaClients = new KafkaClientsBuilder(kafkaClients)
-            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
-            .build();
+        kafkaClients.generateNewConsumerGroup();
 
         resourceManager.createResourceWithWait(
             kafkaClients.producerScramShaTlsStrimzi(testStorage.getClusterName()),

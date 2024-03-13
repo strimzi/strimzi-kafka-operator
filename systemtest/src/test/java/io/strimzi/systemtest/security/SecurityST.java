@@ -316,7 +316,7 @@ class SecurityST extends AbstractST {
                 value, is(not(initialCaCerts.get(secretName))));
         }
 
-        kafkaClients = ClientUtils.generateNewConsumerGroup(kafkaClients);
+        kafkaClients.generateNewConsumerGroup();
         resourceManager.createResourceWithWait(kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
 
@@ -506,7 +506,7 @@ class SecurityST extends AbstractST {
                     value, is(not(initialCaKeys.get(secretName))));
         }
 
-        kafkaClients = ClientUtils.generateNewConsumerGroup(kafkaClients);
+        kafkaClients.generateNewConsumerGroup();
         resourceManager.createResourceWithWait(kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
 
@@ -1206,7 +1206,7 @@ class SecurityST extends AbstractST {
             }
         );
 
-        kafkaClients = ClientUtils.generateNewConsumerGroup(kafkaClients);
+        kafkaClients.generateNewConsumerGroup();
         resourceManager.createResourceWithWait(kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
 
@@ -1235,7 +1235,7 @@ class SecurityST extends AbstractST {
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, brokerPods);
         DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), testStorage.getEoDeploymentName(), 1, eoPods);
 
-        kafkaClients = ClientUtils.generateNewConsumerGroup(kafkaClients);
+        kafkaClients.generateNewConsumerGroup();
         resourceManager.createResourceWithWait(kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
 
