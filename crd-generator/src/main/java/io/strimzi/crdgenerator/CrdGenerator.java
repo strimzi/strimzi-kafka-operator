@@ -38,7 +38,6 @@ import java.io.Writer;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -595,7 +594,7 @@ class CrdGenerator {
             result.set("oneOf", oneOf);
         }
         ArrayNode required = buildSchemaRequired(crApiVersion, crdClass);
-        if (required.size() > 0) {
+        if (!required.isEmpty()) {
             result.set("required", required);
         }
     }
@@ -625,32 +624,50 @@ class CrdGenerator {
     }
 
     private void checkClass(Class<?> crdClass) {
+        checkJsonInclude(crdClass);
+        checkJsonPropertyOrder(crdClass);
+
+        if (!isAbstract(crdClass.getModifiers())) {
+            checkForBuilderClass(crdClass, crdClass.getName() + "Builder");
+            checkForBuilderClass(crdClass, crdClass.getName() + "Fluent");
+
+            checkClassOverrides(crdClass, "hashCode");
+            hasAnyGetterAndAnySetter(crdClass);
+
+            if (!crdClass.isAnnotationPresent(JsonPropertyOrder.class)) {
+                err(crdClass + " is missing @JsonPropertyOrder");
+            }
+        } else {
+            for (Class<?> c : subtypes(crdClass)) {
+                hasAnyGetterAndAnySetter(c);
+                checkDiscriminatorIsIncluded(crdClass, c);
+                checkJsonPropertyOrder(c);
+            }
+        }
+
+        checkInherits(crdClass, "java.io.Serializable");
+
+        if (crdClass.getName().startsWith("io.strimzi.api.")) {
+            checkInherits(crdClass, "io.strimzi.api.kafka.model.common.UnknownPropertyPreserving");
+        }
+
+        checkClassOverrides(crdClass, "equals", Object.class);
+    }
+
+    private void checkJsonInclude(Class<?> crdClass) {
         if (!crdClass.isAnnotationPresent(JsonInclude.class)) {
             err(crdClass + " is missing @JsonInclude");
         } else if (!crdClass.getAnnotation(JsonInclude.class).value().equals(JsonInclude.Include.NON_NULL)
                 && !crdClass.getAnnotation(JsonInclude.class).value().equals(JsonInclude.Include.NON_DEFAULT)) {
             err(crdClass + " has a @JsonInclude value other than Include.NON_NULL");
         }
-        if (!isAbstract(crdClass.getModifiers())) {
-            checkForBuilderClass(crdClass, crdClass.getName() + "Builder");
-            checkForBuilderClass(crdClass, crdClass.getName() + "Fluent");
+    }
+
+    private void checkJsonPropertyOrder(Class<?> crdClass) {
+        if (!isAbstract(crdClass.getModifiers())
+                && !crdClass.isAnnotationPresent(JsonPropertyOrder.class)) {
+            err(crdClass + " is missing @JsonPropertyOrder");
         }
-        if (!Modifier.isAbstract(crdClass.getModifiers())) {
-            hasAnyGetterAndAnySetter(crdClass);
-        } else {
-            for (Class c : subtypes(crdClass)) {
-                hasAnyGetterAndAnySetter(c);
-                checkDiscriminatorIsIncluded(crdClass, c);
-            }
-        }
-        checkInherits(crdClass, "java.io.Serializable");
-        if (crdClass.getName().startsWith("io.strimzi.api.")) {
-            checkInherits(crdClass, "io.strimzi.api.kafka.model.common.UnknownPropertyPreserving");
-        }
-        if (!Modifier.isAbstract(crdClass.getModifiers())) {
-            checkClassOverrides(crdClass, "hashCode");
-        }
-        checkClassOverrides(crdClass, "equals", Object.class);
     }
 
     private void checkDiscriminatorIsIncluded(Class<?> crdClass, Class c) {
@@ -716,7 +733,7 @@ class CrdGenerator {
 
     private Collection<Property> unionOfSubclassProperties(ApiVersion crApiVersion, Class<?> crdClass) {
         TreeMap<String, Property> result = new TreeMap<>();
-        for (Class subtype : Property.subtypes(crdClass)) {
+        for (Class<?> subtype : Property.subtypes(crdClass)) {
             result.putAll(properties(crApiVersion, subtype));
         }
         result.putAll(properties(crApiVersion, crdClass));
