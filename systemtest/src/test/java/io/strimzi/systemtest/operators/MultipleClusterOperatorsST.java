@@ -201,13 +201,11 @@ public class MultipleClusterOperatorsST extends AbstractST {
             .endSpec()
             .build());
 
-        KafkaClients basicClients = ClientUtils.getInstantPlainClientBuilder(testStorage)
-            .withMessageCount(100)
-            .build();
+        KafkaClients basicClients = ClientUtils.getInstantPlainClientBuilder(testStorage).build();
         resourceManager.createResourceWithWait(basicClients.producerStrimzi());
         ClientUtils.waitForClientSuccess(testStorage.getProducerName(), testStorage.getNamespaceName(), testStorage.getMessageCount());
 
-        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), kafkaConnectPodName, TestConstants.DEFAULT_SINK_FILE_PATH, "Hello-world - 99");
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), kafkaConnectPodName, TestConstants.DEFAULT_SINK_FILE_PATH, testStorage.getMessageCount());
 
         LOGGER.info("Verifying that all operands in Namespace: {} are managed by Cluster Operator: {}", testStorage.getNamespaceName(), FIRST_CO_NAME);
         MetricsUtils.assertMetricResourcesHigherThanOrEqualTo(firstCoMetricsCollector, Kafka.RESOURCE_KIND, 1);

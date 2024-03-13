@@ -216,7 +216,7 @@ class RackAwarenessST extends AbstractST {
         resourceManager.createResourceWithWait(kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
         ClientUtils.waitForInstantClientSuccess(testStorage);
 
-        consumeDataWithNewSinkConnector(testStorage.getClusterName(), testStorage.getClusterName(), testStorage.getTopicName(), testStorage.getNamespaceName());
+        consumeDataWithNewSinkConnector(testStorage.getClusterName(), testStorage.getClusterName(), testStorage.getTopicName(), testStorage.getNamespaceName(), testStorage.getMessageCount());
     }
 
     /**
@@ -311,7 +311,7 @@ class RackAwarenessST extends AbstractST {
         ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
     }
 
-    private void consumeDataWithNewSinkConnector(String newConnectorName, String connectClusterName, String topicName, String namespace) {
+    private void consumeDataWithNewSinkConnector(String newConnectorName, String connectClusterName, String topicName, String namespace, int msgCount) {
 
         LOGGER.info("Deploying Sink KafkaConnector in KafkaConnect Cluster: {}/{}", namespace, newConnectorName);
         Map<String, Object> connectorConfig = new HashMap<>();
@@ -334,7 +334,7 @@ class RackAwarenessST extends AbstractST {
         LOGGER.info("KafkaConnect Pod: {}/{}", namespace, kafkaConnectPodName);
         KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(namespace, kafkaConnectPodName);
 
-        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(namespace, kafkaConnectPodName, TestConstants.DEFAULT_SINK_FILE_PATH, "99");
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(namespace, kafkaConnectPodName, TestConstants.DEFAULT_SINK_FILE_PATH, msgCount);
     }
 
     @BeforeEach

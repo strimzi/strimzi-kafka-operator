@@ -601,7 +601,6 @@ public class AbstractUpgradeST extends AbstractST {
 
         final KafkaClients clients = ClientUtils.getInstantTlsClientBuilder(testStorage)
             .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(clusterName))
-            .withMessageCount(500)
             .withUsername(userName)
             .build();
 
@@ -614,7 +613,7 @@ public class AbstractUpgradeST extends AbstractST {
 
         // Verify FileSink KafkaConnector before upgrade
         String connectorPodName = kubeClient().listPods(testStorage.getNamespaceName(), Collections.singletonMap(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND)).get(0).getMetadata().getName();
-        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), connectorPodName, DEFAULT_SINK_FILE_PATH, "\"Hello-world - 499\"");
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), connectorPodName, DEFAULT_SINK_FILE_PATH, testStorage.getMessageCount());
 
         // Upgrade CO to HEAD and wait for readiness of ClusterOperator
         changeClusterOperator(bundleDowngradeDataWithFeatureGates, testStorage.getNamespaceName());
@@ -631,7 +630,7 @@ public class AbstractUpgradeST extends AbstractST {
         ClientUtils.waitForInstantProducerClientSuccess(testStorage);
         // Verify FileSink KafkaConnector
         connectorPodName = kubeClient().listPods(testStorage.getNamespaceName(), Collections.singletonMap(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND)).get(0).getMetadata().getName();
-        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), connectorPodName, DEFAULT_SINK_FILE_PATH, "\"Hello-world - 499\"");
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), connectorPodName, DEFAULT_SINK_FILE_PATH, testStorage.getMessageCount());
 
         // Verify that pods are stable
         PodUtils.verifyThatRunningPodsAreStable(testStorage.getNamespaceName(), clusterName);
