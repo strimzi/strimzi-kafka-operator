@@ -511,7 +511,6 @@ class ConnectST extends AbstractST {
 
         // Kafka Sink Connect expect 100 messages to read
         KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage)
-            .withUsername(testStorage.getUsername())
             .withMessageCount(100)
             .build();
         resourceManager.createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()), kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
@@ -586,7 +585,6 @@ class ConnectST extends AbstractST {
             TestConstants.DEFAULT_SINK_FILE_PATH, KafkaConnectResources.url(testStorage.getClusterName(), testStorage.getNamespaceName(), 8083));
 
         KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage)
-            .withUsername(testStorage.getUsername())
             .withMessageCount(100)
             .build();
         resourceManager.createResourceWithWait(kafkaClients.producerScramShaTlsStrimzi(testStorage.getClusterName()), kafkaClients.consumerScramShaTlsStrimzi(testStorage.getClusterName()));

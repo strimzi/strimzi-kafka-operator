@@ -191,9 +191,7 @@ public class ListenersST extends AbstractST {
         );
 
         LOGGER.info("Transmitting messages over tls transport using mutual tls auth with bootstrap address: {}", KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()));
-        KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage)
-            .withUsername(testStorage.getUsername())
-            .build();
+        KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage).build();
 
         resourceManager.createResourceWithWait(
             kafkaClients.producerTlsStrimzi(testStorage.getClusterName()),
@@ -754,7 +752,6 @@ public class ListenersST extends AbstractST {
 
         KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage)
                 .withBootstrapAddress(KafkaUtils.bootstrapAddressFromStatus(testStorage.getClusterName(), testStorage.getNamespaceName(), TestConstants.CLUSTER_IP_LISTENER_DEFAULT_NAME))
-                .withUsername(testStorage.getUsername())
                 .build();
 
         resourceManager.createResourceWithWait(
@@ -843,7 +840,6 @@ public class ListenersST extends AbstractST {
 
         KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage)
             .withBootstrapAddress(KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9104")
-            .withUsername(testStorage.getUsername())
             .withConsumerGroup("consumer-group-certs-1")
             .withCaCertSecretName(clusterCustomCertServer1)
             .build();
@@ -1029,7 +1025,6 @@ public class ListenersST extends AbstractST {
 
         KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage)
             .withBootstrapAddress(KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9107")
-            .withUsername(testStorage.getUsername())
             .withConsumerGroup("consumer-group-certs-3")
             .withCaCertSecretName(clusterCustomCertServer1)
             .build();
@@ -1120,7 +1115,6 @@ public class ListenersST extends AbstractST {
 
         KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage)
             .withBootstrapAddress(KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9109")
-            .withUsername(testStorage.getUsername())
             .withConsumerGroup("consumer-group-certs-4")
             .withCaCertSecretName(clusterCustomCertChain1)
             .build();
@@ -1214,7 +1208,6 @@ public class ListenersST extends AbstractST {
 
         KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage)
             .withBootstrapAddress(KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9111")
-            .withUsername(testStorage.getUsername())
             .withConsumerGroup("consumer-group-certs-5")
             .withCaCertSecretName(clusterCustomCertServer1)
             .build();
@@ -1310,7 +1303,6 @@ public class ListenersST extends AbstractST {
 
         KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage)
             .withBootstrapAddress(KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9112")
-            .withUsername(testStorage.getUsername())
             .withConsumerGroup("consumer-group-certs-6")
             .withCaCertSecretName(clusterCustomCertChain1)
             .build();
@@ -1457,7 +1449,6 @@ public class ListenersST extends AbstractST {
 
         KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage)
             .withBootstrapAddress(KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9113")
-            .withUsername(testStorage.getUsername())
             .withConsumerGroup("consumer-group-certs-6")
             .withCaCertSecretName(clusterCustomCertServer2)
             .build();
@@ -1983,7 +1974,6 @@ public class ListenersST extends AbstractST {
 
         KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage)
             .withBootstrapAddress(KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9117")
-            .withUsername(testStorage.getUsername())
             .withCaCertSecretName(clusterCustomCertServer2)
             .withConsumerGroup("consumer-group-certs-91")
             .build();

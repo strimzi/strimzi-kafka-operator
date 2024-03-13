@@ -256,9 +256,7 @@ class SecurityST extends AbstractST {
             KafkaTopicTemplates.topic(testStorage).build()
         );
 
-        KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage)
-            .withUsername(testStorage.getUsername())
-            .build();
+        KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage).build();
 
         resourceManager.createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()), kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForInstantClientSuccess(testStorage);
@@ -423,11 +421,7 @@ class SecurityST extends AbstractST {
             KafkaTopicTemplates.topic(testStorage).build()
         );
 
-        KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage)
-            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
-            .withUsername(testStorage.getUsername())
-            .build();
-
+        KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage).build();
         resourceManager.createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()), kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForInstantClientSuccess(testStorage);
 
@@ -631,10 +625,7 @@ class SecurityST extends AbstractST {
             KafkaTopicTemplates.topic(testStorage).build()
         );
 
-        KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage)
-            .withUsername(testStorage.getUsername())
-            .build();
-
+        KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage).build();
         resourceManager.createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()), kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForInstantClientSuccess(testStorage);
 
@@ -701,9 +692,7 @@ class SecurityST extends AbstractST {
 
         Secret kafkaUserSecret = kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), testStorage.getUsername());
 
-        KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage)
-            .withUsername(testStorage.getUsername())
-            .build();
+        KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage).build();
 
         Map<String, String> brokerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
 
@@ -775,9 +764,7 @@ class SecurityST extends AbstractST {
             KafkaTopicTemplates.topic(testStorage).build()
         );
 
-        KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage)
-            .withUsername(testStorage.getUsername())
-            .build();
+        KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage).build();
 
         List<Secret> secrets = kubeClient().listSecrets(testStorage.getNamespaceName()).stream()
             .filter(secret ->
@@ -1160,10 +1147,7 @@ class SecurityST extends AbstractST {
         );
 
         // (implicit) Configuration `acks=all` paired with Kafka's `min.insync.replicas=2` enforces there are at least 2 replicas with all produced data before test continues.
-        KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage)
-            .withUsername(testStorage.getUsername())
-            .build();
-
+        KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage).build();
         resourceManager.createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()), kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForInstantClientSuccess(testStorage);
 

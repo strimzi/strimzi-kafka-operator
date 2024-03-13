@@ -123,10 +123,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
 
         resourceManager.createResourceWithWait(KafkaUserTemplates.tlsUser(testStorage).build());
 
-        KafkaClients clients = ClientUtils.getInstantTlsClientBuilder(testStorage)
-            .withUsername(testStorage.getUsername())
-            .build();
-
+        KafkaClients clients = ClientUtils.getInstantTlsClientBuilder(testStorage).build();
         resourceManager.createResourceWithWait(clients.producerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForInstantProducerClientSuccess(testStorage);
 

@@ -376,6 +376,7 @@ public class ClientUtils {
      */
     public static KafkaClientsBuilder getInstantTlsClientBuilder(TestStorage testStorage) {
         return instantClientBuilderBase(testStorage)
+            .withUsername(testStorage.getUsername())
             .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()));
     }
 
