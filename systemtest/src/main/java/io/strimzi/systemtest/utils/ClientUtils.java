@@ -35,18 +35,49 @@ public class ClientUtils {
     // ensuring that object can not be created outside of class
     private ClientUtils() {}
 
-    // Both clients success
+    /**
+     * Waits for both the instant producer and consumer clients to succeed, automatically deleting the associated jobs afterward.
+     * {@link TestStorage#getProducerName()} is used for identifying producer Job and {@link TestStorage#getConsumerName()}
+     * for identifying consumer Job.
+     *
+     * @param testStorage The {@link TestStorage} instance containing details about the clients' names.
+     */
     public static void waitForInstantClientSuccess(TestStorage testStorage) {
         waitForInstantClientSuccess(testStorage, true);
     }
 
+    /**
+     * Waits for both the instant producer and consumer clients to succeed, optionally deleting jobs afterward.
+     * {@link TestStorage#getProducerName()} is used for identifying producer Job and
+     * {@link TestStorage#getConsumerName()} for identifying consumer Job.
+     *
+     * @param testStorage The {@link TestStorage} instance containing details about the clients' names.
+     * @param deleteAfterSuccess Indicates whether jobs should be deleted after successful completion.
+     */
     public static void waitForInstantClientSuccess(TestStorage testStorage, boolean deleteAfterSuccess) {
         waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName(), testStorage.getMessageCount(), deleteAfterSuccess);
     }
 
+    /**
+     * Waits for both the continuous producer and consumer clients to succeed, automatically deleting the associated jobs afterward.
+     * {@link TestStorage#getContinuousProducerName()} is used for identifying producer Job and
+     * {@link TestStorage#getContinuousConsumerName()} for identifying consumer Job. The timeout while waiting is directly proportional
+     * to the number of messages.
+     *
+     * @param testStorage The {@link TestStorage} instance containing details about the clients' names.
+     * @param messageCount The expected number of messages to be transmitted.
+     */
     public static void waitForContinuousClientSuccess(TestStorage testStorage, int messageCount) {
         waitForClientsSuccess(testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), testStorage.getNamespaceName(), messageCount, true);
     }
+
+    /**
+     * Waits for both the continuous producer and consumer clients to succeed, with default number of messages expected to be transmitted.
+     * {@link TestStorage#getContinuousProducerName()} is used for identifying producer Job and
+     * {@link TestStorage#getContinuousConsumerName()} for identifying consumer Job.
+     *
+     * @param testStorage The {@link TestStorage} instance containing details about the clients' names.
+     */
     public static void waitForContinuousClientSuccess(TestStorage testStorage) {
         waitForClientsSuccess(testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), testStorage.getNamespaceName(), testStorage.getContinuousMessageCount(), true);
     }
@@ -71,10 +102,25 @@ public class ClientUtils {
     }
 
     // Client success
+
+    /**
+     * Waits for the instant consumer client to succeed, automatically deleting the associated job afterward.
+     * {@link TestStorage#getProducerName()} is used for identifying producer Job and
+     * {@link TestStorage#getConsumerName()} for identifying consumer Job.
+     *
+     * @param testStorage The {@link TestStorage} instance containing details about the client's name.
+     */
     public static void waitForInstantConsumerClientSuccess(TestStorage testStorage) {
         waitForClientSuccess(testStorage.getConsumerName(), testStorage.getNamespaceName(), testStorage.getMessageCount());
     }
 
+    /**
+     * Waits for the instant producer client to succeed, automatically deleting the associated job afterward.
+     * {@link TestStorage#getProducerName()} is used for identifying producer Job and
+     * {@link TestStorage#getConsumerName()} for identifying consumer Job.
+     *
+     * @param testStorage The {@link TestStorage} instance containing details about the client's name.
+     */
     public static void waitForInstantProducerClientSuccess(TestStorage testStorage) {
         waitForClientSuccess(testStorage.getProducerName(), testStorage.getNamespaceName(), testStorage.getMessageCount());
     }
@@ -98,18 +144,45 @@ public class ClientUtils {
     }
 
     // Client timeouts
+
+    /**
+     * Waits only for instant producer to timeout, automatically deleting the associated job afterward.
+     * {@link TestStorage#getProducerName()} is used for identifying producer Job.
+     *
+     * @param testStorage The {@link TestStorage} instance containing details about the client's name.
+     */
     public static void waitForInstantProducerClientTimeout(TestStorage testStorage) {
         waitForInstantProducerClientTimeout(testStorage, true);
     }
 
+    /**
+     * Waits only for instant producer to timeout, optionally deleting jobs afterward.
+     * {@link TestStorage#getProducerName()} is used for identifying producer Job and
+     *
+     * @param testStorage The {@link TestStorage} instance contains details about client's name.
+     * @param deleteAfterSuccess Indicates whether producer job should be deleted after timeout.
+     */
     public static void waitForInstantProducerClientTimeout(TestStorage testStorage, boolean deleteAfterSuccess) {
         waitForClientTimeout(testStorage.getProducerName(), testStorage.getNamespaceName(), testStorage.getMessageCount(), deleteAfterSuccess);
     }
 
+    /**
+     * Waits only for instant consumer to timeout, automatically deleting the associated job afterward.
+     * {@link TestStorage#getConsumerName()} is used for identifying consumer Job.
+     *
+     * @param testStorage The {@link TestStorage} instance contains details about client's name.
+     */
     public static void waitForInstantConsumerClientTimeout(TestStorage testStorage) {
         waitForInstantConsumerClientTimeout(testStorage, true);
     }
 
+    /**
+     * Waits only for instant consumer to timeout, automatically deleting the associated job afterward.
+     * {@link TestStorage#getConsumerName()} is used for identifying consumer Job.
+     *
+     * @param testStorage The {@link TestStorage} instance contains details about client's name.
+     * @param deleteAfterSuccess Indicates whether consumer job should be deleted after timeout.
+     */
     public static void waitForInstantConsumerClientTimeout(TestStorage testStorage, boolean deleteAfterSuccess) {
         waitForClientTimeout(testStorage.getConsumerName(), testStorage.getNamespaceName(), testStorage.getMessageCount(), deleteAfterSuccess);
     }
@@ -142,6 +215,14 @@ public class ClientUtils {
     }
 
     // Both clients timeouts
+
+    /**
+     * Waits only for instant consumer and producer to timeout, automatically deleting the associated jobs afterward.
+     * {@link TestStorage#getProducerName()} is used for identifying producer Job and
+     * {@link TestStorage#getConsumerName()} for identifying consumer Job.
+     *
+     * @param testStorage The {@link TestStorage} instance contains details about client's name.
+     */
     public static void waitForInstantClientsTimeout(TestStorage testStorage) {
         waitForClientsTimeout(testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName(), testStorage.getMessageCount());
     }
@@ -255,6 +336,19 @@ public class ClientUtils {
 
     // instant client builders
 
+    /**
+     * Creates and configures a {@link KafkaClientsBuilder} instance for instant Kafka clients based on test storage settings.
+     * This base configuration sets up the namespace, message count, delay, topic name, producer name, and consumer name
+     * for Kafka clients. {@link TestStorage#getProducerName()} is used for naming producer Job and
+     * {@link TestStorage#getConsumerName()} for naming consumer Job. Finally, {@link TestStorage#getTopicName()}
+     * is used as Topic target by attempted message transition. The default message count is set to 100, and the delay in milliseconds
+     * is set to 0, indicating messages will be sent practically instantly. Returned builder can be modified as desired.
+     *
+     * @param testStorage The {@link TestStorage} instance containing configuration details
+     *
+     * @return A configured {@link KafkaClientsBuilder} instance ready for further customization or immediate use
+     *         for creating Kafka producer and consumer clients.
+     */
     private static KafkaClientsBuilder instantClientBuilderBase(TestStorage testStorage) {
         return new KafkaClientsBuilder()
             .withNamespaceName(testStorage.getNamespaceName())
@@ -265,11 +359,31 @@ public class ClientUtils {
             .withConsumerName(testStorage.getConsumerName());
     }
 
+    /**
+     * Generates a {@link KafkaClientsBuilder} for instant Kafka clients using plain communication (non-TLS),
+     * extending the base configuration with the Kafka cluster's plain bootstrap address.
+     * {@link TestStorage#getProducerName()} is used for naming producer Job and
+     * {@link TestStorage#getConsumerName()} for naming consumer Job. Finally,
+     * {@link TestStorage#getTopicName()} is used as Topic target by attempted message transition.
+     *
+     * @param testStorage The {@link TestStorage} instance providing necessary configurations.
+     * @return A configured {@link KafkaClientsBuilder} instance for instant clients with plain communication setup.
+     */
     public static KafkaClientsBuilder getInstantPlainClientBuilder(TestStorage testStorage) {
         return instantClientBuilderBase(testStorage)
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()));
     }
 
+    /**
+     * Generates a {@link KafkaClientsBuilder} for instant Kafka clients using TLS communication,
+     * extending the base configuration with the Kafka cluster's TLS bootstrap address.
+     * {@link TestStorage#getProducerName()} is used for naming producer Job and
+     * {@link TestStorage#getConsumerName()} for naming consumer Job. Finally,
+     * {@link TestStorage#getTopicName()} is used as Topic target by attempted message transition.
+     *
+     * @param testStorage The {@link TestStorage} instance providing necessary configurations.
+     * @return A configured {@link KafkaClientsBuilder} instance for instant clients with TLS communication setup.
+     */
     public static KafkaClientsBuilder getInstantTlsClientBuilder(TestStorage testStorage) {
         return instantClientBuilderBase(testStorage)
             .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()));
@@ -277,8 +391,21 @@ public class ClientUtils {
 
     // continuous client builders
 
-    private static KafkaClientsBuilder continuousClientBuilderBase(TestStorage testStorage) {
+    /**
+     * Creates a {@link KafkaClientsBuilder} for continuous Kafka clients using plain (non-TLS) communication,
+     * configuring it with properties specific to continuous operation scenarios. This includes setting up
+     * (default 300 messages), a delay between messages (1000 ms) making ideal transition last by default for around 5 minutes.
+     * {@link TestStorage#getContinuousProducerName()}  is used for naming producer Job and
+     * {@link TestStorage#getContinuousConsumerName()}  for naming consumer Job. Finally,
+     * {@link TestStorage#getContinuousTopicName()}  is used as Topic target by attempted message transition.
+     *
+     * @param testStorage The {@link TestStorage} instance providing necessary configurations.
+     * @return A configured {@link KafkaClientsBuilder} instance ready for creating Kafka clients for continuous
+     * operations with plain communication, ready for further customization.
+     */
+    public static KafkaClientsBuilder getContinuousPlainClientBuilder(TestStorage testStorage) {
         return new KafkaClientsBuilder()
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
             .withNamespaceName(testStorage.getNamespaceName())
             .withMessageCount(testStorage.getContinuousMessageCount()) // default 300
             .withDelayMs(1000)
@@ -286,17 +413,6 @@ public class ClientUtils {
             .withProducerName(testStorage.getContinuousProducerName())
             .withConsumerName(testStorage.getContinuousConsumerName());
     }
-
-    public static KafkaClientsBuilder getContinuousPlainClientBuilder(TestStorage testStorage) {
-        return continuousClientBuilderBase(testStorage)
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()));
-    }
-
-    public static KafkaClientsBuilder getContinuousTlsClientBuilder(TestStorage testStorage) {
-        return continuousClientBuilderBase(testStorage)
-            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()));
-    }
-
 
 }
 
