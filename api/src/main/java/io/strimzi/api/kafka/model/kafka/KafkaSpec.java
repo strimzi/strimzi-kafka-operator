@@ -7,8 +7,6 @@ package io.strimzi.api.kafka.model.kafka;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.kafka.model.common.CertificateAuthority;
 import io.strimzi.api.kafka.model.common.Constants;
@@ -22,6 +20,7 @@ import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 import java.util.List;
 
@@ -36,7 +35,8 @@ import java.util.List;
 @JsonPropertyOrder({ "kafka", "zookeeper", "topicOperator",
     "entityOperator", "clusterCa", "clientsCa",
     "maintenance"})
-@EqualsAndHashCode
+@EqualsAndHashCode(callSuper = true)
+@ToString(callSuper = true)
 public class KafkaSpec extends Spec {
     private static final long serialVersionUID = 1L;
 
@@ -137,15 +137,4 @@ public class KafkaSpec extends Spec {
     public void setCruiseControl(CruiseControlSpec cruiseControl) {
         this.cruiseControl = cruiseControl;
     }
-
-    @Override
-    public String toString() {
-        YAMLMapper mapper = new YAMLMapper();
-        try {
-            return mapper.writeValueAsString(this);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
 }

@@ -14,6 +14,7 @@ import io.strimzi.api.kafka.model.common.template.ResourceTemplate;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -29,6 +30,7 @@ import java.util.Map;
 @JsonPropertyOrder({"podSet", "pod", "perPodService", "perPodRoute", "perPodIngress", "persistentVolumeClaim",
                     "kafkaContainer", "initContainer"})
 @EqualsAndHashCode(callSuper = true)
+@ToString(callSuper = true)
 public class KafkaNodePoolTemplate extends Spec {
     private static final long serialVersionUID = 1L;
 

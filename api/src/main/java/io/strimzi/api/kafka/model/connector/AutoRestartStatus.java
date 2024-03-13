@@ -26,7 +26,7 @@ import static java.util.Collections.emptyMap;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "count", "connectorName", "lastRestartTimestamp"})
 @EqualsAndHashCode
-@ToString(callSuper = true)
+@ToString
 public class AutoRestartStatus implements UnknownPropertyPreserving, Serializable {
     private static final long serialVersionUID = 1L;
 

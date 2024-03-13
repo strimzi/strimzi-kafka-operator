@@ -12,6 +12,7 @@ import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 import java.util.List;
 import java.util.Map;
@@ -25,7 +26,8 @@ import java.util.Map;
 )
 @JsonPropertyOrder({"type", "size", "storageClass", "selector", "deleteClaim"})
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-@EqualsAndHashCode
+@EqualsAndHashCode(callSuper = true)
+@ToString(callSuper = true)
 public class PersistentClaimStorage extends SingleVolumeStorage {
 
     private static final long serialVersionUID = 1L;

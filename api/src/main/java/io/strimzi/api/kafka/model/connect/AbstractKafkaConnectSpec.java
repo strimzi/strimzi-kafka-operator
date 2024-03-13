@@ -26,6 +26,7 @@ import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 @Buildable(
         editableEnabled = false,
@@ -37,6 +38,7 @@ import lombok.EqualsAndHashCode;
     "logging", "clientRackInitImage", "rack", "metricsConfig", "tracing",
     "template", "externalConfiguration" })
 @EqualsAndHashCode(doNotUseGetters = true, callSuper = true)
+@ToString(callSuper = true)
 public abstract class AbstractKafkaConnectSpec extends Spec implements HasConfigurableMetrics, HasConfigurableLogging, HasJmxOptions, HasLivenessProbe, HasReadinessProbe {
     private static final long serialVersionUID = 1L;
 

@@ -20,6 +20,7 @@ import io.strimzi.api.kafka.model.common.template.ResourceTemplate;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -37,6 +38,7 @@ import java.util.Map;
     "podDisruptionBudget", "serviceAccount", "clusterRoleBinding", "buildPod", "buildContainer", "buildConfig",
     "buildServiceAccount", "jmxSecret"})
 @EqualsAndHashCode
+@ToString
 public class KafkaConnectTemplate implements HasJmxSecretTemplate, Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
 
