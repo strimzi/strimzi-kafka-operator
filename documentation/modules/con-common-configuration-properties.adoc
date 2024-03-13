@@ -576,10 +576,10 @@ For such containers, the requested memory should be significantly higher than th
 ----
 jvmOptions:
   "-XX":
-    "UseG1GC": true
-    "MaxGCPauseMillis": 20
-    "InitiatingHeapOccupancyPercent": 35
-    "ExplicitGCInvokesConcurrent": true
+    "UseG1GC": "true"
+    "MaxGCPauseMillis": "20"
+    "InitiatingHeapOccupancyPercent": "35"
+    "ExplicitGCInvokesConcurrent": "true"
 ----
 
 .JVM options resulting from the `-XX` configuration
