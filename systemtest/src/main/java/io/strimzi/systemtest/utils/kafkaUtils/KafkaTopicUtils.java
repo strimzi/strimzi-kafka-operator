@@ -65,12 +65,10 @@ public class KafkaTopicUtils {
 
     public static void waitUntilTopicObservationGenerationIsPresent(final String namespaceName, final String topicName) {
         LOGGER.info("Waiting for KafkaTopic: {}/{} observation generation", namespaceName, topicName);
-        TestUtils.waitFor("KafkaTopic: " + namespaceName + "/" + topicName + " observation generation",
-                TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
-                () -> KafkaTopicResource.kafkaTopicClient().inNamespace(namespaceName).withName(topicName).get()
-                        .getStatus().getObservedGeneration() >= 0.0,
-                () -> LOGGER.info("KafkaTopic: {}/{} observation generation", namespaceName, topicName)
-        );
+        waitForCondition("KafkaTopic: " + namespaceName + "/" + topicName + " observation generation",
+                namespaceName, topicName,
+                kafkaTopic -> kafkaTopic.getStatus().getObservedGeneration() >= 0.0,
+                TestConstants.GLOBAL_CRUISE_CONTROL_TIMEOUT);
     }
 
     public static long topicObservationGeneration(final String namespaceName, final String topicName) {
@@ -316,26 +314,16 @@ public class KafkaTopicUtils {
      * @param topicName         The name of the KafkaTopic to check.
      * @param condition         A Predicate that takes a KafkaTopic and returns true if the condition is met.
      */
-    public static void waitForCondition(String waitDescription, String namespaceName, String topicName, Predicate<KafkaTopic> condition) {
+    private static void waitForCondition(String waitDescription, String namespaceName, String topicName,
+                                        Predicate<KafkaTopic> condition, long timeout) {
         LOGGER.info("Starting wait for condition: {}", waitDescription);
         TestUtils.waitFor(waitDescription,
-                TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.CRUISE_CONTROL_TRAIN_MODEL_TIMEOUT,
+                TestConstants.GLOBAL_POLL_INTERVAL, timeout,
                 () -> {
-                    KafkaTopic kafkaTopic = getKafkaTopic(namespaceName, topicName);
+                    KafkaTopic kafkaTopic = KafkaTopicResource.getKafkaTopic(namespaceName, topicName);
                     return condition.test(kafkaTopic);
                 });
         LOGGER.info("Condition '{}' met for KafkaTopic: {}/{}", waitDescription, namespaceName, topicName);
-    }
-
-    /**
-     * Retrieves a KafkaTopic object from the Kubernetes API.
-     *
-     * @param namespaceName     The Kubernetes namespace in which the KafkaTopic resides.
-     * @param topicName         The name of the KafkaTopic to retrieve.
-     * @return                  KafkaTopic The KafkaTopic object if found, otherwise null.
-     */
-    private static KafkaTopic getKafkaTopic(String namespaceName, String topicName) {
-        return KafkaTopicResource.kafkaTopicClient().inNamespace(namespaceName).withName(topicName).get();
     }
 
     /**
@@ -348,7 +336,8 @@ public class KafkaTopicUtils {
     public static void waitForReplicaChangeFailureDueToInsufficientBrokers(String namespaceName, String topicName, int targetReplicas) {
         waitForCondition("Replica change failure due to insufficient brokers",
                 namespaceName, topicName,
-                kafkaTopic -> checkReplicaChangeFailureDueToInsufficientBrokers(kafkaTopic, targetReplicas));
+                kafkaTopic -> checkReplicaChangeFailureDueToInsufficientBrokers(kafkaTopic, targetReplicas),
+                TestConstants.CRUISE_CONTROL_TRAIN_MODEL_TIMEOUT);
     }
 
     /**
@@ -401,7 +390,7 @@ public class KafkaTopicUtils {
                     }
                     successCounter[0] = 0; // reset counter if condition not met
                     return false;
-                });
+                }, TestConstants.GLOBAL_CRUISE_CONTROL_TIMEOUT);
     }
 
     /**
@@ -418,7 +407,7 @@ public class KafkaTopicUtils {
                     return "ongoing".equals(kafkaTopic.getStatus().getReplicasChange().getState().toValue());
                 }
                 return false;
-            });
+            }, TestConstants.GLOBAL_CRUISE_CONTROL_TIMEOUT);
     }
 
     /**
@@ -455,7 +444,7 @@ public class KafkaTopicUtils {
                     }
                     successCounter[0] = 0;
                     return false;
-                });
+                }, TestConstants.CRUISE_CONTROL_TRAIN_MODEL_TIMEOUT);
 
         LOGGER.info("Replica change resolved for KafkaTopic: {}/{}", namespaceName, topicName);
     }

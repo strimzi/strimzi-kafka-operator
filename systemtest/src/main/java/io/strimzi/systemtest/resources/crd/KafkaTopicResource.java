@@ -57,4 +57,15 @@ public class KafkaTopicResource implements ResourceType<KafkaTopic> {
     public static void replaceTopicResourceInSpecificNamespace(String resourceName, Consumer<KafkaTopic> editor, String namespaceName) {
         ResourceManager.replaceCrdResource(KafkaTopic.class, KafkaTopicList.class, resourceName, editor, namespaceName);
     }
+
+    /**
+     * Retrieves a KafkaTopic object from the Kubernetes API.
+     *
+     * @param namespaceName     The Kubernetes namespace in which the KafkaTopic resides.
+     * @param topicName         The name of the KafkaTopic to retrieve.
+     * @return                  KafkaTopic The KafkaTopic object if found, otherwise null.
+     */
+    public static KafkaTopic getKafkaTopic(String namespaceName, String topicName) {
+        return KafkaTopicResource.kafkaTopicClient().inNamespace(namespaceName).withName(topicName).get();
+    }
 }

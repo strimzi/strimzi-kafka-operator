@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest.operators.topic;
 
-import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
@@ -65,7 +64,7 @@ import static org.hamcrest.Matchers.containsString;
 
 public class TopicReplicasChangeST extends AbstractST {
 
-    private static final Logger LOGGER = LogManager.getLogger(TopicST.class);
+    private static final Logger LOGGER = LogManager.getLogger(TopicReplicasChangeST.class);
 
     private TestStorage sharedTestStorage;
     private String scraperPodName;
@@ -357,10 +356,11 @@ public class TopicReplicasChangeST extends AbstractST {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final int topicPartitions = 3;
         final int startingTopicReplicationFactor = 3;
-        final Pod eoPod = kubeClient().listPods(this.sharedTestStorage.getNamespaceName(),
+        final String eoPodName = kubeClient().listPods(this.sharedTestStorage.getNamespaceName(),
                         KafkaResource.getEntityOperatorLabelSelector(this.sharedTestStorage.getClusterName())).stream()
                 .findFirst()
-                .orElseThrow();
+                .orElseThrow()
+                .getMetadata().getName();
 
         final KafkaTopic kafkaTopic = KafkaTopicTemplates.topic(this.sharedTestStorage.getClusterName(), testStorage.getTopicName(), topicPartitions, startingTopicReplicationFactor, 1, this.sharedTestStorage.getNamespaceName()).build();
 
@@ -386,7 +386,7 @@ public class TopicReplicasChangeST extends AbstractST {
         Map<String, String> eoPods = DeploymentUtils.depSnapshot(this.sharedTestStorage.getNamespaceName(), KafkaResources.entityOperatorDeploymentName(this.sharedTestStorage.getClusterName()));
 
         // delete EntityOperator Pod during replicaChange process
-        kubeClient().deletePodWithName(this.sharedTestStorage.getNamespaceName(), eoPod.getMetadata().getName());
+        kubeClient().deletePodWithName(this.sharedTestStorage.getNamespaceName(), eoPodName);
 
         // we should see that KafkaTopic is ongoing
         KafkaTopicUtils.waitUntilReplicaChangeOngoing(this.sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
