@@ -2809,18 +2809,39 @@
       }
     },
     {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "custom": {
+            "align": null,
+            "filterable": true
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Log Size"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "decbytes"
+              }
+            ]
+          }
+        ]
       },
-      "fill": 1,
       "gridPos": {
         "h": 8,
         "w": 12,
@@ -2828,79 +2849,88 @@
         "y": 55
       },
       "id": 91,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 1,
       "links": [],
-      "nullPointMode": "null",
-      "paceLength": 10,
-      "percentage": false,
+      "options": {
+        "showHeader": true
+      },
       "pluginVersion": "7.3.7",
-      "pointradius": 5,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
       "targets": [
         {
           "expr": "kafka_log_log_size{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\",kubernetes_pod_name=~\"$strimzi_cluster_name-$kafka_broker\",topic=~\"$kafka_topic\",partition=~\"$kafka_partition\"}",
-          "format": "time_series",
-          "instant": false,
+          "format": "table",
+          "instant": true,
+          "interval": "",
           "intervalFactor": 1,
           "legendFormat": "{{topic}}:{{partition}}",
           "refId": "A"
         }
       ],
-      "thresholds": [],
       "timeFrom": null,
-      "timeRegions": [],
       "timeShift": null,
       "title": "Log Size",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
+      "transformations": [
         {
-          "format": "bytes",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "__name__": true,
+              "container": true,
+              "endpoint": true,
+              "instance": true,
+              "job": true,
+              "kubernetes_pod_name": true,
+              "namespace": true,
+              "node_ip": true,
+              "node_name": true,
+              "pod": true,
+              "strimzi_io_broker_role": true,
+              "strimzi_io_cluster": true,
+              "strimzi_io_component_type": true,
+              "strimzi_io_controller": true,
+              "strimzi_io_controller_name": true,
+              "strimzi_io_controller_role": true,
+              "strimzi_io_kind": true,
+              "strimzi_io_name": true,
+              "strimzi_io_pod_name": true,
+              "strimzi_io_pool_name": true
+            },
+            "indexByName": {
+              "Time": 0,
+              "Value": 23,
+              "__name__": 1,
+              "container": 3,
+              "endpoint": 4,
+              "instance": 5,
+              "job": 6,
+              "kubernetes_pod_name": 7,
+              "namespace": 8,
+              "node_ip": 9,
+              "node_name": 10,
+              "partition": 11,
+              "pod": 12,
+              "strimzi_io_broker_role": 13,
+              "strimzi_io_cluster": 14,
+              "strimzi_io_component_type": 15,
+              "strimzi_io_controller": 16,
+              "strimzi_io_controller_name": 17,
+              "strimzi_io_controller_role": 18,
+              "strimzi_io_kind": 19,
+              "strimzi_io_name": 20,
+              "strimzi_io_pod_name": 21,
+              "strimzi_io_pool_name": 22,
+              "topic": 2
+            },
+            "renameByName": {
+              "Value": "Log Size",
+              "partition": "Partition",
+              "strimzi_io_name": "",
+              "topic": "Topic"
+            }
+          }
         }
       ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
+      "type": "table"
     },
     {
       "aliasColors": {},
