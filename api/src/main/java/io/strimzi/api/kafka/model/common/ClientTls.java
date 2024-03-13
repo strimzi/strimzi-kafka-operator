@@ -58,11 +58,4 @@ public class ClientTls implements UnknownPropertyPreserving, Serializable {
         }
         this.additionalProperties.put(name, value);
     }
-
-    public String toVarString() {
-        Objects.requireNonNull(this.trustedCertificates, "trustedCertificates cannot be null");
-        return this.trustedCertificates.stream()
-                .map(certSecretSource -> certSecretSource.getSecretName() + "/" + certSecretSource.getCertificate())
-                .collect(Collectors.joining(";"));
-    }
 }

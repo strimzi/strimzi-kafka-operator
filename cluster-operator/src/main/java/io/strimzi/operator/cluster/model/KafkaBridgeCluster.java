@@ -423,8 +423,10 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
         if (tls != null) {
             varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BRIDGE_TLS, "true"));
             List<CertSecretSource> trustedCertificates = tls.getTrustedCertificates();
+
             if (trustedCertificates != null && !trustedCertificates.isEmpty()) {
-                varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BRIDGE_TRUSTED_CERTS, tls.toVarString()));
+                varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BRIDGE_TRUSTED_CERTS,
+                        ModelUtils.tlsToString(trustedCertificates)));
             }
         }
     }
