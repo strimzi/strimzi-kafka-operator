@@ -3,7 +3,7 @@
 // configuring/configuring.adoc
 
 [id='cruise-control-concepts-{context}']
-= Rebalancing clusters using Cruise Control
+= Using Cruise Control for cluster rebalancing
 
 include::../../modules/cruise-control/con-cruise-control-description.adoc[leveloffset=+1]
 
