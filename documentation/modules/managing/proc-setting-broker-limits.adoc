@@ -11,6 +11,9 @@ Use the _Kafka Static Quota_ plugin to set throughput and storage limits on brok
 You enable the plugin and set limits by configuring the `Kafka` resource.
 You can set a byte-rate threshold and storage quotas to put limits on the clients interacting with your brokers.
 
+NOTE: Metrics granularity always matches the quota granularity that the plugin is applying.
+For this reason, the plugin produces aggregated metrics, rather than per-client metrics as with the default Kafka quota plugin.
+
 You can set byte-rate thresholds for producer and consumer bandwidth.
 The total limit is distributed across all clients accessing the broker.
 For example, you can set a byte-rate threshold of 40 MBps for producers.
