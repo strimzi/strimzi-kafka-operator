@@ -50,6 +50,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -633,10 +634,6 @@ class CrdGenerator {
 
             checkClassOverrides(crdClass, "hashCode");
             hasAnyGetterAndAnySetter(crdClass);
-
-            if (!crdClass.isAnnotationPresent(JsonPropertyOrder.class)) {
-                err(crdClass + " is missing @JsonPropertyOrder");
-            }
         } else {
             for (Class<?> c : subtypes(crdClass)) {
                 hasAnyGetterAndAnySetter(c);
@@ -732,13 +729,31 @@ class CrdGenerator {
     }
 
     private Collection<Property> unionOfSubclassProperties(ApiVersion crApiVersion, Class<?> crdClass) {
+        JsonPropertyOrder order = crdClass.getAnnotation(JsonPropertyOrder.class);
+
         TreeMap<String, Property> result = new TreeMap<>();
         for (Class<?> subtype : Property.subtypes(crdClass)) {
-            result.putAll(properties(crApiVersion, subtype));
+            Map<String, Property> properties = properties(crApiVersion, subtype);
+            checkPropertiesInJsonPropertyOrder(subtype, properties.keySet());
+            result.putAll(properties);
         }
-        result.putAll(properties(crApiVersion, crdClass));
-        JsonPropertyOrder order = crdClass.getAnnotation(JsonPropertyOrder.class);
+
+        Map<String, Property> properties = properties(crApiVersion, crdClass);
+        checkPropertiesInJsonPropertyOrder(crdClass, properties.keySet());
+        result.putAll(properties);
+
         return sortedProperties(order != null ? order.value() : null, result).values();
+    }
+
+    private void checkPropertiesInJsonPropertyOrder(Class<?> crdClass, Set<String> properties) {
+        if (!isAbstract(crdClass.getModifiers())) {
+            List<String> expectedOrder = asList(crdClass.getAnnotation(JsonPropertyOrder.class).value());
+            for (String property : properties) {
+                if (!expectedOrder.contains(property)) {
+                    err(crdClass + " has a property " + property + " which is not in the @JsonPropertyOrder");
+                }
+            }
+        }
     }
 
     private ArrayNode buildSchemaRequired(ApiVersion crApiVersion, Class<?> crdClass) {
