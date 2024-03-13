@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import io.strimzi.test.k8s.cluster.Kind;
 import io.strimzi.test.k8s.cluster.KubeCluster;
 import io.strimzi.test.k8s.cluster.Microshift;
+import io.strimzi.test.k8s.cluster.Minikube;
 import io.strimzi.test.k8s.cluster.OpenShift;
 import io.strimzi.test.k8s.cmdClient.KubeCmdClient;
 import org.apache.logging.log4j.LogManager;
@@ -331,6 +332,10 @@ public class KubeClusterResource {
 
     public boolean isMicroShift() {
         return kubeClusterResource.cluster() instanceof Microshift;
+    }
+
+    public boolean isMinikube() {
+        return kubeClusterResource.cluster() instanceof Minikube;
     }
 
     /** Returns list of currently deployed resources */
