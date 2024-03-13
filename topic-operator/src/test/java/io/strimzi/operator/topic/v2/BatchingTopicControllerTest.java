@@ -264,7 +264,7 @@ class BatchingTopicControllerTest {
 
     @ParameterizedTest
     @ValueSource(booleans = { true, false })
-    public void replicasChangeShouldMoveFromNewToPending(boolean cruiseControlEnabled) {
+    public void replicasChangeShouldBeReconciled(boolean cruiseControlEnabled) {
         int replicationFactor = 1;
 
         // setup
@@ -410,7 +410,7 @@ class BatchingTopicControllerTest {
     }
 
     @Test
-    public void replicasChangeShouldCompleteCruiseControlRestarts() {
+    public void replicasChangeShouldCompleteWhenCruiseControlRestarts() {
         int replicationFactor = 1;
 
         // setup: pending with .spec.replicas == uniqueReplicationFactor
