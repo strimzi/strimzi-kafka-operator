@@ -22,7 +22,7 @@ import lombok.ToString;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({})
+@JsonPropertyOrder({"id", "sizeLimit", "type"})
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class EphemeralStorage extends SingleVolumeStorage {

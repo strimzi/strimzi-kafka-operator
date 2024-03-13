@@ -24,7 +24,8 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-@JsonPropertyOrder({ "generateCertificateAuthority", "generateSecretOwnerReference", "validityDays", "renewalDays" })
+@JsonPropertyOrder({ "generateCertificateAuthority", "generateSecretOwnerReference", "validityDays",
+    "renewalDays", "certificateExpirationPolicy" })
 @EqualsAndHashCode
 @ToString
 public class CertificateAuthority implements UnknownPropertyPreserving, Serializable {
@@ -35,8 +36,10 @@ public class CertificateAuthority implements UnknownPropertyPreserving, Serializ
     private boolean generateCertificateAuthority = true;
     private boolean generateSecretOwnerReference = true;
     private int renewalDays;
-    private Map<String, Object> additionalProperties = new HashMap<>(0);
     private CertificateExpirationPolicy certificateExpirationPolicy;
+
+    private Map<String, Object> additionalProperties = new HashMap<>(0);
+
     public static final int DEFAULT_CERTS_VALIDITY_DAYS = 365;
     public static final int DEFAULT_CERTS_RENEWAL_DAYS = 30;
 

@@ -25,12 +25,14 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({})
+@JsonPropertyOrder({"authentication"})
 @EqualsAndHashCode
 @ToString
 public class KafkaJmxOptions implements UnknownPropertyPreserving, Serializable {
     private static final long serialVersionUID = 1L;
+
     private KafkaJmxAuthentication authentication;
+
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Authentication configuration for connecting to the JMX port")

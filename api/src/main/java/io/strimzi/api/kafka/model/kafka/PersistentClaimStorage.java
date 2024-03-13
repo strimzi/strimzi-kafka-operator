@@ -24,7 +24,7 @@ import java.util.Map;
         editableEnabled = false,
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
-@JsonPropertyOrder({"type", "size", "storageClass", "selector", "deleteClaim"})
+@JsonPropertyOrder({"id", "type", "size", "class", "selector", "deleteClaim", "overrides"})
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
@@ -37,8 +37,6 @@ public class PersistentClaimStorage extends SingleVolumeStorage {
     private Map<String, String> selector;
     private boolean deleteClaim;
     private List<PersistentClaimStorageOverride> overrides;
-
-    private Integer id;
 
     @Description("Must be `" + TYPE_PERSISTENT_CLAIM + "`")
     @Override

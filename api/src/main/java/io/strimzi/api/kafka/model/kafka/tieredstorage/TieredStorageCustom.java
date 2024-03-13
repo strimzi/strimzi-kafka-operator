@@ -23,7 +23,7 @@ import lombok.ToString;
     builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({})
+@JsonPropertyOrder({"type", "remoteStorageManager"})
 @EqualsAndHashCode
 @ToString
 public class TieredStorageCustom extends TieredStorage {

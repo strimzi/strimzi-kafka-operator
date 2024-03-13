@@ -27,7 +27,7 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({})
+@JsonPropertyOrder({"topologyKey"})
 @EqualsAndHashCode
 @ToString
 public class Rack implements UnknownPropertyPreserving, Serializable {
@@ -35,6 +35,7 @@ public class Rack implements UnknownPropertyPreserving, Serializable {
     private static final long serialVersionUID = 1L;
 
     private String topologyKey;
+
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     public Rack() {

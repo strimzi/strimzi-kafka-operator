@@ -26,7 +26,7 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-@JsonPropertyOrder({})
+@JsonPropertyOrder({"name", "valueFrom"})
 @EqualsAndHashCode
 @ToString
 public class ExternalConfigurationEnv implements Serializable, UnknownPropertyPreserving {

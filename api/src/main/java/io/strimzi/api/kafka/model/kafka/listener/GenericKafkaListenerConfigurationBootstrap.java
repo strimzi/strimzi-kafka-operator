@@ -23,7 +23,8 @@ import java.util.Map;
  * Configures listener bootstrap configuration
  */
 @DescriptionFile
-@JsonPropertyOrder({"alternativeNames", "host", "dnsAnnotations", "nodePort", "loadBalancerIP"})
+@JsonPropertyOrder({"alternativeNames", "host", "dnsAnnotations", "nodePort", "loadBalancerIP",
+    "annotations", "labels"})
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Buildable(
     editableEnabled = false,

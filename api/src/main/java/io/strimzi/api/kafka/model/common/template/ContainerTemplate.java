@@ -30,7 +30,7 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({})
+@JsonPropertyOrder({"env", "securityContext"})
 @DescriptionFile
 @EqualsAndHashCode
 @ToString

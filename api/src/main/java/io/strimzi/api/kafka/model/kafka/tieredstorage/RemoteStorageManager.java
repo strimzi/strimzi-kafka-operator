@@ -26,15 +26,17 @@ import java.util.Map;
     builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({})
+@JsonPropertyOrder({"className", "classPath", "config"})
 @EqualsAndHashCode
 @ToString
 public class RemoteStorageManager implements UnknownPropertyPreserving, Serializable {
     private static final long serialVersionUID = 1L;
-    protected Map<String, Object> additionalProperties;
+
     private String className;
     private String classPath;
     private Map<String, String> config;
+
+    protected Map<String, Object> additionalProperties;
 
     @Override
     public Map<String, Object> getAdditionalProperties() {

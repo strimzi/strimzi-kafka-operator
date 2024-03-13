@@ -25,7 +25,7 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-@JsonPropertyOrder({})
+@JsonPropertyOrder({"secretKeyRef"})
 @EqualsAndHashCode
 @ToString
 public class PasswordSource implements Serializable, UnknownPropertyPreserving {

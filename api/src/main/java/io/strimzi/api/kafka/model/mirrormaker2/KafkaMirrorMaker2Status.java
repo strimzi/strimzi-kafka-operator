@@ -26,7 +26,8 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "conditions", "observedGeneration", "url" })
+@JsonPropertyOrder({ "conditions", "observedGeneration", "url", "connectors", "autoRestartStatuses",
+    "connectorPlugins", "labelSelector", "replicas" })
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaMirrorMaker2Status extends KafkaConnectStatus {

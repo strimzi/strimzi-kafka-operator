@@ -29,7 +29,7 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-@JsonPropertyOrder({})
+@JsonPropertyOrder({"name", "secret", "configMap"})
 @EqualsAndHashCode
 @ToString
 public class ExternalConfigurationVolumeSource implements Serializable, UnknownPropertyPreserving {
@@ -39,6 +39,7 @@ public class ExternalConfigurationVolumeSource implements Serializable, UnknownP
     private String name;
     private SecretVolumeSource secret;
     private ConfigMapVolumeSource configMap;
+
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Name of the volume which will be added to the Kafka Connect pods.")

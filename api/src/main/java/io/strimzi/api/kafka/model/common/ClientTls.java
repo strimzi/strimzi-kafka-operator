@@ -28,7 +28,7 @@ import static java.util.Collections.emptyMap;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({})
+@JsonPropertyOrder({"trustedCertificates"})
 @EqualsAndHashCode
 @ToString
 public class ClientTls implements UnknownPropertyPreserving, Serializable {

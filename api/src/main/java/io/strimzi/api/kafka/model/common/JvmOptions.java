@@ -26,7 +26,7 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-@JsonPropertyOrder({})
+@JsonPropertyOrder({"-XX", "-Xmx", "-Xms", "gcLoggingEnabled", "javaSystemProperties"})
 @EqualsAndHashCode
 @ToString
 public class JvmOptions implements UnknownPropertyPreserving, Serializable {
@@ -44,6 +44,7 @@ public class JvmOptions implements UnknownPropertyPreserving, Serializable {
     private boolean gcLoggingEnabled = DEFAULT_GC_LOGGING_ENABLED;
     private List<SystemProperty> javaSystemProperties;
     private Map<String, String> xx;
+
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @JsonProperty("-Xmx")

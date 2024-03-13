@@ -21,13 +21,11 @@ import lombok.ToString;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "image" })
+@JsonPropertyOrder({ "type", "image" })
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class ImageStreamOutput extends Output {
     private static final long serialVersionUID = 1L;
-
-    private String image;
 
     @Description("Must be `" + TYPE_IMAGESTREAM + "`")
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -40,11 +38,8 @@ public class ImageStreamOutput extends Output {
             "For example `my-custom-connect:latest`. " +
             "Required")
     @JsonProperty(required = true)
+    @Override
     public String getImage() {
         return super.getImage();
-    }
-
-    public void setImage(String image) {
-        super.setImage(image);
     }
 }

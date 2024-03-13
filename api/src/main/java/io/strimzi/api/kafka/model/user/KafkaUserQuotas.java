@@ -31,7 +31,7 @@ import static java.util.Collections.emptyMap;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({})
+@JsonPropertyOrder({"producerByteRate", "consumerByteRate", "requestPercentage", "controllerMutationRate"})
 @EqualsAndHashCode
 @ToString
 public class KafkaUserQuotas implements UnknownPropertyPreserving, Serializable {

@@ -22,7 +22,7 @@ import java.util.List;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({})
+@JsonPropertyOrder({"type", "volumes"})
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class JbodStorage extends Storage {

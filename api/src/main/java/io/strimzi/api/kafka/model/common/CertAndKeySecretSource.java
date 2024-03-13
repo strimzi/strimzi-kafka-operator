@@ -20,7 +20,7 @@ import lombok.ToString;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({})
+@JsonPropertyOrder({"key", "secretName", "certificate"})
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class CertAndKeySecretSource extends CertSecretSource {

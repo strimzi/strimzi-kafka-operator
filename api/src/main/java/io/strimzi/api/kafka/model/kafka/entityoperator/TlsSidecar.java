@@ -30,7 +30,7 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-@JsonPropertyOrder({})
+@JsonPropertyOrder({"image", "resources", "livenessProbe", "readinessProbe", "logLevel"})
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class TlsSidecar extends Sidecar implements HasLivenessProbe, HasReadinessProbe {

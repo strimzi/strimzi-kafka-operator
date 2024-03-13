@@ -28,7 +28,7 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-@JsonPropertyOrder({})
+@JsonPropertyOrder({"secretKeyRef", "configMapKeyRef"})
 @EqualsAndHashCode
 @ToString
 public class ExternalConfigurationEnvVarSource implements Serializable, UnknownPropertyPreserving {
@@ -37,6 +37,7 @@ public class ExternalConfigurationEnvVarSource implements Serializable, UnknownP
 
     private SecretKeySelector secretKeyRef;
     private ConfigMapKeySelector configMapKeyRef;
+
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     // TODO: We should make it possible to generate a CRD configuring that exactly one of secretKeyRef and configMapKeyRef has to be defined.
