@@ -14,6 +14,7 @@ import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -30,6 +31,7 @@ import java.util.Map;
 @JsonPropertyOrder({"metadata", "maxUnavailable"})
 @DescriptionFile
 @EqualsAndHashCode
+@ToString
 public class PodDisruptionBudgetTemplate implements HasMetadataTemplate, Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
 

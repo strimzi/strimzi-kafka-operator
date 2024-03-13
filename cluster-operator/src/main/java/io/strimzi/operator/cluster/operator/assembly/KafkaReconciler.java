@@ -200,7 +200,7 @@ public class KafkaReconciler {
         this.operatorNamespace = config.getOperatorNamespace();
         this.operatorNamespaceLabels = config.getOperatorNamespaceLabels();
         this.isNetworkPolicyGeneration = config.isNetworkPolicyGeneration();
-        this.isKafkaNodePoolsEnabled = config.featureGates().kafkaNodePoolsEnabled() && ReconcilerUtils.nodePoolsEnabled(kafkaCr);
+        this.isKafkaNodePoolsEnabled = ReconcilerUtils.nodePoolsEnabled(kafkaCr);
         this.pfa = pfa;
         this.imagePullPolicy = config.getImagePullPolicy();
         this.imagePullSecrets = config.getImagePullSecrets();

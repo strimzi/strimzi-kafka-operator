@@ -13,6 +13,7 @@ import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 import java.util.List;
 
@@ -25,7 +26,8 @@ import java.util.List;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@EqualsAndHashCode
+@EqualsAndHashCode(callSuper = true)
+@ToString(callSuper = true)
 public class KafkaClientAuthenticationOAuth extends KafkaClientAuthentication {
     private static final long serialVersionUID = 1L;
 

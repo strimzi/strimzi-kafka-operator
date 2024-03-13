@@ -10,6 +10,7 @@ import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -25,6 +26,7 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @JsonPropertyOrder({ "generateCertificateAuthority", "generateSecretOwnerReference", "validityDays", "renewalDays" })
 @EqualsAndHashCode
+@ToString
 public class CertificateAuthority implements UnknownPropertyPreserving, Serializable {
 
     private static final long serialVersionUID = 1L;

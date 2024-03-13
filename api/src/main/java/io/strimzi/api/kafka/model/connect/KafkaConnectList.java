@@ -5,10 +5,12 @@
 package io.strimzi.api.kafka.model.connect;
 
 import io.fabric8.kubernetes.api.model.DefaultKubernetesResourceList;
+import lombok.ToString;
 
 /**
  * A {@code DefaultKubernetesResourceList<KafkaConnectAssembly>} required for using Fabric8 CRD support.
  */
+@ToString(callSuper = true)
 public class KafkaConnectList extends DefaultKubernetesResourceList<KafkaConnect> {
     private static final long serialVersionUID = 1L;
 }

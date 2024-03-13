@@ -90,3 +90,6 @@ kubectl apply -f <kafka_configuration_file>
 +
 There is no change or rolling update.
 The resources remain identical to how they were before.
+
+. Remove the replicated properties from the `Kafka` custom resource.
+When the `KafkaNodePool` resource is in use, you can remove the properties that you copied to the `KafkaNodePool` resource, such as the `.spec.kafka.replicas` and `.spec.kafka.storage` properties.

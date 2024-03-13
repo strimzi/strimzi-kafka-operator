@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import io.strimzi.api.kafka.model.common.PasswordSecretSource;
 import io.strimzi.crdgenerator.annotations.Description;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 /**
  * Configures the Kafka client authentication using one of the possible SASL SCRAM_SHA_* methods in client based
@@ -15,6 +16,7 @@ import lombok.EqualsAndHashCode;
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @EqualsAndHashCode(callSuper = true)
+@ToString(callSuper = true)
 public abstract class KafkaClientAuthenticationScram extends KafkaClientAuthentication {
     private static final long serialVersionUID = 1L;
 

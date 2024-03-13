@@ -27,6 +27,7 @@ import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -45,6 +46,7 @@ import java.util.Map;
     "replicas", "image", "storage", "config", "livenessProbe", "readinessProbe", "jvmOptions", "jmxOptions", "resources",
     "metricsConfig", "logging", "template"})
 @EqualsAndHashCode
+@ToString
 public class ZookeeperClusterSpec implements HasConfigurableMetrics, HasConfigurableLogging, HasJmxOptions, HasLivenessProbe, HasReadinessProbe, UnknownPropertyPreserving, Serializable {
 
     private static final long serialVersionUID = 1L;

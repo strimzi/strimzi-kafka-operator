@@ -28,6 +28,7 @@ import io.strimzi.crdgenerator.annotations.OneOf;
 import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 @DescriptionFile
 @Buildable(
@@ -39,7 +40,8 @@ import lombok.EqualsAndHashCode;
     "version", "replicas", "image", "consumer", "producer", "resources", "whitelist", "include", "jvmOptions",
     "logging", "metricsConfig", "tracing", "template"})
 @OneOf({@OneOf.Alternative(@OneOf.Alternative.Property("include")), @OneOf.Alternative(@OneOf.Alternative.Property("whitelist"))})
-@EqualsAndHashCode
+@EqualsAndHashCode(callSuper = true)
+@ToString(callSuper = true)
 public class KafkaMirrorMakerSpec extends Spec implements HasConfigurableMetrics, HasConfigurableLogging, HasLivenessProbe, HasReadinessProbe {
     private static final long serialVersionUID = 1L;
 

@@ -11,6 +11,7 @@ import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 /**
  * Configures the Kafka client authentication using SASL SCRAM_SHA_256 in client based components
@@ -22,6 +23,7 @@ import lombok.EqualsAndHashCode;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @EqualsAndHashCode(callSuper = true)
+@ToString(callSuper = true)
 public class KafkaClientAuthenticationScramSha256 extends KafkaClientAuthenticationScram {
     private static final long serialVersionUID = 1L;
 

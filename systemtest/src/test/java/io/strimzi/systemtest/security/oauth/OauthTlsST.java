@@ -301,11 +301,11 @@ public class OauthTlsST extends OauthAbstractST {
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getTargetBrokerPoolName(), targetKafkaCluster, 1).build(),
-                KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getTargetControllerPoolName(), targetKafkaCluster, 1).build()
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getTargetBrokerPoolName(), targetKafkaCluster, 1).build(),
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getTargetControllerPoolName(), targetKafkaCluster, 1).build()
             )
         );
-        resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(targetKafkaCluster, 1, 1)
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(targetKafkaCluster, 1, 1)
             .editMetadata()
                 .withNamespace(Environment.TEST_SUITE_NAMESPACE)
             .endMetadata()
@@ -623,11 +623,11 @@ public class OauthTlsST extends OauthAbstractST {
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPool(Environment.TEST_SUITE_NAMESPACE, KafkaNodePoolResource.getBrokerPoolName(introspectionKafka), introspectionKafka, 1).build(),
-                KafkaNodePoolTemplates.controllerPool(Environment.TEST_SUITE_NAMESPACE, KafkaNodePoolResource.getControllerPoolName(introspectionKafka), introspectionKafka, 1).build()
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(Environment.TEST_SUITE_NAMESPACE, KafkaNodePoolResource.getBrokerPoolName(introspectionKafka), introspectionKafka, 1).build(),
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(Environment.TEST_SUITE_NAMESPACE, KafkaNodePoolResource.getControllerPoolName(introspectionKafka), introspectionKafka, 1).build()
             )
         );
-        resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(introspectionKafka, 1)
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(introspectionKafka, 1)
             .editMetadata()
                 .withNamespace(Environment.TEST_SUITE_NAMESPACE)
             .endMetadata()

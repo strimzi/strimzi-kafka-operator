@@ -26,7 +26,7 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "conditions", "observedGeneration", "sessionId", "optimizationResult" })
-@EqualsAndHashCode
+@EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaRebalanceStatus extends Status {
 

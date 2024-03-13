@@ -26,6 +26,7 @@ import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 @DescriptionFile
 @Buildable(
@@ -37,7 +38,8 @@ import lombok.EqualsAndHashCode;
     "replicas", "image", "bootstrapServers", "tls", "authentication", "http", "adminClient", "consumer",
     "producer", "resources", "jvmOptions", "logging", "clientRackInitImage", "rack",
     "enableMetrics", "livenessProbe", "readinessProbe", "template", "tracing"})
-@EqualsAndHashCode
+@EqualsAndHashCode(callSuper = true)
+@ToString(callSuper = true)
 public class KafkaBridgeSpec extends Spec implements HasConfigurableLogging, HasLivenessProbe, HasReadinessProbe {
     private static final long serialVersionUID = 1L;
     private static final int DEFAULT_REPLICAS = 1;

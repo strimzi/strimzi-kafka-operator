@@ -3,6 +3,8 @@
 ## 0.41.0
 
 * Added support for topic replication factor change to the Unidirectional Topic Operator when Cruise Control integration is enabled.
+* The `KafkaNodePools` feature gate moves to GA stage and is permanently enabled without the possibility to disable it.
+  To use the Kafka Node Pool resources, you still need to use the `strimzi.io/node-pools: enabled` annotation on the `Kafka` custom resources.
 * Added support for `custom` SASL config in standalone Topic Operator deployment to support alternate access controllers (i.e. `AWS_MSK_IAM`)
 
 ## 0.40.0

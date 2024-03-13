@@ -14,6 +14,7 @@ import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -29,6 +30,7 @@ import static java.util.Collections.emptyMap;
 @JsonPropertyOrder({"sourceCluster", "targetCluster", "sourceConnector", "heartbeatConnector", "checkpointConnector",
     "topicsPattern", "topicsBlacklistPattern", "topicsExcludePattern", "groupsPattern", "groupsBlacklistPattern", "groupsExcludePattern"})
 @EqualsAndHashCode
+@ToString
 public class KafkaMirrorMaker2MirrorSpec implements Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
 
