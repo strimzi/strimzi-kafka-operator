@@ -325,6 +325,15 @@ public class KubeClusterResource {
         return kubeClusterResource.cluster() instanceof OpenShift;
     }
 
+    /**
+     * Method determining if the cluster we are running tests on are "kind of" OpenShift
+     * That means either OpenShift or MicroShift
+     * @return boolean determining if we are running tests on OpenShift-like cluster
+     */
+    public boolean isOpenShiftLikeCluster() {
+        return isOpenShift() || isMicroShift();
+    }
+
     public boolean isKind() {
         return kubeClusterResource.cluster() instanceof Kind;
     }
