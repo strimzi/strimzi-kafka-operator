@@ -6,6 +6,7 @@ package io.strimzi.api.kafka.model.connect;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.ConfigMapVolumeSource;
 import io.fabric8.kubernetes.api.model.SecretVolumeSource;
 import io.strimzi.api.kafka.model.common.Constants;
@@ -28,6 +29,7 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+@JsonPropertyOrder({})
 @EqualsAndHashCode
 @ToString
 public class ExternalConfigurationVolumeSource implements Serializable, UnknownPropertyPreserving {
