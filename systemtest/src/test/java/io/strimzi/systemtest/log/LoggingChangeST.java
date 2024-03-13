@@ -61,6 +61,7 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 import static io.strimzi.systemtest.TestConstants.BRIDGE;
@@ -688,18 +689,39 @@ class LoggingChangeST extends AbstractST {
             });
     }
 
+    /**
+     * @description This test case verifies dynamic changes in KafkaConnect logging level.
+     *
+     * @steps
+     *  1. - Deploy Kafka cluster and KafkaConnect cluster, the latter with Log level Off.
+     *  2. - Deploy all additional resources, scraper Pod and network policies.
+     *  3. - Verify that no logs are present in KafkaConnect Pods.
+     *  4. - Set inline log level to Debug in KafkaConnect custom resource.
+     *     - log4j.properties file for given cluster has log level Debug, and pods provide logs on respective level.
+     *  5. - Change inline log level from Debug to Info in KafkaConnect custom resource.
+     *     - log4j.properties file for given cluster has log level Info, and pods provide logs on respective level.
+     *  6. - Create ConfigMap with necessary data for external logging and modify KafkaConnect custom resource to use external logging setting log level Off.
+     *     - log4j.properties file for given cluster has log level Off, and pods provide no more logs.
+     * @usecase
+     *  - logging
+     *  - logging-change
+     *  - kafka-connect
+     */
     @ParallelNamespaceTest
     @Tag(ROLLING_UPDATE)
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
     void testDynamicallySetConnectLoggingLevels() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final Pattern log4jPatternDebugLevel = Pattern.compile("^(?<date>[\\d-]+) (?<time>[\\d:,]+) DEBUG (?<message>.+)");
+        final Pattern log4jPatternInfoLevel = Pattern.compile("^(?<date>[\\d-]+) (?<time>[\\d:,]+) INFO (?<message>.+)");
+
         InlineLogging ilOff = new InlineLogging();
         Map<String, String> loggers = new HashMap<>();
         loggers.put("connect.root.logger.level", "OFF");
         ilOff.setLoggers(loggers);
 
-        KafkaConnect connect = KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), testStorage.getNamespaceName(), 1)
+        KafkaConnect connect = KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), testStorage.getNamespaceName(), 3)
             .editSpec()
                 .withLogging(ilOff)
             .endSpec()
@@ -727,13 +749,13 @@ class LoggingChangeST extends AbstractST {
 
         String scraperPodName = PodUtils.getPodsByPrefixInNameWithDynamicWait(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
 
-        Map<String, String> connectSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getKafkaConnectSelector());
-        final String connectPodName = connectSnapshot.keySet().iterator().next();
+        Map<String, String> connectPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getKafkaConnectSelector());
 
-        LOGGER.info("Asserting if log is without records");
-        assertFalse(DEFAULT_LOG4J_PATTERN.matcher(StUtils.getLogFromPodByTime(testStorage.getNamespaceName(), connectPodName, "", "30s")).find());
+        LOGGER.info("Asserting if logs in connect Pods are without records in last 60 seconds");
+        connectPods.keySet().forEach(cPod -> assertFalse(DEFAULT_LOG4J_PATTERN.matcher(StUtils.getLogFromPodByTime(testStorage.getNamespaceName(), cPod, "", "60s")).find()));
 
         LOGGER.info("Changing rootLogger level to DEBUG with inline logging");
+
         InlineLogging ilDebug = new InlineLogging();
         loggers.put("connect.root.logger.level", "DEBUG");
         ilDebug.setLoggers(loggers);
@@ -742,17 +764,30 @@ class LoggingChangeST extends AbstractST {
             conn.getSpec().setLogging(ilDebug);
         }, testStorage.getNamespaceName());
 
-        LOGGER.info("Waiting for log4j.properties will contain desired settings");
-        TestUtils.waitFor("Logger change", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
-            () -> cmdKubeClient().namespace(testStorage.getNamespaceName()).execInPod(scraperPodName, "curl", "http://" + KafkaConnectResources.serviceName(testStorage.getClusterName())
-                        + ":8083/admin/loggers/root").out().contains("DEBUG")
-        );
+        // check if lines from Logs contain messages with log level DEBUG
+        Predicate<String> hasLogLevelDebug = connectLogs ->  connectLogs != null && !connectLogs.isEmpty() &&
+            log4jPatternDebugLevel.matcher(connectLogs).find();
 
-        TestUtils.waitFor("log to not be empty", Duration.ofMillis(100).toMillis(), TestConstants.SAFETY_RECONCILIATION_INTERVAL,
-            () -> {
-                String kcLog = StUtils.getLogFromPodByTime(testStorage.getNamespaceName(), connectPodName, "", "30s");
-                return kcLog != null && !kcLog.isEmpty() && DEFAULT_LOG4J_PATTERN.matcher(kcLog).find();
-            });
+        waitForConnectLogLevelChangePropagation(testStorage, connectPods, scraperPodName, hasLogLevelDebug, "DEBUG");
+
+        LOGGER.info("Changing rootLogger level from DEBUG to INFO with inline logging");
+
+        InlineLogging infoInlineLogging = new InlineLogging();
+        loggers.put("connect.root.logger.level", "INFO");
+        infoInlineLogging.setLoggers(loggers);
+
+        KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(testStorage.getClusterName(), conn -> {
+            conn.getSpec().setLogging(infoInlineLogging);
+        }, testStorage.getNamespaceName());
+
+        // check if lines from Logs contain log Level INFO but no longer DEBUG
+        Predicate<String> hasLogLevelInfo = connectLogs -> connectLogs != null && !connectLogs.isEmpty() &&
+            !log4jPatternDebugLevel.matcher(connectLogs).find() &&
+            log4jPatternInfoLevel.matcher(connectLogs).find();
+
+        waitForConnectLogLevelChangePropagation(testStorage, connectPods, scraperPodName, hasLogLevelInfo, "INFO");
+
+        // external logging
 
         String log4jConfig =
                 "log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender\n" +
@@ -788,23 +823,18 @@ class LoggingChangeST extends AbstractST {
             .build();
 
         LOGGER.info("Setting log level of Connect to OFF");
+
         // change to the external logging
         KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(testStorage.getClusterName(), conn -> {
             conn.getSpec().setLogging(connectXternalLogging);
         }, testStorage.getNamespaceName());
 
-        TestUtils.waitFor("Logger change", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
-            () -> cmdKubeClient().namespace(testStorage.getNamespaceName()).execInPod(scraperPodName, "curl", "http://" + KafkaConnectResources.serviceName(testStorage.getClusterName())
-                + ":8083/admin/loggers/root").out().contains("OFF")
-        );
+        // check if there are no more new lines in Logs
+        Predicate<String> hasLogLevelOff = connectLogs -> connectLogs != null && connectLogs.isEmpty();
 
-        TestUtils.waitFor("log to be empty", Duration.ofMillis(100).toMillis(), TestConstants.SAFETY_RECONCILIATION_INTERVAL,
-            () -> {
-                String kcLog = StUtils.getLogFromPodByTime(testStorage.getNamespaceName(), connectPodName, "", "30s");
-                return kcLog != null && kcLog.isEmpty() && !DEFAULT_LOG4J_PATTERN.matcher(kcLog).find();
-            });
+        waitForConnectLogLevelChangePropagation(testStorage, connectPods, scraperPodName, hasLogLevelOff, "OFF");
 
-        assertThat("Connect Pod should not roll", PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getKafkaConnectSelector()), equalTo(connectSnapshot));
+        assertThat("Connect Pod should not roll", PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getKafkaConnectSelector()), equalTo(connectPods));
     }
 
     @ParallelNamespaceTest
@@ -1632,6 +1662,32 @@ class LoggingChangeST extends AbstractST {
         }
         LOGGER.info("Waiting for Kafka pods to roll after change in logging properties config map");
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, brokerPods);
+    }
+
+    /**
+     * Waits for the propagation of log level changes within the Kafka Connect configuration and verifies the change across all specified Connect pods.
+     * This method first checks if the log level change is reflected in the Kafka Connect REST API's logger settings. Then, it validates
+     * that the new log level is being applied in the actual log outputs in last 60 seconds.
+     *
+     * @param testStorage      The {@link TestStorage} contains test details.
+     * @param connectPods      A map of Kafka Connect Pods.
+     * @param scraperPodName   The name of the pod used to perform network requests within the cluster.
+     * @param connectLogMatch  A {@link Predicate<String>} that tests log entries to confirm the presence of the new log level.
+     * @param logLevel         The desired log level (e.g., "INFO", "DEBUG") that the method waits to be propagated to the Kafka Connect
+     *                         configuration and reflected in the logs.
+     */
+    private static void waitForConnectLogLevelChangePropagation(TestStorage testStorage, Map<String, String> connectPods, String scraperPodName, Predicate<String> connectLogMatch, String logLevel) {
+        LOGGER.info("Waiting for log4j.properties will contain desired settings");
+        TestUtils.waitFor("Logger change", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
+            () -> cmdKubeClient().namespace(testStorage.getNamespaceName()).execInPod(scraperPodName, "curl", "http://" + KafkaConnectResources.serviceName(testStorage.getClusterName())
+                + ":8083/admin/loggers/root").out().contains(logLevel)
+        );
+
+        TestUtils.waitFor(String.format("wait till change in Log level %s takes place in actual Pods", logLevel), Duration.ofMillis(100).toMillis(), TestConstants.SAFETY_RECONCILIATION_INTERVAL,
+            () -> connectPods.keySet().stream()
+                .map(cPod -> StUtils.getLogFromPodByTime(testStorage.getNamespaceName(), cPod, "", "60s"))
+                .allMatch(connectLogMatch)
+        );
     }
 
     @BeforeAll
