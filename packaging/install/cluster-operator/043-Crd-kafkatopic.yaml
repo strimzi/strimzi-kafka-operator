@@ -57,6 +57,9 @@ spec:
           spec:
             type: object
             properties:
+              topicName:
+                type: string
+                description: The name of the topic. When absent this will default to the metadata.name of the topic. It is recommended to not set this unless the topic name is not a valid Kubernetes resource name.
               partitions:
                 type: integer
                 minimum: 1
@@ -70,9 +73,6 @@ spec:
                 x-kubernetes-preserve-unknown-fields: true
                 type: object
                 description: The topic configuration.
-              topicName:
-                type: string
-                description: The name of the topic. When absent this will default to the metadata.name of the topic. It is recommended to not set this unless the topic name is not a valid Kubernetes resource name.
             description: The specification of the topic.
           status:
             type: object
@@ -164,6 +164,9 @@ spec:
           spec:
             type: object
             properties:
+              topicName:
+                type: string
+                description: The name of the topic. When absent this will default to the metadata.name of the topic. It is recommended to not set this unless the topic name is not a valid Kubernetes resource name.
               partitions:
                 type: integer
                 minimum: 1
@@ -177,9 +180,6 @@ spec:
                 x-kubernetes-preserve-unknown-fields: true
                 type: object
                 description: The topic configuration.
-              topicName:
-                type: string
-                description: The name of the topic. When absent this will default to the metadata.name of the topic. It is recommended to not set this unless the topic name is not a valid Kubernetes resource name.
             description: The specification of the topic.
           status:
             type: object
@@ -271,6 +271,9 @@ spec:
           spec:
             type: object
             properties:
+              topicName:
+                type: string
+                description: The name of the topic. When absent this will default to the metadata.name of the topic. It is recommended to not set this unless the topic name is not a valid Kubernetes resource name.
               partitions:
                 type: integer
                 minimum: 1
@@ -284,9 +287,6 @@ spec:
                 x-kubernetes-preserve-unknown-fields: true
                 type: object
                 description: The topic configuration.
-              topicName:
-                type: string
-                description: The name of the topic. When absent this will default to the metadata.name of the topic. It is recommended to not set this unless the topic name is not a valid Kubernetes resource name.
             description: The specification of the topic.
           status:
             type: object

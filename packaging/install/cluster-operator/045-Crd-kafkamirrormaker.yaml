@@ -114,19 +114,19 @@ spec:
                       certificateAndKey:
                         type: object
                         properties:
-                          certificate:
-                            type: string
-                            description: The name of the file certificate in the Secret.
                           key:
                             type: string
                             description: The name of the private key in the Secret.
                           secretName:
                             type: string
                             description: The name of the Secret containing the certificate.
+                          certificate:
+                            type: string
+                            description: The name of the file certificate in the Secret.
                         required:
-                        - certificate
                         - key
                         - secretName
+                        - certificate
                         description: Reference to the `Secret` which holds the certificate and private key pair.
                       clientId:
                         type: string
@@ -168,15 +168,15 @@ spec:
                       passwordSecret:
                         type: object
                         properties:
-                          password:
-                            type: string
-                            description: The name of the key in the Secret under which the password is stored.
                           secretName:
                             type: string
                             description: The name of the Secret containing the password.
+                          password:
+                            type: string
+                            description: The name of the key in the Secret under which the password is stored.
                         required:
-                        - password
                         - secretName
+                        - password
                         description: Reference to the `Secret` which holds the password.
                       readTimeoutSeconds:
                         type: integer
@@ -202,15 +202,15 @@ spec:
                         items:
                           type: object
                           properties:
-                            certificate:
-                              type: string
-                              description: The name of the file certificate in the Secret.
                             secretName:
                               type: string
                               description: The name of the Secret containing the certificate.
+                            certificate:
+                              type: string
+                              description: The name of the file certificate in the Secret.
                           required:
-                          - certificate
                           - secretName
+                          - certificate
                         description: Trusted certificates for TLS connection to the OAuth server.
                       tokenEndpointUri:
                         type: string
@@ -230,10 +230,6 @@ spec:
                     required:
                     - type
                     description: Authentication configuration for connecting to the cluster.
-                  config:
-                    x-kubernetes-preserve-unknown-fields: true
-                    type: object
-                    description: "The MirrorMaker consumer config. Properties with the following prefixes cannot be set: ssl., bootstrap.servers, group.id, sasl., security., interceptor.classes (with the exception of: ssl.endpoint.identification.algorithm, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols)."
                   tls:
                     type: object
                     properties:
@@ -242,17 +238,21 @@ spec:
                         items:
                           type: object
                           properties:
-                            certificate:
-                              type: string
-                              description: The name of the file certificate in the Secret.
                             secretName:
                               type: string
                               description: The name of the Secret containing the certificate.
+                            certificate:
+                              type: string
+                              description: The name of the file certificate in the Secret.
                           required:
-                          - certificate
                           - secretName
+                          - certificate
                         description: Trusted certificates for TLS connection.
                     description: TLS configuration for connecting MirrorMaker to the cluster.
+                  config:
+                    x-kubernetes-preserve-unknown-fields: true
+                    type: object
+                    description: "The MirrorMaker consumer config. Properties with the following prefixes cannot be set: ssl., bootstrap.servers, group.id, sasl., security., interceptor.classes (with the exception of: ssl.endpoint.identification.algorithm, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols)."
                 required:
                 - bootstrapServers
                 - groupId
@@ -291,19 +291,19 @@ spec:
                       certificateAndKey:
                         type: object
                         properties:
-                          certificate:
-                            type: string
-                            description: The name of the file certificate in the Secret.
                           key:
                             type: string
                             description: The name of the private key in the Secret.
                           secretName:
                             type: string
                             description: The name of the Secret containing the certificate.
+                          certificate:
+                            type: string
+                            description: The name of the file certificate in the Secret.
                         required:
-                        - certificate
                         - key
                         - secretName
+                        - certificate
                         description: Reference to the `Secret` which holds the certificate and private key pair.
                       clientId:
                         type: string
@@ -345,15 +345,15 @@ spec:
                       passwordSecret:
                         type: object
                         properties:
-                          password:
-                            type: string
-                            description: The name of the key in the Secret under which the password is stored.
                           secretName:
                             type: string
                             description: The name of the Secret containing the password.
+                          password:
+                            type: string
+                            description: The name of the key in the Secret under which the password is stored.
                         required:
-                        - password
                         - secretName
+                        - password
                         description: Reference to the `Secret` which holds the password.
                       readTimeoutSeconds:
                         type: integer
@@ -379,15 +379,15 @@ spec:
                         items:
                           type: object
                           properties:
-                            certificate:
-                              type: string
-                              description: The name of the file certificate in the Secret.
                             secretName:
                               type: string
                               description: The name of the Secret containing the certificate.
+                            certificate:
+                              type: string
+                              description: The name of the file certificate in the Secret.
                           required:
-                          - certificate
                           - secretName
+                          - certificate
                         description: Trusted certificates for TLS connection to the OAuth server.
                       tokenEndpointUri:
                         type: string
@@ -419,15 +419,15 @@ spec:
                         items:
                           type: object
                           properties:
-                            certificate:
-                              type: string
-                              description: The name of the file certificate in the Secret.
                             secretName:
                               type: string
                               description: The name of the Secret containing the certificate.
+                            certificate:
+                              type: string
+                              description: The name of the file certificate in the Secret.
                           required:
-                          - certificate
                           - secretName
+                          - certificate
                         description: Trusted certificates for TLS connection.
                     description: TLS configuration for connecting MirrorMaker to the cluster.
                 required:
@@ -464,14 +464,14 @@ spec:
                       type: string
                     type: object
                     description: A map of -XX options to the JVM.
-                  "-Xms":
-                    type: string
-                    pattern: "^[0-9]+[mMgG]?$"
-                    description: -Xms option to to the JVM.
                   "-Xmx":
                     type: string
                     pattern: "^[0-9]+[mMgG]?$"
                     description: -Xmx option to to the JVM.
+                  "-Xms":
+                    type: string
+                    pattern: "^[0-9]+[mMgG]?$"
+                    description: -Xms option to to the JVM.
                   gcLoggingEnabled:
                     type: boolean
                     description: Specifies whether the Garbage Collection logging is enabled. The default is false.
@@ -1014,31 +1014,6 @@ spec:
                             value:
                               type: string
                         description: The pod's tolerations.
-                      priorityClassName:
-                        type: string
-                        description: 'The name of the priority class used to assign priority to the pods. '
-                      schedulerName:
-                        type: string
-                        description: "The name of the scheduler used to dispatch this `Pod`. If not specified, the default scheduler will be used."
-                      hostAliases:
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            hostnames:
-                              type: array
-                              items:
-                                type: string
-                            ip:
-                              type: string
-                        description: The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the Pod's hosts file if specified.
-                      tmpDirSizeLimit:
-                        type: string
-                        pattern: "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"
-                        description: Defines the total amount (for example `1Gi`) of local storage required for temporary EmptyDir volume (`/tmp`). Default value is `5Mi`.
-                      enableServiceLinks:
-                        type: boolean
-                        description: Indicates whether information about services should be injected into Pod's environment variables.
                       topologySpreadConstraints:
                         type: array
                         items:
@@ -1081,6 +1056,31 @@ spec:
                             whenUnsatisfiable:
                               type: string
                         description: The pod's topology spread constraints.
+                      priorityClassName:
+                        type: string
+                        description: 'The name of the priority class used to assign priority to the pods. '
+                      schedulerName:
+                        type: string
+                        description: "The name of the scheduler used to dispatch this `Pod`. If not specified, the default scheduler will be used."
+                      hostAliases:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            hostnames:
+                              type: array
+                              items:
+                                type: string
+                            ip:
+                              type: string
+                        description: The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the Pod's hosts file if specified.
+                      enableServiceLinks:
+                        type: boolean
+                        description: Indicates whether information about services should be injected into Pod's environment variables.
+                      tmpDirSizeLimit:
+                        type: string
+                        pattern: "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"
+                        description: Defines the total amount (for example `1Gi`) of local storage required for temporary EmptyDir volume (`/tmp`). Default value is `5Mi`.
                     description: Template for Kafka MirrorMaker `Pods`.
                   podDisruptionBudget:
                     type: object
@@ -1200,14 +1200,14 @@ spec:
               livenessProbe:
                 type: object
                 properties:
-                  failureThreshold:
-                    type: integer
-                    minimum: 1
-                    description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
                   initialDelaySeconds:
                     type: integer
                     minimum: 0
                     description: The initial delay before first the health is first checked. Default to 15 seconds. Minimum value is 0.
+                  timeoutSeconds:
+                    type: integer
+                    minimum: 1
+                    description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
                   periodSeconds:
                     type: integer
                     minimum: 1
@@ -1216,22 +1216,22 @@ spec:
                     type: integer
                     minimum: 1
                     description: Minimum consecutive successes for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness. Minimum value is 1.
-                  timeoutSeconds:
+                  failureThreshold:
                     type: integer
                     minimum: 1
-                    description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
+                    description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
                 description: Pod liveness checking.
               readinessProbe:
                 type: object
                 properties:
-                  failureThreshold:
-                    type: integer
-                    minimum: 1
-                    description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
                   initialDelaySeconds:
                     type: integer
                     minimum: 0
                     description: The initial delay before first the health is first checked. Default to 15 seconds. Minimum value is 0.
+                  timeoutSeconds:
+                    type: integer
+                    minimum: 1
+                    description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
                   periodSeconds:
                     type: integer
                     minimum: 1
@@ -1240,10 +1240,10 @@ spec:
                     type: integer
                     minimum: 1
                     description: Minimum consecutive successes for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness. Minimum value is 1.
-                  timeoutSeconds:
+                  failureThreshold:
                     type: integer
                     minimum: 1
-                    description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
+                    description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
                 description: Pod readiness checking.
             oneOf:
             - properties:
