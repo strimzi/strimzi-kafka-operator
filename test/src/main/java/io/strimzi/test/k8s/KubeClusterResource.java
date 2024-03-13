@@ -333,6 +333,7 @@ public class KubeClusterResource {
     public boolean isMicroShift() {
         return kubeClusterResource.cluster() instanceof Microshift;
     }
+
     public boolean isMinikube() {
         return kubeClusterResource.cluster() instanceof Minikube;
     }
