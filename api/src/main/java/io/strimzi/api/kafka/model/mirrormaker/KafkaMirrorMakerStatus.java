@@ -22,7 +22,7 @@ import lombok.ToString;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"conditions", "observedGeneration"})
-@EqualsAndHashCode
+@EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaMirrorMakerStatus extends Status {
     private static final long serialVersionUID = 1L;

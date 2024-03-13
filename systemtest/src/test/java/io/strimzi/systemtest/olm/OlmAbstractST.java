@@ -42,7 +42,7 @@ public class OlmAbstractST extends AbstractST {
     void doTestDeployExampleKafkaUser() {
         String userKafkaName = "user-kafka";
         // KafkaUser example needs Kafka with authorization
-        resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(userKafkaName, 1, 1)
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(userKafkaName, 1, 1)
             .editSpec()
                 .editKafka()
                     .withNewKafkaAuthorizationSimple()

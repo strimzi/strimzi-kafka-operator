@@ -5,10 +5,12 @@
 package io.strimzi.api.kafka.model.nodepool;
 
 import io.fabric8.kubernetes.api.model.DefaultKubernetesResourceList;
+import lombok.ToString;
 
 /**
  * A {@code DefaultKubernetesResourceList<KafkaNodePool>} required for using Fabric8 CRD support.
  */
+@ToString(callSuper = true)
 public class KafkaNodePoolList extends DefaultKubernetesResourceList<KafkaNodePool> {
     private static final long serialVersionUID = 1L;
 }

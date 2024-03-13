@@ -9,6 +9,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 /**
  * Represents a certificate and private key pair inside a Secret
@@ -19,6 +20,7 @@ import lombok.EqualsAndHashCode;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @EqualsAndHashCode(callSuper = true)
+@ToString(callSuper = true)
 public class CertAndKeySecretSource extends CertSecretSource {
     private static final long serialVersionUID = 1L;
 

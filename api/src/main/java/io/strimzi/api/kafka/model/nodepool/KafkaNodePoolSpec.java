@@ -17,6 +17,7 @@ import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 import java.util.List;
 
@@ -30,6 +31,7 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"replicas", "storage", "roles", "resources", "jvmOptions", "template"})
 @EqualsAndHashCode(callSuper = true)
+@ToString(callSuper = true)
 public class KafkaNodePoolSpec extends Spec {
     private static final long serialVersionUID = 1L;
 

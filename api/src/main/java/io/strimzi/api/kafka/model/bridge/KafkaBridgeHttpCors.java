@@ -12,6 +12,7 @@ import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -28,6 +29,7 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"allowedOrigins", "allowedMethods"})
 @EqualsAndHashCode
+@ToString
 public class KafkaBridgeHttpCors implements UnknownPropertyPreserving, Serializable {
     private static final long serialVersionUID = 1L;
 
@@ -66,14 +68,5 @@ public class KafkaBridgeHttpCors implements UnknownPropertyPreserving, Serializa
     @Override
     public void setAdditionalProperty(String name, Object value) {
         this.additionalProperties.put(name, value);
-    }
-
-    @Override
-    public String toString() {
-        return "KafkaBridgeHttpCors{" +
-            "allowedOrigins=" + allowedOrigins +
-            ", allowedMethods=" + allowedMethods +
-            ", additionalProperties=" + additionalProperties +
-            '}';
     }
 }

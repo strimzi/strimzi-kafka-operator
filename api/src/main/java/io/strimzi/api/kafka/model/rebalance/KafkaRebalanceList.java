@@ -5,10 +5,12 @@
 package io.strimzi.api.kafka.model.rebalance;
 
 import io.fabric8.kubernetes.api.model.DefaultKubernetesResourceList;
+import lombok.ToString;
 
 /**
  * A {@code DefaultKubernetesResourceList<KafkaRebalance>} required for using Fabric8 CRD support.
  */
+@ToString(callSuper = true)
 public class KafkaRebalanceList extends DefaultKubernetesResourceList<KafkaRebalance> {
     private static final long serialVersionUID = 1L;
 }

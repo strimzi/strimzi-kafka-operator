@@ -1,7 +1,26 @@
 apiVersion: kafka.strimzi.io/v1beta2
 kind: KafkaNodePool
 metadata:
-  name: pool-a
+  name: controller
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  replicas: 3
+  roles:
+    - controller
+  storage:
+    type: jbod
+    volumes:
+      - id: 0
+        type: persistent-claim
+        size: 20Gi
+        deleteClaim: false
+---
+
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaNodePool
+metadata:
+  name: broker
   labels:
     strimzi.io/cluster: my-cluster
 spec:
@@ -18,36 +37,16 @@ spec:
 ---
 
 apiVersion: kafka.strimzi.io/v1beta2
-kind: KafkaNodePool
-metadata:
-  name: pool-b
-  labels:
-    strimzi.io/cluster: my-cluster
-spec:
-  replicas: 3
-  roles:
-    - broker
-  storage:
-    type: jbod
-    volumes:
-      - id: 0
-        type: persistent-claim
-        size: 200Gi
-        deleteClaim: false
----
-
-apiVersion: kafka.strimzi.io/v1beta2
 kind: Kafka
 metadata:
   name: my-cluster
   annotations:
     strimzi.io/node-pools: enabled
+    strimzi.io/kraft: enabled
 spec:
   kafka:
-    version: 3.6.1
-    # The replicas field is required by the Kafka CRD schema while the KafkaNodePools feature gate is in alpha phase.
-    # But it will be ignored when Kafka Node Pools are used
-    replicas: 3
+    version: 3.7.0
+    metadataVersion: 3.7-IV4
     listeners:
       - name: plain
         port: 9092
@@ -63,22 +62,6 @@ spec:
       transaction.state.log.min.isr: 2
       default.replication.factor: 3
       min.insync.replicas: 2
-      inter.broker.protocol.version: "3.6"
-    # The storage field is required by the Kafka CRD schema while the KafkaNodePools feature gate is in alpha phase.
-    # But it will be ignored when Kafka Node Pools are used
-    storage:
-      type: jbod
-      volumes:
-      - id: 0
-        type: persistent-claim
-        size: 100Gi
-        deleteClaim: false
-  zookeeper:
-    replicas: 3
-    storage:
-      type: persistent-claim
-      size: 100Gi
-      deleteClaim: false
   entityOperator:
     topicOperator: {}
     userOperator: {}

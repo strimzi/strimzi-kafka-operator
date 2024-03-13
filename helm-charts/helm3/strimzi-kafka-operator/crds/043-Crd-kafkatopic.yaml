@@ -47,6 +47,14 @@ spec:
         openAPIV3Schema:
           type: object
           properties:
+            apiVersion:
+              type: string
+              description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources"
+            kind:
+              type: string
+              description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds"
+            metadata:
+              type: object
             spec:
               type: object
               properties:
@@ -97,6 +105,9 @@ spec:
                 topicName:
                   type: string
                   description: Topic name.
+                topicId:
+                  type: string
+                  description: "The topic's id. For a KafkaTopic with the ready condition, this will change only if the topic gets deleted and recreated with the same name."
               description: The status of the topic.
     - name: v1beta1
       served: true
@@ -124,6 +135,14 @@ spec:
         openAPIV3Schema:
           type: object
           properties:
+            apiVersion:
+              type: string
+              description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources"
+            kind:
+              type: string
+              description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds"
+            metadata:
+              type: object
             spec:
               type: object
               properties:
@@ -174,6 +193,9 @@ spec:
                 topicName:
                   type: string
                   description: Topic name.
+                topicId:
+                  type: string
+                  description: "The topic's id. For a KafkaTopic with the ready condition, this will change only if the topic gets deleted and recreated with the same name."
               description: The status of the topic.
     - name: v1alpha1
       served: true
@@ -201,6 +223,14 @@ spec:
         openAPIV3Schema:
           type: object
           properties:
+            apiVersion:
+              type: string
+              description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources"
+            kind:
+              type: string
+              description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds"
+            metadata:
+              type: object
             spec:
               type: object
               properties:
@@ -251,4 +281,7 @@ spec:
                 topicName:
                   type: string
                   description: Topic name.
+                topicId:
+                  type: string
+                  description: "The topic's id. For a KafkaTopic with the ready condition, this will change only if the topic gets deleted and recreated with the same name."
               description: The status of the topic.

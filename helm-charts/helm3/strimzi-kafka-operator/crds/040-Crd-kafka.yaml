@@ -39,6 +39,10 @@ spec:
           description: The state of the custom resource
           jsonPath: ".status.conditions[?(@.type==\"Ready\")].status"
           type: string
+        - name: Metadata State
+          description: The state of the cluster metadata
+          jsonPath: .status.kafkaMetadataState
+          type: string
         - name: Warnings
           description: Warnings related to the custom resource
           jsonPath: ".status.conditions[?(@.type==\"Warning\")].status"
@@ -47,6 +51,14 @@ spec:
         openAPIV3Schema:
           type: object
           properties:
+            apiVersion:
+              type: string
+              description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources"
+            kind:
+              type: string
+              description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds"
+            metadata:
+              type: object
             spec:
               type: object
               properties:
@@ -62,7 +74,7 @@ spec:
                     replicas:
                       type: integer
                       minimum: 1
-                      description: The number of pods in the cluster.
+                      description: The number of pods in the cluster. This property is required when node pools are not used.
                     image:
                       type: string
                       description: "The container image used for Kafka pods. If the property is not set, the default Kafka image version is determined based on the `version` configuration. The image names are specifically mapped to corresponding versions in the Cluster Operator configuration. Changing the Kafka image version does not automatically update the image versions for other components, such as Kafka Exporter. "
@@ -89,7 +101,7 @@ spec:
                               - nodeport
                               - ingress
                               - cluster-ip
-                            description: "Type of the listener. Currently the supported types are `internal`, `route`, `loadbalancer`, `nodeport` and `ingress`. \n\n* `internal` type exposes Kafka internally only within the Kubernetes cluster.\n* `route` type uses OpenShift Routes to expose Kafka.\n* `loadbalancer` type uses LoadBalancer type services to expose Kafka.\n* `nodeport` type uses NodePort type services to expose Kafka.\n* `ingress` type uses Kubernetes Nginx Ingress to expose Kafka with TLS passthrough.\n* `cluster-ip` type uses a per-broker `ClusterIP` service.\n"
+                            description: "Type of the listener. The supported types are as follows: \n\n* `internal` type exposes Kafka internally only within the Kubernetes cluster.\n* `route` type uses OpenShift Routes to expose Kafka.\n* `loadbalancer` type uses LoadBalancer type services to expose Kafka.\n* `nodeport` type uses NodePort type services to expose Kafka.\n* `ingress` type uses Kubernetes Nginx Ingress to expose Kafka with TLS passthrough.\n* `cluster-ip` type uses a per-broker `ClusterIP` service.\n"
                           tls:
                             type: boolean
                             description: Enables TLS encryption on the listener. This is a required property.
@@ -314,11 +326,13 @@ spec:
                                     type: string
                                     description: The loadbalancer is requested with the IP address specified in this field. This feature depends on whether the underlying cloud provider supports specifying the `loadBalancerIP` when a load balancer is created. This field is ignored if the cloud provider does not support the feature.This field can be used only with `loadbalancer` type listener.
                                   annotations:
-                                    x-kubernetes-preserve-unknown-fields: true
+                                    additionalProperties:
+                                      type: string
                                     type: object
                                     description: "Annotations that will be added to the `Ingress`, `Route`, or `Service` resource. You can use this field to configure DNS providers such as External DNS. This field can be used only with `loadbalancer`, `nodeport`, `route`, or `ingress` type listeners."
                                   labels:
-                                    x-kubernetes-preserve-unknown-fields: true
+                                    additionalProperties:
+                                      type: string
                                     type: object
                                     description: "Labels that will be added to the `Ingress`, `Route`, or `Service` resource. This field can be used only with `loadbalancer`, `nodeport`, `route`, or `ingress` type listeners."
                                 description: Bootstrap configuration.
@@ -346,11 +360,13 @@ spec:
                                       type: string
                                       description: The loadbalancer is requested with the IP address specified in this field. This feature depends on whether the underlying cloud provider supports specifying the `loadBalancerIP` when a load balancer is created. This field is ignored if the cloud provider does not support the feature.This field can be used only with `loadbalancer` type listener.
                                     annotations:
-                                      x-kubernetes-preserve-unknown-fields: true
+                                      additionalProperties:
+                                        type: string
                                       type: object
                                       description: "Annotations that will be added to the `Ingress` or `Service` resource. You can use this field to configure DNS providers such as External DNS. This field can be used only with `loadbalancer`, `nodeport`, or `ingress` type listeners."
                                     labels:
-                                      x-kubernetes-preserve-unknown-fields: true
+                                      additionalProperties:
+                                        type: string
                                       type: object
                                       description: "Labels that will be added to the `Ingress`, `Route`, or `Service` resource. This field can be used only with `loadbalancer`, `nodeport`, `route`, or `ingress` type listeners."
                                   required:
@@ -441,7 +457,8 @@ spec:
                                             items:
                                               type: string
                                     matchLabels:
-                                      x-kubernetes-preserve-unknown-fields: true
+                                      additionalProperties:
+                                        type: string
                                       type: object
                                 podSelector:
                                   type: object
@@ -460,7 +477,8 @@ spec:
                                             items:
                                               type: string
                                     matchLabels:
-                                      x-kubernetes-preserve-unknown-fields: true
+                                      additionalProperties:
+                                        type: string
                                       type: object
                             description: "List of peers which should be able to connect to this listener. Peers in this list are combined using a logical OR operation. If this field is empty or missing, all connections will be allowed for this listener. If this field is present and contains at least one item, the listener only allows the traffic which matches at least one item in this list."
                         required:
@@ -472,7 +490,7 @@ spec:
                     config:
                       x-kubernetes-preserve-unknown-fields: true
                       type: object
-                      description: "Kafka broker config properties with the following prefixes cannot be set: listeners, advertised., broker., listener., host.name, port, inter.broker.listener.name, sasl., ssl., security., password., log.dir, zookeeper.connect, zookeeper.set.acl, zookeeper.ssl, zookeeper.clientCnxnSocket, authorizer., super.user, cruise.control.metrics.topic, cruise.control.metrics.reporter.bootstrap.servers,node.id, process.roles, controller., metadata.log.dir (with the exception of: zookeeper.connection.timeout.ms, sasl.server.max.receive.size,ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols, ssl.secure.random.implementation,cruise.control.metrics.topic.num.partitions, cruise.control.metrics.topic.replication.factor, cruise.control.metrics.topic.retention.ms,cruise.control.metrics.topic.auto.create.retries, cruise.control.metrics.topic.auto.create.timeout.ms,cruise.control.metrics.topic.min.insync.replicas,controller.quorum.election.backoff.max.ms, controller.quorum.election.timeout.ms, controller.quorum.fetch.timeout.ms)."
+                      description: "Kafka broker config properties with the following prefixes cannot be set: listeners, advertised., broker., listener., host.name, port, inter.broker.listener.name, sasl., ssl., security., password., log.dir, zookeeper.connect, zookeeper.set.acl, zookeeper.ssl, zookeeper.clientCnxnSocket, authorizer., super.user, cruise.control.metrics.topic, cruise.control.metrics.reporter.bootstrap.servers, node.id, process.roles, controller., metadata.log.dir, zookeeper.metadata.migration.enable (with the exception of: zookeeper.connection.timeout.ms, sasl.server.max.receive.size, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols, ssl.secure.random.implementation, cruise.control.metrics.topic.num.partitions, cruise.control.metrics.topic.replication.factor, cruise.control.metrics.topic.retention.ms, cruise.control.metrics.topic.auto.create.retries, cruise.control.metrics.topic.auto.create.timeout.ms, cruise.control.metrics.topic.min.insync.replicas, controller.quorum.election.backoff.max.ms, controller.quorum.election.timeout.ms, controller.quorum.fetch.timeout.ms)."
                     storage:
                       type: object
                       properties:
@@ -499,12 +517,13 @@ spec:
                                 description: Id of the kafka broker (broker identifier).
                           description: Overrides for individual brokers. The `overrides` field allows to specify a different configuration for different brokers.
                         selector:
-                          x-kubernetes-preserve-unknown-fields: true
+                          additionalProperties:
+                            type: string
                           type: object
                           description: Specifies a specific persistent volume to use. It contains key:value pairs representing labels for selecting such a volume.
                         size:
                           type: string
-                          description: "When type=persistent-claim, defines the size of the persistent volume claim (i.e 1Gi). Mandatory when type=persistent-claim."
+                          description: "When `type=persistent-claim`, defines the size of the persistent volume claim, such as 100Gi. Mandatory when `type=persistent-claim`."
                         sizeLimit:
                           type: string
                           pattern: "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"
@@ -544,12 +563,13 @@ spec:
                                       description: Id of the kafka broker (broker identifier).
                                 description: Overrides for individual brokers. The `overrides` field allows to specify a different configuration for different brokers.
                               selector:
-                                x-kubernetes-preserve-unknown-fields: true
+                                additionalProperties:
+                                  type: string
                                 type: object
                                 description: Specifies a specific persistent volume to use. It contains key:value pairs representing labels for selecting such a volume.
                               size:
                                 type: string
-                                description: "When type=persistent-claim, defines the size of the persistent volume claim (i.e 1Gi). Mandatory when type=persistent-claim."
+                                description: "When `type=persistent-claim`, defines the size of the persistent volume claim, such as 100Gi. Mandatory when `type=persistent-claim`."
                               sizeLimit:
                                 type: string
                                 pattern: "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"
@@ -565,7 +585,7 @@ spec:
                           description: List of volumes as Storage objects representing the JBOD disks array.
                       required:
                         - type
-                      description: Storage configuration (disk). Cannot be updated.
+                      description: Storage configuration (disk). Cannot be updated. This property is required when node pools are not used.
                     authorization:
                       type: object
                       properties:
@@ -736,7 +756,8 @@ spec:
                       type: object
                       properties:
                         "-XX":
-                          x-kubernetes-preserve-unknown-fields: true
+                          additionalProperties:
+                            type: string
                           type: object
                           description: A map of -XX options to the JVM.
                         "-Xms":
@@ -825,7 +846,8 @@ spec:
                       type: object
                       properties:
                         loggers:
-                          x-kubernetes-preserve-unknown-fields: true
+                          additionalProperties:
+                            type: string
                           type: object
                           description: A Map from logger name to logger level.
                         type:
@@ -861,11 +883,13 @@ spec:
                               type: object
                               properties:
                                 labels:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Labels added to the Kubernetes resource.
                                 annotations:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Annotations added to the Kubernetes resource.
                               description: Metadata applied to the resource.
@@ -883,11 +907,13 @@ spec:
                               type: object
                               properties:
                                 labels:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Labels added to the Kubernetes resource.
                                 annotations:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Annotations added to the Kubernetes resource.
                               description: Metadata applied to the resource.
@@ -1063,8 +1089,17 @@ spec:
                                                           items:
                                                             type: string
                                                   matchLabels:
-                                                    x-kubernetes-preserve-unknown-fields: true
+                                                    additionalProperties:
+                                                      type: string
                                                     type: object
+                                              matchLabelKeys:
+                                                type: array
+                                                items:
+                                                  type: string
+                                              mismatchLabelKeys:
+                                                type: array
+                                                items:
+                                                  type: string
                                               namespaceSelector:
                                                 type: object
                                                 properties:
@@ -1082,7 +1117,8 @@ spec:
                                                           items:
                                                             type: string
                                                   matchLabels:
-                                                    x-kubernetes-preserve-unknown-fields: true
+                                                    additionalProperties:
+                                                      type: string
                                                     type: object
                                               namespaces:
                                                 type: array
@@ -1114,8 +1150,17 @@ spec:
                                                       items:
                                                         type: string
                                               matchLabels:
-                                                x-kubernetes-preserve-unknown-fields: true
+                                                additionalProperties:
+                                                  type: string
                                                 type: object
+                                          matchLabelKeys:
+                                            type: array
+                                            items:
+                                              type: string
+                                          mismatchLabelKeys:
+                                            type: array
+                                            items:
+                                              type: string
                                           namespaceSelector:
                                             type: object
                                             properties:
@@ -1133,7 +1178,8 @@ spec:
                                                       items:
                                                         type: string
                                               matchLabels:
-                                                x-kubernetes-preserve-unknown-fields: true
+                                                additionalProperties:
+                                                  type: string
                                                 type: object
                                           namespaces:
                                             type: array
@@ -1169,8 +1215,17 @@ spec:
                                                           items:
                                                             type: string
                                                   matchLabels:
-                                                    x-kubernetes-preserve-unknown-fields: true
+                                                    additionalProperties:
+                                                      type: string
                                                     type: object
+                                              matchLabelKeys:
+                                                type: array
+                                                items:
+                                                  type: string
+                                              mismatchLabelKeys:
+                                                type: array
+                                                items:
+                                                  type: string
                                               namespaceSelector:
                                                 type: object
                                                 properties:
@@ -1188,7 +1243,8 @@ spec:
                                                           items:
                                                             type: string
                                                   matchLabels:
-                                                    x-kubernetes-preserve-unknown-fields: true
+                                                    additionalProperties:
+                                                      type: string
                                                     type: object
                                               namespaces:
                                                 type: array
@@ -1220,8 +1276,17 @@ spec:
                                                       items:
                                                         type: string
                                               matchLabels:
-                                                x-kubernetes-preserve-unknown-fields: true
+                                                additionalProperties:
+                                                  type: string
                                                 type: object
+                                          matchLabelKeys:
+                                            type: array
+                                            items:
+                                              type: string
+                                          mismatchLabelKeys:
+                                            type: array
+                                            items:
+                                              type: string
                                           namespaceSelector:
                                             type: object
                                             properties:
@@ -1239,7 +1304,8 @@ spec:
                                                       items:
                                                         type: string
                                               matchLabels:
-                                                x-kubernetes-preserve-unknown-fields: true
+                                                additionalProperties:
+                                                  type: string
                                                 type: object
                                           namespaces:
                                             type: array
@@ -1311,7 +1377,8 @@ spec:
                                               items:
                                                 type: string
                                       matchLabels:
-                                        x-kubernetes-preserve-unknown-fields: true
+                                        additionalProperties:
+                                          type: string
                                         type: object
                                   matchLabelKeys:
                                     type: array
@@ -1338,11 +1405,13 @@ spec:
                               type: object
                               properties:
                                 labels:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Labels added to the Kubernetes resource.
                                 annotations:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Annotations added to the Kubernetes resource.
                               description: Metadata applied to the resource.
@@ -1369,11 +1438,13 @@ spec:
                               type: object
                               properties:
                                 labels:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Labels added to the Kubernetes resource.
                                 annotations:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Annotations added to the Kubernetes resource.
                               description: Metadata applied to the resource.
@@ -1400,11 +1471,13 @@ spec:
                               type: object
                               properties:
                                 labels:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Labels added to the Kubernetes resource.
                                 annotations:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Annotations added to the Kubernetes resource.
                               description: Metadata applied to the resource.
@@ -1416,11 +1489,13 @@ spec:
                               type: object
                               properties:
                                 labels:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Labels added to the Kubernetes resource.
                                 annotations:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Annotations added to the Kubernetes resource.
                               description: Metadata applied to the resource.
@@ -1432,11 +1507,13 @@ spec:
                               type: object
                               properties:
                                 labels:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Labels added to the Kubernetes resource.
                                 annotations:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Annotations added to the Kubernetes resource.
                               description: Metadata applied to the resource.
@@ -1448,11 +1525,13 @@ spec:
                               type: object
                               properties:
                                 labels:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Labels added to the Kubernetes resource.
                                 annotations:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Annotations added to the Kubernetes resource.
                               description: Metadata applied to the resource.
@@ -1464,11 +1543,13 @@ spec:
                               type: object
                               properties:
                                 labels:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Labels added to the Kubernetes resource.
                                 annotations:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Annotations added to the Kubernetes resource.
                               description: Metadata applied to the resource.
@@ -1480,11 +1561,13 @@ spec:
                               type: object
                               properties:
                                 labels:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Labels added to the Kubernetes resource.
                                 annotations:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Annotations added to the Kubernetes resource.
                               description: Metadata applied to the resource.
@@ -1496,11 +1579,13 @@ spec:
                               type: object
                               properties:
                                 labels:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Labels added to the Kubernetes resource.
                                 annotations:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Annotations added to the Kubernetes resource.
                               description: Metadata applied to the resource.
@@ -1512,11 +1597,13 @@ spec:
                               type: object
                               properties:
                                 labels:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Labels added to the Kubernetes resource.
                                 annotations:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Annotations added to the Kubernetes resource.
                               description: Metadata to apply to the `PodDisruptionBudgetTemplate` resource.
@@ -1680,11 +1767,13 @@ spec:
                               type: object
                               properties:
                                 labels:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Labels added to the Kubernetes resource.
                                 annotations:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Annotations added to the Kubernetes resource.
                               description: Metadata applied to the resource.
@@ -1696,11 +1785,13 @@ spec:
                               type: object
                               properties:
                                 labels:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Labels added to the Kubernetes resource.
                                 annotations:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Annotations added to the Kubernetes resource.
                               description: Metadata applied to the resource.
@@ -1712,11 +1803,13 @@ spec:
                               type: object
                               properties:
                                 labels:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Labels added to the Kubernetes resource.
                                 annotations:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Annotations added to the Kubernetes resource.
                               description: Metadata applied to the resource.
@@ -1728,11 +1821,13 @@ spec:
                               type: object
                               properties:
                                 labels:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Labels added to the Kubernetes resource.
                                 annotations:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Annotations added to the Kubernetes resource.
                               description: Metadata applied to the resource.
@@ -1744,20 +1839,46 @@ spec:
                               type: object
                               properties:
                                 labels:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Labels added to the Kubernetes resource.
                                 annotations:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Annotations added to the Kubernetes resource.
                               description: Metadata applied to the resource.
                           description: Template for Kafka `StrimziPodSet` resource.
                       description: Template for Kafka cluster resources. The template allows users to specify how the Kubernetes resources are generated.
+                    tieredStorage:
+                      type: object
+                      properties:
+                        remoteStorageManager:
+                          type: object
+                          properties:
+                            className:
+                              type: string
+                              description: The class name for the `RemoteStorageManager` implementation.
+                            classPath:
+                              type: string
+                              description: The class path for the `RemoteStorageManager` implementation.
+                            config:
+                              additionalProperties:
+                                type: string
+                              type: object
+                              description: "The additional configuration map for the `RemoteStorageManager` implementation. Keys will be automatically prefixed with `rsm.config.`, and added to Kafka broker configuration."
+                          description: Configuration for the Remote Storage Manager.
+                        type:
+                          type: string
+                          enum:
+                            - custom
+                          description: "Storage type, only 'custom' is supported at the moment."
+                      required:
+                        - type
+                      description: Configure the tiered storage feature for Kafka brokers.
                   required:
-                    - replicas
                     - listeners
-                    - storage
                   description: Configuration of the Kafka cluster.
                 zookeeper:
                   type: object
@@ -1795,12 +1916,13 @@ spec:
                                 description: Id of the kafka broker (broker identifier).
                           description: Overrides for individual brokers. The `overrides` field allows to specify a different configuration for different brokers.
                         selector:
-                          x-kubernetes-preserve-unknown-fields: true
+                          additionalProperties:
+                            type: string
                           type: object
                           description: Specifies a specific persistent volume to use. It contains key:value pairs representing labels for selecting such a volume.
                         size:
                           type: string
-                          description: "When type=persistent-claim, defines the size of the persistent volume claim (i.e 1Gi). Mandatory when type=persistent-claim."
+                          description: "When `type=persistent-claim`, defines the size of the persistent volume claim, such as 100Gi. Mandatory when `type=persistent-claim`."
                         sizeLimit:
                           type: string
                           pattern: "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"
@@ -1870,7 +1992,8 @@ spec:
                       type: object
                       properties:
                         "-XX":
-                          x-kubernetes-preserve-unknown-fields: true
+                          additionalProperties:
+                            type: string
                           type: object
                           description: A map of -XX options to the JVM.
                         "-Xms":
@@ -1959,7 +2082,8 @@ spec:
                       type: object
                       properties:
                         loggers:
-                          x-kubernetes-preserve-unknown-fields: true
+                          additionalProperties:
+                            type: string
                           type: object
                           description: A Map from logger name to logger level.
                         type:
@@ -1995,11 +2119,13 @@ spec:
                               type: object
                               properties:
                                 labels:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Labels added to the Kubernetes resource.
                                 annotations:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Annotations added to the Kubernetes resource.
                               description: Metadata applied to the resource.
@@ -2017,11 +2143,13 @@ spec:
                               type: object
                               properties:
                                 labels:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Labels added to the Kubernetes resource.
                                 annotations:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Annotations added to the Kubernetes resource.
                               description: Metadata applied to the resource.
@@ -2197,8 +2325,17 @@ spec:
                                                           items:
                                                             type: string
                                                   matchLabels:
-                                                    x-kubernetes-preserve-unknown-fields: true
+                                                    additionalProperties:
+                                                      type: string
                                                     type: object
+                                              matchLabelKeys:
+                                                type: array
+                                                items:
+                                                  type: string
+                                              mismatchLabelKeys:
+                                                type: array
+                                                items:
+                                                  type: string
                                               namespaceSelector:
                                                 type: object
                                                 properties:
@@ -2216,7 +2353,8 @@ spec:
                                                           items:
                                                             type: string
                                                   matchLabels:
-                                                    x-kubernetes-preserve-unknown-fields: true
+                                                    additionalProperties:
+                                                      type: string
                                                     type: object
                                               namespaces:
                                                 type: array
@@ -2248,8 +2386,17 @@ spec:
                                                       items:
                                                         type: string
                                               matchLabels:
-                                                x-kubernetes-preserve-unknown-fields: true
+                                                additionalProperties:
+                                                  type: string
                                                 type: object
+                                          matchLabelKeys:
+                                            type: array
+                                            items:
+                                              type: string
+                                          mismatchLabelKeys:
+                                            type: array
+                                            items:
+                                              type: string
                                           namespaceSelector:
                                             type: object
                                             properties:
@@ -2267,7 +2414,8 @@ spec:
                                                       items:
                                                         type: string
                                               matchLabels:
-                                                x-kubernetes-preserve-unknown-fields: true
+                                                additionalProperties:
+                                                  type: string
                                                 type: object
                                           namespaces:
                                             type: array
@@ -2303,8 +2451,17 @@ spec:
                                                           items:
                                                             type: string
                                                   matchLabels:
-                                                    x-kubernetes-preserve-unknown-fields: true
+                                                    additionalProperties:
+                                                      type: string
                                                     type: object
+                                              matchLabelKeys:
+                                                type: array
+                                                items:
+                                                  type: string
+                                              mismatchLabelKeys:
+                                                type: array
+                                                items:
+                                                  type: string
                                               namespaceSelector:
                                                 type: object
                                                 properties:
@@ -2322,7 +2479,8 @@ spec:
                                                           items:
                                                             type: string
                                                   matchLabels:
-                                                    x-kubernetes-preserve-unknown-fields: true
+                                                    additionalProperties:
+                                                      type: string
                                                     type: object
                                               namespaces:
                                                 type: array
@@ -2354,8 +2512,17 @@ spec:
                                                       items:
                                                         type: string
                                               matchLabels:
-                                                x-kubernetes-preserve-unknown-fields: true
+                                                additionalProperties:
+                                                  type: string
                                                 type: object
+                                          matchLabelKeys:
+                                            type: array
+                                            items:
+                                              type: string
+                                          mismatchLabelKeys:
+                                            type: array
+                                            items:
+                                              type: string
                                           namespaceSelector:
                                             type: object
                                             properties:
@@ -2373,7 +2540,8 @@ spec:
                                                       items:
                                                         type: string
                                               matchLabels:
-                                                x-kubernetes-preserve-unknown-fields: true
+                                                additionalProperties:
+                                                  type: string
                                                 type: object
                                           namespaces:
                                             type: array
@@ -2445,7 +2613,8 @@ spec:
                                               items:
                                                 type: string
                                       matchLabels:
-                                        x-kubernetes-preserve-unknown-fields: true
+                                        additionalProperties:
+                                          type: string
                                         type: object
                                   matchLabelKeys:
                                     type: array
@@ -2472,11 +2641,13 @@ spec:
                               type: object
                               properties:
                                 labels:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Labels added to the Kubernetes resource.
                                 annotations:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Annotations added to the Kubernetes resource.
                               description: Metadata applied to the resource.
@@ -2503,11 +2674,13 @@ spec:
                               type: object
                               properties:
                                 labels:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Labels added to the Kubernetes resource.
                                 annotations:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Annotations added to the Kubernetes resource.
                               description: Metadata applied to the resource.
@@ -2534,11 +2707,13 @@ spec:
                               type: object
                               properties:
                                 labels:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Labels added to the Kubernetes resource.
                                 annotations:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Annotations added to the Kubernetes resource.
                               description: Metadata applied to the resource.
@@ -2550,11 +2725,13 @@ spec:
                               type: object
                               properties:
                                 labels:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Labels added to the Kubernetes resource.
                                 annotations:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Annotations added to the Kubernetes resource.
                               description: Metadata to apply to the `PodDisruptionBudgetTemplate` resource.
@@ -2644,11 +2821,13 @@ spec:
                               type: object
                               properties:
                                 labels:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Labels added to the Kubernetes resource.
                                 annotations:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Annotations added to the Kubernetes resource.
                               description: Metadata applied to the resource.
@@ -2660,11 +2839,13 @@ spec:
                               type: object
                               properties:
                                 labels:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Labels added to the Kubernetes resource.
                                 annotations:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Annotations added to the Kubernetes resource.
                               description: Metadata applied to the resource.
@@ -2676,11 +2857,13 @@ spec:
                               type: object
                               properties:
                                 labels:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Labels added to the Kubernetes resource.
                                 annotations:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Annotations added to the Kubernetes resource.
                               description: Metadata applied to the resource.
@@ -2689,7 +2872,7 @@ spec:
                   required:
                     - replicas
                     - storage
-                  description: Configuration of the ZooKeeper cluster.
+                  description: Configuration of the ZooKeeper cluster. This section is required when running a ZooKeeper-based Apache Kafka cluster.
                 entityOperator:
                   type: object
                   properties:
@@ -2807,7 +2990,8 @@ spec:
                           type: object
                           properties:
                             loggers:
-                              x-kubernetes-preserve-unknown-fields: true
+                              additionalProperties:
+                                type: string
                               type: object
                               description: A Map from logger name to logger level.
                             type:
@@ -2837,7 +3021,8 @@ spec:
                           type: object
                           properties:
                             "-XX":
-                              x-kubernetes-preserve-unknown-fields: true
+                              additionalProperties:
+                                type: string
                               type: object
                               description: A map of -XX options to the JVM.
                             "-Xms":
@@ -2954,7 +3139,8 @@ spec:
                           type: object
                           properties:
                             loggers:
-                              x-kubernetes-preserve-unknown-fields: true
+                              additionalProperties:
+                                type: string
                               type: object
                               description: A Map from logger name to logger level.
                             type:
@@ -2984,7 +3170,8 @@ spec:
                           type: object
                           properties:
                             "-XX":
-                              x-kubernetes-preserve-unknown-fields: true
+                              additionalProperties:
+                                type: string
                               type: object
                               description: A map of -XX options to the JVM.
                             "-Xms":
@@ -3106,11 +3293,13 @@ spec:
                               type: object
                               properties:
                                 labels:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Labels added to the Kubernetes resource.
                                 annotations:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Annotations added to the Kubernetes resource.
                               description: Metadata applied to the resource.
@@ -3128,11 +3317,13 @@ spec:
                               type: object
                               properties:
                                 labels:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Labels added to the Kubernetes resource.
                                 annotations:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Annotations added to the Kubernetes resource.
                               description: Metadata applied to the resource.
@@ -3308,8 +3499,17 @@ spec:
                                                           items:
                                                             type: string
                                                   matchLabels:
-                                                    x-kubernetes-preserve-unknown-fields: true
+                                                    additionalProperties:
+                                                      type: string
                                                     type: object
+                                              matchLabelKeys:
+                                                type: array
+                                                items:
+                                                  type: string
+                                              mismatchLabelKeys:
+                                                type: array
+                                                items:
+                                                  type: string
                                               namespaceSelector:
                                                 type: object
                                                 properties:
@@ -3327,7 +3527,8 @@ spec:
                                                           items:
                                                             type: string
                                                   matchLabels:
-                                                    x-kubernetes-preserve-unknown-fields: true
+                                                    additionalProperties:
+                                                      type: string
                                                     type: object
                                               namespaces:
                                                 type: array
@@ -3359,8 +3560,17 @@ spec:
                                                       items:
                                                         type: string
                                               matchLabels:
-                                                x-kubernetes-preserve-unknown-fields: true
+                                                additionalProperties:
+                                                  type: string
                                                 type: object
+                                          matchLabelKeys:
+                                            type: array
+                                            items:
+                                              type: string
+                                          mismatchLabelKeys:
+                                            type: array
+                                            items:
+                                              type: string
                                           namespaceSelector:
                                             type: object
                                             properties:
@@ -3378,7 +3588,8 @@ spec:
                                                       items:
                                                         type: string
                                               matchLabels:
-                                                x-kubernetes-preserve-unknown-fields: true
+                                                additionalProperties:
+                                                  type: string
                                                 type: object
                                           namespaces:
                                             type: array
@@ -3414,8 +3625,17 @@ spec:
                                                           items:
                                                             type: string
                                                   matchLabels:
-                                                    x-kubernetes-preserve-unknown-fields: true
+                                                    additionalProperties:
+                                                      type: string
                                                     type: object
+                                              matchLabelKeys:
+                                                type: array
+                                                items:
+                                                  type: string
+                                              mismatchLabelKeys:
+                                                type: array
+                                                items:
+                                                  type: string
                                               namespaceSelector:
                                                 type: object
                                                 properties:
@@ -3433,7 +3653,8 @@ spec:
                                                           items:
                                                             type: string
                                                   matchLabels:
-                                                    x-kubernetes-preserve-unknown-fields: true
+                                                    additionalProperties:
+                                                      type: string
                                                     type: object
                                               namespaces:
                                                 type: array
@@ -3465,8 +3686,17 @@ spec:
                                                       items:
                                                         type: string
                                               matchLabels:
-                                                x-kubernetes-preserve-unknown-fields: true
+                                                additionalProperties:
+                                                  type: string
                                                 type: object
+                                          matchLabelKeys:
+                                            type: array
+                                            items:
+                                              type: string
+                                          mismatchLabelKeys:
+                                            type: array
+                                            items:
+                                              type: string
                                           namespaceSelector:
                                             type: object
                                             properties:
@@ -3484,7 +3714,8 @@ spec:
                                                       items:
                                                         type: string
                                               matchLabels:
-                                                x-kubernetes-preserve-unknown-fields: true
+                                                additionalProperties:
+                                                  type: string
                                                 type: object
                                           namespaces:
                                             type: array
@@ -3556,7 +3787,8 @@ spec:
                                               items:
                                                 type: string
                                       matchLabels:
-                                        x-kubernetes-preserve-unknown-fields: true
+                                        additionalProperties:
+                                          type: string
                                         type: object
                                   matchLabelKeys:
                                     type: array
@@ -3805,11 +4037,13 @@ spec:
                               type: object
                               properties:
                                 labels:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Labels added to the Kubernetes resource.
                                 annotations:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Annotations added to the Kubernetes resource.
                               description: Metadata applied to the resource.
@@ -3821,11 +4055,13 @@ spec:
                               type: object
                               properties:
                                 labels:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Labels added to the Kubernetes resource.
                                 annotations:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Annotations added to the Kubernetes resource.
                               description: Metadata applied to the resource.
@@ -3837,11 +4073,13 @@ spec:
                               type: object
                               properties:
                                 labels:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Labels added to the Kubernetes resource.
                                 annotations:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Annotations added to the Kubernetes resource.
                               description: Metadata applied to the resource.
@@ -3853,11 +4091,13 @@ spec:
                               type: object
                               properties:
                                 labels:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Labels added to the Kubernetes resource.
                                 annotations:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Annotations added to the Kubernetes resource.
                               description: Metadata applied to the resource.
@@ -4071,7 +4311,8 @@ spec:
                       type: object
                       properties:
                         "-XX":
-                          x-kubernetes-preserve-unknown-fields: true
+                          additionalProperties:
+                            type: string
                           type: object
                           description: A map of -XX options to the JVM.
                         "-Xms":
@@ -4102,7 +4343,8 @@ spec:
                       type: object
                       properties:
                         loggers:
-                          x-kubernetes-preserve-unknown-fields: true
+                          additionalProperties:
+                            type: string
                           type: object
                           description: A Map from logger name to logger level.
                         type:
@@ -4138,11 +4380,13 @@ spec:
                               type: object
                               properties:
                                 labels:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Labels added to the Kubernetes resource.
                                 annotations:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Annotations added to the Kubernetes resource.
                               description: Metadata applied to the resource.
@@ -4160,11 +4404,13 @@ spec:
                               type: object
                               properties:
                                 labels:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Labels added to the Kubernetes resource.
                                 annotations:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Annotations added to the Kubernetes resource.
                               description: Metadata applied to the resource.
@@ -4340,8 +4586,17 @@ spec:
                                                           items:
                                                             type: string
                                                   matchLabels:
-                                                    x-kubernetes-preserve-unknown-fields: true
+                                                    additionalProperties:
+                                                      type: string
                                                     type: object
+                                              matchLabelKeys:
+                                                type: array
+                                                items:
+                                                  type: string
+                                              mismatchLabelKeys:
+                                                type: array
+                                                items:
+                                                  type: string
                                               namespaceSelector:
                                                 type: object
                                                 properties:
@@ -4359,7 +4614,8 @@ spec:
                                                           items:
                                                             type: string
                                                   matchLabels:
-                                                    x-kubernetes-preserve-unknown-fields: true
+                                                    additionalProperties:
+                                                      type: string
                                                     type: object
                                               namespaces:
                                                 type: array
@@ -4391,8 +4647,17 @@ spec:
                                                       items:
                                                         type: string
                                               matchLabels:
-                                                x-kubernetes-preserve-unknown-fields: true
+                                                additionalProperties:
+                                                  type: string
                                                 type: object
+                                          matchLabelKeys:
+                                            type: array
+                                            items:
+                                              type: string
+                                          mismatchLabelKeys:
+                                            type: array
+                                            items:
+                                              type: string
                                           namespaceSelector:
                                             type: object
                                             properties:
@@ -4410,7 +4675,8 @@ spec:
                                                       items:
                                                         type: string
                                               matchLabels:
-                                                x-kubernetes-preserve-unknown-fields: true
+                                                additionalProperties:
+                                                  type: string
                                                 type: object
                                           namespaces:
                                             type: array
@@ -4446,8 +4712,17 @@ spec:
                                                           items:
                                                             type: string
                                                   matchLabels:
-                                                    x-kubernetes-preserve-unknown-fields: true
+                                                    additionalProperties:
+                                                      type: string
                                                     type: object
+                                              matchLabelKeys:
+                                                type: array
+                                                items:
+                                                  type: string
+                                              mismatchLabelKeys:
+                                                type: array
+                                                items:
+                                                  type: string
                                               namespaceSelector:
                                                 type: object
                                                 properties:
@@ -4465,7 +4740,8 @@ spec:
                                                           items:
                                                             type: string
                                                   matchLabels:
-                                                    x-kubernetes-preserve-unknown-fields: true
+                                                    additionalProperties:
+                                                      type: string
                                                     type: object
                                               namespaces:
                                                 type: array
@@ -4497,8 +4773,17 @@ spec:
                                                       items:
                                                         type: string
                                               matchLabels:
-                                                x-kubernetes-preserve-unknown-fields: true
+                                                additionalProperties:
+                                                  type: string
                                                 type: object
+                                          matchLabelKeys:
+                                            type: array
+                                            items:
+                                              type: string
+                                          mismatchLabelKeys:
+                                            type: array
+                                            items:
+                                              type: string
                                           namespaceSelector:
                                             type: object
                                             properties:
@@ -4516,7 +4801,8 @@ spec:
                                                       items:
                                                         type: string
                                               matchLabels:
-                                                x-kubernetes-preserve-unknown-fields: true
+                                                additionalProperties:
+                                                  type: string
                                                 type: object
                                           namespaces:
                                             type: array
@@ -4588,7 +4874,8 @@ spec:
                                               items:
                                                 type: string
                                       matchLabels:
-                                        x-kubernetes-preserve-unknown-fields: true
+                                        additionalProperties:
+                                          type: string
                                         type: object
                                   matchLabelKeys:
                                     type: array
@@ -4615,11 +4902,13 @@ spec:
                               type: object
                               properties:
                                 labels:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Labels added to the Kubernetes resource.
                                 annotations:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Annotations added to the Kubernetes resource.
                               description: Metadata applied to the resource.
@@ -4646,11 +4935,13 @@ spec:
                               type: object
                               properties:
                                 labels:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Labels added to the Kubernetes resource.
                                 annotations:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Annotations added to the Kubernetes resource.
                               description: Metadata to apply to the `PodDisruptionBudgetTemplate` resource.
@@ -4814,11 +5105,13 @@ spec:
                               type: object
                               properties:
                                 labels:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Labels added to the Kubernetes resource.
                                 annotations:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Annotations added to the Kubernetes resource.
                               description: Metadata applied to the resource.
@@ -4993,11 +5286,13 @@ spec:
                               type: object
                               properties:
                                 labels:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Labels added to the Kubernetes resource.
                                 annotations:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Annotations added to the Kubernetes resource.
                               description: Metadata applied to the resource.
@@ -5015,11 +5310,13 @@ spec:
                               type: object
                               properties:
                                 labels:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Labels added to the Kubernetes resource.
                                 annotations:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Annotations added to the Kubernetes resource.
                               description: Metadata applied to the resource.
@@ -5195,8 +5492,17 @@ spec:
                                                           items:
                                                             type: string
                                                   matchLabels:
-                                                    x-kubernetes-preserve-unknown-fields: true
+                                                    additionalProperties:
+                                                      type: string
                                                     type: object
+                                              matchLabelKeys:
+                                                type: array
+                                                items:
+                                                  type: string
+                                              mismatchLabelKeys:
+                                                type: array
+                                                items:
+                                                  type: string
                                               namespaceSelector:
                                                 type: object
                                                 properties:
@@ -5214,7 +5520,8 @@ spec:
                                                           items:
                                                             type: string
                                                   matchLabels:
-                                                    x-kubernetes-preserve-unknown-fields: true
+                                                    additionalProperties:
+                                                      type: string
                                                     type: object
                                               namespaces:
                                                 type: array
@@ -5246,8 +5553,17 @@ spec:
                                                       items:
                                                         type: string
                                               matchLabels:
-                                                x-kubernetes-preserve-unknown-fields: true
+                                                additionalProperties:
+                                                  type: string
                                                 type: object
+                                          matchLabelKeys:
+                                            type: array
+                                            items:
+                                              type: string
+                                          mismatchLabelKeys:
+                                            type: array
+                                            items:
+                                              type: string
                                           namespaceSelector:
                                             type: object
                                             properties:
@@ -5265,7 +5581,8 @@ spec:
                                                       items:
                                                         type: string
                                               matchLabels:
-                                                x-kubernetes-preserve-unknown-fields: true
+                                                additionalProperties:
+                                                  type: string
                                                 type: object
                                           namespaces:
                                             type: array
@@ -5301,8 +5618,17 @@ spec:
                                                           items:
                                                             type: string
                                                   matchLabels:
-                                                    x-kubernetes-preserve-unknown-fields: true
+                                                    additionalProperties:
+                                                      type: string
                                                     type: object
+                                              matchLabelKeys:
+                                                type: array
+                                                items:
+                                                  type: string
+                                              mismatchLabelKeys:
+                                                type: array
+                                                items:
+                                                  type: string
                                               namespaceSelector:
                                                 type: object
                                                 properties:
@@ -5320,7 +5646,8 @@ spec:
                                                           items:
                                                             type: string
                                                   matchLabels:
-                                                    x-kubernetes-preserve-unknown-fields: true
+                                                    additionalProperties:
+                                                      type: string
                                                     type: object
                                               namespaces:
                                                 type: array
@@ -5352,8 +5679,17 @@ spec:
                                                       items:
                                                         type: string
                                               matchLabels:
-                                                x-kubernetes-preserve-unknown-fields: true
+                                                additionalProperties:
+                                                  type: string
                                                 type: object
+                                          matchLabelKeys:
+                                            type: array
+                                            items:
+                                              type: string
+                                          mismatchLabelKeys:
+                                            type: array
+                                            items:
+                                              type: string
                                           namespaceSelector:
                                             type: object
                                             properties:
@@ -5371,7 +5707,8 @@ spec:
                                                       items:
                                                         type: string
                                               matchLabels:
-                                                x-kubernetes-preserve-unknown-fields: true
+                                                additionalProperties:
+                                                  type: string
                                                 type: object
                                           namespaces:
                                             type: array
@@ -5443,7 +5780,8 @@ spec:
                                               items:
                                                 type: string
                                       matchLabels:
-                                        x-kubernetes-preserve-unknown-fields: true
+                                        additionalProperties:
+                                          type: string
                                         type: object
                                   matchLabelKeys:
                                     type: array
@@ -5544,11 +5882,13 @@ spec:
                               type: object
                               properties:
                                 labels:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Labels added to the Kubernetes resource.
                                 annotations:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Annotations added to the Kubernetes resource.
                               description: Metadata applied to the resource.
@@ -5599,6 +5939,9 @@ spec:
                     enableSaramaLogging:
                       type: boolean
                       description: "Enable Sarama logging, a Go client library used by the Kafka Exporter."
+                    showAllOffsets:
+                      type: boolean
+                      description: "Whether show the offset/lag for all consumer group, otherwise, only show connected consumer groups."
                     template:
                       type: object
                       properties:
@@ -5609,11 +5952,13 @@ spec:
                               type: object
                               properties:
                                 labels:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Labels added to the Kubernetes resource.
                                 annotations:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Annotations added to the Kubernetes resource.
                               description: Metadata applied to the resource.
@@ -5631,11 +5976,13 @@ spec:
                               type: object
                               properties:
                                 labels:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Labels added to the Kubernetes resource.
                                 annotations:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Annotations added to the Kubernetes resource.
                               description: Metadata applied to the resource.
@@ -5811,8 +6158,17 @@ spec:
                                                           items:
                                                             type: string
                                                   matchLabels:
-                                                    x-kubernetes-preserve-unknown-fields: true
+                                                    additionalProperties:
+                                                      type: string
                                                     type: object
+                                              matchLabelKeys:
+                                                type: array
+                                                items:
+                                                  type: string
+                                              mismatchLabelKeys:
+                                                type: array
+                                                items:
+                                                  type: string
                                               namespaceSelector:
                                                 type: object
                                                 properties:
@@ -5830,7 +6186,8 @@ spec:
                                                           items:
                                                             type: string
                                                   matchLabels:
-                                                    x-kubernetes-preserve-unknown-fields: true
+                                                    additionalProperties:
+                                                      type: string
                                                     type: object
                                               namespaces:
                                                 type: array
@@ -5862,8 +6219,17 @@ spec:
                                                       items:
                                                         type: string
                                               matchLabels:
-                                                x-kubernetes-preserve-unknown-fields: true
+                                                additionalProperties:
+                                                  type: string
                                                 type: object
+                                          matchLabelKeys:
+                                            type: array
+                                            items:
+                                              type: string
+                                          mismatchLabelKeys:
+                                            type: array
+                                            items:
+                                              type: string
                                           namespaceSelector:
                                             type: object
                                             properties:
@@ -5881,7 +6247,8 @@ spec:
                                                       items:
                                                         type: string
                                               matchLabels:
-                                                x-kubernetes-preserve-unknown-fields: true
+                                                additionalProperties:
+                                                  type: string
                                                 type: object
                                           namespaces:
                                             type: array
@@ -5917,8 +6284,17 @@ spec:
                                                           items:
                                                             type: string
                                                   matchLabels:
-                                                    x-kubernetes-preserve-unknown-fields: true
+                                                    additionalProperties:
+                                                      type: string
                                                     type: object
+                                              matchLabelKeys:
+                                                type: array
+                                                items:
+                                                  type: string
+                                              mismatchLabelKeys:
+                                                type: array
+                                                items:
+                                                  type: string
                                               namespaceSelector:
                                                 type: object
                                                 properties:
@@ -5936,7 +6312,8 @@ spec:
                                                           items:
                                                             type: string
                                                   matchLabels:
-                                                    x-kubernetes-preserve-unknown-fields: true
+                                                    additionalProperties:
+                                                      type: string
                                                     type: object
                                               namespaces:
                                                 type: array
@@ -5968,8 +6345,17 @@ spec:
                                                       items:
                                                         type: string
                                               matchLabels:
-                                                x-kubernetes-preserve-unknown-fields: true
+                                                additionalProperties:
+                                                  type: string
                                                 type: object
+                                          matchLabelKeys:
+                                            type: array
+                                            items:
+                                              type: string
+                                          mismatchLabelKeys:
+                                            type: array
+                                            items:
+                                              type: string
                                           namespaceSelector:
                                             type: object
                                             properties:
@@ -5987,7 +6373,8 @@ spec:
                                                       items:
                                                         type: string
                                               matchLabels:
-                                                x-kubernetes-preserve-unknown-fields: true
+                                                additionalProperties:
+                                                  type: string
                                                 type: object
                                           namespaces:
                                             type: array
@@ -6059,7 +6446,8 @@ spec:
                                               items:
                                                 type: string
                                       matchLabels:
-                                        x-kubernetes-preserve-unknown-fields: true
+                                        additionalProperties:
+                                          type: string
                                         type: object
                                   matchLabelKeys:
                                     type: array
@@ -6086,11 +6474,13 @@ spec:
                               type: object
                               properties:
                                 labels:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Labels added to the Kubernetes resource.
                                 annotations:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Annotations added to the Kubernetes resource.
                               description: Metadata applied to the resource.
@@ -6176,11 +6566,13 @@ spec:
                               type: object
                               properties:
                                 labels:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Labels added to the Kubernetes resource.
                                 annotations:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  additionalProperties:
+                                    type: string
                                   type: object
                                   description: Annotations added to the Kubernetes resource.
                               description: Metadata applied to the resource.
@@ -6242,7 +6634,6 @@ spec:
                   description: "A list of time windows for maintenance tasks (that is, certificates renewal). Each time window is defined by a cron expression."
               required:
                 - kafka
-                - zookeeper
               description: "The specification of the Kafka and ZooKeeper clusters, and Topic Operator."
             status:
               type: object
@@ -6324,4 +6715,14 @@ spec:
                 kafkaMetadataVersion:
                   type: string
                   description: The KRaft metadata.version currently used by the Kafka cluster.
+                kafkaMetadataState:
+                  type: string
+                  enum:
+                    - ZooKeeper
+                    - KRaftMigration
+                    - KRaftDualWriting
+                    - KRaftPostMigration
+                    - PreKRaft
+                    - KRaft
+                  description: "Defines where cluster metadata are stored. Possible values are: ZooKeeper if the metadata are stored in ZooKeeper; KRaftMigration if the controllers are connected to ZooKeeper, brokers are being rolled with Zookeeper migration enabled and connection information to controllers, and the metadata migration process is running; KRaftDualWriting if the metadata migration process finished and the cluster is in dual-write mode; KRaftPostMigration if the brokers are fully KRaft-based but controllers being rolled to disconnect from ZooKeeper; PreKRaft if brokers and controller are fully KRaft-based, metadata are stored in KRaft, but ZooKeeper must be deleted; KRaft if the metadata are stored in KRaft."
               description: "The status of the Kafka and ZooKeeper clusters, and Topic Operator."
