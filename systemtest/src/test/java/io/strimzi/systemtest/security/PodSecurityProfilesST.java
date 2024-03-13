@@ -190,14 +190,9 @@ public class PodSecurityProfilesST extends AbstractST {
 
         LOGGER.info("Verify that Kafka cluster is usable and everything (MM1, MM2, and Connector) is working");
 
-        // kafka cluster itself
-        final KafkaClients clusterClient = ClientUtils.getInstantPlainClientBuilder(testStorage)
-            .withPodSecurityPolicy(PodSecurityProfile.RESTRICTED)
-            .build();
-
         resourceManager.createResourceWithWait(
-            clusterClient.producerStrimzi(),
-            clusterClient.consumerStrimzi()
+            kafkaClients.producerStrimzi(),
+            kafkaClients.consumerStrimzi()
         );
         ClientUtils.waitForInstantClientSuccess(testStorage);
 

@@ -96,7 +96,26 @@ public class FeatureGatesST extends AbstractST {
             KafkaResource.getLabelSelector(testStorage.getClusterName(), KafkaResources.zookeeperComponentName(testStorage.getClusterName())));
         assertThat("No ZooKeeper Pods should exist", zkPods.size(), is(0));
 
-        rollKafkaNodePoolWithActiveProducerConsumer(testStorage, kafkaReplicas);
+        // create KafkaTopic with replication factor on all brokers and min.insync replicas configuration to not loss data during Rolling Update.
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getContinuousTopicName(), 1, kafkaReplicas, kafkaReplicas - 1, testStorage.getNamespaceName()).build());
+
+        KafkaClients clients = ClientUtils.getContinuousPlainClientBuilder(testStorage).build();
+        LOGGER.info("Producing and Consuming messages with continuous clients: {}, {} in Namespace {}", testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), testStorage.getNamespaceName());
+        resourceManager.createResourceWithWait(
+            clients.producerStrimzi(),
+            clients.consumerStrimzi()
+        );
+
+        // Roll Kafka
+        LOGGER.info("Forcing rolling update of Kafka via read-only configuration change");
+        final Map<String, String> brokerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerPoolSelector());
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> k.getSpec().getKafka().getConfig().put("log.retention.hours", 72), testStorage.getNamespaceName());
+
+        LOGGER.info("Waiting for the next reconciliation to happen");
+        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerPoolSelector(), kafkaReplicas, brokerPods);
+
+        LOGGER.info("Waiting for clients to finish sending/receiving messages");
+        ClientUtils.waitForContinuousClientSuccess(testStorage);
     }
 
     /**
@@ -249,39 +268,5 @@ public class FeatureGatesST extends AbstractST {
             .withBindingsNamespaces(Arrays.asList(TestConstants.CO_NAMESPACE, Environment.TEST_SUITE_NAMESPACE))
             .createInstallation()
             .runInstallation();
-    }
-
-    /**
-     * Performs a rolling update of the Kafka (node pool) while maintaining active Kafka producer and consumer clients.
-     *
-     * @param testStorage      An instance of TestStorage containing test-related configuration
-     * @param kafkaReplicas    The number of Kafka replicas in the Kafka cluster, which is used to verify
-     *                         if the rolling update has been completed across all replicas     .
-     */
-    private void rollKafkaNodePoolWithActiveProducerConsumer(TestStorage testStorage, int kafkaReplicas) {
-
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getContinuousTopicName(), 3, 3, 2, testStorage.getNamespaceName()).build());
-
-        // setup clients to communicate for ~2 minutes
-        KafkaClients clients = ClientUtils.getContinuousPlainClientBuilder(testStorage)
-            .withMessageCount(120)
-            .build();
-
-        LOGGER.info("Producing and Consuming messages with continuous clients: {}, {} in Namespace {}", testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), testStorage.getNamespaceName());
-        resourceManager.createResourceWithWait(
-            clients.producerStrimzi(),
-            clients.consumerStrimzi()
-        );
-
-        // Roll Kafka
-        LOGGER.info("Forcing rolling update of Kafka via read-only configuration change");
-        final Map<String, String> brokerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerPoolSelector());
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> k.getSpec().getKafka().getConfig().put("log.retention.hours", 72), testStorage.getNamespaceName());
-
-        LOGGER.info("Waiting for the next reconciliation to happen");
-        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerPoolSelector(), kafkaReplicas, brokerPods);
-
-        LOGGER.info("Waiting for clients to finish sending/receiving messages");
-        ClientUtils.waitForContinuousClientSuccess(testStorage);
     }
 }

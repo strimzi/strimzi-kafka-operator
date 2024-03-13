@@ -377,7 +377,6 @@ class SecurityST extends AbstractST {
                 false);
     }
 
-    // TODO flaky fail from time to time on client timeouts
     @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
     @Tag(ROLLING_UPDATE)
@@ -1146,7 +1145,6 @@ class SecurityST extends AbstractST {
                 .build()
         );
 
-        // (implicit) Configuration `acks=all` paired with Kafka's `min.insync.replicas=2` enforces there are at least 2 replicas with all produced data before test continues.
         KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage).build();
         resourceManager.createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()), kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForInstantClientSuccess(testStorage);

@@ -184,7 +184,6 @@ public class NetworkPoliciesST extends AbstractST {
             .withTopicName(topicNameAccessedPlain)
             .build();
         KafkaClients kafkaClientsWithAccessTls = ClientUtils.getInstantTlsClientBuilder(testStorage)
-            .withUsername(testStorage.getUsername())
             .withProducerName(producerNameAccessedTls)
             .withConsumerName(consumerNameAccessedTls)
             .withTopicName(topicNameAccessedTls)
@@ -198,7 +197,6 @@ public class NetworkPoliciesST extends AbstractST {
             .withTopicName(topicNameDeniedPlain)
             .build();
         KafkaClients kafkaClientsWithoutAccessTls = ClientUtils.getInstantTlsClientBuilder(testStorage)
-            .withUsername(testStorage.getUsername())
             .withProducerName(producerNameDeniedTls)
             .withConsumerName(consumerNameDeniedTls)
             .withTopicName(topicNameDeniedTls)

@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.kafka;
 
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.user.KafkaUser;
@@ -176,8 +177,8 @@ public class KafkaVersionsST extends AbstractST {
 
         LOGGER.info("Sending and receiving messages via TLS");
 
-        kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage)
-            .withConsumerGroup(readConsumerGroup)
+        kafkaClients = new KafkaClientsBuilder(kafkaClients)
+            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
             .withUsername(kafkaUserReadWriteTls)
             .build();
 
