@@ -212,10 +212,8 @@ public interface TestConstants {
      * Feature gate related constants
      */
     String DONT_USE_KRAFT_MODE = "-UseKRaft";
-    String DONT_USE_KAFKA_NODE_POOLS = "-KafkaNodePools";
     // kept for upgrade/downgrade tests in KRaft
     String USE_KRAFT_MODE = "+UseKRaft";
-    String USE_KAFKA_NODE_POOLS = "+KafkaNodePools";
     String DONT_USE_UNIDIRECTIONAL_TOPIC_OPERATOR = "-UnidirectionalTopicOperator";
     String USE_UNIDIRECTIONAL_TOPIC_OPERATOR = "+UnidirectionalTopicOperator";
 
@@ -399,11 +397,15 @@ public interface TestConstants {
      */
     String ROUTE = "route";
 
-
     /**
      * Tag for tests that focus on migration from ZK to KRaft
      */
     String MIGRATION = "migration";
+
+    /**
+     * Tag for tests that uses Strimzi quotas plugin
+     */
+    String QUOTAS_PLUGIN = "quotasplugin";
 
     /**
      * Tag for tests, without ARM,AARCH64 support

@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import io.strimzi.test.k8s.cluster.Kind;
 import io.strimzi.test.k8s.cluster.KubeCluster;
 import io.strimzi.test.k8s.cluster.Microshift;
+import io.strimzi.test.k8s.cluster.Minikube;
 import io.strimzi.test.k8s.cluster.OpenShift;
 import io.strimzi.test.k8s.cmdClient.KubeCmdClient;
 import org.apache.logging.log4j.LogManager;
@@ -325,12 +326,25 @@ public class KubeClusterResource {
         return kubeClusterResource.cluster() instanceof OpenShift;
     }
 
+    /**
+     * Method determining if the cluster we are running tests on are "kind of" OpenShift
+     * That means either OpenShift or MicroShift
+     * @return boolean determining if we are running tests on OpenShift-like cluster
+     */
+    public boolean isOpenShiftLikeCluster() {
+        return isOpenShift() || isMicroShift();
+    }
+
     public boolean isKind() {
         return kubeClusterResource.cluster() instanceof Kind;
     }
 
     public boolean isMicroShift() {
         return kubeClusterResource.cluster() instanceof Microshift;
+    }
+
+    public boolean isMinikube() {
+        return kubeClusterResource.cluster() instanceof Minikube;
     }
 
     /** Returns list of currently deployed resources */

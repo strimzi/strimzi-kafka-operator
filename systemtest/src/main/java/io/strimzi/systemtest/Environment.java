@@ -143,6 +143,11 @@ public class Environment {
     public static final String STRIMZI_USE_KRAFT_IN_TESTS_ENV = "STRIMZI_USE_KRAFT_IN_TESTS";
 
     /**
+     * Controls whether tests should run with Node Pools or not
+     */
+    public static final String STRIMZI_USE_NODE_POOLS_IN_TESTS_ENV = "STRIMZI_USE_NODE_POOLS_IN_TESTS";
+
+    /**
      * Switch for changing NodePool roles in STs - separate roles or mixed roles
      */
     public static final String STRIMZI_NODE_POOLS_ROLE_MODE_ENV = "STRIMZI_NODE_POOLS_ROLE_MODE";
@@ -198,7 +203,7 @@ public class Environment {
     private static final String ST_CLIENTS_KAFKA_VERSION_DEFAULT = "3.7.0";
     public static final String TEST_CLIENTS_VERSION_DEFAULT = "0.7.0";
     public static final String ST_FILE_PLUGIN_URL_DEFAULT = "https://repo1.maven.org/maven2/org/apache/kafka/connect-file/" + ST_KAFKA_VERSION_DEFAULT + "/connect-file-" + ST_KAFKA_VERSION_DEFAULT + ".jar";
-    public static final String OLM_OPERATOR_VERSION_DEFAULT = "0.38.0";
+    public static final String OLM_OPERATOR_VERSION_DEFAULT = "0.40.0";
 
     public static final String IP_FAMILY_DEFAULT = "ipv4";
     public static final String IP_FAMILY_VERSION_6 = "ipv6";
@@ -219,6 +224,7 @@ public class Environment {
     public static final String STRIMZI_RBAC_SCOPE = getOrDefault(STRIMZI_RBAC_SCOPE_ENV, STRIMZI_RBAC_SCOPE_DEFAULT);
     public static final String STRIMZI_FEATURE_GATES = getOrDefault(STRIMZI_FEATURE_GATES_ENV, STRIMZI_FEATURE_GATES_DEFAULT);
     public static final boolean STRIMZI_USE_KRAFT_IN_TESTS = getOrDefault(STRIMZI_USE_KRAFT_IN_TESTS_ENV, Boolean::parseBoolean, false);
+    public static final boolean STRIMZI_USE_NODE_POOLS_IN_TESTS = getOrDefault(STRIMZI_USE_NODE_POOLS_IN_TESTS_ENV, Boolean::parseBoolean, false);
     public static final NodePoolsRoleMode STRIMZI_NODE_POOLS_ROLE_MODE = getOrDefault(STRIMZI_NODE_POOLS_ROLE_MODE_ENV, value -> NodePoolsRoleMode.valueOf(value.toUpperCase(Locale.ENGLISH)), NodePoolsRoleMode.SEPARATE);
 
     // variables for kafka client app images
@@ -298,7 +304,7 @@ public class Environment {
     }
 
     public static boolean isKafkaNodePoolsEnabled() {
-        return !STRIMZI_FEATURE_GATES.contains(TestConstants.DONT_USE_KAFKA_NODE_POOLS);
+        return STRIMZI_USE_NODE_POOLS_IN_TESTS;
     }
 
     public static boolean isUnidirectionalTopicOperatorEnabled() {

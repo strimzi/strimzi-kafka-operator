@@ -51,6 +51,29 @@ The `StableConnectIdentities` feature gate introduced the `StrimziPodSet` custom
 IMPORTANT: With the `StableConnectIdentities` feature gate permanently enabled, direct downgrades from Strimzi 0.39 and newer to Strimzi 0.33 or earlier are not possible.
 You must first downgrade through one of the Strimzi versions in-between, disable the `StableConnectIdentities` feature gate, and then downgrade to Strimzi 0.33 or earlier.
 
+[id='ref-operator-kafka-node-pools-feature-gate-{context}']
+=== KafkaNodePools feature gate
+
+The `KafkaNodePools` feature gate introduced a new `KafkaNodePool` custom resource that enables the configuration of different _pools_ of Apache Kafka nodes.
+
+A node pool refers to a distinct group of Kafka nodes within a Kafka cluster.
+Each pool has its own unique configuration, which includes mandatory settings such as the number of replicas, storage configuration, and a list of assigned roles.
+You can assign the _controller_ role, _broker_ role, or both roles to all nodes in the pool using the `.spec.roles` property.
+When used with a ZooKeeper-based Apache Kafka cluster, it must be set to the `broker` role.
+When used with the `UseKRaft` feature gate, it can be set to `broker`, `controller`, or both.
+
+In addition, a node pool can have its own configuration of resource requests and limits, Java JVM options, and resource templates.
+Configuration options not set in the `KafkaNodePool` resource are inherited from the `Kafka` custom resource.
+
+The `KafkaNodePool` resources use a `strimzi.io/cluster` label to indicate to which Kafka cluster they belong.
+The label must be set to the name of the `Kafka` custom resource.
+
+Examples of the `KafkaNodePool` resources can be found in the xref:config-examples-{context}[example configuration files] provided by Strimzi.
+
+.Downgrading from KafkaNodePools
+
+If your cluster already uses `KafkaNodePool` custom resources, and you wish to downgrade to an older version of Strimzi that does not support them or with the `KafkaNodePools` feature gate disabled, you must first migrate from `KafkaNodePool` custom resources to managing Kafka nodes using only `Kafka` custom resources.
+
 == Stable feature gates (Beta)
 
 Stable feature gates have reached a beta level of maturity, and are generally enabled by default for all users.
@@ -68,14 +91,12 @@ In KRaft mode, Kafka nodes take on the roles of brokers, controllers, or both.
 They collectively manage the metadata, which is replicated across partitions. 
 Controllers are responsible for coordinating operations and maintaining the cluster's state.
 
-Using the `UseKRaft` feature gate requires the `KafkaNodePools` feature gate to be enabled as well.
 To deploy a Kafka cluster in KRaft mode, you must use the `KafkaNodePool` resources.
 For more details and examples, see xref:deploying-kafka-node-pools-{context}[].
 The `Kafka` custom resource using KRaft mode must also have the annotation `strimzi.io/kraft="enabled"`.
 
 Currently, the KRaft mode in Strimzi has the following major limitations:
 
-* Moving from Kafka clusters with ZooKeeper to KRaft clusters or the other way around is not supported.
 * Only the _Unidirectional_ Topic Operator is supported in KRaft mode.
   The _Bidirectional_ Topic Operator is not supported and when the `UnidirectionalTopicOperator` feature gate is disabled, the `spec.entityOperator.topicOperator` property *must be removed* from the `Kafka` custom resource.
 * JBOD storage is not supported. 
@@ -84,36 +105,6 @@ Currently, the KRaft mode in Strimzi has the following major limitations:
 
 .Disabling the UseKRaft feature gate
 To disable the `UseKRaft` feature gate, specify `-UseKRaft` in the `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.
-
-[id='ref-operator-kafka-node-pools-feature-gate-{context}']
-=== KafkaNodePools feature gate
-
-The `KafkaNodePools` feature gate has a default state of _enabled_.
-
-The `KafkaNodePools` feature gate introduces a new `KafkaNodePool` custom resource that enables the configuration of different _pools_ of Apache Kafka nodes.
-
-A node pool refers to a distinct group of Kafka nodes within a Kafka cluster.
-Each pool has its own unique configuration, which includes mandatory settings such as the number of replicas, storage configuration, and a list of assigned roles.
-You can assign the _controller_ role, _broker_ role, or both roles to all nodes in the pool in the `.spec.roles` field.
-When used with a ZooKeeper-based Apache Kafka cluster, it must be set to the `broker` role.
-When used with the `UseKRaft` feature gate, it can be set to `broker`, `controller`, or both.
-
-In addition, a node pool can have its own configuration of resource requests and limits, Java JVM options, and resource templates.
-Configuration options not set in the `KafkaNodePool` resource are inherited from the `Kafka` custom resource.
-
-The `KafkaNodePool` resources use a `strimzi.io/cluster` label to indicate to which Kafka cluster they belong.
-The label must be set to the name of the `Kafka` custom resource.
-
-Examples of the `KafkaNodePool` resources can be found in the xref:config-examples-{context}[example configuration files] provided by Strimzi.
-
-.Disabling the KafkaNodePools feature gate
-
-To disable the `KafkaNodePools` feature gate, specify `-KafkaNodePools` in the `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.
-The `Kafka` custom resource using the node pools must also have the annotation `strimzi.io/node-pools: enabled`.
-
-.Downgrading from KafkaNodePools
-
-If your cluster already uses `KafkaNodePool` custom resources, and you wish to downgrade to an older version of Strimzi that does not support them or with the `KafkaNodePools` feature gate disabled, you must first migrate from `KafkaNodePool` custom resources to managing Kafka nodes using only `Kafka` custom resources.
 
 [id='ref-operator-unidirectional-topic-operator-feature-gate-{context}']
 === UnidirectionalTopicOperator feature gate
