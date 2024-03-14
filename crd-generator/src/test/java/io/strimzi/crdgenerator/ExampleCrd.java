@@ -57,12 +57,12 @@ import java.util.Map;
 @OneOf({@OneOf.Alternative(@OneOf.Alternative.Property("either")), @OneOf.Alternative(@OneOf.Alternative.Property("or")), @OneOf.Alternative({@OneOf.Alternative.Property("mapStringString"), @OneOf.Alternative.Property("mapStringObject")})})
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"ignored", "stringProperty", "intProperty", "longProperty", "booleanProperty", "normalEnum", "customisedEnum",
-        "objectProperty", "mapStringObject", "mapStringString", "polymorphicProperty", "affinity", "fieldProperty",
-        "arrayProperty", "arrayProperty2", "listOfInts", "listOfInts2", "listOfObjects", "listOfPolymorphic",
-        "rawList", "listOfRawList", "arrayOfList", "arrayOfRawList", "listOfArray", "arrayOfTypeVar", "listOfTypeVar",
-        "arrayOfBoundTypeVar", "listOfBoundTypeVar", "arrayOfBoundTypeVar2", "listOfBoundTypeVar2",
-        "listOfWildcardTypeVar1", "listOfWildcardTypeVar2", "listOfWildcardTypeVar3", "listOfWildcardTypeVar4",
-        "listOfCustomizedEnum", "listOfNormalEnum", "listOfMaps", "either", "or", "status", "spec"})
+    "objectProperty", "mapStringObject", "mapStringString", "polymorphicProperty", "affinity", "fieldProperty",
+    "arrayProperty", "arrayProperty2", "listOfInts", "listOfInts2", "listOfObjects", "listOfPolymorphic",
+    "rawList", "listOfRawList", "arrayOfList", "arrayOfRawList", "listOfArray", "arrayOfTypeVar", "listOfTypeVar",
+    "arrayOfBoundTypeVar", "listOfBoundTypeVar", "arrayOfBoundTypeVar2", "listOfBoundTypeVar2",
+    "listOfWildcardTypeVar1", "listOfWildcardTypeVar2", "listOfWildcardTypeVar3", "listOfWildcardTypeVar4",
+    "listOfCustomizedEnum", "listOfNormalEnum", "listOfMaps", "either", "or", "status", "spec"})
 public class ExampleCrd<T, U extends Number, V extends U> extends CustomResource {
 
     private String ignored;
