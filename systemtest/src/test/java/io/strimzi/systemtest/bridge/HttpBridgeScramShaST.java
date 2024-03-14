@@ -81,7 +81,7 @@ class HttpBridgeScramShaST extends AbstractST {
         resourceManager.createResourceWithWait(kafkaBridgeClientJb.consumerStrimziBridge());
 
         // Send messages to Kafka
-        KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage, KafkaResources.tlsBootstrapAddress(suiteTestStorage.getClusterName()))
+        KafkaClients kafkaClients = ClientUtils.getInstantScramShaClientBuilder(testStorage, KafkaResources.tlsBootstrapAddress(suiteTestStorage.getClusterName()))
             .withUsername(suiteTestStorage.getUsername())
             .build();
 

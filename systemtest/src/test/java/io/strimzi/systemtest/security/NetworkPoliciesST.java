@@ -176,28 +176,25 @@ public class NetworkPoliciesST extends AbstractST {
             KafkaTopicTemplates.topic(testStorage.getClusterName(), topicNameDeniedTls, testStorage.getNamespaceName()).build()
         );
 
-        // TODO refactor scramsha sha sha sha
         LOGGER.info("Initialize producers and consumers with access to the Kafka using plain and tls listeners");
-        final KafkaClients kafkaClientsWithAccessPlain = ClientUtils.getInstantPlainClientBuilder(testStorage)
-            .withUsername(testStorage.getUsername())
+        final KafkaClients kafkaClientsWithAccessPlain = ClientUtils.getInstantScramShaOverPlainClientBuilder(testStorage)
             .withProducerName(producerNameAccessedPlain)
             .withConsumerName(consumerNameAccessedPlain)
             .withTopicName(topicNameAccessedPlain)
             .build();
-        final KafkaClients kafkaClientsWithAccessTls = ClientUtils.getInstantTlsClientBuilder(testStorage)
+        final KafkaClients kafkaClientsWithAccessTls = ClientUtils.getInstantScramShaOverTlsClientBuilder(testStorage)
             .withProducerName(producerNameAccessedTls)
             .withConsumerName(consumerNameAccessedTls)
             .withTopicName(topicNameAccessedTls)
             .build();
 
         LOGGER.info("Initialize producers and consumers without access (denied) to the Kafka using plain and tls listeners");
-        final KafkaClients kafkaClientsWithoutAccessPlain = ClientUtils.getInstantPlainClientBuilder(testStorage)
-            .withUsername(testStorage.getUsername())
+        final KafkaClients kafkaClientsWithoutAccessPlain = ClientUtils.getInstantScramShaOverPlainClientBuilder(testStorage)
             .withProducerName(producerNameDeniedPlain)
             .withConsumerName(consumerNameDeniedPlain)
             .withTopicName(topicNameDeniedPlain)
             .build();
-        final KafkaClients kafkaClientsWithoutAccessTls = ClientUtils.getInstantTlsClientBuilder(testStorage)
+        final KafkaClients kafkaClientsWithoutAccessTls = ClientUtils.getInstantScramShaOverTlsClientBuilder(testStorage)
             .withProducerName(producerNameDeniedTls)
             .withConsumerName(consumerNameDeniedTls)
             .withTopicName(topicNameDeniedTls)

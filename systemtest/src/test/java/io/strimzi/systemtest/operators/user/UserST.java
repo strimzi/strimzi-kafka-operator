@@ -202,8 +202,7 @@ class UserST extends AbstractST {
                     result.contains("controller_mutation_rate=" + mutRate);
             });
 
-        // TODO refactor scramsha
-        final KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage, KafkaResources.tlsBootstrapAddress(sharedTestStorage.getClusterName()))
+        final KafkaClients kafkaClients = ClientUtils.getInstantScramShaClientBuilder(testStorage, KafkaResources.tlsBootstrapAddress(sharedTestStorage.getClusterName()))
             .withUsername(userName)
             .build();
 
@@ -306,9 +305,8 @@ class UserST extends AbstractST {
         resourceManager.createResourceWithWait(clients.producerTlsStrimzi(testStorage.getClusterName()), clients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForInstantClientSuccess(testStorage);
 
-        // TODO refactor scramsha
-        clients = new KafkaClientsBuilder(clients)
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+
+        clients = ClientUtils.getInstantScramShaOverPlainClientBuilder(testStorage)
             .withUsername(secretPrefix + scramShaUserName)
             .build();
 

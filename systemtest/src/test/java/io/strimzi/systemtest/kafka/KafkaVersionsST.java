@@ -157,15 +157,14 @@ public class KafkaVersionsST extends AbstractST {
         );
 
         LOGGER.info("Sending and receiving messages via PLAIN -> SCRAM-SHA");
-        // TODO refactor scramsha
-        final KafkaClients kafkaClientsPlainScramShaWrite = ClientUtils.getInstantPlainClientBuilder(testStorage)
+        final KafkaClients kafkaClientsPlainScramShaWrite = ClientUtils.getInstantScramShaOverPlainClientBuilder(testStorage)
             .withUsername(kafkaUserWrite)
             .build();
 
         resourceManager.createResourceWithWait(kafkaClientsPlainScramShaWrite.producerScramShaPlainStrimzi());
         ClientUtils.waitForInstantProducerClientSuccess(testStorage);
 
-        final KafkaClients kafkaClientsPlainScramShaRead = ClientUtils.getInstantPlainClientBuilder(testStorage)
+        final KafkaClients kafkaClientsPlainScramShaRead = ClientUtils.getInstantScramShaOverPlainClientBuilder(testStorage)
             .withConsumerGroup(readConsumerGroup)
             .withUsername(kafkaUserRead)
             .build();

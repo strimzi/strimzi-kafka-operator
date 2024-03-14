@@ -325,7 +325,9 @@ public class ClientUtils {
         return CONSUMER_GROUP_NAME + salt;
     }
 
-    // instant client builders
+    //////////////////////////////////
+    // instant Plain client builders (ScramSha, TLS, plain)
+    /////////////////////////////////
 
     /**
      * Creates and configures a {@link KafkaClientsBuilder} instance for instant Kafka clients based on test storage settings.
@@ -349,6 +351,44 @@ public class ClientUtils {
             .withProducerName(testStorage.getProducerName())
             .withConsumerName(testStorage.getConsumerName());
     }
+
+    // Instant ScramSha client builders
+
+    /**
+     * Generates a {@link KafkaClientsBuilder} for instant Kafka clients using scram_sha over plain communication.
+     * {@link TestStorage#getClusterName()} is with port 9092 is used to generate kafka bootstrap address.
+     *
+     * @param testStorage The {@link TestStorage} instance providing necessary configurations.
+     * @return A configured {@link KafkaClientsBuilder} instance for instant clients with plain communication setup.
+     */
+    public static KafkaClientsBuilder getInstantScramShaOverPlainClientBuilder(TestStorage testStorage) {
+        return getInstantScramShaClientBuilder(testStorage, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()));
+    }
+
+    /**
+     * Generates a {@link KafkaClientsBuilder} for instant Kafka clients using scram_sha over tls communication.
+     * {@link TestStorage#getClusterName()} is with port 9093 is used to generate kafka bootstrap address.
+     *
+     * @param testStorage The {@link TestStorage} instance providing necessary configurations.
+     * @return A configured {@link KafkaClientsBuilder} instance for instant clients with tls communication setup.
+     */
+    public static KafkaClientsBuilder getInstantScramShaOverTlsClientBuilder(TestStorage testStorage) {
+        return getInstantScramShaClientBuilder(testStorage, KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()));
+    }
+
+    /**
+     * Generates a {@link KafkaClientsBuilder} for instant Kafka clients using specified bootstrap (plain or TLS).
+     *
+     * @param testStorage The {@link TestStorage} instance providing necessary configurations.
+     * @param bootstrapServer is the exact address including port (e.g., source-cluster-kafka-bootstrap:9095)
+     * @return A configured {@link KafkaClientsBuilder} instance for instant clients with plain communication setup.
+     */
+    public static KafkaClientsBuilder getInstantScramShaClientBuilder(TestStorage testStorage, String bootstrapServer) {
+        return getInstantPlainClientBuilder(testStorage, bootstrapServer)
+            .withUsername(testStorage.getUsername());
+    }
+
+    // instant Plain client builders
 
     /**
      * Generates a {@link KafkaClientsBuilder} for instant Kafka clients using plain communication (non-TLS).
@@ -376,6 +416,8 @@ public class ClientUtils {
         return instantClientBuilderBase(testStorage)
             .withBootstrapAddress(bootstrapServer);
     }
+
+    // Instant TLS client builders
 
     /**
      * Generates a {@link KafkaClientsBuilder} for instant Kafka clients using TLS communication.
@@ -405,28 +447,100 @@ public class ClientUtils {
             .withBootstrapAddress(bootstrapServer);
     }
 
+    ////////////////////////////////////////////////////////////
+    // (already build) instant clients (utilizing builders above)
+    /////////////////////////////////////////////////////////////
+
+    /**
+     * Retrieves an instance of {@link KafkaClients} for plain communication with scramsha activated.
+     * Targeting bootstrap address on port 9093 and leveraging the {@code getInstantPlainClientBuilder}
+     * method for initial configuration.
+     *
+     * @param testStorage The {@link TestStorage} instance providing necessary configurations.
+     * @return build {@link KafkaClients}.
+     */
+    public static KafkaClients getInstantScramShaOverPlainClients(TestStorage testStorage) {
+        return getInstantScramShaOverPlainClientBuilder(testStorage).build();
+    }
+
+    /**
+     * Retrieves an instance of {@link KafkaClients} for plain communication with scramsha activated.
+     * Targeting bootstrap address on port 9093 and leveraging the {@code getInstantTlsClientBuilder}
+     * method for initial configuration.
+     *
+     * @param testStorage The {@link TestStorage} instance providing necessary configurations.
+     * @return build {@link KafkaClients}.
+     */
+    public static KafkaClients getInstantScramShaOverTlsClients(TestStorage testStorage) {
+        return getInstantScramShaOverTlsClientBuilder(testStorage).build();
+    }
+
+    /**
+     * Retrieves an instance of {@link KafkaClients} for plain communication with scramsha activated.
+     * Leveraging the {@code getInstantPlainClientBuilder} method for initial configuration.
+     *
+     * @param testStorage The {@link TestStorage} instance providing necessary configurations.
+     * @param bootstrapServer is the exact address including port (e.g., source-cluster-kafka-bootstrap:9096)
+     * @return build {@link KafkaClients}.
+     */
+    public static KafkaClients getInstantScramShaClients(TestStorage testStorage, String bootstrapServer) {
+        return getInstantScramShaClientBuilder(testStorage, bootstrapServer).build();
+    }
+
+    /**
+     * Retrieves an instance of {@link KafkaClients} for plain communication with Kafka brokers targeting port 9092 and,
+     * leveraging the {@code getInstantPlainClientBuilder} method for initial configuration.
+     *
+     * @param testStorage The {@link TestStorage} instance providing necessary configurations.
+     * @return build {@link KafkaClients}.
+     */
     public static KafkaClients getInstantPlainClients(TestStorage testStorage) {
         return getInstantPlainClientBuilder(testStorage, KafkaResources.plainBootstrapAddress(testStorage.getClusterName())).build();
     }
 
+    /**
+     * Retrieves an instance of {@link KafkaClients} for plain communication with Kafka brokers,
+     * leveraging the {@code getInstantPlainClientBuilder} method for initial configuration.
+     *
+     * @param testStorage The {@link TestStorage} instance providing necessary configurations.
+     * @param bootstrapServer is the exact address including port (e.g., source-cluster-kafka-bootstrap:9092)
+     * @return build {@link KafkaClients}.
+     */
     public static KafkaClients getInstantPlainClients(TestStorage testStorage, String bootstrapServer) {
         return getInstantPlainClientBuilder(testStorage, bootstrapServer).build();
     }
 
+    /**
+     * Retrieves an instance of {@link KafkaClients} for tls communication with Kafka brokers, targeting port 9093 and
+     * leveraging the {@code getInstantTlsClientBuilder} method for initial configuration.
+     *
+     * @param testStorage The {@link TestStorage} instance providing necessary configurations.
+     * @return build {@link KafkaClients}.
+     */
     public static KafkaClients getInstantTlsClients(TestStorage testStorage) {
         return getInstantTlsClientBuilder(testStorage, KafkaResources.plainBootstrapAddress(testStorage.getClusterName())).build();
     }
 
+    /**
+     * Retrieves an instance of {@link KafkaClients} for tls communication with Kafka brokers,
+     * leveraging the {@code getInstantTlsClientBuilder} method for initial configuration.
+     *
+     * @param testStorage The {@link TestStorage} instance providing necessary configurations.
+     * @param bootstrapServer is the exact address including port (e.g., source-cluster-kafka-bootstrap:9093)
+     * @return build {@link KafkaClients}.
+     */
     public static KafkaClients getInstantTlsClients(TestStorage testStorage, String bootstrapServer) {
         return getInstantTlsClientBuilder(testStorage, bootstrapServer).build();
     }
 
+    //////////////////////////////////
     // continuous client builders
+    /////////////////////////////////
 
     /**
      * Creates a {@link KafkaClientsBuilder} for continuous Kafka clients using plain (non-TLS) communication,
      * configuring it with properties specific to continuous operation scenarios. This includes setting up
-     * (default 300 messages), a delay between messages (1000 ms) making ideal transition last by default for around 5 minutes.
+     * (default 200 messages), a delay between messages (1000 ms) making ideal transition last by default for around 3-4 minutes.
      * {@link TestStorage#getContinuousProducerName()}  is used for naming producer Job and
      * {@link TestStorage#getContinuousConsumerName()}  for naming consumer Job. Finally,
      * {@link TestStorage#getContinuousTopicName()}  is used as Topic target by attempted message transition.

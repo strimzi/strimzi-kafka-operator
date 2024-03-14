@@ -255,12 +255,9 @@ public class ListenersST extends AbstractST {
             LOGGER.info("Broker Pod log:\n----\n{}\n----\n", brokerPodLog);
         }
 
-        // TODO refactor scramsha
-        LOGGER.info("Transmitting messages over plain transport using scram sha auth with bootstrap address: {}", KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9095");
-        KafkaClients kafkaClients = ClientUtils.getInstantPlainClientBuilder(testStorage)
-            .withBootstrapAddress(KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9095")
-            .withUsername(testStorage.getUsername())
-            .build();
+        final String boostrapAddress = KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9095";
+        LOGGER.info("Transmitting messages over plain transport using scram sha auth with bootstrap address: {}", boostrapAddress);
+        final KafkaClients kafkaClients = ClientUtils.getInstantScramShaClients(testStorage, boostrapAddress);
         resourceManager.createResourceWithWait(kafkaClients.producerScramShaPlainStrimzi(), kafkaClients.consumerScramShaPlainStrimzi());
         ClientUtils.waitForInstantClientSuccess(testStorage);
 
@@ -318,11 +315,9 @@ public class ListenersST extends AbstractST {
             KafkaUserTemplates.scramShaUser(testStorage).build()
         );
 
-        // TODO refactor scramsha
-        KafkaClients kafkaClients = ClientUtils.getInstantPlainClientBuilder(testStorage)
-            .withBootstrapAddress(KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9096")
-            .withUsername(testStorage.getUsername())
-            .build();
+        final String boostrapAddress = KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9096";
+        LOGGER.info("Transmitting messages over tls using scram sha auth with bootstrap address: {}", boostrapAddress);
+        KafkaClients kafkaClients = ClientUtils.getInstantScramShaClients(testStorage, boostrapAddress);
         resourceManager.createResourceWithWait(
             kafkaClients.producerScramShaTlsStrimzi(testStorage.getClusterName()),
             kafkaClients.consumerScramShaTlsStrimzi(testStorage.getClusterName())
@@ -381,11 +376,10 @@ public class ListenersST extends AbstractST {
             KafkaUserTemplates.scramShaUser(testStorage).build()
         );
 
-        // TODO refactor scramsha
-        KafkaClients kafkaClients = ClientUtils.getInstantPlainClientBuilder(testStorage)
-            .withBootstrapAddress(KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9122")
-            .withUsername(testStorage.getUsername())
-            .build();
+
+        final String boostrapAddress = KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9122";
+        LOGGER.info("Transmitting messages over tls using scram sha auth with bootstrap address: {}", boostrapAddress);
+        final KafkaClients kafkaClients = ClientUtils.getInstantScramShaClients(testStorage, boostrapAddress);
         resourceManager.createResourceWithWait(
             kafkaClients.producerScramShaTlsStrimzi(testStorage.getClusterName()),
             kafkaClients.consumerScramShaTlsStrimzi(testStorage.getClusterName())
@@ -2256,11 +2250,9 @@ public class ListenersST extends AbstractST {
             KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getUsername(), testStorage.getNamespaceName()).build()
         );
 
-        // TODO refactor scramsha
-        KafkaClients kafkaClients = ClientUtils.getInstantPlainClientBuilder(testStorage)
-            .withBootstrapAddress(KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9096")
-            .withUsername(testStorage.getUsername())
-            .build();
+        final String boostrapAddress = KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9096";
+        LOGGER.info("Transmitting messages over tls using scram sha auth with bootstrap address: {} with predefined password", boostrapAddress);
+        KafkaClients kafkaClients = ClientUtils.getInstantScramShaClients(testStorage, boostrapAddress);
         resourceManager.createResourceWithWait(
             kafkaClients.producerScramShaTlsStrimzi(testStorage.getClusterName()),
             kafkaClients.consumerScramShaTlsStrimzi(testStorage.getClusterName())

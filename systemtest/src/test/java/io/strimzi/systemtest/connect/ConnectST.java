@@ -303,15 +303,11 @@ class ConnectST extends AbstractST {
         KafkaConnectorUtils.createFileSinkConnector(testStorage.getNamespaceName(), scraperPodName, testStorage.getTopicName(),
             TestConstants.DEFAULT_SINK_FILE_PATH, KafkaConnectResources.url(testStorage.getClusterName(), testStorage.getNamespaceName(), 8083));
 
-        // TODO REFACTOR scramsha !
-        KafkaClients kafkaClients = ClientUtils.getInstantPlainClientBuilder(testStorage)
-            .withUsername(testStorage.getUsername())
-            .build();
-
-        resourceManager.createResourceWithWait(kafkaClients.producerScramShaPlainStrimzi(),
-            kafkaClients.consumerScramShaPlainStrimzi());
+        final KafkaClients plainScramShaClients = ClientUtils.getInstantScramShaOverPlainClients(testStorage);
+        resourceManager.createResourceWithWait(
+            plainScramShaClients.producerScramShaPlainStrimzi(),
+            plainScramShaClients.consumerScramShaPlainStrimzi());
         ClientUtils.waitForInstantClientSuccess(testStorage);
-
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), kafkaConnectPodName, TestConstants.DEFAULT_SINK_FILE_PATH, testStorage.getMessageCount());
     }
 
@@ -580,7 +576,7 @@ class ConnectST extends AbstractST {
         KafkaConnectorUtils.createFileSinkConnector(testStorage.getNamespaceName(), scraperPodName, testStorage.getTopicName(),
             TestConstants.DEFAULT_SINK_FILE_PATH, KafkaConnectResources.url(testStorage.getClusterName(), testStorage.getNamespaceName(), 8083));
 
-        final KafkaClients kafkaClients = ClientUtils.getInstantTlsClients(testStorage);
+        final KafkaClients kafkaClients = ClientUtils.getInstantScramShaOverTlsClients(testStorage);
         resourceManager.createResourceWithWait(kafkaClients.producerScramShaTlsStrimzi(testStorage.getClusterName()), kafkaClients.consumerScramShaTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForInstantClientSuccess(testStorage);
 
