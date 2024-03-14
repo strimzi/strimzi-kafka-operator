@@ -584,7 +584,11 @@ class CrdGenerator {
     }
 
     private void buildObjectSchema(ApiVersion crApiVersion, ObjectNode result, Class<?> crdClass, boolean printType, boolean description) {
-        checkClass(crdClass);
+        if (!crdClass.getName().startsWith("java.lang.")) {
+            // java.lang.* class does not require class validation as i.e. JsonIgnore and Builder does not apply
+            checkClass(crdClass);
+        }
+
         if (printType) {
             result.put("type", "object");
         }
@@ -747,7 +751,13 @@ class CrdGenerator {
 
     private void checkPropertiesInJsonPropertyOrder(Class<?> crdClass, Set<String> properties) {
         if (!isAbstract(crdClass.getModifiers())) {
-            List<String> expectedOrder = asList(crdClass.getAnnotation(JsonPropertyOrder.class).value());
+            JsonPropertyOrder order = crdClass.getAnnotation(JsonPropertyOrder.class);
+            if (order == null) {
+                // Skip as the error is already tracked in checkClass
+                return;
+            }
+
+            List<String> expectedOrder = asList(order.value());
             for (String property : properties) {
                 if (!expectedOrder.contains(property)) {
                     err(crdClass + " has a property " + property + " which is not in the @JsonPropertyOrder");
