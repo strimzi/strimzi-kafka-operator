@@ -53,10 +53,10 @@ spec:
       initialDelaySeconds: 10
       timeoutSeconds: 4
     jvmOptions:
-      "-Xmx": "4G"
-      "-Xms": "2G"
       "-XX":
         foo: "bar"
+      "-Xmx": "4G"
+      "-Xms": "2G"
     resources:
       limits:
         memory: "5Gi"
