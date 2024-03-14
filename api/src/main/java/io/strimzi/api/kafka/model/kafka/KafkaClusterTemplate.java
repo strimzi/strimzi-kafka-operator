@@ -36,7 +36,8 @@ import java.util.Map;
 @JsonPropertyOrder({
     "statefulset", "pod", "bootstrapService", "brokersService", "externalBootstrapService", "perPodService",
     "externalBootstrapRoute", "perPodRoute", "externalBootstrapIngress", "perPodIngress", "persistentVolumeClaim",
-    "podDisruptionBudget", "kafkaContainer", "initContainer", "clusterCaCert", "serviceAccount", "jmxSecret"})
+    "podDisruptionBudget", "kafkaContainer", "initContainer", "clusterCaCert", "serviceAccount", "jmxSecret",
+    "clusterRoleBinding", "podSet"})
 @EqualsAndHashCode
 @ToString
 public class KafkaClusterTemplate implements HasJmxSecretTemplate, Serializable, UnknownPropertyPreserving {

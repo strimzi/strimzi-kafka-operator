@@ -29,8 +29,8 @@ import java.util.Map;
 @JsonPropertyOrder({ "version", "replicas", "image", "bootstrapServers",
     "tls", "authentication", "config", "resources", "livenessProbe",
     "readinessProbe", "jvmOptions", "jmxOptions", "affinity", "tolerations",
-    "logging", "clientRackInitImage", "rack", "metrics", "tracing",
-    "template", "externalConfiguration" })
+    "logging", "clientRackInitImage", "rack", "metricsConfig", "tracing",
+    "template", "externalConfiguration", "build" })
 @EqualsAndHashCode(callSuper = true, doNotUseGetters = true)
 @ToString(callSuper = true)
 public class KafkaConnectSpec extends AbstractKafkaConnectSpec {

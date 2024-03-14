@@ -26,7 +26,7 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-@JsonPropertyOrder({ "connectorClass", "type", "version" })
+@JsonPropertyOrder({ "class", "type", "version" })
 @EqualsAndHashCode
 @ToString
 public class ConnectorPlugin implements Serializable, UnknownPropertyPreserving {

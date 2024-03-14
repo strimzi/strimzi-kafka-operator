@@ -24,7 +24,7 @@ import static java.util.Collections.emptyMap;
     builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "targetReplicas", "state", "userTaskId", "message" })
+@JsonPropertyOrder({ "targetReplicas", "state", "userTaskId", "message", "sessionId" })
 @EqualsAndHashCode
 @ToString(callSuper = true)
 public class ReplicasChangeStatus implements UnknownPropertyPreserving, Serializable {

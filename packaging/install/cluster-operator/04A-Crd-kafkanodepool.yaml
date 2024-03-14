@@ -181,14 +181,14 @@ spec:
                       type: string
                     type: object
                     description: A map of -XX options to the JVM.
-                  "-Xms":
-                    type: string
-                    pattern: "^[0-9]+[mMgG]?$"
-                    description: -Xms option to to the JVM.
                   "-Xmx":
                     type: string
                     pattern: "^[0-9]+[mMgG]?$"
                     description: -Xmx option to to the JVM.
+                  "-Xms":
+                    type: string
+                    pattern: "^[0-9]+[mMgG]?$"
+                    description: -Xms option to to the JVM.
                   gcLoggingEnabled:
                     type: boolean
                     description: Specifies whether the Garbage Collection logging is enabled. The default is false.
@@ -656,31 +656,6 @@ spec:
                             value:
                               type: string
                         description: The pod's tolerations.
-                      priorityClassName:
-                        type: string
-                        description: 'The name of the priority class used to assign priority to the pods. '
-                      schedulerName:
-                        type: string
-                        description: "The name of the scheduler used to dispatch this `Pod`. If not specified, the default scheduler will be used."
-                      hostAliases:
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            hostnames:
-                              type: array
-                              items:
-                                type: string
-                            ip:
-                              type: string
-                        description: The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the Pod's hosts file if specified.
-                      tmpDirSizeLimit:
-                        type: string
-                        pattern: "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"
-                        description: Defines the total amount (for example `1Gi`) of local storage required for temporary EmptyDir volume (`/tmp`). Default value is `5Mi`.
-                      enableServiceLinks:
-                        type: boolean
-                        description: Indicates whether information about services should be injected into Pod's environment variables.
                       topologySpreadConstraints:
                         type: array
                         items:
@@ -723,6 +698,31 @@ spec:
                             whenUnsatisfiable:
                               type: string
                         description: The pod's topology spread constraints.
+                      priorityClassName:
+                        type: string
+                        description: 'The name of the priority class used to assign priority to the pods. '
+                      schedulerName:
+                        type: string
+                        description: "The name of the scheduler used to dispatch this `Pod`. If not specified, the default scheduler will be used."
+                      hostAliases:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            hostnames:
+                              type: array
+                              items:
+                                type: string
+                            ip:
+                              type: string
+                        description: The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the Pod's hosts file if specified.
+                      enableServiceLinks:
+                        type: boolean
+                        description: Indicates whether information about services should be injected into Pod's environment variables.
+                      tmpDirSizeLimit:
+                        type: string
+                        pattern: "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"
+                        description: Defines the total amount (for example `1Gi`) of local storage required for temporary EmptyDir volume (`/tmp`). Default value is `5Mi`.
                     description: Template for Kafka `Pods`.
                   perPodService:
                     type: object
