@@ -749,7 +749,8 @@ class LoggingChangeST extends AbstractST {
         final Map<String, String> connectPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getKafkaConnectSelector());
 
         LOGGER.info("Asserting if logs in connect Pods are without records in last 60 seconds");
-        connectPods.keySet().forEach(cPod -> assertFalse(DEFAULT_LOG4J_PATTERN.matcher(StUtils.getLogFromPodByTime(testStorage.getNamespaceName(), cPod, "", "60s")).find()));
+        final Predicate<String> logsDisabled = pod -> !DEFAULT_LOG4J_PATTERN.matcher(StUtils.getLogFromPodByTime(testStorage.getNamespaceName(), pod, "", "60s")).find();
+        connectPods.keySet().forEach(pod -> assertTrue(logsDisabled.test(pod)));
 
         LOGGER.info("Changing rootLogger level to DEBUG with inline logging");
         final InlineLogging inlineLoggingDebugLevel = new InlineLoggingBuilder().addToLoggers("connect.root.logger.level", "DEBUG").build();
@@ -758,10 +759,10 @@ class LoggingChangeST extends AbstractST {
         }, testStorage.getNamespaceName());
 
         // check if lines from Logs contain messages with log level DEBUG
-        final Predicate<String> hasLogLevelDebug = connectLogs -> {
-            return connectLogs != null && !connectLogs.isEmpty() && log4jPatternDebugLevel.matcher(connectLogs).find();
-        };
+        final Predicate<String> hasLogLevelDebug = connectLogs -> connectLogs != null && !connectLogs.isEmpty() && log4jPatternDebugLevel.matcher(connectLogs).find();
         KafkaConnectUtils.waitForConnectLogLevelChangePropagation(testStorage, connectPods, scraperPodName, hasLogLevelDebug, "DEBUG");
+
+        assertThat("Connect Pod should not roll", PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getKafkaConnectSelector()), equalTo(connectPods));
 
         LOGGER.info("Changing rootLogger level from DEBUG to INFO with inline logging");
         final InlineLogging inlineLoggingInfoLevel = new InlineLoggingBuilder().addToLoggers("connect.root.logger.level", "INFO").build();
@@ -770,12 +771,12 @@ class LoggingChangeST extends AbstractST {
         }, testStorage.getNamespaceName());
 
         // check if lines from Logs contain log Level INFO but no longer DEBUG
-        final Predicate<String> hasLogLevelInfo = connectLogs -> {
-            return connectLogs != null && !connectLogs.isEmpty() &&
-                !log4jPatternDebugLevel.matcher(connectLogs).find() &&
-                log4jPatternInfoLevel.matcher(connectLogs).find();
-        };
+        final Predicate<String> hasLogLevelInfo = connectLogs -> connectLogs != null && !connectLogs.isEmpty() &&
+            !log4jPatternDebugLevel.matcher(connectLogs).find() &&
+            log4jPatternInfoLevel.matcher(connectLogs).find();
         KafkaConnectUtils.waitForConnectLogLevelChangePropagation(testStorage, connectPods, scraperPodName, hasLogLevelInfo, "INFO");
+
+        assertThat("Connect Pod should not roll", PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getKafkaConnectSelector()), equalTo(connectPods));
 
         // external logging
 
