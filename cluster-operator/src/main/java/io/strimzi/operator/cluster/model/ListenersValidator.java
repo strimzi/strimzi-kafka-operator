@@ -345,6 +345,19 @@ public class ListenersValidator {
             errors.add("listener " + listener.getName() + " cannot configure bootstrap.nodePort because it is not NodePort based listener");
         }
     }
+    
+    /**
+     * Validates that bootstrap.nodePort is used only with NodePort type listener
+     *
+     * @param errors    List where any found errors will be added
+     * @param listener  Listener which needs to be validated
+     */
+    private static void validateBootstrapExternalIPs(Set<String> errors, GenericKafkaListener listener) {
+        if (!KafkaListenerType.NODEPORT.equals(listener.getType())
+                && listener.getConfiguration().getBootstrap().getExternalIPs() != null)    {
+        	errors.add("listener " + listener.getName() + " cannot configure bootstrap.externalIPs because it is not NodePort based listener");
+		}
+    }
 
     /**
      * Validates that bootstrap.annotations and bootstrap.labels are used only with LoadBalancer, NodePort, Route, or
@@ -412,6 +425,20 @@ public class ListenersValidator {
                 && broker.getNodePort() != null)    {
             errors.add("listener " + listener.getName() + " cannot configure brokers[].nodePort because it is not NodePort based listener");
         }
+    }
+    
+    /**
+     * Validates that brokers[].nodePort is used only with NodePort type listener
+     *
+     * @param errors    List where any found errors will be added
+     * @param listener  Listener which needs to be validated
+     * @param broker    Broker configuration which needs to be validated
+     */
+    private static void validateBrokerExternalIPs(Set<String> errors, GenericKafkaListener listener, GenericKafkaListenerConfigurationBroker broker) {
+        if (!KafkaListenerType.NODEPORT.equals(listener.getType())
+                && broker.getExternalIPs() != null)    {
+        	errors.add("listener " + listener.getName() + " cannot configure brokers[].externalIPs because it is not NodePort based listener");
+		}
     }
 
     /**

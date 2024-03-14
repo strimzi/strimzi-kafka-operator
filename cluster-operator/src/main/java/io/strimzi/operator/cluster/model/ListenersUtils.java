@@ -701,50 +701,27 @@ public class ListenersUtils {
     }
 
 	/**
-	 * Finds bootstrap service external IPs
-	 *
-	 * @throws UnsupportedOperationException Throws UnsupportedOperationException if
-	 *                                       called for other KafkaListenerType.
-	 * 
-	 * @param listener Listener for which the external IPs should be found
-	 * @return External IPs or null if not specified
-	 */
+     * Returns bootstrap service external IPs
+     * @param listener  Listener for which the external IPs should be found
+     */
 	public static List<String> bootstrapExternalIPs(GenericKafkaListener listener) {
-		if (KafkaListenerType.NODEPORT == listener.getType()) {
-			if (listener.getConfiguration() != null && listener.getConfiguration().getBootstrap() != null) {
-				return listener.getConfiguration().getBootstrap().getExternalIPs();
-			} else {
-				return null;
-			}
-		} else {
-			throw new UnsupportedOperationException(
-					"Bootstrap externalIP are not used with listerner type " + listener.getType());
-		}
+		return (listener.getConfiguration() != null && listener.getConfiguration().getBootstrap() != null)
+	            ? listener.getConfiguration().getBootstrap().getExternalIPs()
+	            : null;
 	}
 
-	/**
-	 * Finds broker service external IPs
-	 *
-	 * @throws UnsupportedOperationException Throws UnsupportedOperationException if
-	 *                                       called for other KafkaListenerType.
-	 *
-	 * @param listener Listener for which the external IPs should be found
-	 * @param pod      Pod ID for which we should get the configuration option
-	 * @return External IPs or null if not specified
-	 */
-	public static List<String> brokerExternalIPs(GenericKafkaListener listener, int pod) {
-		if (KafkaListenerType.NODEPORT == listener.getType()) {
-			if (listener.getConfiguration() != null && listener.getConfiguration().getBrokers() != null) {
-				return listener.getConfiguration().getBrokers().stream()
-						.filter(broker -> broker != null && broker.getBroker() != null && broker.getBroker() == pod
-								&& broker.getExternalIPs() != null)
-						.map(GenericKafkaListenerConfigurationBroker::getExternalIPs).findAny().orElse(null);
-			} else {
-				return null;
-			}
-		} else {
-			throw new UnsupportedOperationException(
-					"Broker externalIP are not used with listerner type " + listener.getType());
-		}
-	}
+	 /**
+     * Returns broker service external IPs
+     * @param listener  Listener for which the external IPs should be found
+     * @param pod       Pod ID for which we should get the configuration option
+     */
+    public static List<String> brokerExternalIPs(GenericKafkaListener listener, int pod){
+    	return (listener.getConfiguration() != null && listener.getConfiguration().getBrokers() != null)
+                ? listener.getConfiguration().getBrokers().stream()
+                    .filter(broker -> broker != null && broker.getBroker() != null && broker.getBroker() == pod && broker.getExternalIPs() != null)
+                    .map(GenericKafkaListenerConfigurationBroker::getExternalIPs)
+                    .findAny()
+                    .orElse(null) :null;
+        }
+    }
 }
