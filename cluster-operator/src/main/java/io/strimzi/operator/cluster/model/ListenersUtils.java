@@ -715,12 +715,12 @@ public class ListenersUtils {
      * @param listener  Listener for which the external IPs should be found
      * @param pod       Pod ID for which we should get the configuration option
      */
-    public static List<String> brokerExternalIPs(GenericKafkaListener listener, int pod){
+    public static List<String> brokerExternalIPs(GenericKafkaListener listener, int pod) {
         return (listener.getConfiguration() != null && listener.getConfiguration().getBrokers() != null)
                 ? listener.getConfiguration().getBrokers().stream()
                     .filter(broker -> broker != null && broker.getBroker() != null && broker.getBroker() == pod && broker.getExternalIPs() != null)
                     .map(GenericKafkaListenerConfigurationBroker::getExternalIPs)
                     .findAny()
-                    .orElse(null) :null;
-        }
+                    .orElse(null) : null;
     }
+}
