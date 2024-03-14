@@ -256,9 +256,7 @@ class ConnectBuilderST extends AbstractST {
         KafkaConnector kafkaConnector = KafkaConnectorResource.kafkaConnectorClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get();
         assertThat(kafkaConnector.getSpec().getClassName(), is(TestConstants.ECHO_SINK_CLASS_NAME));
 
-        KafkaClients kafkaClients = ClientUtils.getInstantPlainClientBuilder(testStorage)
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(suiteTestStorage.getClusterName()))
-            .build();
+        final KafkaClients kafkaClients = ClientUtils.getInstantPlainClients(testStorage, KafkaResources.plainBootstrapAddress(suiteTestStorage.getClusterName()));
         resourceManager.createResourceWithWait(kafkaClients.producerStrimzi());
         ClientUtils.waitForInstantProducerClientSuccess(testStorage);
 
@@ -506,9 +504,7 @@ class ConnectBuilderST extends AbstractST {
             .endSpec()
             .build());
 
-        KafkaClients kafkaClient = ClientUtils.getInstantPlainClientBuilder(testStorage)
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(suiteTestStorage.getClusterName()))
-            .build();
+        final KafkaClients kafkaClient = ClientUtils.getInstantPlainClients(testStorage, KafkaResources.plainBootstrapAddress(suiteTestStorage.getClusterName()));
         resourceManager.createResourceWithWait(kafkaClient.consumerStrimzi());
         ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
     }

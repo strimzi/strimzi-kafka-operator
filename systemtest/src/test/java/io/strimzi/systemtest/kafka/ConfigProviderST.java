@@ -147,7 +147,7 @@ public class ConfigProviderST extends AbstractST {
             .endSpec()
             .build());
 
-        KafkaClients kafkaBasicClientJob = ClientUtils.getInstantPlainClientBuilder(testStorage).build();
+        final KafkaClients kafkaBasicClientJob = ClientUtils.getInstantPlainClients(testStorage);
         resourceManager.createResourceWithWait(kafkaBasicClientJob.producerStrimzi());
 
         String kafkaConnectPodName = kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();

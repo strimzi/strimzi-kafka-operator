@@ -59,8 +59,7 @@ public class OpaIntegrationST extends AbstractST {
 
         LOGGER.info("Checking KafkaUser: {}/{} that is able to send and receive messages to/from Topic: {}/{}", testStorage.getNamespaceName(), OPA_GOOD_USER, testStorage.getNamespaceName(), testStorage.getTopicName());
 
-        KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage)
-            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(CLUSTER_NAME))
+        KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage, KafkaResources.tlsBootstrapAddress(CLUSTER_NAME))
             .withUsername(OPA_GOOD_USER)
             .build();
 
@@ -88,8 +87,7 @@ public class OpaIntegrationST extends AbstractST {
 
         LOGGER.info("Checking KafkaUser: {}/{} that is able to send and receive messages to/from Topic: {}/{}", testStorage.getNamespaceName(), OPA_GOOD_USER, testStorage.getNamespaceName(), testStorage.getTopicName());
 
-        KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage)
-            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(CLUSTER_NAME))
+        final KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage, KafkaResources.tlsBootstrapAddress(CLUSTER_NAME))
             .withUsername(OPA_SUPERUSER)
             .build();
 

@@ -278,7 +278,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
 
         resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage).build());
 
-        KafkaClients clients = ClientUtils.getInstantPlainClientBuilder(testStorage).build();
+        final KafkaClients clients = ClientUtils.getInstantPlainClients(testStorage);
         resourceManager.createResourceWithWait(clients.producerStrimzi(), clients.consumerStrimzi());
         ClientUtils.waitForInstantClientSuccess(testStorage);
 
@@ -288,7 +288,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
     }
 
     private void verifyStabilityBySendingAndReceivingMessages(TestStorage testStorage) {
-        KafkaClients clients = ClientUtils.getInstantPlainClientBuilder(testStorage).build();
+        final KafkaClients clients = ClientUtils.getInstantPlainClients(testStorage);
         resourceManager.createResourceWithWait(clients.producerStrimzi(), clients.consumerStrimzi());
         ClientUtils.waitForInstantClientSuccess(testStorage);
     }

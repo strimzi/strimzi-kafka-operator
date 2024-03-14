@@ -173,12 +173,15 @@ public class PodSecurityProfilesST extends AbstractST {
             .build());
 
         // Messages produced to Main Kafka Cluster (source) will be sinked to file, and mirrored into targeted Kafkas to later verify Operands work correctly.
-        LOGGER.info("Deploy producer: {} and produce {} messages into Kafka: {} in Ns: ", testStorage.getProducerName(), testStorage.getClusterName(), testStorage.getMessageCount());
+        LOGGER.info("Transmit messages in Cluster: {}/{}", testStorage.getNamespaceName(), testStorage.getClusterName());
         final KafkaClients kafkaClients = ClientUtils.getInstantPlainClientBuilder(testStorage)
             .withPodSecurityPolicy(PodSecurityProfile.RESTRICTED)
             .build();
-        resourceManager.createResourceWithWait(kafkaClients.producerStrimzi());
-        ClientUtils.waitForInstantProducerClientSuccess(testStorage);
+        resourceManager.createResourceWithWait(
+            kafkaClients.producerStrimzi(),
+            kafkaClients.consumerStrimzi()
+        );
+        ClientUtils.waitForInstantClientSuccess(testStorage);
 
         // verifies that Pods and Containers have proper generated SC
         final List<Pod> podsWithProperlyGeneratedSecurityCOntexts = PodUtils.getKafkaClusterPods(testStorage);
@@ -188,34 +191,21 @@ public class PodSecurityProfilesST extends AbstractST {
         podsWithProperlyGeneratedSecurityCOntexts.addAll(kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker.RESOURCE_KIND));
         verifyPodAndContainerSecurityContext(podsWithProperlyGeneratedSecurityCOntexts);
 
-        LOGGER.info("Verify that Kafka cluster is usable and everything (MM1, MM2, and Connector) is working");
-
-        resourceManager.createResourceWithWait(
-            kafkaClients.producerStrimzi(),
-            kafkaClients.consumerStrimzi()
-        );
-        ClientUtils.waitForInstantClientSuccess(testStorage);
-
         // verify KafkaConnect
         final String kafkaConnectPodName = kubeClient(testStorage.getNamespaceName()).listPods(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), kafkaConnectPodName, TestConstants.DEFAULT_SINK_FILE_PATH, testStorage.getMessageCount());
 
         // verify MM1, as topic name does not change, only bootstrap server is changed.
-        final KafkaClients mm1Client = new KafkaClientsBuilder(kafkaClients)
-            .withConsumerName("mm1-consumer")
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(mm1TargetClusterName))
-            .build();
+        final KafkaClients mm1Client =  ClientUtils.getInstantPlainClients(testStorage, KafkaResources.plainBootstrapAddress(mm1TargetClusterName));
         resourceManager.createResourceWithWait(mm1Client.consumerStrimzi());
-        ClientUtils.waitForClientSuccess("mm1-consumer", testStorage.getNamespaceName(), testStorage.getMessageCount());
+        ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
 
         // verify MM2
-        final KafkaClients mm2Client = new KafkaClientsBuilder(kafkaClients)
+        final KafkaClients mm2Client = ClientUtils.getInstantPlainClientBuilder(testStorage, KafkaResources.plainBootstrapAddress(mm2TargetClusterName))
             .withTopicName(mm2SourceMirroredTopicName)
-            .withConsumerName("mm2-consumer")
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(mm2TargetClusterName))
             .build();
         resourceManager.createResourceWithWait(mm2Client.consumerStrimzi());
-        ClientUtils.waitForClientSuccess("mm2-consumer", testStorage.getNamespaceName(), testStorage.getMessageCount());
+        ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
 
         // verify that client incorrectly configured Pod Security Profile wont successfully communicate.
         final KafkaClients incorrectKafkaClients = new KafkaClientsBuilder(kafkaClients)

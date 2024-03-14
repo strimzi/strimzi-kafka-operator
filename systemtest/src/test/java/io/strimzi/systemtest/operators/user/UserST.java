@@ -122,8 +122,7 @@ class UserST extends AbstractST {
         final long observedGeneration = KafkaUserResource.kafkaUserClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(testStorage.getKafkaUsername()).get().getStatus().getObservedGeneration();
 
         // Send and receive messages
-        KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage)
-            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(sharedTestStorage.getClusterName()))
+        KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage, KafkaResources.tlsBootstrapAddress(sharedTestStorage.getClusterName()))
             .withUsername(testStorage.getKafkaUsername())
             .build();
 
@@ -203,8 +202,8 @@ class UserST extends AbstractST {
                     result.contains("controller_mutation_rate=" + mutRate);
             });
 
-        KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage)
-            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(sharedTestStorage.getClusterName()))
+        // TODO refactor scramsha
+        final KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage, KafkaResources.tlsBootstrapAddress(sharedTestStorage.getClusterName()))
             .withUsername(userName)
             .build();
 
@@ -307,6 +306,7 @@ class UserST extends AbstractST {
         resourceManager.createResourceWithWait(clients.producerTlsStrimzi(testStorage.getClusterName()), clients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForInstantClientSuccess(testStorage);
 
+        // TODO refactor scramsha
         clients = new KafkaClientsBuilder(clients)
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
             .withUsername(secretPrefix + scramShaUserName)

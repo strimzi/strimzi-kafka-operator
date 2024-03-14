@@ -303,6 +303,7 @@ class ConnectST extends AbstractST {
         KafkaConnectorUtils.createFileSinkConnector(testStorage.getNamespaceName(), scraperPodName, testStorage.getTopicName(),
             TestConstants.DEFAULT_SINK_FILE_PATH, KafkaConnectResources.url(testStorage.getClusterName(), testStorage.getNamespaceName(), 8083));
 
+        // TODO REFACTOR scramsha !
         KafkaClients kafkaClients = ClientUtils.getInstantPlainClientBuilder(testStorage)
             .withUsername(testStorage.getUsername())
             .build();
@@ -353,7 +354,7 @@ class ConnectST extends AbstractST {
 
         final String scraperPodName = kubeClient(testStorage.getNamespaceName()).listPodsByPrefixInName(testStorage.getScraperName()).get(0).getMetadata().getName();
 
-        KafkaClients kafkaClients = ClientUtils.getInstantPlainClientBuilder(testStorage).build();
+        final KafkaClients kafkaClients = ClientUtils.getInstantPlainClients(testStorage);
         resourceManager.createResourceWithWait(kafkaClients.consumerStrimzi());
         ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
 
@@ -507,7 +508,7 @@ class ConnectST extends AbstractST {
         KafkaConnectorUtils.createFileSinkConnector(testStorage.getNamespaceName(), scraperPodName, testStorage.getTopicName(),
             TestConstants.DEFAULT_SINK_FILE_PATH, KafkaConnectResources.url(testStorage.getClusterName(), testStorage.getNamespaceName(), 8083));
 
-        KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage).build();
+        final KafkaClients kafkaClients = ClientUtils.getInstantTlsClients(testStorage);
         resourceManager.createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()), kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForInstantClientSuccess(testStorage);
 
@@ -579,7 +580,7 @@ class ConnectST extends AbstractST {
         KafkaConnectorUtils.createFileSinkConnector(testStorage.getNamespaceName(), scraperPodName, testStorage.getTopicName(),
             TestConstants.DEFAULT_SINK_FILE_PATH, KafkaConnectResources.url(testStorage.getClusterName(), testStorage.getNamespaceName(), 8083));
 
-        KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage).build();
+        final KafkaClients kafkaClients = ClientUtils.getInstantTlsClients(testStorage);
         resourceManager.createResourceWithWait(kafkaClients.producerScramShaTlsStrimzi(testStorage.getClusterName()), kafkaClients.consumerScramShaTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForInstantClientSuccess(testStorage);
 
@@ -822,8 +823,6 @@ class ConnectST extends AbstractST {
             .endSpec()
             .build());
 
-        KafkaClients kafkaClients = ClientUtils.getInstantPlainClientBuilder(testStorage).build();
-
         String execConnectPod =  kubeClient(testStorage.getNamespaceName()).listPodsByPrefixInName(
             KafkaConnectResources.componentName(testStorage.getClusterName())).get(0).getMetadata().getName();
         JsonObject connectStatus = new JsonObject(cmdKubeClient(testStorage.getNamespaceName()).execInPod(
@@ -834,6 +833,7 @@ class ConnectST extends AbstractST {
         String workerNode = connectStatus.getJsonObject("connector").getString("worker_id").split(":")[0];
         String connectorPodName = workerNode.substring(0, workerNode.indexOf("."));
 
+        final KafkaClients kafkaClients = ClientUtils.getInstantPlainClients(testStorage);
         resourceManager.createResourceWithWait(kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
         ClientUtils.waitForInstantClientSuccess(testStorage);
 
@@ -1452,7 +1452,7 @@ class ConnectST extends AbstractST {
 
         // messages need to be produced for each run (although there are more messages in topic eventually, sink will not copy messages it copied previously (before clearing them)
         LOGGER.info("Producing new messages which are to be watched KafkaConnector once it is resumed");
-        final KafkaClients kafkaClients = ClientUtils.getInstantPlainClientBuilder(testStorage).build();
+        final KafkaClients kafkaClients = ClientUtils.getInstantPlainClients(testStorage);
         resourceManager.createResourceWithWait(kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
         ClientUtils.waitForInstantClientSuccess(testStorage);
 

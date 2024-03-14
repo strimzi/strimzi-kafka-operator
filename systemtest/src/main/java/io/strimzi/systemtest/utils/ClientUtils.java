@@ -6,6 +6,7 @@ package io.strimzi.systemtest.utils;
 
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.systemtest.TestConstants;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
@@ -350,6 +351,17 @@ public class ClientUtils {
     }
 
     /**
+     * Generates a {@link KafkaClientsBuilder} for instant Kafka clients using plain communication (non-TLS).
+     * {@link TestStorage#getClusterName()} and port 9092 are used to generate kafka bootstrap address.
+     *
+     * @param testStorage The {@link TestStorage} instance providing necessary configurations.
+     * @return A configured {@link KafkaClientsBuilder} instance for instant clients with plain communication setup.
+     */
+    public static KafkaClientsBuilder getInstantPlainClientBuilder(TestStorage testStorage) {
+        return getInstantPlainClientBuilder(testStorage, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()));
+    }
+
+    /**
      * Generates a {@link KafkaClientsBuilder} for instant Kafka clients using plain communication (non-TLS),
      * extending the base configuration with the Kafka cluster's plain bootstrap address.
      * {@link TestStorage#getProducerName()} is used for naming producer Job and
@@ -357,27 +369,56 @@ public class ClientUtils {
      * {@link TestStorage#getTopicName()} is used as Topic target by attempted message transition.
      *
      * @param testStorage The {@link TestStorage} instance providing necessary configurations.
+     * @param bootstrapServer is the exact address including port (e.g., source-cluster-kafka-bootstrap:9092)
      * @return A configured {@link KafkaClientsBuilder} instance for instant clients with plain communication setup.
      */
-    public static KafkaClientsBuilder getInstantPlainClientBuilder(TestStorage testStorage) {
+    public static KafkaClientsBuilder getInstantPlainClientBuilder(TestStorage testStorage, String bootstrapServer) {
         return instantClientBuilderBase(testStorage)
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()));
+            .withBootstrapAddress(bootstrapServer);
     }
 
     /**
-     * Generates a {@link KafkaClientsBuilder} for instant Kafka clients using TLS communication,
-     * extending the base configuration with the Kafka cluster's TLS bootstrap address.
-     * {@link TestStorage#getProducerName()} is used for naming producer Job and
-     * {@link TestStorage#getConsumerName()} for naming consumer Job. Finally,
-     * {@link TestStorage#getTopicName()} is used as Topic target by attempted message transition.
+     * Generates a {@link KafkaClientsBuilder} for instant Kafka clients using TLS communication.
+     * {@link TestStorage#getClusterName()} and port 9093 are used to generate kafka bootstrap address.
      *
      * @param testStorage The {@link TestStorage} instance providing necessary configurations.
      * @return A configured {@link KafkaClientsBuilder} instance for instant clients with TLS communication setup.
      */
     public static KafkaClientsBuilder getInstantTlsClientBuilder(TestStorage testStorage) {
+        return getInstantTlsClientBuilder(testStorage, KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()));
+    }
+
+    /**
+     * Generates a {@link KafkaClientsBuilder} for instant Kafka clients using TLS communication.
+     * extending the base configuration with the Kafka cluster's plain bootstrap address.
+     * {@link TestStorage#getProducerName()} is used for naming producer Job and
+     * {@link TestStorage#getConsumerName()} for naming consumer Job. Finally,
+     * {@link TestStorage#getTopicName()} is used as Topic target by attempted message transition.
+     *
+     * @param testStorage The {@link TestStorage} instance providing necessary configurations.
+     * @param bootstrapServer is the exact address including port (e.g., source-cluster-kafka-bootstrap:9093)
+     * @return A configured {@link KafkaClientsBuilder} instance for instant clients with plain communication setup.
+     */
+    public static KafkaClientsBuilder getInstantTlsClientBuilder(TestStorage testStorage, String bootstrapServer) {
         return instantClientBuilderBase(testStorage)
             .withUsername(testStorage.getUsername())
-            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()));
+            .withBootstrapAddress(bootstrapServer);
+    }
+
+    public static KafkaClients getInstantPlainClients(TestStorage testStorage) {
+        return getInstantPlainClientBuilder(testStorage, KafkaResources.plainBootstrapAddress(testStorage.getClusterName())).build();
+    }
+
+    public static KafkaClients getInstantPlainClients(TestStorage testStorage, String bootstrapServer) {
+        return getInstantPlainClientBuilder(testStorage, bootstrapServer).build();
+    }
+
+    public static KafkaClients getInstantTlsClients(TestStorage testStorage) {
+        return getInstantTlsClientBuilder(testStorage, KafkaResources.plainBootstrapAddress(testStorage.getClusterName())).build();
+    }
+
+    public static KafkaClients getInstantTlsClients(TestStorage testStorage, String bootstrapServer) {
+        return getInstantTlsClientBuilder(testStorage, bootstrapServer).build();
     }
 
     // continuous client builders
@@ -398,7 +439,7 @@ public class ClientUtils {
         return new KafkaClientsBuilder()
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
             .withNamespaceName(testStorage.getNamespaceName())
-            .withMessageCount(testStorage.getContinuousMessageCount()) // default 300
+            .withMessageCount(testStorage.getContinuousMessageCount()) // default 200
             .withDelayMs(1000)
             .withTopicName(testStorage.getContinuousTopicName())
             .withProducerName(testStorage.getContinuousProducerName())

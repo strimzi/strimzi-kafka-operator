@@ -664,8 +664,6 @@ class KafkaST extends AbstractST {
 
         resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage).build());
 
-        final KafkaClients kafkaClients = ClientUtils.getInstantPlainClientBuilder(testStorage).build();
-
         LOGGER.info("--> Test Strimzi related expected labels of managed kubernetes resources <--");
 
         LOGGER.info("---> PODS <---");
@@ -758,10 +756,8 @@ class KafkaST extends AbstractST {
             assertThat(pvc.getMetadata().getAnnotations().get(pvcLabelOrAnnotationKey), is(pvcLabelOrAnnotationValue));
         }
 
-        resourceManager.createResourceWithWait(
-            kafkaClients.producerStrimzi(),
-            kafkaClients.consumerStrimzi()
-        );
+        final KafkaClients kafkaClients = ClientUtils.getInstantPlainClients(testStorage);
+        resourceManager.createResourceWithWait(kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
         ClientUtils.waitForInstantClientSuccess(testStorage);
 
         LOGGER.info("--> Test Customer specific labels manipulation (add, update) of Kafka CR and (update) PVC <--");
@@ -863,10 +859,7 @@ class KafkaST extends AbstractST {
         }
 
         LOGGER.info("Produce and Consume messages to make sure Kafka cluster is not broken by labels and annotations manipulation");
-        resourceManager.createResourceWithWait(
-            kafkaClients.producerStrimzi(),
-            kafkaClients.consumerStrimzi()
-        );
+        resourceManager.createResourceWithWait(kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
         ClientUtils.waitForInstantClientSuccess(testStorage);
     }
 
@@ -918,8 +911,6 @@ class KafkaST extends AbstractST {
 
         resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), 1, 1, testStorage.getNamespaceName()).build());
 
-        final KafkaClients kafkaClients = ClientUtils.getInstantPlainClientBuilder(testStorage).build();
-
         String brokerPodName = kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getBrokerSelector()).get(0).getMetadata().getName();
 
         TestUtils.waitFor("KafkaTopic creation inside Kafka Pod", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
@@ -939,10 +930,8 @@ class KafkaST extends AbstractST {
         LOGGER.info("Topic: {} is present in Kafka Broker: {} with no data", testStorage.getTopicName(), brokerPodName);
         assertThat("Topic contains data", topicData, emptyOrNullString());
 
-        resourceManager.createResourceWithWait(
-            kafkaClients.producerStrimzi(),
-            kafkaClients.consumerStrimzi()
-        );
+        final KafkaClients kafkaClients = ClientUtils.getInstantPlainClients(testStorage);
+        resourceManager.createResourceWithWait(kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
         ClientUtils.waitForInstantClientSuccess(testStorage);
 
         LOGGER.info("Verifying presence of files created to store offsets Topic");
@@ -1079,11 +1068,7 @@ class KafkaST extends AbstractST {
         resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage).build());
 
         final KafkaClients kafkaClients = ClientUtils.getInstantPlainClientBuilder(testStorage).build();
-
-        resourceManager.createResourceWithWait(
-            kafkaClients.producerStrimzi(),
-            kafkaClients.consumerStrimzi()
-        );
+        resourceManager.createResourceWithWait(kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
         ClientUtils.waitForInstantClientSuccess(testStorage);
     }
 

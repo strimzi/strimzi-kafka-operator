@@ -60,8 +60,7 @@ class HttpBridgeScramShaST extends AbstractST {
         resourceManager.createResourceWithWait(kafkaBridgeClientJb.producerStrimziBridge());
         ClientUtils.waitForClientSuccess(testStorage.getProducerName(), testStorage.getNamespaceName(), testStorage.getMessageCount());
 
-        KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage)
-            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(suiteTestStorage.getClusterName()))
+        final KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage, KafkaResources.tlsBootstrapAddress(suiteTestStorage.getClusterName()))
             .withUsername(suiteTestStorage.getUsername())
             .build();
 
@@ -82,8 +81,7 @@ class HttpBridgeScramShaST extends AbstractST {
         resourceManager.createResourceWithWait(kafkaBridgeClientJb.consumerStrimziBridge());
 
         // Send messages to Kafka
-        KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage)
-            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(suiteTestStorage.getClusterName()))
+        KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage, KafkaResources.tlsBootstrapAddress(suiteTestStorage.getClusterName()))
             .withUsername(suiteTestStorage.getUsername())
             .build();
 

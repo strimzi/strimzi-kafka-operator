@@ -256,8 +256,7 @@ class SecurityST extends AbstractST {
             KafkaTopicTemplates.topic(testStorage).build()
         );
 
-        KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage).build();
-
+        KafkaClients kafkaClients = ClientUtils.getInstantTlsClients(testStorage);
         resourceManager.createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()), kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForInstantClientSuccess(testStorage);
 
@@ -325,7 +324,6 @@ class SecurityST extends AbstractST {
 
         kafkaClients = new KafkaClientsBuilder(kafkaClients)
             .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
-            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
             .withUsername(bobUserName)
             .build();
 
@@ -420,7 +418,7 @@ class SecurityST extends AbstractST {
             KafkaTopicTemplates.topic(testStorage).build()
         );
 
-        KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage).build();
+        KafkaClients kafkaClients = ClientUtils.getInstantTlsClients(testStorage);
         resourceManager.createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()), kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForInstantClientSuccess(testStorage);
 
@@ -511,7 +509,6 @@ class SecurityST extends AbstractST {
 
         kafkaClients = new KafkaClientsBuilder(kafkaClients)
             .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
-            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
             .withUsername(bobUserName)
             .build();
 
@@ -624,7 +621,7 @@ class SecurityST extends AbstractST {
             KafkaTopicTemplates.topic(testStorage).build()
         );
 
-        KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage).build();
+        final KafkaClients kafkaClients = ClientUtils.getInstantTlsClients(testStorage);
         resourceManager.createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()), kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForInstantClientSuccess(testStorage);
 
@@ -691,8 +688,6 @@ class SecurityST extends AbstractST {
 
         Secret kafkaUserSecret = kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), testStorage.getUsername());
 
-        KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage).build();
-
         Map<String, String> brokerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
 
         CertificateAuthority newCAValidity = new CertificateAuthority();
@@ -739,6 +734,7 @@ class SecurityST extends AbstractST {
         assertThat("KafkaUser certificate has not been renewed within maintenanceTimeWindows",
                 kafkaUserSecret, not(sameInstance(kafkaUserSecretRolled)));
 
+        final KafkaClients kafkaClients = ClientUtils.getInstantTlsClients(testStorage);
         resourceManager.createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()), kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForInstantClientSuccess(testStorage);
     }
@@ -762,8 +758,6 @@ class SecurityST extends AbstractST {
             KafkaUserTemplates.tlsUser(testStorage).build(),
             KafkaTopicTemplates.topic(testStorage).build()
         );
-
-        KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage).build();
 
         List<Secret> secrets = kubeClient().listSecrets(testStorage.getNamespaceName()).stream()
             .filter(secret ->
@@ -796,6 +790,7 @@ class SecurityST extends AbstractST {
             assertThat("Certificates has different cert UIDs", !secrets.get(i).getData().get("ca.crt").equals(regeneratedSecrets.get(i).getData().get("ca.crt")));
         }
 
+        final KafkaClients kafkaClients = ClientUtils.getInstantTlsClients(testStorage);
         resourceManager.createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()), kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForInstantClientSuccess(testStorage);
     }
@@ -1145,7 +1140,7 @@ class SecurityST extends AbstractST {
                 .build()
         );
 
-        KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage).build();
+        KafkaClients kafkaClients = ClientUtils.getInstantTlsClients(testStorage);
         resourceManager.createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()), kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForInstantClientSuccess(testStorage);
 

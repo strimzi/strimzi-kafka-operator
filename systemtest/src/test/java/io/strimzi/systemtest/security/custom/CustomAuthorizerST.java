@@ -106,13 +106,7 @@ public class CustomAuthorizerST extends AbstractST {
 
         LOGGER.info("Checking KafkaUser {} that is able to send messages to Topic: {}", kafkaUserWrite, testStorage.getTopicName());
 
-        KafkaClients kafkaClients = new KafkaClientsBuilder()
-            .withProducerName(testStorage.getProducerName())
-            .withConsumerName(testStorage.getConsumerName())
-            .withNamespaceName(testStorage.getNamespaceName())
-            .withMessageCount(testStorage.getMessageCount())
-            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(sharedTestStorage.getClusterName()))
-            .withTopicName(testStorage.getTopicName())
+        KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage, KafkaResources.tlsBootstrapAddress(sharedTestStorage.getClusterName()))
             .withUsername(kafkaUserWrite)
             .withConsumerGroup(consumerGroupName)
             .build();
@@ -160,13 +154,7 @@ public class CustomAuthorizerST extends AbstractST {
         resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(sharedTestStorage.getClusterName(), testStorage.getTopicName(), Environment.TEST_SUITE_NAMESPACE).build());
         resourceManager.createResourceWithWait(KafkaUserTemplates.tlsUser(Environment.TEST_SUITE_NAMESPACE, sharedTestStorage.getClusterName(), ADMIN).build());
 
-        KafkaClients kafkaClients = new KafkaClientsBuilder()
-            .withProducerName(testStorage.getProducerName())
-            .withConsumerName(testStorage.getConsumerName())
-            .withNamespaceName(testStorage.getNamespaceName())
-            .withMessageCount(testStorage.getMessageCount())
-            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(sharedTestStorage.getClusterName()))
-            .withTopicName(testStorage.getTopicName())
+        final KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage, KafkaResources.tlsBootstrapAddress(sharedTestStorage.getClusterName()))
             .withUsername(ADMIN)
             .build();
 

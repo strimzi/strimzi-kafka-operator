@@ -599,8 +599,7 @@ public class AbstractUpgradeST extends AbstractST {
         this.deployKafkaConnectAndKafkaConnectorWithWaitForReadiness(bundleDowngradeDataWithFeatureGates, upgradeKafkaVersion, testStorage);
         this.deployKafkaUserWithWaitForReadiness(bundleDowngradeDataWithFeatureGates, testStorage.getNamespaceName());
 
-        final KafkaClients clients = ClientUtils.getInstantTlsClientBuilder(testStorage)
-            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(clusterName))
+        final KafkaClients clients = ClientUtils.getInstantTlsClientBuilder(testStorage, KafkaResources.tlsBootstrapAddress(clusterName))
             .withUsername(userName)
             .build();
 

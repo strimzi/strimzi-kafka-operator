@@ -201,7 +201,7 @@ public class MultipleClusterOperatorsST extends AbstractST {
             .endSpec()
             .build());
 
-        KafkaClients basicClients = ClientUtils.getInstantPlainClientBuilder(testStorage).build();
+        final KafkaClients basicClients = ClientUtils.getInstantPlainClients(testStorage);
         resourceManager.createResourceWithWait(basicClients.producerStrimzi());
         ClientUtils.waitForClientSuccess(testStorage.getProducerName(), testStorage.getNamespaceName(), testStorage.getMessageCount());
 

@@ -157,16 +157,12 @@ public class TopicST extends AbstractST {
     void testSendingMessagesToNonExistingTopic() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
-        KafkaClients clients = ClientUtils.getInstantPlainClientBuilder(testStorage)
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(sharedTestStorage.getClusterName()))
-            .build();
-
         LOGGER.info("Checking if {} is on Topic list", testStorage.getTopicName());
         assertFalse(KafkaTopicUtils.hasTopicInKafka(testStorage.getTopicName(), sharedTestStorage.getClusterName(), scraperPodName));
         LOGGER.info("Topic with name {} is not created yet", testStorage.getTopicName());
 
         LOGGER.info("Trying to send messages to non-existing Topic: {}", testStorage.getTopicName());
-
+        final KafkaClients clients = ClientUtils.getInstantPlainClients(testStorage, KafkaResources.plainBootstrapAddress(sharedTestStorage.getClusterName()));
         resourceManager.createResourceWithWait(clients.producerStrimzi(), clients.consumerStrimzi());
         ClientUtils.waitForInstantClientSuccess(testStorage);
 
@@ -211,7 +207,7 @@ public class TopicST extends AbstractST {
             .endSpec()
             .build());
 
-        KafkaClients clients = ClientUtils.getInstantPlainClientBuilder(testStorage).build();
+        final KafkaClients clients = ClientUtils.getInstantPlainClients(testStorage);
         resourceManager.createResourceWithWait(clients.producerStrimzi());
         ClientUtils.waitForInstantProducerClientSuccess(testStorage);
 

@@ -68,8 +68,7 @@ public class DrainCleanerST extends AbstractST {
         // allow NetworkPolicies for the webhook in case that we have "default to deny all" mode enabled
         NetworkPolicyResource.allowNetworkPolicySettingsForWebhook(TestConstants.DRAIN_CLEANER_NAMESPACE, TestConstants.DRAIN_CLEANER_DEPLOYMENT_NAME, Map.of(TestConstants.APP_POD_LABEL, TestConstants.DRAIN_CLEANER_DEPLOYMENT_NAME));
 
-        KafkaClients continuousClients = ClientUtils.getContinuousPlainClientBuilder(testStorage)
-            .withMessageCount(200)
+        final KafkaClients continuousClients = ClientUtils.getContinuousPlainClientBuilder(testStorage)
             .withNamespaceName(TestConstants.DRAIN_CLEANER_NAMESPACE)
             .build();
 

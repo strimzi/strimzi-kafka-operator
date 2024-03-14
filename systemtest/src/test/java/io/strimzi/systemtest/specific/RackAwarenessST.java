@@ -20,7 +20,6 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
-import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.NodePoolsConverter;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -126,7 +125,7 @@ class RackAwarenessST extends AbstractST {
         assertThat(brokerRackOut.contains("broker.rack=" + hostname), is(true));
 
         LOGGER.info("Producing and Consuming data in the Kafka cluster: {}/{}", testStorage.getNamespaceName(), testStorage.getClusterName());
-        KafkaClients kafkaClients = ClientUtils.getInstantPlainClientBuilder(testStorage).build();
+        KafkaClients kafkaClients = ClientUtils.getInstantPlainClients(testStorage);
         resourceManager.createResourceWithWait(kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
         ClientUtils.waitForInstantClientSuccess(testStorage);
     }
@@ -212,7 +211,7 @@ class RackAwarenessST extends AbstractST {
         assertThat(commandOut.equals("consumer.client.rack=" + hostname), is(true));
 
         // produce data which are to be available in the topic
-        KafkaClients kafkaClients = ClientUtils.getInstantPlainClientBuilder(testStorage).build();
+        final KafkaClients kafkaClients = ClientUtils.getInstantPlainClients(testStorage);
         resourceManager.createResourceWithWait(kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
         ClientUtils.waitForInstantClientSuccess(testStorage);
 
@@ -295,19 +294,15 @@ class RackAwarenessST extends AbstractST {
         resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getSourceClusterName(), testStorage.getTopicName(), 3, testStorage.getNamespaceName()).build());
 
         LOGGER.info("Producing messages into the source Kafka: {}/{}, Topic: {}", testStorage.getNamespaceName(), testStorage.getSourceClusterName(), testStorage.getTopicName());
-        KafkaClients clients = ClientUtils.getInstantPlainClientBuilder(testStorage)
-            .withTopicName(testStorage.getTopicName())
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getSourceClusterName()))
-            .build();
-        resourceManager.createResourceWithWait(clients.producerStrimzi());
+        final KafkaClients sourceClients = ClientUtils.getInstantPlainClients(testStorage, KafkaResources.plainBootstrapAddress(testStorage.getSourceClusterName()));
+        resourceManager.createResourceWithWait(sourceClients.producerStrimzi());
         ClientUtils.waitForInstantProducerClientSuccess(testStorage);
 
         LOGGER.info("Consuming messages in the target Kafka: {}/{} mirrored Topic: {}", testStorage.getNamespaceName(), testStorage.getTargetClusterName(), testStorage.getMirroredSourceTopicName());
-        clients = new KafkaClientsBuilder(clients)
+        final KafkaClients targetClients = ClientUtils.getInstantPlainClientBuilder(testStorage, KafkaResources.plainBootstrapAddress(testStorage.getTargetClusterName()))
             .withTopicName(testStorage.getMirroredSourceTopicName())
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getTargetClusterName()))
             .build();
-        resourceManager.createResourceWithWait(clients.consumerStrimzi());
+        resourceManager.createResourceWithWait(targetClients.consumerStrimzi());
         ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
     }
 

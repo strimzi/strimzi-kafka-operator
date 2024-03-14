@@ -203,10 +203,7 @@ class RecoveryST extends AbstractST {
     }
 
     private void verifyStabilityBySendingAndReceivingMessages(TestStorage testStorage) {
-        KafkaClients kafkaClients = ClientUtils.getInstantPlainClientBuilder(testStorage)
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(sharedClusterName))
-            .withUsername(testStorage.getUsername())
-            .build();
+        KafkaClients kafkaClients = ClientUtils.getInstantPlainClients(testStorage, KafkaResources.plainBootstrapAddress(sharedClusterName));
         resourceManager.createResourceWithWait(kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
         ClientUtils.waitForInstantClientSuccess(testStorage);
     }

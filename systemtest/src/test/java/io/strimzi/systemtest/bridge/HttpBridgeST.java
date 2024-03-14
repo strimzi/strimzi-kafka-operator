@@ -88,15 +88,10 @@ class HttpBridgeST extends AbstractST {
         resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(suiteTestStorage.getClusterName(), testStorage.getTopicName(), testStorage.getNamespaceName()).build());
 
         resourceManager.createResourceWithWait(kafkaBridgeClientJob.producerStrimziBridge());
-
         ClientUtils.waitForClientSuccess(testStorage.getProducerName(), testStorage.getNamespaceName(), testStorage.getMessageCount());
 
-        KafkaClients kafkaClients = ClientUtils.getInstantPlainClientBuilder(testStorage)
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(suiteTestStorage.getClusterName()))
-            .build();
-
+        final KafkaClients kafkaClients = ClientUtils.getInstantPlainClients(testStorage, KafkaResources.plainBootstrapAddress(suiteTestStorage.getClusterName()));
         resourceManager.createResourceWithWait(kafkaClients.consumerStrimzi());
-
         ClientUtils.waitForClientSuccess(testStorage.getConsumerName(), testStorage.getNamespaceName(), testStorage.getMessageCount());
 
         // Checking labels for KafkaBridge
@@ -122,13 +117,11 @@ class HttpBridgeST extends AbstractST {
             .withNamespaceName(testStorage.getNamespaceName())
             .build();
 
+        // Start receiving messages with bridge
         resourceManager.createResourceWithWait(kafkaBridgeClientJob.consumerStrimziBridge());
 
         // Send messages to Kafka
-        KafkaClients kafkaClients = ClientUtils.getInstantPlainClientBuilder(testStorage)
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(suiteTestStorage.getClusterName()))
-            .build();
-
+        final KafkaClients kafkaClients = ClientUtils.getInstantPlainClients(testStorage, KafkaResources.plainBootstrapAddress(suiteTestStorage.getClusterName()));
         resourceManager.createResourceWithWait(kafkaClients.producerStrimzi());
 
         ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName(), testStorage.getMessageCount());

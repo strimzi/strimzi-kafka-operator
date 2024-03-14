@@ -456,7 +456,7 @@ public interface TestConstants {
 
     // Count of test messages that needs to be sent during the test
     int MESSAGE_COUNT = 100;
-    int CONTINUOUS_MESSAGE_COUNT = 300;
+    int CONTINUOUS_MESSAGE_COUNT = 200;
 
     /**
      * Auxiliary variable for cluster operator deployment

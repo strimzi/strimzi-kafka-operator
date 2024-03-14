@@ -52,13 +52,6 @@ public class PodSetST extends AbstractST {
         final int replicas = 3;
         final int probeTimeoutSeconds = 6;
 
-        // setup clients configured to produce/consume data for next 3-4 minutes and configured for resilience against one broker being down.
-        String producerAdditionConfiguration = "acks=all\n";
-        KafkaClients clients = ClientUtils.getContinuousPlainClientBuilder(testStorage)
-            .withMessageCount(200)
-            .withAdditionalConfig(producerAdditionConfiguration)
-            .build();
-
         EnvVar reconciliationEnv = new EnvVar(Environment.STRIMZI_POD_SET_RECONCILIATION_ONLY_ENV, "true", null);
         List<EnvVar> envVars = kubeClient().getDeployment(clusterOperator.getDeploymentNamespace(), clusterOperator.getClusterOperatorName()).getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
         envVars.add(reconciliationEnv);
@@ -89,6 +82,8 @@ public class PodSetST extends AbstractST {
                 .endSpec()
                 .build()
         );
+
+        final KafkaClients clients = ClientUtils.getContinuousPlainClientBuilder(testStorage).build();
 
         LOGGER.info("Producing and Consuming messages with clients: {}, {} in Namespace {}", testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName());
         resourceManager.createResourceWithWait(

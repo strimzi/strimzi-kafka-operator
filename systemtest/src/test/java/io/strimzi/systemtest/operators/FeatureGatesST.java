@@ -172,7 +172,7 @@ public class FeatureGatesST extends AbstractST {
         resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage).build());
 
         LOGGER.info("Producing and Consuming messages with clients: {}, {} in Namespace {}", testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName());
-        final KafkaClients clients = ClientUtils.getInstantPlainClientBuilder(testStorage).build();
+        final KafkaClients clients = ClientUtils.getInstantPlainClients(testStorage);
         resourceManager.createResourceWithWait(
             clients.producerStrimzi(),
             clients.consumerStrimzi()
