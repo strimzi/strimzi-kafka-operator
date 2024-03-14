@@ -90,6 +90,7 @@ public class ListenersValidator {
                     validateBootstrapLoadBalancerIp(errors, listener);
                     validateBootstrapNodePort(errors, listener);
                     validateBootstrapLabelsAndAnnotations(errors, listener);
+                    validateBootstrapExternalIPs(errors, listener);
                 }
 
                 if (listener.getConfiguration().getBrokers() != null) {
@@ -98,6 +99,7 @@ public class ListenersValidator {
                         validateBrokerLoadBalancerIp(errors, listener, broker);
                         validateBrokerNodePort(errors, listener, broker);
                         validateBrokerLabelsAndAnnotations(errors, listener, broker);
+                        validateBrokerExternalIPs(errors, listener, broker);
                     }
                 }
 
@@ -355,8 +357,8 @@ public class ListenersValidator {
     private static void validateBootstrapExternalIPs(Set<String> errors, GenericKafkaListener listener) {
         if (!KafkaListenerType.NODEPORT.equals(listener.getType())
                 && listener.getConfiguration().getBootstrap().getExternalIPs() != null)    {
-        	errors.add("listener " + listener.getName() + " cannot configure bootstrap.externalIPs because it is not NodePort based listener");
-		}
+            errors.add("listener " + listener.getName() + " cannot configure bootstrap.externalIPs because it is not NodePort based listener");
+        }
     }
 
     /**
@@ -437,8 +439,8 @@ public class ListenersValidator {
     private static void validateBrokerExternalIPs(Set<String> errors, GenericKafkaListener listener, GenericKafkaListenerConfigurationBroker broker) {
         if (!KafkaListenerType.NODEPORT.equals(listener.getType())
                 && broker.getExternalIPs() != null)    {
-        	errors.add("listener " + listener.getName() + " cannot configure brokers[].externalIPs because it is not NodePort based listener");
-		}
+            errors.add("listener " + listener.getName() + " cannot configure brokers[].externalIPs because it is not NodePort based listener");
+        }
     }
 
     /**

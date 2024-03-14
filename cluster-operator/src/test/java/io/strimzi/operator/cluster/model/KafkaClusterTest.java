@@ -4081,8 +4081,8 @@ public class KafkaClusterTest {
 
     @ParallelTest
     public void testNodePortWithBootstrapExternalIPs() {
-		// set externalIP
-		GenericKafkaListenerConfigurationBootstrap bootstrapConfig = new GenericKafkaListenerConfigurationBootstrapBuilder()
+        // set externalIP
+        GenericKafkaListenerConfigurationBootstrap bootstrapConfig = new GenericKafkaListenerConfigurationBootstrapBuilder()
                 .withNodePort(32100)
                 .withExternalIPs(Arrays.asList("10.0.0.1"))
                 .build();
