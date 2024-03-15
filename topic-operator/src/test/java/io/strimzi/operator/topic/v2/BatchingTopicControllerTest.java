@@ -29,8 +29,12 @@ import org.apache.kafka.clients.admin.DescribeConfigsResult;
 import org.apache.kafka.clients.admin.DescribeTopicsResult;
 import org.apache.kafka.clients.admin.ListPartitionReassignmentsResult;
 import org.apache.kafka.clients.admin.NewTopic;
+import org.apache.kafka.clients.admin.PartitionReassignment;
+import org.apache.kafka.clients.admin.TopicDescription;
 import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.TopicCollection;
+import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.TopicPartitionInfo;
 import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.config.TopicConfig;
 import org.apache.logging.log4j.LogManager;
@@ -47,18 +51,16 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 import static io.strimzi.api.kafka.model.topic.KafkaTopic.RESOURCE_KIND;
-import static io.strimzi.api.kafka.model.topic.ReplicasChangeState.ONGOING;
 import static io.strimzi.api.kafka.model.topic.ReplicasChangeState.PENDING;
 import static io.strimzi.operator.topic.v2.TopicOperatorUtil.topicName;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -262,7 +264,7 @@ class BatchingTopicControllerTest {
 
     @ParameterizedTest
     @ValueSource(booleans = { true, false })
-    public void replicasChangeShouldMoveToPendingFromNew(boolean cruiseControlEnabled) {
+    public void replicasChangeShouldBeReconciled(boolean cruiseControlEnabled) {
         int replicationFactor = 1;
 
         // setup
@@ -272,13 +274,25 @@ class BatchingTopicControllerTest {
         Mockito.doReturn(false).when(config).enableAdditionalMetrics();
         Mockito.doReturn(cruiseControlEnabled).when(config).cruiseControlEnabled();
 
-        var admin = Mockito.mock(Admin.class);
         var describeClusterResult = Mockito.mock(DescribeClusterResult.class);
-        Mockito.doReturn(describeClusterResult).when(admin).describeCluster();
         Mockito.doReturn(KafkaFuture.completedFuture(List.of())).when(describeClusterResult).nodes();
 
+        var partitionReassignmentResult = Mockito.mock(ListPartitionReassignmentsResult.class);
+        var topicPartition = Mockito.mock(TopicPartition.class);
+        var partitionReassignment = Mockito.mock(PartitionReassignment.class);
+        Mockito.doReturn(KafkaFuture.completedFuture(Map.of(topicPartition, partitionReassignment))).when(partitionReassignmentResult).reassignments();
+
+        var admin = Mockito.mock(Admin.class);
+        Mockito.doReturn(describeClusterResult).when(admin).describeCluster();
+        Mockito.doReturn(partitionReassignmentResult).when(admin).listPartitionReassignments(any(Set.class));
+        
+        var topicDescription = Mockito.mock(TopicDescription.class);
+        var topicPartitionInfo = Mockito.mock(TopicPartitionInfo.class);
+        Mockito.doReturn(List.of(topicPartitionInfo)).when(topicDescription).partitions();
+        
         var currentState = Mockito.mock(BatchingTopicController.CurrentState.class);
         Mockito.doReturn(replicationFactor).when(currentState).uniqueReplicationFactor();
+        Mockito.doReturn(topicDescription).when(currentState).topicDescription();
         
         var inputKt = new KafkaTopicBuilder()
             .withNewMetadata()
@@ -293,7 +307,11 @@ class BatchingTopicControllerTest {
             .build();
         var inputRt = new ReconcilableTopic(
             new Reconciliation("test", RESOURCE_KIND, NAMESPACE, "my-topic"), inputKt, topicName(inputKt));
-        
+
+        var reconcilableTopics = List.of(inputRt);
+        var currentStatesOrError = new BatchingTopicController.PartitionedByError<>(
+            List.of(new BatchingTopicController.Pair<>(inputRt, Either.ofRight(currentState))), List.of());
+
         var outputKt = new KafkaTopicBuilder(inputKt)
             .withStatus(new KafkaTopicStatusBuilder()
                 .withReplicasChange(new ReplicasChangeStatusBuilder()
@@ -309,169 +327,21 @@ class BatchingTopicControllerTest {
         Mockito.doReturn(List.of(outputRt)).when(replicasChangeHandler).requestPendingChanges(anyList());
         Mockito.doReturn(List.of()).when(replicasChangeHandler).requestOngoingChanges(anyList());
 
-        var reconcilableTopics = List.of(inputRt);
-        var differentRfResults = new BatchingTopicController.PartitionedByError<>(
-            List.of(new BatchingTopicController.Pair<>(inputRt, Either.ofRight(currentState))), List.of());
-        Map<ReconcilableTopic, Either<TopicOperatorException, Object>> results = new HashMap<>();
-
         // test
-        new BatchingTopicController(config, Map.of("key", "VALUE"), admin, client, metrics, replicasChangeHandler)
-            .maybeCheckReplicasChanges(reconcilableTopics, differentRfResults, results);
+        var results = new BatchingTopicController(config, Map.of("key", "VALUE"), admin, client, metrics, replicasChangeHandler)
+            .checkReplicasChanges(reconcilableTopics, currentStatesOrError);
 
         if (cruiseControlEnabled) {
-            assertThat(results.keySet().stream().findFirst().get(), is(outputRt));
-            assertThat(results.size(), is(1));
+            assertThat(results.ok().count(), is(1L));
+            assertThat(results.ok().findFirst().get().getKey(), is(outputRt));
         } else {
-            assertThat(results.keySet(), empty());
+            assertThat(results.errors().count(), is(1L));
+            assertThat(results.errors().findFirst().get().getValue(), instanceOf(TopicOperatorException.NotSupported.class));
         }
     }
 
-    @ParameterizedTest
-    @ValueSource(booleans = { true, false })
-    public void replicasChangeShouldMoveToOngoingFromPending(boolean cruiseControlEnabled) {
-        int replicationFactor = 1;
-
-        // setup: pending with .spec.replicas > uniqueReplicationFactor
-        var config = Mockito.mock(TopicOperatorConfig.class);
-        Mockito.doReturn(NAMESPACE).when(config).namespace();
-        Mockito.doReturn(true).when(config).useFinalizer();
-        Mockito.doReturn(false).when(config).enableAdditionalMetrics();
-        Mockito.doReturn(cruiseControlEnabled).when(config).cruiseControlEnabled();
-
-        var admin = Mockito.mock(Admin.class);
-        var describeClusterResult = Mockito.mock(DescribeClusterResult.class);
-        Mockito.doReturn(describeClusterResult).when(admin).describeCluster();
-        Mockito.doReturn(KafkaFuture.completedFuture(List.of())).when(describeClusterResult).nodes();
-        
-        var currentState = Mockito.mock(BatchingTopicController.CurrentState.class);
-        Mockito.doReturn(replicationFactor).when(currentState).uniqueReplicationFactor();
-        
-        var inputKt = new KafkaTopicBuilder()
-            .withNewMetadata()
-                .withName("my-topic")
-                .withNamespace(namespace(NAMESPACE))
-                .addToLabels("key", "VALUE")
-            .endMetadata()
-            .withNewSpec()
-                .withPartitions(25)
-                .withReplicas(++replicationFactor)
-            .endSpec()
-            .withStatus(new KafkaTopicStatusBuilder()
-                .withReplicasChange(new ReplicasChangeStatusBuilder()
-                    .withState(PENDING)
-                    .withTargetReplicas(replicationFactor)
-                    .build())
-                .build())
-            .build();
-        var inputRt = new ReconcilableTopic(
-            new Reconciliation("test", RESOURCE_KIND, NAMESPACE, "my-topic"), inputKt, topicName(inputKt));
-        
-        var outputKt = new KafkaTopicBuilder(inputKt)
-            .withStatus(new KafkaTopicStatusBuilder()
-                .withReplicasChange(new ReplicasChangeStatusBuilder()
-                    .withSessionId("1aa418ca-53ed-4b93-b0a4-58413c4fc0cb")
-                    .withState(ONGOING)
-                    .withTargetReplicas(replicationFactor)
-                    .build())
-                .build())
-            .build();
-        var outputRt = new ReconcilableTopic(
-            new Reconciliation("test", "KafkaTopic", NAMESPACE, "my-topic"), outputKt, topicName(outputKt));
-        
-        var replicasChangeHandler = Mockito.mock(ReplicasChangeHandler.class);
-        Mockito.doReturn(List.of()).when(replicasChangeHandler).requestPendingChanges(anyList());
-        Mockito.doReturn(List.of(outputRt)).when(replicasChangeHandler).requestOngoingChanges(anyList());
-        
-        var reconcilableTopics = List.of(inputRt);
-        var differentRfResults = new BatchingTopicController.PartitionedByError<>(
-            List.of(new BatchingTopicController.Pair<>(inputRt, Either.ofRight(currentState))), List.of());
-        Map<ReconcilableTopic, Either<TopicOperatorException, Object>> results = new HashMap<>();
-        
-        // run test
-        new BatchingTopicController(config, Map.of("key", "VALUE"), admin, client, metrics, replicasChangeHandler)
-            .maybeCheckReplicasChanges(reconcilableTopics, differentRfResults, results);
-
-        if (cruiseControlEnabled) {
-            assertThat(results.keySet().stream().findFirst().get(), is(outputRt));
-            assertThat(results.size(), is(1));
-        } else {
-            assertThat(results.keySet(), empty());
-        }
-    }
-
-    @ParameterizedTest
-    @ValueSource(booleans = { true, false })
-    public void replicasChangeShouldMoveToCompletedFromOngoing(boolean cruiseControlEnabled) {
-        int replicationFactor = 3;
-
-        // setup: pending with .spec.replicas > uniqueReplicationFactor
-        var config = Mockito.mock(TopicOperatorConfig.class);
-        Mockito.doReturn(NAMESPACE).when(config).namespace();
-        Mockito.doReturn(true).when(config).useFinalizer();
-        Mockito.doReturn(false).when(config).enableAdditionalMetrics();
-        Mockito.doReturn(cruiseControlEnabled).when(config).cruiseControlEnabled();
-
-        var admin = Mockito.mock(Admin.class);
-        var describeClusterResult = Mockito.mock(DescribeClusterResult.class);
-        Mockito.doReturn(describeClusterResult).when(admin).describeCluster();
-        Mockito.doReturn(KafkaFuture.completedFuture(List.of())).when(describeClusterResult).nodes();
-
-        var currentState = Mockito.mock(BatchingTopicController.CurrentState.class);
-        Mockito.doReturn(replicationFactor).when(currentState).uniqueReplicationFactor();
-
-        var inputKt = new KafkaTopicBuilder()
-            .withNewMetadata()
-                .withName("my-topic")
-                .withNamespace(namespace(NAMESPACE))
-                .addToLabels("key", "VALUE")
-            .endMetadata()
-            .withNewSpec()
-                .withPartitions(25)
-                .withReplicas(replicationFactor)
-            .endSpec()
-            .withStatus(new KafkaTopicStatusBuilder()
-                .withReplicasChange(new ReplicasChangeStatusBuilder()
-                    .withSessionId("1aa418ca-53ed-4b93-b0a4-58413c4fc0cb")
-                    .withState(ONGOING)
-                    .withTargetReplicas(replicationFactor)
-                    .build())
-                .build())
-            .build();
-        var inputRt = new ReconcilableTopic(
-            new Reconciliation("test", RESOURCE_KIND, NAMESPACE, "my-topic"), inputKt, topicName(inputKt));
-        
-        var outputKt = new KafkaTopicBuilder(inputKt)
-            .withStatus(new KafkaTopicStatusBuilder()
-                .withReplicasChange(null)
-                .build())
-            .build();
-        var outputRt = new ReconcilableTopic(
-            new Reconciliation("test", "KafkaTopic", NAMESPACE, "my-topic"), outputKt, topicName(outputKt));
-
-        var replicasChangeHandler = Mockito.mock(ReplicasChangeHandler.class);
-        Mockito.doReturn(List.of()).when(replicasChangeHandler).requestPendingChanges(anyList());
-        Mockito.doReturn(List.of(outputRt)).when(replicasChangeHandler).requestOngoingChanges(anyList());
-
-        var reconcilableTopics = List.of(inputRt);
-        var differentRfResults = new BatchingTopicController.PartitionedByError<>(
-            List.of(new BatchingTopicController.Pair<>(inputRt, Either.ofRight(currentState))), List.of());
-        Map<ReconcilableTopic, Either<TopicOperatorException, Object>> results = new HashMap<>();
-
-        // run test
-        new BatchingTopicController(config, Map.of("key", "VALUE"), admin, client, metrics, replicasChangeHandler)
-            .maybeCheckReplicasChanges(reconcilableTopics, differentRfResults, results);
-
-        if (cruiseControlEnabled) {
-            assertThat(results.keySet().stream().findFirst().get(), is(outputRt));
-            assertThat(results.size(), is(1));
-        } else {
-            assertThat(results.keySet(), empty());
-        }
-    }
-
-    @ParameterizedTest
-    @ValueSource(booleans = { true, false })
-    public void replicasChangeShouldCompleteWhenSpecIsReverted(boolean cruiseControlEnabled) {
+    @Test
+    public void replicasChangeShouldCompleteWhenSpecIsReverted() {
         int replicationFactor = 3;
 
         // setup: pending with error and .spec.replicas == uniqueReplicationFactor
@@ -479,15 +349,27 @@ class BatchingTopicControllerTest {
         Mockito.doReturn(NAMESPACE).when(config).namespace();
         Mockito.doReturn(true).when(config).useFinalizer();
         Mockito.doReturn(false).when(config).enableAdditionalMetrics();
-        Mockito.doReturn(cruiseControlEnabled).when(config).cruiseControlEnabled();
+        Mockito.doReturn(true).when(config).cruiseControlEnabled();
+
+        var describeClusterResult = Mockito.mock(DescribeClusterResult.class);
+        Mockito.doReturn(KafkaFuture.completedFuture(List.of())).when(describeClusterResult).nodes();
+
+        var partitionReassignmentResult = Mockito.mock(ListPartitionReassignmentsResult.class);
+        var topicPartition = Mockito.mock(TopicPartition.class);
+        var partitionReassignment = Mockito.mock(PartitionReassignment.class);
+        Mockito.doReturn(KafkaFuture.completedFuture(Map.of(topicPartition, partitionReassignment))).when(partitionReassignmentResult).reassignments();
 
         var admin = Mockito.mock(Admin.class);
-        var describeClusterResult = Mockito.mock(DescribeClusterResult.class);
         Mockito.doReturn(describeClusterResult).when(admin).describeCluster();
-        Mockito.doReturn(KafkaFuture.completedFuture(List.of())).when(describeClusterResult).nodes();
+        Mockito.doReturn(partitionReassignmentResult).when(admin).listPartitionReassignments(any(Set.class));
+
+        var topicDescription = Mockito.mock(TopicDescription.class);
+        var topicPartitionInfo = Mockito.mock(TopicPartitionInfo.class);
+        Mockito.doReturn(List.of(topicPartitionInfo)).when(topicDescription).partitions();
 
         var currentState = Mockito.mock(BatchingTopicController.CurrentState.class);
         Mockito.doReturn(replicationFactor).when(currentState).uniqueReplicationFactor();
+        Mockito.doReturn(topicDescription).when(currentState).topicDescription();
         
         var kafkaTopic = new KafkaTopicBuilder()
             .withNewMetadata()
@@ -516,38 +398,47 @@ class BatchingTopicControllerTest {
         Mockito.doReturn(List.of()).when(replicasChangeHandler).requestOngoingChanges(anyList());
         
         var reconcilableTopics = List.of(reconcilableTopic);
-        BatchingTopicController.PartitionedByError<ReconcilableTopic, BatchingTopicController.CurrentState> differentRfResults
+        BatchingTopicController.PartitionedByError<ReconcilableTopic, BatchingTopicController.CurrentState> currentStatesOrError
             = new BatchingTopicController.PartitionedByError<>(List.of(), List.of());
-        Map<ReconcilableTopic, Either<TopicOperatorException, Object>> results = new HashMap<>();
         
         // run test
-        new BatchingTopicController(config, Map.of("key", "VALUE"), admin, client, metrics, replicasChangeHandler)
-            .maybeCheckReplicasChanges(reconcilableTopics, differentRfResults, results);
+        var results = new BatchingTopicController(config, Map.of("key", "VALUE"), admin, client, metrics, replicasChangeHandler)
+            .checkReplicasChanges(reconcilableTopics, currentStatesOrError);
 
-        if (cruiseControlEnabled) {
-            assertThat(kafkaTopic.getStatus().getReplicasChange(), is(nullValue()));
-            assertThat(results.size(), is(1));
-        } else {
-            assertThat(results.keySet(), empty());
-        }
+        assertThat(results.ok().count(), is(1L));
+        assertThat(results.ok().findFirst().get().getKey().kt().getStatus().getReplicasChange(), is(nullValue()));
     }
 
-    @ParameterizedTest
-    @ValueSource(booleans = { true, false })
-    public void replicasChangeShouldCompleteCruiseControlRestarts(boolean cruiseControlEnabled) {
+    @Test
+    public void replicasChangeShouldCompleteWhenCruiseControlRestarts() {
         int replicationFactor = 1;
 
         // setup: pending with .spec.replicas == uniqueReplicationFactor
-        var admin = Mockito.mock(Admin.class);
-        var describeClusterResult = Mockito.mock(DescribeClusterResult.class);
-        Mockito.doReturn(describeClusterResult).when(admin).describeCluster();
-        Mockito.doReturn(KafkaFuture.completedFuture(List.of())).when(describeClusterResult).nodes();
-
         var config = Mockito.mock(TopicOperatorConfig.class);
         Mockito.doReturn(NAMESPACE).when(config).namespace();
         Mockito.doReturn(true).when(config).useFinalizer();
         Mockito.doReturn(false).when(config).enableAdditionalMetrics();
-        Mockito.doReturn(cruiseControlEnabled).when(config).cruiseControlEnabled();
+        Mockito.doReturn(true).when(config).cruiseControlEnabled();
+
+        var describeClusterResult = Mockito.mock(DescribeClusterResult.class);
+        Mockito.doReturn(KafkaFuture.completedFuture(List.of())).when(describeClusterResult).nodes();
+
+        var partitionReassignmentResult = Mockito.mock(ListPartitionReassignmentsResult.class);
+        var topicPartition = Mockito.mock(TopicPartition.class);
+        var partitionReassignment = Mockito.mock(PartitionReassignment.class);
+        Mockito.doReturn(KafkaFuture.completedFuture(Map.of(topicPartition, partitionReassignment))).when(partitionReassignmentResult).reassignments();
+
+        var admin = Mockito.mock(Admin.class);
+        Mockito.doReturn(describeClusterResult).when(admin).describeCluster();
+        Mockito.doReturn(partitionReassignmentResult).when(admin).listPartitionReassignments(any(Set.class));
+
+        var topicDescription = Mockito.mock(TopicDescription.class);
+        var topicPartitionInfo = Mockito.mock(TopicPartitionInfo.class);
+        Mockito.doReturn(List.of(topicPartitionInfo)).when(topicDescription).partitions();
+
+        var currentState = Mockito.mock(BatchingTopicController.CurrentState.class);
+        Mockito.doReturn(replicationFactor).when(currentState).uniqueReplicationFactor();
+        Mockito.doReturn(topicDescription).when(currentState).topicDescription();
 
         var kafkaTopic = new KafkaTopicBuilder()
             .withNewMetadata()
@@ -575,19 +466,14 @@ class BatchingTopicControllerTest {
         Mockito.doReturn(List.of()).when(replicasChangeHandler).requestOngoingChanges(anyList());
 
         var reconcilableTopics = List.of(reconcilableTopic);
-        BatchingTopicController.PartitionedByError<ReconcilableTopic, BatchingTopicController.CurrentState> differentRfResults 
+        BatchingTopicController.PartitionedByError<ReconcilableTopic, BatchingTopicController.CurrentState> currentStatesOrError 
             = new BatchingTopicController.PartitionedByError<>(List.of(), List.of());
-        Map<ReconcilableTopic, Either<TopicOperatorException, Object>> results = new HashMap<>();
 
         // run test
-        new BatchingTopicController(config, Map.of("key", "VALUE"), admin, client, metrics, replicasChangeHandler)
-            .maybeCheckReplicasChanges(reconcilableTopics, differentRfResults, results);
-
-        if (cruiseControlEnabled) {
-            assertThat(kafkaTopic.getStatus().getReplicasChange(), is(nullValue()));
-            assertThat(results.size(), is(1));
-        } else {
-            assertThat(results.keySet(), empty());
-        }
+        var results = new BatchingTopicController(config, Map.of("key", "VALUE"), admin, client, metrics, replicasChangeHandler)
+            .checkReplicasChanges(reconcilableTopics, currentStatesOrError);
+        
+        assertThat(results.ok().count(), is(1L));
+        assertThat(results.ok().findFirst().get().getKey().kt().getStatus().getReplicasChange(), is(nullValue()));
     }
 }
