@@ -1198,12 +1198,13 @@ class MirrorMaker2ST extends AbstractST {
         brokerTargetPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), controlTargetSelector, 1, brokerTargetPods);
         mmSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getMM2Selector(), 1, mmSnapshot);
 
-        LOGGER.info("Producing messages to source cluster: {} and consuming from target cluster: {} after clients certs removal", testStorage.getSourceClusterName(), testStorage.getTargetClusterName());
-        resourceManager.createResourceWithWait(
-            sourceClients.producerTlsStrimzi(testStorage.getSourceClusterName()),
-            targetClients.consumerTlsStrimzi(testStorage.getTargetClusterName())
-        );
+        LOGGER.info("Producing messages in source cluster: {}/{}", testStorage.getNamespaceName(), testStorage.getSourceClusterName());
+        resourceManager.createResourceWithWait(sourceClients.producerTlsStrimzi(testStorage.getSourceClusterName()), sourceClients.consumerTlsStrimzi(testStorage.getSourceClusterName()));
         ClientUtils.waitForInstantClientSuccess(testStorage);
+
+        LOGGER.info("Consuming messages in target cluster: {}/{}", testStorage.getNamespaceName(), testStorage.getTargetClusterName());
+        resourceManager.createResourceWithWait(targetClients.consumerTlsStrimzi(testStorage.getTargetClusterName()));
+        ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
 
         LOGGER.info("Renew Cluster CA secret for Source clusters via annotation");
         String sourceClusterCaSecretName = KafkaResources.clusterCaCertificateSecretName(testStorage.getSourceClusterName());
@@ -1227,12 +1228,14 @@ class MirrorMaker2ST extends AbstractST {
         DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), KafkaResources.entityOperatorDeploymentName(testStorage.getTargetClusterName()), 1, eoTargetPods);
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getMM2Selector(), 1, mmSnapshot);
 
-        LOGGER.info("Producing messages to source cluster: {} and consuming from target cluster: {} after clients certs removal", testStorage.getSourceClusterName(), testStorage.getTargetClusterName());
-        resourceManager.createResourceWithWait(
-            sourceClients.producerTlsStrimzi(testStorage.getSourceClusterName()),
-            targetClients.consumerTlsStrimzi(testStorage.getTargetClusterName())
-        );
+        LOGGER.info("Producing messages in source cluster: {}/{}", testStorage.getNamespaceName(), testStorage.getSourceClusterName());
+        resourceManager.createResourceWithWait(sourceClients.producerTlsStrimzi(testStorage.getSourceClusterName()), sourceClients.consumerTlsStrimzi(testStorage.getSourceClusterName()));
         ClientUtils.waitForInstantClientSuccess(testStorage);
+
+        LOGGER.info("Consuming messages in target cluster: {}/{}", testStorage.getNamespaceName(), testStorage.getTargetClusterName());
+        resourceManager.createResourceWithWait(targetClients.consumerTlsStrimzi(testStorage.getTargetClusterName()));
+        ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
+
     }
 
     @BeforeAll

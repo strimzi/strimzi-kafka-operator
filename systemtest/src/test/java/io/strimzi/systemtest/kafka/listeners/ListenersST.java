@@ -190,8 +190,16 @@ public class ListenersST extends AbstractST {
             KafkaUserTemplates.tlsUser(testStorage).build()
         );
 
-        LOGGER.info("Transmitting messages over tls transport using mutual tls auth with bootstrap address: {}", KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()));
-        final KafkaClients kafkaClients = ClientUtils.getInstantTlsClients(testStorage);
+        KafkaClients kafkaClients = new KafkaClientsBuilder()
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withMessageCount(testStorage.getMessageCount())
+            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
+            .withUsername(testStorage.getUsername())
+            .withTopicName(testStorage.getTopicName())
+            .build();
+
         resourceManager.createResourceWithWait(
             kafkaClients.producerTlsStrimzi(testStorage.getClusterName()),
             kafkaClients.consumerTlsStrimzi(testStorage.getClusterName())

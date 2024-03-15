@@ -518,7 +518,7 @@ public class ClientUtils {
      * @return build {@link KafkaClients}.
      */
     public static KafkaClients getInstantTlsClients(TestStorage testStorage) {
-        return getInstantTlsClientBuilder(testStorage, KafkaResources.plainBootstrapAddress(testStorage.getClusterName())).build();
+        return getInstantTlsClientBuilder(testStorage, KafkaResources.tlsBootstrapAddress(testStorage.getClusterName())).build();
     }
 
     /**
