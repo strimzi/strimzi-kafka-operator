@@ -8,7 +8,6 @@ topic-operator/scripts/*.sh
 kafka-init/scripts/*.sh
 docker-images/kafka-based/kafka/scripts/*.sh
 docker-images/kafka-based/kafka/cruise-control-scripts/*.sh
-docker-images/kafka-based/kafka/stunnel-scripts/*.sh
 docker-images/kafka-based/kafka/exporter-scripts/*.sh
 tools/*.sh"
 

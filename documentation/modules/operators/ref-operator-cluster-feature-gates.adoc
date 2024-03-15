@@ -106,12 +106,6 @@ The `Kafka` custom resource using KRaft mode must also have the annotation `stri
 
 Currently, the KRaft mode in Strimzi has the following major limitations:
 
-<<<<<<< HEAD
-* Only the _Unidirectional_ Topic Operator is supported in KRaft mode.
-  The _Bidirectional_ Topic Operator is not supported and when the `UnidirectionalTopicOperator` feature gate is disabled, the `spec.entityOperator.topicOperator` property *must be removed* from the `Kafka` custom resource.
-=======
-* Moving from Kafka clusters with ZooKeeper to KRaft clusters or the other way around is not supported.
->>>>>>> 170aa7853 (Promote UnidirectionalTopicOperator feature gate to GA)
 * JBOD storage is not supported. 
   The `type: jbod` storage can be used, but the JBOD array can contain only one disk.
 * Scaling of KRaft controller-only nodes up or down is not supported.

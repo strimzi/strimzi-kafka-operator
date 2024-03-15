@@ -79,17 +79,14 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
     /* test */ static final String ENV_VAR_CRUISE_CONTROL_SSL_ENABLED = "STRIMZI_CRUISE_CONTROL_SSL_ENABLED";
     /* test */ static final String ENV_VAR_CRUISE_CONTROL_AUTH_ENABLED = "STRIMZI_CRUISE_CONTROL_AUTH_ENABLED";
 
-    // Kafka bootstrap servers and Zookeeper nodes can't be specified in the JSON
+    // Kafka bootstrap servers can't be specified in the JSON
     /* test */ String kafkaBootstrapServers;
-    /* test */ String zookeeperConnect;
     private boolean cruiseControlEnabled;
     private boolean rackAwarenessEnabled;
 
     private String watchedNamespace;
     /* test */ int reconciliationIntervalMs;
-    /* test */ int zookeeperSessionTimeoutMs;
     /* test */ String resourceLabels;
-    /* test */ int topicMetadataMaxAttempts;
     private ResourceTemplate templateRoleBinding;
 
     private LoggingModel logging;
@@ -106,11 +103,8 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
 
         // create a default configuration
         this.kafkaBootstrapServers = KafkaResources.bootstrapServiceName(cluster) + ":" + KafkaCluster.REPLICATION_PORT;
-        this.zookeeperConnect = "localhost:" + EntityTopicOperatorSpec.DEFAULT_ZOOKEEPER_PORT;
         this.reconciliationIntervalMs = EntityTopicOperatorSpec.DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS * 1_000;
-        this.zookeeperSessionTimeoutMs = EntityTopicOperatorSpec.DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_SECONDS * 1_000;
         this.resourceLabels = ModelUtils.defaultResourceLabels(cluster);
-        this.topicMetadataMaxAttempts = EntityTopicOperatorSpec.DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS;
     }
 
     /**
@@ -137,8 +131,6 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
             result.image = image;
             result.watchedNamespace = topicOperatorSpec.getWatchedNamespace() != null ? topicOperatorSpec.getWatchedNamespace() : kafkaAssembly.getMetadata().getNamespace();
             result.reconciliationIntervalMs = topicOperatorSpec.getReconciliationIntervalSeconds() * 1_000;
-            result.zookeeperSessionTimeoutMs = topicOperatorSpec.getZookeeperSessionTimeoutSeconds() * 1_000;
-            result.topicMetadataMaxAttempts = topicOperatorSpec.getTopicMetadataMaxAttempts();
             result.logging = new LoggingModel(topicOperatorSpec, result.getClass().getSimpleName(), true, false);
             result.gcLoggingEnabled = topicOperatorSpec.getJvmOptions() == null ? JvmOptions.DEFAULT_GC_LOGGING_ENABLED : topicOperatorSpec.getJvmOptions().isGcLoggingEnabled();
             result.jvmOptions = topicOperatorSpec.getJvmOptions();
@@ -260,7 +252,7 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
 
     /**
      * Generate the Secret containing the Entity Topic Operator certificate signed by the cluster CA certificate used for TLS based
-     * internal communication with Kafka and Zookeeper.
+     * internal communication with Kafka.
      * It also contains the related Entity Topic Operator private key.
      *
      * Note: This certificate will be used by both Topic Operator Container and the TLS sidecar container. The User Operator Container use a separate certificate.

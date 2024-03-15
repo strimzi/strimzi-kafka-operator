@@ -60,7 +60,7 @@ public class EntityOperatorSpec implements UnknownPropertyPreserving, Serializab
     }
 
     @Deprecated
-    @DeprecatedProperty(description = "TLS sidecar was removed in Strimzi 0.41.0.")
+    @DeprecatedProperty(description = "TLS sidecar was deprecated in Strimzi 0.41.0.")
     @Description("TLS sidecar configuration")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public TlsSidecar getTlsSidecar() {

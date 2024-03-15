@@ -161,11 +161,8 @@ public class EntityTopicOperatorTest {
         assertThat(entityTopicOperator.livenessProbeOptions.getPeriodSeconds(), is(livenessProbe.getPeriodSeconds()));
         assertThat(entityTopicOperator.watchedNamespace(), is(toWatchedNamespace));
         assertThat(entityTopicOperator.reconciliationIntervalMs, is(toReconciliationInterval * 1000));
-        assertThat(entityTopicOperator.zookeeperSessionTimeoutMs, is(toZookeeperSessionTimeout * 1000));
-        assertThat(entityTopicOperator.zookeeperConnect, is("localhost:2181"));
         assertThat(entityTopicOperator.kafkaBootstrapServers, is(KafkaResources.bootstrapServiceName(cluster) + ":" + KafkaCluster.REPLICATION_PORT));
         assertThat(entityTopicOperator.resourceLabels, is(ModelUtils.defaultResourceLabels(cluster)));
-        assertThat(entityTopicOperator.topicMetadataMaxAttempts, is(toTopicMetadataMaxAttempts));
         assertThat(entityTopicOperator.logging().getLogging().getType(), is(topicOperatorLogging.getType()));
         assertThat(((InlineLogging) entityTopicOperator.logging().getLogging()).getLoggers(), is(topicOperatorLogging.getLoggers()));
     }
@@ -189,9 +186,6 @@ public class EntityTopicOperatorTest {
         assertThat(entityTopicOperator.watchedNamespace(), is(namespace));
         assertThat(entityTopicOperator.getImage(), is("quay.io/strimzi/operator:latest"));
         assertThat(entityTopicOperator.reconciliationIntervalMs, is(EntityTopicOperatorSpec.DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS * 1000));
-        assertThat(entityTopicOperator.zookeeperSessionTimeoutMs, is(EntityTopicOperatorSpec.DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_SECONDS * 1000));
-        assertThat(entityTopicOperator.topicMetadataMaxAttempts, is(EntityTopicOperatorSpec.DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS));
-        assertThat(entityTopicOperator.zookeeperConnect, is("localhost:2181"));
         assertThat(entityTopicOperator.kafkaBootstrapServers, is(KafkaResources.bootstrapServiceName(cluster) + ":" + KafkaCluster.REPLICATION_PORT));
         assertThat(entityTopicOperator.resourceLabels, is(ModelUtils.defaultResourceLabels(cluster)));
         assertThat(entityTopicOperator.readinessProbeOptions.getInitialDelaySeconds(), is(10));

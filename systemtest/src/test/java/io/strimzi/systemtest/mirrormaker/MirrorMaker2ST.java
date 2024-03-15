@@ -187,7 +187,7 @@ class MirrorMaker2ST extends AbstractST {
 
         RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getMM2Selector(), mirrorMakerReplicasCount, mm2PodsSnapshot);
 
-        // TODO https://github.com/strimzi/strimzi-kafka-operator/issues/8864
+        // TODO: https://github.com/strimzi/strimzi-kafka-operator/issues/8864
         // currently disabled for UTO, as KafkaTopic CR is not created -> we should check it directly in Kafka
         /*if (!Environment.isKRaftModeEnabled()) {
             KafkaTopic mirroredTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getMirroredSourceTopicName()).get();

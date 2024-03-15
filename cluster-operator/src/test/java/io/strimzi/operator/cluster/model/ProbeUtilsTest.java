@@ -8,8 +8,6 @@ import io.fabric8.kubernetes.api.model.Probe;
 import io.fabric8.kubernetes.api.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.kafka.entityoperator.EntityTopicOperatorSpec;
 import io.strimzi.api.kafka.model.kafka.entityoperator.EntityTopicOperatorSpecBuilder;
-import io.strimzi.api.kafka.model.kafka.entityoperator.TlsSidecar;
-import io.strimzi.api.kafka.model.kafka.entityoperator.TlsSidecarBuilder;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
 
@@ -113,23 +111,6 @@ public class ProbeUtilsTest {
         assertThrows(IllegalArgumentException.class, () -> ProbeUtils.execProbe(DEFAULT_CONFIG, null));
         assertThrows(IllegalArgumentException.class, () -> ProbeUtils.execProbe(DEFAULT_CONFIG, Collections.emptyList()));
     }
-
-    private static final TlsSidecar TLS_SIDECAR = new TlsSidecarBuilder()
-            .withNewLivenessProbe()
-                .withInitialDelaySeconds(1)
-                .withTimeoutSeconds(2)
-                .withPeriodSeconds(3)
-                .withSuccessThreshold(4)
-                .withFailureThreshold(5)
-            .endLivenessProbe()
-            .withNewReadinessProbe()
-                .withInitialDelaySeconds(6)
-                .withTimeoutSeconds(7)
-                .withPeriodSeconds(8)
-                .withSuccessThreshold(9)
-                .withFailureThreshold(10)
-            .endReadinessProbe()
-            .build();
 
     @ParallelTest
     public void testZeroInitialDelayIsSetToNull() {

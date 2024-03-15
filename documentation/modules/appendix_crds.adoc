@@ -1452,7 +1452,7 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |Configuration of the User Operator.
 |tlsSidecar
 |xref:type-TlsSidecar-{context}[`TlsSidecar`]
-|**The `tlsSidecar` property has been deprecated.** TLS sidecar was removed in Strimzi 0.41.0. TLS sidecar configuration.
+|**The `tlsSidecar` property has been deprecated.** TLS sidecar was deprecated in Strimzi 0.41.0. TLS sidecar configuration.
 |template
 |xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`]
 |Template for Entity Operator resources. The template allows users to specify how a `Deployment` and `Pod` is generated.
@@ -1485,7 +1485,7 @@ include::../api/io.strimzi.api.kafka.model.kafka.entityoperator.EntityTopicOpera
 |Interval between periodic reconciliations.
 |zookeeperSessionTimeoutSeconds
 |integer
-|Timeout for the ZooKeeper session.
+|**The `zookeeperSessionTimeoutSeconds` property has been deprecated.** This property has been deprecated because ZooKeeper is not used anymore by the Topic Operator. Timeout for the ZooKeeper session.
 |startupProbe
 |xref:type-Probe-{context}[`Probe`]
 |Pod startup checking.
@@ -1500,7 +1500,7 @@ include::../api/io.strimzi.api.kafka.model.kafka.entityoperator.EntityTopicOpera
 |CPU and memory resources to reserve.
 |topicMetadataMaxAttempts
 |integer
-|The number of attempts at getting topic metadata.
+|**The `topicMetadataMaxAttempts` property has been deprecated.** This property has been deprecated because ZooKeeper is not used anymore by the Topic Operator. The number of attempts at getting topic metadata.
 |logging
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
 |Logging configuration.

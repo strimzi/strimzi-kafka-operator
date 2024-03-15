@@ -7,6 +7,7 @@ package io.strimzi.api.kafka.model.kafka.entityoperator;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
+import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.HasConfigurableLogging;
 import io.strimzi.api.kafka.model.common.HasLivenessProbe;
@@ -20,6 +21,7 @@ import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.strimzi.crdgenerator.annotations.Minimum;
+import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -95,10 +97,13 @@ public class EntityTopicOperatorSpec implements HasConfigurableLogging, HasLiven
     public void setReconciliationIntervalSeconds(int reconciliationIntervalSeconds) {
         this.reconciliationIntervalSeconds = reconciliationIntervalSeconds;
     }
-
+    
     @Description("Timeout for the ZooKeeper session")
     @Minimum(0)
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    @DeprecatedProperty(description = "This property has been deprecated because ZooKeeper is not used anymore by the Topic Operator.")
+    @PresentInVersions("v1alpha1-v1beta2")
+    @Deprecated
     public int getZookeeperSessionTimeoutSeconds() {
         return zookeeperSessionTimeoutSeconds;
     }
@@ -106,10 +111,13 @@ public class EntityTopicOperatorSpec implements HasConfigurableLogging, HasLiven
     public void setZookeeperSessionTimeoutSeconds(int zookeeperSessionTimeoutSeconds) {
         this.zookeeperSessionTimeoutSeconds = zookeeperSessionTimeoutSeconds;
     }
-
+    
     @Description("The number of attempts at getting topic metadata")
     @Minimum(0)
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    @DeprecatedProperty(description = "This property has been deprecated because ZooKeeper is not used anymore by the Topic Operator.")
+    @PresentInVersions("v1alpha1-v1beta2")
+    @Deprecated
     public int getTopicMetadataMaxAttempts() {
         return topicMetadataMaxAttempts;
     }

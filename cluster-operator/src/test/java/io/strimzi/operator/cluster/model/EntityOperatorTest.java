@@ -85,8 +85,6 @@ public class EntityOperatorTest {
     private final String image = "my-image:latest";
     private final int healthDelay = 120;
     private final int healthTimeout = 30;
-    private final int tlsHealthDelay = 120;
-    private final int tlsHealthTimeout = 30;
 
     private final EntityUserOperatorSpec entityUserOperatorSpec = new EntityUserOperatorSpecBuilder()
             .build();

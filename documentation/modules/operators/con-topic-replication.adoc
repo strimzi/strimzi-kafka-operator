@@ -29,9 +29,6 @@ For more information, see xref:proc-cruise-control-topic-replication-{context}[]
 
 NOTE: In-sync replicas are used in conjunction with the `acks` configuration for producer applications.
 The `acks` configuration determines the number of follower partitions a message must be replicated to before the message is acknowledged as successfully received.
-<<<<<<< HEAD
-The bidirectional Topic Operator runs with `acks=all` for its internal topics whereby messages must be acknowledged by all in-sync replicas.
-=======
 
 When scaling Kafka clusters by adding or removing brokers, replication factor configuration is not changed and replicas are not reassigned automatically.
 However, you can use the `kafka-reassign-partitions.sh` tool to change the replication factor, and manually reassign replicas to brokers.
@@ -44,4 +41,3 @@ the optimization proposals it generates for rebalancing Kafka include commands t
 * xref:assembly-downgrade-{context}[Downgrading Strimzi]
 * xref:con-partition-reassignment-str[]
 * xref:cruise-control-concepts-str[]
->>>>>>> 170aa7853 (Promote UnidirectionalTopicOperator feature gate to GA)
