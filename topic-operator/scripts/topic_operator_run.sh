@@ -44,13 +44,6 @@ if [ "$STRIMZI_TLS_ENABLED" = "true" ] || [ "$STRIMZI_SECURITY_PROTOCOL" = "SSL"
 fi
 
 export JAVA_CLASSPATH=$JAVA_CLASSPATH:lib/io.strimzi.@project.build.finalName@.@project.packaging@:@project.dist.classpath@
+export JAVA_MAIN=io.strimzi.operator.topic.TopicOperatorMain
 
-if [ -n "${STRIMZI_ZOOKEEPER_CONNECT}" ]; then
-  # If ZooKeeper connection details are provided then use the old bidirectional TO
-  export JAVA_MAIN=io.strimzi.operator.topic.Main
-else
-  # Otherwise use the new unidirectional TO
-  # See https://github.com/strimzi/proposals/blob/main/051-unidirectional-topic-operator.md
-  export JAVA_MAIN=io.strimzi.operator.topic.v2.TopicOperatorMain
-fi
 exec "${STRIMZI_HOME}/bin/launch_java.sh"

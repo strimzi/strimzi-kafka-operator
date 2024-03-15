@@ -7,6 +7,7 @@
 
 [role="_abstract"]
 You can switch between topic management modes when upgrading or downgrading Strimzi, or when using the same version of Strimzi, as long as the mode is supported for that version. 
+The unidirectional is the only supported mode since Strimzi 0.41.0.
 
 .Switching from bidirectional to unidirectional topic management mode
 

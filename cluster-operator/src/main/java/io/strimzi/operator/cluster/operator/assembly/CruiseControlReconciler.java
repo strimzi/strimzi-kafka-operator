@@ -116,8 +116,7 @@ public class CruiseControlReconciler {
         this.isNetworkPolicyGeneration = config.isNetworkPolicyGeneration();
         this.passwordGenerator = passwordGenerator;
         this.isTopicOperatorEnabled = kafkaAssembly.getSpec().getEntityOperator() != null 
-            && kafkaAssembly.getSpec().getEntityOperator().getTopicOperator() != null
-            && config.featureGates().unidirectionalTopicOperatorEnabled();
+            && kafkaAssembly.getSpec().getEntityOperator().getTopicOperator() != null;
         this.deploymentOperator = supplier.deploymentOperations;
         this.secretOperator = supplier.secretOperations;
         this.serviceAccountOperator = supplier.serviceAccountOperations;

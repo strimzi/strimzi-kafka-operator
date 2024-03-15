@@ -16,14 +16,12 @@ import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Resources;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Status;
-import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.KRaftNotSupported;
-import io.strimzi.systemtest.annotations.KRaftWithoutUTONotSupported;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
@@ -32,7 +30,6 @@ import io.strimzi.systemtest.resources.NodePoolsConverter;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.StrimziPodSetResource;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaMirrorMaker2Templates;
@@ -46,7 +43,6 @@ import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.VerificationUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaMirrorMaker2Utils;
-import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
@@ -191,9 +187,9 @@ class MirrorMaker2ST extends AbstractST {
 
         RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getMM2Selector(), mirrorMakerReplicasCount, mm2PodsSnapshot);
 
-        // TODO: https://github.com/strimzi/strimzi-kafka-operator/issues/8864
+        // TODO https://github.com/strimzi/strimzi-kafka-operator/issues/8864
         // currently disabled for UTO, as KafkaTopic CR is not created -> we should check it directly in Kafka
-        if (!Environment.isKRaftModeEnabled() && !Environment.isUnidirectionalTopicOperatorEnabled()) {
+        /*if (!Environment.isKRaftModeEnabled()) {
             KafkaTopic mirroredTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getMirroredSourceTopicName()).get();
             assertThat(mirroredTopic.getSpec().getPartitions(), is(3));
             assertThat(mirroredTopic.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL), is(testStorage.getTargetClusterName()));
@@ -201,7 +197,7 @@ class MirrorMaker2ST extends AbstractST {
             // Replace source topic resource with new data and check that mm2 update target topi
             KafkaTopicResource.replaceTopicResourceInSpecificNamespace(testStorage.getTopicName(), kt -> kt.getSpec().setPartitions(8), testStorage.getNamespaceName());
             KafkaTopicUtils.waitForKafkaTopicPartitionChange(testStorage.getNamespaceName(), testStorage.getMirroredSourceTopicName(), 8);
-        }
+        }*/
     }
 
     /**
@@ -334,22 +330,21 @@ class MirrorMaker2ST extends AbstractST {
         ClientUtils.waitForConsumerClientSuccess(testStorage);
         LOGGER.info("Messages successfully mirrored");
 
-        // TODO: https://github.com/strimzi/strimzi-kafka-operator/issues/8864
+        // TODO https://github.com/strimzi/strimzi-kafka-operator/issues/8864
         // currently disabled for UTO, as KafkaTopic CR is not created -> we should check it directly in Kafka
-        if (!Environment.isKRaftModeEnabled() && !Environment.isUnidirectionalTopicOperatorEnabled()) {
+        /*if (!Environment.isKRaftModeEnabled()) {
             KafkaTopicUtils.waitForKafkaTopicCreation(testStorage.getNamespaceName(), testStorage.getMirroredSourceTopicName());
             KafkaTopic mirroredTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getMirroredSourceTopicName()).get();
 
             assertThat(mirroredTopic.getSpec().getPartitions(), is(3));
             assertThat(mirroredTopic.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL), is(testStorage.getTargetClusterName()));
-        }
+        }*/
     }
 
     /**
      * Test mirroring messages by MirrorMaker 2 over tls transport using scram-sha-512 auth
      */
     @ParallelNamespaceTest
-    @KRaftWithoutUTONotSupported
     void testMirrorMaker2TlsAndScramSha512Auth() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -469,14 +464,14 @@ class MirrorMaker2ST extends AbstractST {
         ClientUtils.waitForConsumerClientSuccess(testStorage);
         LOGGER.info("Messages successfully mirrored");
 
-        // https://github.com/strimzi/strimzi-kafka-operator/issues/8864
-        if (!Environment.isUnidirectionalTopicOperatorEnabled()) {
+        // TODO https://github.com/strimzi/strimzi-kafka-operator/issues/8864
+        /*if (!Environment.isUnidirectionalTopicOperatorEnabled()) {
             KafkaTopicUtils.waitForKafkaTopicCreation(testStorage.getNamespaceName(), testStorage.getMirroredSourceTopicName());
             KafkaTopic mirroredTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getMirroredSourceTopicName()).get();
 
             assertThat(mirroredTopic.getSpec().getPartitions(), is(3));
             assertThat(mirroredTopic.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL), is(testStorage.getTargetClusterName()));
-        }
+        }*/
     }
 
     @ParallelNamespaceTest
@@ -993,7 +988,6 @@ class MirrorMaker2ST extends AbstractST {
      * while user Scram passwords, CA cluster and clients certificates are changed.
      */
     @ParallelNamespaceTest
-    @KRaftWithoutUTONotSupported
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testKMM2RollAfterSecretsCertsUpdateScramSha() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());

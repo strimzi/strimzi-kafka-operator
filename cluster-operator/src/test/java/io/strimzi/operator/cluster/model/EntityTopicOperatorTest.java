@@ -130,9 +130,6 @@ public class EntityTopicOperatorTest {
         expected.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_RESOURCE_LABELS).withValue(ModelUtils.defaultResourceLabels(cluster)).build());
         expected.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_KAFKA_BOOTSTRAP_SERVERS).withValue(KafkaResources.bootstrapServiceName(cluster) + ":" + KafkaCluster.REPLICATION_PORT).build());
         expected.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_WATCHED_NAMESPACE).withValue(toWatchedNamespace).build());
-        expected.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_ZOOKEEPER_CONNECT).withValue(String.format("%s:%d", "localhost", EntityTopicOperatorSpec.DEFAULT_ZOOKEEPER_PORT)).build());
-        expected.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_ZOOKEEPER_SESSION_TIMEOUT_MS).withValue(String.valueOf(toZookeeperSessionTimeout * 1000)).build());
-        expected.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_TOPIC_METADATA_MAX_ATTEMPTS).withValue(String.valueOf(toTopicMetadataMaxAttempts)).build());
         expected.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_FULL_RECONCILIATION_INTERVAL_MS).withValue(String.valueOf(toReconciliationInterval * 1000)).build());
         expected.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_SECURITY_PROTOCOL).withValue(EntityTopicOperatorSpec.DEFAULT_SECURITY_PROTOCOL).build());
         expected.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_TLS_ENABLED).withValue(Boolean.toString(true)).build());
@@ -334,7 +331,7 @@ public class EntityTopicOperatorTest {
                 .build();
         EntityTopicOperator entityTopicOperator = EntityTopicOperator.fromCrd(
             new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), 
-                resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, true);
+                resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER);
 
         List<EnvVar> expectedEnvVars = new ArrayList<>();
         expectedEnvVars.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_RESOURCE_LABELS).withValue(ModelUtils.defaultResourceLabels(cluster)).build());
@@ -379,7 +376,7 @@ public class EntityTopicOperatorTest {
                 .build();
         EntityTopicOperator entityTopicOperator = EntityTopicOperator.fromCrd(
             new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(),
-                resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, true);
+                resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER);
 
         var newSecret = entityTopicOperator.generateCruiseControlApiSecret(null);
         assertThat(newSecret, is(notNullValue()));

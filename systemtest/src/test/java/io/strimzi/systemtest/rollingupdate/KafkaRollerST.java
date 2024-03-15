@@ -29,7 +29,6 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.KRaftNotSupported;
-import io.strimzi.systemtest.annotations.KRaftWithoutUTONotSupported;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
@@ -189,7 +188,6 @@ public class KafkaRollerST extends AbstractST {
     }
 
     @ParallelNamespaceTest
-    @KRaftWithoutUTONotSupported
     void testKafkaTopicRFLowerThanMinInSyncReplicas() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 

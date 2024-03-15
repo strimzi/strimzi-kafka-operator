@@ -6,7 +6,7 @@
 = Removing finalizers on topics
 
 [role="_abstract"]
-If the unidirectional Topic Operator is not running, and you want to bypass the finalization process when deleting managed topics, you have to remove the finalizers.   
+If the Topic Operator is not running, and you want to bypass the finalization process when deleting managed topics, you have to remove the finalizers.   
 You can do this manually by editing the resources directly or by using a command.
 
 To remove finalizers on all topics, use the following command:
@@ -30,4 +30,4 @@ After running the command, you can go ahead and delete the topics.
 Alternatively, if the topics were already being deleted but were blocked due to outstanding finalizers then their deletion should complete.
 
 WARNING: Be careful when removing finalizers, as any cleanup operations associated with the finalization process are not performed if the Topic Operator is not running. 
-For example, if you remove the finalizer from a `KafkaTopic` resource and subsequently delete the resource, the related Kafka topic won't be deleted.  
+For example, if you remove the finalizer from a `KafkaTopic` resource and subsequently delete the resource, the related Kafka topic won't be deleted.

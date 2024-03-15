@@ -25,7 +25,6 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
-import io.strimzi.systemtest.annotations.KRaftWithoutUTONotSupported;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.enums.CustomResourceStatus;
@@ -92,7 +91,6 @@ class LoggingChangeST extends AbstractST {
 
     @ParallelNamespaceTest
     @SuppressWarnings({"checkstyle:MethodLength"})
-    @KRaftWithoutUTONotSupported
     void testJSONFormatLogging() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -246,9 +244,6 @@ class LoggingChangeST extends AbstractST {
 
         if (Environment.isKRaftModeEnabled()) {
             kafka.getSpec().setZookeeper(null);
-            if (!Environment.isUnidirectionalTopicOperatorEnabled()) {
-                kafka.getSpec().getEntityOperator().setTopicOperator(null);
-            }
         }
 
         resourceManager.createResourceWithWait(kafka);
@@ -271,7 +266,6 @@ class LoggingChangeST extends AbstractST {
 
     @ParallelNamespaceTest
     @Tag(ROLLING_UPDATE)
-    @KRaftWithoutUTONotSupported
     @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:CyclomaticComplexity"})
     void testDynamicallySetEOloggingLevels() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());

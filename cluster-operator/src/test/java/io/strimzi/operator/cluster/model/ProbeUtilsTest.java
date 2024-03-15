@@ -23,7 +23,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ParallelSuite
 public class ProbeUtilsTest {
-
     private static final io.strimzi.api.kafka.model.common.Probe DEFAULT_CONFIG = new io.strimzi.api.kafka.model.common.ProbeBuilder()
             .withInitialDelaySeconds(1)
             .withTimeoutSeconds(2)
@@ -131,64 +130,6 @@ public class ProbeUtilsTest {
                 .withFailureThreshold(10)
             .endReadinessProbe()
             .build();
-
-    @ParallelTest
-    public void testTlsSidecarLivenessProbe() {
-        Probe probe = ProbeUtils.tlsSidecarLivenessProbe(TLS_SIDECAR);
-        assertThat(probe, is(new ProbeBuilder()
-                .withNewExec()
-                    .addToCommand("/opt/stunnel/stunnel_healthcheck.sh", "2181")
-                .endExec()
-                .withInitialDelaySeconds(1)
-                .withTimeoutSeconds(2)
-                .withPeriodSeconds(3)
-                .withSuccessThreshold(4)
-                .withFailureThreshold(5)
-                .build()
-        ));
-    }
-
-    @ParallelTest
-    public void testTlsSidecarLivenessProbeWithNullTlsSidecarDefaults() {
-        Probe probe = ProbeUtils.tlsSidecarLivenessProbe(null);
-        assertThat(probe, is(new ProbeBuilder()
-                .withNewExec()
-                .addToCommand("/opt/stunnel/stunnel_healthcheck.sh", "2181")
-                .endExec()
-                .withInitialDelaySeconds(15)
-                .withTimeoutSeconds(5)
-                .build()
-        ));
-    }
-
-    @ParallelTest
-    public void testTlsSidecarReadinessProbe() {
-        Probe probe = ProbeUtils.tlsSidecarReadinessProbe(TLS_SIDECAR);
-        assertThat(probe, is(new ProbeBuilder()
-                .withNewExec()
-                    .addToCommand("/opt/stunnel/stunnel_healthcheck.sh", "2181")
-                .endExec()
-                .withInitialDelaySeconds(6)
-                .withTimeoutSeconds(7)
-                .withPeriodSeconds(8)
-                .withSuccessThreshold(9)
-                .withFailureThreshold(10)
-                .build()
-        ));
-    }
-
-    @ParallelTest
-    public void testTlsSidecarReadinessProbeWithNullTlsSidecarDefaults() {
-        Probe probe = ProbeUtils.tlsSidecarLivenessProbe(null);
-        assertThat(probe, is(new ProbeBuilder()
-                .withNewExec()
-                    .addToCommand("/opt/stunnel/stunnel_healthcheck.sh", "2181")
-                .endExec()
-                .withInitialDelaySeconds(15)
-                .withTimeoutSeconds(5)
-                .build()
-        ));
-    }
 
     @ParallelTest
     public void testZeroInitialDelayIsSetToNull() {

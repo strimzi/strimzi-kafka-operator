@@ -561,8 +561,6 @@ public class StUtils {
 
     /**
      * Checks env variables of Topic operator container (inside EO Pod) and based on that determines, if BTO or UTO is used.
-     * Normally we can determine that based on {@link Environment#isUnidirectionalTopicOperatorEnabled()}, but in case that the
-     * FG is changed during test, we have no other way to check it.
      *
      * @param namespaceName name of the Namespace, where the EO Pod is running
      * @param eoLabelSelector LabelSelector of EO

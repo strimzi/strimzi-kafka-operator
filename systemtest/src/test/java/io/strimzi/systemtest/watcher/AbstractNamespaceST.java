@@ -15,7 +15,6 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.TestConstants;
-import io.strimzi.systemtest.annotations.KRaftWithoutUTONotSupported;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
@@ -139,7 +138,6 @@ public abstract class AbstractNamespaceST extends AbstractST {
      *  - topic-operator-watcher
      */
     @ParallelTest
-    @KRaftWithoutUTONotSupported
     final void testTopicOperatorWatchingOtherNamespace(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 

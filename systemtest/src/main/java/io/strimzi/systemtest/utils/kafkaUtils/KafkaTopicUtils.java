@@ -6,7 +6,6 @@ package io.strimzi.systemtest.utils.kafkaUtils;
 
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
-import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.enums.ConditionStatus;
@@ -26,7 +25,6 @@ import java.util.Random;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -165,10 +163,7 @@ public class KafkaTopicUtils {
     }
 
     public static boolean waitForKafkaTopicNotReady(final String namespaceName, String topicName) {
-        if (Environment.isUnidirectionalTopicOperatorEnabled()) {
-            return waitForKafkaTopicStatus(namespaceName, topicName, Ready, ConditionStatus.False);
-        }
-        return waitForKafkaTopicStatus(namespaceName, topicName, NotReady);
+        return waitForKafkaTopicStatus(namespaceName, topicName, Ready, ConditionStatus.False);
     }
 
     public static void waitForTopicConfigContains(String namespaceName, String topicName, Map<String, Object> config) {

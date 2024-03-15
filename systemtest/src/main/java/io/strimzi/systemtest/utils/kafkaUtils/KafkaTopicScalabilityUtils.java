@@ -5,7 +5,6 @@
 package io.strimzi.systemtest.utils.kafkaUtils;
 
 import io.strimzi.api.kafka.model.topic.KafkaTopicSpec;
-import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.enums.ConditionStatus;
 import io.strimzi.systemtest.enums.CustomResourceStatus;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -58,14 +57,6 @@ public class KafkaTopicScalabilityUtils {
                 .thenRun(() -> LOGGER.info("All Topics are in correct state"));
 
         allTopics.join();
-    }
-
-    public static void waitForTopicsNotReady(String namespaceName, String topicPrefix, int numberOfTopics) {
-        if (Environment.isUnidirectionalTopicOperatorEnabled()) {
-            waitForTopicStatus(namespaceName, topicPrefix, numberOfTopics, CustomResourceStatus.Ready, ConditionStatus.False);
-        } else {
-            waitForTopicStatus(namespaceName, topicPrefix, numberOfTopics, CustomResourceStatus.NotReady);
-        }
     }
 
     public static void waitForTopicsReady(String namespaceName, String topicPrefix, int numberOfTopics) {

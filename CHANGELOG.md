@@ -6,6 +6,11 @@
 * The `KafkaNodePools` feature gate moves to GA stage and is permanently enabled without the possibility to disable it.
   To use the Kafka Node Pool resources, you still need to use the `strimzi.io/node-pools: enabled` annotation on the `Kafka` custom resources.
 * Added support for configuring the `externalIPs` field in node port type services.
+* The `UnidirectionalTopicOperator` feature gate moves to GA stage and is permanently enabled without the possibility to disable it.
+
+### Changes, deprecations and removals
+
+* The TLS sidecar configuration for the Entity Operator is now deprecated, and will be ignored.
 
 ## 0.40.0
 

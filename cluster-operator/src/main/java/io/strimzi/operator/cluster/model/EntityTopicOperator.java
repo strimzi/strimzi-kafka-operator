@@ -62,11 +62,8 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
     // Topic Operator configuration keys
     /* test */ static final String ENV_VAR_RESOURCE_LABELS = "STRIMZI_RESOURCE_LABELS";
     /* test */ static final String ENV_VAR_KAFKA_BOOTSTRAP_SERVERS = "STRIMZI_KAFKA_BOOTSTRAP_SERVERS";
-    /* test */ static final String ENV_VAR_ZOOKEEPER_CONNECT = "STRIMZI_ZOOKEEPER_CONNECT";
     /* test */ static final String ENV_VAR_WATCHED_NAMESPACE = "STRIMZI_NAMESPACE";
     /* test */ static final String ENV_VAR_FULL_RECONCILIATION_INTERVAL_MS = "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS";
-    /* test */ static final String ENV_VAR_ZOOKEEPER_SESSION_TIMEOUT_MS = "STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS";
-    /* test */ static final String ENV_VAR_TOPIC_METADATA_MAX_ATTEMPTS = "STRIMZI_TOPIC_METADATA_MAX_ATTEMPTS";
     /* test */ static final String ENV_VAR_SECURITY_PROTOCOL = "STRIMZI_SECURITY_PROTOCOL";
 
     /* test */ static final String ENV_VAR_TLS_ENABLED = "STRIMZI_TLS_ENABLED";
@@ -85,7 +82,6 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
     // Kafka bootstrap servers and Zookeeper nodes can't be specified in the JSON
     /* test */ String kafkaBootstrapServers;
     /* test */ String zookeeperConnect;
-    private boolean unidirectionalTopicOperator;
     private boolean cruiseControlEnabled;
     private boolean rackAwarenessEnabled;
 
@@ -120,31 +116,15 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
     /**
      * Create an Entity Topic Operator from given desired resource. When Topic Operator (Or Entity Operator) are not
      * enabled, it returns null.
-     *
-     * @param reconciliation The reconciliation
-     * @param kafkaAssembly desired resource with cluster configuration containing the Entity Topic Operator one
-     * @param sharedEnvironmentProvider Shared environment provider
-     *
-     * @return Entity Topic Operator instance, null if not configured
-     */
-    public static EntityTopicOperator fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly, SharedEnvironmentProvider sharedEnvironmentProvider) {
-        return fromCrd(reconciliation, kafkaAssembly, sharedEnvironmentProvider, false);
-    }
-
-    /**
-     * Create an Entity Topic Operator from given desired resource. When Topic Operator (Or Entity Operator) are not
-     * enabled, it returns null.
      * @param reconciliation The reconciliation
      * @param kafkaAssembly desired resource with cluster configuration containing the Entity Topic Operator one
      *                      @param sharedEnvironmentProvider Shared environment provider
-     * @param unidirectionalTopicOperator Indicates whether the UTO should be used.
      *
      * @return Entity Topic Operator instance, null if not configured
      */
     public static EntityTopicOperator fromCrd(Reconciliation reconciliation,
                                               Kafka kafkaAssembly,
-                                              SharedEnvironmentProvider sharedEnvironmentProvider,
-                                              boolean unidirectionalTopicOperator) {
+                                              SharedEnvironmentProvider sharedEnvironmentProvider) {
         if (kafkaAssembly.getSpec().getEntityOperator() != null
                 && kafkaAssembly.getSpec().getEntityOperator().getTopicOperator() != null) {
             EntityTopicOperatorSpec topicOperatorSpec = kafkaAssembly.getSpec().getEntityOperator().getTopicOperator();
@@ -155,7 +135,6 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
                 image = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE, "quay.io/strimzi/operator:latest");
             }
             result.image = image;
-            result.unidirectionalTopicOperator = unidirectionalTopicOperator;
             result.watchedNamespace = topicOperatorSpec.getWatchedNamespace() != null ? topicOperatorSpec.getWatchedNamespace() : kafkaAssembly.getMetadata().getNamespace();
             result.reconciliationIntervalMs = topicOperatorSpec.getReconciliationIntervalSeconds() * 1_000;
             result.zookeeperSessionTimeoutMs = topicOperatorSpec.getZookeeperSessionTimeoutSeconds() * 1_000;
@@ -205,18 +184,13 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_RESOURCE_LABELS, resourceLabels));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BOOTSTRAP_SERVERS, kafkaBootstrapServers));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_WATCHED_NAMESPACE, watchedNamespace));
-        if (!this.unidirectionalTopicOperator) {
-            varList.add(ContainerUtils.createEnvVar(ENV_VAR_ZOOKEEPER_CONNECT, zookeeperConnect));
-            varList.add(ContainerUtils.createEnvVar(ENV_VAR_ZOOKEEPER_SESSION_TIMEOUT_MS, Integer.toString(zookeeperSessionTimeoutMs)));
-            varList.add(ContainerUtils.createEnvVar(ENV_VAR_TOPIC_METADATA_MAX_ATTEMPTS, String.valueOf(topicMetadataMaxAttempts)));
-        }
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_FULL_RECONCILIATION_INTERVAL_MS, Integer.toString(reconciliationIntervalMs)));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_SECURITY_PROTOCOL, EntityTopicOperatorSpec.DEFAULT_SECURITY_PROTOCOL));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_TLS_ENABLED, Boolean.toString(true)));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_GC_LOG_ENABLED, Boolean.toString(gcLoggingEnabled)));
         
         // Add environment variables required for Cruise Control integration
-        if (this.unidirectionalTopicOperator && this.cruiseControlEnabled) {
+        if (this.cruiseControlEnabled) {
             varList.add(ContainerUtils.createEnvVar(ENV_VAR_CRUISE_CONTROL_ENABLED, Boolean.toString(cruiseControlEnabled)));
             varList.add(ContainerUtils.createEnvVar(ENV_VAR_CRUISE_CONTROL_RACK_ENABLED, Boolean.toString(rackAwarenessEnabled)));
             varList.add(ContainerUtils.createEnvVar(ENV_VAR_CRUISE_CONTROL_HOSTNAME, String.format("%s-cruise-control.%s.svc", cluster, namespace)));
@@ -246,7 +220,7 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
         result.add(VolumeUtils.createVolumeMount(LOG_AND_METRICS_CONFIG_VOLUME_NAME, LOG_AND_METRICS_CONFIG_VOLUME_MOUNT));
         result.add(VolumeUtils.createVolumeMount(EntityOperator.ETO_CERTS_VOLUME_NAME, EntityOperator.ETO_CERTS_VOLUME_MOUNT));
         result.add(VolumeUtils.createVolumeMount(EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_NAME, EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT));
-        if (this.unidirectionalTopicOperator && this.cruiseControlEnabled) {
+        if (this.cruiseControlEnabled) {
             result.add(VolumeUtils.createVolumeMount(EntityOperator.ETO_CC_API_VOLUME_NAME, EntityOperator.ETO_CC_API_VOLUME_MOUNT));
         }
         return Collections.unmodifiableList(result);

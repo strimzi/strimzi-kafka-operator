@@ -215,8 +215,6 @@ public interface TestConstants {
     String DONT_USE_KRAFT_MODE = "-UseKRaft";
     // kept for upgrade/downgrade tests in KRaft
     String USE_KRAFT_MODE = "+UseKRaft";
-    String DONT_USE_UNIDIRECTIONAL_TOPIC_OPERATOR = "-UnidirectionalTopicOperator";
-    String USE_UNIDIRECTIONAL_TOPIC_OPERATOR = "+UnidirectionalTopicOperator";
 
     /**
      * Default value which allows execution of tests with any tags
