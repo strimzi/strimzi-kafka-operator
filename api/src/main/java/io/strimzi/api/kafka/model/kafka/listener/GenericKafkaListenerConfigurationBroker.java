@@ -26,7 +26,8 @@ import static java.util.Collections.emptyMap;
  * Configures listener per-broker configuration
  */
 @DescriptionFile
-@JsonPropertyOrder({"broker", "advertisedHost", "advertisedPort", "host", "dnsAnnotations", "nodePort", "loadBalancerIP", "externalIPs"})
+@JsonPropertyOrder({"broker", "advertisedHost", "advertisedPort", "host", "dnsAnnotations", "nodePort",
+    "loadBalancerIP", "annotations", "labels", "externalIPs"})
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Buildable(
     editableEnabled = false,

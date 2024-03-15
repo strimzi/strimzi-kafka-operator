@@ -5,6 +5,7 @@
 package io.strimzi.api.kafka.model.kafka;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
@@ -21,6 +22,7 @@ import java.util.List;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonPropertyOrder({"type", "volumes"})
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class JbodStorage extends Storage {

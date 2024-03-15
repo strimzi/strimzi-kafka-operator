@@ -5,56 +5,47 @@
 [cols="2,2,3a",options="header"]
 |====
 |Property |Property type |Description
+|stringProperty
+|string
+|
+|intProperty
+|integer
+|Added in Strimzi 0.0.1. An example int property.
+|longProperty
+|integer
+|An example long property.
+|booleanProperty
+|boolean
+|
+|normalEnum
+|string (one of [BAR, FOO])
+|
+|customisedEnum
+|string (one of [one, two])
+|
+|objectProperty
+|xref:type-ObjectProperty-{context}[`ObjectProperty`]
+|
+|mapStringObject
+|map
+|
+|mapStringString
+|map
+|
+|polymorphicProperty
+|xref:type-PolymorphicLeft-{context}[`PolymorphicLeft`], xref:type-PolymorphicRight-{context}[`PolymorphicRight`]
+|
 |affinity
 |{KubeApiReferenceBase}#affinity-v1-core[Affinity]
 |
-|arrayOfBoundTypeVar
-|xref:type-Number-{context}[`Number`] array
-|
-|arrayOfBoundTypeVar2
-|xref:type-Number-{context}[`Number`] array
-|
-|arrayOfList
-|string array of dimension 2
-|
-|arrayOfRawList
-|object array of dimension 2
-|
-|arrayOfTypeVar
-|object array
-|
+|fieldProperty
+|string
+|Example of field property.
 |arrayProperty
 |string array
 |
 |arrayProperty2
 |string array of dimension 2
-|
-|booleanProperty
-|boolean
-|
-|customisedEnum
-|string (one of [one, two])
-|
-|either
-|string
-|
-|fieldProperty
-|string
-|Example of field property.
-|intProperty
-|integer
-|Added in Strimzi 0.0.1. An example int property.
-|listOfArray
-|string array of dimension 2
-|
-|listOfBoundTypeVar
-|xref:type-Number-{context}[`Number`] array
-|
-|listOfBoundTypeVar2
-|xref:type-Number-{context}[`Number`] array
-|
-|listOfCustomizedEnum
-|string (one or more of [one, two]) array
 |
 |listOfInts
 |integer array
@@ -62,23 +53,44 @@
 |listOfInts2
 |integer array of dimension 2
 |
-|listOfMaps
-|map array
-|
-|listOfNormalEnum
-|string (one or more of [BAR, FOO]) array
-|
 |listOfObjects
 |xref:type-ObjectProperty-{context}[`ObjectProperty`] array
 |
 |listOfPolymorphic
 |xref:type-PolymorphicLeft-{context}[`PolymorphicLeft`], xref:type-PolymorphicRight-{context}[`PolymorphicRight`] array
 |
+|rawList
+|object array
+|
 |listOfRawList
 |object array of dimension 2
 |
+|arrayOfList
+|string array of dimension 2
+|
+|arrayOfRawList
+|object array of dimension 2
+|
+|listOfArray
+|string array of dimension 2
+|
+|arrayOfTypeVar
+|object array
+|
 |listOfTypeVar
 |object array
+|
+|arrayOfBoundTypeVar
+|xref:type-Number-{context}[`Number`] array
+|
+|listOfBoundTypeVar
+|xref:type-Number-{context}[`Number`] array
+|
+|arrayOfBoundTypeVar2
+|xref:type-Number-{context}[`Number`] array
+|
+|listOfBoundTypeVar2
+|xref:type-Number-{context}[`Number`] array
 |
 |listOfWildcardTypeVar1
 |string array
@@ -92,50 +104,27 @@
 |listOfWildcardTypeVar4
 |xref:type-Number-{context}[`Number`] array of dimension 2
 |
-|longProperty
-|integer
-|An example long property.
-|mapStringObject
-|map
+|listOfCustomizedEnum
+|string (one or more of [one, two]) array
 |
-|mapStringString
-|map
+|listOfNormalEnum
+|string (one or more of [BAR, FOO]) array
 |
-|normalEnum
-|string (one of [BAR, FOO])
+|listOfMaps
+|map array
 |
-|objectProperty
-|xref:type-ObjectProperty-{context}[`ObjectProperty`]
+|either
+|string
 |
 |or
 |string
 |
-|polymorphicProperty
-|xref:type-PolymorphicLeft-{context}[`PolymorphicLeft`], xref:type-PolymorphicRight-{context}[`PolymorphicRight`]
-|
-|rawList
-|object array
+|status
+|object
 |
 |spec
 |object
 |
-|status
-|object
-|
-|stringProperty
-|string
-|
-|====
-
-[id='type-Number-{context}']
-= `Number` schema reference
-
-Used in: xref:type-ExampleCrd-{context}[`ExampleCrd`]
-
-
-[cols="2,2,3a",options="header"]
-|====
-|Property |Property type |Description
 |====
 
 [id='type-ObjectProperty-{context}']
@@ -148,10 +137,10 @@ Example of complex type.
 [cols="2,2,3a",options="header"]
 |====
 |Property |Property type |Description
-|bar
+|foo
 |string
 |
-|foo
+|bar
 |string
 |
 |====
@@ -167,10 +156,10 @@ It must have the value `left` for the type `PolymorphicLeft`.
 [cols="2,2,3a",options="header"]
 |====
 |Property |Property type |Description
-|commonProperty
+|discrim
 |string
 |
-|discrim
+|commonProperty
 |string
 |
 |leftProperty
@@ -189,14 +178,25 @@ It must have the value `right` for the type `PolymorphicRight`.
 [cols="2,2,3a",options="header"]
 |====
 |Property |Property type |Description
-|commonProperty
+|discrim
 |string
 |
-|discrim
+|commonProperty
 |string
 |
 |rightProperty
 |string
 |when descrim=right, the right-hand property.
+|====
+
+[id='type-Number-{context}']
+= `Number` schema reference
+
+Used in: xref:type-ExampleCrd-{context}[`ExampleCrd`]
+
+
+[cols="2,2,3a",options="header"]
+|====
+|Property |Property type |Description
 |====
 

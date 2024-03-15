@@ -34,7 +34,7 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
-    "statefulset", "pod", "clientService", "nodesService", "persistentVolumeClaim",
+    "statefulset", "podSet", "pod", "clientService", "nodesService", "persistentVolumeClaim",
     "podDisruptionBudget", "zookeeperContainer", "serviceAccount", "jmxSecret"})
 @EqualsAndHashCode
 @ToString

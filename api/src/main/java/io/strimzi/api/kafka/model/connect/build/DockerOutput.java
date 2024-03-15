@@ -23,7 +23,7 @@ import java.util.List;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "image", "pushSecret" })
+@JsonPropertyOrder({ "image", "pushSecret", "additionalKanikoOptions", "type" })
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class DockerOutput extends Output {

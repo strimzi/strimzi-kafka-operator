@@ -241,15 +241,15 @@ spec:
                                 items:
                                   type: object
                                   properties:
-                                    certificate:
-                                      type: string
-                                      description: The name of the file certificate in the Secret.
                                     secretName:
                                       type: string
                                       description: The name of the Secret containing the certificate.
+                                    certificate:
+                                      type: string
+                                      description: The name of the file certificate in the Secret.
                                   required:
-                                    - certificate
                                     - secretName
+                                    - certificate
                                 description: Trusted certificates for TLS connection to the OAuth server.
                               tokenEndpointUri:
                                 type: string
@@ -283,20 +283,23 @@ spec:
                               brokerCertChainAndKey:
                                 type: object
                                 properties:
-                                  certificate:
-                                    type: string
-                                    description: The name of the file certificate in the Secret.
                                   key:
                                     type: string
                                     description: The name of the private key in the Secret.
                                   secretName:
                                     type: string
                                     description: The name of the Secret containing the certificate.
+                                  certificate:
+                                    type: string
+                                    description: The name of the file certificate in the Secret.
                                 required:
-                                  - certificate
                                   - key
                                   - secretName
+                                  - certificate
                                 description: Reference to the `Secret` which holds the certificate and private key pair which will be used for this listener. The certificate can optionally contain the whole chain. This field can be used only with listeners with enabled TLS encryption.
+                              class:
+                                type: string
+                                description: "Configures a specific class for `Ingress` and `LoadBalancer` that defines which controller will be used. This field can only be used with `ingress` and `loadbalancer` type listeners. If not specified, the default controller is used. For an `ingress` listener, set the `ingressClassName` property in the `Ingress` resources. For a `loadbalancer` listener, set the `loadBalancerClass` property  in the `Service` resources."
                               externalTrafficPolicy:
                                 type: string
                                 enum:
@@ -390,20 +393,20 @@ spec:
                               createBootstrapService:
                                 type: boolean
                                 description: Whether to create the bootstrap service or not. The bootstrap service is created by default (if not specified differently). This field can be used with the `loadBalancer` type listener.
-                              class:
-                                type: string
-                                description: "Configures a specific class for `Ingress` and `LoadBalancer` that defines which controller will be used. This field can only be used with `ingress` and `loadbalancer` type listeners. If not specified, the default controller is used. For an `ingress` listener, set the `ingressClassName` property in the `Ingress` resources. For a `loadbalancer` listener, set the `loadBalancerClass` property  in the `Service` resources."
                               finalizers:
                                 type: array
                                 items:
                                   type: string
                                 description: "A list of finalizers which will be configured for the `LoadBalancer` type Services created for this listener. If supported by the platform, the finalizer `service.kubernetes.io/load-balancer-cleanup` to make sure that the external load balancer is deleted together with the service.For more information, see https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/#garbage-collecting-load-balancers. This field can be used only with `loadbalancer` type listeners."
-                              maxConnectionCreationRate:
-                                type: integer
-                                description: The maximum connection creation rate we allow in this listener at any time. New connections will be throttled if the limit is reached.
+                              useServiceDnsDomain:
+                                type: boolean
+                                description: "Configures whether the Kubernetes service DNS domain should be used or not. If set to `true`, the generated addresses will contain the service DNS domain suffix (by default `.cluster.local`, can be configured using environment variable `KUBERNETES_SERVICE_DNS_DOMAIN`). Defaults to `false`.This field can be used only with `internal` and `cluster-ip` type listeners."
                               maxConnections:
                                 type: integer
                                 description: The maximum number of connections we allow for this listener in the broker at any time. New connections are blocked if the limit is reached.
+                              maxConnectionCreationRate:
+                                type: integer
+                                description: The maximum connection creation rate we allow in this listener at any time. New connections will be throttled if the limit is reached.
                               preferredNodePortAddressType:
                                 type: string
                                 enum:
@@ -422,9 +425,6 @@ spec:
                                   * `Hostname`
 
                                   This field is used to select the preferred address type, which is checked first. If no address is found for this address type, the other types are checked in the default order. This field can only be used with `nodeport` type listener.
-                              useServiceDnsDomain:
-                                type: boolean
-                                description: "Configures whether the Kubernetes service DNS domain should be used or not. If set to `true`, the generated addresses will contain the service DNS domain suffix (by default `.cluster.local`, can be configured using environment variable `KUBERNETES_SERVICE_DNS_DOMAIN`). Defaults to `false`.This field can be used only with `internal` and `cluster-ip` type listeners."
                             description: Additional listener configuration.
                           networkPolicyPeers:
                             type: array
@@ -663,15 +663,15 @@ spec:
                           items:
                             type: object
                             properties:
-                              certificate:
-                                type: string
-                                description: The name of the file certificate in the Secret.
                               secretName:
                                 type: string
                                 description: The name of the Secret containing the certificate.
+                              certificate:
+                                type: string
+                                description: The name of the file certificate in the Secret.
                             required:
-                              - certificate
                               - secretName
+                              - certificate
                           description: Trusted certificates for TLS connection to the OAuth server.
                         tokenEndpointUri:
                           type: string
@@ -707,14 +707,14 @@ spec:
                     livenessProbe:
                       type: object
                       properties:
-                        failureThreshold:
-                          type: integer
-                          minimum: 1
-                          description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
                         initialDelaySeconds:
                           type: integer
                           minimum: 0
                           description: The initial delay before first the health is first checked. Default to 15 seconds. Minimum value is 0.
+                        timeoutSeconds:
+                          type: integer
+                          minimum: 1
+                          description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
                         periodSeconds:
                           type: integer
                           minimum: 1
@@ -723,22 +723,22 @@ spec:
                           type: integer
                           minimum: 1
                           description: Minimum consecutive successes for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness. Minimum value is 1.
-                        timeoutSeconds:
+                        failureThreshold:
                           type: integer
                           minimum: 1
-                          description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
+                          description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
                       description: Pod liveness checking.
                     readinessProbe:
                       type: object
                       properties:
-                        failureThreshold:
-                          type: integer
-                          minimum: 1
-                          description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
                         initialDelaySeconds:
                           type: integer
                           minimum: 0
                           description: The initial delay before first the health is first checked. Default to 15 seconds. Minimum value is 0.
+                        timeoutSeconds:
+                          type: integer
+                          minimum: 1
+                          description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
                         periodSeconds:
                           type: integer
                           minimum: 1
@@ -747,10 +747,10 @@ spec:
                           type: integer
                           minimum: 1
                           description: Minimum consecutive successes for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness. Minimum value is 1.
-                        timeoutSeconds:
+                        failureThreshold:
                           type: integer
                           minimum: 1
-                          description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
+                          description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
                       description: Pod readiness checking.
                     jvmOptions:
                       type: object
@@ -760,14 +760,14 @@ spec:
                             type: string
                           type: object
                           description: A map of -XX options to the JVM.
-                        "-Xms":
-                          type: string
-                          pattern: "^[0-9]+[mMgG]?$"
-                          description: -Xms option to to the JVM.
                         "-Xmx":
                           type: string
                           pattern: "^[0-9]+[mMgG]?$"
                           description: -Xmx option to to the JVM.
+                        "-Xms":
+                          type: string
+                          pattern: "^[0-9]+[mMgG]?$"
+                          description: -Xms option to to the JVM.
                         gcLoggingEnabled:
                           type: boolean
                           description: Specifies whether the Garbage Collection logging is enabled. The default is false.
@@ -1330,31 +1330,6 @@ spec:
                                   value:
                                     type: string
                               description: The pod's tolerations.
-                            priorityClassName:
-                              type: string
-                              description: 'The name of the priority class used to assign priority to the pods. '
-                            schedulerName:
-                              type: string
-                              description: "The name of the scheduler used to dispatch this `Pod`. If not specified, the default scheduler will be used."
-                            hostAliases:
-                              type: array
-                              items:
-                                type: object
-                                properties:
-                                  hostnames:
-                                    type: array
-                                    items:
-                                      type: string
-                                  ip:
-                                    type: string
-                              description: The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the Pod's hosts file if specified.
-                            tmpDirSizeLimit:
-                              type: string
-                              pattern: "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"
-                              description: Defines the total amount (for example `1Gi`) of local storage required for temporary EmptyDir volume (`/tmp`). Default value is `5Mi`.
-                            enableServiceLinks:
-                              type: boolean
-                              description: Indicates whether information about services should be injected into Pod's environment variables.
                             topologySpreadConstraints:
                               type: array
                               items:
@@ -1397,6 +1372,31 @@ spec:
                                   whenUnsatisfiable:
                                     type: string
                               description: The pod's topology spread constraints.
+                            priorityClassName:
+                              type: string
+                              description: 'The name of the priority class used to assign priority to the pods. '
+                            schedulerName:
+                              type: string
+                              description: "The name of the scheduler used to dispatch this `Pod`. If not specified, the default scheduler will be used."
+                            hostAliases:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  hostnames:
+                                    type: array
+                                    items:
+                                      type: string
+                                  ip:
+                                    type: string
+                              description: The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the Pod's hosts file if specified.
+                            enableServiceLinks:
+                              type: boolean
+                              description: Indicates whether information about services should be injected into Pod's environment variables.
+                            tmpDirSizeLimit:
+                              type: string
+                              pattern: "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"
+                              description: Defines the total amount (for example `1Gi`) of local storage required for temporary EmptyDir volume (`/tmp`). Default value is `5Mi`.
                           description: Template for Kafka `Pods`.
                         bootstrapService:
                           type: object
@@ -1943,14 +1943,14 @@ spec:
                     livenessProbe:
                       type: object
                       properties:
-                        failureThreshold:
-                          type: integer
-                          minimum: 1
-                          description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
                         initialDelaySeconds:
                           type: integer
                           minimum: 0
                           description: The initial delay before first the health is first checked. Default to 15 seconds. Minimum value is 0.
+                        timeoutSeconds:
+                          type: integer
+                          minimum: 1
+                          description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
                         periodSeconds:
                           type: integer
                           minimum: 1
@@ -1959,22 +1959,22 @@ spec:
                           type: integer
                           minimum: 1
                           description: Minimum consecutive successes for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness. Minimum value is 1.
-                        timeoutSeconds:
+                        failureThreshold:
                           type: integer
                           minimum: 1
-                          description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
+                          description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
                       description: Pod liveness checking.
                     readinessProbe:
                       type: object
                       properties:
-                        failureThreshold:
-                          type: integer
-                          minimum: 1
-                          description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
                         initialDelaySeconds:
                           type: integer
                           minimum: 0
                           description: The initial delay before first the health is first checked. Default to 15 seconds. Minimum value is 0.
+                        timeoutSeconds:
+                          type: integer
+                          minimum: 1
+                          description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
                         periodSeconds:
                           type: integer
                           minimum: 1
@@ -1983,10 +1983,10 @@ spec:
                           type: integer
                           minimum: 1
                           description: Minimum consecutive successes for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness. Minimum value is 1.
-                        timeoutSeconds:
+                        failureThreshold:
                           type: integer
                           minimum: 1
-                          description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
+                          description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
                       description: Pod readiness checking.
                     jvmOptions:
                       type: object
@@ -1996,14 +1996,14 @@ spec:
                             type: string
                           type: object
                           description: A map of -XX options to the JVM.
-                        "-Xms":
-                          type: string
-                          pattern: "^[0-9]+[mMgG]?$"
-                          description: -Xms option to to the JVM.
                         "-Xmx":
                           type: string
                           pattern: "^[0-9]+[mMgG]?$"
                           description: -Xmx option to to the JVM.
+                        "-Xms":
+                          type: string
+                          pattern: "^[0-9]+[mMgG]?$"
+                          description: -Xms option to to the JVM.
                         gcLoggingEnabled:
                           type: boolean
                           description: Specifies whether the Garbage Collection logging is enabled. The default is false.
@@ -2136,6 +2136,24 @@ spec:
                                 - Parallel
                               description: PodManagementPolicy which will be used for this StatefulSet. Valid values are `Parallel` and `OrderedReady`. Defaults to `Parallel`.
                           description: Template for ZooKeeper `StatefulSet`.
+                        podSet:
+                          type: object
+                          properties:
+                            metadata:
+                              type: object
+                              properties:
+                                labels:
+                                  additionalProperties:
+                                    type: string
+                                  type: object
+                                  description: Labels added to the Kubernetes resource.
+                                annotations:
+                                  additionalProperties:
+                                    type: string
+                                  type: object
+                                  description: Annotations added to the Kubernetes resource.
+                              description: Metadata applied to the resource.
+                          description: Template for ZooKeeper `StrimziPodSet` resource.
                         pod:
                           type: object
                           properties:
@@ -2566,31 +2584,6 @@ spec:
                                   value:
                                     type: string
                               description: The pod's tolerations.
-                            priorityClassName:
-                              type: string
-                              description: 'The name of the priority class used to assign priority to the pods. '
-                            schedulerName:
-                              type: string
-                              description: "The name of the scheduler used to dispatch this `Pod`. If not specified, the default scheduler will be used."
-                            hostAliases:
-                              type: array
-                              items:
-                                type: object
-                                properties:
-                                  hostnames:
-                                    type: array
-                                    items:
-                                      type: string
-                                  ip:
-                                    type: string
-                              description: The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the Pod's hosts file if specified.
-                            tmpDirSizeLimit:
-                              type: string
-                              pattern: "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"
-                              description: Defines the total amount (for example `1Gi`) of local storage required for temporary EmptyDir volume (`/tmp`). Default value is `5Mi`.
-                            enableServiceLinks:
-                              type: boolean
-                              description: Indicates whether information about services should be injected into Pod's environment variables.
                             topologySpreadConstraints:
                               type: array
                               items:
@@ -2633,6 +2626,31 @@ spec:
                                   whenUnsatisfiable:
                                     type: string
                               description: The pod's topology spread constraints.
+                            priorityClassName:
+                              type: string
+                              description: 'The name of the priority class used to assign priority to the pods. '
+                            schedulerName:
+                              type: string
+                              description: "The name of the scheduler used to dispatch this `Pod`. If not specified, the default scheduler will be used."
+                            hostAliases:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  hostnames:
+                                    type: array
+                                    items:
+                                      type: string
+                                  ip:
+                                    type: string
+                              description: The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the Pod's hosts file if specified.
+                            enableServiceLinks:
+                              type: boolean
+                              description: Indicates whether information about services should be injected into Pod's environment variables.
+                            tmpDirSizeLimit:
+                              type: string
+                              pattern: "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"
+                              description: Defines the total amount (for example `1Gi`) of local storage required for temporary EmptyDir volume (`/tmp`). Default value is `5Mi`.
                           description: Template for ZooKeeper `Pods`.
                         clientService:
                           type: object
@@ -2850,24 +2868,6 @@ spec:
                                   description: Annotations added to the Kubernetes resource.
                               description: Metadata applied to the resource.
                           description: Template for Secret of the Zookeeper Cluster JMX authentication.
-                        podSet:
-                          type: object
-                          properties:
-                            metadata:
-                              type: object
-                              properties:
-                                labels:
-                                  additionalProperties:
-                                    type: string
-                                  type: object
-                                  description: Labels added to the Kubernetes resource.
-                                annotations:
-                                  additionalProperties:
-                                    type: string
-                                  type: object
-                                  description: Annotations added to the Kubernetes resource.
-                              description: Metadata applied to the resource.
-                          description: Template for ZooKeeper `StrimziPodSet` resource.
                       description: Template for ZooKeeper cluster resources. The template allows users to specify how the Kubernetes resources are generated.
                   required:
                     - replicas
@@ -2896,14 +2896,14 @@ spec:
                         startupProbe:
                           type: object
                           properties:
-                            failureThreshold:
-                              type: integer
-                              minimum: 1
-                              description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
                             initialDelaySeconds:
                               type: integer
                               minimum: 0
                               description: The initial delay before first the health is first checked. Default to 15 seconds. Minimum value is 0.
+                            timeoutSeconds:
+                              type: integer
+                              minimum: 1
+                              description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
                             periodSeconds:
                               type: integer
                               minimum: 1
@@ -2912,22 +2912,22 @@ spec:
                               type: integer
                               minimum: 1
                               description: Minimum consecutive successes for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness. Minimum value is 1.
-                            timeoutSeconds:
+                            failureThreshold:
                               type: integer
                               minimum: 1
-                              description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
+                              description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
                           description: Pod startup checking.
                         livenessProbe:
                           type: object
                           properties:
-                            failureThreshold:
-                              type: integer
-                              minimum: 1
-                              description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
                             initialDelaySeconds:
                               type: integer
                               minimum: 0
                               description: The initial delay before first the health is first checked. Default to 15 seconds. Minimum value is 0.
+                            timeoutSeconds:
+                              type: integer
+                              minimum: 1
+                              description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
                             periodSeconds:
                               type: integer
                               minimum: 1
@@ -2936,22 +2936,22 @@ spec:
                               type: integer
                               minimum: 1
                               description: Minimum consecutive successes for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness. Minimum value is 1.
-                            timeoutSeconds:
+                            failureThreshold:
                               type: integer
                               minimum: 1
-                              description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
+                              description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
                           description: Pod liveness checking.
                         readinessProbe:
                           type: object
                           properties:
-                            failureThreshold:
-                              type: integer
-                              minimum: 1
-                              description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
                             initialDelaySeconds:
                               type: integer
                               minimum: 0
                               description: The initial delay before first the health is first checked. Default to 15 seconds. Minimum value is 0.
+                            timeoutSeconds:
+                              type: integer
+                              minimum: 1
+                              description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
                             periodSeconds:
                               type: integer
                               minimum: 1
@@ -2960,10 +2960,10 @@ spec:
                               type: integer
                               minimum: 1
                               description: Minimum consecutive successes for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness. Minimum value is 1.
-                            timeoutSeconds:
+                            failureThreshold:
                               type: integer
                               minimum: 1
-                              description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
+                              description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
                           description: Pod readiness checking.
                         resources:
                           type: object
@@ -3025,14 +3025,14 @@ spec:
                                 type: string
                               type: object
                               description: A map of -XX options to the JVM.
-                            "-Xms":
-                              type: string
-                              pattern: "^[0-9]+[mMgG]?$"
-                              description: -Xms option to to the JVM.
                             "-Xmx":
                               type: string
                               pattern: "^[0-9]+[mMgG]?$"
                               description: -Xmx option to to the JVM.
+                            "-Xms":
+                              type: string
+                              pattern: "^[0-9]+[mMgG]?$"
+                              description: -Xms option to to the JVM.
                             gcLoggingEnabled:
                               type: boolean
                               description: Specifies whether the Garbage Collection logging is enabled. The default is false.
@@ -3073,14 +3073,14 @@ spec:
                         livenessProbe:
                           type: object
                           properties:
-                            failureThreshold:
-                              type: integer
-                              minimum: 1
-                              description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
                             initialDelaySeconds:
                               type: integer
                               minimum: 0
                               description: The initial delay before first the health is first checked. Default to 15 seconds. Minimum value is 0.
+                            timeoutSeconds:
+                              type: integer
+                              minimum: 1
+                              description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
                             periodSeconds:
                               type: integer
                               minimum: 1
@@ -3089,22 +3089,22 @@ spec:
                               type: integer
                               minimum: 1
                               description: Minimum consecutive successes for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness. Minimum value is 1.
-                            timeoutSeconds:
+                            failureThreshold:
                               type: integer
                               minimum: 1
-                              description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
+                              description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
                           description: Pod liveness checking.
                         readinessProbe:
                           type: object
                           properties:
-                            failureThreshold:
-                              type: integer
-                              minimum: 1
-                              description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
                             initialDelaySeconds:
                               type: integer
                               minimum: 0
                               description: The initial delay before first the health is first checked. Default to 15 seconds. Minimum value is 0.
+                            timeoutSeconds:
+                              type: integer
+                              minimum: 1
+                              description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
                             periodSeconds:
                               type: integer
                               minimum: 1
@@ -3113,10 +3113,10 @@ spec:
                               type: integer
                               minimum: 1
                               description: Minimum consecutive successes for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness. Minimum value is 1.
-                            timeoutSeconds:
+                            failureThreshold:
                               type: integer
                               minimum: 1
-                              description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
+                              description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
                           description: Pod readiness checking.
                         resources:
                           type: object
@@ -3174,14 +3174,14 @@ spec:
                                 type: string
                               type: object
                               description: A map of -XX options to the JVM.
-                            "-Xms":
-                              type: string
-                              pattern: "^[0-9]+[mMgG]?$"
-                              description: -Xms option to to the JVM.
                             "-Xmx":
                               type: string
                               pattern: "^[0-9]+[mMgG]?$"
                               description: -Xmx option to to the JVM.
+                            "-Xms":
+                              type: string
+                              pattern: "^[0-9]+[mMgG]?$"
+                              description: -Xms option to to the JVM.
                             gcLoggingEnabled:
                               type: boolean
                               description: Specifies whether the Garbage Collection logging is enabled. The default is false.
@@ -3205,66 +3205,6 @@ spec:
                         image:
                           type: string
                           description: The docker image for the container.
-                        livenessProbe:
-                          type: object
-                          properties:
-                            failureThreshold:
-                              type: integer
-                              minimum: 1
-                              description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
-                            initialDelaySeconds:
-                              type: integer
-                              minimum: 0
-                              description: The initial delay before first the health is first checked. Default to 15 seconds. Minimum value is 0.
-                            periodSeconds:
-                              type: integer
-                              minimum: 1
-                              description: How often (in seconds) to perform the probe. Default to 10 seconds. Minimum value is 1.
-                            successThreshold:
-                              type: integer
-                              minimum: 1
-                              description: Minimum consecutive successes for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness. Minimum value is 1.
-                            timeoutSeconds:
-                              type: integer
-                              minimum: 1
-                              description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
-                          description: Pod liveness checking.
-                        logLevel:
-                          type: string
-                          enum:
-                            - emerg
-                            - alert
-                            - crit
-                            - err
-                            - warning
-                            - notice
-                            - info
-                            - debug
-                          description: The log level for the TLS sidecar. Default value is `notice`.
-                        readinessProbe:
-                          type: object
-                          properties:
-                            failureThreshold:
-                              type: integer
-                              minimum: 1
-                              description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
-                            initialDelaySeconds:
-                              type: integer
-                              minimum: 0
-                              description: The initial delay before first the health is first checked. Default to 15 seconds. Minimum value is 0.
-                            periodSeconds:
-                              type: integer
-                              minimum: 1
-                              description: How often (in seconds) to perform the probe. Default to 10 seconds. Minimum value is 1.
-                            successThreshold:
-                              type: integer
-                              minimum: 1
-                              description: Minimum consecutive successes for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness. Minimum value is 1.
-                            timeoutSeconds:
-                              type: integer
-                              minimum: 1
-                              description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
-                          description: Pod readiness checking.
                         resources:
                           type: object
                           properties:
@@ -3282,6 +3222,66 @@ spec:
                               x-kubernetes-preserve-unknown-fields: true
                               type: object
                           description: CPU and memory resources to reserve.
+                        livenessProbe:
+                          type: object
+                          properties:
+                            initialDelaySeconds:
+                              type: integer
+                              minimum: 0
+                              description: The initial delay before first the health is first checked. Default to 15 seconds. Minimum value is 0.
+                            timeoutSeconds:
+                              type: integer
+                              minimum: 1
+                              description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
+                            periodSeconds:
+                              type: integer
+                              minimum: 1
+                              description: How often (in seconds) to perform the probe. Default to 10 seconds. Minimum value is 1.
+                            successThreshold:
+                              type: integer
+                              minimum: 1
+                              description: Minimum consecutive successes for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness. Minimum value is 1.
+                            failureThreshold:
+                              type: integer
+                              minimum: 1
+                              description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
+                          description: Pod liveness checking.
+                        readinessProbe:
+                          type: object
+                          properties:
+                            initialDelaySeconds:
+                              type: integer
+                              minimum: 0
+                              description: The initial delay before first the health is first checked. Default to 15 seconds. Minimum value is 0.
+                            timeoutSeconds:
+                              type: integer
+                              minimum: 1
+                              description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
+                            periodSeconds:
+                              type: integer
+                              minimum: 1
+                              description: How often (in seconds) to perform the probe. Default to 10 seconds. Minimum value is 1.
+                            successThreshold:
+                              type: integer
+                              minimum: 1
+                              description: Minimum consecutive successes for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness. Minimum value is 1.
+                            failureThreshold:
+                              type: integer
+                              minimum: 1
+                              description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
+                          description: Pod readiness checking.
+                        logLevel:
+                          type: string
+                          enum:
+                            - emerg
+                            - alert
+                            - crit
+                            - err
+                            - warning
+                            - notice
+                            - info
+                            - debug
+                          description: The log level for the TLS sidecar. Default value is `notice`.
                       description: TLS sidecar configuration.
                     template:
                       type: object
@@ -3740,31 +3740,6 @@ spec:
                                   value:
                                     type: string
                               description: The pod's tolerations.
-                            priorityClassName:
-                              type: string
-                              description: 'The name of the priority class used to assign priority to the pods. '
-                            schedulerName:
-                              type: string
-                              description: "The name of the scheduler used to dispatch this `Pod`. If not specified, the default scheduler will be used."
-                            hostAliases:
-                              type: array
-                              items:
-                                type: object
-                                properties:
-                                  hostnames:
-                                    type: array
-                                    items:
-                                      type: string
-                                  ip:
-                                    type: string
-                              description: The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the Pod's hosts file if specified.
-                            tmpDirSizeLimit:
-                              type: string
-                              pattern: "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"
-                              description: Defines the total amount (for example `1Gi`) of local storage required for temporary EmptyDir volume (`/tmp`). Default value is `5Mi`.
-                            enableServiceLinks:
-                              type: boolean
-                              description: Indicates whether information about services should be injected into Pod's environment variables.
                             topologySpreadConstraints:
                               type: array
                               items:
@@ -3807,6 +3782,31 @@ spec:
                                   whenUnsatisfiable:
                                     type: string
                               description: The pod's topology spread constraints.
+                            priorityClassName:
+                              type: string
+                              description: 'The name of the priority class used to assign priority to the pods. '
+                            schedulerName:
+                              type: string
+                              description: "The name of the scheduler used to dispatch this `Pod`. If not specified, the default scheduler will be used."
+                            hostAliases:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  hostnames:
+                                    type: array
+                                    items:
+                                      type: string
+                                  ip:
+                                    type: string
+                              description: The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the Pod's hosts file if specified.
+                            enableServiceLinks:
+                              type: boolean
+                              description: Indicates whether information about services should be injected into Pod's environment variables.
+                            tmpDirSizeLimit:
+                              type: string
+                              pattern: "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"
+                              description: Defines the total amount (for example `1Gi`) of local storage required for temporary EmptyDir volume (`/tmp`). Default value is `5Mi`.
                           description: Template for Entity Operator `Pods`.
                         topicOperatorContainer:
                           type: object
@@ -4164,66 +4164,6 @@ spec:
                         image:
                           type: string
                           description: The docker image for the container.
-                        livenessProbe:
-                          type: object
-                          properties:
-                            failureThreshold:
-                              type: integer
-                              minimum: 1
-                              description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
-                            initialDelaySeconds:
-                              type: integer
-                              minimum: 0
-                              description: The initial delay before first the health is first checked. Default to 15 seconds. Minimum value is 0.
-                            periodSeconds:
-                              type: integer
-                              minimum: 1
-                              description: How often (in seconds) to perform the probe. Default to 10 seconds. Minimum value is 1.
-                            successThreshold:
-                              type: integer
-                              minimum: 1
-                              description: Minimum consecutive successes for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness. Minimum value is 1.
-                            timeoutSeconds:
-                              type: integer
-                              minimum: 1
-                              description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
-                          description: Pod liveness checking.
-                        logLevel:
-                          type: string
-                          enum:
-                            - emerg
-                            - alert
-                            - crit
-                            - err
-                            - warning
-                            - notice
-                            - info
-                            - debug
-                          description: The log level for the TLS sidecar. Default value is `notice`.
-                        readinessProbe:
-                          type: object
-                          properties:
-                            failureThreshold:
-                              type: integer
-                              minimum: 1
-                              description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
-                            initialDelaySeconds:
-                              type: integer
-                              minimum: 0
-                              description: The initial delay before first the health is first checked. Default to 15 seconds. Minimum value is 0.
-                            periodSeconds:
-                              type: integer
-                              minimum: 1
-                              description: How often (in seconds) to perform the probe. Default to 10 seconds. Minimum value is 1.
-                            successThreshold:
-                              type: integer
-                              minimum: 1
-                              description: Minimum consecutive successes for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness. Minimum value is 1.
-                            timeoutSeconds:
-                              type: integer
-                              minimum: 1
-                              description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
-                          description: Pod readiness checking.
                         resources:
                           type: object
                           properties:
@@ -4241,6 +4181,66 @@ spec:
                               x-kubernetes-preserve-unknown-fields: true
                               type: object
                           description: CPU and memory resources to reserve.
+                        livenessProbe:
+                          type: object
+                          properties:
+                            initialDelaySeconds:
+                              type: integer
+                              minimum: 0
+                              description: The initial delay before first the health is first checked. Default to 15 seconds. Minimum value is 0.
+                            timeoutSeconds:
+                              type: integer
+                              minimum: 1
+                              description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
+                            periodSeconds:
+                              type: integer
+                              minimum: 1
+                              description: How often (in seconds) to perform the probe. Default to 10 seconds. Minimum value is 1.
+                            successThreshold:
+                              type: integer
+                              minimum: 1
+                              description: Minimum consecutive successes for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness. Minimum value is 1.
+                            failureThreshold:
+                              type: integer
+                              minimum: 1
+                              description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
+                          description: Pod liveness checking.
+                        readinessProbe:
+                          type: object
+                          properties:
+                            initialDelaySeconds:
+                              type: integer
+                              minimum: 0
+                              description: The initial delay before first the health is first checked. Default to 15 seconds. Minimum value is 0.
+                            timeoutSeconds:
+                              type: integer
+                              minimum: 1
+                              description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
+                            periodSeconds:
+                              type: integer
+                              minimum: 1
+                              description: How often (in seconds) to perform the probe. Default to 10 seconds. Minimum value is 1.
+                            successThreshold:
+                              type: integer
+                              minimum: 1
+                              description: Minimum consecutive successes for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness. Minimum value is 1.
+                            failureThreshold:
+                              type: integer
+                              minimum: 1
+                              description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
+                          description: Pod readiness checking.
+                        logLevel:
+                          type: string
+                          enum:
+                            - emerg
+                            - alert
+                            - crit
+                            - err
+                            - warning
+                            - notice
+                            - info
+                            - debug
+                          description: The log level for the TLS sidecar. Default value is `notice`.
                       description: TLS sidecar configuration.
                     resources:
                       type: object
@@ -4262,14 +4262,14 @@ spec:
                     livenessProbe:
                       type: object
                       properties:
-                        failureThreshold:
-                          type: integer
-                          minimum: 1
-                          description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
                         initialDelaySeconds:
                           type: integer
                           minimum: 0
                           description: The initial delay before first the health is first checked. Default to 15 seconds. Minimum value is 0.
+                        timeoutSeconds:
+                          type: integer
+                          minimum: 1
+                          description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
                         periodSeconds:
                           type: integer
                           minimum: 1
@@ -4278,22 +4278,22 @@ spec:
                           type: integer
                           minimum: 1
                           description: Minimum consecutive successes for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness. Minimum value is 1.
-                        timeoutSeconds:
+                        failureThreshold:
                           type: integer
                           minimum: 1
-                          description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
+                          description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
                       description: Pod liveness checking for the Cruise Control container.
                     readinessProbe:
                       type: object
                       properties:
-                        failureThreshold:
-                          type: integer
-                          minimum: 1
-                          description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
                         initialDelaySeconds:
                           type: integer
                           minimum: 0
                           description: The initial delay before first the health is first checked. Default to 15 seconds. Minimum value is 0.
+                        timeoutSeconds:
+                          type: integer
+                          minimum: 1
+                          description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
                         periodSeconds:
                           type: integer
                           minimum: 1
@@ -4302,10 +4302,10 @@ spec:
                           type: integer
                           minimum: 1
                           description: Minimum consecutive successes for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness. Minimum value is 1.
-                        timeoutSeconds:
+                        failureThreshold:
                           type: integer
                           minimum: 1
-                          description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
+                          description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
                       description: Pod readiness checking for the Cruise Control container.
                     jvmOptions:
                       type: object
@@ -4315,14 +4315,14 @@ spec:
                             type: string
                           type: object
                           description: A map of -XX options to the JVM.
-                        "-Xms":
-                          type: string
-                          pattern: "^[0-9]+[mMgG]?$"
-                          description: -Xms option to to the JVM.
                         "-Xmx":
                           type: string
                           pattern: "^[0-9]+[mMgG]?$"
                           description: -Xmx option to to the JVM.
+                        "-Xms":
+                          type: string
+                          pattern: "^[0-9]+[mMgG]?$"
+                          description: -Xms option to to the JVM.
                         gcLoggingEnabled:
                           type: boolean
                           description: Specifies whether the Garbage Collection logging is enabled. The default is false.
@@ -4827,31 +4827,6 @@ spec:
                                   value:
                                     type: string
                               description: The pod's tolerations.
-                            priorityClassName:
-                              type: string
-                              description: 'The name of the priority class used to assign priority to the pods. '
-                            schedulerName:
-                              type: string
-                              description: "The name of the scheduler used to dispatch this `Pod`. If not specified, the default scheduler will be used."
-                            hostAliases:
-                              type: array
-                              items:
-                                type: object
-                                properties:
-                                  hostnames:
-                                    type: array
-                                    items:
-                                      type: string
-                                  ip:
-                                    type: string
-                              description: The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the Pod's hosts file if specified.
-                            tmpDirSizeLimit:
-                              type: string
-                              pattern: "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"
-                              description: Defines the total amount (for example `1Gi`) of local storage required for temporary EmptyDir volume (`/tmp`). Default value is `5Mi`.
-                            enableServiceLinks:
-                              type: boolean
-                              description: Indicates whether information about services should be injected into Pod's environment variables.
                             topologySpreadConstraints:
                               type: array
                               items:
@@ -4894,6 +4869,31 @@ spec:
                                   whenUnsatisfiable:
                                     type: string
                               description: The pod's topology spread constraints.
+                            priorityClassName:
+                              type: string
+                              description: 'The name of the priority class used to assign priority to the pods. '
+                            schedulerName:
+                              type: string
+                              description: "The name of the scheduler used to dispatch this `Pod`. If not specified, the default scheduler will be used."
+                            hostAliases:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  hostnames:
+                                    type: array
+                                    items:
+                                      type: string
+                                  ip:
+                                    type: string
+                              description: The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the Pod's hosts file if specified.
+                            enableServiceLinks:
+                              type: boolean
+                              description: Indicates whether information about services should be injected into Pod's environment variables.
+                            tmpDirSizeLimit:
+                              type: string
+                              pattern: "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"
+                              description: Defines the total amount (for example `1Gi`) of local storage required for temporary EmptyDir volume (`/tmp`). Default value is `5Mi`.
                           description: Template for Cruise Control `Pods`.
                         apiService:
                           type: object
@@ -5733,31 +5733,6 @@ spec:
                                   value:
                                     type: string
                               description: The pod's tolerations.
-                            priorityClassName:
-                              type: string
-                              description: 'The name of the priority class used to assign priority to the pods. '
-                            schedulerName:
-                              type: string
-                              description: "The name of the scheduler used to dispatch this `Pod`. If not specified, the default scheduler will be used."
-                            hostAliases:
-                              type: array
-                              items:
-                                type: object
-                                properties:
-                                  hostnames:
-                                    type: array
-                                    items:
-                                      type: string
-                                  ip:
-                                    type: string
-                              description: The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the Pod's hosts file if specified.
-                            tmpDirSizeLimit:
-                              type: string
-                              pattern: "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"
-                              description: Defines the total amount (for example `1Gi`) of local storage required for temporary EmptyDir volume (`/tmp`). Default value is `5Mi`.
-                            enableServiceLinks:
-                              type: boolean
-                              description: Indicates whether information about services should be injected into Pod's environment variables.
                             topologySpreadConstraints:
                               type: array
                               items:
@@ -5800,6 +5775,31 @@ spec:
                                   whenUnsatisfiable:
                                     type: string
                               description: The pod's topology spread constraints.
+                            priorityClassName:
+                              type: string
+                              description: 'The name of the priority class used to assign priority to the pods. '
+                            schedulerName:
+                              type: string
+                              description: "The name of the scheduler used to dispatch this `Pod`. If not specified, the default scheduler will be used."
+                            hostAliases:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  hostnames:
+                                    type: array
+                                    items:
+                                      type: string
+                                  ip:
+                                    type: string
+                              description: The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the Pod's hosts file if specified.
+                            enableServiceLinks:
+                              type: boolean
+                              description: Indicates whether information about services should be injected into Pod's environment variables.
+                            tmpDirSizeLimit:
+                              type: string
+                              pattern: "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"
+                              description: Defines the total amount (for example `1Gi`) of local storage required for temporary EmptyDir volume (`/tmp`). Default value is `5Mi`.
                           description: Template for JmxTrans `Pods`.
                         container:
                           type: object
@@ -5936,6 +5936,54 @@ spec:
                     logging:
                       type: string
                       description: "Only log messages with the given severity or above. Valid levels: [`info`, `debug`, `trace`]. Default log level is `info`."
+                    livenessProbe:
+                      type: object
+                      properties:
+                        initialDelaySeconds:
+                          type: integer
+                          minimum: 0
+                          description: The initial delay before first the health is first checked. Default to 15 seconds. Minimum value is 0.
+                        timeoutSeconds:
+                          type: integer
+                          minimum: 1
+                          description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
+                        periodSeconds:
+                          type: integer
+                          minimum: 1
+                          description: How often (in seconds) to perform the probe. Default to 10 seconds. Minimum value is 1.
+                        successThreshold:
+                          type: integer
+                          minimum: 1
+                          description: Minimum consecutive successes for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness. Minimum value is 1.
+                        failureThreshold:
+                          type: integer
+                          minimum: 1
+                          description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
+                      description: Pod liveness check.
+                    readinessProbe:
+                      type: object
+                      properties:
+                        initialDelaySeconds:
+                          type: integer
+                          minimum: 0
+                          description: The initial delay before first the health is first checked. Default to 15 seconds. Minimum value is 0.
+                        timeoutSeconds:
+                          type: integer
+                          minimum: 1
+                          description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
+                        periodSeconds:
+                          type: integer
+                          minimum: 1
+                          description: How often (in seconds) to perform the probe. Default to 10 seconds. Minimum value is 1.
+                        successThreshold:
+                          type: integer
+                          minimum: 1
+                          description: Minimum consecutive successes for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness. Minimum value is 1.
+                        failureThreshold:
+                          type: integer
+                          minimum: 1
+                          description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
+                      description: Pod readiness check.
                     enableSaramaLogging:
                       type: boolean
                       description: "Enable Sarama logging, a Go client library used by the Kafka Exporter."
@@ -6399,31 +6447,6 @@ spec:
                                   value:
                                     type: string
                               description: The pod's tolerations.
-                            priorityClassName:
-                              type: string
-                              description: 'The name of the priority class used to assign priority to the pods. '
-                            schedulerName:
-                              type: string
-                              description: "The name of the scheduler used to dispatch this `Pod`. If not specified, the default scheduler will be used."
-                            hostAliases:
-                              type: array
-                              items:
-                                type: object
-                                properties:
-                                  hostnames:
-                                    type: array
-                                    items:
-                                      type: string
-                                  ip:
-                                    type: string
-                              description: The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the Pod's hosts file if specified.
-                            tmpDirSizeLimit:
-                              type: string
-                              pattern: "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"
-                              description: Defines the total amount (for example `1Gi`) of local storage required for temporary EmptyDir volume (`/tmp`). Default value is `5Mi`.
-                            enableServiceLinks:
-                              type: boolean
-                              description: Indicates whether information about services should be injected into Pod's environment variables.
                             topologySpreadConstraints:
                               type: array
                               items:
@@ -6466,6 +6489,31 @@ spec:
                                   whenUnsatisfiable:
                                     type: string
                               description: The pod's topology spread constraints.
+                            priorityClassName:
+                              type: string
+                              description: 'The name of the priority class used to assign priority to the pods. '
+                            schedulerName:
+                              type: string
+                              description: "The name of the scheduler used to dispatch this `Pod`. If not specified, the default scheduler will be used."
+                            hostAliases:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  hostnames:
+                                    type: array
+                                    items:
+                                      type: string
+                                  ip:
+                                    type: string
+                              description: The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the Pod's hosts file if specified.
+                            enableServiceLinks:
+                              type: boolean
+                              description: Indicates whether information about services should be injected into Pod's environment variables.
+                            tmpDirSizeLimit:
+                              type: string
+                              pattern: "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"
+                              description: Defines the total amount (for example `1Gi`) of local storage required for temporary EmptyDir volume (`/tmp`). Default value is `5Mi`.
                           description: Template for Kafka Exporter `Pods`.
                         service:
                           type: object
@@ -6578,54 +6626,6 @@ spec:
                               description: Metadata applied to the resource.
                           description: Template for the Kafka Exporter service account.
                       description: Customization of deployment templates and pods.
-                    livenessProbe:
-                      type: object
-                      properties:
-                        failureThreshold:
-                          type: integer
-                          minimum: 1
-                          description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
-                        initialDelaySeconds:
-                          type: integer
-                          minimum: 0
-                          description: The initial delay before first the health is first checked. Default to 15 seconds. Minimum value is 0.
-                        periodSeconds:
-                          type: integer
-                          minimum: 1
-                          description: How often (in seconds) to perform the probe. Default to 10 seconds. Minimum value is 1.
-                        successThreshold:
-                          type: integer
-                          minimum: 1
-                          description: Minimum consecutive successes for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness. Minimum value is 1.
-                        timeoutSeconds:
-                          type: integer
-                          minimum: 1
-                          description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
-                      description: Pod liveness check.
-                    readinessProbe:
-                      type: object
-                      properties:
-                        failureThreshold:
-                          type: integer
-                          minimum: 1
-                          description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
-                        initialDelaySeconds:
-                          type: integer
-                          minimum: 0
-                          description: The initial delay before first the health is first checked. Default to 15 seconds. Minimum value is 0.
-                        periodSeconds:
-                          type: integer
-                          minimum: 1
-                          description: How often (in seconds) to perform the probe. Default to 10 seconds. Minimum value is 1.
-                        successThreshold:
-                          type: integer
-                          minimum: 1
-                          description: Minimum consecutive successes for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness. Minimum value is 1.
-                        timeoutSeconds:
-                          type: integer
-                          minimum: 1
-                          description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
-                      description: Pod readiness check.
                   description: "Configuration of the Kafka Exporter. Kafka Exporter can provide additional metrics, for example lag of consumer group at topic/partition."
                 maintenanceTimeWindows:
                   type: array

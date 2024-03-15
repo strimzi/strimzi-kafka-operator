@@ -6,6 +6,7 @@ package io.strimzi.api.kafka.model.connect;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.ConfigMapVolumeSource;
 import io.fabric8.kubernetes.api.model.SecretVolumeSource;
 import io.strimzi.api.kafka.model.common.Constants;
@@ -28,6 +29,7 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+@JsonPropertyOrder({"name", "secret", "configMap"})
 @EqualsAndHashCode
 @ToString
 public class ExternalConfigurationVolumeSource implements Serializable, UnknownPropertyPreserving {
@@ -37,6 +39,7 @@ public class ExternalConfigurationVolumeSource implements Serializable, UnknownP
     private String name;
     private SecretVolumeSource secret;
     private ConfigMapVolumeSource configMap;
+
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Name of the volume which will be added to the Kafka Connect pods.")

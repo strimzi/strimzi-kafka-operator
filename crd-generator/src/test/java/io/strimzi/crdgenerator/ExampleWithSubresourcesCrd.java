@@ -4,6 +4,8 @@
  */
 package io.strimzi.crdgenerator;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.strimzi.crdgenerator.annotations.Crd;
 
@@ -35,6 +37,8 @@ import io.strimzi.crdgenerator.annotations.Crd;
                 type = "integer")
         }
     ))
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonPropertyOrder({"replicas", "spec", "status"})
 public class ExampleWithSubresourcesCrd<T, U extends Number, V extends U> extends CustomResource {
     private String replicas;
 

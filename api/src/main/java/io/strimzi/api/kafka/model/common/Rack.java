@@ -6,6 +6,7 @@ package io.strimzi.api.kafka.model.common;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.strimzi.crdgenerator.annotations.Example;
@@ -26,6 +27,7 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonPropertyOrder({"topologyKey"})
 @EqualsAndHashCode
 @ToString
 public class Rack implements UnknownPropertyPreserving, Serializable {
@@ -33,6 +35,7 @@ public class Rack implements UnknownPropertyPreserving, Serializable {
     private static final long serialVersionUID = 1L;
 
     private String topologyKey;
+
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     public Rack() {

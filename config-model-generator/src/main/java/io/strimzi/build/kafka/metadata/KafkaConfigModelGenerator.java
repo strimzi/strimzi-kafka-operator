@@ -43,6 +43,14 @@ import java.util.regex.Pattern;
  */
 @SuppressWarnings("unchecked")
 public class KafkaConfigModelGenerator {
+
+    /**
+     * Default private constructor
+     */
+    private KafkaConfigModelGenerator() {
+        // Not to be used
+    }
+
     /**
      * The main method to run the config model generator
      *
