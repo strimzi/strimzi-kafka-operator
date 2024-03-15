@@ -702,7 +702,10 @@ public class ListenersUtils {
 
     /**
      * Returns bootstrap service external IPs
+     * 
      * @param listener  Listener for which the external IPs should be found
+     * 
+     * @return  External IPs or null if not specified
      */
     public static List<String> bootstrapExternalIPs(GenericKafkaListener listener) {
         return (listener.getConfiguration() != null && listener.getConfiguration().getBootstrap() != null)
@@ -712,8 +715,11 @@ public class ListenersUtils {
 
      /**
      * Returns broker service external IPs
+     * 
      * @param listener  Listener for which the external IPs should be found
      * @param pod       Pod ID for which we should get the configuration option
+     * 
+     * @return          External IPs or null if not specified
      */
     public static List<String> brokerExternalIPs(GenericKafkaListener listener, int pod) {
         return (listener.getConfiguration() != null && listener.getConfiguration().getBrokers() != null)

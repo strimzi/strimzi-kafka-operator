@@ -141,8 +141,8 @@ public class GenericKafkaListenerConfigurationBroker implements Serializable, Un
     }
 
     @Description("External IPs associated to the nodeport service. " + 
-            "These IPs are uesd by clients external to the cluster to access the kafka brokers. " +
-            "This field is helpful when `nodeport` without `externalIP` is not sufficient eg: bare-metal Kubernetes cluster with Calico that doesn't support Loadbalancer service types. " +
+            "These IPs are used by clients external to the cluster to access the kafka brokers. " +
+            "This field is helpful when `nodeport` without `externalIP` is not sufficient. For example on bare-metal Kubernetes clusters that do not support Loadbalancer service types. " +
             "This field can only be used with `nodeport` type listener.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public List<String> getExternalIPs() {
