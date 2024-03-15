@@ -1131,7 +1131,7 @@ public class ListenersValidatorTest {
     @ParallelTest
     public void testValidateBootstrapExternalIPsListenener() {
         GenericKafkaListener listener1 = new GenericKafkaListenerBuilder()
-        		.withName("listener1")
+                .withName("listener1")
                 .withPort(9094)
                 .withType(KafkaListenerType.LOADBALANCER)
                 .withTls(true)
@@ -1140,7 +1140,7 @@ public class ListenersValidatorTest {
                         .withExternalIPs(Arrays.asList("10.0.0.1"))
                         .build())
                 .withBrokers(new GenericKafkaListenerConfigurationBrokerBuilder()
-                		.withBroker(0)
+                	.withBroker(0)
                         .withAdvertisedHost("advertised-host")
                         .withExternalIPs(Arrays.asList("10.0.0.2"))
                         .build())
@@ -1148,7 +1148,7 @@ public class ListenersValidatorTest {
                 .build();
         
         GenericKafkaListener listener2 = new GenericKafkaListenerBuilder()
-        		.withName("listener2")
+                .withName("listener2")
                 .withPort(9900)
                 .withType(KafkaListenerType.INTERNAL)
                 .withTls(true)
@@ -1157,7 +1157,7 @@ public class ListenersValidatorTest {
                         .withExternalIPs(Arrays.asList("10.0.0.3"))
                         .build())
                 .withBrokers(new GenericKafkaListenerConfigurationBrokerBuilder()
-                		.withBroker(0)
+                	.withBroker(1)
                         .withAdvertisedHost("advertised-host")
                         .withExternalIPs(Arrays.asList("10.0.0.4"))
                         .build())
