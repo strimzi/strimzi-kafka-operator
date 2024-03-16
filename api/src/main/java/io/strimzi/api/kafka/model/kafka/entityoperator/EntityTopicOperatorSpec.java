@@ -59,8 +59,8 @@ public class EntityTopicOperatorSpec implements HasConfigurableLogging, HasLiven
     protected String watchedNamespace;
     protected String image;
     protected int reconciliationIntervalSeconds = DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS;
-    protected int zookeeperSessionTimeoutSeconds = DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_SECONDS;
-    protected int topicMetadataMaxAttempts = DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS;
+    protected Integer zookeeperSessionTimeoutSeconds;
+    protected Integer topicMetadataMaxAttempts;
     private Probe startupProbe;
     private Probe livenessProbe;
     private Probe readinessProbe;
@@ -104,11 +104,11 @@ public class EntityTopicOperatorSpec implements HasConfigurableLogging, HasLiven
     @DeprecatedProperty(description = "This property has been deprecated because ZooKeeper is not used anymore by the Topic Operator.")
     @PresentInVersions("v1alpha1-v1beta2")
     @Deprecated
-    public int getZookeeperSessionTimeoutSeconds() {
+    public Integer getZookeeperSessionTimeoutSeconds() {
         return zookeeperSessionTimeoutSeconds;
     }
 
-    public void setZookeeperSessionTimeoutSeconds(int zookeeperSessionTimeoutSeconds) {
+    public void setZookeeperSessionTimeoutSeconds(Integer zookeeperSessionTimeoutSeconds) {
         this.zookeeperSessionTimeoutSeconds = zookeeperSessionTimeoutSeconds;
     }
     
@@ -118,11 +118,11 @@ public class EntityTopicOperatorSpec implements HasConfigurableLogging, HasLiven
     @DeprecatedProperty(description = "This property has been deprecated because ZooKeeper is not used anymore by the Topic Operator.")
     @PresentInVersions("v1alpha1-v1beta2")
     @Deprecated
-    public int getTopicMetadataMaxAttempts() {
+    public Integer getTopicMetadataMaxAttempts() {
         return topicMetadataMaxAttempts;
     }
 
-    public void setTopicMetadataMaxAttempts(int topicMetadataMaxAttempts) {
+    public void setTopicMetadataMaxAttempts(Integer topicMetadataMaxAttempts) {
         this.topicMetadataMaxAttempts = topicMetadataMaxAttempts;
     }
 
