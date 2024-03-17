@@ -47,7 +47,7 @@ public class KafkaMetadataStateManager {
 
     private KafkaMetadataState metadataState;
 
-    private String kraftAnno;
+    private final String kraftAnno;
 
     private boolean isMigrationDone = false;
 
