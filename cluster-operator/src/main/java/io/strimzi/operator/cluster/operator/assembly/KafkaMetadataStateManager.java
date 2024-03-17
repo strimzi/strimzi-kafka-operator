@@ -14,7 +14,6 @@ import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.model.StatusUtils;
 
 import java.util.Locale;
-import java.util.Objects;
 
 /**
  * Class used to reconcile the metadata state which represents where metadata are stored (ZooKeeper or KRaft)
@@ -67,7 +66,11 @@ public class KafkaMetadataStateManager {
         this.kraftAnno = kraftAnnotation(kafkaCr);
         KafkaMetadataState metadataStateFromKafkaCr = kafkaCr.getStatus() != null ? kafkaCr.getStatus().getKafkaMetadataState() : null;
         // missing metadata state means reconciling an already existing Kafka resource with newer operator supporting metadata state or first reconcile
-        this.metadataState = Objects.requireNonNullElseGet(metadataStateFromKafkaCr, () -> isKRaftAnnoEnabled() ? KafkaMetadataState.KRaft : KafkaMetadataState.ZooKeeper);
+        if (metadataStateFromKafkaCr == null) {
+            this.metadataState = isKRaftAnnoEnabled() ? KafkaMetadataState.KRaft : KafkaMetadataState.ZooKeeper;
+        } else {
+            this.metadataState = metadataStateFromKafkaCr;
+        }
         if (!useKRaftFeatureGateEnabled && (isKRaftAnnoEnabled() || isKRaftAnnoMigration())) {
             LOGGER.errorCr(reconciliation, "Trying to reconcile a KRaft enabled cluster or migrating to KRaft without the useKRaft feature gate enabled");
             throw new IllegalArgumentException("Failed to reconcile a KRaft enabled cluster or migration to KRaft because useKRaft feature gate is disabled");
