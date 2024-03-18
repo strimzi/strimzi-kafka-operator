@@ -717,14 +717,14 @@ public class ListenersUtils {
      * Returns broker service external IPs
      * 
      * @param listener  Listener for which the external IPs should be found
-     * @param pod       Pod ID for which we should get the configuration option
+     * @param nodeId       Node ID for which we should get the configuration option
      * 
      * @return          External IPs or null if not specified
      */
     public static List<String> brokerExternalIPs(GenericKafkaListener listener, int nodeId) {
         return (listener.getConfiguration() != null && listener.getConfiguration().getBrokers() != null)
                 ? listener.getConfiguration().getBrokers().stream()
-                    .filter(broker -> broker != null && broker.getBroker() != null && broker.getBroker() == pod && broker.getExternalIPs() != null)
+                    .filter(broker -> broker != null && broker.getBroker() != null && broker.getBroker() == nodeId && broker.getExternalIPs() != null)
                     .map(GenericKafkaListenerConfigurationBroker::getExternalIPs)
                     .findAny()
                     .orElse(null) : null;
