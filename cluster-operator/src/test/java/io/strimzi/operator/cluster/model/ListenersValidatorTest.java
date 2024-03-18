@@ -1163,10 +1163,26 @@ public class ListenersValidatorTest {
                         .build())
                 .endConfiguration()
                 .build();
+        
+        GenericKafkaListener listener3 = new GenericKafkaListenerBuilder()
+                .withName("listener3")
+                .withPort(9920)
+                .withType(KafkaListenerType.NODEPORT)
+                .withTls(true)
+                .withNewConfiguration()
+                .withBootstrap(new GenericKafkaListenerConfigurationBootstrapBuilder()
+                        .withExternalIPs(Arrays.asList("10.0.0.5"))
+                        .build())
+                .withBrokers(new GenericKafkaListenerConfigurationBrokerBuilder()
+                        .withBroker(1)
+                        .withAdvertisedHost("advertised-host")
+                        .withExternalIPs(Arrays.asList("10.0.0.6"))
+                        .build())
+                .endConfiguration()
+                .build();
+        List<GenericKafkaListener> listeners = List.of(listener1, listener2, listener3);
 
-        List<GenericKafkaListener> listeners = List.of(listener1, listener2);
-
-        assertThat(ListenersValidator.validateAndGetErrorMessages(TWO_NODES, listeners), containsInAnyOrder(
+        assertThat(ListenersValidator.validateAndGetErrorMessages(THREE_NODES, listeners), containsInAnyOrder(
                 "listener listener1 cannot configure bootstrap.externalIPs because it is not NodePort based listener",
                 "listener listener2 cannot configure bootstrap.externalIPs because it is not NodePort based listener",
                 "listener listener1 cannot configure brokers[].externalIPs because it is not NodePort based listener",
