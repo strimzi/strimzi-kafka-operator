@@ -54,28 +54,3 @@
     kafkaAfter: "/examples/kafka/kafka-persistent.yaml"
     kafkaKRaftBefore: "/examples/kafka/kraft/kafka.yaml"
     kafkaKRaftAfter: "/examples/kafka/kraft/kafka.yaml"
-- fromVersion: 0.40.0
-  fromExamples: strimzi-0.40.0
-  oldestKafka: 3.6.0
-  fromUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.40.0/strimzi-0.40.0.zip
-  fromKafkaVersionsUrl: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/0.40.0/kafka-versions.yaml
-  additionalTopics: 2
-  imagesAfterOperations:
-    zookeeper: strimzi/kafka:latest-kafka-3.7.0
-    kafka: strimzi/kafka:latest-kafka-3.7.0
-    topicOperator: strimzi/operator:latest
-    userOperator: strimzi/operator:latest
-  client:
-    continuousClientsMessages: 500
-  environmentInfo:
-    maxK8sVersion: latest
-    status: stable
-    flakyEnvVariable: none
-    reason: Test is working on environment, where k8s server version is < 1.22
-  featureGatesBefore: "-UnidirectionalTopicOperator"
-  featureGatesAfter: ""
-  filePaths:
-    kafkaBefore: "/examples/kafka/kafka-persistent.yaml"
-    kafkaAfter: "/examples/kafka/kafka-persistent.yaml"
-    kafkaKRaftBefore: "/examples/kafka/kraft/kafka.yaml"
-    kafkaKRaftAfter: "/examples/kafka/kraft/kafka.yaml"
