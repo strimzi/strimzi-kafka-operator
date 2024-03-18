@@ -7,12 +7,12 @@
   To use the Kafka Node Pool resources, you still need to use the `strimzi.io/node-pools: enabled` annotation on the `Kafka` custom resources.
 * Added support for configuring the `externalIPs` field in node port type services.
 * The `UnidirectionalTopicOperator` feature gate moves to GA stage and is permanently enabled without the possibility to disable it.
-  If not done during migration, the internal topics whose names start with `strimzi-store-topic` and `strimzi-topic-operator` can be deleted.
+  If not done when migrating from BTO to UTO, the internal topics whose names start with `strimzi-store-topic` and `strimzi-topic-operator` can be deleted.
 
 ### Changes, deprecations and removals
 
 * The `tlsSidecar` configuration for the Entity Operator is now deprecated and will be ignored.
-* The `reconciliationIntervalSeconds`  and `zookeeperSessionTimeoutSeconds` configurations for the Entity Topic Operator are now deprecated and will be ignored.
+* The `zookeeperSessionTimeoutSeconds` and `topicMetadataMaxAttempts` configurations for the Entity Topic Operator have been removed and will be ignored.
 
 ## 0.40.0
 
