@@ -101,7 +101,7 @@ public class EntityTopicOperatorSpec implements HasConfigurableLogging, HasLiven
     @Description("Timeout for the ZooKeeper session")
     @Minimum(0)
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-    @DeprecatedProperty(description = "This property has been deprecated because ZooKeeper is not used anymore by the Topic Operator.")
+    @DeprecatedProperty(description = "This property was removed in Strimzi 0.41.0 and it is ignored.")
     @PresentInVersions("v1alpha1-v1beta2")
     @Deprecated
     public Integer getZookeeperSessionTimeoutSeconds() {
@@ -115,7 +115,7 @@ public class EntityTopicOperatorSpec implements HasConfigurableLogging, HasLiven
     @Description("The number of attempts at getting topic metadata")
     @Minimum(0)
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-    @DeprecatedProperty(description = "This property has been deprecated because ZooKeeper is not used anymore by the Topic Operator.")
+    @DeprecatedProperty(description = "This property was removed in Strimzi 0.41.0 and it is ignored.")
     @PresentInVersions("v1alpha1-v1beta2")
     @Deprecated
     public Integer getTopicMetadataMaxAttempts() {

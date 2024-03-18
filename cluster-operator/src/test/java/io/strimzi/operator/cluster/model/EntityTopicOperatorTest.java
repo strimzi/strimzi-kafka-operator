@@ -80,8 +80,6 @@ public class EntityTopicOperatorTest {
     private final String toWatchedNamespace = "my-topic-namespace";
     private final String toImage = "my-topic-operator-image";
     private final int toReconciliationInterval = 120;
-    private final Integer toZookeeperSessionTimeout = 18;
-    private final Integer toTopicMetadataMaxAttempts = 3;
 
     private final List<SystemProperty> javaSystemProperties = new ArrayList<>() {{
             add(new SystemPropertyBuilder().withName("javax.net.debug").withValue("verbose").build());
@@ -92,8 +90,6 @@ public class EntityTopicOperatorTest {
             .withWatchedNamespace(toWatchedNamespace)
             .withImage(toImage)
             .withReconciliationIntervalSeconds(toReconciliationInterval)
-            .withZookeeperSessionTimeoutSeconds(toZookeeperSessionTimeout)
-            .withTopicMetadataMaxAttempts(toTopicMetadataMaxAttempts)
             .withLivenessProbe(livenessProbe)
             .withReadinessProbe(readinessProbe)
             .withLogging(topicOperatorLogging)
