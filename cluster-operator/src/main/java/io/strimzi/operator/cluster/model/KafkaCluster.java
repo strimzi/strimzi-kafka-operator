@@ -714,9 +714,9 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
             }
 
             if (KafkaListenerType.NODEPORT == listener.getType()) {
-                List<String> eips = ListenersUtils.bootstrapExternalIPs(listener);
-                if (eips != null && !eips.isEmpty()) {
-                    service.getSpec().setExternalIPs(eips);
+                List<String> externalIps = ListenersUtils.bootstrapExternalIPs(listener);
+                if (externalIps != null && !externalIps.isEmpty()) {
+                    service.getSpec().setExternalIPs(externalIps);
                 }
             }
 
@@ -799,9 +799,9 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                         }
 
                         if (KafkaListenerType.NODEPORT == listener.getType()) {
-                            List<String> eips = ListenersUtils.brokerExternalIPs(listener, node.nodeId());
-                            if (eips != null && !eips.isEmpty()) {
-                                service.getSpec().setExternalIPs(eips);
+                            List<String> externalIps = ListenersUtils.brokerExternalIPs(listener, node.nodeId());
+                            if (externalIps != null && !externalIps.isEmpty()) {
+                                service.getSpec().setExternalIPs(externalIps);
                             }
                         }
 

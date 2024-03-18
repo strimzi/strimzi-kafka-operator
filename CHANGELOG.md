@@ -5,7 +5,7 @@
 * Added support for topic replication factor change to the Unidirectional Topic Operator when Cruise Control integration is enabled.
 * The `KafkaNodePools` feature gate moves to GA stage and is permanently enabled without the possibility to disable it.
   To use the Kafka Node Pool resources, you still need to use the `strimzi.io/node-pools: enabled` annotation on the `Kafka` custom resources.
-* Added support for External IP Configurability for Kafka brokers and External Bootstrap.
+* Added support for configuring the `externalIPs` field in node port type services.
 
 ## 0.40.0
 

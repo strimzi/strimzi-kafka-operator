@@ -721,7 +721,7 @@ public class ListenersUtils {
      * 
      * @return          External IPs or null if not specified
      */
-    public static List<String> brokerExternalIPs(GenericKafkaListener listener, int pod) {
+    public static List<String> brokerExternalIPs(GenericKafkaListener listener, int nodeId) {
         return (listener.getConfiguration() != null && listener.getConfiguration().getBrokers() != null)
                 ? listener.getConfiguration().getBrokers().stream()
                     .filter(broker -> broker != null && broker.getBroker() != null && broker.getBroker() == pod && broker.getExternalIPs() != null)
