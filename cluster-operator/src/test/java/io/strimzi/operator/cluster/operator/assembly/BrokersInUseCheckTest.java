@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.operator.assembly;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.auth.TlsPemIdentity;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
@@ -46,6 +47,7 @@ public class BrokersInUseCheckTest {
     private static final String CLUSTER_NAME = "my-cluster";
     private static final Reconciliation RECONCILIATION = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME);
     private static final Function<Integer, Node> NODE = id -> new Node(id, Node.noNode().host(), Node.noNode().port());
+    private static final TlsPemIdentity DUMMY_IDENTITY = new TlsPemIdentity(null, null);
 
     private static Vertx vertx;
 
@@ -84,7 +86,7 @@ public class BrokersInUseCheckTest {
         // Get brokers in use
         Checkpoint checkpoint = context.checkpoint();
         BrokersInUseCheck operations = new BrokersInUseCheck();
-        operations.brokersInUse(RECONCILIATION, vertx, null, null, mock)
+        operations.brokersInUse(RECONCILIATION, vertx, DUMMY_IDENTITY, mock)
                 .onComplete(context.succeeding(brokersInUse -> {
                     Collection<String> topicList = topicListCaptor.getValue();
                     assertThat(topicList.size(), is(3));
@@ -123,7 +125,7 @@ public class BrokersInUseCheckTest {
         // Get brokers in use
         Checkpoint checkpoint = context.checkpoint();
         BrokersInUseCheck operations = new BrokersInUseCheck();
-        operations.brokersInUse(RECONCILIATION, vertx, null, null, mock)
+        operations.brokersInUse(RECONCILIATION, vertx, DUMMY_IDENTITY, mock)
                 .onComplete(context.succeeding(brokersInUse -> {
                     Collection<String> topicList = topicListCaptor.getValue();
                     assertThat(topicList.size(), is(1));
@@ -162,7 +164,7 @@ public class BrokersInUseCheckTest {
         // Get brokers in use
         Checkpoint checkpoint = context.checkpoint();
         BrokersInUseCheck operations = new BrokersInUseCheck();
-        operations.brokersInUse(RECONCILIATION, vertx, null, null, mock)
+        operations.brokersInUse(RECONCILIATION, vertx, DUMMY_IDENTITY, mock)
                 .onComplete(context.failing(e -> {
                     assertThat(e.getMessage(), is("Test error ..."));
 
@@ -191,7 +193,7 @@ public class BrokersInUseCheckTest {
         // Get brokers in use
         Checkpoint checkpoint = context.checkpoint();
         BrokersInUseCheck operations = new BrokersInUseCheck();
-        operations.brokersInUse(RECONCILIATION, vertx, null, null, mock)
+        operations.brokersInUse(RECONCILIATION, vertx, DUMMY_IDENTITY, mock)
                 .onComplete(context.failing(e -> {
                     assertThat(e.getMessage(), is("Test error ..."));
 
@@ -211,7 +213,7 @@ public class BrokersInUseCheckTest {
         // Get brokers in use
         Checkpoint checkpoint = context.checkpoint();
         BrokersInUseCheck operations = new BrokersInUseCheck();
-        operations.brokersInUse(RECONCILIATION, vertx, null, null, mock)
+        operations.brokersInUse(RECONCILIATION, vertx, DUMMY_IDENTITY, mock)
                 .onComplete(context.failing(e -> {
                     assertThat(e.getMessage(), is("Test error ..."));
 

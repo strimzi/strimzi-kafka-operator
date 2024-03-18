@@ -35,13 +35,14 @@ import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.auth.PemAuthIdentity;
+import io.strimzi.operator.common.auth.PemTrustSet;
+import io.strimzi.operator.common.auth.TlsPemIdentity;
 import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.common.model.ClientsCa;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.PasswordGenerator;
-import io.strimzi.operator.common.model.PemAuthIdentity;
-import io.strimzi.operator.common.model.PemTrustSet;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
@@ -380,12 +381,11 @@ public class CaReconciler {
         }
 
         if (podRollReasons.shouldRestart()) {
-            PemTrustSet clusterCaTrustSet = new PemTrustSet(clusterCa.caCertSecret());
-            PemAuthIdentity coAuthIdentity = PemAuthIdentity.clusterOperator(coSecret);
+            TlsPemIdentity tlsPemIdentity = new TlsPemIdentity(new PemTrustSet(clusterCa.caCertSecret()), PemAuthIdentity.clusterOperator(coSecret));
             return getZooKeeperReplicas()
-                    .compose(replicas -> maybeRollZookeeper(replicas, podRollReasons, clusterCaTrustSet, coAuthIdentity))
+                    .compose(replicas -> maybeRollZookeeper(replicas, podRollReasons, tlsPemIdentity))
                     .compose(i -> getKafkaReplicas())
-                    .compose(nodes -> rollKafkaBrokers(nodes, podRollReasons, clusterCaTrustSet, coAuthIdentity))
+                    .compose(nodes -> rollKafkaBrokers(nodes, podRollReasons, tlsPemIdentity))
                     .compose(i -> maybeRollDeploymentIfExists(KafkaResources.entityOperatorDeploymentName(reconciliation.name()), podRollReasons))
                     .compose(i -> maybeRollDeploymentIfExists(KafkaExporterResources.componentName(reconciliation.name()), podRollReasons))
                     .compose(i -> maybeRollDeploymentIfExists(CruiseControlResources.componentName(reconciliation.name()), podRollReasons));
@@ -492,13 +492,12 @@ public class CaReconciler {
      *
      * @param replicas              Current number of ZooKeeper replicas
      * @param podRestartReasons     List of reasons to restart the pods
-     * @param zkCaTrustSet          Trust set for connecting to ZooKeeper
-     * @param coAuthIdentity        Cluster Operator identity for TLS client authentication for connecting to ZooKeeper
+     * @param zkTlsPemIdentity      Trust set and identity for TLS client authentication for connecting to ZooKeeper
      *
      * @return  Future which completes when this step is done either by rolling the ZooKeeper cluster or by deciding
      *          that no rolling is needed.
      */
-    /* test */ Future<Void> maybeRollZookeeper(int replicas, RestartReasons podRestartReasons, PemTrustSet zkCaTrustSet, PemAuthIdentity coAuthIdentity) {
+    /* test */ Future<Void> maybeRollZookeeper(int replicas, RestartReasons podRestartReasons, TlsPemIdentity zkTlsPemIdentity) {
         if (podRestartReasons.contains(RestartReason.CLUSTER_CA_CERT_KEY_REPLACED)) {
             Labels zkSelectorLabels = Labels.EMPTY
                     .withStrimziKind(reconciliation.kind())
@@ -511,7 +510,7 @@ public class CaReconciler {
                 return reason;
             };
             return new ZooKeeperRoller(podOperator, zookeeperLeaderFinder, operationTimeoutMs)
-                    .maybeRollingUpdate(reconciliation, replicas, zkSelectorLabels, rollZkPodAndLogReason, zkCaTrustSet, coAuthIdentity);
+                    .maybeRollingUpdate(reconciliation, replicas, zkSelectorLabels, rollZkPodAndLogReason, zkTlsPemIdentity);
         } else {
             return Future.succeededFuture();
         }
@@ -537,7 +536,7 @@ public class CaReconciler {
                 });
     }
 
-    /* test */ Future<Void> rollKafkaBrokers(Set<NodeRef> nodes, RestartReasons podRollReasons, PemTrustSet kafkaCaTrustSet, PemAuthIdentity coAuthIdentity) {
+    /* test */ Future<Void> rollKafkaBrokers(Set<NodeRef> nodes, RestartReasons podRollReasons, TlsPemIdentity kafkaTlsPemIdentity) {
         return new KafkaRoller(
                 reconciliation,
                 vertx,
@@ -546,8 +545,7 @@ public class CaReconciler {
                 operationTimeoutMs,
                 () -> new BackOff(250, 2, 10),
                 nodes,
-                kafkaCaTrustSet,
-                coAuthIdentity,
+                kafkaTlsPemIdentity,
                 adminClientProvider,
                 kafkaAgentClientProvider,
                 brokerId -> null,

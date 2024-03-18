@@ -10,8 +10,9 @@ import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
-import io.strimzi.operator.common.model.PemAuthIdentity;
-import io.strimzi.operator.common.model.PemTrustSet;
+import io.strimzi.operator.common.auth.PemAuthIdentity;
+import io.strimzi.operator.common.auth.PemTrustSet;
+import io.strimzi.operator.common.auth.TlsPemIdentity;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
@@ -73,7 +74,7 @@ public class ZookeeperLeaderFinder {
      * An exponential backoff is used if no ZK node is leader on the attempt to find it.
      * If there is no leader after 3 attempts then the returned Future completes with {@link #UNKNOWN_LEADER}.
      */
-    Future<String> findZookeeperLeader(Reconciliation reconciliation, Set<String> pods, PemTrustSet zkCaTrustSet, PemAuthIdentity coAuthIdentity) {
+    Future<String> findZookeeperLeader(Reconciliation reconciliation, Set<String> pods, TlsPemIdentity zkTlsPemIdentity) {
         if (pods.size() == 0) {
             return Future.succeededFuture(UNKNOWN_LEADER);
         } else if (pods.size() == 1) {
@@ -81,7 +82,7 @@ public class ZookeeperLeaderFinder {
         }
 
         try {
-            NetClientOptions netClientOptions = clientOptions(zkCaTrustSet, coAuthIdentity);
+            NetClientOptions netClientOptions = clientOptions(zkTlsPemIdentity.pemTrustSet(), zkTlsPemIdentity.pemAuthIdentity());
             return zookeeperLeaderWithBackoff(reconciliation, pods, netClientOptions);
         } catch (Throwable e) {
             return Future.failedFuture(e);

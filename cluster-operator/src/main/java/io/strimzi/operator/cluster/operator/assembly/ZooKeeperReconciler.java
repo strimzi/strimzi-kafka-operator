@@ -17,7 +17,6 @@ import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.model.CertUtils;
 import io.strimzi.operator.cluster.model.ClusterCa;
-import io.strimzi.operator.cluster.model.ClusterOperatorPKCS12AuthIdentity;
 import io.strimzi.operator.cluster.model.DnsNameGenerator;
 import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.KafkaVersionChange;
@@ -32,10 +31,12 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.auth.PemTrustSet;
+import io.strimzi.operator.common.auth.TlsIdentitySet;
+import io.strimzi.operator.common.auth.TlsPemIdentity;
+import io.strimzi.operator.common.auth.TlsPkcs12Identity;
 import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.operator.common.model.PemAuthIdentity;
-import io.strimzi.operator.common.model.PemTrustSet;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
 import io.strimzi.operator.common.operator.resource.PodDisruptionBudgetOperator;
@@ -111,9 +112,8 @@ public class ZooKeeperReconciler {
     private final Map<Integer, String> zkCertificateHash = new HashMap<>();
 
     private String loggingHash = "";
-    private PemTrustSet zkCaTrustSet;
-    private PemAuthIdentity coPemAuthIdentity;
-    private ClusterOperatorPKCS12AuthIdentity coPKCS12AuthIdentity;
+    private TlsPemIdentity tlsPemIdentity;
+    private TlsPkcs12Identity tlsPkcs12Identity;
 
     private final boolean isKRaftMigrationRollback;
 
@@ -229,20 +229,20 @@ public class ZooKeeperReconciler {
     }
 
     /**
-     * Initialize the TrustSet, PemAuthIdentity and ClusterOperatorPKSC12AuthIdentity to be used by TLS clients during reconciliation
+     * Initialize the TrustSet, PemAuthIdentity and Pkcs12AuthIdentity to be used by TLS clients during reconciliation
      *
-     * @return Completes when the TrustSet, PemAuthIdentity and ClusterOperatorPKSC12AuthIdentity have been created
+     * @return Completes when the TrustSet, PemAuthIdentity and Pkcs12AuthIdentity have been created and stored in records
      */
     protected Future<Void> initClientAuthenticationCertificates() {
         return Future.join(
-                ReconcilerUtils.clusterCaPemTrustSet(reconciliation, secretOperator)
-                        .onSuccess(pemTrustSet -> this.zkCaTrustSet = pemTrustSet),
+                ReconcilerUtils.clusterCaPemTrustSet(reconciliation, secretOperator),
                 ReconcilerUtils.coClientAuthIdentity(reconciliation, secretOperator)
-                        .onSuccess(coAuthIdentity -> {
-                            this.coPemAuthIdentity = coAuthIdentity.pemAuthIdentity();
-                            this.coPKCS12AuthIdentity = coAuthIdentity.pkcs12AuthIdentity();
-                        }))
-                .mapEmpty();
+        ).onSuccess(result -> {
+            PemTrustSet pemTrustSet = result.resultAt(0);
+            TlsIdentitySet tlsIdentitySet = result.resultAt(1);
+            this.tlsPemIdentity = new TlsPemIdentity(pemTrustSet, tlsIdentitySet.pemAuthIdentity());
+            this.tlsPkcs12Identity = new TlsPkcs12Identity(pemTrustSet, tlsIdentitySet.pkcs12AuthIdentity());
+        }).mapEmpty();
     }
 
     /**
@@ -300,7 +300,7 @@ public class ZooKeeperReconciler {
                         return maybeRollZooKeeper(pod -> {
                             LOGGER.debugCr(reconciliation, "Rolling Zookeeper pod {} due to manual rolling update", pod.getMetadata().getName());
                             return singletonList("manual rolling update");
-                        }, zkCaTrustSet, coPemAuthIdentity);
+                        }, this.tlsPemIdentity);
                     } else {
                         // The StrimziPodSet does not exist or is not annotated
                         // But maybe the individual pods are annotated to restart only some of them.
@@ -333,7 +333,7 @@ public class ZooKeeperReconciler {
                             } else {
                                 return null;
                             }
-                        }, zkCaTrustSet, coPemAuthIdentity);
+                        }, this.tlsPemIdentity);
                     } else {
                         return Future.succeededFuture();
                     }
@@ -590,8 +590,7 @@ public class ZooKeeperReconciler {
                         vertx,
                         zkConnectionString(connectToReplicas, zkNodeAddress),
                         zkNodeAddress,
-                        zkCaTrustSet,
-                        coPKCS12AuthIdentity,
+                        this.tlsPkcs12Identity,
                         operationTimeoutMs,
                         adminSessionTimeoutMs
                 );
@@ -695,8 +694,7 @@ public class ZooKeeperReconciler {
                         ReconcilerUtils.trackedServerCertChanged(pod, zkCertificateHash),
                         clusterCa)
                         .getAllReasonNotes(),
-                zkCaTrustSet,
-                coPemAuthIdentity
+                        this.tlsPemIdentity
         );
     }
 
@@ -704,20 +702,18 @@ public class ZooKeeperReconciler {
      * Checks if the ZooKeeper cluster needs rolling and if it does, it will roll it.
      *
      * @param podNeedsRestart       Function to determine if the ZooKeeper pod needs to be restarted
-     * @param zkCaTrustSet          Trust set for connecting to Zookeeper
-     * @param coAuthIdentity        Cluster Operator identity for TLS client authentication for connecting to ZooKeeper
+     * @param zkTlsPemIdentity      Trust set and identity for TLS client authentication for connecting to ZooKeeper
      *
      * @return                      Future which completes when any of the ZooKeeper pods which need rolling is rolled
      */
-    /* test */ Future<Void> maybeRollZooKeeper(Function<Pod, List<String>> podNeedsRestart, PemTrustSet zkCaTrustSet, PemAuthIdentity coAuthIdentity) {
+    /* test */ Future<Void> maybeRollZooKeeper(Function<Pod, List<String>> podNeedsRestart, TlsPemIdentity zkTlsPemIdentity) {
         return new ZooKeeperRoller(podOperator, zooLeaderFinder, operationTimeoutMs)
                 .maybeRollingUpdate(
                         reconciliation,
                         currentReplicas > 0 && currentReplicas < zk.getReplicas() ? currentReplicas : zk.getReplicas(),
                         zk.getSelectorLabels(),
                         podNeedsRestart,
-                        zkCaTrustSet,
-                        coAuthIdentity
+                        zkTlsPemIdentity
                 );
     }
 
@@ -895,8 +891,7 @@ public class ZooKeeperReconciler {
         String zkConnectionString = KafkaResources.zookeeperServiceName(reconciliation.name()) + ":" + ZookeeperCluster.CLIENT_TLS_PORT;
         KRaftMigrationUtils.deleteZooKeeperControllerZnode(
                 reconciliation,
-                this.zkCaTrustSet,
-                this.coPKCS12AuthIdentity,
+                this.tlsPkcs12Identity,
                 operationTimeoutMs,
                 zkConnectionString
         );

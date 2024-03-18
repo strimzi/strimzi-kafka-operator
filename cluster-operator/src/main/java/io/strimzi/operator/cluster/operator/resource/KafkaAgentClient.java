@@ -11,8 +11,7 @@ import io.strimzi.operator.cluster.model.DnsNameGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
-import io.strimzi.operator.common.model.PemAuthIdentity;
-import io.strimzi.operator.common.model.PemTrustSet;
+import io.strimzi.operator.common.auth.TlsPemIdentity;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
@@ -51,8 +50,7 @@ public class KafkaAgentClient {
     private final String namespace;
     private final Reconciliation reconciliation;
     private final String cluster;
-    private PemTrustSet kafkaCaTrustSet;
-    private PemAuthIdentity coAuthIdentity;
+    private TlsPemIdentity tlsPemIdentity;
     private HttpClient httpClient;
 
     /**
@@ -61,15 +59,13 @@ public class KafkaAgentClient {
      * @param reconciliation    Reconciliation marker
      * @param cluster   Cluster name
      * @param namespace Cluster namespace
-     * @param kafkaCaTrustSet Trust set for connecting to the Kafka Agent
-     * @param coAuthIdentity Cluster Operator identity for TLS client authentication for connecting to the Kafka Agent
+     * @param kafkaTlsPemIdentity Trust set and identity for TLS client authentication for connecting to the Kafka cluster
      */
-    public KafkaAgentClient(Reconciliation reconciliation, String cluster, String namespace, PemTrustSet kafkaCaTrustSet, PemAuthIdentity coAuthIdentity) {
+    public KafkaAgentClient(Reconciliation reconciliation, String cluster, String namespace, TlsPemIdentity kafkaTlsPemIdentity) {
         this.reconciliation = reconciliation;
         this.cluster = cluster;
         this.namespace = namespace;
-        this.kafkaCaTrustSet = kafkaCaTrustSet;
-        this.coAuthIdentity = coAuthIdentity;
+        this.tlsPemIdentity = kafkaTlsPemIdentity;
         this.httpClient = createHttpClient();
     }
 
@@ -87,7 +83,7 @@ public class KafkaAgentClient {
     }
 
     private HttpClient createHttpClient() {
-        if (kafkaCaTrustSet == null || coAuthIdentity == null) {
+        if (tlsPemIdentity == null) {
             throw new RuntimeException("Missing cluster CA and operator certificates required to create connection to Kafka Agent");
         }
 
@@ -112,10 +108,13 @@ public class KafkaAgentClient {
     }
 
     private KeyStore getTrustStore() throws CertificateException, KeyStoreException, IOException, NoSuchAlgorithmException {
+        if (tlsPemIdentity.pemTrustSet() == null) {
+            throw new RuntimeException("Missing cluster CA trust set certificates required to create connection to Kafka Agent");
+        }
         KeyStore trustStore = KeyStore.getInstance(KEYSTORE_TYPE_JKS);
         trustStore.load(null);
         int aliasIndex = 0;
-        for (X509Certificate certificate : kafkaCaTrustSet.trustedCertificates()) {
+        for (X509Certificate certificate : tlsPemIdentity.pemTrustSet().trustedCertificates()) {
             trustStore.setEntry(certificate.getSubjectX500Principal().getName() + "-" + aliasIndex, new KeyStore.TrustedCertificateEntry(certificate), null);
             aliasIndex++;
         }
@@ -123,14 +122,17 @@ public class KafkaAgentClient {
     }
 
     private KeyStore getKeyStore() throws KeyStoreException, CertificateException, NoSuchAlgorithmException, InvalidKeySpecException, IOException {
-        byte[] decodedKey = Util.decodePemPrivateKey(coAuthIdentity.privateKeyAsPem());
+        if (tlsPemIdentity.pemAuthIdentity() == null) {
+            throw new RuntimeException("Missing cluster operator authentication identity certificates required to create connection to Kafka Agent");
+        }
+        byte[] decodedKey = Util.decodePemPrivateKey(tlsPemIdentity.pemAuthIdentity().privateKeyAsPem());
         PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(decodedKey);
         final KeyFactory keyFactory = KeyFactory.getInstance("RSA");
         final PrivateKey key = keyFactory.generatePrivate(keySpec);
 
         KeyStore coKeyStore = KeyStore.getInstance(KEYSTORE_TYPE_JKS);
         coKeyStore.load(null);
-        coKeyStore.setKeyEntry("cluster-operator", key, KEYSTORE_PASSWORD, new Certificate[]{coAuthIdentity.certificateChain()});
+        coKeyStore.setKeyEntry("cluster-operator", key, KEYSTORE_PASSWORD, new Certificate[]{tlsPemIdentity.pemAuthIdentity().certificateChain()});
 
         return coKeyStore;
     }

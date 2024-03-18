@@ -1229,7 +1229,7 @@ public class KafkaAssemblyOperatorTest {
 
         // Mock broker scale down operation
         BrokersInUseCheck operations = supplier.brokersInUseCheck;
-        when(operations.brokersInUse(any(), any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of()));
+        when(operations.brokersInUse(any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of()));
 
         // Now try to update a KafkaCluster based on this CM
         Checkpoint async = context.checkpoint();

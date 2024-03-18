@@ -17,6 +17,7 @@ import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.DefaultAdminClientProvider;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.auth.TlsPemIdentity;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.vertx.core.Future;
@@ -892,8 +893,7 @@ public class KafkaRollerTest {
                     1000,
                     () -> new BackOff(10L, 2, 4),
                     nodes,
-                    null,
-                    null,
+                    new TlsPemIdentity(null, null),
                     adminClientProvider,
                     kafkaAgentClientProvider,
                     brokerId -> "",

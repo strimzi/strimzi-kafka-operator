@@ -20,7 +20,6 @@
 * Improve broker scale-down prevention to continue in reconciliation when scale-down cannot be executed
 * Added support for Tiered Storage by enabling the configuration of custom storage plugins through the Kafka custom resource.
 * Update HTTP bridge to latest 0.28.0 release
-* Create classes to represent the trust set and identity for client authentication when creating clients using TLS in operators.
 
 ### Changes, deprecations and removals
 

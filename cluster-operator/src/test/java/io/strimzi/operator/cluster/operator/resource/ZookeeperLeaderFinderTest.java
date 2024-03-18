@@ -7,8 +7,9 @@ package io.strimzi.operator.cluster.operator.resource;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.model.PemAuthIdentity;
-import io.strimzi.operator.common.model.PemTrustSet;
+import io.strimzi.operator.common.auth.PemAuthIdentity;
+import io.strimzi.operator.common.auth.PemTrustSet;
+import io.strimzi.operator.common.auth.TlsPemIdentity;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -54,6 +55,7 @@ public class ZookeeperLeaderFinderTest {
     private static Vertx vertx;
     private final SelfSignedCertificate zkCertificate = SelfSignedCertificate.create();
     private final SelfSignedCertificate coCertificate = SelfSignedCertificate.create();
+    private final static TlsPemIdentity DUMMY_IDENTITY = new TlsPemIdentity(null, null);
 
     private static final int MAX_ATTEMPTS = 4;
 
@@ -203,7 +205,7 @@ public class ZookeeperLeaderFinderTest {
     public void test0PodsClusterReturnsUnknownLeader(VertxTestContext context) {
         ZookeeperLeaderFinder finder = new ZookeeperLeaderFinder(vertx, this::backoff);
         Checkpoint a = context.checkpoint();
-        finder.findZookeeperLeader(Reconciliation.DUMMY_RECONCILIATION, emptySet(), null, null)
+        finder.findZookeeperLeader(Reconciliation.DUMMY_RECONCILIATION, emptySet(), DUMMY_IDENTITY)
             .onComplete(context.succeeding(leader -> {
                 context.verify(() -> assertThat(leader, is(ZookeeperLeaderFinder.UNKNOWN_LEADER)));
                 a.flag();
@@ -215,7 +217,7 @@ public class ZookeeperLeaderFinderTest {
         ZookeeperLeaderFinder finder = new ZookeeperLeaderFinder(vertx, this::backoff);
         Checkpoint a = context.checkpoint();
         int firstPodIndex = 0;
-        finder.findZookeeperLeader(Reconciliation.DUMMY_RECONCILIATION, Set.of(createPodWithId(firstPodIndex)), null, null)
+        finder.findZookeeperLeader(Reconciliation.DUMMY_RECONCILIATION, Set.of(createPodWithId(firstPodIndex)), DUMMY_IDENTITY)
             .onComplete(context.succeeding(leader -> {
                 context.verify(() -> assertThat(leader, is("my-cluster-zookeeper-0")));
                 a.flag();
@@ -229,7 +231,7 @@ public class ZookeeperLeaderFinderTest {
         ZookeeperLeaderFinder finder = new TestingZookeeperLeaderFinder(this::backoff, ports);
 
         Checkpoint a = context.checkpoint();
-        finder.findZookeeperLeader(Reconciliation.DUMMY_RECONCILIATION, treeSet(createPodWithId(0), createPodWithId(1)), null, null)
+        finder.findZookeeperLeader(Reconciliation.DUMMY_RECONCILIATION, treeSet(createPodWithId(0), createPodWithId(1)), DUMMY_IDENTITY)
             .onComplete(context.succeeding(leader -> context.verify(() -> {
                 assertThat(leader, is(ZookeeperLeaderFinder.UNKNOWN_LEADER));
                 for (FakeZk zk : zks) {
@@ -248,7 +250,7 @@ public class ZookeeperLeaderFinderTest {
         ZookeeperLeaderFinder finder = new TestingZookeeperLeaderFinder(this::backoff, ports);
 
         Checkpoint a = context.checkpoint();
-        finder.findZookeeperLeader(Reconciliation.DUMMY_RECONCILIATION, treeSet(createPodWithId(0), createPodWithId(1)), null, null)
+        finder.findZookeeperLeader(Reconciliation.DUMMY_RECONCILIATION, treeSet(createPodWithId(0), createPodWithId(1)), DUMMY_IDENTITY)
             .onComplete(context.succeeding(leader -> context.verify(() -> {
                 assertThat(leader, is(ZookeeperLeaderFinder.UNKNOWN_LEADER));
                 for (FakeZk zk : zks) {
@@ -269,7 +271,7 @@ public class ZookeeperLeaderFinderTest {
         TestingZookeeperLeaderFinder finder = new TestingZookeeperLeaderFinder(this::backoff, ports);
 
         Checkpoint a = context.checkpoint();
-        finder.findZookeeperLeader(Reconciliation.DUMMY_RECONCILIATION, treeSet(createPodWithId(0), createPodWithId(1)), null, null)
+        finder.findZookeeperLeader(Reconciliation.DUMMY_RECONCILIATION, treeSet(createPodWithId(0), createPodWithId(1)), DUMMY_IDENTITY)
             .onComplete(context.succeeding(leader -> context.verify(() -> {
                 assertThat(leader, is(leaderPod));
                 for (FakeZk zk : zks) {
@@ -289,7 +291,7 @@ public class ZookeeperLeaderFinderTest {
         ZookeeperLeaderFinder finder = new TestingZookeeperLeaderFinder(this::backoff, ports);
 
         Checkpoint a = context.checkpoint();
-        finder.findZookeeperLeader(Reconciliation.DUMMY_RECONCILIATION, treeSet(createPodWithId(0), createPodWithId(1)), null, null)
+        finder.findZookeeperLeader(Reconciliation.DUMMY_RECONCILIATION, treeSet(createPodWithId(0), createPodWithId(1)), DUMMY_IDENTITY)
             .onComplete(context.succeeding(l -> context.verify(() -> {
                 assertThat(l, is(leaderPod));
                 for (FakeZk zk : zks) {

@@ -62,10 +62,11 @@ import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.MicrometerMetricsProvider;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.auth.PemAuthIdentity;
+import io.strimzi.operator.common.auth.PemTrustSet;
+import io.strimzi.operator.common.auth.TlsPemIdentity;
 import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.operator.common.model.PemAuthIdentity;
-import io.strimzi.operator.common.model.PemTrustSet;
 import io.strimzi.operator.common.operator.resource.BuildConfigOperator;
 import io.strimzi.operator.common.operator.resource.BuildOperator;
 import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
@@ -589,7 +590,7 @@ public class ResourceUtils {
     }
 
     public static ZookeeperScalerProvider zookeeperScalerProvider() {
-        return (reconciliation, vertx, zookeeperConnectionString, zkNodeAddress, trustSet, clientAuthIdentity, operationTimeoutMs, zkAdminSessionTimoutMs) -> {
+        return (reconciliation, vertx, zookeeperConnectionString, zkNodeAddress, zkTlsPkcs12Identity, operationTimeoutMs, zkAdminSessionTimoutMs) -> {
             ZookeeperScaler mockZooScaler = mock(ZookeeperScaler.class);
             when(mockZooScaler.scale(anyInt())).thenReturn(Future.succeededFuture());
             return mockZooScaler;
@@ -612,7 +613,7 @@ public class ResourceUtils {
     public static KafkaAgentClientProvider kafkaAgentClientProvider(KafkaAgentClient mockKafkaAgentClient) {
         return new KafkaAgentClientProvider() {
             @Override
-            public KafkaAgentClient createKafkaAgentClient(Reconciliation reconciliation, PemTrustSet kafkaCaTrustSet, PemAuthIdentity coAuthIdentity) {
+            public KafkaAgentClient createKafkaAgentClient(Reconciliation reconciliation, TlsPemIdentity kafkaTlsPemIdentity) {
                 return mockKafkaAgentClient;
             }
         };

@@ -5,8 +5,7 @@
 package io.strimzi.operator.cluster.operator.resource;
 
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.model.PemAuthIdentity;
-import io.strimzi.operator.common.model.PemTrustSet;
+import io.strimzi.operator.common.auth.TlsPemIdentity;
 
 /**
  * Class to provide the real KafkaAgentClient which connects to actual Kafka Agent
@@ -14,7 +13,7 @@ import io.strimzi.operator.common.model.PemTrustSet;
 public class DefaultKafkaAgentClientProvider implements KafkaAgentClientProvider {
 
     @Override
-    public KafkaAgentClient createKafkaAgentClient(Reconciliation reconciliation, PemTrustSet kafkaCaTrustSet, PemAuthIdentity coAuthIdentity) {
-        return new KafkaAgentClient(reconciliation, reconciliation.name(), reconciliation.namespace(), kafkaCaTrustSet, coAuthIdentity);
+    public KafkaAgentClient createKafkaAgentClient(Reconciliation reconciliation, TlsPemIdentity kafkaTlsPemIdentity) {
+        return new KafkaAgentClient(reconciliation, reconciliation.name(), reconciliation.namespace(), kafkaTlsPemIdentity);
     }
 }

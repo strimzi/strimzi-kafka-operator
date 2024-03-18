@@ -8,9 +8,8 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
+import io.strimzi.operator.common.auth.TlsPemIdentity;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.operator.common.model.PemAuthIdentity;
-import io.strimzi.operator.common.model.PemTrustSet;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -56,12 +55,11 @@ public class ZooKeeperRoller {
      * @param selectorLabels    The selector labels to find the pods
      * @param podRestart        Function that returns a list is reasons why the given pod needs to be restarted, or an
      *                          empty list if the pod does not need to be restarted.
-     * @param zkCaTrustSet      Trust set for connecting to ZooKeeper
-     * @param coAuthIdentity    Cluster Operator identity for TLS client authentication for connecting to ZooKeeper
+     * @param zkTlsPemIdentity  Trust set and identity for TLS client authentication for connecting to ZooKeeper
      *
      * @return A future that completes when any necessary rolling has been completed.
      */
-    public Future<Void> maybeRollingUpdate(Reconciliation reconciliation, int replicas, Labels selectorLabels, Function<Pod, List<String>> podRestart, PemTrustSet zkCaTrustSet, PemAuthIdentity coAuthIdentity) {
+    public Future<Void> maybeRollingUpdate(Reconciliation reconciliation, int replicas, Labels selectorLabels, Function<Pod, List<String>> podRestart, TlsPemIdentity zkTlsPemIdentity) {
         String namespace = reconciliation.namespace();
 
         // We prepare the list of expected Pods. This is needed as we need to account for pods which might be missing.
@@ -105,7 +103,7 @@ public class ZooKeeperRoller {
                 }).compose(clusterRollContext -> {
                     if (clusterRollContext != null)  {
                         Promise<Void> promise = Promise.promise();
-                        Future<String> leaderFuture = leaderFinder.findZookeeperLeader(reconciliation, clusterRollContext.podNames(), zkCaTrustSet, coAuthIdentity);
+                        Future<String> leaderFuture = leaderFinder.findZookeeperLeader(reconciliation, clusterRollContext.podNames(), zkTlsPemIdentity);
 
                         leaderFuture.compose(leader -> {
                             LOGGER.debugCr(reconciliation, "Zookeeper leader is " + (ZookeeperLeaderFinder.UNKNOWN_LEADER.equals(leader) ? "unknown" : "pod " + leader));

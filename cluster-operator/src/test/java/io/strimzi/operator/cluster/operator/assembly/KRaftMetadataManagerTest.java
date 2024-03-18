@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.operator.assembly;
 import io.strimzi.api.kafka.model.kafka.KafkaStatus;
 import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.auth.TlsPemIdentity;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
@@ -42,6 +43,8 @@ import static org.mockito.Mockito.when;
 @ExtendWith(VertxExtension.class)
 public class KRaftMetadataManagerTest {
     private static Vertx vertx;
+
+    private static final TlsPemIdentity DUMMY_IDENTITY = new TlsPemIdentity(null, null);
 
     @BeforeAll
     public static void before() {
@@ -88,7 +91,7 @@ public class KRaftMetadataManagerTest {
         KafkaStatus status = new KafkaStatus();
 
         Checkpoint checkpoint = context.checkpoint();
-        KRaftMetadataManager.maybeUpdateMetadataVersion(Reconciliation.DUMMY_RECONCILIATION, vertx, null, null, mockAdminClientProvider, "3.6-IV1", status)
+        KRaftMetadataManager.maybeUpdateMetadataVersion(Reconciliation.DUMMY_RECONCILIATION, vertx, DUMMY_IDENTITY, mockAdminClientProvider, "3.6-IV1", status)
                 .onComplete(context.succeeding(s -> {
                     assertThat(status.getKafkaMetadataVersion(), is("3.6-IV1"));
 
@@ -121,7 +124,7 @@ public class KRaftMetadataManagerTest {
         KafkaStatus status = new KafkaStatus();
 
         Checkpoint checkpoint = context.checkpoint();
-        KRaftMetadataManager.maybeUpdateMetadataVersion(Reconciliation.DUMMY_RECONCILIATION, vertx, null, null, mockAdminClientProvider, "3.6", status)
+        KRaftMetadataManager.maybeUpdateMetadataVersion(Reconciliation.DUMMY_RECONCILIATION, vertx, DUMMY_IDENTITY, mockAdminClientProvider, "3.6", status)
                 .onComplete(context.succeeding(s -> {
                     assertThat(status.getKafkaMetadataVersion(), is("3.6-IV2"));
 
@@ -158,7 +161,7 @@ public class KRaftMetadataManagerTest {
         KafkaStatus status = new KafkaStatus();
 
         Checkpoint checkpoint = context.checkpoint();
-        KRaftMetadataManager.maybeUpdateMetadataVersion(Reconciliation.DUMMY_RECONCILIATION, vertx, null, null, mockAdminClientProvider, "3.5", status)
+        KRaftMetadataManager.maybeUpdateMetadataVersion(Reconciliation.DUMMY_RECONCILIATION, vertx, DUMMY_IDENTITY, mockAdminClientProvider, "3.5", status)
                 .onComplete(context.succeeding(s -> {
                     assertThat(status.getKafkaMetadataVersion(), is("3.5-IV2"));
 
@@ -200,7 +203,7 @@ public class KRaftMetadataManagerTest {
         KafkaStatus status = new KafkaStatus();
 
         Checkpoint checkpoint = context.checkpoint();
-        KRaftMetadataManager.maybeUpdateMetadataVersion(Reconciliation.DUMMY_RECONCILIATION, vertx, null, null, mockAdminClientProvider, "3.6", status)
+        KRaftMetadataManager.maybeUpdateMetadataVersion(Reconciliation.DUMMY_RECONCILIATION, vertx, DUMMY_IDENTITY, mockAdminClientProvider, "3.6", status)
                 .onComplete(context.succeeding(s -> {
                     assertThat(status.getKafkaMetadataVersion(), is("3.6-IV1"));
                     assertThat(status.getConditions().size(), is(1));
@@ -239,7 +242,7 @@ public class KRaftMetadataManagerTest {
         KafkaStatus status = new KafkaStatus();
 
         Checkpoint checkpoint = context.checkpoint();
-        KRaftMetadataManager.maybeUpdateMetadataVersion(Reconciliation.DUMMY_RECONCILIATION, vertx, null, null, mockAdminClientProvider, "3.5", status)
+        KRaftMetadataManager.maybeUpdateMetadataVersion(Reconciliation.DUMMY_RECONCILIATION, vertx, DUMMY_IDENTITY, mockAdminClientProvider, "3.5", status)
                 .onComplete(context.failing(s -> {
                     assertThat(s, instanceOf(RuntimeException.class));
                     assertThat(s.getMessage(), is("Test error ..."));

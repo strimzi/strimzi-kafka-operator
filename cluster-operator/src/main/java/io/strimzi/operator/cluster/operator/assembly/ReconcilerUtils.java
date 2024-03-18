@@ -12,8 +12,6 @@ import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
-import io.strimzi.operator.cluster.model.ClusterOperatorAuthIdentity;
-import io.strimzi.operator.cluster.model.ClusterOperatorPKCS12AuthIdentity;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.model.PodRevision;
@@ -25,11 +23,13 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.auth.PemAuthIdentity;
+import io.strimzi.operator.common.auth.PemTrustSet;
+import io.strimzi.operator.common.auth.Pkcs12AuthIdentity;
+import io.strimzi.operator.common.auth.TlsIdentitySet;
 import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.common.model.ClientsCa;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.operator.common.model.PemAuthIdentity;
-import io.strimzi.operator.common.model.PemTrustSet;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
@@ -132,11 +132,11 @@ public class ReconcilerUtils {
      * @param reconciliation Reconciliation Marker
      * @param secretOperator Secret operator for working with Kubernetes Secrets that store certificates
      *
-     * @return  Future containing the Kubernetes Secret with the Cluster Operator public and private key in both PEM and PKCS12 format
+     * @return  Future containing a record with the Cluster Operator public and private key in both PEM and PKCS12 format
      */
-    public static Future<ClusterOperatorAuthIdentity> coClientAuthIdentity(Reconciliation reconciliation, SecretOperator secretOperator) {
+    public static Future<TlsIdentitySet> coClientAuthIdentity(Reconciliation reconciliation, SecretOperator secretOperator) {
         return coClientAuthIdentitySecret(reconciliation, secretOperator)
-                .map(secret -> new ClusterOperatorAuthIdentity(PemAuthIdentity.clusterOperator(secret), new ClusterOperatorPKCS12AuthIdentity(secret)));
+                .map(secret -> new TlsIdentitySet(PemAuthIdentity.clusterOperator(secret), Pkcs12AuthIdentity.clusterOperator(secret)));
     }
 
     /**

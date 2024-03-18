@@ -2,9 +2,10 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.operator.common.model;
+package io.strimzi.operator.common.auth;
 
 import io.fabric8.kubernetes.api.model.Secret;
+import io.strimzi.operator.common.model.Ca;
 
 import java.nio.charset.StandardCharsets;
 import java.security.cert.CertificateException;

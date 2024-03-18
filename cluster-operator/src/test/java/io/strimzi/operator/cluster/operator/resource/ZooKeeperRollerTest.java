@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.operator.resource;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.auth.TlsPemIdentity;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.vertx.core.Future;
@@ -34,6 +35,7 @@ import static org.mockito.Mockito.when;
 @ExtendWith(VertxExtension.class)
 public class ZooKeeperRollerTest {
     private final static Labels DUMMY_SELECTOR = Labels.fromMap(Map.of(Labels.STRIMZI_KIND_LABEL, "Kafka", Labels.STRIMZI_CLUSTER_LABEL, "name", Labels.STRIMZI_NAME_LABEL, "name-zookeeper"));
+    private final static TlsPemIdentity DUMMY_IDENTITY = new TlsPemIdentity(null, null);
     private final static List<Pod> PODS = List.of(
             new PodBuilder()
                     .withNewMetadata()
@@ -64,11 +66,11 @@ public class ZooKeeperRollerTest {
         when(podOperator.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(PODS));
 
         ZookeeperLeaderFinder leaderFinder = mock(ZookeeperLeaderFinder.class);
-        when(leaderFinder.findZookeeperLeader(any(), any(), any(), any())).thenReturn(Future.succeededFuture(ZookeeperLeaderFinder.UNKNOWN_LEADER));
+        when(leaderFinder.findZookeeperLeader(any(), any(), any())).thenReturn(Future.succeededFuture(ZookeeperLeaderFinder.UNKNOWN_LEADER));
 
         MockZooKeeperRoller roller = new MockZooKeeperRoller(podOperator, leaderFinder, 300_00L);
 
-        roller.maybeRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, 3, DUMMY_SELECTOR, pod -> List.of("Should restart"), null, null)
+        roller.maybeRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, 3, DUMMY_SELECTOR, pod -> List.of("Should restart"), DUMMY_IDENTITY)
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     assertThat(roller.podRestarts.size(), is(3));
                     assertThat(roller.podRestarts.contains("name-zookeeper-0"), is(true));
@@ -93,12 +95,12 @@ public class ZooKeeperRollerTest {
         when(podOperator.readiness(any(), any(), any(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         ZookeeperLeaderFinder leaderFinder = mock(ZookeeperLeaderFinder.class);
-        when(leaderFinder.findZookeeperLeader(any(), any(), any(), any())).thenReturn(Future.succeededFuture(leaderPodReady));
+        when(leaderFinder.findZookeeperLeader(any(), any(), any())).thenReturn(Future.succeededFuture(leaderPodReady));
 
         MockZooKeeperRoller roller = new MockZooKeeperRoller(podOperator, leaderFinder, 300_00L);
 
         Function<Pod, List<String>> shouldRoll = pod -> List.of("Pod was manually annotated to be rolled");
-        roller.maybeRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, 3, DUMMY_SELECTOR, shouldRoll, null, null)
+        roller.maybeRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, 3, DUMMY_SELECTOR, shouldRoll, DUMMY_IDENTITY)
               .onComplete(context.succeeding(v -> context.verify(() -> {
                   assertThat(roller.podRestarts.size(), is(3));
                   assertThat(roller.podRestarts, contains(followerPodNonReady, followerPodReady, leaderPodReady));
@@ -128,11 +130,11 @@ public class ZooKeeperRollerTest {
 
 
         ZookeeperLeaderFinder leaderFinder = mock(ZookeeperLeaderFinder.class);
-        when(leaderFinder.findZookeeperLeader(any(), any(), any(), any())).thenReturn(Future.succeededFuture(leaderPodNeedsRestart));
+        when(leaderFinder.findZookeeperLeader(any(), any(), any())).thenReturn(Future.succeededFuture(leaderPodNeedsRestart));
 
         MockZooKeeperRoller roller = new MockZooKeeperRoller(podOperator, leaderFinder, 300_00L);
 
-        roller.maybeRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, 3, DUMMY_SELECTOR, shouldRestart, null, null)
+        roller.maybeRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, 3, DUMMY_SELECTOR, shouldRestart, DUMMY_IDENTITY)
               .onComplete(context.failing(v -> context.verify(() -> {
                   assertThat(roller.podRestarts.size(), is(0));
                   context.completeNow();
@@ -160,11 +162,11 @@ public class ZooKeeperRollerTest {
         when(podOperator.readiness(any(), any(), eq(leaderPodNeedsRestartNonReady), anyLong(), anyLong())).thenReturn(Future.failedFuture("failure"));
 
         ZookeeperLeaderFinder leaderFinder = mock(ZookeeperLeaderFinder.class);
-        when(leaderFinder.findZookeeperLeader(any(), any(), any(), any())).thenReturn(Future.succeededFuture(leaderPodNeedsRestartNonReady));
+        when(leaderFinder.findZookeeperLeader(any(), any(), any())).thenReturn(Future.succeededFuture(leaderPodNeedsRestartNonReady));
 
         MockZooKeeperRoller roller = new MockZooKeeperRoller(podOperator, leaderFinder, 300_00L);
 
-        roller.maybeRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, 3, DUMMY_SELECTOR, shouldRestart, null, null)
+        roller.maybeRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, 3, DUMMY_SELECTOR, shouldRestart, DUMMY_IDENTITY)
               .onComplete(context.failing(v -> context.verify(() -> {
                   assertThat(roller.podRestarts.size(), is(0));
                   context.completeNow();
@@ -177,11 +179,11 @@ public class ZooKeeperRollerTest {
         when(podOperator.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(PODS));
 
         ZookeeperLeaderFinder leaderFinder = mock(ZookeeperLeaderFinder.class);
-        when(leaderFinder.findZookeeperLeader(any(), any(), any(), any())).thenReturn(Future.succeededFuture(ZookeeperLeaderFinder.UNKNOWN_LEADER));
+        when(leaderFinder.findZookeeperLeader(any(), any(), any())).thenReturn(Future.succeededFuture(ZookeeperLeaderFinder.UNKNOWN_LEADER));
 
         MockZooKeeperRoller roller = new MockZooKeeperRoller(podOperator, leaderFinder, 300_00L);
 
-        roller.maybeRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, 3, DUMMY_SELECTOR, pod -> null, null, null)
+        roller.maybeRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, 3, DUMMY_SELECTOR, pod -> null, DUMMY_IDENTITY)
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     assertThat(roller.podRestarts.size(), is(0));
 
@@ -196,11 +198,11 @@ public class ZooKeeperRollerTest {
         when(podOperator.readiness(any(), any(), any(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         ZookeeperLeaderFinder leaderFinder = mock(ZookeeperLeaderFinder.class);
-        when(leaderFinder.findZookeeperLeader(any(), any(), any(), any())).thenReturn(Future.succeededFuture("name-zookeeper-1"));
+        when(leaderFinder.findZookeeperLeader(any(), any(), any())).thenReturn(Future.succeededFuture("name-zookeeper-1"));
 
         MockZooKeeperRoller roller = new MockZooKeeperRoller(podOperator, leaderFinder, 300_00L);
 
-        roller.maybeRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, 3, DUMMY_SELECTOR, pod -> List.of("Should restart"), null, null)
+        roller.maybeRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, 3, DUMMY_SELECTOR, pod -> List.of("Should restart"), DUMMY_IDENTITY)
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     assertThat(roller.podRestarts.size(), is(3));
                     assertThat(roller.podRestarts.removeLast(), is("name-zookeeper-1"));
@@ -218,7 +220,7 @@ public class ZooKeeperRollerTest {
         when(podOperator.readiness(any(), any(), any(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         ZookeeperLeaderFinder leaderFinder = mock(ZookeeperLeaderFinder.class);
-        when(leaderFinder.findZookeeperLeader(any(), any(), any(), any())).thenReturn(Future.succeededFuture(ZookeeperLeaderFinder.UNKNOWN_LEADER));
+        when(leaderFinder.findZookeeperLeader(any(), any(), any())).thenReturn(Future.succeededFuture(ZookeeperLeaderFinder.UNKNOWN_LEADER));
 
         MockZooKeeperRoller roller = new MockZooKeeperRoller(podOperator, leaderFinder, 300_00L);
 
@@ -230,7 +232,7 @@ public class ZooKeeperRollerTest {
             }
         };
 
-        roller.maybeRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, 3, DUMMY_SELECTOR, shouldRoll, null, null)
+        roller.maybeRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, 3, DUMMY_SELECTOR, shouldRoll, DUMMY_IDENTITY)
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     assertThat(roller.podRestarts.size(), is(2));
                     assertThat(roller.podRestarts.contains("name-zookeeper-0"), is(true));

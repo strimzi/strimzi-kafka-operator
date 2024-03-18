@@ -24,10 +24,9 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.VertxUtil;
+import io.strimzi.operator.common.auth.TlsPemIdentity;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.OrderedProperties;
-import io.strimzi.operator.common.model.PemAuthIdentity;
-import io.strimzi.operator.common.model.PemTrustSet;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -119,8 +118,7 @@ public class KafkaRoller {
     protected final long operationTimeoutMs;
     protected final Vertx vertx;
     private final String cluster;
-    private final PemTrustSet pemTrustSet;
-    private final PemAuthIdentity pemAuthIdentity;
+    private final TlsPemIdentity kafkaTlsPemIdentity;
     private final Set<NodeRef> nodes;
     private final KubernetesRestartEventPublisher eventsPublisher;
     private final Supplier<BackOff> backoffSupplier;
@@ -153,8 +151,7 @@ public class KafkaRoller {
      * @param operationTimeoutMs        Operation timeout in milliseconds
      * @param backOffSupplier           Backoff supplier
      * @param nodes                     List of Kafka node references to consider rolling
-     * @param kafkaCaTrustSet           Trust set to use in KafkaAgentClient
-     * @param coAuthIdentity            Cluster Operator identity for TLS client authentication to use in KafkaAgentClient
+     * @param kafkaTlsPemIdentity       Trust set and identity for TLS client authentication for connecting to the Kafka cluster
      * @param adminClientProvider       Kafka Admin client provider
      * @param kafkaAgentClientProvider  Kafka Agent client provider
      * @param kafkaConfigProvider       Kafka configuration provider
@@ -165,8 +162,7 @@ public class KafkaRoller {
      */
     public KafkaRoller(Reconciliation reconciliation, Vertx vertx, PodOperator podOperations,
                        long pollingIntervalMs, long operationTimeoutMs, Supplier<BackOff> backOffSupplier, Set<NodeRef> nodes,
-                       PemTrustSet kafkaCaTrustSet, PemAuthIdentity coAuthIdentity,
-                       AdminClientProvider adminClientProvider, KafkaAgentClientProvider kafkaAgentClientProvider,
+                       TlsPemIdentity kafkaTlsPemIdentity, AdminClientProvider adminClientProvider, KafkaAgentClientProvider kafkaAgentClientProvider,
                        Function<Integer, String> kafkaConfigProvider, String kafkaLogging, KafkaVersion kafkaVersion, boolean allowReconfiguration, KubernetesRestartEventPublisher eventsPublisher) {
         this.namespace = reconciliation.namespace();
         this.cluster = reconciliation.name();
@@ -176,8 +172,7 @@ public class KafkaRoller {
             throw new IllegalArgumentException();
         }
         this.backoffSupplier = backOffSupplier;
-        this.pemTrustSet = kafkaCaTrustSet;
-        this.pemAuthIdentity = coAuthIdentity;
+        this.kafkaTlsPemIdentity = kafkaTlsPemIdentity;
         this.vertx = vertx;
         this.operationTimeoutMs = operationTimeoutMs;
         this.podOperations = podOperations;
@@ -524,7 +519,7 @@ public class KafkaRoller {
 
     KafkaAgentClient initKafkaAgentClient() throws FatalProblem {
         try {
-            return kafkaAgentClientProvider.createKafkaAgentClient(reconciliation, pemTrustSet, pemAuthIdentity);
+            return kafkaAgentClientProvider.createKafkaAgentClient(reconciliation, kafkaTlsPemIdentity);
         } catch (Exception e) {
             throw new FatalProblem("Failed to initialise KafkaAgentClient", e);
         }
@@ -932,7 +927,7 @@ public class KafkaRoller {
 
         try {
             LOGGER.debugCr(reconciliation, "Creating AdminClient for {}", bootstrapHostnames);
-            return adminClientProvider.createAdminClient(bootstrapHostnames, pemTrustSet, pemAuthIdentity);
+            return adminClientProvider.createAdminClient(bootstrapHostnames, kafkaTlsPemIdentity.pemTrustSet(), kafkaTlsPemIdentity.pemAuthIdentity());
         } catch (KafkaException e) {
             if (ceShouldBeFatal && (e instanceof ConfigException
                     || e.getCause() instanceof ConfigException)) {

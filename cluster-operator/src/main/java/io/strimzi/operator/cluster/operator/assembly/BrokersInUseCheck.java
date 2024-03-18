@@ -10,8 +10,7 @@ import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.VertxUtil;
-import io.strimzi.operator.common.model.PemAuthIdentity;
-import io.strimzi.operator.common.model.PemTrustSet;
+import io.strimzi.operator.common.auth.TlsPemIdentity;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import org.apache.kafka.clients.admin.Admin;
@@ -38,18 +37,16 @@ public class BrokersInUseCheck {
      *
      * @param reconciliation        Reconciliation marker
      * @param vertx                 Vert.x instance
-     * @param kafkaCaTrustSet       Trust set for connecting to the Kafka cluster
-     * @param coAuthIdentity        Cluster Operator identity for TLS client authentication for connecting to the Kafka cluster
+     * @param kafkaTlsPemIdentity   Trust set and identity for TLS client authentication for connecting to the Kafka cluster
      * @param adminClientProvider   Used to create the Admin client instance
      *
      * @return returns future set of node ids containing partition replicas based on the outcome of the check
      */
-    public Future<Set<Integer>> brokersInUse(Reconciliation reconciliation, Vertx vertx, PemTrustSet kafkaCaTrustSet,
-                                             PemAuthIdentity coAuthIdentity, AdminClientProvider adminClientProvider) {
+    public Future<Set<Integer>> brokersInUse(Reconciliation reconciliation, Vertx vertx, TlsPemIdentity kafkaTlsPemIdentity, AdminClientProvider adminClientProvider) {
         try {
             String bootstrapHostname = KafkaResources.bootstrapServiceName(reconciliation.name()) + "." + reconciliation.namespace() + ".svc:" + KafkaCluster.REPLICATION_PORT;
             LOGGER.debugCr(reconciliation, "Creating AdminClient for Kafka cluster in namespace {}", reconciliation.namespace());
-            Admin kafkaAdmin = adminClientProvider.createAdminClient(bootstrapHostname, kafkaCaTrustSet, coAuthIdentity);
+            Admin kafkaAdmin = adminClientProvider.createAdminClient(bootstrapHostname, kafkaTlsPemIdentity.pemTrustSet(), kafkaTlsPemIdentity.pemAuthIdentity());
 
             return topicNames(reconciliation, vertx, kafkaAdmin)
                     .compose(names -> describeTopics(reconciliation, vertx, kafkaAdmin, names))

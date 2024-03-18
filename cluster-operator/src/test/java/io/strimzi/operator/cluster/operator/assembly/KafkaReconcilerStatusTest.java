@@ -34,6 +34,7 @@ import io.strimzi.operator.cluster.model.KafkaVersionChange;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
+import io.strimzi.operator.common.auth.TlsPemIdentity;
 import io.strimzi.operator.common.model.ClientsCa;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.PasswordGenerator;
@@ -876,6 +877,7 @@ public class KafkaReconcilerStatusTest {
         @Override
         public Future<Void> reconcile(KafkaStatus kafkaStatus, Clock clock)    {
             return modelWarnings(kafkaStatus)
+                    .compose(i -> initClientAuthenticationCertificates())
                     .compose(i -> listeners())
                     .compose(i -> clusterId(kafkaStatus))
                     .compose(i -> nodePortExternalListenerStatus())
@@ -893,6 +895,12 @@ public class KafkaReconcilerStatusTest {
             listenerReconciliationResults.bootstrapNodePorts.put("external-9094", 31234);
             listenerReconciliationResults.listenerStatuses.add(new ListenerStatusBuilder().withName("external").build());
 
+            return Future.succeededFuture();
+        }
+
+        @Override
+        protected Future<Void> initClientAuthenticationCertificates() {
+            kafkaTlsPemIdentity = new TlsPemIdentity(null, null);
             return Future.succeededFuture();
         }
     }

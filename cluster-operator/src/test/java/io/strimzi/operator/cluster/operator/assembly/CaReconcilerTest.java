@@ -31,12 +31,11 @@ import io.strimzi.operator.cluster.model.RestartReason;
 import io.strimzi.operator.cluster.model.RestartReasons;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.auth.TlsPemIdentity;
 import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.PasswordGenerator;
-import io.strimzi.operator.common.model.PemAuthIdentity;
-import io.strimzi.operator.common.model.PemTrustSet;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
@@ -1670,7 +1669,7 @@ public class CaReconcilerTest {
         }
 
         @Override
-        Future<Void> maybeRollZookeeper(int replicas, RestartReasons podRestartReasons, PemTrustSet zkCaTrustSet, PemAuthIdentity coAuthIdentity) {
+        Future<Void> maybeRollZookeeper(int replicas, RestartReasons podRestartReasons, TlsPemIdentity zkTlsPemIdentity) {
             this.zkPodRestartReasons = podRestartReasons;
             return Future.succeededFuture();
         }
@@ -1685,7 +1684,7 @@ public class CaReconcilerTest {
         }
 
         @Override
-        Future<Void> rollKafkaBrokers(Set<NodeRef> nodes, RestartReasons podRollReasons, PemTrustSet kafkaCaTrustSet, PemAuthIdentity coAuthIdentity) {
+        Future<Void> rollKafkaBrokers(Set<NodeRef> nodes, RestartReasons podRollReasons, TlsPemIdentity tlsPemIdentity) {
             this.kPodRollReasons = podRollReasons;
             return Future.succeededFuture();
         }
