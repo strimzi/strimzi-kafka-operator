@@ -21,6 +21,7 @@ import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -1125,5 +1126,66 @@ public class ListenersValidatorTest {
                 "listener listener1 cannot configure createBootstrapService because it is not load balancer listener",
                 "listener listener2 cannot configure createBootstrapService because it is not load balancer listener",
                 "listener listener3 cannot configure createBootstrapService because it is not load balancer listener"));
+    }
+    
+    @ParallelTest
+    public void testValidateBootstrapExternalIPsListenener() {
+        GenericKafkaListener listener1 = new GenericKafkaListenerBuilder()
+                .withName("listener1")
+                .withPort(9094)
+                .withType(KafkaListenerType.LOADBALANCER)
+                .withTls(true)
+                .withNewConfiguration()
+                .withBootstrap(new GenericKafkaListenerConfigurationBootstrapBuilder()
+                        .withExternalIPs(Arrays.asList("10.0.0.1"))
+                        .build())
+                .withBrokers(new GenericKafkaListenerConfigurationBrokerBuilder()
+                        .withBroker(0)
+                        .withAdvertisedHost("advertised-host")
+                        .withExternalIPs(Arrays.asList("10.0.0.2"))
+                        .build())
+                .endConfiguration()
+                .build();
+        
+        GenericKafkaListener listener2 = new GenericKafkaListenerBuilder()
+                .withName("listener2")
+                .withPort(9900)
+                .withType(KafkaListenerType.INTERNAL)
+                .withTls(true)
+                .withNewConfiguration()
+                .withBootstrap(new GenericKafkaListenerConfigurationBootstrapBuilder()
+                        .withExternalIPs(Arrays.asList("10.0.0.3"))
+                        .build())
+                .withBrokers(new GenericKafkaListenerConfigurationBrokerBuilder()
+                        .withBroker(1)
+                        .withAdvertisedHost("advertised-host")
+                        .withExternalIPs(Arrays.asList("10.0.0.4"))
+                        .build())
+                .endConfiguration()
+                .build();
+        
+        GenericKafkaListener listener3 = new GenericKafkaListenerBuilder()
+                .withName("listener3")
+                .withPort(9920)
+                .withType(KafkaListenerType.NODEPORT)
+                .withTls(true)
+                .withNewConfiguration()
+                .withBootstrap(new GenericKafkaListenerConfigurationBootstrapBuilder()
+                        .withExternalIPs(Arrays.asList("10.0.0.5"))
+                        .build())
+                .withBrokers(new GenericKafkaListenerConfigurationBrokerBuilder()
+                        .withBroker(1)
+                        .withAdvertisedHost("advertised-host")
+                        .withExternalIPs(Arrays.asList("10.0.0.6"))
+                        .build())
+                .endConfiguration()
+                .build();
+        List<GenericKafkaListener> listeners = List.of(listener1, listener2, listener3);
+
+        assertThat(ListenersValidator.validateAndGetErrorMessages(THREE_NODES, listeners), containsInAnyOrder(
+                "listener listener1 cannot configure bootstrap.externalIPs because it is not NodePort based listener",
+                "listener listener2 cannot configure bootstrap.externalIPs because it is not NodePort based listener",
+                "listener listener1 cannot configure brokers[].externalIPs because it is not NodePort based listener",
+                "listener listener2 cannot configure brokers[].externalIPs because it is not NodePort based listener"));
     }
 }
