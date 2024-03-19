@@ -241,17 +241,17 @@ public class MultipleClusterOperatorsST extends AbstractST {
      *     - Cluster Operators are successfully deployed.
      *  2. - Set up scrapers and metric collectors for first Cluster Operators.
      *  3. - Deploy Kafka Cluster with 3 Kafka replicas and label 'app.kubernetes.io/operator' pointing to the first Cluster Operator.
-     *  4. - Change Kafka's label selector 'app.kubernetes.io/operator' to point to some none existing operator.
+     *  4. - Change Kafka's label selector 'app.kubernetes.io/operator' to point to not existing Cluster Operator.
      *     - Kafka Cluster is no longer controlled by any Cluster Operator.
-     *  4. - Modify Kafka custom resource, by increasing number of replicas from 3 to 4
+     *  5. - Modify Kafka custom resource, by increasing number of replicas from 3 to 4.
      *     - Kafka is not scaled to 4 replicas.
-     *  5. - Deploy Kafka Rebalance without 'app.kubernetes.io/operator' label.
+     *  6. - Deploy Kafka Rebalance without 'app.kubernetes.io/operator' label.
      *     - For a stable period of time, Kafka Rebalance is ignored as well.
-     *  6. - Change Kafka's label selector 'app.kubernetes.io/operator' to point to the second Cluster Operator.
+     *  7. - Change Kafka's label selector 'app.kubernetes.io/operator' to point to the second Cluster Operator.
      *     - Second Cluster Operator now operates Kafka Cluster and increases its replica count to 4.
-     *  7. - Cruise Control Pod is rolled as there is increase in Kafka replica count.
+     *  8. - Cruise Control Pod is rolled as there is increase in Kafka replica count.
      *     - Rebalance finally takes place.
-     *  8. - Verify that Operators operate expected operands.
+     *  9. - Verify that Operators operate expected operands.
      *     - Operators operate expected operands.
      *
      * @usecase
@@ -378,6 +378,7 @@ public class MultipleClusterOperatorsST extends AbstractST {
         LOGGER.info("Creating: {} in Namespace: {}", coName, coNamespace);
 
         clusterOperator = clusterOperator.defaultInstallation()
+            .withReconciliationInterval(TestConstants.FASTER_RECONCILIATION_INTERVAL)
             .withNamespace(coNamespace)
             .withClusterOperatorName(coName)
             .withWatchingNamespaces(namespace)
