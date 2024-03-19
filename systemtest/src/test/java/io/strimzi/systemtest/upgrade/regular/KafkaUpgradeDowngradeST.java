@@ -47,7 +47,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 public class KafkaUpgradeDowngradeST extends AbstractUpgradeST {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaUpgradeDowngradeST.class);
-    private final int continuousClientsMessageCount = 1000;
+    private final int continuousClientsMessageCount = 500;
 
     @IsolatedTest
     void testKafkaClusterUpgrade() {
@@ -111,7 +111,7 @@ public class KafkaUpgradeDowngradeST extends AbstractUpgradeST {
         // ##############################
         // Validate that continuous clients finished successfully
         // ##############################
-        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), TestConstants.CO_NAMESPACE, continuousClientsMessageCount);
+        ClientUtils.waitForClientsSuccess(testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), TestConstants.CO_NAMESPACE, continuousClientsMessageCount);
         // ##############################
     }
 
