@@ -3612,6 +3612,15 @@ include::../api/io.strimzi.api.kafka.model.bridge.KafkaBridgeHttpConfig.adoc[lev
 |cors
 |xref:type-KafkaBridgeHttpCors-{context}[`KafkaBridgeHttpCors`]
 |CORS configuration for the HTTP Bridge.
+|timeoutSeconds
+|integer
+|The timeout in seconds for deleting inactive consumers.
+|producer
+|xref:type-KafkaBridgeProducerEnablement-{context}[`KafkaBridgeProducerEnablement`]
+|Configurations for the HTTP Producer.
+|consumer
+|xref:type-KafkaBridgeConsumerEnablement-{context}[`KafkaBridgeConsumerEnablement`]
+|Configurations for the HTTP Consumer.
 |====
 
 [id='type-KafkaBridgeHttpCors-{context}']
@@ -3629,6 +3638,48 @@ Used in: xref:type-KafkaBridgeHttpConfig-{context}[`KafkaBridgeHttpConfig`]
 |allowedMethods
 |string array
 |List of allowed HTTP methods.
+|====
+
+[id='type-KafkaBridgeProducerEnablement-{context}']
+= `KafkaBridgeProducerEnablement` schema reference
+
+Used in: xref:type-KafkaBridgeHttpConfig-{context}[`KafkaBridgeHttpConfig`]
+
+xref:type-KafkaBridgeProducerEnablement-schema-{context}[Full list of `KafkaBridgeProducerEnablement` schema properties]
+
+include::../api/io.strimzi.api.kafka.model.bridge.KafkaBridgeProducerEnablement.adoc[leveloffset=+1]
+
+[id='type-KafkaBridgeProducerEnablement-schema-{context}']
+== `KafkaBridgeProducerEnablement` schema properties
+
+
+[cols="2,2,3a",options="header"]
+|====
+|Property |Property type |Description
+|enabled
+|boolean
+|Whether the HTTP producer should be enabled or disabled.
+|====
+
+[id='type-KafkaBridgeConsumerEnablement-{context}']
+= `KafkaBridgeConsumerEnablement` schema reference
+
+Used in: xref:type-KafkaBridgeHttpConfig-{context}[`KafkaBridgeHttpConfig`]
+
+xref:type-KafkaBridgeConsumerEnablement-schema-{context}[Full list of `KafkaBridgeConsumerEnablement` schema properties]
+
+include::../api/io.strimzi.api.kafka.model.bridge.KafkaBridgeConsumerEnablement.adoc[leveloffset=+1]
+
+[id='type-KafkaBridgeConsumerEnablement-schema-{context}']
+== `KafkaBridgeConsumerEnablement` schema properties
+
+
+[cols="2,2,3a",options="header"]
+|====
+|Property |Property type |Description
+|enabled
+|boolean
+|Whether the HTTP consumer should be enabled or disabled.
 |====
 
 [id='type-KafkaBridgeAdminClientSpec-{context}']

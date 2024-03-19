@@ -20,6 +20,7 @@ import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
+import io.strimzi.api.kafka.model.common.CertSecretSource;
 import io.strimzi.api.kafka.model.common.CertificateAuthority;
 import io.strimzi.api.kafka.model.kafka.Storage;
 import io.strimzi.api.kafka.model.kafka.entityoperator.TlsSidecar;
@@ -35,7 +36,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * ModelUtils is a utility class that holds generic static helper functions
@@ -95,6 +98,13 @@ public class ModelUtils {
         return ContainerUtils.createEnvVar(TLS_SIDECAR_LOG_LEVEL,
                 (tlsSidecar != null && tlsSidecar.getLogLevel() != null ?
                         tlsSidecar.getLogLevel() : TlsSidecarLogLevel.NOTICE).toValue());
+    }
+
+    static String tlsToString(List<CertSecretSource> trustedCertificates) {
+        Objects.requireNonNull(trustedCertificates, "trustedCertificates cannot be null");
+        return trustedCertificates.stream()
+                .map(certSecretSource -> certSecretSource.getSecretName() + "/" + certSecretSource.getCertificate())
+                .collect(Collectors.joining(";"));
     }
 
     /**

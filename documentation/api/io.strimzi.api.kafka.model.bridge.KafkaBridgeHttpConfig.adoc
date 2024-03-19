@@ -2,6 +2,8 @@ Configures HTTP access to a Kafka cluster for the Kafka Bridge.
 
 The default HTTP configuration is for the Kafka Bridge to listen on port 8080.
 
+The timeout for deleting inactive consumers can be configured using ``timeoutSeconds``, by default it is not enabled.
+
 [id='property-kafka-bridge-cors-config-{context}']
 = `cors`
 
@@ -21,6 +23,7 @@ spec:
   # ...
   http:
     port: 8080
+    timeoutSeconds: 60
     cors:
       allowedOrigins: "https://strimzi.io"
       allowedMethods: "GET,POST,PUT,DELETE,OPTIONS,PATCH"
