@@ -525,7 +525,7 @@ include::../api/io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerCo
 |Labels that will be added to the `Ingress`, `Route`, or `Service` resource. This field can be used only with `loadbalancer`, `nodeport`, `route`, or `ingress` type listeners.
 |externalIPs
 |string array
-|External IPs associated to the nodeport service. These IPs are used by clients external to the kubernetes cluster to access the kafka brokers. This field is helpful when `nodeport` without `externalIP` is not sufficient. For example on bare-metal Kubernetes clusters that do not support Loadbalancer service types. This field can only be used with `nodeport` type listener.
+|External IPs associated to the nodeport service. These IPs are used by clients external to the Kubernetes cluster to access the Kafka brokers. This field is helpful when `nodeport` without `externalIP` is not sufficient. For example on bare-metal Kubernetes clusters that do not support Loadbalancer service types. This field can only be used with `nodeport` type listener.
 |====
 
 [id='type-GenericKafkaListenerConfigurationBroker-{context}']
@@ -570,7 +570,7 @@ include::../api/io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerCo
 |Labels that will be added to the `Ingress`, `Route`, or `Service` resource. This field can be used only with `loadbalancer`, `nodeport`, `route`, or `ingress` type listeners.
 |externalIPs
 |string array
-|External IPs associated to the nodeport service. These IPs are used by clients external to the kubernetes cluster to access the kafka brokers. This field is helpful when `nodeport` without `externalIP` is not sufficient. For example on bare-metal Kubernetes clusters that do not support Loadbalancer service types. This field can only be used with `nodeport` type listener.
+|External IPs associated to the nodeport service. These IPs are used by clients external to the Kubernetes cluster to access the Kafka brokers. This field is helpful when `nodeport` without `externalIP` is not sufficient. For example on bare-metal Kubernetes clusters that do not support Loadbalancer service types. This field can only be used with `nodeport` type listener.
 |====
 
 [id='type-EphemeralStorage-{context}']
