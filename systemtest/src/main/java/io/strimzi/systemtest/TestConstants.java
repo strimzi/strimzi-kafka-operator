@@ -37,7 +37,8 @@ public interface TestConstants {
 
     long API_CRUISE_CONTROL_POLL = Duration.ofSeconds(5).toMillis();
     long API_CRUISE_CONTROL_TIMEOUT = Duration.ofMinutes(10).toMillis();
-    long GLOBAL_CRUISE_CONTROL_TIMEOUT = Duration.ofMinutes(2).toMillis();
+    long GLOBAL_CRUISE_CONTROL_TIMEOUT = Duration.ofMinutes(4).toMillis();
+    long CRUISE_CONTROL_TRAIN_MODEL_TIMEOUT = Duration.ofMinutes(8).toMillis();
 
     long OLM_UPGRADE_INSTALL_PLAN_TIMEOUT = Duration.ofMinutes(15).toMillis();
     long OLM_UPGRADE_INSTALL_PLAN_POLL = Duration.ofMinutes(1).toMillis();
