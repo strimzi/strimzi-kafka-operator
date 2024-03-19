@@ -30,11 +30,7 @@ For more information, see xref:proc-cruise-control-topic-replication-{context}[]
 NOTE: In-sync replicas are used in conjunction with the `acks` configuration for producer applications.
 The `acks` configuration determines the number of follower partitions a message must be replicated to before the message is acknowledged as successfully received.
 
-When scaling Kafka clusters by adding or removing brokers, replication factor configuration is not changed and replicas are not reassigned automatically.
-However, you can use the `kafka-reassign-partitions.sh` tool to change the replication factor, and manually reassign replicas to brokers.
-
-Alternatively, though the integration of Cruise Control for Strimzi cannot change the replication factor for topics,
-the optimization proposals it generates for rebalancing Kafka include commands that transfer partition replicas and change partition leadership.
+include::../../modules/configuring/con-scaling-kafka-clusters.adoc[leveloffset=+1]
 
 [role="_additional-resources"]
 .Additional resources

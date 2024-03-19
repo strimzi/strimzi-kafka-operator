@@ -57,6 +57,6 @@ If more than one `KafkaTopic` resource refers to the same Kafka topic, the resou
 The status of the newer resources is updated to indicate a conflict, and their `Ready` status is changed to `False`.
 
 A Kafka client application, such as Kafka Streams, can automatically create topics with invalid Kubernetes resource names.
-If you want to manage these topics, you will have to create KafkaTopic resources with a different `.metadata.name`, like shown in the previous example.
+If you want to manage these topics, you must create `KafkaTopic` resources with a different `.metadata.name`, as shown in the previous example.
 
 NOTE: For more information on the requirements for identifiers and names in a cluster, refer to the Kubernetes documentation link:https://kubernetes.io/docs/concepts/overview/working-with-objects/names[Object Names and IDs^].

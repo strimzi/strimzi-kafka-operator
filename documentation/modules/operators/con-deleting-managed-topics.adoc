@@ -6,7 +6,7 @@
 = Deleting managed topics
 
 [role="_abstract"]
-Topic management supports the deletion of topics managed through the `KafkaTopic` resource with or without Kubernetes finalizers.
+The Topic Operator supports the deletion of topics managed through the `KafkaTopic` resource with or without Kubernetes finalizers.
 This is determined by the `STRIMZI_USE_FINALIZERS` Topic Operator environment variable.
 By default, this is set to `true`, though it can be set to `false` in the Topic Operator `env` configuration if you do not want the Topic Operator to add finalizers.
 

@@ -3,12 +3,10 @@
 // assembly-using-the-topic-operator.adoc
 
 [id='ref-operator-topic-{context}']
-= Topic management modes
+= Topic management
 
 [role="_abstract"]
 The `KafkaTopic` resource is responsible for managing a single topic within a Kafka cluster.
-
-== Topic management
 
 The Topic Operator operates as follows: 
 

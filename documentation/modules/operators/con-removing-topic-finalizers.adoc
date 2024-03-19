@@ -6,7 +6,7 @@
 = Removing finalizers on topics
 
 [role="_abstract"]
-If the Topic Operator is not running, and you want to bypass the finalization process when deleting managed topics, you have to remove the finalizers.   
+If the Topic Operator is not running, and you want to bypass the finalization process when deleting managed topics, you must remove the finalizers.
 You can do this manually by editing the resources directly or by using a command.
 
 To remove finalizers on all topics, use the following command:
