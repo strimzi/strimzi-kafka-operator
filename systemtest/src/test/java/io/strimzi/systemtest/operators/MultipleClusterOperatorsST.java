@@ -378,7 +378,6 @@ public class MultipleClusterOperatorsST extends AbstractST {
         LOGGER.info("Creating: {} in Namespace: {}", coName, coNamespace);
 
         clusterOperator = clusterOperator.defaultInstallation()
-            .withReconciliationInterval(TestConstants.FASTER_RECONCILIATION_INTERVAL)
             .withNamespace(coNamespace)
             .withClusterOperatorName(coName)
             .withWatchingNamespaces(namespace)
