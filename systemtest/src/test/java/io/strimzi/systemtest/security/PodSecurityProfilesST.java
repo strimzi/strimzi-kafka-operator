@@ -196,13 +196,16 @@ public class PodSecurityProfilesST extends AbstractST {
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), kafkaConnectPodName, TestConstants.DEFAULT_SINK_FILE_PATH, testStorage.getMessageCount());
 
         // verify MM1, as topic name does not change, only bootstrap server is changed.
-        final KafkaClients mm1Client =  ClientUtils.getInstantPlainClients(testStorage, KafkaResources.plainBootstrapAddress(mm1TargetClusterName));
+        final KafkaClients mm1Client =  ClientUtils.getInstantPlainClientBuilder(testStorage, KafkaResources.plainBootstrapAddress(mm1TargetClusterName))
+            .withPodSecurityPolicy(PodSecurityProfile.RESTRICTED)
+            .build();
         resourceManager.createResourceWithWait(mm1Client.consumerStrimzi());
         ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
 
         // verify MM2
         final KafkaClients mm2Client = ClientUtils.getInstantPlainClientBuilder(testStorage, KafkaResources.plainBootstrapAddress(mm2TargetClusterName))
             .withTopicName(mm2SourceMirroredTopicName)
+            .withPodSecurityPolicy(PodSecurityProfile.RESTRICTED)
             .build();
         resourceManager.createResourceWithWait(mm2Client.consumerStrimzi());
         ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
