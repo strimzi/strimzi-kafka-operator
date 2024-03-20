@@ -1,0 +1,32 @@
+// Module included in the following assemblies:
+//
+// assembly-config.adoc
+
+[id='ref-kubernetes-labels-{context}']
+= Kubernetes labels
+
+The Kubernetes documentation defines some https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/[recommended labels] that could be set on the resources deployed within your application, in order to help describing objects in a way that all tools can understand.
+The Strimzi operator applies some of them to the operands it deploys:
+
+* `app.kubernetes.io/name`: it is the component type within Strimzi which could be `kafka`, `zookeeper`, `cruise-control`, and so on.
+* `app.kubernetes.io/instance`: it is the name of the custom resource to which the operand belong to (i.e. `my-cluster` as the name of the `Kafka` custom resource applied on the Kafka pods).
+* `app.kubernetes.io/part-of`: it is the same as the `app.kubernetes.io/instance` but with a `strimzi-` prefix.
+* `app.kubernetes.io/managed-by`: it defines which application is in charge of managing the operand like `strimzi-cluster-operator`, `strimzi-user-operator` and so on.
+
+.Example of Kubernetes labels on a Kafka Pod when deploying a `Kafka` custom resource named `my-cluster`
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersion}
+kind: Pod
+metadata:
+  name: my-cluster-kafka-0
+  labels:
+    app.kubernetes.io/instance: my-cluster                                                                                                                                                                                                 │
+    app.kubernetes.io/managed-by: strimzi-cluster-operator                                                                                                                                                                                 │
+    app.kubernetes.io/name: kafka                                                                                                                                                                                                          │
+    app.kubernetes.io/part-of: strimzi-my-cluster
+spec:
+  # ...
+----
+
+Those labels cannot be overridden by the user (i.e. by using templates).
