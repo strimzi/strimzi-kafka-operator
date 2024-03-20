@@ -21,9 +21,9 @@ kind: Pod
 metadata:
   name: my-cluster-kafka-0
   labels:
-    app.kubernetes.io/instance: my-cluster                                                                                                                                                                                                 │
-    app.kubernetes.io/managed-by: strimzi-cluster-operator                                                                                                                                                                                 │
-    app.kubernetes.io/name: kafka                                                                                                                                                                                                          │
+    app.kubernetes.io/instance: my-cluster
+    app.kubernetes.io/managed-by: strimzi-cluster-operator
+    app.kubernetes.io/name: kafka
     app.kubernetes.io/part-of: strimzi-my-cluster
 spec:
   # ...
