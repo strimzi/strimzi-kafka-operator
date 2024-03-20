@@ -32,6 +32,9 @@
 |mapStringString
 |map
 |
+|mapStringQuantity
+|map
+|
 |polymorphicProperty
 |xref:type-PolymorphicLeft-{context}[`PolymorphicLeft`], xref:type-PolymorphicRight-{context}[`PolymorphicRight`]
 |

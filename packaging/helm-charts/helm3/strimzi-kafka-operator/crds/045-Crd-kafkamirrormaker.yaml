@@ -445,10 +445,20 @@ spec:
                           name:
                             type: string
                     limits:
-                      x-kubernetes-preserve-unknown-fields: true
+                      additionalProperties:
+                        anyOf:
+                          - type: integer
+                          - type: string
+                        pattern: "^(\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))))?$"
+                        x-kubernetes-int-or-string: true
                       type: object
                     requests:
-                      x-kubernetes-preserve-unknown-fields: true
+                      additionalProperties:
+                        anyOf:
+                          - type: integer
+                          - type: string
+                        pattern: "^(\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))))?$"
+                        x-kubernetes-int-or-string: true
                       type: object
                   description: CPU and memory resources to reserve.
                 whitelist:
