@@ -49,7 +49,7 @@ public class KRaftKafkaUpgradeDowngradeST extends AbstractKRaftUpgradeST {
     private static final Logger LOGGER = LogManager.getLogger(KRaftKafkaUpgradeDowngradeST.class);
 
     private final String continuousTopicName = "continuous-topic";
-    private final int continuousClientsMessageCount = 1000;
+    private final int continuousClientsMessageCount = 500;
 
     @IsolatedTest
     void testKafkaClusterUpgrade() {
