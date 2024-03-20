@@ -9,7 +9,7 @@ The Kubernetes documentation defines some https://kubernetes.io/docs/concepts/ov
 The Strimzi operator applies some of them to the operands it deploys:
 
 * `app.kubernetes.io/name`: it is the component type within Strimzi which could be `kafka`, `zookeeper`, `cruise-control`, and so on.
-* `app.kubernetes.io/instance`: it is the name of the custom resource to which the operand belong to (i.e. `my-cluster` as the name of the `Kafka` custom resource applied on the Kafka pods).
+* `app.kubernetes.io/instance`: it is the name of the custom resource to which the operand belong to (that is, `my-cluster` as the name of the `Kafka` custom resource applied on the Kafka pods).
 * `app.kubernetes.io/part-of`: it is the same as the `app.kubernetes.io/instance` but with a `strimzi-` prefix.
 * `app.kubernetes.io/managed-by`: it defines which application is in charge of managing the operand like `strimzi-cluster-operator`, `strimzi-user-operator` and so on.
 
@@ -29,4 +29,4 @@ spec:
   # ...
 ----
 
-Those labels cannot be overridden by the user (i.e. by using templates).
+Those labels cannot be overridden by the user (that is, by using templates).
