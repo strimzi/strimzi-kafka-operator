@@ -176,6 +176,7 @@ public class KafkaReconciler {
      * @param pfa                       PlatformFeaturesAvailability describing the environment we run in
      * @param vertx                     Vert.x instance
      * @param kafkaMetadataStateManager Instance of the Kafka metadata state manager
+     * @param metrics                   Metrics holder
      */
     public KafkaReconciler(
             Reconciliation reconciliation,
