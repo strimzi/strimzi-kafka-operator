@@ -25,6 +25,15 @@ public class RouteOperator extends AbstractNamespacedResourceOperator<OpenShiftC
     public RouteOperator(Vertx vertx, OpenShiftClient client) {
         super(vertx, client, "Route");
     }
+    /**
+     * Constructor
+     * @param vertx                 The Vertx instance
+     * @param client                The OpenShift client
+     * @param useServerSideApply    Whether to use server side apply
+     */
+    public RouteOperator(Vertx vertx, OpenShiftClient client, boolean useServerSideApply) {
+        super(vertx, client, "Route", useServerSideApply);
+    }
 
     @Override
     protected MixedOperation<Route, RouteList, Resource<Route>> operation() {

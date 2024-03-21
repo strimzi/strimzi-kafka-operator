@@ -22,9 +22,19 @@ public class StorageClassOperator extends AbstractNonNamespacedResourceOperator<
      * @param vertx The Vertx instance.
      * @param client The Kubernetes client.
      */
-
     public StorageClassOperator(Vertx vertx, KubernetesClient client) {
         super(vertx, client, "StorageClass");
+    }
+
+    /**
+     * Constructor.
+     *
+     * @param vertx The Vertx instance.
+     * @param client The Kubernetes client.
+     * @param useServerSideApply Whether to use server side apply
+     */
+    public StorageClassOperator(Vertx vertx, KubernetesClient client, boolean useServerSideApply) {
+        super(vertx, client, "StorageClass", useServerSideApply);
     }
 
     @Override

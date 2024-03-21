@@ -409,7 +409,12 @@ public class ZookeeperCluster extends AbstractModel implements SupportsMetrics, 
                 ownerReference,
                 templatePodSet,
                 replicas,
-                Map.of(Annotations.ANNO_STRIMZI_IO_STORAGE, ModelUtils.encodeStorageToJson(storage)),
+                Map.of(
+                        Annotations.ANNO_STRIMZI_IO_STORAGE, ModelUtils.encodeStorageToJson(storage),
+                        //Take ownership of the rolling update annotation (for SSA) and reset it
+                        //as (potential) one-time roll was already ran by reconcile loop run if it was needed.
+                        Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "false"
+                ),
                 labels.strimziSelectorLabels(),
                 podNum -> WorkloadUtils.createStatefulPod(
                         reconciliation,

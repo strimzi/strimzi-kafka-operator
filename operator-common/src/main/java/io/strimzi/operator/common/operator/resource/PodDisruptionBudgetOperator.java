@@ -24,6 +24,16 @@ public class PodDisruptionBudgetOperator extends AbstractNamespacedResourceOpera
     public PodDisruptionBudgetOperator(Vertx vertx, KubernetesClient client) {
         super(vertx, client, "PodDisruptionBudget");
     }
+    /**
+     * Constructs the PDB operator
+     *
+     * @param vertx     Vert.x instance
+     * @param client    Kubernetes client
+     * @param useServerSideApply Whether to use server side apply
+     */
+    public PodDisruptionBudgetOperator(Vertx vertx, KubernetesClient client, boolean useServerSideApply) {
+        super(vertx, client, "PodDisruptionBudget", useServerSideApply);
+    }
 
     @Override
     protected MixedOperation<PodDisruptionBudget, PodDisruptionBudgetList, Resource<PodDisruptionBudget>> operation() {

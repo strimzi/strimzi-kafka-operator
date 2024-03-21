@@ -25,6 +25,16 @@ public class SecretOperator extends AbstractNamespacedResourceOperator<Kubernete
         super(vertx, client, "Secret");
     }
 
+    /**
+     * Constructor
+     * @param vertx The Vertx instance
+     * @param client The Kubernetes client
+     * @param useServerSideApply Whether to use server side apply
+     */
+    public SecretOperator(Vertx vertx, KubernetesClient client, boolean useServerSideApply) {
+        super(vertx, client, "Secret", useServerSideApply);
+    }
+
     @Override
     protected MixedOperation<Secret, SecretList, Resource<Secret>> operation() {
         return client.secrets();

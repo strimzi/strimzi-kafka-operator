@@ -44,6 +44,17 @@ public abstract class AbstractScalableNamespacedResourceOperator<C extends Kuber
         super(vertx, client, resourceKind);
     }
 
+    /**
+     * Constructor
+     * @param vertx The Vertx instance
+     * @param client The Kubernetes client
+     * @param resourceKind The kind of resource.
+     * @param useServerSideApply Whether to use server side apply
+     */
+    public AbstractScalableNamespacedResourceOperator(Vertx vertx, C client, String resourceKind, boolean useServerSideApply) {
+        super(vertx, client, resourceKind, useServerSideApply);
+    }
+
     private R resource(String namespace, String name) {
         return operation().inNamespace(namespace).withName(name);
     }

@@ -27,6 +27,16 @@ public class IngressOperator extends AbstractNamespacedResourceOperator<Kubernet
         super(vertx, client, "Ingress");
     }
 
+    /**
+     * Constructor
+     * @param vertx The Vertx instance
+     * @param client The Kubernetes client
+     * @param useServerSideApply Whether to use server side apply
+     */
+    public IngressOperator(Vertx vertx, KubernetesClient client, boolean useServerSideApply) {
+        super(vertx, client, "Ingress", useServerSideApply);
+    }
+
     @Override
     protected MixedOperation<Ingress, IngressList, Resource<Ingress>> operation() {
         return client.network().v1().ingresses();

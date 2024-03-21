@@ -231,13 +231,7 @@ public class CruiseControlReconciler {
                                 .reconcile(reconciliation, reconciliation.namespace(), CruiseControlResources.secretName(reconciliation.name()),
                                         cruiseControl.generateCertificatesSecret(reconciliation.namespace(), reconciliation.name(), clusterCa, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant())))
                                 .compose(patchResult -> {
-                                    if (patchResult instanceof ReconcileResult.Patched) {
-                                        // The secret is patched and some changes to the existing certificates actually occurred
-                                        existingCertsChanged = CertUtils.doExistingCertificatesDiffer(oldSecret, patchResult.resource());
-                                    } else {
-                                        existingCertsChanged = false;
-                                    }
-
+                                    existingCertsChanged = patchResult != null && CertUtils.doExistingCertificatesDiffer(oldSecret, patchResult.resourceOpt().orElse(null));
                                     return Future.succeededFuture();
                                 });
                     });
@@ -334,7 +328,11 @@ public class CruiseControlReconciler {
             return deploymentOperator
                     .reconcile(reconciliation, reconciliation.namespace(), CruiseControlResources.componentName(reconciliation.name()), deployment)
                     .compose(patchResult -> {
-                        if (patchResult instanceof ReconcileResult.Noop)   {
+                        boolean isNoop = patchResult instanceof ReconcileResult.Noop;
+                        boolean patchedUsingServerSideApply = patchResult instanceof ReconcileResult.Patched
+                                && ((ReconcileResult.Patched<Deployment>) patchResult).isUsingServerSideApply();
+
+                        if (isNoop || patchedUsingServerSideApply) {
                             // Deployment needs ot be rolled because the certificate secret changed or older/expired cluster CA removed
                             if (existingCertsChanged || clusterCa.certsRemoved()) {
                                 LOGGER.infoCr(reconciliation, "Rolling Cruise Control to update or remove certificates");

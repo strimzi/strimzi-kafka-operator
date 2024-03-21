@@ -23,6 +23,15 @@ public class ImageStreamOperator extends AbstractNamespacedResourceOperator<Open
     public ImageStreamOperator(Vertx vertx, OpenShiftClient client) {
         super(vertx, client, "ImageStream");
     }
+    /**
+     * Constructor
+     * @param vertx The Vertx instance
+     * @param client The OpenShift client
+     * @param useServerSideApply Whether to use server side apply
+     */
+    public ImageStreamOperator(Vertx vertx, OpenShiftClient client, boolean useServerSideApply) {
+        super(vertx, client, "ImageStream", useServerSideApply);
+    }
 
     @Override
     protected MixedOperation<ImageStream, ImageStreamList, Resource<ImageStream>> operation() {

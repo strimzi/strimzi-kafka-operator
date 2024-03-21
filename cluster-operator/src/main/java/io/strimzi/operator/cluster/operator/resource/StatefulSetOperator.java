@@ -47,6 +47,30 @@ public class StatefulSetOperator extends AbstractScalableNamespacedResourceOpera
     }
 
     /**
+     * Constructor
+     * @param vertx The Vertx instance.
+     * @param client The Kubernetes client.
+     * @param operationTimeoutMs The timeout.
+     * @param useServerSideApply Whether to use server side apply
+     */
+    public StatefulSetOperator(Vertx vertx, KubernetesClient client, long operationTimeoutMs, boolean useServerSideApply) {
+        this(vertx, client, operationTimeoutMs, new PodOperator(vertx, client), useServerSideApply);
+    }
+
+    /**
+     * @param vertx The Vertx instance.
+     * @param client The Kubernetes client.
+     * @param operationTimeoutMs The timeout.
+     * @param podOperator The pod operator.
+     * @param useServerSideApply Whether to use server side apply
+     */
+    public StatefulSetOperator(Vertx vertx, KubernetesClient client, long operationTimeoutMs, PodOperator podOperator, boolean useServerSideApply) {
+        super(vertx, client, "StatefulSet", useServerSideApply);
+        this.podOperations = podOperator;
+        this.operationTimeoutMs = operationTimeoutMs;
+    }
+
+    /**
      * @param vertx The Vertx instance.
      * @param client The Kubernetes client.
      * @param operationTimeoutMs The timeout.

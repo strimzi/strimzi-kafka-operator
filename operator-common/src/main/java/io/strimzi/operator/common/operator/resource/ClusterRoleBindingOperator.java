@@ -26,6 +26,16 @@ public class ClusterRoleBindingOperator extends AbstractNonNamespacedResourceOpe
         super(vertx, client, "ClusterRoleBinding");
     }
 
+    /**
+     * Constructor.
+     * @param vertx The Vertx instance.
+     * @param client The Kubernetes client.
+     * @param useServerSideApply Whether to use server side apply
+     */
+    public ClusterRoleBindingOperator(Vertx vertx, KubernetesClient client, boolean useServerSideApply) {
+        super(vertx, client, "ClusterRoleBinding", useServerSideApply);
+    }
+
     @Override
     protected NonNamespaceOperation<ClusterRoleBinding, ClusterRoleBindingList, Resource<ClusterRoleBinding>> operation() {
         return client.rbac().clusterRoleBindings();

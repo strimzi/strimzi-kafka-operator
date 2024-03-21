@@ -26,6 +26,17 @@ public class NodeOperator extends AbstractNonNamespacedResourceOperator<Kubernet
         super(vertx, client, "Node");
     }
 
+    /**
+     * Constructor.
+     *
+     * @param vertx The Vertx instance.
+     * @param client The Kubernetes client.
+     * @param useServerSideApply Whether to use server side apply
+     */
+    public NodeOperator(Vertx vertx, KubernetesClient client, boolean useServerSideApply) {
+        super(vertx, client, "Node", useServerSideApply);
+    }
+
     @Override
     protected NonNamespaceOperation<Node, NodeList, Resource<Node>> operation() {
         return client.nodes();

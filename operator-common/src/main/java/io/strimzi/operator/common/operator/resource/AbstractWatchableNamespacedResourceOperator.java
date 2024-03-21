@@ -38,6 +38,17 @@ public abstract class AbstractWatchableNamespacedResourceOperator<
     public AbstractWatchableNamespacedResourceOperator(Vertx vertx, C client, String resourceKind) {
         super(vertx, client, resourceKind);
     }
+    /**
+     * Constructor.
+     *
+     * @param vertx                 The vertx instance.
+     * @param client                The kubernetes client.
+     * @param resourceKind          The mind of Kubernetes resource (used for logging).
+     * @param useServerSideApply    Whether to use server side apply
+     */
+    public AbstractWatchableNamespacedResourceOperator(Vertx vertx, C client, String resourceKind, boolean useServerSideApply) {
+        super(vertx, client, resourceKind, useServerSideApply);
+    }
 
     protected Watch watchInAnyNamespace(Watcher<T> watcher) {
         return operation().inAnyNamespace().watch(watcher);

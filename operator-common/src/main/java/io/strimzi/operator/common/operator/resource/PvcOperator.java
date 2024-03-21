@@ -45,6 +45,16 @@ public class PvcOperator extends AbstractNamespacedResourceOperator<KubernetesCl
         super(vertx, client, "PersistentVolumeClaim");
     }
 
+    /**
+     * Constructor
+     * @param vertx The Vertx instance
+     * @param client The Kubernetes client
+     * @param useServerSideApply Whether to use server side apply
+     */
+    public PvcOperator(Vertx vertx, KubernetesClient client, boolean useServerSideApply) {
+        super(vertx, client, "PersistentVolumeClaim", useServerSideApply);
+    }
+
     @Override
     protected MixedOperation<PersistentVolumeClaim, PersistentVolumeClaimList, Resource<PersistentVolumeClaim>> operation() {
         return client.persistentVolumeClaims();

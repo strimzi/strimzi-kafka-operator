@@ -29,6 +29,16 @@ public class BuildConfigOperator extends AbstractNamespacedResourceOperator<Open
         super(vertx, client, "BuildConfig");
     }
 
+    /**
+     * Constructor
+     * @param vertx The Vertx instance
+     * @param client The OpenShift client
+     * @param useServerSideApply Whether to use server side apply
+     */
+    public BuildConfigOperator(Vertx vertx, OpenShiftClient client, boolean useServerSideApply) {
+        super(vertx, client, "BuildConfig", useServerSideApply);
+    }
+
     @Override
     protected MixedOperation<BuildConfig, BuildConfigList, BuildConfigResource<BuildConfig, Void, Build>> operation() {
         return client.buildConfigs();

@@ -595,6 +595,7 @@ public abstract class Ca {
         // cluster CA certificate annotation handling
         Map<String, String> certAnnotations = new HashMap<>(2);
         certAnnotations.put(ANNO_STRIMZI_IO_CA_CERT_GENERATION, String.valueOf(caCertGeneration));
+        certAnnotations.put(Annotations.ANNO_STRIMZI_IO_FORCE_RENEW, "false");
 
         if (renewalType.equals(RenewalType.POSTPONED)
                 && this.caCertSecret.getMetadata() != null
@@ -604,6 +605,7 @@ public abstract class Ca {
 
         Map<String, String> keyAnnotations = new HashMap<>(2);
         keyAnnotations.put(ANNO_STRIMZI_IO_CA_KEY_GENERATION, String.valueOf(caKeyGeneration));
+        keyAnnotations.put(Annotations.ANNO_STRIMZI_IO_FORCE_REPLACE, "false");
 
         if (renewalType.equals(RenewalType.POSTPONED)
                 && this.caKeySecret.getMetadata() != null

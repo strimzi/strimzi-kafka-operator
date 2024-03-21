@@ -36,12 +36,36 @@ public class DeploymentOperator extends AbstractScalableNamespacedResourceOperat
     /**
      * Constructor
      *
+     * @param vertx The Vertx instance
+     * @param client The Kubernetes client
+     * @param useServerSideApply Whether to use server side apply
+     */
+    public DeploymentOperator(Vertx vertx, KubernetesClient client, boolean useServerSideApply) {
+        this(vertx, client, new PodOperator(vertx, client), useServerSideApply);
+    }
+
+    /**
+     * Constructor
+     *
      * @param vertx             Vert.x instance
      * @param client            Kubernetes client
      * @param podOperations     Pod Operator for managing pods
      */
     public DeploymentOperator(Vertx vertx, KubernetesClient client, PodOperator podOperations) {
         super(vertx, client, "Deployment");
+        this.podOperations = podOperations;
+    }
+
+    /**
+     * Constructor
+     *
+     * @param vertx             Vert.x instance
+     * @param client            Kubernetes client
+     * @param podOperations     Pod Operator for managing pods
+     * @param useServerSideApply Whether to use server side apply
+     */
+    public DeploymentOperator(Vertx vertx, KubernetesClient client, PodOperator podOperations, boolean useServerSideApply) {
+        super(vertx, client, "Deployment", useServerSideApply);
         this.podOperations = podOperations;
     }
 

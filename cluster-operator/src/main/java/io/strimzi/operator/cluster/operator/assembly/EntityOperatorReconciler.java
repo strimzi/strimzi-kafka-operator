@@ -378,13 +378,7 @@ public class EntityOperatorReconciler {
                                 .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.entityTopicOperatorSecretName(reconciliation.name()),
                                         entityOperator.topicOperator().generateSecret(clusterCa, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant())))
                                 .compose(patchResult -> {
-                                    if (patchResult instanceof ReconcileResult.Patched) {
-                                        // The secret is patched and some changes to the existing certificates actually occurred
-                                        existingEntityTopicOperatorCertsChanged = CertUtils.doExistingCertificatesDiffer(oldSecret, patchResult.resource());
-                                    } else {
-                                        existingEntityTopicOperatorCertsChanged = false;
-                                    }
-
+                                    existingEntityTopicOperatorCertsChanged = patchResult != null && CertUtils.doExistingCertificatesDiffer(oldSecret, patchResult.resourceOpt().orElse(null));
                                     return Future.succeededFuture();
                                 });
                     });
@@ -411,13 +405,7 @@ public class EntityOperatorReconciler {
                                 .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.entityUserOperatorSecretName(reconciliation.name()),
                                         entityOperator.userOperator().generateSecret(clusterCa, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant())))
                                 .compose(patchResult -> {
-                                    if (patchResult instanceof ReconcileResult.Patched) {
-                                        // The secret is patched and some changes to the existing certificates actually occurred
-                                        existingEntityUserOperatorCertsChanged = CertUtils.doExistingCertificatesDiffer(oldSecret, patchResult.resource());
-                                    } else {
-                                        existingEntityUserOperatorCertsChanged = false;
-                                    }
-
+                                    existingEntityUserOperatorCertsChanged = patchResult != null && CertUtils.doExistingCertificatesDiffer(oldSecret, patchResult.resourceOpt().orElse(null));
                                     return Future.succeededFuture();
                                 });
                     });
@@ -466,7 +454,11 @@ public class EntityOperatorReconciler {
             return deploymentOperator
                     .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.entityOperatorDeploymentName(reconciliation.name()), deployment)
                     .compose(patchResult -> {
-                        if (patchResult instanceof ReconcileResult.Noop)   {
+                        boolean isNoop = patchResult instanceof ReconcileResult.Noop;
+                        boolean patchedUsingServerSideApply = patchResult instanceof ReconcileResult.Patched
+                                && ((ReconcileResult.Patched<Deployment>) patchResult).isUsingServerSideApply();
+
+                        if (isNoop || patchedUsingServerSideApply) {
                             // Deployment needs ot be rolled because the certificate secret changed or older/expired cluster CA removed
                             if (existingEntityTopicOperatorCertsChanged || existingEntityUserOperatorCertsChanged || clusterCa.certsRemoved()) {
                                 LOGGER.infoCr(reconciliation, "Rolling Entity Operator to update or remove certificates");
