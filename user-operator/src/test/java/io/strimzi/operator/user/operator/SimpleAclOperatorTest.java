@@ -134,7 +134,7 @@ public class SimpleAclOperatorTest {
                     .toCompletableFuture().get();
 
             assertThat(result, is(notNullValue()));
-            assertThat(result.toString(), is("CREATED"));
+            assertThat(result.getType(), is(ReconcileResult.Type.CREATED));
 
             Collection<AclBinding> capturedAclBindings = aclBindingsCaptor.getValue();
             assertThat(capturedAclBindings, hasSize(3));
@@ -224,7 +224,7 @@ public class SimpleAclOperatorTest {
                     .toCompletableFuture().get();
 
             assertThat(result, is(notNullValue()));
-            assertThat(result.toString(), is("DELETED"));
+            assertThat(result.getType(), is(ReconcileResult.Type.DELETED));
 
             Collection<AclBindingFilter> capturedAclBindingFilters = aclBindingFiltersCaptor.getValue();
             assertThat(capturedAclBindingFilters, hasSize(1));
