@@ -27,7 +27,6 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.KRaftNotSupported;
-import io.strimzi.systemtest.annotations.KRaftWithoutUTONotSupported;
 import io.strimzi.systemtest.annotations.MixedRoleNotSupported;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.annotations.UTONotSupported;
@@ -85,7 +84,6 @@ public class CruiseControlST extends AbstractST {
     private static final String CRUISE_CONTROL_PARTITION_METRICS_SAMPLES_TOPIC = "strimzi.cruisecontrol.partitionmetricsamples"; // partitions 32 , rf - 2
 
     @IsolatedTest
-    @KRaftWithoutUTONotSupported
     @UTONotSupported("https://github.com/strimzi/strimzi-kafka-operator/issues/8864")
     void testAutoCreationOfCruiseControlTopicsWithResources() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
@@ -295,7 +293,6 @@ public class CruiseControlST extends AbstractST {
     }
 
     @ParallelNamespaceTest
-    @KRaftWithoutUTONotSupported
     void testCruiseControlTopicExclusion() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 

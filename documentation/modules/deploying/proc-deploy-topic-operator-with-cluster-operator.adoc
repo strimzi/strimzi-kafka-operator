@@ -7,8 +7,6 @@
 
 [role="_abstract"]
 This procedure describes how to deploy the Topic Operator using the Cluster Operator.
-The Topic Operator can be deployed for use in either bidirectional mode or unidirectional mode.
-To learn more about bidirectional and unidirectional topic management, see xref:ref-operator-topic-{context}[].
 
 You configure the `entityOperator` property of the `Kafka` resource to include the `topicOperator`.
 By default, the Topic Operator watches for `KafkaTopic` resources in the namespace of the Kafka cluster deployed by the Cluster Operator.

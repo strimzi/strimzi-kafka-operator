@@ -24,8 +24,6 @@ include::../../modules/operators/proc-converting-managed-topics.adoc[leveloffset
 include::../../modules/operators/proc-converting-non-managed-topics.adoc[leveloffset=+1]
 //deleting managed topics
 include::../../modules/operators/con-deleting-managed-topics.adoc[leveloffset=+1]
-//changing the topic operator mode
-include::../../modules/operators/proc-changing-topic-operator-mode.adoc[leveloffset=+1]
 //removing finalizers from topics
 include::../../modules/operators/con-removing-topic-finalizers.adoc[leveloffset=+1]
 //disabling topic deletion considerations

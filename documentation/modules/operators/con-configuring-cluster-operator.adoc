@@ -148,11 +148,6 @@ The default is `{DockerUserOperator}`.
 The image name to use as the default when deploying the User Operator
 if no image is specified as the `Kafka.spec.entityOperator.userOperator.image` in the `Kafka` resource.
 
-`STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE`:: Optional.
-The default is `{DockerEntityOperatorStunnel}`.
-The image name to use as the default when deploying the sidecar container for the Entity Operator if no image is specified as the `Kafka.spec.entityOperator.tlsSidecar.image` in the `Kafka` resource.
-The sidecar provides TLS support. 
-
 `STRIMZI_DEFAULT_KAFKA_EXPORTER_IMAGE`:: Optional.
 The default is `{DockerKafka}`.
 The image name to use as the default when deploying the Kafka Exporter if no image is specified as the `Kafka.spec.kafkaExporter.image` in the `Kafka` resource.

@@ -387,10 +387,6 @@ public class VerificationUtils {
         if (!Environment.isKRaftModeEnabled()) {
             imgFromPod = PodUtils.getContainerImageNameFromPod(kafkaNamespaceName, entityOperatorPodName, "topic-operator");
             assertThat(imgFromPod, containsString(imgFromDeplConf.get(TestConstants.TO_IMAGE)));
-            if (!Environment.isUnidirectionalTopicOperatorEnabled()) {
-                imgFromPod = PodUtils.getContainerImageNameFromPod(kafkaNamespaceName, entityOperatorPodName, "tls-sidecar");
-                assertThat(imgFromPod, containsString(imgFromDeplConf.get(TestConstants.TLS_SIDECAR_EO_IMAGE)));
-            }
         }
 
         LOGGER.info("Docker images names of Kafka verified");

@@ -26,7 +26,6 @@ import java.util.Random;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -165,10 +164,7 @@ public class KafkaTopicUtils {
     }
 
     public static boolean waitForKafkaTopicNotReady(final String namespaceName, String topicName) {
-        if (Environment.isUnidirectionalTopicOperatorEnabled()) {
-            return waitForKafkaTopicStatus(namespaceName, topicName, Ready, ConditionStatus.False);
-        }
-        return waitForKafkaTopicStatus(namespaceName, topicName, NotReady);
+        return waitForKafkaTopicStatus(namespaceName, topicName, Ready, ConditionStatus.False);
     }
 
     public static void waitForTopicConfigContains(String namespaceName, String topicName, Map<String, Object> config) {

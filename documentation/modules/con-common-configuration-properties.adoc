@@ -321,10 +321,6 @@ For more information on image environment variables, see link:{BookURLDeploying}
 | STRIMZI_DEFAULT_USER_OPERATOR_IMAGE
 | {DockerUserOperator}
 
-| Entity Operator TLS sidecar
-| STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE
-| {DockerEntityOperatorStunnel}
-
 | Kafka Exporter
 | STRIMZI_DEFAULT_KAFKA_EXPORTER_IMAGE
 | {DockerKafka}

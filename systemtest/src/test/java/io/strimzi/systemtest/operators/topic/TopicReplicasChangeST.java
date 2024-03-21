@@ -13,7 +13,6 @@ import io.strimzi.api.kafka.model.topic.KafkaTopicStatus;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
-import io.strimzi.systemtest.annotations.BTONotSupported;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
@@ -46,7 +45,6 @@ import static org.hamcrest.Matchers.containsString;
 
 @Tag(REGRESSION)
 @Tag(CRUISE_CONTROL)
-@BTONotSupported
 /**
  * This class contains system tests for KafkaTopic resource changes, specifically focusing on testing replication factor adjustments
  * under various conditions. It simulates real-world scenarios such as insufficient brokers for the desired replication factor,
@@ -104,12 +102,12 @@ public class TopicReplicasChangeST extends AbstractST {
         KafkaTopicUtils.waitForKafkaTopicNotReady(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
         KafkaTopicStatus kafkaTopicStatus = KafkaTopicResource.kafkaTopicClient().inNamespace(sharedTestStorage.getNamespaceName()).withName(testStorage.getTopicName()).get().getStatus();
 
-        String errorMessage = Environment.isUnidirectionalTopicOperatorEnabled() && Environment.isKRaftModeEnabled() ?
+        String errorMessage = Environment.isKRaftModeEnabled() ?
                 "org.apache.kafka.common.errors.InvalidReplicationFactorException: Unable to replicate the partition 5 time(s): The target replication factor of 5 cannot be reached because only 3 broker(s) are registered." :
                 "org.apache.kafka.common.errors.InvalidReplicationFactorException: Replication factor: 5 larger than available brokers: 3";
 
         assertThat(kafkaTopicStatus.getConditions().get(0).getMessage(), containsString(errorMessage));
-        assertThat(kafkaTopicStatus.getConditions().get(0).getReason(), containsString(Environment.isUnidirectionalTopicOperatorEnabled() ? "KafkaError" : "CompletionException"));
+        assertThat(kafkaTopicStatus.getConditions().get(0).getReason(), containsString("KafkaError"));
 
         // also we will not see any replicationChange status here because UTO failed on reconciliation
         // to catch such issue, and it does not create a POST request to CC

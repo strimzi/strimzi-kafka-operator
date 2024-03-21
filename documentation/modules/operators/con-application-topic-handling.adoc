@@ -6,53 +6,16 @@
 = Handling changes to topics
 
 [role="_abstract"]
-How the Topic Operator handles changes to topics depends on the xref:ref-operator-topic-{context}[mode of topic management].
+Configuration changes only go in one direction: from the `KafkaTopic` resource to the Kafka topic.
+Any changes to a Kafka topic managed outside the `KafkaTopic` resource are reverted.
 
-* For unidirectional topic management, configuration changes only go in one direction: from the `KafkaTopic` resource to the Kafka topic. Any changes to a Kafka topic managed outside the `KafkaTopic` resource are reverted.
-* For bidirectional topic management, configuration changes are synchronized between the Kafka topic and the `KafkaTopic` resource in both directions. Incompatible changes prioritize the Kafka configuration, and the `KafkaTopic` resource is adjusted accordingly. 
+== Downgrading to a Strimzi version that uses internal topics to store topic metadata
 
-== Topic store for bidirectional topic management
-
-For bidirectional topic management, the Topic Operator is capable of handling changes to topics when there is no single source of truth.
-The `KafkaTopic` resource and the Kafka topic can undergo independent modifications, where real-time observation of changes may not always be feasible, particularly when the Topic Operator is not operational.
-To handle this, the Topic Operator maintains a topic store that stores topic configuration information about each topic. 
-It compares the state of the Kafka cluster and Kubernetes with the topic store to determine the necessary changes for synchronization. 
-This evaluation takes place during startup and at regular intervals while the Topic Operator is active.
-
-For example, if the Topic Operator is inactive, and a new `KafkaTopic` named _my-topic_ is created, upon restart, the Topic Operator recognizes the absence of _my-topic_ in the topic store. 
-It recognizes that the `KafkaTopic` was created after its last operation. 
-Consequently, the Topic Operator generates the corresponding Kafka topic and saves the metadata in the topic store.
-
-The topic store enables the Topic Operator to manage situations where the topic configuration is altered in both Kafka topics and `KafkaTopic` resources, as long as the changes are compatible.
-When Kafka topic configuration is updated or changes are made to the `KafkaTopic` custom resource, the topic store is updated after reconciling with the Kafka cluster, as long as the changes are compatible.
-
-The _topic store_ is based on the Kafka Streams key-value mechanism, which uses Kafka topics to persist the state.
-Topic metadata is cached in-memory and accessed locally within the Topic Operator.
-Updates from operations applied to the local in-memory cache are persisted to a backup topic store on disk.
-The topic store is continually synchronized with updates from Kafka topics or Kubernetes `KafkaTopic` custom resources.
-Operations are handled rapidly with the topic store set up this way,
-but should the in-memory cache crash it is automatically repopulated from the persistent storage.
-
-Internal topics support the handling of topic metadata in the topic store.
-
-`__strimzi_store_topic`:: Input topic for storing the topic metadata
-`__strimzi-topic-operator-kstreams-topic-store-changelog`:: Retains a log of compacted topic store values
-
-WARNING: Do not delete these topics, as they are essential to the running of the Topic Operator.
-
-== Migrating topic metadata from ZooKeeper to the topic store
-
-In previous releases of Strimzi, topic metadata was stored in ZooKeeper.
-The topic store removes this requirement, bringing the metadata into the Kafka cluster, and under the control of the Topic Operator.
-
-When upgrading to Strimzi {ProductVersion}, the transition to Topic Operator control of the topic store is seamless.
-Metadata is found and migrated from ZooKeeper, and the old store is deleted.
+If you are reverting back to a version of Strimzi earlier than 0.41, which uses internal topics for the storage of topic metadata, you still downgrade your Cluster Operator to the previous version, then downgrade Kafka brokers and client applications to the previous Kafka version as standard.
 
 == Downgrading to a Strimzi version that uses ZooKeeper to store topic metadata
 
-If you are reverting back to a version of Strimzi earlier than 0.22, which uses ZooKeeper for the storage of topic metadata,
-you still downgrade your Cluster Operator to the previous version,
-then downgrade Kafka brokers and client applications to the previous Kafka version as standard.
+If you are reverting back to a version of Strimzi earlier than 0.22, which uses ZooKeeper for the storage of topic metadata, you still downgrade your Cluster Operator to the previous version, then downgrade Kafka brokers and client applications to the previous Kafka version as standard.
 
 However, you must also delete the topics that were created for the topic store using a `kafka-topics` command, specifying the bootstrap address of the Kafka cluster.
 For example:
@@ -73,9 +36,7 @@ By default, the Kafka broker configuration `auto.create.topics.enable` is set to
 Applications might also use the Kafka `AdminClient` to automatically create topics.
 When an application is deployed along with its `KafkaTopic` resources, it is possible that automatic topic creation in the cluster happens before the Topic Operator can react to the `KafkaTopic`.
 
-For bidirectional topic management, the Topic Operator synchronizes the changes between the topics and `KafkaTopic` resources.
-
-If you are using unidirectional topic management, this can mean that the topics created for an application deployment are initially created with default topic configuration.
+The topics created for an application deployment are initially created with default topic configuration.
 If the Topic Operator attempts to reconfigure the topics based on `KafkaTopic` resource specifications included with the application deployment, the operation might fail because the required change to the configuration is not allowed.
 For example, if the change means lowering the number of topic partitions.
-For this reason, it is recommended to disable `auto.create.topics.enable` in the Kafka cluster configuration when using unidirectional topic management.
+For this reason, it is recommended to disable `auto.create.topics.enable` in the Kafka cluster configuration.
