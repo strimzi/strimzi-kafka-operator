@@ -14,6 +14,7 @@ import io.strimzi.operator.common.model.Labels;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 
 /**
@@ -29,6 +30,7 @@ public abstract class MetricsHolder {
 
     protected final Map<String, AtomicInteger> resourceCounterMap = new ConcurrentHashMap<>(1);
     protected final Map<String, AtomicInteger> pausedResourceCounterMap = new ConcurrentHashMap<>(1);
+    protected final Map<String, AtomicLong> certificateExpirationMap = new ConcurrentHashMap<>(1);
     private final Map<String, Counter> periodicReconciliationsCounterMap = new ConcurrentHashMap<>(1);
     private final Map<String, Counter> reconciliationsCounterMap = new ConcurrentHashMap<>(1);
     private final Map<String, Counter> failedReconciliationsCounterMap = new ConcurrentHashMap<>(1);
@@ -137,6 +139,17 @@ public abstract class MetricsHolder {
     }
 
     /**
+     * Time in milliseconds when the certificate expiration timestamp in ms.
+     *
+     * @param namespace     Namespace of the resources being reconciled
+     * @return Metric gauge
+     */
+    public AtomicLong certificateExpiration(String clusterName, String namespace) {
+        return getGaugeLong(clusterName, namespace, kind, METRICS_PREFIX + "certificate.expiration.ms", metricsProvider, selectorLabels, certificateExpirationMap,
+                "Time in milliseconds when the certificate expires");
+    }
+
+    /**
      * Timer which measures how long do the reconciliations take.
      *
      * @param namespace     Namespace of the resources being reconciled
@@ -179,17 +192,34 @@ public abstract class MetricsHolder {
      * @param <M>   Type of the metric
      */
     protected static <M> M metric(String namespace, String kind, Labels selectorLabels, Map<String, M> metricMap, Function<Tags, M> fn) {
-        String selectorValue = selectorLabels != null ? selectorLabels.toSelectorString() : "";
-        Tags metricTags;
-        String metricKey = namespace + "/" + kind;
-        if (namespace.equals("*")) {
-            metricTags = Tags.of(Tag.of("kind", kind), Tag.of("namespace", ""), Tag.of("selector", selectorValue));
-        } else {
-            metricTags = Tags.of(Tag.of("kind", kind), Tag.of("namespace", namespace), Tag.of("selector", selectorValue));
-        }
-        Tags finalMetricTags = metricTags;
+        return metric(null, namespace, kind, selectorLabels, metricMap, fn);
+    }
 
-        return metricMap.computeIfAbsent(metricKey, x -> fn.apply(finalMetricTags));
+    /**
+     * Utility method which gets or creates the metric.
+     *
+     * @param clusterName       Strimzi cluster name
+     * @param namespace         Namespace or the resource
+     * @param kind              Kind of the resource
+     * @param selectorLabels    Selector labels used to filter the resources
+     * @param metricMap         The map with the metrics
+     * @param fn                Method fo generating the metrics tags
+     *
+     * @return  Metric
+     *
+     * @param <M>   Type of the metric
+     */
+    protected static <M> M metric(String clusterName, String namespace, String kind, Labels selectorLabels, Map<String, M> metricMap, Function<Tags, M> fn) {
+        String selectorValue = selectorLabels != null ? selectorLabels.toSelectorString() : "";
+        Tags metricTags = Tags.of(
+                Tag.of("kind", kind),
+                Tag.of("namespace", namespace.equals("*") ? "" : namespace),
+                Tag.of("cluster_name", clusterName == null ? "" : clusterName),
+                Tag.of("selector", selectorValue));
+
+        final String metricKey = namespace + "/" + kind;
+        final M metric = fn.apply(metricTags);
+        return metricMap.computeIfAbsent(metricKey, x -> metric);
     }
 
     /**
@@ -207,6 +237,24 @@ public abstract class MetricsHolder {
      */
     protected static Counter getCounter(String namespace, String kind, String metricName, MetricsProvider metrics, Labels selectorLabels, Map<String, Counter> counterMap, String metricHelp) {
         return metric(namespace, kind, selectorLabels, counterMap, tags -> metrics.counter(metricName, metricHelp, tags));
+    }
+
+    /**
+     * Creates or gets a gauge-type metric.
+     *
+     * @param clusterName       Strimzi cluster name
+     * @param namespace         Namespace of the resource
+     * @param kind              Kind of the resource
+     * @param metricName        Name of the metric
+     * @param metrics           Metrics provider
+     * @param selectorLabels    Selector labels used to filter the resources
+     * @param gaugeMap          Map with gauges
+     * @param metricHelp        Help description of the metric
+     *
+     * @return  Gauge metric
+     */
+    protected static AtomicLong getGaugeLong(String clusterName, String namespace, String kind, String metricName, MetricsProvider metrics, Labels selectorLabels, Map<String, AtomicLong> gaugeMap, String metricHelp) {
+        return metric(clusterName, namespace, kind, selectorLabels, gaugeMap, tags -> metrics.gaugeLong(metricName, metricHelp, tags));
     }
 
     /**
