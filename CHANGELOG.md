@@ -6,6 +6,8 @@
 * The `KafkaNodePools` feature gate moves to GA stage and is permanently enabled without the possibility to disable it.
   To use the Kafka Node Pool resources, you still need to use the `strimzi.io/node-pools: enabled` annotation on the `Kafka` custom resources.
 * Added support for configuring the `externalIPs` field in node port type services.
+* Added support for [Server-Side Apply](https://kubernetes.io/docs/reference/using-api/server-side-apply/) via `UseServerSideApply` feature gate. The feature is disabled by default.
+  If needed, `UseServerSideApply` can be enabled in the feature gates configuration in the Cluster Operator.
 
 ## 0.40.0
 
