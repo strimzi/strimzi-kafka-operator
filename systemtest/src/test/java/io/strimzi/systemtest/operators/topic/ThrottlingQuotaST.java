@@ -11,7 +11,6 @@ import io.strimzi.api.kafka.model.user.KafkaUserScramSha512ClientAuthentication;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
-import io.strimzi.systemtest.annotations.KRaftWithoutUTONotSupported;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.annotations.UTONotSupported;
 import io.strimzi.systemtest.kafkaclients.internalClients.admin.AdminClient;
@@ -56,7 +55,6 @@ public class ThrottlingQuotaST extends AbstractST {
     private AdminClient adminClient;
 
     @ParallelTest
-    @KRaftWithoutUTONotSupported
     @UTONotSupported("https://github.com/strimzi/strimzi-kafka-operator/issues/8864")
     void testThrottlingQuotasDuringAllTopicOperations() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());

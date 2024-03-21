@@ -5,7 +5,7 @@
 [id='con-tuning-topic-request-batches-{context}']
 = Tuning request batches for topic operations
 
-In unidirectional mode, the Topic Operator uses the request batching capabilities of the Kafka Admin API for operations on topic resources. 
+The Topic Operator uses the request batching capabilities of the Kafka Admin API for operations on topic resources. 
 You can fine-tune the batching mechanism using the following operator configuration properties:
 
 * `STRIMZI_MAX_QUEUE_SIZE` to set the maximum size of the topic event queue. 

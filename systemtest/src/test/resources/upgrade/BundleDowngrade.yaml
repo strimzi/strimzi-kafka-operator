@@ -29,7 +29,6 @@
 #    kafkaKRaftBefore: path to Kafka and KafkaNodePool resources (KRaft mode), collected in one file, in the version of Strimzi, from which we are doing the downgrade
 #    kafkaKRaftAfter: path to Kafka and KafkaNodePool resources (KRaft mode), collected in one file, in the version of Strimzi, to which we are doing the downgrade
 # --- Structure ---
-  
 - fromVersion: HEAD
   toVersion: 0.40.0
   fromExamples: HEAD
@@ -52,7 +51,7 @@
     flakyEnvVariable: none
     reason: Test is working on all environment used by QE.
   featureGatesBefore: ""
-  featureGatesAfter: "-UnidirectionalTopicOperator"
+  featureGatesAfter: ""
   filePaths:
     kafkaBefore: "/examples/kafka/kafka-persistent.yaml"
     kafkaAfter: "/examples/kafka/kafka-persistent.yaml"
@@ -80,7 +79,7 @@
     flakyEnvVariable: none
     reason: Test is working on all environment used by QE.
   featureGatesBefore: ""
-  featureGatesAfter: ""
+  featureGatesAfter: "-UnidirectionalTopicOperator"
   filePaths:
     kafkaBefore: "/examples/kafka/kafka-persistent.yaml"
     kafkaAfter: "/examples/kafka/kafka-persistent.yaml"

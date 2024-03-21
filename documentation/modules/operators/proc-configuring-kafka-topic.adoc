@@ -20,8 +20,6 @@ To be able to delete topics, `delete.topic.enable` must be set to `true` (defaul
 
 This procedure shows how to create a topic with 10 partitions and 2 replicas.
 
-NOTE: The procedure is the same for the unidirectional and bidirectional modes of topic management. 
-
 .Before you begin
 
 The KafkaTopic resource does not allow the following changes:

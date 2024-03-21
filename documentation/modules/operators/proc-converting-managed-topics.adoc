@@ -14,8 +14,6 @@ You can only do that by deleting the original `KafkaTopic` resource and recreati
 By annotating a `KafkaTopic` resource with `strimzi.io/managed=false`, you indicate that the Topic Operator should no longer manage that particular topic. 
 This allows you to retain the Kafka topic while making changes to the resource's configuration or other administrative tasks.
 
-You can perform this task if you are using unidirectional topic management.
-
 .Prerequisites
 
 * xref:deploying-cluster-operator-str[The Cluster Operator must be deployed.]

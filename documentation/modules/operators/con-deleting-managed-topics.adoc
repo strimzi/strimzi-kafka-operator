@@ -6,7 +6,7 @@
 = Deleting managed topics
 
 [role="_abstract"]
-Unidirectional topic management supports the deletion of topics managed through the `KafkaTopic` resource with or without Kubernetes finalizers.
+The Topic Operator supports the deletion of topics managed through the `KafkaTopic` resource with or without Kubernetes finalizers.
 This is determined by the `STRIMZI_USE_FINALIZERS` Topic Operator environment variable.
 By default, this is set to `true`, though it can be set to `false` in the Topic Operator `env` configuration if you do not want the Topic Operator to add finalizers.
 
@@ -52,6 +52,6 @@ If the deletion fails, it is shown in the status of the resource.
 When the finalization tasks are successfully executed, the finalizer is removed from the metadata, and the resource is fully deleted.  
 
 Finalizers also serve to prevent related resources from being deleted. 
-If the unidirectional Topic Operator is not running, it won't be able to remove its finalizer from the `metadata.finalizers`. 
+If the Topic Operator is not running, it won't be able to remove its finalizer from the `metadata.finalizers`. 
 And any attempt to directly delete the `KafkaTopic` resources or the namespace will fail or timeout, leaving the namespace in a stuck terminating state.
-If this happens, you can bypass the finalization process by xref:con-removing-topic-finalizers-{context}[removing the finalizers on topics]. 
+If this happens, you can bypass the finalization process by xref:con-removing-topic-finalizers-{context}[removing the finalizers on topics].

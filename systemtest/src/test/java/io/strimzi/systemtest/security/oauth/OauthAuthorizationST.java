@@ -13,7 +13,6 @@ import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.FIPSNotSupported;
 import io.strimzi.systemtest.annotations.IsolatedTest;
-import io.strimzi.systemtest.annotations.KRaftWithoutUTONotSupported;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaOauthClients;
@@ -126,7 +125,6 @@ public class OauthAuthorizationST extends OauthAbstractST {
             "and should also write and read to topics starting with 'a-'")
     @ParallelTest
     @Order(2)
-    @KRaftWithoutUTONotSupported
     void testTeamAWriteToTopic() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         String teamAProducerName = TEAM_A_PRODUCER_NAME + "-" + testStorage.getClusterName();
@@ -286,7 +284,6 @@ public class OauthAuthorizationST extends OauthAbstractST {
             "as a member of team B can read from topics starting with 'x-'")
     @ParallelTest
     @Order(5)
-    @KRaftWithoutUTONotSupported
     void testTeamAWriteToTopicStartingWithXAndTeamBReadFromTopicStartingWithX() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         String teamAProducerName = TEAM_A_PRODUCER_NAME + "-" + testStorage.getClusterName();
