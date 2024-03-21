@@ -725,11 +725,17 @@ public class KafkaReconciler {
      * @param crtKey The crt key for the modified secret
      */
     private void emitCertificateSecretMetrics(ReconcileResult.Type resultType, Secret secret, String crtKey) {
-        if (resultType == ReconcileResult.Type.CREATED || resultType == ReconcileResult.Type.PATCHED) {
-            metrics.certificateExpiration(kafka.getCluster(), reconciliation.namespace()).set(
-                    CertUtils.getCertificateExpirationDateEpoch(secret, crtKey));
-        } else if (resultType == ReconcileResult.Type.DELETED) {
-            metrics.certificateExpiration(kafka.getCluster(), reconciliation.namespace()).set(0L);
+        switch (resultType) {
+            case CREATED, PATCHED, NOOP:
+                metrics.certificateExpiration(kafka.getCluster(), reconciliation.namespace()).set(
+                        CertUtils.getCertificateExpirationDateEpoch(secret, crtKey));
+                break;
+            case DELETED:
+                metrics.certificateExpiration(kafka.getCluster(), reconciliation.namespace()).set(0L);
+                break;
+            default:
+                // Intentionally left empty
+                break;
         }
     }
 
