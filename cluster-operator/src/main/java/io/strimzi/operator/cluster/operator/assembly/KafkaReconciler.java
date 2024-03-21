@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.Node;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.model.common.Condition;
@@ -56,6 +57,7 @@ import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.metrics.MetricsHolder;
 import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.common.model.ClientsCa;
 import io.strimzi.operator.common.model.Labels;
@@ -147,6 +149,7 @@ public class KafkaReconciler {
     private final KubernetesRestartEventPublisher eventsPublisher;
     private final AdminClientProvider adminClientProvider;
     private final KafkaAgentClientProvider kafkaAgentClientProvider;
+    private final MetricsHolder metrics;
 
     // State of the reconciliation => these objects might change during the reconciliation (the collection objects are
     // marked as final, but their contents is modified during the reconciliation)
@@ -185,7 +188,8 @@ public class KafkaReconciler {
             ResourceOperatorSupplier supplier,
             PlatformFeaturesAvailability pfa,
             Vertx vertx,
-            KafkaMetadataStateManager kafkaMetadataStateManager
+            KafkaMetadataStateManager kafkaMetadataStateManager,
+            MetricsHolder metrics
     ) {
         this.reconciliation = reconciliation;
         this.vertx = vertx;
@@ -193,6 +197,7 @@ public class KafkaReconciler {
         this.kafkaNodePoolCrs = nodePools;
         this.kafka = kafka;
         this.kafkaMetadataStateManager = kafkaMetadataStateManager;
+        this.metrics = metrics;
 
         this.clusterCa = clusterCa;
         this.clientsCa = clientsCa;
@@ -689,24 +694,42 @@ public class KafkaReconciler {
      */
     protected Future<Void> certificateSecret(Clock clock) {
         return secretOperator.getAsync(reconciliation.namespace(), KafkaResources.kafkaSecretName(reconciliation.name()))
-                .compose(oldSecret -> {
-                    return secretOperator
-                            .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.kafkaSecretName(reconciliation.name()),
-                                    kafka.generateCertificatesSecret(clusterCa, clientsCa, listenerReconciliationResults.bootstrapDnsNames, listenerReconciliationResults.brokerDnsNames, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant())))
-                            .compose(patchResult -> {
-                                if (patchResult != null) {
-                                    for (NodeRef node : kafka.nodes()) {
-                                        kafkaServerCertificateHash.put(
-                                                node.nodeId(),
-                                                CertUtils.getCertificateThumbprint(patchResult.resource(),
-                                                        Ca.SecretEntry.CRT.asKey(node.podName())
-                                                ));
-                                    }
-                                }
+                .compose(oldSecret -> secretOperator
+                        .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.kafkaSecretName(reconciliation.name()),
+                                kafka.generateCertificatesSecret(clusterCa, clientsCa, listenerReconciliationResults.bootstrapDnsNames, listenerReconciliationResults.brokerDnsNames, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant())))
+                        .compose(patchResult -> {
+                            if (patchResult != null) {
+                                for (NodeRef node : kafka.nodes()) {
+                                    Secret secret = patchResult.resource();
+                                    String crtKey = Ca.SecretEntry.CRT.asKey(node.podName());
 
-                                return Future.succeededFuture();
-                            });
-                });
+                                    kafkaServerCertificateHash.put(
+                                            node.nodeId(),
+                                            CertUtils.getCertificateThumbprint(secret, crtKey));
+
+                                    emitCertificateSecretMetrics(patchResult.getType(), secret, crtKey);
+                                }
+                            }
+
+                            return Future.succeededFuture();
+                        }));
+    }
+
+    /**
+     * Emits the certificate expiration metric for the given secret if the resultType is CREATED or PATCHED,
+     * if DELETED the metric will be set to 0 for resetting.
+     *
+     * @param resultType Type of the ReconcileResult
+     * @param secret The modified secret
+     * @param crtKey The crt key for the modified secret
+     */
+    private void emitCertificateSecretMetrics(ReconcileResult.Type resultType, Secret secret, String crtKey) {
+        if (resultType == ReconcileResult.Type.CREATED || resultType == ReconcileResult.Type.PATCHED) {
+            metrics.certificateExpiration(kafka.getCluster(), reconciliation.namespace()).set(
+                    CertUtils.getCertificateExpirationDateEpoch(secret, crtKey));
+        } else if (resultType == ReconcileResult.Type.DELETED) {
+            metrics.certificateExpiration(kafka.getCluster(), reconciliation.namespace()).set(0L);
+        }
     }
 
     /**
