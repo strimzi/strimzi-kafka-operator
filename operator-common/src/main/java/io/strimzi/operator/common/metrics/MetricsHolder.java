@@ -141,6 +141,7 @@ public abstract class MetricsHolder {
     /**
      * Time in milliseconds when the certificate expiration timestamp in ms.
      *
+     * @param clusterName   Name of the cluster
      * @param namespace     Namespace of the resources being reconciled
      * @return Metric gauge
      */
