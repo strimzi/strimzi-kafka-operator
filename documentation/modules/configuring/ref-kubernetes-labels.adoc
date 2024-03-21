@@ -14,7 +14,7 @@ These labels cannot be overridden through `template` configuration of Strimzi re
 * `app.kubernetes.io/part-of`: Similar to `app.kubernetes.io/instance`, but prefixed with `strimzi-`.
 * `app.kubernetes.io/managed-by`: Defines the application responsible for managing the operand, such as `strimzi-cluster-operator` or `strimzi-user-operator`.
 
-.Example Kubernetes labels on a Kafka Pod when deploying a `Kafka` custom resource named `my-cluster`
+.Example Kubernetes labels on a Kafka pod when deploying a `Kafka` custom resource named `my-cluster`
 [source,yaml,subs=attributes+]
 ----
 apiVersion: {KafkaApiVersion}
