@@ -12,13 +12,29 @@ import java.util.Optional;
  * @param <R>   Resource type for which the result is being indicated
  */
 public abstract class ReconcileResult<R> {
-    @SuppressWarnings("unchecked")
-    private static final ReconcileResult DELETED = new ReconcileResult(Optional.empty()) {
-        @Override
-        public String toString() {
-            return "DELETED";
+
+    /**
+     * Type identifier for the ReconsileResult
+     */
+    public enum Type {
+        NOOP, CREATED, PATCHED, DELETED
+    }
+
+    /**
+     * The resource was deleted between the reconciliations
+     *
+     * @param <R>   Resource type for which the result is being indicated
+     */
+    public static class Deleted<R> extends ReconcileResult<R> {
+        private Deleted() {
+            super(Optional.empty());
         }
-    };
+
+        @Override
+        public Type getType() {
+            return Type.DELETED;
+        }
+    }
 
     /**
      * Nothing was changed during the reconciliation
@@ -31,8 +47,8 @@ public abstract class ReconcileResult<R> {
         }
 
         @Override
-        public String toString() {
-            return "NOOP";
+        public Type getType() {
+            return Type.NOOP;
         }
     }
 
@@ -47,8 +63,8 @@ public abstract class ReconcileResult<R> {
         }
 
         @Override
-        public String toString() {
-            return "CREATED";
+        public Type getType() {
+            return Type.CREATED;
         }
     }
 
@@ -63,8 +79,8 @@ public abstract class ReconcileResult<R> {
         }
 
         @Override
-        public String toString() {
-            return "PATCH";
+        public Type getType() {
+            return Type.PATCHED;
         }
     }
 
@@ -93,9 +109,8 @@ public abstract class ReconcileResult<R> {
      * @return a reconciliation result that indicates the resource was deleted.
      * @param <P> The type of resource.
      */
-    @SuppressWarnings("unchecked")
     public static final <P> ReconcileResult<P> deleted() {
-        return DELETED;
+        return new Deleted<>();
     }
 
     /**
@@ -126,5 +141,15 @@ public abstract class ReconcileResult<R> {
      */
     public R resource() {
         return resourceOpt().orElseThrow(() -> new RuntimeException("Resource was concurrently deleted"));
+    }
+
+    /**
+     * @return Type of the ReconsileResult
+     */
+    public abstract Type getType();
+
+    @Override
+    public String toString() {
+        return getType().name();
     }
 }
