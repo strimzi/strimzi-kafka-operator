@@ -14,10 +14,28 @@ import java.util.Optional;
 public abstract class ReconcileResult<R> {
 
     /**
-     * Type identifier for the ReconsileResult
+     * Type identifier for the ReconcileResult
      */
     public enum Type {
-        NOOP, CREATED, PATCHED, DELETED
+        /**
+         * The resource was not modified
+         */
+        NOOP,
+
+        /**
+         * The resource was created
+         */
+        CREATED,
+
+        /**
+         * The resource was patched
+         */
+        PATCHED,
+
+        /**
+         * The resource was deleted
+         */
+        DELETED
     }
 
     /**
