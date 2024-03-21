@@ -1,31 +1,31 @@
 {
   "__requires": [
-    {
-      "type": "grafana",
-      "id": "grafana",
-      "name": "Grafana",
-      "version": "7.3.7"
-    },
-    {
-      "type": "panel",
-      "id": "graph",
-      "name": "Graph",
-      "version": "5.0.0"
-    },
-    {
-      "type": "datasource",
-      "id": "prometheus",
-      "name": "Prometheus",
-      "version": "5.0.0"
-    },
-    {
-      "type": "panel",
-      "id": "singlestat",
-      "name": "Singlestat",
-      "version": "5.0.0"
-    }
-  ],
-    "annotations": {
+  {
+    "type": "grafana",
+    "id": "grafana",
+    "name": "Grafana",
+    "version": "7.3.7"
+  },
+  {
+    "type": "panel",
+    "id": "graph",
+    "name": "Graph",
+    "version": "5.0.0"
+  },
+  {
+    "type": "datasource",
+    "id": "prometheus",
+    "name": "Prometheus",
+    "version": "5.0.0"
+  },
+  {
+    "type": "panel",
+    "id": "singlestat",
+    "name": "Singlestat",
+    "version": "5.0.0"
+  }
+],
+  "annotations": {
     "list": [
       {
         "builtIn": 1,
@@ -42,7 +42,7 @@
   "gnetId": null,
   "graphTooltip": 0,
   "id": null,
-  "iteration": 1711026250106,
+  "iteration": 1711028263126,
   "links": [],
   "panels": [
     {
@@ -887,7 +887,7 @@
               }
             ]
           },
-          "unit": "dateTimeAsIso"
+          "unit": "string"
         },
         "overrides": [
           {
@@ -912,6 +912,18 @@
               "options": "Time to Expiry"
             },
             "properties": []
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Expiry Time"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "dateTimeAsIso"
+              }
+            ]
           }
         ]
       },
@@ -1642,7 +1654,6 @@
         "x": 0,
         "y": 34
       },
-      "hiddenSeries": false,
       "id": 20,
       "legend": {
         "avg": false,
@@ -1658,7 +1669,6 @@
       "links": [],
       "nullPointMode": "null",
       "options": {
-        "alertThreshold": true,
         "dataLinks": []
       },
       "paceLength": 10,
@@ -1742,7 +1752,6 @@
         "x": 8,
         "y": 34
       },
-      "hiddenSeries": false,
       "id": 21,
       "legend": {
         "avg": false,
@@ -1758,7 +1767,6 @@
       "links": [],
       "nullPointMode": "null",
       "options": {
-        "alertThreshold": true,
         "dataLinks": []
       },
       "paceLength": 10,
@@ -1842,7 +1850,6 @@
         "x": 16,
         "y": 34
       },
-      "hiddenSeries": false,
       "id": 22,
       "legend": {
         "avg": false,
@@ -1858,7 +1865,6 @@
       "links": [],
       "nullPointMode": "null",
       "options": {
-        "alertThreshold": true,
         "dataLinks": []
       },
       "paceLength": 10,
@@ -1932,11 +1938,7 @@
   "templating": {
     "list": [
       {
-        "current": {
-          "selected": false,
-          "text": "Prometheus",
-          "value": "Prometheus"
-        },
+        "current": {},
         "error": null,
         "hide": 0,
         "includeAll": false,
