@@ -29,6 +29,7 @@ import io.strimzi.operator.cluster.model.KafkaVersionChange;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.metrics.OperatorMetricsHolder;
 import io.strimzi.operator.common.model.ClientsCa;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.PasswordGenerator;
@@ -327,7 +328,9 @@ public class KafkaReconcilerKRaftMigrationTest {
         private static int count = 0;
 
         public MockKafkaReconciler(Reconciliation reconciliation, Kafka kafkaCr, List<KafkaNodePool> nodePools, ResourceOperatorSupplier supplier, KafkaVersionChange versionChange, KafkaMetadataStateManager kafkaMetadataStateManager) {
-            super(reconciliation, kafkaCr, nodePools, createKafkaCluster(reconciliation, supplier, kafkaCr, nodePools, versionChange, kafkaMetadataStateManager), CLUSTER_CA, CLIENTS_CA, CO_CONFIG, supplier, PFA, vertx, kafkaMetadataStateManager);
+            super(reconciliation, kafkaCr, nodePools, createKafkaCluster(reconciliation, supplier, kafkaCr, nodePools, versionChange, kafkaMetadataStateManager),
+                    CLUSTER_CA, CLIENTS_CA, CO_CONFIG, supplier, PFA, vertx, kafkaMetadataStateManager,
+                    new OperatorMetricsHolder(Kafka.RESOURCE_KIND, Labels.EMPTY, supplier.metricsProvider));
         }
 
         private static KafkaCluster createKafkaCluster(Reconciliation reconciliation, ResourceOperatorSupplier supplier, Kafka kafkaCr, List<KafkaNodePool> nodePools, KafkaVersionChange versionChange, KafkaMetadataStateManager kafkaMetadataStateManager) {
