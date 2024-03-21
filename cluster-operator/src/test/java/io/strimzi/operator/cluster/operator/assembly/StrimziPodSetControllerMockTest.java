@@ -54,7 +54,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -152,92 +151,92 @@ public class StrimziPodSetControllerMockTest {
         return client.resources(KafkaConnect.class, KafkaConnectList.class);
     }
 
-    private static Kafka kafka(String namespace, String name, Map<String, String> labels)   {
+    private static Kafka kafka(String namespace, String name, Map<String, String> labels) {
         return new KafkaBuilder()
-                    .withNewMetadata()
-                        .withName(name)
-                        .withNamespace(namespace)
-                        .withLabels(labels)
-                    .endMetadata()
-                    .withNewSpec()
-                        .withNewKafka()
-                            .withReplicas(3)
-                            .withListeners(new GenericKafkaListenerBuilder()
-                                    .withName("plain")
-                                    .withPort(9092)
-                                    .withType(KafkaListenerType.INTERNAL)
-                                    .withTls(false)
-                                    .build())
-                            .withNewEphemeralStorage()
-                            .endEphemeralStorage()
-                        .endKafka()
-                        .withNewZookeeper()
-                            .withReplicas(3)
-                            .withNewEphemeralStorage()
-                            .endEphemeralStorage()
-                        .endZookeeper()
-                    .endSpec()
-                    .build();
+                .withNewMetadata()
+                .withName(name)
+                .withNamespace(namespace)
+                .withLabels(labels)
+                .endMetadata()
+                .withNewSpec()
+                .withNewKafka()
+                .withReplicas(3)
+                .withListeners(new GenericKafkaListenerBuilder()
+                        .withName("plain")
+                        .withPort(9092)
+                        .withType(KafkaListenerType.INTERNAL)
+                        .withTls(false)
+                        .build())
+                .withNewEphemeralStorage()
+                .endEphemeralStorage()
+                .endKafka()
+                .withNewZookeeper()
+                .withReplicas(3)
+                .withNewEphemeralStorage()
+                .endEphemeralStorage()
+                .endZookeeper()
+                .endSpec()
+                .build();
     }
 
-    private static KafkaConnect connect(String namespace, String name, Map<String, String> labels)   {
+    private static KafkaConnect connect(String namespace, String name, Map<String, String> labels) {
         return new KafkaConnectBuilder()
-                    .withNewMetadata()
-                        .withName(name)
-                        .withNamespace(namespace)
-                        .withLabels(labels)
-                    .endMetadata()
-                    .withNewSpec()
-                        .withReplicas(3)
-                        .withBootstrapServers("my-kafka:9092")
-                    .endSpec()
-                    .build();
+                .withNewMetadata()
+                .withName(name)
+                .withNamespace(namespace)
+                .withLabels(labels)
+                .endMetadata()
+                .withNewSpec()
+                .withReplicas(3)
+                .withBootstrapServers("my-kafka:9092")
+                .endSpec()
+                .build();
     }
 
     private MixedOperation<StrimziPodSet, StrimziPodSetList, Resource<StrimziPodSet>> podSetOp() {
         return client.resources(StrimziPodSet.class, StrimziPodSetList.class);
     }
 
-    private static StrimziPodSet podSet(String namespace, String name, String kafkaName, String kind, Pod... pods)   {
+    private static StrimziPodSet podSet(String namespace, String name, String kafkaName, String kind, Pod... pods) {
         return new StrimziPodSetBuilder()
-                    .withNewMetadata()
-                        .withName(name)
-                        .withNamespace(namespace)
-                        .withLabels(Map.of(Labels.STRIMZI_KIND_LABEL, kind, Labels.STRIMZI_CLUSTER_LABEL, kafkaName))
-                    .endMetadata()
-                    .withNewSpec()
-                        .withSelector(new LabelSelector(null, Map.of(Labels.STRIMZI_KIND_LABEL, kind, Labels.STRIMZI_CLUSTER_LABEL, kafkaName)))
-                        .withPods(PodSetUtils.podsToMaps(Arrays.asList(pods)))
-                    .endSpec()
-                    .build();
+                .withNewMetadata()
+                .withName(name)
+                .withNamespace(namespace)
+                .withLabels(Map.of(Labels.STRIMZI_KIND_LABEL, kind, Labels.STRIMZI_CLUSTER_LABEL, kafkaName))
+                .endMetadata()
+                .withNewSpec()
+                .withSelector(new LabelSelector(null, Map.of(Labels.STRIMZI_KIND_LABEL, kind, Labels.STRIMZI_CLUSTER_LABEL, kafkaName)))
+                .withPods(PodSetUtils.podsToMaps(Arrays.asList(pods)))
+                .endSpec()
+                .build();
     }
 
-    private static Pod pod(String namespace, String name, String kafkaName, String podSetName, String kind)    {
+    private static Pod pod(String namespace, String name, String kafkaName, String podSetName, String kind) {
         Pod pod = new PodBuilder()
-                    .withNewMetadata()
-                        .withName(name)
-                        .withNamespace(namespace)
-                        .withLabels(Map.of(Labels.STRIMZI_KIND_LABEL, kind, Labels.STRIMZI_CLUSTER_LABEL, kafkaName, Labels.STRIMZI_NAME_LABEL, podSetName, Labels.STRIMZI_CONTROLLER_LABEL, "strimzipodset"))
-                        .withAnnotations(new HashMap<>())
-                    .endMetadata()
-                    .withNewSpec()
-                        .withContainers(new ContainerBuilder()
-                                .withName("busybox")
-                                .withImage("quay.io/scholzj/busybox:latest") // Quay.io is used to avoid Docker Hub limits
-                                .withCommand("sleep", "3600")
-                                .withImagePullPolicy("IfNotPresent")
-                                .build())
-                        .withRestartPolicy("Always")
-                        .withTerminationGracePeriodSeconds(0L)
-                    .endSpec()
-                    .build();
+                .withNewMetadata()
+                .withName(name)
+                .withNamespace(namespace)
+                .withLabels(Map.of(Labels.STRIMZI_KIND_LABEL, kind, Labels.STRIMZI_CLUSTER_LABEL, kafkaName, Labels.STRIMZI_NAME_LABEL, podSetName, Labels.STRIMZI_CONTROLLER_LABEL, "strimzipodset"))
+                .withAnnotations(new HashMap<>())
+                .endMetadata()
+                .withNewSpec()
+                .withContainers(new ContainerBuilder()
+                        .withName("busybox")
+                        .withImage("quay.io/scholzj/busybox:latest") // Quay.io is used to avoid Docker Hub limits
+                        .withCommand("sleep", "3600")
+                        .withImagePullPolicy("IfNotPresent")
+                        .build())
+                .withRestartPolicy("Always")
+                .withTerminationGracePeriodSeconds(0L)
+                .endSpec()
+                .build();
 
         pod.getMetadata().getAnnotations().put(PodRevision.STRIMZI_REVISION_ANNOTATION, PodRevision.getRevision(Reconciliation.DUMMY_RECONCILIATION, pod));
 
         return pod;
     }
 
-    private static void checkOwnerReference(HasMetadata resource, String podSetName)  {
+    private static void checkOwnerReference(HasMetadata resource, String podSetName) {
         OwnerReference owner = resource
                 .getMetadata()
                 .getOwnerReferences()
@@ -252,12 +251,12 @@ public class StrimziPodSetControllerMockTest {
         assertThat(owner.getName(), is(podSetName));
     }
 
-    private void startController()  {
+    private void startController() {
         controller = new StrimziPodSetController(namespace, Labels.fromMap(MATCHING_LABELS), kafkaOperator, kafkaConnectOperator, kafkaMirrorMaker2Operator, podSetOperator, podOperator, metricsProvider, Integer.parseInt(ClusterOperatorConfig.POD_SET_CONTROLLER_WORK_QUEUE_SIZE.defaultValue()));
         controller.start();
     }
 
-    private void stopController()   {
+    private void stopController() {
         controller.stop();
     }
 
@@ -267,11 +266,11 @@ public class StrimziPodSetControllerMockTest {
 
     /**
      * Tests the basic operations:
-     *   - Creation of StrimziPodSet and the managed pod
-     *   - Re-creation of the managed pod when it is deleted
-     *   - Deletion of the StrimziPodSet and the managed pod
+     * - Creation of StrimziPodSet and the managed pod
+     * - Re-creation of the managed pod when it is deleted
+     * - Deletion of the StrimziPodSet and the managed pod
      *
-     * @param context   Test context
+     * @param context Test context
      */
     @Test
     public void testPodCreationDeletionAndRecreationKafka(VertxTestContext context) {
@@ -280,11 +279,11 @@ public class StrimziPodSetControllerMockTest {
 
     /**
      * Tests the basic operations:
-     *   - Creation of StrimziPodSet and the managed pod
-     *   - Re-creation of the managed pod when it is deleted
-     *   - Deletion of the StrimziPodSet and the managed pod
+     * - Creation of StrimziPodSet and the managed pod
+     * - Re-creation of the managed pod when it is deleted
+     * - Deletion of the StrimziPodSet and the managed pod
      *
-     * @param context   Test context
+     * @param context Test context
      */
     @Test
     public void testPodCreationDeletionAndRecreationConnect(VertxTestContext context) {
@@ -293,13 +292,13 @@ public class StrimziPodSetControllerMockTest {
 
     /**
      * Tests the basic operations with configurable resource:
-     *   - Creation of StrimziPodSet and the managed pod
-     *   - Re-creation of the managed pod when it is deleted
-     *   - Deletion of the StrimziPodSet and the managed pod
+     * - Creation of StrimziPodSet and the managed pod
+     * - Re-creation of the managed pod when it is deleted
+     * - Deletion of the StrimziPodSet and the managed pod
      *
-     * @param context   Test context
-     * @param kind      Kind od the custom resource
-     * @param name      Name of the custom resource
+     * @param context Test context
+     * @param kind    Kind od the custom resource
+     * @param name    Name of the custom resource
      */
     private void podCreationDeletionAndRecreation(VertxTestContext context, String kind, String name) {
         String podSetName = "basic-test";
@@ -369,7 +368,7 @@ public class StrimziPodSetControllerMockTest {
     /**
      * Tests scaling up and down of the StrimziPodSet and updates of the StrimziPodSet status.
      *
-     * @param context   Test context
+     * @param context Test context
      */
     @Test
     public void testScaleUpScaleDown(VertxTestContext context) {
@@ -459,10 +458,10 @@ public class StrimziPodSetControllerMockTest {
 
     /**
      * Tests updates pods in the StrimziPodSet:
-     *   - StrimziPodSetController should not roll the pods => the dedicated rollers do it
-     *   - The pod should not be marked as current when it is updated
+     * - StrimziPodSetController should not roll the pods => the dedicated rollers do it
+     * - The pod should not be marked as current when it is updated
      *
-     * @param context   Test context
+     * @param context Test context
      */
     @Test
     public void testPodUpdates(VertxTestContext context) {
@@ -532,7 +531,7 @@ public class StrimziPodSetControllerMockTest {
     /**
      * Tests patching of the owner reference in pre-existing pods
      *
-     * @param context   Test context
+     * @param context Test context
      */
     @Test
     public void testOwnerReferencePatching(VertxTestContext context) {
@@ -580,7 +579,7 @@ public class StrimziPodSetControllerMockTest {
      * Tests that the controller will ignore pods or node sets when the Kafka cluster they belong to doesn't match the
      * custom resource selector
      *
-     * @param context   Test context
+     * @param context Test context
      */
     @Test
     public void testCrSelectorKafka(VertxTestContext context) {
@@ -591,7 +590,7 @@ public class StrimziPodSetControllerMockTest {
      * Tests that the controller will ignore pods or node sets when the Kafka Connect cluster they belong to doesn't match the
      * custom resource selector
      *
-     * @param context   Test context
+     * @param context Test context
      */
     @Test
     public void testCrSelectorKafkaConnect(VertxTestContext context) {
@@ -664,10 +663,10 @@ public class StrimziPodSetControllerMockTest {
 
     /**
      * Tests the metrics during the reconciliation
-     *   - It creates and deletes the SPS
-     *   - Checks the metrics during these operations
+     * - It creates and deletes the SPS
+     * - Checks the metrics during these operations
      *
-     * @param context   Test context
+     * @param context Test context
      */
     @Test
     public void testMetrics(VertxTestContext context) {
@@ -695,7 +694,7 @@ public class StrimziPodSetControllerMockTest {
             // Depending on timing, there might be multiple reconciliations happening. That is why we use of greaterThanOrEqualTo
             MeterRegistry registry = metricsProvider.meterRegistry();
 
-            Tag[] tags = new Tag[] { Tag.of("cluster_name", ""), Tag.of("kind", "StrimziPodSet"), Tag.of("namespace", namespace), Tag.of("selector", "selector=matching") };
+            Tag[] tags = new Tag[]{Tag.of("cluster_name", ""), Tag.of("kind", "StrimziPodSet"), Tag.of("namespace", namespace), Tag.of("selector", "selector=matching")};
 
             assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "resources").meter().getId().getTags(), containsInAnyOrder(tags));
             assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "resources").tag("kind", "StrimziPodSet").gauge().value(), is(1.0));
@@ -731,10 +730,10 @@ public class StrimziPodSetControllerMockTest {
 
     /**
      * Tests the handling of failed Pod:
-     *   - Creation of StrimziPodSet and the managed pod
-     *   - Re-creation of a Pod which is moved to the Failed phase
+     * - Creation of StrimziPodSet and the managed pod
+     * - Re-creation of a Pod which is moved to the Failed phase
      *
-     * @param context   Test context
+     * @param context Test context
      */
     @Test
     public void testFailedPodRecovery(VertxTestContext context) {
