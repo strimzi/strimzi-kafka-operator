@@ -68,7 +68,7 @@ public class CertUtils {
      */
     public static long getCertificateExpirationDateEpoch(Secret certSecret, String key) {
         var cert = Ca.cert(certSecret, key);
-        return cert == null ? -1 : (int) (cert.getNotAfter().getTime());
+        return cert == null ? 0 : cert.getNotAfter().getTime();
     }
 
     /**
