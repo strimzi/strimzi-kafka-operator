@@ -12,7 +12,6 @@ import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.model.Labels;
 import org.apache.logging.log4j.util.Strings;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -230,7 +229,7 @@ public abstract class MetricsHolder {
         metricKeys.add(kind);
 
         final M metric = fn.apply(metricTags);
-        return metricMap.computeIfAbsent(Strings.join(metricKeys, '/'),x -> metric);
+        return metricMap.computeIfAbsent(Strings.join(metricKeys, '/'), x -> metric);
     }
 
     /**
