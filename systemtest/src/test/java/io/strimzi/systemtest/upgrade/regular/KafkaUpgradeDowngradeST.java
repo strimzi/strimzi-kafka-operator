@@ -50,7 +50,7 @@ public class KafkaUpgradeDowngradeST extends AbstractUpgradeST {
     private static final Logger LOGGER = LogManager.getLogger(KafkaUpgradeDowngradeST.class);
 
     private final String continuousTopicName = "continuous-topic";
-    private final int continuousClientsMessageCount = 500;
+    private final int continuousClientsMessageCount = 1000;
 
     @IsolatedTest
     void testKafkaClusterUpgrade() {
