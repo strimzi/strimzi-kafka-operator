@@ -35,6 +35,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -178,7 +179,7 @@ public class SimpleAclOperatorTest {
                     .toCompletableFuture().get();
 
             assertThat(result, is(notNullValue()));
-            assertThat(result.toString(), is("PATCH"));
+            assertThat(result.getType(), is(ReconcileResult.Type.PATCHED));
 
             // Create Write rule for resource 2
             Collection<AclBinding> capturedAclBindings = aclBindingsCaptor.getValue();

@@ -170,4 +170,17 @@ public abstract class ReconcileResult<R> {
     public String toString() {
         return getType().name();
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof ReconcileResult<?> other) {
+            return getType() == other.getType() && resourceOpt().equals(other.resourceOpt());
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return getType().hashCode() + resourceOpt().hashCode();
+    }
 }
