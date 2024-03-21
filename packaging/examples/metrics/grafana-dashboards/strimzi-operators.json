@@ -25,7 +25,7 @@
       "version": "5.0.0"
     }
   ],
-  "annotations": {
+    "annotations": {
     "list": [
       {
         "builtIn": 1,
@@ -42,7 +42,7 @@
   "gnetId": null,
   "graphTooltip": 0,
   "id": null,
-  "iteration": 1687301758926,
+  "iteration": 1711026250106,
   "links": [],
   "panels": [
     {
@@ -106,7 +106,6 @@
       "maxDataPoints": 100,
       "nullPointMode": "connected",
       "nullText": null,
-      "options": {},
       "postfix": "",
       "postfixFontSize": "50%",
       "prefix": "",
@@ -195,7 +194,6 @@
       "maxDataPoints": 100,
       "nullPointMode": "connected",
       "nullText": null,
-      "options": {},
       "postfix": "",
       "postfixFontSize": "50%",
       "prefix": "",
@@ -284,7 +282,6 @@
       "maxDataPoints": 100,
       "nullPointMode": "connected",
       "nullText": null,
-      "options": {},
       "postfix": "",
       "postfixFontSize": "50%",
       "prefix": "",
@@ -373,7 +370,6 @@
       "maxDataPoints": 100,
       "nullPointMode": "connected",
       "nullText": null,
-      "options": {},
       "postfix": "",
       "postfixFontSize": "50%",
       "prefix": "",
@@ -462,7 +458,6 @@
       "maxDataPoints": 100,
       "nullPointMode": "connected",
       "nullText": null,
-      "options": {},
       "postfix": "",
       "postfixFontSize": "50%",
       "prefix": "",
@@ -551,7 +546,6 @@
       "maxDataPoints": 100,
       "nullPointMode": "connected",
       "nullText": null,
-      "options": {},
       "postfix": "",
       "postfixFontSize": "50%",
       "prefix": "",
@@ -640,7 +634,6 @@
       "maxDataPoints": 100,
       "nullPointMode": "connected",
       "nullText": null,
-      "options": {},
       "postfix": "",
       "postfixFontSize": "50%",
       "prefix": "",
@@ -729,7 +722,6 @@
       "maxDataPoints": 100,
       "nullPointMode": "connected",
       "nullText": null,
-      "options": {},
       "postfix": "",
       "postfixFontSize": "50%",
       "prefix": "",
@@ -818,7 +810,6 @@
       "maxDataPoints": 100,
       "nullPointMode": "connected",
       "nullText": null,
-      "options": {},
       "postfix": "",
       "postfixFontSize": "50%",
       "prefix": "",
@@ -869,6 +860,125 @@
         "x": 0,
         "y": 7
       },
+      "id": 59,
+      "panels": [],
+      "title": "Certificates",
+      "type": "row"
+    },
+    {
+      "datasource": "$DS_PROMETHEUS",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": null,
+            "filterable": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "dateTimeAsIso"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Time to Expiry"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "dateTimeFromNow"
+              },
+              {
+                "id": "custom.width",
+                "value": null
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Time to Expiry"
+            },
+            "properties": []
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 8
+      },
+      "id": 57,
+      "options": {
+        "showHeader": true,
+        "sortBy": []
+      },
+      "pluginVersion": "7.3.7",
+      "targets": [
+        {
+          "expr": "min by (cluster_name) (strimzi_certificate_expiration_ms)",
+          "format": "table",
+          "hide": false,
+          "instant": true,
+          "interval": "",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Cert expiry",
+      "transformations": [
+        {
+          "id": "calculateField",
+          "options": {
+            "alias": "time_to_expiry",
+            "mode": "reduceRow",
+            "reduce": {
+              "reducer": "last"
+            }
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "indexByName": {},
+            "renameByName": {
+              "Time to Expiry": "",
+              "Value": "Expiry Time",
+              "cluster_name": "Kafka Cluster Name",
+              "time_to_expiry": "Time to Expiry"
+            }
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "collapsed": false,
+      "datasource": null,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 16
+      },
       "id": 10,
       "panels": [],
       "title": "Reconciliations",
@@ -894,7 +1004,7 @@
         "h": 8,
         "w": 8,
         "x": 0,
-        "y": 8
+        "y": 17
       },
       "hiddenSeries": false,
       "id": 48,
@@ -997,7 +1107,7 @@
         "h": 8,
         "w": 8,
         "x": 8,
-        "y": 8
+        "y": 17
       },
       "hiddenSeries": false,
       "id": 49,
@@ -1100,7 +1210,7 @@
         "h": 8,
         "w": 8,
         "x": 16,
-        "y": 8
+        "y": 17
       },
       "hiddenSeries": false,
       "id": 51,
@@ -1204,7 +1314,7 @@
         "h": 8,
         "w": 8,
         "x": 0,
-        "y": 16
+        "y": 25
       },
       "hiddenSeries": false,
       "id": 47,
@@ -1308,7 +1418,7 @@
         "h": 8,
         "w": 8,
         "x": 8,
-        "y": 16
+        "y": 25
       },
       "hiddenSeries": false,
       "id": 46,
@@ -1412,7 +1522,7 @@
         "h": 8,
         "w": 8,
         "x": 16,
-        "y": 16
+        "y": 25
       },
       "hiddenSeries": false,
       "hideTimeOverride": false,
@@ -1504,7 +1614,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 24
+        "y": 33
       },
       "id": 18,
       "panels": [],
@@ -1530,8 +1640,9 @@
         "h": 7,
         "w": 8,
         "x": 0,
-        "y": 25
+        "y": 34
       },
+      "hiddenSeries": false,
       "id": 20,
       "legend": {
         "avg": false,
@@ -1547,6 +1658,7 @@
       "links": [],
       "nullPointMode": "null",
       "options": {
+        "alertThreshold": true,
         "dataLinks": []
       },
       "paceLength": 10,
@@ -1628,8 +1740,9 @@
         "h": 7,
         "w": 8,
         "x": 8,
-        "y": 25
+        "y": 34
       },
+      "hiddenSeries": false,
       "id": 21,
       "legend": {
         "avg": false,
@@ -1645,6 +1758,7 @@
       "links": [],
       "nullPointMode": "null",
       "options": {
+        "alertThreshold": true,
         "dataLinks": []
       },
       "paceLength": 10,
@@ -1726,8 +1840,9 @@
         "h": 7,
         "w": 8,
         "x": 16,
-        "y": 25
+        "y": 34
       },
+      "hiddenSeries": false,
       "id": 22,
       "legend": {
         "avg": false,
@@ -1743,6 +1858,7 @@
       "links": [],
       "nullPointMode": "null",
       "options": {
+        "alertThreshold": true,
         "dataLinks": []
       },
       "paceLength": 10,
@@ -1816,7 +1932,11 @@
   "templating": {
     "list": [
       {
-        "current": {},
+        "current": {
+          "selected": false,
+          "text": "Prometheus",
+          "value": "Prometheus"
+        },
         "error": null,
         "hide": 0,
         "includeAll": false,
