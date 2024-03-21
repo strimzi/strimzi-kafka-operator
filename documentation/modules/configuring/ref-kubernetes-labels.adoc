@@ -1,0 +1,31 @@
+// Module included in the following assemblies:
+//
+// assembly-config.adoc
+
+[id='ref-kubernetes-labels-{context}']
+= Restrictions on Kubernetes labels
+
+https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/[Kubernetes labels] make it easier to organize, manage, and discover Kubernetes resources within your applications.
+The Cluster Operator is responsible for applying the following Kubernetes labels to the operands it deploys.
+These labels cannot be overridden through `template` configuration of Strimzi resources:
+
+* `app.kubernetes.io/name`: Identifies the component type within Strimzi, such as `kafka`, `zookeeper`,  and`cruise-control`.
+* `app.kubernetes.io/instance`: Represents the name of the custom resource to which the operand belongs to. For instance, if a Kafka custom resource is named `my-cluster`, this label will bear that name on the associated pods.
+* `app.kubernetes.io/part-of`: Similar to `app.kubernetes.io/instance`, but prefixed with `strimzi-`.
+* `app.kubernetes.io/managed-by`: Defines the application responsible for managing the operand, such as `strimzi-cluster-operator` or `strimzi-user-operator`.
+
+.Example Kubernetes labels on a Kafka pod when deploying a `Kafka` custom resource named `my-cluster`
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersion}
+kind: Pod
+metadata:
+  name: my-cluster-kafka-0
+  labels:
+    app.kubernetes.io/instance: my-cluster
+    app.kubernetes.io/managed-by: strimzi-cluster-operator
+    app.kubernetes.io/name: kafka
+    app.kubernetes.io/part-of: strimzi-my-cluster
+spec:
+  # ...
+----
