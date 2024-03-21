@@ -29,4 +29,10 @@ For more information, see xref:proc-cruise-control-topic-replication-{context}[]
 
 NOTE: In-sync replicas are used in conjunction with the `acks` configuration for producer applications.
 The `acks` configuration determines the number of follower partitions a message must be replicated to before the message is acknowledged as successfully received.
-The bidirectional Topic Operator runs with `acks=all` for its internal topics whereby messages must be acknowledged by all in-sync replicas.
+Replicas need to be reassigned when adding or removing brokers (see xref:con-scaling-kafka-clusters-str[]).
+
+[role="_additional-resources"]
+.Additional resources
+* xref:assembly-downgrade-{context}[Downgrading Strimzi]
+* xref:con-partition-reassignment-str[]
+* xref:cruise-control-concepts-str[]

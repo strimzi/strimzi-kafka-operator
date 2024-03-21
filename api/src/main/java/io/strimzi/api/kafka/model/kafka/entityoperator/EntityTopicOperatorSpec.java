@@ -7,6 +7,7 @@ package io.strimzi.api.kafka.model.kafka.entityoperator;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
+import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.HasConfigurableLogging;
 import io.strimzi.api.kafka.model.common.HasLivenessProbe;
@@ -20,6 +21,7 @@ import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.strimzi.crdgenerator.annotations.Minimum;
+import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -57,8 +59,8 @@ public class EntityTopicOperatorSpec implements HasConfigurableLogging, HasLiven
     protected String watchedNamespace;
     protected String image;
     protected int reconciliationIntervalSeconds = DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS;
-    protected int zookeeperSessionTimeoutSeconds = DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_SECONDS;
-    protected int topicMetadataMaxAttempts = DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS;
+    protected Integer zookeeperSessionTimeoutSeconds;
+    protected Integer topicMetadataMaxAttempts;
     private Probe startupProbe;
     private Probe livenessProbe;
     private Probe readinessProbe;
@@ -95,26 +97,32 @@ public class EntityTopicOperatorSpec implements HasConfigurableLogging, HasLiven
     public void setReconciliationIntervalSeconds(int reconciliationIntervalSeconds) {
         this.reconciliationIntervalSeconds = reconciliationIntervalSeconds;
     }
-
+    
     @Description("Timeout for the ZooKeeper session")
     @Minimum(0)
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-    public int getZookeeperSessionTimeoutSeconds() {
+    @DeprecatedProperty(description = "This property is not used anymore in Strimzi 0.41.0 and it is ignored.")
+    @PresentInVersions("v1alpha1-v1beta2")
+    @Deprecated
+    public Integer getZookeeperSessionTimeoutSeconds() {
         return zookeeperSessionTimeoutSeconds;
     }
 
-    public void setZookeeperSessionTimeoutSeconds(int zookeeperSessionTimeoutSeconds) {
+    public void setZookeeperSessionTimeoutSeconds(Integer zookeeperSessionTimeoutSeconds) {
         this.zookeeperSessionTimeoutSeconds = zookeeperSessionTimeoutSeconds;
     }
-
+    
     @Description("The number of attempts at getting topic metadata")
     @Minimum(0)
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-    public int getTopicMetadataMaxAttempts() {
+    @DeprecatedProperty(description = "This property is not used anymore in Strimzi 0.41.0 and it is ignored.")
+    @PresentInVersions("v1alpha1-v1beta2")
+    @Deprecated
+    public Integer getTopicMetadataMaxAttempts() {
         return topicMetadataMaxAttempts;
     }
 
-    public void setTopicMetadataMaxAttempts(int topicMetadataMaxAttempts) {
+    public void setTopicMetadataMaxAttempts(Integer topicMetadataMaxAttempts) {
         this.topicMetadataMaxAttempts = topicMetadataMaxAttempts;
     }
 

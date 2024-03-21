@@ -14,7 +14,6 @@ import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
-import io.strimzi.systemtest.annotations.KRaftWithoutUTONotSupported;
 import io.strimzi.systemtest.annotations.UTONotSupported;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
@@ -55,7 +54,6 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
  * These tests does not have to be run every time with PRs and so on, the nature of the tests is sufficient for recovery profile only.
  */
 @Tag(RECOVERY)
-@KRaftWithoutUTONotSupported
 class NamespaceDeletionRecoveryST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(NamespaceDeletionRecoveryST.class);
     private String storageClassName = "retain";

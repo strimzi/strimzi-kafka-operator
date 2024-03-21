@@ -488,10 +488,6 @@ public class KafkaTemplates {
             kafka.getSpec().setZookeeper(null);
             kafka.getSpec().getKafka().getConfig().remove("log.message.format.version");
             kafka.getSpec().getKafka().getConfig().remove("inter.broker.protocol.version");
-
-            if (!Environment.isUnidirectionalTopicOperatorEnabled()) {
-                kafka.getSpec().getEntityOperator().setTopicOperator(null);
-            }
         }
 
         kafka.getSpec().getKafka().setStorage(null);

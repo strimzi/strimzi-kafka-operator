@@ -149,7 +149,6 @@
 :DockerKafkaInit: quay.io/strimzi/operator:{DockerTag}
 :DockerTopicOperator: quay.io/strimzi/operator:{DockerTag}
 :DockerUserOperator: quay.io/strimzi/operator:{DockerTag}
-:DockerEntityOperatorStunnel: quay.io/strimzi/kafka:{DockerTag}-kafka-{DefaultKafkaVersion}
 :DockerKafkaBridge: quay.io/strimzi/kafka-bridge:{BridgeDockerTag}
 
 :DockerImageUser: 1001

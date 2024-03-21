@@ -7,8 +7,6 @@ package io.strimzi.systemtest.operators.topic;
 import io.strimzi.api.kafka.model.topic.KafkaTopicSpecBuilder;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.annotations.BTONotSupported;
-import io.strimzi.systemtest.annotations.KRaftWithoutUTONotSupported;
 import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.systemtest.resources.NodePoolsConverter;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -30,10 +28,7 @@ import static io.strimzi.systemtest.TestConstants.SCALABILITY;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-
 @Tag(SCALABILITY)
-@BTONotSupported
-@KRaftWithoutUTONotSupported
 public class TopicScalabilityST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(TopicScalabilityST.class);

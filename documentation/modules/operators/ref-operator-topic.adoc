@@ -3,19 +3,12 @@
 // assembly-using-the-topic-operator.adoc
 
 [id='ref-operator-topic-{context}']
-= Topic management modes
+= Topic management
 
 [role="_abstract"]
-The `KafkaTopic` resource is responsible for managing a single topic within a Kafka cluster. The Topic Operator provides two modes for managing `KafkaTopic` resources and Kafka topics:
+The `KafkaTopic` resource is responsible for managing a single topic within a Kafka cluster.
 
-Unidirectional mode (default):: Unidirectional mode does not require ZooKeeper for cluster management. It is compatible with using Strimzi in KRaft mode.
-Bidirectional mode:: Bidirectional mode requires ZooKeeper for cluster management. It is not compatible with using Strimzi in KRaft mode.
-
-NOTE: As the feature gate enabling the Topic Operator to run in unidirectional mode progresses to General Availability, bidirectional mode will be phased out. This transition is aimed at enhancing the user experience, particularly in supporting Kafka in KRaft mode. 
-
-== Unidirectional topic management
-
-In unidirectional mode, the Topic Operator operates as follows: 
+The Topic Operator operates as follows: 
 
 * When a `KafkaTopic` is created, deleted, or changed, the Topic Operator performs the corresponding operation on the Kafka topic.
 
@@ -25,13 +18,3 @@ If a `KafkaTopic` does exist for a Kafka topic, any configuration changes made o
 
 The Topic Operator can detect cases where where multiple `KafkaTopic` resources are attempting to manage a Kafka topic using the same `.spec.topicName`. 
 Only the oldest resource is reconciled, while the other resources fail with a resource conflict error.
-
-== Bidirectional topic management
-
-In bidirectional mode, the Topic Operator operates as follows: 
-
-* When a `KafkaTopic` is created, deleted, or changed, the Topic Operator performs the corresponding operation on the Kafka topic.
-* Similarly, when a topic is created, deleted, or changed within the Kafka cluster, the Topic Operator performs the corresponding operation on the `KafkaTopic` resource.
-
-TIP: Try to stick to one method of managing topics, either through the `KafkaTopic` resources or directly in Kafka.
-Avoid routinely switching between both methods for a given topic.

@@ -9,8 +9,6 @@
 This procedure describes how to enable topic management for topics that are not currently managed through the `KafkaTopic` resource.
 You do this by creating a matching `KafkaTopic` resource.
 
-You can perform this task if you are using unidirectional topic management.
-
 .Prerequisites
 
 * xref:deploying-cluster-operator-str[The Cluster Operator must be deployed.]

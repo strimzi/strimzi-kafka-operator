@@ -56,7 +56,6 @@ public class EntityOperatorReconciler {
     private final RoleBindingOperator roleBindingOperator;
     private final ConfigMapOperator configMapOperator;
     private final NetworkPolicyOperator networkPolicyOperator;
-    private final boolean unidirectionalTopicOperator;
     private final boolean isCruiseControlEnabled;
     
     private boolean existingEntityTopicOperatorCertsChanged = false;
@@ -83,12 +82,10 @@ public class EntityOperatorReconciler {
     ) {
         this.reconciliation = reconciliation;
         this.operationTimeoutMs = config.getOperationTimeoutMs();
-        this.entityOperator = EntityOperator.fromCrd(reconciliation, kafkaAssembly, versions, supplier.sharedEnvironmentProvider,
-                config.featureGates().unidirectionalTopicOperatorEnabled());
+        this.entityOperator = EntityOperator.fromCrd(reconciliation, kafkaAssembly, versions, supplier.sharedEnvironmentProvider);
         this.clusterCa = clusterCa;
         this.maintenanceWindows = kafkaAssembly.getSpec().getMaintenanceTimeWindows();
         this.isNetworkPolicyGeneration = config.isNetworkPolicyGeneration();
-        this.unidirectionalTopicOperator = config.featureGates().unidirectionalTopicOperatorEnabled();
         this.isCruiseControlEnabled = kafkaAssembly.getSpec().getCruiseControl() != null;
         
         this.deploymentOperator = supplier.deploymentOperations;
@@ -137,7 +134,7 @@ public class EntityOperatorReconciler {
      * @return Future which completes when the reconciliation is done.
      */
     protected Future<Void> topicOperatorCruiseControlApiSecret() {
-        if (unidirectionalTopicOperator && isCruiseControlEnabled) {
+        if (isCruiseControlEnabled) {
             String ccApiSecretName = KafkaResources.entityTopicOperatorCcApiSecretName(reconciliation.name());
             if (entityOperator != null && entityOperator.topicOperator() != null) {
                 return secretOperator.getAsync(reconciliation.namespace(), ccApiSecretName)
@@ -459,7 +456,7 @@ public class EntityOperatorReconciler {
             int caKeyGeneration = clusterCa.caKeyGeneration();
             Annotations.annotations(deployment.getSpec().getTemplate()).put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, String.valueOf(caKeyGeneration));
             
-            if (entityOperator.topicOperator() != null && unidirectionalTopicOperator && isCruiseControlEnabled) {
+            if (entityOperator.topicOperator() != null && isCruiseControlEnabled) {
                 Annotations.annotations(deployment.getSpec().getTemplate()).put(Annotations.ANNO_STRIMZI_AUTH_HASH, ccApiSecretHash);
             }
 

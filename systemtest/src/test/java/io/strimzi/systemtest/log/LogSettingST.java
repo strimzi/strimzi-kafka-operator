@@ -660,11 +660,6 @@ class LogSettingST extends AbstractST {
         if (Environment.isKRaftModeEnabled()) {
             logSettingKafka.getSpec().setZookeeper(null);
             gcLoggingKafka.getSpec().setZookeeper(null);
-
-            if (!Environment.isUnidirectionalTopicOperatorEnabled()) {
-                logSettingKafka.getSpec().getEntityOperator().setTopicOperator(null);
-                gcLoggingKafka.getSpec().getEntityOperator().setTopicOperator(null);
-            }
         }
         resourceManager.createResourceWithoutWait(logSettingKafka, gcLoggingKafka);
 

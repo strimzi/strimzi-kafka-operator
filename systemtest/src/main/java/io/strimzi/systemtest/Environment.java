@@ -307,10 +307,6 @@ public class Environment {
         return STRIMZI_USE_NODE_POOLS_IN_TESTS;
     }
 
-    public static boolean isUnidirectionalTopicOperatorEnabled() {
-        return !STRIMZI_FEATURE_GATES.contains(TestConstants.DONT_USE_UNIDIRECTIONAL_TOPIC_OPERATOR);
-    }
-
     /**
      * Determine whether separate roles mode for KafkaNodePools is used or not
      */

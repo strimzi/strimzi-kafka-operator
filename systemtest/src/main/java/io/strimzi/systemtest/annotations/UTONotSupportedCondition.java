@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest.annotations;
 
-import io.strimzi.systemtest.Environment;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.extension.ConditionEvaluationResult;
@@ -16,13 +15,7 @@ public class UTONotSupportedCondition implements ExecutionCondition {
 
     @Override
     public ConditionEvaluationResult evaluateExecutionCondition(ExtensionContext extensionContext) {
-        if (!Environment.isUnidirectionalTopicOperatorEnabled()) {
-            return ConditionEvaluationResult.enabled("Test is enabled");
-        } else {
-            LOGGER.warn("According to {} env variable with value: {}, the UnidirectionalTopicOperator is used, skipping this test because the scenario will not work with UTO",
-                Environment.STRIMZI_FEATURE_GATES_ENV,
-                Environment.STRIMZI_FEATURE_GATES);
-            return ConditionEvaluationResult.disabled("Test is disabled");
-        }
+        LOGGER.warn("Skipping this test because the scenario will not work with UTO");
+        return ConditionEvaluationResult.disabled("Test is disabled");
     }
 }
