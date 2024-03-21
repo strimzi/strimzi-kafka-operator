@@ -10,7 +10,11 @@ import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
 import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.model.Labels;
+import org.apache.logging.log4j.util.Strings;
 
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -218,9 +222,15 @@ public abstract class MetricsHolder {
                 Tag.of("cluster_name", clusterName == null ? "" : clusterName),
                 Tag.of("selector", selectorValue));
 
-        final String metricKey = namespace + "/" + kind;
+        final List<String> metricKeys = new ArrayList<>();
+        if (clusterName != null) {
+            metricKeys.add(clusterName);
+        }
+        metricKeys.add(namespace);
+        metricKeys.add(kind);
+
         final M metric = fn.apply(metricTags);
-        return metricMap.computeIfAbsent(metricKey, x -> metric);
+        return metricMap.computeIfAbsent(Strings.join(metricKeys, '/'),x -> metric);
     }
 
     /**
