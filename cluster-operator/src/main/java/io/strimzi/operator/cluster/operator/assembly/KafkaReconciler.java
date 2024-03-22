@@ -12,6 +12,7 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.micrometer.core.instrument.Tags;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
@@ -677,7 +678,7 @@ public class KafkaReconciler extends AbstractReconciler {
      */
     protected Future<Void> brokerConfigurationConfigMaps() {
         return MetricsAndLoggingUtils.metricsAndLogging(reconciliation, configMapOperator, kafka.logging(), kafka.metrics())
-                .compose(metricsAndLoggingCm -> perBrokerKafkaConfiguration(metricsAndLoggingCm));
+                .compose(this::perBrokerKafkaConfiguration);
     }
 
     /**
@@ -690,25 +691,31 @@ public class KafkaReconciler extends AbstractReconciler {
      */
     protected Future<Void> certificateSecret(Clock clock) {
         return secretOperator.getAsync(reconciliation.namespace(), KafkaResources.kafkaSecretName(reconciliation.name()))
-                .compose(oldSecret -> secretOperator
-                        .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.kafkaSecretName(reconciliation.name()),
-                                kafka.generateCertificatesSecret(clusterCa, clientsCa, listenerReconciliationResults.bootstrapDnsNames, listenerReconciliationResults.brokerDnsNames, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant())))
-                        .compose(patchResult -> {
-                            if (patchResult != null) {
-                                for (NodeRef node : kafka.nodes()) {
-                                    Secret secret = patchResult.resource();
-                                    String crtKey = Ca.SecretEntry.CRT.asKey(node.podName());
+                .compose(oldSecret -> {
+                    String secretName = KafkaResources.kafkaSecretName(reconciliation.name());
+                    Secret desiredSecret = kafka.generateCertificatesSecret(clusterCa, clientsCa, listenerReconciliationResults.bootstrapDnsNames, listenerReconciliationResults.brokerDnsNames,
+                            Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant()));
+                    LOGGER.debugCr(reconciliation, "Checking if Kafka certificate Secret {} exists in cluster {}", secretName, kafka.getCluster());
+                    return secretOperator
+                            .reconcile(reconciliation, reconciliation.namespace(), secretName, desiredSecret)
+                            .compose(patchResult -> {
+                                if (patchResult != null) {
+                                    LOGGER.debugCr(reconciliation, "Certificates operation {}", patchResult.getType());
+                                    for (NodeRef node : kafka.nodes()) {
+                                        Secret secret = patchResult.resource();
+                                        String crtKey = Ca.SecretEntry.CRT.asKey(node.podName());
 
-                                    kafkaServerCertificateHash.put(
-                                            node.nodeId(),
-                                            CertUtils.getCertificateThumbprint(secret, crtKey));
+                                        kafkaServerCertificateHash.put(
+                                                node.nodeId(),
+                                                CertUtils.getCertificateThumbprint(secret, crtKey));
 
-                                    emitCertificateSecretMetrics(patchResult.getType(), secret, crtKey);
+                                        emitCertificateSecretMetrics(patchResult.getType(), secret, crtKey);
+                                    }
                                 }
-                            }
 
-                            return Future.succeededFuture();
-                        }));
+                                return Future.succeededFuture();
+                            });
+                });
     }
 
     /**
@@ -724,9 +731,17 @@ public class KafkaReconciler extends AbstractReconciler {
             case CREATED, PATCHED, NOOP:
                 metrics.certificateExpiration(kafka.getCluster(), reconciliation.namespace()).set(
                         CertUtils.getCertificateExpirationDateEpoch(secret, crtKey));
+
+                LOGGER.infoCr(reconciliation, "Metrics {} for Kafka: {}/{} has been created/updated",
+                        MetricsHolder.METRICS_CERTIFICATE_EXPIRATION_MS, reconciliation.namespace(), kafka.getCluster());
                 break;
             case DELETED:
-                metrics.certificateExpiration(kafka.getCluster(), reconciliation.namespace()).set(0L);
+                Tags tags = metrics.getTags(kafka.getCluster(), reconciliation.namespace(), "Kafka");
+                metrics.removeMetric(MetricsHolder.METRICS_CERTIFICATE_EXPIRATION_MS, tags);
+
+                LOGGER.infoCr(reconciliation, "Metrics {} for Kafka: {}/{} has been removed",
+                        MetricsHolder.METRICS_CERTIFICATE_EXPIRATION_MS, reconciliation.namespace(), kafka.getCluster());
+
                 break;
             default:
                 // Intentionally left empty
