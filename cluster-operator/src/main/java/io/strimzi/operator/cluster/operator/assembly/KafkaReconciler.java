@@ -955,7 +955,7 @@ public class KafkaReconciler extends AbstractReconciler {
      * @return  Future which completes when the PVCs which should be deleted are deleted
      */
     protected Future<Void> deletePersistentClaims() {
-        List<String> expectedPvcs = kafka.generatePersistentVolumeClaims().stream().map(pvc -> pvc.getMetadata().getName()).toList();
+        List<String> expectedPvcs = kafka.generatePersistentVolumeClaims().stream().map(pvc -> pvc.getMetadata().getName()).collect(Collectors.toList());
         return super.deletePersistentClaims(expectedPvcs, kafka.getSelectorLabels());
     }
 

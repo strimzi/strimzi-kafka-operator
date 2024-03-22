@@ -11,6 +11,7 @@ import io.strimzi.operator.common.operator.resource.StorageClassOperator;
 import io.vertx.core.Future;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Class used for method relevant for reconciliation of Strimzi objects.
@@ -41,7 +42,7 @@ public abstract class AbstractReconciler {
     protected Future<Void> deletePersistentClaims(List<String> expectedPvcs, Labels selectorLabels) {
         return pvcOperator.listAsync(reconciliation.namespace(), selectorLabels)
                 .compose(pvcs -> {
-                    List<String> maybeDeletePvcs = pvcs.stream().map(pvc -> pvc.getMetadata().getName()).toList();
+                    List<String> maybeDeletePvcs = pvcs.stream().map(pvc -> pvc.getMetadata().getName()).collect(Collectors.toList());
                     return new PvcReconciler(reconciliation, pvcOperator, storageClassOperator)
                             .deletePersistentClaims(maybeDeletePvcs, expectedPvcs);
                 });
