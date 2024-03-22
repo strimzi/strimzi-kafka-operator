@@ -71,12 +71,14 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static io.strimzi.test.TestUtils.map;
 import static io.strimzi.test.TestUtils.waitFor;
 import static java.util.Collections.emptyMap;
+import static java.util.Collections.list;
 import static java.util.Collections.singletonList;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -2062,9 +2064,10 @@ public class ConnectorMockTest {
 
     @Test
     void testConnectorResourceMetricsScaledToZero(VertxTestContext context) {
-        String connectName = "cluster";
-        String connectorName = "connector";
+        final String connectName = "cluster";
+        final String connectorName = "connector";
 
+        LOGGER.info("Creating KafkaConnect resource");
         KafkaConnect kafkaConnect = new KafkaConnectBuilder()
                 .withNewMetadata()
                     .withNamespace(namespace)
@@ -2080,7 +2083,8 @@ public class ConnectorMockTest {
         Crds.kafkaConnectOperation(client).inNamespace(namespace).resource(kafkaConnect).create();
         waitForConnectReady(connectName);
 
-        KafkaConnector connector = defaultKafkaConnectorBuilder()
+        LOGGER.info("Creating KafkaConnector resource");
+        final KafkaConnector connector = defaultKafkaConnectorBuilder()
                 .editMetadata()
                     .withName(connectorName)
                     .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName)
@@ -2089,24 +2093,55 @@ public class ConnectorMockTest {
                 .build();
 
         Crds.kafkaConnectorOperation(client).inNamespace(namespace).resource(connector).create();
-        waitForConnectorNotReady(connectorName, "RuntimeException", "Kafka Connect cluster 'cluster' in namespace " + namespace + " has 0 replicas.");
+        waitForConnectorNotReady(connectorName, "RuntimeException", "Kafka Connect cluster '" + connectName + "' in namespace " + namespace + " has 0 replicas.");
 
-        MeterRegistry meterRegistry = metricsProvider.meterRegistry();
-        Tags tags = Tags.of("kind", KafkaConnector.RESOURCE_KIND, "namespace", namespace);
+        LOGGER.info("Fetching MeterRegistry");
+        final MeterRegistry meterRegistry = metricsProvider.meterRegistry();
+        final Tags tags = Tags.of("kind", KafkaConnector.RESOURCE_KIND, "namespace", namespace);
 
-        Promise<Void> reconciled = Promise.promise();
+        final Promise<Void> reconciled = Promise.promise();
+        LOGGER.info("Initiating reconcileAll operation");
         kafkaConnectOperator.reconcileAll("test", namespace, ignored -> reconciled.complete());
 
         Checkpoint async = context.checkpoint();
-        reconciled.future().onComplete(context.succeeding(v -> context.verify(() -> {
-            Gauge resources = meterRegistry.get("strimzi.resources").tags(tags).gauge();
-            assertThat(resources.value(), is(1.0));
+        reconciled.future().onComplete(context.succeeding(v -> {
+            LOGGER.info("Polling for condition before proceeding with assertions");
+            final AtomicInteger attempts = new AtomicInteger(0);
+            vertx.setPeriodic(1000, id -> {
+                if (attempts.incrementAndGet() > 30) { // Timeout after 30 seconds
+                    vertx.cancelTimer(id);
+                    LOGGER.error("Condition check timed out...");
+                    throw new RuntimeException("Condition check timed out");
+                } else if (checkConnectorResourceMetrics(meterRegistry, tags, 1.0, 0.0)) {
+                    vertx.cancelTimer(id);
+                    context.verify(() -> {
+                        // Perform your assertions here, after verification
+                        LOGGER.info("Test conditions verified, test passed");
+                        async.flag();
+                    });
+                } else {
+                    LOGGER.warn("Condition not met, continuing to poll...");
+                }
+            });
+        }));
+    }
 
-            kafkaConnectOperator.metrics().pausedConnectorsResourceCounter(namespace); // to create metric, otherwise MeterNotFoundException will be thrown
-            Gauge resourcesPaused = meterRegistry.get("strimzi.resources.paused").tags(tags).gauge();
-            assertThat(resourcesPaused.value(), is(0.0));
-            async.flag();
-        })));
+    /**
+     * Checks if the metrics for connector resources and paused connector resources match the expected values.
+     *
+     * @param meterRegistry             The registry containing the metrics.
+     * @param tags                      The tags used to identify the specific metrics.
+     * @param expectedResources         The expected number of connector resources.
+     * @param expectedPausedResources   The expected number of paused connector resources.
+     * @return                          {@code true} if the metrics match the expected values, {@code false} otherwise.
+     */
+    private boolean checkConnectorResourceMetrics(final MeterRegistry meterRegistry, final Tags tags,
+                                                  final double expectedResources, final double expectedPausedResources) {
+        final Gauge resources = meterRegistry.get("strimzi.resources").tags(tags).gauge();
+        final Gauge resourcesPaused = meterRegistry.get("strimzi.resources.paused").tags(tags).gauge();
+
+        // Check the conditions without asserting here
+        return resources.value() == expectedResources && resourcesPaused.value() == expectedPausedResources;
     }
 
     @Test
