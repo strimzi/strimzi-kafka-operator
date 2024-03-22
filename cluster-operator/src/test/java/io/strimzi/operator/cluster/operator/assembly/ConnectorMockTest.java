@@ -2063,9 +2063,10 @@ public class ConnectorMockTest {
 
     @Test
     void testConnectorResourceMetricsScaledToZero(VertxTestContext context) {
-        String connectName = "cluster";
-        String connectorName = "connector";
+        final String connectName = "cluster";
+        final String connectorName = "connector";
 
+        LOGGER.info("Creating KafkaConnect resource");
         KafkaConnect kafkaConnect = new KafkaConnectBuilder()
                 .withNewMetadata()
                     .withNamespace(namespace)
@@ -2081,7 +2082,8 @@ public class ConnectorMockTest {
         Crds.kafkaConnectOperation(client).inNamespace(namespace).resource(kafkaConnect).create();
         waitForConnectReady(connectName);
 
-        KafkaConnector connector = defaultKafkaConnectorBuilder()
+        LOGGER.info("Creating KafkaConnector resource");
+        final KafkaConnector connector = defaultKafkaConnectorBuilder()
                 .editMetadata()
                     .withName(connectorName)
                     .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName)
@@ -2090,12 +2092,14 @@ public class ConnectorMockTest {
                 .build();
 
         Crds.kafkaConnectorOperation(client).inNamespace(namespace).resource(connector).create();
-        waitForConnectorNotReady(connectorName, "RuntimeException", "Kafka Connect cluster 'cluster' in namespace " + namespace + " has 0 replicas.");
+        waitForConnectorNotReady(connectorName, "RuntimeException", "Kafka Connect cluster '" + connectName + "' in namespace " + namespace + " has 0 replicas.");
 
-        MeterRegistry meterRegistry = metricsProvider.meterRegistry();
-        Tags tags = Tags.of("kind", KafkaConnector.RESOURCE_KIND, "namespace", namespace);
+        LOGGER.info("Fetching MeterRegistry");
+        final MeterRegistry meterRegistry = metricsProvider.meterRegistry();
+        final Tags tags = Tags.of("kind", KafkaConnector.RESOURCE_KIND, "namespace", namespace);
 
-        Promise<Void> reconciled = Promise.promise();
+        final Promise<Void> reconciled = Promise.promise();
+        LOGGER.info("Initiating reconcileAll operation");
         kafkaConnectOperator.reconcileAll("test", namespace, ignored -> reconciled.complete());
 
         Checkpoint async = context.checkpoint();
