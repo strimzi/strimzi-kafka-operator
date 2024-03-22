@@ -34,6 +34,7 @@ import io.strimzi.operator.cluster.model.PodRevision;
 import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.metrics.MetricsHolder;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
@@ -696,18 +697,18 @@ public class StrimziPodSetControllerMockTest {
 
             Tag[] tags = new Tag[]{Tag.of("cluster_name", ""), Tag.of("kind", "StrimziPodSet"), Tag.of("namespace", namespace), Tag.of("selector", "selector=matching")};
 
-            assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "resources").meter().getId().getTags(), containsInAnyOrder(tags));
-            assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "resources").tag("kind", "StrimziPodSet").gauge().value(), is(1.0));
+            assertThat(registry.get(MetricsHolder.METRICS_RESOURCES).meter().getId().getTags(), containsInAnyOrder(tags));
+            assertThat(registry.get(MetricsHolder.METRICS_RESOURCES).tag("kind", "StrimziPodSet").gauge().value(), is(1.0));
 
-            assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations").meter().getId().getTags(), containsInAnyOrder(tags));
-            assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations").tag("kind", "StrimziPodSet").counter().count(), greaterThanOrEqualTo(3.0));
+            assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS).meter().getId().getTags(), containsInAnyOrder(tags));
+            assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS).tag("kind", "StrimziPodSet").counter().count(), greaterThanOrEqualTo(3.0));
 
-            assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.successful").meter().getId().getTags(), containsInAnyOrder(tags));
-            assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "StrimziPodSet").counter().count(), greaterThanOrEqualTo(3.0));
+            assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_SUCCESSFUL).meter().getId().getTags(), containsInAnyOrder(tags));
+            assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_SUCCESSFUL).tag("kind", "StrimziPodSet").counter().count(), greaterThanOrEqualTo(3.0));
 
-            assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").meter().getId().getTags(), containsInAnyOrder(tags));
-            assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "StrimziPodSet").timer().count(), greaterThanOrEqualTo(3L));
-            assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "StrimziPodSet").timer().totalTime(TimeUnit.MILLISECONDS), greaterThanOrEqualTo(0.0));
+            assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_DURATION).meter().getId().getTags(), containsInAnyOrder(tags));
+            assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_DURATION).tag("kind", "StrimziPodSet").timer().count(), greaterThanOrEqualTo(3L));
+            assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_DURATION).tag("kind", "StrimziPodSet").timer().totalTime(TimeUnit.MILLISECONDS), greaterThanOrEqualTo(0.0));
 
             // Delete the PodSet
             podSetOp().inNamespace(namespace).withName(podSetName).delete();
@@ -717,7 +718,7 @@ public class StrimziPodSetControllerMockTest {
                     "Wait for resource metric to be 0 again",
                     100,
                     1_000,
-                    () -> registry.get(AbstractOperator.METRICS_PREFIX + "resources").tag("kind", "StrimziPodSet").gauge().value() == 0.0,
+                    () -> registry.get(MetricsHolder.METRICS_RESOURCES).tag("kind", "StrimziPodSet").gauge().value() == 0.0,
                     () -> context.failNow("Resource metric did not returned to 0"));
 
             context.completeNow();

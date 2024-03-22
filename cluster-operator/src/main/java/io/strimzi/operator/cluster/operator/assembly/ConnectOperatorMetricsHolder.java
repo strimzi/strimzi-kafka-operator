@@ -59,7 +59,7 @@ public class ConnectOperatorMetricsHolder extends OperatorMetricsHolder {
      * @return  Metrics counter
      */
     public Counter connectorsFailedReconciliationsCounter(String namespace) {
-        return getCounter(namespace, KafkaConnector.RESOURCE_KIND, METRICS_PREFIX + "reconciliations.failed", metricsProvider, null, connectorsFailedReconciliationsCounterMap,
+        return getCounter(namespace, KafkaConnector.RESOURCE_KIND, METRICS_RECONCILIATIONS_FAILED, metricsProvider, null, connectorsFailedReconciliationsCounterMap,
                 "Number of reconciliations done by the operator for individual resources which failed");
     }
 
@@ -71,7 +71,7 @@ public class ConnectOperatorMetricsHolder extends OperatorMetricsHolder {
      * @return  Metrics counter
      */
     public Counter connectorsSuccessfulReconciliationsCounter(String namespace) {
-        return getCounter(namespace, KafkaConnector.RESOURCE_KIND, METRICS_PREFIX + "reconciliations.successful", metricsProvider, null, connectorsSuccessfulReconciliationsCounterMap,
+        return getCounter(namespace, KafkaConnector.RESOURCE_KIND, METRICS_RECONCILIATIONS_SUCCESSFUL, metricsProvider, null, connectorsSuccessfulReconciliationsCounterMap,
                 "Number of reconciliations done by the operator for individual resources which were successful");
     }
 
@@ -95,7 +95,7 @@ public class ConnectOperatorMetricsHolder extends OperatorMetricsHolder {
      * @return  Metrics counter
      */
     public AtomicInteger connectorsResourceCounter(String namespace) {
-        return getGauge(namespace, KafkaConnector.RESOURCE_KIND, METRICS_PREFIX + "resources",
+        return getGauge(namespace, KafkaConnector.RESOURCE_KIND, METRICS_RESOURCES,
                 metricsProvider, null, connectorsResourceCounterMap,
                 "Number of custom resources the operator sees");
     }
@@ -108,7 +108,7 @@ public class ConnectOperatorMetricsHolder extends OperatorMetricsHolder {
      * @return  Metrics counter
      */
     public AtomicInteger pausedConnectorsResourceCounter(String namespace) {
-        return getGauge(namespace, KafkaConnector.RESOURCE_KIND, METRICS_PREFIX + "resources.paused",
+        return getGauge(namespace, KafkaConnector.RESOURCE_KIND, METRICS_RESOURCES_PAUSED,
                 metricsProvider, null, pausedConnectorsResourceCounterMap,
                 "Number of connectors the connect operator sees but does not reconcile due to paused reconciliations");
     }
@@ -121,7 +121,7 @@ public class ConnectOperatorMetricsHolder extends OperatorMetricsHolder {
      * @return  Metrics timer
      */
     public Timer connectorsReconciliationsTimer(String namespace) {
-        return getTimer(namespace, KafkaConnector.RESOURCE_KIND, METRICS_PREFIX + "reconciliations.duration",
+        return getTimer(namespace, KafkaConnector.RESOURCE_KIND, METRICS_RECONCILIATIONS_DURATION,
                 metricsProvider, null, connectorsReconciliationsTimerMap,
                 "The time the reconciliation takes to complete");
     }
