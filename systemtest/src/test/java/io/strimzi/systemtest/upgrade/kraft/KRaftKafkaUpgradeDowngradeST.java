@@ -13,7 +13,6 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
-import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -47,16 +46,12 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 @Tag(KRAFT_UPGRADE)
 public class KRaftKafkaUpgradeDowngradeST extends AbstractKRaftUpgradeST {
     private static final Logger LOGGER = LogManager.getLogger(KRaftKafkaUpgradeDowngradeST.class);
-
-    private final String continuousTopicName = "continuous-topic";
     private final int continuousClientsMessageCount = 500;
 
     @IsolatedTest
     void testKafkaClusterUpgrade() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext(), TestConstants.CO_NAMESPACE);
         List<TestKafkaVersion> sortedVersions = TestKafkaVersion.getSupportedKafkaVersions();
-
-        String producerName = clusterName + "-producer";
-        String consumerName = clusterName + "-consumer";
 
         for (int x = 0; x < sortedVersions.size() - 1; x++) {
             TestKafkaVersion initialVersion = sortedVersions.get(x);
@@ -65,19 +60,19 @@ public class KRaftKafkaUpgradeDowngradeST extends AbstractKRaftUpgradeST {
             // If it is an upgrade test we keep the metadata version as the lower version number
             String metadataVersion = initialVersion.metadataVersion();
 
-            runVersionChange(initialVersion, newVersion, producerName, consumerName, metadataVersion, 3, 3);
+            runVersionChange(initialVersion, newVersion, testStorage, metadataVersion, 3, 3);
         }
 
         // ##############################
         // Validate that continuous clients finished successfully
         // ##############################
-        ClientUtils.waitForClientsSuccess(producerName, consumerName, TestConstants.CO_NAMESPACE, continuousClientsMessageCount);
+        ClientUtils.waitForClientsSuccess(testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), TestConstants.CO_NAMESPACE, continuousClientsMessageCount);
         // ##############################
     }
 
     @IsolatedTest
     void testKafkaClusterDowngrade() {
-        final TestStorage testStorage = storageMap.get(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext(), TestConstants.CO_NAMESPACE);
         List<TestKafkaVersion> sortedVersions = TestKafkaVersion.getSupportedKafkaVersions();
 
         for (int x = sortedVersions.size() - 1; x > 0; x--) {
@@ -86,34 +81,32 @@ public class KRaftKafkaUpgradeDowngradeST extends AbstractKRaftUpgradeST {
 
             // If it is a downgrade then we make sure that we are using the lowest metadataVersion from the whole list
             String metadataVersion = sortedVersions.get(0).metadataVersion();
-            runVersionChange(initialVersion, newVersion, testStorage.getProducerName(), testStorage.getConsumerName(), metadataVersion, 3, 3);
+            runVersionChange(initialVersion, newVersion, testStorage, metadataVersion, 3, 3);
         }
 
         // ##############################
         // Validate that continuous clients finished successfully
         // ##############################
-        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), TestConstants.CO_NAMESPACE, continuousClientsMessageCount);
+        ClientUtils.waitForClientsSuccess(testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), TestConstants.CO_NAMESPACE, continuousClientsMessageCount);
         // ##############################
     }
 
     @IsolatedTest
     void testUpgradeWithNoMetadataVersionSet() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext(), TestConstants.CO_NAMESPACE);
         List<TestKafkaVersion> sortedVersions = TestKafkaVersion.getSupportedKafkaVersions();
-
-        String producerName = clusterName + "-producer";
-        String consumerName = clusterName + "-consumer";
 
         for (int x = 0; x < sortedVersions.size() - 1; x++) {
             TestKafkaVersion initialVersion = sortedVersions.get(x);
             TestKafkaVersion newVersion = sortedVersions.get(x + 1);
 
-            runVersionChange(initialVersion, newVersion, producerName, consumerName, null, 3, 3);
+            runVersionChange(initialVersion, newVersion, testStorage, null, 3, 3);
         }
 
         // ##############################
         // Validate that continuous clients finished successfully
         // ##############################
-        ClientUtils.waitForClientsSuccess(producerName, consumerName, TestConstants.CO_NAMESPACE, continuousClientsMessageCount);
+        ClientUtils.waitForClientsSuccess(testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), TestConstants.CO_NAMESPACE, continuousClientsMessageCount);
         // ##############################
     }
 
@@ -131,7 +124,7 @@ public class KRaftKafkaUpgradeDowngradeST extends AbstractKRaftUpgradeST {
     }
 
     @SuppressWarnings({"checkstyle:MethodLength"})
-    void runVersionChange(TestKafkaVersion initialVersion, TestKafkaVersion newVersion, String producerName, String consumerName, String initMetadataVersion, int controllerReplicas, int brokerReplicas) {
+    void runVersionChange(TestKafkaVersion initialVersion, TestKafkaVersion newVersion, TestStorage testStorage, String initMetadataVersion, int controllerReplicas, int brokerReplicas) {
         boolean isUpgrade = initialVersion.isUpgrade(newVersion);
         Map<String, String> controllerPods;
         Map<String, String> brokerPods;
@@ -173,17 +166,13 @@ public class KRaftKafkaUpgradeDowngradeST extends AbstractKRaftUpgradeST {
             // Attach clients which will continuously produce/consume messages to/from Kafka brokers during rolling update
             // ##############################
             // Setup topic, which has 3 replicas and 2 min.isr to see if producer will be able to work during rolling update
-            resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(clusterName, continuousTopicName, 3, 3, 2, TestConstants.CO_NAMESPACE).build());
+            resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(clusterName, testStorage.getContinuousTopicName(), 3, 3, 2, TestConstants.CO_NAMESPACE).build());
             String producerAdditionConfiguration = "delivery.timeout.ms=20000\nrequest.timeout.ms=20000";
 
-            KafkaClients kafkaBasicClientJob = new KafkaClientsBuilder()
-                .withProducerName(producerName)
-                .withConsumerName(consumerName)
+            KafkaClients kafkaBasicClientJob = ClientUtils.getContinuousPlainClientBuilder(testStorage)
                 .withBootstrapAddress(KafkaResources.plainBootstrapAddress(clusterName))
-                .withTopicName(continuousTopicName)
                 .withMessageCount(continuousClientsMessageCount)
                 .withAdditionalConfig(producerAdditionConfiguration)
-                .withDelayMs(1000)
                 .build();
 
             resourceManager.createResourceWithWait(kafkaBasicClientJob.producerStrimzi());

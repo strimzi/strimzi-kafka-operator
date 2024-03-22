@@ -14,7 +14,6 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
-import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.NodePoolsConverter;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -125,7 +124,10 @@ public class CustomCaST extends AbstractST {
 
         LOGGER.info("All rounds of rolling update have been finished");
         // Try to produce messages
-        producerMessages(testStorage);
+        final KafkaClients kafkaBasicClientJob = ClientUtils.getInstantTlsClients(testStorage);
+        resourceManager.createResourceWithWait(KafkaUserTemplates.tlsUser(testStorage).build());
+        resourceManager.createResourceWithWait(kafkaBasicClientJob.producerTlsStrimzi(testStorage.getClusterName()));
+        ClientUtils.waitForClientSuccess(testStorage.getProducerName(), testStorage.getNamespaceName(), testStorage.getMessageCount());
 
         // Get new certificate secret and assert old value is still present
         clusterCaCertificateSecret = kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName()));
@@ -195,7 +197,10 @@ public class CustomCaST extends AbstractST {
         DeploymentUtils.waitForNoRollingUpdate(testStorage.getNamespaceName(), testStorage.getEoDeploymentName(), eoPod);
 
         // Try to produce messages
-        producerMessages(testStorage);
+        final KafkaClients kafkaBasicClientJob = ClientUtils.getInstantTlsClients(testStorage);
+        resourceManager.createResourceWithWait(KafkaUserTemplates.tlsUser(testStorage).build());
+        resourceManager.createResourceWithWait(kafkaBasicClientJob.producerTlsStrimzi(testStorage.getClusterName()));
+        ClientUtils.waitForClientSuccess(testStorage.getProducerName(), testStorage.getNamespaceName(), testStorage.getMessageCount());
     }
 
     /** This tests focuses on verifying the functionality of custom cluster and clients CAs.
@@ -273,20 +278,9 @@ public class CustomCaST extends AbstractST {
                 SystemTestCertManager.containsAllDN(userCert.getIssuerX500Principal().getName(), clientsCa.getSubjectDn()));
 
         LOGGER.info("Send and receive messages over TLS");
-
-        KafkaClients kafkaClients = new KafkaClientsBuilder()
-            .withProducerName(testStorage.getProducerName())
-            .withConsumerName(testStorage.getConsumerName())
-            .withNamespaceName(testStorage.getNamespaceName())
-            .withMessageCount(testStorage.getMessageCount())
-            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
-            .withTopicName(testStorage.getTopicName())
-            .withUsername(testStorage.getUsername())
-            .build();
-
-        LOGGER.info("Checking produced and consumed messages via TLS");
+        final KafkaClients kafkaClients = ClientUtils.getInstantTlsClients(testStorage);
         resourceManager.createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()), kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForClientsSuccess(testStorage, false);
+        ClientUtils.waitForInstantClientSuccess(testStorage);
     }
 
     /** This tests focuses on invoking certificate renewal without renewing the ClusterCA.
@@ -611,29 +605,6 @@ public class CustomCaST extends AbstractST {
                 .endClusterCa()
             .endSpec()
             .build());
-    }
-
-    /**
-     * This method is a helping tool for producing and consuming messages based on context and testStorage variables.
-     * @param testStorage is required for containing client variables used to build a client job.
-     */
-    private void producerMessages(final TestStorage testStorage) {
-
-        final KafkaClients kafkaBasicClientJob = new KafkaClientsBuilder()
-            .withNamespaceName(testStorage.getNamespaceName())
-            .withProducerName(testStorage.getProducerName())
-            .withConsumerName(testStorage.getClusterName())
-            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
-            .withTopicName(testStorage.getTopicName())
-            .withUsername(testStorage.getUsername())
-            .withMessageCount(testStorage.getMessageCount())
-            .withDelayMs(10)
-            .build();
-
-        resourceManager.createResourceWithWait(KafkaUserTemplates.tlsUser(testStorage).build());
-        resourceManager.createResourceWithWait(kafkaBasicClientJob.producerTlsStrimzi(testStorage.getClusterName()));
-
-        ClientUtils.waitForClientSuccess(testStorage.getProducerName(), testStorage.getNamespaceName(), testStorage.getMessageCount());
     }
 
     @BeforeAll
