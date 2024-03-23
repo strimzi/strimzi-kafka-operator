@@ -16,6 +16,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.strimzi.api.annotations.ApiVersion;
 import io.strimzi.api.annotations.KubeVersion;
@@ -825,6 +826,10 @@ class CrdGenerator {
             schema = nf.objectNode();
             schema.put("type", "object");
             schema.putObject("patternProperties").set("-?[0-9]+", buildArraySchema(crApiVersion, property, new PropertyType(null, ((ParameterizedType) propertyType.getGenericType()).getActualTypeArguments()[1]), description));
+        } else if (propertyType.getGenericType() instanceof ParameterizedType
+                && ((ParameterizedType) propertyType.getGenericType()).getRawType().equals(Map.class)
+                && isMapOfTypes(propertyType, String.class, Quantity.class)) {
+            schema = buildQuantityTypeSchema();
         } else if (Schema.isJsonScalarType(returnType)
                 || Map.class.equals(returnType)) {            
             schema = addSimpleTypeConstraints(crApiVersion, buildBasicTypeSchema(property, returnType), property);
@@ -863,7 +868,7 @@ class CrdGenerator {
                 || long.class.equals(elementType)) {
             itemResult.put("type", "integer");
         } else if (Map.class.equals(elementType)) {
-            if (isStringStringMap(propertyType)) {
+            if (isMapOfTypes(propertyType, String.class, String.class)) {
                 preserveUnknownStringFields(itemResult);
             } else {
                 preserveUnknownFields(itemResult);
@@ -885,9 +890,16 @@ class CrdGenerator {
         return result;
     }
 
-    private boolean isStringStringMap(PropertyType propertyType) {
+    /**
+     * Utility method to check if Map key-value pair match specific types.
+     * @param propertyType property to check
+     * @param keyType key Class
+     * @param valueType value Class
+     * @return true if key-value types are equal to specified types, false otherwise.
+     */
+    private boolean isMapOfTypes(PropertyType propertyType, Class<?> keyType, Class<?> valueType) {
         java.lang.reflect.Type[] types = ((ParameterizedType) propertyType.getGenericType()).getActualTypeArguments();
-        return String.class.equals(types[0]) && String.class.equals(types[1]);
+        return keyType.equals(types[0]) && valueType.equals(types[1]);
     }
 
     private ObjectNode buildBasicTypeSchema(Property element, Class type) {
@@ -898,7 +910,7 @@ class CrdGenerator {
         if (typeAnno == null) {
             typeName = typeName(type);
             if (Map.class.equals(type)) {
-                if (isStringStringMap(element.getType())) {
+                if (isMapOfTypes(element.getType(), String.class, String.class)) {
                     preserveUnknownStringFields(result);
                 } else {
                     preserveUnknownFields(result);
@@ -909,6 +921,22 @@ class CrdGenerator {
         }
         result.put("type", typeName);
 
+        return result;
+    }
+
+    private ObjectNode buildQuantityTypeSchema() {
+        ObjectNode result = nf.objectNode();
+
+        if (crdApiVersion.compareTo(V1) < 0)
+            return result;
+
+        ObjectNode additionalProperties = result.putObject("additionalProperties");
+        ArrayNode anyOf = additionalProperties.putArray("anyOf");
+        anyOf.addObject().put("type", "integer");
+        anyOf.addObject().put("type", "string");
+        additionalProperties.put("pattern", "^(\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))))?$");
+        additionalProperties.put("x-kubernetes-int-or-string", true);
+        result.put("type", "object");
         return result;
     }
 
