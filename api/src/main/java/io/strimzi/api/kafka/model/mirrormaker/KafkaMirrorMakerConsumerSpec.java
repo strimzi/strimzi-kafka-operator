@@ -24,7 +24,8 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"numStreams", "offsetCommitInterval", "bootstrapServers", "groupId", "logging"})
+@JsonPropertyOrder({"numStreams", "offsetCommitInterval", "bootstrapServers", "groupId", "logging",
+    "authentication", "tls", "config", "livenessProbe", "readinessProbe"})
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaMirrorMakerConsumerSpec extends KafkaMirrorMakerClientSpec {

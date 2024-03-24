@@ -177,26 +177,24 @@ public class NetworkPoliciesST extends AbstractST {
         );
 
         LOGGER.info("Initialize producers and consumers with access to the Kafka using plain and tls listeners");
-        KafkaClients kafkaClientsWithAccessPlain = ClientUtils.getDefaultClientBuilder(testStorage)
+        final KafkaClients kafkaClientsWithAccessPlain = ClientUtils.getInstantScramShaOverPlainClientBuilder(testStorage)
             .withProducerName(producerNameAccessedPlain)
             .withConsumerName(consumerNameAccessedPlain)
             .withTopicName(topicNameAccessedPlain)
             .build();
-        KafkaClients kafkaClientsWithAccessTls = ClientUtils.getDefaultClientBuilder(testStorage)
-            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
+        final KafkaClients kafkaClientsWithAccessTls = ClientUtils.getInstantScramShaOverTlsClientBuilder(testStorage)
             .withProducerName(producerNameAccessedTls)
             .withConsumerName(consumerNameAccessedTls)
             .withTopicName(topicNameAccessedTls)
             .build();
 
         LOGGER.info("Initialize producers and consumers without access (denied) to the Kafka using plain and tls listeners");
-        KafkaClients kafkaClientsWithoutAccessPlain = ClientUtils.getDefaultClientBuilder(testStorage)
+        final KafkaClients kafkaClientsWithoutAccessPlain = ClientUtils.getInstantScramShaOverPlainClientBuilder(testStorage)
             .withProducerName(producerNameDeniedPlain)
             .withConsumerName(consumerNameDeniedPlain)
             .withTopicName(topicNameDeniedPlain)
             .build();
-        KafkaClients kafkaClientsWithoutAccessTls = ClientUtils.getDefaultClientBuilder(testStorage)
-            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
+        final KafkaClients kafkaClientsWithoutAccessTls = ClientUtils.getInstantScramShaOverTlsClientBuilder(testStorage)
             .withProducerName(producerNameDeniedTls)
             .withConsumerName(consumerNameDeniedTls)
             .withTopicName(topicNameDeniedTls)

@@ -321,10 +321,6 @@ For more information on image environment variables, see link:{BookURLDeploying}
 | STRIMZI_DEFAULT_USER_OPERATOR_IMAGE
 | {DockerUserOperator}
 
-| Entity Operator TLS sidecar
-| STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE
-| {DockerEntityOperatorStunnel}
-
 | Kafka Exporter
 | STRIMZI_DEFAULT_KAFKA_EXPORTER_IMAGE
 | {DockerKafka}
@@ -576,10 +572,10 @@ For such containers, the requested memory should be significantly higher than th
 ----
 jvmOptions:
   "-XX":
-    "UseG1GC": true
-    "MaxGCPauseMillis": 20
-    "InitiatingHeapOccupancyPercent": 35
-    "ExplicitGCInvokesConcurrent": true
+    "UseG1GC": "true"
+    "MaxGCPauseMillis": "20"
+    "InitiatingHeapOccupancyPercent": "35"
+    "ExplicitGCInvokesConcurrent": "true"
 ----
 
 .JVM options resulting from the `-XX` configuration

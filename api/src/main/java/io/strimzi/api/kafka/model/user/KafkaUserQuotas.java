@@ -6,6 +6,7 @@
 package io.strimzi.api.kafka.model.user;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
@@ -30,6 +31,7 @@ import static java.util.Collections.emptyMap;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonPropertyOrder({"producerByteRate", "consumerByteRate", "requestPercentage", "controllerMutationRate"})
 @EqualsAndHashCode
 @ToString
 public class KafkaUserQuotas implements UnknownPropertyPreserving, Serializable {

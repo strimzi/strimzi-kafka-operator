@@ -21,7 +21,7 @@ import lombok.ToString;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "conditions", "observedGeneration", "url" })
+@JsonPropertyOrder({ "conditions", "observedGeneration", "url", "replicas", "labelSelector" })
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaBridgeStatus extends Status {

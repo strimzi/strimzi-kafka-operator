@@ -25,8 +25,8 @@ Alpha and beta stage features are removed if they do not prove to be useful.
 * The `UseKRaft` feature gate is in beta stage and is enabled by default.
 * The `KafkaNodePools` feature gate moved to GA stage in Strimzi 0.41.
   It is now permanently enabled and cannot be disabled.
-* The `UnidirectionalTopicOperator` feature gate is in beta stage and is enabled by default.
-  It is expected to move to GA phase and be always enabled from Strimzi 0.41.
+* The `UnidirectionalTopicOperator` feature gate moved to GA stage in Strimzi 0.41.
+  It is now permanently enabled and cannot be disabled.
 
 NOTE: Feature gates might be removed when they reach GA. This means that the feature was incorporated into the Strimzi core features and can no longer be disabled.
 
@@ -72,7 +72,7 @@ NOTE: Feature gates might be removed when they reach GA. This means that the fea
 ¦`UnidirectionalTopicOperator`
 ¦0.36
 ¦0.39
-¦0.41 (planned)
+¦0.41
 
 |===
 

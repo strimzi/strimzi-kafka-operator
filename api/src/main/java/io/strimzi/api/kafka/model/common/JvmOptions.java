@@ -6,6 +6,7 @@ package io.strimzi.api.kafka.model.common;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Pattern;
 import io.sundr.builder.annotations.Buildable;
@@ -25,6 +26,7 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+@JsonPropertyOrder({"-XX", "-Xmx", "-Xms", "gcLoggingEnabled", "javaSystemProperties"})
 @EqualsAndHashCode
 @ToString
 public class JvmOptions implements UnknownPropertyPreserving, Serializable {
@@ -42,6 +44,7 @@ public class JvmOptions implements UnknownPropertyPreserving, Serializable {
     private boolean gcLoggingEnabled = DEFAULT_GC_LOGGING_ENABLED;
     private List<SystemProperty> javaSystemProperties;
     private Map<String, String> xx;
+
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @JsonProperty("-Xmx")

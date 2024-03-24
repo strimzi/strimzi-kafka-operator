@@ -56,18 +56,7 @@ spec:
 If more than one `KafkaTopic` resource refers to the same Kafka topic, the resource that was created first is considered to be the one managing the topic. 
 The status of the newer resources is updated to indicate a conflict, and their `Ready` status is changed to `False`.
 
-If a Kafka client application, such as Kafka Streams, automatically creates topics with invalid Kubernetes resource names, the Topic Operator generates a valid `metadata.name` when used in bidirectional mode. 
-It replaces invalid characters and appends a hash to the name. 
-However, this behavior does not apply in unidirectional mode.
-
-.Example of replacing an invalid topic name
-[source,yaml,subs="attributes+"]
-----
-apiVersion: {KafkaTopicApiVersion}
-kind: KafkaTopic
-metadata:
-  name: my-topic---c55e57fe2546a33f9e603caf57165db4072e827e
-  # ...
-----
+A Kafka client application, such as Kafka Streams, can automatically create topics with invalid Kubernetes resource names.
+If you want to manage these topics, you must create `KafkaTopic` resources with a different `.metadata.name`, as shown in the previous example.
 
 NOTE: For more information on the requirements for identifiers and names in a cluster, refer to the Kubernetes documentation link:https://kubernetes.io/docs/concepts/overview/working-with-objects/names[Object Names and IDs^].

@@ -24,7 +24,7 @@ import java.util.List;
 @JsonPropertyOrder({"version", "replicas", "image", "connectCluster",
     "clusters", "mirrors", "resources", "livenessProbe", "readinessProbe",
     "jvmOptions", "jmxOptions", "affinity", "tolerations", "logging",
-    "clientRackInitImage", "rack", "metrics", "tracing",
+    "clientRackInitImage", "rack", "metricsConfig", "tracing",
     "template", "externalConfiguration" })
 @EqualsAndHashCode(callSuper = true, doNotUseGetters = true)
 @ToString(callSuper = true)

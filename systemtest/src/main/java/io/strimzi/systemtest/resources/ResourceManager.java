@@ -183,14 +183,6 @@ public class ResourceManager {
                         resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName());
             }
 
-            if (Environment.isKRaftModeEnabled() && !Environment.isUnidirectionalTopicOperatorEnabled()) {
-                if (Objects.equals(resource.getKind(), KafkaTopic.RESOURCE_KIND)) {
-                    // Do not create KafkaTopic when KRaft is enabled
-                    LOGGER.warn("KafkaTopic: {}/{} will not be created, because Topic Operator is not enabled with KRaft mode", resource.getMetadata().getNamespace(), resource.getMetadata().getName());
-                    continue;
-                }
-            }
-
             labelResource(resource);
 
             // adding test.suite and test.case labels to the PodTemplate

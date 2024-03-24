@@ -127,6 +127,8 @@ public interface PodSecurityProvider {
      *
      * @return  Security context which will be set for the TLS sidecar container
      */
+    @Deprecated
+    @SuppressWarnings("unused")
     default SecurityContext entityOperatorTlsSidecarContainerSecurityContext(ContainerSecurityProviderContext context) {
         return securityContextOrNull(context);
     }

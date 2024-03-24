@@ -74,6 +74,15 @@ Examples of the `KafkaNodePool` resources can be found in the xref:config-exampl
 
 If your cluster already uses `KafkaNodePool` custom resources, and you wish to downgrade to an older version of Strimzi that does not support them or with the `KafkaNodePools` feature gate disabled, you must first migrate from `KafkaNodePool` custom resources to managing Kafka nodes using only `Kafka` custom resources.
 
+[id='ref-operator-unidirectional-topic-operator-feature-gate-{context}']
+=== UnidirectionalTopicOperator feature gate
+
+The `UnidirectionalTopicOperator` feature gate introduced a unidirectional topic management mode for creating Kafka topics using the `KafkaTopic` resource.
+Unidirectional mode is compatible with using KRaft for cluster management.
+With unidirectional mode, you create Kafka topics using the `KafkaTopic` resource, which are then managed by the Topic Operator.
+Any configuration changes to a topic outside the `KafkaTopic` resource are reverted.
+For more information on topic management, see xref:ref-operator-topic-str[].
+
 == Stable feature gates (Beta)
 
 Stable feature gates have reached a beta level of maturity, and are generally enabled by default for all users.
@@ -97,30 +106,12 @@ The `Kafka` custom resource using KRaft mode must also have the annotation `stri
 
 Currently, the KRaft mode in Strimzi has the following major limitations:
 
-* Moving from Kafka clusters with ZooKeeper to KRaft clusters or the other way around is not supported.
-* Only the _Unidirectional_ Topic Operator is supported in KRaft mode.
-  The _Bidirectional_ Topic Operator is not supported and when the `UnidirectionalTopicOperator` feature gate is disabled, the `spec.entityOperator.topicOperator` property *must be removed* from the `Kafka` custom resource.
 * JBOD storage is not supported. 
   The `type: jbod` storage can be used, but the JBOD array can contain only one disk.
 * Scaling of KRaft controller-only nodes up or down is not supported.
 
 .Disabling the UseKRaft feature gate
 To disable the `UseKRaft` feature gate, specify `-UseKRaft` in the `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.
-
-[id='ref-operator-unidirectional-topic-operator-feature-gate-{context}']
-=== UnidirectionalTopicOperator feature gate
-
-The `UnidirectionalTopicOperator` feature gate has a default state of _enabled_.
-
-The `UnidirectionalTopicOperator` feature gate introduces a unidirectional topic management mode for creating Kafka topics using the `KafkaTopic` resource.
-Unidirectional mode is compatible with using KRaft for cluster management.
-With unidirectional mode, you create Kafka topics using the `KafkaTopic` resource, which are then managed by the Topic Operator.
-Any configuration changes to a topic outside the `KafkaTopic` resource are reverted.
-For more information on topic management, see xref:ref-operator-topic-str[].
-
-.Disabling the `UnidirectionalTopicOperator` feature gate
-
-To disable the `UnidirectionalTopicOperator` feature gate, specify `-UnidirectionalTopicOperator` in the `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.
 
 == Early access feature gates (Alpha)
 
