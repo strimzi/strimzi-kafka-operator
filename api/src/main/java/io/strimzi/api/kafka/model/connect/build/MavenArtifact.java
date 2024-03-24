@@ -21,7 +21,7 @@ import lombok.ToString;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "repository", "group", "artifact", "version" })
+@JsonPropertyOrder({ "type", "repository", "group", "artifact", "version", "insecure" })
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class MavenArtifact extends Artifact {

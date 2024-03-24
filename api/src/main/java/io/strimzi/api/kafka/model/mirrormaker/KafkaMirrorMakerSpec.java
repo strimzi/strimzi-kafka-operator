@@ -38,7 +38,7 @@ import lombok.ToString;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
     "version", "replicas", "image", "consumer", "producer", "resources", "whitelist", "include", "jvmOptions",
-    "logging", "metricsConfig", "tracing", "template"})
+    "logging", "metricsConfig", "tracing", "template", "livenessProbe", "readinessProbe"})
 @OneOf({@OneOf.Alternative(@OneOf.Alternative.Property("include")), @OneOf.Alternative(@OneOf.Alternative.Property("whitelist"))})
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)

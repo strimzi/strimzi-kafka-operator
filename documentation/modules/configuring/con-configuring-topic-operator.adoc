@@ -8,9 +8,6 @@
 [role="_abstract"]
 Use `topicOperator` properties in `Kafka.spec.entityOperator` to configure the Topic Operator.
 
-NOTE: If you are using unidirectional topic management, which is enabled by default, the following properties are not used and are ignored: `Kafka.spec.entityOperator.topicOperator.zookeeperSessionTimeoutSeconds` and `Kafka.spec.entityOperator.topicOperator.topicMetadataMaxAttempts`.
-For more information on unidirectional topic management, refer to xref:ref-operator-topic-{context}[].
-
 The following properties are supported:
 
 `watchedNamespace`::
@@ -20,16 +17,6 @@ Default is the namespace where the Kafka cluster is deployed.
 `reconciliationIntervalSeconds`::
 The interval between periodic reconciliations in seconds.
 Default `120`.
-
-`zookeeperSessionTimeoutSeconds`::
-The ZooKeeper session timeout in seconds.
-Default `18`.
-
-`topicMetadataMaxAttempts`::
-The number of attempts at getting topic metadata from Kafka.
-The time between each attempt is defined as an exponential back-off.
-Consider increasing this value when topic creation might take more time due to the number of partitions or replicas.
-Default `6`.
 
 `image`::
 The `image` property can be used to configure the container image which is used.

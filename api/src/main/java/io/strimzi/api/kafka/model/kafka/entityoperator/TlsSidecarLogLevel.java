@@ -7,6 +7,7 @@ package io.strimzi.api.kafka.model.kafka.entityoperator;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
+@Deprecated
 public enum TlsSidecarLogLevel {
 
     EMERG,

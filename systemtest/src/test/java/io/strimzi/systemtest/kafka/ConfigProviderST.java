@@ -12,13 +12,11 @@ import io.fabric8.kubernetes.api.model.rbac.RoleBuilder;
 import io.fabric8.kubernetes.api.model.rbac.RoleRefBuilder;
 import io.fabric8.kubernetes.api.model.rbac.SubjectBuilder;
 import io.strimzi.api.kafka.model.connect.KafkaConnect;
-import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
-import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.NodePoolsConverter;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -47,7 +45,6 @@ public class ConfigProviderST extends AbstractST {
     @ParallelNamespaceTest
     void testConnectWithConnectorUsingConfigAndEnvProvider() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
-        final String producerName = "producer-" + ClientUtils.generateRandomConsumerGroup();
         final String customFileSinkPath = "/tmp/my-own-path.txt";
 
         resourceManager.createResourceWithWait(
@@ -150,19 +147,11 @@ public class ConfigProviderST extends AbstractST {
             .endSpec()
             .build());
 
-        KafkaClients kafkaBasicClientJob = new KafkaClientsBuilder()
-            .withProducerName(producerName)
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
-            .withTopicName(testStorage.getTopicName())
-            .withMessageCount(testStorage.getMessageCount())
-            .withDelayMs(0)
-            .withNamespaceName(testStorage.getNamespaceName())
-            .build();
-
+        final KafkaClients kafkaBasicClientJob = ClientUtils.getInstantPlainClients(testStorage);
         resourceManager.createResourceWithWait(kafkaBasicClientJob.producerStrimzi());
 
         String kafkaConnectPodName = kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
-        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), kafkaConnectPodName, customFileSinkPath, "Hello-world - 99");
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), kafkaConnectPodName, customFileSinkPath, testStorage.getMessageCount());
     }
 
     @BeforeAll

@@ -15,7 +15,6 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.annotations.KRaftWithoutUTONotSupported;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.enums.CustomResourceStatus;
 import io.strimzi.systemtest.resources.NodePoolsConverter;
@@ -143,7 +142,6 @@ public class ReconciliationST extends AbstractST {
 
     @ParallelNamespaceTest
     @Tag(CRUISE_CONTROL)
-    @KRaftWithoutUTONotSupported
     void testPauseReconciliationInKafkaRebalanceAndTopic() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 

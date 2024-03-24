@@ -6,11 +6,8 @@
 = Deploying the standalone Topic Operator
 
 [role="_abstract"]
-This procedure shows how to deploy the Topic Operator in unidirectional mode as a standalone component for topic management.
+This procedure shows how to deploy the Topic Operator as a standalone component for topic management.
 You can use a standalone Topic Operator with a Kafka cluster that is not managed by the Cluster Operator.
-Unidirectional topic management maintains topics solely through `KafkaTopic` resources.
-For more information on unidirectional topic management, see xref:ref-operator-topic-{context}[].
-Alternate configuration is also shown for deploying the Topic Operator in bidirectional mode.
 
 Standalone deployment files are provided with Strimzi.
 Use the `05-Deployment-strimzi-topic-operator.yaml` deployment file to deploy the Topic Operator.
@@ -184,106 +181,3 @@ strimzi-topic-operator  1/1    1           1
 +
 `READY` shows the number of replicas that are ready/expected.
 The deployment is successful when the `AVAILABLE` output shows `1`.
-
-== Deploying the standalone Topic Operator for bidirectional topic management
-
-Bidirectional topic management requires ZooKeeper for cluster management, and maintains topics through `KafkaTopic` resources and within the Kafka cluster. 
-If you want to switch to using the Topic Operator in this mode, follow these steps to deploy the standalone Topic Operator.
-
-NOTE: As the feature gate enabling the Topic Operator to run in unidirectional mode progresses to General Availability, bidirectional mode will be phased out. This transition is aimed at enhancing the user experience, particularly in supporting Kafka in KRaft mode. 
-
-. Undeploy the current standalone Topic Operator.
-+
-Retain the `KafkaTopic` resources, which are picked up by the Topic Operator when it is deployed again.
-
-. Edit the `Deployment` configuration for the standalone Topic Operator to include ZooKeeper-related environment variables:
-+
-* `STRIMZI_ZOOKEEPER_CONNECT`
-* `STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS`
-* `TC_ZK_CONNECTION_TIMEOUT_MS`
-* `STRIMZI_USE_ZOOKEEPER_TOPIC_STORE`
-+
-It is the presence or absence of the ZooKeeper variables that defines whether the bidirectional Topic Operator is used.
-Unidirectional topic management does not use ZooKeeper.
-If ZooKeeper environment variables are not present, the unidirectional Topic Operator is used.
-Otherwise, the bidirectional Topic Operator is used. 
-+
-Other environment variables that are not used in unidirectional mode can be added if required:
-+
-* `STRIMZI_REASSIGN_THROTTLE`
-* `STRIMZI_REASSIGN_VERIFY_INTERVAL_MS`
-* `STRIMZI_TOPIC_METADATA_MAX_ATTEMPTS`
-* `STRIMZI_TOPICS_PATH`
-* `STRIMZI_STORE_TOPIC`
-* `STRIMZI_STORE_NAME`
-* `STRIMZI_APPLICATION_ID`
-* `STRIMZI_STALE_RESULT_TIMEOUT_MS`
-+
-.Example standalone Topic Operator deployment configuration for bidirectional topic management
-[source,shell,subs=+quotes]
-----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: strimzi-topic-operator
-  labels:
-    app: strimzi
-spec:
-  # ...
-  template:
-    # ...
-    spec:
-      # ...
-      containers:
-        - name: strimzi-topic-operator
-          # ...
-          env:
-            - name: STRIMZI_NAMESPACE
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.namespace
-            - name: STRIMZI_KAFKA_BOOTSTRAP_SERVERS
-              value: my-kafka-bootstrap-address:9092
-            - name: STRIMZI_RESOURCE_LABELS
-              value: "strimzi.io/cluster=my-cluster"
-            - name: STRIMZI_ZOOKEEPER_CONNECT # <1>
-              value: my-cluster-zookeeper-client:2181
-            - name: STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS # <2>
-              value: "18000"
-            - name: STRIMZI_TOPIC_METADATA_MAX_ATTEMPTS # <3>
-              value: "6"
-            - name: STRIMZI_FULL_RECONCILIATION_INTERVAL_MS
-              value: "120000"
-            - name: STRIMZI_LOG_LEVEL
-              value: INFO
-            - name: STRIMZI_TLS_ENABLED
-              value: "false"
-            - name: STRIMZI_JAVA_OPTS
-              value: "-Xmx=512M -Xms=256M"
-            - name: STRIMZI_JAVA_SYSTEM_PROPERTIES
-              value: "-Djavax.net.debug=verbose -DpropertyName=value"
-            - name: STRIMZI_PUBLIC_CA
-              value: "false"
-            - name: STRIMZI_TLS_AUTH_ENABLED
-              value: "false"
-            - name: STRIMZI_SASL_ENABLED
-              value: "false"
-            - name: STRIMZI_SASL_USERNAME
-              value: "admin"
-            - name: STRIMZI_SASL_PASSWORD
-              value: "password"
-            - name: STRIMZI_SASL_MECHANISM
-              value: "scram-sha-512"
-            - name: STRIMZI_SECURITY_PROTOCOL
-              value: "SSL"
-----
-<1> (ZooKeeper) The host and port pair of the address to connect to the ZooKeeper cluster.
-This must be the same ZooKeeper cluster that your Kafka cluster is using.
-<2> (ZooKeeper) The ZooKeeper session timeout, in milliseconds.
-The default is `18000` (18 seconds).
-<3> The number of attempts at getting topic metadata from Kafka.
-The time between each attempt is defined as an exponential backoff.
-Consider increasing this value when topic creation takes more time due to the number of partitions or replicas.
-The default is `6` attempts.
-
-. Apply the changes to the `Deployment` configuration to deploy the Topic Operator.

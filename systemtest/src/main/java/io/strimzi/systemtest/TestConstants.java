@@ -37,7 +37,8 @@ public interface TestConstants {
 
     long API_CRUISE_CONTROL_POLL = Duration.ofSeconds(5).toMillis();
     long API_CRUISE_CONTROL_TIMEOUT = Duration.ofMinutes(10).toMillis();
-    long GLOBAL_CRUISE_CONTROL_TIMEOUT = Duration.ofMinutes(2).toMillis();
+    long GLOBAL_CRUISE_CONTROL_TIMEOUT = Duration.ofMinutes(4).toMillis();
+    long CRUISE_CONTROL_TRAIN_MODEL_TIMEOUT = Duration.ofMinutes(8).toMillis();
 
     long OLM_UPGRADE_INSTALL_PLAN_TIMEOUT = Duration.ofMinutes(15).toMillis();
     long OLM_UPGRADE_INSTALL_PLAN_POLL = Duration.ofMinutes(1).toMillis();
@@ -132,7 +133,6 @@ public interface TestConstants {
     String TO_IMAGE = "STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE";
     String UO_IMAGE = "STRIMZI_DEFAULT_USER_OPERATOR_IMAGE";
     String KAFKA_INIT_IMAGE = "STRIMZI_DEFAULT_KAFKA_INIT_IMAGE";
-    String TLS_SIDECAR_EO_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE";
     String KAFKA_MIRROR_MAKER_2_IMAGE_MAP = "STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES";
     String KAFKA_CONNECT_IMAGE_MAP = "STRIMZI_KAFKA_CONNECT_IMAGES";
     /**
@@ -214,8 +214,6 @@ public interface TestConstants {
     String DONT_USE_KRAFT_MODE = "-UseKRaft";
     // kept for upgrade/downgrade tests in KRaft
     String USE_KRAFT_MODE = "+UseKRaft";
-    String DONT_USE_UNIDIRECTIONAL_TOPIC_OPERATOR = "-UnidirectionalTopicOperator";
-    String USE_UNIDIRECTIONAL_TOPIC_OPERATOR = "+UnidirectionalTopicOperator";
 
     /**
      * Default value which allows execution of tests with any tags
@@ -397,11 +395,15 @@ public interface TestConstants {
      */
     String ROUTE = "route";
 
-
     /**
      * Tag for tests that focus on migration from ZK to KRaft
      */
     String MIGRATION = "migration";
+
+    /**
+     * Tag for tests that uses Strimzi quotas plugin
+     */
+    String QUOTAS_PLUGIN = "quotasplugin";
 
     /**
      * Tag for tests, without ARM,AARCH64 support
@@ -451,6 +453,7 @@ public interface TestConstants {
 
     // Count of test messages that needs to be sent during the test
     int MESSAGE_COUNT = 100;
+    int CONTINUOUS_MESSAGE_COUNT = 200;
 
     /**
      * Auxiliary variable for cluster operator deployment
@@ -469,12 +472,15 @@ public interface TestConstants {
     String TARGET_BROKER_POOL_KEY = "TARGET_BROKER_POOL";
     String TARGET_CONTROLLER_POOL_KEY = "TARGET_CONTROLLER_POOL";
     String TOPIC_KEY = "TOPIC_NAME";
+    String CONTINUOUS_TOPIC_KEY = "CONTINUOUS_TOPIC_NAME";
     String TARGET_TOPIC_KEY = "TARGET_TOPIC_NAME";
     String MIRRORED_SOURCE_TOPIC_KEY = "MIRRORED_SOURCE_TOPIC_NAME";
     String STREAM_TOPIC_KEY = "STREAM_TOPIC_NAME";
     String SCRAPER_KEY = "SCRAPER_NAME";
     String PRODUCER_KEY = "PRODUCER_NAME";
+    String CONTINUOUS_PRODUCER_KEY = "CONTINUOUS_PRODUCER_NAME";
     String CONSUMER_KEY = "CONSUMER_NAME";
+    String CONTINUOUS_CONSUMER_KEY = "CONTINUOUS_CONSUMER_NAME";
     String ADMIN_KEY = "ADMIN_NAME";
     String USER_NAME_KEY = "USER_NAME";
     String SOURCE_USER_NAME_KEY = "SOURCE_USER_NAME";
@@ -495,6 +501,7 @@ public interface TestConstants {
     String KAFKA_CONNECT_SELECTOR_KEY = "KAFKA_CONNECT_SELECTOR";
     String MM2_SELECTOR_KEY = "MM2_SELECTOR";
     String MESSAGE_COUNT_KEY = "MESSAGE_COUNT";
+    String CONTINUOUS_MESSAGE_COUNT_KEY = "CONTINUOUS_MESSAGE_COUNT";
     String TEST_EXECUTION_START_TIME_KEY = "TEST_EXECUTION_START_TIME";
 
     /**

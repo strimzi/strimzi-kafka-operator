@@ -33,7 +33,7 @@ import java.util.Map;
 @JsonPropertyOrder({
     "image", "groupRegex", "topicRegex", 
     "groupExcludeRegex", "topicExcludeRegex",
-    "resources", "logging",
+    "resources", "logging", "livenessProbe", "readinessProbe",
     "enableSaramaLogging", "showAllOffsets", "template"})
 @EqualsAndHashCode
 @ToString
@@ -53,6 +53,7 @@ public class KafkaExporterSpec implements HasLivenessProbe, HasReadinessProbe, U
     private boolean enableSaramaLogging;
     private boolean showAllOffsets = true;
     private KafkaExporterTemplate template;
+
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("The container image used for the Kafka Exporter pods. "

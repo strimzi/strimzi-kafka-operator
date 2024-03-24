@@ -9,7 +9,7 @@ ARG strimzi_version
 ARG TARGETOS
 ARG TARGETARCH
 
-RUN microdnf --setopt=install_weak_deps=0 --setopt=tsflags=nodocs install gettext nmap-ncat stunnel net-tools unzip hostname findutils tar \
+RUN microdnf --setopt=install_weak_deps=0 --setopt=tsflags=nodocs install gettext nmap-ncat net-tools unzip hostname findutils tar \
     && microdnf clean all
 
 # Add kafka user with UID 1001
@@ -89,13 +89,6 @@ ENV CRUISE_CONTROL_HOME=/opt/cruise-control
 RUN mkdir $CRUISE_CONTROL_HOME
 COPY tmp/cc/ ${CRUISE_CONTROL_HOME}/libs/
 COPY ./cruise-control-scripts $CRUISE_CONTROL_HOME
-
-#####
-# Add Stunnel
-#####
-ENV STUNNEL_HOME=/opt/stunnel
-RUN mkdir $STUNNEL_HOME && mkdir -p -m g+rw /usr/local/var/run/
-COPY ./stunnel-scripts/ $STUNNEL_HOME
 
 WORKDIR $KAFKA_HOME
 

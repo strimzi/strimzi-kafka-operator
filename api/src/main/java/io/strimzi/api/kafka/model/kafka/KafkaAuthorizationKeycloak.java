@@ -28,8 +28,8 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"type", "clientId", "tokenEndpointUri",
     "tlsTrustedCertificates", "disableTlsHostnameVerification",
-    "delegateToKafkaAcls", "grantsRefreshPeriodSeconds", "grantsRefreshPoolSize",
-    "grantsMaxIdleSeconds", "grantsGcPeriodSeconds", "grantsAlwaysLatest", "superUsers",
+    "delegateToKafkaAcls", "grantsRefreshPeriodSeconds", "grantsRefreshPoolSize", "grantsMaxIdleTimeSeconds",
+    "grantsMaxIdleSeconds", "grantsGcPeriodSeconds", "grantsAlwaysLatest", "KafkaAuthorizationKeycloak", "superUsers",
     "connectTimeoutSeconds", "readTimeoutSeconds", "httpRetries", "enableMetrics", "includeAcceptHeader"})
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)

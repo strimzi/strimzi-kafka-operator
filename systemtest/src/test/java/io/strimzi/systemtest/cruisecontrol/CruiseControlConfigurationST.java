@@ -10,7 +10,6 @@ import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlSpec;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlSpecBuilder;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.resources.NodePoolsConverter;
@@ -92,11 +91,11 @@ public class CruiseControlConfigurationST extends AbstractST {
         LOGGER.info("Verifying that there is no configuration to CruiseControl metric reporter in Kafka ConfigMap");
         assertThrows(WaitException.class, () -> CruiseControlUtils.verifyCruiseControlMetricReporterConfigurationInKafkaConfigMapIsPresent(CruiseControlUtils.getKafkaCruiseControlMetricsReporterConfiguration(testStorage.getNamespaceName(), testStorage.getClusterName())));
 
-        // https://github.com/strimzi/strimzi-kafka-operator/issues/8864
-        if (!Environment.isKRaftModeEnabled() && !Environment.isUnidirectionalTopicOperatorEnabled()) {
+        // TODO https://github.com/strimzi/strimzi-kafka-operator/issues/8864
+        /*if (!Environment.isKRaftModeEnabled()) {
             LOGGER.info("Cruise Control Topics will not be deleted and will stay in the Kafka cluster");
             CruiseControlUtils.verifyThatCruiseControlTopicsArePresent(testStorage.getNamespaceName(), defaultBrokerReplicaCount);
-        }
+        }*/
 
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> {
             LOGGER.info("Adding CruiseControl to the classic Kafka");
@@ -108,12 +107,11 @@ public class CruiseControlConfigurationST extends AbstractST {
         LOGGER.info("Verifying that configuration of CruiseControl metric reporter is present in Kafka ConfigMap");
         CruiseControlUtils.verifyCruiseControlMetricReporterConfigurationInKafkaConfigMapIsPresent(CruiseControlUtils.getKafkaCruiseControlMetricsReporterConfiguration(testStorage.getNamespaceName(), testStorage.getClusterName()));
 
-        // https://github.com/strimzi/strimzi-kafka-operator/issues/8864
-        if (!Environment.isKRaftModeEnabled() && !Environment.isUnidirectionalTopicOperatorEnabled()) {
+        // TODO https://github.com/strimzi/strimzi-kafka-operator/issues/8864
+        /*if (!Environment.isKRaftModeEnabled()) {
             LOGGER.info("Verifying that {} Topics are created after CC is instantiated", TestConstants.CRUISE_CONTROL_NAME);
-
             CruiseControlUtils.verifyThatCruiseControlTopicsArePresent(testStorage.getNamespaceName(), defaultBrokerReplicaCount);
-        }
+        }*/
     }
 
     @ParallelNamespaceTest

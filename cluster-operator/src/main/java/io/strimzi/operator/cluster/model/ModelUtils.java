@@ -8,7 +8,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.AffinityBuilder;
-import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.NodeSelectorRequirement;
 import io.fabric8.kubernetes.api.model.NodeSelectorRequirementBuilder;
@@ -22,8 +21,6 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.common.CertificateAuthority;
 import io.strimzi.api.kafka.model.kafka.Storage;
-import io.strimzi.api.kafka.model.kafka.entityoperator.TlsSidecar;
-import io.strimzi.api.kafka.model.kafka.entityoperator.TlsSidecarLogLevel;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.InvalidResourceException;
@@ -46,7 +43,6 @@ public class ModelUtils {
     private ModelUtils() {}
 
     protected static final ReconciliationLogger LOGGER = ReconciliationLogger.create(ModelUtils.class.getName());
-    protected static final String TLS_SIDECAR_LOG_LEVEL = "TLS_SIDECAR_LOG_LEVEL";
 
     /**
      * Extract certificate validity days from cluster CA configuration
@@ -89,12 +85,6 @@ public class ModelUtils {
     public static String defaultResourceLabels(String cluster) {
         return String.format("%s=%s",
                 Labels.STRIMZI_CLUSTER_LABEL, cluster);
-    }
-
-    static EnvVar tlsSidecarLogEnvVar(TlsSidecar tlsSidecar) {
-        return ContainerUtils.createEnvVar(TLS_SIDECAR_LOG_LEVEL,
-                (tlsSidecar != null && tlsSidecar.getLogLevel() != null ?
-                        tlsSidecar.getLogLevel() : TlsSidecarLogLevel.NOTICE).toValue());
     }
 
     /**

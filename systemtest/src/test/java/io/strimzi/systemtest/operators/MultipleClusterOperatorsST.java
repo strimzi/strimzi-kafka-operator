@@ -9,7 +9,7 @@ import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.strimzi.api.kafka.model.connect.KafkaConnect;
 import io.strimzi.api.kafka.model.connector.KafkaConnector;
 import io.strimzi.api.kafka.model.kafka.Kafka;
-import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalance;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
@@ -20,7 +20,6 @@ import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
-import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.metrics.MetricsCollector;
 import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.systemtest.resources.NodePoolsConverter;
@@ -43,6 +42,7 @@ import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaRebalanceUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.specific.MetricsUtils;
 import org.apache.logging.log4j.LogManager;
@@ -201,19 +201,11 @@ public class MultipleClusterOperatorsST extends AbstractST {
             .endSpec()
             .build());
 
-        KafkaClients basicClients = new KafkaClientsBuilder()
-            .withNamespaceName(testStorage.getNamespaceName())
-            .withProducerName(testStorage.getProducerName())
-            .withConsumerName(testStorage.getConsumerName())
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
-            .withTopicName(testStorage.getTopicName())
-            .withMessageCount(testStorage.getMessageCount())
-            .build();
-
+        final KafkaClients basicClients = ClientUtils.getInstantPlainClients(testStorage);
         resourceManager.createResourceWithWait(basicClients.producerStrimzi());
         ClientUtils.waitForClientSuccess(testStorage.getProducerName(), testStorage.getNamespaceName(), testStorage.getMessageCount());
 
-        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), kafkaConnectPodName, TestConstants.DEFAULT_SINK_FILE_PATH, "Hello-world - 99");
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), kafkaConnectPodName, TestConstants.DEFAULT_SINK_FILE_PATH, testStorage.getMessageCount());
 
         LOGGER.info("Verifying that all operands in Namespace: {} are managed by Cluster Operator: {}", testStorage.getNamespaceName(), FIRST_CO_NAME);
         MetricsUtils.assertMetricResourcesHigherThanOrEqualTo(firstCoMetricsCollector, Kafka.RESOURCE_KIND, 1);
@@ -238,24 +230,23 @@ public class MultipleClusterOperatorsST extends AbstractST {
      *  1. - Deploy 2 Cluster Operators in the same namespace, with additional env variable 'STRIMZI_LEADER_ELECTION_LEASE_NAME'.
      *     - Cluster Operators are successfully deployed.
      *  2. - Set up scrapers and metric collectors for first Cluster Operators.
-     *     - Mentioned resources are successfully set up.
      *  3. - Deploy Kafka Cluster with 3 Kafka replicas and label 'app.kubernetes.io/operator' pointing to the first Cluster Operator.
-     *     - Kafka is deployed.
-     *  4. - Modify Kafka custom resource, by removing its 'app.kubernetes.io/operator' and changing number of replicas to 4
+     *  4. - Change Kafka's label selector 'app.kubernetes.io/operator' to point to not existing Cluster Operator.
+     *     - Kafka Cluster is no longer controlled by any Cluster Operator.
+     *  5. - Modify Kafka custom resource, by increasing number of replicas from 3 to 4.
      *     - Kafka is not scaled to 4 replicas.
-     *  5. - Deploy Kafka Rebalance without 'app.kubernetes.io/operator' label.
+     *  6. - Deploy Kafka Rebalance without 'app.kubernetes.io/operator' label.
      *     - For a stable period of time, Kafka Rebalance is ignored as well.
-     *  6. - Modify Kafka Rebalance labels 'second-strimzi-cluster-operator' to point to Cluster Operator and
-     *     - Messages are produced and later handled correctly by the Connector.
-     *  7. - Management of Kafka is switched to the second Cluster Operator by modifying value of label 'app.kubernetes.io/operator'.
-     *     - Management is modified, and reballance finally takes place.
-     *  8. - Verify that Operators operate expected operands.
+     *  7. - Change Kafka's label selector 'app.kubernetes.io/operator' to point to the second Cluster Operator.
+     *     - Second Cluster Operator now operates Kafka Cluster and increases its replica count to 4.
+     *  8. - Cruise Control Pod is rolled as there is increase in Kafka replica count.
+     *     - Rebalance finally takes place.
+     *  9. - Verify that Operators operate expected operands.
      *     - Operators operate expected operands.
      *
      * @usecase
      *  - cluster-operator-metrics
      *  - cluster-operator-watcher
-     *  - connect
      *  - kafka
      *  - labels
      *  - metrics
@@ -285,7 +276,7 @@ public class MultipleClusterOperatorsST extends AbstractST {
         // allowing NetworkPolicies for all scraper Pods to all CO Pods
         NetworkPolicyResource.allowNetworkPolicySettingsForClusterOperator(testStorage.getNamespaceName());
 
-        LOGGER.info("Deploying Kafka with {} selector of {}", FIRST_CO_NAME, FIRST_CO_SELECTOR);
+        LOGGER.info("Deploying Kafka with cruise control and with {} selector of {}", FIRST_CO_NAME, FIRST_CO_SELECTOR);
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
                 KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
@@ -298,6 +289,8 @@ public class MultipleClusterOperatorsST extends AbstractST {
                 .withNamespace(testStorage.getNamespaceName())
             .endMetadata()
             .build());
+
+        final Map<String, String> kafkaCCSnapshot = DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), CruiseControlResources.componentName(testStorage.getClusterName()));
 
         LOGGER.info("Removing CR selector from Kafka and increasing number of replicas to 4, new Pod should not appear");
         if (Environment.isKafkaNodePoolsEnabled()) {
@@ -348,8 +341,12 @@ public class MultipleClusterOperatorsST extends AbstractST {
 
         LOGGER.info("Waiting for Kafka to scales Pods to {}", scaleTo);
         RollingUpdateUtils.waitForComponentAndPodsReady(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), scaleTo);
-
         assertThat(PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector()).size(), is(scaleTo));
+
+        LOGGER.info("Waiting for CC Pod to roll, because there is change in kafka replication factor");
+        DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), CruiseControlResources.componentName(testStorage.getClusterName()), 1, kafkaCCSnapshot);
+
+        KafkaUtils.waitForClusterStability(testStorage.getNamespaceName(), testStorage.getClusterName());
 
         KafkaRebalanceUtils.doRebalancingProcess(new Reconciliation("test", KafkaRebalance.RESOURCE_KIND, testStorage.getNamespaceName(), testStorage.getClusterName()), testStorage.getNamespaceName(), testStorage.getClusterName());
 

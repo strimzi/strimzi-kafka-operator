@@ -6,17 +6,16 @@
 = Using the partition reassignment tool
 
 [role="_abstract"]
-When scaling a Kafka cluster, you may need to add or remove brokers and update the distribution of partitions or the replication factor of topics. 
-To update partitions and topics, you can use the `kafka-reassign-partitions.sh` tool.
+You can use the `kafka-reassign-partitions.sh` tool for the following:
 
-Neither the Strimzi Cruise Control integration nor the Topic Operator support changing the replication factor of a topic. 
-However, you can change the replication factor of a topic using the `kafka-reassign-partitions.sh` tool.
+* Adding or removing brokers
+* Reassigning partitions across brokers
+* Changing the replication factor of topics 
 
-The tool can also be used to reassign partitions and balance the distribution of partitions across brokers to improve performance.
-However, it is recommended to use xref:cruise-control-concepts-str[Cruise Control for automated partition reassignments and cluster rebalancing]. 
+However, while `kafka-reassign-partitions.sh` supports these operations, it is generally easier with Cruise Control. 
 Cruise Control can move topics from one broker to another without any downtime, and it is the most efficient way to reassign partitions.
 
-It is recommended to run the `kafka-reassign-partitions.sh` tool as a separate interactive pod rather than within the broker container.
+To use the `kafka-reassign-partitions.sh` tool, run it as a separate interactive pod rather than within the broker container.
 Running the Kafka `bin/` scripts within the broker container may cause a JVM to start with the same settings as the Kafka broker, which can potentially cause disruptions.
 By running the `kafka-reassign-partitions.sh` tool in a separate pod, you can avoid this issue.
 Running a pod with the `-ti` option creates an interactive pod with a terminal for running shell commands inside the pod.

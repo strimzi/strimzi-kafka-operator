@@ -7,11 +7,11 @@
 
 [role="_abstract"]
 When the `delete.topic.enable` configuration in Kafka is set to `false`, topics cannot be deleted. 
-This might be required in certain scenarios, but it introduces a consideration when using the Topic Operator in unidirectional mode.
+This might be required in certain scenarios, but it introduces a consideration when using the Topic Operator.
 
 As topics cannot be deleted, finalizers added to the metadata of a `KafkaTopic` resource to control topic deletion are never removed by the Topic Operator (though they can be xref:con-removing-topic-finalizers-{context}[removed manually]). 
 Similarly, any Custom Resource Definitions (CRDs) or namespaces associated with topics cannot be deleted.
 
 Before configuring `delete.topic.enable=false`, assess these implications to ensure it aligns with your specific requirements.
 
-NOTE: To avoid using finalizers, you can set the `STRIMZI_USE_FINALIZERS` Topic Operator environment variable to `false`. 
+NOTE: To avoid using finalizers, you can set the `STRIMZI_USE_FINALIZERS` Topic Operator environment variable to `false`.

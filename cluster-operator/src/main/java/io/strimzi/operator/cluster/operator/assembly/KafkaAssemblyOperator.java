@@ -228,7 +228,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
             // Validates features which are currently not supported in KRaft mode
             try {
-                KRaftUtils.validateKafkaCrForKRaft(reconcileState.kafkaAssembly.getSpec(), featureGates.unidirectionalTopicOperatorEnabled());
+                KRaftUtils.validateKafkaCrForKRaft(reconcileState.kafkaAssembly.getSpec());
                 // Validations which need to be done only in full KRaft and not during a migration (i.e. ZooKeeper removal)
                 if (kafkaMetadataConfigState.isKRaft()) {
                     KRaftUtils.kraftWarnings(reconcileState.kafkaAssembly, reconcileState.kafkaStatus);
