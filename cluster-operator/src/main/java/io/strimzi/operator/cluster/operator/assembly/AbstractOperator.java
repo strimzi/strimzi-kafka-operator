@@ -67,7 +67,7 @@ public abstract class AbstractOperator<
         P extends Spec,
         S extends Status,
         O extends AbstractWatchableStatusedNamespacedResourceOperator<?, T, ?, ?>>
-        implements Operator {
+            implements Operator {
 
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(AbstractOperator.class);
 
@@ -180,13 +180,13 @@ public abstract class AbstractOperator<
         Timer.Sample reconciliationTimerSample = Timer.start(metrics().metricsProvider().meterRegistry());
 
         Future<Void> handler = withLock(reconciliation, LOCK_TIMEOUT_MS, () ->
-                resourceOperator.getAsync(namespace, name)
-                        .compose(cr -> cr != null ? reconcileResource(reconciliation, cr) : reconcileDeletion(reconciliation)));
+            resourceOperator.getAsync(namespace, name)
+                    .compose(cr -> cr != null ? reconcileResource(reconciliation, cr) : reconcileDeletion(reconciliation)));
 
         Promise<Void> result = Promise.promise();
         handler.onComplete(reconcileResult ->
-                callSafely(reconciliation, () -> handleResult(reconciliation, reconcileResult, reconciliationTimerSample))
-                        .onComplete(handleSafely(reconciliation, ignored -> result.handle(reconcileResult))));
+            callSafely(reconciliation, () -> handleResult(reconciliation, reconcileResult, reconciliationTimerSample))
+                    .onComplete(handleSafely(reconciliation, ignored -> result.handle(reconcileResult))));
 
         return result.future();
     }
@@ -342,9 +342,9 @@ public abstract class AbstractOperator<
                                         LOGGER.debugCr(reconciliation, "Completed status update");
                                         return Future.succeededFuture();
                                     }, error -> {
-                                        LOGGER.errorCr(reconciliation, "Failed to update status", error);
-                                        return Future.failedFuture(error);
-                                    });
+                                            LOGGER.errorCr(reconciliation, "Failed to update status", error);
+                                            return Future.failedFuture(error);
+                                        });
                         } else {
                             LOGGER.debugCr(reconciliation, "Status did not change");
                             return Future.succeededFuture();
@@ -354,9 +354,9 @@ public abstract class AbstractOperator<
                         return Future.failedFuture("Current " + reconciliation.kind() + " resource with name " + name + " not found");
                     }
                 }, error -> {
-                    LOGGER.errorCr(reconciliation, "Failed to get the current {} resource and its status", reconciliation.kind(), error);
-                    return Future.failedFuture(error);
-                });
+                        LOGGER.errorCr(reconciliation, "Failed to get the current {} resource and its status", reconciliation.kind(), error);
+                        return Future.failedFuture(error);
+                    });
     }
 
     protected abstract S createStatus(T cr);
@@ -394,9 +394,9 @@ public abstract class AbstractOperator<
                 long timerId = vertx.setPeriodic(PROGRESS_WARNING, timer -> LOGGER.infoCr(reconciliation, "Reconciliation is in progress"));
 
                 callSafely(reconciliation, callable)
-                        .onSuccess(handleSafely(reconciliation, handler::complete))
-                        .onFailure(handleSafely(reconciliation, handler::fail))
-                        .eventually(() -> releaseLockAndTimer(reconciliation, lock, lockName, timerId));
+                    .onSuccess(handleSafely(reconciliation, handler::complete))
+                    .onFailure(handleSafely(reconciliation, handler::fail))
+                    .eventually(() -> releaseLockAndTimer(reconciliation, lock, lockName, timerId));
             } else {
                 LOGGER.debugCr(reconciliation, "Failed to acquire lock {} within {}ms.", lockName, lockTimeoutMs);
                 handler.fail(new UnableToAcquireLockException());
