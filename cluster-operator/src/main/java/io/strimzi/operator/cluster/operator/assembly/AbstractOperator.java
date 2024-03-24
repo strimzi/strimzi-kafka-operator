@@ -56,12 +56,11 @@ import java.util.stream.Collectors;
  *
  * <li>add support for operator-side {@linkplain StatusUtils#validate(Reconciliation, CustomResource)} validation}.
  *     This can be used to automatically log warnings about source resources which used deprecated part of the CR API.
- * ą
+ *ą
  * </ul>
- *
  * @param <T> The Java representation of the Kubernetes resource, e.g. {@code Kafka} or {@code KafkaConnect}
  * @param <O> The "Resource Operator" for the source resource type. Typically, this will be some instantiation of
- *            {@link io.strimzi.operator.common.operator.resource.CrdOperator}.
+ *           {@link io.strimzi.operator.common.operator.resource.CrdOperator}.
  */
 public abstract class AbstractOperator<
         T extends CustomResource<P, S>,
@@ -90,11 +89,11 @@ public abstract class AbstractOperator<
      * OperatorMetricsHolder instance. This constructor is used by subclasses which want to use specialized metrics
      * ¨holder such as the subclasses dealing with KafkaConnector resources and their metrics.
      *
-     * @param vertx            Vert.x instance
-     * @param kind             Resource kind which will be operated by this operator
-     * @param resourceOperator Resource operator for given custom resource
-     * @param metrics          MetricsHolder for managing operator metrics
-     * @param selectorLabels   Selector labels for selecting custom resources which should be operated
+     * @param vertx             Vert.x instance
+     * @param kind              Resource kind which will be operated by this operator
+     * @param resourceOperator  Resource operator for given custom resource
+     * @param metrics           MetricsHolder for managing operator metrics
+     * @param selectorLabels    Selector labels for selecting custom resources which should be operated
      */
     public AbstractOperator(Vertx vertx, String kind, O resourceOperator, OperatorMetricsHolder metrics, Labels selectorLabels) {
         this.vertx = vertx;
@@ -109,11 +108,11 @@ public abstract class AbstractOperator<
      * MetricsProvider instance, which is used to create OperatorMetricsHolder inside the constructor. It is used by
      * subclasses which do not need a more specialized type of metrics holder.
      *
-     * @param vertx            Vert.x instance
-     * @param kind             Resource kind which will be operated by this operator
-     * @param resourceOperator Resource operator for given custom resource
-     * @param metricsProvider  Metrics provider which should be used to create the OperatorMetricsHolder instance
-     * @param selectorLabels   Selector labels for selecting custom resources which should be operated
+     * @param vertx             Vert.x instance
+     * @param kind              Resource kind which will be operated by this operator
+     * @param resourceOperator  Resource operator for given custom resource
+     * @param metricsProvider   Metrics provider which should be used to create the OperatorMetricsHolder instance
+     * @param selectorLabels    Selector labels for selecting custom resources which should be operated
      */
     public AbstractOperator(Vertx vertx, String kind, O resourceOperator, MetricsProvider metricsProvider, Labels selectorLabels) {
         this(vertx, kind, resourceOperator, new OperatorMetricsHolder(kind, selectorLabels, metricsProvider), selectorLabels);
@@ -125,7 +124,7 @@ public abstract class AbstractOperator<
     }
 
     @Override
-    public OperatorMetricsHolder metrics() {
+    public OperatorMetricsHolder metrics()   {
         return metrics;
     }
 
@@ -134,7 +133,7 @@ public abstract class AbstractOperator<
      * cluster {@code name}
      *
      * @param namespace The namespace containing the cluster
-     * @param name      The name of the cluster
+     * @param name The name of the cluster
      */
     /* test */ String getLockName(String namespace, String name) {
         return "lock::" + namespace + "::" + kind() + "::" + name;
@@ -145,9 +144,8 @@ public abstract class AbstractOperator<
      * This method can be called when the given {@code resource} has been created,
      * or updated and also at some regular interval while the resource continues to exist in Kubernetes.
      * The calling of this method does not imply that anything has actually changed.
-     *
      * @param reconciliation Uniquely identifies the reconciliation itself.
-     * @param resource       The resource to be created, or updated.
+     * @param resource The resource to be created, or updated.
      * @return A Future which is completed once the reconciliation of the given resource instance is complete.
      */
     protected abstract Future<S> createOrUpdate(Reconciliation reconciliation, T resource);
@@ -159,8 +157,9 @@ public abstract class AbstractOperator<
      * Such operators should return a Future which completes with {@code false}.
      * Operators which handle deletion themselves should return a Future which completes with {@code true}.
      *
-     * @param reconciliation Reconciliation marker
-     * @return Future which completes when the deletion is complete
+     * @param reconciliation    Reconciliation marker
+     *
+     * @return  Future which completes when the deletion is complete
      */
     protected abstract Future<Boolean> delete(Reconciliation reconciliation);
 
@@ -169,7 +168,6 @@ public abstract class AbstractOperator<
      * Reconciliation works by getting the assembly resource (e.g. {@code KafkaUser})
      * in the given namespace with the given name and
      * comparing with the corresponding resource.
-     *
      * @param reconciliation The reconciliation.
      * @return A Future which is completed with the result of the reconciliation.
      */
@@ -196,19 +194,19 @@ public abstract class AbstractOperator<
     /**
      * Reconcile assembly resources in the namespace given by {@code reconciliation} having the name
      * give by {@code reconciliation}.
-     * 
+     *
      * Reconciliation works by comparing the assembly resource given by the {@code cr} parameter
      * (e.g. a {@code KafkaUser} resource) with the corresponding resource(s) in the cluster.
      *
      * @param reconciliation The reconciliation.
-     * @param cr             The custom resource
+     * @param cr The custom resource
      * @return A Future which is completed with the result of the reconciliation.
      */
     Future<Void> reconcileResource(Reconciliation reconciliation, T cr) {
         String namespace = reconciliation.namespace();
         String name = reconciliation.name();
 
-        if (!Util.matchesSelector(selector(), cr)) {
+        if (!Util.matchesSelector(selector(), cr))  {
             // When the labels matching the selector are removed from the custom resource, a DELETE event is
             // triggered by the watch even through the custom resource might not match the watch labels anymore
             // and might not be really deleted. We have to filter these situations out and ignore the
@@ -317,11 +315,12 @@ public abstract class AbstractOperator<
      * the update only when there is any difference in non-timestamp fields.
      *
      * @param reconciliation the reconciliation identified
-     * @param desiredStatus  The KafkaStatus which should be set
-     * @return Future which completes when the status is updated
+     * @param desiredStatus The KafkaStatus which should be set
+     *
+     * @return  Future which completes when the status is updated
      */
     Future<Void> updateStatus(Reconciliation reconciliation, S desiredStatus) {
-        if (desiredStatus == null) {
+        if (desiredStatus == null)  {
             LOGGER.debugCr(reconciliation, "Desired status is null - status will not be updated");
             return Future.succeededFuture();
         }
@@ -366,8 +365,7 @@ public abstract class AbstractOperator<
      * The exception by which Futures returned by {@link #withLock(Reconciliation, long, Callable)} are failed when
      * the lock cannot be acquired within the timeout.
      */
-    static class UnableToAcquireLockException extends TimeoutException {
-    }
+    static class UnableToAcquireLockException extends TimeoutException { }
 
     /**
      * Acquire the lock for the resource implied by the {@code reconciliation}
@@ -375,10 +373,12 @@ public abstract class AbstractOperator<
      * Once the callable returns (or if it throws) release the lock and complete the returned Future.
      * If the lock cannot be acquired the given {@code callable} is not called and the returned Future is completed with {@link UnableToAcquireLockException}.
      *
-     * @param reconciliation Reconciliation marker
-     * @param callable       Function which will be called when the lock is acquired
-     * @param <T>            Type of the custom resource managed by this operator
-     * @return Future which completes when the callable is completed.
+     * @param reconciliation    Reconciliation marker
+     * @param callable          Function which will be called when the lock is acquired
+     *
+     * @param <T>   Type of the custom resource managed by this operator
+     *
+     * @return  Future which completes when the callable is completed.
      */
     protected final <T> Future<T> withLock(Reconciliation reconciliation, long lockTimeoutMs, Callable<Future<T>> callable) {
         Promise<T> handler = Promise.promise();
@@ -416,8 +416,9 @@ public abstract class AbstractOperator<
      * @param reconciliation the reconciliation being processed by
      *                       <code>callable</code>
      * @param callable       callable routine for processing the reconciliation
+     *
      * @return the result of <code>callable</code> or a failed <code>Future</code>
-     * when an exception is thrown
+     *         when an exception is thrown
      */
     private <C> Future<C> callSafely(Reconciliation reconciliation, Callable<Future<C>> callable) {
         try {
@@ -438,9 +439,10 @@ public abstract class AbstractOperator<
      * @param reconciliation the reconciliation being processed, the context of the
      *                       operation
      * @param handler        handler, for either success or failure
+     *
      * @return a proxy <code>Handler</code> that, when executed, will execute the
-     * provided handler, ensuring that unhandled exceptions are caught and
-     * logged.
+     *         provided handler, ensuring that unhandled exceptions are caught and
+     *         logged.
      */
     private <H> Handler<H> handleSafely(Reconciliation reconciliation, Handler<H> handler) {
         return result -> {
@@ -470,7 +472,6 @@ public abstract class AbstractOperator<
     /**
      * A selector to narrow the scope of the {@linkplain #createWatch(String) watch}
      * and {@linkplain #allResourceNames(String) query}.
-     *
      * @return A selector.
      */
     public LabelSelector selector() {
@@ -480,8 +481,9 @@ public abstract class AbstractOperator<
     /**
      * Create Kubernetes watch
      *
-     * @param namespace Namespace where to watch for resources
-     * @return A future which completes when the watcher has been created
+     * @param namespace     Namespace where to watch for resources
+     *
+     * @return  A future which completes when the watcher has been created
      */
     public Future<ReconnectingWatcher<T>> createWatch(String namespace) {
         return VertxUtil.async(vertx, () -> new ReconnectingWatcher<>(resourceOperator, kind(), namespace, selector(), this::eventHandler));
@@ -490,8 +492,8 @@ public abstract class AbstractOperator<
     /**
      * Event handler called when the watch receives an event.
      *
-     * @param action   An Action describing the type of the event
-     * @param resource The resource for which the event was triggered
+     * @param action    An Action describing the type of the event
+     * @param resource  The resource for which the event was triggered
      */
     private void eventHandler(Watcher.Action action, T resource) {
         String name = resource.getMetadata().getName();
@@ -560,7 +562,7 @@ public abstract class AbstractOperator<
      * of the custom resource.
      *
      * @param reconciliation reconciliation to use to update the resource state metric
-     * @param ready          if reconcile was successful and the resource is ready
+     * @param ready if reconcile was successful and the resource is ready
      */
     private Future<Void> updateResourceState(Reconciliation reconciliation, boolean ready, Throwable cause) {
         String key = reconciliation.namespace() + ":" + reconciliation.kind() + "/" + reconciliation.name();
