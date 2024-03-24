@@ -181,12 +181,12 @@ public abstract class AbstractOperator<
 
         Future<Void> handler = withLock(reconciliation, LOCK_TIMEOUT_MS, () ->
             resourceOperator.getAsync(namespace, name)
-                    .compose(cr -> cr != null ? reconcileResource(reconciliation, cr) : reconcileDeletion(reconciliation)));
+                .compose(cr -> cr != null ? reconcileResource(reconciliation, cr) : reconcileDeletion(reconciliation)));
 
         Promise<Void> result = Promise.promise();
         handler.onComplete(reconcileResult ->
             callSafely(reconciliation, () -> handleResult(reconciliation, reconcileResult, reconciliationTimerSample))
-                    .onComplete(handleSafely(reconciliation, ignored -> result.handle(reconcileResult))));
+                .onComplete(handleSafely(reconciliation, ignored -> result.handle(reconcileResult))));
 
         return result.future();
     }
