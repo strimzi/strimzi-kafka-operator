@@ -196,7 +196,7 @@ public abstract class AbstractOperator<
     /**
      * Reconcile assembly resources in the namespace given by {@code reconciliation} having the name
      * give by {@code reconciliation}.
-     * <p>
+     * 
      * Reconciliation works by comparing the assembly resource given by the {@code cr} parameter
      * (e.g. a {@code KafkaUser} resource) with the corresponding resource(s) in the cluster.
      *
@@ -582,7 +582,6 @@ public abstract class AbstractOperator<
                         Tag.of("resource-namespace", reconciliation.namespace())));
 
         if (removed) {
-            // remove metric so it can be re-added with new tags
             resourcesStateCounter.remove(key);
             LOGGER.debugCr(reconciliation, "Removed metric " + MetricsHolder.METRICS_PREFIX + "resource.state{}", key);
         }

@@ -12,7 +12,6 @@ import java.util.Optional;
  * @param <R>   Resource type for which the result is being indicated
  */
 public abstract class ReconcileResult<R> {
-
     /**
      * Type identifier for the ReconcileResult
      */

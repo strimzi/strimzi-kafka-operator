@@ -72,11 +72,13 @@ import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
 import io.strimzi.operator.common.operator.resource.NodeOperator;
 import io.strimzi.operator.common.operator.resource.PodDisruptionBudgetOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
+import io.strimzi.operator.common.operator.resource.PvcOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.RouteOperator;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
+import io.strimzi.operator.common.operator.resource.StorageClassOperator;
 import io.strimzi.operator.common.operator.resource.StrimziPodSetOperator;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -106,7 +108,7 @@ import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_SERVER_CERT_HA
  * and is also used to store the state between them.
  */
 @SuppressWarnings({"checkstyle:ClassFanOutComplexity"})
-public class KafkaReconciler extends AbstractReconciler {
+public class KafkaReconciler {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaReconciler.class.getName());
 
     // Various settings
@@ -120,6 +122,8 @@ public class KafkaReconciler extends AbstractReconciler {
     private final ImagePullPolicy imagePullPolicy;
     private final List<LocalObjectReference> imagePullSecrets;
 
+    // Objects used during the reconciliation
+    /* test */ final Reconciliation reconciliation;
     private final KafkaCluster kafka;
     private final List<KafkaNodePool> kafkaNodePoolCrs;
     private final ClusterCa clusterCa;
@@ -132,6 +136,8 @@ public class KafkaReconciler extends AbstractReconciler {
     private final SecretOperator secretOperator;
     private final ServiceAccountOperator serviceAccountOperator;
     private final ServiceOperator serviceOperator;
+    private final PvcOperator pvcOperator;
+    private final StorageClassOperator storageClassOperator;
     private final ConfigMapOperator configMapOperator;
     private final NetworkPolicyOperator networkPolicyOperator;
     private final PodDisruptionBudgetOperator podDisruptionBudgetOperator;
@@ -187,8 +193,7 @@ public class KafkaReconciler extends AbstractReconciler {
             KafkaMetadataStateManager kafkaMetadataStateManager,
             MetricsHolder metrics
     ) {
-        super(reconciliation, supplier.pvcOperations, supplier.storageClassOperations);
-
+        this.reconciliation = reconciliation;
         this.vertx = vertx;
         this.operationTimeoutMs = config.getOperationTimeoutMs();
         this.kafkaNodePoolCrs = nodePools;
@@ -212,6 +217,8 @@ public class KafkaReconciler extends AbstractReconciler {
         this.secretOperator = supplier.secretOperations;
         this.serviceAccountOperator = supplier.serviceAccountOperations;
         this.serviceOperator = supplier.serviceOperations;
+        this.pvcOperator = supplier.pvcOperations;
+        this.storageClassOperator = supplier.storageClassOperations;
         this.configMapOperator = supplier.configMapOperations;
         this.networkPolicyOperator = supplier.networkPolicyOperator;
         this.podDisruptionBudgetOperator = supplier.podDisruptionBudgetOperator;
@@ -676,7 +683,7 @@ public class KafkaReconciler extends AbstractReconciler {
      */
     protected Future<Void> brokerConfigurationConfigMaps() {
         return MetricsAndLoggingUtils.metricsAndLogging(reconciliation, configMapOperator, kafka.logging(), kafka.metrics())
-                .compose(this::perBrokerKafkaConfiguration);
+                .compose(metricsAndLoggingCm -> perBrokerKafkaConfiguration(metricsAndLoggingCm));
     }
 
     /**
@@ -949,14 +956,21 @@ public class KafkaReconciler extends AbstractReconciler {
      * Deletion of PVCs after the cluster is deleted is handled by owner reference and garbage collection. However,
      * this would not help after scale-downs. Therefore, we check if there are any PVCs which should not be present
      * and delete them when they are.
+     *
      * This should be called only after the StrimziPodSet reconciliation, rolling update and scale-down when the PVCs
      * are not used any more by the pods.
      *
      * @return  Future which completes when the PVCs which should be deleted are deleted
      */
     protected Future<Void> deletePersistentClaims() {
-        List<String> expectedPvcs = kafka.generatePersistentVolumeClaims().stream().map(pvc -> pvc.getMetadata().getName()).collect(Collectors.toList());
-        return super.deletePersistentClaims(expectedPvcs, kafka.getSelectorLabels());
+        return pvcOperator.listAsync(reconciliation.namespace(), kafka.getSelectorLabels())
+                .compose(pvcs -> {
+                    List<String> maybeDeletePvcs = pvcs.stream().map(pvc -> pvc.getMetadata().getName()).collect(Collectors.toList());
+                    List<String> desiredPvcs = kafka.generatePersistentVolumeClaims().stream().map(pvc -> pvc.getMetadata().getName()).collect(Collectors.toList());
+
+                    return new PvcReconciler(reconciliation, pvcOperator, storageClassOperator)
+                            .deletePersistentClaims(maybeDeletePvcs, desiredPvcs);
+                });
     }
 
     /**

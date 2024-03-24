@@ -67,9 +67,10 @@ import static java.util.Collections.singletonList;
  * reconciliation pipeline and is also used to store the state between them.
  */
 @SuppressWarnings({"checkstyle:ClassFanOutComplexity"})
-public class ZooKeeperReconciler extends AbstractReconciler {
+public class ZooKeeperReconciler {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(ZooKeeperReconciler.class.getName());
 
+    private final Reconciliation reconciliation;
     private final Vertx vertx;
     private final long operationTimeoutMs;
     private final ZookeeperCluster zk;
@@ -89,6 +90,8 @@ public class ZooKeeperReconciler extends AbstractReconciler {
     private final SecretOperator secretOperator;
     private final ServiceAccountOperator serviceAccountOperator;
     private final ServiceOperator serviceOperator;
+    private final PvcOperator pvcOperator;
+    private final StorageClassOperator storageClassOperator;
     private final ConfigMapOperator configMapOperator;
     private final NetworkPolicyOperator networkPolicyOperator;
     private final PodDisruptionBudgetOperator podDisruptionBudgetOperator;
@@ -135,8 +138,7 @@ public class ZooKeeperReconciler extends AbstractReconciler {
             ClusterCa clusterCa,
             boolean isKRaftMigrationRollback
     ) {
-        super(reconciliation, supplier.pvcOperations, supplier.storageClassOperations);
-
+        this.reconciliation = reconciliation;
         this.vertx = vertx;
         this.operationTimeoutMs = config.getOperationTimeoutMs();
         this.zk = ZookeeperCluster.fromCrd(reconciliation, kafkaAssembly, config.versions(), oldStorage, currentReplicas, supplier.sharedEnvironmentProvider);
@@ -158,6 +160,8 @@ public class ZooKeeperReconciler extends AbstractReconciler {
         this.secretOperator = supplier.secretOperations;
         this.serviceAccountOperator = supplier.serviceAccountOperations;
         this.serviceOperator = supplier.serviceOperations;
+        this.pvcOperator = supplier.pvcOperations;
+        this.storageClassOperator = supplier.storageClassOperations;
         this.configMapOperator = supplier.configMapOperations;
         this.networkPolicyOperator = supplier.networkPolicyOperator;
         this.podDisruptionBudgetOperator = supplier.podDisruptionBudgetOperator;
@@ -855,8 +859,14 @@ public class ZooKeeperReconciler extends AbstractReconciler {
      * @return  Future which completes when the PVCs which should be deleted are deleted
      */
     protected Future<Void> deletePersistentClaims() {
-        List<String> expectedPvcs = zk.generatePersistentVolumeClaims().stream().map(pvc -> pvc.getMetadata().getName()).collect(Collectors.toList());
-        return super.deletePersistentClaims(expectedPvcs, zk.getSelectorLabels());
+        return pvcOperator.listAsync(reconciliation.namespace(), zk.getSelectorLabels())
+                .compose(pvcs -> {
+                    List<String> maybeDeletePvcs = pvcs.stream().map(pvc -> pvc.getMetadata().getName()).collect(Collectors.toList());
+                    List<String> desiredPvcs = zk.generatePersistentVolumeClaims().stream().map(pvc -> pvc.getMetadata().getName()).collect(Collectors.toList());
+
+                    return new PvcReconciler(reconciliation, pvcOperator, storageClassOperator)
+                            .deletePersistentClaims(maybeDeletePvcs, desiredPvcs);
+                });
     }
 
     /**

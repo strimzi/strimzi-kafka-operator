@@ -28,7 +28,6 @@ import java.util.function.Function;
  * Subclasses can add more specialized metrics.
  */
 public abstract class MetricsHolder {
-
     /**
      * Prefix used for metrics provided by Strimzi operators
      */
