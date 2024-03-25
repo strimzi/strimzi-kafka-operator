@@ -2052,10 +2052,17 @@ public class ConnectorMockTest {
 
         Checkpoint async = context.checkpoint();
         reconciled.future().onComplete(context.succeeding(v -> context.verify(() -> {
+<<<<<<< HEAD
             Gauge resources = meterRegistry.get(MetricsHolder.METRICS_RESOURCES).tags(tags).gauge();
             assertThat(resources.value(), is(2.0));
 
             Gauge resourcesPaused = meterRegistry.get(MetricsHolder.METRICS_RESOURCES_PAUSED).tags(tags).gauge();
+=======
+            Gauge resources = meterRegistry.get("strimzi.resources").tags(tags).gauge();
+            assertThat(resources.value(), is(2.0));
+
+            Gauge resourcesPaused = meterRegistry.get("strimzi.resources.paused").tags(tags).gauge();
+>>>>>>> d5c59894c (update and ajdust test cases correctly)
             assertThat(resourcesPaused.value(), is(1.0));
             async.flag();
         })));
@@ -2063,8 +2070,49 @@ public class ConnectorMockTest {
 
     @Test
     void testConnectorResourceMetricsScaledToZero(VertxTestContext context) {
+<<<<<<< HEAD
         final String connectName = "cluster";
         final String connectorName = "connector";
+=======
+        String connectName = "cluster";
+        String connectorName = "connector";
+
+        KafkaConnect kafkaConnect = new KafkaConnectBuilder()
+            .withNewMetadata()
+                .withNamespace(namespace)
+                .withName(connectName)
+                .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
+            .endMetadata()
+            .withNewSpec()
+                .withReplicas(0)
+                .withBootstrapServers("my-kafka:9092")
+            .endSpec()
+            .build();
+
+        Crds.kafkaConnectOperation(client).inNamespace(namespace).resource(kafkaConnect).create();
+        waitForConnectReady(connectName);
+
+        KafkaConnector connector = defaultKafkaConnectorBuilder()
+            .editMetadata()
+                .withName(connectorName)
+                .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName)
+                .addToAnnotations(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true")
+            .endMetadata()
+            .build();
+
+        Crds.kafkaConnectorOperation(client).inNamespace(namespace).resource(connector).create();
+        waitForConnectorNotReady(connectorName, "RuntimeException", "Kafka Connect cluster 'cluster' in namespace " + namespace + " has 0 replicas.");
+
+        MeterRegistry meterRegistry = metricsProvider.meterRegistry();
+        Tags tags = Tags.of("kind", KafkaConnector.RESOURCE_KIND, "namespace", namespace);
+
+        Promise<Void> reconciled = Promise.promise();
+        kafkaConnectOperator.reconcileAll("test", namespace, ignored -> reconciled.complete());
+
+        Checkpoint async = context.checkpoint();
+        attemptReconciliationAndAssertion(vertx, 0, 5, context, async, meterRegistry, tags);
+    }
+>>>>>>> d5c59894c (update and ajdust test cases correctly)
 
         LOGGER.info("Creating KafkaConnect resource");
         KafkaConnect kafkaConnect = new KafkaConnectBuilder()
