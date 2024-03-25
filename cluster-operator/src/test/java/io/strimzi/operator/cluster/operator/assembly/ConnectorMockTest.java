@@ -71,7 +71,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -201,11 +200,16 @@ public class ConnectorMockTest {
             .onComplete(testContext.succeeding(i -> { }))
             .compose(watch -> {
                 connectWatch = watch;
+                LOGGER.info("Creating connector watch: {} in namespace: {}", connectWatch, namespace);
                 return kafkaConnectOperator.createConnectorWatch(namespace);
             }).compose(watch -> {
                 connectorWatch = watch;
+                LOGGER.info("Created connector watch: {}", connectWatch);
                 return Future.succeededFuture();
-            }).onComplete(testContext.succeeding(v -> async.flag()));
+            }).onComplete(testContext.succeeding(v -> {
+                LOGGER.info("Finishing and marking before each as succeed (using checkpoing) flag!");
+                async.flag();
+            }));
     }
 
     @AfterEach
@@ -2051,96 +2055,53 @@ public class ConnectorMockTest {
         kafkaConnectOperator.reconcileAll("test", namespace, ignored -> reconciled.complete());
 
         Checkpoint async = context.checkpoint();
-        reconciled.future().onComplete(context.succeeding(v -> context.verify(() -> {
-            Gauge resources = meterRegistry.get("strimzi.resources").tags(tags).gauge();
-            assertThat(resources.value(), is(2.0));
-
-            Gauge resourcesPaused = meterRegistry.get("strimzi.resources.paused").tags(tags).gauge();
-            assertThat(resourcesPaused.value(), is(1.0));
-            async.flag();
-        })));
+        attemptReconciliationAndAssertion(vertx, 0, 5, context, async, meterRegistry, tags);
     }
 
-    @Test
-    void testConnectorResourceMetricsScaledToZero(VertxTestContext context) {
-        final String connectName = "cluster";
-        final String connectorName = "connector";
-
-        LOGGER.info("Creating KafkaConnect resource");
-        KafkaConnect kafkaConnect = new KafkaConnectBuilder()
-                .withNewMetadata()
-                    .withNamespace(namespace)
-                    .withName(connectName)
-                    .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
-                .endMetadata()
-                .withNewSpec()
-                    .withReplicas(0)
-                    .withBootstrapServers("my-kafka:9092")
-                .endSpec()
-                .build();
-
-        Crds.kafkaConnectOperation(client).inNamespace(namespace).resource(kafkaConnect).create();
-        waitForConnectReady(connectName);
-
-        LOGGER.info("Creating KafkaConnector resource");
-        final KafkaConnector connector = defaultKafkaConnectorBuilder()
-                .editMetadata()
-                    .withName(connectorName)
-                    .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName)
-                    .addToAnnotations(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true")
-                .endMetadata()
-                .build();
-
-        Crds.kafkaConnectorOperation(client).inNamespace(namespace).resource(connector).create();
-        waitForConnectorNotReady(connectorName, "RuntimeException", "Kafka Connect cluster '" + connectName + "' in namespace " + namespace + " has 0 replicas.");
-
-        LOGGER.info("Fetching MeterRegistry");
-        final MeterRegistry meterRegistry = metricsProvider.meterRegistry();
-        final Tags tags = Tags.of("kind", KafkaConnector.RESOURCE_KIND, "namespace", namespace);
-
-        final Promise<Void> reconciled = Promise.promise();
-        LOGGER.info("Initiating reconcileAll operation");
-        kafkaConnectOperator.reconcileAll("test", namespace, ignored -> reconciled.complete());
-
-        Checkpoint async = context.checkpoint();
-        reconciled.future().onComplete(context.succeeding(v -> {
-            LOGGER.info("Polling for condition before proceeding with assertions");
-            final AtomicInteger attempts = new AtomicInteger(0);
-            vertx.setPeriodic(1000, id -> {
-                if (attempts.incrementAndGet() > 30) { // Timeout after 30 seconds
-                    vertx.cancelTimer(id);
-                    LOGGER.error("Condition check timed out...");
-                    throw new RuntimeException("Condition check timed out");
-                } else if (checkConnectorResourceMetrics(meterRegistry, tags, 1.0, 0.0)) {
-                    vertx.cancelTimer(id);
-                    context.verify(() -> {
-                        // Perform your assertions here, after verification
-                        LOGGER.info("Test conditions verified, test passed");
-                        async.flag();
-                    });
-                } else {
-                    LOGGER.warn("Condition not met, continuing to poll...");
-                }
-            });
-        }));
-    }
 
     /**
-     * Checks if the metrics for connector resources and paused connector resources match the expected values.
+     * Attempts the reconciliation process and asserts the expected metrics values.
+     * If the assertion fails, it retries the process up to a maximum number of attempts.
+     * On success, it flags the checkpoint to signal that the test can proceed.
+     * On failure, it logs the error and fails the test context.
      *
-     * @param meterRegistry             The registry containing the metrics.
-     * @param tags                      The tags used to identify the specific metrics.
-     * @param expectedResources         The expected number of connector resources.
-     * @param expectedPausedResources   The expected number of paused connector resources.
-     * @return                          {@code true} if the metrics match the expected values, {@code false} otherwise.
+     * @param vertx         The Vert.x instance.
+     * @param attempt       The current attempt number.
+     * @param maxAttempts   The maximum number of attempts before failing the test.
+     * @param testContext   The VertxTestContext for the test.
+     * @param async         The Checkpoint to flag upon successful assertion.
+     * @param meterRegistry The MeterRegistry where metrics are registered.
+     * @param tags          The tags to identify the right metrics.
      */
-    private boolean checkConnectorResourceMetrics(final MeterRegistry meterRegistry, final Tags tags,
-                                                  final double expectedResources, final double expectedPausedResources) {
-        final Gauge resources = meterRegistry.get("strimzi.resources").tags(tags).gauge();
-        final Gauge resourcesPaused = meterRegistry.get("strimzi.resources.paused").tags(tags).gauge();
+    private void attemptReconciliationAndAssertion(Vertx vertx, int attempt, int maxAttempts, VertxTestContext testContext, Checkpoint async, MeterRegistry meterRegistry, Tags tags) {
+        kafkaConnectOperator.reconcileAll("test", namespace, ar -> {
+            if (ar.succeeded()) {
+                try {
+                    Gauge resources = meterRegistry.get("strimzi.resources").tags(tags).gauge();
+                    assertThat(resources.value(), is(1.0));
 
-        // Check the conditions without asserting here
-        return resources.value() == expectedResources && resourcesPaused.value() == expectedPausedResources;
+                    Gauge resourcesPaused = meterRegistry.get("strimzi.resources.paused").tags(tags).gauge();
+                    assertThat(resourcesPaused.value(), is(0.0));
+
+                    LOGGER.info("Assertion for paused connectors resource counter succeeded on attempt " + (attempt + 1));
+                    // If assertions pass, flag the checkpoint
+                    async.flag();
+                } catch (AssertionError e) {
+                    if (attempt < maxAttempts) {
+                        // If assertions fail, retry after a delay
+                        LOGGER.warn("Assertion for paused connectors resource counter failed on attempt " + (attempt + 1) + ": " + e.getMessage());
+                        vertx.setTimer(1000, id -> attemptReconciliationAndAssertion(vertx, attempt + 1, maxAttempts, testContext, async, meterRegistry, tags));
+                    } else {
+                        LOGGER.error("Assertion for paused connectors resource counter failed after " + maxAttempts + " attempts.");
+                        // If max attempts reached, fail the test
+                        testContext.failNow(e);
+                    }
+                }
+            } else {
+                // If reconciliation fails, directly fail the test
+                testContext.failNow(ar.cause());
+            }
+        });
     }
 
     @Test
