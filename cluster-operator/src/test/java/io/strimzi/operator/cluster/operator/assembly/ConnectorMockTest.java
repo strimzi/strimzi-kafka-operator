@@ -2120,9 +2120,26 @@ public class ConnectorMockTest {
                 assertThat(requiredSearch.gauge().value(), matcher);
             } catch (MeterNotFoundException mnfe) {
                 try {
+<<<<<<< HEAD
                     TimeUnit.SECONDS.sleep(1);
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
+=======
+                    for (Map.Entry<String, Double> metricEntry : expectedMetrics.entrySet()) {
+                        Gauge gauge = meterRegistry.get(metricEntry.getKey()).tags(tags).gauge();
+                        assertThat(gauge.value(), is(metricEntry.getValue()));
+                    }
+                    LOGGER.info("All assertions succeeded on attempt " + attempt);
+                    async.flag();
+                } catch (AssertionError e) {
+                    if (attempt < maxAttempts) {
+                        LOGGER.warn("Assertion failed on attempt " + attempt + ": " + e.getMessage());
+                        vertx.setTimer(1000, id -> attemptReconciliationAndAssertion(vertx, attempt + 1, maxAttempts, testContext, async, meterRegistry, tags, expectedMetrics));
+                    } else {
+                        LOGGER.error("All assertions failed after " + maxAttempts + " attempts.");
+                        testContext.failNow(e);
+                    }
+>>>>>>> 2882c39e8 (fix recursive call)
                 }
             }
         }
