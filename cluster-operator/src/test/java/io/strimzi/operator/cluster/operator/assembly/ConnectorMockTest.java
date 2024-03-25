@@ -15,6 +15,8 @@ import io.fabric8.kubernetes.client.dsl.base.PatchType;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
+import io.micrometer.core.instrument.search.MeterNotFoundException;
+import io.micrometer.core.instrument.search.RequiredSearch;
 import io.netty.channel.ConnectTimeoutException;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.common.Condition;
@@ -57,6 +59,7 @@ import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.hamcrest.Matcher;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -65,6 +68,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -75,8 +79,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import static io.strimzi.api.kafka.model.topic.KafkaTopic.RESOURCE_KIND;
 import static io.strimzi.test.TestUtils.map;
 import static io.strimzi.test.TestUtils.waitFor;
+import static java.lang.String.format;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static org.hamcrest.CoreMatchers.is;
@@ -2052,17 +2058,10 @@ public class ConnectorMockTest {
 
         Checkpoint async = context.checkpoint();
         reconciled.future().onComplete(context.succeeding(v -> context.verify(() -> {
-<<<<<<< HEAD
             Gauge resources = meterRegistry.get(MetricsHolder.METRICS_RESOURCES).tags(tags).gauge();
             assertThat(resources.value(), is(2.0));
 
             Gauge resourcesPaused = meterRegistry.get(MetricsHolder.METRICS_RESOURCES_PAUSED).tags(tags).gauge();
-=======
-            Gauge resources = meterRegistry.get("strimzi.resources").tags(tags).gauge();
-            assertThat(resources.value(), is(2.0));
-
-            Gauge resourcesPaused = meterRegistry.get("strimzi.resources.paused").tags(tags).gauge();
->>>>>>> d5c59894c (update and ajdust test cases correctly)
             assertThat(resourcesPaused.value(), is(1.0));
             async.flag();
         })));
@@ -2070,51 +2069,9 @@ public class ConnectorMockTest {
 
     @Test
     void testConnectorResourceMetricsScaledToZero(VertxTestContext context) {
-<<<<<<< HEAD
-        final String connectName = "cluster";
-        final String connectorName = "connector";
-=======
         String connectName = "cluster";
         String connectorName = "connector";
 
-        KafkaConnect kafkaConnect = new KafkaConnectBuilder()
-            .withNewMetadata()
-                .withNamespace(namespace)
-                .withName(connectName)
-                .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
-            .endMetadata()
-            .withNewSpec()
-                .withReplicas(0)
-                .withBootstrapServers("my-kafka:9092")
-            .endSpec()
-            .build();
-
-        Crds.kafkaConnectOperation(client).inNamespace(namespace).resource(kafkaConnect).create();
-        waitForConnectReady(connectName);
-
-        KafkaConnector connector = defaultKafkaConnectorBuilder()
-            .editMetadata()
-                .withName(connectorName)
-                .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName)
-                .addToAnnotations(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true")
-            .endMetadata()
-            .build();
-
-        Crds.kafkaConnectorOperation(client).inNamespace(namespace).resource(connector).create();
-        waitForConnectorNotReady(connectorName, "RuntimeException", "Kafka Connect cluster 'cluster' in namespace " + namespace + " has 0 replicas.");
-
-        MeterRegistry meterRegistry = metricsProvider.meterRegistry();
-        Tags tags = Tags.of("kind", KafkaConnector.RESOURCE_KIND, "namespace", namespace);
-
-        Promise<Void> reconciled = Promise.promise();
-        kafkaConnectOperator.reconcileAll("test", namespace, ignored -> reconciled.complete());
-
-        Checkpoint async = context.checkpoint();
-        attemptReconciliationAndAssertion(vertx, 0, 5, context, async, meterRegistry, tags);
-    }
->>>>>>> d5c59894c (update and ajdust test cases correctly)
-
-        LOGGER.info("Creating KafkaConnect resource");
         KafkaConnect kafkaConnect = new KafkaConnectBuilder()
                 .withNewMetadata()
                     .withNamespace(namespace)
@@ -2130,8 +2087,7 @@ public class ConnectorMockTest {
         Crds.kafkaConnectOperation(client).inNamespace(namespace).resource(kafkaConnect).create();
         waitForConnectReady(connectName);
 
-        LOGGER.info("Creating KafkaConnector resource");
-        final KafkaConnector connector = defaultKafkaConnectorBuilder()
+        KafkaConnector connector = defaultKafkaConnectorBuilder()
                 .editMetadata()
                     .withName(connectorName)
                     .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName)
@@ -2140,26 +2096,39 @@ public class ConnectorMockTest {
                 .build();
 
         Crds.kafkaConnectorOperation(client).inNamespace(namespace).resource(connector).create();
-        waitForConnectorNotReady(connectorName, "RuntimeException", "Kafka Connect cluster '" + connectName + "' in namespace " + namespace + " has 0 replicas.");
+        // no need to wait, as this resource is paused and should not be reconciled
 
-        LOGGER.info("Fetching MeterRegistry");
-        final MeterRegistry meterRegistry = metricsProvider.meterRegistry();
-        final Tags tags = Tags.of("kind", KafkaConnector.RESOURCE_KIND, "namespace", namespace);
-
-        final Promise<Void> reconciled = Promise.promise();
-        LOGGER.info("Initiating reconcileAll operation");
+        Promise<Void> reconciled = Promise.promise();
         kafkaConnectOperator.reconcileAll("test", namespace, ignored -> reconciled.complete());
 
         Checkpoint async = context.checkpoint();
         reconciled.future().onComplete(context.succeeding(v -> context.verify(() -> {
-            Gauge resources = meterRegistry.get(MetricsHolder.METRICS_RESOURCES).tags(tags).gauge();
-            assertThat(resources.value(), is(1.0));
-
-            kafkaConnectOperator.metrics().pausedConnectorsResourceCounter(namespace); // to create metric, otherwise MeterNotFoundException will be thrown
-            Gauge resourcesPaused = meterRegistry.get(MetricsHolder.METRICS_RESOURCES_PAUSED).tags(tags).gauge();
-            assertThat(resourcesPaused.value(), is(0.0));
+            String[] tags = new String[]{"kind", RESOURCE_KIND, "namespace", namespace};
+            assertMetricMatches("strimzi.resources", tags, is(1.0));
+            assertMetricMatches("strimzi.resources.paused", tags, is(0.0));
             async.flag();
         })));
+    }
+
+    private void assertMetricMatches(String name, String[] tags, Matcher<Double> matcher) {
+        // wait some time because metrics are created lazily
+        int timeoutSec = 120;
+        RequiredSearch requiredSearch = null;
+        while (requiredSearch == null && timeoutSec-- > 0) {
+            try {
+                requiredSearch = metricsProvider.meterRegistry().get(name).tags(tags);
+                assertThat(requiredSearch.gauge().value(), matcher);
+            } catch (MeterNotFoundException mnfe) {
+                try {
+                    TimeUnit.SECONDS.sleep(1);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+        if (requiredSearch == null) {
+            throw new RuntimeException(format("Unable to find metric %s with tags %s", name, Arrays.toString(tags)));
+        }
     }
 
     @Test

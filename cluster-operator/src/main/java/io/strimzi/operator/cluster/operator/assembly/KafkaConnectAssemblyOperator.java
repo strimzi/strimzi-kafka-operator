@@ -142,7 +142,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
         Map<String, String> podAnnotations = new HashMap<>();
         Map<String, String> controllerAnnotations = new HashMap<>();
 
-        boolean hasZeroReplicas = connect.getReplicas() == 0;
+        final boolean hasZeroReplicas = connect.getReplicas() == 0;
         final AtomicReference<String> image = new AtomicReference<>();
         final AtomicReference<String> desiredLogging = new AtomicReference<>();
         final AtomicReference<Deployment> deployment = new AtomicReference<>();
@@ -323,7 +323,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
             List<Future<Void>> connectorFutures = new ArrayList<>();
             for (KafkaConnector connector : connectors) {
                 connectorFutures.add(maybeUpdateConnectorStatus(reconciliation, connector, null,
-                        noConnectCluster(reconciliation.namespace(), reconciliation.name())));
+                    noConnectCluster(reconciliation.namespace(), reconciliation.name())));
             }
             return Future.join(connectorFutures);
         }).map((Void) null);
@@ -362,11 +362,13 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
 
         if (scaledToZero)   {
             return connectorOperator.listAsync(namespace, new LabelSelectorBuilder().addToMatchLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName).build())
-                    .compose(connectors -> Future.join(
-                            connectors.stream().map(connector -> maybeUpdateConnectorStatus(reconciliation, connector, null, zeroReplicas(namespace, connectName)))
-                                    .collect(Collectors.toList())
-                    ))
-                    .map((Void) null);
+                .compose(connectors -> Future.join(
+                    connectors.stream()
+                        .filter(connector -> !Annotations.isReconciliationPausedWithAnnotation(connector))
+                        .map(connector -> maybeUpdateConnectorStatus(reconciliation, connector, null, zeroReplicas(namespace, connectName)))
+                        .collect(Collectors.toList())
+                ))
+                .map((Void) null);
         }
 
         KafkaConnectApi apiClient = connectClientProvider.apply(vertx);
