@@ -39,6 +39,8 @@ public class Pkcs12AuthIdentity {
     }
 
     /**
+     * Authentication identity as a KeyStore file for clients to use during TlS connections.
+     * File password can be retrieved using password().
      * @return The KeyStore for this authentication identity as a byte array
      */
     public byte[] keystore() {
@@ -46,6 +48,7 @@ public class Pkcs12AuthIdentity {
     }
 
     /**
+     * Password for the corresponding KeyStore file provided by keystore().
      * @return The KeyStore password for this authentication identity as a String
      */
     public String password() {

@@ -7,7 +7,6 @@ package io.strimzi.operator.cluster.operator.resource;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.auth.TlsPemIdentity;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.vertx.core.Future;
@@ -23,6 +22,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 
+import static io.strimzi.operator.common.auth.TlsPemIdentity.DUMMY_IDENTITY;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
@@ -35,7 +35,6 @@ import static org.mockito.Mockito.when;
 @ExtendWith(VertxExtension.class)
 public class ZooKeeperRollerTest {
     private final static Labels DUMMY_SELECTOR = Labels.fromMap(Map.of(Labels.STRIMZI_KIND_LABEL, "Kafka", Labels.STRIMZI_CLUSTER_LABEL, "name", Labels.STRIMZI_NAME_LABEL, "name-zookeeper"));
-    private final static TlsPemIdentity DUMMY_IDENTITY = new TlsPemIdentity(null, null);
     private final static List<Pod> PODS = List.of(
             new PodBuilder()
                     .withNewMetadata()

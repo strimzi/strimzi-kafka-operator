@@ -74,7 +74,7 @@ public class ZookeeperLeaderFinder {
      * An exponential backoff is used if no ZK node is leader on the attempt to find it.
      * If there is no leader after 3 attempts then the returned Future completes with {@link #UNKNOWN_LEADER}.
      */
-    Future<String> findZookeeperLeader(Reconciliation reconciliation, Set<String> pods, TlsPemIdentity zkTlsPemIdentity) {
+    Future<String> findZookeeperLeader(Reconciliation reconciliation, Set<String> pods, TlsPemIdentity coTlsPemIdentity) {
         if (pods.size() == 0) {
             return Future.succeededFuture(UNKNOWN_LEADER);
         } else if (pods.size() == 1) {
@@ -82,7 +82,7 @@ public class ZookeeperLeaderFinder {
         }
 
         try {
-            NetClientOptions netClientOptions = clientOptions(zkTlsPemIdentity.pemTrustSet(), zkTlsPemIdentity.pemAuthIdentity());
+            NetClientOptions netClientOptions = clientOptions(coTlsPemIdentity.pemTrustSet(), coTlsPemIdentity.pemAuthIdentity());
             return zookeeperLeaderWithBackoff(reconciliation, pods, netClientOptions);
         } catch (Throwable e) {
             return Future.failedFuture(e);

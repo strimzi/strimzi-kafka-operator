@@ -613,7 +613,7 @@ public class ResourceUtils {
     public static KafkaAgentClientProvider kafkaAgentClientProvider(KafkaAgentClient mockKafkaAgentClient) {
         return new KafkaAgentClientProvider() {
             @Override
-            public KafkaAgentClient createKafkaAgentClient(Reconciliation reconciliation, TlsPemIdentity kafkaTlsPemIdentity) {
+            public KafkaAgentClient createKafkaAgentClient(Reconciliation reconciliation, TlsPemIdentity tlsPemIdentity) {
                 return mockKafkaAgentClient;
             }
         };

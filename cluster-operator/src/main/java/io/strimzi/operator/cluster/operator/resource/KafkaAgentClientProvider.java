@@ -16,9 +16,9 @@ public interface KafkaAgentClientProvider {
      * Creates an instance of KafkaAgentClient
      *
      * @param reconciliation    Reconciliation information
-     * @param kafkaTlsPemIdentity Trust set and identity for TLS client authentication for connecting to the Kafka cluster
+     * @param tlsPemIdentity    Trust set and identity for TLS client authentication for connecting to the Kafka cluster
      *
      * @return  KafkaAgentClient instance
      */
-    KafkaAgentClient createKafkaAgentClient(Reconciliation reconciliation, TlsPemIdentity kafkaTlsPemIdentity);
+    KafkaAgentClient createKafkaAgentClient(Reconciliation reconciliation, TlsPemIdentity tlsPemIdentity);
 }

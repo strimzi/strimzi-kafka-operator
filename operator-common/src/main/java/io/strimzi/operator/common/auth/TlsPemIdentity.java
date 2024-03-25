@@ -10,4 +10,9 @@ package io.strimzi.operator.common.auth;
  * @param pemAuthIdentity Identity for TLS client authentication in PEM format
  */
 public record TlsPemIdentity(PemTrustSet pemTrustSet, PemAuthIdentity pemAuthIdentity) {
+
+    /**
+     * Dummy identity used in tests
+     */
+    public static final TlsPemIdentity DUMMY_IDENTITY = new TlsPemIdentity(null, null);
 }

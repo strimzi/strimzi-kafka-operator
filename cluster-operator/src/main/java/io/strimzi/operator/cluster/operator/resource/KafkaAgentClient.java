@@ -59,13 +59,13 @@ public class KafkaAgentClient {
      * @param reconciliation    Reconciliation marker
      * @param cluster   Cluster name
      * @param namespace Cluster namespace
-     * @param kafkaTlsPemIdentity Trust set and identity for TLS client authentication for connecting to the Kafka cluster
+     * @param tlsPemIdentity Trust set and identity for TLS client authentication for connecting to the Kafka cluster
      */
-    public KafkaAgentClient(Reconciliation reconciliation, String cluster, String namespace, TlsPemIdentity kafkaTlsPemIdentity) {
+    public KafkaAgentClient(Reconciliation reconciliation, String cluster, String namespace, TlsPemIdentity tlsPemIdentity) {
         this.reconciliation = reconciliation;
         this.cluster = cluster;
         this.namespace = namespace;
-        this.tlsPemIdentity = kafkaTlsPemIdentity;
+        this.tlsPemIdentity = tlsPemIdentity;
         this.httpClient = createHttpClient();
     }
 

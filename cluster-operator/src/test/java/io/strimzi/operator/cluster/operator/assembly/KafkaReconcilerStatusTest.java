@@ -900,7 +900,7 @@ public class KafkaReconcilerStatusTest {
 
         @Override
         protected Future<Void> initClientAuthenticationCertificates() {
-            kafkaTlsPemIdentity = new TlsPemIdentity(null, null);
+            coTlsPemIdentity = new TlsPemIdentity(null, null);
             return Future.succeededFuture();
         }
     }

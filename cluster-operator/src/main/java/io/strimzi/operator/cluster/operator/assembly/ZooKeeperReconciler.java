@@ -702,18 +702,18 @@ public class ZooKeeperReconciler {
      * Checks if the ZooKeeper cluster needs rolling and if it does, it will roll it.
      *
      * @param podNeedsRestart       Function to determine if the ZooKeeper pod needs to be restarted
-     * @param zkTlsPemIdentity      Trust set and identity for TLS client authentication for connecting to ZooKeeper
+     * @param coTlsPemIdentity      Trust set and identity for TLS client authentication for connecting to ZooKeeper
      *
      * @return                      Future which completes when any of the ZooKeeper pods which need rolling is rolled
      */
-    /* test */ Future<Void> maybeRollZooKeeper(Function<Pod, List<String>> podNeedsRestart, TlsPemIdentity zkTlsPemIdentity) {
+    /* test */ Future<Void> maybeRollZooKeeper(Function<Pod, List<String>> podNeedsRestart, TlsPemIdentity coTlsPemIdentity) {
         return new ZooKeeperRoller(podOperator, zooLeaderFinder, operationTimeoutMs)
                 .maybeRollingUpdate(
                         reconciliation,
                         currentReplicas > 0 && currentReplicas < zk.getReplicas() ? currentReplicas : zk.getReplicas(),
                         zk.getSelectorLabels(),
                         podNeedsRestart,
-                        zkTlsPemIdentity
+                        coTlsPemIdentity
                 );
     }
 

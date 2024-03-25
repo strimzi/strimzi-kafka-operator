@@ -7,7 +7,6 @@ package io.strimzi.operator.cluster.operator.assembly;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.auth.TlsPemIdentity;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
@@ -32,6 +31,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 
+import static io.strimzi.operator.common.auth.TlsPemIdentity.DUMMY_IDENTITY;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -47,7 +47,6 @@ public class BrokersInUseCheckTest {
     private static final String CLUSTER_NAME = "my-cluster";
     private static final Reconciliation RECONCILIATION = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME);
     private static final Function<Integer, Node> NODE = id -> new Node(id, Node.noNode().host(), Node.noNode().port());
-    private static final TlsPemIdentity DUMMY_IDENTITY = new TlsPemIdentity(null, null);
 
     private static Vertx vertx;
 

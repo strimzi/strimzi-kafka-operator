@@ -9,7 +9,6 @@ import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.auth.PemAuthIdentity;
 import io.strimzi.operator.common.auth.PemTrustSet;
-import io.strimzi.operator.common.auth.TlsPemIdentity;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -39,6 +38,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import static io.strimzi.operator.common.auth.TlsPemIdentity.DUMMY_IDENTITY;
 import static java.lang.Integer.parseInt;
 import static java.util.Collections.emptySet;
 import static org.hamcrest.CoreMatchers.is;
@@ -55,7 +55,6 @@ public class ZookeeperLeaderFinderTest {
     private static Vertx vertx;
     private final SelfSignedCertificate zkCertificate = SelfSignedCertificate.create();
     private final SelfSignedCertificate coCertificate = SelfSignedCertificate.create();
-    private final static TlsPemIdentity DUMMY_IDENTITY = new TlsPemIdentity(null, null);
 
     private static final int MAX_ATTEMPTS = 4;
 

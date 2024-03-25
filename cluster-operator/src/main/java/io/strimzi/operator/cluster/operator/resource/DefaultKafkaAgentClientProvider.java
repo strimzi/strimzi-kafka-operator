@@ -13,7 +13,7 @@ import io.strimzi.operator.common.auth.TlsPemIdentity;
 public class DefaultKafkaAgentClientProvider implements KafkaAgentClientProvider {
 
     @Override
-    public KafkaAgentClient createKafkaAgentClient(Reconciliation reconciliation, TlsPemIdentity kafkaTlsPemIdentity) {
-        return new KafkaAgentClient(reconciliation, reconciliation.name(), reconciliation.namespace(), kafkaTlsPemIdentity);
+    public KafkaAgentClient createKafkaAgentClient(Reconciliation reconciliation, TlsPemIdentity tlsPemIdentity) {
+        return new KafkaAgentClient(reconciliation, reconciliation.name(), reconciliation.namespace(), tlsPemIdentity);
     }
 }

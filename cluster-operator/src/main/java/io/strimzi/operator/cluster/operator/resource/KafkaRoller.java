@@ -118,7 +118,7 @@ public class KafkaRoller {
     protected final long operationTimeoutMs;
     protected final Vertx vertx;
     private final String cluster;
-    private final TlsPemIdentity kafkaTlsPemIdentity;
+    private final TlsPemIdentity coTlsPemIdentity;
     private final Set<NodeRef> nodes;
     private final KubernetesRestartEventPublisher eventsPublisher;
     private final Supplier<BackOff> backoffSupplier;
@@ -151,7 +151,7 @@ public class KafkaRoller {
      * @param operationTimeoutMs        Operation timeout in milliseconds
      * @param backOffSupplier           Backoff supplier
      * @param nodes                     List of Kafka node references to consider rolling
-     * @param kafkaTlsPemIdentity       Trust set and identity for TLS client authentication for connecting to the Kafka cluster
+     * @param coTlsPemIdentity          Trust set and identity for TLS client authentication for connecting to the Kafka cluster
      * @param adminClientProvider       Kafka Admin client provider
      * @param kafkaAgentClientProvider  Kafka Agent client provider
      * @param kafkaConfigProvider       Kafka configuration provider
@@ -162,7 +162,7 @@ public class KafkaRoller {
      */
     public KafkaRoller(Reconciliation reconciliation, Vertx vertx, PodOperator podOperations,
                        long pollingIntervalMs, long operationTimeoutMs, Supplier<BackOff> backOffSupplier, Set<NodeRef> nodes,
-                       TlsPemIdentity kafkaTlsPemIdentity, AdminClientProvider adminClientProvider, KafkaAgentClientProvider kafkaAgentClientProvider,
+                       TlsPemIdentity coTlsPemIdentity, AdminClientProvider adminClientProvider, KafkaAgentClientProvider kafkaAgentClientProvider,
                        Function<Integer, String> kafkaConfigProvider, String kafkaLogging, KafkaVersion kafkaVersion, boolean allowReconfiguration, KubernetesRestartEventPublisher eventsPublisher) {
         this.namespace = reconciliation.namespace();
         this.cluster = reconciliation.name();
@@ -172,7 +172,7 @@ public class KafkaRoller {
             throw new IllegalArgumentException();
         }
         this.backoffSupplier = backOffSupplier;
-        this.kafkaTlsPemIdentity = kafkaTlsPemIdentity;
+        this.coTlsPemIdentity = coTlsPemIdentity;
         this.vertx = vertx;
         this.operationTimeoutMs = operationTimeoutMs;
         this.podOperations = podOperations;
@@ -519,7 +519,7 @@ public class KafkaRoller {
 
     KafkaAgentClient initKafkaAgentClient() throws FatalProblem {
         try {
-            return kafkaAgentClientProvider.createKafkaAgentClient(reconciliation, kafkaTlsPemIdentity);
+            return kafkaAgentClientProvider.createKafkaAgentClient(reconciliation, coTlsPemIdentity);
         } catch (Exception e) {
             throw new FatalProblem("Failed to initialise KafkaAgentClient", e);
         }
@@ -927,7 +927,7 @@ public class KafkaRoller {
 
         try {
             LOGGER.debugCr(reconciliation, "Creating AdminClient for {}", bootstrapHostnames);
-            return adminClientProvider.createAdminClient(bootstrapHostnames, kafkaTlsPemIdentity.pemTrustSet(), kafkaTlsPemIdentity.pemAuthIdentity());
+            return adminClientProvider.createAdminClient(bootstrapHostnames, coTlsPemIdentity.pemTrustSet(), coTlsPemIdentity.pemAuthIdentity());
         } catch (KafkaException e) {
             if (ceShouldBeFatal && (e instanceof ConfigException
                     || e.getCause() instanceof ConfigException)) {

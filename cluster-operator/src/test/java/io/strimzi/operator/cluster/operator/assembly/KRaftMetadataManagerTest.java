@@ -7,7 +7,6 @@ package io.strimzi.operator.cluster.operator.assembly;
 import io.strimzi.api.kafka.model.kafka.KafkaStatus;
 import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.auth.TlsPemIdentity;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
@@ -28,6 +27,7 @@ import org.mockito.ArgumentCaptor;
 
 import java.util.Map;
 
+import static io.strimzi.operator.common.auth.TlsPemIdentity.DUMMY_IDENTITY;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -43,8 +43,6 @@ import static org.mockito.Mockito.when;
 @ExtendWith(VertxExtension.class)
 public class KRaftMetadataManagerTest {
     private static Vertx vertx;
-
-    private static final TlsPemIdentity DUMMY_IDENTITY = new TlsPemIdentity(null, null);
 
     @BeforeAll
     public static void before() {

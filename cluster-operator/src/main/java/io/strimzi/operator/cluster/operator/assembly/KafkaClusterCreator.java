@@ -25,7 +25,6 @@ import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
-import io.strimzi.operator.common.auth.TlsPemIdentity;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.StatusUtils;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
@@ -181,11 +180,8 @@ public class KafkaClusterCreator {
             usedToBeBrokersCheckFailed = false;
             return Future.succeededFuture(kafka);
         } else {
-            return Future.join(
-                        ReconcilerUtils.clusterCaPemTrustSet(reconciliation, secretOperator),
-                        ReconcilerUtils.coPemAuthIdentity(reconciliation, secretOperator)
-                    )
-                    .compose(res -> brokerScaleDownOperations.brokersInUse(reconciliation, vertx, new TlsPemIdentity(res.resultAt(0), res.resultAt(1)), adminClientProvider))
+            return ReconcilerUtils.coTlsPemIdentity(reconciliation, secretOperator)
+                    .compose(coTlsPemIdentity -> brokerScaleDownOperations.brokersInUse(reconciliation, vertx, coTlsPemIdentity, adminClientProvider))
                     .compose(brokersInUse -> {
                         // Check nodes that are being scaled down
                         Set<Integer> scaledDownBrokersInUse = kafka.removedNodes().stream().filter(brokersInUse::contains).collect(Collectors.toSet());

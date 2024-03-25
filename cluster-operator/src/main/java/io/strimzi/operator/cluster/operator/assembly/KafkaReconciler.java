@@ -156,7 +156,7 @@ public class KafkaReconciler {
     private String loggingHash = "";
     private final Map<Integer, String> brokerConfigurationHash = new HashMap<>();
     private final Map<Integer, String> kafkaServerCertificateHash = new HashMap<>();
-    /* test */ TlsPemIdentity kafkaTlsPemIdentity;
+    /* test */ TlsPemIdentity coTlsPemIdentity;
     /* test */ KafkaListenersReconciler.ReconciliationResult listenerReconciliationResults; // Result of the listener reconciliation with the listener details
 
     private final KafkaMetadataStateManager kafkaMetadataStateManager;
@@ -294,10 +294,9 @@ public class KafkaReconciler {
      * @return Completes when the TrustStore and PemAuthIdentity have been created and stored in a record
      */
     protected Future<Void> initClientAuthenticationCertificates() {
-        return Future.join(
-                ReconcilerUtils.clusterCaPemTrustSet(reconciliation, secretOperator),
-                ReconcilerUtils.coPemAuthIdentity(reconciliation, secretOperator)
-        ).onSuccess(result -> this.kafkaTlsPemIdentity = new TlsPemIdentity(result.resultAt(0), result.resultAt(1))).mapEmpty();
+        return ReconcilerUtils.coTlsPemIdentity(reconciliation, secretOperator)
+                .onSuccess(coTlsPemIdentity -> this.coTlsPemIdentity = coTlsPemIdentity)
+                .mapEmpty();
     }
 
     /**
@@ -448,7 +447,7 @@ public class KafkaReconciler {
                     operationTimeoutMs,
                     () -> new BackOff(250, 2, 10),
                     nodes,
-                    this.kafkaTlsPemIdentity,
+                    this.coTlsPemIdentity,
                     adminClientProvider,
                     kafkaAgentClientProvider,
                     brokerId -> kafka.generatePerBrokerConfiguration(brokerId, kafkaAdvertisedHostnames, kafkaAdvertisedPorts),
@@ -885,7 +884,7 @@ public class KafkaReconciler {
                     try {
                         String bootstrapHostname = KafkaResources.bootstrapServiceName(reconciliation.name()) + "." + reconciliation.namespace() + ".svc:" + KafkaCluster.REPLICATION_PORT;
                         LOGGER.debugCr(reconciliation, "Creating AdminClient for clusterId using {}", bootstrapHostname);
-                        kafkaAdmin = adminClientProvider.createAdminClient(bootstrapHostname, this.kafkaTlsPemIdentity.pemTrustSet(), this.kafkaTlsPemIdentity.pemAuthIdentity());
+                        kafkaAdmin = adminClientProvider.createAdminClient(bootstrapHostname, this.coTlsPemIdentity.pemTrustSet(), this.coTlsPemIdentity.pemAuthIdentity());
                         kafkaStatus.setClusterId(kafkaAdmin.describeCluster().clusterId().get());
                     } catch (KafkaException e) {
                         LOGGER.warnCr(reconciliation, "Kafka exception getting clusterId {}", e.getMessage());
@@ -910,7 +909,7 @@ public class KafkaReconciler {
      */
     protected Future<Void> metadataVersion(KafkaStatus kafkaStatus) {
         if (kafkaMetadataStateManager.getMetadataConfigurationState().isKRaft()) {
-            return KRaftMetadataManager.maybeUpdateMetadataVersion(reconciliation, vertx, this.kafkaTlsPemIdentity, adminClientProvider, kafka.getMetadataVersion(), kafkaStatus);
+            return KRaftMetadataManager.maybeUpdateMetadataVersion(reconciliation, vertx, this.coTlsPemIdentity, adminClientProvider, kafka.getMetadataVersion(), kafkaStatus);
         } else {
             return Future.succeededFuture();
         }
@@ -1065,7 +1064,7 @@ public class KafkaReconciler {
                     LOGGER.debugCr(reconciliation, "Checking ZooKeeper migration state on controller {}", controller.podName());
                     KafkaAgentClient kafkaAgentClient = kafkaAgentClientProvider.createKafkaAgentClient(
                             reconciliation,
-                            this.kafkaTlsPemIdentity
+                            this.coTlsPemIdentity
                     );
                     this.kafkaMetadataStateManager.setMigrationDone(
                             KRaftMigrationUtils.checkMigrationInProgress(

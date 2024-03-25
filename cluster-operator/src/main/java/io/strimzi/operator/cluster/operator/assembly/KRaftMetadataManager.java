@@ -53,7 +53,7 @@ public class KRaftMetadataManager {
      *
      * @param reconciliation            Reconciliation marker
      * @param vertx                     Vert.x instance
-     * @param kafkaTlsPemIdentity       Trust set and identity for TLS client authentication for connecting to the Kafka cluster
+     * @param coTlsPemIdentity          Trust set and identity for TLS client authentication for connecting to the Kafka cluster
      * @param adminClientProvider       Kafka Admin client provider
      * @param desiredMetadataVersion    Desired metadata version
      * @param status                    Kafka status
@@ -63,14 +63,14 @@ public class KRaftMetadataManager {
     public static Future<Void> maybeUpdateMetadataVersion(
             Reconciliation reconciliation,
             Vertx vertx,
-            TlsPemIdentity kafkaTlsPemIdentity,
+            TlsPemIdentity coTlsPemIdentity,
             AdminClientProvider adminClientProvider,
             String desiredMetadataVersion,
             KafkaStatus status
     ) {
         String bootstrapHostname = KafkaResources.bootstrapServiceName(reconciliation.name()) + "." + reconciliation.namespace() + ".svc:" + KafkaCluster.REPLICATION_PORT;
         LOGGER.debugCr(reconciliation, "Creating AdminClient for Kafka cluster in namespace {}", reconciliation.namespace());
-        Admin kafkaAdmin = adminClientProvider.createAdminClient(bootstrapHostname, kafkaTlsPemIdentity.pemTrustSet(), kafkaTlsPemIdentity.pemAuthIdentity());
+        Admin kafkaAdmin = adminClientProvider.createAdminClient(bootstrapHostname, coTlsPemIdentity.pemTrustSet(), coTlsPemIdentity.pemAuthIdentity());
 
         Promise<Void> updatePromise = Promise.promise();
         maybeUpdateMetadataVersion(reconciliation, vertx, kafkaAdmin, desiredMetadataVersion, status)

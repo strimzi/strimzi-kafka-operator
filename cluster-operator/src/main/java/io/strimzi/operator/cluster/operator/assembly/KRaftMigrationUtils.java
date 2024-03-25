@@ -31,20 +31,20 @@ public class KRaftMigrationUtils {
      * to elect a new controller among them taking the KRaft controllers out of the picture.
      *
      * @param reconciliation        Reconciliation information
-     * @param zkTlsPemIdentity      Trust set and identity for TLS client authentication for connecting to ZooKeeper
+     * @param coTlsPemIdentity      Trust set and identity for TLS client authentication for connecting to ZooKeeper
      * @param operationTimeoutMs    Timeout to be set on the ZooKeeper request configuration
      * @param zkConnectionString    Connection string to the ZooKeeper ensemble to connect to
      */
-    public static void deleteZooKeeperControllerZnode(Reconciliation reconciliation, TlsPkcs12Identity zkTlsPemIdentity, long operationTimeoutMs, String zkConnectionString) {
+    public static void deleteZooKeeperControllerZnode(Reconciliation reconciliation, TlsPkcs12Identity coTlsPemIdentity, long operationTimeoutMs, String zkConnectionString) {
         PasswordGenerator pg = new PasswordGenerator(12);
         // Setup truststore from PEM file in cluster CA secret
         // We cannot use P12 because of custom CAs which for simplicity provide only PEM
         String trustStorePassword = pg.generate();
-        File trustStoreFile = Util.createFileTrustStore(KRaftMigrationUtils.class.getName(), "p12", zkTlsPemIdentity.pemTrustSet().trustedCertificates(), trustStorePassword.toCharArray());
+        File trustStoreFile = Util.createFileTrustStore(KRaftMigrationUtils.class.getName(), "p12", coTlsPemIdentity.pemTrustSet().trustedCertificates(), trustStorePassword.toCharArray());
 
         // Setup keystore from PKCS12 in cluster-operator secret
-        String keyStorePassword = zkTlsPemIdentity.pkcs12AuthIdentity().password();
-        File keyStoreFile = Util.createFileStore(KRaftMigrationUtils.class.getName(), "p12", zkTlsPemIdentity.pkcs12AuthIdentity().keystore());
+        String keyStorePassword = coTlsPemIdentity.pkcs12AuthIdentity().password();
+        File keyStoreFile = Util.createFileStore(KRaftMigrationUtils.class.getName(), "p12", coTlsPemIdentity.pkcs12AuthIdentity().keystore());
         try {
             ZooKeeperAdmin admin = createZooKeeperAdminClient(reconciliation, zkConnectionString, operationTimeoutMs,
                     trustStoreFile, trustStorePassword, keyStoreFile, keyStorePassword);
