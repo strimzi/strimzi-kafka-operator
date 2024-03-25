@@ -45,7 +45,7 @@ import static io.strimzi.operator.common.operator.resource.ConfigParameterParser
  * @param sslEndpointIdentificationAlgorithm The SSL endpoint identification algorithm
  * @param saslEnabled                   Whether the Admin client should be configured to use SASL
  * @param saslMechanism                 The SASL mechanism for the Admin client
- * @param saslCustomConfig              The SASL custom values for the Admin client when using alternate auth mechanisms.
+ * @param saslCustomConfigJson          The SASL custom values for the Admin client when using alternate auth mechanisms.
  * @param saslUsername,                 The SASL username for the Admin client
  * @param saslPassword,                 The SASL password for the Admin client
  * @param securityProtocol              The security protocol for the Admin client
@@ -78,7 +78,7 @@ public record TopicOperatorConfig(
         String sslEndpointIdentificationAlgorithm,
         boolean saslEnabled,
         String saslMechanism,
-        String saslCustomConfig,
+        String saslCustomConfigJson,
         String saslUsername,
         String saslPassword,
         String securityProtocol,
@@ -116,7 +116,7 @@ public record TopicOperatorConfig(
     static final ConfigParameter<String> SSL_ENDPOINT_IDENTIFICATION_ALGORITHM = new ConfigParameter<>("STRIMZI_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM", STRING, "HTTPS", CONFIG_VALUES);
     static final ConfigParameter<Boolean> SASL_ENABLED = new ConfigParameter<>("STRIMZI_SASL_ENABLED", BOOLEAN, "false", CONFIG_VALUES);
     static final ConfigParameter<String> SASL_MECHANISM = new ConfigParameter<>("STRIMZI_SASL_MECHANISM", STRING, "", CONFIG_VALUES);
-    static final ConfigParameter<String> SASL_CUSTOM_CONFIG = new ConfigParameter<>("STRIMZI_SASL_CUSTOM_CONFIG", STRING, "", CONFIG_VALUES);
+    static final ConfigParameter<String> SASL_CUSTOM_CONFIG_JSON = new ConfigParameter<>("STRIMZI_SASL_CUSTOM_CONFIG_JSON", STRING, "", CONFIG_VALUES);
     static final ConfigParameter<String> SASL_USERNAME = new ConfigParameter<>("STRIMZI_SASL_USERNAME", STRING, "", CONFIG_VALUES);
     static final ConfigParameter<String> SASL_PASSWORD = new ConfigParameter<>("STRIMZI_SASL_PASSWORD", STRING, "", CONFIG_VALUES);
     static final ConfigParameter<String> SECURITY_PROTOCOL = new ConfigParameter<>("STRIMZI_SECURITY_PROTOCOL", STRING, "", CONFIG_VALUES);
@@ -181,7 +181,7 @@ public record TopicOperatorConfig(
                 get(map, SSL_ENDPOINT_IDENTIFICATION_ALGORITHM),
                 get(map, SASL_ENABLED),
                 get(map, SASL_MECHANISM),
-                get(map, SASL_CUSTOM_CONFIG),
+                get(map, SASL_CUSTOM_CONFIG_JSON),
                 get(map, SASL_USERNAME),
                 get(map, SASL_PASSWORD),
                 get(map, SECURITY_PROTOCOL),
@@ -251,24 +251,18 @@ public record TopicOperatorConfig(
     private void putSaslConfigs(Map<String, Object> kafkaClientProps) {
         TopicOperatorConfig config = this;
         String configSaslMechanism = config.saslMechanism();
+        String customSaslConfigJson = config.saslCustomConfigJson();
 
-        switch (configSaslMechanism) {
-            case "plain":
-            case "scram-sha-256":
-            case "scram-sha-512":
-                setStandardSaslConfigs(kafkaClientProps);
-                break;
-            case "custom":
-                setCustomSaslConfigs(kafkaClientProps);
-                break;
-            default:
-                throw new IllegalArgumentException("Invalid SASL_MECHANISM type: " + configSaslMechanism);
+        if (customSaslConfigJson.isBlank()) {
+            setStandardSaslConfigs(kafkaClientProps);
+        } else {
+            setCustomSaslConfigs(kafkaClientProps);
         }
     }
 
     private void setCustomSaslConfigs(Map<String, Object> kafkaClientProps) {
         TopicOperatorConfig config = this;
-        String customPropsString = config.saslCustomConfig();
+        String customPropsString = config.saslCustomConfigJson();
 
         if (customPropsString.isEmpty()) {
             throw new InvalidConfigurationException("Custom SASL config properties are not set");
@@ -345,7 +339,7 @@ public record TopicOperatorConfig(
                 "\n\tsslEndpointIdentificationAlgorithm='" + sslEndpointIdentificationAlgorithm + '\'' +
                 "\n\tsaslEnabled=" + saslEnabled +
                 "\n\tsaslMechanism='" + saslMechanism + '\'' +
-                "\n\tsaslCustomConfig='" + (saslCustomConfig == null ? null : mask) + '\'' +
+                "\n\tsaslCustomConfigJson='" + (saslCustomConfigJson == null ? null : mask) + '\'' +
                 "\n\tsaslUsername='" + saslUsername + '\'' +
                 "\n\tsaslPassword='" + mask + '\'' +
                 "\n\tsecurityProtocol='" + securityProtocol + '\'' +

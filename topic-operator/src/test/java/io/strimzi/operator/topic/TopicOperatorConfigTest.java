@@ -278,8 +278,7 @@ class TopicOperatorConfigTest {
               TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
               TopicOperatorConfig.NAMESPACE.key(), "some-namespace",
               TopicOperatorConfig.SASL_ENABLED.key(), "true",
-              TopicOperatorConfig.SASL_MECHANISM.key(), "custom",
-              TopicOperatorConfig.SASL_CUSTOM_CONFIG.key(), """
+              TopicOperatorConfig.SASL_CUSTOM_CONFIG_JSON.key(), """
                     {
                         "sasl.mechanism": "WAS_SMK_IAM",
                         "sasl.jaas.config": "some.custom.auth.iam.IAMLoginModule required;",
@@ -304,25 +303,12 @@ class TopicOperatorConfigTest {
     }
 
     @Test
-    void shouldThrowIfCustomMechanismAndNoCustomConfig() {
-        var config = TopicOperatorConfig.buildFromMap(Map.of(
-              TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
-              TopicOperatorConfig.NAMESPACE.key(), "some-namespace",
-              TopicOperatorConfig.SASL_ENABLED.key(), "true",
-              TopicOperatorConfig.SASL_MECHANISM.key(), "custom"));
-
-        var customMechanismException = assertThrows(InvalidConfigurationException.class, config::adminClientConfig);
-        assertEquals("Custom SASL config properties are not set", customMechanismException.getMessage());
-    }
-
-    @Test
     void shouldThrowIfCustomConfigPropertyEmpty() {
         var config = TopicOperatorConfig.buildFromMap(Map.of(
               TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
               TopicOperatorConfig.NAMESPACE.key(), "some-namespace",
               TopicOperatorConfig.SASL_ENABLED.key(), "true",
-              TopicOperatorConfig.SASL_MECHANISM.key(), "custom",
-              TopicOperatorConfig.SASL_CUSTOM_CONFIG.key(), "{}"
+              TopicOperatorConfig.SASL_CUSTOM_CONFIG_JSON.key(), "{}"
         ));
 
         var customMechanismException = assertThrows(InvalidConfigurationException.class, config::adminClientConfig);
@@ -335,8 +321,7 @@ class TopicOperatorConfigTest {
               TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
               TopicOperatorConfig.NAMESPACE.key(), "some-namespace",
               TopicOperatorConfig.SASL_ENABLED.key(), "true",
-              TopicOperatorConfig.SASL_MECHANISM.key(), "custom",
-              TopicOperatorConfig.SASL_CUSTOM_CONFIG.key(), "{"
+              TopicOperatorConfig.SASL_CUSTOM_CONFIG_JSON.key(), "{"
         ));
 
         var customMechanismException = assertThrows(InvalidConfigurationException.class, config::adminClientConfig);
@@ -349,8 +334,7 @@ class TopicOperatorConfigTest {
               TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
               TopicOperatorConfig.NAMESPACE.key(), "some-namespace",
               TopicOperatorConfig.SASL_ENABLED.key(), "true",
-              TopicOperatorConfig.SASL_MECHANISM.key(), "custom",
-              TopicOperatorConfig.SASL_CUSTOM_CONFIG.key(), "{ \"a\": \"b\" }"
+              TopicOperatorConfig.SASL_CUSTOM_CONFIG_JSON.key(), "{ \"a\": \"b\" }"
         ));
 
         var customMechanismException = assertThrows(InvalidConfigurationException.class, config::adminClientConfig);
@@ -363,8 +347,7 @@ class TopicOperatorConfigTest {
               TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
               TopicOperatorConfig.NAMESPACE.key(), "some-namespace",
               TopicOperatorConfig.SASL_ENABLED.key(), "true",
-              TopicOperatorConfig.SASL_MECHANISM.key(), "custom",
-              TopicOperatorConfig.SASL_CUSTOM_CONFIG.key(), "{ \"\": \"b\" }"
+              TopicOperatorConfig.SASL_CUSTOM_CONFIG_JSON.key(), "{ \"\": \"b\" }"
         ));
 
         var customMechanismException = assertThrows(InvalidConfigurationException.class, config::adminClientConfig);
