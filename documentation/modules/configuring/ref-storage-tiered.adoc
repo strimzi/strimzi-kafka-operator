@@ -3,11 +3,12 @@
 
 [role="_abstract"]
 Tiered storage introduces a flexible approach to managing Kafka data whereby log segments are moved to a separate storage system. 
-For example, you can have fast local disks on brokers and offload older or less frequently accessed data from the local disks to more cost-effective, scalable remote storage solutions, such as Amazon S3, without compromising data accessibility and durability.
+For example, you can combine the use of local disks on brokers for frequently accessed data and offload older or less frequently accessed data from the local disks to more cost-effective, scalable remote storage solutions, such as Amazon S3, without compromising data accessibility and durability.
 
-NOTE: Tiered storage is available a technology preview with Strimzi, so it is not suitable for production environments.
- 
-Tiered storage requires an implementation of Kafka's `RemoteStorageManager` interface, which is enabled through configuration of the `Kafka` resource.
+WARNING: Tiered storage is an early access Kafka feature, which is also available in Strimzi. 
+Due to its https://kafka.apache.org/documentation/#tiered_storage_limitation[current limitations^], it is not recommended for production environments. 
+
+Tiered storage requires an implementation of Kafka's `RemoteStorageManager` interface to handle communication between Kafka and the remote storage system, which is enabled through configuration of the `Kafka` resource.
 Strimzi uses Kafka's `TopicBasedRemoteLogMetadataManager` for Remote Log Metadata Management (RLMM) when custom tiered storage is enabled.
 The RLMM manages the metadata related to remote storage.  
 
@@ -15,8 +16,6 @@ To use custom tiered storage, do the following:
 
 * Include a tiered storage plugin for Kafka in the Strimzi image by building a custom container image. 
 The plugin must provide the necessary functionality for a Kafka cluster managed by Strimzi to interact with the tiered storage solution.
-* Create a custom implementation of Kafka's `RemoteStorageManager` interface for your chosen tiered storage solution. 
-The implementation handles communication between Kafka and the remote storage system.
 * Configure Kafka for tiered storage using `tieredStorage` properties in the `Kafka` resource. 
 Specify the class name and path for the custom `RemoteStorageManager` implementation, as well as any additional configuration. 
 * If required, specify RLMM-specific tiered storage configuration.

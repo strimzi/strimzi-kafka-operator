@@ -5,9 +5,10 @@ If you want to use custom tiered storage, you must first add a tiered storage fo
 Custom tiered storage configuration enables the use of a custom `RemoteStorageManager` configuration.
 `RemoteStorageManager` is a Kafka interface for managing the interaction between Kafka and remote tiered storage.
 
-If custom tiered storage is enabled, Strimzi uses the link:https://github.com/apache/kafka/blob/trunk/storage/src/main/java/org/apache/kafka/server/log/remote/metadata/storage/TopicBasedRemoteLogMetadataManager.java[`TopicBasedRemoteLogMetadataManager`] for Remote Log Metadata Management (RLMM).
+If custom tiered storage is enabled, Strimzi uses the https://github.com/apache/kafka/blob/trunk/storage/src/main/java/org/apache/kafka/server/log/remote/metadata/storage/TopicBasedRemoteLogMetadataManager.java[`TopicBasedRemoteLogMetadataManager`^] for Remote Log Metadata Management (RLMM).
 
-NOTE: Tiered storage is available a technology preview with Strimzi, so it is not suitable for production environments.
+WARNING: Tiered storage is an early access Kafka feature, which is also available in Strimzi. 
+Due to its https://kafka.apache.org/documentation/#tiered_storage_limitation[current limitations^], it is not recommended for production environments.
 
 .Example custom tiered storage configuration
 [source,yaml,subs="attributes+"]
