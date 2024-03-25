@@ -730,7 +730,7 @@ public class StrimziPodSetController implements Runnable {
 
         @Override
         public void onUpdate(Kafka oldKafka, Kafka newKafka) {
-            // Internationally not used
+            // Intentionally not used
         }
 
         @Override
