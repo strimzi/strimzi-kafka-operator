@@ -2103,7 +2103,11 @@ public class ConnectorMockTest {
         kafkaConnectOperator.reconcileAll("test", namespace, ignored -> reconciled.complete());
 
         Checkpoint async = context.checkpoint();
-        attemptReconciliationAndAssertion(vertx, 0, 5, context, async, meterRegistry, tags);
+
+        final Map<String, Double> expectedMetrics = Map.of(
+            "strimzi.resources", 1.0,
+            "strimzi.resources.paused", 0.0);
+        attemptReconciliationAndAssertion(vertx, 0, 5, context, async, meterRegistry, tags, expectedMetrics);
     }
 
     /**
@@ -2112,40 +2116,44 @@ public class ConnectorMockTest {
      * On success, it flags the checkpoint to signal that the test can proceed.
      * On failure, it logs the error and fails the test context.
      *
-     * @param vertx         The Vert.x instance.
-     * @param attempt       The current attempt number.
-     * @param maxAttempts   The maximum number of attempts before failing the test.
-     * @param testContext   The VertxTestContext for the test.
-     * @param async         The Checkpoint to flag upon successful assertion.
-     * @param meterRegistry The MeterRegistry where metrics are registered.
+     * @param vertx           The Vert.x instance.
+     * @param attempt         The current attempt number.
+     * @param maxAttempts     The maximum number of attempts before failing the test.
+     * @param testContext     The VertxTestContext for the test.
+     * @param async           The Checkpoint to flag upon successful assertion.
+     * @param meterRegistry   The MeterRegistry where metrics are registered.
      * @param tags          The tags to identify the right metrics.
+     * @param expectedMetrics A map of metric names to their expected values.
      */
-    private void attemptReconciliationAndAssertion(Vertx vertx, int attempt, int maxAttempts, VertxTestContext testContext, Checkpoint async, MeterRegistry meterRegistry, Tags tags) {
+    private void attemptReconciliationAndAssertion(
+        Vertx vertx,
+        int attempt,
+        int maxAttempts,
+        VertxTestContext testContext,
+        Checkpoint async,
+        MeterRegistry meterRegistry,
+        Tags tags,
+        Map<String, Double> expectedMetrics) {
+
         kafkaConnectOperator.reconcileAll("test", namespace, ar -> {
             if (ar.succeeded()) {
                 try {
-                    Gauge resources = meterRegistry.get("strimzi.resources").tags(tags).gauge();
-                    assertThat(resources.value(), is(1.0));
-
-                    Gauge resourcesPaused = meterRegistry.get("strimzi.resources.paused").tags(tags).gauge();
-                    assertThat(resourcesPaused.value(), is(0.0));
-
-                    LOGGER.info("Assertion for paused connectors resource counter succeeded on attempt " + (attempt + 1));
-                    // If assertions pass, flag the checkpoint
+                    for (Map.Entry<String, Double> metricEntry : expectedMetrics.entrySet()) {
+                        Gauge gauge = meterRegistry.get(metricEntry.getKey()).tags(tags).gauge();
+                        assertThat(gauge.value(), is(metricEntry.getValue()));
+                    }
+                    LOGGER.info("All assertions succeeded on attempt " + attempt);
                     async.flag();
                 } catch (AssertionError e) {
                     if (attempt < maxAttempts) {
-                        // If assertions fail, retry after a delay
-                        LOGGER.warn("Assertion for paused connectors resource counter failed on attempt " + (attempt + 1) + ": " + e.getMessage());
-                        vertx.setTimer(1000, id -> attemptReconciliationAndAssertion(vertx, attempt + 1, maxAttempts, testContext, async, meterRegistry, tags));
+                        LOGGER.warn("Assertion failed on attempt " + attempt + ": " + e.getMessage());
+                        vertx.setTimer(1000, id -> attemptReconciliationAndAssertion(vertx, attempt + 1, maxAttempts, testContext, async, meterRegistry, expectedMetrics));
                     } else {
-                        LOGGER.error("Assertion for paused connectors resource counter failed after " + maxAttempts + " attempts.");
-                        // If max attempts reached, fail the test
+                        LOGGER.error("All assertions failed after " + maxAttempts + " attempts.");
                         testContext.failNow(e);
                     }
                 }
             } else {
-                // If reconciliation fails, directly fail the test
                 testContext.failNow(ar.cause());
             }
         });
