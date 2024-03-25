@@ -2147,7 +2147,7 @@ public class ConnectorMockTest {
                 } catch (AssertionError e) {
                     if (attempt < maxAttempts) {
                         LOGGER.warn("Assertion failed on attempt " + attempt + ": " + e.getMessage());
-                        vertx.setTimer(1000, id -> attemptReconciliationAndAssertion(vertx, attempt + 1, maxAttempts, testContext, async, meterRegistry, expectedMetrics));
+                        vertx.setTimer(1000, id -> attemptReconciliationAndAssertion(vertx, attempt + 1, maxAttempts, testContext, async, meterRegistry, tags, expectedMetrics));
                     } else {
                         LOGGER.error("All assertions failed after " + maxAttempts + " attempts.");
                         testContext.failNow(e);
