@@ -725,7 +725,7 @@ public class StrimziPodSetController implements Runnable {
     private class KafkaEventHandler implements ResourceEventHandler<Kafka> {
         @Override
         public void onAdd(Kafka kafka) {
-            // Internationally not used
+            // Intentionally not used
         }
 
         @Override
