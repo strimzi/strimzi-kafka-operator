@@ -566,11 +566,15 @@ public abstract class AbstractOperator<
      */
     private Future<Void> updateResourceState(Reconciliation reconciliation, boolean ready, Throwable cause) {
         String key = reconciliation.namespace() + ":" + reconciliation.kind() + "/" + reconciliation.name();
-        String errorReason = cause == null
-                ? "none"
-                : cause.getMessage() == null
-                ? "unknown error"
-                : cause.getMessage();
+
+        String errorReason = "none";
+        if (cause != null) {
+            if (cause.getMessage() != null) {
+                errorReason = cause.getMessage();
+            } else {
+                errorReason = "unknown error";
+            }
+        }
 
         Tags metricTags = Tags.of(
                 Tag.of("kind", reconciliation.kind()),

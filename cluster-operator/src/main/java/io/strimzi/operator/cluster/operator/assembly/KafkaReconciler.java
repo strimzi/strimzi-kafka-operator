@@ -737,16 +737,15 @@ public class KafkaReconciler {
                 metrics.certificateExpiration(kafka.getCluster(), reconciliation.namespace()).set(
                         CertUtils.getCertificateExpirationDateEpoch(secret, crtKey));
 
-                LOGGER.infoCr(reconciliation, "Metrics {} for Kafka: {}/{} has been created/updated",
+                LOGGER.debugCr(reconciliation, "Metrics {} for Kafka: {}/{} has been created/updated",
                         MetricsHolder.METRICS_CERTIFICATE_EXPIRATION_MS, reconciliation.namespace(), kafka.getCluster());
                 break;
             case DELETED:
                 Tags tags = metrics.getTags(kafka.getCluster(), reconciliation.namespace(), "Kafka");
                 metrics.removeMetric(MetricsHolder.METRICS_CERTIFICATE_EXPIRATION_MS, tags);
 
-                LOGGER.infoCr(reconciliation, "Metrics {} for Kafka: {}/{} has been removed",
+                LOGGER.debugCr(reconciliation, "Metrics {} for Kafka: {}/{} has been removed",
                         MetricsHolder.METRICS_CERTIFICATE_EXPIRATION_MS, reconciliation.namespace(), kafka.getCluster());
-
                 break;
             default:
                 // Intentionally left empty

@@ -748,7 +748,7 @@ public class StrimziPodSetController implements Runnable {
             Tags tags = metrics().getTags(clusterName, namespace, "Kafka");
             metrics().removeMetric(MetricsHolder.METRICS_CERTIFICATE_EXPIRATION_MS, tags);
 
-            LOGGER.infoOp("Metrics {} for Kafka: {}/{} has been removed",
+            LOGGER.debugOp("Metrics {} for Kafka: {}/{} has been removed",
                     MetricsHolder.METRICS_CERTIFICATE_EXPIRATION_MS, namespace, clusterName);
         }
     }
