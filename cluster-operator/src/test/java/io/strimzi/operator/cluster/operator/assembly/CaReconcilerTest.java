@@ -31,6 +31,7 @@ import io.strimzi.operator.cluster.model.RestartReason;
 import io.strimzi.operator.cluster.model.RestartReasons;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.auth.TlsPemIdentity;
 import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
@@ -1668,7 +1669,7 @@ public class CaReconcilerTest {
         }
 
         @Override
-        Future<Void> maybeRollZookeeper(int replicas, RestartReasons podRestartReasons) {
+        Future<Void> maybeRollZookeeper(int replicas, RestartReasons podRestartReasons, TlsPemIdentity coTlsPemIdentity) {
             this.zkPodRestartReasons = podRestartReasons;
             return Future.succeededFuture();
         }
@@ -1683,7 +1684,7 @@ public class CaReconcilerTest {
         }
 
         @Override
-        Future<Void> rollKafkaBrokers(Set<NodeRef> nodes, RestartReasons podRollReasons) {
+        Future<Void> rollKafkaBrokers(Set<NodeRef> nodes, RestartReasons podRollReasons, TlsPemIdentity coTlsPemIdentity) {
             this.kPodRollReasons = podRollReasons;
             return Future.succeededFuture();
         }

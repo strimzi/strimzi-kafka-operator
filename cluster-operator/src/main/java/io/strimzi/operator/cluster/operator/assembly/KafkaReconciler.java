@@ -56,6 +56,7 @@ import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.auth.TlsPemIdentity;
 import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.common.model.ClientsCa;
 import io.strimzi.operator.common.model.Labels;
@@ -155,6 +156,7 @@ public class KafkaReconciler {
     private String loggingHash = "";
     private final Map<Integer, String> brokerConfigurationHash = new HashMap<>();
     private final Map<Integer, String> kafkaServerCertificateHash = new HashMap<>();
+    /* test */ TlsPemIdentity coTlsPemIdentity;
     /* test */ KafkaListenersReconciler.ReconciliationResult listenerReconciliationResults; // Result of the listener reconciliation with the listener details
 
     private final KafkaMetadataStateManager kafkaMetadataStateManager;
@@ -239,6 +241,7 @@ public class KafkaReconciler {
      */
     public Future<Void> reconcile(KafkaStatus kafkaStatus, Clock clock)    {
         return modelWarnings(kafkaStatus)
+                .compose(i -> initClientAuthenticationCertificates())
                 .compose(i -> manualPodCleaning())
                 .compose(i -> networkPolicy())
                 .compose(i -> manualRollingUpdate())
@@ -283,6 +286,17 @@ public class KafkaReconciler {
         kafkaStatus.addConditions(conditions);
 
         return Future.succeededFuture();
+    }
+
+    /**
+     * Initialize the TrustSet and PemAuthIdentity to be used by TLS clients during reconciliation
+     *
+     * @return Completes when the TrustStore and PemAuthIdentity have been created and stored in a record
+     */
+    protected Future<Void> initClientAuthenticationCertificates() {
+        return ReconcilerUtils.coTlsPemIdentity(reconciliation, secretOperator)
+                .onSuccess(coTlsPemIdentity -> this.coTlsPemIdentity = coTlsPemIdentity)
+                .mapEmpty();
     }
 
     /**
@@ -425,26 +439,23 @@ public class KafkaReconciler {
             Map<Integer, Map<String, String>> kafkaAdvertisedPorts,
             boolean allowReconfiguration
     ) {
-        return ReconcilerUtils.clientSecrets(reconciliation, secretOperator)
-                .compose(compositeFuture ->
-                        new KafkaRoller(
-                                reconciliation,
-                                vertx,
-                                podOperator,
-                                1_000,
-                                operationTimeoutMs,
-                                () -> new BackOff(250, 2, 10),
-                                nodes,
-                                compositeFuture.resultAt(0),
-                                compositeFuture.resultAt(1),
-                                adminClientProvider,
-                                kafkaAgentClientProvider,
-                                brokerId -> kafka.generatePerBrokerConfiguration(brokerId, kafkaAdvertisedHostnames, kafkaAdvertisedPorts),
-                                logging,
-                                kafka.getKafkaVersion(),
-                                allowReconfiguration,
-                                eventsPublisher
-                        ).rollingRestart(podNeedsRestart));
+        return new KafkaRoller(
+                    reconciliation,
+                    vertx,
+                    podOperator,
+                    1_000,
+                    operationTimeoutMs,
+                    () -> new BackOff(250, 2, 10),
+                    nodes,
+                    this.coTlsPemIdentity,
+                    adminClientProvider,
+                    kafkaAgentClientProvider,
+                    brokerId -> kafka.generatePerBrokerConfiguration(brokerId, kafkaAdvertisedHostnames, kafkaAdvertisedPorts),
+                    logging,
+                    kafka.getKafkaVersion(),
+                    allowReconfiguration,
+                    eventsPublisher
+            ).rollingRestart(podNeedsRestart);
     }
 
     /**
@@ -865,32 +876,29 @@ public class KafkaReconciler {
      * @return  Future which completes when the Cluster ID is retrieved and set in the status
      */
     protected Future<Void> clusterId(KafkaStatus kafkaStatus) {
-        return ReconcilerUtils.clientSecrets(reconciliation, secretOperator)
-                .compose(compositeFuture -> {
-                    LOGGER.debugCr(reconciliation, "Attempt to get clusterId");
-                    return vertx.createSharedWorkerExecutor("kubernetes-ops-pool")
-                            .executeBlocking(() -> {
-                                Admin kafkaAdmin = null;
+        LOGGER.debugCr(reconciliation, "Attempt to get clusterId");
+        return vertx.createSharedWorkerExecutor("kubernetes-ops-pool")
+                .executeBlocking(() -> {
+                    Admin kafkaAdmin = null;
 
-                                try {
-                                    String bootstrapHostname = KafkaResources.bootstrapServiceName(reconciliation.name()) + "." + reconciliation.namespace() + ".svc:" + KafkaCluster.REPLICATION_PORT;
-                                    LOGGER.debugCr(reconciliation, "Creating AdminClient for clusterId using {}", bootstrapHostname);
-                                    kafkaAdmin = adminClientProvider.createAdminClient(bootstrapHostname, compositeFuture.resultAt(0), compositeFuture.resultAt(1), "cluster-operator");
-                                    kafkaStatus.setClusterId(kafkaAdmin.describeCluster().clusterId().get());
-                                } catch (KafkaException e) {
-                                    LOGGER.warnCr(reconciliation, "Kafka exception getting clusterId {}", e.getMessage());
-                                } catch (InterruptedException e) {
-                                    LOGGER.warnCr(reconciliation, "Interrupted exception getting clusterId {}", e.getMessage());
-                                } catch (ExecutionException e) {
-                                    LOGGER.warnCr(reconciliation, "Execution exception getting clusterId {}", e.getMessage());
-                                } finally {
-                                    if (kafkaAdmin != null) {
-                                        kafkaAdmin.close();
-                                    }
-                                }
+                    try {
+                        String bootstrapHostname = KafkaResources.bootstrapServiceName(reconciliation.name()) + "." + reconciliation.namespace() + ".svc:" + KafkaCluster.REPLICATION_PORT;
+                        LOGGER.debugCr(reconciliation, "Creating AdminClient for clusterId using {}", bootstrapHostname);
+                        kafkaAdmin = adminClientProvider.createAdminClient(bootstrapHostname, this.coTlsPemIdentity.pemTrustSet(), this.coTlsPemIdentity.pemAuthIdentity());
+                        kafkaStatus.setClusterId(kafkaAdmin.describeCluster().clusterId().get());
+                    } catch (KafkaException e) {
+                        LOGGER.warnCr(reconciliation, "Kafka exception getting clusterId {}", e.getMessage());
+                    } catch (InterruptedException e) {
+                        LOGGER.warnCr(reconciliation, "Interrupted exception getting clusterId {}", e.getMessage());
+                    } catch (ExecutionException e) {
+                        LOGGER.warnCr(reconciliation, "Execution exception getting clusterId {}", e.getMessage());
+                    } finally {
+                        if (kafkaAdmin != null) {
+                            kafkaAdmin.close();
+                        }
+                    }
 
-                                return null;
-                            });
+                    return null;
                 });
     }
 
@@ -901,7 +909,7 @@ public class KafkaReconciler {
      */
     protected Future<Void> metadataVersion(KafkaStatus kafkaStatus) {
         if (kafkaMetadataStateManager.getMetadataConfigurationState().isKRaft()) {
-            return KRaftMetadataManager.maybeUpdateMetadataVersion(reconciliation, vertx, secretOperator, adminClientProvider, kafka.getMetadataVersion(), kafkaStatus);
+            return KRaftMetadataManager.maybeUpdateMetadataVersion(reconciliation, vertx, this.coTlsPemIdentity, adminClientProvider, kafka.getMetadataVersion(), kafkaStatus);
         } else {
             return Future.succeededFuture();
         }
@@ -1047,34 +1055,30 @@ public class KafkaReconciler {
         KafkaMetadataConfigurationState kafkaMetadataConfigState = this.kafkaMetadataStateManager.getMetadataConfigurationState();
         // on each reconcile, would be useless to check migration status if it's not going on
         if (kafkaMetadataConfigState.isMigration()) {
-            return ReconcilerUtils.clientSecrets(reconciliation, secretOperator)
-                    .compose(compositeFuture -> {
-                        // we should get the quorum controller leader using the Admin Client API describeMetadataQuorum() but
-                        // it's not supported by brokers during migration because they are still connected to ZooKeeper so ...
-                        // going through the controllers set to get metrics from one of them, because all expose the needed metrics
-                        boolean zkMigrationStateChecked = false;
-                        for (NodeRef controller : kafka.controllerNodes()) {
-                            try {
-                                LOGGER.debugCr(reconciliation, "Checking ZooKeeper migration state on controller {}", controller.podName());
-                                KafkaAgentClient kafkaAgentClient = kafkaAgentClientProvider.createKafkaAgentClient(
-                                        reconciliation,
-                                        compositeFuture.resultAt(0),
-                                        compositeFuture.resultAt(1)
-                                );
-                                this.kafkaMetadataStateManager.setMigrationDone(
-                                        KRaftMigrationUtils.checkMigrationInProgress(
-                                                reconciliation,
-                                                kafkaAgentClient,
-                                                controller.podName()
-                                        ));
-                                zkMigrationStateChecked = true;
-                                break;
-                            } catch (RuntimeException e) {
-                                LOGGER.debugCr(reconciliation, "Error on checking ZooKeeper migration state on controller {}", controller.podName());
-                            }
-                        }
-                        return zkMigrationStateChecked ? Future.succeededFuture() : Future.failedFuture(new Throwable("Failed to check ZooKeeper migration state"));
-                    });
+            // we should get the quorum controller leader using the Admin Client API describeMetadataQuorum() but
+            // it's not supported by brokers during migration because they are still connected to ZooKeeper so ...
+            // going through the controllers set to get metrics from one of them, because all expose the needed metrics
+            boolean zkMigrationStateChecked = false;
+            for (NodeRef controller : kafka.controllerNodes()) {
+                try {
+                    LOGGER.debugCr(reconciliation, "Checking ZooKeeper migration state on controller {}", controller.podName());
+                    KafkaAgentClient kafkaAgentClient = kafkaAgentClientProvider.createKafkaAgentClient(
+                            reconciliation,
+                            this.coTlsPemIdentity
+                    );
+                    this.kafkaMetadataStateManager.setMigrationDone(
+                            KRaftMigrationUtils.checkMigrationInProgress(
+                                    reconciliation,
+                                    kafkaAgentClient,
+                                    controller.podName()
+                            ));
+                    zkMigrationStateChecked = true;
+                    break;
+                } catch (RuntimeException e) {
+                    LOGGER.debugCr(reconciliation, "Error on checking ZooKeeper migration state on controller {}", controller.podName());
+                }
+            }
+            return zkMigrationStateChecked ? Future.succeededFuture() : Future.failedFuture(new Throwable("Failed to check ZooKeeper migration state"));
         }
         return Future.succeededFuture();
     }

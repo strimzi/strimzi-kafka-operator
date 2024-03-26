@@ -4,8 +4,8 @@
  */
 package io.strimzi.operator.cluster.operator.resource;
 
-import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.auth.TlsPemIdentity;
 
 /**
  * Helper interface to pass different KafkaAgentClient implementations
@@ -16,10 +16,9 @@ public interface KafkaAgentClientProvider {
      * Creates an instance of KafkaAgentClient
      *
      * @param reconciliation    Reconciliation information
-     * @param clusterCaCertSecret   Secret with the Cluster CA public key
-     * @param coKeySecret   Secret with the Cluster CA private key
+     * @param tlsPemIdentity    Trust set and identity for TLS client authentication for connecting to the Kafka cluster
      *
      * @return  KafkaAgentClient instance
      */
-    KafkaAgentClient createKafkaAgentClient(Reconciliation reconciliation, Secret clusterCaCertSecret, Secret coKeySecret);
+    KafkaAgentClient createKafkaAgentClient(Reconciliation reconciliation, TlsPemIdentity tlsPemIdentity);
 }
