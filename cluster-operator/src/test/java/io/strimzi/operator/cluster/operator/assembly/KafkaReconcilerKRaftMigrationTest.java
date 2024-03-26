@@ -328,9 +328,7 @@ public class KafkaReconcilerKRaftMigrationTest {
         private static int count = 0;
 
         public MockKafkaReconciler(Reconciliation reconciliation, Kafka kafkaCr, List<KafkaNodePool> nodePools, ResourceOperatorSupplier supplier, KafkaVersionChange versionChange, KafkaMetadataStateManager kafkaMetadataStateManager) {
-            super(reconciliation, kafkaCr, nodePools, createKafkaCluster(reconciliation, supplier, kafkaCr, nodePools, versionChange, kafkaMetadataStateManager),
-                    CLUSTER_CA, CLIENTS_CA, CO_CONFIG, supplier, PFA, vertx, kafkaMetadataStateManager,
-                    new OperatorMetricsHolder(Kafka.RESOURCE_KIND, Labels.EMPTY, supplier.metricsProvider));
+            super(reconciliation, kafkaCr, nodePools, createKafkaCluster(reconciliation, supplier, kafkaCr, nodePools, versionChange, kafkaMetadataStateManager), CLUSTER_CA, CLIENTS_CA, CO_CONFIG, supplier, PFA, vertx, kafkaMetadataStateManager);
         }
 
         private static KafkaCluster createKafkaCluster(Reconciliation reconciliation, ResourceOperatorSupplier supplier, Kafka kafkaCr, List<KafkaNodePool> nodePools, KafkaVersionChange versionChange, KafkaMetadataStateManager kafkaMetadataStateManager) {

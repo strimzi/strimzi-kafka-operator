@@ -1186,9 +1186,7 @@ public class KafkaAssemblyOperatorWithKRaftTest {
         Function<Pod, RestartReasons> kafkaPodNeedsRestart = null;
 
         public MockKafkaReconciler(Reconciliation reconciliation, Vertx vertx, ClusterOperatorConfig config, ResourceOperatorSupplier supplier, PlatformFeaturesAvailability pfa, Kafka kafkaAssembly, List<KafkaNodePool> nodePools, KafkaCluster kafkaCluster, ClusterCa clusterCa, ClientsCa clientsCa) {
-            super(reconciliation, kafkaAssembly, nodePools, kafkaCluster, clusterCa, clientsCa, config, supplier, pfa, vertx,
-                    new KafkaMetadataStateManager(reconciliation, kafkaAssembly, config.featureGates().useKRaftEnabled()),
-                    new OperatorMetricsHolder(Kafka.RESOURCE_KIND, Labels.EMPTY, supplier.metricsProvider));
+            super(reconciliation, kafkaAssembly, null, kafkaCluster, clusterCa, clientsCa, config, supplier, pfa, vertx, new KafkaMetadataStateManager(reconciliation, kafkaAssembly, config.featureGates().useKRaftEnabled()));
         }
 
         @Override

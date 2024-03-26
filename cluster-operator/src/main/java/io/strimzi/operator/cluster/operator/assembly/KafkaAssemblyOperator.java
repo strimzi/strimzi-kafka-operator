@@ -635,8 +635,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     supplier,
                     pfa,
                     vertx,
-                    kafkaMetadataStateManager,
-                    metrics
+                    kafkaMetadataStateManager
             );
         }
 

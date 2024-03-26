@@ -9,10 +9,8 @@ import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.Node;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.micrometer.core.instrument.Tags;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
@@ -59,7 +57,6 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.auth.TlsPemIdentity;
-import io.strimzi.operator.common.metrics.MetricsHolder;
 import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.common.model.ClientsCa;
 import io.strimzi.operator.common.model.Labels;
@@ -151,7 +148,6 @@ public class KafkaReconciler {
     private final KubernetesRestartEventPublisher eventsPublisher;
     private final AdminClientProvider adminClientProvider;
     private final KafkaAgentClientProvider kafkaAgentClientProvider;
-    private final MetricsHolder metrics;
 
     // State of the reconciliation => these objects might change during the reconciliation (the collection objects are
     // marked as final, but their contents is modified during the reconciliation)
@@ -179,7 +175,6 @@ public class KafkaReconciler {
      * @param pfa                       PlatformFeaturesAvailability describing the environment we run in
      * @param vertx                     Vert.x instance
      * @param kafkaMetadataStateManager Instance of the Kafka metadata state manager
-     * @param metrics                   Metrics holder
      */
     public KafkaReconciler(
             Reconciliation reconciliation,
@@ -192,8 +187,7 @@ public class KafkaReconciler {
             ResourceOperatorSupplier supplier,
             PlatformFeaturesAvailability pfa,
             Vertx vertx,
-            KafkaMetadataStateManager kafkaMetadataStateManager,
-            MetricsHolder metrics
+            KafkaMetadataStateManager kafkaMetadataStateManager
     ) {
         this.reconciliation = reconciliation;
         this.vertx = vertx;
@@ -201,7 +195,6 @@ public class KafkaReconciler {
         this.kafkaNodePoolCrs = nodePools;
         this.kafka = kafka;
         this.kafkaMetadataStateManager = kafkaMetadataStateManager;
-        this.metrics = metrics;
 
         this.clusterCa = clusterCa;
         this.clientsCa = clientsCa;
@@ -708,60 +701,23 @@ public class KafkaReconciler {
     protected Future<Void> certificateSecret(Clock clock) {
         return secretOperator.getAsync(reconciliation.namespace(), KafkaResources.kafkaSecretName(reconciliation.name()))
                 .compose(oldSecret -> {
-                    String secretName = KafkaResources.kafkaSecretName(reconciliation.name());
-                    Secret desiredSecret = kafka.generateCertificatesSecret(clusterCa, clientsCa, listenerReconciliationResults.bootstrapDnsNames, listenerReconciliationResults.brokerDnsNames,
-                            Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant()));
-                    LOGGER.debugCr(reconciliation, "Checking if Kafka certificate Secret {} exists in cluster {}", secretName, kafka.getCluster());
                     return secretOperator
-                            .reconcile(reconciliation, reconciliation.namespace(), secretName, desiredSecret)
+                            .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.kafkaSecretName(reconciliation.name()),
+                                    kafka.generateCertificatesSecret(clusterCa, clientsCa, listenerReconciliationResults.bootstrapDnsNames, listenerReconciliationResults.brokerDnsNames, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant())))
                             .compose(patchResult -> {
                                 if (patchResult != null) {
-                                    LOGGER.debugCr(reconciliation, "Certificates operation {}", patchResult.getType());
                                     for (NodeRef node : kafka.nodes()) {
-                                        Secret secret = patchResult.resource();
-                                        String crtKey = Ca.SecretEntry.CRT.asKey(node.podName());
-
                                         kafkaServerCertificateHash.put(
                                                 node.nodeId(),
-                                                CertUtils.getCertificateThumbprint(secret, crtKey));
-
-                                        emitCertificateSecretMetrics(patchResult.getType(), secret, crtKey);
+                                                CertUtils.getCertificateThumbprint(patchResult.resource(),
+                                                        Ca.SecretEntry.CRT.asKey(node.podName())
+                                                ));
                                     }
                                 }
 
                                 return Future.succeededFuture();
                             });
                 });
-    }
-
-    /**
-     * Emits the certificate expiration metric for the given secret if the resultType is CREATED or PATCHED,
-     * if DELETED the metric will be set to 0 for resetting.
-     *
-     * @param resultType Type of the ReconcileResult
-     * @param secret The modified secret
-     * @param crtKey The crt key for the modified secret
-     */
-    private void emitCertificateSecretMetrics(ReconcileResult.Type resultType, Secret secret, String crtKey) {
-        switch (resultType) {
-            case CREATED, PATCHED, NOOP:
-                metrics.certificateExpiration(kafka.getCluster(), reconciliation.namespace()).set(
-                        CertUtils.getCertificateExpirationDateEpoch(secret, crtKey));
-
-                LOGGER.debugCr(reconciliation, "Metrics {} for Kafka: {}/{} has been created/updated",
-                        MetricsHolder.METRICS_CERTIFICATE_EXPIRATION_MS, reconciliation.namespace(), kafka.getCluster());
-                break;
-            case DELETED:
-                Tags tags = metrics.getTags(kafka.getCluster(), reconciliation.namespace(), "Kafka");
-                metrics.removeMetric(MetricsHolder.METRICS_CERTIFICATE_EXPIRATION_MS, tags);
-
-                LOGGER.debugCr(reconciliation, "Metrics {} for Kafka: {}/{} has been removed",
-                        MetricsHolder.METRICS_CERTIFICATE_EXPIRATION_MS, reconciliation.namespace(), kafka.getCluster());
-                break;
-            default:
-                // Intentionally left empty
-                break;
-        }
     }
 
     /**
