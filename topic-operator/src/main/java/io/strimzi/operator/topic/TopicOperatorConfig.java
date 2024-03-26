@@ -251,7 +251,6 @@ public record TopicOperatorConfig(
 
     private void putSaslConfigs(Map<String, Object> kafkaClientProps) {
         TopicOperatorConfig config = this;
-        String configSaslMechanism = config.saslMechanism();
         String customSaslConfigJson = config.saslCustomConfigJson();
 
         if (customSaslConfigJson.isBlank()) {
