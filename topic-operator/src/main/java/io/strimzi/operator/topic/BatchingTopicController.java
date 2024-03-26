@@ -105,13 +105,25 @@ public class BatchingTopicController {
         this.useFinalizer = config.useFinalizer();
         this.admin = admin;
 
-        // Get the config of some broker and check whether auto topic creation is enabled
-        Optional<String> autoCreateValue = getClusterConfig(admin, AUTO_CREATE_TOPICS_ENABLE);
-        if (autoCreateValue.isPresent() ? "true".equals(autoCreateValue.get()) : false) {
+        var isCustomSaslConfigSet = config.saslCustomConfigJson() != null && !config.saslCustomConfigJson().isBlank();
+        if (isCustomSaslConfigSet) {
             LOGGER.warnOp(
-                    "It is recommended that " + AUTO_CREATE_TOPICS_ENABLE + " is set to 'false' " +
-                    "to avoid races between the operator and Kafka applications auto-creating topics");
+                  "Custom SASL config is being used. Some managed Kafka services like AWS MSK " +
+                  "don't allow reading cluster config. So the " + AUTO_CREATE_TOPICS_ENABLE +
+                  " property is not being tested.");
+            LOGGER.warnOp(
+                  "It is recommended that " + AUTO_CREATE_TOPICS_ENABLE + " is set to 'false' " +
+                        "to avoid races between the operator and Kafka applications auto-creating topics");
+        } else {
+            // Get the config of some broker and check whether auto topic creation is enabled
+            Optional<String> autoCreateValue = getClusterConfig(admin, AUTO_CREATE_TOPICS_ENABLE);
+            if (autoCreateValue.filter("true"::equals).isPresent()) {
+                LOGGER.warnOp(
+                      "It is recommended that " + AUTO_CREATE_TOPICS_ENABLE + " is set to 'false' " +
+                            "to avoid races between the operator and Kafka applications auto-creating topics");
+            }
         }
+
         this.kubeClient = kubeClient;
         this.metrics = metrics;
         this.namespace = config.namespace();
@@ -582,6 +594,15 @@ public class BatchingTopicController {
      * @param reconcilableTopics Reconcilable topic.
      */
     private void warnTooLargeMinIsr(List<ReconcilableTopic> reconcilableTopics) {
+        var isCustomSaslConfigSet = config.saslCustomConfigJson() != null && !config.saslCustomConfigJson().isBlank();
+        if (isCustomSaslConfigSet) {
+            LOGGER.warnOp("Custom SASL config is being used. Some managed Kafka services like AWS MSK " +
+                  "don't allow reading cluster config. So the " + MIN_INSYNC_REPLICAS +
+                  " property is not being tested.");
+
+            return;
+        }
+
         Optional<String> clusterMinIsr = getClusterConfig(admin, MIN_INSYNC_REPLICAS);
         for (ReconcilableTopic reconcilableTopic : reconcilableTopics) {
             var topicConfig = reconcilableTopic.kt().getSpec().getConfig();
