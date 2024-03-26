@@ -180,7 +180,8 @@ public class KafkaClusterCreator {
             usedToBeBrokersCheckFailed = false;
             return Future.succeededFuture(kafka);
         } else {
-            return brokerScaleDownOperations.brokersInUse(reconciliation, vertx, secretOperator, adminClientProvider)
+            return ReconcilerUtils.coTlsPemIdentity(reconciliation, secretOperator)
+                    .compose(coTlsPemIdentity -> brokerScaleDownOperations.brokersInUse(reconciliation, vertx, coTlsPemIdentity, adminClientProvider))
                     .compose(brokersInUse -> {
                         // Check nodes that are being scaled down
                         Set<Integer> scaledDownBrokersInUse = kafka.removedNodes().stream().filter(brokersInUse::contains).collect(Collectors.toSet());

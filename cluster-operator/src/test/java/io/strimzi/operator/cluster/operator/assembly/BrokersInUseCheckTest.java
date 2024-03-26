@@ -4,14 +4,9 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
-import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.api.kafka.model.kafka.Kafka;
-import io.strimzi.api.kafka.model.kafka.KafkaResources;
-import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.operator.resource.SecretOperator;
-import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
@@ -36,13 +31,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 
+import static io.strimzi.operator.common.auth.TlsPemIdentity.DUMMY_IDENTITY;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyString;
-import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -69,7 +64,7 @@ public class BrokersInUseCheckTest {
     public void testBrokersInUse(VertxTestContext context) {
         Admin admin = mock(Admin.class);
         AdminClientProvider mock = mock(AdminClientProvider.class);
-        when(mock.createAdminClient(anyString(), any(), any(), anyString())).thenReturn(admin);
+        when(mock.createAdminClient(anyString(), any(), any())).thenReturn(admin);
 
         // Mock topic description
         TopicDescription t1 = new TopicDescription("my-topic", false, List.of(new TopicPartitionInfo(0, NODE.apply(0), List.of(NODE.apply(0)), List.of(NODE.apply(0)))));
@@ -87,16 +82,10 @@ public class BrokersInUseCheckTest {
         when(ltr.names()).thenReturn(KafkaFuture.completedFuture(Set.of("my-topic", "my-topic2", "my-topic3")));
         when(admin.listTopics(any())).thenReturn(ltr);
 
-        // Mock Secrets
-        SecretOperator mockSecretOps = ResourceUtils.supplierWithMocks(false).secretOperations;
-        Secret secret = new Secret();
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.secretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
-
         // Get brokers in use
         Checkpoint checkpoint = context.checkpoint();
         BrokersInUseCheck operations = new BrokersInUseCheck();
-        operations.brokersInUse(RECONCILIATION, vertx, mockSecretOps, mock)
+        operations.brokersInUse(RECONCILIATION, vertx, DUMMY_IDENTITY, mock)
                 .onComplete(context.succeeding(brokersInUse -> {
                     Collection<String> topicList = topicListCaptor.getValue();
                     assertThat(topicList.size(), is(3));
@@ -113,7 +102,7 @@ public class BrokersInUseCheckTest {
     public void testBrokersInUseWithSingleTopicAndMultiplePartitions(VertxTestContext context) {
         Admin admin = mock(Admin.class);
         AdminClientProvider mock = mock(AdminClientProvider.class);
-        when(mock.createAdminClient(anyString(), any(), any(), anyString())).thenReturn(admin);
+        when(mock.createAdminClient(anyString(), any(), any())).thenReturn(admin);
 
         // Mock topic description
         TopicDescription t = new TopicDescription("my-topic", false, List.of(
@@ -132,16 +121,10 @@ public class BrokersInUseCheckTest {
         when(ltr.names()).thenReturn(KafkaFuture.completedFuture(Set.of("my-topic")));
         when(admin.listTopics(any())).thenReturn(ltr);
 
-        // Mock Secrets
-        SecretOperator mockSecretOps = ResourceUtils.supplierWithMocks(false).secretOperations;
-        Secret secret = new Secret();
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.secretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
-
         // Get brokers in use
         Checkpoint checkpoint = context.checkpoint();
         BrokersInUseCheck operations = new BrokersInUseCheck();
-        operations.brokersInUse(RECONCILIATION, vertx, mockSecretOps, mock)
+        operations.brokersInUse(RECONCILIATION, vertx, DUMMY_IDENTITY, mock)
                 .onComplete(context.succeeding(brokersInUse -> {
                     Collection<String> topicList = topicListCaptor.getValue();
                     assertThat(topicList.size(), is(1));
@@ -158,7 +141,7 @@ public class BrokersInUseCheckTest {
     public void testTopicDescriptionFailure(VertxTestContext context) {
         Admin admin = mock(Admin.class);
         AdminClientProvider mock = mock(AdminClientProvider.class);
-        when(mock.createAdminClient(anyString(), any(), any(), anyString())).thenReturn(admin);
+        when(mock.createAdminClient(anyString(), any(), any())).thenReturn(admin);
 
         // Mock topic description
         @SuppressWarnings(value = "unchecked")
@@ -177,16 +160,10 @@ public class BrokersInUseCheckTest {
         when(ltr.names()).thenReturn(KafkaFuture.completedFuture(Set.of("my-topic")));
         when(admin.listTopics(any())).thenReturn(ltr);
 
-        // Mock Secrets
-        SecretOperator mockSecretOps = ResourceUtils.supplierWithMocks(false).secretOperations;
-        Secret secret = new Secret();
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.secretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
-
         // Get brokers in use
         Checkpoint checkpoint = context.checkpoint();
         BrokersInUseCheck operations = new BrokersInUseCheck();
-        operations.brokersInUse(RECONCILIATION, vertx, mockSecretOps, mock)
+        operations.brokersInUse(RECONCILIATION, vertx, DUMMY_IDENTITY, mock)
                 .onComplete(context.failing(e -> {
                     assertThat(e.getMessage(), is("Test error ..."));
 
@@ -198,7 +175,7 @@ public class BrokersInUseCheckTest {
     public void testListTopicsFailure(VertxTestContext context) {
         Admin admin = mock(Admin.class);
         AdminClientProvider mock = mock(AdminClientProvider.class);
-        when(mock.createAdminClient(anyString(), any(), any(), anyString())).thenReturn(admin);
+        when(mock.createAdminClient(anyString(), any(), any())).thenReturn(admin);
 
         // Mock list topics
         @SuppressWarnings(value = "unchecked")
@@ -212,16 +189,10 @@ public class BrokersInUseCheckTest {
         when(ltr.names()).thenReturn(kf);
         when(admin.listTopics(any())).thenReturn(ltr);
 
-        // Mock Secrets
-        SecretOperator mockSecretOps = ResourceUtils.supplierWithMocks(false).secretOperations;
-        Secret secret = new Secret();
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.secretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
-
         // Get brokers in use
         Checkpoint checkpoint = context.checkpoint();
         BrokersInUseCheck operations = new BrokersInUseCheck();
-        operations.brokersInUse(RECONCILIATION, vertx, mockSecretOps, mock)
+        operations.brokersInUse(RECONCILIATION, vertx, DUMMY_IDENTITY, mock)
                 .onComplete(context.failing(e -> {
                     assertThat(e.getMessage(), is("Test error ..."));
 
@@ -233,21 +204,15 @@ public class BrokersInUseCheckTest {
     public void testKafkaClientFailure(VertxTestContext context) {
         Admin admin = mock(Admin.class);
         AdminClientProvider mock = mock(AdminClientProvider.class);
-        when(mock.createAdminClient(anyString(), any(), any(), anyString())).thenReturn(admin);
+        when(mock.createAdminClient(anyString(), any(), any())).thenReturn(admin);
 
         // Mock list topics
         when(admin.listTopics(any())).thenThrow(new KafkaException("Test error ..."));
 
-        // Mock Secrets
-        SecretOperator mockSecretOps = ResourceUtils.supplierWithMocks(false).secretOperations;
-        Secret secret = new Secret();
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.secretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
-
         // Get brokers in use
         Checkpoint checkpoint = context.checkpoint();
         BrokersInUseCheck operations = new BrokersInUseCheck();
-        operations.brokersInUse(RECONCILIATION, vertx, mockSecretOps, mock)
+        operations.brokersInUse(RECONCILIATION, vertx, DUMMY_IDENTITY, mock)
                 .onComplete(context.failing(e -> {
                     assertThat(e.getMessage(), is("Test error ..."));
 

@@ -5,13 +5,12 @@
 
 package io.strimzi.operator.cluster.operator.assembly;
 
-import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.operator.cluster.operator.resource.KRaftMigrationState;
 import io.strimzi.operator.cluster.operator.resource.KafkaAgentClient;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
-import io.strimzi.operator.common.model.Ca;
+import io.strimzi.operator.common.auth.TlsPkcs12Identity;
 import io.strimzi.operator.common.model.PasswordGenerator;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.admin.ZooKeeperAdmin;
@@ -19,7 +18,6 @@ import org.apache.zookeeper.client.ZKClientConfig;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 
 /**
  * Utility class for ZooKeeper to KRaft migration purposes
@@ -32,22 +30,21 @@ public class KRaftMigrationUtils {
      * This method deletes the /controller znode from ZooKeeper to allow the brokers, which are now in ZooKeeper mode again,
      * to elect a new controller among them taking the KRaft controllers out of the picture.
      *
-     * @param reconciliation    Reconciliation information
-     * @param clusterCaCertSecret   Secret with the Cluster CA public key
-     * @param coKeySecret   Secret with the Cluster CA private key
+     * @param reconciliation        Reconciliation information
+     * @param coTlsPemIdentity      Trust set and identity for TLS client authentication for connecting to ZooKeeper
      * @param operationTimeoutMs    Timeout to be set on the ZooKeeper request configuration
      * @param zkConnectionString    Connection string to the ZooKeeper ensemble to connect to
      */
-    public static void deleteZooKeeperControllerZnode(Reconciliation reconciliation, Secret clusterCaCertSecret, Secret coKeySecret, long operationTimeoutMs, String zkConnectionString) {
+    public static void deleteZooKeeperControllerZnode(Reconciliation reconciliation, TlsPkcs12Identity coTlsPemIdentity, long operationTimeoutMs, String zkConnectionString) {
         PasswordGenerator pg = new PasswordGenerator(12);
         // Setup truststore from PEM file in cluster CA secret
         // We cannot use P12 because of custom CAs which for simplicity provide only PEM
         String trustStorePassword = pg.generate();
-        File trustStoreFile = Util.createFileTrustStore(KRaftMigrationUtils.class.getName(), "p12", Ca.certs(clusterCaCertSecret), trustStorePassword.toCharArray());
+        File trustStoreFile = Util.createFileTrustStore(KRaftMigrationUtils.class.getName(), "p12", coTlsPemIdentity.pemTrustSet().trustedCertificates(), trustStorePassword.toCharArray());
 
         // Setup keystore from PKCS12 in cluster-operator secret
-        String keyStorePassword = new String(Util.decodeFromSecret(coKeySecret, "cluster-operator.password"), StandardCharsets.US_ASCII);
-        File keyStoreFile = Util.createFileStore(KRaftMigrationUtils.class.getName(), "p12", Util.decodeFromSecret(coKeySecret, "cluster-operator.p12"));
+        String keyStorePassword = coTlsPemIdentity.pkcs12AuthIdentity().password();
+        File keyStoreFile = Util.createFileStore(KRaftMigrationUtils.class.getName(), "p12", coTlsPemIdentity.pkcs12AuthIdentity().keystore());
         try {
             ZooKeeperAdmin admin = createZooKeeperAdminClient(reconciliation, zkConnectionString, operationTimeoutMs,
                     trustStoreFile, trustStorePassword, keyStoreFile, keyStorePassword);
