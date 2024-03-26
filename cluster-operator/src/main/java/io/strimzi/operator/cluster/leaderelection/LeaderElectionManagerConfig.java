@@ -4,7 +4,7 @@
  */
 package io.strimzi.operator.cluster.leaderelection;
 
-import io.strimzi.operator.common.operator.resource.ConfigParameter;
+import io.strimzi.operator.common.config.ConfigParameter;
 
 import java.time.Duration;
 import java.util.Collections;
@@ -12,8 +12,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.DURATION;
-import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.NON_EMPTY_STRING;
+import static io.strimzi.operator.common.config.ConfigParameterParser.DURATION;
+import static io.strimzi.operator.common.config.ConfigParameterParser.NON_EMPTY_STRING;
 
 /**
  * Configuration class for the Leader Election Manager

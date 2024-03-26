@@ -2,13 +2,14 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.operator.common.operator.resource;
+package io.strimzi.operator.common.config;
 
 
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.LocalObjectReferenceBuilder;
 import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.operator.resource.AbstractNamespacedResourceOperator;
 
 import java.io.IOException;
 import java.io.StringReader;
