@@ -149,19 +149,44 @@ env:
 ----
 # ....
 env:
-  - name: SASL_MECHANISM # <1>
-    value: custom
-  - name: SASL_CUSTOM_CONFIG # <2>
+  - name: STRIMZI_SASL_ENABLED
+    value: "true"
+  - name: STRIMZI_SECURITY_PROTOCOL
+    value: SASL_SSL
+  - name: SASL_CUSTOM_CONFIG_JSON # <1>
     value: |
       {
         "sasl.mechanism": "AWS_MSK_IAM",
         "sasl.jaas.config": "software.amazon.msk.auth.iam.IAMLoginModule required;",
         "sasl.client.callback.handler.class": "software.amazon.msk.auth.iam.IAMClientCallbackHandler"
       }
+  - name: STRIMZI_PUBLIC_CA
+    value: "true"
+  - name: STRIMZI_TRUSTSTORE_LOCATION
+    value: /opt/cacerts
+  - name: STRIMZI_TRUSTSTORE_PASSWORD
+    value: changeit
+  - name: STRIMZI_KAFKA_BOOTSTRAP_SERVERS
+    value: your-instance-here.kafka-serverless.us-east-1.amazonaws.com:9098
 # ...
 ----
-<1> Setting the `custom` SASL mechanism. This enables the custom configuration, so the actual `sasl.mechanism` needs to be included in the `SASL_CUSTOM_CONFIG` value.
-<2> JSON with the SASL properties to be set. Only properties beginning with `sasl.` are allowed.
+<1> JSON with the SASL properties to be set. Only properties beginning with `sasl.` are allowed.
++
+.Example Dockerfile with external jars
+[source,shell,subs=+quotes]
+----
+FROM strimzi/operator:latest
+
+USER root
+
+RUN mkdir -p ${STRIMZI_HOME}/external-libs
+RUN  chmod +rx ${STRIMZI_HOME}/external-libs
+
+COPY ./aws-msk-iam-auth-and-dependencies/* /opt/strimzi/external-libs/
+ENV  JAVA_CLASSPATH=external-libs/*
+
+USER 1001
+----
 
 . Apply the changes to the `Deployment` configuration to deploy the Topic Operator.
 
