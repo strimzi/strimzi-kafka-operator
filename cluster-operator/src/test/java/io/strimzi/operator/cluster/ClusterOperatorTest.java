@@ -13,7 +13,6 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
 import io.fabric8.kubernetes.client.informers.cache.Indexer;
 import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderFactory;
-import io.strimzi.operator.common.ShutdownHook;
 import io.strimzi.platform.KubernetesVersion;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
