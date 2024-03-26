@@ -153,7 +153,7 @@ env:
     value: "true"
   - name: STRIMZI_SECURITY_PROTOCOL
     value: SASL_SSL
-  - name: SASL_CUSTOM_CONFIG_JSON # <1>
+  - name: STRIMZI_SASL_CUSTOM_CONFIG_JSON # <1>
     value: |
       {
         "sasl.mechanism": "AWS_MSK_IAM",
@@ -182,8 +182,8 @@ USER root
 RUN mkdir -p ${STRIMZI_HOME}/external-libs
 RUN  chmod +rx ${STRIMZI_HOME}/external-libs
 
-COPY ./aws-msk-iam-auth-and-dependencies/* /opt/strimzi/external-libs/
-ENV  JAVA_CLASSPATH=external-libs/*
+COPY ./aws-msk-iam-auth-and-dependencies/* ${STRIMZI_HOME}/external-libs/
+ENV  JAVA_CLASSPATH=${STRIMZI_HOME}/external-libs/*
 
 USER 1001
 ----
