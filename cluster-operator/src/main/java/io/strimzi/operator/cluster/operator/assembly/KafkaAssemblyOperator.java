@@ -28,6 +28,7 @@ import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.FeatureGates;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
+import io.strimzi.operator.cluster.model.CertUtils;
 import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.KRaftUtils;
 import io.strimzi.operator.cluster.model.KafkaCluster;
@@ -45,6 +46,7 @@ import io.strimzi.operator.common.ReconciliationException;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.VertxUtil;
+import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.common.model.ClientsCa;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
@@ -65,6 +67,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.IntStream;
 
 /**
@@ -254,6 +257,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         reconcileState.initialStatus()
                 // Preparation steps => prepare cluster descriptions, handle CA creation or changes
                 .compose(state -> state.reconcileCas(clock))
+                .compose(state -> state.emitCertificateSecretMetrics())
                 .compose(state -> state.versionChange(kafkaMetadataConfigState.isKRaft()))
 
                 // Run reconciliations of the different components
@@ -470,6 +474,21 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         this.clientsCa = cas.clientsCa();
                         return Future.succeededFuture(this);
                     });
+        }
+
+        /**
+         * Emits the certificate expiration metric for cluster CA and client CA
+         *
+         * @return  Future with Reconciliation State
+         */
+        Future<ReconciliationState> emitCertificateSecretMetrics() {
+            long serverCertificateExpiration = CertUtils.getCertificateExpirationDateEpoch(this.clusterCa.caCertSecret(), Ca.CA_KEY);
+            metrics().serverCertificateExpiration(this.name, this.namespace).set(serverCertificateExpiration);
+
+            long clientCertificateExpiration = CertUtils.getCertificateExpirationDateEpoch(this.clientsCa.caCertSecret(), Ca.CA_KEY);
+            metrics().clientCertificateExpiration(this.name, this.namespace).set(clientCertificateExpiration);
+
+            return Future.succeededFuture(this);
         }
 
         /**

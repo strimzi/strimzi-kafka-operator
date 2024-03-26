@@ -75,7 +75,8 @@ public abstract class MetricsHolder {
 
     protected final Map<String, AtomicInteger> resourceCounterMap = new ConcurrentHashMap<>(1);
     protected final Map<String, AtomicInteger> pausedResourceCounterMap = new ConcurrentHashMap<>(1);
-    protected final Map<String, AtomicLong> certificateExpirationMap = new ConcurrentHashMap<>(1);
+    protected final Map<String, AtomicLong> serverCertificateExpirationMap = new ConcurrentHashMap<>(1);
+    protected final Map<String, AtomicLong> clientCertificateExpirationMap = new ConcurrentHashMap<>(1);
     private final Map<String, Counter> periodicReconciliationsCounterMap = new ConcurrentHashMap<>(1);
     private final Map<String, Counter> reconciliationsCounterMap = new ConcurrentHashMap<>(1);
     private final Map<String, Counter> failedReconciliationsCounterMap = new ConcurrentHashMap<>(1);
@@ -280,14 +281,26 @@ public abstract class MetricsHolder {
     }
 
     /**
-     * Time in milliseconds when the certificate expiration timestamp in ms.
+     * Time in milliseconds when the server certificate expiration timestamp in ms.
      *
      * @param clusterName   Name of the cluster
      * @param namespace     Namespace of the resources being reconciled
      * @return Metric gauge
      */
-    public AtomicLong certificateExpiration(String clusterName, String namespace) {
-        return getGaugeLong(clusterName, namespace, kind, METRICS_CERTIFICATE_EXPIRATION_MS, metricsProvider, selectorLabels, certificateExpirationMap,
+    public AtomicLong serverCertificateExpiration(String clusterName, String namespace) {
+        return getGaugeLong(clusterName, namespace, kind, METRICS_CERTIFICATE_EXPIRATION_MS, metricsProvider, selectorLabels, serverCertificateExpirationMap,
+                "Time in milliseconds when the certificate expires");
+    }
+
+    /**
+     * Time in milliseconds when the client certificate expiration timestamp in ms.
+     *
+     * @param clusterName   Name of the cluster
+     * @param namespace     Namespace of the resources being reconciled
+     * @return Metric gauge
+     */
+    public AtomicLong clientCertificateExpiration(String clusterName, String namespace) {
+        return getGaugeLong(clusterName, namespace, kind, METRICS_CERTIFICATE_EXPIRATION_MS, metricsProvider, selectorLabels, clientCertificateExpirationMap,
                 "Time in milliseconds when the certificate expires");
     }
 
