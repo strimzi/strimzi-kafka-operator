@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import static com.fasterxml.jackson.core.JsonParser.Feature.ALLOW_COMMENTS;
 import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.BOOLEAN;
 import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.INTEGER;
 import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.LABEL_PREDICATE;
@@ -269,6 +270,8 @@ public record TopicOperatorConfig(
         }
 
         ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.configure(ALLOW_COMMENTS, true);
+
         try {
             Map<String, String> customProperties = objectMapper.readValue(customPropsString, STRING_HASH_MAP_TYPE_REFERENCE);
 

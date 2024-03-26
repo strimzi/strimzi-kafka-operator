@@ -104,6 +104,7 @@ public class BatchingTopicController {
         this.selector = Objects.requireNonNull(selector);
         this.useFinalizer = config.useFinalizer();
         this.admin = admin;
+
         // Get the config of some broker and check whether auto topic creation is enabled
         Optional<String> autoCreateValue = getClusterConfig(admin, AUTO_CREATE_TOPICS_ENABLE);
         if (autoCreateValue.isPresent() ? "true".equals(autoCreateValue.get()) : false) {
