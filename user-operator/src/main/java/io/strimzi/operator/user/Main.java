@@ -23,6 +23,8 @@ import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.MicrometerMetricsProvider;
 import io.strimzi.operator.common.OperatorKubernetesClientBuilder;
 import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.auth.PemAuthIdentity;
+import io.strimzi.operator.common.auth.PemTrustSet;
 import io.strimzi.operator.common.http.HealthCheckAndMetricsServer;
 import io.strimzi.operator.common.operator.resource.concurrent.CrdOperator;
 import io.strimzi.operator.common.operator.resource.concurrent.SecretOperator;
@@ -142,14 +144,15 @@ public class Main {
      * @return  An instance of the Admin API client
      */
     private static Admin createAdminClient(UserOperatorConfig config, SecretOperator secretOperator, AdminClientProvider adminClientProvider)    {
-        Secret clusterCaCert = getSecret(secretOperator, config.getCaNamespaceOrNamespace(), config.getClusterCaCertSecretName());
+        PemTrustSet pemTrustSet = new PemTrustSet(getSecret(secretOperator, config.getCaNamespaceOrNamespace(), config.getClusterCaCertSecretName()));
         Secret uoKeyAndCert = getSecret(secretOperator, config.getCaNamespaceOrNamespace(), config.getEuoKeySecretName());
+        // When the UO secret is not null (i.e. mTLS is used), we create a PemAuthIdentity. Otherwise, we just pass null.
+        PemAuthIdentity pemAuthIdentity = uoKeyAndCert != null ? PemAuthIdentity.entityOperator(uoKeyAndCert) : null;
 
         return adminClientProvider.createAdminClient(
                 config.getKafkaBootstrapServers(),
-                clusterCaCert,
-                uoKeyAndCert,
-                uoKeyAndCert != null ? "entity-operator" : null, // When the UO secret is not null (i.e. mTLS is used), we set the name. Otherwise, we just pass null.
+                pemTrustSet,
+                pemAuthIdentity,
                 config.getKafkaAdminClientConfiguration());
     }
 

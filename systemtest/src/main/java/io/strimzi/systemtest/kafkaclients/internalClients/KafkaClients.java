@@ -86,6 +86,12 @@ public class KafkaClients extends BaseClients {
         return consumerGroup;
     }
 
+    public void generateNewConsumerGroup() {
+        final String newConsumerGroup = ClientUtils.generateRandomConsumerGroup();
+        LOGGER.info("Regenerating new consumer group {} for clients {} {}", newConsumerGroup, this.getProducerName(), this.getConsumerName());
+        this.setConsumerGroup(newConsumerGroup);
+    }
+
     public void setConsumerGroup(String consumerGroup) {
         if (consumerGroup == null || consumerGroup.isEmpty()) {
             LOGGER.info("Consumer group were not specified going to create the random one");

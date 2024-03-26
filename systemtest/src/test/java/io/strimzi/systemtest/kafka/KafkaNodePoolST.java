@@ -318,16 +318,13 @@ public class KafkaNodePoolST extends AbstractST {
         resourceManager.createResourceWithWait(kafkaTopic);
 
         LOGGER.info("Transmit messages with Kafka {}/{} using topic {}", testStorage.getNamespaceName(), testStorage.getClusterName(), topicName);
-        KafkaClients kafkaClients = ClientUtils.getDefaultClientBuilder(testStorage)
+        KafkaClients kafkaClients = ClientUtils.getInstantPlainClientBuilder(testStorage)
             .withTopicName(topicName)
             .build();
+        resourceManager.createResourceWithWait(kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
+        ClientUtils.waitForInstantClientSuccess(testStorage);
 
-        resourceManager.createResourceWithWait(
-            kafkaClients.producerStrimzi(),
-            kafkaClients.consumerStrimzi()
-        );
-        ClientUtils.waitForClientsSuccess(testStorage);
-
+        // clean topic
         resourceManager.deleteResource(kafkaTopic);
         KafkaTopicUtils.waitForKafkaTopicDeletion(testStorage.getNamespaceName(), topicName);
     }

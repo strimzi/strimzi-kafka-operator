@@ -11,7 +11,6 @@ import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
-import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -48,16 +47,12 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 public class KafkaUpgradeDowngradeST extends AbstractUpgradeST {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaUpgradeDowngradeST.class);
-
-    private final String continuousTopicName = "continuous-topic";
     private final int continuousClientsMessageCount = 500;
 
     @IsolatedTest
     void testKafkaClusterUpgrade() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext(), TestConstants.CO_NAMESPACE);
         List<TestKafkaVersion> sortedVersions = TestKafkaVersion.getSupportedKafkaVersions();
-
-        String producerName = clusterName + "-producer";
-        String consumerName = clusterName + "-consumer";
 
         for (int x = 0; x < sortedVersions.size() - 1; x++) {
             TestKafkaVersion initialVersion = sortedVersions.get(x);
@@ -66,19 +61,19 @@ public class KafkaUpgradeDowngradeST extends AbstractUpgradeST {
             // If it is an upgrade test we keep the message format as the lower version number
             String logMsgFormat = initialVersion.messageVersion();
             String interBrokerProtocol = initialVersion.protocolVersion();
-            runVersionChange(initialVersion, newVersion, producerName, consumerName, logMsgFormat, interBrokerProtocol, 3, 3);
+            runVersionChange(initialVersion, newVersion, testStorage, logMsgFormat, interBrokerProtocol, 3, 3);
         }
 
         // ##############################
         // Validate that continuous clients finished successfully
         // ##############################
-        ClientUtils.waitForClientsSuccess(producerName, consumerName, TestConstants.CO_NAMESPACE, continuousClientsMessageCount);
+        ClientUtils.waitForClientsSuccess(testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), TestConstants.CO_NAMESPACE, continuousClientsMessageCount);
         // ##############################
     }
 
     @IsolatedTest
     void testKafkaClusterDowngrade() {
-        final TestStorage testStorage = storageMap.get(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext(), TestConstants.CO_NAMESPACE);
         List<TestKafkaVersion> sortedVersions = TestKafkaVersion.getSupportedKafkaVersions();
 
         for (int x = sortedVersions.size() - 1; x > 0; x--) {
@@ -88,19 +83,19 @@ public class KafkaUpgradeDowngradeST extends AbstractUpgradeST {
             // If it is a downgrade then we make sure to use the lower version number for the message format
             String logMsgFormat = newVersion.messageVersion();
             String interBrokerProtocol = newVersion.protocolVersion();
-            runVersionChange(initialVersion, newVersion, testStorage.getProducerName(), testStorage.getConsumerName(), logMsgFormat, interBrokerProtocol, 3, 3);
+            runVersionChange(initialVersion, newVersion, testStorage, logMsgFormat, interBrokerProtocol, 3, 3);
         }
 
         // ##############################
         // Validate that continuous clients finished successfully
         // ##############################
-        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), TestConstants.CO_NAMESPACE, continuousClientsMessageCount);
+        ClientUtils.waitForClientsSuccess(testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), TestConstants.CO_NAMESPACE, continuousClientsMessageCount);
         // ##############################
     }
 
     @IsolatedTest
     void testKafkaClusterDowngradeToOlderMessageFormat() {
-        final TestStorage testStorage = storageMap.get(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext(), TestConstants.CO_NAMESPACE);
         List<TestKafkaVersion> sortedVersions = TestKafkaVersion.getSupportedKafkaVersions();
 
         String initLogMsgFormat = sortedVersions.get(0).messageVersion();
@@ -110,43 +105,39 @@ public class KafkaUpgradeDowngradeST extends AbstractUpgradeST {
             TestKafkaVersion initialVersion = sortedVersions.get(x);
             TestKafkaVersion newVersion = sortedVersions.get(x - 1);
 
-            runVersionChange(initialVersion, newVersion, testStorage.getProducerName(), testStorage.getConsumerName(), initLogMsgFormat, initInterBrokerProtocol, 3, 3);
+            runVersionChange(initialVersion, newVersion, testStorage, initLogMsgFormat, initInterBrokerProtocol, 3, 3);
         }
 
         // ##############################
         // Validate that continuous clients finished successfully
         // ##############################
-        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), TestConstants.CO_NAMESPACE, continuousClientsMessageCount);
+        ClientUtils.waitForClientsSuccess(testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), TestConstants.CO_NAMESPACE, continuousClientsMessageCount);
         // ##############################
     }
 
     @IsolatedTest
     void testUpgradeWithNoMessageAndProtocolVersionsSet() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext(), TestConstants.CO_NAMESPACE);
         List<TestKafkaVersion> sortedVersions = TestKafkaVersion.getSupportedKafkaVersions();
-
-        String producerName = clusterName + "-producer";
-        String consumerName = clusterName + "-consumer";
 
         for (int x = 0; x < sortedVersions.size() - 1; x++) {
             TestKafkaVersion initialVersion = sortedVersions.get(x);
             TestKafkaVersion newVersion = sortedVersions.get(x + 1);
 
-            runVersionChange(initialVersion, newVersion, producerName, consumerName, null, null, 3, 3);
+            runVersionChange(initialVersion, newVersion, testStorage, null, null, 3, 3);
         }
 
         // ##############################
         // Validate that continuous clients finished successfully
         // ##############################
-        ClientUtils.waitForClientsSuccess(producerName, consumerName, TestConstants.CO_NAMESPACE, continuousClientsMessageCount);
+        ClientUtils.waitForClientsSuccess(testStorage.getContinuousProducerName(), testStorage.getContinuousProducerName(), TestConstants.CO_NAMESPACE, continuousClientsMessageCount);
         // ##############################
     }
 
     @IsolatedTest
     void testUpgradeWithoutLogMessageFormatVersionSet() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext(), TestConstants.CO_NAMESPACE);
         List<TestKafkaVersion> sortedVersions = TestKafkaVersion.getSupportedKafkaVersions();
-
-        String producerName = clusterName + "-producer";
-        String consumerName = clusterName + "-consumer";
 
         for (int x = 0; x < sortedVersions.size() - 1; x++) {
             TestKafkaVersion initialVersion = sortedVersions.get(x);
@@ -154,13 +145,13 @@ public class KafkaUpgradeDowngradeST extends AbstractUpgradeST {
 
             // If it is an upgrade test we keep the message format as the lower version number
             String interBrokerProtocol = initialVersion.protocolVersion();
-            runVersionChange(initialVersion, newVersion, producerName, consumerName, null, interBrokerProtocol, 3, 3);
+            runVersionChange(initialVersion, newVersion, testStorage, null, interBrokerProtocol, 3, 3);
         }
 
         // ##############################
         // Validate that continuous clients finished successfully
         // ##############################
-        ClientUtils.waitForClientsSuccess(producerName, consumerName, TestConstants.CO_NAMESPACE, continuousClientsMessageCount);
+        ClientUtils.waitForClientsSuccess(testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), TestConstants.CO_NAMESPACE, continuousClientsMessageCount);
         // ##############################
     }
 
@@ -170,7 +161,7 @@ public class KafkaUpgradeDowngradeST extends AbstractUpgradeST {
     }
 
     @SuppressWarnings({"checkstyle:MethodLength"})
-    void runVersionChange(TestKafkaVersion initialVersion, TestKafkaVersion newVersion, String producerName, String consumerName, String initLogMsgFormat, String initInterBrokerProtocol, int kafkaReplicas, int zkReplicas) {
+    void runVersionChange(TestKafkaVersion initialVersion, TestKafkaVersion newVersion, TestStorage testStorage, String initLogMsgFormat, String initInterBrokerProtocol, int kafkaReplicas, int zkReplicas) {
         boolean isUpgrade = initialVersion.isUpgrade(newVersion);
         Map<String, String> brokerPods;
 
@@ -211,17 +202,13 @@ public class KafkaUpgradeDowngradeST extends AbstractUpgradeST {
             // Attach clients which will continuously produce/consume messages to/from Kafka brokers during rolling update
             // ##############################
             // Setup topic, which has 3 replicas and 2 min.isr to see if producer will be able to work during rolling update
-            resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(clusterName, continuousTopicName, 3, 3, 2, TestConstants.CO_NAMESPACE).build());
+            resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(clusterName, testStorage.getContinuousTopicName(), 3, 3, 2, TestConstants.CO_NAMESPACE).build());
             String producerAdditionConfiguration = "delivery.timeout.ms=20000\nrequest.timeout.ms=20000";
 
-            KafkaClients kafkaBasicClientJob = new KafkaClientsBuilder()
-                .withProducerName(producerName)
-                .withConsumerName(consumerName)
+            KafkaClients kafkaBasicClientJob = ClientUtils.getContinuousPlainClientBuilder(testStorage)
                 .withBootstrapAddress(KafkaResources.plainBootstrapAddress(clusterName))
-                .withTopicName(continuousTopicName)
                 .withMessageCount(continuousClientsMessageCount)
                 .withAdditionalConfig(producerAdditionConfiguration)
-                .withDelayMs(1000)
                 .build();
 
             resourceManager.createResourceWithWait(kafkaBasicClientJob.producerStrimzi());

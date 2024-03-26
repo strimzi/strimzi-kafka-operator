@@ -4,16 +4,15 @@
  */
 package io.strimzi.operator.cluster.operator.resource;
 
-import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
-import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.cluster.model.DnsNameGenerator;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
-import io.strimzi.operator.common.Util;
-import io.strimzi.operator.common.model.Ca;
+import io.strimzi.operator.common.auth.PemAuthIdentity;
+import io.strimzi.operator.common.auth.PemTrustSet;
+import io.strimzi.operator.common.auth.TlsPemIdentity;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
@@ -24,11 +23,6 @@ import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.core.net.PemTrustOptions;
 
-import java.io.ByteArrayInputStream;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
-import java.util.Base64;
-import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
@@ -61,76 +55,18 @@ public class ZookeeperLeaderFinder {
         this.backOffSupplier = backOffSupplier;
     }
 
-    /*test*/ NetClientOptions clientOptions(Reconciliation reconciliation, Secret coCertKeySecret, Secret clusterCaCertificateSecret) {
+    /*test*/ NetClientOptions clientOptions(PemTrustSet zkCaTrustSet, PemAuthIdentity coAuthIdentity) {
+        PemTrustOptions pto = new PemTrustOptions();
+        zkCaTrustSet.trustedCertificatesBytes().forEach(certBytes -> pto.addCertValue(Buffer.buffer(certBytes)));
+        PemKeyCertOptions pkco = new PemKeyCertOptions()
+                .setCertValue(Buffer.buffer(coAuthIdentity.certificateChainAsPemBytes()))
+                .setKeyValue(Buffer.buffer(coAuthIdentity.privateKeyAsPemBytes()));
         return new NetClientOptions()
                 .setConnectTimeout(10_000)
                 .setSsl(true)
                 .setHostnameVerificationAlgorithm("HTTPS")
-                .setKeyCertOptions(keyCertOptions(coCertKeySecret))
-                .setTrustOptions(trustOptions(reconciliation, clusterCaCertificateSecret));
-    }
-
-    private CertificateFactory x509Factory() {
-        CertificateFactory x509;
-        try {
-            x509 = CertificateFactory.getInstance("X.509");
-        } catch (CertificateException e) {
-            throw new RuntimeException("No security provider supports X.509");
-        }
-        return x509;
-    }
-
-    /**
-     * Validate the cluster CA certificate(s) passed in the given Secret
-     * and return the PemTrustOptions for trusting them.
-     */
-    protected PemTrustOptions trustOptions(Reconciliation reconciliation, Secret clusterCaCertificateSecret) {
-        Base64.Decoder decoder = Base64.getDecoder();
-        CertificateFactory x509 = x509Factory();
-        PemTrustOptions pto = new PemTrustOptions();
-        for (Map.Entry<String, String> entry : clusterCaCertificateSecret.getData().entrySet()) {
-            String entryName = entry.getKey();
-            if (entryName.endsWith(".crt")) {
-                LOGGER.debugCr(reconciliation, "Trusting certificate {} from Secret {}", entryName, clusterCaCertificateSecret.getMetadata().getName());
-                byte[] certBytes = decoder.decode(entry.getValue());
-                try {
-                    x509.generateCertificate(new ByteArrayInputStream(certBytes));
-                } catch (CertificateException e) {
-                    throw corruptCertificate(clusterCaCertificateSecret, entryName, e);
-                }
-                pto.addCertValue(Buffer.buffer(certBytes));
-            } else {
-                LOGGER.debugCr(reconciliation, "Ignoring non-certificate {} in Secret {}", entryName, clusterCaCertificateSecret.getMetadata().getName());
-            }
-        }
-        return pto;
-    }
-
-    private RuntimeException corruptCertificate(Secret secret, String certKey, CertificateException e) {
-        return new RuntimeException("Bad/corrupt certificate found in data." + certKey.replace(".", "\\.") + " of Secret "
-                + secret.getMetadata().getName() + " in namespace " + secret.getMetadata().getNamespace(), e);
-    }
-
-    /**
-     * Validate the CO certificate and key passed in the given Secret
-     * and return the PemKeyCertOptions for using it for TLS authentication.
-     */
-    protected PemKeyCertOptions keyCertOptions(Secret coCertKeySecret) {
-        CertAndKey coCertKey = Ca.asCertAndKey(coCertKeySecret,
-                                            "cluster-operator.key", "cluster-operator.crt",
-                                        "cluster-operator.p12", "cluster-operator.password");
-        if (coCertKey == null) {
-            throw Util.missingSecretException(coCertKeySecret.getMetadata().getNamespace(), coCertKeySecret.getMetadata().getName());
-        }
-        CertificateFactory x509 = x509Factory();
-        try {
-            x509.generateCertificate(new ByteArrayInputStream(coCertKey.cert()));
-        } catch (CertificateException e) {
-            throw corruptCertificate(coCertKeySecret, "cluster-operator.crt", e);
-        }
-        return new PemKeyCertOptions()
-                .setCertValue(Buffer.buffer(coCertKey.cert()))
-                .setKeyValue(Buffer.buffer(coCertKey.key()));
+                .setKeyCertOptions(pkco)
+                .setTrustOptions(pto);
     }
 
     /**
@@ -138,7 +74,7 @@ public class ZookeeperLeaderFinder {
      * An exponential backoff is used if no ZK node is leader on the attempt to find it.
      * If there is no leader after 3 attempts then the returned Future completes with {@link #UNKNOWN_LEADER}.
      */
-    Future<String> findZookeeperLeader(Reconciliation reconciliation, Set<String> pods, Secret clusterCaSecret, Secret coKeySecret) {
+    Future<String> findZookeeperLeader(Reconciliation reconciliation, Set<String> pods, TlsPemIdentity coTlsPemIdentity) {
         if (pods.size() == 0) {
             return Future.succeededFuture(UNKNOWN_LEADER);
         } else if (pods.size() == 1) {
@@ -146,7 +82,7 @@ public class ZookeeperLeaderFinder {
         }
 
         try {
-            NetClientOptions netClientOptions = clientOptions(reconciliation, coKeySecret, clusterCaSecret);
+            NetClientOptions netClientOptions = clientOptions(coTlsPemIdentity.pemTrustSet(), coTlsPemIdentity.pemAuthIdentity());
             return zookeeperLeaderWithBackoff(reconciliation, pods, netClientOptions);
         } catch (Throwable e) {
             return Future.failedFuture(e);

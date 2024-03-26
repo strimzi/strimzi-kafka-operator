@@ -12,7 +12,6 @@ import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.MicroShiftNotSupported;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
-import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.NodePoolsConverter;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.draincleaner.SetupDrainCleaner;
@@ -69,19 +68,13 @@ public class DrainCleanerST extends AbstractST {
         // allow NetworkPolicies for the webhook in case that we have "default to deny all" mode enabled
         NetworkPolicyResource.allowNetworkPolicySettingsForWebhook(TestConstants.DRAIN_CLEANER_NAMESPACE, TestConstants.DRAIN_CLEANER_DEPLOYMENT_NAME, Map.of(TestConstants.APP_POD_LABEL, TestConstants.DRAIN_CLEANER_DEPLOYMENT_NAME));
 
-        KafkaClients kafkaBasicExampleClients = new KafkaClientsBuilder()
-            .withMessageCount(200)
-            .withTopicName(testStorage.getTopicName())
+        final KafkaClients continuousClients = ClientUtils.getContinuousPlainClientBuilder(testStorage)
             .withNamespaceName(TestConstants.DRAIN_CLEANER_NAMESPACE)
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
-            .withProducerName(testStorage.getProducerName())
-            .withConsumerName(testStorage.getConsumerName())
-            .withDelayMs(1000)
             .build();
 
         resourceManager.createResourceWithWait(
-            kafkaBasicExampleClients.producerStrimzi(),
-            kafkaBasicExampleClients.consumerStrimzi());
+            continuousClients.producerStrimzi(),
+            continuousClients.consumerStrimzi());
 
         List<String> brokerPods = kubeClient().listPodNames(TestConstants.DRAIN_CLEANER_NAMESPACE, testStorage.getBrokerSelector());
 
@@ -103,7 +96,7 @@ public class DrainCleanerST extends AbstractST {
         evictPodWithName(kafkaPodName);
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(TestConstants.DRAIN_CLEANER_NAMESPACE, testStorage.getBrokerSelector(), replicas, kafkaPod);
 
-        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), TestConstants.DRAIN_CLEANER_NAMESPACE, 300);
+        ClientUtils.waitForClientsSuccess(testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), TestConstants.DRAIN_CLEANER_NAMESPACE, 200);
     }
 
     private void evictPodWithName(String podName) {

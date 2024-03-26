@@ -26,6 +26,7 @@ import java.time.Duration;
 import java.util.Random;
 
 import static io.strimzi.operator.common.Util.hashStub;
+import static io.strimzi.systemtest.TestConstants.CONTINUOUS_MESSAGE_COUNT;
 import static io.strimzi.systemtest.TestConstants.MESSAGE_COUNT;
 
 /**
@@ -34,8 +35,9 @@ import static io.strimzi.systemtest.TestConstants.MESSAGE_COUNT;
  */
 final public class TestStorage {
 
-    private static final String PRODUCER = "hello-world-producer";
-    private static final String CONSUMER = "hello-world-consumer";
+    private static final String PRODUCER = "producer";
+    private static final String CONSUMER = "consumer";
+    private static final String CONTINUOUS_SUFFIX = "-continuous";
     private static final String ADMIN = "admin-client";
     private static final String USER = "user";
     private static final String CLUSTER_NAME_PREFIX = "cluster-";
@@ -61,6 +63,9 @@ final public class TestStorage {
     private String scraperName;
     private String producerName;
     private String consumerName;
+    private String continuousProducerName;
+    private String continuousConsumerName;
+    private String continuousTopicName;
     private String adminName;
     private String username;
     private String sourceUsername;
@@ -79,6 +84,7 @@ final public class TestStorage {
     private LabelSelector kafkaConnectSelector;
     private LabelSelector mm2Selector;
     private int messageCount;
+    private int continuousMessageCount;
     private long testExecutionStartTime;
 
 
@@ -106,12 +112,15 @@ final public class TestStorage {
         this.targetBrokerPoolName = TestConstants.BROKER_ROLE_PREFIX + hashStub(targetClusterName);
         this.targetControllerPoolName = TestConstants.CONTROLLER_ROLE_PREFIX + hashStub(targetClusterName);
         this.topicName = KafkaTopicUtils.generateRandomNameOfTopic();
+        this.continuousTopicName = topicName + CONTINUOUS_SUFFIX;
         this.targetTopicName = topicName + "-target";
         this.mirroredSourceTopicName = sourceClusterName + "." + topicName;
         this.streamsTopicTargetName = KafkaTopicUtils.generateRandomNameOfTopic();
         this.scraperName = clusterName + "-" + TestConstants.SCRAPER_NAME;
         this.producerName = clusterName + "-" + PRODUCER;
         this.consumerName = clusterName  + "-" + CONSUMER;
+        this.continuousProducerName = producerName + CONTINUOUS_SUFFIX;
+        this.continuousConsumerName = consumerName + CONTINUOUS_SUFFIX;
         this.adminName = clusterName + "-" + ADMIN;
         this.username = clusterName + "-" + USER;
         this.sourceUsername = username + "-source";
@@ -130,6 +139,7 @@ final public class TestStorage {
         this.kafkaConnectSelector = KafkaConnectResource.getLabelSelector(clusterName, KafkaConnectResources.componentName(clusterName));
         this.mm2Selector = KafkaMirrorMaker2Resource.getLabelSelector(clusterName, KafkaMirrorMaker2Resources.componentName(clusterName));
         this.messageCount = messageCount;
+        this.continuousMessageCount = CONTINUOUS_MESSAGE_COUNT;
         this.testExecutionStartTime = System.currentTimeMillis();
 
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.TEST_NAME_KEY, this.testName);
@@ -145,12 +155,15 @@ final public class TestStorage {
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.TARGET_BROKER_POOL_KEY, this.targetBrokerPoolName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.TARGET_CONTROLLER_POOL_KEY, this.targetControllerPoolName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.TOPIC_KEY, this.topicName);
+        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.CONTINUOUS_TOPIC_KEY, this.continuousTopicName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.TARGET_TOPIC_KEY, this.targetTopicName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.MIRRORED_SOURCE_TOPIC_KEY, this.mirroredSourceTopicName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.STREAM_TOPIC_KEY, this.streamsTopicTargetName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.SCRAPER_KEY, this.scraperName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.PRODUCER_KEY, this.producerName);
+        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.CONTINUOUS_PRODUCER_KEY, this.continuousProducerName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.CONSUMER_KEY, this.consumerName);
+        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.CONTINUOUS_CONSUMER_KEY, this.continuousConsumerName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.ADMIN_KEY, this.adminName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.USER_NAME_KEY, this.username);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.SOURCE_USER_NAME_KEY, this.sourceUsername);
@@ -169,6 +182,7 @@ final public class TestStorage {
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.KAFKA_CONNECT_SELECTOR_KEY, this.kafkaConnectSelector);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.MM2_SELECTOR_KEY, this.mm2Selector);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.MESSAGE_COUNT_KEY, this.messageCount);
+        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.CONTINUOUS_MESSAGE_COUNT_KEY, this.continuousMessageCount);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.TEST_EXECUTION_START_TIME_KEY, this.testExecutionStartTime);
     }
 
@@ -237,6 +251,10 @@ final public class TestStorage {
         return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.TOPIC_KEY).toString();
     }
 
+    public String getContinuousTopicName() {
+        return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.CONTINUOUS_TOPIC_KEY).toString();
+    }
+
     public String getTargetTopicName() {
         return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.TARGET_TOPIC_KEY).toString();
     }
@@ -257,8 +275,16 @@ final public class TestStorage {
         return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.PRODUCER_KEY).toString();
     }
 
+    public String getContinuousProducerName() {
+        return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.CONTINUOUS_PRODUCER_KEY).toString();
+    }
+
     public String getConsumerName() {
         return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.CONSUMER_KEY).toString();
+    }
+
+    public String getContinuousConsumerName() {
+        return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.CONTINUOUS_CONSUMER_KEY).toString();
     }
 
     public String getAdminName() {
@@ -330,6 +356,10 @@ final public class TestStorage {
 
     public int getMessageCount() {
         return (int) extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.MESSAGE_COUNT_KEY);
+    }
+
+    public int getContinuousMessageCount() {
+        return (int) extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.CONTINUOUS_MESSAGE_COUNT_KEY);
     }
 
     public long getTestExecutionStartTime() {

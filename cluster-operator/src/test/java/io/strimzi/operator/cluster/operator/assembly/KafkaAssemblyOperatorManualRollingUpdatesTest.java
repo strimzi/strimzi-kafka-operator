@@ -41,6 +41,7 @@ import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.metrics.OperatorMetricsHolder;
+import io.strimzi.operator.common.auth.TlsPemIdentity;
 import io.strimzi.operator.common.model.ClientsCa;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.PasswordGenerator;
@@ -645,7 +646,7 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
         }
 
         @Override
-        Future<Void> maybeRollZooKeeper(Function<Pod, List<String>> podNeedsRestart) {
+        Future<Void> maybeRollZooKeeper(Function<Pod, List<String>> podNeedsRestart, TlsPemIdentity coTlsPemIdentity) {
             maybeRollZooKeeperInvocations++;
             zooPodNeedsRestart = podNeedsRestart;
             return Future.succeededFuture();

@@ -453,6 +453,7 @@ public interface TestConstants {
 
     // Count of test messages that needs to be sent during the test
     int MESSAGE_COUNT = 100;
+    int CONTINUOUS_MESSAGE_COUNT = 200;
 
     /**
      * Auxiliary variable for cluster operator deployment
@@ -471,12 +472,15 @@ public interface TestConstants {
     String TARGET_BROKER_POOL_KEY = "TARGET_BROKER_POOL";
     String TARGET_CONTROLLER_POOL_KEY = "TARGET_CONTROLLER_POOL";
     String TOPIC_KEY = "TOPIC_NAME";
+    String CONTINUOUS_TOPIC_KEY = "CONTINUOUS_TOPIC_NAME";
     String TARGET_TOPIC_KEY = "TARGET_TOPIC_NAME";
     String MIRRORED_SOURCE_TOPIC_KEY = "MIRRORED_SOURCE_TOPIC_NAME";
     String STREAM_TOPIC_KEY = "STREAM_TOPIC_NAME";
     String SCRAPER_KEY = "SCRAPER_NAME";
     String PRODUCER_KEY = "PRODUCER_NAME";
+    String CONTINUOUS_PRODUCER_KEY = "CONTINUOUS_PRODUCER_NAME";
     String CONSUMER_KEY = "CONSUMER_NAME";
+    String CONTINUOUS_CONSUMER_KEY = "CONTINUOUS_CONSUMER_NAME";
     String ADMIN_KEY = "ADMIN_NAME";
     String USER_NAME_KEY = "USER_NAME";
     String SOURCE_USER_NAME_KEY = "SOURCE_USER_NAME";
@@ -497,6 +501,7 @@ public interface TestConstants {
     String KAFKA_CONNECT_SELECTOR_KEY = "KAFKA_CONNECT_SELECTOR";
     String MM2_SELECTOR_KEY = "MM2_SELECTOR";
     String MESSAGE_COUNT_KEY = "MESSAGE_COUNT";
+    String CONTINUOUS_MESSAGE_COUNT_KEY = "CONTINUOUS_MESSAGE_COUNT";
     String TEST_EXECUTION_START_TIME_KEY = "TEST_EXECUTION_START_TIME";
 
     /**

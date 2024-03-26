@@ -11,6 +11,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.fabric8.kubernetes.api.model.Affinity;
+import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.strimzi.crdgenerator.annotations.AddedIn;
 import io.strimzi.crdgenerator.annotations.Crd;
@@ -57,7 +58,7 @@ import java.util.Map;
 @OneOf({@OneOf.Alternative(@OneOf.Alternative.Property("either")), @OneOf.Alternative(@OneOf.Alternative.Property("or")), @OneOf.Alternative({@OneOf.Alternative.Property("mapStringString"), @OneOf.Alternative.Property("mapStringObject")})})
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"ignored", "stringProperty", "intProperty", "longProperty", "booleanProperty", "normalEnum", "customisedEnum",
-    "objectProperty", "mapStringObject", "mapStringString", "polymorphicProperty", "affinity", "fieldProperty",
+    "objectProperty", "mapStringObject", "mapStringString", "mapStringQuantity", "polymorphicProperty", "affinity", "fieldProperty",
     "arrayProperty", "arrayProperty2", "listOfInts", "listOfInts2", "listOfObjects", "listOfPolymorphic",
     "rawList", "listOfRawList", "arrayOfList", "arrayOfRawList", "listOfArray", "arrayOfTypeVar", "listOfTypeVar",
     "arrayOfBoundTypeVar", "listOfBoundTypeVar", "arrayOfBoundTypeVar2", "listOfBoundTypeVar2",
@@ -166,6 +167,8 @@ public class ExampleCrd<T, U extends Number, V extends U> extends CustomResource
     private Map<String, Object> mapStringObject;
 
     private Map<String, String> mapStringString;
+
+    private Map<String, Quantity> mapStringQuantity;
 
     private PolymorphicTop polymorphicProperty;
 
@@ -312,6 +315,14 @@ public class ExampleCrd<T, U extends Number, V extends U> extends CustomResource
 
     public void setMapStringString(Map<String, String> mapStringString) {
         this.mapStringString = mapStringString;
+    }
+
+    public Map<String, Quantity> getMapStringQuantity() {
+        return mapStringQuantity;
+    }
+
+    public void setMapStringQuantity(Map<String, Quantity> mapStringQuantity) {
+        this.mapStringQuantity = mapStringQuantity;
     }
 
     public PolymorphicTop getPolymorphicProperty() {

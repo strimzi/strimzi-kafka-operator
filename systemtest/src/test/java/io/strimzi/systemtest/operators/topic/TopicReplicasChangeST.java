@@ -422,7 +422,7 @@ public class TopicReplicasChangeST extends AbstractST {
                 kafkaClients.producerStrimzi(),
                 kafkaClients.consumerStrimzi()
         );
-        ClientUtils.waitForClientsSuccess(testStorage);
+        ClientUtils.waitForInstantClientSuccess(testStorage);
     }
 
     @BeforeAll

@@ -62,6 +62,9 @@ import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.MicrometerMetricsProvider;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.auth.PemAuthIdentity;
+import io.strimzi.operator.common.auth.PemTrustSet;
+import io.strimzi.operator.common.auth.TlsPemIdentity;
 import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.BuildConfigOperator;
@@ -89,8 +92,6 @@ import io.strimzi.test.TestUtils;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.net.NetClientOptions;
-import io.vertx.core.net.PemKeyCertOptions;
-import io.vertx.core.net.PemTrustOptions;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.DescribeClusterResult;
@@ -123,11 +124,13 @@ import java.util.Properties;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
+import static org.mockito.AdditionalMatchers.or;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.endsWith;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -473,16 +476,6 @@ public class ResourceUtils {
                 protected Future<Boolean> isLeader(Reconciliation reconciliation, String podName, NetClientOptions options) {
                     return Future.succeededFuture(true);
                 }
-
-                @Override
-                protected PemTrustOptions trustOptions(Reconciliation reconciliation, Secret s) {
-                    return new PemTrustOptions();
-                }
-
-                @Override
-                protected PemKeyCertOptions keyCertOptions(Secret s) {
-                    return new PemKeyCertOptions();
-                }
             };
     }
 
@@ -585,19 +578,19 @@ public class ResourceUtils {
     public static AdminClientProvider adminClientProvider(Admin mockAdminClient) {
         return new AdminClientProvider() {
             @Override
-            public Admin createAdminClient(String bootstrapHostnames, Secret clusterCaCertSecret, Secret keyCertSecret, String keyCertName) {
-                return createAdminClient(bootstrapHostnames, clusterCaCertSecret, keyCertSecret, keyCertName, new Properties());
+            public Admin createAdminClient(String bootstrapHostnames, PemTrustSet kafkaCaTrustSet, PemAuthIdentity authIdentity) {
+                return createAdminClient(bootstrapHostnames, kafkaCaTrustSet, authIdentity, new Properties());
             }
 
             @Override
-            public Admin createAdminClient(String bootstrapHostnames, Secret clusterCaCertSecret, Secret keyCertSecret, String keyCertName, Properties config) {
+            public Admin createAdminClient(String bootstrapHostnames, PemTrustSet kafkaCaTrustSet, PemAuthIdentity authIdentity, Properties config) {
                 return mockAdminClient;
             }
         };
     }
 
     public static ZookeeperScalerProvider zookeeperScalerProvider() {
-        return (reconciliation, vertx, zookeeperConnectionString, zkNodeAddress, clusterCaCertSecret, coKeySecret, operationTimeoutMs, zkAdminSessionTimoutMs) -> {
+        return (reconciliation, vertx, zookeeperConnectionString, zkNodeAddress, zkTlsPkcs12Identity, operationTimeoutMs, zkAdminSessionTimoutMs) -> {
             ZookeeperScaler mockZooScaler = mock(ZookeeperScaler.class);
             when(mockZooScaler.scale(anyInt())).thenReturn(Future.succeededFuture());
             return mockZooScaler;
@@ -620,7 +613,7 @@ public class ResourceUtils {
     public static KafkaAgentClientProvider kafkaAgentClientProvider(KafkaAgentClient mockKafkaAgentClient) {
         return new KafkaAgentClientProvider() {
             @Override
-            public KafkaAgentClient createKafkaAgentClient(Reconciliation reconciliation, Secret clusterCaCertSecret, Secret coKeySecret) {
+            public KafkaAgentClient createKafkaAgentClient(Reconciliation reconciliation, TlsPemIdentity tlsPemIdentity) {
                 return mockKafkaAgentClient;
             }
         };
@@ -675,6 +668,15 @@ public class ResourceUtils {
                 mock(BrokersInUseCheck.class));
 
         when(supplier.secretOperations.getAsync(any(), any())).thenReturn(Future.succeededFuture());
+        when(supplier.secretOperations.getAsync(any(), or(endsWith("ca-cert"), endsWith("certs")))).thenReturn(Future.succeededFuture(
+                new SecretBuilder()
+                        .withNewMetadata()
+                            .withName("cert-secret")
+                            .withNamespace("namespace")
+                        .endMetadata()
+                        .addToData("cluster-operator.key", "key")
+                        .addToData("cluster-operator.crt", "cert")
+                        .build()));
         when(supplier.serviceAccountOperations.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
         when(supplier.roleBindingOperations.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
         when(supplier.roleOperations.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());

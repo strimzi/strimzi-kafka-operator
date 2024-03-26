@@ -97,17 +97,9 @@ public class MirrorMakerST extends AbstractST {
 
         resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getSourceClusterName(), testStorage.getTopicName(), testStorage.getNamespaceName()).build());
 
-        KafkaClients clients = new KafkaClientsBuilder()
-            .withProducerName(testStorage.getProducerName())
-            .withConsumerName(testStorage.getConsumerName())
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getSourceClusterName()))
-            .withNamespaceName(testStorage.getNamespaceName())
-            .withTopicName(testStorage.getTopicName())
-            .withMessageCount(testStorage.getMessageCount())
-            .build();
-
-        resourceManager.createResourceWithWait(clients.producerStrimzi(), clients.consumerStrimzi());
-        ClientUtils.waitForClientsSuccess(testStorage);
+        final KafkaClients sourceClients = ClientUtils.getInstantPlainClients(testStorage, KafkaResources.plainBootstrapAddress(testStorage.getSourceClusterName()));
+        resourceManager.createResourceWithWait(sourceClients.producerStrimzi(), sourceClients.consumerStrimzi());
+        ClientUtils.waitForInstantClientSuccess(testStorage);
 
         // Deploy MirrorMaker
         resourceManager.createResourceWithWait(KafkaMirrorMakerTemplates.kafkaMirrorMaker(testStorage.getClusterName(), testStorage.getSourceClusterName(), testStorage.getTargetClusterName(), ClientUtils.generateRandomConsumerGroup(), 1, false)
@@ -145,12 +137,9 @@ public class MirrorMakerST extends AbstractST {
         VerificationUtils.assertJvmOptions(testStorage.getNamespaceName(), podName, KafkaMirrorMakerResources.componentName(testStorage.getClusterName()),
                 "-Xmx200m", "-Xms200m", "-XX:+UseG1GC");
 
-        clients = new KafkaClientsBuilder(clients)
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getTargetClusterName()))
-            .build();
-
-        resourceManager.createResourceWithWait(clients.consumerStrimzi());
-        ClientUtils.waitForConsumerClientSuccess(testStorage);
+        final KafkaClients targetClients = ClientUtils.getInstantPlainClients(testStorage, KafkaResources.plainBootstrapAddress(testStorage.getTargetClusterName()));
+        resourceManager.createResourceWithWait(targetClients.consumerStrimzi());
+        ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
     }
 
     /**
@@ -222,18 +211,11 @@ public class MirrorMakerST extends AbstractST {
         certSecretTarget.setCertificate("ca.crt");
         certSecretTarget.setSecretName(KafkaResources.clusterCaCertificateSecretName(testStorage.getTargetClusterName()));
 
-        KafkaClients clients = new KafkaClientsBuilder()
-            .withProducerName(testStorage.getProducerName())
-            .withConsumerName(testStorage.getConsumerName())
-            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getSourceClusterName()))
-            .withNamespaceName(testStorage.getNamespaceName())
+        final KafkaClients sourceClients = ClientUtils.getInstantTlsClientBuilder(testStorage, KafkaResources.tlsBootstrapAddress(testStorage.getSourceClusterName()))
             .withUsername(testStorage.getSourceUsername())
-            .withTopicName(testStorage.getTopicName())
-            .withMessageCount(testStorage.getMessageCount())
             .build();
-
-        resourceManager.createResourceWithWait(clients.producerTlsStrimzi(testStorage.getSourceClusterName()), clients.consumerTlsStrimzi(testStorage.getSourceClusterName()));
-        ClientUtils.waitForClientsSuccess(testStorage);
+        resourceManager.createResourceWithWait(sourceClients.producerTlsStrimzi(testStorage.getSourceClusterName()), sourceClients.consumerTlsStrimzi(testStorage.getSourceClusterName()));
+        ClientUtils.waitForInstantClientSuccess(testStorage);
 
         // Deploy MirrorMaker with tls listener and mutual tls auth
         resourceManager.createResourceWithWait(KafkaMirrorMakerTemplates.kafkaMirrorMaker(testStorage.getClusterName(), testStorage.getSourceClusterName(), testStorage.getTargetClusterName(), ClientUtils.generateRandomConsumerGroup(), 1, true)
@@ -265,13 +247,11 @@ public class MirrorMakerST extends AbstractST {
             .endSpec()
             .build());
 
-        clients = new KafkaClientsBuilder(clients)
-            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getTargetClusterName()))
+        final KafkaClients targetClients = ClientUtils.getInstantTlsClientBuilder(testStorage, KafkaResources.tlsBootstrapAddress(testStorage.getTargetClusterName()))
             .withUsername(testStorage.getTargetUsername())
             .build();
-
-        resourceManager.createResourceWithWait(clients.consumerTlsStrimzi(testStorage.getTargetClusterName()));
-        ClientUtils.waitForConsumerClientSuccess(testStorage);
+        resourceManager.createResourceWithWait(targetClients.consumerTlsStrimzi(testStorage.getTargetClusterName()));
+        ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
     }
 
     /**
@@ -353,18 +333,12 @@ public class MirrorMakerST extends AbstractST {
         certSecretTarget.setCertificate("ca.crt");
         certSecretTarget.setSecretName(KafkaResources.clusterCaCertificateSecretName(testStorage.getTargetClusterName()));
 
-        KafkaClients clients = new KafkaClientsBuilder()
-            .withProducerName(testStorage.getProducerName())
-            .withConsumerName(testStorage.getConsumerName())
-            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getSourceClusterName()))
-            .withNamespaceName(testStorage.getNamespaceName())
+        final KafkaClients sourceClients = ClientUtils.getInstantTlsClientBuilder(testStorage, KafkaResources.tlsBootstrapAddress(testStorage.getSourceClusterName()))
             .withUsername(testStorage.getSourceUsername())
             .withTopicName(testStorage.getTopicName())
-            .withMessageCount(testStorage.getMessageCount())
             .build();
-
-        resourceManager.createResourceWithWait(clients.producerScramShaTlsStrimzi(testStorage.getSourceClusterName()), clients.consumerScramShaTlsStrimzi(testStorage.getSourceClusterName()));
-        ClientUtils.waitForClientsSuccess(testStorage);
+        resourceManager.createResourceWithWait(sourceClients.producerScramShaTlsStrimzi(testStorage.getSourceClusterName()), sourceClients.consumerScramShaTlsStrimzi(testStorage.getSourceClusterName()));
+        ClientUtils.waitForInstantClientSuccess(testStorage);
 
         // Deploy MirrorMaker with TLS and ScramSha512
         resourceManager.createResourceWithWait(KafkaMirrorMakerTemplates.kafkaMirrorMaker(testStorage.getClusterName(), testStorage.getSourceClusterName(), testStorage.getTargetClusterName(), ClientUtils.generateRandomConsumerGroup(), 1, true)
@@ -390,13 +364,11 @@ public class MirrorMakerST extends AbstractST {
             .endSpec()
             .build());
 
-        clients = new KafkaClientsBuilder(clients)
-            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getTargetClusterName()))
+        final KafkaClients targetClients = ClientUtils.getInstantTlsClientBuilder(testStorage, KafkaResources.tlsBootstrapAddress(testStorage.getTargetClusterName()))
             .withUsername(testStorage.getTargetUsername())
             .build();
-
-        resourceManager.createResourceWithWait(clients.consumerScramShaTlsStrimzi(testStorage.getTargetClusterName()));
-        ClientUtils.waitForConsumerClientSuccess(testStorage);
+        resourceManager.createResourceWithWait(targetClients.consumerScramShaTlsStrimzi(testStorage.getTargetClusterName()));
+        ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
     }
 
     @ParallelNamespaceTest
@@ -428,24 +400,19 @@ public class MirrorMakerST extends AbstractST {
             KafkaTopicTemplates.topic(testStorage.getSourceClusterName(), topicNotIncluded, testStorage.getNamespaceName()).build()
         );
 
-        KafkaClients clients = new KafkaClientsBuilder()
-            .withProducerName(testStorage.getProducerName())
-            .withConsumerName(testStorage.getConsumerName())
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getSourceClusterName()))
-            .withNamespaceName(testStorage.getNamespaceName())
+        KafkaClients sourceClients = ClientUtils.getInstantPlainClientBuilder(testStorage, KafkaResources.plainBootstrapAddress(testStorage.getSourceClusterName()))
             .withTopicName(topicName)
-            .withMessageCount(testStorage.getMessageCount())
             .build();
 
-        resourceManager.createResourceWithWait(clients.producerStrimzi(), clients.consumerStrimzi());
-        ClientUtils.waitForClientsSuccess(testStorage);
+        resourceManager.createResourceWithWait(sourceClients.producerStrimzi(), sourceClients.consumerStrimzi());
+        ClientUtils.waitForInstantClientSuccess(testStorage);
 
-        clients = new KafkaClientsBuilder(clients)
+        sourceClients = new KafkaClientsBuilder(sourceClients)
             .withTopicName(topicNotIncluded)
             .build();
 
-        resourceManager.createResourceWithWait(clients.producerStrimzi(), clients.consumerStrimzi());
-        ClientUtils.waitForClientsSuccess(testStorage);
+        resourceManager.createResourceWithWait(sourceClients.producerStrimzi(), sourceClients.consumerStrimzi());
+        ClientUtils.waitForInstantClientSuccess(testStorage);
 
         resourceManager.createResourceWithWait(KafkaMirrorMakerTemplates.kafkaMirrorMaker(testStorage.getClusterName(), testStorage.getSourceClusterName(), testStorage.getTargetClusterName(), ClientUtils.generateRandomConsumerGroup(), 1, false)
             .editMetadata()
@@ -456,22 +423,20 @@ public class MirrorMakerST extends AbstractST {
             .endSpec()
             .build());
 
-        clients = new KafkaClientsBuilder(clients)
+        KafkaClients targetClients = ClientUtils.getInstantPlainClientBuilder(testStorage, KafkaResources.plainBootstrapAddress(testStorage.getTargetClusterName()))
             .withTopicName(topicName)
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getTargetClusterName()))
             .build();
 
-        resourceManager.createResourceWithWait(clients.consumerStrimzi());
-        ClientUtils.waitForConsumerClientSuccess(testStorage);
+        resourceManager.createResourceWithWait(targetClients.consumerStrimzi());
+        ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
 
-        clients = new KafkaClientsBuilder(clients)
+        targetClients = new KafkaClientsBuilder(targetClients)
             .withTopicName(topicNotIncluded)
             .build();
 
         LOGGER.info("Becuase {} is not included, we should not receive any message", topicNotIncluded);
-
-        resourceManager.createResourceWithWait(clients.consumerStrimzi());
-        ClientUtils.waitForConsumerClientTimeout(testStorage);
+        resourceManager.createResourceWithWait(targetClients.consumerStrimzi());
+        ClientUtils.waitForInstantConsumerClientTimeout(testStorage);
     }
 
     @ParallelNamespaceTest

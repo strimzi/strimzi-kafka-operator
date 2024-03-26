@@ -24,7 +24,6 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
-import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -381,19 +380,17 @@ public class AbstractUpgradeST extends AbstractST {
 
             String producerAdditionConfiguration = "delivery.timeout.ms=20000\nrequest.timeout.ms=20000";
 
-            KafkaClients kafkaBasicClientJob = new KafkaClientsBuilder()
-                .withProducerName(testStorage.getProducerName())
-                .withConsumerName(testStorage.getConsumerName())
+            KafkaClients kafkaBasicClientJob = ClientUtils.getContinuousPlainClientBuilder(testStorage)
                 .withBootstrapAddress(KafkaResources.plainBootstrapAddress(clusterName))
-                .withTopicName(testStorage.getTopicName())
                 .withMessageCount(upgradeData.getContinuousClientsMessages())
                 .withAdditionalConfig(producerAdditionConfiguration)
                 .withNamespaceName(namespace)
-                .withDelayMs(1000)
                 .build();
 
-            resourceManager.createResourceWithWait(kafkaBasicClientJob.producerStrimzi());
-            resourceManager.createResourceWithWait(kafkaBasicClientJob.consumerStrimzi());
+            resourceManager.createResourceWithWait(
+                kafkaBasicClientJob.producerStrimzi(),
+                kafkaBasicClientJob.consumerStrimzi()
+            );
             // ##############################
         }
 
@@ -602,26 +599,20 @@ public class AbstractUpgradeST extends AbstractST {
         this.deployKafkaConnectAndKafkaConnectorWithWaitForReadiness(bundleDowngradeDataWithFeatureGates, upgradeKafkaVersion, testStorage);
         this.deployKafkaUserWithWaitForReadiness(bundleDowngradeDataWithFeatureGates, testStorage.getNamespaceName());
 
-        final KafkaClients clients = new KafkaClientsBuilder()
-                .withProducerName(testStorage.getProducerName())
-                .withConsumerName(testStorage.getConsumerName())
-                .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(clusterName))
-                .withTopicName(testStorage.getTopicName())
-                .withUsername(userName)
-                .withMessageCount(500)
-                .withNamespaceName(testStorage.getNamespaceName())
-                .build();
+        final KafkaClients clients = ClientUtils.getInstantTlsClientBuilder(testStorage, KafkaResources.tlsBootstrapAddress(clusterName))
+            .withUsername(userName)
+            .build();
 
         resourceManager.createResourceWithWait(clients.producerTlsStrimzi(clusterName));
         // Verify that Producer finish successfully
-        ClientUtils.waitForProducerClientSuccess(testStorage);
+        ClientUtils.waitForInstantProducerClientSuccess(testStorage);
 
         makeSnapshots();
         logPodImagesWithConnect(TestConstants.CO_NAMESPACE);
 
         // Verify FileSink KafkaConnector before upgrade
         String connectorPodName = kubeClient().listPods(testStorage.getNamespaceName(), Collections.singletonMap(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND)).get(0).getMetadata().getName();
-        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), connectorPodName, DEFAULT_SINK_FILE_PATH, "\"Hello-world - 499\"");
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), connectorPodName, DEFAULT_SINK_FILE_PATH, testStorage.getMessageCount());
 
         // Upgrade CO to HEAD and wait for readiness of ClusterOperator
         changeClusterOperator(bundleDowngradeDataWithFeatureGates, testStorage.getNamespaceName());
@@ -635,10 +626,10 @@ public class AbstractUpgradeST extends AbstractST {
         // send again new messages
         resourceManager.createResourceWithWait(clients.producerTlsStrimzi(clusterName));
         // Verify that Producer finish successfully
-        ClientUtils.waitForProducerClientSuccess(testStorage);
+        ClientUtils.waitForInstantProducerClientSuccess(testStorage);
         // Verify FileSink KafkaConnector
         connectorPodName = kubeClient().listPods(testStorage.getNamespaceName(), Collections.singletonMap(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND)).get(0).getMetadata().getName();
-        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), connectorPodName, DEFAULT_SINK_FILE_PATH, "\"Hello-world - 499\"");
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), connectorPodName, DEFAULT_SINK_FILE_PATH, testStorage.getMessageCount());
 
         // Verify that pods are stable
         PodUtils.verifyThatRunningPodsAreStable(testStorage.getNamespaceName(), clusterName);

@@ -17,7 +17,6 @@ import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.UTONotSupported;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
-import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.systemtest.resources.NodePoolsConverter;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -277,17 +276,9 @@ class NamespaceDeletionRecoveryST extends AbstractST {
 
         resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage).build());
 
-        KafkaClients clients = new KafkaClientsBuilder()
-            .withProducerName(testStorage.getProducerName())
-            .withConsumerName(testStorage.getConsumerName())
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
-            .withNamespaceName(testStorage.getNamespaceName())
-            .withTopicName(testStorage.getTopicName())
-            .withMessageCount(testStorage.getMessageCount())
-            .build();
-
+        final KafkaClients clients = ClientUtils.getInstantPlainClients(testStorage);
         resourceManager.createResourceWithWait(clients.producerStrimzi(), clients.consumerStrimzi());
-        ClientUtils.waitForClientsSuccess(testStorage);
+        ClientUtils.waitForInstantClientSuccess(testStorage);
 
         LOGGER.info("##################################################");
         LOGGER.info("Environment for recovery was successfully created");
@@ -295,17 +286,9 @@ class NamespaceDeletionRecoveryST extends AbstractST {
     }
 
     private void verifyStabilityBySendingAndReceivingMessages(TestStorage testStorage) {
-        KafkaClients clients = new KafkaClientsBuilder()
-            .withProducerName(testStorage.getProducerName())
-            .withConsumerName(testStorage.getConsumerName())
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
-            .withNamespaceName(testStorage.getNamespaceName())
-            .withTopicName(testStorage.getTopicName())
-            .withMessageCount(testStorage.getMessageCount())
-            .build();
-
+        final KafkaClients clients = ClientUtils.getInstantPlainClients(testStorage);
         resourceManager.createResourceWithWait(clients.producerStrimzi(), clients.consumerStrimzi());
-        ClientUtils.waitForClientsSuccess(testStorage);
+        ClientUtils.waitForInstantClientSuccess(testStorage);
     }
 
     private void recreatePvcAndUpdatePv(List<PersistentVolumeClaim> persistentVolumeClaimList, String namespace) {

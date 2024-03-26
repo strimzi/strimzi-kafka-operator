@@ -62,10 +62,11 @@ public class KafkaConnectUtils {
         LOGGER.info("KafkaConnect API is available");
     }
 
-    public static void waitForMessagesInKafkaConnectFileSink(String namespaceName, String kafkaConnectPodName, String sinkFileName, String message) {
+    public static void waitForMessagesInKafkaConnectFileSink(String namespaceName, String kafkaConnectPodName, String sinkFileName, int sinkReceivedMsgCount) {
+        final String lastReceivedMessageIndex = Integer.toString(sinkReceivedMsgCount - 1);
         LOGGER.info("Waiting for messages to be present in file sink on {}/{}", namespaceName, kafkaConnectPodName);
         TestUtils.waitFor("messages to be present in file sink", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.TIMEOUT_FOR_SEND_RECEIVE_MSG,
-            () -> cmdKubeClient(namespaceName).execInPod(Level.TRACE, kafkaConnectPodName, "/bin/bash", "-c", "cat " + sinkFileName).out().contains(message),
+            () -> cmdKubeClient(namespaceName).execInPod(Level.TRACE, kafkaConnectPodName, "/bin/bash", "-c", "cat " + sinkFileName).out().contains(lastReceivedMessageIndex),
             () -> LOGGER.warn(cmdKubeClient(namespaceName).execInPod(Level.TRACE, kafkaConnectPodName, "/bin/bash", "-c", "cat " + sinkFileName).out()));
         LOGGER.info("Expected messages are in file sink on {}/{}", namespaceName, kafkaConnectPodName);
     }

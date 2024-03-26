@@ -4,18 +4,17 @@
  */
 package io.strimzi.systemtest.kafka;
 
-import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
-import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.NodePoolsConverter;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
+import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
 import io.strimzi.test.WaitException;
@@ -70,17 +69,10 @@ public class QuotasST extends AbstractST {
             .build());
         resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), testStorage.getNamespaceName()).build());
 
-        final KafkaClients clients = new KafkaClientsBuilder()
-            .withProducerName(testStorage.getProducerName())
-            .withConsumerName(testStorage.getConsumerName())
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
-            .withTopicName(testStorage.getTopicName())
+        final KafkaClients clients = ClientUtils.getInstantPlainClientBuilder(testStorage)
             .withMessageCount(100000)
-            .withDelayMs(0)
             .withMessage(String.join("", Collections.nCopies(1000, "#")))
-            .withNamespaceName(testStorage.getNamespaceName())
             .build();
-
 
         resourceManager.createResourceWithWait(clients.producerStrimzi());
         // Kafka Quotas Plugin should stop producer in around 10-20 seconds with configured throughput

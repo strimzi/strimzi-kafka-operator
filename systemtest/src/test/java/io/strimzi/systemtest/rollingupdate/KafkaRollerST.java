@@ -19,7 +19,6 @@ import io.strimzi.api.kafka.model.common.template.PodTemplate;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaClusterTemplate;
 import io.strimzi.api.kafka.model.kafka.KafkaClusterTemplateBuilder;
-import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolSpecBuilder;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
@@ -111,13 +110,8 @@ public class KafkaRollerST extends AbstractST {
         resourceManager.createResourceWithWait(kafkaTopicWith3Replicas);
 
         // setup clients
-        KafkaClients clients = new KafkaClientsBuilder()
-            .withProducerName(testStorage.getProducerName())
-            .withConsumerName(testStorage.getConsumerName())
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+        KafkaClients clients = ClientUtils.getInstantPlainClientBuilder(testStorage)
             .withTopicName(topicNameWith3Replicas)
-            .withMessageCount(testStorage.getMessageCount())
-            .withNamespaceName(testStorage.getNamespaceName())
             .build();
 
         // producing and consuming data when there are 3 brokers ensures that 'consumer_offests' topic will have all of its replicas only across first 3 brokers
@@ -126,7 +120,7 @@ public class KafkaRollerST extends AbstractST {
             clients.producerStrimzi(),
             clients.consumerStrimzi()
         );
-        ClientUtils.waitForClientsSuccess(testStorage);
+        ClientUtils.waitForInstantClientSuccess(testStorage);
 
         LOGGER.info("Scale Kafka up from 3 to 4 brokers");
         if (Environment.isKafkaNodePoolsEnabled()) {
@@ -154,7 +148,7 @@ public class KafkaRollerST extends AbstractST {
             clients.producerStrimzi(),
             clients.consumerStrimzi()
         );
-        ClientUtils.waitForClientsSuccess(testStorage);
+        ClientUtils.waitForInstantClientSuccess(testStorage);
 
         LOGGER.info("Scaling down to {}", initialBrokerReplicaCount);
         if (Environment.isKafkaNodePoolsEnabled()) {
