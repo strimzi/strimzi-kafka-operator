@@ -53,6 +53,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -202,14 +203,19 @@ public class KafkaAssemblyOperatorMockTest {
                 StrimziPodSet sps = supplier.strimziPodSetOperator.client().inNamespace(namespace).withName(KafkaResources.kafkaComponentName(CLUSTER_NAME)).get();
                 assertThat(sps, is(notNullValue()));
 
+                X509Certificate serverCert = Ca.x509Certificate(MockCertManager.serverCert().getBytes());
+
                 sps.getSpec().getPods().stream().map(PodSetUtils::mapToPod).forEach(pod -> {
                     assertThat(pod.getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, "0"));
                     assertThat(pod.getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "0"));
                     assertThat(pod.getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, "0"));
                     var brokersSecret = client.secrets().inNamespace(namespace).withName(KafkaResources.kafkaSecretName(CLUSTER_NAME)).get();
+                    var brokersSecretKey = Ca.SecretEntry.CRT.asKey(pod.getMetadata().getName());
+
                     assertThat(pod.getMetadata().getAnnotations(), hasEntry(Annotations.ANNO_STRIMZI_SERVER_CERT_HASH,
-                            CertUtils.getCertificateThumbprint(brokersSecret, Ca.SecretEntry.CRT.asKey(pod.getMetadata().getName()))
+                            CertUtils.getCertificateThumbprint(brokersSecret, brokersSecretKey)
                     ));
+                    assertThat(serverCert.getNotAfter().getTime(), is(CertUtils.getCertificateExpirationDateEpoch(brokersSecret, brokersSecretKey)));
                 });
 
                 StrimziPodSet zkSps = supplier.strimziPodSetOperator.client().inNamespace(namespace).withName(KafkaResources.zookeeperComponentName(CLUSTER_NAME)).get();

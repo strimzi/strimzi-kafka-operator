@@ -64,7 +64,8 @@ public class CertUtils {
      *
      * @param certSecret    Secrets with the certificate
      * @param key           Key under which the certificate is stored in the Secret
-     * @return              Epoch representation of the expiration date of the certificate or -1 if certSecret contains no valid X509Certificate
+     * @return              Epoch representation of the expiration date of the certificate or 0 if certSecret contains no valid X509Certificate
+     * @throws              RuntimeException if the certificate cannot be decoded
      */
     public static long getCertificateExpirationDateEpoch(Secret certSecret, String key) {
         var cert = Ca.cert(certSecret, key);
