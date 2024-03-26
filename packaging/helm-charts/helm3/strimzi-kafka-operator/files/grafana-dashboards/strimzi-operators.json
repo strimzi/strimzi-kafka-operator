@@ -936,7 +936,11 @@
       "id": 57,
       "options": {
         "showHeader": true,
-        "sortBy": []
+        "sortBy": [
+          {
+            "field": "Expiry Time"
+          }
+        ]
       },
       "pluginVersion": "7.3.7",
       "targets": [
@@ -977,6 +981,17 @@
               "cluster_name": "Kafka Cluster Name",
               "time_to_expiry": "Time to Expiry"
             }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "field": "Expiry Time"
+              }
+            ]
           }
         }
       ],
