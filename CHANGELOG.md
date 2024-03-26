@@ -8,7 +8,7 @@
 * Added support for configuring the `externalIPs` field in node port type services.
 * The `UnidirectionalTopicOperator` feature gate moves to GA stage and is permanently enabled without the possibility to disable it.
   If the topics whose names start with `strimzi-store-topic` and `strimzi-topic-operator` still exist, you can delete them.
-* Added support for `custom` SASL config in standalone Topic Operator deployment to support alternate access controllers (i.e. `AWS_MSK_IAM`)
+* Added support for custom SASL config in standalone Topic Operator deployment to support alternate access controllers (i.e. `AWS_MSK_IAM`)
 
 ### Changes, deprecations and removals
 
