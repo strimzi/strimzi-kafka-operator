@@ -20,7 +20,6 @@ import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
 import io.fabric8.kubernetes.client.informers.cache.Lister;
 import io.fabric8.kubernetes.client.readiness.Readiness;
-import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
 import io.strimzi.api.kafka.model.connect.KafkaConnect;
 import io.strimzi.api.kafka.model.connect.KafkaConnectList;
@@ -40,7 +39,6 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.metrics.ControllerMetricsHolder;
-import io.strimzi.operator.common.metrics.MetricsHolder;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.StatusDiff;
 import io.strimzi.operator.common.model.StatusUtils;
@@ -165,7 +163,6 @@ public class StrimziPodSetController implements Runnable {
         podInformer.addEventHandler(new PodEventHandler());
         podInformer.exceptionHandler((isStarted, throwable) -> InformerUtils.loggingExceptionHandler("Pod", isStarted, throwable));
 
-        kafkaInformer.addEventHandler(new KafkaEventHandler());
         kafkaInformer.exceptionHandler((isStarted, throwable) -> InformerUtils.loggingExceptionHandler("Kafka", isStarted, throwable));
         kafkaConnectInformer.exceptionHandler((isStarted, throwable) -> InformerUtils.loggingExceptionHandler("KafkaConnect", isStarted, throwable));
         kafkaMirrorMaker2Informer.exceptionHandler((isStarted, throwable) -> InformerUtils.loggingExceptionHandler("KafkaMirrorMaker2", isStarted, throwable));
@@ -719,37 +716,6 @@ public class StrimziPodSetController implements Runnable {
         @Override
         public void onDelete(Pod pod, boolean deletedFinalStateUnknown) {
             enqueuePod(pod, "DELETED");
-        }
-    }
-
-    private class KafkaEventHandler implements ResourceEventHandler<Kafka> {
-        @Override
-        public void onAdd(Kafka kafka) {
-            // Intentionally not used
-        }
-
-        @Override
-        public void onUpdate(Kafka oldKafka, Kafka newKafka) {
-            // Intentionally not used
-        }
-
-        @Override
-        public void onDelete(Kafka kafka, boolean deletedFinalStateUnknown) {
-            clearCertificateExpirationMetric(kafka.getMetadata().getName(), kafka.getMetadata().getNamespace());
-        }
-
-        /**
-         * Removes the certificate expiration metric for the Kafka cluster in the namespace specified
-         *
-         * @param clusterName   Name of the Kafka cluster
-         * @param namespace     Namespace of the Kafka cluster
-         */
-        private void clearCertificateExpirationMetric(String clusterName, String namespace) {
-            Tags tags = metrics().getTags(clusterName, namespace, "Kafka");
-            metrics().removeMetric(MetricsHolder.METRICS_CERTIFICATE_EXPIRATION_MS, tags);
-
-            LOGGER.debugOp("Metrics {} for Kafka: {}/{} has been removed",
-                    MetricsHolder.METRICS_CERTIFICATE_EXPIRATION_MS, namespace, clusterName);
         }
     }
 }
