@@ -136,7 +136,7 @@ public class ClusterOperatorConfig {
     /**
      * Namespace in which the operator will run and create resources
      */
-    public static final ConfigParameter<Set<String>> NAMESPACE = new ConfigParameter<>("STRIMZI_NAMESPACE", NAMESPACE_SET, "*",  CONFIG_VALUES);
+    public static final ConfigParameter<Set<String>> NAMESPACE = new ConfigParameter<>("STRIMZI_NAMESPACE", NAMESPACE_SET, ConfigParameter.ANY_NAMESPACE,  CONFIG_VALUES);
 
     /**
      * Specify every how many milliseconds the reconciliation runs
