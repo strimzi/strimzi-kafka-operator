@@ -141,8 +141,9 @@ env:
 <3> The keystore contains the private key for mTLS authentication.
 <4> The password for accessing the keystore.
 
-. If you need a custom `SASL` configuration. For example, to access a cluster in a cloud provider with a custom login module, the `custom` `SASL_MECHANISM` allows for `SASL_CUSTOM_CONFIG`. +
-*NOTE:  Only SASL properties can be set with the `custom` mechanism.*
+. If you need a custom `SASL` configuration. For example, to access a cluster in a cloud provider with a custom login module like `AWS_MSK_IAM`. The `STRIMZI_SASL_CUSTOM_CONFIG_JSON` is the mechanism to do that. +
++
+*NOTE:  Only SASL properties can be set with the `STRIMZI_SASL_CUSTOM_CONFIG_JSON` mechanism.*
 +
 .Example custom SASL configuration
 [source,shell,subs=+quotes]
@@ -163,7 +164,7 @@ env:
   - name: STRIMZI_PUBLIC_CA
     value: "true"
   - name: STRIMZI_TRUSTSTORE_LOCATION
-    value: /opt/cacerts
+    value: /etc/pki/java/cacerts
   - name: STRIMZI_TRUSTSTORE_PASSWORD
     value: changeit
   - name: STRIMZI_KAFKA_BOOTSTRAP_SERVERS
