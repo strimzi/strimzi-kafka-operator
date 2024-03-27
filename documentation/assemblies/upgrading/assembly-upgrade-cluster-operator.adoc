@@ -33,12 +33,6 @@ The `helm upgrade` command does not upgrade the {HelmCustomResourceDefinitions}.
 Install the new CRDs manually after upgrading the Cluster Operator.
 You can access the CRDs from the {ReleaseDownload} or find them in the `crd` subdirectory inside the Helm Chart.
 
-== Migrating to unidirectional topic management
-
-When deploying the Topic Operator to manage topics, the Cluster Operator enables unidirectional topic management by default. 
-If you are switching from a version of Strimzi that used bidirectional topic management, there are some cleanup tasks to perform after upgrading the Cluster Operator.
-For more information, see xref:proc-changing-topic-operator-mode-{context}[].
-
 [id='con-upgrade-cluster-operator-unsupported-kafka-{context}']
 == Upgrading the Cluster Operator returns Kafka version error
 
