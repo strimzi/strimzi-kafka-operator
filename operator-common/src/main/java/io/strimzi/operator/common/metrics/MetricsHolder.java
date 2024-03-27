@@ -317,11 +317,7 @@ public abstract class MetricsHolder {
     protected static <M> M metric(String clusterName, String namespace, String kind, Labels selectorLabels, Map<String, M> metricMap, Function<Tags, M> fn) {
         Tags metricTags = MetricsUtils.getMetricTags(clusterName, namespace, kind, selectorLabels);
         String metricKey = MetricsUtils.getMetricKey(clusterName, namespace, kind);
-
-        if (metricMap.containsKey(metricKey)) {
-            return metricMap.get(metricKey);
-        }
-        return fn.apply(metricTags);
+        return metricMap.computeIfAbsent(metricKey, k -> fn.apply(metricTags));
     }
 
     /**
