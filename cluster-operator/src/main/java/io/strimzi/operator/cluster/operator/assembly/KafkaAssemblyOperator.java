@@ -481,10 +481,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          * @return  Future with Reconciliation State
          */
         Future<ReconciliationState> emitCertificateSecretMetrics() {
-            long serverCertificateExpiration = CertUtils.getCertificateExpirationDateEpoch(this.clusterCa.caCertSecret(), Ca.CA_KEY);
+            long serverCertificateExpiration = CertUtils.getCertificateExpirationDateEpoch(this.clusterCa.caCertSecret(), Ca.CA_CRT);
             metrics().serverCertificateExpiration(this.name, this.namespace).set(serverCertificateExpiration);
 
-            long clientCertificateExpiration = CertUtils.getCertificateExpirationDateEpoch(this.clientsCa.caCertSecret(), Ca.CA_KEY);
+            long clientCertificateExpiration = CertUtils.getCertificateExpirationDateEpoch(this.clientsCa.caCertSecret(), Ca.CA_CRT);
             metrics().clientCertificateExpiration(this.name, this.namespace).set(clientCertificateExpiration);
 
             return Future.succeededFuture(this);
