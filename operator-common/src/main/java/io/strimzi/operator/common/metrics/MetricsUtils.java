@@ -28,7 +28,7 @@ public class MetricsUtils {
     /**
      * Tag representing any namespace
      */
-    private static final Tag TAG_ANY_NAMESPACE = Tag.of("namespace", "*");
+    protected static final Tag TAG_ANY_NAMESPACE = Tag.of("namespace", "*");
 
     /**
      * Checks if the given meter matches the given metric name
@@ -63,7 +63,7 @@ public class MetricsUtils {
      * @param expectedTag   Expected tag to check
      * @return  True if the meter matches the metric tag, false otherwise
      */
-    private static boolean isMatchingTag(Set<Tag> meterTags, Tag expectedTag) {
+    protected static boolean isMatchingTag(Set<Tag> meterTags, Tag expectedTag) {
         for (Tag meterTag : meterTags) {
             if (expectedTag.getKey().equals(TAG_ANY_NAMESPACE.getKey())
                     && expectedTag.getValue().equals(TAG_ANY_NAMESPACE.getValue())) {
