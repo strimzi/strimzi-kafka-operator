@@ -7,12 +7,12 @@ package io.strimzi.operator.cluster.operator.assembly;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.strimzi.api.kafka.model.kafka.KafkaStatus;
 import io.strimzi.operator.cluster.model.StorageUtils;
+import io.strimzi.operator.cluster.operator.resource.kubernetes.PvcOperator;
+import io.strimzi.operator.cluster.operator.resource.kubernetes.StorageClassOperator;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.model.StatusUtils;
-import io.strimzi.operator.common.operator.resource.PvcOperator;
-import io.strimzi.operator.common.operator.resource.StorageClassOperator;
 import io.vertx.core.Future;
 
 import java.util.ArrayList;
