@@ -37,6 +37,7 @@ import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import io.vertx.micrometer.MicrometerMetricsOptions;
 import io.vertx.micrometer.VertxPrometheusOptions;
+import io.vertx.micrometer.backends.BackendRegistries;
 import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -144,7 +145,7 @@ public class KafkaConnectorIT {
         KafkaConnector connector = createKafkaConnector(namespace, connectorName, false, config);
         Crds.kafkaConnectorOperation(client).inNamespace(namespace).resource(connector).create();
 
-        MetricsProvider metrics = new MicrometerMetricsProvider();
+        MetricsProvider metrics = new MicrometerMetricsProvider(BackendRegistries.getDefaultNow());
         ResourceOperatorSupplier ros = new ResourceOperatorSupplier(vertx, client,
                 new ZookeeperLeaderFinder(vertx,
                         // Retry up to 3 times (4 attempts), with overall max delay of 35000ms
@@ -214,7 +215,7 @@ public class KafkaConnectorIT {
         KafkaConnector connector = createKafkaConnector(namespace, connectorName, false, config);
         Crds.kafkaConnectorOperation(client).inNamespace(namespace).resource(connector).create();
 
-        MetricsProvider metrics = new MicrometerMetricsProvider();
+        MetricsProvider metrics = new MicrometerMetricsProvider(BackendRegistries.getDefaultNow());
         ResourceOperatorSupplier ros = new ResourceOperatorSupplier(vertx, client,
                 new ZookeeperLeaderFinder(vertx,
                         // Retry up to 3 times (4 attempts), with overall max delay of 35000ms
@@ -263,7 +264,7 @@ public class KafkaConnectorIT {
         KafkaConnector connector = createKafkaConnector(namespace, connectorName, false, config);
         Crds.kafkaConnectorOperation(client).inNamespace(namespace).resource(connector).create();
 
-        MetricsProvider metrics = new MicrometerMetricsProvider();
+        MetricsProvider metrics = new MicrometerMetricsProvider(BackendRegistries.getDefaultNow());
         ResourceOperatorSupplier ros = new ResourceOperatorSupplier(vertx, client,
                 new ZookeeperLeaderFinder(vertx,
                         // Retry up to 3 times (4 attempts), with overall max delay of 35000ms
@@ -323,7 +324,7 @@ public class KafkaConnectorIT {
         KafkaConnector connector = createKafkaConnector(namespace, connectorName, true, config);
         Crds.kafkaConnectorOperation(client).inNamespace(namespace).resource(connector).create();
 
-        MetricsProvider metrics = new MicrometerMetricsProvider();
+        MetricsProvider metrics = new MicrometerMetricsProvider(BackendRegistries.getDefaultNow());
         ResourceOperatorSupplier ros = new ResourceOperatorSupplier(vertx, client,
             new ZookeeperLeaderFinder(vertx,
                 // Retry up to 3 times (4 attempts), with overall max delay of 35000ms
@@ -372,7 +373,7 @@ public class KafkaConnectorIT {
         KafkaConnector connector = createKafkaConnector(namespace, connectorName, true, config);
         Crds.kafkaConnectorOperation(client).inNamespace(namespace).resource(connector).create();
 
-        MetricsProvider metrics = new MicrometerMetricsProvider();
+        MetricsProvider metrics = new MicrometerMetricsProvider(BackendRegistries.getDefaultNow());
         ResourceOperatorSupplier ros = new ResourceOperatorSupplier(vertx, client,
             new ZookeeperLeaderFinder(vertx,
                 // Retry up to 3 times (4 attempts), with overall max delay of 35000ms
@@ -502,7 +503,7 @@ public class KafkaConnectorIT {
             JsonObject connectorStatus = new JsonObject(kafkaConnector.getStatus().getConnectorStatus());
             assertThat(connectorStatus.getJsonObject("connector"), notNullValue());
             assertThat(connectorStatus.getJsonObject("connector").getString("state"), is("RESTARTING"));
-            MetricsProvider metrics = new MicrometerMetricsProvider();
+            MetricsProvider metrics = new MicrometerMetricsProvider(BackendRegistries.getDefaultNow());
             MeterRegistry registry = metrics.meterRegistry();
             assertThat(registry.get(MetricsHolder.METRICS_PREFIX + "auto.restarts").tag("kind", KafkaConnector.RESOURCE_KIND).counter().count(), CoreMatchers.is(1.0));
         });
@@ -523,7 +524,7 @@ public class KafkaConnectorIT {
             assertThat(connectorStatus.getJsonArray("tasks"), notNullValue());
             assertThat(connectorStatus.getJsonArray("tasks").size(), is(1));
             assertThat(connectorStatus.getJsonArray("tasks").getJsonObject(0).getString("state"), is("RESTARTING"));
-            MetricsProvider metrics = new MicrometerMetricsProvider();
+            MetricsProvider metrics = new MicrometerMetricsProvider(BackendRegistries.getDefaultNow());
             MeterRegistry registry = metrics.meterRegistry();
             assertThat(registry.get(MetricsHolder.METRICS_PREFIX + "auto.restarts").tag("kind", KafkaConnector.RESOURCE_KIND).counter().count(), CoreMatchers.is(1.0));
         });

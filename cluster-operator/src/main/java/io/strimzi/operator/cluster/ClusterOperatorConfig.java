@@ -12,9 +12,9 @@ import io.strimzi.operator.cluster.model.NoImageException;
 import io.strimzi.operator.cluster.model.UnsupportedVersionException;
 import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.config.ConfigParameter;
+import io.strimzi.operator.common.config.ConfigParameterParser;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.operator.common.operator.resource.ConfigParameter;
-import io.strimzi.operator.common.operator.resource.ConfigParameterParser;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -25,13 +25,13 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.BOOLEAN;
-import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.INTEGER;
-import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.LABEL_PREDICATE;
-import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.LOCAL_OBJECT_REFERENCE_LIST;
-import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.LONG;
-import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.NAMESPACE_SET;
-import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.STRING;
+import static io.strimzi.operator.common.config.ConfigParameterParser.BOOLEAN;
+import static io.strimzi.operator.common.config.ConfigParameterParser.INTEGER;
+import static io.strimzi.operator.common.config.ConfigParameterParser.LABEL_PREDICATE;
+import static io.strimzi.operator.common.config.ConfigParameterParser.LOCAL_OBJECT_REFERENCE_LIST;
+import static io.strimzi.operator.common.config.ConfigParameterParser.LONG;
+import static io.strimzi.operator.common.config.ConfigParameterParser.NAMESPACE_SET;
+import static io.strimzi.operator.common.config.ConfigParameterParser.STRING;
 
 /**
  * Cluster Operator configuration
@@ -136,7 +136,7 @@ public class ClusterOperatorConfig {
     /**
      * Namespace in which the operator will run and create resources
      */
-    public static final ConfigParameter<Set<String>> NAMESPACE = new ConfigParameter<>("STRIMZI_NAMESPACE", NAMESPACE_SET, "*",  CONFIG_VALUES);
+    public static final ConfigParameter<Set<String>> NAMESPACE = new ConfigParameter<>("STRIMZI_NAMESPACE", NAMESPACE_SET, ConfigParameter.ANY_NAMESPACE,  CONFIG_VALUES);
 
     /**
      * Specify every how many milliseconds the reconciliation runs

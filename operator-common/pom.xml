@@ -188,11 +188,6 @@
             <artifactId>micrometer-registry-prometheus</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.vertx</groupId>
-            <artifactId>vertx-micrometer-metrics</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
             <groupId>io.strimzi</groupId>
             <artifactId>mockkube</artifactId>
             <scope>test</scope>

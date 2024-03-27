@@ -12,6 +12,7 @@ import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.FilterWatchListDeletable;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.strimzi.operator.common.config.ConfigParameter;
 
 import java.util.concurrent.Executor;
 
@@ -57,7 +58,7 @@ public abstract class AbstractWatchableNamespacedResourceOperator<
      * @return  A Kubernetes watch instance
      */
     public Watch watch(String namespace, Watcher<T> watcher) {
-        if (ANY_NAMESPACE.equals(namespace))    {
+        if (ConfigParameter.ANY_NAMESPACE.equals(namespace))    {
             return watchInAnyNamespace(watcher);
         } else {
             return watchInNamespace(namespace, watcher);
@@ -75,7 +76,7 @@ public abstract class AbstractWatchableNamespacedResourceOperator<
      */
     public Watch watch(String namespace, LabelSelector selector, Watcher<T> watcher) {
         FilterWatchListDeletable<T, L, R> operation
-                = ANY_NAMESPACE.equals(namespace) ? operation().inAnyNamespace() : operation().inNamespace(namespace);
+                = ConfigParameter.ANY_NAMESPACE.equals(namespace) ? operation().inAnyNamespace() : operation().inNamespace(namespace);
         if (selector != null) {
             operation = operation.withLabelSelector(selector);
         }

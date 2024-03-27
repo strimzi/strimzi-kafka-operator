@@ -20,6 +20,7 @@ import io.fabric8.kubernetes.client.dsl.base.PatchType;
 import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
+import io.strimzi.operator.common.config.ConfigParameter;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 
@@ -47,12 +48,6 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
             R extends Resource<T>>
         extends AbstractResourceOperator<C, T, L, R> {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(AbstractNamespacedResourceOperator.class);
-
-    /**
-     * Marker for indication "all namespaces" => this is used for example when creating watches to create a cluster
-     * wide watch.
-     */
-    public static final String ANY_NAMESPACE = "*";
 
     /**
      * Constructor.
@@ -356,7 +351,7 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
      * @return  Operation with applied namespace
      */
     private FilterWatchListDeletable<T, L, R> applyNamespace(String namespace) {
-        if (ANY_NAMESPACE.equals(namespace)) {
+        if (ConfigParameter.ANY_NAMESPACE.equals(namespace)) {
             return operation().inAnyNamespace();
         } else {
             return operation().inNamespace(namespace);

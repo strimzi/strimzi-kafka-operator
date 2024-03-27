@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.operator.assembly;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.micrometer.core.instrument.Tags;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.config.ConfigParameter;
 import io.strimzi.operator.common.metrics.MetricsHolder;
 import io.strimzi.operator.common.metrics.OperatorMetricsHolder;
 import io.strimzi.operator.common.model.NamespaceAndName;
@@ -75,7 +76,7 @@ public interface Operator {
      * @param handler       Handler called on completion.
      */
     default void reconcileThese(String trigger, Set<NamespaceAndName> desiredNames, String namespace, Handler<AsyncResult<Void>> handler) {
-        if (namespace.equals("*")) {
+        if (namespace.equals(ConfigParameter.ANY_NAMESPACE)) {
             metrics().resetResourceAndPausedResourceCounters();
         } else {
             metrics().resourceCounter(namespace).set(0);

@@ -14,7 +14,6 @@ import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticatio
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationTls;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
-import io.strimzi.operator.common.operator.resource.TimeoutException;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;

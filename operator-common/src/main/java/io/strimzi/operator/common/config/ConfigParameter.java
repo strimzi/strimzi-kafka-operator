@@ -2,7 +2,7 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.operator.common.operator.resource;
+package io.strimzi.operator.common.config;
 
 import io.strimzi.operator.common.InvalidConfigurationException;
 
@@ -22,6 +22,11 @@ import java.util.Map;
  * @param map           Map that will contain all the configuration values
  */
 public record ConfigParameter<T>(String key, ConfigParameterParser<T> type, String defaultValue, boolean required, Map<String, ConfigParameter<?>> map) {
+    /**
+     * Marker for indication "all namespaces" => this is used for example when creating watches to create a cluster
+     * wide watch.
+     */
+    public final static String ANY_NAMESPACE = "*";
 
     /**
      * Constructor

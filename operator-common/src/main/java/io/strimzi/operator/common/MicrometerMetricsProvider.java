@@ -9,7 +9,6 @@ import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
-import io.vertx.micrometer.backends.BackendRegistries;
 
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -20,13 +19,6 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class MicrometerMetricsProvider implements MetricsProvider {
     protected final MeterRegistry metrics;
-
-    /**
-     * Constructor of the Micrometer metrics provider which uses the Vert.x provided metrics registry
-     */
-    public MicrometerMetricsProvider() {
-        this.metrics = BackendRegistries.getDefaultNow();
-    }
 
     /**
      * Constructor of the Micrometer metrics provider.

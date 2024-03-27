@@ -390,7 +390,7 @@ public class KafkaRoller {
                     LOGGER.infoCr(reconciliation, "Could not verify pod {} is up-to-date, giving up after {} attempts. Total delay between attempts {}ms",
                             nodeRef, ctx.backOff.maxAttempts(), ctx.backOff.totalDelayMs(), e);
                     ctx.promise.fail(e instanceof TimeoutException ?
-                            new io.strimzi.operator.common.operator.resource.TimeoutException() :
+                            new io.strimzi.operator.common.TimeoutException() :
                             e);
                 } else {
                     long delay1 = ctx.backOff.delayMs();

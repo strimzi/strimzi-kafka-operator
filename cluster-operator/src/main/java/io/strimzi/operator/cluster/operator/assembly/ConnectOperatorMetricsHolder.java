@@ -8,6 +8,7 @@ import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Timer;
 import io.strimzi.api.kafka.model.connector.KafkaConnector;
 import io.strimzi.operator.common.MetricsProvider;
+import io.strimzi.operator.common.config.ConfigParameter;
 import io.strimzi.operator.common.metrics.OperatorMetricsHolder;
 import io.strimzi.operator.common.model.Labels;
 
@@ -133,7 +134,7 @@ public class ConnectOperatorMetricsHolder extends OperatorMetricsHolder {
      * @param namespace Namespace for which should the metrics be reset to 0
      */
     public void resetConnectorsCounters(String namespace) {
-        if (namespace.equals("*")) {
+        if (namespace.equals(ConfigParameter.ANY_NAMESPACE)) {
             connectorsResourceCounterMap.forEach((key, counter) -> counter.set(0));
             pausedConnectorsResourceCounterMap.forEach((key, counter) -> counter.set(0));
         } else {
