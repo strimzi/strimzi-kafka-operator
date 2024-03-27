@@ -18,10 +18,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 /**
  * Abstract base class holding common metrics used by operators and controllers.
@@ -65,9 +68,18 @@ public abstract class MetricsHolder {
      */
     public static final String METRICS_RESOURCES_PAUSED = METRICS_PREFIX + "resources.paused";
     /**
-     * Metric name for certificate expiration timestamp in ms.
+     * Metric name for server certificate expiration timestamp in ms.
      */
-    public static final String METRICS_CERTIFICATE_EXPIRATION_MS = METRICS_PREFIX + "certificate.expiration.ms";
+    public static final String METRICS_SERVER_CERTIFICATE_EXPIRATION_MS = METRICS_PREFIX + "server.certificate.expiration.ms";
+    /**
+     * Metric name for client certificate expiration timestamp in ms.
+     */
+    public static final String METRICS_CLIENT_CERTIFICATE_EXPIRATION_MS = METRICS_PREFIX + "client.certificate.expiration.ms";
+
+    /**
+     * Matching tag for any namespace
+     */
+    private static final Tag TAG_ANY_NAMESPACE = Tag.of("namespace", "*");
 
     protected final String kind;
     protected final Labels selectorLabels;
@@ -107,20 +119,46 @@ public abstract class MetricsHolder {
     }
 
     /**
-     * Removing metric based on filter
+     * Removing metric based on filters metricName and expectedTags.
+     * Tags will be matched against the tags of the metric. If all tags are present and have the same values.
+     * If expected tag for namespace is '*', then any value will be accepted.
      *
      * @param metricName    Name of the metric to remove
-     * @param tags          Tags of the metric to remove
+     * @param expectedTags  Tags of the metric to remove
      * @return  true if the metric was removed, false otherwise
      */
-    public boolean removeMetric(String metricName, Tags tags) {
+    public boolean removeMetric(String metricName, Tags expectedTags) {
         Optional<Meter> maybeMetric = metricsProvider()
                 .meterRegistry()
                 .getMeters()
                 .stream()
-                .filter(meter -> meter.getId().getName().equals(metricName)
-                        && new HashSet<>(meter.getId().getTags()).containsAll(tags.stream().toList()))
+                .filter(meter -> {
+                    // Check metric name matches
+                    if (!meter.getId().getName().equals(metricName)) {
+                        return false;
+                    }
+
+                    // Check that all expected tags are present
+                    Set<Tag> otherTags = new HashSet<>(meter.getId().getTags());
+                    Set<Tag> thisTags = expectedTags.stream().collect(Collectors.toSet());
+                    if (!otherTags.containsAll(thisTags)) {
+                        return false;
+                    }
+
+                    // Check that tags has expected values
+                    return thisTags.stream().allMatch(expectedTag -> {
+                        for (Tag otherTag : otherTags) {
+                            if (otherTag.getKey().equals(expectedTag.getKey())
+                                    && (otherTag.getValue().equals(expectedTag.getValue())
+                                        || expectedTag.equals(TAG_ANY_NAMESPACE))) {
+                                return true;
+                            }
+                        }
+                        return false;
+                    });
+                })
                 .findFirst();
+
         if (maybeMetric.isPresent()) {
             metricsProvider().meterRegistry().remove(maybeMetric.get());
             return true;
@@ -288,7 +326,7 @@ public abstract class MetricsHolder {
      * @return Metric gauge
      */
     public AtomicLong serverCertificateExpiration(String clusterName, String namespace) {
-        return getGaugeLong(clusterName, namespace, kind, METRICS_CERTIFICATE_EXPIRATION_MS, metricsProvider, selectorLabels, serverCertificateExpirationMap,
+        return getGaugeLong(clusterName, namespace, kind, METRICS_SERVER_CERTIFICATE_EXPIRATION_MS, metricsProvider, selectorLabels, serverCertificateExpirationMap,
                 "Time in milliseconds when the certificate expires");
     }
 
@@ -300,7 +338,7 @@ public abstract class MetricsHolder {
      * @return Metric gauge
      */
     public AtomicLong clientCertificateExpiration(String clusterName, String namespace) {
-        return getGaugeLong(clusterName, namespace, kind, METRICS_CERTIFICATE_EXPIRATION_MS, metricsProvider, selectorLabels, clientCertificateExpirationMap,
+        return getGaugeLong(clusterName, namespace, kind, METRICS_CLIENT_CERTIFICATE_EXPIRATION_MS, metricsProvider, selectorLabels, clientCertificateExpirationMap,
                 "Time in milliseconds when the certificate expires");
     }
 
