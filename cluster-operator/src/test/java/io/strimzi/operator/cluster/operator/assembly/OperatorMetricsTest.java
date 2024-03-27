@@ -30,6 +30,7 @@ import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import io.vertx.micrometer.MicrometerMetricsOptions;
 import io.vertx.micrometer.VertxPrometheusOptions;
+import io.vertx.micrometer.backends.BackendRegistries;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -486,7 +487,7 @@ public class OperatorMetricsTest {
      * @return  Clean MetricsProvider
      */
     public MetricsProvider createCleanMetricsProvider() {
-        MetricsProvider metrics = new MicrometerMetricsProvider();
+        MetricsProvider metrics = new MicrometerMetricsProvider(BackendRegistries.getDefaultNow());
         MeterRegistry registry = metrics.meterRegistry();
 
         registry.forEachMeter(registry::remove);

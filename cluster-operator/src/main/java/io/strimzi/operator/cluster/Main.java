@@ -34,6 +34,7 @@ import io.vertx.core.VertxOptions;
 import io.vertx.core.http.HttpServer;
 import io.vertx.micrometer.MicrometerMetricsOptions;
 import io.vertx.micrometer.VertxPrometheusOptions;
+import io.vertx.micrometer.backends.BackendRegistries;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -90,7 +91,7 @@ public class Main {
         shutdownHook.register(() -> ShutdownHook.shutdownVertx(vertx, SHUTDOWN_TIMEOUT));
 
         // Setup Micrometer Metrics provider
-        MetricsProvider metricsProvider = new MicrometerMetricsProvider();
+        MetricsProvider metricsProvider = new MicrometerMetricsProvider(BackendRegistries.getDefaultNow());
         KubernetesClient client = new OperatorKubernetesClientBuilder("strimzi-cluster-operator", strimziVersion).build();
 
         maybeCreateClusterRoles(vertx, config, client)
