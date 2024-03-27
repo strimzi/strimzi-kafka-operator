@@ -12,7 +12,6 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.ParallelTest;
-import io.strimzi.systemtest.annotations.UTONotSupported;
 import io.strimzi.systemtest.kafkaclients.internalClients.admin.AdminClient;
 import io.strimzi.systemtest.resources.NodePoolsConverter;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -21,6 +20,7 @@ import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
 import io.strimzi.systemtest.templates.specific.AdminClientTemplates;
+import io.strimzi.systemtest.templates.specific.ScraperTemplates;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.logging.log4j.LogManager;
@@ -28,6 +28,7 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 
+import static io.strimzi.api.kafka.model.kafka.KafkaResources.bootstrapServiceName;
 import static io.strimzi.systemtest.TestConstants.ARM64_UNSUPPORTED;
 import static io.strimzi.systemtest.TestConstants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.TestConstants.REGRESSION;
@@ -55,7 +56,7 @@ public class ThrottlingQuotaST extends AbstractST {
     private AdminClient adminClient;
 
     @ParallelTest
-    @UTONotSupported("https://github.com/strimzi/strimzi-kafka-operator/issues/8864")
+
     void testThrottlingQuotasDuringAllTopicOperations() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -70,7 +71,12 @@ public class ThrottlingQuotaST extends AbstractST {
         String commandOutput = adminClient.createTopics(testStorage.getTopicName(), numOfTopics, numOfPartitions, numOfReplicas);
         assertThat(commandOutput, containsString(THROTTLING_ERROR_MSG));
 
-        KafkaTopicUtils.deleteAllKafkaTopicsByPrefixWithWait(testStorage.getNamespaceName(), testStorage.getTopicName());
+        // seems like one not working
+        resourceManager.createResourceWithWait(ScraperTemplates.scraperPod(sharedTestStorage.getNamespaceName(), testStorage.getScraperName()).build());
+        final String scraperPodName = ResourceManager.kubeClient().listPodsByPrefixInName(sharedTestStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
+        final String bootstrapAddress = bootstrapServiceName(sharedTestStorage.getClusterName()) + ":9095";
+
+        KafkaTopicUtils.deleteTopicsByPrefixInKafka(sharedTestStorage.getNamespaceName(), testStorage.getTopicName(), scraperPodName, bootstrapAddress);
         KafkaTopicUtils.waitForDeletionOfTopicsWithPrefix(testStorage.getTopicName(), adminClient);
 
         numOfPartitions = 5;
@@ -116,8 +122,10 @@ public class ThrottlingQuotaST extends AbstractST {
         assertThat(commandOutput, containsString(THROTTLING_ERROR_MSG));
 
         LOGGER.info("Because we hit quota, removing the remaining Topics through console");
-        KafkaTopicUtils.deleteAllKafkaTopicsByPrefixWithWait(testStorage.getNamespaceName(), testStorage.getTopicName());
+        KafkaTopicUtils.deleteTopicsByPrefixInKafka(sharedTestStorage.getNamespaceName(), testStorage.getTopicName(), scraperPodName, bootstrapAddress);
         // we need to wait for all KafkaTopics to be deleted from Kafka before proceeding - using Kafka pod cli (with AdminClient props)
+
+
         KafkaTopicUtils.waitForDeletionOfTopicsWithPrefix(testStorage.getTopicName(), adminClient);
 
         // List topics after deletion
@@ -149,6 +157,12 @@ public class ThrottlingQuotaST extends AbstractST {
             .editSpec()
                 .editKafka()
                     .withListeners(
+                        new GenericKafkaListenerBuilder()
+                            .withName("query")
+                            .withPort(9095)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withTls(false)
+                            .build(),
                         new GenericKafkaListenerBuilder()
                             .withName(TestConstants.PLAIN_LISTENER_DEFAULT_NAME)
                             .withPort(9092)

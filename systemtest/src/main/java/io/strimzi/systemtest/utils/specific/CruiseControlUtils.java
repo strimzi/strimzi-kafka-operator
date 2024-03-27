@@ -5,12 +5,11 @@
 package io.strimzi.systemtest.utils.specific;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.StrimziPodSetResource;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.executor.ExecResult;
@@ -104,50 +103,21 @@ public class CruiseControlUtils {
             kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_PASSWORD.getValue()).equals("${CERTS_STORE_PASSWORD}"));
     }
 
-    public static void verifyThatCruiseControlSamplesTopicsArePresent(String namespaceName, int defaultReplicaCount, long timeout) {
-        final int numberOfPartitionsSamplesTopic = 32;
+    public static void verifyThatCruiseControlTopicsArePresent(String namesapce, int defaultReplicaCount, String bootstrapAddress, String scraperPod) {
+        LOGGER.info("Waiting for Cruise Control topics to be present in Kafka");
+        KafkaTopicUtils.waitForTopicWillBePresentInKafka(namesapce, CRUISE_CONTROL_METRICS_TOPIC, bootstrapAddress, scraperPod);
+        KafkaTopicUtils.waitForTopicWillBePresentInKafka(namesapce, CRUISE_CONTROL_MODEL_TRAINING_SAMPLES_TOPIC, bootstrapAddress, scraperPod);
+        KafkaTopicUtils.waitForTopicWillBePresentInKafka(namesapce, CRUISE_CONTROL_PARTITION_METRICS_SAMPLES_TOPIC, bootstrapAddress, scraperPod);
 
-        TestUtils.waitFor("Verify that Kafka contains CruiseControl Topics with related configuration.",
-            TestConstants.GLOBAL_POLL_INTERVAL, timeout, () -> {
-                KafkaTopic modelTrainingSamples = KafkaTopicResource.kafkaTopicClient().inNamespace(namespaceName).withName(CRUISE_CONTROL_MODEL_TRAINING_SAMPLES_TOPIC).get();
-                KafkaTopic partitionsMetricsSamples = KafkaTopicResource.kafkaTopicClient().inNamespace(namespaceName).withName(CRUISE_CONTROL_PARTITION_METRICS_SAMPLES_TOPIC).get();
+        LOGGER.info("Checking if Cruise Control topics have expected replications");
+        KafkaTopicUtils.verifyTopicReplicasInKafka(namesapce, CRUISE_CONTROL_METRICS_TOPIC, scraperPod, bootstrapAddress, defaultReplicaCount);
+        KafkaTopicUtils.verifyTopicReplicasInKafka(namesapce, CRUISE_CONTROL_MODEL_TRAINING_SAMPLES_TOPIC, scraperPod, bootstrapAddress, defaultReplicaCount);
+        KafkaTopicUtils.verifyTopicReplicasInKafka(namesapce, CRUISE_CONTROL_PARTITION_METRICS_SAMPLES_TOPIC, scraperPod, bootstrapAddress, defaultReplicaCount);
 
-                if (modelTrainingSamples != null && partitionsMetricsSamples != null) {
-                    boolean hasTopicCorrectPartitionsCount =
-                            modelTrainingSamples.getSpec().getPartitions() == numberOfPartitionsSamplesTopic &&
-                            partitionsMetricsSamples.getSpec().getPartitions() == numberOfPartitionsSamplesTopic;
-
-                    boolean hasTopicCorrectReplicasCount =
-                            modelTrainingSamples.getSpec().getReplicas() == defaultReplicaCount &&
-                            partitionsMetricsSamples.getSpec().getReplicas() == defaultReplicaCount;
-
-                    return hasTopicCorrectPartitionsCount && hasTopicCorrectReplicasCount;
-                }
-                LOGGER.debug("One of the samples {}, {} Topics are not present", CRUISE_CONTROL_MODEL_TRAINING_SAMPLES_TOPIC, CRUISE_CONTROL_PARTITION_METRICS_SAMPLES_TOPIC);
-                return false;
-            });
-    }
-
-    public static void verifyThatKafkaCruiseControlMetricReporterTopicIsPresent(String namespaceName, int defaultReplicaCount, long timeout) {
-        final int numberOfPartitionsMetricTopic = 1;
-
-        TestUtils.waitFor("Verify that Kafka contains CruiseControl topics with related configuration.",
-            TestConstants.GLOBAL_POLL_INTERVAL, timeout, () -> {
-                KafkaTopic metrics = KafkaTopicResource.kafkaTopicClient().inNamespace(namespaceName).withName(CRUISE_CONTROL_METRICS_TOPIC).get();
-
-                boolean hasTopicCorrectPartitionsCount =
-                    metrics.getSpec().getPartitions() == numberOfPartitionsMetricTopic;
-
-                boolean hasTopicCorrectReplicasCount =
-                    metrics.getSpec().getReplicas() == defaultReplicaCount;
-
-                return hasTopicCorrectPartitionsCount && hasTopicCorrectReplicasCount;
-            });
-    }
-
-    public static void verifyThatCruiseControlTopicsArePresent(String namespaceName, int defaultReplicaCount) {
-        verifyThatKafkaCruiseControlMetricReporterTopicIsPresent(namespaceName, defaultReplicaCount, TestConstants.GLOBAL_CRUISE_CONTROL_TIMEOUT);
-        verifyThatCruiseControlSamplesTopicsArePresent(namespaceName, defaultReplicaCount, TestConstants.GLOBAL_CRUISE_CONTROL_TIMEOUT);
+        LOGGER.info("Checking if Cruise Control topics have expected partitions");
+        KafkaTopicUtils.verifyTopicPartitionsInKafka(namesapce, CRUISE_CONTROL_METRICS_TOPIC, scraperPod, bootstrapAddress, 1);
+        KafkaTopicUtils.verifyTopicPartitionsInKafka(namesapce, CRUISE_CONTROL_MODEL_TRAINING_SAMPLES_TOPIC, scraperPod, bootstrapAddress, 32);
+        KafkaTopicUtils.verifyTopicPartitionsInKafka(namesapce, CRUISE_CONTROL_PARTITION_METRICS_SAMPLES_TOPIC, scraperPod, bootstrapAddress, 32);
     }
 
     public static Properties getKafkaCruiseControlMetricsReporterConfiguration(String namespaceName, String clusterName) throws IOException {

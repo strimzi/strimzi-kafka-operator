@@ -30,6 +30,7 @@ import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItems;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 
 public class KafkaTopicUtils {
@@ -237,6 +238,16 @@ public class KafkaTopicUtils {
             () -> KafkaCmdClient.listTopicsUsingPodCli(namespaceName, scraperPodName, bootstrapName).contains(topicName));
     }
 
+    public static void deleteTopicByNameInKafka(String namespaceName, String topicName, String podName, String bootstrapServer) {
+        KafkaCmdClient.deleteTopicUsingPodCli(namespaceName, podName, bootstrapServer, topicName);
+    }
+
+    public static void deleteTopicsByPrefixInKafka(String namespaceName, String topicName, String podName, String bootstrapServer) {
+        KafkaCmdClient.listTopicsUsingPodCli(namespaceName, podName, bootstrapServer).stream()
+            .filter(singleTopicName -> singleTopicName.startsWith(topicName))
+            .forEach(singleTopicName -> deleteTopicByNameInKafka(namespaceName, singleTopicName, podName, bootstrapServer));
+    }
+
     public static List<String> getKafkaTopicReplicasForEachPartition(String namespaceName, String topicName, String podName, String bootstrapServer) {
         return Arrays.stream(KafkaCmdClient.describeTopicUsingPodCli(namespaceName, podName, bootstrapServer, topicName)
             .replaceFirst("Topic.*\n", "")
@@ -244,6 +255,109 @@ public class KafkaTopicUtils {
             .replaceAll("\tIsr.*", "")
             .split("\n"))
             .collect(Collectors.toList());
+    }
+
+    /**
+     * Returns the number of partitions for a Kafka topic.
+     *
+     * This method calculates the number of partitions by retrieving the number of records which are present for each partition.
+     *
+     * @param namespace the namespace in which the Kafka topic is located
+     * @param topicName the name of the Kafka topic
+     * @param podName the name of the pod used to interact with Kafka
+     * @param bootstrapServer the address of the Kafka bootstrap server
+     * @return the number of partitions for the specified Kafka topic
+     */
+    public static int getTopicPartitionCountInKafka(String namespace, String topicName, String podName, String bootstrapServer) {
+        return getKafkaTopicReplicasForEachPartition(namespace, topicName, podName, bootstrapServer).size();
+    }
+
+    /**
+     * Returns the replica count for a Kafka topic.
+     *
+     * This method determines the replica count by retrieving the details of partition replica distribution for the first partition.
+     * This represents comma separated list of broker Ids storing replicas (as each partition has same number of replicas we obtain first).
+     *
+     * @param namespace the namespace in which the Kafka topic is located
+     * @param topicName the name of the Kafka topic
+     * @param podName the name of the pod used to interact with Kafka
+     * @param bootstrapServer the address of the Kafka bootstrap server
+     * @return the replica count for the specified Kafka topic
+     */
+    public static int getTopicReplicaCountInKafka(String namespace, String topicName, String podName, String bootstrapServer) {
+        return getKafkaTopicReplicasForEachPartition(namespace, topicName, podName, bootstrapServer).get(0).split(",").length;
+    }
+
+    /**
+     * Verifies that a Kafka topic has the expected number of replicas.
+     *
+     * Checks the actual number of replicas for the specified Kafka topic against the expected value,
+     * and asserts that they match.
+     *
+     * @param namespace The Kubernetes namespace in which the Kafka topic is located.
+     * @param topicName The name of the Kafka topic to verify.
+     * @param podName The name of the pod used for accessing Kafka.
+     * @param bootstrapAddress The bootstrap address for the Kafka cluster.
+     * @param expectedReplicas The expected number of replicas.
+     *
+     * @throws AssertionError if the actual number of partitions or replicas does not match the expected values.
+     */
+    public static void verifyTopicReplicasInKafka(String namespace, String topicName, String podName, String bootstrapAddress, int expectedReplicas) {
+        LOGGER.info("Verifying topic {} has expected replicas: {}", topicName, expectedReplicas);
+        int topicReplicaCountObserved = KafkaTopicUtils.getTopicReplicaCountInKafka(namespace, topicName, podName, bootstrapAddress);
+        assertThat(topicReplicaCountObserved, is(expectedReplicas));
+    }
+
+    /**
+     * Verifies that a Kafka topic has the expected number of partitions.
+     *
+     * Checks the actual number of partitions for the specified Kafka topic against the expected value,
+     * and asserts that they match.
+     *
+     * @param namespace The Kubernetes namespace in which the Kafka topic is located.
+     * @param topicName The name of the Kafka topic to verify.
+     * @param podName The name of the pod used for accessing Kafka.
+     * @param bootstrapAddress The bootstrap address for the Kafka cluster.
+     * @param expectedPartitions The expected number of partitions.
+     *
+     * @throws AssertionError if the actual number of partitions or replicas does not match the expected values.
+     */
+    public static void verifyTopicPartitionsInKafka(String namespace, String topicName, String podName, String bootstrapAddress, int expectedPartitions) {
+        LOGGER.info("Verifying topic {} has expected partitions: {}", topicName, expectedPartitions);
+        int topicPartitionCountObserved = KafkaTopicUtils.getTopicPartitionCountInKafka(namespace, topicName, podName, bootstrapAddress);
+        assertThat(topicPartitionCountObserved, is(expectedPartitions));
+    }
+
+    /**
+     * Waits for a Kafka topic to achieve a specific number of replicas.
+     *
+     * Waits for the number of replicas for a specified Kafka topic until the number matches.
+     *
+     * @param namespace The Kubernetes namespace in which the Kafka topic is located.
+     * @param topicName The name of the Kafka topic.
+     * @param podName The name of the pod used for accessing Kafka.
+     * @param bootstrapAddress The bootstrap address for the Kafka cluster.
+     * @param expectedReplicas The expected number of replicas for the topic to reach.
+     */
+    public static void waitForTopicReplicasInKafka(String namespace, String topicName, String podName, String bootstrapAddress, int expectedReplicas) {
+        TestUtils.waitFor("KafkaTopic's spec to be stable", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_STATUS_TIMEOUT,
+            () -> KafkaTopicUtils.getTopicReplicaCountInKafka(namespace, topicName, podName, bootstrapAddress) == expectedReplicas);
+    }
+
+    /**
+     * Waits for a Kafka topic to achieve a specific number of partitions.
+     *
+     * Waits for the number of partitions for a specified Kafka topic until the number matches.
+     *
+     * @param namespace The Kubernetes namespace in which the Kafka topic is located.
+     * @param topicName The name of the Kafka topic.
+     * @param podName The name of the pod used for accessing Kafka.
+     * @param bootstrapAddress The bootstrap address for the Kafka cluster.
+     * @param expectedPartition The expected number of partitions for the topic to reach.
+     */
+    public static void waitForTopicPartitionInKafka(String namespace, String topicName, String podName, String bootstrapAddress, int expectedPartition) {
+        TestUtils.waitFor("KafkaTopic's spec to be stable", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_STATUS_TIMEOUT,
+            () -> KafkaTopicUtils.getTopicPartitionCountInKafka(namespace, topicName, podName, bootstrapAddress) == expectedPartition);
     }
 
     public static void waitForTopicWithPrefixDeletion(String namespaceName, String topicPrefix) {

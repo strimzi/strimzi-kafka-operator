@@ -30,6 +30,7 @@ import io.strimzi.systemtest.resources.NodePoolsConverter;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.StrimziPodSetResource;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaMirrorMaker2Templates;
@@ -43,6 +44,7 @@ import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.VerificationUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaMirrorMaker2Utils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
@@ -131,7 +133,9 @@ class MirrorMaker2ST extends AbstractST {
                     .endSourceConnector()
                 .endMirror()
             .endSpec()
-            .build());
+            .build(),
+            ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build()
+        );
 
         // Deploy source topic
         resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getSourceClusterName(), testStorage.getTopicName(), 3, testStorage.getNamespaceName()).build());
@@ -177,17 +181,13 @@ class MirrorMaker2ST extends AbstractST {
 
         RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getMM2Selector(), mirrorMakerReplicasCount, mm2PodsSnapshot);
 
-        // TODO: https://github.com/strimzi/strimzi-kafka-operator/issues/8864
-        // currently disabled for UTO, as KafkaTopic CR is not created -> we should check it directly in Kafka
-        /*if (!Environment.isKRaftModeEnabled()) {
-            KafkaTopic mirroredTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getMirroredSourceTopicName()).get();
-            assertThat(mirroredTopic.getSpec().getPartitions(), is(3));
-            assertThat(mirroredTopic.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL), is(testStorage.getTargetClusterName()));
+        final String scraperPodName = ResourceManager.kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
+        final String bootstrapAddress = KafkaResources.plainBootstrapAddress(testStorage.getTargetClusterName());
+        KafkaTopicUtils.verifyTopicPartitionsInKafka(testStorage.getNamespaceName(), testStorage.getMirroredSourceTopicName(), scraperPodName, bootstrapAddress, 3);
 
-            // Replace source topic resource with new data and check that mm2 update target topi
-            KafkaTopicResource.replaceTopicResourceInSpecificNamespace(testStorage.getTopicName(), kt -> kt.getSpec().setPartitions(8), testStorage.getNamespaceName());
-            KafkaTopicUtils.waitForKafkaTopicPartitionChange(testStorage.getNamespaceName(), testStorage.getMirroredSourceTopicName(), 8);
-        }*/
+        // Replace source topic resource with new data and check that mm2 update target topic as well
+        KafkaTopicResource.replaceTopicResourceInSpecificNamespace(testStorage.getTopicName(), kt -> kt.getSpec().setPartitions(8), testStorage.getNamespaceName());
+        KafkaTopicUtils.waitForTopicPartitionInKafka(testStorage.getNamespaceName(), testStorage.getMirroredSourceTopicName(), scraperPodName, bootstrapAddress, 8);
     }
 
     /**
@@ -232,13 +232,21 @@ class MirrorMaker2ST extends AbstractST {
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(testStorage.getTargetClusterName(), 1, 1)
             .editSpec()
                 .editKafka()
-                    .withListeners(new GenericKafkaListenerBuilder()
-                        .withName(TestConstants.TLS_LISTENER_DEFAULT_NAME)
-                        .withPort(9093)
-                        .withType(KafkaListenerType.INTERNAL)
-                        .withTls(true)
-                        .withAuth(new KafkaListenerAuthenticationTls())
-                        .build())
+                    .withListeners(
+                        new GenericKafkaListenerBuilder()
+                            .withName(TestConstants.TLS_LISTENER_DEFAULT_NAME)
+                            .withPort(9093)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withTls(true)
+                            .withAuth(new KafkaListenerAuthenticationTls())
+                            .build(),
+                        // plain listener to talk to from client to list topics
+                        new GenericKafkaListenerBuilder()
+                            .withName("plain")
+                            .withPort(9092)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withTls(false)
+                            .build())
                 .endKafka()
             .endSpec()
             .build());
@@ -304,22 +312,18 @@ class MirrorMaker2ST extends AbstractST {
             .build();
         resourceManager.createResourceWithWait(targetClients.consumerTlsStrimzi(testStorage.getTargetClusterName()));
         ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
-        LOGGER.info("Messages successfully mirrored");
 
-        // TODO https://github.com/strimzi/strimzi-kafka-operator/issues/8864
-        // currently disabled for UTO, as KafkaTopic CR is not created -> we should check it directly in Kafka
-        /*if (!Environment.isKRaftModeEnabled()) {
-            KafkaTopicUtils.waitForKafkaTopicCreation(testStorage.getNamespaceName(), testStorage.getMirroredSourceTopicName());
-            KafkaTopic mirroredTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getMirroredSourceTopicName()).get();
-
-            assertThat(mirroredTopic.getSpec().getPartitions(), is(3));
-            assertThat(mirroredTopic.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL), is(testStorage.getTargetClusterName()));
-        }*/
+        LOGGER.info("Checking topic is mirrored correctly in target cluster");
+        final String scraperPodName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), StrimziPodSetResource.getBrokerComponentName(testStorage.getTargetClusterName())).get(0).getMetadata().getName();
+        final String bootstrapAddress = KafkaResources.plainBootstrapAddress(testStorage.getTargetClusterName());
+        KafkaTopicUtils.waitForTopicWillBePresentInKafka(testStorage.getNamespaceName(), testStorage.getMirroredSourceTopicName(), bootstrapAddress, scraperPodName);
+        assertThat(KafkaTopicUtils.getTopicPartitionCountInKafka(testStorage.getNamespaceName(), testStorage.getMirroredSourceTopicName(), scraperPodName, bootstrapAddress), is(3));
     }
 
     /**
      * Test mirroring messages by MirrorMaker 2 over tls transport using scram-sha-512 auth
      */
+    @SuppressWarnings({"checkstyle:MethodLength"})
     @ParallelNamespaceTest
     void testMirrorMaker2TlsAndScramSha512Auth() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
@@ -349,13 +353,21 @@ class MirrorMaker2ST extends AbstractST {
             KafkaTemplates.kafkaPersistent(testStorage.getTargetClusterName(), 1, 1)
                 .editSpec()
                     .editKafka()
-                        .withListeners(new GenericKafkaListenerBuilder()
-                            .withName(TestConstants.TLS_LISTENER_DEFAULT_NAME)
-                            .withPort(9093)
-                            .withType(KafkaListenerType.INTERNAL)
-                            .withTls(true)
-                            .withAuth(new KafkaListenerAuthenticationScramSha512())
-                            .build())
+                        .withListeners(
+                            new GenericKafkaListenerBuilder()
+                                .withName(TestConstants.TLS_LISTENER_DEFAULT_NAME)
+                                .withPort(9093)
+                                .withType(KafkaListenerType.INTERNAL)
+                                .withTls(true)
+                                .withAuth(new KafkaListenerAuthenticationScramSha512())
+                                .build(),
+                            // plain listener to talk to from client to list topics
+                            new GenericKafkaListenerBuilder()
+                                .withName("plain")
+                                .withPort(9092)
+                                .withType(KafkaListenerType.INTERNAL)
+                                .withTls(false)
+                                .build())
                     .endKafka()
                 .endSpec()
                 .build()
@@ -425,16 +437,13 @@ class MirrorMaker2ST extends AbstractST {
             .build();
         resourceManager.createResourceWithWait(targetClients.consumerScramShaTlsStrimzi(testStorage.getTargetClusterName()));
         ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
-        LOGGER.info("Messages successfully mirrored");
 
-        // TODO https://github.com/strimzi/strimzi-kafka-operator/issues/8864
-        /*if (!Environment.isUnidirectionalTopicOperatorEnabled()) {
-            KafkaTopicUtils.waitForKafkaTopicCreation(testStorage.getNamespaceName(), testStorage.getMirroredSourceTopicName());
-            KafkaTopic mirroredTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getMirroredSourceTopicName()).get();
+        LOGGER.info("Checking topic is mirrored correctly in target cluster");
+        final String scraperPodName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), StrimziPodSetResource.getBrokerComponentName(testStorage.getTargetClusterName())).get(0).getMetadata().getName();
+        final String bootstrapAddress = KafkaResources.plainBootstrapAddress(testStorage.getTargetClusterName());
+        KafkaTopicUtils.waitForTopicWillBePresentInKafka(testStorage.getNamespaceName(), testStorage.getMirroredSourceTopicName(), bootstrapAddress, scraperPodName);
+        assertThat(KafkaTopicUtils.getTopicPartitionCountInKafka(testStorage.getNamespaceName(), testStorage.getMirroredSourceTopicName(), scraperPodName, bootstrapAddress), is(3));
 
-            assertThat(mirroredTopic.getSpec().getPartitions(), is(3));
-            assertThat(mirroredTopic.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL), is(testStorage.getTargetClusterName()));
-        }*/
     }
 
     @ParallelNamespaceTest
