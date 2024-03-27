@@ -2,8 +2,7 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.operator.common.operator.resource;
-
+package io.strimzi.operator.common.config;
 
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.LocalObjectReferenceBuilder;
@@ -174,16 +173,16 @@ public interface ConfigParameterParser<T> {
      */
     ConfigParameterParser<Set<String>> NAMESPACE_SET = namespacesList -> {
         Set<String> namespaces;
-        if (namespacesList.equals("*")) {
-            namespaces = Collections.singleton(AbstractNamespacedResourceOperator.ANY_NAMESPACE);
+        if (namespacesList.equals(ConfigParameter.ANY_NAMESPACE)) {
+            namespaces = Collections.singleton(ConfigParameter.ANY_NAMESPACE);
         } else {
-            if (namespacesList.trim().equals(AbstractNamespacedResourceOperator.ANY_NAMESPACE)) {
-                namespaces = Collections.singleton(AbstractNamespacedResourceOperator.ANY_NAMESPACE);
+            if (namespacesList.trim().equals(ConfigParameter.ANY_NAMESPACE)) {
+                namespaces = Collections.singleton(ConfigParameter.ANY_NAMESPACE);
             } else if (namespacesList.matches("(\\s*[a-z0-9.-]+\\s*,)*\\s*[a-z0-9.-]+\\s*")) {
                 namespaces = new HashSet<>(asList(namespacesList.trim().split("\\s*,+\\s*")));
             } else {
                 throw new InvalidConfigurationException("Not a valid list of namespaces nor the 'any namespace' wildcard "
-                        + AbstractNamespacedResourceOperator.ANY_NAMESPACE);
+                        + ConfigParameter.ANY_NAMESPACE);
             }
         }
 
