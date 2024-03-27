@@ -9,7 +9,6 @@ import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
 import io.strimzi.operator.common.MetricsProvider;
-import io.strimzi.operator.common.config.ConfigParameter;
 import io.strimzi.operator.common.model.Labels;
 
 import java.util.HashSet;
