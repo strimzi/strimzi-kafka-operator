@@ -240,7 +240,8 @@ public class KubernetesRestartEventsMockTest {
                 supplier,
                 PFA,
                 vertx,
-                new KafkaMetadataStateManager(reconciliation, kafkaWithLessVolumes, clusterOperatorConfig.featureGates().useKRaftEnabled()));
+                new KafkaMetadataStateManager(reconciliation, kafkaWithLessVolumes, clusterOperatorConfig.featureGates().useKRaftEnabled())
+        );
 
         lowerVolumes.reconcile(ks, Clock.systemUTC()).onComplete(verifyEventPublished(POD_HAS_OLD_REVISION, context));
     }
@@ -546,7 +547,6 @@ public class KubernetesRestartEventsMockTest {
                 PFA,
                 vertx,
                 new KafkaMetadataStateManager(reconciliation, kafka, clusterOperatorConfig.featureGates().useKRaftEnabled()));
-
         reconciler.reconcile(ks, Clock.systemUTC()).onComplete(verifyEventPublished(KAFKA_CERTIFICATES_CHANGED, context));
 
     }
