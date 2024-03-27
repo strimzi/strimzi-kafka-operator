@@ -6,19 +6,14 @@ package io.strimzi.operator.common.metrics;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Meter;
-import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
 import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.model.Labels;
-import org.apache.logging.log4j.util.Strings;
 
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -75,11 +70,6 @@ public abstract class MetricsHolder {
      */
     public static final String METRICS_CLIENT_CERTIFICATE_EXPIRATION_MS = METRICS_PREFIX + "client.certificate.expiration.ms";
 
-    /**
-     * Matching tag for any namespace
-     */
-    private static final Tag TAG_ANY_NAMESPACE = Tag.of("namespace", "*");
-
     protected final String kind;
     protected final Labels selectorLabels;
     protected final MetricsProvider metricsProvider;
@@ -132,29 +122,13 @@ public abstract class MetricsHolder {
                 .getMeters()
                 .stream()
                 .filter(meter -> {
-                    // Check metric name matches
-                    if (!meter.getId().getName().equals(metricName)) {
+                    if (!MetricsUtils.isMatchingMetricName(meter, metricName)) {
                         return false;
                     }
 
-                    // Check that all expected tags are present
-                    Set<Tag> otherTags = new HashSet<>(meter.getId().getTags());
-                    Set<Tag> thisTags = expectedTags.stream().collect(Collectors.toSet());
-                    if (!otherTags.containsAll(thisTags)) {
-                        return false;
-                    }
-
-                    // Check that tags has expected values
-                    return thisTags.stream().allMatch(expectedTag -> {
-                        for (Tag otherTag : otherTags) {
-                            if (otherTag.getKey().equals(expectedTag.getKey())
-                                    && (otherTag.getValue().equals(expectedTag.getValue())
-                                        || expectedTag.equals(TAG_ANY_NAMESPACE))) {
-                                return true;
-                            }
-                        }
-                        return false;
-                    });
+                    return MetricsUtils.isMatchingMetricTags(
+                            new HashSet<>(meter.getId().getTags()),
+                            expectedTags.stream().collect(Collectors.toSet()));
                 })
                 .findFirst();
 
@@ -167,25 +141,6 @@ public abstract class MetricsHolder {
     }
 
     /**
-     * Constructing the metric key
-     *
-     * @param clusterName   Name of the cluster
-     * @param namespace     Namespace of the resources being reconciled
-     * @param kind          Kind of the resources for which these metrics apply
-     * @return metric key
-     */
-    public static String getMetricKey(String clusterName, String namespace, String kind) {
-        final List<String> metricKeys = new ArrayList<>();
-        if (clusterName != null) {
-            metricKeys.add(clusterName);
-        }
-        metricKeys.add(namespace);
-        metricKeys.add(kind);
-
-        return Strings.join(metricKeys, '/');
-    }
-
-    /**
      * Constructing the tags for the metrics
      *
      * @param clusterName       Name of the cluster
@@ -194,24 +149,7 @@ public abstract class MetricsHolder {
      * @return  Tags
      */
     public Tags getTags(String clusterName, String namespace, String kind) {
-        return getTags(clusterName, namespace, kind, selectorLabels);
-    }
-
-    /**
-     * Constructing the tags for the metrics internally from the static metrics methods
-     *
-     * @param clusterName       Name of the cluster
-     * @param namespace         Namespace of the resources being reconciled
-     * @param kind              Kind of the resources for which these metrics apply
-     * @param selectorLabels    Selector labels to select the controller resources
-     * @return  Tags
-     */
-    private static Tags getTags(String clusterName, String namespace, String kind, Labels selectorLabels) {
-        return Tags.of(
-                Tag.of("kind", kind),
-                Tag.of("namespace", namespace.equals("*") ? "" : namespace),
-                Tag.of("cluster_name", clusterName == null ? "" : clusterName),
-                Tag.of("selector", selectorLabels != null ? selectorLabels.toSelectorString() : ""));
+        return MetricsUtils.getMetricTags(clusterName, namespace, kind, selectorLabels);
     }
 
     ////////////////////
@@ -377,8 +315,8 @@ public abstract class MetricsHolder {
      * @param <M>   Type of the metric
      */
     protected static <M> M metric(String clusterName, String namespace, String kind, Labels selectorLabels, Map<String, M> metricMap, Function<Tags, M> fn) {
-        Tags metricTags = getTags(clusterName, namespace, kind, selectorLabels);
-        String metricKey = getMetricKey(clusterName, namespace, kind);
+        Tags metricTags = MetricsUtils.getMetricTags(clusterName, namespace, kind, selectorLabels);
+        String metricKey = MetricsUtils.getMetricKey(clusterName, namespace, kind);
 
         if (metricMap.containsKey(metricKey)) {
             return metricMap.get(metricKey);
