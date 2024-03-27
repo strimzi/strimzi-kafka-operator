@@ -380,8 +380,10 @@ public abstract class MetricsHolder {
         Tags metricTags = getTags(clusterName, namespace, kind, selectorLabels);
         String metricKey = getMetricKey(clusterName, namespace, kind);
 
-        final M metric = fn.apply(metricTags);
-        return metricMap.computeIfAbsent(metricKey, x -> metric);
+        if (metricMap.containsKey(metricKey)) {
+            return metricMap.get(metricKey);
+        }
+        return fn.apply(metricTags);
     }
 
     /**
