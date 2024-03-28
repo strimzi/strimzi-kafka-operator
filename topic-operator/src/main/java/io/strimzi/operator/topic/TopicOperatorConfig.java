@@ -9,8 +9,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.ReconciliationLogger;
+import io.strimzi.operator.common.config.ConfigParameter;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.operator.common.operator.resource.ConfigParameter;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.common.config.SaslConfigs;
 import org.apache.kafka.common.config.SslConfigs;
@@ -22,13 +22,13 @@ import java.util.Set;
 import java.util.UUID;
 
 import static com.fasterxml.jackson.core.JsonParser.Feature.ALLOW_COMMENTS;
-import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.BOOLEAN;
-import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.INTEGER;
-import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.LABEL_PREDICATE;
-import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.LONG;
-import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.NON_EMPTY_STRING;
-import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.STRING;
-import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.strictlyPositive;
+import static io.strimzi.operator.common.config.ConfigParameterParser.BOOLEAN;
+import static io.strimzi.operator.common.config.ConfigParameterParser.INTEGER;
+import static io.strimzi.operator.common.config.ConfigParameterParser.LABEL_PREDICATE;
+import static io.strimzi.operator.common.config.ConfigParameterParser.LONG;
+import static io.strimzi.operator.common.config.ConfigParameterParser.NON_EMPTY_STRING;
+import static io.strimzi.operator.common.config.ConfigParameterParser.STRING;
+import static io.strimzi.operator.common.config.ConfigParameterParser.strictlyPositive;
 
 /**
  * Config
