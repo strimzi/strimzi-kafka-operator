@@ -64,7 +64,7 @@ import static io.strimzi.operator.common.operator.resource.ConfigParameterParser
  * @param cruiseControlCrtFilePath      Certificate chain to be trusted
  * @param cruiseControlApiUserPath      Api admin username file path
  * @param cruiseControlApiPassPath      Api admin password file path
- * @param customAlterableConfigurations Comma separated list of the alterable Kafka topic properties
+ * @param alterableTopicConfig          Comma separated list of the alterable Kafka topic properties
  * @param skipClusterConfigReview       For some managed Kafka services the Cluster config is not callable, so this skips those calls.
  */
 public record TopicOperatorConfig(
@@ -99,7 +99,7 @@ public record TopicOperatorConfig(
         String cruiseControlCrtFilePath,
         String cruiseControlApiUserPath,
         String cruiseControlApiPassPath,
-        String customAlterableConfigurations,
+        String alterableTopicConfig,
         boolean skipClusterConfigReview
 ) {
     private final static ReconciliationLogger LOGGER = ReconciliationLogger.create(TopicOperatorConfig.class);
@@ -130,7 +130,7 @@ public record TopicOperatorConfig(
     static final ConfigParameter<Integer> MAX_BATCH_SIZE = new ConfigParameter<>("STRIMZI_MAX_BATCH_SIZE", strictlyPositive(INTEGER), "100", CONFIG_VALUES);
     static final ConfigParameter<Long> MAX_BATCH_LINGER_MS = new ConfigParameter<>("STRIMZI_MAX_BATCH_LINGER_MS", strictlyPositive(LONG), "100", CONFIG_VALUES);
     static final ConfigParameter<Boolean> ENABLE_ADDITIONAL_METRICS = new ConfigParameter<>("STRIMZI_ENABLE_ADDITIONAL_METRICS", BOOLEAN, "false", CONFIG_VALUES);
-    static final ConfigParameter<String> CUSTOM_ALTERABLE_CONFIGURATIONS = new ConfigParameter<>("STRIMZI_CUSTOM_ALTERABLE_CONFIGURATIONS", STRING, "", CONFIG_VALUES);
+    static final ConfigParameter<String> ALTERABLE_TOPIC_CONFIG = new ConfigParameter<>("STRIMZI_ALTERABLE_TOPIC_CONFIG", STRING, "", CONFIG_VALUES);
     static final ConfigParameter<Boolean> SKIP_CLUSTER_CONFIG_REVIEW = new ConfigParameter<>("STRIMZI_SKIP_CLUSTER_CONFIG_REVIEW", BOOLEAN, "false", CONFIG_VALUES);
 
     // Cruise Control integration
@@ -206,7 +206,7 @@ public record TopicOperatorConfig(
                 get(map, CRUISE_CONTROL_CRT_FILE_PATH),
                 get(map, CRUISE_CONTROL_API_USER_PATH),
                 get(map, CRUISE_CONTROL_API_PASS_PATH),
-                get(map, CUSTOM_ALTERABLE_CONFIGURATIONS),
+                get(map, ALTERABLE_TOPIC_CONFIG),
                 get(map, SKIP_CLUSTER_CONFIG_REVIEW)
         );
     }

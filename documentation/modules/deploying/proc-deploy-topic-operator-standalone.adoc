@@ -154,7 +154,11 @@ env:
     value: "true"
   - name: STRIMZI_SECURITY_PROTOCOL
     value: SASL_SSL
-  - name: STRIMZI_SASL_CUSTOM_CONFIG_JSON # <1>
+  - name: STRIMZI_SKIP_CLUSTER_CONFIG_REVIEW # <1>
+    value: "true"
+  - name: STRIMZI_ALTERABLE_TOPIC_CONFIG # <2>
+    value: compression.type, max.message.bytes, message.timestamp.difference.max.ms, message.timestamp.type, retention.bytes, retention.ms
+  - name: STRIMZI_SASL_CUSTOM_CONFIG_JSON # <3>
     value: |
       {
         "sasl.mechanism": "AWS_MSK_IAM",
@@ -171,7 +175,9 @@ env:
     value: your-instance-here.kafka-serverless.us-east-1.amazonaws.com:9098
 # ...
 ----
-<1> JSON with the SASL properties to be set. Only properties beginning with `sasl.` are allowed.
+<1> Some managed Kafka services, such as `AWS MSK`, don't allow cluster config lookup, so we disable those checks.
+<2> Some managed Kafka services, such as `AWS MSK`, limit what properties can be updated, so we use this to define what values can be set/updated.
+<3> JSON with the SASL properties to be set. Only properties beginning with `sasl.` are allowed.
 +
 .Example Dockerfile with external jars
 [source,shell,subs=+quotes]

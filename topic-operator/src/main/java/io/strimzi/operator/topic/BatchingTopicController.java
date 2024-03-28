@@ -1130,7 +1130,7 @@ public class BatchingTopicController {
                     AlterConfigOp.OpType.DELETE));
         }
 
-        var customAlterableConfigs = config.customAlterableConfigurations();
+        var customAlterableConfigs = config.alterableTopicConfig();
         if (customAlterableConfigs != null && !customAlterableConfigs.isBlank()) {
             var cleanPropertyNames = customAlterableConfigs.replaceAll("\\s", "");
             var properties = cleanPropertyNames.split(",");
