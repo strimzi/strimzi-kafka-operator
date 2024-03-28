@@ -2066,7 +2066,7 @@ public class ConnectorMockTest {
     }
 
     @Test
-    void testConnectorResourceMetricsScaledToZero(VertxTestContext context) {
+    void testConnectorResourceMetricsScaledToZero(VertxTestContext context) throws InterruptedException {
         String connectName = "cluster";
         String connectorName = "connector";
 
@@ -2099,64 +2099,30 @@ public class ConnectorMockTest {
         MeterRegistry meterRegistry = metricsProvider.meterRegistry();
         Tags tags = Tags.of("kind", KafkaConnector.RESOURCE_KIND, "namespace", namespace);
 
+        LOGGER.info("Pausing KafkaConnect reconciliations");
+        KafkaConnect pausedConnect = new KafkaConnectBuilder(kafkaConnect)
+            .editOrNewMetadata()
+            .addToAnnotations(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true")
+            .endMetadata()
+            .build();
+        Crds.kafkaConnectOperation(client).inNamespace(namespace).resource(pausedConnect).update();
+        waitForConnectPaused(connectName);
+
+        LOGGER.info("Triggering reconcileAll operation");
         Promise<Void> reconciled = Promise.promise();
         kafkaConnectOperator.reconcileAll("test", namespace, ignored -> reconciled.complete());
 
         Checkpoint async = context.checkpoint();
 
-        final Map<String, Double> expectedMetrics = Map.of(
-            "strimzi.resources", 1.0,
-            "strimzi.resources.paused", 0.0);
-        attemptReconciliationAndAssertion(vertx, 0, 5, context, async, meterRegistry, tags, expectedMetrics);
-    }
+        reconciled.future().onComplete(context.succeeding(v -> context.verify(() -> {
+            Gauge resources = meterRegistry.get("strimzi.resources").tags(tags).gauge();
+            assertThat(resources.value(), is(1.0));
 
-    /**
-     * Attempts the reconciliation process and asserts the expected metrics values.
-     * If the assertion fails, it retries the process up to a maximum number of attempts.
-     * On success, it flags the checkpoint to signal that the test can proceed.
-     * On failure, it logs the error and fails the test context.
-     *
-     * @param vertx           The Vert.x instance.
-     * @param attempt         The current attempt number.
-     * @param maxAttempts     The maximum number of attempts before failing the test.
-     * @param testContext     The VertxTestContext for the test.
-     * @param async           The Checkpoint to flag upon successful assertion.
-     * @param meterRegistry   The MeterRegistry where metrics are registered.
-     * @param tags          The tags to identify the right metrics.
-     * @param expectedMetrics A map of metric names to their expected values.
-     */
-    private void attemptReconciliationAndAssertion(
-        Vertx vertx,
-        int attempt,
-        int maxAttempts,
-        VertxTestContext testContext,
-        Checkpoint async,
-        MeterRegistry meterRegistry,
-        Tags tags,
-        Map<String, Double> expectedMetrics) {
-
-        kafkaConnectOperator.reconcileAll("test", namespace, ar -> {
-            if (ar.succeeded()) {
-                try {
-                    for (Map.Entry<String, Double> metricEntry : expectedMetrics.entrySet()) {
-                        Gauge gauge = meterRegistry.get(metricEntry.getKey()).tags(tags).gauge();
-                        assertThat(gauge.value(), is(metricEntry.getValue()));
-                    }
-                    LOGGER.info("All assertions succeeded on attempt " + attempt);
-                    async.flag();
-                } catch (AssertionError e) {
-                    if (attempt < maxAttempts) {
-                        LOGGER.warn("Assertion failed on attempt " + attempt + ": " + e.getMessage());
-                        vertx.setTimer(1000, id -> attemptReconciliationAndAssertion(vertx, attempt + 1, maxAttempts, testContext, async, meterRegistry, tags, expectedMetrics));
-                    } else {
-                        LOGGER.error("All assertions failed after " + maxAttempts + " attempts.");
-                        testContext.failNow(e);
-                    }
-                }
-            } else {
-                testContext.failNow(ar.cause());
-            }
-        });
+            kafkaConnectOperator.metrics().pausedConnectorsResourceCounter(namespace); // to create metric, otherwise MeterNotFoundException will be thrown
+            Gauge resourcesPaused = meterRegistry.get("strimzi.resources.paused").tags(tags).gauge();
+            assertThat(resourcesPaused.value(), is(0.0));
+            async.flag();
+        })));
     }
 
     @Test
