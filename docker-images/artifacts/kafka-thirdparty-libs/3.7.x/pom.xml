@@ -121,11 +121,6 @@
                     <groupId>com.google.errorprone</groupId>
                     <artifactId>error_prone_annotations</artifactId>
                 </exclusion>
-                <!-- Excluding Guava (which is the android version) because we bring the jre one directly already -->
-                <exclusion>
-                    <groupId>guava</groupId>
-                    <artifactId>com.google.guava</artifactId>
-                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
@@ -143,11 +138,6 @@
                 <exclusion>
                     <groupId>com.google.errorprone</groupId>
                     <artifactId>error_prone_annotations</artifactId>
-                </exclusion>
-                <!-- Excluding Guava (which is the android version) because we bring the jre one directly -->
-                <exclusion>
-                    <groupId>guava</groupId>
-                    <artifactId>com.google.guava</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
