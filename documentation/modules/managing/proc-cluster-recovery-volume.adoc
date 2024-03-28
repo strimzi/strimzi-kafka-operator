@@ -9,6 +9,7 @@
 This procedure describes how to recover a deleted cluster from persistent volumes (PVs) by recreating the original `PersistentVolumeClaim` (PVC) resources.
 
 If the Topic Operator and User Operator are deployed, you can recover `KafkaTopic` and `KafkaUser` resources by recreating them. 
+It is important that you recreate the resources with the same configurations, or the Topic Operator will try to update them in Kafka.
 This procedure shows how to recreate both resources.
 
 WARNING: If the User Operator is enabled and Kafka users are not recreated, users are deleted from the Kafka cluster immediately after recovery. 
