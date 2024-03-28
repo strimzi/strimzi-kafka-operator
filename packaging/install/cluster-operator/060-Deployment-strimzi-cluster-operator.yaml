@@ -57,21 +57,25 @@ spec:
               value: |
                 3.6.0=quay.io/strimzi/kafka:latest-kafka-3.6.0
                 3.6.1=quay.io/strimzi/kafka:latest-kafka-3.6.1
+                3.6.2=quay.io/strimzi/kafka:latest-kafka-3.6.2
                 3.7.0=quay.io/strimzi/kafka:latest-kafka-3.7.0
             - name: STRIMZI_KAFKA_CONNECT_IMAGES
               value: |
                 3.6.0=quay.io/strimzi/kafka:latest-kafka-3.6.0
                 3.6.1=quay.io/strimzi/kafka:latest-kafka-3.6.1
+                3.6.2=quay.io/strimzi/kafka:latest-kafka-3.6.2
                 3.7.0=quay.io/strimzi/kafka:latest-kafka-3.7.0
             - name: STRIMZI_KAFKA_MIRROR_MAKER_IMAGES
               value: |
                 3.6.0=quay.io/strimzi/kafka:latest-kafka-3.6.0
                 3.6.1=quay.io/strimzi/kafka:latest-kafka-3.6.1
+                3.6.2=quay.io/strimzi/kafka:latest-kafka-3.6.2
                 3.7.0=quay.io/strimzi/kafka:latest-kafka-3.7.0
             - name: STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES
               value: |
                 3.6.0=quay.io/strimzi/kafka:latest-kafka-3.6.0
                 3.6.1=quay.io/strimzi/kafka:latest-kafka-3.6.1
+                3.6.2=quay.io/strimzi/kafka:latest-kafka-3.6.2
                 3.7.0=quay.io/strimzi/kafka:latest-kafka-3.7.0
             - name: STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE
               value: quay.io/strimzi/operator:latest

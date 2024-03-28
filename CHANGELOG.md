@@ -2,6 +2,7 @@
 
 ## 0.41.0
 
+* Add support for Apache Kafka 3.6.2
 * Added support for topic replication factor change to the Unidirectional Topic Operator when Cruise Control integration is enabled.
 * The `KafkaNodePools` feature gate moves to GA stage and is permanently enabled without the possibility to disable it.
   To use the Kafka Node Pool resources, you still need to use the `strimzi.io/node-pools: enabled` annotation on the `Kafka` custom resources.
