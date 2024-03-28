@@ -2068,7 +2068,7 @@ public class ConnectorMockTest {
     }
 
     @Test
-    void testConnectorResourceMetricsScaledToZero(VertxTestContext context) throws InterruptedException {
+    void testConnectorResourceMetricsScaledToZero(VertxTestContext context) {
         String connectName = "cluster";
         String connectorName = "connector";
 
@@ -2101,7 +2101,7 @@ public class ConnectorMockTest {
         LOGGER.info("Pausing KafkaConnect reconciliations");
         KafkaConnect pausedConnect = new KafkaConnectBuilder(kafkaConnect)
             .editOrNewMetadata()
-            .addToAnnotations(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true")
+                .addToAnnotations(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true")
             .endMetadata()
             .build();
         Crds.kafkaConnectOperation(client).inNamespace(namespace).resource(pausedConnect).update();
