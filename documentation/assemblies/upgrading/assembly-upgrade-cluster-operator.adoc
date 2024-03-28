@@ -88,7 +88,3 @@ kubectl delete $(kubectl get kt -n <namespace> -o name | grep consumer-offsets) 
 ----
 
 By discontinuing their management, they won't also be deleted in Kafka.
-
-
-
-
