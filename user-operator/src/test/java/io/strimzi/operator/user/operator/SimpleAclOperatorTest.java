@@ -134,7 +134,7 @@ public class SimpleAclOperatorTest {
                     .toCompletableFuture().get();
 
             assertThat(result, is(notNullValue()));
-            assertThat(result.getType(), is(ReconcileResult.Type.CREATED));
+            assertThat(result.toString(), is("CREATED"));
 
             Collection<AclBinding> capturedAclBindings = aclBindingsCaptor.getValue();
             assertThat(capturedAclBindings, hasSize(3));
@@ -178,7 +178,7 @@ public class SimpleAclOperatorTest {
                     .toCompletableFuture().get();
 
             assertThat(result, is(notNullValue()));
-            assertThat(result.getType(), is(ReconcileResult.Type.PATCHED));
+            assertThat(result.toString(), is("PATCH"));
 
             // Create Write rule for resource 2
             Collection<AclBinding> capturedAclBindings = aclBindingsCaptor.getValue();
@@ -224,7 +224,7 @@ public class SimpleAclOperatorTest {
                     .toCompletableFuture().get();
 
             assertThat(result, is(notNullValue()));
-            assertThat(result.getType(), is(ReconcileResult.Type.DELETED));
+            assertThat(result.toString(), is("DELETED"));
 
             Collection<AclBindingFilter> capturedAclBindingFilters = aclBindingFiltersCaptor.getValue();
             assertThat(capturedAclBindingFilters, hasSize(1));

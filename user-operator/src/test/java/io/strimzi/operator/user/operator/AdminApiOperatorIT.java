@@ -130,7 +130,7 @@ public abstract class AdminApiOperatorIT<T, S extends Collection<String>> {
             LOGGER.info("Checking user creation");
             CompletionStage<ReconcileResult<T>> reconcile = op.reconcile(Reconciliation.DUMMY_RECONCILIATION, username, newResource);
             ReconcileResult<T> reconcileResult = reconcile.toCompletableFuture().get();
-            assertThat(reconcileResult.getType(), is(createPatches() ? ReconcileResult.Type.PATCHED : ReconcileResult.Type.CREATED));
+            assertThat(reconcileResult.toString(), is(createPatches() ? "PATCH" : "CREATED"));
             T created = get(username);
             assertThat(created, is(notNullValue()));
             assertResources(newResource, created);
@@ -146,7 +146,7 @@ public abstract class AdminApiOperatorIT<T, S extends Collection<String>> {
             LOGGER.info("Checking user modification");
             reconcile = op.reconcile(Reconciliation.DUMMY_RECONCILIATION, username, modResource);
             reconcileResult = reconcile.toCompletableFuture().get();
-            assertThat(reconcileResult.getType(), is(ReconcileResult.Type.PATCHED));
+            assertThat(reconcileResult.toString(), is("PATCH"));
             T modified = get(username);
             assertThat(modified, is(notNullValue()));
             assertResources(modResource, modified);
@@ -155,7 +155,7 @@ public abstract class AdminApiOperatorIT<T, S extends Collection<String>> {
             LOGGER.info("Checking user deletion");
             reconcile = op.reconcile(Reconciliation.DUMMY_RECONCILIATION, username, null);
             reconcileResult = reconcile.toCompletableFuture().get();
-            assertThat(reconcileResult.getType(), is(ReconcileResult.Type.DELETED));
+            assertThat(reconcileResult.toString(), is("DELETED"));
             T deleted = get(username);
             assertThat(deleted, is(nullValue()));
 
@@ -170,7 +170,7 @@ public abstract class AdminApiOperatorIT<T, S extends Collection<String>> {
             LOGGER.info("Checking deletion of non-existent user");
             reconcile = op.reconcile(Reconciliation.DUMMY_RECONCILIATION, username, null);
             reconcileResult = reconcile.toCompletableFuture().get();
-            assertThat(reconcileResult.getType(), is(ReconcileResult.Type.NOOP));
+            assertThat(reconcileResult.toString(), is("NOOP"));
             deleted = get(username);
             assertThat(deleted, is(nullValue()));
         } finally {
