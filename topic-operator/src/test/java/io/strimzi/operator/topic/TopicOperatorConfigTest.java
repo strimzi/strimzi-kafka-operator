@@ -291,10 +291,9 @@ class TopicOperatorConfigTest {
         assertEquals("some-namespace", config.namespace());
 
         var adminConfig = config.adminClientConfig();
-        // client.id is random, so check it's there then remove for an easier assertion on the rest of the map
-        assertTrue(!adminConfig.get("client.id").toString().isEmpty());
-        adminConfig.remove("client.id");
+        adminConfig.put("client.id", "foo");
         assertEquals(Map.of(
+              "client.id", "foo",
               "security.protocol", "PLAINTEXT",
               "bootstrap.servers", "localhost:1234",
               "sasl.mechanism", "WAS_SMK_IAM",
