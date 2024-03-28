@@ -50,7 +50,7 @@ kubectl get kafka <kafka_cluster_name> -n <namespace> -o jsonpath='{.status.cond
 
 Replace <kafka_cluster_name> with the name of your Kafka cluster and <namespace> with the Kubernetes namespace where the pod is running.
 
-== Migrating from using the Bidirectional Topic Operator
+== Upgrading from a Strimzi version using the Bidirectional Topic Operator
 When deploying the Topic Operator to manage topics, the Cluster Operator enables unidirectional topic management.
 This means that the Topic Operator only manages Kafka topics associated with `KafkaTopic` resources and does not interfere with topics managed independently within the Kafka cluster.
 
