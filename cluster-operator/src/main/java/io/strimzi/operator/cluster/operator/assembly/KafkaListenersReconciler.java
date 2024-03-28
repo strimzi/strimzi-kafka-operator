@@ -24,13 +24,13 @@ import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.ListenersUtils;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.model.NodeRef;
+import io.strimzi.operator.cluster.operator.resource.kubernetes.IngressOperator;
+import io.strimzi.operator.cluster.operator.resource.kubernetes.RouteOperator;
+import io.strimzi.operator.cluster.operator.resource.kubernetes.SecretOperator;
+import io.strimzi.operator.cluster.operator.resource.kubernetes.ServiceOperator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.model.InvalidResourceException;
-import io.strimzi.operator.common.operator.resource.IngressOperator;
-import io.strimzi.operator.common.operator.resource.RouteOperator;
-import io.strimzi.operator.common.operator.resource.SecretOperator;
-import io.strimzi.operator.common.operator.resource.ServiceOperator;
 import io.vertx.core.Future;
 
 import java.nio.charset.StandardCharsets;

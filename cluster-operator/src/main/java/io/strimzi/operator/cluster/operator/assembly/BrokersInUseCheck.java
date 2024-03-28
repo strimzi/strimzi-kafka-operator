@@ -6,10 +6,10 @@ package io.strimzi.operator.cluster.operator.assembly;
 
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.operator.cluster.model.KafkaCluster;
+import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
-import io.strimzi.operator.common.VertxUtil;
 import io.strimzi.operator.common.auth.TlsPemIdentity;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;

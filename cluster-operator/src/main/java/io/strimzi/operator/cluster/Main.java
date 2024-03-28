@@ -18,13 +18,13 @@ import io.strimzi.operator.cluster.operator.assembly.KafkaMirrorMaker2AssemblyOp
 import io.strimzi.operator.cluster.operator.assembly.KafkaMirrorMakerAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceAssemblyOperator;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
+import io.strimzi.operator.cluster.operator.resource.kubernetes.ClusterRoleOperator;
 import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.MicrometerMetricsProvider;
 import io.strimzi.operator.common.OperatorKubernetesClientBuilder;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.PasswordGenerator;
-import io.strimzi.operator.common.operator.resource.ClusterRoleOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;

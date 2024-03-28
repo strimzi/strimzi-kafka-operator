@@ -12,7 +12,7 @@ import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaList;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
-import io.strimzi.operator.common.operator.resource.CrdOperator;
+import io.strimzi.operator.cluster.operator.resource.kubernetes.CrdOperator;
 import io.strimzi.test.mockkube3.MockKube3;
 import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;

@@ -5,10 +5,10 @@
 package io.strimzi.operator.cluster.operator.resource;
 
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
+import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
-import io.strimzi.operator.common.VertxUtil;
 import io.strimzi.operator.common.auth.TlsPkcs12Identity;
 import io.strimzi.operator.common.model.PasswordGenerator;
 import io.vertx.core.Future;
