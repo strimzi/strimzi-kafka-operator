@@ -9,8 +9,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.ReconciliationLogger;
+import io.strimzi.operator.common.config.ConfigParameter;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.operator.common.operator.resource.ConfigParameter;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.common.config.SaslConfigs;
 import org.apache.kafka.common.config.SslConfigs;
@@ -46,7 +46,6 @@ import static io.strimzi.operator.common.operator.resource.ConfigParameterParser
  * @param sslEndpointIdentificationAlgorithm The SSL endpoint identification algorithm
  * @param saslEnabled                   Whether the Admin client should be configured to use SASL
  * @param saslMechanism                 The SASL mechanism for the Admin client
- * @param saslCustomConfigJson          The SASL custom values for the Admin client when using alternate auth mechanisms.
  * @param saslUsername,                 The SASL username for the Admin client
  * @param saslPassword,                 The SASL password for the Admin client
  * @param securityProtocol              The security protocol for the Admin client
@@ -64,8 +63,6 @@ import static io.strimzi.operator.common.operator.resource.ConfigParameterParser
  * @param cruiseControlCrtFilePath      Certificate chain to be trusted
  * @param cruiseControlApiUserPath      Api admin username file path
  * @param cruiseControlApiPassPath      Api admin password file path
- * @param alterableTopicConfig          Comma separated list of the alterable Kafka topic properties
- * @param skipClusterConfigReview       For some managed Kafka services the Cluster config is not callable, so this skips those calls.
  */
 public record TopicOperatorConfig(
         String namespace,
@@ -81,7 +78,6 @@ public record TopicOperatorConfig(
         String sslEndpointIdentificationAlgorithm,
         boolean saslEnabled,
         String saslMechanism,
-        String saslCustomConfigJson,
         String saslUsername,
         String saslPassword,
         String securityProtocol,

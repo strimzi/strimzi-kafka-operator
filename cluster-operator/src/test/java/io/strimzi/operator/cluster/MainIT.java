@@ -6,7 +6,7 @@ package io.strimzi.operator.cluster;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
-import io.strimzi.operator.common.operator.resource.ClusterRoleOperator;
+import io.strimzi.operator.cluster.operator.resource.kubernetes.ClusterRoleOperator;
 import io.strimzi.test.k8s.cluster.KubeCluster;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
