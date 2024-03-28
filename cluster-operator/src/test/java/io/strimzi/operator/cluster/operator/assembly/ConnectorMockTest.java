@@ -200,9 +200,11 @@ public class ConnectorMockTest {
             .onComplete(testContext.succeeding(i -> { }))
             .compose(watch -> {
                 connectWatch = watch;
+                LOGGER.info("Creating connector watch: {} in namespace: {}", connectWatch, namespace);
                 return kafkaConnectOperator.createConnectorWatch(namespace);
             }).compose(watch -> {
                 connectorWatch = watch;
+                LOGGER.info("Created connector watch: {}", connectWatch);
                 return Future.succeededFuture();
             }).onComplete(testContext.succeeding(v -> async.flag()));
     }
@@ -2094,10 +2096,21 @@ public class ConnectorMockTest {
         MeterRegistry meterRegistry = metricsProvider.meterRegistry();
         Tags tags = Tags.of("kind", KafkaConnector.RESOURCE_KIND, "namespace", namespace);
 
+        LOGGER.info("Pausing KafkaConnect reconciliations");
+        KafkaConnect pausedConnect = new KafkaConnectBuilder(kafkaConnect)
+            .editOrNewMetadata()
+                .addToAnnotations(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true")
+            .endMetadata()
+            .build();
+        Crds.kafkaConnectOperation(client).inNamespace(namespace).resource(pausedConnect).update();
+        waitForConnectPaused(connectName);
+
+        LOGGER.info("Triggering reconcileAll operation");
         Promise<Void> reconciled = Promise.promise();
         kafkaConnectOperator.reconcileAll("test", namespace, ignored -> reconciled.complete());
 
         Checkpoint async = context.checkpoint();
+
         reconciled.future().onComplete(context.succeeding(v -> context.verify(() -> {
             Gauge resources = meterRegistry.get("strimzi.resources").tags(tags).gauge();
             assertThat(resources.value(), is(1.0));
