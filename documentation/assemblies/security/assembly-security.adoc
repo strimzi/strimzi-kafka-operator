@@ -52,7 +52,6 @@ The ZooKeeper ports are used as follows:
 
 ZooKeeper Port (2181):: ZooKeeper port for connection to Kafka brokers.
 Additionally, the Cluster Operator communicates with ZooKeeper through this port.
-If you are using the Topic Operator in bidirectional mode, it also communicates with ZooKeeper through this port.
 ZooKeeper internodal communication port (2888):: ZooKeeper port for internodal communication between ZooKeeper nodes.
 ZooKeeper leader election port (3888):: ZooKeeper port for leader election among ZooKeeper nodes in a ZooKeeper cluster.
 
