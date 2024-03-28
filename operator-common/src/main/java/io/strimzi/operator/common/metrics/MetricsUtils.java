@@ -7,6 +7,7 @@ package io.strimzi.operator.common.metrics;
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Tags;
+import io.strimzi.operator.common.config.ConfigParameter;
 import io.strimzi.operator.common.model.Labels;
 import org.apache.logging.log4j.util.Strings;
 
@@ -28,7 +29,7 @@ public class MetricsUtils {
     /**
      * Tag representing any namespace
      */
-    protected static final Tag TAG_ANY_NAMESPACE = Tag.of("namespace", "*");
+    protected static final Tag TAG_ANY_NAMESPACE = Tag.of("namespace", ConfigParameter.ANY_NAMESPACE);
 
     /**
      * Checks if the given meter matches the given metric name
