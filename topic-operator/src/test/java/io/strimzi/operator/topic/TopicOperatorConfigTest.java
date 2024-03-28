@@ -352,4 +352,24 @@ class TopicOperatorConfigTest {
         var customMechanismException = assertThrows(InvalidConfigurationException.class, config::adminClientConfig);
         assertEquals("SASL custom config properties not SASL properties. customProperty: '' = 'b'", customMechanismException.getMessage());
     }
+
+    @Test
+    void shouldDefaultToFalseForSkipClusterConfigCheck() {
+        var config = TopicOperatorConfig.buildFromMap(Map.of(
+              TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
+              TopicOperatorConfig.NAMESPACE.key(), "some-namespace"
+        ));
+
+        assertFalse(config.skipClusterConfigReview());
+    }
+
+    @Test
+    void shouldDefaultToEmptyForAlterableTopicConfig() {
+        var config = TopicOperatorConfig.buildFromMap(Map.of(
+              TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
+              TopicOperatorConfig.NAMESPACE.key(), "some-namespace"
+        ));
+
+        assertTrue(config.alterableTopicConfig().isEmpty());
+    }
 }
