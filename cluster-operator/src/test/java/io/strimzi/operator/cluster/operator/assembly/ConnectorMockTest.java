@@ -206,10 +206,7 @@ public class ConnectorMockTest {
                 connectorWatch = watch;
                 LOGGER.info("Created connector watch: {}", connectWatch);
                 return Future.succeededFuture();
-            }).onComplete(testContext.succeeding(v -> {
-                LOGGER.info("Finishing and marking before each as succeed (using checkpoing) flag!");
-                async.flag();
-            }));
+            }).onComplete(testContext.succeeding(v -> async.flag()));
     }
 
     @AfterEach
@@ -2066,32 +2063,32 @@ public class ConnectorMockTest {
     }
 
     @Test
-    void testConnectorResourceMetricsScaledToZero(VertxTestContext context) throws InterruptedException {
+    void testConnectorResourceMetricsScaledToZero(VertxTestContext context) {
         String connectName = "cluster";
         String connectorName = "connector";
 
         KafkaConnect kafkaConnect = new KafkaConnectBuilder()
-            .withNewMetadata()
-                .withNamespace(namespace)
-                .withName(connectName)
-                .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
-            .endMetadata()
-            .withNewSpec()
-                .withReplicas(0)
-                .withBootstrapServers("my-kafka:9092")
-            .endSpec()
-            .build();
+                .withNewMetadata()
+                    .withNamespace(namespace)
+                    .withName(connectName)
+                    .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
+                .endMetadata()
+                .withNewSpec()
+                    .withReplicas(0)
+                    .withBootstrapServers("my-kafka:9092")
+                .endSpec()
+                .build();
 
         Crds.kafkaConnectOperation(client).inNamespace(namespace).resource(kafkaConnect).create();
         waitForConnectReady(connectName);
 
         KafkaConnector connector = defaultKafkaConnectorBuilder()
-            .editMetadata()
-                .withName(connectorName)
-                .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName)
-                .addToAnnotations(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true")
-            .endMetadata()
-            .build();
+                .editMetadata()
+                    .withName(connectorName)
+                    .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName)
+                    .addToAnnotations(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true")
+                .endMetadata()
+                .build();
 
         Crds.kafkaConnectorOperation(client).inNamespace(namespace).resource(connector).create();
         waitForConnectorNotReady(connectorName, "RuntimeException", "Kafka Connect cluster 'cluster' in namespace " + namespace + " has 0 replicas.");
@@ -2102,7 +2099,7 @@ public class ConnectorMockTest {
         LOGGER.info("Pausing KafkaConnect reconciliations");
         KafkaConnect pausedConnect = new KafkaConnectBuilder(kafkaConnect)
             .editOrNewMetadata()
-            .addToAnnotations(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true")
+                .addToAnnotations(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true")
             .endMetadata()
             .build();
         Crds.kafkaConnectOperation(client).inNamespace(namespace).resource(pausedConnect).update();
