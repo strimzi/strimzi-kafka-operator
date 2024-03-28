@@ -60,6 +60,19 @@ public class CertUtils {
     }
 
     /**
+     * Generates the expiration date as epoch of the server certificate which is used to track when the certificate changes and rolling update needs to be triggered.
+     *
+     * @param certSecret    Secrets with the certificate
+     * @param key           Key under which the certificate is stored in the Secret
+     * @return              Epoch representation of the expiration date of the certificate or 0 if certSecret contains no valid X509Certificate
+     * @throws              RuntimeException if the certificate cannot be decoded
+     */
+    public static long getCertificateExpirationDateEpoch(Secret certSecret, String key) {
+        var cert = Ca.cert(certSecret, key);
+        return cert == null ? 0 : cert.getNotAfter().getTime();
+    }
+
+    /**
      * Builds a clusterCa certificate secret for the different Strimzi components (TO, UO, KE, ...)
      *
      * @param reconciliation                        Reconciliation marker

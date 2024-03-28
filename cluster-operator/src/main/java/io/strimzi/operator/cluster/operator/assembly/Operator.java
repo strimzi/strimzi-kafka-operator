@@ -5,8 +5,10 @@
 package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.micrometer.core.instrument.Tags;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.config.ConfigParameter;
+import io.strimzi.operator.common.metrics.MetricsHolder;
 import io.strimzi.operator.common.metrics.OperatorMetricsHolder;
 import io.strimzi.operator.common.model.NamespaceAndName;
 import io.vertx.core.AsyncResult;
@@ -79,6 +81,12 @@ public interface Operator {
         } else {
             metrics().resourceCounter(namespace).set(0);
             metrics().pausedResourceCounter(namespace).set(0);
+        }
+
+        for (NamespaceAndName desiredName : desiredNames) {
+            Tags tags = metrics().getTags(desiredName.getName(), namespace, kind());
+            metrics().removeMetric(MetricsHolder.METRICS_SERVER_CERTIFICATE_EXPIRATION_MS, tags);
+            metrics().removeMetric(MetricsHolder.METRICS_CLIENT_CERTIFICATE_EXPIRATION_MS, tags);
         }
 
         if (desiredNames.size() > 0) {

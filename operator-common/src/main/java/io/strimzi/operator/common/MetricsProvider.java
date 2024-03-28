@@ -10,6 +10,7 @@ import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
 
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Interface for providing metrics or their mocks
@@ -51,4 +52,14 @@ public interface MetricsProvider {
      * @return              AtomicInteger which represents the Gauge metric
      */
     AtomicInteger gauge(String name, String description, Tags tags);
+
+    /**
+     * Creates new Gauge type metric of type Long
+     *
+     * @param name          Name of the metric
+     * @param description   Description of the metric
+     * @param tags          Tags used for the metric
+     * @return              AtomicLong which represents the Gauge metric
+     */
+    AtomicLong gaugeLong(String name, String description, Tags tags);
 }
