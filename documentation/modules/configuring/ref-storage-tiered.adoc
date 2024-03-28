@@ -1,0 +1,47 @@
+[id='ref-tiered-storage-{context}']
+= Tiered storage (early access)
+
+[role="_abstract"]
+Tiered storage introduces a flexible approach to managing Kafka data whereby log segments are moved to a separate storage system. 
+For example, you can combine the use of block storage on brokers for frequently accessed data and offload older or less frequently accessed data from the block storage to more cost-effective, scalable remote storage solutions, such as Amazon S3, without compromising data accessibility and durability.
+
+WARNING: Tiered storage is an early access Kafka feature, which is also available in Strimzi. 
+Due to its https://kafka.apache.org/documentation/#tiered_storage_limitation[current limitations^], it is not recommended for production environments. 
+
+Tiered storage requires an implementation of Kafka's `RemoteStorageManager` interface to handle communication between Kafka and the remote storage system, which is enabled through configuration of the `Kafka` resource.
+Strimzi uses Kafka's https://github.com/apache/kafka/blob/trunk/storage/src/main/java/org/apache/kafka/server/log/remote/metadata/storage/TopicBasedRemoteLogMetadataManager.java[`TopicBasedRemoteLogMetadataManager`^] for Remote Log Metadata Management (RLMM) when custom tiered storage is enabled.
+The RLMM manages the metadata related to remote storage.  
+
+To use custom tiered storage, do the following:
+
+* Include a tiered storage plugin for Kafka in the Strimzi image by building a custom container image. 
+The plugin must provide the necessary functionality for a Kafka cluster managed by Strimzi to interact with the tiered storage solution.
+* Configure Kafka for tiered storage using `tieredStorage` properties in the `Kafka` resource. 
+Specify the class name and path for the custom `RemoteStorageManager` implementation, as well as any additional configuration. 
+* If required, specify RLMM-specific tiered storage configuration.
+
+.Example custom tiered storage configuration for Kafka
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    tieredStorage:
+      type: custom # <1>
+      remoteStorageManager: # <2>
+        className: com.example.kafka.tiered.storage.s3.S3RemoteStorageManager
+        classPath: /opt/kafka/plugins/tiered-storage-s3/*
+        config:
+          storage.bucket.name: my-bucket # <3>
+          # ...
+    config:
+      rlmm.config.remote.log.metadata.topic.replication.factor: 1 # <4>
+  # ...  
+----
+<1> The `type` must be set to `custom`.
+<2> The configuration for the custom `RemoteStorageManager` implementation, including class name and path.
+<3> Configuration to pass to the custom `RemoteStorageManager` implementation, which Strimzi automatically prefixes with `rsm.config.`. 
+<4> Tiered storage configuration to pass to the RLMM, which requires an `rlmm.config.` prefix. For more information on tiered storage configuration, see the {kafkaDoc}.
