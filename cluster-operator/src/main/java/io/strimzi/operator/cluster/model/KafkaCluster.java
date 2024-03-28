@@ -61,6 +61,8 @@ import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationCustom;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationOAuth;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
+import io.strimzi.api.kafka.model.kafka.quotas.QuotasPlugin;
+import io.strimzi.api.kafka.model.kafka.quotas.QuotasPluginStrimzi;
 import io.strimzi.api.kafka.model.kafka.tieredstorage.TieredStorage;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolStatus;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
@@ -81,6 +83,7 @@ import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.ClientsCa;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.model.StatusUtils;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
@@ -204,6 +207,11 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      */
     public static final String BROKER_METADATA_STATE_FILENAME = "metadata.state";
 
+    /**
+     * Key under which the class of the quota plugin can be configured
+     */
+    private static final String CLIENT_CALLBACK_CLASS_OPTION = "client.quota.callback.class";
+
     // Kafka configuration
     private Rack rack;
     private String initImage;
@@ -216,6 +224,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     private CruiseControlMetricsReporter ccMetricsReporter;
     private MetricsModel metrics;
     private LoggingModel logging;
+    private QuotasPlugin quotas;
     /* test */ KafkaConfiguration configuration;
     private KafkaMetadataConfigurationState kafkaMetadataConfigState;
 
@@ -336,6 +345,12 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         // Handle Kafka broker configuration
         KafkaConfiguration configuration = new KafkaConfiguration(reconciliation, kafkaClusterSpec.getConfig().entrySet());
         validateConfiguration(reconciliation, kafka, result.kafkaVersion, configuration);
+
+        if (kafkaClusterSpec.getQuotas() != null) {
+            validateConfigurationOfQuotasPlugin(configuration, kafkaClusterSpec.getQuotas(), result.warningConditions);
+            result.quotas = kafkaClusterSpec.getQuotas();
+        }
+
         result.configuration = configuration;
 
         // We set the user-configured inter.broker.protocol.version if needed (when not set by the user)
@@ -400,6 +415,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         if (kafkaClusterSpec.getTieredStorage() != null) {
             result.tieredStorage = kafkaClusterSpec.getTieredStorage();
         }
+
         // Should run at the end when everything is set
         KafkaSpecChecker specChecker = new KafkaSpecChecker(kafkaSpec, versions, result);
         result.warningConditions.addAll(specChecker.run(kafkaMetadataConfigState.isKRaft()));
@@ -545,6 +561,33 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                     kafkaAssembly.getMetadata().getNamespace() + "/" + kafkaAssembly.getMetadata().getName() +
                     " has invalid spec.kafka.config: " +
                     String.join(", ", errorsInConfig));
+        }
+    }
+
+    /**
+     * Validates the user configuration with the configuration of quotas plugin
+     * In case that user configured the client.quota.callback.class option and the {@link QuotasPluginStrimzi} is configured as well,
+     * the warning is raised and the option is removed
+     *
+     * @param configuration     {@link KafkaConfiguration} with user specified config
+     * @param quotasPlugin      configuration of the quotas plugin
+     * @param warnings          list of warnings
+     */
+    private static void validateConfigurationOfQuotasPlugin(KafkaConfiguration configuration, QuotasPlugin quotasPlugin, List<Condition> warnings) {
+        if (quotasPlugin != null) {
+            if (quotasPlugin instanceof QuotasPluginStrimzi quotasPluginStrimzi) {
+                if (quotasPluginStrimzi.getMinAvailableBytesPerVolume() != null && quotasPluginStrimzi.getMinAvailableRatioPerVolume() != null) {
+                    throw new InvalidResourceException("You cannot configure both `minAvailableBytesPerVolume` and `minAvailableRatioPerVolume`, they are mutually exclusive.");
+                }
+            }
+            if (configuration.getConfigOption(CLIENT_CALLBACK_CLASS_OPTION) != null) {
+                warnings.add(StatusUtils.buildWarningCondition("QuotasPluginConflict",
+                    String.format("Quotas plugin class cannot be configured in .spec.kafka.config, " +
+                        "when .spec.kafka.quotas contains configuration of `%s` plugin. " +
+                        "The plugin from .spec.kafka.quotas will be used", QuotasPluginStrimzi.TYPE_STRIMZI)));
+
+                configuration.removeConfigOption(CLIENT_CALLBACK_CLASS_OPTION);
+            }
         }
     }
 
@@ -1726,6 +1769,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                         .withAuthorization(cluster, authorization)
                         .withCruiseControl(cluster, ccMetricsReporter, node.broker())
                         .withTieredStorage(cluster, tieredStorage)
+                        .withQuotas(cluster, quotas)
                         .withUserConfiguration(configuration, node.broker() && ccMetricsReporter != null);
         withZooKeeperOrKRaftConfiguration(pool, node, builder);
         return builder.build().trim();
@@ -1879,6 +1923,13 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      */
     public LoggingModel logging()   {
         return logging;
+    }
+
+    /**
+     * @return  QuotasPlugin instance for configuring quotas
+     */
+    public QuotasPlugin quotas() {
+        return quotas;
     }
 
     /**

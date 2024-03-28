@@ -95,6 +95,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.net.NetClientOptions;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.admin.DescribeClientQuotasResult;
 import org.apache.kafka.clients.admin.DescribeClusterResult;
 import org.apache.kafka.clients.admin.DescribeConfigsResult;
 import org.apache.kafka.clients.admin.DescribeFeaturesResult;
@@ -108,6 +109,7 @@ import org.apache.kafka.clients.admin.TopicListing;
 import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.Node;
 import org.apache.kafka.common.internals.KafkaFutureImpl;
+import org.apache.kafka.common.quota.ClientQuotaEntity;
 import org.apache.kafka.server.common.MetadataVersion;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
@@ -118,6 +120,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -572,6 +575,21 @@ public class ResourceUtils {
             throw new RuntimeException(e);
         }
         when(mock.describeMetadataQuorum()).thenReturn(dmqr);
+
+        DescribeClientQuotasResult dcqr;
+        try {
+            Constructor<DescribeClientQuotasResult> declaredConstructor = DescribeClientQuotasResult.class.getDeclaredConstructor(KafkaFuture.class);
+
+            final ClientQuotaEntity defaultUserEntity = new ClientQuotaEntity(Collections.singletonMap(ClientQuotaEntity.USER, null));
+            KafkaFuture<Map<ClientQuotaEntity, Map<String, Double>>> future = KafkaFuture.completedFuture(Map.of(defaultUserEntity, Map.of()));
+
+            declaredConstructor.setAccessible(true);
+            dcqr = declaredConstructor.newInstance(future);
+        } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
+            throw new RuntimeException(e);
+        }
+
+        when(mock.describeClientQuotas(any())).thenReturn(dcqr);
 
         return mock;
     }

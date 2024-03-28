@@ -8,7 +8,7 @@
 
 [role="_abstract"]
 Use the _Kafka Static Quota_ plugin to set throughput and storage limits on brokers in your Kafka cluster.
-You enable the plugin and set limits by configuring the `Kafka` resource.
+You enable the plugin and set limits by configuring the `quotas` section of the `Kafka` resource.
 You can set a byte-rate threshold and storage quotas to put limits on the clients interacting with your brokers.
 
 NOTE: Only one quota plugin can be used in Kafka. 
@@ -20,15 +20,11 @@ The total limit is distributed across all clients accessing the broker.
 For example, you can set a byte-rate threshold of 40 MBps for producers.
 If two producers are running, they are each limited to a throughput of 20 MBps.
 
-Storage quotas throttle Kafka disk storage limits between a soft limit and hard limit.
-The limits apply to all available disk space.
-Producers are slowed gradually between the soft and hard limit.
-The limits prevent disks filling up too quickly and exceeding their capacity.
+Storage quotas enforce the throttling of Kafka producers based on Kafka disk storage utilization when it reaches the specified limit.
+You can specify the limit in bytes or percentage of available disk space.
+The limit applies to every disk individually.
+It prevents disks filling up too quickly and exceeding their capacity.
 Full disks can lead to issues that are hard to rectify.
-The hard limit is the maximum storage limit.
-
-NOTE: For JBOD storage, the limit applies across all disks.
-If a broker is using two 1 TB disks and the quota is 1.1 TB, one disk might fill and the other disk will be almost empty.
 
 .Prerequisites
 
@@ -36,9 +32,9 @@ If a broker is using two 1 TB disks and the quota is 1.1 TB, one disk might fill
 
 .Procedure
 
-. Add the plugin properties to the `config` of the `Kafka` resource.
+. Add the plugin configuration to the `quotas` section of the `Kafka` resource.
 +
-The plugin properties are shown in this example configuration.
+The plugin configuration is shown in this example configuration.
 +
 .Example Kafka Static Quota plugin configuration
 [source,yaml,options="nowrap",subs="+attributes"]
@@ -50,27 +46,26 @@ metadata:
 spec:
   kafka:
     # ...
-    config:
-      client.quota.callback.class: io.strimzi.kafka.quotas.StaticQuotaCallback <1>
-      client.quota.callback.static.produce: 1000000 <2>
-      client.quota.callback.static.fetch: 1000000 <3>
-      client.quota.callback.static.storage.soft: 400000000000 <4>
-      client.quota.callback.static.storage.hard: 500000000000 <5>
-      client.quota.callback.static.storage.check-interval: 5 <6>
+    quotas:
+      type: strimzi
+      producerByteRate: 1000000 # <1>
+      consumerByteRate: 1000000 # <2>
+      minAvailableBytesPerVolume: 500000000000 # <3>
+      excludedPrincipals: # <4>
+        - my-user
 ----
-<1> Loads the Kafka Static Quota plugin.
-<2> Sets the producer byte-rate threshold. 1 MBps in this example.
-<3> Sets the consumer byte-rate threshold. 1 MBps in this example.
-<4> Sets the lower soft limit for storage. 400 GB in this example.
-<5> Sets the higher hard limit for storage. 500 GB in this example.
-<6> Sets the interval in seconds between checks on storage. 5 seconds in this example. You can set this to 0 to disable the check.
+<1> Sets the producer byte-rate threshold. 1 MBps in this example.
+<2> Sets the consumer byte-rate threshold. 1 MBps in this example.
+<3> Sets the available bytes limit for storage. 500 GB in this example.
+<4> Sets the list of excluded users that are removed from the quota. `my-user` in this example.
 
-. Update the resource.
-+
-[source,shell,subs=+quotes]
-kubectl apply -f _<kafka_configuration_file>_
+. Apply the changes to the `Kafka` configuration.
+
+NOTE: `minAvailableBytesPerVolume` and `minAvailableRatioPerVolume` are mutually exclusive.
+This means that only one of these parameters should be configured.
 
 [role="_additional-resources"]
 .Additional resources
 
+* link:{BookURLConfiguring}#type-QuotasPluginStrimzi-reference[`QuotasPluginStrimzi` schema reference^]
 * link:{BookURLConfiguring}#type-KafkaUserQuotas-reference[`KafkaUserQuotas` schema reference^]

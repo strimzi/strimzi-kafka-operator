@@ -89,6 +89,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -460,9 +461,18 @@ public class KubernetesRestartEventsMockTest {
 
     @Test
     void testEventEmittedWhenPodIsUnresponsive(Vertx vertx, VertxTestContext context) {
+        AtomicInteger failCounter = new AtomicInteger(0);
+
+        Admin adminClient = ResourceUtils.adminClientProvider().createAdminClient(null, null, null);
+
         // Simulate not being able to initiate an initial admin client connection broker at all
         ResourceOperatorSupplier supplierWithModifiedAdmin = supplierWithAdmin(vertx, () -> {
-            throw new ConfigException("");
+            if (failCounter.getAndIncrement() == 0) {
+                throw new ConfigException("");
+            }
+
+            // In case that we already threw the exception, we simulate that the Admin client is created after the Pod is rolled
+            return adminClient;
         });
 
         KafkaCluster kafkaCluster = KafkaClusterCreator.createKafkaCluster(reconciliation,

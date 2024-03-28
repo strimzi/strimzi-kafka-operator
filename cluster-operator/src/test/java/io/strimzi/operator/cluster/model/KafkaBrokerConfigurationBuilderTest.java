@@ -24,6 +24,10 @@ import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerConfigurati
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationOAuth;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationOAuthBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
+import io.strimzi.api.kafka.model.kafka.quotas.QuotasPluginKafka;
+import io.strimzi.api.kafka.model.kafka.quotas.QuotasPluginKafkaBuilder;
+import io.strimzi.api.kafka.model.kafka.quotas.QuotasPluginStrimzi;
+import io.strimzi.api.kafka.model.kafka.quotas.QuotasPluginStrimziBuilder;
 import io.strimzi.api.kafka.model.kafka.tieredstorage.RemoteStorageManager;
 import io.strimzi.api.kafka.model.kafka.tieredstorage.TieredStorageCustom;
 import io.strimzi.kafka.oauth.server.ServerConfig;
@@ -2451,6 +2455,64 @@ public class KafkaBrokerConfigurationBuilderTest {
                 assertThat(configuration, containsString("authorizer.class.name=kafka.security.authorizer.AclAuthorizer"));
             }
         }
+    }
+
+    @ParallelTest
+    public void testWithStrimziQuotas() {
+        QuotasPluginStrimzi quotasPluginStrimzi = new QuotasPluginStrimziBuilder()
+            .withConsumerByteRate(1000L)
+            .withProducerByteRate(1000L)
+            .withExcludedPrincipals("User:my-user1", "User:my-user2")
+            .withMinAvailableBytesPerVolume(200000L)
+            .build();
+
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.ZK)
+            .withQuotas("my-personal-cluster", quotasPluginStrimzi)
+            .build();
+
+        assertThat(configuration, isEquivalent("broker.id=2",
+            "node.id=2",
+            "client.quota.callback.class=io.strimzi.kafka.quotas.StaticQuotaCallback",
+            "client.quota.callback.static.kafka.admin.bootstrap.servers=my-personal-cluster-kafka-brokers:9091",
+            "client.quota.callback.static.kafka.admin.security.protocol=SSL",
+            "client.quota.callback.static.kafka.admin.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
+            "client.quota.callback.static.kafka.admin.ssl.keystore.password=${CERTS_STORE_PASSWORD}",
+            "client.quota.callback.static.kafka.admin.ssl.keystore.type=PKCS12",
+            "client.quota.callback.static.kafka.admin.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
+            "client.quota.callback.static.kafka.admin.ssl.truststore.password=${CERTS_STORE_PASSWORD}",
+            "client.quota.callback.static.kafka.admin.ssl.truststore.type=PKCS12",
+            "client.quota.callback.static.produce=1000",
+            "client.quota.callback.static.fetch=1000",
+            "client.quota.callback.static.storage.per.volume.limit.min.available.bytes=200000",
+            "client.quota.callback.static.excluded.principal.name.list=User:CN=my-personal-cluster-kafka,O=io.strimzi;User:CN=my-personal-cluster-cruise-control,O=io.strimzi;User:my-user1;User:my-user2"
+        ));
+    }
+
+    @ParallelTest
+    public void testWithNullQuotas() {
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.ZK)
+            .withQuotas("my-personal-cluster", null)
+            .build();
+
+        assertThat(configuration, not(containsString("client.quota.callback.class")));
+        assertThat(configuration, not(containsString("client.quota.callback.static")));
+    }
+
+    @ParallelTest
+    public void testWithKafkaQuotas() {
+        QuotasPluginKafka quotasPluginKafka = new QuotasPluginKafkaBuilder()
+            .withConsumerByteRate(1000L)
+            .withProducerByteRate(1000L)
+            .withRequestPercentage(33)
+            .withControllerMutationRate(0.5)
+            .build();
+
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.ZK)
+            .withQuotas("my-personal-cluster", quotasPluginKafka)
+            .build();
+
+        assertThat(configuration, not(containsString("client.quota.callback.class")));
+        assertThat(configuration, not(containsString("client.quota.callback.static")));
     }
 
     @ParallelTest

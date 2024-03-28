@@ -22,6 +22,7 @@ import io.strimzi.api.kafka.model.common.jmx.HasJmxOptions;
 import io.strimzi.api.kafka.model.common.jmx.KafkaJmxOptions;
 import io.strimzi.api.kafka.model.common.metrics.MetricsConfig;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener;
+import io.strimzi.api.kafka.model.kafka.quotas.QuotasPlugin;
 import io.strimzi.api.kafka.model.kafka.tieredstorage.TieredStorage;
 import io.strimzi.crdgenerator.annotations.AddedIn;
 import io.strimzi.crdgenerator.annotations.Description;
@@ -49,7 +50,7 @@ import java.util.Map;
 @JsonPropertyOrder({
     "version", "metadataVersion", "replicas", "image", "listeners", "config", "storage", "authorization", "rack",
     "brokerRackInitImage", "livenessProbe", "readinessProbe", "jvmOptions", "jmxOptions", "resources", "metricsConfig",
-    "logging", "template", "tieredStorage"})
+    "logging", "template", "tieredStorage", "quotas"})
 @EqualsAndHashCode
 @ToString
 public class KafkaClusterSpec implements HasConfigurableMetrics, HasConfigurableLogging, HasJmxOptions, HasReadinessProbe, HasLivenessProbe, UnknownPropertyPreserving {
@@ -57,7 +58,9 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, HasConfigurable
             + "inter.broker.listener.name, sasl., ssl., security., password., log.dir, "
             + "zookeeper.connect, zookeeper.set.acl, zookeeper.ssl, zookeeper.clientCnxnSocket, authorizer., super.user, "
             + "cruise.control.metrics.topic, cruise.control.metrics.reporter.bootstrap.servers, "
-            + "node.id, process.roles, controller., metadata.log.dir, zookeeper.metadata.migration.enable"; // KRaft options
+            + "node.id, process.roles, controller., metadata.log.dir, zookeeper.metadata.migration.enable, " // KRaft options
+            + "client.quota.callback.static.kafka.admin., client.quota.callback.static.produce, client.quota.callback.static.fetch, "
+            + "client.quota.callback.static.storage.per.volume.limit.min.available., client.quota.callback.static.excluded.principal.name.list";
 
     public static final String FORBIDDEN_PREFIX_EXCEPTIONS = "zookeeper.connection.timeout.ms, sasl.server.max.receive.size, "
             + "ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols, ssl.secure.random.implementation, "
@@ -85,6 +88,7 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, HasConfigurable
     private KafkaAuthorization authorization;
     private KafkaClusterTemplate template;
     private TieredStorage tieredStorage;
+    private QuotasPlugin quotas;
     private Map<String, Object> additionalProperties;
 
     @Description("The Kafka broker version. Defaults to the latest version. " +
@@ -290,6 +294,18 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, HasConfigurable
 
     public void setTieredStorage(TieredStorage tieredStorage) {
         this.tieredStorage = tieredStorage;
+    }
+
+    @Description("Quotas plugin configuration for Kafka brokers allows setting quotas for disk usage, produce/fetch rates, and more. " +
+        "Supported plugin types include `kafka` (default) and `strimzi`. " +
+        "If not specified, the default `kafka` quotas plugin is used.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public QuotasPlugin getQuotas() {
+        return quotas;
+    }
+
+    public void setQuotas(QuotasPlugin quotas) {
+        this.quotas = quotas;
     }
 
     @Override
