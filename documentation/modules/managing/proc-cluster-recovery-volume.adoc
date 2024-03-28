@@ -9,7 +9,7 @@
 This procedure describes how to recover a deleted cluster from persistent volumes (PVs) by recreating the original `PersistentVolumeClaim` (PVC) resources.
 
 If the Topic Operator and User Operator are deployed, you can recover `KafkaTopic` and `KafkaUser` resources by recreating them. 
-It is important that you recreate the resources with the same configurations, or the Topic Operator will try to update them in Kafka.
+It is important that you recreate the `KafkaTopic` resources with the same configurations, or the Topic Operator will try to update them in Kafka.
 This procedure shows how to recreate both resources.
 
 WARNING: If the User Operator is enabled and Kafka users are not recreated, users are deleted from the Kafka cluster immediately after recovery. 
@@ -159,18 +159,10 @@ kubectl apply -f <topic_configuration_file>
 ----
 
 . Recreate all `KafkaUser` resources:
-.. If user passwords and certificates need to be retained, recreate the user secrets before recreating the `KafkaUser` resources.
-For example, you can create your own TLS certificate and key file, then create a secret from the file:
+.. If user passwords and certificates need to be retained, recreate the user secrets before recreating the `KafkaUser` resources. 
 +
-[source,shell]
-----
-kubectl create secret generic my-secret \
---from-file=tls.crt \
---from-file=tls.key
-----
-+
-The files must contain the user's certificate, private key, and any other required information
-Strimzi generates user secrets based on the names of users, so ensure that the secrets are recreated with the name corresponding to the Kafka users.
+If the secrets are not recreated, the User Operator will generate new credentials automatically. 
+Ensure that the recreated secrets have exactly the same name, labels, and fields as the original secrets.
 
 .. Apply the `KafkaUser` resource configuration:
 +
