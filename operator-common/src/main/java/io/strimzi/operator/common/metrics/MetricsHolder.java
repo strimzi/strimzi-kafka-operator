@@ -9,6 +9,7 @@ import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
 import io.strimzi.operator.common.MetricsProvider;
+import io.strimzi.operator.common.config.ConfigParameter;
 import io.strimzi.operator.common.model.Labels;
 
 import java.util.Map;
@@ -182,7 +183,7 @@ public abstract class MetricsHolder {
         String selectorValue = selectorLabels != null ? selectorLabels.toSelectorString() : "";
         Tags metricTags;
         String metricKey = namespace + "/" + kind;
-        if (namespace.equals("*")) {
+        if (namespace.equals(ConfigParameter.ANY_NAMESPACE)) {
             metricTags = Tags.of(Tag.of("kind", kind), Tag.of("namespace", ""), Tag.of("selector", selectorValue));
         } else {
             metricTags = Tags.of(Tag.of("kind", kind), Tag.of("namespace", namespace), Tag.of("selector", selectorValue));

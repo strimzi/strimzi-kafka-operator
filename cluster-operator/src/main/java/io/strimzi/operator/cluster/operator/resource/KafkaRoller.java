@@ -17,17 +17,17 @@ import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.model.RestartReason;
 import io.strimzi.operator.cluster.model.RestartReasons;
+import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.cluster.operator.resource.events.KubernetesRestartEventPublisher;
+import io.strimzi.operator.cluster.operator.resource.kubernetes.PodOperator;
 import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
-import io.strimzi.operator.common.VertxUtil;
 import io.strimzi.operator.common.auth.TlsPemIdentity;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.OrderedProperties;
-import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -390,7 +390,7 @@ public class KafkaRoller {
                     LOGGER.infoCr(reconciliation, "Could not verify pod {} is up-to-date, giving up after {} attempts. Total delay between attempts {}ms",
                             nodeRef, ctx.backOff.maxAttempts(), ctx.backOff.totalDelayMs(), e);
                     ctx.promise.fail(e instanceof TimeoutException ?
-                            new io.strimzi.operator.common.operator.resource.TimeoutException() :
+                            new io.strimzi.operator.common.TimeoutException() :
                             e);
                 } else {
                     long delay1 = ctx.backOff.delayMs();

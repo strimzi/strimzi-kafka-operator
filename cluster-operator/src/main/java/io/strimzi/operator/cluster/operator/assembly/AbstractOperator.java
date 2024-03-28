@@ -15,13 +15,15 @@ import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.common.ConditionBuilder;
 import io.strimzi.api.kafka.model.common.Spec;
 import io.strimzi.api.kafka.model.kafka.Status;
+import io.strimzi.operator.cluster.operator.VertxUtil;
+import io.strimzi.operator.cluster.operator.resource.kubernetes.AbstractWatchableStatusedNamespacedResourceOperator;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationException;
 import io.strimzi.operator.common.ReconciliationLogger;
+import io.strimzi.operator.common.TimeoutException;
 import io.strimzi.operator.common.Util;
-import io.strimzi.operator.common.VertxUtil;
 import io.strimzi.operator.common.metrics.OperatorMetricsHolder;
 import io.strimzi.operator.common.model.InvalidConfigParameterException;
 import io.strimzi.operator.common.model.InvalidResourceException;
@@ -29,8 +31,6 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.NamespaceAndName;
 import io.strimzi.operator.common.model.StatusDiff;
 import io.strimzi.operator.common.model.StatusUtils;
-import io.strimzi.operator.common.operator.resource.AbstractWatchableStatusedNamespacedResourceOperator;
-import io.strimzi.operator.common.operator.resource.TimeoutException;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -61,7 +61,7 @@ import java.util.stream.Collectors;
  * </ul>
  * @param <T> The Java representation of the Kubernetes resource, e.g. {@code Kafka} or {@code KafkaConnect}
  * @param <O> The "Resource Operator" for the source resource type. Typically, this will be some instantiation of
- *           {@link io.strimzi.operator.common.operator.resource.CrdOperator}.
+ *           {@link io.strimzi.operator.cluster.operator.resource.kubernetes.CrdOperator}.
  */
 public abstract class AbstractOperator<
         T extends CustomResource<P, S>,

@@ -15,12 +15,12 @@ import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.search.MeterNotFoundException;
 import io.strimzi.api.kafka.model.common.Spec;
 import io.strimzi.api.kafka.model.kafka.Status;
+import io.strimzi.operator.cluster.operator.resource.kubernetes.AbstractWatchableStatusedNamespacedResourceOperator;
 import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.MicrometerMetricsProvider;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.NamespaceAndName;
-import io.strimzi.operator.common.operator.resource.AbstractWatchableStatusedNamespacedResourceOperator;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -30,6 +30,7 @@ import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import io.vertx.micrometer.MicrometerMetricsOptions;
 import io.vertx.micrometer.VertxPrometheusOptions;
+import io.vertx.micrometer.backends.BackendRegistries;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -486,7 +487,7 @@ public class OperatorMetricsTest {
      * @return  Clean MetricsProvider
      */
     public MetricsProvider createCleanMetricsProvider() {
-        MetricsProvider metrics = new MicrometerMetricsProvider();
+        MetricsProvider metrics = new MicrometerMetricsProvider(BackendRegistries.getDefaultNow());
         MeterRegistry registry = metrics.meterRegistry();
 
         registry.forEachMeter(registry::remove);

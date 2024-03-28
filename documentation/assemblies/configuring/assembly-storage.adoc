@@ -13,18 +13,29 @@ The supported storage types are:
 * Ephemeral (Recommended for development only)
 * Persistent
 * JBOD (Kafka only; not available for ZooKeeper)
+* Tiered storage (Early access)
 
 To configure storage, you specify `storage` properties in the custom resource of the component. 
 The storage type is set using the `storage.type` property.
-
-When using node pools, you can specify storage configuration unique to each node pool used in the cluster.
+When using node pools, you can specify storage configuration unique to each node pool used in a Kafka cluster.
 The same storage properties available to the `Kafka` resource are also available to the `KafkaNodePool` pool resource.
+
+Tiered storage provides more flexibility for data management by leveraging the parallel use of storage types with different characteristics.
+For example, tiered storage might include the following:
+
+* Higher performance and higher cost block storage
+* Lower performance and lower cost object storage
+
+Tiered storage is an early access feature in Kafka.
+To configure tiered storage, you specify `tieredStorage` properties.
+Tiered storage is configured only at the cluster level using the `Kafka` custom resource. 
 
 The storage-related schema references provide more information on the storage configuration properties:
 
 * link:{BookURLConfiguring}#type-EphemeralStorage-reference[`EphemeralStorage` schema reference^]
 * link:{BookURLConfiguring}#type-PersistentClaimStorage-reference[`PersistentClaimStorage` schema reference^]
 * link:{BookURLConfiguring}#type-JbodStorage-reference[`JbodStorage` schema reference^]
+* link:{BookURLConfiguring}#type-TieredStorageCustom-reference[`TieredStorageCustom` schema reference^]
 
 WARNING: The storage type cannot be changed after a Kafka cluster is deployed.
 
@@ -41,3 +52,5 @@ include::../../modules/configuring/ref-storage-jbod.adoc[leveloffset=+1]
 include::../../modules/configuring/proc-adding-volumes-to-jbod-storage.adoc[leveloffset=+1]
 
 include::../../modules/configuring/proc-removing-volumes-from-jbod-storage.adoc[leveloffset=+1]
+
+include::../../modules/configuring/ref-storage-tiered.adoc[leveloffset=+1]
