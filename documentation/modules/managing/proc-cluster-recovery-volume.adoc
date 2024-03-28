@@ -6,21 +6,13 @@
 = Recovering a deleted cluster from persistent volumes
 
 [role="_abstract"]
-This procedure describes how to recover a deleted cluster from persistent volumes (PVs).
+This procedure describes how to recover a deleted cluster from persistent volumes (PVs) by recreating the original `PersistentVolumeClaim` (PVC) resources.
 
-In this situation, the Topic Operator identifies that topics exist in Kafka, but the `KafkaTopic` resources do not exist.
+If the Topic Operator and User Operator are deployed, you can recover `KafkaTopic` and `KafkaUser` resources by recreating them. 
+It is important that you recreate the `KafkaTopic` resources with the same configurations, or the Topic Operator will try to update them in Kafka.
+This procedure shows how to recreate both resources.
 
-When you get to the step to recreate your cluster, you have two options:
-
-. Use _Option 1_ when you can recover all `KafkaTopic` resources.
-+
-The `KafkaTopic` resources must therefore be recovered before the cluster is started so that the corresponding topics are not deleted by the Topic Operator.
-
-. Use _Option 2_ when you are unable to recover all `KafkaTopic` resources.
-+
-In this case, you deploy your cluster without the Topic Operator, delete the Topic Operator topic store metadata, and then redeploy the Kafka cluster with the Topic Operator so it can recreate the `KafkaTopic` resources from the corresponding topics.
-
-NOTE: If the Topic Operator is not deployed, you only need to recover the `PersistentVolumeClaim` (PVC) resources.
+WARNING: If the User Operator is enabled and Kafka users are not recreated, users are deleted from the Kafka cluster immediately after recovery. 
 
 .Before you begin
 
@@ -28,9 +20,6 @@ In this procedure, it is essential that PVs are mounted into the correct PVC to 
 A `volumeName` is specified for the PVC and this must match the name of the PV.
 
 For more information, see xref:ref-persistent-storage-{context}[Persistent storage].
-
-NOTE: The procedure does not include recovery of `KafkaUser` resources, which must be recreated manually.
-If passwords and certificates need to be retained, secrets must be recreated before creating the `KafkaUser` resources.
 
 .Procedure
 
@@ -43,34 +32,34 @@ kubectl get pv
 +
 Information is presented for PVs with data.
 +
-Example output showing columns important to this procedure:
-+
+.Example PV output
 [source,shell,subs="+quotes,attributes"]
 ----
-NAME                                         RECLAIMPOLICY CLAIM
-pvc-5e9c5c7f-3317-11ea-a650-06e1eadd9a4c ... Retain ...    myproject/data-my-cluster-zookeeper-1
-pvc-5e9cc72d-3317-11ea-97b0-0aef8816c7ea ... Retain ...    myproject/data-my-cluster-zookeeper-0
-pvc-5ead43d1-3317-11ea-97b0-0aef8816c7ea ... Retain ...    myproject/data-my-cluster-zookeeper-2
-pvc-7e1f67f9-3317-11ea-a650-06e1eadd9a4c ... Retain ...    myproject/data-0-my-cluster-kafka-0
-pvc-7e21042e-3317-11ea-9786-02deaf9aa87e ... Retain ...    myproject/data-0-my-cluster-kafka-1
-pvc-7e226978-3317-11ea-97b0-0aef8816c7ea ... Retain ...    myproject/data-0-my-cluster-kafka-2
+NAME                                          RECLAIMPOLICY  CLAIM
+pvc-5e9c5c7f-3317-11ea-a650-06e1eadd9a4c ...  Retain ...     myproject/data-my-cluster-zookeeper-1
+pvc-5e9cc72d-3317-11ea-97b0-0aef8816c7ea ...  Retain ...     myproject/data-my-cluster-zookeeper-0
+pvc-5ead43d1-3317-11ea-97b0-0aef8816c7ea ...  Retain ...     myproject/data-my-cluster-zookeeper-2
+pvc-7e1f67f9-3317-11ea-a650-06e1eadd9a4c ...  Retain ...     myproject/data-0-my-cluster-kafka-0
+pvc-7e21042e-3317-11ea-9786-02deaf9aa87e ...  Retain ...     myproject/data-0-my-cluster-kafka-1
+pvc-7e226978-3317-11ea-97b0-0aef8816c7ea ...  Retain ...     myproject/data-0-my-cluster-kafka-2
 ----
 +
-* _NAME_ shows the name of each PV.
-* _RECLAIM POLICY_ shows that PVs are _retained_.
-* _CLAIM_ shows the link to the original PVCs.
+* `NAME` is the name of each PV.
+* `RECLAIMPOLICY` shows that PVs are retained, meaning that the PV is not automatically deleted when the PVC is deleted.
+* `CLAIM` shows the link to the original PVCs.
 
 . Recreate the original namespace:
 +
 [source,shell,subs="+quotes,attributes"]
 ----
-kubectl create namespace _myproject_
+kubectl create namespace my-project
 ----
++
+Here, we recreate the `my-project` namespace.
 
 . Recreate the original PVC resource specifications, linking the PVCs to the appropriate PV:
 +
-For example:
-+
+.Example PVC resource specification
 [source,shell,subs="+quotes,attributes"]
 ----
 apiVersion: v1
@@ -90,8 +79,7 @@ spec:
 
 . Edit the PV specifications to delete the `claimRef` properties that bound the original PVC.
 +
-For example:
-+
+.Example PV specification
 [source,shell,subs="+quotes,attributes"]
 ----
 apiVersion: v1
@@ -156,73 +144,70 @@ claimRef:
   uid: 54be1c60-3319-11ea-97b0-0aef8816c7ea
 ----
 
-. Deploy the Cluster Operator.
+. Deploy the Cluster Operator:
 +
-[source,shell,subs="+quotes,attributes"]
+[source,shell]
 ----
-kubectl create -f install/cluster-operator -n _my-project_
+kubectl create -f install/cluster-operator -n my-project
 ----
 
-. Recreate your cluster.
+. Recreate all `KafkaTopic` resources by applying the `KafkaTopic` resource configuration:
 +
-Follow the steps depending on whether or not you have all the `KafkaTopic` resources needed to recreate your cluster.
-+
---
-*_Option 1_*: If you have *all* the `KafkaTopic` resources that existed before you lost your cluster, including internal topics such as committed offsets from `__consumer_offsets`:
+[source,shell]
+----
+kubectl apply -f <topic_configuration_file>
+----
 
-. Recreate all `KafkaTopic` resources.
+. Recreate all `KafkaUser` resources:
+.. If user passwords and certificates need to be retained, recreate the user secrets before recreating the `KafkaUser` resources. 
 +
-It is essential that you recreate the resources before deploying the cluster, or the Topic Operator will delete the topics.
+If the secrets are not recreated, the User Operator will generate new credentials automatically. 
+Ensure that the recreated secrets have exactly the same name, labels, and fields as the original secrets.
 
-. Deploy the Kafka cluster.
+.. Apply the `KafkaUser` resource configuration:
 +
-For example:
-+
-[source,shell,subs="+quotes,attributes"]
-----
-kubectl apply -f _kafka.yaml_
-----
---
-+
---
-*_Option 2_*: If you do not have all the `KafkaTopic` resources that existed before you lost your cluster:
+[source,shell]
+kubectl apply -f <user_configuration_file>
 
-. Deploy the Kafka cluster, as with the first option, but without the Topic Operator by removing the `topicOperator` property from the Kafka resource before deploying.
+. Deploy the Kafka cluster using the original configuration for the `Kafka` resource:
 +
-If you include the Topic Operator in the deployment, the Topic Operator will delete all the topics.
+[source,shell]
+----
+kubectl apply -f <kafka_resource_configuration>.yaml -n my-project
+----
 
-. Delete the internal topic store topics from the Kafka cluster:
+. Verify the recovery of the `KafkaTopic` resources:
 +
-[source,shell,subs="+attributes"]
+[source,shell]
 ----
-kubectl run kafka-admin -ti --image={DockerKafkaImageCurrent} --rm=true --restart=Never -- ./bin/kafka-topics.sh --bootstrap-server localhost:9092 --topic __strimzi-topic-operator-kstreams-topic-store-changelog --delete && ./bin/kafka-topics.sh --bootstrap-server localhost:9092 --topic __strimzi_store_topic --delete
+kubectl get kafkatopics -o wide -w -n my-project
 ----
 +
-The command must correspond to the type of listener and authentication used to access the Kafka cluster.
+.Kafka topic status
+[source,shell,subs="+quotes"]
+----
+NAME         CLUSTER     PARTITIONS  REPLICATION FACTOR READY
+my-topic-1   my-cluster  10          3                  True
+my-topic-2   my-cluster  10          3                  True
+my-topic-3   my-cluster  10          3                  True
+----
++
+`KafkaTopic` custom resource creation is successful when the `READY` output shows `True`. 
 
-. Enable the Topic Operator by redeploying the Kafka cluster with the `topicOperator` property to recreate the `KafkaTopic` resources.
+. Verify the recovery of the `KafkaUser` resources:
 +
-For example:
+[source,shell]
+----
+kubectl get kafkausers -o wide -w -n my-project
+----
 +
-[source,shell,subs="+quotes,attributes"]
+.Kafka user status
+[source,shell,subs="+quotes"]
 ----
-apiVersion: {KafkaApiVersion}
-kind: Kafka
-metadata:
-  name: my-cluster
-spec:
-  #...
-  entityOperator:
-    *topicOperator: {}* <1>
-    #...
+NAME       CLUSTER     AUTHENTICATION  AUTHORIZATION READY
+my-user-1  my-cluster  tls             simple        True
+my-user-2  my-cluster  tls             simple        True
+my-user-3  my-cluster  tls             simple        True
 ----
---
-<1> Here we show the default configuration, which has no additional properties.
-You specify the required configuration using the properties described in the link:{BookURLConfiguring}#type-EntityTopicOperatorSpec-reference[`EntityTopicOperatorSpec` schema reference^].
-
-. Verify the recovery by listing the `KafkaTopic` resources:
 +
-[source,shell,subs="+quotes,attributes"]
-----
-kubectl get KafkaTopic
-----
+`KafkaUser` custom resource creation is successful when the `READY` output shows `True`.
