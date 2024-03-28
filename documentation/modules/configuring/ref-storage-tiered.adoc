@@ -9,7 +9,7 @@ WARNING: Tiered storage is an early access Kafka feature, which is also availabl
 Due to its https://kafka.apache.org/documentation/#tiered_storage_limitation[current limitations^], it is not recommended for production environments. 
 
 Tiered storage requires an implementation of Kafka's `RemoteStorageManager` interface to handle communication between Kafka and the remote storage system, which is enabled through configuration of the `Kafka` resource.
-Strimzi uses Kafka's `TopicBasedRemoteLogMetadataManager` for Remote Log Metadata Management (RLMM) when custom tiered storage is enabled.
+Strimzi uses Kafka's https://github.com/apache/kafka/blob/trunk/storage/src/main/java/org/apache/kafka/server/log/remote/metadata/storage/TopicBasedRemoteLogMetadataManager.java[`TopicBasedRemoteLogMetadataManager`^] for Remote Log Metadata Management (RLMM) when custom tiered storage is enabled.
 The RLMM manages the metadata related to remote storage.  
 
 To use custom tiered storage, do the following:
