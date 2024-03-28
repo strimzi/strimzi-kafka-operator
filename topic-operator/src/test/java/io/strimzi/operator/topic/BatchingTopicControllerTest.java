@@ -487,13 +487,7 @@ class BatchingTopicControllerTest {
               TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
               TopicOperatorConfig.NAMESPACE.key(), "some-namespace",
               TopicOperatorConfig.SASL_ENABLED.key(), "true",
-              TopicOperatorConfig.SASL_CUSTOM_CONFIG_JSON.key(), """
-                    {
-                        "sasl.mechanism": "WAS_SMK_IAM",
-                        "sasl.jaas.config": "some.custom.auth.iam.IAMLoginModule required;",
-                        "sasl.client.callback.handler.class": "some.other.nonstandard.iam.IAMClientCallbackHandler"
-                    }
-                    """
+              TopicOperatorConfig.SKIP_CLUSTER_CONFIG_REVIEW.key(), "true"
         ));
 
         new BatchingTopicController(config, Map.of("key", "VALUE"), admin, client, metrics, replicasChangeClient);

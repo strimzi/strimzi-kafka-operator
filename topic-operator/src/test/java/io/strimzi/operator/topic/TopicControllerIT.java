@@ -1234,7 +1234,8 @@ class TopicControllerIT {
                 false, "", "", "", "", "",
                 useFinalizer,
                 100, 100, 10, false,
-                false, false, "", 9090, false, false, "", "", "");
+                false, false, "", 9090, false, false, "", "", "",
+                "", false);
     }
 
     @ParameterizedTest
@@ -1987,7 +1988,8 @@ class TopicControllerIT {
                 false, "", "", "", "", "",
                 true,
                 1, 100, 5_0000, false,
-                false, false, "", 9090, false, false, "", "", "");
+                false, false, "", 9090, false, false, "", "", "",
+                "", false);
 
         maybeStartOperator(config);
 

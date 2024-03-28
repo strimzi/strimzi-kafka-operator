@@ -64,6 +64,8 @@ import static io.strimzi.operator.common.operator.resource.ConfigParameterParser
  * @param cruiseControlCrtFilePath      Certificate chain to be trusted
  * @param cruiseControlApiUserPath      Api admin username file path
  * @param cruiseControlApiPassPath      Api admin password file path
+ * @param customAlterableConfigurations Comma separated list of the alterable Kafka topic properties
+ * @param skipClusterConfigReview       For some managed Kafka services the Cluster config is not callable, so this skips those calls.
  */
 public record TopicOperatorConfig(
         String namespace,
@@ -96,7 +98,9 @@ public record TopicOperatorConfig(
         boolean cruiseControlAuthEnabled,
         String cruiseControlCrtFilePath,
         String cruiseControlApiUserPath,
-        String cruiseControlApiPassPath
+        String cruiseControlApiPassPath,
+        String customAlterableConfigurations,
+        boolean skipClusterConfigReview
 ) {
     private final static ReconciliationLogger LOGGER = ReconciliationLogger.create(TopicOperatorConfig.class);
 
@@ -126,7 +130,9 @@ public record TopicOperatorConfig(
     static final ConfigParameter<Integer> MAX_BATCH_SIZE = new ConfigParameter<>("STRIMZI_MAX_BATCH_SIZE", strictlyPositive(INTEGER), "100", CONFIG_VALUES);
     static final ConfigParameter<Long> MAX_BATCH_LINGER_MS = new ConfigParameter<>("STRIMZI_MAX_BATCH_LINGER_MS", strictlyPositive(LONG), "100", CONFIG_VALUES);
     static final ConfigParameter<Boolean> ENABLE_ADDITIONAL_METRICS = new ConfigParameter<>("STRIMZI_ENABLE_ADDITIONAL_METRICS", BOOLEAN, "false", CONFIG_VALUES);
-    
+    static final ConfigParameter<String> CUSTOM_ALTERABLE_CONFIGURATIONS = new ConfigParameter<>("STRIMZI_CUSTOM_ALTERABLE_CONFIGURATIONS", STRING, "", CONFIG_VALUES);
+    static final ConfigParameter<Boolean> SKIP_CLUSTER_CONFIG_REVIEW = new ConfigParameter<>("STRIMZI_SKIP_CLUSTER_CONFIG_REVIEW", BOOLEAN, "false", CONFIG_VALUES);
+
     // Cruise Control integration
     static final ConfigParameter<Boolean> CRUISE_CONTROL_ENABLED = new ConfigParameter<>("STRIMZI_CRUISE_CONTROL_ENABLED", BOOLEAN, "false", CONFIG_VALUES);
     static final ConfigParameter<Boolean> CRUISE_CONTROL_RACK_ENABLED = new ConfigParameter<>("STRIMZI_CRUISE_CONTROL_RACK_ENABLED", BOOLEAN, "false", CONFIG_VALUES);
@@ -199,7 +205,9 @@ public record TopicOperatorConfig(
                 get(map, CRUISE_CONTROL_AUTH_ENABLED),
                 get(map, CRUISE_CONTROL_CRT_FILE_PATH),
                 get(map, CRUISE_CONTROL_API_USER_PATH),
-                get(map, CRUISE_CONTROL_API_PASS_PATH)
+                get(map, CRUISE_CONTROL_API_PASS_PATH),
+                get(map, CUSTOM_ALTERABLE_CONFIGURATIONS),
+                get(map, SKIP_CLUSTER_CONFIG_REVIEW)
         );
     }
 

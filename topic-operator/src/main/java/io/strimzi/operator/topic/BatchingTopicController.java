@@ -46,6 +46,7 @@ import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
 import java.io.InterruptedIOException;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -63,6 +64,7 @@ import java.util.stream.Stream;
 
 import static io.strimzi.api.kafka.model.topic.ReplicasChangeState.ONGOING;
 import static io.strimzi.api.kafka.model.topic.ReplicasChangeState.PENDING;
+import static io.strimzi.operator.topic.TopicOperatorConfig.SKIP_CLUSTER_CONFIG_REVIEW;
 import static io.strimzi.operator.topic.TopicOperatorUtil.topicNames;
 
 /**
@@ -105,15 +107,12 @@ public class BatchingTopicController {
         this.useFinalizer = config.useFinalizer();
         this.admin = admin;
 
-        var isCustomSaslConfigSet = config.saslCustomConfigJson() != null && !config.saslCustomConfigJson().isBlank();
-        if (isCustomSaslConfigSet) {
+        if (config.skipClusterConfigReview()) {
             LOGGER.warnOp(
-                  "Custom SASL config is being used. Some managed Kafka services like AWS MSK " +
-                  "don't allow reading cluster config. So the " + AUTO_CREATE_TOPICS_ENABLE +
-                  " property is not being tested.");
-            LOGGER.warnOp(
+                  SKIP_CLUSTER_CONFIG_REVIEW.key() + " is set to false. Some managed Kafka services " +
+                  "like AWS MSK don't allow reading cluster config. " +
                   "It is recommended that " + AUTO_CREATE_TOPICS_ENABLE + " is set to 'false' " +
-                        "to avoid races between the operator and Kafka applications auto-creating topics");
+                  "to avoid races between the operator and Kafka applications auto-creating topics");
         } else {
             // Get the config of some broker and check whether auto topic creation is enabled
             Optional<String> autoCreateValue = getClusterConfig(admin, AUTO_CREATE_TOPICS_ENABLE);
@@ -594,9 +593,8 @@ public class BatchingTopicController {
      * @param reconcilableTopics Reconcilable topic.
      */
     private void warnTooLargeMinIsr(List<ReconcilableTopic> reconcilableTopics) {
-        var isCustomSaslConfigSet = config.saslCustomConfigJson() != null && !config.saslCustomConfigJson().isBlank();
-        if (isCustomSaslConfigSet) {
-            LOGGER.warnOp("Custom SASL config is being used. Some managed Kafka services like AWS MSK " +
+        if (config.skipClusterConfigReview()) {
+            LOGGER.warnOp(SKIP_CLUSTER_CONFIG_REVIEW.key() + " is set to false. Some managed Kafka services like AWS MSK " +
                   "don't allow reading cluster config. So the " + MIN_INSYNC_REPLICAS +
                   " property is not being tested.");
 
@@ -731,7 +729,7 @@ public class BatchingTopicController {
         replicasChangeResults.errors().forEach(pair -> putResult(results, pair.getKey(), Either.ofLeft(pair.getValue())));
     }
 
-    private static List<Pair<ReconcilableTopic, Collection<AlterConfigOp>>> configChanges(Map<ReconcilableTopic, Either<TopicOperatorException, Object>> results, PartitionedByError<ReconcilableTopic, CurrentState> currentStatesOrError) {
+    private List<Pair<ReconcilableTopic, Collection<AlterConfigOp>>> configChanges(Map<ReconcilableTopic, Either<TopicOperatorException, Object>> results, PartitionedByError<ReconcilableTopic, CurrentState> currentStatesOrError) {
         // Determine config changes
         Map<Boolean, List<Pair<ReconcilableTopic, Collection<AlterConfigOp>>>> alterConfigs = currentStatesOrError.ok().map(pair -> {
             var reconcilableTopic = pair.getKey();
@@ -1105,7 +1103,7 @@ public class BatchingTopicController {
         }
     }
 
-    private static Collection<AlterConfigOp> buildAlterConfigOps(Reconciliation reconciliation, KafkaTopic kt, Config configs) {
+    private Collection<AlterConfigOp> buildAlterConfigOps(Reconciliation reconciliation, KafkaTopic kt, Config configs) {
         Set<AlterConfigOp> alterConfigOps = new HashSet<>();
         if (hasConfig(kt)) {
             for (var specConfigEntry : kt.getSpec().getConfig().entrySet()) {
@@ -1131,6 +1129,20 @@ public class BatchingTopicController {
                     new ConfigEntry(key, null),
                     AlterConfigOp.OpType.DELETE));
         }
+
+        var customAlterableConfigs = config.customAlterableConfigurations();
+        if (customAlterableConfigs != null && !customAlterableConfigs.isBlank()) {
+            var cleanPropertyNames = customAlterableConfigs.replaceAll("\\s", "");
+            var properties = cleanPropertyNames.split(",");
+            var propertySet = new HashSet<>(Arrays.asList(properties));
+
+            var filteredOps = alterConfigOps.stream()
+                  .filter(op -> propertySet.contains(op.configEntry().name()))
+                  .toList();
+
+            alterConfigOps = new HashSet<>(filteredOps);
+        }
+
         if (alterConfigOps.isEmpty()) {
             LOGGER.debugCr(reconciliation, "No config change");
         } else {
