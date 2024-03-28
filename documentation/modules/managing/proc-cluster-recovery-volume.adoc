@@ -8,11 +8,10 @@
 [role="_abstract"]
 This procedure describes how to recover a deleted cluster from persistent volumes (PVs) by recreating the original `PersistentVolumeClaim` (PVC) resources.
 
-If the Topic Operator is deployed, you can also recover `KafkaTopic` resources.
-This must be done before the cluster is started so that the corresponding topics are not deleted.
+If the Topic Operator and User Operator are deployed, you can recover `KafkaTopic` and `KafkaUser` resources by recreating them. 
+This procedure shows how to recreate both resources.
 
-NOTE: The procedure does not include recovery of `KafkaUser` resources, which must be recreated manually.
-If passwords and certificates need to be retained, secrets must be recreated before creating the `KafkaUser` resources.
+WARNING: If the User Operator is enabled and Kafka users are not recreated, users are deleted from the Kafka cluster immediately after recovery. 
 
 .Before you begin
 
@@ -151,12 +150,31 @@ claimRef:
 kubectl create -f install/cluster-operator -n my-project
 ----
 
-. Recreate all `KafkaTopic` resources:
+. Recreate all `KafkaTopic` resources by applying the `KafkaTopic` resource configuration:
 +
 [source,shell]
+----
 kubectl apply -f <topic_configuration_file>
+----
+
+. Recreate all `KafkaUser` resources:
+.. If user passwords and certificates need to be retained, recreate the user secrets before recreating the `KafkaUser` resources.
+For example, you can create your own TLS certificate and key file, then create a secret from the file:
 +
-It is essential that you recreate the resources before deploying the cluster or the Topic Operator will delete the topics.
+[source,shell]
+----
+kubectl create secret generic my-secret \
+--from-file=tls.crt \
+--from-file=tls.key
+----
++
+The files must contain the user's certificate, private key, and any other required information
+Strimzi generates user secrets based on the names of users, so ensure that the secrets are recreated with the name corresponding to the Kafka users.
+
+.. Apply the `KafkaUser` resource configuration:
++
+[source,shell]
+kubectl apply -f <user_configuration_file>
 
 . Deploy the Kafka cluster using the original configuration for the `Kafka` resource:
 +
@@ -165,7 +183,7 @@ It is essential that you recreate the resources before deploying the cluster or 
 kubectl apply -f <kafka_resource_configuration>.yaml -n my-project
 ----
 
-. Verify the recovery by listing the `KafkaTopic` resources:
+. Verify the recovery of the `KafkaTopic` resources:
 +
 [source,shell]
 ----
@@ -181,4 +199,22 @@ my-topic-2   my-cluster  10          3                  True
 my-topic-3   my-cluster  10          3                  True
 ----
 +
-Topic creation is successful when the `READY` output shows `True`.
+`KafkaTopic` custom resource creation is successful when the `READY` output shows `True`. 
+
+. Verify the recovery of the `KafkaUser` resources:
++
+[source,shell]
+----
+kubectl get kafkausers -o wide -w -n my-project
+----
++
+.Kafka user status
+[source,shell,subs="+quotes"]
+----
+NAME       CLUSTER     AUTHENTICATION  AUTHORIZATION READY
+my-user-1  my-cluster  tls             simple        True
+my-user-2  my-cluster  tls             simple        True
+my-user-3  my-cluster  tls             simple        True
+----
++
+`KafkaUser` custom resource creation is successful when the `READY` output shows `True`.
