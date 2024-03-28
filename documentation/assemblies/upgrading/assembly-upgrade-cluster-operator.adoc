@@ -62,8 +62,8 @@ For the `strimzi-store-topic` and `strimzi-topic-operator` topics, delete the re
 .Deleting internal topics used by the operator
 [source,shell,subs=+quotes]
 ----
-kubectl delete $(kubectl get kt -n <namespace_name> -o name | grep strimzi-store-topic) \
-  && kubectl delete $(kubectl get kt -n <namespace_name> -o name | grep strimzi-topic-operator)
+kubectl delete $(kubectl get kt -n <namespace> -o name | grep strimzi-store-topic) \
+  && kubectl delete $(kubectl get kt -n <namespace> -o name | grep strimzi-topic-operator)
 ----
 
 For the internal topics for storing consumer offsets and transaction states, `consumer-offsets` and `transaction-state`, you want to retain them in Kafka, but you don't want them to be managed by the Topic Operator.
@@ -74,8 +74,8 @@ Annotating the `KafkaTopic` resources with `strimzi.io/managed="false"` indicate
 .Discontinuing management of internal topics
 [source,shell,subs=+quotes]
 ----
-kubectl annotate $(kubectl get kt -n <namespace_name> -o name | grep consumer-offsets) strimzi.io/managed="false" \
-  && kubectl annotate $(kubectl get kt -n <namespace_name> -o name | grep transaction-state) strimzi.io/managed="false"
+kubectl annotate $(kubectl get kt -n <namespace> -o name | grep consumer-offsets) strimzi.io/managed="false" \
+  && kubectl annotate $(kubectl get kt -n <namespace> -o name | grep transaction-state) strimzi.io/managed="false"
 ----
 
 Having discontinued their management, delete the `KafkaTopic` resources:
@@ -83,8 +83,8 @@ Having discontinued their management, delete the `KafkaTopic` resources:
 .Deleting the resources for managing internal topics
 [source,shell,subs=+quotes]
 ----
-kubectl delete $(kubectl get kt -n <namespace_name> -o name | grep consumer-offsets) \
-  && kubectl delete $(kubectl get kt -n <namespace_name> -o name | grep transaction-state)
+kubectl delete $(kubectl get kt -n <namespace> -o name | grep consumer-offsets) \
+  && kubectl delete $(kubectl get kt -n <namespace> -o name | grep transaction-state)
 ----
 
 By discontinuing their management, they won't also be deleted in Kafka.
