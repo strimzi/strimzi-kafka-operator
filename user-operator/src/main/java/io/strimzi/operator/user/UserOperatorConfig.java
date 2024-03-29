@@ -6,6 +6,7 @@ package io.strimzi.operator.user;
 
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.ConfigParameter;
+import io.strimzi.operator.common.operator.resource.ConfigParameterParser;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -128,6 +129,11 @@ public class UserOperatorConfig {
      */
     public static final ConfigParameter<List<String>> MAINTENANCE_TIME_WINDOWS = new ConfigParameter<>("STRIMZI_MAINTENANCE_TIME_WINDOWS", SEMICOLON_SEPARATED_LIST, "", CONFIG_VALUES);
 
+    /**
+     * Configuration string with feature gates settings
+     */
+    public static final ConfigParameter<FeatureGates> FEATURE_GATES = new ConfigParameter<>("STRIMZI_FEATURE_GATES", parseFeatureGates(), "", CONFIG_VALUES);
+
     private final Map<String, Object> map;
 
     /**
@@ -152,6 +158,10 @@ public class UserOperatorConfig {
         Map<String, Object> generatedMap = ConfigParameter.define(envMap, CONFIG_VALUES);
 
         return new UserOperatorConfig(generatedMap);
+    }
+
+    static ConfigParameterParser<FeatureGates> parseFeatureGates() {
+        return FeatureGates::new;
     }
 
     /**
@@ -366,6 +376,12 @@ public class UserOperatorConfig {
         return get(CERTS_RENEWAL_DAYS);
     }
 
+    /**
+     * @return  Feature gates configuration
+     */
+    public FeatureGates featureGates()  {
+        return get(FEATURE_GATES);
+    }
 
     @Override
     public String toString() {
