@@ -301,6 +301,43 @@ public class ResourceOperatorSupplier {
                                     KafkaAgentClientProvider kafkaAgentClientProvider,
                                     MetricsProvider metricsProvider,
                                     PlatformFeaturesAvailability pfa,
+                                    long operationTimeoutMs,
+                                    boolean useServerSideApply) {
+        this(vertx,
+                client,
+                zlf,
+                adminClientProvider,
+                zkScalerProvider,
+                kafkaAgentClientProvider,
+                metricsProvider,
+                pfa,
+                operationTimeoutMs,
+                new KubernetesRestartEventPublisher(client, "operatorName"),
+                useServerSideApply
+        );
+    }
+
+    /**
+     * Constructor used for tests
+     *
+     * @param vertx                     Vert.x instance
+     * @param client                    Kubernetes Client
+     * @param zlf                       ZooKeeper Leader Finder
+     * @param adminClientProvider       Kafka Admin client provider
+     * @param zkScalerProvider          ZooKeeper Scaler provider
+     * @param kafkaAgentClientProvider  Kafka Agent client provider
+     * @param metricsProvider           Metrics provider
+     * @param pfa                       Platform Availability Features
+     * @param operationTimeoutMs        Operation timeout in milliseconds
+     */
+    public ResourceOperatorSupplier(Vertx vertx,
+                                    KubernetesClient client,
+                                    ZookeeperLeaderFinder zlf,
+                                    AdminClientProvider adminClientProvider,
+                                    ZookeeperScalerProvider zkScalerProvider,
+                                    KafkaAgentClientProvider kafkaAgentClientProvider,
+                                    MetricsProvider metricsProvider,
+                                    PlatformFeaturesAvailability pfa,
                                     long operationTimeoutMs) {
         this(vertx,
                 client,

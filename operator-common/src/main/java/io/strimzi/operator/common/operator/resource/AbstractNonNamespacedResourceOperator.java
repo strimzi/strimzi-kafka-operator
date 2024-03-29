@@ -193,7 +193,7 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
         try {
             T result = patch(reconciliation, name, desired);
             LOGGER.debugCr(reconciliation, "{} {} in namespace {} has been patched", resourceKind, name);
-            return Future.succeededFuture(ReconcileResult.patched(result));
+            return Future.succeededFuture(ReconcileResult.patchedUsingServerSideApply(result));
         } catch (Exception e) {
             LOGGER.debugCr(reconciliation, "Caught exception while patching {} {} in namespace {}", resourceKind, name, e);
             return Future.failedFuture(e);

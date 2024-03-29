@@ -721,6 +721,12 @@ public class ResourceUtils {
                 .build();
     }
 
+    public static ClusterOperatorConfig dummyClusterOperatorConfig(KafkaVersion.Lookup versions, String featureGates) {
+        return new ClusterOperatorConfigBuilder(dummyClusterOperatorConfig(), versions)
+                .with(ClusterOperatorConfig.FEATURE_GATES.key(), featureGates)
+                .build();
+    }
+
     public static ClusterOperatorConfig dummyClusterOperatorConfig(String featureGates) {
         return new ClusterOperatorConfigBuilder(dummyClusterOperatorConfig(), KafkaVersionTestUtils.getKafkaVersionLookup())
                 .with(ClusterOperatorConfig.FEATURE_GATES.key(), featureGates)
