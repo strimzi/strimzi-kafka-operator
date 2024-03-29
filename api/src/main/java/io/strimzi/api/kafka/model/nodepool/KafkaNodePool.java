@@ -58,7 +58,7 @@ import java.util.Map;
                     @Crd.Spec.AdditionalPrinterColumn(
                                 name = "Roles",
                                 description = "Roles of the nodes in the pool",
-                                jsonPath = ".spec.roles",
+                                jsonPath = ".status.roles",
                                 type = "string")
                 }
         )
