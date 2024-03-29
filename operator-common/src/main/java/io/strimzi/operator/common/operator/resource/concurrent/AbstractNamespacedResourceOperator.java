@@ -22,7 +22,6 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
-import io.vertx.core.Future;
 
 import java.util.ArrayList;
 import java.util.List;

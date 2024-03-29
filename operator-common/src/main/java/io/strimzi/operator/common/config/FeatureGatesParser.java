@@ -1,3 +1,7 @@
+/*
+ * Copyright Strimzi authors.
+ * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
+ */
 package io.strimzi.operator.common.config;
 
 import io.strimzi.operator.common.InvalidConfigurationException;
@@ -14,6 +18,9 @@ import static java.util.Arrays.asList;
 public class FeatureGatesParser {
     private List<String> featureGates = Collections.emptyList();
 
+    /**
+     * @param featureGateConfig String with all feature gates joined by ","
+     */
     public FeatureGatesParser(String featureGateConfig) {
         if (featureGateConfig != null && !featureGateConfig.trim().isEmpty()) {
             if (featureGateConfig.matches("(\\s*[+-][a-zA-Z0-9]+\\s*,)*\\s*[+-][a-zA-Z0-9]+\\s*")) {
@@ -24,13 +31,16 @@ public class FeatureGatesParser {
         }
     }
 
-    public void applyFor(Map<String, FeatureGate> possibleFeatureGates) {
+    /**
+     * @param possibleFeatureGateWithDefaultValues Map of possibe feature gates and its default values
+     */
+    public void applyFor(Map<String, FeatureGate> possibleFeatureGateWithDefaultValues) {
         for (String featureGate : featureGates) {
             boolean value = '+' == featureGate.charAt(0);
             featureGate = featureGate.substring(1);
 
-            if (possibleFeatureGates.containsKey(featureGate)) {
-                setValueOnlyOnce(possibleFeatureGates.get(featureGate), value);
+            if (possibleFeatureGateWithDefaultValues.containsKey(featureGate)) {
+                setValueOnlyOnce(possibleFeatureGateWithDefaultValues.get(featureGate), value);
             } else {
                 throw new InvalidConfigurationException("Unknown feature gate " + featureGate + " found in the configuration");
             }
