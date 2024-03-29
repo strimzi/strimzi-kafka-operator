@@ -54,7 +54,12 @@ import java.util.Map;
                                 name = "Desired replicas",
                                 description = "The desired number of replicas",
                                 jsonPath = ".spec.replicas",
-                                type = "integer")
+                                type = "integer"),
+                    @Crd.Spec.AdditionalPrinterColumn(
+                                name = "Roles",
+                                description = "Roles of the nodes in the pool",
+                                jsonPath = ".status.roles",
+                                type = "string")
                 }
         )
 )
