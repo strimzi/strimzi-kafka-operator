@@ -42,11 +42,11 @@ public abstract class AdminApiOperatorIT<T, S extends Collection<String>> {
     @BeforeAll
     public static void beforeAll() {
         Map<String, String> additionalConfiguration = Map.of(
-            "authorizer.class.name", "kafka.security.authorizer.AclAuthorizer",
-            "super.users", "User:ANONYMOUS");
+                "authorizer.class.name", "kafka.security.authorizer.AclAuthorizer",
+                "super.users", "User:ANONYMOUS");
         kafkaContainer = new StrimziKafkaContainer()
-            .withBrokerId(1)
-            .withKafkaConfigurationMap(additionalConfiguration);
+                .withBrokerId(1)
+                .withKafkaConfigurationMap(additionalConfiguration);
         kafkaContainer.start();
 
         Properties p = new Properties();
@@ -130,7 +130,7 @@ public abstract class AdminApiOperatorIT<T, S extends Collection<String>> {
             LOGGER.info("Checking user creation");
             CompletionStage<ReconcileResult<T>> reconcile = op.reconcile(Reconciliation.DUMMY_RECONCILIATION, username, newResource);
             ReconcileResult<T> reconcileResult = reconcile.toCompletableFuture().get();
-            assertThat(reconcileResult.toString(), is(createPatches() ? "PATCH" : "CREATED"));
+            assertThat(reconcileResult.getType(), is(createPatches() ? ReconcileResult.Type.PATCHED : ReconcileResult.Type.CREATED));
             T created = get(username);
             assertThat(created, is(notNullValue()));
             assertResources(newResource, created);
@@ -146,7 +146,7 @@ public abstract class AdminApiOperatorIT<T, S extends Collection<String>> {
             LOGGER.info("Checking user modification");
             reconcile = op.reconcile(Reconciliation.DUMMY_RECONCILIATION, username, modResource);
             reconcileResult = reconcile.toCompletableFuture().get();
-            assertThat(reconcileResult.toString(), is("PATCH"));
+            assertThat(reconcileResult.getType(), is(ReconcileResult.Type.PATCHED));
             T modified = get(username);
             assertThat(modified, is(notNullValue()));
             assertResources(modResource, modified);
@@ -155,7 +155,7 @@ public abstract class AdminApiOperatorIT<T, S extends Collection<String>> {
             LOGGER.info("Checking user deletion");
             reconcile = op.reconcile(Reconciliation.DUMMY_RECONCILIATION, username, null);
             reconcileResult = reconcile.toCompletableFuture().get();
-            assertThat(reconcileResult.toString(), is("DELETED"));
+            assertThat(reconcileResult.getType(), is(ReconcileResult.Type.DELETED));
             T deleted = get(username);
             assertThat(deleted, is(nullValue()));
 
@@ -170,7 +170,7 @@ public abstract class AdminApiOperatorIT<T, S extends Collection<String>> {
             LOGGER.info("Checking deletion of non-existent user");
             reconcile = op.reconcile(Reconciliation.DUMMY_RECONCILIATION, username, null);
             reconcileResult = reconcile.toCompletableFuture().get();
-            assertThat(reconcileResult.toString(), is("NOOP"));
+            assertThat(reconcileResult.getType(), is(ReconcileResult.Type.NOOP));
             deleted = get(username);
             assertThat(deleted, is(nullValue()));
         } finally {
