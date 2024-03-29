@@ -98,7 +98,7 @@ public abstract class ReconcileResult<R> {
      * @param <D> The type of resource.
      * @return a reconciliation result that indicates the resource was patched using server side apply
      */
-    public static <D> Patched<D> patchedUsingServerSideApply(D resource) {
+    public static <D> ReconcileResult<D> patchedUsingServerSideApply(D resource) {
         return new Patched<>(resource, true);
     }
 

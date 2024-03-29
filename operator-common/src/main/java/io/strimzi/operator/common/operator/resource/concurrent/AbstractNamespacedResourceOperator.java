@@ -22,6 +22,7 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
+import io.vertx.core.Future;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -54,15 +55,19 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
      */
     public static final String ANY_NAMESPACE = "*";
 
+    private final boolean useServerSideApply;
+
     /**
      * Constructor.
      *
      * @param asyncExecutor Executor to use for asynchronous subroutines
      * @param client        The kubernetes client.
      * @param resourceKind  The mind of Kubernetes resource (used for logging).
+     * @param useServerSideApply Whether to use server side apply
      */
-    protected AbstractNamespacedResourceOperator(Executor asyncExecutor, C client, String resourceKind) {
+    protected AbstractNamespacedResourceOperator(Executor asyncExecutor, C client, String resourceKind, boolean useServerSideApply) {
         super(asyncExecutor, client, resourceKind);
+        this.useServerSideApply = useServerSideApply;
     }
 
     protected abstract MixedOperation<T, L, R> operation();
@@ -93,14 +98,29 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
      * @return A CompletionStage which completes when the resource has been updated.
      */
     public CompletionStage<ReconcileResult<T>> reconcile(Reconciliation reconciliation, String namespace, String name, T desired) {
-        if (desired != null && !namespace.equals(desired.getMetadata().getNamespace())) {
-            return CompletableFuture.failedStage(new IllegalArgumentException("Given namespace " + namespace + " incompatible with desired namespace " + desired.getMetadata().getNamespace()));
-        } else if (desired != null && !name.equals(desired.getMetadata().getName())) {
-            return CompletableFuture.failedStage(new IllegalArgumentException("Given name " + name + " incompatible with desired name " + desired.getMetadata().getName()));
-        }
+        if (useServerSideApply) {
+            if (desired != null) {
+                if (desired.getMetadata().getManagedFields() != null && !desired.getMetadata().getManagedFields().isEmpty()) {
+                    LOGGER.debugCr(reconciliation, "Deleting managedFields from request before pathing resource {} {}/{}", resourceKind, namespace, name);
+                    desired.getMetadata().setManagedFields(null);
+                }
 
-        return CompletableFuture.supplyAsync(() -> operation().inNamespace(namespace).withName(name).get(), asyncExecutor)
-            .thenCompose(current -> this.reconcile(reconciliation, namespace, name, current, desired));
+                LOGGER.debugCr(reconciliation, "{} {}/{} desired, patching it", resourceKind, namespace, name);
+                return internalPatch(reconciliation, namespace, name, desired);
+            } else {
+                LOGGER.debugCr(reconciliation, "{} {}/{} no longer desired, deleting it", resourceKind, namespace, name);
+                return internalDelete(reconciliation, namespace, name);
+            }
+        } else {
+            if (desired != null && !namespace.equals(desired.getMetadata().getNamespace())) {
+                return CompletableFuture.failedStage(new IllegalArgumentException("Given namespace " + namespace + " incompatible with desired namespace " + desired.getMetadata().getNamespace()));
+            } else if (desired != null && !name.equals(desired.getMetadata().getName())) {
+                return CompletableFuture.failedStage(new IllegalArgumentException("Given name " + name + " incompatible with desired name " + desired.getMetadata().getName()));
+            }
+
+            return CompletableFuture.supplyAsync(() -> operation().inNamespace(namespace).withName(name).get(), asyncExecutor)
+                    .thenCompose(current -> this.reconcile(reconciliation, namespace, name, current, desired));
+        }
     }
 
     /**
@@ -115,22 +135,37 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
      * @return A CompletionStage which completes when the resource has been updated.
      */
     public CompletionStage<ReconcileResult<T>> reconcile(Reconciliation reconciliation, String namespace, String name, T current, T desired) {
-        if (desired != null) {
-            if (current == null) {
-                LOGGER.debugCr(reconciliation, "{} {}/{} does not exist, creating it", resourceKind, namespace, name);
-                return internalCreate(reconciliation, namespace, name, desired);
+        if (useServerSideApply) {
+            if (desired != null) {
+                if (desired.getMetadata().getManagedFields() != null && !desired.getMetadata().getManagedFields().isEmpty()) {
+                    LOGGER.debugCr(reconciliation, "Deleting managedFields from request before pathing resource {} {}/{}", resourceKind, namespace, name);
+                    desired.getMetadata().setManagedFields(null);
+                }
+
+                LOGGER.debugCr(reconciliation, "{} {}/{} desired, patching it", resourceKind, namespace, name);
+                return internalPatch(reconciliation, namespace, name, desired);
             } else {
-                LOGGER.debugCr(reconciliation, "{} {}/{} already exists, updating it", resourceKind, namespace, name);
-                return internalUpdate(reconciliation, namespace, name, current, desired);
+                LOGGER.debugCr(reconciliation, "{} {}/{} no longer desired, deleting it", resourceKind, namespace, name);
+                return internalDelete(reconciliation, namespace, name);
             }
         } else {
-            if (current != null) {
-                // Deletion is desired
-                LOGGER.debugCr(reconciliation, "{} {}/{} exist, deleting it", resourceKind, namespace, name);
-                return internalDelete(reconciliation, namespace, name);
+            if (desired != null) {
+                if (current == null) {
+                    LOGGER.debugCr(reconciliation, "{} {}/{} does not exist, creating it", resourceKind, namespace, name);
+                    return internalCreate(reconciliation, namespace, name, desired);
+                } else {
+                    LOGGER.debugCr(reconciliation, "{} {}/{} already exists, updating it", resourceKind, namespace, name);
+                    return internalUpdate(reconciliation, namespace, name, current, desired);
+                }
             } else {
-                LOGGER.debugCr(reconciliation, "{} {}/{} does not exist, noop", resourceKind, namespace, name);
-                return CompletableFuture.completedStage(ReconcileResult.noop(null));
+                if (current != null) {
+                    // Deletion is desired
+                    LOGGER.debugCr(reconciliation, "{} {}/{} exist, deleting it", resourceKind, namespace, name);
+                    return internalDelete(reconciliation, namespace, name);
+                } else {
+                    LOGGER.debugCr(reconciliation, "{} {}/{} does not exist, noop", resourceKind, namespace, name);
+                    return CompletableFuture.completedStage(ReconcileResult.noop(null));
+                }
             }
         }
     }
@@ -173,6 +208,40 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
 
                     return CompletableFuture.allOf(futures.stream().map(CompletionStage::toCompletableFuture).toArray(CompletableFuture[]::new));
                 });
+    }
+
+    protected CompletionStage<ReconcileResult<T>> internalPatch(Reconciliation reconciliation, String namespace, String name, T desired) {
+        try {
+            return CompletableFuture.supplyAsync(() -> patch(reconciliation, namespace, name, desired), asyncExecutor)
+                    .thenApply(ReconcileResult::patchedUsingServerSideApply)
+                    .whenComplete((result, error) -> {
+                        if (error == null) {
+                            LOGGER.debugCr(reconciliation, "{} {} in namespace {} has been patched", resourceKind, name, namespace);
+                        } else {
+                            LOGGER.debugCr(reconciliation, "Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, error);
+                        }
+                    });
+        } catch (Exception e) {
+            LOGGER.debugCr(reconciliation, "Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, e);
+            return CompletableFuture.failedStage(e);
+        }
+    }
+
+    protected T patch(Reconciliation reconciliation, String namespace, String name, T desired) {
+        try {
+            return operation().inNamespace(namespace).withName(name).patch(serverSideApplyPatchContext(false), desired);
+        } catch (KubernetesClientException e) {
+            LOGGER.warnCr(reconciliation, "{} {} in namespace {} failed to apply, using force", resourceKind, name, namespace, e);
+            return operation().inNamespace(namespace).withName(name).patch(serverSideApplyPatchContext(true), desired);
+        }
+    }
+
+    protected PatchContext serverSideApplyPatchContext(boolean force) {
+        return new PatchContext.Builder()
+                .withPatchType(PatchType.SERVER_SIDE_APPLY)
+                .withFieldManager("strimzi-cluster-operator")
+                .withForce(force)
+                .build();
     }
 
     /**

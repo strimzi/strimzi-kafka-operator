@@ -22,9 +22,10 @@ public class SecretOperator extends AbstractNamespacedResourceOperator<Kubernete
      *
      * @param asyncExecutor Executor to use for asynchronous subroutines
      * @param client        The Kubernetes client
+     * @param useServerSideApply Whether to use server side apply
      */
-    public SecretOperator(Executor asyncExecutor, KubernetesClient client) {
-        super(asyncExecutor, client, "Secret");
+    public SecretOperator(Executor asyncExecutor, KubernetesClient client, boolean useServerSideApply) {
+        super(asyncExecutor, client, "Secret", useServerSideApply);
     }
 
     @Override

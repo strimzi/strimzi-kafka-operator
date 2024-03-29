@@ -28,7 +28,7 @@ public class KafkaUserCrdOperatorIT extends AbstractCustomResourceOperatorIT<Kub
 
     @Override
     protected CrdOperator<KubernetesClient, KafkaUser, KafkaUserList> operator() {
-        return new CrdOperator<>(ForkJoinPool.commonPool(), client, KafkaUser.class, KafkaUserList.class, KafkaUser.RESOURCE_KIND);
+        return new CrdOperator<>(ForkJoinPool.commonPool(), client, KafkaUser.class, KafkaUserList.class, KafkaUser.RESOURCE_KIND, false);
     }
 
     @Override

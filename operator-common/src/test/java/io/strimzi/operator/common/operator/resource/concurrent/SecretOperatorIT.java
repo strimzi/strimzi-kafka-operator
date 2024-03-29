@@ -48,6 +48,6 @@ public class SecretOperatorIT extends AbstractNamespacedResourceOperatorIT<Kuber
 
     @Override
     AbstractNamespacedResourceOperator<KubernetesClient, Secret, SecretList, Resource<Secret>> operator() {
-        return new SecretOperator(asyncExecutor, client);
+        return new SecretOperator(asyncExecutor, client, false);
     }
 }

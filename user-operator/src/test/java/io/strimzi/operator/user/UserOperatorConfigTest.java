@@ -32,6 +32,7 @@ public class UserOperatorConfigTest {
         ENV_VARS.put(UserOperatorConfig.CERTS_RENEWAL_DAYS.key(), "10");
         ENV_VARS.put(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.key(), "false");
         ENV_VARS.put(UserOperatorConfig.SCRAM_SHA_PASSWORD_LENGTH.key(), "20");
+        ENV_VARS.put(UserOperatorConfig.FEATURE_GATES.key(), "+UseServerSideApply");
 
 
         Map<String, String> labels = new HashMap<>(2);
@@ -63,6 +64,14 @@ public class UserOperatorConfigTest {
         assertThat(config.getBatchMaxBlockSize(), is(100));
         assertThat(config.getBatchMaxBlockTime(), is(100));
         assertThat(config.getUserOperationsThreadPoolSize(), is(4));
+    }
+
+    @Test
+    public void shouldParseCorrectlyFeatureGates() {
+        UserOperatorConfig config = UserOperatorConfig.buildFromMap(ENV_VARS);
+        FeatureGates featureGates = config.featureGates();
+
+        assertThat(featureGates.useServerSideApply(), is(true));
     }
 
     @Test

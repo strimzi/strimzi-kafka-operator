@@ -71,14 +71,15 @@ public class Main {
 
         // Create and log UserOperatorConfig
         UserOperatorConfig config = UserOperatorConfig.buildFromMap(System.getenv());
+        FeatureGates featureGates = config.featureGates();
         LOGGER.info("UserOperator configuration is {}", config);
 
         // Create KubernetesClient, AdminClient and KafkaUserOperator classes
         ExecutorService kafkaUserOperatorExecutor = Executors.newFixedThreadPool(config.getUserOperationsThreadPoolSize(), new OperatorWorkThreadFactory());
         KubernetesClient client = new OperatorKubernetesClientBuilder("strimzi-user-operator", Main.class.getPackage().getImplementationVersion()).build();
-        SecretOperator secretOperator = new SecretOperator(kafkaUserOperatorExecutor, client);
+        SecretOperator secretOperator = new SecretOperator(kafkaUserOperatorExecutor, client, featureGates.useServerSideApply());
         Admin adminClient = createAdminClient(config, secretOperator, new DefaultAdminClientProvider());
-        var kafkaUserCrdOperator = new CrdOperator<>(kafkaUserOperatorExecutor, client, KafkaUser.class, KafkaUserList.class, "KafkaUser");
+        var kafkaUserCrdOperator = new CrdOperator<>(kafkaUserOperatorExecutor, client, KafkaUser.class, KafkaUserList.class, "KafkaUser", featureGates.useServerSideApply());
 
         KafkaUserOperator kafkaUserOperator = new KafkaUserOperator(
                 config,

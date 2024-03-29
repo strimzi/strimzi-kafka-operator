@@ -35,9 +35,10 @@ public abstract class AbstractWatchableNamespacedResourceOperator<
      * @param asyncExecutor Executor to use for asynchronous subroutines
      * @param client        The kubernetes client.
      * @param resourceKind  The mind of Kubernetes resource (used for logging).
+     * @param useServerSideApply Whether to use server side apply
      */
-    protected AbstractWatchableNamespacedResourceOperator(Executor asyncExecutor, C client, String resourceKind) {
-        super(asyncExecutor, client, resourceKind);
+    protected AbstractWatchableNamespacedResourceOperator(Executor asyncExecutor, C client, String resourceKind, boolean useServerSideApply) {
+        super(asyncExecutor, client, resourceKind, useServerSideApply);
     }
 
     protected Watch watchInAnyNamespace(Watcher<T> watcher) {

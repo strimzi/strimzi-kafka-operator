@@ -8,6 +8,9 @@ import java.util.Map;
 
 import static java.util.Arrays.asList;
 
+/**
+ * Parses String like "+FeatureA,-FeatureB" and sets the result in a map with possible feature gates.
+ */
 public class FeatureGatesParser {
     private List<String> featureGates = Collections.emptyList();
 

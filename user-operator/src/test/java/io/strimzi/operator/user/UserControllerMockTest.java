@@ -80,8 +80,8 @@ public class UserControllerMockTest {
         namespace = testInfo.getTestMethod().orElseThrow().getName().toLowerCase(Locale.ROOT);
         mockKube.prepareNamespace(namespace);
 
-        secretOperator = new SecretOperator(ForkJoinPool.commonPool(), client);
-        kafkaUserOps = new CrdOperator<>(ForkJoinPool.commonPool(), client, KafkaUser.class, KafkaUserList.class, "KafkaUser");
+        secretOperator = new SecretOperator(ForkJoinPool.commonPool(), client, false);
+        kafkaUserOps = new CrdOperator<>(ForkJoinPool.commonPool(), client, KafkaUser.class, KafkaUserList.class, "KafkaUser", false);
         mockKafkaUserOperator = mock(KafkaUserOperator.class);
     }
 

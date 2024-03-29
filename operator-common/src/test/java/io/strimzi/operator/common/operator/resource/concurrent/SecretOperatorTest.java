@@ -52,6 +52,6 @@ public class SecretOperatorTest extends AbstractNamespacedResourceOperatorTest<K
 
     @Override
     protected AbstractNamespacedResourceOperator<KubernetesClient, Secret, SecretList, Resource<Secret>> createResourceOperations(KubernetesClient mockClient) {
-        return new SecretOperator(asyncExecutor, mockClient);
+        return new SecretOperator(asyncExecutor, mockClient, false);
     }
 }

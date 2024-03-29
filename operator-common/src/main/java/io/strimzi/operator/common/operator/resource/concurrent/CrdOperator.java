@@ -44,11 +44,11 @@ public class CrdOperator<C extends KubernetesClient,
      * @param client        The Kubernetes client
      * @param cls           The class of the CR
      * @param listCls       The class of the list.
-     * @param kind          The Kind of the CR for which this operator should be
-     *                      used
+     * @param kind          The Kind of the CR for which this operator should be used
+     * @param useServerSideApply Whether to use server side apply
      */
-    public CrdOperator(Executor asyncExecutor, C client, Class<T> cls, Class<L> listCls, String kind) {
-        super(asyncExecutor, client, kind);
+    public CrdOperator(Executor asyncExecutor, C client, Class<T> cls, Class<L> listCls, String kind, boolean useServerSideApply) {
+        super(asyncExecutor, client, kind, useServerSideApply);
         this.cls = cls;
         this.listCls = listCls;
     }

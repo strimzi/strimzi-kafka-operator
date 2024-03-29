@@ -34,9 +34,10 @@ public abstract class AbstractWatchableStatusedNamespacedResourceOperator<
      * @param asyncExecutor Executor to use for asynchronous subroutines
      * @param client        The kubernetes client.
      * @param resourceKind  The mind of Kubernetes resource (used for logging).
+     * @param useServerSideApply Whether to use server side apply
      */
-    protected AbstractWatchableStatusedNamespacedResourceOperator(Executor asyncExecutor, C client, String resourceKind) {
-        super(asyncExecutor, client, resourceKind);
+    protected AbstractWatchableStatusedNamespacedResourceOperator(Executor asyncExecutor, C client, String resourceKind, boolean useServerSideApply) {
+        super(asyncExecutor, client, resourceKind, useServerSideApply);
     }
 
     /**

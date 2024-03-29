@@ -8,11 +8,7 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.Crds;
-import io.strimzi.api.kafka.model.user.KafkaUser;
-import io.strimzi.api.kafka.model.user.KafkaUserBuilder;
-import io.strimzi.api.kafka.model.user.KafkaUserList;
-import io.strimzi.api.kafka.model.user.KafkaUserQuotas;
-import io.strimzi.api.kafka.model.user.KafkaUserStatus;
+import io.strimzi.api.kafka.model.user.*;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.Reconciliation;
@@ -29,32 +25,15 @@ import io.strimzi.operator.user.model.KafkaUserModel;
 import io.strimzi.operator.user.model.acl.SimpleAclRule;
 import io.strimzi.test.mockkube3.MockKube3;
 import org.apache.kafka.common.KafkaException;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.*;
 import org.mockito.ArgumentCaptor;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Base64;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.CoreMatchers.nullValue;
-import static org.hamcrest.CoreMatchers.startsWith;
+import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -63,7 +42,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class KafkaUserOperatorMockTest {
+public class KafkaUserOperatorWithSSAMockTest {
     private final static ExecutorService EXECUTOR = Executors.newSingleThreadExecutor();
 
     private final CertManager mockCertManager = new MockCertManager();
@@ -107,8 +86,8 @@ public class KafkaUserOperatorMockTest {
         namespace = testInfo.getTestMethod().orElseThrow().getName().toLowerCase(Locale.ROOT);
         mockKube.prepareNamespace(namespace);
 
-        secretOps = new SecretOperator(EXECUTOR, client, false);
-        kafkaUserOps = new CrdOperator<>(EXECUTOR, client, KafkaUser.class, KafkaUserList.class, "KafkaUser", false);
+        secretOps = new SecretOperator(EXECUTOR, client, true);
+        kafkaUserOps = new CrdOperator<>(EXECUTOR, client, KafkaUser.class, KafkaUserList.class, "KafkaUser", true);
 
         mockCaSecrets();
         mockKafka();
