@@ -5,6 +5,7 @@
 package io.strimzi.api.kafka.model.common.authentication;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.DescriptionFile;
@@ -20,6 +21,11 @@ import lombok.EqualsAndHashCode;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
+// Make sure this is in sync with KafkaClientAuthenticationOAuth
+@JsonPropertyOrder({"type", "clientId", "username", "scope", "audience", "tokenEndpointUri", "connectTimeoutSeconds",
+    "readTimeoutSeconds", "httpRetries", "httpRetryPauseMs", "clientSecret", "passwordSecret", "accessToken",
+    "refreshToken", "tlsTrustedCertificates", "disableTlsHostnameVerification", "maxTokenExpirySeconds",
+    "accessTokenIsJwt", "enableMetrics", "includeAcceptHeader", "accessTokenLocation"})
 @EqualsAndHashCode(callSuper = true)
 public class KafkaClientAuthenticationK8sOIDC extends KafkaClientAuthenticationOAuth {
     private static final long serialVersionUID = 1L;
