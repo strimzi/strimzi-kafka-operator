@@ -7,7 +7,10 @@ package io.strimzi.operator.common.auth;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.operator.common.model.Ca;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
+import java.security.KeyStore;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Base64;
@@ -43,15 +46,6 @@ public class PemTrustSet {
 
     /**
      * Certificates to use in a TrustStore for TLS connections.
-     * This also validates that each certificate is a valid X509 certificate and throws an exception if it is not.
-     * @return The set of trusted certificates as X509Certificate objects
-     */
-    public Set<X509Certificate> trustedCertificates() {
-        return new HashSet<>(asX509Certificates().values());
-    }
-
-    /**
-     * Certificates to use in a TrustStore for TLS connections.
      * @return The set of trusted certificates as byte arrays
      */
     public Set<byte[]> trustedCertificatesBytes() {
@@ -75,6 +69,25 @@ public class PemTrustSet {
                 .stream()
                 .map(bytes -> new String(bytes, StandardCharsets.US_ASCII))
                 .collect(Collectors.joining("\n"));
+    }
+
+    /**
+     * TrustStore to use for TLS connections. This also validates each one is a valid certificate and
+     * throws an exception if it is not.
+     * @return TrustStore file in JKS format
+     * @throws GeneralSecurityException if something goes wrong when creating the truststore
+     * @throws IOException if there is an I/O or format problem with the data used to load the truststore.
+     * This is not expected as the truststore is loaded with null parameter.
+     */
+    public KeyStore jksTrustStore() throws GeneralSecurityException, IOException {
+        KeyStore trustStore = KeyStore.getInstance("JKS");
+        trustStore.load(null);
+        int aliasIndex = 0;
+        for (X509Certificate certificate : asX509Certificates().values()) {
+            trustStore.setEntry(certificate.getSubjectX500Principal().getName() + "-" + aliasIndex, new KeyStore.TrustedCertificateEntry(certificate), null);
+            aliasIndex++;
+        }
+        return trustStore;
     }
 
     /**

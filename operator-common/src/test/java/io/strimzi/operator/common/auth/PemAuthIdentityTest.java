@@ -7,6 +7,7 @@ package io.strimzi.operator.common.auth;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.operator.common.operator.MockCertManager;
 import org.junit.jupiter.api.Test;
 
 import static io.strimzi.test.TestUtils.map;
@@ -52,13 +53,13 @@ public class PemAuthIdentityTest {
                     .withName(KafkaResources.secretName(CLUSTER))
                     .withNamespace(NAMESPACE)
                 .endMetadata()
-                .withData(map("cluster-operator.key", "notacert",
-                        "cluster-operator.crt", "notacert",
-                        "cluster-operator.p12", "notatruststore",
-                        "cluster-operator.password", "notapassword"))
+                .withData(map("cluster-operator.key", MockCertManager.clusterCaKey(),
+                        "cluster-operator.crt", "bm90YWNlcnQ=",
+                        "cluster-operator.p12", "bm90YXRydXN0c3RvcmU=",
+                        "cluster-operator.password", "bm90YXBhc3N3b3Jk"))
                 .build();
         PemAuthIdentity pemAuthIdentity = PemAuthIdentity.clusterOperator(secretWithBadCertificate);
-        Exception e = assertThrows(RuntimeException.class, pemAuthIdentity::certificateChain);
+        Exception e = assertThrows(RuntimeException.class, () -> pemAuthIdentity.jksKeyStore(new char[]{}));
         assertThat(e.getMessage(), is("Bad/corrupt certificate found in data.cluster-operator.crt of Secret testcluster-cluster-operator-certs in namespace testns"));
     }
 

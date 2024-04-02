@@ -22,12 +22,8 @@ import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
 import java.text.ParseException;
 import java.time.Instant;
 import java.util.Base64;
@@ -37,7 +33,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
 import java.util.TreeMap;
@@ -184,64 +179,6 @@ public class Util {
      */
     public static String asciiFieldFromSecret(Secret secret, String field) {
         return fromAsciiBytes(decodeBase64FieldFromSecret(secret, field));
-    }
-
-    /**
-     * Decode the private key in PEM format, from base64 to a byte array.
-     * Before decoding it into byte array, it removes the PEM header and footer.
-     * @param privateKey        Key which should be decoded
-     * @return                  Decoded bytes
-     */
-    public static byte[] decodePemPrivateKey(String privateKey) {
-        String decodedPrivateKey = privateKey
-                .replace("-----BEGIN PRIVATE KEY-----", "")
-                .replaceAll(System.lineSeparator(), "")
-                .replace("-----END PRIVATE KEY-----", "");
-        return Base64.getDecoder().decode(decodedPrivateKey);
-    }
-
-    /**
-     * Create a Truststore file containing the given {@code certificate} and protected with {@code password}.
-     * The file will be set to get deleted when the JVM exist.
-     *
-     * @param prefix Prefix which will be used for the filename
-     * @param suffix Suffix which will be used for the filename
-     * @param certificates X509 certificates to put inside the Truststore
-     * @param password Password protecting the Truststore
-     * @return File with the Truststore
-     */
-    public static File createFileTrustStore(String prefix, String suffix, Set<X509Certificate> certificates, char[] password) {
-        try {
-            KeyStore trustStore = KeyStore.getInstance("PKCS12");
-            trustStore.load(null, password);
-
-            int aliasIndex = 0;
-            for (X509Certificate certificate : certificates) {
-                trustStore.setEntry(certificate.getSubjectX500Principal().getName() + "-" + aliasIndex, new KeyStore.TrustedCertificateEntry(certificate), null);
-                aliasIndex++;
-            }
-
-            return store(prefix, suffix, trustStore, password);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private static File store(String prefix, String suffix, KeyStore trustStore, char[] password) throws Exception {
-        File f = null;
-        try {
-            f = Files.createTempFile(prefix, suffix).toFile();
-            f.deleteOnExit();
-            try (OutputStream os = new BufferedOutputStream(new FileOutputStream(f))) {
-                trustStore.store(os, password);
-            }
-            return f;
-        } catch (IOException | KeyStoreException | NoSuchAlgorithmException | CertificateException | RuntimeException e) {
-            if (f != null && !f.delete()) {
-                LOGGER.warnOp("Failed to delete temporary file in exception handler");
-            }
-            throw e;
-        }
     }
 
     /**

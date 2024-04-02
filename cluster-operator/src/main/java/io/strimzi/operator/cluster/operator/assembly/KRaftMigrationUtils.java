@@ -13,7 +13,6 @@ import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.auth.PemAuthIdentity;
 import io.strimzi.operator.common.auth.PemTrustSet;
 import io.strimzi.operator.common.auth.TlsPemIdentity;
-import io.strimzi.operator.common.model.PasswordGenerator;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.admin.ZooKeeperAdmin;
 import org.apache.zookeeper.client.ZKClientConfig;
@@ -38,7 +37,6 @@ public class KRaftMigrationUtils {
      * @param zkConnectionString    Connection string to the ZooKeeper ensemble to connect to
      */
     public static void deleteZooKeeperControllerZnode(Reconciliation reconciliation, TlsPemIdentity coTlsPemIdentity, long operationTimeoutMs, String zkConnectionString) {
-        PasswordGenerator pg = new PasswordGenerator(12);
         // Setup truststore from PEM file in cluster CA secret
         File trustStoreFile = Util.createFileStore(KRaftMigrationUtils.class.getName(), PemTrustSet.CERT_SUFFIX, coTlsPemIdentity.pemTrustSet().trustedCertificatesPemBytes());
 
