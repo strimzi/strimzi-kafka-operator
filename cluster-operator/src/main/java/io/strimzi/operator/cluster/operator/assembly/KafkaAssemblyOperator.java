@@ -47,9 +47,11 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationException;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.config.ConfigParameter;
 import io.strimzi.operator.common.model.ClientsCa;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.model.NamespaceAndName;
 import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.model.StatusDiff;
 import io.strimzi.operator.common.model.StatusUtils;
@@ -65,6 +67,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
@@ -102,6 +105,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         OPERATOR_VERSION = PROPERTIES.getProperty("version");
     }
 
+    /**
+     * Intentionally shadowing inherited field to make it in specific implementation dedicated for the Kafka assembly
+     */
+    private final KafkaAssemblyOperatorMetricsHolder metrics;
 
     /* test */ final ClusterOperatorConfig config;
     /* test */ final ResourceOperatorSupplier supplier;
@@ -136,6 +143,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         this.kafkaOperator = supplier.kafkaOperator;
         this.nodePoolOperator = supplier.kafkaNodePoolOperator;
         this.strimziPodSetOperator = supplier.strimziPodSetOperator;
+        this.metrics = new KafkaAssemblyOperatorMetricsHolder(Kafka.RESOURCE_KIND, config.getCustomResourceSelector(), supplier.metricsProvider);
         this.clock = Clock.systemUTC();
     }
 
@@ -254,6 +262,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         reconcileState.initialStatus()
                 // Preparation steps => prepare cluster descriptions, handle CA creation or changes
                 .compose(state -> state.reconcileCas(clock))
+                .compose(state -> state.emitCertificateSecretMetrics())
                 .compose(state -> state.versionChange(kafkaMetadataConfigState.isKRaft()))
 
                 // Run reconciliations of the different components
@@ -470,6 +479,21 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         this.clientsCa = cas.clientsCa();
                         return Future.succeededFuture(this);
                     });
+        }
+
+        /**
+         * Emits the certificate expiration metric for cluster CA and client CA
+         *
+         * @return  Future with Reconciliation State
+         */
+        Future<ReconciliationState> emitCertificateSecretMetrics() {
+            long serverCertificateExpiration = this.clusterCa.getCertificateExpirationDateEpoch();
+            metrics.clusterCaCertificateExpiration(this.name, this.namespace).set(serverCertificateExpiration);
+
+            long clientCertificateExpiration = this.clientsCa.getCertificateExpirationDateEpoch();
+            metrics.clientCaCertificateExpiration(this.name, this.namespace).set(clientCertificateExpiration);
+
+            return Future.succeededFuture(this);
         }
 
         /**
@@ -818,6 +842,30 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     protected Future<Boolean> delete(Reconciliation reconciliation) {
         return ReconcilerUtils.withIgnoreRbacError(reconciliation, clusterRoleBindingOperations.reconcile(reconciliation, KafkaResources.initContainerClusterRoleBindingName(reconciliation.name(), reconciliation.namespace()), null), null)
                 .map(Boolean.FALSE); // Return FALSE since other resources are still deleted by garbage collection
+    }
+
+    /**
+     * Remove the metrics specific to the kind implementing it.
+     *
+     * @param desiredNames  Set of resources which should be reconciled
+     * @param namespace     The namespace to reconcile, or {@code *} to reconcile across all namespaces.
+     */
+    @Override
+    public void removeMetrics(Set<NamespaceAndName> desiredNames, String namespace) {
+        // Removing all CA cluster metrics not in the desired set
+        Set<String> desiredClusterNames = desiredNames.stream().map(NamespaceAndName::getName).collect(Collectors.toSet());
+        metrics.removeMetricsForCertificates(key -> {
+            if (!key.getKind().equals(kind())) {
+                return false;
+            }
+            if (namespace.equals(ConfigParameter.ANY_NAMESPACE)) {
+                Set<String> desiredNamespaces = desiredNames.stream().map(NamespaceAndName::getNamespace).collect(Collectors.toSet());
+                return !desiredNamespaces.contains(key.getNamespace()) && !desiredClusterNames.contains(key.getClusterName());
+            }
+
+            // Otherwise only remove the ones related to the namespace and not in the desired set
+            return key.getNamespace().equals(namespace) && !desiredClusterNames.contains(key.getClusterName());
+        });
     }
 
     /**

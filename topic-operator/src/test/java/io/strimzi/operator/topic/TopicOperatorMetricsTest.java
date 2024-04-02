@@ -16,6 +16,7 @@ import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.api.kafka.model.topic.KafkaTopicBuilder;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.metrics.MetricsHolder;
 import io.strimzi.operator.topic.metrics.TopicOperatorMetricsHolder;
 import io.strimzi.operator.topic.metrics.TopicOperatorMetricsProvider;
 import org.apache.kafka.clients.admin.Admin;
@@ -81,30 +82,30 @@ public class TopicOperatorMetricsTest {
             eventHandler.onAdd(kt);
         }
         String[] tags = new String[]{"kind", RESOURCE_KIND, "namespace", NAMESPACE};
-        assertMetricMatches("strimzi.resources", tags, "gauge", is(Double.valueOf(numOfTestResources)));
+        assertMetricMatches(MetricsHolder.METRICS_RESOURCES, tags, "gauge", is(Double.valueOf(numOfTestResources)));
 
         for (int i = 0; i < numOfTestResources; i++) {
             KafkaTopic kt = createKafkaTopic("t" + i, "100100");
             eventHandler.onDelete(kt, false);
         }
-        assertMetricMatches("strimzi.resources", tags, "gauge", is(0.0));
+        assertMetricMatches(MetricsHolder.METRICS_RESOURCES, tags, "gauge", is(0.0));
 
         KafkaTopic foo1 = createKafkaTopic("my-topic", "100100");
         eventHandler.onAdd(foo1);
-        assertMetricMatches("strimzi.resources.paused", tags, "gauge", is(0.0));
+        assertMetricMatches(MetricsHolder.METRICS_RESOURCES_PAUSED, tags, "gauge", is(0.0));
 
         KafkaTopic foo2 = createKafkaTopic("my-topic", "100100");
         foo2.getMetadata().setAnnotations(Map.of(ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true"));
         eventHandler.onUpdate(foo1, foo2);
-        assertMetricMatches("strimzi.resources.paused", tags, "gauge", is(1.0));
+        assertMetricMatches(MetricsHolder.METRICS_RESOURCES_PAUSED, tags, "gauge", is(1.0));
 
         eventHandler.onUpdate(foo1, foo1);
-        assertMetricMatches("strimzi.resources.paused", tags, "gauge", is(1.0));
+        assertMetricMatches(MetricsHolder.METRICS_RESOURCES_PAUSED, tags, "gauge", is(1.0));
 
         KafkaTopic foo3 = createKafkaTopic("my-topic", "100100");
         foo3.getMetadata().setAnnotations(Map.of(ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "false"));
         eventHandler.onUpdate(foo2, foo3);
-        assertMetricMatches("strimzi.resources.paused", tags, "gauge", is(0.0));
+        assertMetricMatches(MetricsHolder.METRICS_RESOURCES_PAUSED, tags, "gauge", is(0.0));
     }
 
     private static KafkaTopic createKafkaTopic(String name, String version) {
@@ -128,11 +129,11 @@ public class TopicOperatorMetricsTest {
         }
 
         String[] tags = new String[]{"kind", RESOURCE_KIND, "namespace", NAMESPACE};
-        assertMetricMatches("strimzi.reconciliations.max.queue.size", tags, "gauge", greaterThan(0.0));
-        assertMetricMatches("strimzi.reconciliations.max.queue.size", tags, "gauge", lessThanOrEqualTo(Double.valueOf(MAX_QUEUE_SIZE)));
-        assertMetricMatches("strimzi.reconciliations.max.batch.size", tags, "gauge", greaterThan(0.0));
-        assertMetricMatches("strimzi.reconciliations.max.batch.size", tags, "gauge", lessThanOrEqualTo(Double.valueOf(MAX_BATCH_SIZE)));
-        assertMetricMatches("strimzi.reconciliations.locked", tags, "counter", greaterThan(0.0));
+        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS_MAX_QUEUE_SIZE, tags, "gauge", greaterThan(0.0));
+        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS_MAX_QUEUE_SIZE, tags, "gauge", lessThanOrEqualTo(Double.valueOf(MAX_QUEUE_SIZE)));
+        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS_MAX_BATCH_SIZE, tags, "gauge", greaterThan(0.0));
+        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS_MAX_BATCH_SIZE, tags, "gauge", lessThanOrEqualTo(Double.valueOf(MAX_BATCH_SIZE)));
+        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS_LOCKED, tags, "counter", greaterThan(0.0));
         batchingLoop.stop();
     }
     
@@ -177,21 +178,21 @@ public class TopicOperatorMetricsTest {
         controller.onDelete(deleteBatch);
 
         String[] tags = new String[]{"kind", RESOURCE_KIND, "namespace", NAMESPACE};
-        assertMetricMatches("strimzi.reconciliations", tags, "counter", is(2.0));
-        assertMetricMatches("strimzi.reconciliations.successful", tags, "counter", is(2.0));
-        assertMetricMatches("strimzi.reconciliations.failed", tags, "counter", is(1.0));
-        assertMetricMatches("strimzi.reconciliations.duration", tags, "timer", greaterThan(0.0));
+        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS, tags, "counter", is(2.0));
+        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS_SUCCESSFUL, tags, "counter", is(2.0));
+        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS_FAILED, tags, "counter", is(1.0));
+        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS_DURATION, tags, "timer", greaterThan(0.0));
 
-        assertMetricMatches("strimzi.add.finalizer.duration", tags, "timer", greaterThan(0.0));
-        assertMetricMatches("strimzi.remove.finalizer.duration", tags, "timer", greaterThan(0.0));
-        assertMetricMatches("strimzi.create.topics.duration", tags, "timer", greaterThan(0.0));
-        assertMetricMatches("strimzi.update.status.duration", tags, "timer", greaterThan(0.0));
-        assertMetricMatches("strimzi.list.reassignments.duration", tags, "timer", greaterThan(0.0));
-        assertMetricMatches("strimzi.alter.configs.duration", tags, "timer", greaterThan(0.0));
-        assertMetricMatches("strimzi.create.partitions.duration", tags, "timer", greaterThan(0.0));
-        assertMetricMatches("strimzi.describe.topics.duration", tags, "timer", greaterThan(0.0));
-        assertMetricMatches("strimzi.describe.configs.duration", tags, "timer", greaterThan(0.0));
-        assertMetricMatches("strimzi.delete.topics.duration", tags, "timer", greaterThan(0.0));
+        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_ADD_FINALIZER_DURATION, tags, "timer", greaterThan(0.0));
+        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_REMOVE_FINALIZER_DURATION, tags, "timer", greaterThan(0.0));
+        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_CREATE_TOPICS_DURATION, tags, "timer", greaterThan(0.0));
+        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_UPDATE_TOPICS_DURATION, tags, "timer", greaterThan(0.0));
+        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_LIST_REASSIGNMENTS_DURATION, tags, "timer", greaterThan(0.0));
+        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_ALTER_CONFIGS_DURATION, tags, "timer", greaterThan(0.0));
+        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_CREATE_PARTITIONS_DURATION, tags, "timer", greaterThan(0.0));
+        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_DESCRIBE_TOPICS_DURATION, tags, "timer", greaterThan(0.0));
+        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_DESCRIBE_CONFIGS_DURATION, tags, "timer", greaterThan(0.0));
+        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_DELETE_TOPICS_DURATION, tags, "timer", greaterThan(0.0));
     }
 
     private KafkaTopic createResource(KubernetesClient client, String resourceName, String topicName) {

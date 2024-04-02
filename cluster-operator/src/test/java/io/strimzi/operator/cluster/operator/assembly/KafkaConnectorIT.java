@@ -23,6 +23,7 @@ import io.strimzi.operator.common.DefaultAdminClientProvider;
 import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.MicrometerMetricsProvider;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.metrics.MetricsHolder;
 import io.strimzi.platform.KubernetesVersion;
 import io.strimzi.test.container.StrimziKafkaCluster;
 import io.strimzi.test.mockkube3.MockKube3;
@@ -182,11 +183,11 @@ public class KafkaConnectorIT {
                 // Assert metrics from Connector Operator
                 MeterRegistry registry = metrics.meterRegistry();
 
-                assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations").tag("kind", KafkaConnector.RESOURCE_KIND).counter().count(), CoreMatchers.is(2.0));
-                assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", KafkaConnector.RESOURCE_KIND).counter().count(), CoreMatchers.is(2.0));
+                assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS).tag("kind", KafkaConnector.RESOURCE_KIND).counter().count(), CoreMatchers.is(2.0));
+                assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_SUCCESSFUL).tag("kind", KafkaConnector.RESOURCE_KIND).counter().count(), CoreMatchers.is(2.0));
 
-                assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", KafkaConnector.RESOURCE_KIND).timer().count(), CoreMatchers.is(2L));
-                assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", KafkaConnector.RESOURCE_KIND).timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
+                assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_DURATION).tag("kind", KafkaConnector.RESOURCE_KIND).timer().count(), CoreMatchers.is(2L));
+                assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_DURATION).tag("kind", KafkaConnector.RESOURCE_KIND).timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
 
                 async.flag();
             })));
@@ -504,7 +505,7 @@ public class KafkaConnectorIT {
             assertThat(connectorStatus.getJsonObject("connector").getString("state"), is("RESTARTING"));
             MetricsProvider metrics = new MicrometerMetricsProvider(BackendRegistries.getDefaultNow());
             MeterRegistry registry = metrics.meterRegistry();
-            assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "auto.restarts").tag("kind", KafkaConnector.RESOURCE_KIND).counter().count(), CoreMatchers.is(1.0));
+            assertThat(registry.get(ConnectOperatorMetricsHolder.METRIC_AUTO_RESTARTS).tag("kind", KafkaConnector.RESOURCE_KIND).counter().count(), CoreMatchers.is(1.0));
         });
     }
 
@@ -525,7 +526,7 @@ public class KafkaConnectorIT {
             assertThat(connectorStatus.getJsonArray("tasks").getJsonObject(0).getString("state"), is("RESTARTING"));
             MetricsProvider metrics = new MicrometerMetricsProvider(BackendRegistries.getDefaultNow());
             MeterRegistry registry = metrics.meterRegistry();
-            assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "auto.restarts").tag("kind", KafkaConnector.RESOURCE_KIND).counter().count(), CoreMatchers.is(1.0));
+            assertThat(registry.get(ConnectOperatorMetricsHolder.METRIC_AUTO_RESTARTS).tag("kind", KafkaConnector.RESOURCE_KIND).counter().count(), CoreMatchers.is(1.0));
         });
     }
 }

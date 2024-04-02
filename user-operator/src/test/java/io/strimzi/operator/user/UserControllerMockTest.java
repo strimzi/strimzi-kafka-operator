@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.model.user.KafkaUserList;
 import io.strimzi.api.kafka.model.user.KafkaUserStatus;
 import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.MicrometerMetricsProvider;
+import io.strimzi.operator.common.metrics.MetricsHolder;
 import io.strimzi.operator.common.model.NamespaceAndName;
 import io.strimzi.operator.common.model.StatusUtils;
 import io.strimzi.operator.common.operator.resource.concurrent.CrdOperator;
@@ -129,9 +130,9 @@ public class UserControllerMockTest {
             verify(mockKafkaUserOperator, atLeast(1)).reconcile(any(), any(), any());
 
             // Check metrics
-            assertThat(metrics.meterRegistry().get("strimzi.resources").tag("kind", "KafkaUser").tag("namespace", namespace).gauge().value(), is(1.0));
-            assertThat(metrics.meterRegistry().get("strimzi.reconciliations.successful").tag("kind", "KafkaUser").tag("namespace", namespace).counter().count(), is(greaterThanOrEqualTo(1.0))); // Might be 1 or 2, depends on the timing
-            assertThat(metrics.meterRegistry().get("strimzi.reconciliations").tag("kind", "KafkaUser").tag("namespace", namespace).counter().count(), is(greaterThanOrEqualTo(1.0))); // Might be 1 or 2, depends on the timing
+            assertThat(metrics.meterRegistry().get(MetricsHolder.METRICS_RESOURCES).tag("kind", "KafkaUser").tag("namespace", namespace).gauge().value(), is(1.0));
+            assertThat(metrics.meterRegistry().get(MetricsHolder.METRICS_RECONCILIATIONS_SUCCESSFUL).tag("kind", "KafkaUser").tag("namespace", namespace).counter().count(), is(greaterThanOrEqualTo(1.0))); // Might be 1 or 2, depends on the timing
+            assertThat(metrics.meterRegistry().get(MetricsHolder.METRICS_RECONCILIATIONS).tag("kind", "KafkaUser").tag("namespace", namespace).counter().count(), is(greaterThanOrEqualTo(1.0))); // Might be 1 or 2, depends on the timing
 
             // Test that secret change triggers reconciliation
             secretOperator.resource(namespace, ResourceUtils.createUserSecretTls(namespace)).create();
@@ -142,13 +143,13 @@ public class UserControllerMockTest {
                     "Wait for 3rd reconciliation",
                     100,
                     10_000,
-                    () -> metrics.meterRegistry().get("strimzi.reconciliations.successful").tag("kind", "KafkaUser").tag("namespace", namespace).counter().count() == 3
+                    () -> metrics.meterRegistry().get(MetricsHolder.METRICS_RECONCILIATIONS_SUCCESSFUL).tag("kind", "KafkaUser").tag("namespace", namespace).counter().count() == 3
             );
 
             // Check metrics
-            assertThat(metrics.meterRegistry().get("strimzi.resources").tag("kind", "KafkaUser").tag("namespace", namespace).gauge().value(), is(1.0));
-            assertThat(metrics.meterRegistry().get("strimzi.reconciliations.successful").tag("kind", "KafkaUser").tag("namespace", namespace).counter().count(), is(3.0));
-            assertThat(metrics.meterRegistry().get("strimzi.reconciliations").tag("kind", "KafkaUser").tag("namespace", namespace).counter().count(), is(3.0));
+            assertThat(metrics.meterRegistry().get(MetricsHolder.METRICS_RESOURCES).tag("kind", "KafkaUser").tag("namespace", namespace).gauge().value(), is(1.0));
+            assertThat(metrics.meterRegistry().get(MetricsHolder.METRICS_RECONCILIATIONS_SUCCESSFUL).tag("kind", "KafkaUser").tag("namespace", namespace).counter().count(), is(3.0));
+            assertThat(metrics.meterRegistry().get(MetricsHolder.METRICS_RECONCILIATIONS).tag("kind", "KafkaUser").tag("namespace", namespace).counter().count(), is(3.0));
         } finally {
             controller.stop();
         }
@@ -192,9 +193,9 @@ public class UserControllerMockTest {
             verify(mockKafkaUserOperator, atLeast(1)).reconcile(any(), any(), any());
 
             // Check metrics
-            assertThat(metrics.meterRegistry().get("strimzi.resources").tag("kind", "KafkaUser").tag("namespace", namespace).gauge().value(), is(1.0));
-            assertThat(metrics.meterRegistry().get("strimzi.reconciliations.successful").tag("kind", "KafkaUser").tag("namespace", namespace).counter().count(), is(greaterThanOrEqualTo(1.0))); // Might be 1 or 2, depends on the timing
-            assertThat(metrics.meterRegistry().get("strimzi.reconciliations").tag("kind", "KafkaUser").tag("namespace", namespace).counter().count(), is(greaterThanOrEqualTo(1.0))); // Might be 1 or 2, depends on the timing
+            assertThat(metrics.meterRegistry().get(MetricsHolder.METRICS_RESOURCES).tag("kind", "KafkaUser").tag("namespace", namespace).gauge().value(), is(1.0));
+            assertThat(metrics.meterRegistry().get(MetricsHolder.METRICS_RECONCILIATIONS_SUCCESSFUL).tag("kind", "KafkaUser").tag("namespace", namespace).counter().count(), is(greaterThanOrEqualTo(1.0))); // Might be 1 or 2, depends on the timing
+            assertThat(metrics.meterRegistry().get(MetricsHolder.METRICS_RECONCILIATIONS).tag("kind", "KafkaUser").tag("namespace", namespace).counter().count(), is(greaterThanOrEqualTo(1.0))); // Might be 1 or 2, depends on the timing
 
             // Test that secret change triggers reconciliation
             Secret userSecret = ResourceUtils.createUserSecretTls(namespace);
@@ -207,13 +208,13 @@ public class UserControllerMockTest {
                     "Wait for 3rd reconciliation",
                     100,
                     10_000,
-                    () -> metrics.meterRegistry().get("strimzi.reconciliations.successful").tag("kind", "KafkaUser").tag("namespace", namespace).counter().count() == 3
+                    () -> metrics.meterRegistry().get(MetricsHolder.METRICS_RECONCILIATIONS_SUCCESSFUL).tag("kind", "KafkaUser").tag("namespace", namespace).counter().count() == 3
             );
 
             // Check metrics
-            assertThat(metrics.meterRegistry().get("strimzi.resources").tag("kind", "KafkaUser").tag("namespace", namespace).gauge().value(), is(1.0));
-            assertThat(metrics.meterRegistry().get("strimzi.reconciliations.successful").tag("kind", "KafkaUser").tag("namespace", namespace).counter().count(), is(3.0));
-            assertThat(metrics.meterRegistry().get("strimzi.reconciliations").tag("kind", "KafkaUser").tag("namespace", namespace).counter().count(), is(3.0));
+            assertThat(metrics.meterRegistry().get(MetricsHolder.METRICS_RESOURCES).tag("kind", "KafkaUser").tag("namespace", namespace).gauge().value(), is(1.0));
+            assertThat(metrics.meterRegistry().get(MetricsHolder.METRICS_RECONCILIATIONS_SUCCESSFUL).tag("kind", "KafkaUser").tag("namespace", namespace).counter().count(), is(3.0));
+            assertThat(metrics.meterRegistry().get(MetricsHolder.METRICS_RECONCILIATIONS).tag("kind", "KafkaUser").tag("namespace", namespace).counter().count(), is(3.0));
         } finally {
             controller.stop();
         }
@@ -262,10 +263,10 @@ public class UserControllerMockTest {
             verify(mockKafkaUserOperator, never()).reconcile(any(), any(), any());
 
             // Check metrics
-            assertThat(metrics.meterRegistry().get("strimzi.resources").tag("kind", "KafkaUser").tag("namespace", namespace).gauge().value(), is(1.0));
-            assertThat(metrics.meterRegistry().get("strimzi.resources.paused").tag("kind", "KafkaUser").tag("namespace", namespace).gauge().value(), is(1.0));
-            assertThat(metrics.meterRegistry().get("strimzi.reconciliations.successful").tag("kind", "KafkaUser").tag("namespace", namespace).counter().count(), is(greaterThanOrEqualTo(1.0)));
-            assertThat(metrics.meterRegistry().get("strimzi.reconciliations").tag("kind", "KafkaUser").tag("namespace", namespace).counter().count(), is(greaterThanOrEqualTo(1.0)));
+            assertThat(metrics.meterRegistry().get(MetricsHolder.METRICS_RESOURCES).tag("kind", "KafkaUser").tag("namespace", namespace).gauge().value(), is(1.0));
+            assertThat(metrics.meterRegistry().get(MetricsHolder.METRICS_RESOURCES_PAUSED).tag("kind", "KafkaUser").tag("namespace", namespace).gauge().value(), is(1.0));
+            assertThat(metrics.meterRegistry().get(MetricsHolder.METRICS_RECONCILIATIONS_SUCCESSFUL).tag("kind", "KafkaUser").tag("namespace", namespace).counter().count(), is(greaterThanOrEqualTo(1.0)));
+            assertThat(metrics.meterRegistry().get(MetricsHolder.METRICS_RECONCILIATIONS).tag("kind", "KafkaUser").tag("namespace", namespace).counter().count(), is(greaterThanOrEqualTo(1.0)));
         } finally {
             controller.stop();
         }
@@ -313,9 +314,9 @@ public class UserControllerMockTest {
             assertThat(user.getStatus(), is(notNullValue()));
 
             // Check metrics
-            assertThat(metrics.meterRegistry().get("strimzi.resources").tag("kind", "KafkaUser").tag("namespace", namespace).gauge().value(), is(1.0));
-            assertThat(metrics.meterRegistry().get("strimzi.reconciliations.failed").tag("kind", "KafkaUser").tag("namespace", namespace).counter().count(), is(greaterThanOrEqualTo(1.0)));
-            assertThat(metrics.meterRegistry().get("strimzi.reconciliations").tag("kind", "KafkaUser").tag("namespace", namespace).counter().count(), is(greaterThanOrEqualTo(1.0)));
+            assertThat(metrics.meterRegistry().get(MetricsHolder.METRICS_RESOURCES).tag("kind", "KafkaUser").tag("namespace", namespace).gauge().value(), is(1.0));
+            assertThat(metrics.meterRegistry().get(MetricsHolder.METRICS_RECONCILIATIONS_FAILED).tag("kind", "KafkaUser").tag("namespace", namespace).counter().count(), is(greaterThanOrEqualTo(1.0)));
+            assertThat(metrics.meterRegistry().get(MetricsHolder.METRICS_RECONCILIATIONS).tag("kind", "KafkaUser").tag("namespace", namespace).counter().count(), is(greaterThanOrEqualTo(1.0)));
         } finally {
             controller.stop();
         }
@@ -369,9 +370,9 @@ public class UserControllerMockTest {
             verify(mockKafkaUserOperator, atLeast(1)).reconcile(any(), any(), any());
 
             // Check metrics
-            assertThat(metrics.meterRegistry().get("strimzi.resources").tag("kind", "KafkaUser").tag("namespace", namespace).gauge().value(), is(1.0));
-            assertThat(metrics.meterRegistry().get("strimzi.reconciliations.successful").tag("kind", "KafkaUser").tag("namespace", namespace).counter().count(), is(greaterThanOrEqualTo(1.0))); // Might be 1 or 2, depends on the timing
-            assertThat(metrics.meterRegistry().get("strimzi.reconciliations").tag("kind", "KafkaUser").tag("namespace", namespace).counter().count(), is(greaterThanOrEqualTo(1.0))); // Might be 1 or 2, depends on the timing
+            assertThat(metrics.meterRegistry().get(MetricsHolder.METRICS_RESOURCES).tag("kind", "KafkaUser").tag("namespace", namespace).gauge().value(), is(1.0));
+            assertThat(metrics.meterRegistry().get(MetricsHolder.METRICS_RECONCILIATIONS_SUCCESSFUL).tag("kind", "KafkaUser").tag("namespace", namespace).counter().count(), is(greaterThanOrEqualTo(1.0))); // Might be 1 or 2, depends on the timing
+            assertThat(metrics.meterRegistry().get(MetricsHolder.METRICS_RECONCILIATIONS).tag("kind", "KafkaUser").tag("namespace", namespace).counter().count(), is(greaterThanOrEqualTo(1.0))); // Might be 1 or 2, depends on the timing
         } finally {
             controller.stop();
         }
@@ -422,10 +423,10 @@ public class UserControllerMockTest {
             periods.await();
 
             // Check metrics
-            assertThat(metrics.meterRegistry().get("strimzi.resources").tag("kind", "KafkaUser").tag("namespace", namespace).gauge().value(), is(1.0));
-            assertThat(metrics.meterRegistry().get("strimzi.reconciliations.successful").tag("kind", "KafkaUser").tag("namespace", namespace).counter().count(), is(greaterThanOrEqualTo(3.0))); // Might be 3 or 4, depends on the timing
-            assertThat(metrics.meterRegistry().get("strimzi.reconciliations").tag("kind", "KafkaUser").tag("namespace", namespace).counter().count(), is(greaterThanOrEqualTo(3.0))); // Might be 3 or 4, depends on the timing
-            assertThat(metrics.meterRegistry().get("strimzi.reconciliations.periodical").tag("kind", "KafkaUser").tag("namespace", namespace).counter().count(), is(greaterThanOrEqualTo(2.0))); // At least 2, depends on timing
+            assertThat(metrics.meterRegistry().get(MetricsHolder.METRICS_RESOURCES).tag("kind", "KafkaUser").tag("namespace", namespace).gauge().value(), is(1.0));
+            assertThat(metrics.meterRegistry().get(MetricsHolder.METRICS_RECONCILIATIONS_SUCCESSFUL).tag("kind", "KafkaUser").tag("namespace", namespace).counter().count(), is(greaterThanOrEqualTo(3.0))); // Might be 3 or 4, depends on the timing
+            assertThat(metrics.meterRegistry().get(MetricsHolder.METRICS_RECONCILIATIONS).tag("kind", "KafkaUser").tag("namespace", namespace).counter().count(), is(greaterThanOrEqualTo(3.0))); // Might be 3 or 4, depends on the timing
+            assertThat(metrics.meterRegistry().get(MetricsHolder.METRICS_RECONCILIATIONS_PERIODICAL).tag("kind", "KafkaUser").tag("namespace", namespace).counter().count(), is(greaterThanOrEqualTo(2.0))); // At least 2, depends on timing
         } finally {
             controller.stop();
         }
@@ -492,9 +493,9 @@ public class UserControllerMockTest {
             verify(mockKafkaUserOperator, atLeast(1)).reconcile(any(), any(), any());
 
             // Check metrics
-            assertThat(metrics.meterRegistry().get("strimzi.resources").tag("kind", "KafkaUser").tag("namespace", namespace).gauge().value(), is(1.0));
-            assertThat(metrics.meterRegistry().get("strimzi.reconciliations.successful").tag("kind", "KafkaUser").tag("namespace", namespace).counter().count(), is(1.0));
-            assertThat(metrics.meterRegistry().get("strimzi.reconciliations").tag("kind", "KafkaUser").tag("namespace", namespace).counter().count(), is(1.0));
+            assertThat(metrics.meterRegistry().get(MetricsHolder.METRICS_RESOURCES).tag("kind", "KafkaUser").tag("namespace", namespace).gauge().value(), is(1.0));
+            assertThat(metrics.meterRegistry().get(MetricsHolder.METRICS_RECONCILIATIONS_SUCCESSFUL).tag("kind", "KafkaUser").tag("namespace", namespace).counter().count(), is(1.0));
+            assertThat(metrics.meterRegistry().get(MetricsHolder.METRICS_RECONCILIATIONS).tag("kind", "KafkaUser").tag("namespace", namespace).counter().count(), is(1.0));
         } finally {
             controller.stop();
         }
@@ -545,9 +546,9 @@ public class UserControllerMockTest {
             verify(mockKafkaUserOperator, atLeast(1)).reconcile(any(), any(), any());
 
             // Check metrics
-            assertThat(metrics.meterRegistry().get("strimzi.resources").tag("kind", "KafkaUser").tag("namespace", namespace).gauge().value(), is(1.0));
-            assertThat(metrics.meterRegistry().get("strimzi.reconciliations.successful").tag("kind", "KafkaUser").tag("namespace", namespace).counter().count(), is(1.0));
-            assertThat(metrics.meterRegistry().get("strimzi.reconciliations").tag("kind", "KafkaUser").tag("namespace", namespace).counter().count(), is(1.0));
+            assertThat(metrics.meterRegistry().get(MetricsHolder.METRICS_RESOURCES).tag("kind", "KafkaUser").tag("namespace", namespace).gauge().value(), is(1.0));
+            assertThat(metrics.meterRegistry().get(MetricsHolder.METRICS_RECONCILIATIONS_SUCCESSFUL).tag("kind", "KafkaUser").tag("namespace", namespace).counter().count(), is(1.0));
+            assertThat(metrics.meterRegistry().get(MetricsHolder.METRICS_RECONCILIATIONS).tag("kind", "KafkaUser").tag("namespace", namespace).counter().count(), is(1.0));
         } finally {
             controller.stop();
         }

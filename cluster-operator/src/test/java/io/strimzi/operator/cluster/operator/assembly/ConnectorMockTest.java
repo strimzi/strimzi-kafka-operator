@@ -41,6 +41,7 @@ import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.DefaultAdminClientProvider;
 import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.metrics.MetricsHolder;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.platform.KubernetesVersion;
@@ -1983,10 +1984,10 @@ public class ConnectorMockTest {
 
         Checkpoint async = context.checkpoint();
         reconciled1.future().onComplete(context.succeeding(v -> context.verify(() -> {
-            Gauge resources = meterRegistry.get("strimzi.resources").tags(tags).gauge();
+            Gauge resources = meterRegistry.get(MetricsHolder.METRICS_RESOURCES).tags(tags).gauge();
             assertThat(resources.value(), is(2.0));
 
-            Gauge resourcesPaused = meterRegistry.get("strimzi.resources.paused").tags(tags).gauge();
+            Gauge resourcesPaused = meterRegistry.get(MetricsHolder.METRICS_RESOURCES_PAUSED).tags(tags).gauge();
             assertThat(resourcesPaused.value(), is(2.0));
 
             Crds.kafkaConnectorOperation(client).inNamespace(namespace).resource(connector1).delete();
@@ -2051,10 +2052,10 @@ public class ConnectorMockTest {
 
         Checkpoint async = context.checkpoint();
         reconciled.future().onComplete(context.succeeding(v -> context.verify(() -> {
-            Gauge resources = meterRegistry.get("strimzi.resources").tags(tags).gauge();
+            Gauge resources = meterRegistry.get(MetricsHolder.METRICS_RESOURCES).tags(tags).gauge();
             assertThat(resources.value(), is(2.0));
 
-            Gauge resourcesPaused = meterRegistry.get("strimzi.resources.paused").tags(tags).gauge();
+            Gauge resourcesPaused = meterRegistry.get(MetricsHolder.METRICS_RESOURCES_PAUSED).tags(tags).gauge();
             assertThat(resourcesPaused.value(), is(1.0));
             async.flag();
         })));
@@ -2099,11 +2100,11 @@ public class ConnectorMockTest {
 
         Checkpoint async = context.checkpoint();
         reconciled.future().onComplete(context.succeeding(v -> context.verify(() -> {
-            Gauge resources = meterRegistry.get("strimzi.resources").tags(tags).gauge();
+            Gauge resources = meterRegistry.get(MetricsHolder.METRICS_RESOURCES).tags(tags).gauge();
             assertThat(resources.value(), is(1.0));
 
             kafkaConnectOperator.metrics().pausedConnectorsResourceCounter(namespace); // to create metric, otherwise MeterNotFoundException will be thrown
-            Gauge resourcesPaused = meterRegistry.get("strimzi.resources.paused").tags(tags).gauge();
+            Gauge resourcesPaused = meterRegistry.get(MetricsHolder.METRICS_RESOURCES_PAUSED).tags(tags).gauge();
             assertThat(resourcesPaused.value(), is(0.0));
             async.flag();
         })));
@@ -2148,10 +2149,10 @@ public class ConnectorMockTest {
 
         Checkpoint async = context.checkpoint();
         reconciled.future().onComplete(context.succeeding(v -> context.verify(() -> {
-            Gauge resources = meterRegistry.get("strimzi.resources").tags(tags).gauge();
+            Gauge resources = meterRegistry.get(MetricsHolder.METRICS_RESOURCES).tags(tags).gauge();
             assertThat(resources.value(), is(1.0));
 
-            Gauge resourcesPaused = meterRegistry.get("strimzi.resources.paused").tags(tags).gauge();
+            Gauge resourcesPaused = meterRegistry.get(MetricsHolder.METRICS_RESOURCES_PAUSED).tags(tags).gauge();
             assertThat(resourcesPaused.value(), is(1.0));
             async.flag();
         })));
@@ -2206,10 +2207,10 @@ public class ConnectorMockTest {
 
         Checkpoint async = context.checkpoint();
         reconciled1.future().onComplete(context.succeeding(v -> context.verify(() -> {
-            Gauge resources = meterRegistry.get("strimzi.resources").tags(tags).gauge();
+            Gauge resources = meterRegistry.get(MetricsHolder.METRICS_RESOURCES).tags(tags).gauge();
             assertThat(resources.value(), is(2.0));
 
-            Gauge resourcesPaused = meterRegistry.get("strimzi.resources.paused").tags(tags).gauge();
+            Gauge resourcesPaused = meterRegistry.get(MetricsHolder.METRICS_RESOURCES_PAUSED).tags(tags).gauge();
             assertThat(resourcesPaused.value(), is(2.0));
 
             Crds.kafkaConnectOperation(client).inNamespace(namespace).resource(kafkaConnect).delete();
@@ -2288,10 +2289,10 @@ public class ConnectorMockTest {
 
         Checkpoint async = context.checkpoint();
         reconciled1.future().onComplete(context.succeeding(v -> context.verify(() -> {
-            Gauge resources = meterRegistry.get("strimzi.resources").tags(tags).gauge();
+            Gauge resources = meterRegistry.get(MetricsHolder.METRICS_RESOURCES).tags(tags).gauge();
             assertThat(resources.value(), is(2.0));
 
-            Gauge resourcesPaused = meterRegistry.get("strimzi.resources.paused").tags(tags).gauge();
+            Gauge resourcesPaused = meterRegistry.get(MetricsHolder.METRICS_RESOURCES_PAUSED).tags(tags).gauge();
             assertThat(resourcesPaused.value(), is(2.0));
 
             Crds.kafkaConnectOperation(client).inNamespace(namespace).withName(connectName2).edit(ctr ->

@@ -5,37 +5,76 @@
 package io.strimzi.operator.common.metrics;
 
 import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
 import io.strimzi.operator.common.MetricsProvider;
-import io.strimzi.operator.common.config.ConfigParameter;
 import io.strimzi.operator.common.model.Labels;
 
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Abstract base class holding common metrics used by operators and controllers.
  * Subclasses can add more specialized metrics.
  */
 public abstract class MetricsHolder {
-    protected static final String METRICS_PREFIX = "strimzi.";
+    /**
+     * Prefix used for metrics provided by Strimzi operators
+     */
+    public static final String METRICS_PREFIX = "strimzi.";
+    /**
+     * Metric name for number of reconciliations.
+     */
+    public static final String METRICS_RECONCILIATIONS = METRICS_PREFIX + "reconciliations";
+    /**
+     * Metric name for number of periodic reconciliations.
+     */
+    public static final String METRICS_RECONCILIATIONS_PERIODICAL = METRICS_RECONCILIATIONS + ".periodical";
+    /**
+     * Metric name for number of failed reconciliations.
+     */
+    public static final String METRICS_RECONCILIATIONS_FAILED = METRICS_RECONCILIATIONS + ".failed";
+    /**
+     * Metric name for number of successful reconciliations.
+     */
+    public static final String METRICS_RECONCILIATIONS_SUCCESSFUL = METRICS_RECONCILIATIONS + ".successful";
+    /**
+     * Metric name for duration of reconciliations.
+     */
+    public static final String METRICS_RECONCILIATIONS_DURATION = METRICS_RECONCILIATIONS + ".duration";
+    /**
+     * Metric name for number of locked reconciliations.
+     */
+    public static final String METRICS_RECONCILIATIONS_LOCKED = METRICS_RECONCILIATIONS + ".locked";
+    /**
+     * Metric name for number of resources managed by the operator.
+     */
+    public static final String METRICS_RESOURCES = METRICS_PREFIX + "resources";
+    /**
+     * Metric name for number of paused resources.
+     */
+    public static final String METRICS_RESOURCES_PAUSED = METRICS_RESOURCES + ".paused";
 
     protected final String kind;
     protected final Labels selectorLabels;
     protected final MetricsProvider metricsProvider;
 
-    protected final Map<String, AtomicInteger> resourceCounterMap = new ConcurrentHashMap<>(1);
-    protected final Map<String, AtomicInteger> pausedResourceCounterMap = new ConcurrentHashMap<>(1);
-    private final Map<String, Counter> periodicReconciliationsCounterMap = new ConcurrentHashMap<>(1);
-    private final Map<String, Counter> reconciliationsCounterMap = new ConcurrentHashMap<>(1);
-    private final Map<String, Counter> failedReconciliationsCounterMap = new ConcurrentHashMap<>(1);
-    private final Map<String, Counter> successfulReconciliationsCounterMap = new ConcurrentHashMap<>(1);
-    private final Map<String, Counter> lockedReconciliationsCounterMap = new ConcurrentHashMap<>(1);
-    private final Map<String, Timer> reconciliationsTimerMap = new ConcurrentHashMap<>(1);
+    protected final Map<MetricKey, AtomicInteger> resourceCounterMap = new ConcurrentHashMap<>(1);
+    protected final Map<MetricKey, AtomicInteger> pausedResourceCounterMap = new ConcurrentHashMap<>(1);
+    private final Map<MetricKey, Counter> periodicReconciliationsCounterMap = new ConcurrentHashMap<>(1);
+    private final Map<MetricKey, Counter> reconciliationsCounterMap = new ConcurrentHashMap<>(1);
+    private final Map<MetricKey, Counter> failedReconciliationsCounterMap = new ConcurrentHashMap<>(1);
+    private final Map<MetricKey, Counter> successfulReconciliationsCounterMap = new ConcurrentHashMap<>(1);
+    private final Map<MetricKey, Counter> lockedReconciliationsCounterMap = new ConcurrentHashMap<>(1);
+    private final Map<MetricKey, Timer> reconciliationsTimerMap = new ConcurrentHashMap<>(1);
 
     /**
      * Constructs the metrics holder
@@ -59,6 +98,39 @@ public abstract class MetricsHolder {
         return metricsProvider;
     }
 
+    /**
+     * Removing metric based on filters metricName and expectedTags.
+     * Tags will be matched against the tags of the metric. If all tags are present and have the same values.
+     * If expected tag for namespace is '*', then any value will be accepted.
+     *
+     * @param metricName    Name of the metric to remove
+     * @param expectedTags  Tags of the metric to remove
+     * @return  true if the metric was removed, false otherwise
+     */
+    public boolean removeMetric(String metricName, Tags expectedTags) {
+        Optional<Meter> maybeMetric = metricsProvider()
+                .meterRegistry()
+                .getMeters()
+                .stream()
+                .filter(meter -> {
+                    if (!MetricsUtils.isMatchingMetricName(meter, metricName)) {
+                        return false;
+                    }
+
+                    return MetricsUtils.isMatchingMetricTags(
+                            new HashSet<>(meter.getId().getTags()),
+                            expectedTags.stream().collect(Collectors.toSet()));
+                })
+                .findFirst();
+
+        if (maybeMetric.isPresent()) {
+            metricsProvider().meterRegistry().remove(maybeMetric.get());
+            return true;
+        }
+
+        return false;
+    }
+
     ////////////////////
     // Methods for individual counters
     ////////////////////
@@ -72,8 +144,9 @@ public abstract class MetricsHolder {
      * @return  Metrics counter
      */
     public Counter periodicReconciliationsCounter(String namespace) {
-        return getCounter(namespace, kind, METRICS_PREFIX + "reconciliations.periodical", metricsProvider, selectorLabels, periodicReconciliationsCounterMap,
-                "Number of periodical reconciliations done by the operator");
+        return getCounter(new MetricKey(kind, namespace), METRICS_RECONCILIATIONS_PERIODICAL,
+                "Number of periodical reconciliations done by the operator",
+                Optional.of(getLabelSelectorValues()), periodicReconciliationsCounterMap);
     }
 
     /**
@@ -85,8 +158,9 @@ public abstract class MetricsHolder {
      * @return  Metrics counter
      */
     public Counter reconciliationsCounter(String namespace) {
-        return getCounter(namespace, kind, METRICS_PREFIX + "reconciliations", metricsProvider, selectorLabels, reconciliationsCounterMap,
-                "Number of reconciliations done by the operator for individual resources");
+        return getCounter(new MetricKey(kind, namespace), METRICS_RECONCILIATIONS,
+                "Number of reconciliations done by the operator for individual resources",
+                Optional.of(getLabelSelectorValues()), reconciliationsCounterMap);
     }
 
     /**
@@ -97,8 +171,9 @@ public abstract class MetricsHolder {
      * @return  Metrics counter
      */
     public Counter failedReconciliationsCounter(String namespace) {
-        return getCounter(namespace, kind, METRICS_PREFIX + "reconciliations.failed", metricsProvider, selectorLabels, failedReconciliationsCounterMap,
-                "Number of reconciliations done by the operator for individual resources which failed");
+        return getCounter(new MetricKey(kind, namespace), METRICS_RECONCILIATIONS_FAILED,
+                "Number of reconciliations done by the operator for individual resources which failed",
+                Optional.of(getLabelSelectorValues()), failedReconciliationsCounterMap);
     }
 
     /**
@@ -109,32 +184,9 @@ public abstract class MetricsHolder {
      * @return  Metrics counter
      */
     public Counter successfulReconciliationsCounter(String namespace) {
-        return getCounter(namespace, kind, METRICS_PREFIX + "reconciliations.successful", metricsProvider, selectorLabels, successfulReconciliationsCounterMap,
-                "Number of reconciliations done by the operator for individual resources which were successful");
-    }
-
-    /**
-     * Counter metric for number of resources managed by this operator.
-     *
-     * @param namespace     Namespace of the resources being reconciled
-     *
-     * @return  Metrics counter
-     */
-    public AtomicInteger resourceCounter(String namespace) {
-        return getGauge(namespace, kind, METRICS_PREFIX + "resources", metricsProvider, selectorLabels, resourceCounterMap,
-                "Number of custom resources the operator sees");
-    }
-
-    /**
-     * Counter metric for number of paused resources which are not reconciled.
-     *
-     * @param namespace     Namespace of the resources being reconciled
-     *
-     * @return  Metrics counter
-     */
-    public AtomicInteger pausedResourceCounter(String namespace) {
-        return getGauge(namespace, kind, METRICS_PREFIX + "resources.paused", metricsProvider, selectorLabels, pausedResourceCounterMap,
-                "Number of custom resources the operator sees but does not reconcile due to paused reconciliations");
+        return getCounter(new MetricKey(kind, namespace), METRICS_RECONCILIATIONS_SUCCESSFUL,
+                "Number of reconciliations done by the operator for individual resources which were successful",
+                Optional.of(getLabelSelectorValues()), successfulReconciliationsCounterMap);
     }
 
     /**
@@ -145,8 +197,9 @@ public abstract class MetricsHolder {
      * @return  Metrics timer
      */
     public Timer reconciliationsTimer(String namespace) {
-        return getTimer(namespace, kind, METRICS_PREFIX + "reconciliations.duration", metricsProvider, selectorLabels, reconciliationsTimerMap,
-                "The time the reconciliation takes to complete");
+        return getTimer(new MetricKey(kind, namespace), METRICS_RECONCILIATIONS_DURATION,
+                "The time the reconciliation takes to complete",
+                Optional.of(getLabelSelectorValues()), reconciliationsTimerMap);
     }
 
     /**
@@ -158,8 +211,35 @@ public abstract class MetricsHolder {
      * @return  Metrics counter
      */
     public Counter lockedReconciliationsCounter(String namespace) {
-        return getCounter(namespace, kind, METRICS_PREFIX + "reconciliations.locked", metricsProvider, selectorLabels, lockedReconciliationsCounterMap,
-                "Number of reconciliations skipped because another reconciliation for the same resource was still running");
+        return getCounter(new MetricKey(kind, namespace), METRICS_RECONCILIATIONS_LOCKED,
+                "Number of reconciliations skipped because another reconciliation for the same resource was still running",
+                Optional.of(getLabelSelectorValues()), lockedReconciliationsCounterMap);
+    }
+
+    /**
+     * Counter metric for number of resources managed by this operator.
+     *
+     * @param namespace     Namespace of the resources being reconciled
+     *
+     * @return  Metrics counter
+     */
+    public AtomicInteger resourceCounter(String namespace) {
+        return getGauge(new MetricKey(kind, namespace), METRICS_RESOURCES,
+                "Number of custom resources the operator sees",
+                Optional.of(getLabelSelectorValues()), resourceCounterMap);
+    }
+
+    /**
+     * Counter metric for number of paused resources which are not reconciled.
+     *
+     * @param namespace     Namespace of the resources being reconciled
+     *
+     * @return  Metrics counter
+     */
+    public AtomicInteger pausedResourceCounter(String namespace) {
+        return getGauge(new MetricKey(kind, namespace), METRICS_RESOURCES_PAUSED,
+                "Number of custom resources the operator sees but does not reconcile due to paused reconciliations",
+                Optional.of(getLabelSelectorValues()), pausedResourceCounterMap);
     }
 
     ////////////////////
@@ -169,78 +249,83 @@ public abstract class MetricsHolder {
     /**
      * Utility method which gets or creates the metric.
      *
-     * @param namespace         Namespace or the resource
-     * @param kind              Kind of the resource
-     * @param selectorLabels    Selector labels used to filter the resources
+     * @param metricKey         Key of the metric
+     * @param selectorLabels    Selector labels to select the controller resources
      * @param metricMap         The map with the metrics
      * @param fn                Method fo generating the metrics tags
+     * @param optionalTags      Optional tags to be added to the metric
      *
      * @return  Metric
      *
      * @param <M>   Type of the metric
      */
-    protected static <M> M metric(String namespace, String kind, Labels selectorLabels, Map<String, M> metricMap, Function<Tags, M> fn) {
-        String selectorValue = selectorLabels != null ? selectorLabels.toSelectorString() : "";
-        Tags metricTags;
-        String metricKey = namespace + "/" + kind;
-        if (namespace.equals(ConfigParameter.ANY_NAMESPACE)) {
-            metricTags = Tags.of(Tag.of("kind", kind), Tag.of("namespace", ""), Tag.of("selector", selectorValue));
-        } else {
-            metricTags = Tags.of(Tag.of("kind", kind), Tag.of("namespace", namespace), Tag.of("selector", selectorValue));
-        }
-        Tags finalMetricTags = metricTags;
-
-        return metricMap.computeIfAbsent(metricKey, x -> fn.apply(finalMetricTags));
+    protected <M> M metric(MetricKey metricKey, Optional<String> selectorLabels, Map<MetricKey, M> metricMap, Function<Tags, M> fn, Tag... optionalTags) {
+        Tags metricTags = MetricsUtils.getAllMetricTags(metricKey.getNamespace(), metricKey.getKind(), selectorLabels, optionalTags);
+        return metricMap.computeIfAbsent(metricKey, k -> fn.apply(metricTags));
     }
 
     /**
      * Creates or gets a counter-type metric.
      *
-     * @param namespace         Namespace of the resource
-     * @param kind              Kind of the resource
+     * @param metricKey         Key of the metric
      * @param metricName        Name of the metric
-     * @param metrics           Metrics provider
-     * @param selectorLabels    Selector labels used to filter the resources
-     * @param counterMap        Map with counters
      * @param metricHelp        Help description of the metric
+     * @param selectorLabels    Selector labels to select the controller resources
+     * @param counterMap        Map with counters
      *
      * @return  Counter metric
      */
-    protected static Counter getCounter(String namespace, String kind, String metricName, MetricsProvider metrics, Labels selectorLabels, Map<String, Counter> counterMap, String metricHelp) {
-        return metric(namespace, kind, selectorLabels, counterMap, tags -> metrics.counter(metricName, metricHelp, tags));
+    protected Counter getCounter(MetricKey metricKey, String metricName, String metricHelp, Optional<String> selectorLabels, Map<MetricKey, Counter> counterMap) {
+        return metric(metricKey, selectorLabels, counterMap, tags -> metricsProvider.counter(metricName, metricHelp, tags));
     }
 
     /**
      * Creates or gets a gauge-type metric.
      *
-     * @param namespace         Namespace of the resource
-     * @param kind              Kind of the resource
+     * @param metricKey         Key of the metric
      * @param metricName        Name of the metric
-     * @param metrics           Metrics provider
-     * @param selectorLabels    Selector labels used to filter the resources
-     * @param gaugeMap          Map with gauges
      * @param metricHelp        Help description of the metric
+     * @param selectorLabels    Selector labels to select the controller resources
+     * @param gaugeMap          Map with gauges
+     * @param optionalTags      Optional tags to be added to the metric
      *
      * @return  Gauge metric
      */
-    protected static AtomicInteger getGauge(String namespace, String kind, String metricName, MetricsProvider metrics, Labels selectorLabels, Map<String, AtomicInteger> gaugeMap, String metricHelp) {
-        return metric(namespace, kind, selectorLabels, gaugeMap, tags -> metrics.gauge(metricName, metricHelp, tags));
+    protected AtomicLong getGaugeLong(MetricKey metricKey, String metricName, String metricHelp, Optional<String> selectorLabels, Map<MetricKey, AtomicLong> gaugeMap, Tag... optionalTags) {
+        return metric(metricKey, selectorLabels, gaugeMap, tags -> metricsProvider.gaugeLong(metricName, metricHelp, tags), optionalTags);
+    }
+
+    /**
+     * Creates or gets a gauge-type metric.
+     *
+     * @param metricKey         Key of the metric
+     * @param metricName        Name of the metric
+     * @param metricHelp        Help description of the metric
+     * @param selectorLabels    Selector labels to select the controller resources
+     * @param gaugeMap          Map with gauges
+     *
+     * @return  Gauge metric
+     */
+    protected AtomicInteger getGauge(MetricKey metricKey, String metricName, String metricHelp, Optional<String> selectorLabels, Map<MetricKey, AtomicInteger> gaugeMap) {
+        return metric(metricKey, selectorLabels, gaugeMap, tags -> metricsProvider.gauge(metricName, metricHelp, tags));
     }
 
     /**
      * Creates or gets a timer-type metric.
      *
-     * @param namespace         Namespace of the resource
-     * @param kind              Kind of the resource
+     * @param metricKey         Key of the metric
      * @param metricName        Name of the metric
-     * @param metrics           Metrics provider
-     * @param selectorLabels    Selector labels used to filter the resources
-     * @param timerMap          Map with timers
      * @param metricHelp        Help description of the metric
+     * @param selectorLabels    Selector labels to select the controller resources
+     * @param timerMap          Map with timers
      *
      * @return  Timer metric
      */
-    protected static Timer getTimer(String namespace, String kind, String metricName, MetricsProvider metrics, Labels selectorLabels, Map<String, Timer> timerMap, String metricHelp) {
-        return metric(namespace, kind, selectorLabels, timerMap, tags -> metrics.timer(metricName, metricHelp, tags));
+    protected Timer getTimer(MetricKey metricKey, String metricName, String metricHelp, Optional<String> selectorLabels, Map<MetricKey, Timer> timerMap) {
+        return metric(metricKey, selectorLabels, timerMap, tags -> metricsProvider.timer(metricName, metricHelp, tags));
+    }
+
+    protected String getLabelSelectorValues() {
+        return selectorLabels != null ? selectorLabels.toSelectorString() : "";
     }
 }

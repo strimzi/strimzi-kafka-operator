@@ -19,6 +19,7 @@ import io.strimzi.operator.cluster.operator.resource.kubernetes.AbstractWatchabl
 import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.MicrometerMetricsProvider;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.metrics.MetricsHolder;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.NamespaceAndName;
 import io.vertx.core.Future;
@@ -46,6 +47,7 @@ import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.hasItem;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ExtendWith(VertxExtension.class)
@@ -95,18 +97,30 @@ public class OperatorMetricsTest {
         operator.reconcile(new Reconciliation("test", "TestResource", "my-namespace", "my-resource"))
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     MeterRegistry registry = metricsProvider.meterRegistry();
-                    Tag selectorTag = Tag.of("selector", selectorLabels != null ? selectorLabels.toSelectorString() : "");
 
-                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations").meter().getId().getTags().get(2), is(selectorTag));
-                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations").tag("kind", "TestResource").counter().count(), is(1.0));
-                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.successful").meter().getId().getTags().get(2), is(selectorTag));
-                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "TestResource").counter().count(), is(1.0));
+                    if (selectorLabels != null) {
+                        assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS).meter().getId().getTags(), hasItem(Tag.of("selector", selectorLabels.toSelectorString())));
+                    } else {
+                        assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS).meter().getId().getTags().stream().anyMatch(tag -> tag.getKey().equals("selector")), is(false));
+                    }
+                    assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS).tag("kind", "TestResource").counter().count(), is(1.0));
 
-                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").meter().getId().getTags().get(2), is(selectorTag));
-                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").timer().count(), is(1L));
-                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
+                    if (selectorLabels != null) {
+                        assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_SUCCESSFUL).meter().getId().getTags(), hasItem(Tag.of("selector", selectorLabels.toSelectorString())));
+                    } else {
+                        assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_SUCCESSFUL).meter().getId().getTags().stream().anyMatch(tag -> tag.getKey().equals("selector")), is(false));
+                    }
+                    assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_SUCCESSFUL).tag("kind", "TestResource").counter().count(), is(1.0));
 
-                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "resource.state")
+                    if (selectorLabels != null) {
+                        assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_DURATION).meter().getId().getTags(), hasItem(Tag.of("selector", selectorLabels.toSelectorString())));
+                    } else {
+                        assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_DURATION).meter().getId().getTags().stream().anyMatch(tag -> tag.getKey().equals("selector")), is(false));
+                    }
+                    assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_DURATION).tag("kind", "TestResource").timer().count(), is(1L));
+                    assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_DURATION).tag("kind", "TestResource").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
+
+                    assertThat(registry.get(MetricsHolder.METRICS_PREFIX + "resource.state")
                             .tag("kind", "TestResource")
                             .tag("name", "my-resource")
                             .tag("resource-namespace", "my-namespace")
@@ -119,6 +133,11 @@ public class OperatorMetricsTest {
     @Test
     public void testReconcileWithEmptySelectorLabels(VertxTestContext context) {
         successfulReconcile(context, Labels.fromMap(emptyMap()));
+    }
+
+    @Test
+    public void testReconcileWithEmptyNullLabels(VertxTestContext context) {
+        successfulReconcile(context, null);
     }
 
     @Test
@@ -157,18 +176,30 @@ public class OperatorMetricsTest {
         operator.reconcile(new Reconciliation("test", "TestResource", "my-namespace", "my-resource"))
                 .onComplete(context.failing(v -> context.verify(() -> {
                     MeterRegistry registry = metricsProvider.meterRegistry();
-                    Tag selectorTag = Tag.of("selector", selectorLabels != null ? selectorLabels.toSelectorString() : "");
 
-                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations").meter().getId().getTags().get(2), is(selectorTag));
-                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations").tag("kind", "TestResource").counter().count(), is(1.0));
-                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.failed").meter().getId().getTags().get(2), is(selectorTag));
-                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.failed").tag("kind", "TestResource").counter().count(), is(1.0));
+                    if (selectorLabels != null) {
+                        assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS).meter().getId().getTags(), hasItem(Tag.of("selector", selectorLabels.toSelectorString())));
+                    } else {
+                        assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS).meter().getId().getTags().stream().anyMatch(tag -> tag.getKey().equals("selector")), is(false));
+                    }
+                    assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS).tag("kind", "TestResource").counter().count(), is(1.0));
 
-                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").meter().getId().getTags().get(2), is(selectorTag));
-                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").timer().count(), is(1L));
-                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
+                    if (selectorLabels != null) {
+                        assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_FAILED).meter().getId().getTags(), hasItem(Tag.of("selector", selectorLabels.toSelectorString())));
+                    } else {
+                        assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_FAILED).meter().getId().getTags().stream().anyMatch(tag -> tag.getKey().equals("selector")), is(false));
+                    }
+                    assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_FAILED).tag("kind", "TestResource").counter().count(), is(1.0));
 
-                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "resource.state")
+                    if (selectorLabels != null) {
+                        assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_DURATION).meter().getId().getTags(), hasItem(Tag.of("selector", selectorLabels.toSelectorString())));
+                    } else {
+                        assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_DURATION).meter().getId().getTags().stream().anyMatch(tag -> tag.getKey().equals("selector")), is(false));
+                    }
+                    assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_DURATION).tag("kind", "TestResource").timer().count(), is(1L));
+                    assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_DURATION).tag("kind", "TestResource").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
+
+                    assertThat(registry.get(MetricsHolder.METRICS_PREFIX + "resource.state")
                             .tag("kind", "TestResource")
                             .tag("name", "my-resource")
                             .tag("resource-namespace", "my-namespace")
@@ -181,6 +212,11 @@ public class OperatorMetricsTest {
 
     @Test
     public void testFailingReconcileWithEmptySelectorLabels(VertxTestContext context) {
+        failingReconcile(context, Labels.fromMap(emptyMap()));
+    }
+
+    @Test
+    public void testFailingReconcileWithNullLabels(VertxTestContext context) {
         failingReconcile(context, Labels.fromMap(emptyMap()));
     }
 
@@ -221,20 +257,21 @@ public class OperatorMetricsTest {
         operator.reconcile(new Reconciliation("test", "TestResource", "my-namespace", "my-resource"))
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     MeterRegistry registry = metricsProvider.meterRegistry();
-                    Tag selectorTag = Tag.of("selector", "");
 
-                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations").meter().getId().getTags().get(2), is(selectorTag));
-                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations").tag("kind", "TestResource").counter().count(), is(1.0));
-                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.successful").meter().getId().getTags().get(2), is(selectorTag));
-                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "TestResource").counter().count(), is(1.0));
-                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "resources.paused").meter().getId().getTags().get(2), is(selectorTag));
-                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "resources.paused").tag("kind", "TestResource").gauge().value(), is(1.0));
+                    assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS).meter().getId().getTags().stream().anyMatch(tag -> tag.getKey().equals("selector")), is(false));
+                    assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS).tag("kind", "TestResource").counter().count(), is(1.0));
 
-                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").meter().getId().getTags().get(2), is(selectorTag));
-                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").timer().count(), is(1L));
-                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
+                    assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_SUCCESSFUL).meter().getId().getTags().stream().anyMatch(tag -> tag.getKey().equals("selector")), is(false));
+                    assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_SUCCESSFUL).tag("kind", "TestResource").counter().count(), is(1.0));
 
-                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "resource.state")
+                    assertThat(registry.get(MetricsHolder.METRICS_RESOURCES_PAUSED).meter().getId().getTags().stream().anyMatch(tag -> tag.getKey().equals("selector")), is(false));
+                    assertThat(registry.get(MetricsHolder.METRICS_RESOURCES_PAUSED).tag("kind", "TestResource").gauge().value(), is(1.0));
+
+                    assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_DURATION).meter().getId().getTags().stream().anyMatch(tag -> tag.getKey().equals("selector")), is(false));
+                    assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_DURATION).tag("kind", "TestResource").timer().count(), is(1L));
+                    assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_DURATION).tag("kind", "TestResource").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
+
+                    assertThat(registry.get(MetricsHolder.METRICS_PREFIX + "resource.state")
                             .tag("kind", "TestResource")
                             .tag("name", "my-resource")
                             .tag("resource-namespace", "my-namespace")
@@ -271,12 +308,12 @@ public class OperatorMetricsTest {
         operator.reconcile(new Reconciliation("test", "TestResource", "my-namespace", "my-resource"))
                 .onComplete(context.failing(v -> context.verify(() -> {
                     MeterRegistry registry = metricsProvider.meterRegistry();
-                    Tag selectorTag = Tag.of("selector", "");
 
-                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations").meter().getId().getTags().get(2), is(selectorTag));
-                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations").tag("kind", "TestResource").counter().count(), is(1.0));
-                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.locked").meter().getId().getTags().get(2), is(selectorTag));
-                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.locked").tag("kind", "TestResource").counter().count(), is(1.0));
+                    assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS).meter().getId().getTags().stream().anyMatch(tag -> tag.getKey().equals("selector")), is(false));
+                    assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS).tag("kind", "TestResource").counter().count(), is(1.0));
+
+                    assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_LOCKED).meter().getId().getTags().stream().anyMatch(tag -> tag.getKey().equals("selector")), is(false));
+                    assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_LOCKED).tag("kind", "TestResource").counter().count(), is(1.0));
                     async.flag();
                 })));
     }
@@ -328,18 +365,18 @@ public class OperatorMetricsTest {
         operator.reconcile(new Reconciliation("test", "TestResource", "my-namespace", "my-resource"))
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     MeterRegistry registry = metricsProvider.meterRegistry();
-                    Tag selectorTag = Tag.of("selector", "");
 
-                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations").meter().getId().getTags().get(2), is(selectorTag));
-                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations").tag("kind", "TestResource").counter().count(), is(1.0));
-                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.successful").meter().getId().getTags().get(2), is(selectorTag));
-                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "TestResource").counter().count(), is(1.0));
+                    assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS).meter().getId().getTags().stream().anyMatch(tag -> tag.getKey().equals("selector")), is(false));
+                    assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS).tag("kind", "TestResource").counter().count(), is(1.0));
 
-                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").meter().getId().getTags().get(2), is(selectorTag));
-                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").timer().count(), is(1L));
-                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
+                    assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_SUCCESSFUL).meter().getId().getTags().stream().anyMatch(tag -> tag.getKey().equals("selector")), is(false));
+                    assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_SUCCESSFUL).tag("kind", "TestResource").counter().count(), is(1.0));
 
-                    assertThrows(MeterNotFoundException.class, () -> registry.get(AbstractOperator.METRICS_PREFIX + "resource.state")
+                    assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_DURATION).meter().getId().getTags().stream().anyMatch(tag -> tag.getKey().equals("selector")), is(false));
+                    assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_DURATION).tag("kind", "TestResource").timer().count(), is(1L));
+                    assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_DURATION).tag("kind", "TestResource").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
+
+                    assertThrows(MeterNotFoundException.class, () -> registry.get(MetricsHolder.METRICS_PREFIX + "resource.state")
                             .tag("kind", "TestResource")
                             .tag("name", "my-resource")
                             .tag("resource-namespace", "my-namespace")
@@ -368,24 +405,25 @@ public class OperatorMetricsTest {
         Checkpoint async = context.checkpoint();
         reconcileAllPromise.future().onComplete(context.succeeding(v -> context.verify(() -> {
             MeterRegistry registry = metrics.meterRegistry();
-            Tag selectorTag = Tag.of("selector", "");
 
-            assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.periodical").meter().getId().getTags().get(2), is(selectorTag));
-            assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.periodical").tag("kind", "TestResource").counter().count(), is(1.0));
-            assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations").meter().getId().getTags().get(2), is(selectorTag));
-            assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations").tag("kind", "TestResource").counter().count(), is(3.0));
-            assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.successful").meter().getId().getTags().get(2), is(selectorTag));
-            assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "TestResource").counter().count(), is(3.0));
+            assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_PERIODICAL).meter().getId().getTags().stream().anyMatch(tag -> tag.getKey().equals("selector")), is(false));
+            assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_PERIODICAL).tag("kind", "TestResource").counter().count(), is(1.0));
 
-            assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").meter().getId().getTags().get(2), is(selectorTag));
-            assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").timer().count(), is(3L));
-            assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
+            assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS).meter().getId().getTags().stream().anyMatch(tag -> tag.getKey().equals("selector")), is(false));
+            assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS).tag("kind", "TestResource").counter().count(), is(3.0));
 
-            assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "resources").meter().getId().getTags().get(2), is(selectorTag));
-            assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "resources").tag("kind", "TestResource").tag("namespace", "my-namespace").gauge().value(), is(3.0));
+            assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_SUCCESSFUL).meter().getId().getTags().stream().anyMatch(tag -> tag.getKey().equals("selector")), is(false));
+            assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_SUCCESSFUL).tag("kind", "TestResource").counter().count(), is(3.0));
+
+            assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_DURATION).meter().getId().getTags().stream().anyMatch(tag -> tag.getKey().equals("selector")), is(false));
+            assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_DURATION).tag("kind", "TestResource").timer().count(), is(3L));
+            assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_DURATION).tag("kind", "TestResource").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
+
+            assertThat(registry.get(MetricsHolder.METRICS_RESOURCES).meter().getId().getTags().stream().anyMatch(tag -> tag.getKey().equals("selector")), is(false));
+            assertThat(registry.get(MetricsHolder.METRICS_RESOURCES).tag("kind", "TestResource").tag("namespace", "my-namespace").gauge().value(), is(3.0));
 
             for (NamespaceAndName resource : resources) {
-                assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "resource.state")
+                assertThat(registry.get(MetricsHolder.METRICS_PREFIX + "resource.state")
                         .tag("kind", "TestResource")
                         .tag("name", resource.getName())
                         .tag("resource-namespace", resource.getNamespace())
@@ -422,22 +460,22 @@ public class OperatorMetricsTest {
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     MeterRegistry registry = metrics.meterRegistry();
 
-                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.periodical").tag("kind", "TestResource").counter().count(), is(1.0));
-                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations").tag("kind", "TestResource").tag("namespace", "my-namespace").counter().count(), is(2.0));
-                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations").tag("kind", "TestResource").tag("namespace", "my-namespace2").counter().count(), is(1.0));
-                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "TestResource").tag("namespace", "my-namespace").counter().count(), is(2.0));
-                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "TestResource").tag("namespace", "my-namespace2").counter().count(), is(1.0));
+                    assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_PERIODICAL).tag("kind", "TestResource").counter().count(), is(1.0));
+                    assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS).tag("kind", "TestResource").tag("namespace", "my-namespace").counter().count(), is(2.0));
+                    assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS).tag("kind", "TestResource").tag("namespace", "my-namespace2").counter().count(), is(1.0));
+                    assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_SUCCESSFUL).tag("kind", "TestResource").tag("namespace", "my-namespace").counter().count(), is(2.0));
+                    assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_SUCCESSFUL).tag("kind", "TestResource").tag("namespace", "my-namespace2").counter().count(), is(1.0));
 
-                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").tag("namespace", "my-namespace").timer().count(), is(2L));
-                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").tag("namespace", "my-namespace2").timer().count(), is(1L));
-                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").tag("namespace", "my-namespace").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
-                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").tag("namespace", "my-namespace2").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
+                    assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_DURATION).tag("kind", "TestResource").tag("namespace", "my-namespace").timer().count(), is(2L));
+                    assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_DURATION).tag("kind", "TestResource").tag("namespace", "my-namespace2").timer().count(), is(1L));
+                    assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_DURATION).tag("kind", "TestResource").tag("namespace", "my-namespace").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
+                    assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_DURATION).tag("kind", "TestResource").tag("namespace", "my-namespace2").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
 
-                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "resources").tag("kind", "TestResource").tag("namespace", "my-namespace").gauge().value(), is(2.0));
-                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "resources").tag("kind", "TestResource").tag("namespace", "my-namespace2").gauge().value(), is(1.0));
+                    assertThat(registry.get(MetricsHolder.METRICS_RESOURCES).tag("kind", "TestResource").tag("namespace", "my-namespace").gauge().value(), is(2.0));
+                    assertThat(registry.get(MetricsHolder.METRICS_RESOURCES).tag("kind", "TestResource").tag("namespace", "my-namespace2").gauge().value(), is(1.0));
 
                     for (NamespaceAndName resource : resources) {
-                        assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "resource.state")
+                        assertThat(registry.get(MetricsHolder.METRICS_PREFIX + "resource.state")
                                 .tag("kind", "TestResource")
                                 .tag("name", resource.getName())
                                 .tag("resource-namespace", resource.getNamespace())
@@ -455,22 +493,22 @@ public class OperatorMetricsTest {
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     MeterRegistry registry = metrics.meterRegistry();
 
-                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.periodical").tag("kind", "TestResource").counter().count(), is(2.0));
-                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations").tag("kind", "TestResource").tag("namespace", "my-namespace").counter().count(), is(4.0));
-                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations").tag("kind", "TestResource").tag("namespace", "my-namespace2").counter().count(), is(1.0));
-                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "TestResource").tag("namespace", "my-namespace").counter().count(), is(4.0));
-                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "TestResource").tag("namespace", "my-namespace2").counter().count(), is(1.0));
+                    assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_PERIODICAL).tag("kind", "TestResource").counter().count(), is(2.0));
+                    assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS).tag("kind", "TestResource").tag("namespace", "my-namespace").counter().count(), is(4.0));
+                    assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS).tag("kind", "TestResource").tag("namespace", "my-namespace2").counter().count(), is(1.0));
+                    assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_SUCCESSFUL).tag("kind", "TestResource").tag("namespace", "my-namespace").counter().count(), is(4.0));
+                    assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_SUCCESSFUL).tag("kind", "TestResource").tag("namespace", "my-namespace2").counter().count(), is(1.0));
 
-                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").tag("namespace", "my-namespace").timer().count(), is(4L));
-                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").tag("namespace", "my-namespace2").timer().count(), is(1L));
-                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").tag("namespace", "my-namespace").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
-                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").tag("namespace", "my-namespace2").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
+                    assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_DURATION).tag("kind", "TestResource").tag("namespace", "my-namespace").timer().count(), is(4L));
+                    assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_DURATION).tag("kind", "TestResource").tag("namespace", "my-namespace2").timer().count(), is(1L));
+                    assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_DURATION).tag("kind", "TestResource").tag("namespace", "my-namespace").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
+                    assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_DURATION).tag("kind", "TestResource").tag("namespace", "my-namespace2").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
 
-                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "resources").tag("kind", "TestResource").tag("namespace", "my-namespace").gauge().value(), is(2.0));
-                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "resources").tag("kind", "TestResource").tag("namespace", "my-namespace2").gauge().value(), is(0.0));
+                    assertThat(registry.get(MetricsHolder.METRICS_RESOURCES).tag("kind", "TestResource").tag("namespace", "my-namespace").gauge().value(), is(2.0));
+                    assertThat(registry.get(MetricsHolder.METRICS_RESOURCES).tag("kind", "TestResource").tag("namespace", "my-namespace2").gauge().value(), is(0.0));
 
                     for (NamespaceAndName resource : updatedResources) {
-                        assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "resource.state")
+                        assertThat(registry.get(MetricsHolder.METRICS_PREFIX + "resource.state")
                                 .tag("kind", "TestResource")
                                 .tag("name", resource.getName())
                                 .tag("resource-namespace", resource.getNamespace())
