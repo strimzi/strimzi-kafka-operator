@@ -6,9 +6,9 @@ package io.strimzi.operator.cluster.operator.resource;
 
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.auth.PemAuthIdentity;
 import io.strimzi.operator.common.auth.PemTrustSet;
-import io.strimzi.operator.common.auth.Pkcs12AuthIdentity;
-import io.strimzi.operator.common.auth.TlsPkcs12Identity;
+import io.strimzi.operator.common.auth.TlsPemIdentity;
 import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.vertx.core.Vertx;
@@ -64,18 +64,18 @@ public class ZookeeperScalerTest {
                     .addToData(Ca.CA_CRT, MockCertManager.clusterCaCert())
                     .build()
     );
-    Pkcs12AuthIdentity dummyPKSC12AuthIdentity = Pkcs12AuthIdentity.clusterOperator(
+    PemAuthIdentity dummyPemAuthIdentity = PemAuthIdentity.clusterOperator(
             new SecretBuilder()
                     .withNewMetadata()
                         .withName("cluster-operator-certs")
                         .withNamespace("myproject")
                     .endMetadata()
-                    .addToData("cluster-operator.password", dummyBase64Value)
-                    .addToData("cluster-operator.p12", dummyBase64Value)
+                    .addToData("cluster-operator.crt", dummyBase64Value)
+                    .addToData("cluster-operator.key", dummyBase64Value)
                     .build()
     );
 
-    TlsPkcs12Identity dummyPkcs12Identity = new TlsPkcs12Identity(dummyPemTrustSet, dummyPKSC12AuthIdentity);
+    TlsPemIdentity dummyPemIdentity = new TlsPemIdentity(dummyPemTrustSet, dummyPemAuthIdentity);
 
     Function<Integer, String> zkNodeAddress = (Integer i) -> String.format("%s.%s.%s.svc",
             "my-cluster-zookeeper-" + i,
@@ -200,7 +200,7 @@ public class ZookeeperScalerTest {
         ZooKeeperAdminProvider zooKeeperAdminProvider = (connectString, sessionTimeout, watcher, conf) -> mockZooAdmin;
 
         ZookeeperScaler scaler = new ZookeeperScaler(new Reconciliation("test", "TestResource", "my-namespace", "my-resource"),
-                vertx, zooKeeperAdminProvider, "zookeeper:2181", null, dummyPkcs12Identity, 1_000, 10_000);
+                vertx, zooKeeperAdminProvider, "zookeeper:2181", null, dummyPemIdentity, 1_000, 10_000);
 
         Checkpoint check = context.checkpoint();
         scaler.scale(5).onComplete(context.failing(cause -> context.verify(() -> {
@@ -225,7 +225,7 @@ public class ZookeeperScalerTest {
         };
 
         ZookeeperScaler scaler = new ZookeeperScaler(new Reconciliation("test", "TestResource", "my-namespace", "my-resource"),
-                vertx, zooKeeperAdminProvider, "zookeeper:2181", zkNodeAddress, dummyPkcs12Identity, 1_000, 10_000);
+                vertx, zooKeeperAdminProvider, "zookeeper:2181", zkNodeAddress, dummyPemIdentity, 1_000, 10_000);
 
         Checkpoint check = context.checkpoint();
         scaler.scale(1).onComplete(context.succeeding(res -> context.verify(() -> {
@@ -255,7 +255,7 @@ public class ZookeeperScalerTest {
         };
 
         ZookeeperScaler scaler = new ZookeeperScaler(new Reconciliation("test", "TestResource", "my-namespace", "my-resource"),
-                vertx, zooKeeperAdminProvider, "zookeeper:2181", zkNodeAddress, dummyPkcs12Identity, 1_000, 10_000);
+                vertx, zooKeeperAdminProvider, "zookeeper:2181", zkNodeAddress, dummyPemIdentity, 1_000, 10_000);
 
         Checkpoint check = context.checkpoint();
         scaler.scale(1).onComplete(context.succeeding(res -> context.verify(() -> {
@@ -282,7 +282,7 @@ public class ZookeeperScalerTest {
         };
 
         ZookeeperScaler scaler = new ZookeeperScaler(new Reconciliation("test", "TestResource", "my-namespace", "my-resource"),
-                vertx, zooKeeperAdminProvider, "zookeeper:2181", zkNodeAddress, dummyPkcs12Identity, 1_000, 10_000);
+                vertx, zooKeeperAdminProvider, "zookeeper:2181", zkNodeAddress, dummyPemIdentity, 1_000, 10_000);
 
         Checkpoint check = context.checkpoint();
         scaler.scale(1).onComplete(context.failing(cause -> context.verify(() -> {
@@ -295,7 +295,7 @@ public class ZookeeperScalerTest {
     @Test
     public void testConnectionToNonExistingHost(VertxTestContext context)  {
         ZookeeperScaler scaler = new ZookeeperScaler(new Reconciliation("test", "TestResource", "my-namespace", "my-resource"),
-                vertx, new DefaultZooKeeperAdminProvider(), "i-do-not-exist.com:2181", null, dummyPkcs12Identity, 2_000, 10_000);
+                vertx, new DefaultZooKeeperAdminProvider(), "i-do-not-exist.com:2181", null, dummyPemIdentity, 2_000, 10_000);
 
         Checkpoint check = context.checkpoint();
         scaler.scale(5).onComplete(context.failing(cause -> context.verify(() -> {
@@ -314,7 +314,7 @@ public class ZookeeperScalerTest {
         ZooKeeperAdminProvider zooKeeperAdminProvider = (connectString, sessionTimeout, watcher, conf) -> mockZooAdmin;
 
         ZookeeperScaler scaler = new ZookeeperScaler(new Reconciliation("test", "TestResource", "my-namespace", "my-resource"),
-                vertx, zooKeeperAdminProvider, "zookeeper:2181", null, dummyPkcs12Identity, 1_000, 10_000);
+                vertx, zooKeeperAdminProvider, "zookeeper:2181", null, dummyPemIdentity, 1_000, 10_000);
 
         Checkpoint check = context.checkpoint();
         scaler.scale(5).onComplete(context.failing(cause -> context.verify(() -> {

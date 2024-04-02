@@ -21,7 +21,11 @@ import java.util.stream.Collectors;
  * Represents the set of certificates to be trusted by a TLS client or server
  */
 public class PemTrustSet {
-    private static final String CERT_SUFFIX = ".crt";
+    /**
+     * Filename suffix for certificate files
+     */
+    public static final String CERT_SUFFIX = "crt";
+    private static final String FULL_CERT_SUFFIX = "." + CERT_SUFFIX;
     private final Map<String, byte[]> trustedCertificateMap;
     private final String secretName;
     private final String secretNamespace;
@@ -52,6 +56,14 @@ public class PemTrustSet {
      */
     public Set<byte[]> trustedCertificatesBytes() {
         return new HashSet<>(trustedCertificateMap.values());
+    }
+
+    /**
+     * Certificates to use in a TrustStore for TLS connections, with each certificate on a separate line.
+     * @return The set of trusted certificates as a byte array
+     */
+    public byte[] trustedCertificatesPemBytes() {
+        return trustedCertificatesString().getBytes(StandardCharsets.US_ASCII);
     }
 
     /**
@@ -96,7 +108,7 @@ public class PemTrustSet {
                 .getData()
                 .entrySet()
                 .stream()
-                .filter(record -> record.getKey().endsWith(CERT_SUFFIX))
+                .filter(record -> record.getKey().endsWith(FULL_CERT_SUFFIX))
                 .collect(Collectors.toMap(
                         entry -> stripCertKeySuffix(entry.getKey()),
                         entry -> decoder.decode(entry.getValue()))
@@ -108,6 +120,6 @@ public class PemTrustSet {
     }
 
     private static String stripCertKeySuffix(String key) {
-        return key.substring(0, key.length() - CERT_SUFFIX.length());
+        return key.substring(0, key.length() - FULL_CERT_SUFFIX.length());
     }
 }

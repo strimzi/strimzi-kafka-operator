@@ -9,8 +9,9 @@ import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
-import io.strimzi.operator.common.auth.TlsPkcs12Identity;
-import io.strimzi.operator.common.model.PasswordGenerator;
+import io.strimzi.operator.common.auth.PemAuthIdentity;
+import io.strimzi.operator.common.auth.PemTrustSet;
+import io.strimzi.operator.common.auth.TlsPemIdentity;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -42,11 +43,7 @@ public class ZookeeperScaler implements AutoCloseable {
 
     private final long operationTimeoutMs;
     private final int zkAdminSessionTimeoutMs;
-
-    private final String trustStorePassword;
     private final File trustStoreFile;
-
-    private final String keyStorePassword;
     private final File keyStoreFile;
 
     private final Reconciliation reconciliation;
@@ -58,14 +55,14 @@ public class ZookeeperScaler implements AutoCloseable {
      * @param vertx                         Vertx instance
      * @param zookeeperConnectionString     Connection string to connect to the right Zookeeper
      * @param zkNodeAddress                 Function for generating the Zookeeper node addresses
-     * @param zkTlsPkcs12Identity           Trust set and identity for TLS client authentication for connecting to ZooKeeper
+     * @param coTlsPemIdentity              Trust set and identity for TLS client authentication for connecting to ZooKeeper
      * @param operationTimeoutMs            Operation timeout
      * @param zkAdminSessionTimeoutMs       Zookeeper Admin session timeout
      *
      */
     protected ZookeeperScaler(Reconciliation reconciliation, Vertx vertx, ZooKeeperAdminProvider zooAdminProvider,
                               String zookeeperConnectionString, Function<Integer, String> zkNodeAddress,
-                              TlsPkcs12Identity zkTlsPkcs12Identity, long operationTimeoutMs, int zkAdminSessionTimeoutMs) {
+                              TlsPemIdentity coTlsPemIdentity, long operationTimeoutMs, int zkAdminSessionTimeoutMs) {
         this.reconciliation = reconciliation;
 
         LOGGER.debugCr(reconciliation, "Creating Zookeeper Scaler for cluster {}", zookeeperConnectionString);
@@ -78,14 +75,10 @@ public class ZookeeperScaler implements AutoCloseable {
         this.zkAdminSessionTimeoutMs = zkAdminSessionTimeoutMs;
 
         // Setup truststore from PEM file in cluster CA secret
-        // We cannot use P12 because of custom CAs which for simplicity provide only PEM
-        PasswordGenerator pg = new PasswordGenerator(12);
-        trustStorePassword = pg.generate();
-        trustStoreFile = Util.createFileTrustStore(getClass().getName(), "p12", zkTlsPkcs12Identity.pemTrustSet().trustedCertificates(), trustStorePassword.toCharArray());
+        trustStoreFile = Util.createFileStore(getClass().getName(), PemTrustSet.CERT_SUFFIX, coTlsPemIdentity.pemTrustSet().trustedCertificatesPemBytes());
 
-        // Setup keystore from PKCS12 in cluster-operator secret
-        keyStorePassword = zkTlsPkcs12Identity.pkcs12AuthIdentity().password();
-        keyStoreFile = Util.createFileStore(getClass().getName(), "p12", zkTlsPkcs12Identity.pkcs12AuthIdentity().keystore());
+        // Setup keystore from PEM in cluster-operator secret
+        keyStoreFile = Util.createFileStore(getClass().getName(), PemAuthIdentity.PEM_SUFFIX, coTlsPemIdentity.pemAuthIdentity().certificateChainAsPemBytes());
     }
 
     /**
@@ -269,11 +262,9 @@ public class ZookeeperScaler implements AutoCloseable {
                 clientConfig.setProperty("zookeeper.client.secure", "true");
                 clientConfig.setProperty("zookeeper.sasl.client", "false");
                 clientConfig.setProperty("zookeeper.ssl.trustStore.location", trustStoreFile.getAbsolutePath());
-                clientConfig.setProperty("zookeeper.ssl.trustStore.password", trustStorePassword);
-                clientConfig.setProperty("zookeeper.ssl.trustStore.type", "PKCS12");
+                clientConfig.setProperty("zookeeper.ssl.trustStore.type", "PEM");
                 clientConfig.setProperty("zookeeper.ssl.keyStore.location", keyStoreFile.getAbsolutePath());
-                clientConfig.setProperty("zookeeper.ssl.keyStore.password", keyStorePassword);
-                clientConfig.setProperty("zookeeper.ssl.keyStore.type", "PKCS12");
+                clientConfig.setProperty("zookeeper.ssl.keyStore.type", "PEM");
                 clientConfig.setProperty("zookeeper.request.timeout", String.valueOf(operationTimeoutMs));
 
                 return clientConfig;

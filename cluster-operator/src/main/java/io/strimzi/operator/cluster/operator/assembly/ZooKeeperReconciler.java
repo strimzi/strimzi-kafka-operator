@@ -41,10 +41,7 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
-import io.strimzi.operator.common.auth.PemTrustSet;
-import io.strimzi.operator.common.auth.TlsIdentitySet;
 import io.strimzi.operator.common.auth.TlsPemIdentity;
-import io.strimzi.operator.common.auth.TlsPkcs12Identity;
 import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
@@ -113,7 +110,6 @@ public class ZooKeeperReconciler {
 
     private String loggingHash = "";
     private TlsPemIdentity tlsPemIdentity;
-    private TlsPkcs12Identity tlsPkcs12Identity;
 
     private final boolean isKRaftMigrationRollback;
 
@@ -229,20 +225,14 @@ public class ZooKeeperReconciler {
     }
 
     /**
-     * Initialize the TrustSet, PemAuthIdentity and Pkcs12AuthIdentity to be used by TLS clients during reconciliation
+     * Initialize the TrustSet and PemAuthIdentity to be used by TLS clients during reconciliation
      *
-     * @return Completes when the TrustSet, PemAuthIdentity and Pkcs12AuthIdentity have been created and stored in records
+     * @return Completes when the TrustSet and PemAuthIdentity have been created and stored in a record
      */
     protected Future<Void> initClientAuthenticationCertificates() {
-        return Future.join(
-                ReconcilerUtils.clusterCaPemTrustSet(reconciliation, secretOperator),
-                ReconcilerUtils.coClientAuthIdentity(reconciliation, secretOperator)
-        ).onSuccess(result -> {
-            PemTrustSet pemTrustSet = result.resultAt(0);
-            TlsIdentitySet tlsIdentitySet = result.resultAt(1);
-            this.tlsPemIdentity = new TlsPemIdentity(pemTrustSet, tlsIdentitySet.pemAuthIdentity());
-            this.tlsPkcs12Identity = new TlsPkcs12Identity(pemTrustSet, tlsIdentitySet.pkcs12AuthIdentity());
-        }).mapEmpty();
+        return ReconcilerUtils.coTlsPemIdentity(reconciliation, secretOperator)
+                .onSuccess(coTlsPemIdentity -> this.tlsPemIdentity = coTlsPemIdentity)
+                .mapEmpty();
     }
 
     /**
@@ -590,7 +580,7 @@ public class ZooKeeperReconciler {
                         vertx,
                         zkConnectionString(connectToReplicas, zkNodeAddress),
                         zkNodeAddress,
-                        this.tlsPkcs12Identity,
+                        this.tlsPemIdentity,
                         operationTimeoutMs,
                         adminSessionTimeoutMs
                 );
@@ -891,7 +881,7 @@ public class ZooKeeperReconciler {
         String zkConnectionString = KafkaResources.zookeeperServiceName(reconciliation.name()) + ":" + ZookeeperCluster.CLIENT_TLS_PORT;
         KRaftMigrationUtils.deleteZooKeeperControllerZnode(
                 reconciliation,
-                this.tlsPkcs12Identity,
+                this.tlsPemIdentity,
                 operationTimeoutMs,
                 zkConnectionString
         );

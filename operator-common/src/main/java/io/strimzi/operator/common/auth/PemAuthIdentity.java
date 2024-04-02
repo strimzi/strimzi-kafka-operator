@@ -18,7 +18,10 @@ import java.util.Objects;
  * This consists of an X509 end-entity certificate, corresponding private key, and a (possibly empty) chain of X509 intermediate CA certificates, all in PEM format.
  */
 public class PemAuthIdentity {
-
+    /**
+     * Filename suffix for certificate chain as PEM
+     */
+    public static final String PEM_SUFFIX = "pem";
     private final byte[] privateKeyAsPemBytes;
     private final byte[] certificateChainAsPemBytes;
     private final String secretCertName;

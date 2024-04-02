@@ -27,8 +27,6 @@ import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.auth.PemAuthIdentity;
 import io.strimzi.operator.common.auth.PemTrustSet;
-import io.strimzi.operator.common.auth.Pkcs12AuthIdentity;
-import io.strimzi.operator.common.auth.TlsIdentitySet;
 import io.strimzi.operator.common.auth.TlsPemIdentity;
 import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.common.model.ClientsCa;
@@ -127,20 +125,6 @@ public class ReconcilerUtils {
                 coClientAuthIdentitySecret(reconciliation, secretOperator)
                         .map(PemAuthIdentity::clusterOperator)
         ).compose(res -> Future.succeededFuture(new TlsPemIdentity(res.resultAt(0), res.resultAt(1))));
-    }
-
-    /**
-     * Utility method which helps to get the set of client auth identities for the Cluster Operator needed to bootstrap different
-     * clients used during the reconciliation.
-     *
-     * @param reconciliation Reconciliation Marker
-     * @param secretOperator Secret operator for working with Kubernetes Secrets that store certificates
-     *
-     * @return  Future containing a record with the Cluster Operator public and private key in both PEM and PKCS12 format
-     */
-    public static Future<TlsIdentitySet> coClientAuthIdentity(Reconciliation reconciliation, SecretOperator secretOperator) {
-        return coClientAuthIdentitySecret(reconciliation, secretOperator)
-                .map(secret -> new TlsIdentitySet(PemAuthIdentity.clusterOperator(secret), Pkcs12AuthIdentity.clusterOperator(secret)));
     }
 
     /**

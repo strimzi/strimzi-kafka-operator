@@ -10,7 +10,9 @@ import io.strimzi.operator.cluster.operator.resource.KafkaAgentClient;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
-import io.strimzi.operator.common.auth.TlsPkcs12Identity;
+import io.strimzi.operator.common.auth.PemAuthIdentity;
+import io.strimzi.operator.common.auth.PemTrustSet;
+import io.strimzi.operator.common.auth.TlsPemIdentity;
 import io.strimzi.operator.common.model.PasswordGenerator;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.admin.ZooKeeperAdmin;
@@ -35,19 +37,16 @@ public class KRaftMigrationUtils {
      * @param operationTimeoutMs    Timeout to be set on the ZooKeeper request configuration
      * @param zkConnectionString    Connection string to the ZooKeeper ensemble to connect to
      */
-    public static void deleteZooKeeperControllerZnode(Reconciliation reconciliation, TlsPkcs12Identity coTlsPemIdentity, long operationTimeoutMs, String zkConnectionString) {
+    public static void deleteZooKeeperControllerZnode(Reconciliation reconciliation, TlsPemIdentity coTlsPemIdentity, long operationTimeoutMs, String zkConnectionString) {
         PasswordGenerator pg = new PasswordGenerator(12);
         // Setup truststore from PEM file in cluster CA secret
-        // We cannot use P12 because of custom CAs which for simplicity provide only PEM
-        String trustStorePassword = pg.generate();
-        File trustStoreFile = Util.createFileTrustStore(KRaftMigrationUtils.class.getName(), "p12", coTlsPemIdentity.pemTrustSet().trustedCertificates(), trustStorePassword.toCharArray());
+        File trustStoreFile = Util.createFileStore(KRaftMigrationUtils.class.getName(), PemTrustSet.CERT_SUFFIX, coTlsPemIdentity.pemTrustSet().trustedCertificatesPemBytes());
 
-        // Setup keystore from PKCS12 in cluster-operator secret
-        String keyStorePassword = coTlsPemIdentity.pkcs12AuthIdentity().password();
-        File keyStoreFile = Util.createFileStore(KRaftMigrationUtils.class.getName(), "p12", coTlsPemIdentity.pkcs12AuthIdentity().keystore());
+        // Setup keystore from PEM in cluster-operator secret
+        File keyStoreFile = Util.createFileStore(KRaftMigrationUtils.class.getName(), PemAuthIdentity.PEM_SUFFIX, coTlsPemIdentity.pemAuthIdentity().certificateChainAsPemBytes());
         try {
             ZooKeeperAdmin admin = createZooKeeperAdminClient(reconciliation, zkConnectionString, operationTimeoutMs,
-                    trustStoreFile, trustStorePassword, keyStoreFile, keyStorePassword);
+                    trustStoreFile, keyStoreFile);
             admin.delete("/controller", -1);
             admin.close();
             LOGGER.infoCr(reconciliation, "Deleted the '/controller' znode as part of the KRaft migration rollback");
@@ -92,25 +91,21 @@ public class KRaftMigrationUtils {
      * @param zkConnectionString    Connection information to ZooKeeper
      * @param operationTimeoutMs    Timeout for ZooKeeper requests
      * @param trustStoreFile    File hosting the truststore with TLS certificates to use to connect to ZooKeeper
-     * @param trustStorePassword    Password for accessing the truststore
      * @param keyStoreFile  File hosting the keystore with TLS private keys to use to connect to ZooKeeper
-     * @param keyStorePassword  Password for accessing the keystore
      * @return  A ZooKeeperAdmin instance
      * @throws IOException
      */
     private static ZooKeeperAdmin createZooKeeperAdminClient(Reconciliation reconciliation, String zkConnectionString, long operationTimeoutMs,
-                                                             File trustStoreFile, String trustStorePassword, File keyStoreFile, String keyStorePassword) throws IOException {
+                                                             File trustStoreFile, File keyStoreFile) throws IOException {
         ZKClientConfig clientConfig = new ZKClientConfig();
 
         clientConfig.setProperty("zookeeper.clientCnxnSocket", "org.apache.zookeeper.ClientCnxnSocketNetty");
         clientConfig.setProperty("zookeeper.client.secure", "true");
         clientConfig.setProperty("zookeeper.sasl.client", "false");
         clientConfig.setProperty("zookeeper.ssl.trustStore.location", trustStoreFile.getAbsolutePath());
-        clientConfig.setProperty("zookeeper.ssl.trustStore.password", trustStorePassword);
-        clientConfig.setProperty("zookeeper.ssl.trustStore.type", "PKCS12");
+        clientConfig.setProperty("zookeeper.ssl.trustStore.type", "PEM");
         clientConfig.setProperty("zookeeper.ssl.keyStore.location", keyStoreFile.getAbsolutePath());
-        clientConfig.setProperty("zookeeper.ssl.keyStore.password", keyStorePassword);
-        clientConfig.setProperty("zookeeper.ssl.keyStore.type", "PKCS12");
+        clientConfig.setProperty("zookeeper.ssl.keyStore.type", "PEM");
         clientConfig.setProperty("zookeeper.request.timeout", String.valueOf(operationTimeoutMs));
 
         return new ZooKeeperAdmin(
