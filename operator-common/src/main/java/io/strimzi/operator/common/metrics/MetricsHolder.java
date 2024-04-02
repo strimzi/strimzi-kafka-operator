@@ -59,6 +59,10 @@ public abstract class MetricsHolder {
      */
     public static final String METRICS_RESOURCES = METRICS_PREFIX + "resources";
     /**
+     * Metric name for the resource state.
+     */
+    public static final String METRICS_RESOURCE_STATE = METRICS_PREFIX + "resource.state";
+    /**
      * Metric name for number of paused resources.
      */
     public static final String METRICS_RESOURCES_PAUSED = METRICS_RESOURCES + ".paused";
