@@ -116,7 +116,7 @@ public class PerformanceReporter {
     }
 
     public static void writePerformanceMetricsToFile(String performanceData, Path filePath) throws IOException {
-        Files.write(filePath, performanceData.getBytes());
+        Files.write(filePath, performanceData.getBytes(StandardCharsets.UTF_8));
         LOGGER.info("Test performance data written to file: {}", filePath);
     }
 
@@ -172,7 +172,13 @@ public class PerformanceReporter {
     private static Path prepareUseCaseDirectory(TemporalAccessor date, String baseDir, String useCase,
                                               String maxBatchSize, String maxBatchLingerMs, boolean clientsEnabled) throws IOException {
         // Reusing the existing 'prepareLogFile' method for directory preparation logic
-        final Path useCasePathDir = prepareLogFile(date, baseDir, useCase, maxBatchSize, maxBatchLingerMs, clientsEnabled).getParent();
+        final Path logFilePath = prepareLogFile(date, baseDir, useCase, maxBatchSize, maxBatchLingerMs, clientsEnabled);
+        final Path useCasePathDir = logFilePath.getParent();
+
+        // Check if the parent directory path is not null
+        if (useCasePathDir == null) {
+            throw new IOException("Unable to determine the parent directory for the log file path: " + logFilePath);
+        }
 
         if (Files.notExists(useCasePathDir)) {
             Files.createDirectories(useCasePathDir);

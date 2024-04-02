@@ -13,8 +13,8 @@ import io.strimzi.test.TestUtils;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -190,7 +190,7 @@ public class PerformanceMetricsParser {
         StringBuilder yamlBuilder = new StringBuilder();
         boolean yamlSectionStarted = false;
 
-        try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+        try (BufferedReader br = Files.newBufferedReader(file.toPath(), StandardCharsets.UTF_8)) {
             String line;
             while ((line = br.readLine()) != null) {
                 if (line.startsWith("---")) {
