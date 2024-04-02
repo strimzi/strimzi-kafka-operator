@@ -26,6 +26,7 @@ import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
 import io.strimzi.systemtest.templates.specific.ScraperTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicScalabilityUtils;
+import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
@@ -121,7 +122,7 @@ public class TopicOperatorPerformanceTest extends AbstractST {
     @MethodSource("provideConfigurationsForAliceBulkBatchUseCase")
     @SuppressWarnings({"checkstyle:MethodLength"})
     public void testAliceBulkBatchUseCase(String maxBatchSize, String maxBatchLingerMs, boolean withClientsEnabled) throws IOException {
-        final int numberOfTopics = 500; // Number of topics to test
+        final int numberOfTopics = KubeClusterResource.getInstance().isMultiNode() ? 500 : 250; // Number of topics to test
         final int numberOfClientInstances = withClientsEnabled ? 30 : 0; // producers and consumers if enabled
         final String topicNamePrefix = "perf-topic-";
         final String clientExchangeMessagesTopicPrefix = "client-topic-";
@@ -321,7 +322,7 @@ public class TopicOperatorPerformanceTest extends AbstractST {
     @MethodSource("provideConfigurationsForBobDataStreamingUseCase")
     @SuppressWarnings({"checkstyle:MethodLength"})
     public void testBobDataStreamingUseCase(String maxBatchSize, String maxBatchLingerMs, boolean withClientsEnabled) throws IOException, InterruptedException {
-        final int numberOfTopics = 3000; // Number of topics to test
+        final int numberOfTopics = KubeClusterResource.getInstance().isMultiNode() ? 3000 : 1000; // Number of topics to test
         final int numberOfClientInstances = withClientsEnabled ? 30 : 0; // producers and consumers if enabled
         final String topicNamePrefix = "perf-topic-";
         final String clientExchangeMessagesTopicPrefix = "client-topic-";
