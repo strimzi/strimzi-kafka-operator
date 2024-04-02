@@ -77,7 +77,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Stack;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 import static java.util.Arrays.asList;
@@ -385,6 +384,11 @@ public class ResourceManager {
         Crds.operation(kubeClient().getClient(), crdClass, listClass).inNamespace(namespace).resource(toBeReplaced).update();
     }
 
+    /**
+     * Deletes all resources associated with the current test context.
+     * This method iterates over all stored resources for the current context and attempts to delete them.
+     * It logs the deletion process, indicating the start and end of the deletion.
+     */
     public void deleteResources() {
         LOGGER.info(String.join("", Collections.nCopies(76, "#")));
         if (!STORED_RESOURCES.containsKey(getTestContext().getDisplayName()) || STORED_RESOURCES.get(getTestContext().getDisplayName()).isEmpty()) {
@@ -392,28 +396,60 @@ public class ResourceManager {
         } else {
             LOGGER.info("Deleting all resources for {}", getTestContext().getDisplayName());
         }
+        deleteResourcesHelper(getTestContext().getDisplayName(), null);
+        LOGGER.info(String.join("", Collections.nCopies(76, "#")));
+    }
 
-        // if stack is created for specific test suite or test case
-        AtomicInteger numberOfResources = STORED_RESOURCES.get(getTestContext().getDisplayName()) != null ?
-            new AtomicInteger(STORED_RESOURCES.get(getTestContext().getDisplayName()).size()) :
-            // stack has no elements
-            new AtomicInteger(0);
-        while (STORED_RESOURCES.containsKey(getTestContext().getDisplayName()) && numberOfResources.get() > 0) {
-            Stack<ResourceItem> s = STORED_RESOURCES.get(getTestContext().getDisplayName());
+    /**
+     * Deletes resources of a specific type for the current test context.
+     * Only resources that match the specified type are deleted. Other types of resources are left untouched.
+     *
+     * @param resourceKind The kind of resources to delete. This should match the resource kind, e.g., KafkaTopic.RESOURCE_KIND.
+     */
+    public void deleteResourcesOfType(String resourceKind) {
+        LOGGER.info(String.join("", Collections.nCopies(76, "#")));
+        LOGGER.info("Deleting resources of type {} for {}", resourceKind, getTestContext().getDisplayName());
+        deleteResourcesHelper(getTestContext().getDisplayName(), resourceKind);
+        LOGGER.info(String.join("", Collections.nCopies(76, "#")));
+    }
 
-            while (!s.isEmpty()) {
-                ResourceItem resourceItem = s.pop();
+    private void deleteResourcesHelper(String contextDisplayName, String resourceKind) {
+        // Check if there are resources for the current context
+        Stack<ResourceItem> resourcesStack = STORED_RESOURCES.get(contextDisplayName);
+        if (resourcesStack == null) {
+            LOGGER.info("No resources to delete for context: {}", contextDisplayName);
+            return;
+        }
 
+        // Temporary stack to hold resources that should not be deleted
+        Stack<ResourceItem> tempStack = new Stack<>();
+
+        // Process resources
+        while (!resourcesStack.isEmpty()) {
+            ResourceItem resourceItem = resourcesStack.pop();
+            // Delete if resourceKind is null (delete all) or matches the specified type
+            if (resourceKind == null || resourceKind.equals(resourceItem.getResourceKind())) {
                 try {
                     resourceItem.getThrowableRunner().run();
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-                numberOfResources.decrementAndGet();
+            } else {
+                // If not deleting, save it to the temporary stack
+                tempStack.push(resourceItem);
             }
         }
-        STORED_RESOURCES.remove(getTestContext().getDisplayName());
-        LOGGER.info(String.join("", Collections.nCopies(76, "#")));
+
+        // If there were items not to be deleted, put them back into the original stack
+        if (!tempStack.isEmpty()) {
+            while (!tempStack.isEmpty()) {
+                resourcesStack.push(tempStack.pop());
+            }
+            STORED_RESOURCES.put(contextDisplayName, resourcesStack);
+        } else {
+            // Remove the context key if no resources are left
+            STORED_RESOURCES.remove(contextDisplayName);
+        }
     }
 
     /**

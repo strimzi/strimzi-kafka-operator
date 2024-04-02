@@ -189,3 +189,21 @@ jobs:
       test:
         tmt:
           name: acceptance
+  ###############################################################################################
+  ####################################    Performance   #########################################
+  ###############################################################################################
+  - job: tests
+    trigger: pull_request
+    identifier: "performance"
+    targets:
+      - centos-stream-9-x86_64
+      - centos-stream-9-aarch64
+    skip_build: true
+    manual_trigger: true
+    env: { IP_FAMILY: ipv4 }
+    labels:
+      - performance
+    tf_extra_params:
+      test:
+        tmt:
+          name: performance

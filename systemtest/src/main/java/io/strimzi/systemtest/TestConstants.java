@@ -401,6 +401,11 @@ public interface TestConstants {
     String MIGRATION = "migration";
 
     /**
+     * Tag for tests that focus on performance
+     */
+    String PERFORMANCE = "performance";
+
+    /**
      * Tag for tests that uses Strimzi quotas plugin
      */
     String QUOTAS_PLUGIN = "quotasplugin";
