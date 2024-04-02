@@ -49,7 +49,7 @@ import java.util.stream.Stream;
 import static io.strimzi.systemtest.TestConstants.PERFORMANCE;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
- @Tag(PERFORMANCE)
+@Tag(PERFORMANCE)
 public class TopicOperatorPerformanceTest extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(TopicOperatorPerformanceTest.class);
@@ -58,7 +58,7 @@ public class TopicOperatorPerformanceTest extends AbstractST {
 
     private static final String REPORT_DIRECTORY = "topic-operator";
 
-     private TestStorage testStorage;
+    private TestStorage testStorage;
     private TopicOperatorMetricsCollector topicOperatorCollector;
     private TopicOperatorPollingThread topicOperatorPollingThread;
     private Thread daemonThread;
@@ -89,7 +89,7 @@ public class TopicOperatorPerformanceTest extends AbstractST {
                 Arguments.of("100", "100", false),    // Lower batch size with longer linger time for extended comparison
                 Arguments.of("500", "100", false),    // Increased batch size with longer linger time
                 Arguments.of("1000", "100", false),    // Large batch size with longer linger time
-//                // with clients
+                // with clients
                 Arguments.of("100", "10", true),     // Lower batch size with short linger time for comparison
                 Arguments.of("500", "10", true),   // Increased batch size with short linger time
                 Arguments.of("1000", "10", true),    // Large batch size with short linger time
@@ -119,6 +119,7 @@ public class TopicOperatorPerformanceTest extends AbstractST {
      */
     @ParameterizedTest
     @MethodSource("provideConfigurationsForAliceBulkBatchUseCase")
+    @SuppressWarnings({"checkstyle:MethodLength"})
     public void testAliceBulkBatchUseCase(String maxBatchSize, String maxBatchLingerMs, boolean withClientsEnabled) throws IOException {
         final int numberOfTopics = 500; // Number of topics to test
         final int numberOfClientInstances = withClientsEnabled ? 30 : 0; // producers and consumers if enabled
@@ -139,6 +140,12 @@ public class TopicOperatorPerformanceTest extends AbstractST {
                 KafkaTemplates.kafkaMetricsConfigMap(testStorage.getNamespaceName(), testStorage.getClusterName()),
                 KafkaTemplates.kafkaWithMetrics(testStorage.getNamespaceName(), testStorage.getClusterName(), brokerReplicas, controllerReplicas)
                     .editSpec()
+                        .editKafka()
+                            .withNewPersistentClaimStorage()
+                                .withSize("10Gi")
+                                .withDeleteClaim(true)
+                            .endPersistentClaimStorage()
+                        .endKafka()
                         .editEntityOperator()
                             .editTopicOperator()
                                 .withReconciliationIntervalSeconds(10)
@@ -183,7 +190,7 @@ public class TopicOperatorPerformanceTest extends AbstractST {
                     numberOfClientInstances, 12, 3, 1);
 
                 KafkaTopicScalabilityUtils.waitForTopicsReady(testStorage.getNamespaceName(), clientExchangeMessagesTopicPrefix, numberOfClientInstances);
-            }// create KafkaUser for TLS communication via clients
+            } // create KafkaUser for TLS communication via clients
             resourceManager.createResourceWithWait(KafkaUserTemplates.tlsUser(testStorage).build());
 
             if (withClientsEnabled) {
@@ -294,25 +301,26 @@ public class TopicOperatorPerformanceTest extends AbstractST {
       *
       * The UTO's single-threaded nature means that beyond a certain point, increasing the number of topics primarily impacts memory usage and the time taken for no-op timed reconciliations. The configurations below are designed to find a balance that allows for scalability while maintaining responsiveness to changes.
       */
-     private static Stream<Arguments> provideConfigurationsForBobDataStreamingUseCase() {
-         return Stream.of(
-             Arguments.of("250", "1000", false), // Medium batch size with 1 second linger time, optimized for infrequent changes
-             Arguments.of("500", "1000", false), // Slightly larger batch size with 1 second linger time, considering memory usage efficiency
-             Arguments.of("250", "5000", false), // Medium batch size with longer no-op timed reconciliation intervals for reduced CPU utilization
-             Arguments.of("500", "5000", false)  // Larger batch size with longer intervals, balancing scalability with operational latency
-         );
-     }
+    private static Stream<Arguments> provideConfigurationsForBobDataStreamingUseCase() {
+        return Stream.of(
+            Arguments.of("250", "1000", false), // Medium batch size with 1 second linger time, optimized for infrequent changes
+            Arguments.of("500", "1000", false), // Slightly larger batch size with 1 second linger time, considering memory usage efficiency
+            Arguments.of("250", "5000", false), // Medium batch size with longer no-op timed reconciliation intervals for reduced CPU utilization
+            Arguments.of("500", "5000", false)  // Larger batch size with longer intervals, balancing scalability with operational latency
+        );
+    }
 
-     /**
-      * Test for Bob's data streaming use case.
-      *
-      * This scenario simulates a production environment with thousands of topics where topics are updated infrequently.
-      * The main objective is to ensure the UTO can handle the scale efficiently, with a goal of minimizing latency for
-      * occasional, small changes.
-      */
-     @ParameterizedTest
-     @MethodSource("provideConfigurationsForBobDataStreamingUseCase")
-     public void testBobDataStreamingUseCase(String maxBatchSize, String maxBatchLingerMs, boolean withClientsEnabled) throws IOException, InterruptedException {
+    /**
+     * Test for Bob's data streaming use case.
+     *
+     * This scenario simulates a production environment with thousands of topics where topics are updated infrequently.
+     * The main objective is to ensure the UTO can handle the scale efficiently, with a goal of minimizing latency for
+     * occasional, small changes.
+     */
+    @ParameterizedTest
+    @MethodSource("provideConfigurationsForBobDataStreamingUseCase")
+    @SuppressWarnings({"checkstyle:MethodLength"})
+    public void testBobDataStreamingUseCase(String maxBatchSize, String maxBatchLingerMs, boolean withClientsEnabled) throws IOException, InterruptedException {
         final int numberOfTopics = 3000; // Number of topics to test
         final int numberOfClientInstances = withClientsEnabled ? 30 : 0; // producers and consumers if enabled
         final String topicNamePrefix = "perf-topic-";
@@ -325,7 +333,7 @@ public class TopicOperatorPerformanceTest extends AbstractST {
         final long[] bobUpdateTimerMsArr = new long[totalRounds];
         final int bobAmountOfKafkaTopics = 10; // Number of topics to update in each round
 
-         try {
+        try {
             resourceManager.createResourceWithWait(
                 NodePoolsConverter.convertNodePoolsIfNeeded(
                     KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), brokerReplicas).build(),
@@ -336,6 +344,12 @@ public class TopicOperatorPerformanceTest extends AbstractST {
                 KafkaTemplates.kafkaMetricsConfigMap(testStorage.getNamespaceName(), testStorage.getClusterName()),
                 KafkaTemplates.kafkaWithMetrics(testStorage.getNamespaceName(), testStorage.getClusterName(), brokerReplicas, controllerReplicas)
                     .editSpec()
+                        .editKafka()
+                            .withNewPersistentClaimStorage()
+                                .withSize("20Gi")
+                                .withDeleteClaim(true)
+                            .endPersistentClaimStorage()
+                        .endKafka()
                         .editEntityOperator()
                             .editTopicOperator()
                                 .withReconciliationIntervalSeconds(10)

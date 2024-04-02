@@ -87,6 +87,7 @@ public class PerformanceMetricsParser {
         return command != null && command.contains("JUnitStarter");
     }
 
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity"})
     public static void main(String[] args) throws IOException {
         String parentPath;
         if (isRunningInTest()) {

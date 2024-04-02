@@ -5,7 +5,6 @@
 package io.strimzi.systemtest.performance.gather;
 
 import io.strimzi.systemtest.resources.ComponentType;
-import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.logging.log4j.Level;
 
 import java.util.regex.Matcher;
