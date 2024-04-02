@@ -6,6 +6,7 @@ package io.strimzi.systemtest.kafkaclients.clientproperties;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.strimzi.operator.common.Util;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.test.TestUtils;
@@ -176,7 +177,7 @@ abstract public class AbstractKafkaClientProperties<C extends AbstractKafkaClien
                             ts.store(tsOs, tsPassword.toCharArray());
                         }
                     } else {
-                        tsPassword = new String(Base64.getDecoder().decode(clusterCaCertSecret.getData().get("ca.password")), StandardCharsets.US_ASCII);
+                        tsPassword = Util.decodeFromBase64(clusterCaCertSecret.getData().get("ca.password"));
                         String truststore = clusterCaCertSecret.getData().get("ca.p12");
                         Files.write(tsFile.toPath(), Base64.getDecoder().decode(truststore));
                     }
@@ -191,7 +192,7 @@ abstract public class AbstractKafkaClientProperties<C extends AbstractKafkaClien
 
                     properties.setProperty(SaslConfigs.SASL_MECHANISM, "SCRAM-SHA-512");
                     Secret userSecret = kubeClient().getSecret(namespaceName, kafkaUsername);
-                    String password = new String(Base64.getDecoder().decode(userSecret.getData().get("password")), StandardCharsets.UTF_8);
+                    String password = Util.decodeFromBase64(userSecret.getData().get("password"), StandardCharsets.UTF_8);
 
                     String jaasTemplate = "org.apache.kafka.common.security.scram.ScramLoginModule required username=\"%s\" password=\"%s\";";
                     String jaasCfg = String.format(jaasTemplate, kafkaUsername, password);

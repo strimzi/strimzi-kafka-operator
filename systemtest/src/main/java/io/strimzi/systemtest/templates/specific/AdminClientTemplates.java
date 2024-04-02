@@ -8,13 +8,12 @@ import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.PodSpecBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
+import io.strimzi.operator.common.Util;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.enums.DeploymentTypes;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
 
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -93,7 +92,7 @@ public class AdminClientTemplates {
 
     private static String getAdminClientScramConfig(String namespaceName, String userName) {
         final String saslJaasConfigEncrypted = kubeClient().getSecret(namespaceName, userName).getData().get("sasl.jaas.config");
-        final String saslJaasConfigDecrypted = new String(Base64.getDecoder().decode(saslJaasConfigEncrypted), StandardCharsets.US_ASCII);
+        final String saslJaasConfigDecrypted = Util.decodeFromBase64(saslJaasConfigEncrypted);
 
         return "sasl.mechanism=SCRAM-SHA-512\n" +
             "security.protocol=" + SecurityProtocol.SASL_PLAINTEXT + "\n" +

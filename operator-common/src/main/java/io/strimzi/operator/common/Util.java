@@ -19,6 +19,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.math.BigInteger;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -552,10 +553,22 @@ public class Util {
      *
      * @param data    String that should be decoded.
      *
-     * @return        Plain data.
+     * @return        Plain data using US ASCII charset.
      */
     public static String decodeFromBase64(String data)  {
-        return new String(Base64.getDecoder().decode(data), StandardCharsets.US_ASCII);
+        return decodeFromBase64(data, StandardCharsets.US_ASCII);
+    }
+    
+    /**
+     * Decodes a String from Base64.
+     *
+     * @param data    String that should be decoded.
+     * @param charset The charset for the return string
+     *
+     * @return        Plain data using specified charset.
+     */
+    public static String decodeFromBase64(String data, Charset charset)  {
+        return new String(Base64.getDecoder().decode(data), charset);
     }
 
     /**
