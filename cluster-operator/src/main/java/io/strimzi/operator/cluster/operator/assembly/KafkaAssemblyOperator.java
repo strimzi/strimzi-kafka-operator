@@ -47,7 +47,6 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationException;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
-import io.strimzi.operator.common.config.ConfigParameter;
 import io.strimzi.operator.common.model.ClientsCa;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
@@ -67,7 +66,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
@@ -852,20 +850,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
      */
     @Override
     public void removeMetrics(Set<NamespaceAndName> desiredNames, String namespace) {
-        // Removing all CA cluster metrics not in the desired set
-        Set<String> desiredClusterNames = desiredNames.stream().map(NamespaceAndName::getName).collect(Collectors.toSet());
-        metrics.removeMetricsForCertificates(key -> {
-            if (!key.getKind().equals(kind())) {
-                return false;
-            }
-            if (namespace.equals(ConfigParameter.ANY_NAMESPACE)) {
-                Set<String> desiredNamespaces = desiredNames.stream().map(NamespaceAndName::getNamespace).collect(Collectors.toSet());
-                return !desiredNamespaces.contains(key.getNamespace()) && !desiredClusterNames.contains(key.getClusterName());
-            }
-
-            // Otherwise only remove the ones related to the namespace and not in the desired set
-            return key.getNamespace().equals(namespace) && !desiredClusterNames.contains(key.getClusterName());
-        });
+        metrics.removeMetricsForCertificates(key ->
+                !desiredNames.contains(new NamespaceAndName(key.getNamespace(), key.getClusterName())));
     }
 
     /**
