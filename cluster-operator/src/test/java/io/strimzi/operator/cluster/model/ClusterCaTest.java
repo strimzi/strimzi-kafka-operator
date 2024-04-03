@@ -10,6 +10,7 @@ import io.strimzi.api.kafka.model.common.CertificateExpirationPolicy;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.test.annotations.ParallelSuite;
@@ -164,9 +165,9 @@ public class ClusterCaTest {
         // checking that the cluster CA related Secret was not touched by the operator
         Map<String, String> clusterCaCertDataInSecret = clusterCa.caCertSecret().getData();
         assertThat(clusterCaCertDataInSecret.size(), is(4));
-        assertThat(new String(Base64.getDecoder().decode(clusterCaCertDataInSecret.get(Ca.CA_CRT))).equals("new-dummy-crt"), is(true));
-        assertThat(new String(Base64.getDecoder().decode(clusterCaCertDataInSecret.get(Ca.CA_STORE))).equals("updated-dummy-p12"), is(true));
-        assertThat(new String(Base64.getDecoder().decode(clusterCaCertDataInSecret.get(Ca.CA_STORE_PASSWORD))).equals("dummy-password"), is(true));
-        assertThat(new String(Base64.getDecoder().decode(clusterCaCertDataInSecret.get("ca-2023-03-23T09-00-00Z.crt"))).equals("dummy-crt"), is(true));
+        assertThat(Util.decodeFromBase64(clusterCaCertDataInSecret.get(Ca.CA_CRT)).equals("new-dummy-crt"), is(true));
+        assertThat(Util.decodeFromBase64(clusterCaCertDataInSecret.get(Ca.CA_STORE)).equals("updated-dummy-p12"), is(true));
+        assertThat(Util.decodeFromBase64(clusterCaCertDataInSecret.get(Ca.CA_STORE_PASSWORD)).equals("dummy-password"), is(true));
+        assertThat(Util.decodeFromBase64(clusterCaCertDataInSecret.get("ca-2023-03-23T09-00-00Z.crt")).equals("dummy-crt"), is(true));
     }
 }

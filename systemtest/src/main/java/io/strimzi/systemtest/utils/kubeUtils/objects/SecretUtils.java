@@ -7,6 +7,7 @@ package io.strimzi.systemtest.utils.kubeUtils.objects;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -166,7 +167,7 @@ public class SecretUtils {
         TestUtils.waitFor("cert to be replaced", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.TIMEOUT_FOR_CLUSTER_STABLE, () -> {
             Secret secret = kubeClient(namespaceName).getSecret(namespaceName, secretName);
             if (secret != null && secret.getData() != null && secret.getData().containsKey("ca.crt")) {
-                String currentCert = new String(Base64.getDecoder().decode(secret.getData().get("ca.crt")), StandardCharsets.US_ASCII);
+                String currentCert = Util.decodeFromBase64((secret.getData().get("ca.crt")));
                 boolean changed = !originalCert.equals(currentCert);
                 if (changed) {
                     LOGGER.info("Certificate in Secret: {}/{} changed, was: {}, is now: {}", namespaceName, secretName, originalCert, currentCert);
@@ -267,8 +268,8 @@ public class SecretUtils {
             String caKey = KubeClusterResource.kubeClient(namespaceName).getSecret(KafkaResources.clientsCaKeySecretName(clusterName)).getData().get("ca.key");
 
             File clientCert = OpenSsl.generateSignedCert(csr,
-                                                         SystemTestCertManager.exportCaDataToFile(new String(Base64.getDecoder().decode(caCrt), StandardCharsets.UTF_8), "ca", ".crt"),
-                                                         SystemTestCertManager.exportCaDataToFile(new String(Base64.getDecoder().decode(caKey), StandardCharsets.UTF_8), "ca", ".key"));
+                                                         SystemTestCertManager.exportCaDataToFile(Util.decodeFromBase64(caCrt, StandardCharsets.UTF_8), "ca", ".crt"),
+                                                         SystemTestCertManager.exportCaDataToFile(Util.decodeFromBase64(caKey, StandardCharsets.UTF_8), "ca", ".key"));
 
             Secret secretBuilder = new SecretBuilder()
                 .withNewMetadata()

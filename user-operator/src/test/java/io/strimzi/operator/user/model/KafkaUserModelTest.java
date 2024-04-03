@@ -16,6 +16,7 @@ import io.strimzi.api.kafka.model.user.KafkaUserTlsClientAuthentication;
 import io.strimzi.api.kafka.model.user.KafkaUserTlsExternalClientAuthentication;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.PasswordGenerator;
@@ -373,8 +374,8 @@ public class KafkaUserModelTest {
         assertThat(generatedSecret.getData().keySet(), is(new HashSet<>(Arrays.asList(KafkaUserModel.KEY_PASSWORD, KafkaUserModel.KEY_SASL_JAAS_CONFIG))));
 
         String password = "aaaaaaaaaa";
-        assertThat(new String(Base64.getDecoder().decode(generatedSecret.getData().get(KafkaUserModel.KEY_PASSWORD))), is(password));
-        assertThat(new String(Base64.getDecoder().decode(generatedSecret.getData().get(KafkaUserModel.KEY_SASL_JAAS_CONFIG))),
+        assertThat(Util.decodeFromBase64(generatedSecret.getData().get(KafkaUserModel.KEY_PASSWORD)), is(password));
+        assertThat(Util.decodeFromBase64(generatedSecret.getData().get(KafkaUserModel.KEY_SASL_JAAS_CONFIG)),
                 is("org.apache.kafka.common.security.scram.ScramLoginModule required username=\"" + ResourceUtils.NAME + "\" password=\"" + password + "\";"));
 
         // Check owner reference
@@ -445,8 +446,8 @@ public class KafkaUserModelTest {
 
         assertThat(generatedSecret.getData().keySet(), is(new HashSet<>(Arrays.asList(KafkaUserModel.KEY_PASSWORD, KafkaUserModel.KEY_SASL_JAAS_CONFIG))));
 
-        assertThat(new String(Base64.getDecoder().decode(generatedSecret.getData().get(KafkaUserModel.KEY_PASSWORD))), is(DESIRED_PASSWORD));
-        assertThat(new String(Base64.getDecoder().decode(generatedSecret.getData().get(KafkaUserModel.KEY_SASL_JAAS_CONFIG))),
+        assertThat(Util.decodeFromBase64(generatedSecret.getData().get(KafkaUserModel.KEY_PASSWORD)), is(DESIRED_PASSWORD));
+        assertThat(Util.decodeFromBase64(generatedSecret.getData().get(KafkaUserModel.KEY_SASL_JAAS_CONFIG)),
                 is("org.apache.kafka.common.security.scram.ScramLoginModule required username=\"" + ResourceUtils.NAME + "\" password=\"" + DESIRED_PASSWORD + "\";"));
 
         // Check owner reference
@@ -492,8 +493,8 @@ public class KafkaUserModelTest {
                         .withStrimziKind(KafkaUser.RESOURCE_KIND)
                         .toMap()));
         assertThat(generated.getData().keySet(), is(new HashSet<>(Arrays.asList(KafkaUserModel.KEY_PASSWORD, KafkaUserModel.KEY_SASL_JAAS_CONFIG))));
-        assertThat(new String(Base64.getDecoder().decode(generated.getData().get(KafkaUserModel.KEY_PASSWORD))), is(DESIRED_PASSWORD));
-        assertThat(new String(Base64.getDecoder().decode(generated.getData().get(KafkaUserModel.KEY_SASL_JAAS_CONFIG))),
+        assertThat(Util.decodeFromBase64(generated.getData().get(KafkaUserModel.KEY_PASSWORD)), is(DESIRED_PASSWORD));
+        assertThat(Util.decodeFromBase64(generated.getData().get(KafkaUserModel.KEY_SASL_JAAS_CONFIG)),
                 is("org.apache.kafka.common.security.scram.ScramLoginModule required username=\"" + ResourceUtils.NAME + "\" password=\"" + DESIRED_PASSWORD + "\";"));
 
         // Check owner reference
@@ -604,8 +605,8 @@ public class KafkaUserModelTest {
         assertThat(generated.getData().keySet(), is(new HashSet<>(Arrays.asList(KafkaUserModel.KEY_PASSWORD, KafkaUserModel.KEY_SASL_JAAS_CONFIG))));
 
         String password = "aaaaaaaaaa";
-        assertThat(new String(Base64.getDecoder().decode(generated.getData().get(KafkaUserModel.KEY_PASSWORD))), is(password));
-        assertThat(new String(Base64.getDecoder().decode(generated.getData().get(KafkaUserModel.KEY_SASL_JAAS_CONFIG))),
+        assertThat(Util.decodeFromBase64(generated.getData().get(KafkaUserModel.KEY_PASSWORD)), is(password));
+        assertThat(Util.decodeFromBase64(generated.getData().get(KafkaUserModel.KEY_SASL_JAAS_CONFIG)),
                 is("org.apache.kafka.common.security.scram.ScramLoginModule required username=\"" + ResourceUtils.NAME + "\" password=\"" + password + "\";"));
 
         // Check owner reference
