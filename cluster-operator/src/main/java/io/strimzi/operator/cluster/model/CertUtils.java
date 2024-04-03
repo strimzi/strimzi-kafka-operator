@@ -18,7 +18,6 @@ import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.security.cert.CertificateEncodingException;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -146,7 +145,7 @@ public class CertUtils {
 
     private static byte[] decodeFromSecret(Secret secret, String key) {
         if (secret.getData().get(key) != null && !secret.getData().get(key).isEmpty()) {
-            return Base64.getDecoder().decode(secret.getData().get(key));
+            return Util.decodeBytesFromBase64(secret.getData().get(key));
         } else {
             return new byte[]{};
         }

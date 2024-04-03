@@ -5,12 +5,12 @@
 package io.strimzi.operator.common.auth;
 
 import io.fabric8.kubernetes.api.model.Secret;
+import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Ca;
 
 import java.nio.charset.StandardCharsets;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.Base64;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
@@ -90,8 +90,6 @@ public class PemTrustSet {
      * Extract all public keys (all .crt records) from a secret.
      */
     private Map<String, byte[]> extractCerts(Secret secret)  {
-        Base64.Decoder decoder = Base64.getDecoder();
-
         Map<String, byte[]> certs = secret
                 .getData()
                 .entrySet()
@@ -99,7 +97,7 @@ public class PemTrustSet {
                 .filter(record -> record.getKey().endsWith(CERT_SUFFIX))
                 .collect(Collectors.toMap(
                         entry -> stripCertKeySuffix(entry.getKey()),
-                        entry -> decoder.decode(entry.getValue()))
+                        entry -> Util.decodeBytesFromBase64(entry.getValue()))
                 );
         if (certs.isEmpty()) {
             throw new RuntimeException("The Secret " + secretNamespace + "/" + secretName + " does not contain any fields with the suffix .crt");

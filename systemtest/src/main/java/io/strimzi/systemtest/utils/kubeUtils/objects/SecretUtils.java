@@ -191,7 +191,7 @@ public class SecretUtils {
 
     public static X509Certificate getCertificateFromSecret(Secret secret, String dataKey) {
         String caCert = secret.getData().get(dataKey);
-        byte[] decoded = Base64.getDecoder().decode(caCert);
+        byte[] decoded = Util.decodeBytesFromBase64(caCert);
         X509Certificate cacert = null;
         try {
             cacert = (X509Certificate)

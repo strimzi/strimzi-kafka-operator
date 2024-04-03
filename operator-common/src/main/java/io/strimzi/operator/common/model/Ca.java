@@ -384,7 +384,6 @@ public abstract class Ca {
      * @return The CertAndKey.
      */
     public static CertAndKey asCertAndKey(Secret secret, String key, String cert, String keyStore, String keyStorePassword) {
-        Base64.Decoder decoder = Base64.getDecoder();
         if (secret == null || secret.getData() == null) {
             return null;
         } else {
@@ -397,10 +396,10 @@ public abstract class Ca {
                 throw new RuntimeException("The Secret " + secret.getMetadata().getNamespace() + "/" + secret.getMetadata().getName() + " is missing the key " + cert);
             }
             return new CertAndKey(
-                    decoder.decode(keyData),
-                    decoder.decode(certData),
+                    Util.decodeBytesFromBase64(keyData),
+                    Util.decodeBytesFromBase64(certData),
                     null,
-                    decoder.decode(secret.getData().get(keyStore)),
+                    Util.decodeBytesFromBase64(secret.getData().get(keyStore)),
                     Util.decodeFromBase64(secret.getData().get(keyStorePassword)));
         }
     }
@@ -766,8 +765,7 @@ public abstract class Ca {
      * @return The current CA certificate as bytes.
      */
     public byte[] currentCaCertBytes() {
-        Base64.Decoder decoder = Base64.getDecoder();
-        return decoder.decode(caCertSecret().getData().get(CA_CRT));
+        return Util.decodeBytesFromBase64(caCertSecret().getData().get(CA_CRT));
     }
 
     /**
@@ -781,8 +779,7 @@ public abstract class Ca {
      * @return The current CA key as bytes.
      */
     public byte[] currentCaKey() {
-        Base64.Decoder decoder = Base64.getDecoder();
-        return decoder.decode(caKeySecret().getData().get(CA_KEY));
+        return Util.decodeBytesFromBase64(caKeySecret().getData().get(CA_KEY));
     }
 
     /**
@@ -865,7 +862,7 @@ public abstract class Ca {
         String certName = entry.getKey();
         String certText = entry.getValue();
         try {
-            X509Certificate cert = x509Certificate(Base64.getDecoder().decode(certText));
+            X509Certificate cert = x509Certificate(Util.decodeBytesFromBase64(certText));
             Instant expiryDate = cert.getNotAfter().toInstant();
             remove = expiryDate.isBefore(clock.instant());
             if (remove) {
@@ -909,7 +906,7 @@ public abstract class Ca {
             // the certificates removed from the Secret data has tobe removed from the store as well
             try {
                 File trustStoreFile = Files.createTempFile("tls", "-truststore").toFile();
-                Files.write(trustStoreFile.toPath(), Base64.getDecoder().decode(newData.get(CA_STORE)));
+                Files.write(trustStoreFile.toPath(), Util.decodeBytesFromBase64(newData.get(CA_STORE)));
                 try {
                     String trustStorePassword = Util.decodeFromBase64(newData.get(CA_STORE_PASSWORD));
                     certManager.deleteFromTrustStore(removed, trustStoreFile, trustStorePassword);
@@ -944,8 +941,7 @@ public abstract class Ca {
         if (secret == null || secret.getData() == null || secret.getData().get(key) == null) {
             return null;
         }
-        Base64.Decoder decoder = Base64.getDecoder();
-        byte[] bytes = decoder.decode(secret.getData().get(key));
+        byte[] bytes = Util.decodeBytesFromBase64(secret.getData().get(key));
         try {
             return x509Certificate(bytes);
         } catch (CertificateException e) {
@@ -964,15 +960,13 @@ public abstract class Ca {
         if (secret == null || secret.getData() == null) {
             return Set.of();
         } else {
-            Base64.Decoder decoder = Base64.getDecoder();
-
             return secret
                     .getData()
                     .entrySet()
                     .stream()
                     .filter(record -> SecretEntry.CRT.matchesType(record.getKey()))
                     .map(record -> {
-                        byte[] bytes = decoder.decode(record.getValue());
+                        byte[] bytes = Util.decodeBytesFromBase64(record.getValue());
                         try {
                             return x509Certificate(bytes);
                         } catch (CertificateException e) {
@@ -1020,11 +1014,11 @@ public abstract class Ca {
     private void addCertCaToTrustStore(String alias, Map<String, String> certData) {
         try {
             File certFile = Files.createTempFile("tls", "-cert").toFile();
-            Files.write(certFile.toPath(), Base64.getDecoder().decode(certData.get(CA_CRT)));
+            Files.write(certFile.toPath(), Util.decodeBytesFromBase64(certData.get(CA_CRT)));
             try {
                 File trustStoreFile = Files.createTempFile("tls", "-truststore").toFile();
                 if (certData.containsKey(CA_STORE)) {
-                    Files.write(trustStoreFile.toPath(), Base64.getDecoder().decode(certData.get(CA_STORE)));
+                    Files.write(trustStoreFile.toPath(), Util.decodeBytesFromBase64(certData.get(CA_STORE)));
                 }
                 try {
                     String trustStorePassword = certData.containsKey(CA_STORE_PASSWORD) ?
@@ -1056,7 +1050,7 @@ public abstract class Ca {
                     String trustStorePassword;
                     // if secret already contains the truststore, we have to reuse it without changing password
                     if (certData.containsKey(CA_STORE)) {
-                        Files.write(trustStoreFile.toPath(), Base64.getDecoder().decode(certData.get(CA_STORE)));
+                        Files.write(trustStoreFile.toPath(), Util.decodeBytesFromBase64(certData.get(CA_STORE)));
                         trustStorePassword = Util.decodeFromBase64(certData.get(CA_STORE_PASSWORD));
                     } else {
                         trustStorePassword = passwordGenerator.generate();
@@ -1092,8 +1086,7 @@ public abstract class Ca {
         try {
             LOGGER.infoCr(reconciliation, "Renewing CA with subject={}", subject);
 
-            Base64.Decoder decoder = Base64.getDecoder();
-            byte[] bytes = decoder.decode(caKeySecret.getData().get(CA_KEY));
+            byte[] bytes = Util.decodeBytesFromBase64(caKeySecret.getData().get(CA_KEY));
             File keyFile = Files.createTempFile("tls", subject.commonName() + "-key").toFile();
             try {
                 Files.write(keyFile.toPath(), bytes);

@@ -22,6 +22,7 @@ import io.strimzi.api.kafka.model.kafka.listener.ListenerStatus;
 import io.strimzi.kafka.config.model.ConfigModel;
 import io.strimzi.kafka.config.model.ConfigModels;
 import io.strimzi.kafka.config.model.Scope;
+import io.strimzi.operator.common.Util;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
@@ -43,7 +44,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.time.Duration;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -168,7 +168,7 @@ public class KafkaUtils {
     public static String getKafkaSecretCertificates(String namespaceName, String secretName, String certType) {
         String secretCerts = "";
         secretCerts = kubeClient(namespaceName).getSecret(namespaceName, secretName).getData().get(certType);
-        byte[] decodedBytes = Base64.getDecoder().decode(secretCerts);
+        byte[] decodedBytes = Util.decodeBytesFromBase64(secretCerts);
         secretCerts = new String(decodedBytes, Charset.defaultCharset());
 
         return secretCerts;

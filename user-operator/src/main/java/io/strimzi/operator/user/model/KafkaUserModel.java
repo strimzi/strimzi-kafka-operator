@@ -377,7 +377,7 @@ public class KafkaUserModel {
      * @return decoded value
      */
     protected byte[] decodeFromSecret(Secret secret, String key) {
-        return Base64.getDecoder().decode(secret.getData().get(key));
+        return Util.decodeBytesFromBase64(secret.getData().get(key));
     }
 
     /**

@@ -31,7 +31,6 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
-import java.util.Base64;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -171,7 +170,7 @@ abstract public class AbstractKafkaClientProperties<C extends AbstractKafkaClien
                         ts.load(null, tsPassword.toCharArray());
                         CertificateFactory cf = CertificateFactory.getInstance("X.509");
                         String clusterCaCert = kubeClient().getSecret(namespaceName, caSecretName).getData().get("ca.crt");
-                        Certificate cert = cf.generateCertificate(new ByteArrayInputStream(Base64.getDecoder().decode(clusterCaCert)));
+                        Certificate cert = cf.generateCertificate(new ByteArrayInputStream(Util.decodeBytesFromBase64(clusterCaCert)));
                         ts.setCertificateEntry("ca.crt", cert);
                         try (FileOutputStream tsOs = new FileOutputStream(tsFile)) {
                             ts.store(tsOs, tsPassword.toCharArray());
@@ -179,7 +178,7 @@ abstract public class AbstractKafkaClientProperties<C extends AbstractKafkaClien
                     } else {
                         tsPassword = Util.decodeFromBase64(clusterCaCertSecret.getData().get("ca.password"));
                         String truststore = clusterCaCertSecret.getData().get("ca.p12");
-                        Files.write(tsFile.toPath(), Base64.getDecoder().decode(truststore));
+                        Files.write(tsFile.toPath(), Util.decodeBytesFromBase64(truststore));
                     }
                     properties.setProperty(SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, ts.getType());
                     properties.setProperty(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, tsPassword);
@@ -211,9 +210,9 @@ abstract public class AbstractKafkaClientProperties<C extends AbstractKafkaClien
                     properties.setProperty(SslConfigs.SSL_KEYSTORE_PASSWORD_CONFIG, ksPassword);
                     LOGGER.debug("User CA cert: {}", userCaCert);
                     LOGGER.debug("User CA key: {}", userCaKey);
-                    File ksFile = createKeystore(Base64.getDecoder().decode(clientsCaCert),
-                        Base64.getDecoder().decode(userCaCert),
-                        Base64.getDecoder().decode(userCaKey),
+                    File ksFile = createKeystore(Util.decodeBytesFromBase64(clientsCaCert),
+                        Util.decodeBytesFromBase64(userCaCert),
+                        Util.decodeBytesFromBase64(userCaKey),
                         ksPassword);
                     properties.setProperty(SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG, ksFile.getAbsolutePath());
                     properties.setProperty(SslConfigs.SSL_KEYSTORE_TYPE_CONFIG, TRUSTSTORE_TYPE_CONFIG);
