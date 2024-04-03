@@ -401,7 +401,7 @@ public abstract class Ca {
                     decoder.decode(certData),
                     null,
                     decoder.decode(secret.getData().get(keyStore)),
-                    new String(decoder.decode(secret.getData().get(keyStorePassword)), StandardCharsets.US_ASCII));
+                    Util.decodeFromBase64(secret.getData().get(keyStorePassword)));
         }
     }
 
@@ -911,7 +911,7 @@ public abstract class Ca {
                 File trustStoreFile = Files.createTempFile("tls", "-truststore").toFile();
                 Files.write(trustStoreFile.toPath(), Base64.getDecoder().decode(newData.get(CA_STORE)));
                 try {
-                    String trustStorePassword = new String(Base64.getDecoder().decode(newData.get(CA_STORE_PASSWORD)), StandardCharsets.US_ASCII);
+                    String trustStorePassword = Util.decodeFromBase64(newData.get(CA_STORE_PASSWORD));
                     certManager.deleteFromTrustStore(removed, trustStoreFile, trustStorePassword);
                     newData.put(CA_STORE, Base64.getEncoder().encodeToString(Files.readAllBytes(trustStoreFile.toPath())));
                 } finally {
@@ -1028,7 +1028,7 @@ public abstract class Ca {
                 }
                 try {
                     String trustStorePassword = certData.containsKey(CA_STORE_PASSWORD) ?
-                            new String(Base64.getDecoder().decode(certData.get(CA_STORE_PASSWORD)), StandardCharsets.US_ASCII) :
+                            Util.decodeFromBase64(certData.get(CA_STORE_PASSWORD)) :
                             passwordGenerator.generate();
                     certManager.addCertToTrustStore(certFile, alias, trustStoreFile, trustStorePassword);
                     certData.put(CA_STORE, Base64.getEncoder().encodeToString(Files.readAllBytes(trustStoreFile.toPath())));
@@ -1057,7 +1057,7 @@ public abstract class Ca {
                     // if secret already contains the truststore, we have to reuse it without changing password
                     if (certData.containsKey(CA_STORE)) {
                         Files.write(trustStoreFile.toPath(), Base64.getDecoder().decode(certData.get(CA_STORE)));
-                        trustStorePassword = new String(Base64.getDecoder().decode(certData.get(CA_STORE_PASSWORD)), StandardCharsets.US_ASCII);
+                        trustStorePassword = Util.decodeFromBase64(certData.get(CA_STORE_PASSWORD));
                     } else {
                         trustStorePassword = passwordGenerator.generate();
                     }
