@@ -55,7 +55,9 @@ public class KafkaAssemblyOperatorMetricsHolder extends OperatorMetricsHolder {
         return getGaugeLong(new CertificateMetricKey(kind, namespace, clusterName, CertificateMetricKey.Type.CLUSTER_CA),
                 METRICS_CERTIFICATE_EXPIRATION_MS, "Time in milliseconds when the certificate expires",
                 Optional.empty(), certificateExpirationMap,
-                Tag.of("cluster", clusterName), Tag.of("type", CertificateMetricKey.Type.CLUSTER_CA.getDisplayName()));
+                Tag.of("cluster", clusterName),
+                Tag.of("type", CertificateMetricKey.Type.CLUSTER_CA.getDisplayName()),
+                Tag.of("resource-namespace", namespace));
     }
 
     /**
@@ -69,7 +71,9 @@ public class KafkaAssemblyOperatorMetricsHolder extends OperatorMetricsHolder {
         return getGaugeLong(new CertificateMetricKey(kind, namespace, clusterName, CertificateMetricKey.Type.CLIENT_CA),
                 METRICS_CERTIFICATE_EXPIRATION_MS, "Time in milliseconds when the certificate expires",
                 Optional.empty(), certificateExpirationMap,
-                Tag.of("cluster", clusterName), Tag.of("type", CertificateMetricKey.Type.CLIENT_CA.getDisplayName()));
+                Tag.of("cluster", clusterName),
+                Tag.of("type", CertificateMetricKey.Type.CLIENT_CA.getDisplayName()),
+                Tag.of("resource-namespace", namespace));
     }
 
     /**
