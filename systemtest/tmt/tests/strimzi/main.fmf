@@ -9,6 +9,7 @@ environment:
   TEST_GROUPS: ""
   EXCLUDED_TEST_GROUPS: "loadbalancer"
   CLUSTER_OPERATOR_INSTALL_TYPE: bundle
+  PARALLELISM_ENABLED: true
   PARALLEL_TEST_COUNT: 2
   RERUN_FAILED_TEST_COUNT: 2
   # All tests on TF will use KRaft mode because ZK is not working reliably on it's infra
@@ -73,3 +74,4 @@ adjust:
   tier: 1
   environment+:
     TEST_PROFILE: performance
+    PARALLELISM_ENABLED: false
