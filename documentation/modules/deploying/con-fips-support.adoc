@@ -21,6 +21,9 @@ You can do that, for example, by deleting the user secret and waiting for the Us
 IMPORTANT: If you are using FIPS-enabled Kubernetes clusters, you may experience higher memory consumption compared to regular Kubernetes clusters. 
 To avoid any issues, we suggest increasing the memory request to at least 512Mi.
 
+//FIPS NIST validation
+include::../../modules/deploying/con-fips-validation.adoc[leveloffset=+1]
+
 [role="_additional-resources"]
 .Additional resources
 
