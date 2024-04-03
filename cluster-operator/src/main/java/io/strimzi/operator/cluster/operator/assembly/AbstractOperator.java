@@ -587,7 +587,7 @@ public abstract class AbstractOperator<
                 Tag.of("resource-namespace", reconciliation.namespace()),
                 Tag.of("reason", errorReason));
 
-        boolean removed = metrics().removeMetric(MetricsHolder.METRICS_PREFIX + "resource.state",
+        boolean removed = metrics().removeMetric(MetricsHolder.METRICS_RESOURCE_STATE,
                 Tags.of(Tag.of("kind", reconciliation.kind()),
                         Tag.of("name", reconciliation.name()),
                         Tag.of("resource-namespace", reconciliation.namespace())));
@@ -600,7 +600,7 @@ public abstract class AbstractOperator<
         return resourceOperator.getAsync(reconciliation.namespace(), reconciliation.name()).map(cr -> {
             if (cr != null && Util.matchesSelector(selector(), cr)) {
                 resourcesStateCounter.computeIfAbsent(key, tags ->
-                        metrics().metricsProvider().gauge(MetricsHolder.METRICS_PREFIX + "resource.state", "Current state of the resource: 1 ready, 0 fail", metricTags)
+                        metrics().metricsProvider().gauge(MetricsHolder.METRICS_RESOURCE_STATE, "Current state of the resource: 1 ready, 0 fail", metricTags)
                 );
                 resourcesStateCounter.get(key).set(ready ? 1 : 0);
                 LOGGER.debugCr(reconciliation, "Updated metric " + MetricsHolder.METRICS_PREFIX + "resource.state{} = {}", metricTags, ready ? 1 : 0);
