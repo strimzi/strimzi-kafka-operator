@@ -168,10 +168,7 @@ public class KafkaUtils {
     public static String getKafkaSecretCertificates(String namespaceName, String secretName, String certType) {
         String secretCerts = "";
         secretCerts = kubeClient(namespaceName).getSecret(namespaceName, secretName).getData().get(certType);
-        byte[] decodedBytes = Util.decodeBytesFromBase64(secretCerts);
-        secretCerts = new String(decodedBytes, Charset.defaultCharset());
-
-        return secretCerts;
+        return Util.decodeFromBase64(secretCerts, Charset.defaultCharset());
     }
 
     public static void waitForKafkaSecretAndStatusCertsMatches(Supplier<String> kafkaStatusCertificate, Supplier<String> kafkaSecretCertificate) {

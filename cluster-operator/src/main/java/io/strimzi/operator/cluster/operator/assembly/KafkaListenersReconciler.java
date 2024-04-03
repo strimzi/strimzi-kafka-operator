@@ -748,8 +748,8 @@ public class KafkaListenersReconciler {
                                 } else if (!secret.getData().containsKey(customCert.getKey())) {
                                     errors.add("Secret " + customCert.getSecretName() + " does not contain custom certificate private key under the key " + customCert.getKey() + ".");
                                 } else  {
-                                    byte[] publicKeyBytes = Util.decodeBytesFromBase64(secret.getData().get(customCert.getCertificate()));
-                                    customListenerCertificates.put(listener.getName(), new String(publicKeyBytes, StandardCharsets.US_ASCII));
+                                    String publicKey = Util.decodeFromBase64(secret.getData().get(customCert.getCertificate()));
+                                    customListenerCertificates.put(listener.getName(), publicKey);
                                     result.customListenerCertificateThumbprints.put(listener.getName(), CertUtils.getCertificateShortThumbprint(secret, customCert.getCertificate()));
                                 }
                             } else {

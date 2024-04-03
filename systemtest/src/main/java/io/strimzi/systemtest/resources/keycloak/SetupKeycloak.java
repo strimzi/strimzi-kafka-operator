@@ -128,10 +128,10 @@ public class SetupKeycloak {
         Secret keycloakSecret = kubeClient().getSecret(namespaceName, KEYCLOAK_SECRET_NAME);
 
         String usernameEncoded = keycloakSecret.getData().get("username");
-        String username = new String(Util.decodeBytesFromBase64(usernameEncoded.getBytes(StandardCharsets.UTF_8)), StandardCharsets.UTF_8);
+        String username = Util.decodeFromBase64(usernameEncoded);
 
         String passwordEncoded = keycloakSecret.getData().get("password");
-        String password = new String(Util.decodeBytesFromBase64(passwordEncoded.getBytes(StandardCharsets.UTF_8)), StandardCharsets.UTF_8);
+        String password = Util.decodeFromBase64(passwordEncoded);
 
         return new KeycloakInstance(username, password, namespaceName);
     }

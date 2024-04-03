@@ -15,12 +15,12 @@ import io.strimzi.operator.common.model.Labels;
 
 import java.io.IOException;
 import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
 import java.security.cert.CertificateEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 
 import static java.util.Collections.emptyMap;
 
@@ -150,6 +150,10 @@ public class CertUtils {
             return new byte[]{};
         }
     }
+    
+    private static String decodeStringFromSecret(Secret secret, String key) {
+        return secret.getData().get(key) == null ? null : Util.decodeFromBase64(secret.getData().get(key));
+    }
 
     /**
      * Extracts the KeyStore from the Kubernetes Secret as a CertAndKey
@@ -159,14 +163,12 @@ public class CertUtils {
      * may have empty key, cert or keystore and null store password.
      */
     public static CertAndKey keyStoreCertAndKey(Secret secret, String keyCertName) {
-        byte[] passwordBytes = decodeFromSecret(secret, Ca.SecretEntry.P12_KEYSTORE_PASSWORD.asKey(keyCertName));
-        String password = passwordBytes.length == 0 ? null : new String(passwordBytes, StandardCharsets.US_ASCII);
         return new CertAndKey(
                 decodeFromSecret(secret, Ca.SecretEntry.KEY.asKey(keyCertName)),
                 decodeFromSecret(secret, Ca.SecretEntry.CRT.asKey(keyCertName)),
                 new byte[]{},
                 decodeFromSecret(secret, Ca.SecretEntry.P12_KEYSTORE.asKey(keyCertName)),
-                password
+                decodeStringFromSecret(secret, Ca.SecretEntry.P12_KEYSTORE_PASSWORD.asKey(keyCertName))
         );
     }
 
