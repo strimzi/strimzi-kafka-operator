@@ -126,7 +126,7 @@ public class TopicOperatorPerformanceTest extends AbstractST {
         final int numberOfClientInstances = withClientsEnabled ? 30 : 0; // producers and consumers if enabled
         final String topicNamePrefix = "perf-topic-";
         final String clientExchangeMessagesTopicPrefix = "client-topic-";
-        final int brokerReplicas = 5;
+        final int brokerReplicas = KubeClusterResource.getInstance().isMultiNode() ? 5 : 3;
         final int controllerReplicas = 3;
         long startTimeMs, endTimeMs, createTopicsTimeMs = 0, endTimeWholeMs, totalTimeWholeMs = 0, totalDeletionTimeMs = 0, startSendRecvTimeMs = 0, endSendRecvTimeMs, totalSendAndRecvTimeMs = 0;
 
@@ -322,11 +322,11 @@ public class TopicOperatorPerformanceTest extends AbstractST {
     @MethodSource("provideConfigurationsForBobDataStreamingUseCase")
     @SuppressWarnings({"checkstyle:MethodLength"})
     public void testBobDataStreamingUseCase(String maxBatchSize, String maxBatchLingerMs, boolean withClientsEnabled) throws IOException, InterruptedException {
-        final int numberOfTopics = KubeClusterResource.getInstance().isMultiNode() ? 3000 : 1000; // Number of topics to test
+        final int numberOfTopics = KubeClusterResource.getInstance().isMultiNode() ? 3000 : 750; // Number of topics to test
         final int numberOfClientInstances = withClientsEnabled ? 30 : 0; // producers and consumers if enabled
         final String topicNamePrefix = "perf-topic-";
         final String clientExchangeMessagesTopicPrefix = "client-topic-";
-        final int brokerReplicas = 9;
+        final int brokerReplicas = KubeClusterResource.getInstance().isMultiNode() ? 9 : 5;
         final int controllerReplicas = 3;
         long startTimeMs, endTimeMs, createTopicsTimeMs = 0, endTimeWholeMs, totalTimeWholeMs = 0, totalDeletionTimeMs = 0, startSendRecvTimeMs = 0, endSendRecvTimeMs, totalSendAndRecvTimeMs = 0;
 
