@@ -362,13 +362,13 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
 
         if (scaledToZero)   {
             return connectorOperator.listAsync(namespace, new LabelSelectorBuilder().addToMatchLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName).build())
-                    .compose(connectors -> Future.join(
-                            connectors.stream()
-                                .filter(connector -> !Annotations.isReconciliationPausedWithAnnotation(connector))
-                                .map(connector -> maybeUpdateConnectorStatus(reconciliation, connector, null, zeroReplicas(namespace, connectName)))
-                                .collect(Collectors.toList())
-                    ))
-                    .map((Void) null);
+                .compose(connectors -> Future.join(
+                    connectors.stream()
+                        .filter(connector -> !Annotations.isReconciliationPausedWithAnnotation(connector))
+                        .map(connector -> maybeUpdateConnectorStatus(reconciliation, connector, null, zeroReplicas(namespace, connectName)))
+                        .collect(Collectors.toList())
+                ))
+                .map((Void) null);
         }
 
         KafkaConnectApi apiClient = connectClientProvider.apply(vertx);
