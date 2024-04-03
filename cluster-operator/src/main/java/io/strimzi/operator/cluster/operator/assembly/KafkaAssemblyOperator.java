@@ -850,8 +850,16 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
      */
     @Override
     public void removeMetrics(Set<NamespaceAndName> desiredNames, String namespace) {
-        metrics.removeMetricsForCertificates(key ->
-                !desiredNames.contains(new NamespaceAndName(key.getNamespace(), key.getClusterName())));
+        if (ConfigParameter.ANY_NAMESPACE.equals(namespace)) {
+            metrics.removeMetricsForCertificates(key ->
+                    // When watching all namespaces, we remove all metrics that do not belong to existing clusters
+                    !desiredNames.contains(new NamespaceAndName(key.getNamespace(), key.getClusterName())));
+        } else {
+            metrics.removeMetricsForCertificates(key ->
+                    // When watching only one namespace, we remove all metrics that belong to our namespace but not to an existing cluster
+                    // We ignore the metrics from other namespaces
+                    namespace.equals(key.getNamespace()) && !desiredNames.contains(new NamespaceAndName(key.getNamespace(), key.getClusterName())));
+        }
     }
 
     /**
