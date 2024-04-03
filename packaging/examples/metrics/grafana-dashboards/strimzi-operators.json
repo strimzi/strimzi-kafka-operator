@@ -1562,7 +1562,7 @@
       "pluginVersion": "7.3.7",
       "targets": [
         {
-          "expr": "sort (strimzi_certificate_expiration_timestamp_ms)",
+          "expr": "sort (min by (cluster, type, resource_namespace) (strimzi_certificate_expiration_timestamp_ms))",
           "format": "table",
           "instant": true,
           "interval": "",
@@ -1588,17 +1588,7 @@
           "id": "organize",
           "options": {
             "excludeByName": {
-              "Time": true,
-              "__name__": true,
-              "container": true,
-              "endpoint": true,
-              "exported_namespace": true,
-              "instance": true,
-              "job": true,
-              "kind": true,
-              "namespace": true,
-              "pod": true,
-              "type": true
+              "Time": true
             },
             "indexByName": {
               "Time": 0,
