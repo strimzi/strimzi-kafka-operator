@@ -1157,4 +1157,18 @@ public abstract class Ca {
         }
         return false;
     }
+
+
+    /**
+     * Generates the expiration date as epoch of the CA certificate.
+     * @return  Epoch representation of the expiration date of the certificate
+     * @throws  RuntimeException if the certificate cannot be decoded or the cert does not exist
+     */
+    public long getCertificateExpirationDateEpoch() {
+        var cert = cert(caCertSecret, CA_CRT);
+        if (cert == null) {
+            throw new RuntimeException(CA_CRT + " does not exist in the secret " + caCertSecret);
+        }
+        return cert.getNotAfter().getTime();
+    }
 }

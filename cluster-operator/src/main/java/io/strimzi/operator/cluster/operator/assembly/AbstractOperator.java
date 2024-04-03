@@ -7,7 +7,6 @@ package io.strimzi.operator.cluster.operator.assembly;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.Watcher;
-import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
@@ -24,6 +23,7 @@ import io.strimzi.operator.common.ReconciliationException;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.TimeoutException;
 import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.metrics.MetricsHolder;
 import io.strimzi.operator.common.metrics.OperatorMetricsHolder;
 import io.strimzi.operator.common.model.InvalidConfigParameterException;
 import io.strimzi.operator.common.model.InvalidResourceException;
@@ -40,7 +40,6 @@ import io.vertx.core.shareddata.Lock;
 
 import java.util.ArrayList;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
@@ -74,11 +73,6 @@ public abstract class AbstractOperator<
 
     private static final long PROGRESS_WARNING = 60_000L;
     protected static final int LOCK_TIMEOUT_MS = 10000;
-
-    /**
-     * Prefix used for metrics provided by Strimzi operators
-     */
-    public static final String METRICS_PREFIX = "strimzi.";
 
     protected final Vertx vertx;
     protected final O resourceOperator;
@@ -132,6 +126,11 @@ public abstract class AbstractOperator<
     @Override
     public OperatorMetricsHolder metrics()   {
         return metrics;
+    }
+
+    @Override
+    public void removeMetrics(Set<NamespaceAndName> desiredNames, String namespace) {
+        // Intentionally left blank for dedicated Kinds to implement, but not be required by.
     }
 
     /**
@@ -573,34 +572,38 @@ public abstract class AbstractOperator<
     private Future<Void> updateResourceState(Reconciliation reconciliation, boolean ready, Throwable cause) {
         String key = reconciliation.namespace() + ":" + reconciliation.kind() + "/" + reconciliation.name();
 
+        String errorReason = "none";
+        if (cause != null) {
+            if (cause.getMessage() != null) {
+                errorReason = cause.getMessage();
+            } else {
+                errorReason = "unknown error";
+            }
+        }
+
         Tags metricTags = Tags.of(
-                    Tag.of("kind", reconciliation.kind()),
-                    Tag.of("name", reconciliation.name()),
-                    Tag.of("resource-namespace", reconciliation.namespace()),
-                    Tag.of("reason", cause == null ? "none" : cause.getMessage() == null ? "unknown error" : cause.getMessage()));
+                Tag.of("kind", reconciliation.kind()),
+                Tag.of("name", reconciliation.name()),
+                Tag.of("resource-namespace", reconciliation.namespace()),
+                Tag.of("reason", errorReason));
 
-        Optional<Meter> metric = metrics().metricsProvider().meterRegistry().getMeters()
-                .stream()
-                .filter(meter -> meter.getId().getName().equals(METRICS_PREFIX + "resource.state") &&
-                        meter.getId().getTags().contains(Tag.of("kind", reconciliation.kind())) &&
-                        meter.getId().getTags().contains(Tag.of("name", reconciliation.name())) &&
-                        meter.getId().getTags().contains(Tag.of("resource-namespace", reconciliation.namespace()))
-                ).findFirst();
+        boolean removed = metrics().removeMetric(MetricsHolder.METRICS_RESOURCE_STATE,
+                Tags.of(Tag.of("kind", reconciliation.kind()),
+                        Tag.of("name", reconciliation.name()),
+                        Tag.of("resource-namespace", reconciliation.namespace())));
 
-        if (metric.isPresent()) {
-            // remove metric so it can be re-added with new tags
-            metrics().metricsProvider().meterRegistry().remove(metric.get().getId());
+        if (removed) {
             resourcesStateCounter.remove(key);
-            LOGGER.debugCr(reconciliation, "Removed metric " + METRICS_PREFIX + "resource.state{}", key);
+            LOGGER.debugCr(reconciliation, "Removed metric " + MetricsHolder.METRICS_PREFIX + "resource.state{}", key);
         }
 
         return resourceOperator.getAsync(reconciliation.namespace(), reconciliation.name()).map(cr -> {
             if (cr != null && Util.matchesSelector(selector(), cr)) {
                 resourcesStateCounter.computeIfAbsent(key, tags ->
-                        metrics().metricsProvider().gauge(METRICS_PREFIX + "resource.state", "Current state of the resource: 1 ready, 0 fail", metricTags)
+                        metrics().metricsProvider().gauge(MetricsHolder.METRICS_RESOURCE_STATE, "Current state of the resource: 1 ready, 0 fail", metricTags)
                 );
                 resourcesStateCounter.get(key).set(ready ? 1 : 0);
-                LOGGER.debugCr(reconciliation, "Updated metric " + METRICS_PREFIX + "resource.state{} = {}", metricTags, ready ? 1 : 0);
+                LOGGER.debugCr(reconciliation, "Updated metric " + MetricsHolder.METRICS_PREFIX + "resource.state{} = {}", metricTags, ready ? 1 : 0);
             }
 
             return null;
