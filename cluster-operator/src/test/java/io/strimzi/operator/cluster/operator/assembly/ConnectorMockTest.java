@@ -2098,25 +2098,14 @@ public class ConnectorMockTest {
         Crds.kafkaConnectorOperation(client).inNamespace(namespace).resource(connector).create();
         // no need to wait, as this resource is paused and should not be reconciled
 
-        LOGGER.info("Pausing KafkaConnect reconciliations");
-        KafkaConnect pausedConnect = new KafkaConnectBuilder(kafkaConnect)
-            .editOrNewMetadata()
-                .addToAnnotations(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true")
-            .endMetadata()
-            .build();
-        Crds.kafkaConnectOperation(client).inNamespace(namespace).resource(pausedConnect).update();
-        waitForConnectPaused(connectName);
-
-        LOGGER.info("Triggering reconcileAll operation");
         Promise<Void> reconciled = Promise.promise();
         kafkaConnectOperator.reconcileAll("test", namespace, ignored -> reconciled.complete());
 
         Checkpoint async = context.checkpoint();
-<<<<<<< HEAD
         reconciled.future().onComplete(context.succeeding(v -> context.verify(() -> {
             String[] tags = new String[]{"kind", RESOURCE_KIND, "namespace", namespace};
-            assertMetricMatches("strimzi.resources", tags, is(1.0));
-            assertMetricMatches("strimzi.resources.paused", tags, is(0.0));
+            assertMetricMatches(MetricsHolder.METRICS_RESOURCES, tags, is(1.0));
+            assertMetricMatches(MetricsHolder.METRICS_RESOURCES_PAUSED, tags, is(0.0));
             async.flag();
         })));
     }
@@ -2131,44 +2120,15 @@ public class ConnectorMockTest {
                 assertThat(requiredSearch.gauge().value(), matcher);
             } catch (MeterNotFoundException mnfe) {
                 try {
-<<<<<<< HEAD
                     TimeUnit.SECONDS.sleep(1);
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
-=======
-                    for (Map.Entry<String, Double> metricEntry : expectedMetrics.entrySet()) {
-                        Gauge gauge = meterRegistry.get(metricEntry.getKey()).tags(tags).gauge();
-                        assertThat(gauge.value(), is(metricEntry.getValue()));
-                    }
-                    LOGGER.info("All assertions succeeded on attempt " + attempt);
-                    async.flag();
-                } catch (AssertionError e) {
-                    if (attempt < maxAttempts) {
-                        LOGGER.warn("Assertion failed on attempt " + attempt + ": " + e.getMessage());
-                        vertx.setTimer(1000, id -> attemptReconciliationAndAssertion(vertx, attempt + 1, maxAttempts, testContext, async, meterRegistry, tags, expectedMetrics));
-                    } else {
-                        LOGGER.error("All assertions failed after " + maxAttempts + " attempts.");
-                        testContext.failNow(e);
-                    }
->>>>>>> 2882c39e8 (fix recursive call)
                 }
             }
         }
         if (requiredSearch == null) {
             throw new RuntimeException(format("Unable to find metric %s with tags %s", name, Arrays.toString(tags)));
         }
-=======
-
-        reconciled.future().onComplete(context.succeeding(v -> context.verify(() -> {
-            Gauge resources = meterRegistry.get("strimzi.resources").tags(tags).gauge();
-            assertThat(resources.value(), is(1.0));
-
-            kafkaConnectOperator.metrics().pausedConnectorsResourceCounter(namespace); // to create metric, otherwise MeterNotFoundException will be thrown
-            Gauge resourcesPaused = meterRegistry.get("strimzi.resources.paused").tags(tags).gauge();
-            assertThat(resourcesPaused.value(), is(0.0));
-            async.flag();
-        })));
->>>>>>> 0bcaac16a (fixes root of cause race condition)
     }
 
     @Test
