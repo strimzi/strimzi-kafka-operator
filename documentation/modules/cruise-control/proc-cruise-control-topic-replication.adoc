@@ -16,12 +16,10 @@ One or more replication factor updates are then sent to Cruise Control for proce
 
 Progress is reflected in the status of the `KafkaTopic` resource.
 
-NOTE: This operation requires the unidirectional Topic Operator. It does not work when using the bidirectional Topic Operator.
-
 .Prerequisites
 
 * xref:deploying-cluster-operator-str[The Cluster Operator must be deployed.]
-* xref:deploying-the-topic-operator-using-the-cluster-operator-str[The Topic Operator must be deployed] and running in unidirectional mode to manage topics through the `KafkaTopic` custom resource. 
+* xref:deploying-the-topic-operator-using-the-cluster-operator-str[The Topic Operator must be deployed] to manage topics through the `KafkaTopic` custom resource. 
 * xref:proc-configuring-deploying-cruise-control-str[Cruise Control is deployed with Kafka.]
 
 .Procedure
