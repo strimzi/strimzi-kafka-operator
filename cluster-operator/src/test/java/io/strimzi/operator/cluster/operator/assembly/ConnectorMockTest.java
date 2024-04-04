@@ -15,7 +15,6 @@ import io.fabric8.kubernetes.client.dsl.base.PatchType;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
-import io.micrometer.core.instrument.search.MeterNotFoundException;
 import io.micrometer.core.instrument.search.RequiredSearch;
 import io.netty.channel.ConnectTimeoutException;
 import io.strimzi.api.kafka.Crds;
@@ -68,7 +67,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -79,10 +77,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import static io.strimzi.api.kafka.model.topic.KafkaTopic.RESOURCE_KIND;
 import static io.strimzi.test.TestUtils.map;
 import static io.strimzi.test.TestUtils.waitFor;
-import static java.lang.String.format;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static org.hamcrest.CoreMatchers.is;
@@ -2103,32 +2099,16 @@ public class ConnectorMockTest {
 
         Checkpoint async = context.checkpoint();
         reconciled.future().onComplete(context.succeeding(v -> context.verify(() -> {
-            String[] tags = new String[]{"kind", RESOURCE_KIND, "namespace", namespace};
-            assertMetricMatches(MetricsHolder.METRICS_RESOURCES, tags, is(1.0));
-            assertMetricMatches(MetricsHolder.METRICS_RESOURCES_PAUSED, tags, is(0.0));
+            String[] tags = new String[]{"kind", KafkaConnector.RESOURCE_KIND, "namespace", namespace};
+            assertGaugeMetricMatches(MetricsHolder.METRICS_RESOURCES, tags, is(1.0));
+            assertGaugeMetricMatches(MetricsHolder.METRICS_RESOURCES_PAUSED, tags, is(0.0));
             async.flag();
         })));
     }
 
-    private void assertMetricMatches(String name, String[] tags, Matcher<Double> matcher) {
-        // wait some time because metrics are created lazily
-        int timeoutSec = 120;
-        RequiredSearch requiredSearch = null;
-        while (requiredSearch == null && timeoutSec-- > 0) {
-            try {
-                requiredSearch = metricsProvider.meterRegistry().get(name).tags(tags);
-                assertThat(requiredSearch.gauge().value(), matcher);
-            } catch (MeterNotFoundException mnfe) {
-                try {
-                    TimeUnit.SECONDS.sleep(1);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        }
-        if (requiredSearch == null) {
-            throw new RuntimeException(format("Unable to find metric %s with tags %s", name, Arrays.toString(tags)));
-        }
+    private void assertGaugeMetricMatches(String name, String[] tags, Matcher<Double> matcher) {
+        RequiredSearch requiredSearch = metricsProvider.meterRegistry().get(name).tags(tags);
+        assertThat(requiredSearch.gauge().value(), matcher);
     }
 
     @Test
