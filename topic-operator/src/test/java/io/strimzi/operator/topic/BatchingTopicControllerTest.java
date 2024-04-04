@@ -482,7 +482,7 @@ class BatchingTopicControllerTest {
     }
 
     @Test
-    public void shouldNotCallGetClusterConfigWhenCustomSaslSet() {
+    public void shouldNotCallGetClusterConfigWhenDisabled() {
         var admin = mock(Admin.class);
         var replicasChangeClient = mock(ReplicasChangeHandler.class);
 
