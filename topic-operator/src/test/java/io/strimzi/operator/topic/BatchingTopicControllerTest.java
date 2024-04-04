@@ -21,7 +21,6 @@ import io.strimzi.operator.topic.metrics.TopicOperatorMetricsProvider;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.AlterConfigsResult;
-import org.apache.kafka.clients.admin.ConfigEntry;
 import org.apache.kafka.clients.admin.CreatePartitionsResult;
 import org.apache.kafka.clients.admin.CreateTopicsResult;
 import org.apache.kafka.clients.admin.DeleteTopicsResult;
@@ -56,7 +55,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
-import java.util.stream.Collectors;
 
 import static io.strimzi.api.kafka.model.topic.KafkaTopic.RESOURCE_KIND;
 import static io.strimzi.api.kafka.model.topic.ReplicasChangeState.PENDING;

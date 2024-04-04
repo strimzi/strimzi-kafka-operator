@@ -1135,15 +1135,10 @@ public class BatchingTopicController {
         // subset of config properties. In that case we remove the configOps that would not be allowed.
         var customAlterableConfigs = config.alterableTopicConfig();
         if (customAlterableConfigs != null && !customAlterableConfigs.isBlank()) {
-            var cleanPropertyNames = customAlterableConfigs.replaceAll("\\s", "");
-            var alterableProperties = cleanPropertyNames.split(",");
-            var alterablePropertySet = new HashSet<>(Arrays.asList(alterableProperties));
+            var alterablePropertySet = Arrays.stream(customAlterableConfigs.replaceAll("\\s", "").split(","))
+                 .collect(Collectors.toSet());
 
-            var filteredOps = alterConfigOps.stream()
-                  .filter(op -> alterablePropertySet.contains(op.configEntry().name()))
-                  .toList();
-
-            alterConfigOps = new HashSet<>(filteredOps);
+            alterConfigOps.removeIf(op -> !alterablePropertySet.contains(op.configEntry().name()));
         }
 
         if (alterConfigOps.isEmpty()) {
