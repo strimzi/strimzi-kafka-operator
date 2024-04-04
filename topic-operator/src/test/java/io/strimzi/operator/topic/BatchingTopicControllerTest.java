@@ -535,16 +535,19 @@ class BatchingTopicControllerTest {
         Map<String, Object> deepCopyOfTopicConfig = topicConfig.entries().stream()
               .collect(Collectors.toMap(ConfigEntry::name, ConfigEntry::value));
         deepCopyOfTopicConfig.put("cleanup.policy", "Compact");
-        var kt = Crds.topicOperation(client).resource(new KafkaTopicBuilder().withNewMetadata()
-              .withName(MY_TOPIC)
-              .withNamespace(namespace(NAMESPACE))
-              .addToLabels("key", "VALUE")
-              .endMetadata()
-              .withNewSpec()
-              .withConfig(deepCopyOfTopicConfig)
-              .withPartitions(2)
-              .withReplicas(1)
-              .endSpec().build()).create();
+        var kt = Crds.topicOperation(client).resource(
+            new KafkaTopicBuilder()
+                .withNewMetadata()
+                    .withName(MY_TOPIC)
+                    .withNamespace(namespace(NAMESPACE))
+                    .addToLabels("key", "VALUE")
+                .endMetadata()
+                .withNewSpec()
+                    .withConfig(deepCopyOfTopicConfig)
+                    .withPartitions(2)
+                    .withReplicas(1)
+                .endSpec()
+                .build()).create();
 
         controller = new BatchingTopicController(config, Map.of("key", "VALUE"), adminSpy, client, metrics, replicasChangeClient);
         List<ReconcilableTopic> batch = List.of(new ReconcilableTopic(new Reconciliation("test", "KafkaTopic", NAMESPACE, MY_TOPIC), kt, topicName(kt)));
