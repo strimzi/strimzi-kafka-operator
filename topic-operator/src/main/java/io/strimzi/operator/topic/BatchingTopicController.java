@@ -1130,7 +1130,7 @@ public class BatchingTopicController {
                     AlterConfigOp.OpType.DELETE));
         }
 
-        // alterableTopicConfig is used with external clusters, like AWS MSK serverless, that only allow modifying a
+        // alterableTopicConfig is used with external clusters that only allow modifying a
         // subset of config properties. In that case we remove the configOps that would not be allowed.
         var customAlterableConfigs = config.alterableTopicConfig();
         if (customAlterableConfigs != null && !customAlterableConfigs.isBlank()) {
