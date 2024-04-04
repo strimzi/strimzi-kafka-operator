@@ -15,6 +15,7 @@ import io.strimzi.certs.CertManager;
 import io.strimzi.certs.IpAndDnsValidation;
 import io.strimzi.certs.Subject;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.common.model.PasswordGenerator;
 
@@ -24,7 +25,6 @@ import java.nio.file.Files;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -333,9 +333,9 @@ public class ClusterCa extends Ca {
                     certAndKey = asCertAndKey(secret, podName);
                 } else {
                     // coming from an older operator version, the secret exists but without keystore and password
-                    certAndKey = addKeyAndCertToKeyStore(subject.commonName(),
-                            Base64.getDecoder().decode(secretEntryDataForPod(secret, podName, SecretEntry.KEY)),
-                            Base64.getDecoder().decode(secretEntryDataForPod(secret, podName, SecretEntry.CRT)));
+                    certAndKey = addKeyAndCertToKeyStore(subject.commonName(), 
+                            Util.decodeBytesFromBase64(secretEntryDataForPod(secret, podName, SecretEntry.KEY)),
+                            Util.decodeBytesFromBase64(secretEntryDataForPod(secret, podName, SecretEntry.CRT)));
                 }
 
                 List<String> reasons = new ArrayList<>(2);

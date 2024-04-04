@@ -547,6 +547,28 @@ public class Util {
     public static String encodeToBase64(String data)  {
         return Base64.getEncoder().encodeToString(data.getBytes(StandardCharsets.US_ASCII));
     }
+    
+    /**
+     * Decodes a byte[] from Base64.
+     *
+     * @param data    String that should be decoded.
+     *
+     * @return        Plain data in byte[].
+     */
+    public static byte[] decodeBytesFromBase64(String data)  {
+        return Base64.getDecoder().decode(data);
+    }
+    
+    /**
+     * Decodes a byte[] from Base64.
+     *
+     * @param data    byte[] that should be decoded.
+     *
+     * @return        Plain data in byte[].
+     */
+    public static byte[] decodeBytesFromBase64(byte[] data)  {
+        return Base64.getDecoder().decode(data);
+    }
 
     /**
      * Decodes a String from Base64.
@@ -568,7 +590,7 @@ public class Util {
      * @return        Plain data using specified charset.
      */
     public static String decodeFromBase64(String data, Charset charset)  {
-        return new String(Base64.getDecoder().decode(data), charset);
+        return new String(decodeBytesFromBase64(data), charset);
     }
 
     /**
