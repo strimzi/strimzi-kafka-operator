@@ -515,26 +515,15 @@ class BatchingTopicControllerTest {
     @Test
     public void shouldNotUpdatePropertiesNotInTheAlterableProperties(KafkaCluster cluster) throws InterruptedException, ExecutionException {
         admin[0] = Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, cluster.getBootstrapServers()));
-        admin[0].createTopics(List.of(new NewTopic("my-topic", 1, (short) 1).configs(Map.of(TopicConfig.COMPRESSION_TYPE_CONFIG, "snappy")))).all().get();
+
+        final String MY_TOPIC_NAME = "my-topic";
+        admin[0].createTopics(List.of(new NewTopic(MY_TOPIC_NAME, 1, (short) 1).configs(Map.of(TopicConfig.COMPRESSION_TYPE_CONFIG, "snappy")))).all().get();
+
         Admin adminSpy = Mockito.spy(admin[0]);
 
-        var configResources = new ConfigResource(ConfigResource.Type.TOPIC, "my-topic");
+        var configResources = new ConfigResource(ConfigResource.Type.TOPIC, MY_TOPIC_NAME );
         var describeConfigsResultReal = adminSpy.describeConfigs(Set.of(configResources));
         var topicConfig = describeConfigsResultReal.values().get(configResources).get();
-
-        var describeTopicsResultReal = adminSpy.describeTopics(Set.of("my-topic"));
-        var topicDescriptionReal = describeTopicsResultReal.topicNameValues().get("my-topic").get();
-
-        var describeConfigsResult = mock(DescribeConfigsResult.class);
-        var describeTopicsResult = mock(DescribeTopicsResult.class);
-        Mockito.doReturn(describeConfigsResult).when(adminSpy).describeConfigs(any(Collection.class));
-        Mockito.doReturn(describeTopicsResult).when(adminSpy).describeTopics(any(Collection.class));
-
-        Mockito.doReturn(KafkaFuture.completedFuture(Map.of(configResources, topicConfig))).when(describeConfigsResult).all();
-        Mockito.doReturn(Map.of(configResources, KafkaFuture.completedFuture(topicConfig))).when(describeConfigsResult).values();
-
-        Mockito.doReturn(Map.of("my-topic", KafkaFuture.completedFuture(topicDescriptionReal))).when(describeTopicsResult).topicNameValues();
-        Mockito.doReturn(KafkaFuture.completedFuture(Map.of("my-topic", topicDescriptionReal))).when(describeTopicsResult).allTopicNames();
 
         var config = mock(TopicOperatorConfig.class);
         Mockito.doReturn(NAMESPACE).when(config).namespace();
@@ -547,7 +536,7 @@ class BatchingTopicControllerTest {
               .collect(Collectors.toMap(ConfigEntry::name, ConfigEntry::value));
         deepCopyOfTopicConfig.put("cleanup.policy", "Compact");
         var kt = Crds.topicOperation(client).resource(new KafkaTopicBuilder().withNewMetadata()
-              .withName("my-topic")
+              .withName(MY_TOPIC_NAME)
               .withNamespace(namespace(NAMESPACE))
               .addToLabels("key", "VALUE")
               .endMetadata()
@@ -558,7 +547,7 @@ class BatchingTopicControllerTest {
               .endSpec().build()).create();
 
         controller = new BatchingTopicController(config, Map.of("key", "VALUE"), adminSpy, client, metrics, replicasChangeClient);
-        List<ReconcilableTopic> batch = List.of(new ReconcilableTopic(new Reconciliation("test", "KafkaTopic", NAMESPACE, "my-topic"), kt, topicName(kt)));
+        List<ReconcilableTopic> batch = List.of(new ReconcilableTopic(new Reconciliation("test", "KafkaTopic", NAMESPACE, MY_TOPIC_NAME), kt, topicName(kt)));
 
         controller.onUpdate(batch);
 
