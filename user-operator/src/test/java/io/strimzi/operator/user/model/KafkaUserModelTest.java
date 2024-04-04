@@ -226,11 +226,11 @@ public class KafkaUserModelTest {
         model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, clientsCaCert, clientsCaKey, null, 365, 30, null, Clock.systemUTC());
         Secret generated = model.generateSecret();
 
-        assertThat(new String(model.decodeFromSecret(generated, "ca.crt")), is("clients-ca-crt"));
-        assertThat(new String(model.decodeFromSecret(generated, "user.crt")), is(MockCertManager.userCert()));
-        assertThat(new String(model.decodeFromSecret(generated, "user.key")), is(MockCertManager.userKey()));
-        assertThat(new String(model.decodeFromSecret(generated, "user.p12")), is(MockCertManager.userKeyStore()));
-        assertThat(new String(model.decodeFromSecret(generated, "user.password")), is("aaaaaaaaaa"));
+        assertThat(Util.decodeFromBase64(generated.getData().get("ca.crt")), is("clients-ca-crt"));
+        assertThat(Util.decodeFromBase64(generated.getData().get("user.crt")), is(MockCertManager.userCert()));
+        assertThat(Util.decodeFromBase64(generated.getData().get("user.key")), is(MockCertManager.userKey()));
+        assertThat(Util.decodeFromBase64(generated.getData().get("user.p12")), is(MockCertManager.userKeyStore()));
+        assertThat(Util.decodeFromBase64(generated.getData().get("user.password")), is("aaaaaaaaaa"));
 
         // Check owner reference
         checkOwnerReference(model.createOwnerReference(), generated);
@@ -280,12 +280,12 @@ public class KafkaUserModelTest {
         KafkaUserModel model = KafkaUserModel.fromCrd(tlsUser, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
         model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, clientsCaCertSecret, clientsCaKeySecret, userCert, 365, 30, null, Clock.systemUTC());
         Secret generatedSecret = model.generateSecret();
-
-        assertThat(new String(model.decodeFromSecret(generatedSecret, "ca.crt")),  is("different-clients-ca-crt"));
-        assertThat(new String(model.decodeFromSecret(generatedSecret, "user.crt")), is(MockCertManager.userCert()));
-        assertThat(new String(model.decodeFromSecret(generatedSecret, "user.key")), is(MockCertManager.userKey()));
-        assertThat(new String(model.decodeFromSecret(generatedSecret, "user.p12")), is(MockCertManager.userKeyStore()));
-        assertThat(new String(model.decodeFromSecret(generatedSecret, "user.password")), is("aaaaaaaaaa"));
+    
+        assertThat(Util.decodeFromBase64(generatedSecret.getData().get("ca.crt")),  is("different-clients-ca-crt"));
+        assertThat(Util.decodeFromBase64(generatedSecret.getData().get("user.crt")), is(MockCertManager.userCert()));
+        assertThat(Util.decodeFromBase64(generatedSecret.getData().get("user.key")), is(MockCertManager.userKey()));
+        assertThat(Util.decodeFromBase64(generatedSecret.getData().get("user.p12")), is(MockCertManager.userKeyStore()));
+        assertThat(Util.decodeFromBase64(generatedSecret.getData().get("user.password")), is("aaaaaaaaaa"));
 
         // Check owner reference
         checkOwnerReference(model.createOwnerReference(), generatedSecret);
@@ -300,11 +300,11 @@ public class KafkaUserModelTest {
         Secret generatedSecret = model.generateSecret();
 
         // These values match those in ResourceUtils.createUserSecretTls()
-        assertThat(new String(model.decodeFromSecret(generatedSecret, "ca.crt")),  is("clients-ca-crt"));
-        assertThat(new String(model.decodeFromSecret(generatedSecret, "user.crt")), is("expected-crt"));
-        assertThat(new String(model.decodeFromSecret(generatedSecret, "user.key")), is("expected-key"));
-        assertThat(new String(model.decodeFromSecret(generatedSecret, "user.p12")), is("expected-p12"));
-        assertThat(new String(model.decodeFromSecret(generatedSecret, "user.password")), is("expected-password"));
+        assertThat(Util.decodeFromBase64(generatedSecret.getData().get("ca.crt")),  is("clients-ca-crt"));
+        assertThat(Util.decodeFromBase64(generatedSecret.getData().get("user.crt")), is("expected-crt"));
+        assertThat(Util.decodeFromBase64(generatedSecret.getData().get("user.key")), is("expected-key"));
+        assertThat(Util.decodeFromBase64(generatedSecret.getData().get("user.p12")), is("expected-p12"));
+        assertThat(Util.decodeFromBase64(generatedSecret.getData().get("user.password")), is("expected-password"));
 
         // Check owner reference
         checkOwnerReference(model.createOwnerReference(), generatedSecret);
@@ -317,11 +317,11 @@ public class KafkaUserModelTest {
         model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, clientsCaCert, clientsCaKey, userCert, 365, 30, null, Clock.systemUTC());
         Secret generated = model.generateSecret();
 
-        assertThat(new String(model.decodeFromSecret(generated, "ca.crt")),  is("clients-ca-crt"));
-        assertThat(new String(model.decodeFromSecret(generated, "user.crt")), is(MockCertManager.userCert()));
-        assertThat(new String(model.decodeFromSecret(generated, "user.key")), is(MockCertManager.userKey()));
-        assertThat(new String(model.decodeFromSecret(generated, "user.p12")), is(MockCertManager.userKeyStore()));
-        assertThat(new String(model.decodeFromSecret(generated, "user.password")), is("aaaaaaaaaa"));
+        assertThat(Util.decodeFromBase64(generated.getData().get("ca.crt")),  is("clients-ca-crt"));
+        assertThat(Util.decodeFromBase64(generated.getData().get("user.crt")), is(MockCertManager.userCert()));
+        assertThat(Util.decodeFromBase64(generated.getData().get("user.key")), is(MockCertManager.userKey()));
+        assertThat(Util.decodeFromBase64(generated.getData().get("user.p12")), is(MockCertManager.userKeyStore()));
+        assertThat(Util.decodeFromBase64(generated.getData().get("user.password")), is("aaaaaaaaaa"));
 
         // Check owner reference
         checkOwnerReference(model.createOwnerReference(), generated);
@@ -343,12 +343,12 @@ public class KafkaUserModelTest {
 
         assertThat(generatedSecret.getData().keySet(), is(set("ca.crt", "user.crt", "user.key", "user.p12", "user.password")));
 
-        assertThat(new String(model.decodeFromSecret(generatedSecret, "ca.crt")), is("clients-ca-crt"));
-        assertThat(new String(model.decodeFromSecret(generatedSecret, "user.crt")), is(MockCertManager.userCert()));
-        assertThat(new String(model.decodeFromSecret(generatedSecret, "user.key")), is(MockCertManager.userKey()));
+        assertThat(Util.decodeFromBase64(generatedSecret.getData().get("ca.crt")), is("clients-ca-crt"));
+        assertThat(Util.decodeFromBase64(generatedSecret.getData().get("user.crt")), is(MockCertManager.userCert()));
+        assertThat(Util.decodeFromBase64(generatedSecret.getData().get("user.key")), is(MockCertManager.userKey()));
         // assert that keystore and password have been re-added
-        assertThat(new String(model.decodeFromSecret(generatedSecret, "user.p12")), is(MockCertManager.userKeyStore()));
-        assertThat(new String(model.decodeFromSecret(generatedSecret, "user.password")), is("aaaaaaaaaa"));
+        assertThat(Util.decodeFromBase64(generatedSecret.getData().get("user.p12")), is(MockCertManager.userKeyStore()));
+        assertThat(Util.decodeFromBase64(generatedSecret.getData().get("user.password")), is("aaaaaaaaaa"));
 
         // Check owner reference
         checkOwnerReference(model.createOwnerReference(), generatedSecret);

@@ -48,6 +48,14 @@ public interface Operator {
     Future<Void> reconcile(Reconciliation reconciliation);
 
     /**
+     * Remove the metrics specific to the kind implementing it.
+     *
+     * @param desiredNames  Set of resources which should be reconciled
+     * @param namespace     The namespace to reconcile, or {@code *} to reconcile across all namespaces.
+     */
+    void removeMetrics(Set<NamespaceAndName> desiredNames, String namespace);
+
+    /**
      * Triggers the asynchronous reconciliation of all resources which this operator consumes.
      * The resources to reconcile are identified by {@link #allResourceNames(String)}.
      * @param trigger The cause of this reconciliation (for logging).
@@ -80,6 +88,8 @@ public interface Operator {
             metrics().resourceCounter(namespace).set(0);
             metrics().pausedResourceCounter(namespace).set(0);
         }
+
+        removeMetrics(desiredNames, namespace);
 
         if (desiredNames.size() > 0) {
             List<Future<Void>> futures = new ArrayList<>();

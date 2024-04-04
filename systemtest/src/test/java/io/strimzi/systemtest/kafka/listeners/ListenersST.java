@@ -2391,7 +2391,7 @@ public class ListenersST extends AbstractST {
 
             LOGGER.info("Encoding {}.crt", kafkaBroker);
 
-            ByteArrayInputStream publicCert = new ByteArrayInputStream(Base64.getDecoder().decode(cert.getBytes()));
+            ByteArrayInputStream publicCert = new ByteArrayInputStream(Util.decodeBytesFromBase64(cert.getBytes()));
             CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
             Certificate certificate = certificateFactory.generateCertificate(publicCert);
 

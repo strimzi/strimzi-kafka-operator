@@ -37,6 +37,7 @@ import io.strimzi.operator.cluster.operator.resource.kubernetes.PodOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.StrimziPodSetOperator;
 import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.metrics.MetricsHolder;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.mockkube3.MockKube3;
@@ -63,7 +64,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.not;
 
@@ -694,18 +695,20 @@ public class StrimziPodSetControllerMockTest {
             // Depending on timing, there might be multiple reconciliations happening. That is why we use of greaterThanOrEqualTo
             MeterRegistry registry = metricsProvider.meterRegistry();
 
-            assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "resources").meter().getId().getTags(), contains(Tag.of("kind", "StrimziPodSet"), Tag.of("namespace", namespace), Tag.of("selector", "selector=matching")));
-            assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "resources").tag("kind", "StrimziPodSet").gauge().value(), is(1.0));
+            Tag[] tags = new Tag[]{Tag.of("kind", "StrimziPodSet"), Tag.of("namespace", namespace), Tag.of("selector", "selector=matching")};
 
-            assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations").meter().getId().getTags(), contains(Tag.of("kind", "StrimziPodSet"), Tag.of("namespace", namespace), Tag.of("selector", "selector=matching")));
-            assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations").tag("kind", "StrimziPodSet").counter().count(), greaterThanOrEqualTo(3.0));
+            assertThat(registry.get(MetricsHolder.METRICS_RESOURCES).meter().getId().getTags(), containsInAnyOrder(tags));
+            assertThat(registry.get(MetricsHolder.METRICS_RESOURCES).tag("kind", "StrimziPodSet").gauge().value(), is(1.0));
 
-            assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.successful").meter().getId().getTags(), contains(Tag.of("kind", "StrimziPodSet"), Tag.of("namespace", namespace), Tag.of("selector", "selector=matching")));
-            assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "StrimziPodSet").counter().count(), greaterThanOrEqualTo(3.0));
+            assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS).meter().getId().getTags(), containsInAnyOrder(tags));
+            assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS).tag("kind", "StrimziPodSet").counter().count(), greaterThanOrEqualTo(3.0));
 
-            assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").meter().getId().getTags(), contains(Tag.of("kind", "StrimziPodSet"), Tag.of("namespace", namespace), Tag.of("selector", "selector=matching")));
-            assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "StrimziPodSet").timer().count(), greaterThanOrEqualTo(3L));
-            assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "StrimziPodSet").timer().totalTime(TimeUnit.MILLISECONDS), greaterThanOrEqualTo(0.0));
+            assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_SUCCESSFUL).meter().getId().getTags(), containsInAnyOrder(tags));
+            assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_SUCCESSFUL).tag("kind", "StrimziPodSet").counter().count(), greaterThanOrEqualTo(3.0));
+
+            assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_DURATION).meter().getId().getTags(), containsInAnyOrder(tags));
+            assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_DURATION).tag("kind", "StrimziPodSet").timer().count(), greaterThanOrEqualTo(3L));
+            assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_DURATION).tag("kind", "StrimziPodSet").timer().totalTime(TimeUnit.MILLISECONDS), greaterThanOrEqualTo(0.0));
 
             // Delete the PodSet
             podSetOp().inNamespace(namespace).withName(podSetName).delete();
@@ -715,7 +718,7 @@ public class StrimziPodSetControllerMockTest {
                     "Wait for resource metric to be 0 again",
                     100,
                     1_000,
-                    () -> registry.get(AbstractOperator.METRICS_PREFIX + "resources").tag("kind", "StrimziPodSet").gauge().value() == 0.0,
+                    () -> registry.get(MetricsHolder.METRICS_RESOURCES).tag("kind", "StrimziPodSet").gauge().value() == 0.0,
                     () -> context.failNow("Resource metric did not returned to 0"));
 
             context.completeNow();
