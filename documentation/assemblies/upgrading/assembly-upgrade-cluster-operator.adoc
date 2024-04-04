@@ -55,7 +55,12 @@ When deploying the Topic Operator to manage topics, the Cluster Operator enables
 This means that the Topic Operator only manages Kafka topics associated with `KafkaTopic` resources and does not interfere with topics managed independently within the Kafka cluster.
 
 Previously, the Topic Operator worked in bidirectional mode, which meant it could also perform operations on topics within the Kafka cluster.
-If you are switching from a version of Strimzi that uses the Bidirectional Topic Operator, after upgrading the Cluster Operator, perform some cleanup tasks to delete the internal topics that were used by the operator. 
+If you are switching from a version of Strimzi that uses the Bidirectional Topic Operator, after upgrading the Cluster Operator, perform some cleanup tasks on the following internal topics that were used by the operator: 
+
+* `strimzi-store-topic`
+* `strimzi-topic-operator`
+* `consumer-offsets`
+* `transaction-state`
 
 For the `strimzi-store-topic` and `strimzi-topic-operator` topics, delete the resources that were used to manage them:
 
@@ -77,6 +82,8 @@ Annotating the `KafkaTopic` resources with `strimzi.io/managed="false"` indicate
 kubectl annotate $(kubectl get kt -n <namespace> -o name | grep consumer-offsets) strimzi.io/managed="false" \
   && kubectl annotate $(kubectl get kt -n <namespace> -o name | grep transaction-state) strimzi.io/managed="false"
 ----
+
+Check the statuses of the `KafkaTopic` resources to make sure the reconciliation was successful and the topics are no longer managed, as shown in the   xref:proc-converting-managed-topics-str[procedure to stop managing topics]. 
 
 Having discontinued their management, delete the `KafkaTopic` resources:
 
