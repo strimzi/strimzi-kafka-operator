@@ -714,6 +714,7 @@ class LoggingChangeST extends AbstractST {
         final Pattern log4jPatternInfoLevel = Pattern.compile("^(?<date>[\\d-]+) (?<time>[\\d:,]+) INFO (?<message>.+)");
 
         // logging changes on multiple Connect instances are possible from Kafka 3.7.0
+        // TODO: change once support for Kafka 3.6.x is removed - https://github.com/strimzi/strimzi-kafka-operator/issues/9921
         final int connectReplicas = TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "3.7.0") >= 0 ? 3 : 1;
 
         final KafkaConnect connect = KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), testStorage.getNamespaceName(), connectReplicas)
