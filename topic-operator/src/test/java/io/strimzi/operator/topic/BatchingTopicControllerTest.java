@@ -81,6 +81,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 class BatchingTopicControllerTest {
     private static final Logger LOGGER = LogManager.getLogger(BatchingTopicControllerTest.class);
     private static final String NAMESPACE = "topic-operator-test";
+    private static final String MY_TOPIC = "my-topic";
 
     private BatchingTopicController controller;
     private KubernetesClient client;
@@ -516,12 +517,11 @@ class BatchingTopicControllerTest {
     public void shouldNotUpdatePropertiesNotInTheAlterableProperties(KafkaCluster cluster) throws InterruptedException, ExecutionException {
         admin[0] = Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, cluster.getBootstrapServers()));
 
-        final String MY_TOPIC_NAME = "my-topic";
-        admin[0].createTopics(List.of(new NewTopic(MY_TOPIC_NAME, 1, (short) 1).configs(Map.of(TopicConfig.COMPRESSION_TYPE_CONFIG, "snappy")))).all().get();
+        admin[0].createTopics(List.of(new NewTopic(MY_TOPIC, 1, (short) 1).configs(Map.of(TopicConfig.COMPRESSION_TYPE_CONFIG, "snappy")))).all().get();
 
         Admin adminSpy = Mockito.spy(admin[0]);
 
-        var configResources = new ConfigResource(ConfigResource.Type.TOPIC, MY_TOPIC_NAME );
+        var configResources = new ConfigResource(ConfigResource.Type.TOPIC, MY_TOPIC);
         var describeConfigsResultReal = adminSpy.describeConfigs(Set.of(configResources));
         var topicConfig = describeConfigsResultReal.values().get(configResources).get();
 
@@ -536,7 +536,7 @@ class BatchingTopicControllerTest {
               .collect(Collectors.toMap(ConfigEntry::name, ConfigEntry::value));
         deepCopyOfTopicConfig.put("cleanup.policy", "Compact");
         var kt = Crds.topicOperation(client).resource(new KafkaTopicBuilder().withNewMetadata()
-              .withName(MY_TOPIC_NAME)
+              .withName(MY_TOPIC)
               .withNamespace(namespace(NAMESPACE))
               .addToLabels("key", "VALUE")
               .endMetadata()
@@ -547,7 +547,7 @@ class BatchingTopicControllerTest {
               .endSpec().build()).create();
 
         controller = new BatchingTopicController(config, Map.of("key", "VALUE"), adminSpy, client, metrics, replicasChangeClient);
-        List<ReconcilableTopic> batch = List.of(new ReconcilableTopic(new Reconciliation("test", "KafkaTopic", NAMESPACE, MY_TOPIC_NAME), kt, topicName(kt)));
+        List<ReconcilableTopic> batch = List.of(new ReconcilableTopic(new Reconciliation("test", "KafkaTopic", NAMESPACE, MY_TOPIC), kt, topicName(kt)));
 
         controller.onUpdate(batch);
 
