@@ -1,0 +1,8 @@
+[id='assembly-fips-validation-{context}']
+= NIST validation
+
+Strimzi is designed to use FIPS-validated cryptographic libraries for secure communication in a FIPS-enabled Kubernetes cluster.
+However, it's important to note that while Strimzi can leverage these libraries in a FIPS environment, the underlying Universal Base Images (UBI) used in Strimzi deployments may not inherently include NIST-validated binaries. 
+This means that while Strimzi can leverage cryptographic libraries for FIPS, the specific binaries within the Strimzi container images might not have undergone NIST validation.
+
+For more information about the NIST validation program and validated modules, see link:https://csrc.nist.gov/Projects/cryptographic-module-validation-program/validated-modules[Cryptographic Module Validation Program^] on the NIST website.
