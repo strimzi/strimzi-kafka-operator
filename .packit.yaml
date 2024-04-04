@@ -204,6 +204,10 @@ jobs:
     labels:
       - performance
     tf_extra_params:
+      settings:
+        pipeline:
+          timeout: 1440
       test:
         tmt:
           name: performance
+        timeout: 86400 # Hypothetical parameter and value for a 24-hour timeout in seconds

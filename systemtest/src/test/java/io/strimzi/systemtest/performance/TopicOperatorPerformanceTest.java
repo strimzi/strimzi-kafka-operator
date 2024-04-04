@@ -79,10 +79,11 @@ public class TopicOperatorPerformanceTest extends AbstractST {
      * This method supplies a variety of configurations to find the optimal balance between throughput and operational latency for bulk topic management in Kafka.
      */
     private static Stream<Arguments> provideConfigurationsForAliceBulkBatchUseCase() {
+        // note: for single-node >= 30GB, >= 8CPUs -> each test takes ~45 minutes
         return Stream.of(
                 // without clients
                 Arguments.of("100", "10", false),     // Lower batch size with short linger time for comparison
-                Arguments.of("500", "10", false),  // Increased batch size with short linger time
+                Arguments.of("500", "10", false),     // Increased batch size with short linger time
                 Arguments.of("1000", "10", false),    // Large batch size with short linger time
                 Arguments.of("100", "30000", false),  // Lower batch size with 30 seconds linger time
                 Arguments.of("500", "30000", false),  // Increased batch size with 30 seconds linger time
@@ -92,7 +93,7 @@ public class TopicOperatorPerformanceTest extends AbstractST {
                 Arguments.of("1000", "100", false),    // Large batch size with longer linger time
                 // with clients
                 Arguments.of("100", "10", true),     // Lower batch size with short linger time for comparison
-                Arguments.of("500", "10", true),   // Increased batch size with short linger time
+                Arguments.of("500", "10", true),     // Increased batch size with short linger time
                 Arguments.of("1000", "10", true),    // Large batch size with short linger time
                 Arguments.of("100", "30000", true),  // Lower batch size with 30 seconds linger time
                 Arguments.of("500", "30000", true),  // Increased batch size with 30 seconds linger time
