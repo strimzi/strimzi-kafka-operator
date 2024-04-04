@@ -21,6 +21,7 @@ import io.strimzi.operator.topic.metrics.TopicOperatorMetricsProvider;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.AlterConfigsResult;
+import org.apache.kafka.clients.admin.ConfigEntry;
 import org.apache.kafka.clients.admin.CreatePartitionsResult;
 import org.apache.kafka.clients.admin.CreateTopicsResult;
 import org.apache.kafka.clients.admin.DeleteTopicsResult;
@@ -55,6 +56,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 
 import static io.strimzi.api.kafka.model.topic.KafkaTopic.RESOURCE_KIND;
 import static io.strimzi.api.kafka.model.topic.ReplicasChangeState.PENDING;
@@ -493,5 +495,73 @@ class BatchingTopicControllerTest {
         new BatchingTopicController(config, Map.of("key", "VALUE"), admin, client, metrics, replicasChangeClient);
 
         verifyNoInteractions(admin);
+    }
+
+    @Test
+    public void shouldNotCallDescribeClusterWhenSkipClusterConfigReviewIsTrue(KafkaCluster cluster) {
+        admin[0] = Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, cluster.getBootstrapServers()));
+        Admin adminSpy = Mockito.spy(admin[0]);
+
+        var config = mock(TopicOperatorConfig.class);
+        Mockito.doReturn(NAMESPACE).when(config).namespace();
+        Mockito.doReturn(true).when(config).skipClusterConfigReview();
+        var replicasChangeClient = mock(ReplicasChangeHandler.class);
+
+        controller = new BatchingTopicController(config, Map.of("key", "VALUE"), adminSpy, client, metrics, replicasChangeClient);
+
+        verifyNoInteractions(adminSpy);
+    }
+
+    @Test
+    public void shouldNotUpdatePropertiesNotInTheAlterableProperties(KafkaCluster cluster) throws InterruptedException, ExecutionException {
+        admin[0] = Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, cluster.getBootstrapServers()));
+        admin[0].createTopics(List.of(new NewTopic("my-topic", 1, (short) 1).configs(Map.of(TopicConfig.COMPRESSION_TYPE_CONFIG, "snappy")))).all().get();
+        Admin adminSpy = Mockito.spy(admin[0]);
+
+        var configResources = new ConfigResource(ConfigResource.Type.TOPIC, "my-topic");
+        var describeConfigsResultReal = adminSpy.describeConfigs(Set.of(configResources));
+        var topicConfig = describeConfigsResultReal.values().get(configResources).get();
+
+        var describeTopicsResultReal = adminSpy.describeTopics(Set.of("my-topic"));
+        var topicDescriptionReal = describeTopicsResultReal.topicNameValues().get("my-topic").get();
+
+        var describeConfigsResult = mock(DescribeConfigsResult.class);
+        var describeTopicsResult = mock(DescribeTopicsResult.class);
+        Mockito.doReturn(describeConfigsResult).when(adminSpy).describeConfigs(any(Collection.class));
+        Mockito.doReturn(describeTopicsResult).when(adminSpy).describeTopics(any(Collection.class));
+
+        Mockito.doReturn(KafkaFuture.completedFuture(Map.of(configResources, topicConfig))).when(describeConfigsResult).all();
+        Mockito.doReturn(Map.of(configResources, KafkaFuture.completedFuture(topicConfig))).when(describeConfigsResult).values();
+
+        Mockito.doReturn(Map.of("my-topic", KafkaFuture.completedFuture(topicDescriptionReal))).when(describeTopicsResult).topicNameValues();
+        Mockito.doReturn(KafkaFuture.completedFuture(Map.of("my-topic", topicDescriptionReal))).when(describeTopicsResult).allTopicNames();
+
+        var config = mock(TopicOperatorConfig.class);
+        Mockito.doReturn(NAMESPACE).when(config).namespace();
+        Mockito.doReturn(true).when(config).skipClusterConfigReview();
+        Mockito.doReturn("compression.type, max.message.bytes, message.timestamp.difference.max.ms, message.timestamp.type, retention.bytes, retention.ms").when(config).alterableTopicConfig();
+        var replicasChangeClient = mock(ReplicasChangeHandler.class);
+
+        // Setup the KafkaTopic with 1 property change that is not in the alterableTopicConfig() list.
+        Map<String, Object> deepCopyOfTopicConfig = topicConfig.entries().stream()
+              .collect(Collectors.toMap(ConfigEntry::name, ConfigEntry::value));
+        deepCopyOfTopicConfig.put("cleanup.policy", "Compact");
+        var kt = Crds.topicOperation(client).resource(new KafkaTopicBuilder().withNewMetadata()
+              .withName("my-topic")
+              .withNamespace(namespace(NAMESPACE))
+              .addToLabels("key", "VALUE")
+              .endMetadata()
+              .withNewSpec()
+              .withConfig(deepCopyOfTopicConfig)
+              .withPartitions(2)
+              .withReplicas(1)
+              .endSpec().build()).create();
+
+        controller = new BatchingTopicController(config, Map.of("key", "VALUE"), adminSpy, client, metrics, replicasChangeClient);
+        List<ReconcilableTopic> batch = List.of(new ReconcilableTopic(new Reconciliation("test", "KafkaTopic", NAMESPACE, "my-topic"), kt, topicName(kt)));
+
+        controller.onUpdate(batch);
+
+        Mockito.verify(adminSpy, Mockito.never()).incrementalAlterConfigs(any());
     }
 }

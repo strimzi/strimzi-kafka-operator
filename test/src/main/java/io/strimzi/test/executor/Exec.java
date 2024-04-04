@@ -21,6 +21,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Scanner;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -339,6 +340,11 @@ public class Exec {
      * @return true.false
      */
     public static boolean isExecutableOnPath(String cmd) {
+        var osName = System.getProperty("os.name");
+        if (osName.toLowerCase(Locale.US).startsWith("windows")) {
+            cmd += ".exe";
+        }
+
         for (String dir : PATH_SPLITTER.split(System.getenv("PATH"))) {
             if (new File(dir, cmd).canExecute()) {
                 return true;
