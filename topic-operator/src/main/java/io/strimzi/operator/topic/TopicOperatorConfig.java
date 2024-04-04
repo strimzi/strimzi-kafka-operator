@@ -350,6 +350,8 @@ public record TopicOperatorConfig(
                 "\n\tsaslEnabled=" + saslEnabled +
                 "\n\tsaslMechanism='" + saslMechanism + '\'' +
                 "\n\tsaslCustomConfigJson='" + (saslCustomConfigJson == null ? null : mask) + '\'' +
+                "\n\talterableTopicConfig='" + alterableTopicConfig + '\'' +
+                "\n\tskipClusterConfigReview='" + skipClusterConfigReview + '\'' +
                 "\n\tsaslUsername='" + saslUsername + '\'' +
                 "\n\tsaslPassword='" + mask + '\'' +
                 "\n\tsecurityProtocol='" + securityProtocol + '\'' +
