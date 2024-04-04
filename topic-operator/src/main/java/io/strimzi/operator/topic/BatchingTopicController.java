@@ -107,13 +107,17 @@ public class BatchingTopicController {
         this.useFinalizer = config.useFinalizer();
         this.admin = admin;
 
-        if (config.skipClusterConfigReview()) {
+        var skipClusterConfigReview = config.skipClusterConfigReview();
+
+        if (skipClusterConfigReview) {
             LOGGER.warnOp(
                   SKIP_CLUSTER_CONFIG_REVIEW.key() + " is set to false. Some managed Kafka services " +
                   "like AWS MSK don't allow reading cluster config. " +
                   "It is recommended that " + AUTO_CREATE_TOPICS_ENABLE + " is set to 'false' " +
                   "to avoid races between the operator and Kafka applications auto-creating topics");
-        } else {
+        }
+
+        if (!skipClusterConfigReview) {
             // Get the config of some broker and check whether auto topic creation is enabled
             Optional<String> autoCreateValue = getClusterConfig(admin, AUTO_CREATE_TOPICS_ENABLE);
             if (autoCreateValue.filter("true"::equals).isPresent()) {
@@ -594,10 +598,7 @@ public class BatchingTopicController {
      */
     private void warnTooLargeMinIsr(List<ReconcilableTopic> reconcilableTopics) {
         if (config.skipClusterConfigReview()) {
-            LOGGER.warnOp(SKIP_CLUSTER_CONFIG_REVIEW.key() + " is set to false. Some managed Kafka services like AWS MSK " +
-                  "don't allow reading cluster config. So the " + MIN_INSYNC_REPLICAS +
-                  " property is not being tested.");
-
+            // This method is for internal configurations. So skipping.
             return;
         }
 
@@ -1134,8 +1135,6 @@ public class BatchingTopicController {
         // subset of config properties. In that case we remove the configOps that would not be allowed.
         var customAlterableConfigs = config.alterableTopicConfig();
         if (customAlterableConfigs != null && !customAlterableConfigs.isBlank()) {
-            LOGGER.debugOp("customAlterableConfigs: {}", customAlterableConfigs);
-
             var cleanPropertyNames = customAlterableConfigs.replaceAll("\\s", "");
             var alterableProperties = cleanPropertyNames.split(",");
             var alterablePropertySet = new HashSet<>(Arrays.asList(alterableProperties));
@@ -1145,8 +1144,6 @@ public class BatchingTopicController {
                   .toList();
 
             alterConfigOps = new HashSet<>(filteredOps);
-        } else {
-            LOGGER.debugOp("customAlterableConfigs: '{}'", customAlterableConfigs);
         }
 
         if (alterConfigOps.isEmpty()) {
