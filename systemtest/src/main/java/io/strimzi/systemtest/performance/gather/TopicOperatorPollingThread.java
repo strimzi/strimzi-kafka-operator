@@ -149,7 +149,7 @@ public class TopicOperatorPollingThread implements Runnable {
             } catch (Exception e) {
                 LOGGER.error("Exception in thread", e);
             } finally {
-                LOGGER.info("Thread finishing");
+                LOGGER.debug("Thread finishing");
             }
         }
     }

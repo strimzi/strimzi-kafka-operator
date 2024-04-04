@@ -70,7 +70,7 @@ adjust:
 /performance:
   summary: Run performance strimzi test suite
   tags: [strimzi, kafka, kraft, performance]
-  duration: 10h
+  duration: 24h
   tier: 1
   environment+:
     TEST_PROFILE: performance
