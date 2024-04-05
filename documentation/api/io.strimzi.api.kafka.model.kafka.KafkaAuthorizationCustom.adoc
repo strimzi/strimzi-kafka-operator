@@ -3,10 +3,9 @@ To use custom authorization in Strimzi, you can configure your own `Authorizer` 
 ACLs allow you to define which users have access to which resources at a granular level.
 
 Configure the `Kafka` custom resource to use custom authorization.
-Set the `type` property in the `authorization` section to the value `custom`,
-and the set following properties.
+Set the `type` property in the `authorization` section to the value `custom`, and configure a list of super users.
 
-IMPORTANT: The custom authorizer must implement the `org.apache.kafka.server.authorizer.Authorizer` interface, and support configuration of `super.users` using the super.users configuration property.
+IMPORTANT: The custom authorizer must implement the `org.apache.kafka.server.authorizer.Authorizer` interface, and support configuration of super users using the `super.users` configuration property.
 
 [id='property-custom-authorization-authorizerclass-{context}']
 = `authorizerClass`
