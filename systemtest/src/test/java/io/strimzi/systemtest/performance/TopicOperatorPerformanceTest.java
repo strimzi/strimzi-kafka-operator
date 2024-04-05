@@ -134,7 +134,14 @@ public class TopicOperatorPerformanceTest extends AbstractST {
         try {
             resourceManager.createResourceWithWait(
                     NodePoolsConverter.convertNodePoolsIfNeeded(
-                            KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), brokerReplicas).build(),
+                        KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), brokerReplicas)
+                            .editSpec()
+                                .withNewPersistentClaimStorage()
+                                    .withSize("10Gi")
+                                .withDeleteClaim(true)
+                                .endPersistentClaimStorage()
+                            .endSpec()
+                            .build(),
                             KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), controllerReplicas).build()
                     )
             );
@@ -142,12 +149,6 @@ public class TopicOperatorPerformanceTest extends AbstractST {
                 KafkaTemplates.kafkaMetricsConfigMap(testStorage.getNamespaceName(), testStorage.getClusterName()),
                 KafkaTemplates.kafkaWithMetrics(testStorage.getNamespaceName(), testStorage.getClusterName(), brokerReplicas, controllerReplicas)
                     .editSpec()
-                        .editKafka()
-                            .withNewPersistentClaimStorage()
-                                .withSize("10Gi")
-                                .withDeleteClaim(true)
-                            .endPersistentClaimStorage()
-                        .endKafka()
                         .editEntityOperator()
                             .editTopicOperator()
                                 .withReconciliationIntervalSeconds(10)
@@ -338,7 +339,13 @@ public class TopicOperatorPerformanceTest extends AbstractST {
         try {
             resourceManager.createResourceWithWait(
                 NodePoolsConverter.convertNodePoolsIfNeeded(
-                    KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), brokerReplicas).build(),
+                    KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), brokerReplicas)
+                        .editSpec()
+                            .withNewPersistentClaimStorage()
+                                .withSize("20Gi")
+                            .endPersistentClaimStorage()
+                        .endSpec()
+                        .build(),
                     KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), controllerReplicas).build()
                 )
             );
@@ -346,13 +353,6 @@ public class TopicOperatorPerformanceTest extends AbstractST {
                 KafkaTemplates.kafkaMetricsConfigMap(testStorage.getNamespaceName(), testStorage.getClusterName()),
                 KafkaTemplates.kafkaWithMetrics(testStorage.getNamespaceName(), testStorage.getClusterName(), brokerReplicas, controllerReplicas)
                     .editSpec()
-                        .editKafka()
-                            .withNewPersistentClaimStorage()
-                                // 20Gi is not enough for multi-node (java.io.IOException: No space left on device)
-                                .withSize(KubeClusterResource.getInstance().isMultiNode() ? "100Gi" : "20Gi")
-                                .withDeleteClaim(true)
-                            .endPersistentClaimStorage()
-                        .endKafka()
                         .editEntityOperator()
                             .editTopicOperator()
                                 .withReconciliationIntervalSeconds(10)
