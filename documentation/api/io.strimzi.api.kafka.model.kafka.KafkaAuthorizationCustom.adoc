@@ -50,16 +50,16 @@ spec:
     # ...
 ----
 
-= Adding the custom authorizer JAR file(s) to the container image
+= Adding custom authorizer JAR files to the container image
 
-In addition to the `Kafka` custom resource configuration, the JAR file(s) containing the custom authorizer class along with its dependencies must be available on the classpath of the Kafka broker.
+In addition to the `Kafka` custom resource configuration, the JAR files containing the custom authorizer class along with its dependencies must be available on the classpath of the Kafka broker.
 
 You can add them by building Strimzi from the source-code.
 The Strimzi build process provides a mechanism to add custom third-party libraries to the generated Kafka broker container image by adding them as dependencies in the `pom.xml` file under the `docker-images/artifacts/kafka-thirdparty-libs` directory.
 The directory contains different folders for different Kafka versions. Choose the appropriate folder.
 Before modifying the `pom.xml` file, the third-party library must be available in a Maven repository, and that Maven repository must be accessible to the Strimzi build process.
 
-Or by adding the JARs to an existing Strimzi container image:
+Alternatively, you can add the JARs to an existing Strimzi container image:
 
 [source,subs="+quotes,attributes"]
 ----
@@ -69,10 +69,10 @@ COPY ./_my-authorizer_/ /opt/kafka/libs/
 USER {DockerImageUser}
 ----
 
-= Using custom authorizer with OAuth authentication
+= Using custom authorizers with OAuth authentication
 
-Custom authorization can make use of group membership information extracted from the JWT token during authentication when using `oauth` authentication and configuring `groupsClaim` configuration attribute.
-Groups are available on the `OAuthKafkaPrincipal` object during authorize() call as follows:
+When using `oauth` authentication with a `groupsClaim` configuration to extract user group information from JWT tokens, group information can be used in custom authorization calls.
+Groups are accessible through the `OAuthKafkaPrincipal` object during custom authorization calls, as follows:
 
 [source, subs="attributes+"]
 ----
