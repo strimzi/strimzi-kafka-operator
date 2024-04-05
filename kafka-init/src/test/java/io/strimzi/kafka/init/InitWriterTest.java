@@ -34,9 +34,9 @@ public class InitWriterTest {
     public File tempDir;
 
     private static final Map<String, String> ENV_VARS = Map.of(
-            InitWriterConfig.NODE_NAME, "localhost",
-            InitWriterConfig.RACK_TOPOLOGY_KEY, "failure-domain.beta.kubernetes.io/zone",
-            InitWriterConfig.EXTERNAL_ADDRESS, "true"
+            InitWriterConfig.NODE_NAME.key(), "localhost",
+            InitWriterConfig.RACK_TOPOLOGY_KEY.key(), "failure-domain.beta.kubernetes.io/zone",
+            InitWriterConfig.EXTERNAL_ADDRESS.key(), "true"
     );
     // metadata labels related to the Kubernetes cluster node
     private static final Map<String, String> LABELS = Map.of(
@@ -60,7 +60,7 @@ public class InitWriterTest {
         new File(rackFolder).mkdirs();
 
         Map<String, String> envVars = new HashMap<>(ENV_VARS);
-        envVars.put(InitWriterConfig.INIT_FOLDER, rackFolder);
+        envVars.put(InitWriterConfig.INIT_FOLDER.key(), rackFolder);
 
         InitWriterConfig config = InitWriterConfig.fromMap(envVars);
 
@@ -80,7 +80,7 @@ public class InitWriterTest {
         new File(addressFolder).mkdirs();
 
         Map<String, String> envVars = new HashMap<>(ENV_VARS);
-        envVars.put(InitWriterConfig.INIT_FOLDER, addressFolder);
+        envVars.put(InitWriterConfig.INIT_FOLDER.key(), addressFolder);
 
         InitWriterConfig config = InitWriterConfig.fromMap(envVars);
 
@@ -116,7 +116,7 @@ public class InitWriterTest {
 
         // specify a not existing folder for emulating IOException in the rack writer
         Map<String, String> envVars = new HashMap<>(ENV_VARS);
-        envVars.put(InitWriterConfig.INIT_FOLDER, "/no-folder");
+        envVars.put(InitWriterConfig.INIT_FOLDER.key(), "/no-folder");
 
         InitWriterConfig config = InitWriterConfig.fromMap(envVars);
 
