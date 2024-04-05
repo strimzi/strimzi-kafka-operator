@@ -116,7 +116,8 @@ public class KafkaMirrorMaker2ConnectorsTest {
         ex = assertThrows(InvalidResourceException.class, () -> KafkaMirrorMaker2Connectors.validateConnectors(kmm2WrongAlias));
         assertThat(ex.getMessage(), is("KafkaMirrorMaker2 resource validation failed: " +
                 "[Each MirrorMaker 2 mirror definition has to specify the source cluster alias, " +
-                "Target cluster alias wrong-target is used in a mirror definition, but cluster with this alias does not exist in cluster definitions]"));
+                "Target cluster alias wrong-target is used in a mirror definition, but cluster with this alias does not exist in cluster definitions, " +
+                "Target cluster alias wrong-target is used in a mirror definition, but it is not the same as the connect cluster alias target]"));
     }
 
     @Test
