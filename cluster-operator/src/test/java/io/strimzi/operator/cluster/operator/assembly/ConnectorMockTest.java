@@ -15,6 +15,7 @@ import io.fabric8.kubernetes.client.dsl.base.PatchType;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
+import io.micrometer.core.instrument.search.RequiredSearch;
 import io.netty.channel.ConnectTimeoutException;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.common.Condition;
@@ -57,6 +58,7 @@ import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.hamcrest.Matcher;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -447,11 +449,11 @@ public class ConnectorMockTest {
         waitForStatus(resource, connectorName, ConnectorMockTest.<KafkaConnector>statusIsForCurrentGeneration().and(ready()));
     }
 
-    public void waitForConnectorPaused(String connectName) {
+    public void waitForConnectorPaused(String connectorName) {
         Resource<KafkaConnector> resource = Crds.kafkaConnectorOperation(client)
                 .inNamespace(namespace)
-                .withName(connectName);
-        waitForStatus(resource, connectName, paused());
+                .withName(connectorName);
+        waitForStatus(resource, connectorName, paused());
     }
 
     public void waitForConnectorState(String connectorName, String state) {
@@ -2067,47 +2069,46 @@ public class ConnectorMockTest {
         String connectorName = "connector";
 
         KafkaConnect kafkaConnect = new KafkaConnectBuilder()
-                .withNewMetadata()
-                    .withNamespace(namespace)
-                    .withName(connectName)
-                    .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
-                .endMetadata()
-                .withNewSpec()
-                    .withReplicas(0)
-                    .withBootstrapServers("my-kafka:9092")
-                .endSpec()
-                .build();
+            .withNewMetadata()
+                .withNamespace(namespace)
+                .withName(connectName)
+                .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
+            .endMetadata()
+            .withNewSpec()
+                .withReplicas(0)
+                .withBootstrapServers("my-kafka:9092")
+            .endSpec()
+            .build();
 
         Crds.kafkaConnectOperation(client).inNamespace(namespace).resource(kafkaConnect).create();
         waitForConnectReady(connectName);
 
         KafkaConnector connector = defaultKafkaConnectorBuilder()
-                .editMetadata()
-                    .withName(connectorName)
-                    .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName)
-                    .addToAnnotations(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true")
-                .endMetadata()
-                .build();
+            .editMetadata()
+                .withName(connectorName)
+                .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName)
+                .addToAnnotations(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true")
+            .endMetadata()
+            .build();
 
         Crds.kafkaConnectorOperation(client).inNamespace(namespace).resource(connector).create();
-        waitForConnectorNotReady(connectorName, "RuntimeException", "Kafka Connect cluster 'cluster' in namespace " + namespace + " has 0 replicas.");
-
-        MeterRegistry meterRegistry = metricsProvider.meterRegistry();
-        Tags tags = Tags.of("kind", KafkaConnector.RESOURCE_KIND, "namespace", namespace);
+        waitForConnectorPaused(connectorName);
 
         Promise<Void> reconciled = Promise.promise();
         kafkaConnectOperator.reconcileAll("test", namespace, ignored -> reconciled.complete());
 
         Checkpoint async = context.checkpoint();
         reconciled.future().onComplete(context.succeeding(v -> context.verify(() -> {
-            Gauge resources = meterRegistry.get(MetricsHolder.METRICS_RESOURCES).tags(tags).gauge();
-            assertThat(resources.value(), is(1.0));
-
-            kafkaConnectOperator.metrics().pausedConnectorsResourceCounter(namespace); // to create metric, otherwise MeterNotFoundException will be thrown
-            Gauge resourcesPaused = meterRegistry.get(MetricsHolder.METRICS_RESOURCES_PAUSED).tags(tags).gauge();
-            assertThat(resourcesPaused.value(), is(0.0));
+            String[] tags = new String[]{"kind", KafkaConnector.RESOURCE_KIND, "namespace", namespace};
+            assertGaugeMetricMatches(MetricsHolder.METRICS_RESOURCES, tags, is(1.0));
+            assertGaugeMetricMatches(MetricsHolder.METRICS_RESOURCES_PAUSED, tags, is(1.0));
             async.flag();
         })));
+    }
+
+    private void assertGaugeMetricMatches(String name, String[] tags, Matcher<Double> matcher) {
+        RequiredSearch requiredSearch = metricsProvider.meterRegistry().get(name).tags(tags);
+        assertThat(requiredSearch.gauge().value(), matcher);
     }
 
     @Test
