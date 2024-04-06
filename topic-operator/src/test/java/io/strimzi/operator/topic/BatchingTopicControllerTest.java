@@ -63,6 +63,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
@@ -80,6 +81,7 @@ class BatchingTopicControllerTest {
     private static final Logger LOGGER = LogManager.getLogger(BatchingTopicControllerTest.class);
     private static final String NAMESPACE = "topic-operator-test";
     private static final String MY_TOPIC = "my-topic";
+    public static final String ALTERABLE_TOPIC_CONFIGS = "compression.type, max.message.bytes, message.timestamp.difference.max.ms, message.timestamp.type, retention.bytes, retention.ms";
 
     private BatchingTopicController controller;
     private KubernetesClient client;
@@ -524,7 +526,7 @@ class BatchingTopicControllerTest {
         var config = Mockito.mock(TopicOperatorConfig.class);
         Mockito.doReturn(NAMESPACE).when(config).namespace();
         Mockito.doReturn(true).when(config).skipClusterConfigReview();
-        Mockito.doReturn("compression.type, max.message.bytes, message.timestamp.difference.max.ms, message.timestamp.type, retention.bytes, retention.ms").when(config).alterableTopicConfig();
+        Mockito.doReturn(ALTERABLE_TOPIC_CONFIGS).when(config).alterableTopicConfig();
         var replicasChangeClient = Mockito.mock(ReplicasChangeHandler.class);
 
         controller = new BatchingTopicController(config, Map.of("key", "VALUE"), adminSpy, client, metrics, replicasChangeClient);
@@ -533,5 +535,19 @@ class BatchingTopicControllerTest {
         controller.onUpdate(batch);
 
         Mockito.verify(adminSpy, Mockito.never()).incrementalAlterConfigs(any());
+
+        var updateTopic = Crds.topicOperation(client).inNamespace(NAMESPACE).withName("my-topic").get();
+
+        var conditionList = updateTopic.getStatus().getConditions();
+        assertEquals(3, conditionList.size());
+
+        var readyCondition = conditionList.stream().filter(condition -> condition.getType().equals("Ready")).findFirst().get();
+        assertEquals("True", readyCondition.getStatus());
+
+        var infoCondition = conditionList.stream().filter(condition -> condition.getType().equals("Informational")).findFirst().get();
+        assertEquals("Only the following properties can be set for topics in this cluster: [" + ALTERABLE_TOPIC_CONFIGS + "]", infoCondition.getMessage());
+
+        var propertyIgnoredCondition = conditionList.stream().filter(condition -> condition.getType().equals("PropertyIgnored")).findFirst().get();
+        assertEquals("'" + TopicConfig.CLEANUP_POLICY_CONFIG + "' in config, but not configurable", propertyIgnoredCondition.getMessage());
     }
 }

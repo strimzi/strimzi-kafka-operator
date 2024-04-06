@@ -1155,18 +1155,52 @@ public class BatchingTopicController {
     }
     
     private void updateStatusForSuccess(ReconcilableTopic reconcilableTopic) {
+        List<Condition> conditions = new ArrayList<>();
+        conditions.add(new ConditionBuilder()
+              .withType(TopicOperatorUtil.isPaused(reconcilableTopic.kt()) ? "ReconciliationPaused" : "Ready")
+              .withStatus("True")
+              .withLastTransitionTime(StatusUtils.iso8601Now())
+              .build());
+
+        var customAlterableConfigs = config.alterableTopicConfig();
+        if (customAlterableConfigs != null && !customAlterableConfigs.isBlank()) {
+            addAlterableConfigsConditions(reconcilableTopic, conditions, customAlterableConfigs);
+        }
+
         reconcilableTopic.kt().setStatus(
             new KafkaTopicStatusBuilder(reconcilableTopic.kt().getStatus())
-                .withConditions(List.of(new ConditionBuilder()
-                    .withType(TopicOperatorUtil.isPaused(reconcilableTopic.kt()) ? "ReconciliationPaused" : "Ready")
-                    .withStatus("True")
-                    .withLastTransitionTime(StatusUtils.iso8601Now())
-                    .build()))
+                .withConditions(conditions)
             .build());
         updateStatus(reconcilableTopic);
         metrics.successfulReconciliationsCounter(namespace).increment();
     }
-    
+
+    private void addAlterableConfigsConditions(ReconcilableTopic reconcilableTopic, List<Condition> conditions, String customAlterableConfigs) {
+        String message = "Only the following properties can be set for topics in this cluster: [" + customAlterableConfigs + "]";
+        conditions.add(new ConditionBuilder()
+              .withMessage(message)
+              .withStatus("True")
+              .withType("Informational")
+              .withLastTransitionTime(StatusUtils.iso8601Now())
+              .build());
+
+        if (reconcilableTopic.kt().getSpec() != null) {
+            var alterablePropertySet = Arrays.stream(customAlterableConfigs.replaceAll("\\s", "").split(","))
+                  .collect(Collectors.toSet());
+            reconcilableTopic.kt().getSpec().getConfig().forEach((key, value) -> {
+                if (!alterablePropertySet.contains(key)) {
+                    conditions.add(new ConditionBuilder()
+                          .withMessage("'" + key + "' in config, but not configurable")
+                          .withReason("NotSupportedByCluster")
+                          .withStatus("True")
+                          .withType("PropertyIgnored")
+                          .withLastTransitionTime(StatusUtils.iso8601Now())
+                          .build());
+                }
+            });
+        }
+    }
+
     private void updateStatusForException(ReconcilableTopic reconcilableTopic, Exception e) {
         String reason;
         if (e instanceof TopicOperatorException) {
