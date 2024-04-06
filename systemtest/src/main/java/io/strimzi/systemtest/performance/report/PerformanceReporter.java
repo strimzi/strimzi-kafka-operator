@@ -79,7 +79,7 @@ public class PerformanceReporter {
         final String maxBatchSize = performanceAttributes.getOrDefault(PerformanceConstants.MAX_BATCH_SIZE, "").toString();
         final String maxBatchLingerMs = performanceAttributes.getOrDefault(PerformanceConstants.MAX_BATCH_LINGER_MS, "").toString();
 
-        final boolean clientsEnabled = !performanceAttributes.get(PerformanceConstants.NUMBER_OF_CLIENT_INSTANCES).equals("0");
+        final boolean clientsEnabled = !performanceAttributes.get(PerformanceConstants.NUMBER_OF_CLIENT_INSTANCES).equals(0);
 
         // Prepare log file path
         Path performanceLogFile = prepareLogFile(date, baseDir, useCase, maxBatchSize, maxBatchLingerMs, clientsEnabled);

@@ -10,6 +10,8 @@ import io.strimzi.api.kafka.model.common.ContainerEnvVar;
 import io.strimzi.api.kafka.model.kafka.KafkaSpec;
 import io.strimzi.systemtest.performance.PerformanceConstants;
 import io.strimzi.test.TestUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -59,6 +61,8 @@ import java.util.Optional;
 public class PerformanceMetricsParser {
 
     private static final Map<String, List<ExperimentMetrics>> USE_CASE_EXPERIMENTS = new HashMap<>();
+    private static final Logger LOGGER = LogManager.getLogger(PerformanceMetricsParser.class);
+
     /**
      * Determines whether the current execution context is within a test environment.
      * <p>
@@ -89,14 +93,23 @@ public class PerformanceMetricsParser {
 
     @SuppressWarnings({"checkstyle:CyclomaticComplexity"})
     public static void main(String[] args) throws IOException {
+
+        LOGGER.info("Using user.dir: {}", TestUtils.USER_PATH);
+
         String parentPath;
         if (isRunningInTest()) {
             // If running in test, adjust the path accordingly
             parentPath = TestUtils.USER_PATH + "/target/performance";
+        // resolve path for TestingFarm
+        } else if (System.getenv().containsKey("TMT_PLAN_DATA")) {
+            parentPath = System.getenv().get("TMT_PLAN_DATA") + "/performance/performance";
         } else {
             // For standalone application run
             parentPath = TestUtils.USER_PATH + "/systemtest/target/performance";
         }
+
+        LOGGER.info("Using path: {}", parentPath);
+
         String specificDirectory = args != null && args.length > 0 ? args[0] : null; // Check for command-line argument
 
         Path basePath;
