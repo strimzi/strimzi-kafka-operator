@@ -80,7 +80,7 @@ public class PerformanceMetricsParser {
         String parentPath;
         // resolve path for TestingFarm
         if (System.getenv().containsKey("TMT_PLAN_DATA")) {
-            parentPath = System.getenv().get("TMT_PLAN_DATA") + "../discover/default-0/tests/systemtest/target/performance";
+            parentPath = System.getenv().get("TMT_PLAN_DATA") + "/../discover/default-0/tests/systemtest/target/performance";
         // If running in test, adjust the path accordingly
         } else if (isRunningInTest()) {
             parentPath = TestUtils.USER_PATH + "/target/performance";
