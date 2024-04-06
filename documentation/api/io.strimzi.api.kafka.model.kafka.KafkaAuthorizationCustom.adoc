@@ -3,21 +3,26 @@ To use custom authorization in Strimzi, you can configure your own `Authorizer` 
 ACLs allow you to define which users have access to which resources at a granular level.
 
 Configure the `Kafka` custom resource to use custom authorization.
-Set the `type` property in the `authorization` section to the value `custom`,
-and the set following properties.
+Set the `type` property in the `authorization` section to the value `custom`, and configure a list of super users.
 
-IMPORTANT: The custom authorizer must implement the `org.apache.kafka.server.authorizer.Authorizer` interface, and support configuration of `super.users` using the super.users configuration property.
+IMPORTANT: The custom authorizer must implement the `org.apache.kafka.server.authorizer.Authorizer` interface, and support configuration of super users using the `super.users` configuration property.
 
 [id='property-custom-authorization-authorizerclass-{context}']
 = `authorizerClass`
-(Required) Java class that implements the `org.apache.kafka.server.authorizer.Authorizer` interface to support custom ACLs.
 
+(Required) Java class that implements the `org.apache.kafka.server.authorizer.Authorizer` interface to support custom ACLs.
 
 [id='property-custom-authorization-superusers-{context}']
 = `superUsers`
 A list of user principals treated as super users, so that they are always allowed without querying ACL rules.
 
-You can add configuration for initializing the custom authorizer using `Kafka.spec.kafka.config`.
+NOTE: The `super.user` configuration option in the `config` property in `Kafka.spec.kafka` is ignored.
+Designate super users in the `authorization` property instead.
+For more information, see xref:type-KafkaClusterSpec-reference[Kafka broker configuration].
+
+= Additional configuration options
+
+You can add additional configuration for initializing the custom authorizer using `Kafka.spec.kafka.config`.
 
 .An example of custom authorization configuration under `Kafka.spec`
 [source,yaml,subs="attributes+"]
@@ -44,15 +49,29 @@ spec:
     # ...
 ----
 
-In addition to the `Kafka` custom resource configuration, the JAR file containing the custom authorizer class along with its dependencies must be available on the classpath of the Kafka broker.
+= Adding custom authorizer JAR files to the container image
 
-The Strimzi Maven build process provides a mechanism to add custom third-party libraries to the generated Kafka broker container image by adding them as dependencies in the `pom.xml` file under the `docker-images/kafka/kafka-thirdparty-libs` directory. The directory contains different folders for different Kafka versions. Choose the appropriate folder. Before modifying the `pom.xml` file, the third-party library must be available in a Maven repository, and that Maven repository must be accessible to the Strimzi build process.
+In addition to the `Kafka` custom resource configuration, the JAR files containing the custom authorizer class along with its dependencies must be available on the classpath of the Kafka broker.
 
-NOTE: The `super.user` configuration option in the `config` property in `Kafka.spec.kafka` is ignored.
-Designate super users in the `authorization` property instead.
-For more information, see xref:type-KafkaClusterSpec-reference[Kafka broker configuration].
+You can add them by building Strimzi from the source-code.
+The Strimzi build process provides a mechanism to add custom third-party libraries to the generated Kafka broker container image by adding them as dependencies in the `pom.xml` file under the `docker-images/artifacts/kafka-thirdparty-libs` directory.
+The directory contains different folders for different Kafka versions. Choose the appropriate folder.
+Before modifying the `pom.xml` file, the third-party library must be available in a Maven repository, and that Maven repository must be accessible to the Strimzi build process.
 
-Custom authorization can make use of group membership information extracted from the JWT token during authentication when using `oauth` authentication and configuring `groupsClaim` configuration attribute. Groups are available on the `OAuthKafkaPrincipal` object during authorize() call as follows:
+Alternatively, you can add the JARs to an existing Strimzi container image:
+
+[source,subs="+quotes,attributes"]
+----
+FROM {DockerKafka}
+USER root:root
+COPY ./_my-authorizer_/ /opt/kafka/libs/
+USER {DockerImageUser}
+----
+
+= Using custom authorizers with OAuth authentication
+
+When using `oauth` authentication with a `groupsClaim` configuration to extract user group information from JWT tokens, group information can be used in custom authorization calls.
+Groups are accessible through the `OAuthKafkaPrincipal` object during custom authorization calls, as follows:
 
 [source, subs="attributes+"]
 ----
