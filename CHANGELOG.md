@@ -2,6 +2,7 @@
 
 ## 0.41.0
 
+* Add support for Apache Kafka 3.6.2
 * Provide metrics to monitor certificates expiration as well as modified `Strimzi Operators` dashboard to include certificate expiration per cluster.
 * Added support for topic replication factor change to the Unidirectional Topic Operator when Cruise Control integration is enabled.
 * The `KafkaNodePools` feature gate moves to GA stage and is permanently enabled without the possibility to disable it.
