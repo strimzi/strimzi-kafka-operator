@@ -63,32 +63,13 @@ public class PerformanceMetricsParser {
     private static final Map<String, List<ExperimentMetrics>> USE_CASE_EXPERIMENTS = new HashMap<>();
     private static final Logger LOGGER = LogManager.getLogger(PerformanceMetricsParser.class);
 
-    /**
-     * Determines whether the current execution context is within a test environment.
-     * <p>
-     * This method checks the command line that launched the current JVM for indications
-     * of a test framework invocation. Specifically, it looks for the presence of
-     * "JUnitStarter" in the system property {@code sun.java.command}, which is set
-     * to the command line used to start the JVM. This approach is useful for distinguishing
-     * between a test run and a regular application run, allowing for conditional logic
-     * based on the execution context.
-     * <p>
-     * Note: This method relies on the {@code sun.java.command} system property, which,
-     * while commonly available in most Java environments, is not officially documented
-     * and may not be present in all JVM implementations. Additionally, the specific
-     * string checked ("JUnitStarter") is tied to the JUnit test framework and may
-     * need adjustment for use with other test runners or versions.
-     *
-     * @return {@code true} if the current JVM was launched by a test runner (specifically looking for JUnit),
-     * indicating a test environment; {@code false} otherwise.
-     *
-     */
     public static boolean isRunningInTest() {
-        // Get the command line that launched the current JVM
-        String command = System.getProperty("sun.java.command");
-
-        // Check if the command line indicates a test framework invocation
-        return command != null && command.contains("JUnitStarter");
+        for (StackTraceElement element : Thread.currentThread().getStackTrace()) {
+            if (element.getClassName().startsWith("org.junit.")) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @SuppressWarnings({"checkstyle:CyclomaticComplexity"})
@@ -97,12 +78,12 @@ public class PerformanceMetricsParser {
         LOGGER.info("Using user.dir: {}", TestUtils.USER_PATH);
 
         String parentPath;
-        if (isRunningInTest()) {
-            // If running in test, adjust the path accordingly
-            parentPath = TestUtils.USER_PATH + "/target/performance";
         // resolve path for TestingFarm
-        } else if (System.getenv().containsKey("TMT_PLAN_DATA")) {
-            parentPath = System.getenv().get("TMT_PLAN_DATA") + "/performance/performance";
+        if (System.getenv().containsKey("TMT_PLAN_DATA")) {
+            parentPath = System.getenv().get("TMT_PLAN_DATA") + "../discover/default-0/tests/systemtest/target/performance";
+        // If running in test, adjust the path accordingly
+        } else if (isRunningInTest()) {
+            parentPath = TestUtils.USER_PATH + "/target/performance";
         } else {
             // For standalone application run
             parentPath = TestUtils.USER_PATH + "/systemtest/target/performance";
