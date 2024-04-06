@@ -108,15 +108,6 @@ public class BatchingTopicController {
         this.admin = admin;
 
         var skipClusterConfigReview = config.skipClusterConfigReview();
-
-        if (skipClusterConfigReview) {
-            LOGGER.warnOp(
-                  SKIP_CLUSTER_CONFIG_REVIEW.key() + " is set to false. Some managed Kafka services " +
-                  "like AWS MSK don't allow reading cluster config. " +
-                  "It is recommended that " + AUTO_CREATE_TOPICS_ENABLE + " is set to 'false' " +
-                  "to avoid races between the operator and Kafka applications auto-creating topics");
-        }
-
         if (!skipClusterConfigReview) {
             // Get the config of some broker and check whether auto topic creation is enabled
             Optional<String> autoCreateValue = getClusterConfig(admin, AUTO_CREATE_TOPICS_ENABLE);
