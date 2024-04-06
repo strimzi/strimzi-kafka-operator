@@ -64,7 +64,6 @@ import java.util.stream.Stream;
 
 import static io.strimzi.api.kafka.model.topic.ReplicasChangeState.ONGOING;
 import static io.strimzi.api.kafka.model.topic.ReplicasChangeState.PENDING;
-import static io.strimzi.operator.topic.TopicOperatorConfig.SKIP_CLUSTER_CONFIG_REVIEW;
 import static io.strimzi.operator.topic.TopicOperatorUtil.topicNames;
 
 /**
