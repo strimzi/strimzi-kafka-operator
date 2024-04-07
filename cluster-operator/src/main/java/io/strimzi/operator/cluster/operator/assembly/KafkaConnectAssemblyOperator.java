@@ -142,6 +142,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
         Map<String, String> podAnnotations = new HashMap<>();
         Map<String, String> controllerAnnotations = new HashMap<>();
 
+        final boolean hasZeroReplicas = connect.getReplicas() == 0;
         final AtomicReference<String> image = new AtomicReference<>();
         final AtomicReference<String> desiredLogging = new AtomicReference<>();
         final AtomicReference<Deployment> deployment = new AtomicReference<>();
@@ -198,11 +199,11 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                         )
                         .migrateFromDeploymentToStrimziPodSets(deployment.get(), podSet.get()))
                 .compose(i -> reconcilePodSet(reconciliation, connect, podAnnotations, controllerAnnotations, image.get()))
-                .compose(i -> reconcileConnectors(reconciliation, kafkaConnect, kafkaConnectStatus, desiredLogging.get(), connect.defaultLogConfig()))
+                .compose(i -> reconcileConnectors(reconciliation, kafkaConnect, kafkaConnectStatus, hasZeroReplicas, desiredLogging.get(), connect.defaultLogConfig()))
                 .onComplete(reconciliationResult -> {
                     StatusUtils.setStatusConditionAndObservedGeneration(kafkaConnect, kafkaConnectStatus, reconciliationResult.cause());
 
-                    if (connect.getReplicas() != 0) {
+                    if (!hasZeroReplicas) {
                         kafkaConnectStatus.setUrl(KafkaConnectResources.url(connect.getCluster(), namespace, KafkaConnectCluster.REST_API_PORT));
                     }
 
@@ -347,9 +348,10 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
      * @param connect The connector
      * @param connectStatus Status of the KafkaConnect  resource (will be used to set the available
      *                      connector plugins)
+     * @param scaledToZero  Indicated whether the related Connect cluster is currently scaled to 0 replicas
      * @return A future, failed if any of the connectors' statuses could not be updated.
      */
-    private Future<Void> reconcileConnectors(Reconciliation reconciliation, KafkaConnect connect, KafkaConnectStatus connectStatus, String desiredLogging, OrderedProperties defaultLogging) {
+    private Future<Void> reconcileConnectors(Reconciliation reconciliation, KafkaConnect connect, KafkaConnectStatus connectStatus, boolean scaledToZero, String desiredLogging, OrderedProperties defaultLogging) {
         String connectName = connect.getMetadata().getName();
         String namespace = connect.getMetadata().getNamespace();
         String host = KafkaConnectResources.qualifiedServiceName(connectName, namespace);
@@ -358,7 +360,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
             return Future.succeededFuture();
         }
 
-        if (connect.getSpec().getReplicas() == 0)   {
+        if (scaledToZero)   {
             return connectorOperator.listAsync(namespace, new LabelSelectorBuilder().addToMatchLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName).build())
                 .compose(connectors -> Future.join(
                     connectors.stream().map(connector -> Annotations.isReconciliationPausedWithAnnotation(connector)
