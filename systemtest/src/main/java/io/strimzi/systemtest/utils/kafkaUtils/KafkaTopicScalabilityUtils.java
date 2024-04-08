@@ -58,7 +58,7 @@ public class KafkaTopicScalabilityUtils {
             for (int i = 0; i < numberOfTopics; i++) {
                 final String currentTopic = topicPrefix + i;
                 topics.add(CompletableFuture.runAsync(() ->
-                                KafkaTopicUtils.waitForKafkaTopicStatus(namespaceName, currentTopic, conditionType, conditionStatus),
+                    KafkaTopicUtils.waitForKafkaTopicStatus(namespaceName, currentTopic, conditionType, conditionStatus),
                         customExecutor // Use the custom executor
                 ));
             }
@@ -68,19 +68,16 @@ public class KafkaTopicScalabilityUtils {
 
             allTopics.join();
         } finally {
-            // Ensure the executor shuts down even if an exception occurs
-            customExecutor.shutdown();
+            // Attempt to shut down now to immediately terminate ongoing tasks
+            List<Runnable> notExecutedTasks = customExecutor.shutdownNow();
+            if (!notExecutedTasks.isEmpty()) {
+                LOGGER.warn("There were {} tasks that did not start", notExecutedTasks.size());
+            }
             try {
-                // Wait a while for existing tasks to terminate
-                if (!customExecutor.awaitTermination(60, TimeUnit.SECONDS)) {
-                    customExecutor.shutdownNow(); // Cancel currently executing tasks
-                    // Wait a while for tasks to respond to being cancelled
-                    if (!customExecutor.awaitTermination(60, TimeUnit.SECONDS))
-                        LOGGER.error("Executor did not terminate");
-                }
+                // Wait a while for tasks to respond to being cancelled
+                if (!customExecutor.awaitTermination(30, TimeUnit.SECONDS))
+                    LOGGER.error("Executor did not terminate");
             } catch (InterruptedException ie) {
-                // (Re-)Cancel if current thread also interrupted
-                customExecutor.shutdownNow();
                 // Preserve interrupt status
                 Thread.currentThread().interrupt();
             }

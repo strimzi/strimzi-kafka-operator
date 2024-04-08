@@ -184,11 +184,7 @@ public class TopicOperatorMetricsCollector extends MetricsCollector {
      * @return A map with unique keys for each label combination and their corresponding metric values.
      */
     public Map<String, Double> getJvmMemoryUsedBytes() {
-        String metricName = "jvm_memory_used_bytes";
-        // Call the collectSpecificMetric method with the pattern to get the metric values.
-        Map<String, Double> jvmMemoryUsedBytes = collectMetricWithLabels(metricName);
-
-        return jvmMemoryUsedBytes;
+        return collectMetricWithLabels("jvm_memory_used_bytes");
     }
 
     public List<Double> getJvmThreadsLiveThreads() {
@@ -200,11 +196,7 @@ public class TopicOperatorMetricsCollector extends MetricsCollector {
     }
 
     public Map<String, Double>  getJvmGcPauseSecondsMax() {
-        String metricName = "jvm_gc_pause_seconds_max";
-        // Call the collectSpecificMetric method with the pattern to get the metric values.
-        Map<String, Double> jvmGcPauseSecondsMax = collectMetricWithLabels(metricName);
-
-        return jvmGcPauseSecondsMax;
+        return collectMetricWithLabels("jvm_gc_pause_seconds_max");
     }
 
     public List<Double> getJvmMemoryMaxBytes() {
@@ -217,6 +209,19 @@ public class TopicOperatorMetricsCollector extends MetricsCollector {
 
     public List<Double> getSystemLoadAverage1m() {
         return collectMetricSimpleValues(PerformanceConstants.SYSTEM_LOAD_AVERAGE_1M);
+    }
+
+    // Example of a bucketed metric method
+    public List<Double> getAlterConfigsDurationSecondsBucket(String selector, String le) {
+        Pattern pattern = Pattern.compile("strimzi_alter_configs_duration_seconds_bucket\\{kind=\"KafkaTopic\",namespace=\"" + this.getNamespaceName() + "\",selector=\"" + selector + "\",le=\"" + le + "\",\\}\\s(\\d+\\.?\\d*)");
+        return collectSpecificMetric(pattern);
+    }
+
+    // Example for a method collecting multiple buckets at once
+    public Map<String, List<Double>> getAlterConfigsDurationSecondsBuckets(String selector, List<String> les) {
+        Map<String, List<Double>> buckets = new HashMap<>();
+        les.forEach(le -> buckets.put(le, getAlterConfigsDurationSecondsBucket(selector, le)));
+        return buckets;
     }
 
     // -----------------------------------------------------------------------------------------------------
@@ -235,19 +240,6 @@ public class TopicOperatorMetricsCollector extends MetricsCollector {
         // Updated pattern to match numbers in standard or scientific notation
         Pattern pattern = Pattern.compile("^" + Pattern.quote(metricName) + "\\s+([\\d.]+(?:E-?\\d+)?)$", Pattern.MULTILINE);
         return collectSpecificMetric(pattern);
-    }
-
-    // Example of a bucketed metric method
-    public List<Double> getAlterConfigsDurationSecondsBucket(String selector, String le) {
-        Pattern pattern = Pattern.compile("strimzi_alter_configs_duration_seconds_bucket\\{kind=\"KafkaTopic\",namespace=\"" + this.getNamespaceName() + "\",selector=\"" + selector + "\",le=\"" + le + "\",\\}\\s(\\d+\\.?\\d*)");
-        return collectSpecificMetric(pattern);
-    }
-
-    // Example for a method collecting multiple buckets at once
-    public Map<String, List<Double>> getAlterConfigsDurationSecondsBuckets(String selector, List<String> les) {
-        Map<String, List<Double>> buckets = new HashMap<>();
-        les.forEach(le -> buckets.put(le, getAlterConfigsDurationSecondsBucket(selector, le)));
-        return buckets;
     }
 
     /**

@@ -398,7 +398,7 @@
             <properties>
                 <skipTests>false</skipTests>
                 <groups>
-                    all,performance
+                    performance
                 </groups>
             </properties>
         </profile>

@@ -78,4 +78,8 @@ public interface PerformanceConstants {
     String TOPIC_OPERATOR_BOBS_STREAMING_USE_CASE = "bobStreamingUseCase";
     String TOPIC_OPERATOR_ALICE_BULK_USE_CASE = "aliceBulkUseCase";
 
+    /**
+     * Performance metrics file
+     */
+    String PERFORMANCE_METRICS_FILE_NAME = "test-performance-metrics";
 }

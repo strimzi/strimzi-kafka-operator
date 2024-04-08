@@ -209,7 +209,9 @@ public class PerformanceMetricsParser {
         }
     }
 
-    // Helper method to parse the list of doubles from a String and find the max value
+    /**
+     * Helper method to parse the list of doubles from a String and find the max value
+     */
     private static double getMaxValueFromList(String listAsString) {
         // Assuming the list is formatted as "[value1, value2, ...]"
         String[] items = listAsString.substring(1, listAsString.length() - 1).split(", ");
