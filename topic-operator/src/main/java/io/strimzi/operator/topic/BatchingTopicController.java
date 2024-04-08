@@ -1181,7 +1181,7 @@ public class BatchingTopicController {
                 if (!alterablePropertySet.contains(key)) {
                     conditions.add(new ConditionBuilder()
                           .withMessage("'" + key + "' in config, but not configurable")
-                          .withReason("NotSupportedByCluster")
+                          .withReason("NotConfigurable")
                           .withStatus("True")
                           .withType("PropertyIgnored")
                           .withLastTransitionTime(StatusUtils.iso8601Now())
