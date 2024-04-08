@@ -1166,28 +1166,27 @@ public class BatchingTopicController {
     }
 
     private void addAlterableConfigsConditions(ReconcilableTopic reconcilableTopic, List<Condition> conditions, String customAlterableConfigs) {
-        String message = "Only the following properties can be set for topics in this cluster: [" + customAlterableConfigs + "]";
-        conditions.add(new ConditionBuilder()
-              .withMessage(message)
-              .withStatus("True")
-              .withType("Informational")
-              .withLastTransitionTime(StatusUtils.iso8601Now())
-              .build());
-
         if (reconcilableTopic.kt().getSpec() != null) {
             var alterablePropertySet = Arrays.stream(customAlterableConfigs.replaceAll("\\s", "").split(","))
                   .collect(Collectors.toSet());
+
+            var propertiesNotSet = new ArrayList<>();
             reconcilableTopic.kt().getSpec().getConfig().forEach((key, value) -> {
                 if (!alterablePropertySet.contains(key)) {
-                    conditions.add(new ConditionBuilder()
-                          .withMessage("'" + key + "' in config, but not configurable")
-                          .withReason("NotConfigurable")
-                          .withStatus("True")
-                          .withType("PropertyIgnored")
-                          .withLastTransitionTime(StatusUtils.iso8601Now())
-                          .build());
+                    propertiesNotSet.add(key);
                 }
             });
+
+            if (!propertiesNotSet.isEmpty()) {
+                var properties = String.join(", ", propertiesNotSet.toArray(new String[0]));
+                conditions.add(new ConditionBuilder()
+                      .withMessage("These .spec.config properties are not configurable: [" + properties + "]")
+                      .withReason("NotConfigurable")
+                      .withStatus("True")
+                      .withType("Warning")
+                      .withLastTransitionTime(StatusUtils.iso8601Now())
+                      .build());
+            }
         }
     }
 

@@ -539,15 +539,14 @@ class BatchingTopicControllerTest {
         var updateTopic = Crds.topicOperation(client).inNamespace(NAMESPACE).withName("my-topic").get();
 
         var conditionList = updateTopic.getStatus().getConditions();
-        assertEquals(3, conditionList.size());
+        assertEquals(2, conditionList.size());
 
         var readyCondition = conditionList.stream().filter(condition -> condition.getType().equals("Ready")).findFirst().get();
         assertEquals("True", readyCondition.getStatus());
 
-        var infoCondition = conditionList.stream().filter(condition -> condition.getType().equals("Informational")).findFirst().get();
-        assertEquals("Only the following properties can be set for topics in this cluster: [" + ALTERABLE_TOPIC_CONFIGS + "]", infoCondition.getMessage());
-
-        var propertyIgnoredCondition = conditionList.stream().filter(condition -> condition.getType().equals("PropertyIgnored")).findFirst().get();
-        assertEquals("'" + TopicConfig.CLEANUP_POLICY_CONFIG + "' in config, but not configurable", propertyIgnoredCondition.getMessage());
+        var notConfiguredCondition = conditionList.stream().filter(condition -> condition.getType().equals("Warning")).findFirst().get();
+        assertEquals("These .spec.config properties are not configurable: [cleanup.policy]", notConfiguredCondition.getMessage());
+        assertEquals("NotConfigurable", notConfiguredCondition.getReason());
+        assertEquals("True", notConfiguredCondition.getStatus());
     }
 }

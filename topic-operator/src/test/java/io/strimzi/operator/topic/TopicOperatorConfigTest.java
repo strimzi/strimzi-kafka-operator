@@ -19,6 +19,7 @@ import java.util.concurrent.ExecutionException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -364,12 +365,12 @@ class TopicOperatorConfigTest {
     }
 
     @Test
-    void shouldDefaultToEmptyForAlterableTopicConfig() {
+    void shouldDefaultToNullForAlterableTopicConfig() {
         var config = TopicOperatorConfig.buildFromMap(Map.of(
               TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
               TopicOperatorConfig.NAMESPACE.key(), "some-namespace"
         ));
 
-        assertTrue(config.alterableTopicConfig().isEmpty());
+        assertNull(config.alterableTopicConfig());
     }
 }
