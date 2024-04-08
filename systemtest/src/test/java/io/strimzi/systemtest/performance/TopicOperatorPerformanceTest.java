@@ -13,7 +13,7 @@ import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.performance.gather.TopicOperatorMetricsCollector;
-import io.strimzi.systemtest.performance.gather.TopicOperatorPollingRunnable;
+import io.strimzi.systemtest.performance.gather.TopicOperatorMetricsGatherer;
 import io.strimzi.systemtest.performance.report.PerformanceReporter;
 import io.strimzi.systemtest.performance.report.parser.PerformanceMetricsParser;
 import io.strimzi.systemtest.resources.ComponentType;
@@ -61,8 +61,7 @@ public class TopicOperatorPerformanceTest extends AbstractST {
 
     private TestStorage testStorage;
     private TopicOperatorMetricsCollector topicOperatorCollector;
-    private TopicOperatorPollingRunnable topicOperatorPollingRunnable;
-    private Thread topicOperatorThread;
+    private TopicOperatorMetricsGatherer topicOperatorMetricsGatherer;
 
     /**
      * Provides configurations for Alice's bulk batch use case, testing different batch sizes and linger times.
@@ -211,10 +210,8 @@ public class TopicOperatorPerformanceTest extends AbstractST {
                     .withComponentName(this.testStorage.getClusterName())
                     .build();
 
-            this.topicOperatorPollingRunnable = new TopicOperatorPollingRunnable(this.topicOperatorCollector, "strimzi.io/cluster=" + this.testStorage.getClusterName());
-            this.topicOperatorThread = new Thread(this.topicOperatorPollingRunnable);
-            this.topicOperatorThread.setDaemon(true); // Set as daemon so it doesn't prevent JVM shutdown
-            this.topicOperatorThread.start();
+            this.topicOperatorMetricsGatherer = new TopicOperatorMetricsGatherer(this.topicOperatorCollector, "strimzi.io/cluster=" + this.testStorage.getClusterName());
+            this.topicOperatorMetricsGatherer.startCollecting();
             // ----- ----- ------ ------
 
             // Measure topic creation time
@@ -263,18 +260,8 @@ public class TopicOperatorPerformanceTest extends AbstractST {
 
             LOGGER.info("Total time taken to create {} topics, send and receive {} messages, and delete topics: {} ms", numberOfTopics, NUMBER_OF_MESSAGES, totalTimeWholeMs);
         } finally {
-            // Gracefully stop the topic-operator thread
-            if (this.topicOperatorThread != null) {
-                // Step 1: Interrupt the daemon thread to stop collecting metrics
-                this.topicOperatorThread.interrupt();
-
-                try {
-                    // Step 2: Wait for the thread to finish, with a timeout
-                    this.topicOperatorThread.join(5000);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt(); // Re-interrupt the current thread if interrupted while waiting
-                    LOGGER.warn("Interrupted while waiting for the metrics collection thread to finish.", e);
-                }
+            if (this.topicOperatorMetricsGatherer != null) {
+                this.topicOperatorMetricsGatherer.stopCollecting();
 
                 final Map<String, Object> performanceAttributes = new LinkedHashMap<>();
                 performanceAttributes.put(PerformanceConstants.NUMBER_OF_TOPICS, numberOfTopics);
@@ -288,7 +275,7 @@ public class TopicOperatorPerformanceTest extends AbstractST {
                 performanceAttributes.put(PerformanceConstants.MAX_BATCH_LINGER_MS, maxBatchLingerMs);
 
                 // Handling complex objects
-                performanceAttributes.put(PerformanceConstants.METRICS_HISTORY, topicOperatorPollingRunnable.getMetricsHistory()); // Map of metrics history
+                performanceAttributes.put(PerformanceConstants.METRICS_HISTORY, this.topicOperatorMetricsGatherer.getMetricsHistory()); // Map of metrics history
 
                 // Step 3: Now, it's safe to log performance data as the collection thread has been stopped
                 PerformanceReporter.logPerformanceData(performanceAttributes, TopicOperatorPerformanceTest.REPORT_DIRECTORY + "/" + PerformanceConstants.TOPIC_OPERATOR_ALICE_BULK_USE_CASE, this.testStorage, ACTUAL_TIME, Environment.PERFORMANCE_DIR);
@@ -418,10 +405,8 @@ public class TopicOperatorPerformanceTest extends AbstractST {
                 .withComponentName(this.testStorage.getClusterName())
                 .build();
 
-            this.topicOperatorPollingRunnable = new TopicOperatorPollingRunnable(this.topicOperatorCollector, "strimzi.io/cluster=" + this.testStorage.getClusterName());
-            this.topicOperatorThread = new Thread(this.topicOperatorPollingRunnable);
-            this.topicOperatorThread.setDaemon(true); // Set as daemon so it doesn't prevent JVM shutdown
-            this.topicOperatorThread.start();
+            this.topicOperatorMetricsGatherer = new TopicOperatorMetricsGatherer(this.topicOperatorCollector, "strimzi.io/cluster=" + this.testStorage.getClusterName());
+            this.topicOperatorMetricsGatherer.startCollecting();
             // ----- ----- ------ ------
 
             // Measure topic creation time
@@ -527,18 +512,8 @@ public class TopicOperatorPerformanceTest extends AbstractST {
 
             LOGGER.info("Total time taken to create {} topics, send and receive {} messages, and delete topics: {} ms", numberOfTopics, NUMBER_OF_MESSAGES, totalTimeWholeMs);
         } finally {
-            // Gracefully stop the topic-operator thread
-            if (this.topicOperatorThread != null) {
-                // Step 1: Interrupt the daemon thread to stop collecting metrics
-                this.topicOperatorThread.interrupt();
-
-                try {
-                    // Step 2: Wait for the thread to finish, with a timeout
-                    this.topicOperatorThread.join(5000);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt(); // Re-interrupt the current thread if interrupted while waiting
-                    LOGGER.warn("Interrupted while waiting for the metrics collection thread to finish.", e);
-                }
+            if (this.topicOperatorMetricsGatherer != null) {
+                this.topicOperatorMetricsGatherer.stopCollecting();
 
                 final Map<String, Object> performanceAttributes = new LinkedHashMap<>();
                 performanceAttributes.put(PerformanceConstants.NUMBER_OF_TOPICS, numberOfTopics);
@@ -554,7 +529,7 @@ public class TopicOperatorPerformanceTest extends AbstractST {
 
                 // Handling complex objects
                 performanceAttributes.put(PerformanceConstants.BOB_UPDATE_TIMES, bobUpdateTimerMsArr); // Array of update times
-                performanceAttributes.put(PerformanceConstants.METRICS_HISTORY, topicOperatorPollingRunnable.getMetricsHistory()); // Map of metrics history
+                performanceAttributes.put(PerformanceConstants.METRICS_HISTORY, topicOperatorMetricsGatherer.getMetricsHistory()); // Map of metrics history
                 // Step 3: Now, it's safe to log performance data as the collection thread has been stopped
                 PerformanceReporter.logPerformanceData(performanceAttributes, TopicOperatorPerformanceTest.REPORT_DIRECTORY + "/" + PerformanceConstants.TOPIC_OPERATOR_BOBS_STREAMING_USE_CASE, this.testStorage, ACTUAL_TIME, Environment.PERFORMANCE_DIR);
             }

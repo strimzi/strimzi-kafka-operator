@@ -13,11 +13,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 /**
- * This class represents a polling runnable for collecting metrics related to the Topic Operator.
+ * This class represents a polling for collecting metrics related to the Topic Operator.
  * It periodically collects metrics from pods based on a given selector and maintains a history
  * of these metrics, indexed by timestamp. The metrics history is stored in a TreeMap to preserve
  * the temporal order of the data.
@@ -27,49 +29,55 @@ import java.util.stream.Stream;
  * can result in undefined behavior. Therefore, instances of this class should not be shared across
  * multiple threads.</p>
  */
-public class TopicOperatorPollingRunnable implements Runnable {
+public class TopicOperatorMetricsGatherer {
 
-    private static final Logger LOGGER = LogManager.getLogger(TopicOperatorPollingRunnable.class);
+    private static final Logger LOGGER = LogManager.getLogger(TopicOperatorMetricsGatherer.class);
     private final TopicOperatorMetricsCollector topicOperatorMetricsCollector;
     private final String selector;
     // make sure that order of metrics with timestamp
     private final Map<Long, Map<String, List<Double>>> metricsHistory = new TreeMap<>();
+    private ScheduledExecutorService scheduler;
 
-    public TopicOperatorPollingRunnable(TopicOperatorMetricsCollector topicOperatorMetricsCollector, String selector) {
+    public TopicOperatorMetricsGatherer(TopicOperatorMetricsCollector topicOperatorMetricsCollector, String selector) {
         this.topicOperatorMetricsCollector = topicOperatorMetricsCollector;
         this.selector = selector;
+        this.scheduler = Executors.newSingleThreadScheduledExecutor();
     }
 
-    @Override
-    public void run() {
-        LOGGER.info("Thread started with selector: {}", this.selector);
+    public void startCollecting() {
+        final Runnable task = this::collectMetrics;
+        this.scheduler.scheduleAtFixedRate(task, 0, 5, TimeUnit.SECONDS);
+    }
 
-        while (!Thread.currentThread().isInterrupted()) {
-            this.topicOperatorMetricsCollector.collectMetricsFromPods();
-            // record specific time when metrics were collected
-            Long timeWhenMetricsWereCollected = System.currentTimeMillis();
-
-            Map<String, List<Double>> currentMetrics = this.buildMetricsMap();
-
-            // Store metrics with current timestamp as key
-            this.metricsHistory.put(timeWhenMetricsWereCollected, currentMetrics);
-
-            this.printCurrentMetrics();
-
-            LOGGER.debug("Collected metrics:\n{}", currentMetrics.toString());
-
+    public void stopCollecting() {
+        if (this.scheduler != null) {
+            this.scheduler.shutdownNow();
             try {
-                // Sleep for a predefined interval before polling again
-                TimeUnit.SECONDS.sleep(5); // Poll every 5 seconds, adjust as needed
+                if (!this.scheduler.awaitTermination(5, TimeUnit.SECONDS)) {
+                    LOGGER.error("Scheduler did not terminate in the specified time.");
+                }
             } catch (InterruptedException e) {
-                Thread.currentThread().interrupt(); // restore interrupted status
-                LOGGER.error("Thread was interrupted", e);
-            } catch (Exception e) {
-                LOGGER.error("Exception in thread", e);
-            } finally {
-                LOGGER.debug("Thread finishing");
+                LOGGER.error("Interrupted during shutdown.", e);
+                Thread.currentThread().interrupt();
             }
         }
+    }
+
+    private void collectMetrics() {
+        LOGGER.info("Collecting metrics with selector: {}", this.selector);
+
+        this.topicOperatorMetricsCollector.collectMetricsFromPods();
+        // record specific time when metrics were collected
+        Long timeWhenMetricsWereCollected = System.currentTimeMillis();
+
+        Map<String, List<Double>> currentMetrics = this.buildMetricsMap();
+
+        // Store metrics with current timestamp as key
+        this.metricsHistory.put(timeWhenMetricsWereCollected, currentMetrics);
+
+        this.printCurrentMetrics();
+
+        LOGGER.debug("Collected metrics:\n{}", currentMetrics.toString());
     }
 
     public Map<Long, Map<String, List<Double>>> getMetricsHistory() {
