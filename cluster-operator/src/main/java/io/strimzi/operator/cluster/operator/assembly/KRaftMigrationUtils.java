@@ -5,6 +5,7 @@
 
 package io.strimzi.operator.cluster.operator.assembly;
 
+import io.strimzi.operator.cluster.operator.resource.DefaultZooKeeperAdminProvider;
 import io.strimzi.operator.cluster.operator.resource.KRaftMigrationState;
 import io.strimzi.operator.cluster.operator.resource.KafkaAgentClient;
 import io.strimzi.operator.common.Reconciliation;
@@ -15,7 +16,6 @@ import io.strimzi.operator.common.auth.PemTrustSet;
 import io.strimzi.operator.common.auth.TlsPemIdentity;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.admin.ZooKeeperAdmin;
-import org.apache.zookeeper.client.ZKClientConfig;
 
 import java.io.File;
 import java.io.IOException;
@@ -43,8 +43,14 @@ public class KRaftMigrationUtils {
         // Setup keystore from PEM in cluster-operator secret
         File keyStoreFile = Util.createFileStore(KRaftMigrationUtils.class.getName(), PemAuthIdentity.PEM_SUFFIX, coTlsPemIdentity.pemAuthIdentity().certificateChainAsPemBytes());
         try {
-            ZooKeeperAdmin admin = createZooKeeperAdminClient(reconciliation, zkConnectionString, operationTimeoutMs,
-                    trustStoreFile, keyStoreFile);
+            ZooKeeperAdmin admin = new DefaultZooKeeperAdminProvider().createZookeeperAdmin(
+                    zkConnectionString,
+                    10000,
+                    watchedEvent -> LOGGER.debugCr(reconciliation, "Received event {} from ZooKeeperAdmin client connected to {}", watchedEvent, zkConnectionString),
+                    operationTimeoutMs,
+                    trustStoreFile.getAbsolutePath(),
+                    keyStoreFile.getAbsolutePath()
+                    );
             admin.delete("/controller", -1);
             admin.close();
             LOGGER.infoCr(reconciliation, "Deleted the '/controller' znode as part of the KRaft migration rollback");
@@ -80,36 +86,5 @@ public class KRaftMigrationUtils {
             throw new RuntimeException("Failed to get the ZooKeeper to KRaft migration state");
         }
         return kraftMigrationState.isMigrationDone();
-    }
-
-    /**
-     * Create a ZooKeeperAdmin client instance to interact with the ZooKeeper ensamble for migration rollback purposes
-     *
-     * @param reconciliation    Reconciliation information
-     * @param zkConnectionString    Connection information to ZooKeeper
-     * @param operationTimeoutMs    Timeout for ZooKeeper requests
-     * @param trustStoreFile    File hosting the truststore with TLS certificates to use to connect to ZooKeeper
-     * @param keyStoreFile  File hosting the keystore with TLS private keys to use to connect to ZooKeeper
-     * @return  A ZooKeeperAdmin instance
-     * @throws IOException
-     */
-    private static ZooKeeperAdmin createZooKeeperAdminClient(Reconciliation reconciliation, String zkConnectionString, long operationTimeoutMs,
-                                                             File trustStoreFile, File keyStoreFile) throws IOException {
-        ZKClientConfig clientConfig = new ZKClientConfig();
-
-        clientConfig.setProperty("zookeeper.clientCnxnSocket", "org.apache.zookeeper.ClientCnxnSocketNetty");
-        clientConfig.setProperty("zookeeper.client.secure", "true");
-        clientConfig.setProperty("zookeeper.sasl.client", "false");
-        clientConfig.setProperty("zookeeper.ssl.trustStore.location", trustStoreFile.getAbsolutePath());
-        clientConfig.setProperty("zookeeper.ssl.trustStore.type", "PEM");
-        clientConfig.setProperty("zookeeper.ssl.keyStore.location", keyStoreFile.getAbsolutePath());
-        clientConfig.setProperty("zookeeper.ssl.keyStore.type", "PEM");
-        clientConfig.setProperty("zookeeper.request.timeout", String.valueOf(operationTimeoutMs));
-
-        return new ZooKeeperAdmin(
-                zkConnectionString,
-                10000,
-                watchedEvent -> LOGGER.debugCr(reconciliation, "Received event {} from ZooKeeperAdmin client connected to {}", watchedEvent, zkConnectionString),
-                clientConfig);
     }
 }

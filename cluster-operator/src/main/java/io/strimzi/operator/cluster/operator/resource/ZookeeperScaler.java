@@ -17,7 +17,6 @@ import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.admin.ZooKeeperAdmin;
-import org.apache.zookeeper.client.ZKClientConfig;
 
 import java.io.File;
 import java.io.IOException;
@@ -53,6 +52,7 @@ public class ZookeeperScaler implements AutoCloseable {
      *
      * @param reconciliation                The reconciliation
      * @param vertx                         Vertx instance
+     * @param zooAdminProvider              ZooKeeper Admin Client Provider
      * @param zookeeperConnectionString     Connection string to connect to the right Zookeeper
      * @param zkNodeAddress                 Function for generating the Zookeeper node addresses
      * @param coTlsPemIdentity              Trust set and identity for TLS client authentication for connecting to ZooKeeper
@@ -90,8 +90,7 @@ public class ZookeeperScaler implements AutoCloseable {
      * @return          Future which succeeds / fails when the scaling is finished
      */
     public Future<Void> scale(int scaleTo) {
-        return getClientConfig()
-                .compose(this::connect)
+        return connect()
                 .compose(zkAdmin -> {
                     Promise<Void> scalePromise = Promise.promise();
 
@@ -135,7 +134,7 @@ public class ZookeeperScaler implements AutoCloseable {
      *
      * @return      Future indicating success or failure
      */
-    private Future<ZooKeeperAdmin> connect(ZKClientConfig clientConfig)    {
+    private Future<ZooKeeperAdmin> connect()    {
         Promise<ZooKeeperAdmin> connected = Promise.promise();
 
         try {
@@ -143,7 +142,9 @@ public class ZookeeperScaler implements AutoCloseable {
                 this.zookeeperConnectionString,
                 zkAdminSessionTimeoutMs,
                 watchedEvent -> LOGGER.debugCr(reconciliation, "Received event {} from ZooKeeperAdmin client connected to {}", watchedEvent, zookeeperConnectionString),
-                clientConfig);
+                operationTimeoutMs,
+                trustStoreFile.getAbsolutePath(),
+                keyStoreFile.getAbsolutePath());
 
             VertxUtil.waitFor(reconciliation, vertx,
                 String.format("ZooKeeperAdmin connection to %s", zookeeperConnectionString),
@@ -246,33 +247,6 @@ public class ZookeeperScaler implements AutoCloseable {
         } else {
             return Future.succeededFuture();
         }
-    }
-
-    /**
-     * Generates the TLS configuration for Zookeeper.
-     *
-     * @return  A future with the ZooKeeper Client Configuration
-     */
-    private Future<ZKClientConfig> getClientConfig()  {
-        return vertx.executeBlocking(() -> {
-            try {
-                ZKClientConfig clientConfig = new ZKClientConfig();
-
-                clientConfig.setProperty("zookeeper.clientCnxnSocket", "org.apache.zookeeper.ClientCnxnSocketNetty");
-                clientConfig.setProperty("zookeeper.client.secure", "true");
-                clientConfig.setProperty("zookeeper.sasl.client", "false");
-                clientConfig.setProperty("zookeeper.ssl.trustStore.location", trustStoreFile.getAbsolutePath());
-                clientConfig.setProperty("zookeeper.ssl.trustStore.type", "PEM");
-                clientConfig.setProperty("zookeeper.ssl.keyStore.location", keyStoreFile.getAbsolutePath());
-                clientConfig.setProperty("zookeeper.ssl.keyStore.type", "PEM");
-                clientConfig.setProperty("zookeeper.request.timeout", String.valueOf(operationTimeoutMs));
-
-                return clientConfig;
-            } catch (Exception e)    {
-                LOGGER.warnCr(reconciliation, "Failed to create Zookeeper client configuration", e);
-                throw new ZookeeperScalingException("Failed to create Zookeeper client configuration", e);
-            }
-        }, false);
     }
 
     /**
