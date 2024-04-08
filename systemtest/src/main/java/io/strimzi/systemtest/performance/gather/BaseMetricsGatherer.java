@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.performance.gather;
 
+import io.strimzi.systemtest.performance.PerformanceConstants;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -46,7 +47,7 @@ public abstract class BaseMetricsGatherer {
     }
 
     public void startCollecting() {
-        startCollecting(0, 5, TimeUnit.SECONDS);
+        startCollecting(0, PerformanceConstants.POLLING_METRICS_INTERVAL_DEFAULT, TimeUnit.SECONDS);
     }
 
     public void stopCollecting() {

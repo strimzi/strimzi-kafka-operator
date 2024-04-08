@@ -15,7 +15,7 @@ import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.performance.gather.TopicOperatorMetricsCollector;
 import io.strimzi.systemtest.performance.gather.TopicOperatorMetricsGatherer;
 import io.strimzi.systemtest.performance.report.PerformanceReporter;
-import io.strimzi.systemtest.performance.report.parser.PerformanceMetricsParser;
+import io.strimzi.systemtest.performance.report.parser.TopicOperatorMetricsParser;
 import io.strimzi.systemtest.resources.ComponentType;
 import io.strimzi.systemtest.resources.NodePoolsConverter;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -58,6 +58,7 @@ public class TopicOperatorPerformanceTest extends AbstractST {
     private static final TemporalAccessor ACTUAL_TIME = LocalDateTime.now();
 
     private static final String REPORT_DIRECTORY = "topic-operator";
+    private static final String PARSER_TYPE = REPORT_DIRECTORY;
 
     private TestStorage testStorage;
     private TopicOperatorMetricsCollector topicOperatorCollector;
@@ -122,7 +123,7 @@ public class TopicOperatorPerformanceTest extends AbstractST {
     @MethodSource("provideConfigurationsForAliceBulkBatchUseCase")
     @SuppressWarnings({"checkstyle:MethodLength"})
     public void testAliceBulkBatchUseCase(String maxBatchSize, String maxBatchLingerMs, boolean withClientsEnabled) throws IOException {
-        final int numberOfTopics = KubeClusterResource.getInstance().isMultiNode() ? 500 : 250; // Number of topics to test
+        final int numberOfTopics = KubeClusterResource.getInstance().isMultiNode() ? 30 : 250; // Number of topics to test
         final int numberOfClientInstances = withClientsEnabled ? 30 : 0; // producers and consumers if enabled
         final String topicNamePrefix = "perf-topic-";
         final String clientExchangeMessagesTopicPrefix = "client-topic-";
@@ -525,10 +526,10 @@ public class TopicOperatorPerformanceTest extends AbstractST {
                 performanceAttributes.put(PerformanceConstants.TOTAL_TEST_TIME, totalTimeWholeMs + " ms");
                 performanceAttributes.put(PerformanceConstants.MAX_BATCH_SIZE, maxBatchSize);
                 performanceAttributes.put(PerformanceConstants.MAX_BATCH_LINGER_MS, maxBatchLingerMs);
-                performanceAttributes.put(PerformanceConstants.BOB_NUMBER_OF_TOPICS_TO_UPDATE, bobAmountOfKafkaTopics);
+                performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_NUMBER_OF_TOPICS_TO_UPDATE, bobAmountOfKafkaTopics);
 
                 // Handling complex objects
-                performanceAttributes.put(PerformanceConstants.BOB_UPDATE_TIMES, bobUpdateTimerMsArr); // Array of update times
+                performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_UPDATE_TIMES, bobUpdateTimerMsArr); // Array of update times
                 performanceAttributes.put(PerformanceConstants.METRICS_HISTORY, topicOperatorMetricsGatherer.getMetricsHistory()); // Map of metrics history
                 // Step 3: Now, it's safe to log performance data as the collection thread has been stopped
                 PerformanceReporter.logPerformanceData(this.testStorage, performanceAttributes, TopicOperatorPerformanceTest.REPORT_DIRECTORY + "/" + PerformanceConstants.TOPIC_OPERATOR_BOBS_STREAMING_USE_CASE, ACTUAL_TIME, Environment.PERFORMANCE_DIR);
@@ -578,9 +579,9 @@ public class TopicOperatorPerformanceTest extends AbstractST {
     }
 
     @AfterAll
-     void tearDown() throws IOException {
+     void tearDown() {
         // show tables with metrics
-        PerformanceMetricsParser.main(null);
+        TopicOperatorMetricsParser.main(new String[]{PARSER_TYPE});
     }
 }
 

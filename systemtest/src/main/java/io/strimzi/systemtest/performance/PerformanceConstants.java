@@ -21,8 +21,8 @@ public interface PerformanceConstants {
     String TOTAL_TEST_TIME = "Total Test Time";
     String MAX_BATCH_SIZE = "Max Batch Size";
     String MAX_BATCH_LINGER_MS = "Max Batch Linger Ms";
-    String BOB_UPDATE_TIMES = "Bob Update Times";
-    String BOB_NUMBER_OF_TOPICS_TO_UPDATE = "Bob Update Number of Topics";
+    String TOPIC_OPERATOR_UPDATE_TIMES = "Bob Update Times";
+    String TOPIC_OPERATOR_NUMBER_OF_TOPICS_TO_UPDATE = "Update Number of Topics";
     String METRICS_HISTORY = "Metrics History";
 
     /**
@@ -86,5 +86,10 @@ public interface PerformanceConstants {
     /**
      * Polling interval of metrics in seconds
      */
-    long POLLING_METRICS_INTERVAL = 5;
+    long POLLING_METRICS_INTERVAL_DEFAULT = 5;
+
+    /**
+     * Parser types
+     */
+    String TOPIC_OPERATOR_PARSER = "topic-operator";
 }
