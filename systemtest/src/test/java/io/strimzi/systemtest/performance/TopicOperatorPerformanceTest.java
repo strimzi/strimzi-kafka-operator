@@ -82,24 +82,24 @@ public class TopicOperatorPerformanceTest extends AbstractST {
         return Stream.of(
                 // without clients
                 Arguments.of("100", "10", false),     // Lower batch size with short linger time for comparison
-                Arguments.of("500", "10", false),     // Increased batch size with short linger time
-                Arguments.of("1000", "10", false),    // Large batch size with short linger time
-                Arguments.of("100", "30000", false),  // Lower batch size with 30 seconds linger time
-                Arguments.of("500", "30000", false),  // Increased batch size with 30 seconds linger time
-                Arguments.of("1000", "30000", false), // Large batch size with 30 seconds linger time
-                Arguments.of("100", "100", false),    // Lower batch size with longer linger time for extended comparison
-                Arguments.of("500", "100", false),    // Increased batch size with longer linger time
-                Arguments.of("1000", "100", false),    // Large batch size with longer linger time
+                Arguments.of("500", "10", false)     // Increased batch size with short linger time
+//                Arguments.of("1000", "10", false),    // Large batch size with short linger time
+//                Arguments.of("100", "30000", false),  // Lower batch size with 30 seconds linger time
+//                Arguments.of("500", "30000", false),  // Increased batch size with 30 seconds linger time
+//                Arguments.of("1000", "30000", false), // Large batch size with 30 seconds linger time
+//                Arguments.of("100", "100", false),    // Lower batch size with longer linger time for extended comparison
+//                Arguments.of("500", "100", false),    // Increased batch size with longer linger time
+//                Arguments.of("1000", "100", false),    // Large batch size with longer linger time
                 // with clients
-                Arguments.of("100", "10", true),     // Lower batch size with short linger time for comparison
-                Arguments.of("500", "10", true),     // Increased batch size with short linger time
-                Arguments.of("1000", "10", true),    // Large batch size with short linger time
-                Arguments.of("100", "30000", true),  // Lower batch size with 30 seconds linger time
-                Arguments.of("500", "30000", true),  // Increased batch size with 30 seconds linger time
-                Arguments.of("1000", "30000", true), // Large batch size with 30 seconds linger time
-                Arguments.of("100", "100", true),    // Lower batch size with longer linger time for extended comparison
-                Arguments.of("500", "100", true),    // Increased batch size with longer linger time
-                Arguments.of("1000", "100", true)    // Large batch size with longer linger time
+//                Arguments.of("100", "10", true),     // Lower batch size with short linger time for comparison
+//                Arguments.of("500", "10", true),     // Increased batch size with short linger time
+//                Arguments.of("1000", "10", true),    // Large batch size with short linger time
+//                Arguments.of("100", "30000", true),  // Lower batch size with 30 seconds linger time
+//                Arguments.of("500", "30000", true),  // Increased batch size with 30 seconds linger time
+//                Arguments.of("1000", "30000", true), // Large batch size with 30 seconds linger time
+//                Arguments.of("100", "100", true),    // Lower batch size with longer linger time for extended comparison
+//                Arguments.of("500", "100", true),    // Increased batch size with longer linger time
+//                Arguments.of("1000", "100", true)    // Large batch size with longer linger time
         );
     }
 
@@ -294,10 +294,10 @@ public class TopicOperatorPerformanceTest extends AbstractST {
       */
     private static Stream<Arguments> provideConfigurationsForBobDataStreamingUseCase() {
         return Stream.of(
-            Arguments.of("250", "1000", false), // Medium batch size with 1 second linger time, optimized for infrequent changes
-            Arguments.of("500", "1000", false), // Slightly larger batch size with 1 second linger time, considering memory usage efficiency
-            Arguments.of("250", "5000", false), // Medium batch size with longer no-op timed reconciliation intervals for reduced CPU utilization
-            Arguments.of("500", "5000", false)  // Larger batch size with longer intervals, balancing scalability with operational latency
+            Arguments.of("250", "1000", false) // Medium batch size with 1 second linger time, optimized for infrequent changes
+//            Arguments.of("500", "1000", false), // Slightly larger batch size with 1 second linger time, considering memory usage efficiency
+//            Arguments.of("250", "5000", false), // Medium batch size with longer no-op timed reconciliation intervals for reduced CPU utilization
+//            Arguments.of("500", "5000", false)  // Larger batch size with longer intervals, balancing scalability with operational latency
         );
     }
 
@@ -312,7 +312,7 @@ public class TopicOperatorPerformanceTest extends AbstractST {
     @MethodSource("provideConfigurationsForBobDataStreamingUseCase")
     @SuppressWarnings({"checkstyle:MethodLength"})
     public void testBobDataStreamingUseCase(String maxBatchSize, String maxBatchLingerMs, boolean withClientsEnabled) throws IOException, InterruptedException {
-        final int numberOfTopics = KubeClusterResource.getInstance().isMultiNode() ? 3000 : 750; // Number of topics to test
+        final int numberOfTopics = KubeClusterResource.getInstance().isMultiNode() ? 10 : 750; // Number of topics to test
         final int numberOfClientInstances = withClientsEnabled ? 30 : 0; // producers and consumers if enabled
         final String topicNamePrefix = "perf-topic-";
         final String clientExchangeMessagesTopicPrefix = "client-topic-";

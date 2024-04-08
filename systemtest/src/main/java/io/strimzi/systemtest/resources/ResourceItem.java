@@ -56,18 +56,4 @@ public final class ResourceItem<T extends HasMetadata> {
     public T getResource() {
         return resource;
     }
-
-    /**
-     * Returns the kind of the Kubernetes resource.
-     *
-     * @return The kind of the resource.
-     * @throws RuntimeException If the resource does not have a 'kind' property defined.
-     */
-    public String getResourceKind() {
-        if (resource != null && resource.getKind() != null) {
-            return resource.getKind();
-        } else {
-            throw new RuntimeException("Resource does not have a 'Kind' property defined: " + resource);
-        }
-    }
 }

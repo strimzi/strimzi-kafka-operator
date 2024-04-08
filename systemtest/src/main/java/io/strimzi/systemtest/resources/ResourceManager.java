@@ -422,9 +422,9 @@ public class ResourceManager {
         LOGGER.info("Deleted all resources of kind: {}", resourceKind);
 
         // Clear the instance stack of such resources
-        STORED_RESOURCES.forEach((key, stack) -> {
-            stack.removeIf(resourceItem -> resourceKind.equals(resourceItem.getResourceKind()));
-        });
+        STORED_RESOURCES.forEach((key, stack) -> stack.removeIf(resourceItem ->
+            resourceItem.getResource() != null && resourceKind.equals(resourceItem.getResource().getKind())
+        ));
         LOGGER.info("Cleared all resources of kind: {} from the resource stack", resourceKind);
     }
 

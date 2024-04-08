@@ -12,10 +12,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 /**
@@ -29,41 +25,18 @@ import java.util.stream.Stream;
  * can result in undefined behavior. Therefore, instances of this class should not be shared across
  * multiple threads.</p>
  */
-public class TopicOperatorMetricsGatherer {
+public class TopicOperatorMetricsGatherer extends BaseMetricsGatherer {
 
     private static final Logger LOGGER = LogManager.getLogger(TopicOperatorMetricsGatherer.class);
     private final TopicOperatorMetricsCollector topicOperatorMetricsCollector;
-    private final String selector;
-    // make sure that order of metrics with timestamp
-    private final Map<Long, Map<String, List<Double>>> metricsHistory = new TreeMap<>();
-    private ScheduledExecutorService scheduler;
 
     public TopicOperatorMetricsGatherer(TopicOperatorMetricsCollector topicOperatorMetricsCollector, String selector) {
+        super(selector);
         this.topicOperatorMetricsCollector = topicOperatorMetricsCollector;
-        this.selector = selector;
-        this.scheduler = Executors.newSingleThreadScheduledExecutor();
     }
 
-    public void startCollecting() {
-        final Runnable task = this::collectMetrics;
-        this.scheduler.scheduleAtFixedRate(task, 0, PerformanceConstants.POLLING_METRICS_INTERVAL, TimeUnit.SECONDS);
-    }
-
-    public void stopCollecting() {
-        if (this.scheduler != null) {
-            this.scheduler.shutdownNow();
-            try {
-                if (!this.scheduler.awaitTermination(5, TimeUnit.SECONDS)) {
-                    LOGGER.error("Scheduler did not terminate in the specified time.");
-                }
-            } catch (InterruptedException e) {
-                LOGGER.error("Interrupted during shutdown.", e);
-                Thread.currentThread().interrupt();
-            }
-        }
-    }
-
-    private void collectMetrics() {
+    @Override
+    public void collectMetrics() {
         LOGGER.info("Collecting metrics with selector: {}", this.selector);
 
         this.topicOperatorMetricsCollector.collectMetricsFromPods();
@@ -84,17 +57,8 @@ public class TopicOperatorMetricsGatherer {
         return metricsHistory;
     }
 
-    private void printCurrentMetrics() {
-        this.metricsHistory.forEach((key, valueList) -> {
-            if (valueList.isEmpty()) {
-                LOGGER.debug(key + " => [No data]");
-            } else {
-                LOGGER.debug(key + " => " + valueList);
-            }
-        });
-    }
-
-    private Map<String, List<Double>> buildMetricsMap() {
+    @Override
+    protected Map<String, List<Double>> buildMetricsMap() {
         Map<String, List<Double>> metrics = new HashMap<>();
 
         metrics.put(PerformanceConstants.ALTER_CONFIGS_DURATION_SECONDS_SUM, this.topicOperatorMetricsCollector.getAlterConfigsDurationSecondsSum(this.selector));
@@ -203,21 +167,5 @@ public class TopicOperatorMetricsGatherer {
 
         // Return this as a List<Double>
         return Collections.singletonList(totalTimeSpentOnUtoEventQueue);
-    }
-
-    private List<Double> calculateLoadAveragePerCore(List<Double> systemLoadAverage1m, List<Double> systemCpuCount) {
-        // Ensure the lists are not empty to avoid IndexOutOfBoundsException
-        if (!systemLoadAverage1m.isEmpty() && !systemCpuCount.isEmpty()) {
-            double loadAverage = systemLoadAverage1m.get(0);
-            double cpuCount = systemCpuCount.get(0);
-
-            // Calculate load average per core
-            double loadAveragePerCore = loadAverage / cpuCount;
-
-            // Return this as a List<Double>
-            return Collections.singletonList(loadAveragePerCore);
-        } else {
-            return Collections.emptyList();
-        }
     }
 }

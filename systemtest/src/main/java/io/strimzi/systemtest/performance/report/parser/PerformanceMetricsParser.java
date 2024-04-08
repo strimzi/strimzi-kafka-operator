@@ -120,53 +120,30 @@ public class PerformanceMetricsParser {
         final File[] componentDirs = basePath.toFile().listFiles(File::isDirectory);
 
         if (componentDirs != null) {
+
+            // 1st: iterating over each component (e.g., user-operator, topic-oeprator...)
             for (File componentDir : componentDirs) {
                 // e.g., bulk batch, streaming  ...
                 final File[] useCaseDirs = componentDir.listFiles();
 
                 if (useCaseDirs != null) {
+                    // 2nd: iterating over each use case (i.e., topic operator alice batch, topic operator bob streaming use case)
                     for (File useCaseDir : useCaseDirs) {
                         final String useCaseName = useCaseDir.getName();
                         final List<ExperimentMetrics> experimentsList = new ArrayList<>();
                         final File[] experimentsFiles = useCaseDir.listFiles();
 
                         if (experimentsFiles != null) {
+
+                            // 3rd: iterating over each experiment scenario (e.g., topic operator with batch size 250/500...)
                             for (File experimentFile : experimentsFiles) {
                                 final File[] metricFiles = experimentFile.listFiles();
                                 final ExperimentMetrics experimentMetrics = new ExperimentMetrics();
 
                                 if (metricFiles != null) {
+                                    // 4th: iterating over each experiment file for specific experiment scenario (e.g., memory_usage....)
                                     for (File metricFile : metricFiles) {
-                                        if (metricFile.getName().endsWith("test-performance-metrics.txt")) {
-                                            try {
-                                                processFile(metricFile, experimentMetrics);
-                                            } catch (IOException e) {
-                                                System.err.println("Error processing file " + metricFile.getAbsolutePath());
-                                                e.printStackTrace();
-                                            }
-                                            // these are most metrics
-                                        } else {
-                                            final List<Double> values = new ArrayList<>();
-                                            final List<String> lines = Files.readAllLines(metricFile.toPath());
-
-                                            for (String line : lines) {
-                                                final String[] parts = line.split(", Values: ");
-                                                if (parts.length > 1 && !parts[1].equals("[]")) {
-                                                    final String valuesPart = parts[1].replaceAll("\\[|\\]", ""); // Remove brackets
-                                                    final String[] valueStrings = valuesPart.split(", ");
-                                                    for (String valueString : valueStrings) {
-                                                        try {
-                                                            double value = Double.parseDouble(valueString);
-                                                            values.add(value);
-                                                        } catch (NumberFormatException e) {
-                                                            System.err.println("Error parsing value: " + valueString);
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                            // TODO: we can do post processing here.. (AVG, Q90, Q99 for strimzi_total_time_spend_on_uto_event_queue_duration_seconds f.e.)
-                                            experimentMetrics.addSimpleMetric(metricFile.getName(), values.toString());
-                                        }
+                                        processMetricsFile(metricFile, experimentMetrics);
                                     }
                                 }
                                 experimentsList.add(experimentMetrics);
@@ -178,6 +155,64 @@ public class PerformanceMetricsParser {
             }
         }
         showValuesOfExperiments();
+    }
+
+    /**
+     * Processes a metrics file and updates the provided {@link ExperimentMetrics} object
+     * accordingly. The method distinguishes between two types of metrics files:
+     * a specific "performance metrics" file, identified by a predefined name
+     * plus ".txt" extension, and other generic metrics files.
+     * <p>
+     * For the performance metrics file, it directly processes the file using
+     * {@code processFile}, handling any {@code IOException} that may occur.
+     * For other metrics files, it parses each line to extract and accumulate
+     * numerical values which are then added to the {@code ExperimentMetrics}
+     * object as a simple metric.
+     * <p>
+     * The method expects the metric values to be listed in each line following
+     * the format "Key: Value, Values: [v1, v2, v3, ...]", where only the values
+     * after "Values:" are processed.
+     *
+     * @param metricFile                the metrics file to process. This file can either be
+     *                                  a designated "performance metrics" file or a generic metrics file.
+     * @param experimentMetrics         the {@link ExperimentMetrics} object to update with
+     *                                  the metrics extracted from {@code metricFile}. This object
+     *                                  accumulates the metrics for a single experiment.
+     * @throws IOException              if an I/O error occurs while reading from the metrics file.
+     *                                  Note: For "performance metrics" files, I/O exceptions are caught
+     *                                  and logged, but not rethrown. For other files, any I/O exception
+     *                                  is propagated upwards.
+     */
+    private static void processMetricsFile(final File metricFile, final ExperimentMetrics experimentMetrics) throws IOException {
+        if (metricFile.getName().endsWith(PerformanceConstants.PERFORMANCE_METRICS_FILE_NAME + ".txt")) {
+            try {
+                processFile(metricFile, experimentMetrics);
+            } catch (IOException e) {
+                System.err.println("Error processing file " + metricFile.getAbsolutePath());
+                e.printStackTrace();
+            }
+            // these are most metrics
+        } else {
+            final List<Double> values = new ArrayList<>();
+            final List<String> lines = Files.readAllLines(metricFile.toPath());
+
+            for (String line : lines) {
+                final String[] parts = line.split(", Values: ");
+                if (parts.length > 1 && !parts[1].equals("[]")) {
+                    final String valuesPart = parts[1].replaceAll("\\[|\\]", ""); // Remove brackets
+                    final String[] valueStrings = valuesPart.split(", ");
+                    for (String valueString : valueStrings) {
+                        try {
+                            double value = Double.parseDouble(valueString);
+                            values.add(value);
+                        } catch (NumberFormatException e) {
+                            System.err.println("Error parsing value: " + valueString);
+                        }
+                    }
+                }
+            }
+            experimentMetrics.addSimpleMetric(metricFile.getName(), values.toString());
+        }
     }
 
     private static void processFile(File file, ExperimentMetrics experimentMetrics) throws IOException {
