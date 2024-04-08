@@ -46,7 +46,7 @@ public class TopicOperatorMetricsGatherer {
 
     public void startCollecting() {
         final Runnable task = this::collectMetrics;
-        this.scheduler.scheduleAtFixedRate(task, 0, 5, TimeUnit.SECONDS);
+        this.scheduler.scheduleAtFixedRate(task, 0, PerformanceConstants.POLLING_METRICS_INTERVAL, TimeUnit.SECONDS);
     }
 
     public void stopCollecting() {

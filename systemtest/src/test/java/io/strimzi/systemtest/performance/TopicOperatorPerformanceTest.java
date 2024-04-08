@@ -278,7 +278,7 @@ public class TopicOperatorPerformanceTest extends AbstractST {
                 performanceAttributes.put(PerformanceConstants.METRICS_HISTORY, this.topicOperatorMetricsGatherer.getMetricsHistory()); // Map of metrics history
 
                 // Step 3: Now, it's safe to log performance data as the collection thread has been stopped
-                PerformanceReporter.logPerformanceData(performanceAttributes, TopicOperatorPerformanceTest.REPORT_DIRECTORY + "/" + PerformanceConstants.TOPIC_OPERATOR_ALICE_BULK_USE_CASE, this.testStorage, ACTUAL_TIME, Environment.PERFORMANCE_DIR);
+                PerformanceReporter.logPerformanceData(this.testStorage, performanceAttributes, TopicOperatorPerformanceTest.REPORT_DIRECTORY + "/" + PerformanceConstants.TOPIC_OPERATOR_ALICE_BULK_USE_CASE, ACTUAL_TIME, Environment.PERFORMANCE_DIR);
             }
         }
     }
@@ -531,7 +531,7 @@ public class TopicOperatorPerformanceTest extends AbstractST {
                 performanceAttributes.put(PerformanceConstants.BOB_UPDATE_TIMES, bobUpdateTimerMsArr); // Array of update times
                 performanceAttributes.put(PerformanceConstants.METRICS_HISTORY, topicOperatorMetricsGatherer.getMetricsHistory()); // Map of metrics history
                 // Step 3: Now, it's safe to log performance data as the collection thread has been stopped
-                PerformanceReporter.logPerformanceData(performanceAttributes, TopicOperatorPerformanceTest.REPORT_DIRECTORY + "/" + PerformanceConstants.TOPIC_OPERATOR_BOBS_STREAMING_USE_CASE, this.testStorage, ACTUAL_TIME, Environment.PERFORMANCE_DIR);
+                PerformanceReporter.logPerformanceData(this.testStorage, performanceAttributes, TopicOperatorPerformanceTest.REPORT_DIRECTORY + "/" + PerformanceConstants.TOPIC_OPERATOR_BOBS_STREAMING_USE_CASE, ACTUAL_TIME, Environment.PERFORMANCE_DIR);
             }
         }
     }

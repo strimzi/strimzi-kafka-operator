@@ -82,4 +82,9 @@ public interface PerformanceConstants {
      * Performance metrics file
      */
     String PERFORMANCE_METRICS_FILE_NAME = "test-performance-metrics";
+
+    /**
+     * Polling interval of metrics in seconds
+     */
+    long POLLING_METRICS_INTERVAL = 5;
 }

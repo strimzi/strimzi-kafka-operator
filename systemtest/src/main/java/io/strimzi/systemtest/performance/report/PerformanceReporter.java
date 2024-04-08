@@ -54,17 +54,17 @@ public class PerformanceReporter {
      * the use case and additional configuration parameters. This method handles serialization of
      * complex data types and organizes logs for easier analysis.
      *
+     * @param testStorage               An object containing details about the test storage, including namespace and cluster name.
      * @param performanceAttributes     A map containing the performance metrics and attributes to log.
      * @param useCase                   The name of the test use case (scenario) being logged.
-     * @param testStorage               An object containing details about the test storage, including namespace and cluster name.
      * @param date                      The date and time of the test execution, used in naming the log file.
      * @param baseDir                   The base directory where the log file will be saved.
      * @throws IOException              If an I/O error occurs during writing to the log file.
      */
     public static void logPerformanceData(
+            TestStorage testStorage,
             Map<String, Object> performanceAttributes,
             String useCase,
-            TestStorage testStorage,
             TemporalAccessor date,
             String baseDir
     ) throws IOException {
@@ -156,7 +156,7 @@ public class PerformanceReporter {
      * @param filePath          The path to the file where the data will be saved.
      * @throws IOException      If an I/O error occurs during the writing process.
      */
-    public static void writePerformanceMetricsToFile(String performanceData, Path filePath) throws IOException {
+    private static void writePerformanceMetricsToFile(String performanceData, Path filePath) throws IOException {
         Files.write(filePath, performanceData.getBytes(StandardCharsets.UTF_8));
         LOGGER.info("Test performance data written to file: {}", filePath);
     }
