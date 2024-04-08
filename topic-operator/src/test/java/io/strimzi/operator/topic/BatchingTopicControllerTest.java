@@ -506,7 +506,7 @@ class BatchingTopicControllerTest {
 
         Admin adminSpy = Mockito.spy(admin[0]);
 
-        // Setup the KafkaTopic with 1 property change that is not in the alterableTopicConfig() list.
+        // Setup the KafkaTopic with 1 property change that is not in the alterableTopicConfig list.
         var kt = Crds.topicOperation(client).resource(
               new KafkaTopicBuilder()
                   .withNewMetadata()
@@ -546,6 +546,58 @@ class BatchingTopicControllerTest {
 
         var notConfiguredCondition = conditionList.stream().filter(condition -> condition.getType().equals("Warning")).findFirst().get();
         assertEquals("These .spec.config properties are not configurable: [cleanup.policy]", notConfiguredCondition.getMessage());
+        assertEquals("NotConfigurable", notConfiguredCondition.getReason());
+        assertEquals("True", notConfiguredCondition.getStatus());
+    }
+
+    @Test
+    public void shouldNotUpdateAnyPropertiesWarnOnAllProperties(KafkaCluster cluster) throws InterruptedException, ExecutionException {
+        admin[0] = Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, cluster.getBootstrapServers()));
+
+        admin[0].createTopics(List.of(new NewTopic(MY_TOPIC, 1, (short) 1).configs(Map.of(TopicConfig.COMPRESSION_TYPE_CONFIG, "snappy")))).all().get();
+
+        Admin adminSpy = Mockito.spy(admin[0]);
+
+        // Setup the KafkaTopic with 2 property changes and an empty alterableTopicConfig list.
+        var kt = Crds.topicOperation(client).resource(
+              new KafkaTopicBuilder()
+                    .withNewMetadata()
+                    .withName(MY_TOPIC)
+                    .withNamespace(namespace(NAMESPACE))
+                    .addToLabels("key", "VALUE")
+                    .endMetadata()
+                    .withNewSpec()
+                    .withConfig(Map.of(
+                          TopicConfig.COMPRESSION_TYPE_CONFIG, "snappy",
+                          TopicConfig.CLEANUP_POLICY_CONFIG, "compact"))
+                    .withPartitions(2)
+                    .withReplicas(1)
+                    .endSpec()
+                    .build()).create();
+
+        var config = Mockito.mock(TopicOperatorConfig.class);
+        Mockito.doReturn(NAMESPACE).when(config).namespace();
+        Mockito.doReturn(true).when(config).skipClusterConfigReview();
+        Mockito.doReturn("").when(config).alterableTopicConfig();
+        var replicasChangeClient = Mockito.mock(ReplicasChangeHandler.class);
+
+        controller = new BatchingTopicController(config, Map.of("key", "VALUE"), adminSpy, client, metrics, replicasChangeClient);
+        List<ReconcilableTopic> batch = List.of(new ReconcilableTopic(new Reconciliation("test", "KafkaTopic", NAMESPACE, MY_TOPIC), kt, topicName(kt)));
+
+        controller.onUpdate(batch);
+
+        Mockito.verify(adminSpy, Mockito.never()).incrementalAlterConfigs(any());
+
+        var updateTopic = Crds.topicOperation(client).inNamespace(NAMESPACE).withName("my-topic").get();
+
+        var conditionList = updateTopic.getStatus().getConditions();
+        assertEquals(2, conditionList.size());
+
+        var readyCondition = conditionList.stream().filter(condition -> condition.getType().equals("Ready")).findFirst().get();
+        assertEquals("True", readyCondition.getStatus());
+
+        var notConfiguredCondition = conditionList.stream().filter(condition -> condition.getType().equals("Warning")).findFirst().get();
+        assertEquals("These .spec.config properties are not configurable: [cleanup.policy, compression.type]", notConfiguredCondition.getMessage());
         assertEquals("NotConfigurable", notConfiguredCondition.getReason());
         assertEquals("True", notConfiguredCondition.getStatus());
     }

@@ -1124,7 +1124,7 @@ public class BatchingTopicController {
         // alterableTopicConfig is used with external clusters that only allow modifying a
         // subset of config properties. In that case we remove the configOps that would not be allowed.
         var customAlterableConfigs = config.alterableTopicConfig();
-        if (customAlterableConfigs != null && !customAlterableConfigs.isBlank()) {
+        if (customAlterableConfigs != null) {
             var alterablePropertySet = Arrays.stream(customAlterableConfigs.replaceAll("\\s", "").split(","))
                  .collect(Collectors.toSet());
 
@@ -1153,7 +1153,7 @@ public class BatchingTopicController {
               .build());
 
         var customAlterableConfigs = config.alterableTopicConfig();
-        if (customAlterableConfigs != null && !customAlterableConfigs.isBlank()) {
+        if (customAlterableConfigs != null) {
             addAlterableConfigsConditions(reconcilableTopic, conditions, customAlterableConfigs);
         }
 
@@ -1166,21 +1166,25 @@ public class BatchingTopicController {
     }
 
     private void addAlterableConfigsConditions(ReconcilableTopic reconcilableTopic, List<Condition> conditions, String customAlterableConfigs) {
-        if (reconcilableTopic.kt().getSpec() != null) {
+        if (hasTopicSpec.test(reconcilableTopic)) {
             var alterablePropertySet = Arrays.stream(customAlterableConfigs.replaceAll("\\s", "").split(","))
                   .collect(Collectors.toSet());
 
             var propertiesNotSet = new ArrayList<>();
-            reconcilableTopic.kt().getSpec().getConfig().forEach((key, value) -> {
-                if (!alterablePropertySet.contains(key)) {
-                    propertiesNotSet.add(key);
-                }
-            });
+            if (hasConfig(reconcilableTopic.kt())) {
+                reconcilableTopic.kt().getSpec().getConfig().forEach((key, value) -> {
+                    if (!alterablePropertySet.contains(key)) {
+                        propertiesNotSet.add(key);
+                    }
+                });
+            }
 
             if (!propertiesNotSet.isEmpty()) {
                 var properties = String.join(", ", propertiesNotSet.toArray(new String[0]));
+                var message = "These .spec.config properties are not configurable: [" + properties + "]";
+                LOGGER.warnOp(message);
                 conditions.add(new ConditionBuilder()
-                      .withMessage("These .spec.config properties are not configurable: [" + properties + "]")
+                      .withMessage(message)
                       .withReason("NotConfigurable")
                       .withStatus("True")
                       .withType("Warning")
