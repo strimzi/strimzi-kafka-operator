@@ -19,7 +19,7 @@ public class InitWriterConfigTest {
     private static final Map<String, String> ENV_VARS = Map.of(
         InitWriterConfig.NODE_NAME.key(), "localhost",
         InitWriterConfig.RACK_TOPOLOGY_KEY.key(), "failure-domain.beta.kubernetes.io/zone",
-        InitWriterConfig.EXTERNAL_ADDRESS.key(), "true"
+        InitWriterConfig.EXTERNAL_ADDRESS.key(), "TRUE"
     );
 
     @Test
