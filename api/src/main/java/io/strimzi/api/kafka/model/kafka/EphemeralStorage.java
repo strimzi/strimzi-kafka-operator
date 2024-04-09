@@ -22,14 +22,11 @@ import lombok.ToString;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"id", "sizeLimit", "type"})
+@JsonPropertyOrder({"id", "sizeLimit", "type", "kraftMetadata"})
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class EphemeralStorage extends SingleVolumeStorage {
-
     private static final long serialVersionUID = 1L;
-
-    private Integer id;
 
     private String sizeLimit;
 
@@ -61,5 +58,20 @@ public class EphemeralStorage extends SingleVolumeStorage {
 
     public void setSizeLimit(String sizeLimit) {
         this.sizeLimit = sizeLimit;
+    }
+
+    @Override
+    @Description("Specifies whether this volume should be used for storing KRaft metadata. " +
+            "This option is optional. " +
+            "When set, the only currently supported value is `shared`. " +
+            "At most one volume can have this field set.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public KRaftMetadataStorage getKraftMetadata() {
+        return super.getKraftMetadata();
+    }
+
+    @Override
+    public void setKraftMetadata(KRaftMetadataStorage kraftMetadata) {
+        super.setKraftMetadata(kraftMetadata);
     }
 }

@@ -593,6 +593,9 @@ It must have the value `ephemeral` for the type `EphemeralStorage`.
 |type
 |string
 |Must be `ephemeral`.
+|kraftMetadata
+|string (one of [shared])
+|Specifies whether this volume should be used for storing KRaft metadata. This option is optional. When set, the only currently supported value is `shared`. At most one volume can have this field set.
 |====
 
 [id='type-PersistentClaimStorage-{context}']
@@ -615,6 +618,9 @@ It must have the value `persistent-claim` for the type `PersistentClaimStorage`.
 |size
 |string
 |When `type=persistent-claim`, defines the size of the persistent volume claim, such as 100Gi. Mandatory when `type=persistent-claim`.
+|kraftMetadata
+|string (one of [shared])
+|Specifies whether this volume should be used for storing KRaft metadata. This option is optional. When set, the only currently supported value is `shared`. At most one volume can have this field set.
 |class
 |string
 |The storage class to use for dynamic volume allocation.

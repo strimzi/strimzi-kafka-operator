@@ -142,7 +142,6 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     protected static final String CLIENT_CA_CERTS_VOLUME_MOUNT = "/opt/kafka/client-ca-certs";
     protected static final String TRUSTED_CERTS_BASE_VOLUME_MOUNT = "/opt/kafka/certificates";
     protected static final String CUSTOM_AUTHN_SECRETS_VOLUME_MOUNT = "/opt/kafka/custom-authn-secrets";
-    private static final String DATA_VOLUME_MOUNT_PATH = "/var/lib/kafka";
     private static final String LOG_AND_METRICS_CONFIG_VOLUME_NAME = "kafka-metrics-and-logging";
     private static final String LOG_AND_METRICS_CONFIG_VOLUME_MOUNT = "/opt/kafka/custom-config/";
 
@@ -1348,7 +1347,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      * @return  List of volume mounts
      */
     private List<VolumeMount> getVolumeMounts(Storage storage) {
-        List<VolumeMount> volumeMountList = new ArrayList<>(VolumeUtils.createVolumeMounts(storage, DATA_VOLUME_MOUNT_PATH, false));
+        List<VolumeMount> volumeMountList = new ArrayList<>(VolumeUtils.createVolumeMounts(storage, false));
         volumeMountList.add(VolumeUtils.createTempDirVolumeMount());
         volumeMountList.add(VolumeUtils.createVolumeMount(CLUSTER_CA_CERTS_VOLUME, CLUSTER_CA_CERTS_VOLUME_MOUNT));
         volumeMountList.add(VolumeUtils.createVolumeMount(BROKER_CERTS_VOLUME, BROKER_CERTS_VOLUME_MOUNT));
@@ -1696,7 +1695,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         KafkaBrokerConfigurationBuilder builder =
                 new KafkaBrokerConfigurationBuilder(reconciliation, node, this.kafkaMetadataConfigState)
                         .withRackId(rack)
-                        .withLogDirs(VolumeUtils.createVolumeMounts(pool.storage, DATA_VOLUME_MOUNT_PATH, false))
+                        .withLogDirs(VolumeUtils.createVolumeMounts(pool.storage, false))
                         .withListeners(cluster,
                                 namespace,
                                 listeners,
@@ -1707,7 +1706,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                         .withCruiseControl(cluster, ccMetricsReporter, node.broker())
                         .withTieredStorage(cluster, tieredStorage)
                         .withUserConfiguration(configuration, node.broker() && ccMetricsReporter != null);
-        withZooKeeperOrKRaftConfiguration(node, builder);
+        withZooKeeperOrKRaftConfiguration(pool, node, builder);
         return builder.build().trim();
     }
 
@@ -1736,10 +1735,11 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      * | KRAFT          | KRaft        | KRaft        | ---> controllers rolled
      * +----------------+--------------+--------------+
      *
-     * @param node node on which the configuration is applied
-     * @param builder KafkaBrokerConfigurationBuilder instance to use to build the node configuration
+     * @param pool      Pool to which the node belongs
+     * @param node      Node on which the configuration is applied
+     * @param builder   KafkaBrokerConfigurationBuilder instance to use to build the node configuration
      */
-    private void withZooKeeperOrKRaftConfiguration(NodeRef node, KafkaBrokerConfigurationBuilder builder) {
+    private void withZooKeeperOrKRaftConfiguration(KafkaPool pool, NodeRef node, KafkaBrokerConfigurationBuilder builder) {
         if ((node.broker() && this.kafkaMetadataConfigState.isZooKeeperToMigration()) ||
                 (node.controller() && this.kafkaMetadataConfigState.isPreMigrationToKRaft() && this.kafkaMetadataConfigState.isZooKeeperToPostMigration())) {
             builder.withZookeeper(cluster);
@@ -1755,6 +1755,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         if ((node.broker() && this.kafkaMetadataConfigState.isMigrationToKRaft()) ||
                 (node.controller() && this.kafkaMetadataConfigState.isPreMigrationToKRaft())) {
             builder.withKRaft(cluster, namespace, nodes());
+            builder.withKRaftMetadataLogDir(VolumeUtils.kraftMetadataPath(pool.storage));
             LOGGER.debugCr(reconciliation, "Adding KRaft configuration on node [{}]", node.podName());
         }
     }
