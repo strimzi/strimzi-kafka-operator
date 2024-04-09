@@ -14,7 +14,7 @@ import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.performance.gather.TopicOperatorMetricsCollector;
 import io.strimzi.systemtest.performance.gather.TopicOperatorMetricsGatherer;
-import io.strimzi.systemtest.performance.report.PerformanceReporter;
+import io.strimzi.systemtest.performance.report.TopicOperatorPerformanceReporter;
 import io.strimzi.systemtest.performance.report.parser.TopicOperatorMetricsParser;
 import io.strimzi.systemtest.resources.ComponentType;
 import io.strimzi.systemtest.resources.NodePoolsConverter;
@@ -58,11 +58,11 @@ public class TopicOperatorPerformanceTest extends AbstractST {
     private static final TemporalAccessor ACTUAL_TIME = LocalDateTime.now();
 
     private static final String REPORT_DIRECTORY = "topic-operator";
-    private static final String PARSER_TYPE = REPORT_DIRECTORY;
 
     private TestStorage testStorage;
     private TopicOperatorMetricsCollector topicOperatorCollector;
     private TopicOperatorMetricsGatherer topicOperatorMetricsGatherer;
+    private TopicOperatorPerformanceReporter topicOperatorPerformanceReporter = new TopicOperatorPerformanceReporter();
 
     /**
      * Provides configurations for Alice's bulk batch use case, testing different batch sizes and linger times.
@@ -124,7 +124,7 @@ public class TopicOperatorPerformanceTest extends AbstractST {
     @SuppressWarnings({"checkstyle:MethodLength"})
     public void testAliceBulkBatchUseCase(String maxBatchSize, String maxBatchLingerMs, boolean withClientsEnabled) throws IOException {
         final int numberOfTopics = KubeClusterResource.getInstance().isMultiNode() ? 500 : 250; // Number of topics to test
-        final int numberOfClientInstances = withClientsEnabled ? 30 : 0; // producers and consumers if enabled
+        final int numberOfClientInstances = withClientsEnabled ? KubeClusterResource.getInstance().isMultiNode() ? 30 : 10 : 0; // producers and consumers if enabled
         final String topicNamePrefix = "perf-topic-";
         final String clientExchangeMessagesTopicPrefix = "client-topic-";
         final int brokerReplicas = KubeClusterResource.getInstance().isMultiNode() ? 5 : 3;
@@ -279,7 +279,7 @@ public class TopicOperatorPerformanceTest extends AbstractST {
                 performanceAttributes.put(PerformanceConstants.METRICS_HISTORY, this.topicOperatorMetricsGatherer.getMetricsHistory()); // Map of metrics history
 
                 // Step 3: Now, it's safe to log performance data as the collection thread has been stopped
-                PerformanceReporter.logPerformanceData(this.testStorage, performanceAttributes, TopicOperatorPerformanceTest.REPORT_DIRECTORY + "/" + PerformanceConstants.TOPIC_OPERATOR_ALICE_BULK_USE_CASE, ACTUAL_TIME, Environment.PERFORMANCE_DIR);
+                this.topicOperatorPerformanceReporter.logPerformanceData(this.testStorage, performanceAttributes, TopicOperatorPerformanceTest.REPORT_DIRECTORY + "/" + PerformanceConstants.TOPIC_OPERATOR_ALICE_BULK_USE_CASE, ACTUAL_TIME, Environment.PERFORMANCE_DIR);
             }
         }
     }
@@ -313,8 +313,8 @@ public class TopicOperatorPerformanceTest extends AbstractST {
     @MethodSource("provideConfigurationsForBobDataStreamingUseCase")
     @SuppressWarnings({"checkstyle:MethodLength"})
     public void testBobDataStreamingUseCase(String maxBatchSize, String maxBatchLingerMs, boolean withClientsEnabled) throws IOException, InterruptedException {
-        final int numberOfTopics = KubeClusterResource.getInstance().isMultiNode() ? 2500 : 750; // Number of topics to test
-        final int numberOfClientInstances = withClientsEnabled ? 30 : 0; // producers and consumers if enabled
+        final int numberOfTopics = KubeClusterResource.getInstance().isMultiNode() ? 2000 : 750; // Number of topics to test
+        final int numberOfClientInstances = withClientsEnabled ? KubeClusterResource.getInstance().isMultiNode() ? 30 : 10 : 0; // producers and consumers if enabled
         final String topicNamePrefix = "perf-topic-";
         final String clientExchangeMessagesTopicPrefix = "client-topic-";
         final int brokerReplicas = KubeClusterResource.getInstance().isMultiNode() ? 9 : 5;
@@ -532,7 +532,7 @@ public class TopicOperatorPerformanceTest extends AbstractST {
                 performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_UPDATE_TIMES, bobUpdateTimerMsArr); // Array of update times
                 performanceAttributes.put(PerformanceConstants.METRICS_HISTORY, topicOperatorMetricsGatherer.getMetricsHistory()); // Map of metrics history
                 // Step 3: Now, it's safe to log performance data as the collection thread has been stopped
-                PerformanceReporter.logPerformanceData(this.testStorage, performanceAttributes, TopicOperatorPerformanceTest.REPORT_DIRECTORY + "/" + PerformanceConstants.TOPIC_OPERATOR_BOBS_STREAMING_USE_CASE, ACTUAL_TIME, Environment.PERFORMANCE_DIR);
+                this.topicOperatorPerformanceReporter.logPerformanceData(this.testStorage, performanceAttributes, TopicOperatorPerformanceTest.REPORT_DIRECTORY + "/" + PerformanceConstants.TOPIC_OPERATOR_BOBS_STREAMING_USE_CASE, ACTUAL_TIME, Environment.PERFORMANCE_DIR);
             }
         }
     }
@@ -581,7 +581,7 @@ public class TopicOperatorPerformanceTest extends AbstractST {
     @AfterAll
      void tearDown() {
         // show tables with metrics
-        TopicOperatorMetricsParser.main(new String[]{PARSER_TYPE});
+        TopicOperatorMetricsParser.main(new String[]{PerformanceConstants.TOPIC_OPERATOR_PARSER});
     }
 }
 

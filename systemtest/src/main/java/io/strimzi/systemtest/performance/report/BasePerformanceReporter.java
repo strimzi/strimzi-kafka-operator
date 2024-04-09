@@ -27,24 +27,28 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Reports performance metrics from tests related to Strimzi Kafka operators.
+ * Provides a foundational structure for logging performance data across various Strimzi components.
  * <p>
- * This class provides functionality to log performance data gathered during performance tests,
- * including operation durations, Kafka configuration, and custom performance metrics defined
- * in {@link PerformanceConstants}. The performance data is logged to files organized by test
- * use case and configuration parameters such as max batch size and max linger time.
- * <p>
- * Key Features:
- * <ul>
- *     <li>Logs detailed performance metrics and Kafka configurations in a structured format.</li>
- *     <li>Supports logging of complex data types, including long arrays and maps, with special
- *     handling for serialization.</li>
- *     <li>Organizes logs by test use case and configuration parameters, facilitating easier
- *     analysis of performance under different conditions.</li>
- * </ul>
+ * This abstract class outlines the procedure for collecting, organizing, and writing performance metrics
+ * to files. It is designed to be extended by specific component reporters (e.g., TopicOperatorPerformanceReporter)
+ * which can provide detailed implementations for component-specific configurations and logging needs.
  */
-public class PerformanceReporter {
-    private static final Logger LOGGER = LogManager.getLogger(PerformanceReporter.class);
+public abstract class BasePerformanceReporter {
+
+    private static final Logger LOGGER = LogManager.getLogger(BasePerformanceReporter.class);
+
+    /**
+     * Resolves the directory path for logging use case-specific performance data.
+     * <p>
+     * Implementations of this method should determine the structure and naming convention of the
+     * directory based on the component's specific requirements and the provided attributes.
+     *
+     * @param performanceLogDir             The base directory for performance logs.
+     * @param useCaseName                   The name of the testing use case.
+     * @param performanceAttributes         A map of performance attributes relevant to the specific use case.
+     * @return                              The resolved directory path for the use case-specific performance data.
+     */
+    protected abstract Path resolveComponentUseCasePathDir(Path performanceLogDir, String useCaseName, Map<String, Object> performanceAttributes);
 
     /**
      * Logs performance metrics for a given test case.
@@ -61,15 +65,15 @@ public class PerformanceReporter {
      * @param baseDir                   The base directory where the log file will be saved.
      * @throws IOException              If an I/O error occurs during writing to the log file.
      */
-    public static void logPerformanceData(
-            TestStorage testStorage,
-            Map<String, Object> performanceAttributes,
-            String useCase,
-            TemporalAccessor date,
-            String baseDir
+    public void logPerformanceData(
+        TestStorage testStorage,
+        Map<String, Object> performanceAttributes,
+        String useCase,
+        TemporalAccessor date,
+        String baseDir
     ) throws IOException {
         // Dynamically build the performance data string from the map
-        StringBuilder testPerformanceDataBuilder = new StringBuilder();
+        final StringBuilder testPerformanceDataBuilder = new StringBuilder();
         performanceAttributes.forEach((key, value) -> {
             // Special handling for complex objects like long arrays or maps
             if (value instanceof long[] times) {
@@ -90,60 +94,17 @@ public class PerformanceReporter {
 
         final String testPerformanceData = testPerformanceDataBuilder.toString();
 
-        // Retrieve necessary data for logging file path
-        final String maxBatchSize = performanceAttributes.getOrDefault(PerformanceConstants.MAX_BATCH_SIZE, "").toString();
-        final String maxBatchLingerMs = performanceAttributes.getOrDefault(PerformanceConstants.MAX_BATCH_LINGER_MS, "").toString();
-
-        final boolean clientsEnabled = !performanceAttributes.get(PerformanceConstants.NUMBER_OF_CLIENT_INSTANCES).equals(0);
-
         // Prepare log file path
-        Path performanceLogFile = prepareLogFile(date, baseDir, useCase, maxBatchSize, maxBatchLingerMs, clientsEnabled);
+        Path performanceLogFilePath = prepareLogFile(date, baseDir, useCase, performanceAttributes);
 
         // Write performance data to file
-        writePerformanceMetricsToFile(testPerformanceData, performanceLogFile);
+        writePerformanceMetricsToFile(testPerformanceData, performanceLogFilePath);
 
         // Assuming serializeMetricsHistory handles serialization of the metrics history within the map
         Map<Long, Map<String, List<Double>>> metricsHistory = (Map<Long, Map<String, List<Double>>>) performanceAttributes.get(PerformanceConstants.METRICS_HISTORY);
         if (metricsHistory != null) {
-            serializeMetricsHistory(metricsHistory, date, useCase, baseDir, maxBatchSize, maxBatchLingerMs, clientsEnabled);
+            serializeMetricsHistory(metricsHistory, performanceLogFilePath);
         }
-    }
-
-    /**
-     * Prepares the log file path for the performance metrics based on the test execution details.
-     * <p>
-     * This method generates a directory structure based on the date, use case, and configuration parameters
-     * such as max batch size and linger time. It ensures that the directories exist before returning the path
-     * to the log file within this structure.
-     *
-     * @param date              The date and time of the test execution.
-     * @param baseDir           The base directory for the logs.
-     * @param useCaseName       The name of the use case being logged.
-     * @param maxBatchSize      The max batch size configuration for the test.
-     * @param maxBatchLingerMs  The max linger time configuration for the test.
-     * @param clientsEnabled    A flag indicating whether client instances were used in the test.
-     * @return                  The path to the log file where performance metrics will be saved.
-     * @throws IOException      If an I/O error occurs during the directory creation process.
-     */
-    public static Path prepareLogFile(TemporalAccessor date, String baseDir, String useCaseName, String maxBatchSize, String maxBatchLingerMs, boolean clientsEnabled) throws IOException {
-        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss");
-        dateTimeFormatter = dateTimeFormatter.withZone(ZoneId.systemDefault());
-        String currentDate = dateTimeFormatter.format(date);
-
-        Path logDirPath = Path.of(baseDir).resolve(currentDate);
-
-        if (Files.notExists(logDirPath)) {
-            Files.createDirectories(logDirPath);
-        }
-
-        // Use the useCaseName to create a directory specific to the current test case (Alice or Bob)
-        Path useCasePathDir = logDirPath.resolve(useCaseName + "/max-batch-size-" + maxBatchSize + "-max-linger-time-" + maxBatchLingerMs + "with-clients-" + clientsEnabled);
-
-        if (Files.notExists(useCasePathDir)) {
-            Files.createDirectories(useCasePathDir);
-        }
-
-        return useCasePathDir.resolve(PerformanceConstants.PERFORMANCE_METRICS_FILE_NAME + ".txt");
     }
 
     /**
@@ -156,7 +117,7 @@ public class PerformanceReporter {
      * @param filePath          The path to the file where the data will be saved.
      * @throws IOException      If an I/O error occurs during the writing process.
      */
-    private static void writePerformanceMetricsToFile(String performanceData, Path filePath) throws IOException {
+    private void writePerformanceMetricsToFile(String performanceData, Path filePath) throws IOException {
         Files.write(filePath, performanceData.getBytes(StandardCharsets.UTF_8));
         LOGGER.info("Test performance data written to file: {}", filePath);
     }
@@ -172,7 +133,7 @@ public class PerformanceReporter {
      * @param clusterName       The name of the Kafka cluster.
      * @return                  A string containing the serialized YAML representation of the Kafka configuration, or an error message if the configuration cannot be serialized.
      */
-    public static String serializeKafkaConfiguration(String namespace, String clusterName) {
+    private String serializeKafkaConfiguration(String namespace, String clusterName) {
         Kafka kafkaResource = KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get();
 
         // Check if the Kafka resource has deployed
@@ -191,6 +152,65 @@ public class PerformanceReporter {
     }
 
     /**
+     * Prepares the log file path for the performance metrics based on the test execution details.
+     * <p>
+     * This method generates a directory structure based on the date, use case, and configuration parameters
+     * such as max batch size and linger time. It ensures that the directories exist before returning the path
+     * to the log file within this structure.
+     *
+     * @param date                  The date and time of the test execution.
+     * @param baseDir               The base directory for the logs.
+     * @param useCaseName           The name of the use case being logged.
+     * @param performanceAttributes The map of all performance attributes in specific test scenario
+     * @return                      The path to the log file where performance metrics will be saved.
+     * @throws IOException          If an I/O error occurs during the directory creation process.
+     */
+    private Path prepareLogFile(TemporalAccessor date, String baseDir, String useCaseName, Map<String, Object> performanceAttributes) throws IOException {
+        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss");
+        dateTimeFormatter = dateTimeFormatter.withZone(ZoneId.systemDefault());
+        final String currentDate = dateTimeFormatter.format(date);
+
+        final Path logDirPath = Path.of(baseDir).resolve(currentDate);
+
+        if (Files.notExists(logDirPath)) {
+            Files.createDirectories(logDirPath);
+        }
+
+        final Path componentUseCasePathDir = this.resolveComponentUseCasePathDir(logDirPath, useCaseName, performanceAttributes);
+
+        if (Files.notExists(componentUseCasePathDir)) {
+            Files.createDirectories(componentUseCasePathDir);
+        }
+
+        return componentUseCasePathDir.resolve(PerformanceConstants.PERFORMANCE_METRICS_FILE_NAME + ".txt");
+    }
+
+    /**
+     * Prepares a directory for storing use case-specific logs and metrics.
+     * <p>
+     * This method leverages the logic in `prepareLogFile` to create a directory structure tailored
+     * for the given use case and its configurations. It returns the path to the directory intended
+     * for storing related logs and metrics files.
+     *
+     * @return                  The path to the directory where use case-specific files should be stored.
+     * @throws IOException      If an I/O error occurs during the directory preparation process.
+     */
+    private Path prepareUseCaseDirectory(Path performanceLogPath) throws IOException {
+        final Path useCasePathDir = performanceLogPath.getParent();
+
+        // Check if the parent directory path is not null
+        if (useCasePathDir == null) {
+            throw new IOException("Unable to determine the parent directory for the log file path: " + performanceLogPath);
+        }
+
+        if (Files.notExists(useCasePathDir)) {
+            Files.createDirectories(useCasePathDir);
+        }
+
+        return useCasePathDir;
+    }
+
+    /**
      * Serializes the history of metrics for the test execution and writes it to files.
      * <p>
      * This method processes a map containing metrics history, organizing the data by timestamp and metric name.
@@ -198,18 +218,11 @@ public class PerformanceReporter {
      * ensures that data for each metric is saved in a coherent and readable format.
      *
      * @param metricsHistory        A map containing the history of metrics collected during the test.
-     * @param date                  The date and time of the test execution.
-     * @param useCase               The name of the use case being analyzed.
-     * @param baseDir               The base directory for storing metrics history files.
-     * @param maxBatchSize          The max batch size configuration for the test.
-     * @param maxBatchLingerMs      The max linger time configuration for the test.
-     * @param clientsEnabled        A flag indicating whether client instances were used in the test.
+     * @param performanceLogPath    Path of performance logs, typically in /target/performance
      * @throws IOException          If an I/O error occurs during the file writing process.
      */
-    public static void serializeMetricsHistory(Map<Long, Map<String, List<Double>>> metricsHistory,
-                                               TemporalAccessor date, String useCase, String baseDir,
-                                               String maxBatchSize, String maxBatchLingerMs, boolean clientsEnabled) throws IOException {
-        final Path alicePathDir = prepareUseCaseDirectory(date, baseDir, useCase, maxBatchSize, maxBatchLingerMs, clientsEnabled);
+    private void serializeMetricsHistory(Map<Long, Map<String, List<Double>>> metricsHistory, Path performanceLogPath) throws IOException {
+        final Path useCasePathDir = prepareUseCaseDirectory(performanceLogPath);
         final String newLine = System.lineSeparator();
 
         metricsHistory.forEach((time, metrics) -> {
@@ -223,51 +236,17 @@ public class PerformanceReporter {
 
                 // Using just the metric name for the file name
                 String fileName = metricName + ".txt";
-                Path metricFilePath = alicePathDir.resolve(fileName);
+                Path metricFilePath = useCasePathDir.resolve(fileName);
 
                 // Appending to the file if it exists, or creating a new one if it doesn't
                 try (BufferedWriter writer = Files.newBufferedWriter(metricFilePath,
-                        StandardCharsets.UTF_8,
-                        Files.exists(metricFilePath) ? StandardOpenOption.APPEND : StandardOpenOption.CREATE)) {
+                    StandardCharsets.UTF_8,
+                    Files.exists(metricFilePath) ? StandardOpenOption.APPEND : StandardOpenOption.CREATE)) {
                     writer.write(content);
                 } catch (IOException e) {
                     LOGGER.error("Failed to write metrics to file", e);
                 }
             });
         });
-    }
-
-    /**
-     * Prepares a directory for storing use case-specific logs and metrics.
-     * <p>
-     * This method leverages the logic in `prepareLogFile` to create a directory structure tailored
-     * for the given use case and its configurations. It returns the path to the directory intended
-     * for storing related logs and metrics files.
-     *
-     * @param date              The date and time of the test execution.
-     * @param baseDir           The base directory for logs and metrics.
-     * @param useCase           The name of the use case.
-     * @param maxBatchSize      The max batch size used in the test.
-     * @param maxBatchLingerMs  The max linger time used in the test.
-     * @param clientsEnabled    Indicates if client instances were enabled during the test.
-     * @return                  The path to the directory where use case-specific files should be stored.
-     * @throws IOException      If an I/O error occurs during the directory preparation process.
-     */
-    private static Path prepareUseCaseDirectory(TemporalAccessor date, String baseDir, String useCase,
-                                              String maxBatchSize, String maxBatchLingerMs, boolean clientsEnabled) throws IOException {
-        // Reusing the existing 'prepareLogFile' method for directory preparation logic
-        final Path logFilePath = prepareLogFile(date, baseDir, useCase, maxBatchSize, maxBatchLingerMs, clientsEnabled);
-        final Path useCasePathDir = logFilePath.getParent();
-
-        // Check if the parent directory path is not null
-        if (useCasePathDir == null) {
-            throw new IOException("Unable to determine the parent directory for the log file path: " + logFilePath);
-        }
-
-        if (Files.notExists(useCasePathDir)) {
-            Files.createDirectories(useCasePathDir);
-        }
-
-        return useCasePathDir;
     }
 }

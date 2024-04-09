@@ -37,7 +37,7 @@ public class TopicOperatorMetricsGatherer extends BaseMetricsGatherer {
 
     @Override
     public void collectMetrics() {
-        LOGGER.info("Collecting metrics with selector: {}", this.selector);
+        LOGGER.debug("Collecting metrics with selector: {}", this.selector);
 
         this.topicOperatorMetricsCollector.collectMetricsFromPods();
         // record specific time when metrics were collected
