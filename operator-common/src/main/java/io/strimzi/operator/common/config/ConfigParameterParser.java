@@ -134,7 +134,7 @@ public interface ConfigParameterParser<T> {
      * A Java Boolean
      */
     ConfigParameterParser<Boolean> BOOLEAN = configValue -> {
-        if (configValue.equals("true") || configValue.equals("false")) {
+        if (configValue.equalsIgnoreCase("true") || configValue.equalsIgnoreCase("false")) {
             return Boolean.parseBoolean(configValue);
         } else {
             throw new InvalidConfigurationException("Failed to parse. Value " + configValue + " is not valid");
