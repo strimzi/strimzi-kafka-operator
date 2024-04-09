@@ -152,7 +152,7 @@ public class KRaftUtils {
 
         MetadataVersion kafkaVersion = MetadataVersion.fromVersionString(kafkaVersionFromCr);
         // this should check that spec.kafka.version is >= 3.7.0
-        boolean isMigrationSupported = kafkaVersion.isMigrationSupported();
+        boolean isMigrationSupported = kafkaVersion.isAtLeast(MetadataVersion.IBP_3_7_IV0);
 
         MetadataVersion metadataVersion = MetadataVersion.fromVersionString(metadataVersionFromCr);
         MetadataVersion interBrokerProtocolVersion = MetadataVersion.fromVersionString(interBrokerProtocolVersionFromCr);
