@@ -19,6 +19,7 @@ import io.strimzi.operator.common.Util;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
+import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
@@ -33,7 +34,6 @@ import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
-import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StrimziPodSetUtils;
@@ -62,7 +62,6 @@ import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @Tag(REGRESSION)
 @Tag(INTERNAL_CLIENTS_USED)
@@ -335,11 +334,9 @@ class AlternativeReconcileTriggersST extends AbstractST {
      *  - persistent-volume-claims
      */
     @ParallelNamespaceTest
+    // This test needs to be adapted to support KRaft: https://github.com/strimzi/strimzi-kafka-operator/issues/9938
+    @KRaftNotSupported("This test has not yet been adapted to support KRaft after JBOD support was added in KRat mode.")
     void testAddingAndRemovingJbodVolumes() {
-        // JBOD storage in KRaft is supported only from Kafka 3.7.0 and higher.
-        // So we want to run this test when KRaft is disabled or when it is with KRaft and Kafka 3.7.0+
-        assumeTrue(!Environment.isKRaftForCOEnabled() || TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "3.7.0") >= 0);
-
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
         // 500 messages will take 500 seconds in that case

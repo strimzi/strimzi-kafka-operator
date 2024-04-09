@@ -37,6 +37,7 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
+import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.resources.NodePoolsConverter;
@@ -51,7 +52,6 @@ import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.StUtils;
-import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.systemtest.utils.VerificationUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.ConfigMapUtils;
@@ -86,7 +86,6 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.emptyOrNullString;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @Tag(REGRESSION)
 @SuppressWarnings("checkstyle:ClassFanOutComplexity")
@@ -401,11 +400,9 @@ class KafkaST extends AbstractST {
      *  - annotations
      */
     @ParallelNamespaceTest
+    // This test needs to be adapted to support KRaft: https://github.com/strimzi/strimzi-kafka-operator/issues/9938
+    @KRaftNotSupported("This test has not yet been adapted to support KRaft after JBOD support was added in KRat mode.")
     void testKafkaJBODDeleteClaimsTrueFalse() {
-        // JBOD storage in KRaft is supported only from Kafka 3.7.0 and higher.
-        // So we want to run this test when KRaft is disabled or when it is with KRaft and Kafka 3.7.0+
-        assumeTrue(!Environment.isKRaftForCOEnabled() || TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "3.7.0") >= 0);
-
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final int kafkaReplicas = 2;
         final String diskSizeGi = "10";
@@ -548,13 +545,11 @@ class KafkaST extends AbstractST {
      *  - persistent-storage
      */
     @ParallelNamespaceTest
+    // This test needs to be adapted to support KRaft: https://github.com/strimzi/strimzi-kafka-operator/issues/9938
+    @KRaftNotSupported("This test has not yet been adapted to support KRaft after JBOD support was added in KRat mode.")
     @SuppressWarnings({"checkstyle:JavaNCSS", "checkstyle:NPathComplexity", "checkstyle:MethodLength"})
     @Tag(INTERNAL_CLIENTS_USED)
     void testLabelsExistenceAndManipulation() {
-        // JBOD storage in KRaft is supported only from Kafka 3.7.0 and higher.
-        // So we want to run this test when KRaft is disabled or when it is with KRaft and Kafka 3.7.0+
-        assumeTrue(!Environment.isKRaftForCOEnabled() || TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "3.7.0") >= 0);
-
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
         // label key and values to be used as part of kafka CR
