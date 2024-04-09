@@ -171,14 +171,16 @@ public class DeploymentUtils {
     /**
      * Wait until the given Deployment is ready.
      * @param namespaceName name of the namespace
-     * @param deploymentName The name of the Deployment.
+     * @param deploymentName The name of the Deployment which may also serve as filter for present Pods.
      * @param expectPods The expected number of Pods.
      */
     public static boolean waitForDeploymentAndPodsReady(String namespaceName, String deploymentName, int expectPods) {
         waitForDeploymentReady(namespaceName, deploymentName);
 
         LOGGER.info("Waiting for {} Pod(s) of Deployment: {}/{} to be ready", expectPods, namespaceName, deploymentName);
-        PodUtils.waitForPodsReady(namespaceName, kubeClient(namespaceName).getDeploymentSelectors(namespaceName, deploymentName), expectPods, true,
+        final LabelSelector deploymentPodSelector = kubeClient(namespaceName).getDeploymentSelectors(namespaceName, deploymentName);
+
+        PodUtils.waitForPodsReady(namespaceName, deploymentPodSelector, expectPods, true, deploymentName,
             () -> DeploymentUtils.logCurrentDeploymentStatus(kubeClient(namespaceName).getDeployment(namespaceName, deploymentName), namespaceName));
         LOGGER.info("Deployment: {}/{} is ready", namespaceName, deploymentName);
         return true;
