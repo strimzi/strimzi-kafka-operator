@@ -33,8 +33,11 @@ import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.specific.AdminClientTemplates;
 import io.strimzi.systemtest.templates.specific.ScraperTemplates;
+import io.strimzi.systemtest.utils.AdminClientUtils;
 import io.strimzi.systemtest.utils.ClientUtils;
+import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.specific.ScraperUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.exceptions.KubeClusterException;
@@ -45,6 +48,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 
 import java.util.List;
+import java.util.Map;
 
 import static io.strimzi.systemtest.TestConstants.ARM64_UNSUPPORTED;
 import static io.strimzi.systemtest.TestConstants.INTERNAL_CLIENTS_USED;
@@ -215,7 +219,6 @@ public class TopicST extends AbstractST {
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(INTERNAL_CLIENTS_USED)
-    @UTONotSupported
     void testDeleteTopicEnableFalse() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -240,23 +243,40 @@ public class TopicST extends AbstractST {
             .endSpec()
             .build());
 
+        // create Kafka Topic CR and wait for its presence in Kafka cluster.
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage).build());
+
+        // setup admin client
+        resourceManager.createResourceWithWait(
+            AdminClientTemplates.defaultAdminClient(testStorage.getNamespaceName(),
+                testStorage.getAdminName(),
+                KafkaResources.plainBootstrapAddress(testStorage.getClusterName())
+            ).build()
+        );
+        final String adminClientPodName = kubeClient().listPods(testStorage.getNamespaceName(), TestConstants.ADMIN_CLIENT_LABEL_SELECTOR).stream().filter(pod -> pod.getMetadata().getName().startsWith(testStorage.getAdminName())).toList().get(0).getMetadata().getName();
+        AdminClient localKafkaAdminClient = new AdminClient(testStorage.getNamespaceName(), adminClientPodName);
+        localKafkaAdminClient.configureFromEnv();
+
+        AdminClientUtils.waitForTopicPresence(localKafkaAdminClient, testStorage.getTopicName());
+
         final KafkaClients clients = ClientUtils.getInstantPlainClients(testStorage);
         resourceManager.createResourceWithWait(clients.producerStrimzi());
         ClientUtils.waitForInstantProducerClientSuccess(testStorage);
 
-        String topicUid = KafkaTopicUtils.topicSnapshot(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName());
-        LOGGER.info("Deleting KafkaTopic: {}/{}", Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName());
+        LOGGER.info("Try to delete KafkaTopic: {}/{}", Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName());
         KafkaTopicResource.kafkaTopicClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(testStorage.getTopicName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
-        LOGGER.info("KafkaTopic: {}/{} deleted", Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName());
-
-        KafkaTopicUtils.waitTopicHasRolled(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName(), topicUid);
-
-        LOGGER.info("Waiting for KafkaTopic: {}/{} recreation", Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName());
-        KafkaTopicUtils.waitForKafkaTopicCreation(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName());
-        LOGGER.info("KafkaTopic: {}/{} recreated", Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName());
+        KafkaTopicUtils.waitForTopicStatusMessage(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName(), "TopicDeletionDisabledException");
 
         resourceManager.createResourceWithWait(clients.consumerStrimzi());
         ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
+
+        LOGGER.info("Enable automatic topic deletion");
+        Map<String, String> kafkaPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> k.getSpec().getKafka().setConfig(Map.of("delete.topic.enable", true)), testStorage.getNamespaceName());
+        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, kafkaPods);
+
+        LOGGER.info("Deleting KafkaTopic: {}/{}", Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName());
+        KafkaTopicResource.kafkaTopicClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(testStorage.getTopicName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
     }
 
     @ParallelTest
