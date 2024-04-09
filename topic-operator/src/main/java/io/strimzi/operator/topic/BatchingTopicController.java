@@ -1121,15 +1121,7 @@ public class BatchingTopicController {
                     AlterConfigOp.OpType.DELETE));
         }
 
-        // alterableTopicConfig is used with external clusters that only allow modifying a
-        // subset of config properties. In that case we remove the configOps that would not be allowed.
-        var customAlterableConfigs = config.alterableTopicConfig();
-        if (customAlterableConfigs != null) {
-            var alterablePropertySet = Arrays.stream(customAlterableConfigs.replaceAll("\\s", "").split(","))
-                 .collect(Collectors.toSet());
-
-            alterConfigOps.removeIf(op -> !alterablePropertySet.contains(op.configEntry().name()));
-        }
+        skipNonAlterableConfigs(alterConfigOps);
 
         if (alterConfigOps.isEmpty()) {
             LOGGER.debugCr(reconciliation, "No config change");
@@ -1137,6 +1129,32 @@ public class BatchingTopicController {
             LOGGER.debugCr(reconciliation, "Config changes {}", alterConfigOps);
         }
         return alterConfigOps;
+    }
+
+    /**
+     * <p>The Topic Operator {@code alterableTopicConfig} can be used to specify a comma separated list of Kafka
+     * topic configurations that can be altered by users through {@code .spec.config}. Keep in mind that if changes
+     * are applied directly in Kafka, the operator will try to revert them producing a warning.</p>
+     *
+     * <p>This is useful in standalone mode when you have a Kafka service that restricts alter operations
+     * to a subset of all the Kafka topic configurations.</p>
+     *
+     * <p>The default value is "all", which means no restrictions in changing {@code .spec.config}.
+     * The opposite is "none", which can be set to explicitly disable any change.</p>
+     *
+     * @param alterConfigOps Requested alter config operations.
+     */
+    private void skipNonAlterableConfigs(Set<AlterConfigOp> alterConfigOps) {
+        var alterableConfigs = config.alterableTopicConfig();
+        if (alterableConfigs != null && alterConfigOps != null && !alterableConfigs.isEmpty()) {
+            if (alterableConfigs.equalsIgnoreCase("none")) {
+                alterConfigOps.clear();
+            } else if (!alterableConfigs.equalsIgnoreCase("all")) {
+                var alterablePropertySet = Arrays.stream(alterableConfigs.replaceAll("\\s", "").split(","))
+                      .collect(Collectors.toSet());
+                alterConfigOps.removeIf(op -> !alterablePropertySet.contains(op.configEntry().name()));
+            }
+        }
     }
 
     private static boolean hasConfig(KafkaTopic kt) {
@@ -1152,10 +1170,7 @@ public class BatchingTopicController {
               .withLastTransitionTime(StatusUtils.iso8601Now())
               .build());
 
-        var customAlterableConfigs = config.alterableTopicConfig();
-        if (customAlterableConfigs != null) {
-            addAlterableConfigsConditions(reconcilableTopic, conditions, customAlterableConfigs);
-        }
+        addNonAlterableConfigsWarning(reconcilableTopic, conditions);
 
         reconcilableTopic.kt().setStatus(
             new KafkaTopicStatusBuilder(reconcilableTopic.kt().getStatus())
@@ -1165,32 +1180,37 @@ public class BatchingTopicController {
         metrics.successfulReconciliationsCounter(namespace).increment();
     }
 
-    private void addAlterableConfigsConditions(ReconcilableTopic reconcilableTopic, List<Condition> conditions, String customAlterableConfigs) {
-        if (hasTopicSpec.test(reconcilableTopic)) {
-            var alterablePropertySet = Arrays.stream(customAlterableConfigs.replaceAll("\\s", "").split(","))
-                  .collect(Collectors.toSet());
+    private void addNonAlterableConfigsWarning(ReconcilableTopic reconcilableTopic,
+                                               List<Condition> conditions) {
+        var readOnlyConfigs = new ArrayList<>();
+        var alterableConfigs = config.alterableTopicConfig();
 
-            var propertiesNotSet = new ArrayList<>();
-            if (hasConfig(reconcilableTopic.kt())) {
+        if (reconcilableTopic != null && reconcilableTopic.kt() != null
+              && hasConfig(reconcilableTopic.kt()) && alterableConfigs != null) {
+            if (alterableConfigs.equalsIgnoreCase("none")) {
+                reconcilableTopic.kt().getSpec().getConfig().forEach((key, value) -> readOnlyConfigs.add(key));
+            } else if (!alterableConfigs.equalsIgnoreCase("all") && !alterableConfigs.isBlank()) {
+                var alterablePropertySet = Arrays.stream(alterableConfigs.replaceAll("\\s", "").split(","))
+                      .collect(Collectors.toSet());
                 reconcilableTopic.kt().getSpec().getConfig().forEach((key, value) -> {
                     if (!alterablePropertySet.contains(key)) {
-                        propertiesNotSet.add(key);
+                        readOnlyConfigs.add(key);
                     }
                 });
             }
+        }
 
-            if (!propertiesNotSet.isEmpty()) {
-                var properties = String.join(", ", propertiesNotSet.toArray(new String[0]));
-                var message = "These .spec.config properties are not configurable: [" + properties + "]";
-                LOGGER.warnOp(message);
-                conditions.add(new ConditionBuilder()
-                      .withMessage(message)
-                      .withReason("NotConfigurable")
-                      .withStatus("True")
-                      .withType("Warning")
-                      .withLastTransitionTime(StatusUtils.iso8601Now())
-                      .build());
-            }
+        if (!readOnlyConfigs.isEmpty()) {
+            var properties = String.join(", ", readOnlyConfigs.toArray(new String[0]));
+            var message = "These .spec.config properties are not configurable: [" + properties + "]";
+            LOGGER.warnCr(reconcilableTopic.reconciliation(), message);
+            conditions.add(new ConditionBuilder()
+                  .withMessage(message)
+                  .withReason("NotConfigurable")
+                  .withStatus("True")
+                  .withType("Warning")
+                  .withLastTransitionTime(StatusUtils.iso8601Now())
+                  .build());
         }
     }
 
