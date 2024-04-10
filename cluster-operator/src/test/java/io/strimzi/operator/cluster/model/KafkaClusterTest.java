@@ -3990,13 +3990,13 @@ public class KafkaClusterTest {
     public void testInvalidInterBrokerProtocolAndLogMessageFormatOnKRaftMigration() {
         // invalid values ... metadata missing (it gets the Kafka version), inter broker protocol and log message format lower than Kafka version
         Map<String, Object> config = new HashMap<>();
-        config.put("inter.broker.protocol.version", "3.5");
-        config.put("log.message.format.version", "3.5");
+        config.put("inter.broker.protocol.version", "3.6");
+        config.put("log.message.format.version", "3.6");
 
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .editKafka()
-                        .withVersion("3.6.1")
+                        .withVersion("3.7.0")
                         .withConfig(config)
                     .endKafka()
                 .endSpec()
@@ -4009,14 +4009,14 @@ public class KafkaClusterTest {
             KafkaVersionChange kafkaVersionChange = new KafkaVersionChange(
                     kafkaVersion,
                     kafkaVersion,
-                    VERSIONS.version("3.5.0").protocolVersion(),
-                    VERSIONS.version("3.5.0").messageVersion(),
+                    VERSIONS.version("3.6.0").protocolVersion(),
+                    VERSIONS.version("3.6.0").messageVersion(),
                     // as per ZooKeeperVersionChangeCreator, when migration, we set missing metadata version to the Kafka version
                     kafkaVersion.metadataVersion());
             KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, kafkaVersionChange, KafkaMetadataConfigurationState.PRE_MIGRATION, null, SHARED_ENV_PROVIDER);
         });
 
-        assertThat(ex.getMessage(), containsString("Migration cannot be performed with Kafka version 3.6-IV2, metadata version 3.6-IV2, inter.broker.protocol.version 3.5-IV2, log.message.format.version 3.5-IV2."));
+        assertThat(ex.getMessage(), containsString("Migration cannot be performed with Kafka version 3.7-IV4, metadata version 3.7-IV4, inter.broker.protocol.version 3.6-IV2, log.message.format.version 3.6-IV2."));
     }
 
     @ParallelTest
@@ -4025,8 +4025,8 @@ public class KafkaClusterTest {
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .editKafka()
-                        .withVersion("3.6.1")
-                        .withMetadataVersion("3.5-IV2")
+                        .withVersion("3.7.0")
+                        .withMetadataVersion("3.6-IV2")
                         .withConfig(Map.of())
                     .endKafka()
                 .endSpec()
@@ -4046,20 +4046,20 @@ public class KafkaClusterTest {
             KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, kafkaVersionChange, KafkaMetadataConfigurationState.PRE_MIGRATION, null, SHARED_ENV_PROVIDER);
         });
 
-        assertThat(ex.getMessage(), containsString("Migration cannot be performed with Kafka version 3.6-IV2, metadata version 3.5-IV2, inter.broker.protocol.version 3.6-IV2, log.message.format.version 3.6-IV2."));
+        assertThat(ex.getMessage(), containsString("Migration cannot be performed with Kafka version 3.7-IV4, metadata version 3.6-IV2, inter.broker.protocol.version 3.7-IV4, log.message.format.version 3.7-IV4."));
     }
 
     @ParallelTest
     public void testValidVersionsOnKRaftMigration() {
         Map<String, Object> config = new HashMap<>();
-        config.put("inter.broker.protocol.version", "3.6");
-        config.put("log.message.format.version", "3.6");
+        config.put("inter.broker.protocol.version", "3.7");
+        config.put("log.message.format.version", "3.7");
 
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .editKafka()
-                        .withVersion("3.6.1")
-                        .withMetadataVersion("3.6-IV2")
+                        .withVersion("3.7.0")
+                        .withMetadataVersion("3.7-IV4")
                         .withConfig(config)
                 .endKafka()
                 .endSpec()
