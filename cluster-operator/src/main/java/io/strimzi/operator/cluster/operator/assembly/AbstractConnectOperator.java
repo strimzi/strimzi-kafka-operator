@@ -836,7 +836,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         }
 
         Map<String, Object> statusResult = null;
-        List<String> topics = new ArrayList<>();
+        List<String> topics = null;
         List<Condition> conditions = new ArrayList<>();
         AutoRestartStatus autoRestart = null;
 

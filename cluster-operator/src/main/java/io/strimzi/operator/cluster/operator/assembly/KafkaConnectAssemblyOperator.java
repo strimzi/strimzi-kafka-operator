@@ -466,8 +466,13 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                                         return Future.succeededFuture();
                                     } else if (connect.getSpec() != null && connect.getSpec().getReplicas() == 0 && !Annotations.isReconciliationPausedWithAnnotation(resource)) {
                                         LOGGER.infoCr(reconciliation, "{} {} in namespace {} was {}, but Connect cluster {} has 0 replicas", connectorKind, connectorName, namespace, action, connectName);
-                                        updateStatus(reconciliation, zeroReplicas(namespace, connectName), resource, connectorOperator);
-                                        return Future.succeededFuture();
+
+                                        return withLock(reconciliation, LOCK_TIMEOUT_MS,
+                                                () -> maybeUpdateConnectorStatus(reconciliation, resource, null, zeroReplicas(namespace, connectName))
+                                                        .compose(reconcileResult -> {
+                                                            LOGGER.infoCr(reconciliation, "reconciled");
+                                                            return Future.succeededFuture();
+                                                        }));
                                     } else {
                                         LOGGER.infoCr(reconciliation, "{} {} in namespace {} was {}", connectorKind, connectorName, namespace, action);
 
