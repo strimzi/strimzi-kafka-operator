@@ -523,13 +523,13 @@ public class VolumeUtils {
     }
 
     /**
-     * Creates the mount path of the volume where the Kraft metadata should be stored. This is either the volume marked
+     * Creates the mount path of the volume where the KRaft metadata should be stored. This is either the volume marked
      * for KRaft metadata or the volume with the lowest available ID. The actual metadata will be stored in a
      * subdirectory of this volume. The exact name of the subdirectory depends on the node ID.
      *
      * @param storage       Storage configuration
      *
-     * @return  Mount path of the volume where the Kraft metadata will be stored
+     * @return  Mount path of the volume where the KRaft metadata will be stored
      */
     protected static String kraftMetadataPath(Storage storage)  {
         if (storage instanceof JbodStorage jbodStorage) {

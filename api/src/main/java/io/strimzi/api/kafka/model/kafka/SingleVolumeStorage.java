@@ -34,7 +34,7 @@ public abstract class SingleVolumeStorage extends Storage {
     @Description("Storage type, must be either 'ephemeral' or 'persistent-claim'.")
     public abstract String getType();
 
-    @Description("Storage identification number. It is mandatory only for storage volumes defined in a storage of type 'jbod'.")
+    @Description("Storage identification number. Mandatory for storage volumes defined with a `jbod` storage type configuration.")
     @Minimum(0)
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public Integer getId() {
@@ -46,9 +46,9 @@ public abstract class SingleVolumeStorage extends Storage {
     }
 
     @Description("Specifies whether this volume should be used for storing KRaft metadata. " +
-            "This option is optional. " +
+            "This property is optional. " +
             "When set, the only currently supported value is `shared`. " +
-            "At most one volume can have this field set.")
+            "At most one volume can have this property set.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public KRaftMetadataStorage getKraftMetadata() {
         return kraftMetadata;

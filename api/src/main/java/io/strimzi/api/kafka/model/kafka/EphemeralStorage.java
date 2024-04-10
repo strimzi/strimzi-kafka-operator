@@ -62,9 +62,9 @@ public class EphemeralStorage extends SingleVolumeStorage {
 
     @Override
     @Description("Specifies whether this volume should be used for storing KRaft metadata. " +
-            "This option is optional. " +
+            "This property is optional. " +
             "When set, the only currently supported value is `shared`. " +
-            "At most one volume can have this field set.")
+            "At most one volume can have this property set.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public KRaftMetadataStorage getKraftMetadata() {
         return super.getKraftMetadata();

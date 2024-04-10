@@ -88,7 +88,7 @@ if [ "$USE_KRAFT" == "true" ]; then
     fi
   fi
 
-  # when in KRaft mode, the Kafka ready and ZooKeeper connected file paths are empty because not needed to the agent
+  # # In KRaft mode, the file paths for Kafka readiness and ZooKeeper connection are empty as they are not required by the agent.
   KAFKA_READY=
   ZK_CONNECTED=
 else

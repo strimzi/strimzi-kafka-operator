@@ -193,7 +193,7 @@ public class StorageDiff extends AbstractJsonDiff {
     }
 
     /**
-     * Indicated whether too many volumes of a JBOD storage are marked as KRaft metadata volumes
+     * Indicates whether too many volumes of a JBOD storage are marked as KRaft metadata volumes
      *
      * @return true when multiple volumes are marked as KRaft metadata volumes. False if no or only one volume is marked.
      */

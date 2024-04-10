@@ -74,7 +74,7 @@ spec:
                     type: string
                     enum:
                     - shared
-                    description: "Specifies whether this volume should be used for storing KRaft metadata. This option is optional. When set, the only currently supported value is `shared`. At most one volume can have this field set."
+                    description: "Specifies whether this volume should be used for storing KRaft metadata. This property is optional. When set, the only currently supported value is `shared`. At most one volume can have this property set."
                   overrides:
                     type: array
                     items:
@@ -120,12 +120,12 @@ spec:
                         id:
                           type: integer
                           minimum: 0
-                          description: Storage identification number. It is mandatory only for storage volumes defined in a storage of type 'jbod'.
+                          description: Storage identification number. Mandatory for storage volumes defined with a `jbod` storage type configuration.
                         kraftMetadata:
                           type: string
                           enum:
                           - shared
-                          description: "Specifies whether this volume should be used for storing KRaft metadata. This option is optional. When set, the only currently supported value is `shared`. At most one volume can have this field set."
+                          description: "Specifies whether this volume should be used for storing KRaft metadata. This property is optional. When set, the only currently supported value is `shared`. At most one volume can have this property set."
                         overrides:
                           type: array
                           items:
