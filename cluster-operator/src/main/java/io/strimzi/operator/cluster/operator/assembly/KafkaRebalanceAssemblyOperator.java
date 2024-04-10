@@ -70,7 +70,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -151,8 +150,6 @@ public class KafkaRebalanceAssemblyOperator
 
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaRebalanceAssemblyOperator.class.getName());
 
-    private static final long REBALANCE_POLLING_TIMER_MS = 5_000;
-    private static final int MAX_API_RETRIES = 5;
     protected static final String BROKER_LOAD_KEY = "brokerLoad.json";
     private final CrdOperator<KubernetesClient, KafkaRebalance, KafkaRebalanceList> kafkaRebalanceOperator;
     private final CrdOperator<KubernetesClient, Kafka, KafkaList> kafkaOperator;
@@ -174,10 +171,6 @@ public class KafkaRebalanceAssemblyOperator
         this.kafkaOperator = supplier.kafkaOperator;
         this.configMapOperator = supplier.configMapOperations;
         this.secretOperations = supplier.secretOperations;
-    }
-
-    protected long rebalancePollingTimerDelay() {
-        return REBALANCE_POLLING_TIMER_MS;
     }
 
     /**
@@ -503,11 +496,11 @@ public class KafkaRebalanceAssemblyOperator
             case New:
                 return onNew(reconciliation, host, apiClient, kafkaRebalance, rebalanceOptionsBuilder);
             case PendingProposal:
-                return onPendingProposal(reconciliation, host, apiClient, kafkaRebalance, rebalanceAnnotation, rebalanceOptionsBuilder);
+                return onPendingProposal(reconciliation, host, apiClient, kafkaRebalance, rebalanceOptionsBuilder);
             case ProposalReady:
                 return onProposalReady(reconciliation, host, apiClient, kafkaRebalance, rebalanceAnnotation, rebalanceOptionsBuilder);
             case Rebalancing:
-                return onRebalancing(reconciliation, host, apiClient, kafkaRebalance, rebalanceAnnotation, rebalanceOptionsBuilder);
+                return onRebalancing(reconciliation, host, apiClient, kafkaRebalance, rebalanceOptionsBuilder);
             case Stopped:
                 return onStop(reconciliation, host, apiClient, kafkaRebalance, rebalanceAnnotation, rebalanceOptionsBuilder);
             case Ready:
@@ -829,78 +822,44 @@ public class KafkaRebalanceAssemblyOperator
      * @param host Cruise Control service to which sending the REST API requests
      * @param apiClient Cruise Control REST API client instance
      * @param kafkaRebalance Current {@code KafkaRebalance} resource
-     * @param rebalanceAnnotation The current value for the strimzi.io/rebalance annotation
      * @param rebalanceOptionsBuilder builder for the Cruise Control REST API client options
      * @return a Future with the next {@code MapAndStatus<ConfigMap, KafkaRebalanceStatus>} including the ConfigMap and state.
      */
     private Future<MapAndStatus<ConfigMap, KafkaRebalanceStatus>> onPendingProposal(Reconciliation reconciliation,
                                                                     String host, CruiseControlApi apiClient,
                                                                     KafkaRebalance kafkaRebalance,
-                                                                    KafkaRebalanceAnnotation rebalanceAnnotation,
                                                                     AbstractRebalanceOptions.AbstractRebalanceOptionsBuilder<?, ?> rebalanceOptionsBuilder) {
         Promise<MapAndStatus<ConfigMap, KafkaRebalanceStatus>> p = Promise.promise();
-        if (rebalanceAnnotation == KafkaRebalanceAnnotation.none) {
-            LOGGER.debugCr(reconciliation, "Starting Cruise Control rebalance proposal request timer");
-            vertx.setPeriodic(rebalancePollingTimerDelay(), t ->
-                kafkaRebalanceOperator.getAsync(kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName())
-                    .onSuccess(currentKafkaRebalance -> {
-                        // Checking that the resource was not deleted between periodic polls
-                        if (currentKafkaRebalance != null) {
-                            // Check resource is in the right state as previous execution might have set the status and completed the future
-                            // Safety check as timer might be called again (from a delayed timer firing)
-                            if (state(currentKafkaRebalance) == KafkaRebalanceState.PendingProposal) {
-                                if (rebalanceAnnotation(currentKafkaRebalance) == KafkaRebalanceAnnotation.refresh) {
-                                    LOGGER.debugCr(reconciliation, "Requesting a new proposal since refresh annotation is applied on the KafkaRebalance resource");
-                                    vertx.cancelTimer(t);
-                                    requestRebalance(reconciliation, host, apiClient, currentKafkaRebalance, true, rebalanceOptionsBuilder).onSuccess(p::complete);
-                                } else if (rebalanceAnnotation(currentKafkaRebalance) == KafkaRebalanceAnnotation.stop) {
-                                    LOGGER.debugCr(reconciliation, "Stopping current Cruise Control proposal request timer");
-                                    vertx.cancelTimer(t);
-                                    p.complete(buildRebalanceStatus(null, KafkaRebalanceState.Stopped, StatusUtils.validate(reconciliation, currentKafkaRebalance)));
-                                } else {
-                                    requestRebalance(reconciliation, host, apiClient, kafkaRebalance, true, rebalanceOptionsBuilder,
-                                            currentKafkaRebalance.getStatus().getSessionId())
-                                        .onSuccess(rebalanceMapAndStatus -> {
-                                            // If the returned status has an optimization result then the rebalance proposal
-                                            // is ready, so stop the polling
-                                            KafkaRebalanceStatus status = rebalanceMapAndStatus.getStatus();
-                                            Set<Condition> conditions = new HashSet<>();
-                                            validateAnnotation(reconciliation, conditions, KafkaRebalanceState.PendingProposal, rebalanceAnnotation(currentKafkaRebalance), kafkaRebalance);
-                                            status.addConditions(conditions);
-                                            rebalanceMapAndStatus.setStatus(status);
-                                            if (rebalanceMapAndStatus.getStatus().getOptimizationResult() != null &&
-                                                    !rebalanceMapAndStatus.getStatus().getOptimizationResult().isEmpty()) {
-                                                vertx.cancelTimer(t);
-                                                LOGGER.debugCr(reconciliation, "Optimization proposal ready");
-                                                p.complete(rebalanceMapAndStatus);
-                                            } else {
-                                                // The rebalance proposal is still not ready yet, keep the timer for polling
-                                                LOGGER.debugCr(reconciliation, "Waiting for optimization proposal to be ready");
-                                            }
-                                        })
-                                        .onFailure(e -> {
-                                            LOGGER.errorCr(reconciliation, "Cruise Control getting rebalance proposal failed");
-                                            vertx.cancelTimer(t);
-                                            p.fail(e);
-                                        });
-                                }
-                            } else {
-                                p.complete(new MapAndStatus<>(null, currentKafkaRebalance.getStatus()));
-                            }
-                        } else {
-                            LOGGER.debugCr(reconciliation, "Rebalance resource was deleted, stopping the request time");
-                            vertx.cancelTimer(t);
-                            p.complete();
-                        }
-                    })
-                    .onFailure(e -> {
-                        LOGGER.errorCr(reconciliation, "Cruise Control getting rebalance resource failed", e.getCause());
-                        vertx.cancelTimer(t);
-                        p.fail(e.getCause());
-                    })
-            );
+
+        if (rebalanceAnnotation(kafkaRebalance) == KafkaRebalanceAnnotation.refresh) {
+            LOGGER.infoCr(reconciliation, "Requesting a new proposal since refresh annotation is applied on the KafkaRebalance resource"); // TODO: debugCr
+            requestRebalance(reconciliation, host, apiClient, kafkaRebalance, true, rebalanceOptionsBuilder).onSuccess(p::complete);
+        } else if (rebalanceAnnotation(kafkaRebalance) == KafkaRebalanceAnnotation.stop) {
+            LOGGER.infoCr(reconciliation, "Stopping to request proposal or checking the status"); // TODO: debugCr
+            p.complete(buildRebalanceStatus(null, KafkaRebalanceState.Stopped, StatusUtils.validate(reconciliation, kafkaRebalance)));
         } else {
-            p.complete(new MapAndStatus<>(null, kafkaRebalance.getStatus()));
+            LOGGER.infoCr(reconciliation, "Requesting a new proposal or checking the status for an already issued one");
+            requestRebalance(reconciliation, host, apiClient, kafkaRebalance, true, rebalanceOptionsBuilder,
+                    kafkaRebalance.getStatus().getSessionId())
+                .onSuccess(rebalanceMapAndStatus -> {
+                    // If the returned status has an optimization result then the rebalance proposal is ready
+                    KafkaRebalanceStatus status = rebalanceMapAndStatus.getStatus();
+                    Set<Condition> conditions = new HashSet<>();
+                    validateAnnotation(reconciliation, conditions, KafkaRebalanceState.PendingProposal, rebalanceAnnotation(kafkaRebalance), kafkaRebalance);
+                    status.addConditions(conditions);
+                    rebalanceMapAndStatus.setStatus(status);
+                    if (rebalanceMapAndStatus.getStatus().getOptimizationResult() != null &&
+                            !rebalanceMapAndStatus.getStatus().getOptimizationResult().isEmpty()) {
+                        LOGGER.infoCr(reconciliation, "Optimization proposal ready"); // TODO: debugCr
+                    } else {
+                        LOGGER.infoCr(reconciliation, "Waiting for optimization proposal to be ready"); // TODO: debugCr
+                    }
+                    p.complete(rebalanceMapAndStatus);
+                })
+                .onFailure(e -> {
+                    LOGGER.errorCr(reconciliation, "Cruise Control getting rebalance proposal failed");
+                    p.fail(e);
+                });
         }
         return p.future();
     }
@@ -965,132 +924,92 @@ public class KafkaRebalanceAssemblyOperator
      * @param host Cruise Control service to which sending the REST API requests
      * @param apiClient Cruise Control REST API client instance
      * @param kafkaRebalance Current {@code KafkaRebalance} resource
-     * @param rebalanceAnnotation The current value for the strimzi.io/rebalance annotation
      * @return a Future with the next {@code MapAndStatus<ConfigMap, KafkaRebalanceStatus>} including the state
      */
     private Future<MapAndStatus<ConfigMap, KafkaRebalanceStatus>> onRebalancing(Reconciliation reconciliation,
                                                                                 String host, CruiseControlApi apiClient,
                                                                                 KafkaRebalance kafkaRebalance,
-                                                                                KafkaRebalanceAnnotation rebalanceAnnotation,
                                                                                 AbstractRebalanceOptions.AbstractRebalanceOptionsBuilder<?, ?> rebalanceOptionsBuilder) {
         Promise<MapAndStatus<ConfigMap, KafkaRebalanceStatus>> p = Promise.promise();
-        if (rebalanceAnnotation == KafkaRebalanceAnnotation.none) {
-            LOGGER.infoCr(reconciliation, "Starting Cruise Control rebalance user task status timer");
-            String sessionId = kafkaRebalance.getStatus().getSessionId();
-            AtomicInteger ccApiErrorCount = new AtomicInteger();
-            vertx.setPeriodic(rebalancePollingTimerDelay(), t -> {
-                // Check that we have not already failed to contact the API beyond the allowed number of times.
-                if (ccApiErrorCount.get() >= MAX_API_RETRIES) {
-                    vertx.cancelTimer(t);
-                    p.fail(new CruiseControlRestException("Unable to reach Cruise Control API after " + MAX_API_RETRIES + " attempts"));
-                }
-                kafkaRebalanceOperator.getAsync(kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName())
-                    .onSuccess(currentKafkaRebalance -> {
-                        // Checking that the resource was not deleted between periodic polls
-                        if (currentKafkaRebalance != null) {
-                            // Check resource is in the right state as previous execution might have set the status and completed the future
-                            // Safety check as timer might be called again (from a delayed timer firing)
-                            if (state(currentKafkaRebalance) == KafkaRebalanceState.Rebalancing) {
-                                if (rebalanceAnnotation(currentKafkaRebalance) == KafkaRebalanceAnnotation.stop) {
-                                    LOGGER.debugCr(reconciliation, "Stopping current Cruise Control rebalance user task");
-                                    vertx.cancelTimer(t);
-                                    apiClient.stopExecution(host, CruiseControl.REST_API_PORT)
-                                        .onSuccess(r -> p.complete(buildRebalanceStatus(null, KafkaRebalanceState.Stopped, StatusUtils.validate(reconciliation, kafkaRebalance))))
-                                        .onFailure(e -> {
-                                            LOGGER.errorCr(reconciliation, "Cruise Control stopping execution failed", e.getCause());
-                                            p.fail(e.getCause());
-                                        });
-                                } else if (rebalanceAnnotation(currentKafkaRebalance) == KafkaRebalanceAnnotation.refresh) {
-                                    LOGGER.debugCr(reconciliation, "Stopping current Cruise Control rebalance user task since refresh annotation is applied on the KafkaRebalance resource and requesting a new proposal");
-                                    vertx.cancelTimer(t);
-                                    apiClient.stopExecution(host, CruiseControl.REST_API_PORT)
-                                            .onSuccess(r -> {
-                                                requestRebalance(reconciliation, host, apiClient, currentKafkaRebalance, true, rebalanceOptionsBuilder).onSuccess(p::complete);
-                                            })
-                                            .onFailure(e -> {
-                                                LOGGER.errorCr(reconciliation, "Cruise Control stopping execution failed", e.getCause());
-                                                p.fail(e.getCause());
-                                            });
-                                } else {
-                                    LOGGER.infoCr(reconciliation, "Getting Cruise Control rebalance user task status");
-                                    Set<Condition> conditions = StatusUtils.validate(reconciliation, kafkaRebalance);
-                                    validateAnnotation(reconciliation, conditions, KafkaRebalanceState.Rebalancing, rebalanceAnnotation(currentKafkaRebalance), kafkaRebalance);
-                                    apiClient.getUserTaskStatus(host, CruiseControl.REST_API_PORT, sessionId)
-                                        .onSuccess(cruiseControlResponse -> {
-                                            JsonObject taskStatusJson = cruiseControlResponse.getJson();
-                                            CruiseControlUserTaskStatus taskStatus = CruiseControlUserTaskStatus.lookup(taskStatusJson.getString("Status"));
-                                            switch (taskStatus) {
-                                                case COMPLETED:
-                                                    vertx.cancelTimer(t);
-                                                    LOGGER.infoCr(reconciliation, "Rebalance ({}) is now complete", sessionId);
-                                                    p.complete(buildRebalanceStatus(
-                                                            kafkaRebalance, null, KafkaRebalanceState.Ready, taskStatusJson, conditions));
-                                                    break;
-                                                case COMPLETED_WITH_ERROR:
-                                                    // TODO: There doesn't seem to be a way to retrieve the actual error message from the user tasks endpoint?
-                                                    //       We may need to propose an upstream PR for this.
-                                                    // TODO: Once we can get the error details we need to add an error field to the Rebalance Status to hold
-                                                    //       details of any issues while rebalancing.
-                                                    LOGGER.errorCr(reconciliation, "Rebalance ({}) optimization proposal has failed to complete", sessionId);
-                                                    vertx.cancelTimer(t);
-                                                    p.complete(buildRebalanceStatus(sessionId, KafkaRebalanceState.NotReady, conditions));
-                                                    break;
-                                                case IN_EXECUTION: // Rebalance is still in progress
-                                                    // We need to check that the status has been updated with the ongoing optimisation proposal
-                                                    // The proposal field can be empty if a rebalance(dryrun=false) was called and the optimisation
-                                                    // proposal was still being prepared (in progress). In that case the rebalance will start when
-                                                    // the proposal is complete but the optimisation proposal summary will be missing.
-                                                    if (currentKafkaRebalance.getStatus().getOptimizationResult() == null ||
-                                                            currentKafkaRebalance.getStatus().getOptimizationResult().isEmpty()) {
-                                                        LOGGER.infoCr(reconciliation, "Rebalance ({}) optimization proposal is now ready and has been added to the status", sessionId);
-                                                        // Cancel the timer so that the status is returned and updated.
-                                                        vertx.cancelTimer(t);
-                                                        p.complete(buildRebalanceStatus(
-                                                                kafkaRebalance, sessionId, KafkaRebalanceState.Rebalancing, taskStatusJson, conditions));
-                                                    }
-                                                    ccApiErrorCount.set(0);
-                                                    // TODO: Find out if there is any way to check the progress of a rebalance.
-                                                    //       We could parse the verbose proposal for total number of reassignments and compare to number completed (if available)?
-                                                    //       We can then update the status at this point.
-                                                    break;
-                                                case ACTIVE: // Rebalance proposal is still being calculated
-                                                    // If a rebalance(dryrun=false) was called and the proposal is still being prepared then the task
-                                                    // will be in an ACTIVE state. When the proposal is ready it will shift to IN_EXECUTION and we will
-                                                    // check that the optimisation proposal is added to the status on the next reconcile.
-                                                    LOGGER.infoCr(reconciliation, "Rebalance ({}) optimization proposal is still being prepared", sessionId);
-                                                    ccApiErrorCount.set(0);
-                                                    break;
-                                                default:
-                                                    LOGGER.errorCr(reconciliation, "Unexpected state {}", taskStatus);
-                                                    vertx.cancelTimer(t);
-                                                    p.fail("Unexpected state " + taskStatus);
-                                                    break;
-                                            }
-                                        })
-                                        .onFailure(e -> {
-                                            LOGGER.errorCr(reconciliation, "Cruise Control getting rebalance task status failed", e.getCause());
-                                            // To make sure this error is not just a temporary problem with the network we retry several times.
-                                            // If the number of errors pass the MAX_API_ERRORS limit then the period method will fail the promise.
-                                            ccApiErrorCount.getAndIncrement();
-                                        });
-                                }
-                            } else {
-                                p.complete(new MapAndStatus<>(null, currentKafkaRebalance.getStatus()));
-                            }
-                        } else {
-                            LOGGER.warnCr(reconciliation, "Rebalance resource was deleted, rebalancing is still in progress but the status won't be reported");
-                            vertx.cancelTimer(t);
-                            p.complete();
-                        }
+
+        String sessionId = kafkaRebalance.getStatus().getSessionId();
+        if (rebalanceAnnotation(kafkaRebalance) == KafkaRebalanceAnnotation.stop) {
+            LOGGER.infoCr(reconciliation, "Stopping current Cruise Control rebalance user task"); // TODO: debugCr
+            apiClient.stopExecution(host, CruiseControl.REST_API_PORT)
+                .onSuccess(r -> p.complete(buildRebalanceStatus(null, KafkaRebalanceState.Stopped, StatusUtils.validate(reconciliation, kafkaRebalance))))
+                .onFailure(e -> {
+                    LOGGER.errorCr(reconciliation, "Cruise Control stopping execution failed", e.getCause());
+                    p.fail(e.getCause());
+                });
+        } else if (rebalanceAnnotation(kafkaRebalance) == KafkaRebalanceAnnotation.refresh) {
+            LOGGER.infoCr(reconciliation, "Stopping current Cruise Control rebalance user task since refresh annotation is applied on the KafkaRebalance resource and requesting a new proposal"); // TODO: debugCr
+            apiClient.stopExecution(host, CruiseControl.REST_API_PORT)
+                    .onSuccess(r -> {
+                        requestRebalance(reconciliation, host, apiClient, kafkaRebalance, true, rebalanceOptionsBuilder).onSuccess(p::complete);
                     })
                     .onFailure(e -> {
-                        LOGGER.errorCr(reconciliation, "Cruise Control getting rebalance resource failed", e.getCause());
-                        vertx.cancelTimer(t);
+                        LOGGER.errorCr(reconciliation, "Cruise Control stopping execution failed", e.getCause());
                         p.fail(e.getCause());
                     });
-            });
         } else {
-            p.complete(new MapAndStatus<>(null, kafkaRebalance.getStatus()));
+            LOGGER.infoCr(reconciliation, "Getting Cruise Control rebalance user task status");
+            Set<Condition> conditions = StatusUtils.validate(reconciliation, kafkaRebalance);
+            validateAnnotation(reconciliation, conditions, KafkaRebalanceState.Rebalancing, rebalanceAnnotation(kafkaRebalance), kafkaRebalance);
+            apiClient.getUserTaskStatus(host, CruiseControl.REST_API_PORT, sessionId)
+                .onSuccess(cruiseControlResponse -> {
+                    JsonObject taskStatusJson = cruiseControlResponse.getJson();
+                    CruiseControlUserTaskStatus taskStatus = CruiseControlUserTaskStatus.lookup(taskStatusJson.getString("Status"));
+                    switch (taskStatus) {
+                        case COMPLETED:
+                            LOGGER.infoCr(reconciliation, "Rebalance ({}) is now complete", sessionId);
+                            p.complete(buildRebalanceStatus(
+                                    kafkaRebalance, null, KafkaRebalanceState.Ready, taskStatusJson, conditions));
+                            break;
+                        case COMPLETED_WITH_ERROR:
+                            // TODO: There doesn't seem to be a way to retrieve the actual error message from the user tasks endpoint?
+                            //       We may need to propose an upstream PR for this.
+                            // TODO: Once we can get the error details we need to add an error field to the Rebalance Status to hold
+                            //       details of any issues while rebalancing.
+                            LOGGER.errorCr(reconciliation, "Rebalance ({}) optimization proposal has failed to complete", sessionId);
+                            p.complete(buildRebalanceStatus(sessionId, KafkaRebalanceState.NotReady, conditions));
+                            break;
+                        case IN_EXECUTION: // Rebalance is still in progress
+                            LOGGER.infoCr(reconciliation, "Rebalance ({}) optimization proposal in execution", sessionId); // TODO: debugCr
+                            // We need to check that the status has been updated with the ongoing optimisation proposal
+                            // The proposal field can be empty if a rebalance(dryrun=false) was called and the optimisation
+                            // proposal was still being prepared (in progress). In that case the rebalance will start when
+                            // the proposal is complete but the optimisation proposal summary will be missing.
+                            if (kafkaRebalance.getStatus().getOptimizationResult() == null ||
+                                    kafkaRebalance.getStatus().getOptimizationResult().isEmpty()) {
+                                LOGGER.infoCr(reconciliation, "Rebalance ({}) optimization proposal is now ready and has been added to the status", sessionId);
+                                p.complete(buildRebalanceStatus(
+                                        kafkaRebalance, sessionId, KafkaRebalanceState.Rebalancing, taskStatusJson, conditions));
+                            } else {
+                                configMapOperator.getAsync(kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName())
+                                        .onSuccess(loadmap -> p.complete(new MapAndStatus<>(loadmap, buildRebalanceStatusFromPreviousStatus(kafkaRebalance.getStatus(), conditions))));
+                            }
+                            // TODO: Find out if there is any way to check the progress of a rebalance.
+                            //       We could parse the verbose proposal for total number of reassignments and compare to number completed (if available)?
+                            //       We can then update the status at this point.
+                            break;
+                        case ACTIVE: // Rebalance proposal is still being calculated
+                            // If a rebalance(dryrun=false) was called and the proposal is still being prepared then the task
+                            // will be in an ACTIVE state. When the proposal is ready it will shift to IN_EXECUTION and we will
+                            // check that the optimisation proposal is added to the status on the next reconcile.
+                            LOGGER.infoCr(reconciliation, "Rebalance ({}) optimization proposal is still being prepared", sessionId);
+                            configMapOperator.getAsync(kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName())
+                                    .onSuccess(loadmap -> p.complete(new MapAndStatus<>(loadmap, buildRebalanceStatusFromPreviousStatus(kafkaRebalance.getStatus(), conditions))));
+                            break;
+                        default:
+                            LOGGER.errorCr(reconciliation, "Unexpected state {}", taskStatus);
+                            p.fail("Unexpected state " + taskStatus);
+                            break;
+                    }
+                })
+                .onFailure(e -> {
+                    LOGGER.errorCr(reconciliation, "Cruise Control getting rebalance task status failed", e.getCause());
+                    p.fail(new CruiseControlRestException("Cruise Control getting rebalance task status failed"));
+                });
         }
         return p.future();
     }
