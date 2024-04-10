@@ -79,7 +79,7 @@ if [ "$USE_KRAFT" == "true" ]; then
   CURRENT_KRAFT_METADATA_LOG_DIR=$(ls -d /var/lib/kafka/data-*/kafka-log"$STRIMZI_BROKER_ID"/__cluster_metadata-0 2> /dev/null || true)
   if [[ -d "$CURRENT_KRAFT_METADATA_LOG_DIR" && "$CURRENT_KRAFT_METADATA_LOG_DIR" != $KRAFT_METADATA_LOG_DIR* ]]; then
     echo "The desired KRaft metadata log directory ($KRAFT_METADATA_LOG_DIR) and the current one ($CURRENT_KRAFT_METADATA_LOG_DIR) differ. The current directory will be deleted."
-    rm -rfv "$CURRENT_KRAFT_METADATA_LOG_DIR"
+    rm -rf "$CURRENT_KRAFT_METADATA_LOG_DIR"
   else
     # remove quorum-state file so that we won't enter voter not match error after scaling up/down
     if [ -f "$KRAFT_METADATA_LOG_DIR/__cluster_metadata-0/quorum-state" ]; then
