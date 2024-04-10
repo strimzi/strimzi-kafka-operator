@@ -141,8 +141,11 @@ env:
 <3> The keystore contains the private key for mTLS authentication.
 <4> The password for accessing the keystore.
 
-. If you need a custom `SASL` configuration. For example, to access a cluster in a cloud provider with a custom login module like `AWS_MSK_IAM`. The `STRIMZI_SASL_CUSTOM_CONFIG_JSON` is the mechanism to do that.
-The property `STRIMZI_ALTERABLE_TOPIC_CONFIG` defaults to `ALL`. When a subset of properties is alterable, use a comma separated list, as below. In the case that a managed Kafka service doesn't allow any `.spec.config` properties to be set in the `KafkaTopic` a value of `NONE` is equivalent to an empty property.
+. If you need a custom `SASL` configuration. For example, to access a cluster in a cloud provider with a custom login module like `AWS_MSK_IAM`.
+The `STRIMZI_SASL_CUSTOM_CONFIG_JSON` is the mechanism to do that.
+The property `STRIMZI_ALTERABLE_TOPIC_CONFIG` defaults to `ALL`.
+When a subset of properties is alterable, use a comma separated list, as below.
+In the case that a managed Kafka service doesn't allow any `.spec.config` properties to be set in the `KafkaTopic` a value of `NONE` is equivalent to an empty property.
 Otherwise, a comma separated list of the properties that can be altered is used.
 +
 *NOTE:  Only SASL properties can be set with the `STRIMZI_SASL_CUSTOM_CONFIG_JSON` mechanism.*
