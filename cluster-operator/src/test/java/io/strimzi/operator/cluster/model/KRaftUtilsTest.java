@@ -281,7 +281,7 @@ public class KRaftUtilsTest {
     @ParallelTest
     public void testsVersionsForKRaftMigrationValidation() {
         // Valid values
-        assertDoesNotThrow(() -> KRaftUtils.validateVersionsForKRaftMigration("3.6.1", "3.6-IV2", "3.6", "3.6"));
+        assertDoesNotThrow(() -> KRaftUtils.validateVersionsForKRaftMigration("3.7.0", "3.7-IV4", "3.7", "3.7"));
 
         // Invalid Values
         InvalidResourceException e = assertThrows(InvalidResourceException.class, () -> KRaftUtils.validateVersionsForKRaftMigration("3.6.1", "3.6-IV2", "3.5", "3.5"));
