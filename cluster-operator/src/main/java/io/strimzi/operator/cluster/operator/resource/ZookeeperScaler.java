@@ -76,9 +76,8 @@ public class ZookeeperScaler implements AutoCloseable {
 
         // Setup truststore from PEM file in cluster CA secret
         trustStoreFile = Util.createFileStore(getClass().getName(), PemTrustSet.CERT_SUFFIX, coTlsPemIdentity.pemTrustSet().trustedCertificatesPemBytes());
-
         // Setup keystore from PEM in cluster-operator secret
-        keyStoreFile = Util.createFileStore(getClass().getName(), PemAuthIdentity.PEM_SUFFIX, coTlsPemIdentity.pemAuthIdentity().certificateChainAsPemBytes());
+        keyStoreFile = Util.createFileStore(getClass().getName(), PemAuthIdentity.PEM_SUFFIX, coTlsPemIdentity.pemAuthIdentity().pemKeyStore());
     }
 
     /**

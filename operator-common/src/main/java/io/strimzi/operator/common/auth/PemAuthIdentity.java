@@ -9,6 +9,7 @@ import io.strimzi.operator.common.Util;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
 import java.security.KeyStore;
@@ -108,6 +109,14 @@ public class PemAuthIdentity {
      */
     public String privateKeyAsPem() {
         return Util.fromAsciiBytes(privateKeyAsPemBytes);
+    }
+
+    /**
+     * KeyStore to use for TLS connections.
+     * @return KeyStore file in PEM format
+     */
+    public byte[] pemKeyStore() {
+        return (privateKeyAsPem() + certificateChainAsPem()).getBytes(StandardCharsets.US_ASCII);
     }
 
     /**

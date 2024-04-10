@@ -41,7 +41,7 @@ public class KRaftMigrationUtils {
         File trustStoreFile = Util.createFileStore(KRaftMigrationUtils.class.getName(), PemTrustSet.CERT_SUFFIX, coTlsPemIdentity.pemTrustSet().trustedCertificatesPemBytes());
 
         // Setup keystore from PEM in cluster-operator secret
-        File keyStoreFile = Util.createFileStore(KRaftMigrationUtils.class.getName(), PemAuthIdentity.PEM_SUFFIX, coTlsPemIdentity.pemAuthIdentity().certificateChainAsPemBytes());
+        File keyStoreFile = Util.createFileStore(KRaftMigrationUtils.class.getName(), PemAuthIdentity.PEM_SUFFIX, coTlsPemIdentity.pemAuthIdentity().pemKeyStore());
         try {
             ZooKeeperAdmin admin = new DefaultZooKeeperAdminProvider().createZookeeperAdmin(
                     zkConnectionString,
