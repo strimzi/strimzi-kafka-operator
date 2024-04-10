@@ -501,7 +501,7 @@ class BatchingTopicControllerTest {
 
     @ParameterizedTest
     @NullSource
-    @ValueSource(strings = { "all", "" })
+    @ValueSource(strings = { "ALL", "" })
     public void shouldUpdateProperties(String alterableTopicConfig, KafkaCluster cluster) throws InterruptedException, ExecutionException {
         admin[0] = Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, cluster.getBootstrapServers()));
 
@@ -549,7 +549,7 @@ class BatchingTopicControllerTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = { "none", "sdasdas", "retention.bytes; retention.ms" })
+    @ValueSource(strings = { "NONE", "sdasdas", "retention.bytes; retention.ms" })
     public void shouldNotUpdateAnyPropertiesWarnOnAllProperties(String alterableTopicConfig, KafkaCluster cluster) throws InterruptedException, ExecutionException {
         admin[0] = Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, cluster.getBootstrapServers()));
 

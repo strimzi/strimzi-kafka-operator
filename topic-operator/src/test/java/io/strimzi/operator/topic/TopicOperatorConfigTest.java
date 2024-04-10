@@ -370,6 +370,6 @@ class TopicOperatorConfigTest {
               TopicOperatorConfig.NAMESPACE.key(), "some-namespace"
         ));
 
-        assertEquals("all", config.alterableTopicConfig());
+        assertEquals("ALL", config.alterableTopicConfig());
     }
 }
