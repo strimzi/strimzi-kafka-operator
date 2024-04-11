@@ -581,7 +581,7 @@ public class KafkaUtils {
     }
 
     public static void waitUntilKafkaStatusContainsKafkaMetadataState(String namespaceName, String clusterName, KafkaMetadataState desiredKafkaMetadataState) {
-        TestUtils.waitFor(String.join("Kafka status to be contain kafkaMetadataState: %s", desiredKafkaMetadataState.name()), TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_STATUS_TIMEOUT, () -> {
+        TestUtils.waitFor(String.join("Kafka status to be contain kafkaMetadataState: %s", desiredKafkaMetadataState.name()), TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT, () -> {
             Kafka k = KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get();
             return k.getStatus().getKafkaMetadataState().equals(desiredKafkaMetadataState);
         });
