@@ -12,7 +12,6 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.ParallelTest;
-import io.strimzi.systemtest.annotations.UTONotSupported;
 import io.strimzi.systemtest.kafkaclients.internalClients.admin.AdminClient;
 import io.strimzi.systemtest.resources.NodePoolsConverter;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -31,7 +30,6 @@ import org.junit.jupiter.api.Tag;
 import static io.strimzi.systemtest.TestConstants.ARM64_UNSUPPORTED;
 import static io.strimzi.systemtest.TestConstants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.TestConstants.REGRESSION;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -52,10 +50,11 @@ public class ThrottlingQuotaST extends AbstractST {
         "org.apache.kafka.common.errors.ThrottlingQuotaExceededException: The throttling quota has been exceeded.";
     private TestStorage sharedTestStorage;
 
-    private AdminClient adminClient;
+    private AdminClient limitedAdminClient;
+    // this Admin client does not have assigned quota therefore is able to perform clean ups and checks
+    private AdminClient unlimitedAdminClient;
 
     @ParallelTest
-    @UTONotSupported("https://github.com/strimzi/strimzi-kafka-operator/issues/8864")
     void testThrottlingQuotasDuringAllTopicOperations() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -67,20 +66,19 @@ public class ThrottlingQuotaST extends AbstractST {
 
         LOGGER.info("Creating {} Topics with {} partitions, we should hit the quota", numOfTopics, numOfPartitions);
 
-        String commandOutput = adminClient.createTopics(testStorage.getTopicName(), numOfTopics, numOfPartitions, numOfReplicas);
+        String commandOutput = limitedAdminClient.createTopics(testStorage.getTopicName(), numOfTopics, numOfPartitions, numOfReplicas);
         assertThat(commandOutput, containsString(THROTTLING_ERROR_MSG));
 
-        KafkaTopicUtils.deleteAllKafkaTopicsByPrefixWithWait(testStorage.getNamespaceName(), testStorage.getTopicName());
-        KafkaTopicUtils.waitForDeletionOfTopicsWithPrefix(testStorage.getTopicName(), adminClient);
+        unlimitedAdminClient.deleteTopicsWithPrefix(testStorage.getTopicName());
+        KafkaTopicUtils.waitForDeletionOfTopicsWithPrefix(testStorage.getTopicName(), unlimitedAdminClient);
+        LOGGER.info("All created topics are cleaned");
 
         numOfPartitions = 5;
 
         LOGGER.info("Creating {} Topics with {} partitions, the quota should not be exceeded", numOfTopics, numOfPartitions);
 
-        commandOutput = adminClient.createTopics(testStorage.getTopicName(), numOfTopics, numOfPartitions, numOfReplicas);
+        commandOutput = limitedAdminClient.createTopics(testStorage.getTopicName(), numOfTopics, numOfPartitions, numOfReplicas);
         assertThat(commandOutput, containsString("successfully created"));
-
-        commandOutput = adminClient.listTopics();
 
         for (int i = 0; i < numOfTopics; i++) {
             assertThat(commandOutput, containsString(testStorage.getTopicName() + "-" + i));
@@ -90,7 +88,7 @@ public class ThrottlingQuotaST extends AbstractST {
 
         LOGGER.info("Altering {} Topics - setting partitions to {} - we should hit the quota", numOfTopics, partitionAlter);
 
-        commandOutput = adminClient.alterPartitionsForTopicsInRange(testStorage.getTopicName(), partitionAlter, numOfTopics, 0);
+        commandOutput = limitedAdminClient.alterPartitionsForTopicsInRange(testStorage.getTopicName(), partitionAlter, numOfTopics, 0);
         assertThat(commandOutput, containsString(THROTTLING_ERROR_MSG));
 
         // we need to set higher partitions - for case when we alter some topics before hitting the quota to 25 partitions
@@ -100,28 +98,27 @@ public class ThrottlingQuotaST extends AbstractST {
         for (int i = 0; i < iterations; i++) {
             LOGGER.info("Altering {} Topics with offset {} - setting partitions to {} - we should not hit the quota", numOfTopicsIter, numOfTopicsIter * i, partitionAlter);
 
-            commandOutput = adminClient.alterPartitionsForTopicsInRange(testStorage.getTopicName(), partitionAlter, numOfTopicsIter, numOfTopicsIter * i);
+            commandOutput = limitedAdminClient.alterPartitionsForTopicsInRange(testStorage.getTopicName(), partitionAlter, numOfTopicsIter, numOfTopicsIter * i);
             assertThat(commandOutput, containsString("successfully altered"));
         }
 
         // delete few topics
         LOGGER.info("Deleting first {} Topics, we will not hit the quota", numOfTopicsIter);
-        commandOutput = adminClient.deleteTopicsWithPrefixAndCount(testStorage.getTopicName(), numOfTopicsIter);
+        commandOutput = limitedAdminClient.deleteTopicsWithPrefixAndCount(testStorage.getTopicName(), numOfTopicsIter);
         assertThat(commandOutput, containsString("successfully deleted"));
 
         int remainingTopics = numOfTopics - numOfTopicsIter;
 
         LOGGER.info("Trying to remove all remaining {} Topics with offset of {} - we should hit the quota", remainingTopics, numOfTopicsIter);
-        commandOutput = adminClient.deleteTopicsWithPrefixAndCountFromIndex(testStorage.getTopicName(), remainingTopics, numOfTopicsIter);
+        commandOutput = limitedAdminClient.deleteTopicsWithPrefixAndCountFromIndex(testStorage.getTopicName(), remainingTopics, numOfTopicsIter);
         assertThat(commandOutput, containsString(THROTTLING_ERROR_MSG));
 
-        LOGGER.info("Because we hit quota, removing the remaining Topics through console");
-        KafkaTopicUtils.deleteAllKafkaTopicsByPrefixWithWait(testStorage.getNamespaceName(), testStorage.getTopicName());
-        // we need to wait for all KafkaTopics to be deleted from Kafka before proceeding - using Kafka pod cli (with AdminClient props)
-        KafkaTopicUtils.waitForDeletionOfTopicsWithPrefix(testStorage.getTopicName(), adminClient);
+        LOGGER.info("Removing the remaining Topics through console");
+        unlimitedAdminClient.deleteTopicsWithPrefix(testStorage.getTopicName());
+        KafkaTopicUtils.waitForDeletionOfTopicsWithPrefix(testStorage.getTopicName(), unlimitedAdminClient);
 
         // List topics after deletion
-        commandOutput = adminClient.listTopics();
+        commandOutput = unlimitedAdminClient.listTopics();
         assertThat(commandOutput, not(containsString(testStorage.getTopicName())));
     }
 
@@ -170,6 +167,8 @@ public class ThrottlingQuotaST extends AbstractST {
             .build()
         );
 
+        // deploy quota limited admin client and respective Kafka User
+
         resourceManager.createResourceWithWait(KafkaUserTemplates.defaultUser(sharedTestStorage.getNamespaceName(), sharedTestStorage.getClusterName(), sharedTestStorage.getUsername())
             .editOrNewSpec()
                 .withNewQuotas()
@@ -177,20 +176,31 @@ public class ThrottlingQuotaST extends AbstractST {
                 .endQuotas()
                 .withAuthentication(new KafkaUserScramSha512ClientAuthentication())
             .endSpec()
-            .build());
-
-        resourceManager.createResourceWithWait(
-            AdminClientTemplates.scramShaAdminClient(sharedTestStorage.getNamespaceName(),
-                sharedTestStorage.getUsername(),
-                sharedTestStorage.getAdminName(),
-                KafkaResources.plainBootstrapAddress(sharedTestStorage.getClusterName()),
-                CommonClientConfigs.REQUEST_TIMEOUT_MS_CONFIG + "=" + TIMEOUT_REQUEST_MS
-            )
+            .build()
         );
 
-        String adminClientPodName = kubeClient().listPods(sharedTestStorage.getNamespaceName(), TestConstants.ADMIN_CLIENT_LABEL_SELECTOR).get(0).getMetadata().getName();
+        limitedAdminClient = AdminClientTemplates.deployScramShaOverPlainAdminClient(resourceManager,
+            sharedTestStorage.getNamespaceName(),
+            sharedTestStorage.getUsername(),
+            sharedTestStorage.getAdminName(),
+            KafkaResources.plainBootstrapAddress(sharedTestStorage.getClusterName()),
+            CommonClientConfigs.REQUEST_TIMEOUT_MS_CONFIG + "=" + TIMEOUT_REQUEST_MS
+        );
 
-        adminClient = new AdminClient(sharedTestStorage.getNamespaceName(), adminClientPodName);
-        adminClient.configureFromEnv();
+        // deploy unlimited admin client and respective user for purpose of cleaning up resources
+
+        resourceManager.createResourceWithWait(KafkaUserTemplates.defaultUser(sharedTestStorage.getNamespaceName(), sharedTestStorage.getClusterName(), sharedTestStorage.getUsername() + "-unlimited")
+            .editOrNewSpec()
+                .withAuthentication(new KafkaUserScramSha512ClientAuthentication())
+            .endSpec()
+            .build());
+
+        unlimitedAdminClient = AdminClientTemplates.deployScramShaOverPlainAdminClient(resourceManager,
+            sharedTestStorage.getNamespaceName(),
+            sharedTestStorage.getUsername() + "-unlimited",
+            sharedTestStorage.getAdminName() + "-unlimited",
+            KafkaResources.plainBootstrapAddress(sharedTestStorage.getClusterName()),
+            CommonClientConfigs.REQUEST_TIMEOUT_MS_CONFIG + "=" + TIMEOUT_REQUEST_MS
+        );
     }
 }

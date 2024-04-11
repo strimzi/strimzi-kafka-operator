@@ -62,32 +62,42 @@ public class PodUtils {
         waitForPodsReady(namespaceName, selector, expectPods, containers, () -> { });
     }
 
-    public static void waitForPodsReady(String namespaceName, LabelSelector selector, int expectPods, boolean containers, Runnable onTimeout) {
+
+    /**
+     * Waits for a specified number of pods in a given namespace to become ready.
+     *
+     * @param namespace The name of the Kubernetes namespace in which to wait for pods.
+     * @param selector The label selector to identify the pods of interest.
+     * @param expectPods The expected number of pods that should be ready.
+     * @param containers If true, checks individual container readiness within the pods.
+     * @param onTimeout The action to be executed if the pods do not become ready before the timeout.
+     */
+    public static void waitForPodsReady(String namespace, LabelSelector selector, int expectPods, boolean containers, Runnable onTimeout) {
         TestUtils.waitFor("readiness of all Pods matching: " + selector,
             TestConstants.POLL_INTERVAL_FOR_RESOURCE_READINESS, ResourceOperation.timeoutForPodsOperation(expectPods),
             () -> {
-                List<Pod> pods = kubeClient(namespaceName).listPods(namespaceName, selector);
+                List<Pod> pods = kubeClient(namespace).listPods(namespace, selector);
                 if (pods.isEmpty() && expectPods == 0) {
                     LOGGER.debug("Expected Pods are ready");
                     return true;
                 }
                 if (pods.isEmpty()) {
-                    LOGGER.debug("Pods matching: {}/{} are not ready", namespaceName, selector);
+                    LOGGER.debug("Pods matching: {}/{} are not ready", namespace, selector);
                     return false;
                 }
                 if (pods.size() != expectPods) {
-                    LOGGER.debug("Expected Pods: {}/{} are not ready", namespaceName, selector);
+                    LOGGER.debug("Expected Pods: {}/{} are not ready", namespace, selector);
                     return false;
                 }
                 for (Pod pod : pods) {
                     if (!Readiness.isPodReady(pod)) {
-                        LOGGER.debug("Pod not ready: {}/{}", namespaceName, pod.getMetadata().getName());
+                        LOGGER.debug("Pod not ready: {}/{}", namespace, pod.getMetadata().getName());
                         return false;
                     } else {
                         if (containers) {
                             for (ContainerStatus cs : pod.getStatus().getContainerStatuses()) {
                                 if (!Boolean.TRUE.equals(cs.getReady())) {
-                                    LOGGER.debug("Container: {} of Pod: {}/{} not ready", namespaceName, pod.getMetadata().getName(), cs.getName());
+                                    LOGGER.debug("Container: {} of Pod: {}/{} not ready", namespace, pod.getMetadata().getName(), cs.getName());
                                     return false;
                                 }
                             }

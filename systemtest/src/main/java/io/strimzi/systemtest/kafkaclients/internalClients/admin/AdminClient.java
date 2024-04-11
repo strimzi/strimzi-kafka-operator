@@ -4,6 +4,10 @@
  */
 package io.strimzi.systemtest.kafkaclients.internalClients.admin;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.strimzi.test.executor.ExecResult;
 
 import java.util.ArrayList;
@@ -16,6 +20,11 @@ public class AdminClient {
     private final String namespaceName;
     private final String podName;
     private final static String CMD = "admin-client";
+    private static ObjectMapper mapper = new ObjectMapper();
+
+    static {
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    }
 
     public AdminClient(String namespaceName, String podName) {
         this.namespaceName = namespaceName;
@@ -62,7 +71,28 @@ public class AdminClient {
 
         ExecResult result = cmdKubeClient(namespaceName).execInPod(podName, false, adminTopicCommand.getCommand());
         return result.returnCode() == 0 ? result.out() : result.err();
+    }
 
+    public KafkaTopicDescription describeTopic(String topicName) {
+        AdminTopicCommand adminTopicCommand = new AdminTopicCommand()
+            .withDescribeSubcommand()
+            .withTopicName(topicName)
+            .withOutputJson();
+
+        ExecResult result = cmdKubeClient(namespaceName).execInPod(podName, false, adminTopicCommand.getCommand());
+        // return first element from description as topic is
+        return responseFromJSONExecResult(result, new TypeReference<List<KafkaTopicDescription>>() { }).get(0);
+    }
+
+    private static <T> T responseFromJSONExecResult(ExecResult result, TypeReference<T> typeReference) {
+        if (result.returnCode() == 0 && !result.out().isEmpty()) {
+            try {
+                return mapper.readValue(result.out(), typeReference);
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        throw new KafkaAdminException(result.err());
     }
 
     public String alterPartitionsForTopicsInRange(String topicPrefix, int topicPartitions, int topicsCount, int fromIndex) {
@@ -103,6 +133,16 @@ public class AdminClient {
             return this;
         }
 
+        public AdminTopicCommand withDescribeSubcommand() {
+            this.command.add("describe");
+            return this;
+        }
+
+        public AdminTopicCommand withOutputJson() {
+            this.command.add("--output=json");
+            return this;
+        }
+
         public AdminTopicCommand withDeleteSubcommand() {
             this.command.add("delete");
             return this;
@@ -120,6 +160,11 @@ public class AdminClient {
 
         public AdminTopicCommand withTopicPrefix(String topicPrefix) {
             this.command.addAll(List.of("-tpref", topicPrefix));
+            return this;
+        }
+
+        public AdminTopicCommand withTopicName(String topicName) {
+            this.command.addAll(List.of("-t", topicName));
             return this;
         }
 

@@ -15,7 +15,6 @@ import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.annotations.ParallelTest;
-import io.strimzi.systemtest.annotations.UTONotSupported;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.enums.ConditionStatus;
 import io.strimzi.systemtest.enums.CustomResourceStatus;
@@ -33,11 +32,12 @@ import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.specific.AdminClientTemplates;
 import io.strimzi.systemtest.templates.specific.ScraperTemplates;
+import io.strimzi.systemtest.utils.AdminClientUtils;
 import io.strimzi.systemtest.utils.ClientUtils;
+import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.specific.ScraperUtils;
-import io.strimzi.test.TestUtils;
-import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hamcrest.CoreMatchers;
@@ -45,6 +45,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 
 import java.util.List;
+import java.util.Map;
 
 import static io.strimzi.systemtest.TestConstants.ARM64_UNSUPPORTED;
 import static io.strimzi.systemtest.TestConstants.INTERNAL_CLIENTS_USED;
@@ -61,11 +62,9 @@ import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -74,6 +73,7 @@ public class TopicST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(TopicST.class);
     private TestStorage sharedTestStorage;
+    private AdminClient adminClient;
     private String scraperPodName;
     private static int topicOperatorReconciliationInterval;
 
@@ -113,42 +113,10 @@ public class TopicST extends AbstractST {
         assertThat("Topic exists in Kafka CR (Kubernetes)", hasTopicInCRK8s(kafkaTopic, newTopicName));
     }
 
-    @ParallelTest
-    @UTONotSupported
-    void testCreateTopicViaKafka() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
-        int topicPartitions = 3;
-
-        LOGGER.debug("Creating Topic: {} with {} replicas and {} partitions", testStorage.getTopicName(), 3, topicPartitions);
-        KafkaCmdClient.createTopicUsingPodCli(Environment.TEST_SUITE_NAMESPACE, scraperPodName, KafkaResources.plainBootstrapAddress(sharedTestStorage.getClusterName()), testStorage.getTopicName(), 3, topicPartitions);
-
-        KafkaTopic kafkaTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(testStorage.getTopicName()).get();
-
-        verifyTopicViaKafkaTopicCRK8s(kafkaTopic, testStorage.getTopicName(), topicPartitions, sharedTestStorage.getClusterName());
-
-        topicPartitions = 5;
-        LOGGER.info("Editing Topic via Kafka, settings to partitions {}", topicPartitions);
-
-        KafkaCmdClient.updateTopicPartitionsCountUsingPodCli(Environment.TEST_SUITE_NAMESPACE, scraperPodName, KafkaResources.plainBootstrapAddress(sharedTestStorage.getClusterName()), testStorage.getTopicName(), topicPartitions);
-        LOGGER.debug("Topic: {} updated from {} to {} partitions", testStorage.getTopicName(), 3, topicPartitions);
-
-        KafkaTopicUtils.waitForKafkaTopicPartitionChange(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName(), topicPartitions);
-        verifyTopicViaKafka(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName(), topicPartitions, sharedTestStorage.getClusterName());
-    }
-
     @Tag(ARM64_UNSUPPORTED) // Due to https://github.com/strimzi/test-clients/issues/75
     @ParallelTest
     void testCreateDeleteCreate() throws InterruptedException {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
-
-        resourceManager.createResourceWithWait(
-            AdminClientTemplates.defaultAdminClient(testStorage.getNamespaceName(), testStorage.getAdminName(), KafkaResources.plainBootstrapAddress(sharedTestStorage.getClusterName())).build()
-        );
-
-        String adminClientPodName = kubeClient().listPods(testStorage.getNamespaceName(), TestConstants.ADMIN_CLIENT_LABEL_SELECTOR).get(0).getMetadata().getName();
-
-        AdminClient adminClient = new AdminClient(testStorage.getNamespaceName(), adminClientPodName);
-        adminClient.configureFromEnv();
 
         resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(sharedTestStorage.getClusterName(), testStorage.getTopicName(), Environment.TEST_SUITE_NAMESPACE)
             .editMetadata()
@@ -186,36 +154,24 @@ public class TopicST extends AbstractST {
 
     @ParallelTest
     @Tag(INTERNAL_CLIENTS_USED)
-    @UTONotSupported
     void testSendingMessagesToNonExistingTopic() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
-        LOGGER.info("Checking if {} is on Topic list", testStorage.getTopicName());
-        assertFalse(hasTopicInKafka(testStorage.getTopicName(), sharedTestStorage.getClusterName(), scraperPodName));
+        LOGGER.info("Checking if topic {} is present in Kafka", testStorage.getTopicName());
+        assertFalse(AdminClientUtils.isTopicPresent(adminClient, testStorage.getTopicName()));
         LOGGER.info("Topic with name {} is not created yet", testStorage.getTopicName());
 
-        LOGGER.info("Trying to send messages to non-existing Topic: {}", testStorage.getTopicName());
+        LOGGER.info("Sending messages to non-existing Topic: {}, with auto.topic.creation configuration enabled", testStorage.getTopicName());
         final KafkaClients clients = ClientUtils.getInstantPlainClients(testStorage, KafkaResources.plainBootstrapAddress(sharedTestStorage.getClusterName()));
         resourceManager.createResourceWithWait(clients.producerStrimzi(), clients.consumerStrimzi());
         ClientUtils.waitForInstantClientSuccess(testStorage);
 
-        LOGGER.info("Checking if {} is on Topic list", testStorage.getTopicName());
-        assertTrue(hasTopicInKafka(testStorage.getTopicName(), sharedTestStorage.getClusterName(), scraperPodName));
-
-        KafkaTopicUtils.waitForKafkaTopicCreation(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName());
-        KafkaTopic kafkaTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(testStorage.getTopicName()).get();
-        assertThat(kafkaTopic, notNullValue());
-
-        assertThat(kafkaTopic.getStatus(), notNullValue());
-        assertThat(kafkaTopic.getStatus().getConditions(), notNullValue());
-        assertThat(kafkaTopic.getStatus().getConditions().isEmpty(), is(false));
-        assertThat(kafkaTopic.getStatus().getConditions().get(0).getType(), is(Ready.toString()));
-        LOGGER.info("Topic successfully created");
+        LOGGER.info("Checking if topic {} is present in Kafka", testStorage.getTopicName());
+        assertTrue(AdminClientUtils.isTopicPresent(adminClient, testStorage.getTopicName()));
     }
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(INTERNAL_CLIENTS_USED)
-    @UTONotSupported
     void testDeleteTopicEnableFalse() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -240,23 +196,34 @@ public class TopicST extends AbstractST {
             .endSpec()
             .build());
 
+        // create Kafka Topic CR and wait for its presence in Kafka cluster.
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage).build());
+        final AdminClient localKafkaAdminClient = AdminClientTemplates.deployPlainAdminClient(
+            resourceManager,
+            testStorage.getNamespaceName(),
+            testStorage.getAdminName(),
+            KafkaResources.plainBootstrapAddress(testStorage.getClusterName())
+        );
+        AdminClientUtils.waitForTopicPresence(localKafkaAdminClient, testStorage.getTopicName());
+
         final KafkaClients clients = ClientUtils.getInstantPlainClients(testStorage);
         resourceManager.createResourceWithWait(clients.producerStrimzi());
         ClientUtils.waitForInstantProducerClientSuccess(testStorage);
 
-        String topicUid = KafkaTopicUtils.topicSnapshot(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName());
-        LOGGER.info("Deleting KafkaTopic: {}/{}", Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName());
+        LOGGER.info("Try to delete KafkaTopic: {}/{}", Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName());
         KafkaTopicResource.kafkaTopicClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(testStorage.getTopicName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
-        LOGGER.info("KafkaTopic: {}/{} deleted", Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName());
-
-        KafkaTopicUtils.waitTopicHasRolled(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName(), topicUid);
-
-        LOGGER.info("Waiting for KafkaTopic: {}/{} recreation", Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName());
-        KafkaTopicUtils.waitForKafkaTopicCreation(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName());
-        LOGGER.info("KafkaTopic: {}/{} recreated", Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName());
+        KafkaTopicUtils.waitForTopicStatusMessage(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName(), "TopicDeletionDisabledException");
 
         resourceManager.createResourceWithWait(clients.consumerStrimzi());
         ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
+
+        LOGGER.info("Enable automatic topic deletion");
+        Map<String, String> kafkaPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> k.getSpec().getKafka().setConfig(Map.of("delete.topic.enable", true)), testStorage.getNamespaceName());
+        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, kafkaPods);
+
+        LOGGER.info("Deleting KafkaTopic: {}/{}", Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName());
+        KafkaTopicResource.kafkaTopicClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(testStorage.getTopicName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
     }
 
     @ParallelTest
@@ -544,31 +511,6 @@ public class TopicST extends AbstractST {
         }
     }
 
-    void verifyTopicViaKafka(final String namespaceName, String topicName, int topicPartitions, String clusterName) {
-        TestUtils.waitFor("Describing Topic: " + topicName + " using pod CLI", TestConstants.POLL_INTERVAL_FOR_RESOURCE_READINESS, TestConstants.GLOBAL_TIMEOUT,
-            () -> {
-                try {
-                    String topicInfo =  KafkaCmdClient.describeTopicUsingPodCli(namespaceName, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName), topicName);
-                    LOGGER.info("Checking Topic: {} in Kafka: {}", topicName, clusterName);
-                    LOGGER.debug("Topic: {} info: {}", topicName, topicInfo);
-                    assertThat(topicInfo, containsString("Topic: " + topicName));
-                    assertThat(topicInfo, containsString("PartitionCount: " + topicPartitions));
-                    return true;
-                } catch (KubeClusterException e) {
-                    LOGGER.info("Describing Topic using Pod cli occurred following error: {}", e.getMessage());
-                    return false;
-                }
-            });
-    }
-
-    void verifyTopicViaKafkaTopicCRK8s(KafkaTopic kafkaTopic, String topicName, int topicPartitions, String clusterName) {
-        LOGGER.info("Checking in KafkaTopic CR that Topic: {} was created with expected settings", topicName);
-        assertThat(kafkaTopic, is(notNullValue()));
-        assertThat(KafkaCmdClient.listTopicsUsingPodCli(Environment.TEST_SUITE_NAMESPACE, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName)), hasItem(topicName));
-        assertThat(kafkaTopic.getMetadata().getName(), is(topicName));
-        assertThat(kafkaTopic.getSpec().getPartitions(), is(topicPartitions));
-    }
-
     @BeforeAll
     void setup() {
         sharedTestStorage = new TestStorage(ResourceManager.getTestContext(), Environment.TEST_SUITE_NAMESPACE);
@@ -599,6 +541,14 @@ public class TopicST extends AbstractST {
             .endSpec()
             .build(),
             ScraperTemplates.scraperPod(Environment.TEST_SUITE_NAMESPACE, sharedTestStorage.getScraperName()).build()
+        );
+
+        LOGGER.info("Deploying admin client across all test cases for namespace: {}", sharedTestStorage.getClusterName());
+        adminClient = AdminClientTemplates.deployPlainAdminClient(
+            resourceManager,
+            sharedTestStorage.getNamespaceName(),
+            sharedTestStorage.getAdminName(),
+            KafkaResources.plainBootstrapAddress(sharedTestStorage.getClusterName())
         );
 
         scraperPodName = ScraperUtils.getScraperPod(Environment.TEST_SUITE_NAMESPACE).getMetadata().getName();
