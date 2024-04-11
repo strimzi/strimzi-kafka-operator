@@ -5,7 +5,6 @@
 package io.strimzi.systemtest.kafkaclients.internalClients.admin;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.strimzi.test.executor.ExecResult;
@@ -80,14 +79,17 @@ public class AdminClient {
             .withOutputJson();
 
         ExecResult result = cmdKubeClient(namespaceName).execInPod(podName, false, adminTopicCommand.getCommand());
-        // return first element from description as topic is
-        return responseFromJSONExecResult(result, new TypeReference<List<KafkaTopicDescription>>() { }).get(0);
+        KafkaTopicDescription[] descriptions = responseFromJSONExecResult(result, KafkaTopicDescription[].class);
+        if (descriptions.length == 0) {
+            throw new KafkaAdminException("topic: " + topicName + " is not present");
+        }
+        return descriptions[0];
     }
 
-    private static <T> T responseFromJSONExecResult(ExecResult result, TypeReference<T> typeReference) {
+    private static <T> T responseFromJSONExecResult(ExecResult result, Class<T> responseType) {
         if (result.returnCode() == 0 && !result.out().isEmpty()) {
             try {
-                return mapper.readValue(result.out(), typeReference);
+                return mapper.readValue(result.out(), responseType);
             } catch (JsonProcessingException e) {
                 throw new RuntimeException(e);
             }
