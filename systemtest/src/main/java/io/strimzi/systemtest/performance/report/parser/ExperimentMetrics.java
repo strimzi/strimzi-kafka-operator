@@ -7,6 +7,7 @@ package io.strimzi.systemtest.performance.report.parser;
 import io.strimzi.api.kafka.model.kafka.KafkaSpec;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -17,7 +18,8 @@ public class ExperimentMetrics {
     /**
      * A map to hold simple metrics with their keys and values as strings.
      */
-    private Map<String, String> simpleMetrics;
+    private Map<String, String> testMetrics;
+    private Map<String, List<Double>> componentMetrics;
 
     /**
      * The specification of the Kafka cluster used during the experiment.
@@ -29,7 +31,8 @@ public class ExperimentMetrics {
      * and a new instance of {@code KafkaSpec}.
      */
     public ExperimentMetrics() {
-        this.simpleMetrics = new LinkedHashMap<>();
+        this.testMetrics = new LinkedHashMap<>();
+        this.componentMetrics = new LinkedHashMap<>();
         this.kafkaSpec = new KafkaSpec();
     }
 
@@ -39,8 +42,12 @@ public class ExperimentMetrics {
      * @param key the key of the metric to add
      * @param value the value of the metric
      */
-    public void addSimpleMetric(String key, String value) {
-        this.simpleMetrics.put(key, value);
+    public void addTestMetric(String key, String value) {
+        this.testMetrics.put(key, value);
+    }
+
+    public void addComponentMetric(String key, List<Double> value) {
+        this.componentMetrics.put(key, value);
     }
 
     /**
@@ -52,8 +59,12 @@ public class ExperimentMetrics {
         this.kafkaSpec = kafkaSpec;
     }
 
-    public Map<String, String> getSimpleMetrics() {
-        return this.simpleMetrics;
+    public Map<String, String> getTestMetrics() {
+        return this.testMetrics;
+    }
+
+    public Map<String, List<Double>> getComponentMetrics() {
+        return componentMetrics;
     }
 
     public KafkaSpec getKafkaSpec() {
@@ -62,8 +73,10 @@ public class ExperimentMetrics {
 
     @Override
     public String toString() {
-        return "PerformanceMetrics{" +
-                "simpleMetrics=" + this.simpleMetrics +
-                '}';
+        return "ExperimentMetrics{" +
+            "testMetrics=" + testMetrics +
+            ", componentMetrics=" + componentMetrics +
+            ", kafkaSpec=" + kafkaSpec +
+            '}';
     }
 }

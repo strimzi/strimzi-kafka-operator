@@ -65,11 +65,10 @@ public abstract class BasePerformanceMetricsParser {
      * Abstract method for extracting and formatting data from metrics into a row format.
      *
      * @param experimentNumber      The experiment number.
-     * @param simpleMetrics         A map of simple metrics.
      * @param experimentMetrics     The experiment metrics object containing detailed metrics information.
      * @return                      An array of strings representing the formatted row data.
      */
-    protected abstract String[] extractAndFormatRowData(int experimentNumber, Map<String, String> simpleMetrics, ExperimentMetrics experimentMetrics);
+    protected abstract String[] extractAndFormatRowData(int experimentNumber, ExperimentMetrics experimentMetrics);
 
     /**
      * Abstract method to get headers for a use case. This allows different parsers to specify
@@ -78,7 +77,7 @@ public abstract class BasePerformanceMetricsParser {
      * @param useCaseName           The name of the use case.
      * @return                      An array of strings representing the headers for the use case.
      */
-    protected abstract String[] getHeadersForUseCase(String useCaseName);
+    protected abstract String[] getHeadersForUseCase(ExperimentMetrics experimentMetrics);
 
     /**
      * Checks if the current execution context is a test environment.
@@ -216,7 +215,7 @@ public abstract class BasePerformanceMetricsParser {
                     }
                 }
             }
-            experimentMetrics.addSimpleMetric(metricFile.getName(), values.toString());
+            experimentMetrics.addComponentMetric(metricFile.getName(), values);
         }
     }
 
@@ -241,7 +240,7 @@ public abstract class BasePerformanceMetricsParser {
                     // Process simple key-value pairs
                     String[] parts = line.split(": ", 2);
                     if (parts.length == 2) {
-                        experimentMetrics.addSimpleMetric(parts[0].trim(), parts[1].trim());
+                        experimentMetrics.addTestMetric(parts[0].trim(), parts[1].trim());
                     }
                 } else {
                     // Collect YAML content
@@ -266,7 +265,7 @@ public abstract class BasePerformanceMetricsParser {
         this.useCaseExperiments.forEach((useCaseName, experimentsList) -> {
             System.out.println("Use Case: " + useCaseName);
 
-            final String[] headers = getHeadersForUseCase(useCaseName);
+            final String[] headers = getHeadersForUseCase(experimentsList.get(0));
             final List<String[]> allRows = new ArrayList<>();
 
             allRows.add(headers);
@@ -279,14 +278,14 @@ public abstract class BasePerformanceMetricsParser {
                 }
             }
 
-            printSeparator(columnWidths);
-
             int experimentCounter = 1;
 
+            printSeparator(columnWidths);
+
+
             for (final ExperimentMetrics experimentMetrics : experimentsList) {
-                final Map<String, String> simpleMetrics = experimentMetrics.getSimpleMetrics();
                 // Assume methods to extract and format metrics correctly are implemented
-                final String[] rowData = extractAndFormatRowData(experimentCounter, simpleMetrics, experimentMetrics);
+                final String[] rowData = extractAndFormatRowData(experimentCounter, experimentMetrics);
                 allRows.add(rowData);
                 experimentCounter++;
             }
@@ -370,11 +369,24 @@ public abstract class BasePerformanceMetricsParser {
     }
 
     /**
+     * Returns the maximum value found in a list of doubles.
+     *
+     * @param values List of double values.
+     * @return The maximum double value in the list, or 0 if the list is empty.
+     */
+    protected double getMaxValueFromList(List<Double> values) {
+        return values.stream()
+            .mapToDouble(Double::doubleValue)
+            .max()
+            .orElse(0); // Default to 0 if list is empty
+    }
+
+    /**
      * Appends the .txt file extension to a metric name.
      * @param metricName The name of the metric without the file extension.
      * @return The metric name with the .txt file extension.
      */
-    protected String getMetricFileName(String metricName) {
+    protected static String getMetricFileName(String metricName) {
         return metricName + ".txt";
     }
 

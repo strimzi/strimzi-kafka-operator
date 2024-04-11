@@ -82,7 +82,7 @@ public abstract class BasePerformanceReporter {
                 }
             } else if (value instanceof Map) {
                 // This placeholder assumes you'll implement or call a method to nicely serialize or format this map
-                testPerformanceDataBuilder.append(String.format("%s: [Complex Data]%n", key));
+                // skip...
             } else {
                 testPerformanceDataBuilder.append(String.format("%s: %s%n", key, value.toString()));
             }

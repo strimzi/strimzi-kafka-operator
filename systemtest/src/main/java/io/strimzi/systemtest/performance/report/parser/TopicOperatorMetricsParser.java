@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest.performance.report.parser;
 
-import io.strimzi.api.kafka.model.common.ContainerEnvVar;
 import io.strimzi.systemtest.performance.PerformanceConstants;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -13,150 +12,118 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
- * Parses and displays performance metrics from experiment results in {@code TestUtils.USER_PATH + "/target/performance}
- * directory
- * <p>
- * This class is designed to read performance metrics stored in files, which are generated
- * from performance tests. It categorizes metrics by use case and experiment, processes them to
- * calculate various statistical measures, and outputs formatted results. The parser can
- * differentiate between running in a test environment and a standalone application mode,
- * adjusting file paths accordingly. Metrics include operation durations, system and JVM
- * performance, and custom metrics defined in {@code PerformanceConstants}.
- * <p>
- * Usage:
+ * Parses and displays performance metrics from experiment results located in the
+ * {@code TestUtils.USER_PATH + "/target/performance"} directory. This parser is specialized for performance metrics
+ * generated from Kafka Topic Operator tests, providing detailed insights into various operational characteristics.
+ *
+ * <p>This class categorizes metrics by use case and experiment, calculates various statistical measures, and
+ * formats them for output. It is capable of functioning both in test environments and as a standalone application,
+ * adjusting file paths and processing logic accordingly.</p>
+ *
+ * <p><strong>Usage:</strong></p>
  * <ul>
- *     <li>To run as a standalone application, provide the directory path containing
- *     performance metrics files as a command-line argument. If no directory is specified,
- *     the parser attempts to find the latest directory under the default path.</li>
- *     <li>In a test environment, ensure the {@code sun.java.command} system property
- *     contains "JUnitStarter" to adjust the base path for metrics files.</li>
+ *     <li><strong>Standalone Application:</strong> Run with the directory path containing performance metrics
+ *     files as a command-line argument. If no directory is specified, the parser attempts to find and use the
+ *     latest directory under the default path.</li>
+ *     <li><strong>Test Environment:</strong> Ensure the {@code sun.java.command} system property contains
+ *     "JUnitStarter". This adjusts the base path for metrics files to align with expected test directory structures.</li>
  * </ul>
  *
- * Key Methods:
+ * <p><strong>Key Features:</strong></p>
  * <ul>
- *     <li>{@link #isRunningInTest()} - Checks if the application is running in a test environment.</li>
- *     <li>{@link #main(String[])} - Entry point for parsing and displaying performance metrics.</li>
- *     <li>{@link #showValuesOfExperiments()} - Displays formatted metrics for all experiments and use cases.</li>
+ *     <li>Filtering of metrics based on predefined sets of interest specific to test scenarios.</li>
+ *     <li>Dynamic extraction and formatting of row data for reporting, based on the content of experimental metrics.</li>
+ *     <li>Generation of appropriate headers for data columns based on the actual metrics collected during tests.</li>
  * </ul>
+ *
+ * <p><strong>Key Methods:</strong></p>
+ * <ul>
+ *     <li>{@link #isRunningInTest()} - Checks if the application is running within a test environment.</li>
+ *     <li>{@link #main(String[])} - Main entry point for parsing and displaying performance metrics when run as an application.</li>
+ *     <li>{@link #showValuesOfExperiments()} - Aggregates and displays formatted metrics for all tracked experiments and use cases.</li>
+ * </ul>
+ *
+ * @see BasePerformanceMetricsParser Base class for handling basic parsing operations and environment setup.
  */
 public class TopicOperatorMetricsParser extends BasePerformanceMetricsParser {
 
     private static final Logger LOGGER = LogManager.getLogger(TopicOperatorMetricsParser.class);
 
+    /**
+     * A set of metric identifiers considered relevant for inclusion in reports. These identifiers are predefined
+     * and are used to filter and process only the metrics that are of interest for specific test scenarios.
+     */
+    private static final Set<String> METRICS_OF_INTEREST = Set.of(
+        getMetricFileName(PerformanceConstants.RECONCILIATIONS_DURATION_SECONDS_MAX),
+        getMetricFileName(PerformanceConstants.RECONCILIATIONS_MAX_BATCH_SIZE),
+        getMetricFileName(PerformanceConstants.RECONCILIATIONS_MAX_QUEUE_SIZE),
+        getMetricFileName(PerformanceConstants.TOTAL_TIME_SPEND_ON_UTO_EVENT_QUEUE_DURATION_SECONDS),
+        getMetricFileName(PerformanceConstants.DESCRIBE_CONFIGS_DURATION_SECONDS_MAX),
+        getMetricFileName(PerformanceConstants.CREATE_TOPICS_DURATION_SECONDS_MAX),
+        getMetricFileName(PerformanceConstants.UPDATE_STATUS_DURATION_SECONDS_MAX),
+        getMetricFileName(PerformanceConstants.SYSTEM_LOAD_AVERAGE_PER_CORE_PERCENT),
+        getMetricFileName(PerformanceConstants.JVM_MEMORY_USED_MEGABYTES_TOTAL)
+    );
+
     public TopicOperatorMetricsParser() {
         super();
     }
 
+    /**
+     * Extracts and formats a row of data from experimental metrics for reporting. This method dynamically adjusts
+     * the data extraction based on the content of the experiment metrics, ensuring that all relevant test and
+     * component metrics are correctly captured and formatted.
+     *
+     * @param experimentNumber The unique identifier for the experiment whose metrics are being parsed.
+     * @param experimentMetrics The {@link ExperimentMetrics} object containing both test and component metrics.
+     * @return An array of strings, each representing a column value in the resultant data row.
+     */
     @Override
-    protected String[] extractAndFormatRowData(int experimentNumber, Map<String, String> simpleMetrics, ExperimentMetrics experimentMetrics) {
-        final String numberOfTopics = simpleMetrics.get(PerformanceConstants.NUMBER_OF_TOPICS);
-        final String numberOfTopicsToUpdate = simpleMetrics.getOrDefault(PerformanceConstants.TOPIC_OPERATOR_NUMBER_OF_TOPICS_TO_UPDATE, "0");
-        final int numberOfClientInstances = Integer.parseInt(simpleMetrics.get(PerformanceConstants.NUMBER_OF_CLIENT_INSTANCES)) * 2;
-        final String numberOfMessages = simpleMetrics.get(PerformanceConstants.NUMBER_OF_MESSAGES);
-        final double creationTimeSec = Double.parseDouble(simpleMetrics.getOrDefault(PerformanceConstants.CREATION_TIME, "0").split(" ")[0]) / 1000.0;
-        final double sendAndRecvSec = Double.parseDouble(simpleMetrics.getOrDefault(PerformanceConstants.SEND_AND_RECV_TIME, "0").split(" ")[0]) / 1000.0;
-        final double deletionTimeSec = Double.parseDouble(simpleMetrics.getOrDefault(PerformanceConstants.DELETION_TIME, "0").split(" ")[0]) / 1000.0;
-        final double totalTestTimeSec = Double.parseDouble(simpleMetrics.getOrDefault(PerformanceConstants.TOTAL_TEST_TIME, "0").split(" ")[0]) / 1000.0;
-
-        List<ContainerEnvVar> topicOperatorContainerEnvs = experimentMetrics.getKafkaSpec().getEntityOperator().getTemplate().getTopicOperatorContainer().getEnv();
-        String strimziMaxBatchSize = "", maxBatchLingerMs = "";
-        for (ContainerEnvVar envVar : topicOperatorContainerEnvs) {
-            if ("STRIMZI_MAX_BATCH_SIZE".equals(envVar.getName())) {
-                strimziMaxBatchSize = envVar.getValue();
-            } else if ("MAX_BATCH_LINGER_MS".equals(envVar.getName())) {
-                maxBatchLingerMs = envVar.getValue();
-            }
-        }
-
-        // Inside your method or class where you are using these metrics
-        final double maxReconciliationDuration = getMaxValueFromList(simpleMetrics.get(getMetricFileName(PerformanceConstants.RECONCILIATIONS_DURATION_SECONDS_MAX)));
-        final double maxBatchSize = getMaxValueFromList(simpleMetrics.get(getMetricFileName(PerformanceConstants.RECONCILIATIONS_MAX_BATCH_SIZE)));
-        final double maxQueueSize = getMaxValueFromList(simpleMetrics.get(getMetricFileName(PerformanceConstants.RECONCILIATIONS_MAX_QUEUE_SIZE)));
-        final double maxUtoEventQueueTime = getMaxValueFromList(simpleMetrics.get(getMetricFileName(PerformanceConstants.TOTAL_TIME_SPEND_ON_UTO_EVENT_QUEUE_DURATION_SECONDS)));
-        final double describeConfigsMaxDuration = getMaxValueFromList(simpleMetrics.get(getMetricFileName(PerformanceConstants.DESCRIBE_CONFIGS_DURATION_SECONDS_MAX)));
-        final double createTopicsMaxDuration = getMaxValueFromList(simpleMetrics.get(getMetricFileName(PerformanceConstants.CREATE_TOPICS_DURATION_SECONDS_MAX)));
-        final double reconciliationsMaxDuration = getMaxValueFromList(simpleMetrics.get(getMetricFileName(PerformanceConstants.RECONCILIATIONS_DURATION_SECONDS_MAX)));
-        final double updateStatusMaxDuration = getMaxValueFromList(simpleMetrics.get(getMetricFileName(PerformanceConstants.UPDATE_STATUS_DURATION_SECONDS_MAX)));
-        final double systemLoadAveragePerCore1m = getMaxValueFromList(simpleMetrics.get(getMetricFileName(PerformanceConstants.SYSTEM_LOAD_AVERAGE_PER_CORE_PERCENT))) * 100; // Convert to percentage
-        final double jvmMemoryUsedMBs = getMaxValueFromList(simpleMetrics.get(getMetricFileName(PerformanceConstants.JVM_MEMORY_USED_MEGABYTES_TOTAL)));
-
+    protected String[] extractAndFormatRowData(int experimentNumber, ExperimentMetrics experimentMetrics) {
         final List<String> rowData = new ArrayList<>();
 
         rowData.add(String.valueOf(experimentNumber));
-        rowData.add(numberOfTopics);
-        rowData.add(String.valueOf(numberOfClientInstances));
-        rowData.add(numberOfMessages);
 
-        final String bobUpdateTimes = formatBobUpdateTimes(simpleMetrics);
-        if (!bobUpdateTimes.isEmpty()) {
-            rowData.add(bobUpdateTimes);
-        }
-        if (!numberOfTopicsToUpdate.equals("0")) {
-            rowData.add(numberOfTopicsToUpdate);
+        for (final Map.Entry<String, String> testMetric : experimentMetrics.getTestMetrics().entrySet()) {
+            rowData.add(testMetric.getValue());
         }
 
-        rowData.add(String.format("%.3f", creationTimeSec));
-        rowData.add(String.format("%.3f", sendAndRecvSec));
-        rowData.add(String.format("%.3f", deletionTimeSec));
-        rowData.add(String.format("%.3f", totalTestTimeSec));
-        rowData.add(strimziMaxBatchSize);
-        rowData.add(maxBatchLingerMs);
-        rowData.add(String.format("%.3f", maxReconciliationDuration));
-        rowData.add(String.format("%.3f", maxBatchSize));
-        rowData.add(String.format("%.3f", maxQueueSize));
-        rowData.add(String.format("%.3f", maxUtoEventQueueTime));
-        rowData.add(String.format("%.3f", describeConfigsMaxDuration));
-        rowData.add(String.format("%.3f", createTopicsMaxDuration));
-        rowData.add(String.format("%.3f", reconciliationsMaxDuration));
-        rowData.add(String.format("%.3f", updateStatusMaxDuration));
-        rowData.add(String.format("%.1f%%", systemLoadAveragePerCore1m));
-        rowData.add(String.format("%.2f", jvmMemoryUsedMBs));
+        for (final Map.Entry<String, List<Double>> componentMetric : experimentMetrics.getComponentMetrics().entrySet()) {
+            if (METRICS_OF_INTEREST.contains(componentMetric.getKey())) {
+                // get max
+                rowData.add(String.valueOf(getMaxValueFromList(componentMetric.getValue())));
+            }
+        }
 
         return rowData.toArray(new String[0]);
     }
 
-    private static String formatBobUpdateTimes(Map<String, String> simpleMetrics) {
-        StringBuilder bobUpdateTimes = new StringBuilder();
-        for (int i = 1; i <= 3; i++) { // Assuming up to 3 rounds for simplification
-            String key = "Bob Update Times Round " + i;
-            if (simpleMetrics.containsKey(key)) {
-                if (bobUpdateTimes.length() > 0) bobUpdateTimes.append(", ");
-                bobUpdateTimes.append(Double.parseDouble(simpleMetrics.get(key).split(" ")[0]) / 1000.0);
-            }
-        }
-        return bobUpdateTimes.toString();
-    }
-
+    /**
+     * Generates headers for the data columns based on the metrics present in the experiment metrics. This ensures
+     * that each column in the output is accurately labeled according to the metrics it represents.
+     *
+     * @param experimentMetrics The {@link ExperimentMetrics} used to determine the headers based on its content.
+     * @return An array of headers, each corresponding to a column in the data output.
+     */
     @Override
-    protected String[] getHeadersForUseCase(String useCaseName) {
+    protected String[] getHeadersForUseCase(ExperimentMetrics experimentMetrics) {
         final List<String> headers = new ArrayList<>();
-        headers.add("Experiment");
-        headers.add(PerformanceConstants.NUMBER_OF_TOPICS);
-        headers.add(PerformanceConstants.NUMBER_OF_CLIENT_INSTANCES);
-        headers.add(PerformanceConstants.NUMBER_OF_MESSAGES);
-        headers.add(PerformanceConstants.CREATION_TIME + " (s)");
-        headers.add(PerformanceConstants.SEND_AND_RECV_TIME + " (s)");
-        headers.add(PerformanceConstants.DELETION_TIME + " (s)");
-        headers.add(PerformanceConstants.TOTAL_TEST_TIME + " (s)");
-        headers.add("STRIMZI_MAX_BATCH_SIZE");
-        headers.add("MAX_BATCH_LINGER_MS");
-        headers.add("Reconciliation Max Duration (s)");
-        headers.add("Max Batch Size");
-        headers.add("Max Queue Size");
-        headers.add("UTO Event Queue Time (s)");
-        headers.add("Describe Configs Max Duration (s)");
-        headers.add("Create Topics Max Duration (s)");
-        headers.add("Reconciliations Max Duration (s)");
-        headers.add("Update Status Max Duration (s)");
-        headers.add("Max System Load Average 1m Per Core (%)");
-        headers.add("Max JVM Memory Used (MBs)");
 
-        // Now, customize for Bob's scenario
-        if (PerformanceConstants.TOPIC_OPERATOR_BOBS_STREAMING_USE_CASE.equals(useCaseName)) {
-            headers.add(4, "Bob Update Times Round 1,2,3 (s)"); // Insert at the correct position
-            headers.add(5, PerformanceConstants.TOPIC_OPERATOR_NUMBER_OF_TOPICS_TO_UPDATE);
+        headers.add("Experiment");
+
+        // for test metrics
+        for (final Map.Entry<String, String> testMetric : experimentMetrics.getTestMetrics().entrySet()) {
+            headers.add(testMetric.getKey());
+        }
+
+        // for component metrics
+        for (final Map.Entry<String, List<Double>> componentMetric : experimentMetrics.getComponentMetrics().entrySet()) {
+            if (METRICS_OF_INTEREST.contains(componentMetric.getKey())) {
+                headers.add(componentMetric.getKey());
+            }
         }
 
         return headers.toArray(new String[0]); // Convert ArrayList back to array

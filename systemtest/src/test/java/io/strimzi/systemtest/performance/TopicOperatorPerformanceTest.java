@@ -266,12 +266,12 @@ public class TopicOperatorPerformanceTest extends AbstractST {
 
                 final Map<String, Object> performanceAttributes = new LinkedHashMap<>();
                 performanceAttributes.put(PerformanceConstants.NUMBER_OF_TOPICS, numberOfTopics);
-                performanceAttributes.put(PerformanceConstants.NUMBER_OF_CLIENT_INSTANCES, numberOfClientInstances);
+                performanceAttributes.put(PerformanceConstants.NUMBER_OF_CLIENT_INSTANCES, numberOfClientInstances * 2); // producer and consumers
                 performanceAttributes.put(PerformanceConstants.NUMBER_OF_MESSAGES, NUMBER_OF_MESSAGES);
-                performanceAttributes.put(PerformanceConstants.CREATION_TIME, createTopicsTimeMs + " ms");
-                performanceAttributes.put(PerformanceConstants.SEND_AND_RECV_TIME, totalSendAndRecvTimeMs + " ms");
-                performanceAttributes.put(PerformanceConstants.DELETION_TIME, totalDeletionTimeMs + " ms");
-                performanceAttributes.put(PerformanceConstants.TOTAL_TEST_TIME, totalTimeWholeMs + " ms");
+                performanceAttributes.put(PerformanceConstants.CREATION_TIME, createTopicsTimeMs);
+                performanceAttributes.put(PerformanceConstants.SEND_AND_RECV_TIME, totalSendAndRecvTimeMs);
+                performanceAttributes.put(PerformanceConstants.DELETION_TIME, totalDeletionTimeMs);
+                performanceAttributes.put(PerformanceConstants.TOTAL_TEST_TIME, totalTimeWholeMs);
                 performanceAttributes.put(PerformanceConstants.MAX_BATCH_SIZE, maxBatchSize);
                 performanceAttributes.put(PerformanceConstants.MAX_BATCH_LINGER_MS, maxBatchLingerMs);
 
@@ -518,12 +518,12 @@ public class TopicOperatorPerformanceTest extends AbstractST {
 
                 final Map<String, Object> performanceAttributes = new LinkedHashMap<>();
                 performanceAttributes.put(PerformanceConstants.NUMBER_OF_TOPICS, numberOfTopics);
-                performanceAttributes.put(PerformanceConstants.NUMBER_OF_CLIENT_INSTANCES, numberOfClientInstances);
+                performanceAttributes.put(PerformanceConstants.NUMBER_OF_CLIENT_INSTANCES, numberOfClientInstances * 2); // producer and consumers
                 performanceAttributes.put(PerformanceConstants.NUMBER_OF_MESSAGES, NUMBER_OF_MESSAGES);
-                performanceAttributes.put(PerformanceConstants.CREATION_TIME, createTopicsTimeMs + " ms");
-                performanceAttributes.put(PerformanceConstants.SEND_AND_RECV_TIME, totalSendAndRecvTimeMs + " ms");
-                performanceAttributes.put(PerformanceConstants.DELETION_TIME, totalDeletionTimeMs + " ms");
-                performanceAttributes.put(PerformanceConstants.TOTAL_TEST_TIME, totalTimeWholeMs + " ms");
+                performanceAttributes.put(PerformanceConstants.CREATION_TIME, createTopicsTimeMs);
+                performanceAttributes.put(PerformanceConstants.SEND_AND_RECV_TIME, totalSendAndRecvTimeMs);
+                performanceAttributes.put(PerformanceConstants.DELETION_TIME, totalDeletionTimeMs);
+                performanceAttributes.put(PerformanceConstants.TOTAL_TEST_TIME, totalTimeWholeMs);
                 performanceAttributes.put(PerformanceConstants.MAX_BATCH_SIZE, maxBatchSize);
                 performanceAttributes.put(PerformanceConstants.MAX_BATCH_LINGER_MS, maxBatchLingerMs);
                 performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_NUMBER_OF_TOPICS_TO_UPDATE, bobAmountOfKafkaTopics);
