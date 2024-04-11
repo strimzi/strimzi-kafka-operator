@@ -74,7 +74,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
@@ -110,6 +109,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
     private SecretOperator mockSecretOps;
     private KafkaRebalanceAssemblyOperator kcrao;
     private ConfigMapOperator mockCmOps;
+    private ResourceOperatorSupplier supplier;
 
     @BeforeAll
     public static void beforeAll() {
@@ -140,7 +140,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
 
         ccServer.reset();
 
-        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+        supplier = ResourceUtils.supplierWithMocks(false);
 
         // Override to inject mocked cruise control address so real cruise control not required
         kcrao = new KafkaRebalanceAssemblyOperator(vertx, supplier, ResourceUtils.dummyClusterOperatorConfig()) {
@@ -237,7 +237,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
         mockRebalanceOperator(mockRebalanceOps, mockCmOps, namespace, kr.getMetadata().getName(), client);
 
         Checkpoint checkpoint = context.checkpoint();
-        kcrao.reconcileRebalance(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()), kr)
+        kcrao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()))
                 .onComplete(context.succeeding(v -> {
                     // the resource moved from 'New' directly to 'ProposalReady' (no pending calls in the Mock server)
                     assertState(context, client, namespace, kr.getMetadata().getName(), KafkaRebalanceState.ProposalReady);
@@ -272,14 +272,13 @@ public class KafkaRebalanceAssemblyOperatorTest {
 
         Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kr).create();
 
-        // the Kafka cluster isn't deployed in the namespace
         when(mockKafkaOps.getAsync(namespace, CLUSTER_NAME)).thenReturn(Future.succeededFuture(kafka()));
         mockSecretResources();
         mockRebalanceOperator(mockRebalanceOps, mockCmOps, namespace, kr.getMetadata().getName(), client);
 
         Checkpoint checkpoint = context.checkpoint();
 
-        kcrao.reconcileRebalance(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()), kr)
+        kcrao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()))
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     // the resource moved from New to NotReady due to the error
                     KafkaRebalance kr1 = Crds.kafkaRebalanceOperation(client).inNamespace(namespace).withName(kr.getMetadata().getName()).get();
@@ -310,9 +309,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
                                     .endSpec()
                                     .build());
 
-                    return kcrao.reconcileRebalance(
-                            new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()),
-                           updatedKafkaRebalance);
+                    return kcrao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()));
                 })
                 .onComplete(context.succeeding(v -> {
                     // the resource transitioned from 'NotReady' to 'ProposalReady'
@@ -367,16 +364,14 @@ public class KafkaRebalanceAssemblyOperatorTest {
         mockRebalanceOperator(mockRebalanceOps, mockCmOps, namespace, kr.getMetadata().getName(), client);
 
         Checkpoint checkpoint = context.checkpoint();
-        kcrao.reconcileRebalance(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()), kr)
+        kcrao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()))
                 .onComplete(context.succeeding(v -> {
                     // the resource moved from New to PendingProposal (proposal not ready yet due to the configured CC mock server pending calls)
                     assertState(context, client, namespace, kr.getMetadata().getName(), KafkaRebalanceState.PendingProposal);
                 }))
                 .compose(v -> {
                     // trigger another reconcile to process the PendingProposal state
-                    KafkaRebalance kr1 = Crds.kafkaRebalanceOperation(client).inNamespace(namespace).withName(kr.getMetadata().getName()).get();
-
-                    return kcrao.reconcileRebalance(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()), kr1);
+                    return kcrao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()));
                 })
                 .onComplete(context.succeeding(v -> {
                     // the resource stays in PendingProposal (proposal not ready yet due to the configured CC mock server pending calls)
@@ -384,9 +379,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
                 }))
                 .compose(v -> {
                     // trigger another reconcile to process the PendingProposal state
-                    KafkaRebalance kr2 = Crds.kafkaRebalanceOperation(client).inNamespace(namespace).withName(kr.getMetadata().getName()).get();
-
-                    return kcrao.reconcileRebalance(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()), kr2);
+                    return kcrao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()));
                 })
                 .onComplete(context.succeeding(v -> {
                     // the resource moved from PendingProposal to ProposalReady
@@ -447,19 +440,17 @@ public class KafkaRebalanceAssemblyOperatorTest {
         mockRebalanceOperator(mockRebalanceOps, mockCmOps, namespace, kr.getMetadata().getName(), client);
 
         Checkpoint checkpoint = context.checkpoint();
-        kcrao.reconcileRebalance(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()), kr)
+        kcrao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()))
                 .onComplete(context.succeeding(v -> {
                     // the resource moved from New to PendingProposal (proposal not ready yet due to the configured CC mock server pending calls)
                     assertState(context, client, namespace, kr.getMetadata().getName(), KafkaRebalanceState.PendingProposal);
                 }))
                 .compose(v -> {
                     // apply the "stop" annotation to the resource in the PendingProposal state
-                    KafkaRebalance stoppedKr = annotate(client, namespace, kr.getMetadata().getName(), KafkaRebalanceAnnotation.stop);
+                    annotate(client, namespace, kr.getMetadata().getName(), KafkaRebalanceAnnotation.stop);
 
                     // trigger another reconcile to process the PendingProposal state
-                    return kcrao.reconcileRebalance(
-                            new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()),
-                            stoppedKr);
+                    return kcrao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()));
                 })
                 .onComplete(context.succeeding(v -> {
                     // the resource moved from PendingProposal to Stopped
@@ -521,43 +512,36 @@ public class KafkaRebalanceAssemblyOperatorTest {
         mockRebalanceOperator(mockRebalanceOps, mockCmOps, namespace, kr.getMetadata().getName(), client);
 
         Checkpoint checkpoint = context.checkpoint();
-        kcrao.reconcileRebalance(
-                new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()),
-                kr)
+        kcrao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()))
                 // the resource moved from New to PendingProposal (proposal not ready yet due to the configured CC mock server pending calls)
                 .onComplete(context.succeeding(v ->
                         assertState(context, client, namespace, kr.getMetadata().getName(), KafkaRebalanceState.PendingProposal)))
                 .compose(v -> {
                     // apply the "stop" annotation to the resource in the PendingProposal state
-                    KafkaRebalance stoppedKr = annotate(client, namespace, kr.getMetadata().getName(), KafkaRebalanceAnnotation.stop);
+                    annotate(client, namespace, kr.getMetadata().getName(), KafkaRebalanceAnnotation.stop);
 
                     // trigger another reconcile to process the PendingProposal state
-                    return kcrao.reconcileRebalance(
-                            new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()),
-                            stoppedKr);
+                    return kcrao.reconcile(
+                            new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()));
                 })
                 // the resource moved from PendingProposal to Stopped
                 .onComplete(context.succeeding(v ->
                         assertState(context, client, namespace, kr.getMetadata().getName(), KafkaRebalanceState.Stopped)))
                 .compose(v -> {
                     // apply the "refresh" annotation to the resource in the Stopped state
-                    KafkaRebalance refreshedKr = annotate(client, namespace, kr.getMetadata().getName(), KafkaRebalanceAnnotation.refresh);
+                    annotate(client, namespace, kr.getMetadata().getName(), KafkaRebalanceAnnotation.refresh);
 
                     // trigger another reconcile to process the Stopped state
-                    return kcrao.reconcileRebalance(
-                            new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()),
-                            refreshedKr);
+                    return kcrao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()));
                 })
                 // the resource moved from Stopped to PendingProposal (proposal not ready yet due to the configured CC mock server pending calls)
                 .onComplete(context.succeeding(v ->
                         assertState(context, client, namespace, kr.getMetadata().getName(), KafkaRebalanceState.PendingProposal)))
                 .compose(v -> {
                     // trigger another reconcile to process the PendingProposal state
-                    KafkaRebalance pendingProposalKr = Crds.kafkaRebalanceOperation(client).inNamespace(namespace).withName(kr.getMetadata().getName()).get();
+                    Crds.kafkaRebalanceOperation(client).inNamespace(namespace).withName(kr.getMetadata().getName()).get();
 
-                    return kcrao.reconcileRebalance(
-                            new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()),
-                            pendingProposalKr);
+                    return kcrao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()));
                 })
                 .onComplete(context.succeeding(v -> {
                     // the resource moved from PendingProposal to ProposalReady
@@ -654,9 +638,10 @@ public class KafkaRebalanceAssemblyOperatorTest {
         when(mockKafkaOps.getAsync(namespace, CLUSTER_NAME)).thenReturn(Future.succeededFuture(kafka()));
         mockSecretResources();
         mockRebalanceOperator(mockRebalanceOps, mockCmOps, namespace, kr.getMetadata().getName(), client);
+        when(mockCmOps.getAsync(namespace, RESOURCE_NAME)).thenReturn(Future.succeededFuture(new ConfigMap()));
 
         Checkpoint checkpoint = context.checkpoint();
-        kcrao.reconcileRebalance(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()), kr)
+        kcrao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()))
                 // the resource moved from 'New' to 'ProposalReady' directly (no pending calls in the Mock server)
                 .onComplete(context.succeeding(v ->
                         assertState(context, client, namespace, kr.getMetadata().getName(), KafkaRebalanceState.ProposalReady)))
@@ -664,13 +649,11 @@ public class KafkaRebalanceAssemblyOperatorTest {
 
                     // if "rebalance-auto-approval" annotation is set, no need for applying the "approve" annotation
                     // otherwise apply the "approve" annotation to the resource in the ProposalReady state
-                    KafkaRebalance approvedKr = Annotations.booleanAnnotation(kr, Annotations.ANNO_STRIMZI_IO_REBALANCE_AUTOAPPROVAL, false) ?
-                            kr :
-                            annotate(client, namespace, kr.getMetadata().getName(), KafkaRebalanceAnnotation.approve);
+                    if (!Annotations.booleanAnnotation(kr, Annotations.ANNO_STRIMZI_IO_REBALANCE_AUTOAPPROVAL, false)) {
+                        annotate(client, namespace, kr.getMetadata().getName(), KafkaRebalanceAnnotation.approve);
+                    }
 
-                    return kcrao.reconcileRebalance(
-                            new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()),
-                            approvedKr);
+                    return kcrao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()));
                 })
                 .onComplete(context.succeeding(v -> {
                     // the resource moved from ProposalReady to Rebalancing on approval
@@ -678,11 +661,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
                 }))
                 .compose(v -> {
                     // trigger another reconcile to process the Rebalancing state
-                    KafkaRebalance kr4 = Crds.kafkaRebalanceOperation(client).inNamespace(namespace).withName(kr.getMetadata().getName()).get();
-
-                    return kcrao.reconcileRebalance(
-                            new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()),
-                            kr4);
+                    return kcrao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()));
                 })
                 .onComplete(context.succeeding(v -> {
                     // the resource moved from Rebalancing to Ready
@@ -738,7 +717,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
         mockRebalanceOperator(mockRebalanceOps, mockCmOps, namespace, kr.getMetadata().getName(), client);
 
         Checkpoint checkpoint = context.checkpoint();
-        kcrao.reconcileRebalance(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()), kr)
+        kcrao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()))
                 // the resource moved from 'New' to 'ProposalReady' directly (no pending calls in the Mock server)
                 .onComplete(context.succeeding(v ->
                         assertState(context, client, namespace, kr.getMetadata().getName(), KafkaRebalanceState.ProposalReady)))
@@ -758,9 +737,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
                             .withName(kr.getMetadata().getName())
                             .edit(kr3 -> patchedKr);
 
-                    return kcrao.reconcileRebalance(
-                            new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()),
-                            kr2);
+                    return kcrao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()));
                 })
                 .onComplete(context.succeeding(v -> {
                     // the resource moved from ProposalReady to ReconciliationPaused on pausing
@@ -823,17 +800,15 @@ public class KafkaRebalanceAssemblyOperatorTest {
         mockRebalanceOperator(mockRebalanceOps, mockCmOps, namespace, kr.getMetadata().getName(), client);
 
         Checkpoint checkpoint = context.checkpoint();
-        kcrao.reconcileRebalance(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()), kr)
+        kcrao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()))
                 // the resource moved from 'New' to 'ProposalReady' directly (no pending calls in the Mock server)
                 .onComplete(context.succeeding(v ->
                         assertState(context, client, namespace, kr.getMetadata().getName(), KafkaRebalanceState.ProposalReady)))
                 .compose(v -> {
                     // apply the "approve" annotation to the resource in the ProposalReady state
-                    KafkaRebalance approvedKr = annotate(client, namespace, kr.getMetadata().getName(), KafkaRebalanceAnnotation.approve);
+                    annotate(client, namespace, kr.getMetadata().getName(), KafkaRebalanceAnnotation.approve);
 
-                    return kcrao.reconcileRebalance(
-                            new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()),
-                            approvedKr);
+                    return kcrao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()));
                 })
                 .onComplete(context.succeeding(v -> {
                     // the resource moved from ProposalReady to Rebalancing on approval
@@ -841,11 +816,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
                 }))
                 .compose(v -> {
                     // trigger another reconcile to process the Rebalancing state
-                    KafkaRebalance kr4 = Crds.kafkaRebalanceOperation(client).inNamespace(namespace).withName(kr.getMetadata().getName()).get();
-
-                    return kcrao.reconcileRebalance(
-                            new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()),
-                            kr4);
+                    return kcrao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()));
                 })
                 .onComplete(context.succeeding(v -> {
                     // the resource moved from Rebalancing to Ready
@@ -853,11 +824,9 @@ public class KafkaRebalanceAssemblyOperatorTest {
                 }))
                 .compose(v -> {
                     // apply the "refresh" annotation to the resource in the ProposalReady state
-                    KafkaRebalance refreshKr = annotate(client, namespace, kr.getMetadata().getName(), KafkaRebalanceAnnotation.refresh);
+                    annotate(client, namespace, kr.getMetadata().getName(), KafkaRebalanceAnnotation.refresh);
 
-                    return kcrao.reconcileRebalance(
-                            new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()),
-                            refreshKr);
+                    return kcrao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()));
                 })
                 .onComplete(context.succeeding(v -> {
                     // the resource moved from Ready to ProposalReady
@@ -920,13 +889,12 @@ public class KafkaRebalanceAssemblyOperatorTest {
 
         Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kr).create();
 
-        // the Kafka cluster isn't deployed in the namespace
         when(mockKafkaOps.getAsync(namespace, CLUSTER_NAME)).thenReturn(Future.succeededFuture(kafka()));
         mockSecretResources();
         mockRebalanceOperator(mockRebalanceOps, mockCmOps, namespace, kr.getMetadata().getName(), client);
 
         Checkpoint checkpoint = context.checkpoint();
-        kcrao.reconcileRebalance(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()), kr)
+        kcrao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()))
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     // the resource moved from New to NotReady due to the error
                     KafkaRebalance kr1 = Crds.kafkaRebalanceOperation(client).inNamespace(namespace).withName(kr.getMetadata().getName()).get();
@@ -1003,7 +971,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
         mockRebalanceOperator(mockRebalanceOps, mockCmOps, namespace, kr.getMetadata().getName(), client);
 
         Checkpoint checkpoint = context.checkpoint();
-        kcrao.reconcileRebalance(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()), kr)
+        kcrao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()))
                 .onComplete(context.succeeding(v -> {
                     // the resource moved from New directly to ProposalReady (no pending calls in the Mock server)
                     assertState(context, client, namespace, kr.getMetadata().getName(), KafkaRebalanceState.ProposalReady);
@@ -1070,13 +1038,12 @@ public class KafkaRebalanceAssemblyOperatorTest {
 
         Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kr).create();
 
-        // the Kafka cluster isn't deployed in the namespace
         when(mockKafkaOps.getAsync(namespace, CLUSTER_NAME)).thenReturn(Future.succeededFuture(kafka()));
         mockSecretResources();
         mockRebalanceOperator(mockRebalanceOps, mockCmOps, namespace, kr.getMetadata().getName(), client);
 
         Checkpoint checkpoint = context.checkpoint();
-        kcrao.reconcileRebalance(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()), kr)
+        kcrao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()))
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     // the resource moved from New to NotReady due to the error
                     KafkaRebalance kr1 = Crds.kafkaRebalanceOperation(client).inNamespace(namespace).withName(kr.getMetadata().getName()).get();
@@ -1109,12 +1076,10 @@ public class KafkaRebalanceAssemblyOperatorTest {
                                     .build());
 
                     // apply the "refresh" annotation to the resource in the NotReady state
-                    KafkaRebalance annotatedPatchedKr = annotate(client, namespace, kr.getMetadata().getName(), KafkaRebalanceAnnotation.refresh);
+                    annotate(client, namespace, kr.getMetadata().getName(), KafkaRebalanceAnnotation.refresh);
 
                     // trigger another reconcile to process the NotReady state
-                    return kcrao.reconcileRebalance(
-                            new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()),
-                            annotatedPatchedKr);
+                    return kcrao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()));
                 })
                 .onComplete(context.succeeding(v -> {
                     // the resource transitioned from 'NotReady' to 'ProposalReady'
@@ -1167,27 +1132,20 @@ public class KafkaRebalanceAssemblyOperatorTest {
         mockRebalanceOperator(mockRebalanceOps, mockCmOps, namespace, kr.getMetadata().getName(), client);
 
         Checkpoint checkpoint = context.checkpoint();
-        kcrao.reconcileRebalance(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()), kr)
+        kcrao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()))
                 // the resource moved from 'New' to 'PendingProposal' (due to the configured Mock server pending calls)
                 .onComplete(context.succeeding(v ->
                         assertState(context, client, namespace, kr.getMetadata().getName(), KafkaRebalanceState.PendingProposal)))
                 .compose(v -> {
                     // trigger another reconcile to process the PendingProposal state
-                    KafkaRebalance currentKR = Crds.kafkaRebalanceOperation(client).inNamespace(namespace).withName(kr.getMetadata().getName()).get();
-
-                    return kcrao.reconcileRebalance(
-                            new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()),
-                            currentKR);
+                    return kcrao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()));
                 })
                 .onComplete(context.succeeding(v ->
                         assertState(context, client, namespace, kr.getMetadata().getName(), KafkaRebalanceState.PendingProposal)))
                 .compose(v -> {
                     // trigger another reconcile to process the PendingProposal state
                     Crds.kafkaRebalanceOperation(client).inNamespace(namespace).withName(kr.getMetadata().getName()).delete();
-
-                    return kcrao.reconcileRebalance(
-                            new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()),
-                            null);
+                    return kcrao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()));
                 })
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     // the resource should not exist anymore
@@ -1251,31 +1209,25 @@ public class KafkaRebalanceAssemblyOperatorTest {
         when(mockCmOps.getAsync(namespace, RESOURCE_NAME)).thenReturn(Future.succeededFuture(new ConfigMap()));
 
         Checkpoint checkpoint = context.checkpoint();
-        kcrao.reconcileRebalance(
-                new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()),
-                kr)
+        kcrao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()))
                 // the resource moved from New to ProposalReady directly (no pending calls in the CC mock server)
                 .onComplete(context.succeeding(v ->
                         assertState(context, client, namespace, kr.getMetadata().getName(), KafkaRebalanceState.ProposalReady)))
                 .compose(v -> {
                     // apply the "approve" annotation to the resource in the ProposalReady state
-                    KafkaRebalance approvedKr = annotate(client, namespace, kr.getMetadata().getName(), KafkaRebalanceAnnotation.approve);
+                    annotate(client, namespace, kr.getMetadata().getName(), KafkaRebalanceAnnotation.approve);
 
-                    return kcrao.reconcileRebalance(
-                            new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()),
-                            approvedKr);
+                    return kcrao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()));
                 })
                 // the resource moved from ProposalReady to Rebalancing on approval
                 .onComplete(context.succeeding(v ->
                         assertState(context, client, namespace, kr.getMetadata().getName(), KafkaRebalanceState.Rebalancing)))
                 .compose(v -> {
                     // apply the "stop" annotation to the resource in the Rebalancing state
-                    KafkaRebalance stoppedKr = annotate(client, namespace, kr.getMetadata().getName(), KafkaRebalanceAnnotation.stop);
+                    annotate(client, namespace, kr.getMetadata().getName(), KafkaRebalanceAnnotation.stop);
 
                     // trigger another reconcile to process the Rebalancing state
-                    return kcrao.reconcileRebalance(
-                            new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()),
-                            stoppedKr);
+                    return kcrao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()));
                 })
                 .onComplete(context.succeeding(v -> {
                     // the resource moved from Rebalancing to Stopped
@@ -1304,9 +1256,8 @@ public class KafkaRebalanceAssemblyOperatorTest {
         mockRebalanceOperator(mockRebalanceOps, mockCmOps, namespace, RESOURCE_NAME, client);
 
         Checkpoint checkpoint = context.checkpoint();
-        kcrao.reconcileRebalance(
-                new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, RESOURCE_NAME),
-                kr).onComplete(context.succeeding(v -> context.verify(() -> {
+        kcrao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, RESOURCE_NAME))
+                .onComplete(context.succeeding(v -> context.verify(() -> {
                     // the resource moved from New to NotReady due to the error
                     assertState(context, client, namespace, RESOURCE_NAME,
                             KafkaRebalanceState.NotReady, NoSuchResourceException.class,
@@ -1348,13 +1299,11 @@ public class KafkaRebalanceAssemblyOperatorTest {
 
         Checkpoint checkpoint = context.checkpoint();
 
-        kcrao.reconcileRebalance(
-                new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, RESOURCE_NAME),
-                        kr1).onComplete(context.succeeding(v -> context.verify(() -> {
-                            assertState(context, client, namespace, kr1.getMetadata().getName(), KafkaRebalanceState.Ready);
-                        })))
+        kcrao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, RESOURCE_NAME))
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    assertState(context, client, namespace, kr1.getMetadata().getName(), KafkaRebalanceState.Ready);
+                })))
                 .compose(v -> {
-                    KafkaRebalance kr2 = Crds.kafkaRebalanceOperation(client).inNamespace(namespace).withName(RESOURCE_NAME).get();
                     Kafka kafkaPatch = new KafkaBuilder(ResourceUtils.createKafka(namespace, CLUSTER_NAME, REPLICAS, IMAGE, HEALTH_DELAY, HEALTH_TIMEOUT))
                             .editSpec()
                                 .editKafka()
@@ -1373,9 +1322,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
                             .endStatus()
                             .build();
                     when(mockKafkaOps.getAsync(namespace, CLUSTER_NAME)).thenReturn(Future.succeededFuture(kafkaPatch));
-                    return kcrao.reconcileRebalance(
-                            new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, RESOURCE_NAME),
-                            kr2);
+                    return kcrao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, RESOURCE_NAME));
                 })
                 .onComplete(context.succeeding(v -> {
                     // the resource moved from ProposalReady to Rebalancing on approval
@@ -1390,13 +1337,11 @@ public class KafkaRebalanceAssemblyOperatorTest {
      */
     @Test
     public void testKafkaClusterNotMatchingLabelSelector(VertxTestContext context) {
-        KafkaRebalance kr =
-                createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, EMPTY_KAFKA_REBALANCE_SPEC, false);
+        KafkaRebalance kr = createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, EMPTY_KAFKA_REBALANCE_SPEC, false);
+        Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kr).create();
 
-        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        mockKafkaOps = supplier.kafkaOperator;
-        mockRebalanceOps = supplier.kafkaRebalanceOperator;
         when(mockKafkaOps.getAsync(namespace, CLUSTER_NAME)).thenReturn(Future.succeededFuture(kafka()));
+        mockRebalanceOperator(mockRebalanceOps, mockCmOps, namespace, RESOURCE_NAME, client);
 
         ClusterOperatorConfig config = new ClusterOperatorConfig.ClusterOperatorConfigBuilder(ResourceUtils.dummyClusterOperatorConfig(), KafkaVersionTestUtils.getKafkaVersionLookup())
                 .with(ClusterOperatorConfig.OPERATION_TIMEOUT_MS.key(), "120000")
@@ -1405,12 +1350,11 @@ public class KafkaRebalanceAssemblyOperatorTest {
         kcrao = new KafkaRebalanceAssemblyOperator(Vertx.vertx(), supplier, config);
 
         Checkpoint checkpoint = context.checkpoint();
-        kcrao.reconcileRebalance(
-                new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, RESOURCE_NAME),
-                kr).onComplete(context.succeeding(v -> context.verify(() -> {
-                    // The labels of the Kafka resource do not match the => the KafkaRebalance should not be reconciled and the
-                    // rebalance ops should have no interactions.
-                    verifyNoInteractions(mockRebalanceOps);
+        kcrao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, RESOURCE_NAME))
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    KafkaRebalance kr2 = Crds.kafkaRebalanceOperation(client).inNamespace(namespace).withName(kr.getMetadata().getName()).get();
+                    // The labels of the Kafka resource do not match the => the KafkaRebalance is skipped and status not updated
+                    assertThat(kr2.getStatus(), is(nullValue()));
                     checkpoint.flag();
                 })));
     }
@@ -1441,7 +1385,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
         mockRebalanceOperator(mockRebalanceOps, mockCmOps, namespace, RESOURCE_NAME, client);
 
         Checkpoint checkpoint = context.checkpoint();
-        kcrao.reconcileRebalance(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, RESOURCE_NAME), kr)
+        kcrao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, RESOURCE_NAME))
                 .onComplete(context.succeeding(v -> {
                     // the resource moved from 'New' directly to 'ProposalReady' (no pending calls in the Mock server)
                     assertState(context, client, namespace, RESOURCE_NAME, KafkaRebalanceState.ProposalReady);
@@ -1488,7 +1432,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
         mockRebalanceOperator(mockRebalanceOps, mockCmOps, namespace, RESOURCE_NAME, client);
 
         Checkpoint checkpoint = context.checkpoint();
-        kcrao.reconcileRebalance(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, RESOURCE_NAME), kr)
+        kcrao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, RESOURCE_NAME))
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     // the resource moved from New to NotReady due to the error
                     assertState(context, client, namespace, RESOURCE_NAME,
@@ -1528,7 +1472,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
         mockRebalanceOperator(mockRebalanceOps, mockCmOps, namespace, RESOURCE_NAME, client);
 
         Checkpoint checkpoint = context.checkpoint();
-        kcrao.reconcileRebalance(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, RESOURCE_NAME), kr)
+        kcrao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, RESOURCE_NAME))
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 // the resource moved from New to NotReady due to the error
                 assertState(context, client, namespace, RESOURCE_NAME,
@@ -1566,9 +1510,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
                     mockRebalanceOperator(mockRebalanceOps, mockCmOps, namespace, RESOURCE_NAME, client);
 
                     // trigger another reconcile to process the NotReady state
-                    return kcrao.reconcileRebalance(
-                            new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, RESOURCE_NAME),
-                            kr);
+                    return kcrao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, RESOURCE_NAME));
                 })
                 .onComplete(context.succeeding(v -> {
                     // the resource transitioned from 'NotReady' to 'ProposalReady'
@@ -1596,7 +1538,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
         mockRebalanceOperator(mockRebalanceOps, mockCmOps, namespace, RESOURCE_NAME, client);
 
         Checkpoint checkpoint = context.checkpoint();
-        kcrao.reconcileRebalance(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, RESOURCE_NAME), kr)
+        kcrao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, RESOURCE_NAME))
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 // the resource moved from New to NotReady due to the error
                 assertState(context, client, namespace, RESOURCE_NAME,
@@ -1630,7 +1572,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
         mockRebalanceOperator(mockRebalanceOps, mockCmOps, namespace, RESOURCE_NAME, client);
 
         Checkpoint checkpoint = context.checkpoint();
-        kcrao.reconcileRebalance(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, RESOURCE_NAME), kr)
+        kcrao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, RESOURCE_NAME))
             .onComplete(context.succeeding(v -> {
                 // the resource moved from New to NotReady (mocked Cruise Control didn't reply on time)
                 assertState(context, client, namespace, RESOURCE_NAME,
@@ -1663,7 +1605,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
         mockRebalanceOperator(mockRebalanceOps, mockCmOps, namespace, RESOURCE_NAME, client);
 
         Checkpoint checkpoint = context.checkpoint();
-        kcrao.reconcileRebalance(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, RESOURCE_NAME), kr)
+        kcrao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, RESOURCE_NAME))
             .onComplete(context.succeeding(v -> {
                 try {
                     ccServer = new MockCruiseControl(CruiseControl.REST_API_PORT);
@@ -1697,13 +1639,12 @@ public class KafkaRebalanceAssemblyOperatorTest {
 
         Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kr).create();
 
-        // the Kafka cluster isn't deployed in the namespace
         when(mockKafkaOps.getAsync(namespace, CLUSTER_NAME)).thenReturn(Future.succeededFuture(kafka()));
         mockSecretResources();
         mockRebalanceOperator(mockRebalanceOps, mockCmOps, namespace, RESOURCE_NAME, client);
 
         Checkpoint checkpoint = context.checkpoint();
-        kcrao.reconcileRebalance(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, RESOURCE_NAME), kr)
+        kcrao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, RESOURCE_NAME))
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     // the resource moved from New to NotReady due to the error
                     KafkaRebalance kr1 = Crds.kafkaRebalanceOperation(client).inNamespace(namespace).withName(RESOURCE_NAME).get();
@@ -1776,20 +1717,12 @@ public class KafkaRebalanceAssemblyOperatorTest {
                 .build();
     }
 
-    private void mockRebalanceOperator(CrdOperator<KubernetesClient, KafkaRebalance, KafkaRebalanceList> mockRebalanceOps, ConfigMapOperator mockCmOps,
-                                       String namespace, String resource, KubernetesClient client) {
-        mockRebalanceOperator(mockRebalanceOps, mockCmOps, namespace, resource, client, null);
-    }
-
     private void mockRebalanceOperator(CrdOperator<KubernetesClient, KafkaRebalance, KafkaRebalanceList> mockRebalanceOps,
-                                       ConfigMapOperator mockCmOps, String namespace, String resource, KubernetesClient client, Runnable getAsyncFunction) {
+                                       ConfigMapOperator mockCmOps, String namespace, String resource, KubernetesClient client) {
 
 
         when(mockRebalanceOps.getAsync(namespace, resource)).thenAnswer(invocation -> {
             try {
-                if (getAsyncFunction != null) {
-                    getAsyncFunction.run();
-                }
                 return Future.succeededFuture(Crds.kafkaRebalanceOperation(client)
                         .inNamespace(namespace)
                         .withName(resource)
