@@ -121,6 +121,35 @@ public class KafkaMirrorMaker2ConnectorsTest {
     }
 
     @Test
+    public void testMirrorTargetClusterNotSameAsConnectCluster() {
+        // The most obvious error case, where connect cluster is set to the source cluster instead of target
+        KafkaMirrorMaker2 kmm2 = new KafkaMirrorMaker2Builder(KMM2)
+                .editSpec()
+                    .withConnectCluster("source")
+                .endSpec()
+                .build();
+        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> KafkaMirrorMaker2Connectors.validateConnectors(kmm2));
+        assertThat(ex.getMessage(), is("KafkaMirrorMaker2 resource validation failed: " +
+                "[Target cluster alias target is used in a mirror definition, but it is not the same as the connect cluster alias source]"));
+
+        // A case where one mirror has the correct target cluster, but the other does not
+        KafkaMirrorMaker2 kmm2CorrectAndIncorrectMirror = new KafkaMirrorMaker2Builder(KMM2)
+                .editSpec()
+                .addToClusters(new KafkaMirrorMaker2ClusterSpecBuilder()
+                                .withAlias("third")
+                                .withBootstrapServers("third:9092")
+                                .build())
+                .addToMirrors(new KafkaMirrorMaker2MirrorSpecBuilder()
+                        .withSourceCluster("source")
+                        .withTargetCluster("third").build())
+                .endSpec()
+                .build();
+        ex = assertThrows(InvalidResourceException.class, () -> KafkaMirrorMaker2Connectors.validateConnectors(kmm2CorrectAndIncorrectMirror));
+        assertThat(ex.getMessage(), is("KafkaMirrorMaker2 resource validation failed: " +
+                "[Target cluster alias third is used in a mirror definition, but it is not the same as the connect cluster alias target]"));
+    }
+
+    @Test
     public void testConnectors() {
         KafkaMirrorMaker2Connectors connectors = KafkaMirrorMaker2Connectors.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KMM2);
         List<KafkaConnector> kcs = connectors.generateConnectorDefinitions();

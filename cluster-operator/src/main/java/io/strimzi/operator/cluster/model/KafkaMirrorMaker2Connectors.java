@@ -101,6 +101,7 @@ public class KafkaMirrorMaker2Connectors {
             } else {
                 Set<String> existingClusterAliases = kafkaMirrorMaker2.getSpec().getClusters().stream().map(KafkaMirrorMaker2ClusterSpec::getAlias).collect(Collectors.toSet());
                 Set<String> errorMessages = new HashSet<>();
+                String connectCluster = kafkaMirrorMaker2.getSpec().getConnectCluster();
 
                 for (KafkaMirrorMaker2MirrorSpec mirror : kafkaMirrorMaker2.getSpec().getMirrors())  {
                     if (mirror.getSourceCluster() == null)  {
@@ -115,7 +116,6 @@ public class KafkaMirrorMaker2Connectors {
                         errorMessages.add("Target cluster alias " + mirror.getTargetCluster() + " is used in a mirror definition, but cluster with this alias does not exist in cluster definitions");
                     }
 
-                    String connectCluster = kafkaMirrorMaker2.getSpec().getConnectCluster();
                     if (!mirror.getTargetCluster().equals(connectCluster)) {
                         errorMessages.add("Target cluster alias " + mirror.getTargetCluster() + " is used in a mirror definition, but it is not the same as the connect cluster alias " + connectCluster);
                     }
