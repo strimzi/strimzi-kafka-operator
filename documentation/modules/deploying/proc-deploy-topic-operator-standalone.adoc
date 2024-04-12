@@ -180,7 +180,7 @@ env:
     value: your-instance-here.kafka-serverless.us-east-1.amazonaws.com:9098
 # ...
 ----
-<1> Some managed Kafka services don't allow cluster config lookup, so we disable those checks.
+<1> Disables cluster configuration lookup for managed Kafka services that don't allow topic configuration changes.
 <2> Defines the topic configuration properties that can be updated based on the limitations set by managed Kafka services.
 <3> Specifies the SASL properties to be set in JSON format. Only properties starting with `sasl.` are allowed.
 +
