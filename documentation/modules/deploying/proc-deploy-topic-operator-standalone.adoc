@@ -177,7 +177,7 @@ env:
   - name: STRIMZI_TRUSTSTORE_PASSWORD
     value: changeit
   - name: STRIMZI_KAFKA_BOOTSTRAP_SERVERS
-    value: your-instance-here.kafka-serverless.us-east-1.amazonaws.com:9098
+    value: my-kafka-cluster-.kafka-serverless.us-east-1.amazonaws.com:9098
 # ...
 ----
 <1> Disables cluster configuration lookup for managed Kafka services that don't allow topic configuration changes.
