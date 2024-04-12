@@ -206,6 +206,6 @@ public class ThrottlingQuotaST extends AbstractST {
                 KafkaResources.plainBootstrapAddress(sharedTestStorage.getClusterName()),
                 CommonClientConfigs.REQUEST_TIMEOUT_MS_CONFIG + "=" + TIMEOUT_REQUEST_MS
             ));
-        limitedAdminClient = AdminClientUtils.getConfiguredAdminClient(sharedTestStorage.getNamespaceName(), sharedTestStorage.getAdminName() + "-unlimited");
+        unlimitedAdminClient = AdminClientUtils.getConfiguredAdminClient(sharedTestStorage.getNamespaceName(), sharedTestStorage.getAdminName() + "-unlimited");
     }
 }
