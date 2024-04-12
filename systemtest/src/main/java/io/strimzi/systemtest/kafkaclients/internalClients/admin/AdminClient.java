@@ -19,7 +19,7 @@ public class AdminClient {
     private final String namespaceName;
     private final String podName;
     private final static String CMD = "admin-client";
-    private static ObjectMapper mapper = new ObjectMapper();
+    private final static ObjectMapper mapper = new ObjectMapper();
 
     static {
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
