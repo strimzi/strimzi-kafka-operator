@@ -5,10 +5,13 @@
 [id="kafka-concepts-components_{context}"]
 = Kafka component architecture
 
-A cluster of Kafka brokers handles delivery of messages.
+[role="_abstract"]
+A Kafka cluster comprises the brokers responsible for message delivery. 
 
-A broker uses Apache ZooKeeper for storing configuration data and for cluster coordination.
-Before running Apache Kafka, an Apache ZooKeeper cluster has to be ready.
+ZooKeeper is used for cluster management.
+When deploying Kafka in KRaft (Kafka Raft metadata) mode, cluster management is simplified by integrating broker and controller roles within Kafka nodes, eliminating the need for ZooKeeper.
+Kafka nodes take on the roles of brokers, controllers, or both.
+Roles are configured in Strimzi using node pools. 
 
 Each of the other Kafka components interact with the Kafka cluster to perform specific roles.
 
@@ -16,7 +19,7 @@ Each of the other Kafka components interact with the Kafka cluster to perform sp
 
 image:overview/kafka-concepts-supporting-components.png[Data flows between several Kafka components and the Kafka cluster. See the component descriptions after this image.]
 
-Apache ZooKeeper:: Apache ZooKeeper is a core dependency for Kafka as it provides a cluster coordination service, storing and tracking the status of brokers and consumers. ZooKeeper is also used for controller election.
+Apache ZooKeeper:: Apache ZooKeeper provides a cluster coordination service, storing and tracking the status of brokers and consumers. ZooKeeper is also used for controller election. If ZooKeeper is used, the ZooKeeper cluster must be ready before running Kafka. In KRaft mode, ZooKeeper is not required because the coordination is managed in the Kafka cluster by Kafka nodes operating as controllers.
 Kafka Connect:: Kafka Connect is an integration toolkit for streaming data between Kafka brokers and other systems using _Connector_ plugins.
 Kafka Connect provides a framework for integrating Kafka with an external data source or target, such as a database, for import or export of data using connectors.
 Connectors are plugins that provide the connection configuration needed.

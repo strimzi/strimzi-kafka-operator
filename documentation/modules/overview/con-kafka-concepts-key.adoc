@@ -8,16 +8,16 @@
 [role="_abstract"]
 To maximise your experience of using Strimzi, you need to understand how Kafka operates as a message broker.
 
-A Kafka cluster comprises multiple brokers.
-Brokers contain topics that receive and store data.
-Topics are split by partitions, where the data is written.
-Partitions are replicated across topics for fault tolerance.
+* A Kafka cluster comprises multiple nodes.
+* Nodes operating as brokers contain topics that receive and store data.
+* Topics are split by partitions, where the data is written.
+* Partitions are replicated across brokers for fault tolerance.
 
 .Kafka brokers and topics
 
 image:overview/kafka-concepts-key-concepts.png[Kafka brokers and topics inside a Kafka cluster showing the partition leader of each topic]
 
-Broker:: A broker, sometimes referred to as a server or node, orchestrates the storage and passing of messages.
+Broker:: A broker orchestrates the storage and passing of messages.
 Topic:: A topic provides a destination for the storage of data.
 Each topic is split into one or more partitions.
 Cluster:: A group of broker instances.
@@ -29,7 +29,7 @@ Topics use a _replication factor_ to configure the number of replicas of each pa
 A topic comprises at least one partition.
 +
 An _in-sync_ replica has the same number of messages as the leader.
-Configuration defines how many replicas must be _in-sync_ to be able to produce messages, ensuring that a message is committed only after it has been successfully copied to the replica partition.
+Configuration defines how many replicas must be in-sync to be able to produce messages, ensuring that a message is committed only after it has been successfully copied to the replica partition.
 In this way, if the leader fails the message is not lost.
 +
 In the _Kafka brokers and topics_ diagram, we can see each numbered partition has a leader and two followers in replicated topics.

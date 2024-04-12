@@ -5,8 +5,9 @@
 [id='con-feature-gates-overview-{context}']
 = Feature gates in Strimzi Operators
 
-You can enable and disable some features of operators using _feature gates_.
+Strimzi operators use feature gates to enable or disable specific features and functions. Enabling a feature gate alters the behavior of the associated operator, introducing the corresponding feature to your Strimzi deployment.
 
-Feature gates are set in the operator configuration and have three stages of maturity: alpha, beta, or General Availability (GA).
+Feature gates are set in the operator configuration and have three stages of maturity: alpha, beta, or graduated.
+Graduated feature gates have reached General Availability (GA) and are permanently enabled features.
 
 For more information, see link:{BookURLDeploying}#ref-operator-cluster-feature-gates-str[Feature gates^].
