@@ -181,7 +181,7 @@ env:
 # ...
 ----
 <1> Some managed Kafka services don't allow cluster config lookup, so we disable those checks.
-<2> Some managed Kafka services limit what properties can be updated, so we use this to define what values can be altered.
+<2> Defines the topic configuration properties that can be updated based on the limitations set by managed Kafka services.
 <3> Specifies the SASL properties to be set in JSON format. Only properties starting with `sasl.` are allowed.
 +
 .Example Dockerfile with external jars
