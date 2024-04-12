@@ -816,10 +816,10 @@ public class KafkaRebalanceAssemblyOperator
         Promise<MapAndStatus<ConfigMap, KafkaRebalanceStatus>> p = Promise.promise();
 
         if (rebalanceAnnotation(kafkaRebalance) == KafkaRebalanceAnnotation.refresh) {
-            LOGGER.infoCr(reconciliation, "Requesting a new proposal since refresh annotation is applied on the KafkaRebalance resource"); // TODO: debugCr
+            LOGGER.infoCr(reconciliation, "Requesting a new proposal since refresh annotation is applied on the KafkaRebalance resource");
             requestRebalance(reconciliation, host, apiClient, kafkaRebalance, true, rebalanceOptionsBuilder).onSuccess(p::complete);
         } else if (rebalanceAnnotation(kafkaRebalance) == KafkaRebalanceAnnotation.stop) {
-            LOGGER.infoCr(reconciliation, "Stopping to request proposal or checking the status"); // TODO: debugCr
+            LOGGER.infoCr(reconciliation, "Stopping to request proposal or checking the status");
             p.complete(buildRebalanceStatus(null, KafkaRebalanceState.Stopped, StatusUtils.validate(reconciliation, kafkaRebalance)));
         } else {
             LOGGER.infoCr(reconciliation, "Requesting a new proposal or checking the status for an already issued one");
@@ -834,9 +834,9 @@ public class KafkaRebalanceAssemblyOperator
                     rebalanceMapAndStatus.setStatus(status);
                     if (rebalanceMapAndStatus.getStatus().getOptimizationResult() != null &&
                             !rebalanceMapAndStatus.getStatus().getOptimizationResult().isEmpty()) {
-                        LOGGER.infoCr(reconciliation, "Optimization proposal ready"); // TODO: debugCr
+                        LOGGER.infoCr(reconciliation, "Optimization proposal ready");
                     } else {
-                        LOGGER.infoCr(reconciliation, "Waiting for optimization proposal to be ready"); // TODO: debugCr
+                        LOGGER.infoCr(reconciliation, "Waiting for optimization proposal to be ready");
                     }
                     p.complete(rebalanceMapAndStatus);
                 })
@@ -917,7 +917,7 @@ public class KafkaRebalanceAssemblyOperator
 
         String sessionId = kafkaRebalance.getStatus().getSessionId();
         if (rebalanceAnnotation(kafkaRebalance) == KafkaRebalanceAnnotation.stop) {
-            LOGGER.infoCr(reconciliation, "Stopping current Cruise Control rebalance user task"); // TODO: debugCr
+            LOGGER.infoCr(reconciliation, "Stopping current Cruise Control rebalance user task");
             apiClient.stopExecution(host, CruiseControl.REST_API_PORT)
                 .onSuccess(r -> p.complete(buildRebalanceStatus(null, KafkaRebalanceState.Stopped, StatusUtils.validate(reconciliation, kafkaRebalance))))
                 .onFailure(e -> {
@@ -925,7 +925,7 @@ public class KafkaRebalanceAssemblyOperator
                     p.fail(e.getCause());
                 });
         } else if (rebalanceAnnotation(kafkaRebalance) == KafkaRebalanceAnnotation.refresh) {
-            LOGGER.infoCr(reconciliation, "Stopping current Cruise Control rebalance user task since refresh annotation is applied on the KafkaRebalance resource and requesting a new proposal"); // TODO: debugCr
+            LOGGER.infoCr(reconciliation, "Stopping current Cruise Control rebalance user task since refresh annotation is applied on the KafkaRebalance resource and requesting a new proposal");
             apiClient.stopExecution(host, CruiseControl.REST_API_PORT)
                     .onSuccess(r -> {
                         requestRebalance(reconciliation, host, apiClient, kafkaRebalance, true, rebalanceOptionsBuilder).onSuccess(p::complete);
@@ -957,7 +957,7 @@ public class KafkaRebalanceAssemblyOperator
                             p.complete(buildRebalanceStatus(sessionId, KafkaRebalanceState.NotReady, conditions));
                             break;
                         case IN_EXECUTION: // Rebalance is still in progress
-                            LOGGER.infoCr(reconciliation, "Rebalance ({}) optimization proposal in execution", sessionId); // TODO: debugCr
+                            LOGGER.infoCr(reconciliation, "Rebalance ({}) optimization proposal in execution", sessionId);
                             // We need to check that the status has been updated with the ongoing optimisation proposal
                             // The proposal field can be empty if a rebalance(dryrun=false) was called and the optimisation
                             // proposal was still being prepared (in progress). In that case the rebalance will start when
