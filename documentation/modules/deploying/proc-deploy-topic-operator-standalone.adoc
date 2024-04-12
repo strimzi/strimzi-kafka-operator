@@ -148,7 +148,7 @@ When a subset of properties is alterable, use a comma separated list, as below.
 In the case that a managed Kafka service doesn't allow any `.spec.config` properties to be set in the `KafkaTopic` a value of `NONE` is equivalent to an empty property.
 Otherwise, a comma separated list of the properties that can be altered is used.
 +
-*NOTE:  Only SASL properties can be set with the `STRIMZI_SASL_CUSTOM_CONFIG_JSON` mechanism.*
+NOTE:  Only Kafka configuration properties starting with `sasl.` can be set with the `STRIMZI_SASL_CUSTOM_CONFIG_JSON` environment variable.
 +
 .Example custom SASL configuration
 [source,shell,subs=+quotes]
