@@ -11,7 +11,7 @@ To maximise your experience of using Strimzi, you need to understand how Kafka o
 * A Kafka cluster comprises multiple nodes.
 * Nodes operating as brokers contain topics that receive and store data.
 * Topics are split by partitions, where the data is written.
-* Partitions are replicated across topics for fault tolerance.
+* Partitions are replicated across brokers for fault tolerance.
 
 .Kafka brokers and topics
 
