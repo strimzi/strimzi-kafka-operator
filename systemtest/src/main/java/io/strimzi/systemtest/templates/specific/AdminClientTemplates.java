@@ -6,6 +6,8 @@ package io.strimzi.systemtest.templates.specific;
 
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
+import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.PodSpecBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
@@ -17,7 +19,7 @@ import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.enums.DeploymentTypes;
 import io.strimzi.systemtest.kafkaclients.internalClients.admin.AdminClient;
 import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.utils.AdminClientUtils;
+import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
 
 import java.util.Collections;
@@ -32,7 +34,7 @@ public class AdminClientTemplates {
     private AdminClientTemplates() {}
 
     ///////////////////////////////////////////
-    /////////////// Tls (SSL) /////////////////
+    //              Tls (SSL)
     ///////////////////////////////////////////
 
     /**
@@ -91,7 +93,7 @@ public class AdminClientTemplates {
     }
 
     ///////////////////////////////////////////
-    /////// SCRAM-SHA over Tls (SASL_SSL) //////
+    //    SCRAM-SHA over Tls (SASL_SSL)
     ///////////////////////////////////////////
 
     /**
@@ -147,7 +149,7 @@ public class AdminClientTemplates {
     }
 
     ///////////////////////////////////////////
-    // SCRAM-SHA over Plain (SASL_PLAINTEXT) ///
+    // SCRAM-SHA over Plain (SASL_PLAINTEXT)
     ///////////////////////////////////////////
 
     /**
@@ -192,7 +194,7 @@ public class AdminClientTemplates {
     }
 
     ///////////////////////////////////////////
-    /////////// plain (PLAINTEXT) /////////////
+    //          plain (PLAINTEXT)
     ///////////////////////////////////////////
 
     /**
@@ -285,9 +287,13 @@ public class AdminClientTemplates {
             .endSpec();
     }
 
+    ///////////////////////////////////////////
+    //   Admin Client Configuration and envs
+    ///////////////////////////////////////////
+
     /**
      * Constructs the (SASL) SCRAM configuration string from a secret for an admin client based on the user and security protocol.
-     * Works for SASL-PLAIN  SASL-SSL alike.
+     * Works for SASL-PLAIN and SASL-SSL alike.
      *
      * @param namespace the namespace in which the secret is stored
      * @param userName the name of the user (also used as the secret name) to fetch the SASL JAAS config
@@ -354,6 +360,10 @@ public class AdminClientTemplates {
         return List.of(userCrt, userKey);
     }
 
+    ///////////////////////////////////////////
+    //   Admin Client Pod deploying Utility
+    ///////////////////////////////////////////
+
     /**
      * Constructs and configures an {@link AdminClient} for managing Kafka resources.
      *
@@ -363,10 +373,22 @@ public class AdminClientTemplates {
      *         settings to interact with a Kafka cluster
      */
     private static AdminClient getConfiguredAdminClient(String namespace, String adminName) {
-        final String adminClientPodName = AdminClientUtils.getAdminClientPodName(adminName, namespace);
+        final String adminClientPodName = KubeClusterResource.kubeClient().listPods(namespace, getLabelSelector(adminName)).get(0).getMetadata().getName();
         final AdminClient targetClusterAdminClient = new AdminClient(namespace, adminClientPodName);
         targetClusterAdminClient.configureFromEnv();
 
         return targetClusterAdminClient;
+    }
+
+    private static LabelSelector getLabelSelector(String adminName) {
+        Map<String, String> matchLabels = new HashMap<>();
+        matchLabels.put(TestConstants.APP_POD_LABEL, TestConstants.ADMIN_CLIENT_NAME);
+        matchLabels.put(TestConstants.KAFKA_ADMIN_CLIENT_LABEL_KEY, TestConstants.KAFKA_ADMIN_CLIENT_LABEL_VALUE);
+        matchLabels.put(TestConstants.DEPLOYMENT_TYPE, DeploymentTypes.AdminClient.name());
+        matchLabels.put(TestConstants.APP_CONTROLLER_LABEL, adminName);
+
+        return new LabelSelectorBuilder()
+            .withMatchLabels(matchLabels)
+            .build();
     }
 }

@@ -4,41 +4,18 @@
  */
 package io.strimzi.systemtest.utils;
 
-import io.fabric8.kubernetes.api.model.LabelSelector;
-import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.strimzi.systemtest.TestConstants;
-import io.strimzi.systemtest.enums.DeploymentTypes;
 import io.strimzi.systemtest.kafkaclients.internalClients.admin.AdminClient;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class AdminClientUtils {
     private static final Logger LOGGER = LogManager.getLogger(AdminClientUtils.class);
 
     private AdminClientUtils() {}
-
-    private static LabelSelector getLabelSelector(String adminName) {
-        Map<String, String> matchLabels = new HashMap<>();
-        matchLabels.put(TestConstants.APP_POD_LABEL, TestConstants.ADMIN_CLIENT_NAME);
-        matchLabels.put(TestConstants.KAFKA_ADMIN_CLIENT_LABEL_KEY, TestConstants.KAFKA_ADMIN_CLIENT_LABEL_VALUE);
-        matchLabels.put(TestConstants.DEPLOYMENT_TYPE, DeploymentTypes.AdminClient.name());
-        matchLabels.put(TestConstants.APP_CONTROLLER_LABEL, adminName);
-
-        return new LabelSelectorBuilder()
-            .withMatchLabels(matchLabels)
-            .build();
-    }
-
-    public static String getAdminClientPodName(String adminName, String namespace) {
-        return kubeClient().listPods(namespace, AdminClientUtils.getLabelSelector(adminName)).get(0).getMetadata().getName();
-    }
 
     public static boolean isTopicPresent(AdminClient adminClient, String topicName) {
         final String newLineSeparatedTopics = adminClient.listTopics();
