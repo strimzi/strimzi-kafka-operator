@@ -15,14 +15,19 @@ Strimzi supports the following storage configuration options for managing Kafka 
 Ephemeral (Recommended for development only):: Ephemeral storage stores data for the lifetime of an instance. Data is lost when the instance is restarted.
 Persistent:: Persistent storage relates to long-term data storage independent of the lifecycle of the instance.
 JBOD (Just a Bunch of Disks, suitable for Kafka only):: JBOD allows you to use multiple disks to store commit logs in each broker.
-Tiered storage (Early access):: Tiered storage is an early access feature in Kafka. Tiered storage provides more flexibility for data management by leveraging the parallel use of storage types with different characteristics.
+
+In addition to these options, you can configure Strimzi to use tiered storage. 
+Tiered storage is an *early access* feature in Kafka, providing more flexibility for data management by leveraging the parallel use of storage types with different characteristics. 
+While one of the basic storage options must be configured alongside tiered storage, it enables combinations such as block storage with object storage for enhanced performance and scalability.
 
 Storage types are specified in the custom resource using `storage` or `tieredStorage` configuration properties:
 
-* `storage.type: ephemeral`
-* `storage.type: persistent-claim` for persistent storage using {K8sPersistentVolumeClaims} (PVCs)
-* `storage.type:jbod` for JBOD storage
-* `tieredStorage.type:custom` for custom tiered storage
+* `storage` configuration types:
+** `type: ephemeral`
+** `type: persistent-claim` for persistent storage using {K8sPersistentVolumeClaims} (PVCs)
+** `type: jbod` for JBOD storage
+* `tieredStorage` configuration types:
+** `type: custom` for custom tiered storage
 
 For the Kafka and ZooKeeper data stored on disks, the file system format for storage must be XFS or EXT4.
 The disk capacity used by an existing Kafka cluster can be increased if supported by the infrastructure.
