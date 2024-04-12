@@ -66,7 +66,7 @@ public class AdminClientTemplates {
     }
 
     ///////////////////////////////////////////
-    //    SCRAM-SHA over Tls (SASL_SSL)
+    //    SCRAM-SHA over TlS (SASL_SSL)
     ///////////////////////////////////////////
 
     /**
@@ -223,7 +223,7 @@ public class AdminClientTemplates {
 
     /**
      * Creates an {@link EnvVar} environment variable for the Kafka cluster CA certificate, used for
-     * configuring Kafka clients to trust the cluster's CA, thereby enabling Tls and ScramSha over Tls communication.
+     * configuring Kafka clients to trust the cluster's CA, thereby enabling TlS and ScramSha over TlS communication.
      *
      * @param clusterName the name of the Kafka cluster, used to derive the name of the Kubernetes secret containing the CA certificate
      * @return an {@link EnvVar} instance representing the CA certificate environment variable
