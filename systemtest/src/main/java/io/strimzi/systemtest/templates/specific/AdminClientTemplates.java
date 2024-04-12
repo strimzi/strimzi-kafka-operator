@@ -6,8 +6,6 @@ package io.strimzi.systemtest.templates.specific;
 
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
-import io.fabric8.kubernetes.api.model.LabelSelector;
-import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.PodSpecBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
@@ -17,9 +15,6 @@ import io.strimzi.operator.common.Util;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.enums.DeploymentTypes;
-import io.strimzi.systemtest.kafkaclients.internalClients.admin.AdminClient;
-import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
 
 import java.util.Collections;
@@ -34,52 +29,30 @@ public class AdminClientTemplates {
     private AdminClientTemplates() {}
 
     ///////////////////////////////////////////
-    //              Tls (SSL)
+    //              TlS (SSL)
     ///////////////////////////////////////////
 
     /**
      * Deploys an AdminClient with TLS enabled, with only essential configuration.
-     */
-    public static AdminClient deployTlsAdminClient(ResourceManager rm, String namespace, String userName, String adminName, String clusterName, String bootstrapName) {
-        return deployTlsAdminClient(rm, namespace, userName, adminName, clusterName, bootstrapName, "");
-    }
-
-
-    /**
-     * Deploys an AdminClient with TLS enabled.
      *
-     * @param rm The ResourceManager deploying admin client Pod.
-     * @param namespace The Namespace in which to deploy the AdminClient and where Kafka resides.
+     * @param namespaceName The Namespace in which to deploy the AdminClient and where Kafka resides.
      * @param userName The Kafka userName to correctly configure TLS.
      * @param adminName The name of the AdminClient deployment.
      * @param clusterName The name of the Kafka cluster to which the AdminClient will connect.
      * @param bootstrapName The name of the Kafka bootstrap server to use for the initial connection.
-     * @param additionalConfig A string representing additional configuration settings for the AdminClient which will be added into configuration necessary for TLS communication.
-     * @return An instance of AdminClient configured with TLS settings.
      */
-    public static AdminClient deployTlsAdminClient(ResourceManager rm, String namespace, String userName, String adminName, String clusterName, String bootstrapName, String additionalConfig) {
-        // Deploy admin client pod
-        rm.createResourceWithWait(
-            AdminClientTemplates.tlsAdminClient(
-                namespace,
-                userName,
-                adminName,
-                clusterName,
-                bootstrapName,
-                additionalConfig
-        ));
-
-        return getConfiguredAdminClient(namespace, adminName);
+    public static Deployment tlsAdminClient(String namespaceName, String userName, String adminName, String clusterName, String bootstrapName) {
+        return tlsAdminClient(namespaceName, userName, adminName, clusterName, bootstrapName, "");
     }
 
     /**
      * Creates a Deployment configuration for an AdminClient with TLS settings.
      */
-    private static Deployment tlsAdminClient(String namespaceName, String userName, String adminName, String clusterName, String bootstrapName, String additionalConfig) {
+    public static Deployment tlsAdminClient(String namespaceName, String userName, String adminName, String clusterName, String bootstrapName, String additionalConfig) {
         final List<EnvVar> tlsEnvs = getTlsEnvironmentVariables(userName);
         final String finalAdditionalConfig = "sasl.mechanism=GSSAPI\n" + "security.protocol=" + SecurityProtocol.SSL + "\n"  + "\n" + additionalConfig;
 
-        return defaultAdminClient(namespaceName, adminName, bootstrapName, finalAdditionalConfig)
+        return plainAdminClient(namespaceName, adminName, bootstrapName, finalAdditionalConfig)
             .editOrNewSpec()
                 .editOrNewTemplate()
                     .editOrNewSpec()
@@ -98,45 +71,24 @@ public class AdminClientTemplates {
 
     /**
      * Deploys an AdminClient with SCRAM-SHA and TLS enabled and has only essential configuration.
-     */
-    public static AdminClient deployScramShaOverTlsAdminClient(ResourceManager rm, String namespace, String userName, String adminName, String clusterName, String bootstrapName) {
-        return deployScramShaOverTlsAdminClient(rm, namespace, userName, adminName, clusterName, bootstrapName, "");
-    }
-
-    /**
-     * Deploys an AdminClient with SCRAM-SHA and TLS enabled.
      *
-     * @param rm The ResourceManager deploying admin client Pod.
-     * @param namespace The Namespace in which to deploy the AdminClient and where Kafka resides.
+     * @param namespaceName The Namespace in which to deploy the AdminClient and where Kafka resides.
      * @param userName The Kafka userName to correctly configure SCRAM-SHA.
      * @param adminName The name of the AdminClient deployment.
      * @param clusterName The name of the Kafka cluster to which the AdminClient will connect.
      * @param bootstrapName The name of the Kafka bootstrap server to use for the initial connection.
-     * @param additionalConfig A string representing additional configuration settings for the AdminClient which will be added into configuration necessary for communication.
-     * @return An instance of AdminClient configured with TLS and SCRAM-SHA settings.
      */
-    public static AdminClient deployScramShaOverTlsAdminClient(ResourceManager rm, String namespace, String userName, String adminName, String clusterName, String bootstrapName, String additionalConfig) {
-        // Deploy admin client pod
-        rm.createResourceWithWait(
-            AdminClientTemplates.scramShaOverTlsAdminClient(
-                namespace,
-                userName,
-                adminName,
-                clusterName,
-                bootstrapName,
-                additionalConfig
-            ));
-
-        return getConfiguredAdminClient(namespace, adminName);
+    public static Deployment scramShaOverTlsAdminClient(String namespaceName, String userName, String adminName, String clusterName, String bootstrapName) {
+        return scramShaOverTlsAdminClient(namespaceName, userName, adminName, clusterName, bootstrapName, "");
     }
 
     /**
      * Creates a Deployment configuration for an AdminClient with TLS and SCRAM_SHA settings.
      */
-    private static Deployment scramShaOverTlsAdminClient(String namespaceName, String userName, String adminName, String clusterName, String bootstrapName, String additionalConfig) {
+    public static Deployment scramShaOverTlsAdminClient(String namespaceName, String userName, String adminName, String clusterName, String bootstrapName, String additionalConfig) {
         String finalAdditionalConfig = getAdminClientScramConfig(namespaceName, userName, SecurityProtocol.SASL_SSL) + "\n" + additionalConfig;
         // authenticating is taken care of (by SASL) thus only cluster needed
-        return defaultAdminClient(namespaceName, adminName, bootstrapName, finalAdditionalConfig)
+        return plainAdminClient(namespaceName, adminName, bootstrapName, finalAdditionalConfig)
             .editOrNewSpec()
                 .editOrNewTemplate()
                     .editOrNewSpec()
@@ -154,42 +106,22 @@ public class AdminClientTemplates {
 
     /**
      * Deploys an AdminClient with SCRAM-SHA over PLAINTEXT and has only essential configuration.
-     */
-    public static AdminClient deployScramShaOverPlainAdminClient(ResourceManager rm, String namespace, String userName, String adminName, String bootstrapName) {
-        return deployScramShaOverPlainAdminClient(rm, namespace, userName, adminName, bootstrapName, "");
-    }
-
-    /**
-     * Deploys an AdminClient with SCRAM-SHA over PLAINTEXT.
      *
-     * @param rm The ResourceManager deploying admin client Pod.
-     * @param namespace The Namespace in which to deploy the AdminClient and where Kafka resides.
+     * @param namespaceName The Namespace in which to deploy the AdminClient and where Kafka resides.
      * @param userName The Kafka userName to correctly configure SCRAM-SHA.
      * @param adminName The name of the AdminClient deployment.
      * @param bootstrapName The name of the Kafka bootstrap server to use for the initial connection.
-     * @param additionalConfig A string representing additional configuration settings for the AdminClient which will be added into configuration necessary for communication.
-     * @return An instance of AdminClient configured with PLAINTEXT and SCRAM-SHA settings.
      */
-    public static AdminClient deployScramShaOverPlainAdminClient(ResourceManager rm, String namespace, String userName, String adminName, String bootstrapName, String additionalConfig) {
-        // Deploy admin client pod
-        rm.createResourceWithWait(
-            AdminClientTemplates.scramShaOverPlainAdminClient(
-                namespace,
-                userName,
-                adminName,
-                bootstrapName,
-                additionalConfig
-            ));
-
-        return getConfiguredAdminClient(namespace, adminName);
+    public static Deployment scramShaOverPlainAdminClient(String namespaceName, String userName, String adminName, String bootstrapName) {
+        return scramShaOverPlainAdminClient(namespaceName, userName, adminName, bootstrapName, "");
     }
 
     /**
      * Creates a Deployment configuration for an AdminClient with PLAINTEXT and SCRAM_SHA settings.
      */
-    private static Deployment scramShaOverPlainAdminClient(String namespaceName, String userName, String adminName, String bootstrapName, String additionalConfig) {
+    public static Deployment scramShaOverPlainAdminClient(String namespaceName, String userName, String adminName, String bootstrapName, String additionalConfig) {
         String finalAdditionalConfig = getAdminClientScramConfig(namespaceName, userName, SecurityProtocol.SASL_PLAINTEXT) + "\n" + additionalConfig;
-        return defaultAdminClient(namespaceName, adminName, bootstrapName, finalAdditionalConfig)
+        return plainAdminClient(namespaceName, adminName, bootstrapName, finalAdditionalConfig)
             .build();
     }
 
@@ -199,39 +131,19 @@ public class AdminClientTemplates {
 
     /**
      * Deploys an AdminClient with PLAINTEXT communication and no other configuration.
-     */
-    public static AdminClient deployPlainAdminClient(ResourceManager rm, String namespace, String adminName, String bootstrapName) {
-        return deployPlainAdminClient(rm, namespace, adminName, bootstrapName, "");
-    }
-
-    /**
-     * Deploys an AdminClient with PLAINTEXT communication.
      *
-     * @param rm The ResourceManager deploying admin client Pod.
-     * @param namespace The Namespace in which to deploy the AdminClient and where Kafka resides.
+     * @param namespaceName The Namespace in which to deploy the AdminClient and where Kafka resides.
      * @param adminName The name of the AdminClient deployment.
      * @param bootstrapName The name of the Kafka bootstrap server to use for the initial connection.
-     * @param additionalConfig A string representing additional configuration settings for the AdminClient which will be added into configuration necessary for communication.
-     * @return An instance of AdminClient communicating in PLAINTEXT.
      */
-    public static AdminClient deployPlainAdminClient(ResourceManager rm, String namespace, String adminName, String bootstrapName, String additionalConfig) {
-        // Deploy admin client pod
-        rm.createResourceWithWait(
-            AdminClientTemplates.defaultAdminClient(
-                namespace,
-                adminName,
-                bootstrapName,
-                additionalConfig
-            ).build()
-        );
-
-        return getConfiguredAdminClient(namespace, adminName);
+    public static DeploymentBuilder plainAdminClient(String namespaceName, String adminName, String bootstrapName) {
+        return plainAdminClient(namespaceName, adminName, bootstrapName, "");
     }
 
     /**
      * Creates a Deployment configuration for an AdminClient with PLAINTEXT settings and also serves as base for all the other admin clients (SCRAM_SHA and TLS).
      */
-    private static DeploymentBuilder defaultAdminClient(String namespaceName, String adminName, String bootstrapName, String additionalConfig) {
+    public static DeploymentBuilder plainAdminClient(String namespaceName, String adminName, String bootstrapName, String additionalConfig) {
         Map<String, String> adminLabels = new HashMap<>();
         adminLabels.put(TestConstants.APP_POD_LABEL, TestConstants.ADMIN_CLIENT_NAME);
         adminLabels.put(TestConstants.KAFKA_ADMIN_CLIENT_LABEL_KEY, TestConstants.KAFKA_ADMIN_CLIENT_LABEL_VALUE);
@@ -358,37 +270,5 @@ public class AdminClientTemplates {
             .build();
 
         return List.of(userCrt, userKey);
-    }
-
-    ///////////////////////////////////////////
-    //   Admin Client Pod deploying Utility
-    ///////////////////////////////////////////
-
-    /**
-     * Constructs and configures an {@link AdminClient} for managing Kafka resources.
-     *
-     * @param namespace The Kubernetes namespace where the admin client pod is expected to be located.
-     * @param adminName The name of the admin client, used to locate admin client Pod.
-     * @return An {@link AdminClient} instance that has been configured with the necessary environment-based
-     *         settings to interact with a Kafka cluster
-     */
-    private static AdminClient getConfiguredAdminClient(String namespace, String adminName) {
-        final String adminClientPodName = KubeClusterResource.kubeClient().listPods(namespace, getLabelSelector(adminName)).get(0).getMetadata().getName();
-        final AdminClient targetClusterAdminClient = new AdminClient(namespace, adminClientPodName);
-        targetClusterAdminClient.configureFromEnv();
-
-        return targetClusterAdminClient;
-    }
-
-    private static LabelSelector getLabelSelector(String adminName) {
-        Map<String, String> matchLabels = new HashMap<>();
-        matchLabels.put(TestConstants.APP_POD_LABEL, TestConstants.ADMIN_CLIENT_NAME);
-        matchLabels.put(TestConstants.KAFKA_ADMIN_CLIENT_LABEL_KEY, TestConstants.KAFKA_ADMIN_CLIENT_LABEL_VALUE);
-        matchLabels.put(TestConstants.DEPLOYMENT_TYPE, DeploymentTypes.AdminClient.name());
-        matchLabels.put(TestConstants.APP_CONTROLLER_LABEL, adminName);
-
-        return new LabelSelectorBuilder()
-            .withMatchLabels(matchLabels)
-            .build();
     }
 }

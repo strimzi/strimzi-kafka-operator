@@ -198,12 +198,16 @@ public class TopicST extends AbstractST {
 
         // create Kafka Topic CR and wait for its presence in Kafka cluster.
         resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage).build());
-        final AdminClient localKafkaAdminClient = AdminClientTemplates.deployPlainAdminClient(
-            resourceManager,
-            testStorage.getNamespaceName(),
-            testStorage.getAdminName(),
-            KafkaResources.plainBootstrapAddress(testStorage.getClusterName())
+
+        resourceManager.createResourceWithWait(
+            AdminClientTemplates.plainAdminClient(
+                testStorage.getNamespaceName(),
+                testStorage.getAdminName(),
+                KafkaResources.plainBootstrapAddress(testStorage.getClusterName())
+            ).build()
         );
+        final AdminClient localKafkaAdminClient = AdminClientUtils.getConfiguredAdminClient(testStorage.getNamespaceName(), testStorage.getAdminName());
+
         AdminClientUtils.waitForTopicPresence(localKafkaAdminClient, testStorage.getTopicName());
 
         final KafkaClients clients = ClientUtils.getInstantPlainClients(testStorage);
@@ -544,12 +548,14 @@ public class TopicST extends AbstractST {
         );
 
         LOGGER.info("Deploying admin client across all test cases for namespace: {}", sharedTestStorage.getClusterName());
-        adminClient = AdminClientTemplates.deployPlainAdminClient(
-            resourceManager,
-            sharedTestStorage.getNamespaceName(),
-            sharedTestStorage.getAdminName(),
-            KafkaResources.plainBootstrapAddress(sharedTestStorage.getClusterName())
+        resourceManager.createResourceWithWait(
+            AdminClientTemplates.plainAdminClient(
+                sharedTestStorage.getNamespaceName(),
+                sharedTestStorage.getAdminName(),
+                KafkaResources.plainBootstrapAddress(sharedTestStorage.getClusterName())
+            ).build()
         );
+        adminClient = AdminClientUtils.getConfiguredAdminClient(sharedTestStorage.getNamespaceName(), sharedTestStorage.getAdminName());
 
         scraperPodName = ScraperUtils.getScraperPod(Environment.TEST_SUITE_NAMESPACE).getMetadata().getName();
         topicOperatorReconciliationInterval = KafkaResource.kafkaClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(sharedTestStorage.getClusterName()).get()

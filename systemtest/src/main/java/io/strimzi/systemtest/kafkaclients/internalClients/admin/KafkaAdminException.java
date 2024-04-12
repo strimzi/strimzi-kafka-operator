@@ -4,6 +4,9 @@
  */
 package io.strimzi.systemtest.kafkaclients.internalClients.admin;
 
+/**
+ * Represents exceptions that are specific to Kafka admin operations. e.g. describing none existing topics
+ */
 class KafkaAdminException extends RuntimeException {
     public KafkaAdminException(String message) {
         super(message);

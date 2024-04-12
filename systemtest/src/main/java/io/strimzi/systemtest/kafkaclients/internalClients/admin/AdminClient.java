@@ -19,10 +19,10 @@ public class AdminClient {
     private final String namespaceName;
     private final String podName;
     private final static String CMD = "admin-client";
-    private final static ObjectMapper mapper = new ObjectMapper();
+    private final static ObjectMapper MAPPER = new ObjectMapper();
 
     static {
-        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        MAPPER.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
 
     public AdminClient(String namespaceName, String podName) {
@@ -89,7 +89,7 @@ public class AdminClient {
     private static <T> T responseFromJSONExecResult(ExecResult result, Class<T> responseType) {
         if (result.returnCode() == 0 && !result.out().isEmpty()) {
             try {
-                return mapper.readValue(result.out(), responseType);
+                return MAPPER.readValue(result.out(), responseType);
             } catch (JsonProcessingException e) {
                 throw new RuntimeException(e);
             }

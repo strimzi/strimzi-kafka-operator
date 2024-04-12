@@ -182,12 +182,14 @@ class MirrorMaker2ST extends AbstractST {
 
         RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getMM2Selector(), mirrorMakerReplicasCount, mm2PodsSnapshot);
 
-        final AdminClient targetClusterAdminClient = AdminClientTemplates.deployPlainAdminClient(
-            resourceManager,
-            testStorage.getNamespaceName(),
-            testStorage.getAdminName(),
-            KafkaResources.plainBootstrapAddress(testStorage.getTargetClusterName())
+        resourceManager.createResourceWithWait(
+            AdminClientTemplates.plainAdminClient(
+                testStorage.getNamespaceName(),
+                testStorage.getAdminName(),
+                KafkaResources.plainBootstrapAddress(testStorage.getTargetClusterName())
+            ).build()
         );
+        final AdminClient targetClusterAdminClient = AdminClientUtils.getConfiguredAdminClient(testStorage.getNamespaceName(), testStorage.getAdminName());
 
         LOGGER.info("Verifying topic {} has expected partitions: {}", testStorage.getMirroredSourceTopicName(), 3);
         final KafkaTopicDescription mirroredTopic = targetClusterAdminClient.describeTopic(testStorage.getMirroredSourceTopicName());
@@ -316,14 +318,17 @@ class MirrorMaker2ST extends AbstractST {
         LOGGER.info("Checking topic is mirrored correctly in target cluster");
 
         // Deploy kafka admin on communicating with target kafka cluster.
-        final AdminClient targetClusterAdminClient =  AdminClientTemplates.deployTlsAdminClient(
-            resourceManager,
-            testStorage.getNamespaceName(),
-            testStorage.getTargetUsername(),
-            testStorage.getAdminName(),
-            testStorage.getTargetClusterName(),
-            KafkaResources.tlsBootstrapAddress(testStorage.getTargetClusterName())
-        );
+
+        resourceManager.createResourceWithWait(
+            AdminClientTemplates.tlsAdminClient(
+                testStorage.getNamespaceName(),
+                testStorage.getTargetUsername(),
+                testStorage.getAdminName(),
+                testStorage.getTargetClusterName(),
+                KafkaResources.tlsBootstrapAddress(testStorage.getTargetClusterName())
+            ));
+
+        final AdminClient targetClusterAdminClient = AdminClientUtils.getConfiguredAdminClient(testStorage.getNamespaceName(), testStorage.getAdminName());
 
         AdminClientUtils.waitForTopicPresence(targetClusterAdminClient, testStorage.getMirroredSourceTopicName());
         assertThat(targetClusterAdminClient.describeTopic(testStorage.getMirroredSourceTopicName()).partitionCount(), is(3));
@@ -442,13 +447,15 @@ class MirrorMaker2ST extends AbstractST {
         LOGGER.info("Checking topic is mirrored correctly in target cluster");
 
         // deploy admin client
-        final AdminClient targetClusterAdminClient = AdminClientTemplates.deployScramShaOverTlsAdminClient(resourceManager,
-            testStorage.getNamespaceName(),
-            testStorage.getTargetUsername(),
-            testStorage.getAdminName(),
-            testStorage.getTargetClusterName(),
-            KafkaResources.tlsBootstrapAddress(testStorage.getTargetClusterName())
-        );
+        resourceManager.createResourceWithWait(
+            AdminClientTemplates.scramShaOverTlsAdminClient(
+                testStorage.getNamespaceName(),
+                testStorage.getTargetUsername(),
+                testStorage.getAdminName(),
+                testStorage.getTargetClusterName(),
+                KafkaResources.tlsBootstrapAddress(testStorage.getTargetClusterName())
+        ));
+        final AdminClient targetClusterAdminClient = AdminClientUtils.getConfiguredAdminClient(testStorage.getNamespaceName(), testStorage.getAdminName());
 
         AdminClientUtils.waitForTopicPresence(targetClusterAdminClient, testStorage.getMirroredSourceTopicName());
         assertThat(targetClusterAdminClient.describeTopic(testStorage.getMirroredSourceTopicName()).partitionCount(), is(3));

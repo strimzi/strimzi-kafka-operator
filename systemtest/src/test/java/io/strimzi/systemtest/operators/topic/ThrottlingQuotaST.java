@@ -20,6 +20,7 @@ import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
 import io.strimzi.systemtest.templates.specific.AdminClientTemplates;
+import io.strimzi.systemtest.utils.AdminClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.logging.log4j.LogManager;
@@ -179,13 +180,15 @@ public class ThrottlingQuotaST extends AbstractST {
             .build()
         );
 
-        limitedAdminClient = AdminClientTemplates.deployScramShaOverPlainAdminClient(resourceManager,
-            sharedTestStorage.getNamespaceName(),
-            sharedTestStorage.getUsername(),
-            sharedTestStorage.getAdminName(),
-            KafkaResources.plainBootstrapAddress(sharedTestStorage.getClusterName()),
-            CommonClientConfigs.REQUEST_TIMEOUT_MS_CONFIG + "=" + TIMEOUT_REQUEST_MS
-        );
+        resourceManager.createResourceWithWait(
+            AdminClientTemplates.scramShaOverPlainAdminClient(
+                sharedTestStorage.getNamespaceName(),
+                sharedTestStorage.getUsername(),
+                sharedTestStorage.getAdminName(),
+                KafkaResources.plainBootstrapAddress(sharedTestStorage.getClusterName()),
+                CommonClientConfigs.REQUEST_TIMEOUT_MS_CONFIG + "=" + TIMEOUT_REQUEST_MS
+            ));
+        limitedAdminClient = AdminClientUtils.getConfiguredAdminClient(sharedTestStorage.getNamespaceName(), sharedTestStorage.getAdminName());
 
         // deploy unlimited admin client and respective user for purpose of cleaning up resources
 
@@ -195,12 +198,14 @@ public class ThrottlingQuotaST extends AbstractST {
             .endSpec()
             .build());
 
-        unlimitedAdminClient = AdminClientTemplates.deployScramShaOverPlainAdminClient(resourceManager,
-            sharedTestStorage.getNamespaceName(),
-            sharedTestStorage.getUsername() + "-unlimited",
-            sharedTestStorage.getAdminName() + "-unlimited",
-            KafkaResources.plainBootstrapAddress(sharedTestStorage.getClusterName()),
-            CommonClientConfigs.REQUEST_TIMEOUT_MS_CONFIG + "=" + TIMEOUT_REQUEST_MS
-        );
+        resourceManager.createResourceWithWait(
+            AdminClientTemplates.scramShaOverPlainAdminClient(
+                sharedTestStorage.getNamespaceName(),
+                sharedTestStorage.getUsername() + "-unlimited",
+                sharedTestStorage.getAdminName() + "-unlimited",
+                KafkaResources.plainBootstrapAddress(sharedTestStorage.getClusterName()),
+                CommonClientConfigs.REQUEST_TIMEOUT_MS_CONFIG + "=" + TIMEOUT_REQUEST_MS
+            ));
+        limitedAdminClient = AdminClientUtils.getConfiguredAdminClient(sharedTestStorage.getNamespaceName(), sharedTestStorage.getAdminName() + "-unlimited");
     }
 }
