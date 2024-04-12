@@ -98,7 +98,7 @@ When the `KafkaNodePool` resource is in use, you can remove the properties that 
 
 To revert to managing Kafka nodes using only `Kafka` custom resources:
 
-. Move all brokers (and partition replicas) to a single `KafkaNodePool` named `kafka` with node IDs from 0 to N (where N is the number of replicas).
+. If you have multiple node pools, consolidate them into a single `KafkaNodePool` named `kafka` with node IDs from 0 to N (where N is the number of replicas).
 . Ensure that the `.spec.kafka` configuration in the `Kafka` resource matches the `KafkaNodePool` configuration, including storage, resources, and replicas.
 . Disable support for node pools in the `Kafka` resource using the `strimzi.io/node-pools: disabled` annotation.
 . Delete the Kafka node pool named `kafka`.
