@@ -6,7 +6,7 @@ JMX_USERNAME="$2"
 JMX_PASSWORD="$3"
 
 if [ "$JMX_ENABLED" = "true" ]; then
-  KAFKA_JMX_OPTS="-Dcom.sun.management.jmxremote.port=9999 -Dcom.sun.management.jmxremote.rmi.port=9999 -Dcom.sun.management.jmxremote=true -Dcom.sun.management.jmxremote.ssl=false -Djava.rmi.server.hostname=$(hostname -i) -Djava.net.preferIPv4Stack=true"
+  KAFKA_JMX_OPTS="-Dcom.sun.management.jmxremote.port=9999 -Dcom.sun.management.jmxremote.rmi.port=9999 -Dcom.sun.management.jmxremote=true -Dcom.sun.management.jmxremote.ssl=false -Djava.rmi.server.hostname=$(hostname -I | awk '{print $1}') -Djava.net.preferIPv4Stack=true"
 
   if [ -n "$JMX_USERNAME" ]; then
     mkdir -p /tmp/jmx/
