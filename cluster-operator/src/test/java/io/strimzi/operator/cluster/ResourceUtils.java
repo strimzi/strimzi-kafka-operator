@@ -187,6 +187,7 @@ public class ResourceUtils {
                         .withImage(image + "-zk")
                         .withLivenessProbe(probe)
                         .withReadinessProbe(probe)
+                        .withStorage(new EphemeralStorage())
                     .endZookeeper()
                 .endSpec()
                 .build();
