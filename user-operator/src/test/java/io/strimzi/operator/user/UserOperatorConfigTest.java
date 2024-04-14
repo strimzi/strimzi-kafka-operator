@@ -6,13 +6,18 @@ package io.strimzi.operator.user;
 
 import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.model.Labels;
+import org.hamcrest.CoreMatchers;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -32,7 +37,7 @@ public class UserOperatorConfigTest {
         ENV_VARS.put(UserOperatorConfig.CERTS_RENEWAL_DAYS.key(), "10");
         ENV_VARS.put(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.key(), "false");
         ENV_VARS.put(UserOperatorConfig.SCRAM_SHA_PASSWORD_LENGTH.key(), "20");
-
+        ENV_VARS.put(UserOperatorConfig.SECRET_LABELS_EXCLUSION_PATTERN.key(), null);
 
         Map<String, String> labels = new HashMap<>(2);
         labels.put("label1", "value1");
@@ -63,6 +68,7 @@ public class UserOperatorConfigTest {
         assertThat(config.getBatchMaxBlockSize(), is(100));
         assertThat(config.getBatchMaxBlockTime(), is(100));
         assertThat(config.getUserOperationsThreadPoolSize(), is(4));
+        assertThat(config.getSecretLabelExclusionPattern(), is(nullValue()));
     }
 
     @Test
@@ -227,5 +233,54 @@ public class UserOperatorConfigTest {
         envVars.put(UserOperatorConfig.OPERATION_TIMEOUT_MS.key(), "abcdefg");
 
         assertThrows(InvalidConfigurationException.class, () -> UserOperatorConfig.buildFromMap(envVars));
+    }
+
+    @Test
+    public void testValidSecretLabelsExclusionPattern() {
+        Map<String, String> envVars = new HashMap<>(UserOperatorConfigTest.ENV_VARS);
+        envVars.put(UserOperatorConfig.SECRET_LABELS_EXCLUSION_PATTERN.key(), "^excluded.*");
+
+        UserOperatorConfig config = UserOperatorConfig.buildFromMap(envVars);
+        Pattern pattern = config.getSecretLabelExclusionPattern();
+
+        assertThat(pattern, is(notNullValue()));
+
+        assertThat(pattern.matcher("excludedLabel").matches(), is(Boolean.TRUE));
+        assertThat(pattern.matcher("includedLabel").matches(), is(Boolean.FALSE));
+    }
+
+    @Test
+    public void testInvalidSecretLabelsExclusionPattern() {
+        Map<String, String> envVars = new HashMap<>(UserOperatorConfigTest.ENV_VARS);
+        envVars.put(UserOperatorConfig.SECRET_LABELS_EXCLUSION_PATTERN.key(), "[unterminatedBracket");
+
+        assertThrows(InvalidConfigurationException.class, () -> UserOperatorConfig.buildFromMap(envVars),
+            "Expected to throw an exception for invalid regex pattern");
+    }
+
+    @Test
+    public void testSecretLabelsExclusionPatternNotSet() {
+        UserOperatorConfig config = UserOperatorConfig.buildFromMap(UserOperatorConfigTest.ENV_VARS);
+
+        assertThat("Expected no pattern to be set if the ENV var is not defined", config.getSecretLabelExclusionPattern(), is(nullValue()));
+    }
+
+    @Test
+    public void testLabelExclusionEffect() {
+        Map<String, String> envVars = new HashMap<>(UserOperatorConfigTest.ENV_VARS);
+        envVars.put(UserOperatorConfig.SECRET_LABELS_EXCLUSION_PATTERN.key(), "^excluded.*");
+
+        UserOperatorConfig config = UserOperatorConfig.buildFromMap(envVars);
+        Pattern pattern = config.getSecretLabelExclusionPattern();
+
+        Map<String, String> labels = new HashMap<>();
+        labels.put("excludedLabel1", "value1");
+        labels.put("includedLabel1", "value2");
+
+        labels = labels.entrySet().stream()
+            .filter(entry -> pattern == null || !pattern.matcher(entry.getKey()).matches())
+            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        assertThat("Excluded labels should not be present", labels, CoreMatchers.not(Matchers.hasKey("excludedLabel1")));
     }
 }

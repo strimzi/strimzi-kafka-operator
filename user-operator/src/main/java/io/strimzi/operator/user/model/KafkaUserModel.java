@@ -41,6 +41,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -85,6 +86,8 @@ public class KafkaUserModel {
 
     private final String secretPrefix;
 
+    private final Pattern secretLabelExclusionPattern;
+
     /**
      * Constructor
      *
@@ -92,7 +95,7 @@ public class KafkaUserModel {
      * @param name   User name
      * @param labels   Labels
      */
-    protected KafkaUserModel(String namespace, String name, Labels labels, String secretPrefix) {
+    protected KafkaUserModel(String namespace, String name, Labels labels, String secretPrefix, Pattern secretLabelExclusionPattern) {
         this.namespace = namespace;
         this.name = name;
         this.labels = labels.withKubernetesName(KAFKA_USER_OPERATOR_NAME)
@@ -100,24 +103,29 @@ public class KafkaUserModel {
             .withKubernetesPartOf(name)
             .withKubernetesManagedBy(KAFKA_USER_OPERATOR_NAME);
         this.secretPrefix = secretPrefix;
+        this.secretLabelExclusionPattern = secretLabelExclusionPattern;
     }
 
     /**
      * Creates instance of KafkaUserModel from CRD definition.
      *
-     * @param kafkaUser                 The Custom Resource based on which the model should be created.
-     * @param secretPrefix              The prefix used to add to the name of the Secret generated from the KafkaUser resource.
-     * @param aclsAdminApiSupported     Indicates whether Kafka Admin API can be used to manage ACL rights
+     * @param kafkaUser                     The Custom Resource based on which the model should be created.
+     * @param secretPrefix                  The prefix used to add to the name of the Secret generated from the KafkaUser resource.
+     * @param aclsAdminApiSupported         Indicates whether Kafka Admin API can be used to manage ACL rights
+     * @param secretLabelExclusionPattern   A regex pattern used to filter out labels that should not be applied to the
+     *                                      Secret created from the KafkaUser. Labels matching this pattern will be excluded.
      *
      * @return The user model.
      */
     public static KafkaUserModel fromCrd(KafkaUser kafkaUser,
                                          String secretPrefix,
-                                         boolean aclsAdminApiSupported) {
+                                         boolean aclsAdminApiSupported,
+                                         Pattern secretLabelExclusionPattern) {
         KafkaUserModel result = new KafkaUserModel(kafkaUser.getMetadata().getNamespace(),
                 kafkaUser.getMetadata().getName(),
                 Labels.fromResource(kafkaUser).withStrimziKind(kafkaUser.getKind()),
-                secretPrefix);
+                secretPrefix,
+                secretLabelExclusionPattern);
 
         validateTlsUsername(kafkaUser);
         validateDesiredPassword(kafkaUser);
@@ -387,11 +395,27 @@ public class KafkaUserModel {
      * @return The secret.
      */
     protected Secret createSecret(Map<String, String> data) {
+        Map<String, String> labels = this.labels.toMap();
+
+        if (this.secretLabelExclusionPattern != null) {
+            LOGGER.infoOp("Applying Secret Label Exclusion Pattern: {}", this.secretLabelExclusionPattern);
+            LOGGER.debugOp("Initial labels before exclusion: {}", labels);
+
+            labels = Util.mergeLabelsOrAnnotations(labels, templateSecretLabels)
+                .entrySet().stream()
+                .filter(entry -> !this.secretLabelExclusionPattern.matcher(entry.getKey()).matches()) // Filtering based on keys
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+            LOGGER.debugOp("Updated labels: {}", labels);
+        } else {
+            LOGGER.debugOp("No Secret Label Exclusion Pattern set. Skipping label filtering.");
+        }
+
         return new SecretBuilder()
                 .withNewMetadata()
                     .withName(getSecretName())
                     .withNamespace(namespace)
-                    .withLabels(Util.mergeLabelsOrAnnotations(labels.toMap(), templateSecretLabels))
+                    .withLabels(Util.mergeLabelsOrAnnotations(labels, templateSecretLabels))
                     .withAnnotations(Util.mergeLabelsOrAnnotations(null, templateSecretAnnotations))
                     .withOwnerReferences(createOwnerReference())
                 .endMetadata()
@@ -672,4 +696,13 @@ public class KafkaUserModel {
         return getSaslJsonConfig(getScramUserName(name), scramSha512Password);
     }
 
+    /**
+     * Retrieves the compiled regular expression pattern used to exclude certain labels from being included in the secret's metadata.
+     * This pattern is applied to each label key, and labels matching this pattern are not included.
+     *
+     * @return the compiled {@link Pattern} representing the label exclusion criteria, or {@code null} if no exclusion pattern is set.
+     */
+    public Pattern getSecretLabelExclusionPattern() {
+        return secretLabelExclusionPattern;
+    }
 }

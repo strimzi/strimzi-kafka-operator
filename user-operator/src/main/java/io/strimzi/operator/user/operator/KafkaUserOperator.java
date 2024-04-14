@@ -235,7 +235,7 @@ public class KafkaUserOperator {
         KafkaUserStatus userStatus = new KafkaUserStatus();
 
         try {
-            user = KafkaUserModel.fromCrd(kafkaUser, config.getSecretPrefix(), config.isAclsAdminApiSupported());
+            user = KafkaUserModel.fromCrd(kafkaUser, config.getSecretPrefix(), config.isAclsAdminApiSupported(), config.getSecretLabelExclusionPattern());
             LOGGER.debugCr(reconciliation, "Updating User {} in namespace {}", reconciliation.name(), reconciliation.namespace());
         } catch (Exception e) {
             LOGGER.warnCr(reconciliation, e);

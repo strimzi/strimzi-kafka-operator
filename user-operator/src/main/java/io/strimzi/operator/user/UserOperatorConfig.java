@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import static io.strimzi.operator.common.config.ConfigParameterParser.BOOLEAN;
 import static io.strimzi.operator.common.config.ConfigParameterParser.INTEGER;
@@ -20,6 +21,7 @@ import static io.strimzi.operator.common.config.ConfigParameterParser.LABEL_PRED
 import static io.strimzi.operator.common.config.ConfigParameterParser.LONG;
 import static io.strimzi.operator.common.config.ConfigParameterParser.NON_EMPTY_STRING;
 import static io.strimzi.operator.common.config.ConfigParameterParser.PROPERTIES;
+import static io.strimzi.operator.common.config.ConfigParameterParser.REGEX_PATTERN;
 import static io.strimzi.operator.common.config.ConfigParameterParser.SEMICOLON_SEPARATED_LIST;
 import static io.strimzi.operator.common.config.ConfigParameterParser.STRING;
 import static io.strimzi.operator.common.config.ConfigParameterParser.strictlyPositive;
@@ -71,6 +73,14 @@ public class UserOperatorConfig {
      * Configures the default prefix of user secrets created by the operator
      */
     public static final ConfigParameter<String> SECRET_PREFIX = new ConfigParameter<>("STRIMZI_SECRET_PREFIX", STRING, "", CONFIG_VALUES);
+
+    /**
+     * Configuration parameter to define a regex pattern used for excluding certain labels
+     * from being considered in processing. This parameter allows for specifying a pattern
+     * that labels must not match to be included. If null, no labels are excluded based on the pattern.
+     */
+    public static final ConfigParameter<Pattern> SECRET_LABELS_EXCLUSION_PATTERN = new ConfigParameter<>("STRIMZI_SECRET_LABELS_EXCLUSION_PATTERN", REGEX_PATTERN, null, CONFIG_VALUES);
+
     /**
      * Number of days for which the certificate should be valid
      */
@@ -269,6 +279,18 @@ public class UserOperatorConfig {
     }
 
     /**
+     * Retrieves the configured regex pattern used to exclude specific labels. This pattern
+     * defines which labels should not be included based on their key matching the pattern.
+     * If no pattern has been set, this method returns {@code null}, implying that no labels
+     * are excluded.
+     *
+     * @return      The regex pattern for excluding labels, or {@code null} if no exclusion is configured.
+     */
+    public Pattern getSecretLabelExclusionPattern() {
+        return get(SECRET_LABELS_EXCLUSION_PATTERN);
+    }
+
+    /**
      * @return The length used for Scram-Sha Password
      */
     public int getScramPasswordLength() {
@@ -366,7 +388,6 @@ public class UserOperatorConfig {
         return get(CERTS_RENEWAL_DAYS);
     }
 
-
     @Override
     public String toString() {
         return "UserOperatorBuilderConfig{" +
@@ -394,6 +415,7 @@ public class UserOperatorConfig {
                 "\n\tbatchMaxBlockSize=" + getBatchMaxBlockSize() +
                 "\n\tbatchMaxBlockTime=" + getBatchMaxBlockTime() +
                 "\n\tuserOperationsThreadPoolSize=" + getUserOperationsThreadPoolSize() +
+                "\n\tsecretLabelsExclusionPattern=" + getSecretLabelExclusionPattern() +
                 '}';
     }
 }
