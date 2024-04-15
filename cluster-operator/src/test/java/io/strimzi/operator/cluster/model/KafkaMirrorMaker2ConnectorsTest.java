@@ -117,7 +117,7 @@ public class KafkaMirrorMaker2ConnectorsTest {
         assertThat(ex.getMessage(), is("KafkaMirrorMaker2 resource validation failed: " +
                 "[Each MirrorMaker 2 mirror definition has to specify the source cluster alias, " +
                 "Target cluster alias wrong-target is used in a mirror definition, but cluster with this alias does not exist in cluster definitions, " +
-                "Target cluster alias wrong-target is used in a mirror definition, but it is not the same as the connect cluster alias target]"));
+                "Connect cluster alias (currently set to target) has to be the same as the target cluster alias wrong-target]"));
     }
 
     @Test
@@ -130,7 +130,7 @@ public class KafkaMirrorMaker2ConnectorsTest {
                 .build();
         InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> KafkaMirrorMaker2Connectors.validateConnectors(kmm2));
         assertThat(ex.getMessage(), is("KafkaMirrorMaker2 resource validation failed: " +
-                "[Target cluster alias target is used in a mirror definition, but it is not the same as the connect cluster alias source]"));
+                "[Connect cluster alias (currently set to source) has to be the same as the target cluster alias target]"));
 
         // A case where one mirror has the correct target cluster, but the other does not
         KafkaMirrorMaker2 kmm2CorrectAndIncorrectMirror = new KafkaMirrorMaker2Builder(KMM2)
@@ -146,7 +146,7 @@ public class KafkaMirrorMaker2ConnectorsTest {
                 .build();
         ex = assertThrows(InvalidResourceException.class, () -> KafkaMirrorMaker2Connectors.validateConnectors(kmm2CorrectAndIncorrectMirror));
         assertThat(ex.getMessage(), is("KafkaMirrorMaker2 resource validation failed: " +
-                "[Target cluster alias third is used in a mirror definition, but it is not the same as the connect cluster alias target]"));
+                "[Connect cluster alias (currently set to target) has to be the same as the target cluster alias third]"));
     }
 
     @Test

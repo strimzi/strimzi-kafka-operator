@@ -117,7 +117,7 @@ public class KafkaMirrorMaker2Connectors {
                     }
 
                     if (!mirror.getTargetCluster().equals(connectCluster)) {
-                        errorMessages.add("Target cluster alias " + mirror.getTargetCluster() + " is used in a mirror definition, but it is not the same as the connect cluster alias " + connectCluster);
+                        errorMessages.add("Connect cluster alias (currently set to " + connectCluster + ") has to be the same as the target cluster alias " + mirror.getTargetCluster());
                     }
                 }
 
