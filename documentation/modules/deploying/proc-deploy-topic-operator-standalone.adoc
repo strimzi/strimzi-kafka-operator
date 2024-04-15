@@ -147,8 +147,10 @@ This allows you to specify the necessary SASL properties for authentication.
 The property `STRIMZI_ALTERABLE_TOPIC_CONFIG` defaults to `ALL`, allowing all `.spec.config` properties to be set in the `KafkaTopic` resource.  
 If this setting is not suitable for a managed Kafka service, do as follows:
 +
+--
 * If only a subset of properties is configurable, list them as comma-separated values.
 * If no  properties are to be configured, use `NONE`, which is equivalent to an empty property list.
+--
 +
 NOTE:  Only Kafka configuration properties starting with `sasl.` can be set with the `STRIMZI_SASL_CUSTOM_CONFIG_JSON` environment variable.
 +
