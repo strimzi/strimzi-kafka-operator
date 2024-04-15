@@ -11,7 +11,7 @@ import com.fasterxml.jackson.annotation.JsonValue;
  * Enum that is used to define if the volume should be used to store the KRaft metadata. Currently, it has only two
  * options:
  * - shared for a volume that should share both KRaft metadata and regular logs
- * - Null for automatic assignment of the KRaft metadata to tne volume with lowest ID
+ * - Null for automatic assignment of the KRaft metadata to the volume with lowest ID
  */
 public enum KRaftMetadataStorage {
     SHARED;

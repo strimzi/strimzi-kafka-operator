@@ -70,7 +70,8 @@ if [ "$USE_KRAFT" == "true" ]; then
   METADATA_VERSION=$(cat "$KAFKA_HOME/custom-config/metadata.version")
   echo "Making sure the Kraft storage is formatted with cluster ID $STRIMZI_CLUSTER_ID and metadata version $METADATA_VERSION"
   # Using "=" to assign arguments for the Kafka storage tool to avoid issues if the generated
-  # cluster ID starts with a "-". See https://issues.apache.org/jira/browse/KAFKA-15754
+  # cluster ID starts with a "-". See https://issues.apache.org/jira/browse/KAFKA-15754.
+  # The -g option makes sure the tool will ignore any volumes that are already formatted.
   ./bin/kafka-storage.sh format -t="$STRIMZI_CLUSTER_ID" -r="$METADATA_VERSION" -c=/tmp/strimzi.properties -g
   echo "KRaft storage formatting is done"
 

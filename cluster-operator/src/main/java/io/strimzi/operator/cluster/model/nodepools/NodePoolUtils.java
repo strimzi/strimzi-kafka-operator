@@ -234,7 +234,9 @@ public class NodePoolUtils {
             if (pool.getSpec().getStorage() != null
                     && pool.getSpec().getStorage() instanceof JbodStorage jbod) {
                 if (KafkaVersion.compareDottedVersions(versionChange.to().version(), "3.7.0") < 0 && jbod.getVolumes().size() > 1) {
-                    // When running Kafka older than 3.7.0, JBOD storage is not supported in KRaft
+                    // When running Kafka older than 3.7.0, JBOD storage is not supported in KRaft.
+                    // This check should be removed when we remove support for Kafka 3.6.x.
+                    // This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/9960.
                     errors.add("Using more than one disk in a JBOD storage in KRaft mode is supported only with Apache Kafka 3.7.0 and newer (in KafkaNodePool " + pool.getMetadata().getName() + ")");
                 }
             }
