@@ -141,7 +141,7 @@ env:
 <3> The keystore contains the private key for mTLS authentication.
 <4> The password for accessing the keystore.
 
-. If required, configure custom SASL authentication using the STRIMZI_SASL_CUSTOM_CONFIG_JSON environment variable. 
+. If required, configure custom SASL authentication using the `STRIMZI_SASL_CUSTOM_CONFIG_JSON` environment variable. 
 This allows you to specify the necessary SASL properties for authentication.
 +
 The property `STRIMZI_ALTERABLE_TOPIC_CONFIG` defaults to `ALL`, allowing all `.spec.config` properties to be set in the `KafkaTopic` resource.  
