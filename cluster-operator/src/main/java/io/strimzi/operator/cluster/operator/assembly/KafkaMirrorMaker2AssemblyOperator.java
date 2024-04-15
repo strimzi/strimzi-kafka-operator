@@ -251,7 +251,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
      * @param kafkaMirrorMaker2 The MirrorMaker 2
      * @return A future, failed if any of the connectors could not be reconciled.
      */
-    private Future<Void> reconcileConnectors(Reconciliation reconciliation, KafkaMirrorMaker2 kafkaMirrorMaker2, KafkaMirrorMaker2Cluster mirrorMaker2Cluster, KafkaMirrorMaker2Status mirrorMaker2Status, String desiredLogging) {
+    /* test */ Future<Void> reconcileConnectors(Reconciliation reconciliation, KafkaMirrorMaker2 kafkaMirrorMaker2, KafkaMirrorMaker2Cluster mirrorMaker2Cluster, KafkaMirrorMaker2Status mirrorMaker2Status, String desiredLogging) {
         String host = KafkaMirrorMaker2Resources.qualifiedServiceName(mirrorMaker2Cluster.getCluster(), reconciliation.namespace());
         KafkaConnectApi apiClient = connectClientProvider.apply(vertx);
         List<KafkaConnector> desiredConnectors = mirrorMaker2Cluster.connectors().generateConnectorDefinitions();
@@ -342,7 +342,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                 .map(Boolean.FALSE); // Return FALSE since other resources are still deleted by garbage collection
     }
 
-    // Methods for working with restart annotations
+    // Methods for working with connector restarts
 
     /**
      * Checks whether the provided KafkaMirrorMaker2 resource has the strimzi.io/restart-connector annotation, and
@@ -427,6 +427,36 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                 .build();
         return resourceOperator.patchAsync(reconciliation, patchedKafkaMirrorMaker2)
                 .compose(ignored -> Future.succeededFuture());
+    }
+
+    /**
+     * Returns the previous auto-restart status with the information about the previous restarts (number of restarts and
+     * last restart timestamp). For Mirror Maker 2, this information is gathered from the KafkaMirrorMaker2 resource
+     * passed to this method.
+     *
+     * @param reconciliation    Reconciliation marker
+     * @param connectorName     Name of the connector for which the restart should be returned
+     * @param resource          The KafkaMirrorMaker2 custom resource that configures the connector)
+     *
+     * @return  The previous auto-restart status
+     */
+    @SuppressWarnings({ "rawtypes" })
+    @Override
+    protected Future<AutoRestartStatus> previousAutoRestartStatus(Reconciliation reconciliation, String connectorName, CustomResource resource)  {
+        if (resource instanceof KafkaMirrorMaker2 kafkaMirrorMaker2)    {
+            if (kafkaMirrorMaker2.getStatus() != null
+                    && kafkaMirrorMaker2.getStatus().getAutoRestartStatuses() != null)    {
+                AutoRestartStatus ars = kafkaMirrorMaker2.getStatus().getAutoRestartStatuses().stream().filter(c -> connectorName.equals(c.getConnectorName())).findFirst().orElse(null);
+                return Future.succeededFuture(ars);
+            } else {
+                // The status does not exist yet or has no auto-restarts stored
+                return Future.succeededFuture(null);
+            }
+        } else {
+            // Something went wrong and we
+            LOGGER.warnCr(reconciliation, "The Kafka Mirror Maker 2 resource is missing or has a wrong type.", reconciliation.namespace(), reconciliation.name());
+            return Future.succeededFuture(null);
+        }
     }
 
     // Static utility methods and classes

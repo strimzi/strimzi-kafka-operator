@@ -5,7 +5,6 @@
 package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.strimzi.api.kafka.model.connector.AutoRestartStatusBuilder;
 import io.strimzi.api.kafka.model.connector.KafkaConnector;
 import io.strimzi.api.kafka.model.connector.KafkaConnectorBuilder;
 import io.strimzi.api.kafka.model.connector.KafkaConnectorList;
@@ -57,119 +56,6 @@ public class KafkaConnectAssemblyOperatorConnectorAutoRestartTest {
     @AfterAll
     public static void after() {
         vertx.close();
-    }
-
-    @Test
-    public void testShouldAutoRestartConnector(VertxTestContext context) {
-        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
-
-        KafkaConnectAssemblyOperator op = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, KubernetesVersion.MINIMAL_SUPPORTED_VERSION),
-            supplier, ResourceUtils.dummyClusterOperatorConfig());
-
-        // Should restart after minute 2 when auto restart count is 1
-        var autoRestartStatus =  new AutoRestartStatusBuilder()
-            .withCount(1)
-            .withLastRestartTimestamp(ZonedDateTime.now(ZoneOffset.UTC).minusMinutes(3).format(DateTimeFormatter.ISO_INSTANT))
-            .build();
-        assertThat(op.shouldAutoRestart(autoRestartStatus, null), is(true));
-
-        // Should not restart before minute 2 when auto restart count is 1
-        autoRestartStatus =  new AutoRestartStatusBuilder()
-            .withCount(1)
-            .withLastRestartTimestamp(ZonedDateTime.now(ZoneOffset.UTC).minusMinutes(1).format(DateTimeFormatter.ISO_INSTANT))
-            .build();
-        assertThat(op.shouldAutoRestart(autoRestartStatus, null), is(false));
-
-        // Should restart after minute 12 when auto restart count is 3
-        autoRestartStatus =  new AutoRestartStatusBuilder()
-            .withCount(3)
-            .withLastRestartTimestamp(ZonedDateTime.now(ZoneOffset.UTC).minusMinutes(13).format(DateTimeFormatter.ISO_INSTANT))
-            .build();
-        assertThat(op.shouldAutoRestart(autoRestartStatus, null), is(true));
-
-        // Should not restart before minute 12 when auto restart count is 3
-        autoRestartStatus =  new AutoRestartStatusBuilder()
-            .withCount(3)
-            .withLastRestartTimestamp(ZonedDateTime.now(ZoneOffset.UTC).minusMinutes(10).format(DateTimeFormatter.ISO_INSTANT))
-            .build();
-        assertThat(op.shouldAutoRestart(autoRestartStatus, null), is(false));
-
-        // Should restart after minute 61 when auto restart count is 25
-        autoRestartStatus =  new AutoRestartStatusBuilder()
-                .withCount(25)
-                .withLastRestartTimestamp(ZonedDateTime.now(ZoneOffset.UTC).minusMinutes(61).format(DateTimeFormatter.ISO_INSTANT))
-                .build();
-        assertThat(op.shouldAutoRestart(autoRestartStatus, null), is(true));
-
-        // Should not restart after 59 minutes when auto restart count is 25
-        autoRestartStatus =  new AutoRestartStatusBuilder()
-                .withCount(25)
-                .withLastRestartTimestamp(ZonedDateTime.now(ZoneOffset.UTC).minusMinutes(59).format(DateTimeFormatter.ISO_INSTANT))
-                .build();
-        assertThat(op.shouldAutoRestart(autoRestartStatus, null), is(false));
-
-        // Should not restart after 6 attempts
-        autoRestartStatus =  new AutoRestartStatusBuilder()
-            .withCount(7)
-            .withLastRestartTimestamp(ZonedDateTime.now(ZoneOffset.UTC).minusDays(1).format(DateTimeFormatter.ISO_INSTANT))
-            .build();
-        assertThat(op.shouldAutoRestart(autoRestartStatus, 7), is(false));
-
-        // Should restart after 6 attempts when maxRestarts set to higher number
-        autoRestartStatus =  new AutoRestartStatusBuilder()
-                .withCount(7)
-                .withLastRestartTimestamp(ZonedDateTime.now(ZoneOffset.UTC).minusDays(1).format(DateTimeFormatter.ISO_INSTANT))
-                .build();
-        assertThat(op.shouldAutoRestart(autoRestartStatus, 8), is(true));
-
-        context.completeNow();
-    }
-
-    @Test
-    public void testShouldResetAutoRestartStatus(VertxTestContext context) {
-        // Should reset after minute 2 when auto restart count is 1
-        var autoRestartStatus =  new AutoRestartStatusBuilder()
-                .withCount(1)
-                .withLastRestartTimestamp(ZonedDateTime.now(ZoneOffset.UTC).minusMinutes(3).format(DateTimeFormatter.ISO_INSTANT))
-                .build();
-        assertThat(AbstractConnectOperator.shouldResetAutoRestartStatus(autoRestartStatus), is(true));
-
-        // Should not reset before minute 2 when auto restart count is 1
-        autoRestartStatus =  new AutoRestartStatusBuilder()
-                .withCount(1)
-                .withLastRestartTimestamp(ZonedDateTime.now(ZoneOffset.UTC).minusMinutes(1).format(DateTimeFormatter.ISO_INSTANT))
-                .build();
-        assertThat(AbstractConnectOperator.shouldResetAutoRestartStatus(autoRestartStatus), is(false));
-
-        // Should reset after minute 12 when auto restart count is 3
-        autoRestartStatus =  new AutoRestartStatusBuilder()
-                .withCount(3)
-                .withLastRestartTimestamp(ZonedDateTime.now(ZoneOffset.UTC).minusMinutes(13).format(DateTimeFormatter.ISO_INSTANT))
-                .build();
-        assertThat(AbstractConnectOperator.shouldResetAutoRestartStatus(autoRestartStatus), is(true));
-
-        // Should not reset before minute 12 when auto restart count is 3
-        autoRestartStatus =  new AutoRestartStatusBuilder()
-                .withCount(3)
-                .withLastRestartTimestamp(ZonedDateTime.now(ZoneOffset.UTC).minusMinutes(10).format(DateTimeFormatter.ISO_INSTANT))
-                .build();
-        assertThat(AbstractConnectOperator.shouldResetAutoRestartStatus(autoRestartStatus), is(false));
-
-        // Should reset after 60 minutes when auto restart count is 25
-        autoRestartStatus =  new AutoRestartStatusBuilder()
-                .withCount(25)
-                .withLastRestartTimestamp(ZonedDateTime.now(ZoneOffset.UTC).minusMinutes(61).format(DateTimeFormatter.ISO_INSTANT))
-                .build();
-        assertThat(AbstractConnectOperator.shouldResetAutoRestartStatus(autoRestartStatus), is(true));
-
-        // Should not reset after 59 minutes when auto restart count is 25
-        autoRestartStatus =  new AutoRestartStatusBuilder()
-                .withCount(25)
-                .withLastRestartTimestamp(ZonedDateTime.now(ZoneOffset.UTC).minusMinutes(59).format(DateTimeFormatter.ISO_INSTANT))
-                .build();
-        assertThat(AbstractConnectOperator.shouldResetAutoRestartStatus(autoRestartStatus), is(false));
-
-        context.completeNow();
     }
 
     @Test
