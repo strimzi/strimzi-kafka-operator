@@ -52,7 +52,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class UserControllerMockTest {
-
     public static final String NAME = "user";
 
     private static KubernetesClient client;

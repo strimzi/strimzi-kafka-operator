@@ -398,17 +398,12 @@ public class KafkaUserModel {
         Map<String, String> labels = this.labels.toMap();
 
         if (this.secretLabelExclusionPattern != null) {
-            LOGGER.infoOp("Applying Secret Label Exclusion Pattern: {}", this.secretLabelExclusionPattern);
-            LOGGER.debugOp("Initial labels before exclusion: {}", labels);
+            LOGGER.debugOp("Applying Secret Label Exclusion Pattern: {}", this.secretLabelExclusionPattern);
 
             labels = Util.mergeLabelsOrAnnotations(labels, templateSecretLabels)
                 .entrySet().stream()
                 .filter(entry -> !this.secretLabelExclusionPattern.matcher(entry.getKey()).matches()) // Filtering based on keys
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-
-            LOGGER.debugOp("Updated labels: {}", labels);
-        } else {
-            LOGGER.debugOp("No Secret Label Exclusion Pattern set. Skipping label filtering.");
         }
 
         return new SecretBuilder()
@@ -702,7 +697,7 @@ public class KafkaUserModel {
      *
      * @return the compiled {@link Pattern} representing the label exclusion criteria, or {@code null} if no exclusion pattern is set.
      */
-    public Pattern getSecretLabelExclusionPattern() {
+    protected Pattern getSecretLabelExclusionPattern() {
         return secretLabelExclusionPattern;
     }
 }

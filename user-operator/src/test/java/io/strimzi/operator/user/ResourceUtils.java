@@ -39,7 +39,7 @@ public class ResourceUtils {
 
     public static UserOperatorConfig createUserOperatorConfig(String namespace, Map<String, String> labels,
                                                               boolean aclsAdminApiSupported, String scramShaPasswordLength,
-                                                              String secretPrefix, String secretLabelExclusionPattern) {
+                                                              String secretPrefix) {
         Map<String, String> envVars = new HashMap<>(4);
         envVars.put(UserOperatorConfig.NAMESPACE.key(), namespace);
         envVars.put(UserOperatorConfig.LABELS.key(), labels.entrySet().stream().map(e -> e.getKey() + "=" + e.getValue()).collect(Collectors.joining(",")));
@@ -55,36 +55,15 @@ public class ResourceUtils {
             envVars.put(UserOperatorConfig.SECRET_PREFIX.key(), secretPrefix);
         }
 
-        if (secretLabelExclusionPattern != null) {
-            envVars.put(UserOperatorConfig.SECRET_LABELS_EXCLUSION_PATTERN.key(), secretLabelExclusionPattern);
-        }
-
         return UserOperatorConfig.buildFromMap(envVars);
     }
 
-    public static UserOperatorConfig createUserOperatorConfig(String namespace, Map<String, String> labels,
-                                                              boolean aclsAdminApiSupported, String scramShaPasswordLength,
-                                                              String secretPrefix) {
-        return createUserOperatorConfig(namespace, labels, aclsAdminApiSupported, scramShaPasswordLength, secretPrefix, null);
-    }
-
-    public static UserOperatorConfig createUserOperatorConfigForUserControllerTesting(String namespace, Map<String, String> labels,
-                                                                                      int fullReconciliationInterval,
-                                                                                      int queueSize, int poolSize,
-                                                                                      String secretPrefix, String secretLabelExclusionPattern) {
-        return new UserOperatorConfigBuilder(createUserOperatorConfig(namespace, labels, false, "32", secretPrefix, secretLabelExclusionPattern))
+    public static UserOperatorConfig createUserOperatorConfigForUserControllerTesting(String namespace, Map<String, String> labels, int fullReconciliationInterval, int queueSize, int poolSize, String secretPrefix) {
+        return new UserOperatorConfigBuilder(createUserOperatorConfig(namespace, labels, false, "32", secretPrefix))
                       .with(UserOperatorConfig.RECONCILIATION_INTERVAL_MS.key(), String.valueOf(fullReconciliationInterval))
                       .with(UserOperatorConfig.WORK_QUEUE_SIZE.key(), String.valueOf(queueSize))
                       .with(UserOperatorConfig.USER_OPERATIONS_THREAD_POOL_SIZE.key(), String.valueOf(poolSize))
                       .build();
-    }
-
-    public static UserOperatorConfig createUserOperatorConfigForUserControllerTesting(String namespace, Map<String, String> labels,
-                                                                                      int fullReconciliationInterval,
-                                                                                      int queueSize, int poolSize,
-                                                                                      String secretPrefix) {
-        return createUserOperatorConfigForUserControllerTesting(namespace, labels, fullReconciliationInterval, queueSize, poolSize,
-            secretPrefix, null);
     }
 
     public static UserOperatorConfig createUserOperatorConfig(String namespace) {
