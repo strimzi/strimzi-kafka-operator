@@ -3,8 +3,6 @@
 # Default replicas for the cluster operator
 replicas: 1
 
-#Default number of ReplicaSets to keep the of the operator deployment
-revisionHistoryLimit: 10
 
 # If you set `watchNamespaces` to the same value as ``.Release.Namespace` (e.g. `helm ... --namespace $NAMESPACE`),
 # the chart will fail because duplicate RoleBindings will be attempted to be created in the same namespace
