@@ -3,6 +3,9 @@
 # Default replicas for the cluster operator
 replicas: 1
 
+#Default number of ReplicaSets to keep the of the operator deployment
+revisionHistoryLimit: 10
+
 # If you set `watchNamespaces` to the same value as ``.Release.Namespace` (e.g. `helm ... --namespace $NAMESPACE`),
 # the chart will fail because duplicate RoleBindings will be attempted to be created in the same namespace
 watchNamespaces: []
@@ -54,11 +57,11 @@ leaderElection:
   enable: true
 
 # https://kubernetes.io/docs/tasks/run-application/configure-pdb/
-podDisruptionBudget:  
+podDisruptionBudget:
   enabled: false
-  # The PDB definition only has two attributes to control the availability requirements: minAvailable or maxUnavailable (mutually exclusive). 
+  # The PDB definition only has two attributes to control the availability requirements: minAvailable or maxUnavailable (mutually exclusive).
   # Field maxUnavailable tells how many pods can be down and minAvailable tells how many pods must be running in a cluster.
-  
+
   # The pdb template will check values according to below order
   #
   #  {{- if .Values.podDisruptionBudget.minAvailable }}
