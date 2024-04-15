@@ -11,7 +11,9 @@ metadata:
     heritage: {{ .Release.Service }}
 spec:
   replicas: {{ .Values.replicas }}
-  revisionHistoryLimit: {{ .Values.revisionHistoryLimit | default 10}}
+  {{- if .Values.revisionHistoryLimit }}
+  revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
+  {{- end }}
   selector:
     matchLabels:
       name: strimzi-cluster-operator
