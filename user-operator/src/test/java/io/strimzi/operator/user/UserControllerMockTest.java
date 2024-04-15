@@ -554,7 +554,4 @@ public class UserControllerMockTest {
             controller.stop();
         }
     }
-
-    // TODO: add a UserControllerMock test probably
-    //  (i.e., that reconciliation is triggered by a KafkaUser which matches a regex?)
 }
