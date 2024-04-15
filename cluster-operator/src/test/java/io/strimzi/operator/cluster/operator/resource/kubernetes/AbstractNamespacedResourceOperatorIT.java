@@ -4,14 +4,15 @@
  */
 package io.strimzi.operator.cluster.operator.resource.kubernetes;
 
+import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
+import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.cluster.KubeCluster;
 import io.vertx.core.Vertx;
 import io.vertx.core.WorkerExecutor;
@@ -26,10 +27,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import java.util.Objects;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
@@ -55,8 +56,6 @@ public abstract class AbstractNamespacedResourceOperatorIT<C extends KubernetesC
     protected static KubernetesClient client;
     protected static String namespace = "resource-operator-it-namespace";
 
-    private static KubeClusterResource cluster;
-
     @BeforeEach
     public void renameResource() {
         this.resourceName = getResourceName(RESOURCE_NAME);
@@ -64,33 +63,30 @@ public abstract class AbstractNamespacedResourceOperatorIT<C extends KubernetesC
 
     @BeforeAll
     public static void before() {
-        cluster = KubeClusterResource.getInstance();
-        cluster.setNamespace(namespace);
-
         assertDoesNotThrow(() -> KubeCluster.bootstrap(), "Could not bootstrap server");
         vertx = Vertx.vertx();
         sharedWorkerExecutor = vertx.createSharedWorkerExecutor("kubernetes-ops-pool");
         client = new KubernetesClientBuilder().build();
 
-        if (cluster.getNamespace() != null && System.getenv("SKIP_TEARDOWN") == null) {
+        if (client.namespaces().withName(namespace).get() != null && System.getenv("SKIP_TEARDOWN") == null) {
             LOGGER.warn("Namespace {} is already created, going to delete it", namespace);
-            kubeClient().deleteNamespace(namespace);
-            cmdKubeClient().waitForResourceDeletion("Namespace", namespace);
+            client.namespaces().withName(namespace).withPropagationPolicy(DeletionPropagation.BACKGROUND).delete();
+            client.namespaces().withName(namespace).waitUntilCondition(Objects::isNull, 30_000, TimeUnit.MILLISECONDS);
         }
 
         LOGGER.info("Creating namespace: {}", namespace);
-        kubeClient().createNamespace(namespace);
-        cmdKubeClient().waitForResourceCreation("Namespace", namespace);
+        client.namespaces().resource(new NamespaceBuilder().withNewMetadata().withName(namespace).endMetadata().build()).create();
+        client.namespaces().withName(namespace).waitUntilCondition(ns -> ns.getStatus() != null && "Active".equals(ns.getStatus().getPhase()), 30_000, TimeUnit.MILLISECONDS);
     }
 
     @AfterAll
     public static void after() {
         sharedWorkerExecutor.close();
         vertx.close();
-        if (kubeClient().getNamespace(namespace) != null && System.getenv("SKIP_TEARDOWN") == null) {
+        if (client.namespaces().withName(namespace).get() != null && System.getenv("SKIP_TEARDOWN") == null) {
             LOGGER.warn("Deleting namespace {} after tests run", namespace);
-            kubeClient().deleteNamespace(namespace);
-            cmdKubeClient().waitForResourceDeletion("Namespace", namespace);
+            client.namespaces().withName(namespace).withPropagationPolicy(DeletionPropagation.BACKGROUND).delete();
+            client.namespaces().withName(namespace).waitUntilCondition(Objects::isNull, 30_000, TimeUnit.MILLISECONDS);
         }
     }
 
@@ -123,7 +119,7 @@ public abstract class AbstractNamespacedResourceOperatorIT<C extends KubernetesC
             }))
             .compose(rr -> op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, null))
             .onComplete(context.succeeding(rrDeleted -> {
-                // it seems the resource is cached for some time so we need wait for it to be null
+                // it seems the resource is cached for some time, so we need wait for it to be null
                 context.verify(() -> {
                         VertxUtil.waitFor(Reconciliation.DUMMY_RECONCILIATION, vertx, "resource deletion " + resourceName, "deleted", 1000,
                                 30_000, () -> op.get(namespace, resourceName) == null)
