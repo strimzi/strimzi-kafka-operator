@@ -185,7 +185,7 @@ public class KafkaUserModelCertificateHandlingTest {
         public int generateNewCertificateCalled = 0;
 
         protected MockKafkaUserModel() {
-            super(ResourceUtils.NAMESPACE, ResourceUtils.NAME, Labels.EMPTY, null, null);
+            super(ResourceUtils.NAMESPACE, ResourceUtils.NAME, Labels.EMPTY, null);
         }
 
         @Override

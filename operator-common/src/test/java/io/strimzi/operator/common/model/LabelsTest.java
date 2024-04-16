@@ -9,8 +9,10 @@ import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -290,5 +292,52 @@ public class LabelsTest {
         assertThat(Labels.getOrValidInstanceLabelValue("too-long-012345678901234567890123456789012345678901234567890123456789"), is("too-long-012345678901234567890123456789012345678901234567890123"));
         assertThat(Labels.getOrValidInstanceLabelValue("too-long-01234567890123456789012345678901234567890123456789012-456789"), is("too-long-01234567890123456789012345678901234567890123456789012"));
         assertThat(Labels.getOrValidInstanceLabelValue("too-long-01234567890123456789012345678901234567890123456789.---456789"), is("too-long-01234567890123456789012345678901234567890123456789"));
+    }
+
+    @Test
+    public void testFilterLabelsNoExclusions() {
+        Map<String, String> inputLabels = Map.of(
+            "someLabel", "someValue",
+            "anotherLabel", "anotherValue"
+        );
+        Labels result = Labels.filterLabels(inputLabels);
+        assertThat(result.toMap(), is(inputLabels));
+        assertThat(result.toMap().size(), is(inputLabels.size()));
+    }
+
+    @Test
+    public void testFilterLabelsWithExclusions() {
+        Map<String, String> inputLabels = new HashMap<>();
+        inputLabels.put("someLabel", "someValue");
+        inputLabels.put("anotherLabel", "anotherValue");
+        inputLabels.put("app.kubernetes.io/managed-by", "strimzi");
+        inputLabels.put("kustomize.toolkit.fluxcd.io/name", "someName");
+
+        Labels result = Labels.filterLabels(inputLabels);
+        assertThat(result.toMap().keySet(), Matchers.containsInAnyOrder("someLabel", "anotherLabel"));
+        assertThat(result.toMap().size(), is(2));
+    }
+
+    @Test
+    public void testFilterLabelsAllExcluded() {
+        Map<String, String> inputLabels = Map.of(
+            "app.kubernetes.io/managed-by", "strimzi",
+            "kustomize.toolkit.fluxcd.io/name", "someName"
+        );
+        Labels result = Labels.filterLabels(inputLabels);
+        assertThat(result.toMap(), is(Collections.emptyMap()));
+    }
+
+    @Test
+    public void testFilterLabelsEmptyInput() {
+        Map<String, String> inputLabels = new HashMap<>();
+        Labels result = Labels.filterLabels(inputLabels);
+        assertThat(result.toMap(), is(Collections.emptyMap()));
+    }
+
+    @Test
+    public void testFilterLabelsNullInput() {
+        Labels result = Labels.filterLabels(null);
+        assertThat(result.toMap(), is(Collections.emptyMap()));
     }
 }

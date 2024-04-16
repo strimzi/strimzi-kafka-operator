@@ -154,6 +154,24 @@ public class Labels extends ResourceLabels {
     }
 
     /**
+     * Filters out labels that match the predefined exclusion pattern. This method is used to remove certain
+     * labels that should not be included based on a specific pattern, typically used for internal or sensitive
+     * keys that should not be propagated.
+     *
+     * @param labels        The original map of labels that may contain keys which need to be excluded.
+     * @return              A {@link Labels} object containing only the labels that do not match the exclusion pattern.
+     *                       If the input is null, it returns a new Labels object initialized with null.
+     */
+    public static Labels filterLabels(Map<String, String> labels) {
+        if (labels != null) {
+            labels = labels.entrySet().stream()
+                .filter(entry -> !STRIMZI_LABELS_EXCLUSION_PATTERN.matcher(entry.getKey()).matches())
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        }
+        return new Labels(labels);
+    }
+
+    /**
      * @param resource The resource to get the labels of.
      * @return A new instance with filtered labels added from the given {@code resource}.
      */
@@ -161,11 +179,7 @@ public class Labels extends ResourceLabels {
         Map<String, String> additionalLabels = resource.getMetadata().getLabels();
 
         if (additionalLabels != null) {
-            additionalLabels = additionalLabels
-                    .entrySet()
-                    .stream()
-                    .filter(entryset -> !STRIMZI_LABELS_EXCLUSION_PATTERN.matcher(entryset.getKey()).matches())
-                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+            additionalLabels = filterLabels(additionalLabels).toMap();
         }
 
         return additionalLabels(additionalLabels);

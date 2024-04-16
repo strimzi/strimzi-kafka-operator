@@ -86,8 +86,6 @@ public class KafkaUserModel {
 
     private final String secretPrefix;
 
-    private final Pattern secretLabelExclusionPattern;
-
     /**
      * Constructor
      *
@@ -95,7 +93,7 @@ public class KafkaUserModel {
      * @param name   User name
      * @param labels   Labels
      */
-    protected KafkaUserModel(String namespace, String name, Labels labels, String secretPrefix, Pattern secretLabelExclusionPattern) {
+    protected KafkaUserModel(String namespace, String name, Labels labels, String secretPrefix) {
         this.namespace = namespace;
         this.name = name;
         this.labels = labels.withKubernetesName(KAFKA_USER_OPERATOR_NAME)
@@ -103,7 +101,6 @@ public class KafkaUserModel {
             .withKubernetesPartOf(name)
             .withKubernetesManagedBy(KAFKA_USER_OPERATOR_NAME);
         this.secretPrefix = secretPrefix;
-        this.secretLabelExclusionPattern = secretLabelExclusionPattern;
     }
 
     /**
@@ -112,20 +109,16 @@ public class KafkaUserModel {
      * @param kafkaUser                     The Custom Resource based on which the model should be created.
      * @param secretPrefix                  The prefix used to add to the name of the Secret generated from the KafkaUser resource.
      * @param aclsAdminApiSupported         Indicates whether Kafka Admin API can be used to manage ACL rights
-     * @param secretLabelExclusionPattern   A regex pattern used to filter out labels that should not be applied to the
-     *                                      Secret created from the KafkaUser. Labels matching this pattern will be excluded.
      *
      * @return The user model.
      */
     public static KafkaUserModel fromCrd(KafkaUser kafkaUser,
                                          String secretPrefix,
-                                         boolean aclsAdminApiSupported,
-                                         Pattern secretLabelExclusionPattern) {
+                                         boolean aclsAdminApiSupported) {
         KafkaUserModel result = new KafkaUserModel(kafkaUser.getMetadata().getNamespace(),
                 kafkaUser.getMetadata().getName(),
                 Labels.fromResource(kafkaUser).withStrimziKind(kafkaUser.getKind()),
-                secretPrefix,
-                secretLabelExclusionPattern);
+                secretPrefix);
 
         validateTlsUsername(kafkaUser);
         validateDesiredPassword(kafkaUser);
@@ -397,14 +390,7 @@ public class KafkaUserModel {
     protected Secret createSecret(Map<String, String> data) {
         Map<String, String> labels = this.labels.toMap();
 
-        if (this.secretLabelExclusionPattern != null) {
-            LOGGER.debugOp("Applying Secret Label Exclusion Pattern: {}", this.secretLabelExclusionPattern);
-
-            labels = Util.mergeLabelsOrAnnotations(labels, templateSecretLabels)
-                .entrySet().stream()
-                .filter(entry -> !this.secretLabelExclusionPattern.matcher(entry.getKey()).matches()) // Filtering based on keys
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-        }
+        labels = Labels.filterLabels(Util.mergeLabelsOrAnnotations(labels, templateSecretLabels)).toMap();
 
         return new SecretBuilder()
                 .withNewMetadata()
@@ -692,12 +678,12 @@ public class KafkaUserModel {
     }
 
     /**
-     * Retrieves the compiled regular expression pattern used to exclude certain labels from being included in the secret's metadata.
-     * This pattern is applied to each label key, and labels matching this pattern are not included.
-     *
-     * @return the compiled {@link Pattern} representing the label exclusion criteria, or {@code null} if no exclusion pattern is set.
+     * Gets the exclusion pattern for labels based on the application's configuration or other logic.
+     * @return A compiled Pattern if there's an applicable exclusion pattern, or null if none should be applied.
      */
-    protected Pattern getSecretLabelExclusionPattern() {
-        return secretLabelExclusionPattern;
+    private Pattern getSecretLabelExclusionPattern() {
+        // Example: Fetching a pattern string from an environment variable or configuration
+        String patternStr = System.getenv("STRIMZI_LABELS_EXCLUSION_PATTERN");
+        return (patternStr != null && !patternStr.isEmpty()) ? Pattern.compile(patternStr) : null;
     }
 }
