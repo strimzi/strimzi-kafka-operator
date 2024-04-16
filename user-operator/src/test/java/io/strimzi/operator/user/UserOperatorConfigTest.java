@@ -33,6 +33,7 @@ public class UserOperatorConfigTest {
         ENV_VARS.put(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.key(), "false");
         ENV_VARS.put(UserOperatorConfig.SCRAM_SHA_PASSWORD_LENGTH.key(), "20");
 
+
         Map<String, String> labels = new HashMap<>(2);
         labels.put("label1", "value1");
         labels.put("label2", "value2");

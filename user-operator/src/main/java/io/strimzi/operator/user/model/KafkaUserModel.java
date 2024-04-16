@@ -106,9 +106,9 @@ public class KafkaUserModel {
     /**
      * Creates instance of KafkaUserModel from CRD definition.
      *
-     * @param kafkaUser                     The Custom Resource based on which the model should be created.
-     * @param secretPrefix                  The prefix used to add to the name of the Secret generated from the KafkaUser resource.
-     * @param aclsAdminApiSupported         Indicates whether Kafka Admin API can be used to manage ACL rights
+     * @param kafkaUser                 The Custom Resource based on which the model should be created.
+     * @param secretPrefix              The prefix used to add to the name of the Secret generated from the KafkaUser resource.
+     * @param aclsAdminApiSupported     Indicates whether Kafka Admin API can be used to manage ACL rights
      *
      * @return The user model.
      */
@@ -675,15 +675,5 @@ public class KafkaUserModel {
      */
     public String getSaslJsonConfig() {
         return getSaslJsonConfig(getScramUserName(name), scramSha512Password);
-    }
-
-    /**
-     * Gets the exclusion pattern for labels based on the application's configuration or other logic.
-     * @return A compiled Pattern if there's an applicable exclusion pattern, or null if none should be applied.
-     */
-    private Pattern getSecretLabelExclusionPattern() {
-        // Example: Fetching a pattern string from an environment variable or configuration
-        String patternStr = System.getenv("STRIMZI_LABELS_EXCLUSION_PATTERN");
-        return (patternStr != null && !patternStr.isEmpty()) ? Pattern.compile(patternStr) : null;
     }
 }

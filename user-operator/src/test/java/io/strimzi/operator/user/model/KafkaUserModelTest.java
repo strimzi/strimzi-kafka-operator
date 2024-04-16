@@ -182,6 +182,7 @@ public class KafkaUserModelTest {
         checkOwnerReference(model.createOwnerReference(), generatedSecret);
     }
 
+
     @Test
     public void testGenerateSecretWithMetadataOverrides()    {
         KafkaUser userWithTemplate = new KafkaUserBuilder(tlsUser)
@@ -621,6 +622,7 @@ public class KafkaUserModelTest {
 
         assertThat(model.generateSecret(), is(nullValue()));
     }
+
     @Test
     public void testGetSimpleAclRulesWithNoSimpleAuthorizationReturnsNull()    {
         KafkaUser user = ResourceUtils.createKafkaUserTls(ResourceUtils.NAMESPACE);

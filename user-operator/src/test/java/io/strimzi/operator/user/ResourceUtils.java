@@ -37,9 +37,7 @@ public class ResourceUtils {
     public static final String CA_KEY_NAME = "ca-key";
     public static final String PASSWORD = "my-password";
 
-    public static UserOperatorConfig createUserOperatorConfig(String namespace, Map<String, String> labels,
-                                                              boolean aclsAdminApiSupported, String scramShaPasswordLength,
-                                                              String secretPrefix) {
+    public static UserOperatorConfig createUserOperatorConfig(String namespace, Map<String, String> labels, boolean aclsAdminApiSupported, String scramShaPasswordLength, String secretPrefix) {
         Map<String, String> envVars = new HashMap<>(4);
         envVars.put(UserOperatorConfig.NAMESPACE.key(), namespace);
         envVars.put(UserOperatorConfig.LABELS.key(), labels.entrySet().stream().map(e -> e.getKey() + "=" + e.getValue()).collect(Collectors.joining(",")));

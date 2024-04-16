@@ -71,7 +71,6 @@ public class UserOperatorConfig {
      * Configures the default prefix of user secrets created by the operator
      */
     public static final ConfigParameter<String> SECRET_PREFIX = new ConfigParameter<>("STRIMZI_SECRET_PREFIX", STRING, "", CONFIG_VALUES);
-
     /**
      * Number of days for which the certificate should be valid
      */
@@ -366,6 +365,7 @@ public class UserOperatorConfig {
     public int getClientsCaRenewalDays() {
         return get(CERTS_RENEWAL_DAYS);
     }
+
 
     @Override
     public String toString() {

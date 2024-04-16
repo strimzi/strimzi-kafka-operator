@@ -190,19 +190,5 @@ public interface ConfigParameterParser<T> {
 
         return namespaces;
     };
-
-    /**
-     * A Java Pattern, compiled from a regex string.
-     */
-    ConfigParameterParser<Pattern> REGEX_PATTERN = configValue -> {
-        try {
-            if (configValue != null && !configValue.isEmpty()) {
-                return Pattern.compile(configValue);
-            }
-            return null;
-        } catch (PatternSyntaxException e) {
-            throw new InvalidConfigurationException("Failed to parse. Regex pattern " + configValue + " is not valid", e);
-        }
-    };
 }
 
