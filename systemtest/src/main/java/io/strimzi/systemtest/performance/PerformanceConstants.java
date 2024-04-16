@@ -133,6 +133,7 @@ public interface PerformanceConstants {
      * Performance metrics file
      */
     String PERFORMANCE_METRICS_FILE_NAME = "test-performance-metrics";
+    String RESULTS_TABLE = "results-table";
 
     /**
      * Polling interval of metrics in seconds

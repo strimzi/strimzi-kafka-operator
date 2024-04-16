@@ -13,6 +13,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -36,7 +37,6 @@ import java.util.Optional;
 public abstract class BasePerformanceMetricsParser {
 
     protected static final Logger LOGGER = LogManager.getLogger(BasePerformanceMetricsParser.class);
-
 
     protected Map<String, List<ExperimentMetrics>> useCaseExperiments;
 
@@ -257,13 +257,18 @@ public abstract class BasePerformanceMetricsParser {
     }
 
     /**
-     * Displays the values of parsed experiments in a formatted table.
+     * Construct the values of parsed experiments in a formatted table.
      * This method organizes metrics into rows and columns based on headers and formats the output.
+     * @return      A string representation of the formatted table.
      */
-    protected void showValuesOfExperiments() {
+    protected String buildResultTable() {
+        StringBuilder output = new StringBuilder();
+
         // Populate data for each experiment
         this.useCaseExperiments.forEach((useCaseName, experimentsList) -> {
-            System.out.println("Use Case: " + useCaseName);
+            output.append("Use Case: ")
+                .append(useCaseName)
+                .append("\n");
 
             final String[] headers = getHeadersForUseCase(experimentsList.get(0));
             final List<String[]> allRows = new ArrayList<>();
@@ -279,9 +284,7 @@ public abstract class BasePerformanceMetricsParser {
             }
 
             int experimentCounter = 1;
-
-            printSeparator(columnWidths);
-
+            output.append(generateColumn(columnWidths));
 
             for (final ExperimentMetrics experimentMetrics : experimentsList) {
                 // Assume methods to extract and format metrics correctly are implemented
@@ -290,10 +293,13 @@ public abstract class BasePerformanceMetricsParser {
                 experimentCounter++;
             }
 
-            // Print table with dynamically adjusted widths
-            allRows.forEach(row -> printRow(row, columnWidths));
-            printSeparator(columnWidths);
+            allRows.forEach(row -> output.append(generateRow(row, columnWidths)));
+
+            output.append(generateColumn(columnWidths));
         });
+
+        // return result table
+        return output.toString();
     }
 
     public static void main(String[] args) {
@@ -304,30 +310,24 @@ public abstract class BasePerformanceMetricsParser {
 
         LOGGER.info("Using user.dir: {}", TestUtils.USER_PATH);
 
-        String parserType = args[0]; // [parser type as first argument]
-        BasePerformanceMetricsParser parser = null;
-
-        switch (parserType) {
-            case PerformanceConstants.TOPIC_OPERATOR_PARSER:
-                parser = new TopicOperatorMetricsParser();
-                break;
-            // ... more parsers here
-            default:
-                System.err.println("Unsupported parser type: " + parserType);
-                System.exit(1);
-        }
-
-        LOGGER.info("Using path: {}", parser.getParentPath());
+        ParserType parserType = null;
 
         try {
-            // parse metrics and fill inner structures
-            parser.parseMetrics();
-            // show metrics (i.e., normal and derived) to end user
-            parser.showMetrics();
-        } catch (IOException e) {
-            System.err.println("Error parsing metrics: " + e.getMessage());
-            e.printStackTrace();
+            parserType = ParserType.fromString(args[0]);
+        } catch (IllegalArgumentException e) {
+            System.err.println("Unsupported parser type: " + args[0]);
             System.exit(1);
+        }
+
+        final BasePerformanceMetricsParser parser = ParserFactory.createParser(parserType);
+
+        try {
+            parser.parseMetrics();
+            parser.showMetrics();
+            parser.writeToFile(parserType);
+        } catch (IOException e) {
+            System.err.println("Error handling metrics: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -382,6 +382,38 @@ public abstract class BasePerformanceMetricsParser {
     }
 
     /**
+     * Writes formatted experiment data to a specific file determined by the parser type.
+     * This method finds the directory named after the {@link ParserType} provided and writes the data
+     * into a text file named according to the constant {@link PerformanceConstants#RESULTS_TABLE}.
+     * This operation is performed in the latest directory returned by {@code findLatestDirectory()}.
+     *
+     * @param parserType    The type of parser which determines the directory in which to write the file.
+     *                      The directory name must exactly match the parser type's name.
+     * @throws IOException  If there is an error during the file writing process, or if the directory
+     *                      corresponding to the parser type cannot be found.
+     *                      This includes scenarios where the directory list could not be retrieved
+     *                      or no matching directory is present.
+     */
+    protected void writeToFile(ParserType parserType) throws IOException {
+        final String formattedData = this.buildResultTable();
+        final Path latestDir = this.findLatestDirectory();
+        if (latestDir != null && parserType != null) {
+            final File componentDir = Arrays.stream(latestDir.toFile().listFiles((File file) -> file.isDirectory() && file.getName().equals(parserType.getParserName())))
+                .findFirst()
+                .orElseThrow(() -> new IOException("No directory found for parser type: " + parserType.getParserName()));
+
+            final Path typeSpecificDir = componentDir.toPath();
+            final Path file = typeSpecificDir.resolve(PerformanceConstants.RESULTS_TABLE + ".txt");
+
+            try (final BufferedWriter writer = Files.newBufferedWriter(file, StandardCharsets.UTF_8)) {
+                writer.write(formattedData);
+            }
+        } else {
+            throw new IOException("No latest directory found! It seems you don't have data in " + this.parentPath + " directory");
+        }
+    }
+
+    /**
      * Appends the .txt file extension to a metric name.
      * @param metricName The name of the metric without the file extension.
      * @return The metric name with the .txt file extension.
@@ -390,20 +422,25 @@ public abstract class BasePerformanceMetricsParser {
         return metricName + ".txt";
     }
 
-    private void printRow(String[] row, int[] columnWidths) {
+    private String generateRow(String[] row, int[] columnWidths) {
         StringBuilder sb = new StringBuilder("|");
         for (int i = 0; i < row.length; i++) {
             sb.append(String.format(" %-" + columnWidths[i] + "s |", row[i]));
         }
-        System.out.println(sb);
+
+        sb.append("\n");
+
+        return sb.toString();
     }
 
-    private void printSeparator(int[] columnWidths) {
+    private String generateColumn(int[] columnWidths) {
         StringBuilder sb = new StringBuilder("+");
         for (int width : columnWidths) {
             sb.append("-".repeat(width + 2)).append("+"); // +2 for the padding on either side of the value
         }
-        System.out.println(sb);
+        sb.append("\n");
+
+        return sb.toString();
     }
 
     public String getParentPath() {

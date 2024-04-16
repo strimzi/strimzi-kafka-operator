@@ -43,7 +43,7 @@ import java.util.Set;
  * <ul>
  *     <li>{@link #isRunningInTest()} - Checks if the application is running within a test environment.</li>
  *     <li>{@link #main(String[])} - Main entry point for parsing and displaying performance metrics when run as an application.</li>
- *     <li>{@link #showValuesOfExperiments()} - Aggregates and displays formatted metrics for all tracked experiments and use cases.</li>
+ *     <li>{@link #buildResultTable()} - Aggregates and displays formatted metrics for all tracked experiments and use cases.</li>
  * </ul>
  *
  * @see BasePerformanceMetricsParser Base class for handling basic parsing operations and environment setup.
@@ -149,6 +149,6 @@ public class TopicOperatorMetricsParser extends BasePerformanceMetricsParser {
 
     @Override
     protected void showMetrics() {
-        this.showValuesOfExperiments();
+        System.out.println(this.buildResultTable());
     }
 }
