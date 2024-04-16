@@ -436,7 +436,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
      *
      * @param reconciliation    Reconciliation marker
      * @param connectorName     Name of the connector for which the restart should be returned
-     * @param resource          The KafkaMirrorMaker2 custom resource that configures the connector)
+     * @param resource          The KafkaMirrorMaker2 custom resource that configures the connector
      *
      * @return  The previous auto-restart status
      */
@@ -453,7 +453,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                 return Future.succeededFuture(null);
             }
         } else {
-            // Something went wrong and we
+            // Something went wrong and we return null as the auto-restart status
             LOGGER.warnCr(reconciliation, "The Kafka Mirror Maker 2 resource is missing or has a wrong type.", reconciliation.namespace(), reconciliation.name());
             return Future.succeededFuture(null);
         }
