@@ -56,9 +56,9 @@ Usage: report.sh [options]
 
 Required:
   --namespace=<string>          Kubernetes namespace.
-  --cluster=<string>            Kafka cluster name.
 
 Optional:
+  --cluster=<string>            Kafka cluster name.
   --bridge=<string>             Bridge component name to get pods and logs.
   --connect=<string>            Connect component name to get pods and logs.
   --mm2=<string>                MM2 component name to get pods and logs.
@@ -100,7 +100,7 @@ while getopts "$OPTSPEC" optchar; do
 done
 shift $((OPTIND-1))
 
-if [[ -z $NAMESPACE || -z $CLUSTER ]]; then
+if [[ -z $NAMESPACE ]]; then
   error "$USAGE"
 fi
 
@@ -117,11 +117,6 @@ if [[ "$SECRETS_OPT" != "all" && "$SECRETS_OPT" != "off" && "$SECRETS_OPT" != "h
   error "$USAGE"
 fi
 
-if [[ -z $CLUSTER ]]; then
-  echo "Cluster was not specified. Use --cluster option to specify it."
-  error "$USAGE"
-fi
-
 if [[ -z $NAMESPACE ]]; then
   echo "Namespace was not specified. Use --namespace option to specify it."
   error "$USAGE"
@@ -131,7 +126,7 @@ if [[ -z $($KUBE_CLIENT get ns "$NAMESPACE" -o name --ignore-not-found) ]]; then
   error "Namespace $NAMESPACE not found! Exiting"
 fi
 
-if [[ -z $($KUBE_CLIENT get kafkas.kafka.strimzi.io "$CLUSTER" -o name -n "$NAMESPACE" --ignore-not-found) ]]; then
+if [[ -n $CLUSTER && -z $($KUBE_CLIENT get kafkas.kafka.strimzi.io "$CLUSTER" -o name -n "$NAMESPACE" --ignore-not-found) ]]; then
   error "Kafka cluster $CLUSTER in namespace $NAMESPACE not found! Exiting"
 fi
 
@@ -163,7 +158,7 @@ fi
 get_masked_secrets() {
   echo "secrets"
   mkdir -p "$OUT_DIR"/reports/secrets
-  local resources && resources=$($KUBE_CLIENT get secrets -l strimzi.io/cluster="$CLUSTER" -o name -n "$NAMESPACE")
+  local resources && resources=$($KUBE_CLIENT get secrets -l strimzi.io/cluster${CLUSTER:+"=$CLUSTER"} -o name -n "$NAMESPACE")
   for res in $resources; do
     local filename && filename=$(echo "$res" | cut -f 2 -d "/")
     echo "    $res"
@@ -180,10 +175,10 @@ get_namespaced_yamls() {
   local type="$1"
   mkdir -p "$OUT_DIR"/reports/"$type"
   local resources
-  resources=$($KUBE_CLIENT get "$type" -l strimzi.io/cluster="$CLUSTER" -o name -n "$NAMESPACE" 2>/dev/null ||true)
-  resources="$resources $($KUBE_CLIENT get "$type" -l strimzi.io/cluster="$BRIDGE" -o name -n "$NAMESPACE" 2>/dev/null ||true)"
-  resources="$resources $($KUBE_CLIENT get "$type" -l strimzi.io/cluster="$CONNECT" -o name -n "$NAMESPACE" 2>/dev/null ||true)"
-  resources="$resources $($KUBE_CLIENT get "$type" -l strimzi.io/cluster="$MM2" -o name -n "$NAMESPACE" 2>/dev/null ||true)"
+  resources=$($KUBE_CLIENT get "$type" -l strimzi.io/kind=Kafka,strimzi.io/cluster${CLUSTER:+"=$CLUSTER"} -o name -n "$NAMESPACE" 2>/dev/null ||true)
+  resources="$resources $($KUBE_CLIENT get "$type" -l strimzi.io/kind=KafkaBridge,strimzi.io/cluster${BRIDGE:+"=$BRIDGE"} -o name -n "$NAMESPACE" 2>/dev/null ||true)"
+  resources="$resources $($KUBE_CLIENT get "$type" -l strimzi.io/kind=KafkaConnect,strimzi.io/cluster${CONNECT:+"=$CONNECT"} -o name -n "$NAMESPACE" 2>/dev/null ||true)"
+  resources="$resources $($KUBE_CLIENT get "$type" -l strimzi.io/kind=KafkaMirrorMaker2,strimzi.io/cluster${MM2:+"=$MM2"} -o name -n "$NAMESPACE" 2>/dev/null ||true)"
   echo "$type"
   if [[ -n $resources ]]; then
     for res in $resources; do
@@ -314,77 +309,84 @@ if [[ -n $EVENTS ]]; then
 fi
 
 echo "logs"
-mkdir -p "$OUT_DIR"/reports/configs
-mapfile -t KAFKA_PODS < <($KUBE_CLIENT -n "$NAMESPACE" get po -l strimzi.io/kind=Kafka,strimzi.io/name="$CLUSTER-kafka" --ignore-not-found --no-headers -o=custom-columns=NAME:.metadata.name)
-if [[ ${#KAFKA_PODS[@]} -ne 0 ]]; then
-  for pod in "${KAFKA_PODS[@]}"; do
-    echo "    $pod"
-    get_pod_logs "$pod" kafka
-    get_pod_logs "$pod" tls-sidecar # for old Strimzi releases
-    $KUBE_CLIENT -n "$NAMESPACE" exec -i "$pod" -c kafka -- \
-      cat /tmp/strimzi.properties > "$OUT_DIR"/reports/configs/"$pod".cfg 2>/dev/null||true
-  done
+
+if [[ -z $CLUSTER ]]; then
+  mapfile -t CLUSTER_NAMES < <(oc get po -l strimzi.io/kind=Kafka --ignore-not-found --no-headers -o=custom-columns=NAME:.metadata.labels.strimzi\\.io/cluster | uniq)
+else
+  CLUSTER_NAMES=$CLUSTER
 fi
-mapfile -t ZOO_PODS < <($KUBE_CLIENT -n "$NAMESPACE" get po -l strimzi.io/kind=Kafka,strimzi.io/name="$CLUSTER-zookeeper" --ignore-not-found --no-headers -o=custom-columns=NAME:.metadata.name)
-if [[ ${#ZOO_PODS[@]} -ne 0 ]]; then
-  for pod in "${ZOO_PODS[@]}"; do
-    echo "    $pod"
-    get_pod_logs "$pod" zookeeper
-    get_pod_logs "$pod" tls-sidecar # for old Strimzi releases
-    $KUBE_CLIENT exec -i "$pod" -n "$NAMESPACE" -c zookeeper -- \
-      cat /tmp/zookeeper.properties > "$OUT_DIR"/reports/configs/"$pod".cfg 2>/dev/null||true
-  done
-fi
-mapfile -t ENTITY_PODS < <($KUBE_CLIENT -n "$NAMESPACE" get po -l strimzi.io/kind=Kafka,strimzi.io/name="$CLUSTER-entity-operator" --ignore-not-found --no-headers -o=custom-columns=NAME:.metadata.name)
-if [[ ${#ENTITY_PODS[@]} -ne 0 ]]; then
-  for pod in "${ENTITY_PODS[@]}"; do
-    echo "    $pod"
-    get_pod_logs "$pod" topic-operator
-    get_pod_logs "$pod" user-operator
-    get_pod_logs "$pod" tls-sidecar
-  done
-fi
-mapfile -t CC_PODS < <($KUBE_CLIENT -n "$NAMESPACE" get po -l strimzi.io/kind=Kafka,strimzi.io/name="$CLUSTER-cruise-control" --ignore-not-found --no-headers -o=custom-columns=NAME:.metadata.name)
-if [[ ${#CC_PODS[@]} -ne 0 ]]; then
-  for pod in "${CC_PODS[@]}"; do
+
+for clustername in "${CLUSTER_NAMES[@]}"; do
+
+  mkdir -p "$OUT_DIR"/reports/configs
+  mapfile -t KAFKA_PODS < <($KUBE_CLIENT -n "$NAMESPACE" get po -l strimzi.io/kind=Kafka,strimzi.io/name="$clustername-kafka" --ignore-not-found --no-headers -o=custom-columns=NAME:.metadata.name)
+  if [[ ${#KAFKA_PODS[@]} -ne 0 ]]; then
+    for pod in "${KAFKA_PODS[@]}"; do
+      echo "    $pod"
+      get_pod_logs "$pod" kafka
+      get_pod_logs "$pod" tls-sidecar # for old Strimzi releases
+      $KUBE_CLIENT -n "$NAMESPACE" exec -i "$pod" -c kafka -- \
+        cat /tmp/strimzi.properties > "$OUT_DIR"/reports/configs/"$pod".cfg 2>/dev/null||true
+    done
+  fi
+  mapfile -t ZOO_PODS < <($KUBE_CLIENT -n "$NAMESPACE" get po -l strimzi.io/kind=Kafka,strimzi.io/name="$clustername-zookeeper" --ignore-not-found --no-headers -o=custom-columns=NAME:.metadata.name)
+  if [[ ${#ZOO_PODS[@]} -ne 0 ]]; then
+    for pod in "${ZOO_PODS[@]}"; do
+      echo "    $pod"
+      get_pod_logs "$pod" zookeeper
+      get_pod_logs "$pod" tls-sidecar # for old Strimzi releases
+      $KUBE_CLIENT exec -i "$pod" -n "$NAMESPACE" -c zookeeper -- \
+        cat /tmp/zookeeper.properties > "$OUT_DIR"/reports/configs/"$pod".cfg 2>/dev/null||true
+    done
+  fi
+  mapfile -t ENTITY_PODS < <($KUBE_CLIENT -n "$NAMESPACE" get po -l strimzi.io/kind=Kafka,strimzi.io/name="$clustername-entity-operator" --ignore-not-found --no-headers -o=custom-columns=NAME:.metadata.name)
+  if [[ ${#ENTITY_PODS[@]} -ne 0 ]]; then
+    for pod in "${ENTITY_PODS[@]}"; do
+      echo "    $pod"
+      get_pod_logs "$pod" topic-operator
+      get_pod_logs "$pod" user-operator
+      get_pod_logs "$pod" tls-sidecar
+    done
+  fi
+  mapfile -t CC_PODS < <($KUBE_CLIENT -n "$NAMESPACE" get po -l strimzi.io/kind=Kafka,strimzi.io/name="$clustername-cruise-control" --ignore-not-found --no-headers -o=custom-columns=NAME:.metadata.name)
+  if [[ ${#CC_PODS[@]} -ne 0 ]]; then
+    for pod in "${CC_PODS[@]}"; do
+      echo "    $pod"
+      get_pod_logs "$pod"
+      get_pod_logs "$pod" tls-sidecar # for old Strimzi releases
+    done
+  fi
+  mapfile -t EXPORTER_PODS < <($KUBE_CLIENT -n "$NAMESPACE" get po -l strimzi.io/kind=Kafka,strimzi.io/name="$clustername-kafka-exporter" --ignore-not-found --no-headers -o=custom-columns=NAME:.metadata.name)
+  if [[ ${#EXPORTER_PODS[@]} -ne 0 ]]; then
+    for pod in "${EXPORTER_PODS[@]}"; do
+      echo "    $pod"
+      get_pod_logs "$pod"
+    done
+  fi
+done
+
+mapfile -t BRIDGE_PODS < <($KUBE_CLIENT -n "$NAMESPACE" get po -l strimzi.io/kind=KafkaBridge${BRIDGE:+",strimzi.io/name=$BRIDGE-bridge"} --ignore-not-found --no-headers -o=custom-columns=NAME:.metadata.name)
+if [[ ${#BRIDGE_PODS[@]} -ne 0 ]]; then
+  for pod in "${BRIDGE_PODS[@]}"; do
     echo "    $pod"
     get_pod_logs "$pod"
-    get_pod_logs "$pod" tls-sidecar # for old Strimzi releases
   done
 fi
-mapfile -t EXPORTER_PODS < <($KUBE_CLIENT -n "$NAMESPACE" get po -l strimzi.io/kind=Kafka,strimzi.io/name="$CLUSTER-kafka-exporter" --ignore-not-found --no-headers -o=custom-columns=NAME:.metadata.name)
-if [[ ${#EXPORTER_PODS[@]} -ne 0 ]]; then
-  for pod in "${EXPORTER_PODS[@]}"; do
+
+mapfile -t CONNECT_PODS < <($KUBE_CLIENT -n "$NAMESPACE" get po -l strimzi.io/kind=KafkaConnect${CONNECT:+",strimzi.io/name=$CONNECT-connect"} --ignore-not-found --no-headers -o=custom-columns=NAME:.metadata.name)
+if [[ ${#CONNECT_PODS[@]} -ne 0 ]]; then
+  for pod in "${CONNECT_PODS[@]}"; do
     echo "    $pod"
     get_pod_logs "$pod"
   done
 fi
-if [[ -n $BRIDGE ]]; then
-  mapfile -t BRIDGE_PODS < <($KUBE_CLIENT -n "$NAMESPACE" get po -l strimzi.io/kind=KafkaBridge,strimzi.io/name="$BRIDGE-bridge" --ignore-not-found --no-headers -o=custom-columns=NAME:.metadata.name)
-  if [[ ${#BRIDGE_PODS[@]} -ne 0 ]]; then
-    for pod in "${BRIDGE_PODS[@]}"; do
-      echo "    $pod"
-      get_pod_logs "$pod"
-    done
-  fi
-fi
-if [[ -n $CONNECT ]]; then
-  mapfile -t CONNECT_PODS < <($KUBE_CLIENT -n "$NAMESPACE" get po -l strimzi.io/kind=KafkaConnect,strimzi.io/name="$CONNECT-connect" --ignore-not-found --no-headers -o=custom-columns=NAME:.metadata.name)
-  if [[ ${#CONNECT_PODS[@]} -ne 0 ]]; then
-    for pod in "${CONNECT_PODS[@]}"; do
-      echo "    $pod"
-      get_pod_logs "$pod"
-    done
-  fi
-fi
-if [[ -n $MM2 ]]; then
-  mapfile -t MM2_PODS < <($KUBE_CLIENT -n "$NAMESPACE" get po -l strimzi.io/kind=KafkaMirrorMaker2,strimzi.io/name="$MM2-mirrormaker2" --ignore-not-found --no-headers -o=custom-columns=NAME:.metadata.name)
-  if [[ ${#MM2_PODS[@]} -ne 0 ]]; then
-    for pod in "${MM2_PODS[@]}"; do
-      echo "    $pod"
-      get_pod_logs "$pod"
-    done
-  fi
+
+mapfile -t MM2_PODS < <($KUBE_CLIENT -n "$NAMESPACE" get po -l strimzi.io/kind=KafkaMirrorMaker2${MM2:+",strimzi.io/name=$MM2-mirrormaker2"} --ignore-not-found --no-headers -o=custom-columns=NAME:.metadata.name)
+if [[ ${#MM2_PODS[@]} -ne 0 ]]; then
+  for pod in "${MM2_PODS[@]}"; do
+    echo "    $pod"
+    get_pod_logs "$pod"
+  done
 fi
 
 FILENAME="report-$(date +"%d-%m-%Y_%H-%M-%S")"
