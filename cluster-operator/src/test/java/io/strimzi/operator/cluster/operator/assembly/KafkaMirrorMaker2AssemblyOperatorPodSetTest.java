@@ -1049,6 +1049,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
                         .withBootstrapServers(targetClusterAlias + "." + targetNamespace + ".svc:9092")
                         .build();
         kmm2.getSpec().setClusters(List.of(sourceCluster, targetCluster));
+        kmm2.getSpec().setConnectCluster(targetClusterAlias);
 
         KafkaMirrorMaker2MirrorSpec deprecatedMirrorConnector = new KafkaMirrorMaker2MirrorSpecBuilder()
                 .withSourceCluster(sourceClusterAlias)
@@ -1099,6 +1100,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
                         .withBootstrapServers(targetClusterAlias + "." + targetNamespace + ".svc:9092")
                         .build();
         kmm2.getSpec().setClusters(List.of(sourceCluster, targetCluster));
+        kmm2.getSpec().setConnectCluster(targetClusterAlias);
 
         KafkaMirrorMaker2MirrorSpec deprecatedMirrorConnector = new KafkaMirrorMaker2MirrorSpecBuilder()
                 .withSourceCluster(sourceClusterAlias)

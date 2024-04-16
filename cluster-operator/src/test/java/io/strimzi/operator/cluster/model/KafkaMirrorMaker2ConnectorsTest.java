@@ -116,7 +116,37 @@ public class KafkaMirrorMaker2ConnectorsTest {
         ex = assertThrows(InvalidResourceException.class, () -> KafkaMirrorMaker2Connectors.validateConnectors(kmm2WrongAlias));
         assertThat(ex.getMessage(), is("KafkaMirrorMaker2 resource validation failed: " +
                 "[Each MirrorMaker 2 mirror definition has to specify the source cluster alias, " +
-                "Target cluster alias wrong-target is used in a mirror definition, but cluster with this alias does not exist in cluster definitions]"));
+                "Target cluster alias wrong-target is used in a mirror definition, but cluster with this alias does not exist in cluster definitions, " +
+                "Connect cluster alias (currently set to target) has to be the same as the target cluster alias wrong-target]"));
+    }
+
+    @Test
+    public void testMirrorTargetClusterNotSameAsConnectCluster() {
+        // The most obvious error case, where connect cluster is set to the source cluster instead of target
+        KafkaMirrorMaker2 kmm2 = new KafkaMirrorMaker2Builder(KMM2)
+                .editSpec()
+                    .withConnectCluster("source")
+                .endSpec()
+                .build();
+        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> KafkaMirrorMaker2Connectors.validateConnectors(kmm2));
+        assertThat(ex.getMessage(), is("KafkaMirrorMaker2 resource validation failed: " +
+                "[Connect cluster alias (currently set to source) has to be the same as the target cluster alias target]"));
+
+        // A case where one mirror has the correct target cluster, but the other does not
+        KafkaMirrorMaker2 kmm2CorrectAndIncorrectMirror = new KafkaMirrorMaker2Builder(KMM2)
+                .editSpec()
+                .addToClusters(new KafkaMirrorMaker2ClusterSpecBuilder()
+                                .withAlias("third")
+                                .withBootstrapServers("third:9092")
+                                .build())
+                .addToMirrors(new KafkaMirrorMaker2MirrorSpecBuilder()
+                        .withSourceCluster("source")
+                        .withTargetCluster("third").build())
+                .endSpec()
+                .build();
+        ex = assertThrows(InvalidResourceException.class, () -> KafkaMirrorMaker2Connectors.validateConnectors(kmm2CorrectAndIncorrectMirror));
+        assertThat(ex.getMessage(), is("KafkaMirrorMaker2 resource validation failed: " +
+                "[Connect cluster alias (currently set to target) has to be the same as the target cluster alias third]"));
     }
 
     @Test
