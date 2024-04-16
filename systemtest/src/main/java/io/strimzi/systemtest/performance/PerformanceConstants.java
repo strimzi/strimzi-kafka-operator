@@ -10,20 +10,71 @@ package io.strimzi.systemtest.performance;
 public interface PerformanceConstants {
 
     /**
-     * Topic Operator specific metrics gathered after test execution
+     * IN constants represent the input parameters provided to the topic operator during performance tests.
      */
-    String NUMBER_OF_TOPICS = "Number of Topics";
-    String NUMBER_OF_CLIENT_INSTANCES = "Number of Client Instances";
-    String NUMBER_OF_MESSAGES = "Number of Messages";
-    String CREATION_TIME = "Creation Time";
-    String SEND_AND_RECV_TIME = "Send And Recv Time";
-    String DELETION_TIME = "Deletion Time";
-    String TOTAL_TEST_TIME = "Total Test Time";
-    String MAX_BATCH_SIZE = "Max Batch Size";
-    String MAX_BATCH_LINGER_MS = "Max Batch Linger Ms";
-    String TOPIC_OPERATOR_UPDATE_TIMES = "Bob Update Times";
-    String TOPIC_OPERATOR_NUMBER_OF_TOPICS_TO_UPDATE = "Update Number of Topics";
+
+    /**
+     * The number of Kafka topics to be created or managed during the test.
+     */
+    String TOPIC_OPERATOR_IN_NUMBER_OF_TOPICS = "IN: NUMBER OF TOPICS";
+
+    /**
+     * The number of client instances interacting with Kafka during the test.
+     */
+    String TOPIC_OPERATOR_IN_NUMBER_OF_CLIENT_INSTANCES = "IN: NUMBER OF CLIENTS INSTANCES";
+
+    /**
+     * The total number of messages that should be sent or received during the test.
+     */
+    String TOPIC_OPERATOR_IN_NUMBER_OF_MESSAGES = "IN: NUMBER OF MESSAGES";
+
+    /**
+     * The maximum size of a batch of messages in bytes. This affects how Kafka batches messages before sending them.
+     */
+    String TOPIC_OPERATOR_IN_MAX_BATCH_SIZE = "IN: MAX BATCH SIZE (ms)";
+
+    /**
+     * The maximum time, in milliseconds, to wait before sending a batch, even if the batch size has not been reached.
+     */
+    String TOPIC_OPERATOR_IN_MAX_BATCH_LINGER_MS = "IN: MAX BATCH LINGER (ms)";
+
+    /**
+     * The number of topics that will be updated during the test. This can involve changes to configurations or partitions.
+     */
+    String TOPIC_OPERATOR_IN_NUMBER_OF_TOPICS_TO_UPDATE = "IN: UPDATE NUMBER OF TOPICS";
+
+    /**
+     * OUT constants represent the output metrics or results measured after the performance tests involving the topic operator.
+     */
+
+    /**
+     * The time taken, in milliseconds, to create all necessary Kafka topics as specified in the test parameters.
+     */
+    String TOPIC_OPERATOR_OUT_CREATION_TIME = "OUT: Creation Time (ms)";
+
+    /**
+     * The total time, in milliseconds, for sending and receiving all messages as part of the test.
+     */
+    String TOPIC_OPERATOR_OUT_SEND_AND_RECV_TIME = "OUT: Send And Recv Time (ms)";
+
+    /**
+     * The time taken, in milliseconds, to delete all Kafka topics that were created during the test.
+     */
+    String TOPIC_OPERATOR_OUT_DELETION_TIME = "OUT: Deletion Time (ms)";
+
+    /**
+     * The total time, in milliseconds, from the start to the end of the test, covering all operations.
+     */
+    String TOPIC_OPERATOR_OUT_TOTAL_TEST_TIME = "OUT: Total Test Time (ms)";
+
+    /**
+     * The time taken, in milliseconds, to update the configurations or parameters of existing Kafka topics during the test.
+     */
+    String TOPIC_OPERATOR_OUT_UPDATE_TIMES = "OUT: Bob Update Times (ms)";
+
     String METRICS_HISTORY = "Metrics History";
+
+    String KAFKA_IN_CONFIGURATION = "IN: Kafka Configuration";
 
     /**
      * Metrics names
@@ -69,7 +120,7 @@ public interface PerformanceConstants {
      * Derived metrics
      */
     String TOTAL_TIME_SPEND_ON_UTO_EVENT_QUEUE_DURATION_SECONDS = "strimzi_total_time_spend_on_uto_event_queue_duration_seconds";
-    String SYSTEM_LOAD_AVERAGE_PER_CORE_PERCENT = "system_load_average_per_core_percent";
+    String SYSTEM_LOAD_AVERAGE_PER_CORE_PERCENT = "system_load_average_per_core";
     String JVM_MEMORY_USED_MEGABYTES_TOTAL = "jvm_memory_used_megabytes_total";
 
     /**
@@ -86,7 +137,7 @@ public interface PerformanceConstants {
     /**
      * Polling interval of metrics in seconds
      */
-    long POLLING_METRICS_INTERVAL_DEFAULT = 5;
+    long DEFAULT_METRICS_POLLING_INTERVAL_SEC = 5;
 
     /**
      * Parser types

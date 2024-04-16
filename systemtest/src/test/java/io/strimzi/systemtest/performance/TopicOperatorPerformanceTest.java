@@ -13,7 +13,7 @@ import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.performance.gather.TopicOperatorMetricsCollector;
-import io.strimzi.systemtest.performance.gather.TopicOperatorMetricsGatherer;
+import io.strimzi.systemtest.performance.gather.TopicOperatorMetricsCollectionScheduler;
 import io.strimzi.systemtest.performance.report.TopicOperatorPerformanceReporter;
 import io.strimzi.systemtest.performance.report.parser.TopicOperatorMetricsParser;
 import io.strimzi.systemtest.resources.ComponentType;
@@ -61,7 +61,7 @@ public class TopicOperatorPerformanceTest extends AbstractST {
 
     private TestStorage testStorage;
     private TopicOperatorMetricsCollector topicOperatorCollector;
-    private TopicOperatorMetricsGatherer topicOperatorMetricsGatherer;
+    private TopicOperatorMetricsCollectionScheduler topicOperatorMetricsGatherer;
     private TopicOperatorPerformanceReporter topicOperatorPerformanceReporter = new TopicOperatorPerformanceReporter();
 
     /**
@@ -73,7 +73,10 @@ public class TopicOperatorPerformanceTest extends AbstractST {
      *
      * Configurations include:
      * - Short Linger Times ("10" ms): Useful for evaluating the impact of rapidly processing batches. This setting is beneficial for scenarios where immediate batch processing is required.
-     * - Targeted Linger Time ("30000" ms or 30 seconds): Specifically introduced based on the scenario where a linger time of about 30 seconds is expected to balance batching efficiency without significantly affecting the overall operational duration. This setting is designed to simulate a real-world use case of creating 500 topics daily, optimizing for batching efficiency.
+     * - Targeted Linger Time ("30000" ms or 30 seconds): Specifically introduced based on the scenario where a linger
+     * time of about 30 seconds is expected to balance batching efficiency without significantly affecting the overall
+     * operational duration. This setting is designed to simulate a real-world use case of creating 500 topics daily,
+     * optimizing for batching efficiency.
      * - Extended Linger Time ("100" ms): Provides a comparison to assess if longer wait times before processing batches could enhance performance, despite potentially increasing latency.
      *
      * This method supplies a variety of configurations to find the optimal balance between throughput and operational latency for bulk topic management in Kafka.
@@ -82,25 +85,25 @@ public class TopicOperatorPerformanceTest extends AbstractST {
         // note: for single-node >= 30GB, >= 8CPUs -> each test takes ~45 minutes
         return Stream.of(
                 // without clients
-                Arguments.of("100", "10", false),     // Lower batch size with short linger time for comparison
-                Arguments.of("500", "10", false),     // Increased batch size with short linger time
-                Arguments.of("1000", "10", false),    // Large batch size with short linger time
-                Arguments.of("100", "30000", false),  // Lower batch size with 30 seconds linger time
-                Arguments.of("500", "30000", false),  // Increased batch size with 30 seconds linger time
-                Arguments.of("1000", "30000", false), // Large batch size with 30 seconds linger time
-                Arguments.of("100", "100", false),    // Lower batch size with longer linger time for extended comparison
-                Arguments.of("500", "100", false),    // Increased batch size with longer linger time
-                Arguments.of("1000", "100", false),    // Large batch size with longer linger time
-                // with clients
-                Arguments.of("100", "10", true),     // Lower batch size with short linger time for comparison
-                Arguments.of("500", "10", true),     // Increased batch size with short linger time
-                Arguments.of("1000", "10", true),    // Large batch size with short linger time
-                Arguments.of("100", "30000", true),  // Lower batch size with 30 seconds linger time
-                Arguments.of("500", "30000", true),  // Increased batch size with 30 seconds linger time
-                Arguments.of("1000", "30000", true), // Large batch size with 30 seconds linger time
-                Arguments.of("100", "100", true),    // Lower batch size with longer linger time for extended comparison
-                Arguments.of("500", "100", true),    // Increased batch size with longer linger time
-                Arguments.of("1000", "100", true)    // Large batch size with longer linger time
+                Arguments.of("100", "10", false)     // Lower batch size with short linger time for comparison
+//                Arguments.of("500", "10", false),     // Increased batch size with short linger time
+//                Arguments.of("1000", "10", false),    // Large batch size with short linger time
+//                Arguments.of("100", "30000", false),  // Lower batch size with 30 seconds linger time
+//                Arguments.of("500", "30000", false),  // Increased batch size with 30 seconds linger time
+//                Arguments.of("1000", "30000", false), // Large batch size with 30 seconds linger time
+//                Arguments.of("100", "100", false),    // Lower batch size with longer linger time for extended comparison
+//                Arguments.of("500", "100", false),    // Increased batch size with longer linger time
+//                Arguments.of("1000", "100", false),    // Large batch size with longer linger time
+//                // with clients
+//                Arguments.of("100", "10", true),     // Lower batch size with short linger time for comparison
+//                Arguments.of("500", "10", true),     // Increased batch size with short linger time
+//                Arguments.of("1000", "10", true),    // Large batch size with short linger time
+//                Arguments.of("100", "30000", true),  // Lower batch size with 30 seconds linger time
+//                Arguments.of("500", "30000", true),  // Increased batch size with 30 seconds linger time
+//                Arguments.of("1000", "30000", true), // Large batch size with 30 seconds linger time
+//                Arguments.of("100", "100", true),    // Lower batch size with longer linger time for extended comparison
+//                Arguments.of("500", "100", true),    // Increased batch size with longer linger time
+//                Arguments.of("1000", "100", true)    // Large batch size with longer linger time
         );
     }
 
@@ -113,7 +116,7 @@ public class TopicOperatorPerformanceTest extends AbstractST {
      *
      * The test leverages Kafka's batching capabilities for both creation and deletion of topics to aid in this process. By using a larger batch size
      * and a longer linger time, the test aims to optimize the throughput and minimize the operational latency. For instance, if the requirement is to
-     * create 500 topics daily and Kafka takes approximately 5 minutes for this operation without considering the User Topic Operator (UTO),
+     * create 500 topics daily and Kafka takes approximately 5 minutes for this operation excluding Topic Operator time,
      * setting a linger time of around 30 seconds would not significantly impact the overall duration but would help in batching efficiency.
      *
      * This test scenario is implemented to help users like Alice in understanding the performance characteristics of Kafka when dealing with
@@ -211,7 +214,7 @@ public class TopicOperatorPerformanceTest extends AbstractST {
                     .withComponentName(this.testStorage.getClusterName())
                     .build();
 
-            this.topicOperatorMetricsGatherer = new TopicOperatorMetricsGatherer(this.topicOperatorCollector, "strimzi.io/cluster=" + this.testStorage.getClusterName());
+            this.topicOperatorMetricsGatherer = new TopicOperatorMetricsCollectionScheduler(this.topicOperatorCollector, "strimzi.io/cluster=" + this.testStorage.getClusterName());
             this.topicOperatorMetricsGatherer.startCollecting();
             // ----- ----- ------ ------
 
@@ -265,18 +268,18 @@ public class TopicOperatorPerformanceTest extends AbstractST {
                 this.topicOperatorMetricsGatherer.stopCollecting();
 
                 final Map<String, Object> performanceAttributes = new LinkedHashMap<>();
-                performanceAttributes.put(PerformanceConstants.NUMBER_OF_TOPICS, numberOfTopics);
-                performanceAttributes.put(PerformanceConstants.NUMBER_OF_CLIENT_INSTANCES, numberOfClientInstances * 2); // producer and consumers
-                performanceAttributes.put(PerformanceConstants.NUMBER_OF_MESSAGES, NUMBER_OF_MESSAGES);
-                performanceAttributes.put(PerformanceConstants.CREATION_TIME, createTopicsTimeMs);
-                performanceAttributes.put(PerformanceConstants.SEND_AND_RECV_TIME, totalSendAndRecvTimeMs);
-                performanceAttributes.put(PerformanceConstants.DELETION_TIME, totalDeletionTimeMs);
-                performanceAttributes.put(PerformanceConstants.TOTAL_TEST_TIME, totalTimeWholeMs);
-                performanceAttributes.put(PerformanceConstants.MAX_BATCH_SIZE, maxBatchSize);
-                performanceAttributes.put(PerformanceConstants.MAX_BATCH_LINGER_MS, maxBatchLingerMs);
+                performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_IN_NUMBER_OF_TOPICS, numberOfTopics);
+                performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_IN_NUMBER_OF_CLIENT_INSTANCES, numberOfClientInstances * 2); // producer and consumers
+                performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_IN_NUMBER_OF_MESSAGES, NUMBER_OF_MESSAGES);
+                performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_OUT_CREATION_TIME, createTopicsTimeMs);
+                performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_OUT_SEND_AND_RECV_TIME, totalSendAndRecvTimeMs);
+                performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_OUT_DELETION_TIME, totalDeletionTimeMs);
+                performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_OUT_TOTAL_TEST_TIME, totalTimeWholeMs);
+                performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_IN_MAX_BATCH_SIZE, maxBatchSize);
+                performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_IN_MAX_BATCH_LINGER_MS, maxBatchLingerMs);
 
                 // Handling complex objects
-                performanceAttributes.put(PerformanceConstants.METRICS_HISTORY, this.topicOperatorMetricsGatherer.getMetricsHistory()); // Map of metrics history
+                performanceAttributes.put(PerformanceConstants.METRICS_HISTORY, this.topicOperatorMetricsGatherer.getMetricsStore()); // Map of metrics history
 
                 // Step 3: Now, it's safe to log performance data as the collection thread has been stopped
                 this.topicOperatorPerformanceReporter.logPerformanceData(this.testStorage, performanceAttributes, TopicOperatorPerformanceTest.REPORT_DIRECTORY + "/" + PerformanceConstants.TOPIC_OPERATOR_ALICE_BULK_USE_CASE, ACTUAL_TIME, Environment.PERFORMANCE_DIR);
@@ -288,17 +291,17 @@ public class TopicOperatorPerformanceTest extends AbstractST {
       * Provides configurations for Bob's data streaming use case, focusing on supporting a large number of topics with minimal changes.
       *
       * Configurations aim to:
-      * - Support scalability: Configurations are optimized to manage thousands of topics, considering memory usage and CPU utilization of the UTO.
+      * - Support scalability: Configurations are optimized to manage thousands of topics, considering memory usage and CPU utilization of the Topic Operator.
       * - Minimize operational latency: By setting a reasonable linger time and batch size, the goal is to reduce the impact of small, infrequent changes without causing significant delays.
       *
-      * The UTO's single-threaded nature means that beyond a certain point, increasing the number of topics primarily impacts memory usage and the time taken for no-op timed reconciliations. The configurations below are designed to find a balance that allows for scalability while maintaining responsiveness to changes.
+      * The Topic Operator's single-threaded nature means that beyond a certain point, increasing the number of topics primarily impacts memory usage and the time taken for no-op timed reconciliations. The configurations below are designed to find a balance that allows for scalability while maintaining responsiveness to changes.
       */
     private static Stream<Arguments> provideConfigurationsForBobDataStreamingUseCase() {
         return Stream.of(
-            Arguments.of("250", "1000", false), // Medium batch size with 1 second linger time, optimized for infrequent changes
-            Arguments.of("500", "1000", false), // Slightly larger batch size with 1 second linger time, considering memory usage efficiency
-            Arguments.of("250", "5000", false), // Medium batch size with longer no-op timed reconciliation intervals for reduced CPU utilization
-            Arguments.of("500", "5000", false)  // Larger batch size with longer intervals, balancing scalability with operational latency
+            Arguments.of("250", "1000", false) // Medium batch size with 1 second linger time, optimized for infrequent changes
+//            Arguments.of("500", "1000", false), // Slightly larger batch size with 1 second linger time, considering memory usage efficiency
+//            Arguments.of("250", "5000", false), // Medium batch size with longer no-op timed reconciliation intervals for reduced CPU utilization
+//            Arguments.of("500", "5000", false)  // Larger batch size with longer intervals, balancing scalability with operational latency
         );
     }
 
@@ -306,7 +309,7 @@ public class TopicOperatorPerformanceTest extends AbstractST {
      * Test for Bob's data streaming use case.
      *
      * This scenario simulates a production environment with thousands of topics where topics are updated infrequently.
-     * The main objective is to ensure the UTO can handle the scale efficiently, with a goal of minimizing latency for
+     * The main objective is to ensure the Topic Operator can handle the scale efficiently, with a goal of minimizing latency for
      * occasional, small changes.
      */
     @ParameterizedTest
@@ -406,7 +409,7 @@ public class TopicOperatorPerformanceTest extends AbstractST {
                 .withComponentName(this.testStorage.getClusterName())
                 .build();
 
-            this.topicOperatorMetricsGatherer = new TopicOperatorMetricsGatherer(this.topicOperatorCollector, "strimzi.io/cluster=" + this.testStorage.getClusterName());
+            this.topicOperatorMetricsGatherer = new TopicOperatorMetricsCollectionScheduler(this.topicOperatorCollector, "strimzi.io/cluster=" + this.testStorage.getClusterName());
             this.topicOperatorMetricsGatherer.startCollecting();
             // ----- ----- ------ ------
 
@@ -517,20 +520,20 @@ public class TopicOperatorPerformanceTest extends AbstractST {
                 this.topicOperatorMetricsGatherer.stopCollecting();
 
                 final Map<String, Object> performanceAttributes = new LinkedHashMap<>();
-                performanceAttributes.put(PerformanceConstants.NUMBER_OF_TOPICS, numberOfTopics);
-                performanceAttributes.put(PerformanceConstants.NUMBER_OF_CLIENT_INSTANCES, numberOfClientInstances * 2); // producer and consumers
-                performanceAttributes.put(PerformanceConstants.NUMBER_OF_MESSAGES, NUMBER_OF_MESSAGES);
-                performanceAttributes.put(PerformanceConstants.CREATION_TIME, createTopicsTimeMs);
-                performanceAttributes.put(PerformanceConstants.SEND_AND_RECV_TIME, totalSendAndRecvTimeMs);
-                performanceAttributes.put(PerformanceConstants.DELETION_TIME, totalDeletionTimeMs);
-                performanceAttributes.put(PerformanceConstants.TOTAL_TEST_TIME, totalTimeWholeMs);
-                performanceAttributes.put(PerformanceConstants.MAX_BATCH_SIZE, maxBatchSize);
-                performanceAttributes.put(PerformanceConstants.MAX_BATCH_LINGER_MS, maxBatchLingerMs);
-                performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_NUMBER_OF_TOPICS_TO_UPDATE, bobAmountOfKafkaTopics);
+                performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_IN_NUMBER_OF_TOPICS, numberOfTopics);
+                performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_IN_NUMBER_OF_CLIENT_INSTANCES, numberOfClientInstances * 2); // producer and consumers
+                performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_IN_NUMBER_OF_MESSAGES, NUMBER_OF_MESSAGES);
+                performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_OUT_CREATION_TIME, createTopicsTimeMs);
+                performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_OUT_SEND_AND_RECV_TIME, totalSendAndRecvTimeMs);
+                performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_OUT_DELETION_TIME, totalDeletionTimeMs);
+                performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_OUT_TOTAL_TEST_TIME, totalTimeWholeMs);
+                performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_IN_MAX_BATCH_SIZE, maxBatchSize);
+                performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_IN_MAX_BATCH_LINGER_MS, maxBatchLingerMs);
+                performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_IN_NUMBER_OF_TOPICS_TO_UPDATE, bobAmountOfKafkaTopics);
 
                 // Handling complex objects
-                performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_UPDATE_TIMES, bobUpdateTimerMsArr); // Array of update times
-                performanceAttributes.put(PerformanceConstants.METRICS_HISTORY, topicOperatorMetricsGatherer.getMetricsHistory()); // Map of metrics history
+                performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_OUT_UPDATE_TIMES, bobUpdateTimerMsArr); // Array of update times
+                performanceAttributes.put(PerformanceConstants.METRICS_HISTORY, topicOperatorMetricsGatherer.getMetricsStore()); // Map of metrics history
                 // Step 3: Now, it's safe to log performance data as the collection thread has been stopped
                 this.topicOperatorPerformanceReporter.logPerformanceData(this.testStorage, performanceAttributes, TopicOperatorPerformanceTest.REPORT_DIRECTORY + "/" + PerformanceConstants.TOPIC_OPERATOR_BOBS_STREAMING_USE_CASE, ACTUAL_TIME, Environment.PERFORMANCE_DIR);
             }

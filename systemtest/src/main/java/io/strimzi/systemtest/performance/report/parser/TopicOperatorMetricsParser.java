@@ -68,6 +68,9 @@ public class TopicOperatorMetricsParser extends BasePerformanceMetricsParser {
         getMetricFileName(PerformanceConstants.JVM_MEMORY_USED_MEGABYTES_TOTAL)
     );
 
+    private static final Set<String> COMPONENT_PARAMETERS_TO_IGNORE = Set.of(
+        PerformanceConstants.KAFKA_IN_CONFIGURATION);
+
     public TopicOperatorMetricsParser() {
         super();
     }
@@ -88,6 +91,11 @@ public class TopicOperatorMetricsParser extends BasePerformanceMetricsParser {
         rowData.add(String.valueOf(experimentNumber));
 
         for (final Map.Entry<String, String> testMetric : experimentMetrics.getTestMetrics().entrySet()) {
+            if (COMPONENT_PARAMETERS_TO_IGNORE.contains(testMetric.getKey())) {
+                LOGGER.trace("Excluding parameter: {} for result table", testMetric.getKey());
+                // ignore such parameter
+                continue;
+            }
             rowData.add(testMetric.getValue());
         }
 
@@ -116,6 +124,11 @@ public class TopicOperatorMetricsParser extends BasePerformanceMetricsParser {
 
         // for test metrics
         for (final Map.Entry<String, String> testMetric : experimentMetrics.getTestMetrics().entrySet()) {
+            if (COMPONENT_PARAMETERS_TO_IGNORE.contains(testMetric.getKey())) {
+                LOGGER.trace("Excluding parameter: {} for result table", testMetric.getKey());
+                // ignore such parameter
+                continue;
+            }
             headers.add(testMetric.getKey());
         }
 

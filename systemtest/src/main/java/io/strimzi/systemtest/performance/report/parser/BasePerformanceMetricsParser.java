@@ -74,7 +74,7 @@ public abstract class BasePerformanceMetricsParser {
      * Abstract method to get headers for a use case. This allows different parsers to specify
      * what headers are relevant to their specific metrics.
      *
-     * @param useCaseName           The name of the use case.
+     * @param experimentMetrics     An object of performance metrics (i.e., test and component metrics)
      * @return                      An array of strings representing the headers for the use case.
      */
     protected abstract String[] getHeadersForUseCase(ExperimentMetrics experimentMetrics);
@@ -238,7 +238,7 @@ public abstract class BasePerformanceMetricsParser {
                     yamlSectionStarted = true; // Start collecting YAML content
                 } else if (!yamlSectionStarted) {
                     // Process simple key-value pairs
-                    String[] parts = line.split(": ", 2);
+                    String[] parts = line.split("=", 2);
                     if (parts.length == 2) {
                         experimentMetrics.addTestMetric(parts[0].trim(), parts[1].trim());
                     }

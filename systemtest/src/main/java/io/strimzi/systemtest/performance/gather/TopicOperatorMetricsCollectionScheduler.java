@@ -15,46 +15,38 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 /**
- * This class represents a polling for collecting metrics related to the Topic Operator.
- * It periodically collects metrics from pods based on a given selector and maintains a history
- * of these metrics, indexed by timestamp. The metrics history is stored in a TreeMap to preserve
- * the temporal order of the data.
+ * The TopicOperatorMetricsCollectionScheduler class extends the MetricsCollectionScheduler abstract class,
+ * providing specific implementations for collecting and storing metrics related to the topic operator in a Strimzi Kafka environment.
+ * This class orchestrates the gathering of various performance metrics from Kafka topic operations, such as creating, updating, and deleting topics.
  *
- * <p>Note: This class is designed to be run as a single thread because it uses a TreeMap to store
- * metrics history. TreeMap is not thread-safe, and concurrent modifications from multiple threads
- * can result in undefined behavior. Therefore, instances of this class should not be shared across
- * multiple threads.</p>
+ * <p>This class utilizes a TopicOperatorMetricsCollector to perform the actual collection of metrics from Kafka topic operations. It manages
+ * a scheduled task that periodically triggers metric collection, storing the results along with a timestamp to maintain a history of metrics over time.</p>
+ *
+ * <p>Metrics collected include durations and counts of various Kafka topic operations, JVM metrics, and system performance data. These metrics
+ * are stored in a structured map with timestamps as keys, making it easy to track changes over time.</p>
+ *
+ * <p>Usage involves creating an instance with a selector string that helps identify the specific topics or resources from which metrics are to be gathered.
+ * The scheduler can be started and stopped to control the collection process based on the application's lifecycle.</p>
  */
-public class TopicOperatorMetricsGatherer extends BaseMetricsGatherer {
+public class TopicOperatorMetricsCollectionScheduler extends BaseMetricsCollectionScheduler {
 
-    private static final Logger LOGGER = LogManager.getLogger(TopicOperatorMetricsGatherer.class);
+    private static final Logger LOGGER = LogManager.getLogger(TopicOperatorMetricsCollectionScheduler.class);
     private final TopicOperatorMetricsCollector topicOperatorMetricsCollector;
 
-    public TopicOperatorMetricsGatherer(TopicOperatorMetricsCollector topicOperatorMetricsCollector, String selector) {
+    public TopicOperatorMetricsCollectionScheduler(TopicOperatorMetricsCollector topicOperatorMetricsCollector, String selector) {
         super(selector);
         this.topicOperatorMetricsCollector = topicOperatorMetricsCollector;
     }
 
     @Override
-    public void collectMetrics() {
+    protected void collectMetrics() {
         LOGGER.debug("Collecting metrics with selector: {}", this.selector);
-
         this.topicOperatorMetricsCollector.collectMetricsFromPods();
-        // record specific time when metrics were collected
-        Long timeWhenMetricsWereCollected = System.currentTimeMillis();
-
-        Map<String, List<Double>> currentMetrics = this.buildMetricsMap();
-
-        // Store metrics with current timestamp as key
-        this.metricsHistory.put(timeWhenMetricsWereCollected, currentMetrics);
-
-        this.printCurrentMetrics();
-
-        LOGGER.debug("Collected metrics:\n{}", currentMetrics.toString());
+        LOGGER.debug("Metrics collected.");
     }
 
-    public Map<Long, Map<String, List<Double>>> getMetricsHistory() {
-        return metricsHistory;
+    public Map<Long, Map<String, List<Double>>> getMetricsStore() {
+        return metricsStore;
     }
 
     @Override
@@ -117,7 +109,7 @@ public class TopicOperatorMetricsGatherer extends BaseMetricsGatherer {
         metrics.put(PerformanceConstants.SYSTEM_LOAD_AVERAGE_1M, this.topicOperatorMetricsCollector.getSystemLoadAverage1m());
 
         // derived Metrics
-        // the total time spent on the UTO's event queue. -> (reconciliations_duration - (internal_op0_duration + internal_op1_duration,...)).
+        // the total time spent on the Topic Operator's event queue. -> (reconciliations_duration - (internal_op0_duration + internal_op1_duration,...)).
         metrics.put(PerformanceConstants.TOTAL_TIME_SPEND_ON_UTO_EVENT_QUEUE_DURATION_SECONDS,
             this.calculateTotalTimeSpendOnToEventQueueDurationSeconds(this.selector));
         metrics.put(PerformanceConstants.SYSTEM_LOAD_AVERAGE_PER_CORE_PERCENT,

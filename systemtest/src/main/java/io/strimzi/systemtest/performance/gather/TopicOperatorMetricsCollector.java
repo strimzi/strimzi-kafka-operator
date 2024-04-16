@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.performance.gather;
 
+import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.systemtest.metrics.MetricsCollector;
 import io.strimzi.systemtest.performance.PerformanceConstants;
 import io.strimzi.systemtest.resources.ComponentType;
@@ -213,7 +214,7 @@ public class TopicOperatorMetricsCollector extends MetricsCollector {
 
     // Example of a bucketed metric method
     public List<Double> getAlterConfigsDurationSecondsBucket(String selector, String le) {
-        Pattern pattern = Pattern.compile("strimzi_alter_configs_duration_seconds_bucket\\{kind=\"KafkaTopic\",namespace=\"" + this.getNamespaceName() + "\",selector=\"" + selector + "\",le=\"" + le + "\",\\}\\s(\\d+\\.?\\d*)");
+        Pattern pattern = Pattern.compile("strimzi_alter_configs_duration_seconds_bucket\\{kind=\"" + KafkaTopic.RESOURCE_KIND + "\",namespace=\"" + this.getNamespaceName() + "\",selector=\"" + selector + "\",le=\"" + le + "\",\\}\\s(\\d+\\.?\\d*)");
         return collectSpecificMetric(pattern);
     }
 
@@ -227,7 +228,7 @@ public class TopicOperatorMetricsCollector extends MetricsCollector {
     // -----------------------------------------------------------------------------------------------------
 
     private List<Double> collectMetricValues(String metricName, String selector) {
-        Pattern pattern = Pattern.compile(metricName + "\\{kind=\"KafkaTopic\",namespace=\"" + this.getNamespaceName() + "\",selector=\"" + selector + "\",.*\\}\\s(\\d+\\.?\\d*)");
+        Pattern pattern = Pattern.compile(metricName + "\\{kind=\"" + KafkaTopic.RESOURCE_KIND + "\",namespace=\"" + this.getNamespaceName() + "\",selector=\"" + selector + "\",.*\\}\\s(\\d+\\.?\\d*)");
         return collectSpecificMetric(pattern);
     }
 

@@ -78,19 +78,19 @@ public abstract class BasePerformanceReporter {
             // Special handling for complex objects like long arrays or maps
             if (value instanceof long[] times) {
                 for (int i = 0; i < times.length; i++) {
-                    testPerformanceDataBuilder.append(String.format("%s Round %d: %d ms%n", key, i + 1, times[i]));
+                    testPerformanceDataBuilder.append(String.format("%s Round %d= %d ms%n", key, i + 1, times[i]));
                 }
             } else if (value instanceof Map) {
                 // This placeholder assumes you'll implement or call a method to nicely serialize or format this map
                 // skip...
             } else {
-                testPerformanceDataBuilder.append(String.format("%s: %s%n", key, value.toString()));
+                testPerformanceDataBuilder.append(String.format("%s= %s%n", key, value.toString()));
             }
         });
 
         // Serialize Kafka configuration and add to performance data
         final String kafkaConfig = serializeKafkaConfiguration(testStorage.getNamespaceName(), testStorage.getClusterName());
-        testPerformanceDataBuilder.append(String.format("Kafka Configuration:%n%s", kafkaConfig));
+        testPerformanceDataBuilder.append(String.format(PerformanceConstants.KAFKA_IN_CONFIGURATION + "=%n%s", kafkaConfig));
 
         final String testPerformanceData = testPerformanceDataBuilder.toString();
 
@@ -232,7 +232,7 @@ public abstract class BasePerformanceReporter {
             final String formattedTime = dateTimeFormatter.format(Instant.ofEpochMilli(time));
 
             metrics.forEach((metricName, values) -> {
-                String content = String.format("Timestamp: %s, Values: %s%s", formattedTime, values, newLine);
+                String content = String.format("Timestamp= %s, Values= %s%s", formattedTime, values, newLine);
 
                 // Using just the metric name for the file name
                 String fileName = metricName + ".txt";
