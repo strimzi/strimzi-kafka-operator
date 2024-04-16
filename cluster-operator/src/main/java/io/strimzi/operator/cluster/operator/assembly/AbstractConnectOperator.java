@@ -19,9 +19,7 @@ import io.strimzi.api.kafka.model.connect.KafkaConnectStatus;
 import io.strimzi.api.kafka.model.connector.AutoRestartStatus;
 import io.strimzi.api.kafka.model.connector.AutoRestartStatusBuilder;
 import io.strimzi.api.kafka.model.connector.KafkaConnector;
-import io.strimzi.api.kafka.model.connector.KafkaConnectorList;
 import io.strimzi.api.kafka.model.connector.KafkaConnectorSpec;
-import io.strimzi.api.kafka.model.connector.KafkaConnectorStatus;
 import io.strimzi.api.kafka.model.kafka.Status;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
@@ -89,7 +87,6 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
 
     private final boolean isNetworkPolicyGeneration;
     protected final Function<Vertx, KafkaConnectApi> connectClientProvider;
-    protected final CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> connectorOperator;
     protected final ImagePullPolicy imagePullPolicy;
     protected final DeploymentOperator deploymentOperations;
     protected final StrimziPodSetOperator podSetOperations;
@@ -133,7 +130,6 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         this.deploymentOperations = supplier.deploymentOperations;
         this.podSetOperations = supplier.strimziPodSetOperator;
         this.podOperations = supplier.podOperations;
-        this.connectorOperator = supplier.kafkaConnectorOperator;
         this.connectClientProvider = connectClientProvider;
         this.configMapOperations = supplier.configMapOperations;
         this.clusterRoleBindingOperations = supplier.clusterRoleBindingOperator;
@@ -395,13 +391,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     /* test */ Future<ConnectorStatusAndConditions> autoRestartFailedConnectorAndTasks(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, String connectorName, KafkaConnectorSpec connectorSpec, ConnectorStatusAndConditions status, CustomResource resource) {
         JsonObject statusResultJson = new JsonObject(status.statusResult);
         if (connectorSpec.getAutoRestart() != null && connectorSpec.getAutoRestart().isEnabled()) {
-            return getPreviousKafkaConnectorStatus(reconciliation, connectorOperator, resource)
-                 .compose(previousStatus -> {
-                     if (previousStatus == null) {
-                         previousStatus = new KafkaConnectorStatus();
-                     }
-                     return Future.succeededFuture(previousStatus.getAutoRestart());
-                 })
+            return previousAutoRestartStatus(reconciliation, connectorName, resource)
                  .compose(previousAutoRestartStatus -> {
                      boolean needsRestart = connectorHasFailed(statusResultJson) || !failedTaskIds(statusResultJson).isEmpty();
 
@@ -479,7 +469,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      *
      * @return True if the connector should be auto-restarted right now. False otherwise.
      */
-    /* test */ boolean shouldAutoRestart(AutoRestartStatus autoRestartStatus, Integer maxRestarts) {
+    /* test */ static boolean shouldAutoRestart(AutoRestartStatus autoRestartStatus, Integer maxRestarts) {
         if (autoRestartStatus == null
                 || autoRestartStatus.getLastRestartTimestamp() == null) {
             // If there is no previous auto.restart status or timestamp, we always restart it
@@ -589,7 +579,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         return ReconcilerUtils.withIgnoreRbacError(reconciliation, clusterRoleBindingOperations.reconcile(reconciliation, crbName, crb), crb);
     }
 
-    // Abstract methods for working with restart annotations. These methods are implemented in the KafkaConnectAssemblyOperator and KafkaMirrorMaker2AssemblyOperator
+    // Abstract methods for working with connector restarts. These methods are implemented in the KafkaConnectAssemblyOperator and KafkaMirrorMaker2AssemblyOperator
 
     /**
      * Checks whether the provided resource instance (a KafkaConnector or KafkaMirrorMaker2) has the annotation requesting a restart.
@@ -635,6 +625,19 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     @SuppressWarnings({ "rawtypes" })
     abstract Future<Void> removeRestartTaskAnnotation(Reconciliation reconciliation, CustomResource resource);
 
+    /**
+     * Returns the previous auto-restart status with the information about the previous restarts (number of restarts and
+     * last restart timestamp)
+     *
+     * @param reconciliation    Reconciliation marker
+     * @param connectorName     Name of the connector for which the restart should be returned
+     * @param resource          The custom resource that configures the connector (KafkaConnector or KafkaMirrorMaker2)
+     *
+     * @return  The previous auto-restart status
+     */
+    @SuppressWarnings({ "rawtypes" })
+    abstract Future<AutoRestartStatus> previousAutoRestartStatus(Reconciliation reconciliation, String connectorName, CustomResource resource);
+
     // Static utility methods and classes
 
     private static Function<Map<String, Object>, Future<ConnectorStatusAndConditions>> createConnectorStatusAndConditions() {
@@ -677,24 +680,6 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         }
 
         return connectorConfigJson.put("connector.class", spec.getClassName());
-    }
-
-    @SuppressWarnings({ "rawtypes" })
-    private static Future<KafkaConnectorStatus> getPreviousKafkaConnectorStatus(Reconciliation reconciliation, CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> resourceOperator,
-                                                           CustomResource resource) {
-        return resourceOperator
-            .getAsync(resource.getMetadata().getNamespace(), resource.getMetadata().getName())
-            .compose(result -> {
-                if (result != null) {
-                    return Future.succeededFuture(result.getStatus());
-                } else {
-                    // This is unexpected, since we are reconciling the resource and therefore it should exist. So the
-                    // result being null suggests some race condition. We log a warning and return null which is handled
-                    // in the place calling this method.
-                    LOGGER.warnCr(reconciliation, "Previous Kafka Connector status was not found");
-                    return Future.succeededFuture(null);
-                }
-            });
     }
 
     /**

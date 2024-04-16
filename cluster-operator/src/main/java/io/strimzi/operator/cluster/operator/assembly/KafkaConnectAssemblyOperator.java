@@ -82,6 +82,7 @@ import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_RESTART;
 public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<KubernetesClient, KafkaConnect, KafkaConnectList, KafkaConnectSpec, KafkaConnectStatus> {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaConnectAssemblyOperator.class.getName());
 
+    private final CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> connectorOperator;
     private final ConnectBuildOperator connectBuildOperator;
 
     /**
@@ -133,6 +134,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                                         Function<Vertx, KafkaConnectApi> connectClientProvider, int port) {
         super(vertx, pfa, KafkaConnect.RESOURCE_KIND, supplier.connectOperator, supplier, config, connectClientProvider, port);
 
+        this.connectorOperator = supplier.kafkaConnectorOperator;
         this.connectBuildOperator = new ConnectBuildOperator(pfa, supplier, config);
     }
 
@@ -618,7 +620,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
             (connector1, status1) -> new KafkaConnectorBuilder(connector1).withStatus(status1).build());
     }
 
-    // Methods for working with restart annotations
+    // Methods for working with connector restarts
 
     /**
      * Checks whether the provided KafkaConnector resource and has the strimzi.io/restart annotation.
@@ -694,6 +696,35 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                 .build();
         return connectorOperator.patchAsync(reconciliation, patchedKafkaConnector)
                 .compose(ignored -> Future.succeededFuture());
+    }
+
+    /**
+     * Returns the previous auto-restart status with the information about the previous restarts (number of restarts and
+     * last restart timestamp). For Kafka Connect it queries the Kubernetes API to get the latest KafkaConnector
+     * resource and get the status from it.
+     *
+     * @param reconciliation    Reconciliation marker
+     * @param connectorName     Name of the connector for which the restart should be returned (not used for Kafka
+     *                          Connect, used only for Mirror Maker 2)
+     * @param resource          The KafkaConnector custom resource that configures the connector
+     *
+     * @return  The previous auto-restart status
+     */
+    @SuppressWarnings({ "rawtypes" })
+    @Override
+    protected Future<AutoRestartStatus> previousAutoRestartStatus(Reconciliation reconciliation, String connectorName, CustomResource resource)  {
+        return connectorOperator.getAsync(resource.getMetadata().getNamespace(), resource.getMetadata().getName())
+                .compose(result -> {
+                    if (result != null) {
+                        return Future.succeededFuture(result.getStatus() != null ? result.getStatus().getAutoRestart() : null);
+                    } else {
+                        // This is unexpected, since we are reconciling the resource and therefore it should exist. So the
+                        // result being null suggests some race condition. We log a warning and return null which is handled
+                        // in the place calling this method.
+                        LOGGER.warnCr(reconciliation, "Kafka Connector {}/{} was not found", resource.getMetadata().getNamespace(), resource.getMetadata().getName());
+                        return Future.succeededFuture(null);
+                    }
+                });
     }
 
     // Static utility methods and classes

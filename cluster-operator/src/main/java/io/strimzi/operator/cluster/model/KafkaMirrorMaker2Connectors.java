@@ -150,6 +150,7 @@ public class KafkaMirrorMaker2Connectors {
                                 .withConfig(prepareMirrorMaker2ConnectorConfig(mirror, mm2ConnectorSpec, clusters.get(mirror.getSourceCluster()), clusters.get(mirror.getTargetCluster())))
                                 .withPause(mm2ConnectorSpec.getPause())
                                 .withState(mm2ConnectorSpec.getState())
+                                .withAutoRestart(mm2ConnectorSpec.getAutoRestart())
                                 .withTasksMax(mm2ConnectorSpec.getTasksMax())
                             .endSpec()
                             .build();
