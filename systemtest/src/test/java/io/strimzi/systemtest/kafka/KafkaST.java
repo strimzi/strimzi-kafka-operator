@@ -401,7 +401,7 @@ class KafkaST extends AbstractST {
      */
     @ParallelNamespaceTest
     // This test needs to be adapted to support KRaft: https://github.com/strimzi/strimzi-kafka-operator/issues/9938
-    @KRaftNotSupported("This test has not yet been adapted to support KRaft after JBOD support was added in KRat mode.")
+    @KRaftNotSupported("This test has not yet been adapted to support KRaft after JBOD support was added in KRaft mode.")
     void testKafkaJBODDeleteClaimsTrueFalse() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final int kafkaReplicas = 2;
@@ -546,7 +546,7 @@ class KafkaST extends AbstractST {
      */
     @ParallelNamespaceTest
     // This test needs to be adapted to support KRaft: https://github.com/strimzi/strimzi-kafka-operator/issues/9938
-    @KRaftNotSupported("This test has not yet been adapted to support KRaft after JBOD support was added in KRat mode.")
+    @KRaftNotSupported("This test has not yet been adapted to support KRaft after JBOD support was added in KRaft mode.")
     @SuppressWarnings({"checkstyle:JavaNCSS", "checkstyle:NPathComplexity", "checkstyle:MethodLength"})
     @Tag(INTERNAL_CLIENTS_USED)
     void testLabelsExistenceAndManipulation() {
