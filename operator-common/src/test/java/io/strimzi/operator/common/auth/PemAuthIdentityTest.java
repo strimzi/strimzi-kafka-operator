@@ -54,9 +54,9 @@ public class PemAuthIdentityTest {
                     .withNamespace(NAMESPACE)
                 .endMetadata()
                 .withData(map("cluster-operator.key", MockCertManager.clusterCaKey(),
-                        "cluster-operator.crt", "bm90YWNlcnQ=",
-                        "cluster-operator.p12", "bm90YXRydXN0c3RvcmU=",
-                        "cluster-operator.password", "bm90YXBhc3N3b3Jk"))
+                        "cluster-operator.crt", "bm90YWNlcnQ=", //notacert
+                        "cluster-operator.p12", "bm90YXRydXN0c3RvcmU=", //notatruststore
+                        "cluster-operator.password", "bm90YXBhc3N3b3Jk")) //notapassword
                 .build();
         PemAuthIdentity pemAuthIdentity = PemAuthIdentity.clusterOperator(secretWithBadCertificate);
         Exception e = assertThrows(RuntimeException.class, () -> pemAuthIdentity.jksKeyStore(new char[]{}));

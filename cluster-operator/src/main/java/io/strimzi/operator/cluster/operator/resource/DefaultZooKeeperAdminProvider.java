@@ -29,12 +29,7 @@ public class DefaultZooKeeperAdminProvider implements ZooKeeperAdminProvider {
     @Override
     public ZooKeeperAdmin createZookeeperAdmin(String connectString, int sessionTimeout, Watcher watcher,
                                                long operationTimeoutMs, String trustStoreFile, String keyStoreFile) throws IOException {
-        ZKClientConfig clientConfig;
-        try {
-            clientConfig = new ZKClientConfig();
-        } catch (Exception e)    {
-            throw new ZooKeeperAdminClientException("Failed to create Zookeeper client configuration", e);
-        }
+        ZKClientConfig clientConfig = new ZKClientConfig();
         clientConfig.setProperty("zookeeper.clientCnxnSocket", "org.apache.zookeeper.ClientCnxnSocketNetty");
         clientConfig.setProperty("zookeeper.client.secure", "true");
         clientConfig.setProperty("zookeeper.sasl.client", "false");
