@@ -54,11 +54,11 @@ leaderElection:
   enable: true
 
 # https://kubernetes.io/docs/tasks/run-application/configure-pdb/
-podDisruptionBudget:  
+podDisruptionBudget:
   enabled: false
-  # The PDB definition only has two attributes to control the availability requirements: minAvailable or maxUnavailable (mutually exclusive). 
+  # The PDB definition only has two attributes to control the availability requirements: minAvailable or maxUnavailable (mutually exclusive).
   # Field maxUnavailable tells how many pods can be down and minAvailable tells how many pods must be running in a cluster.
-  
+
   # The pdb template will check values according to below order
   #
   #  {{- if .Values.podDisruptionBudget.minAvailable }}
