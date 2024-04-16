@@ -201,7 +201,7 @@ public abstract class BasePerformanceMetricsParser {
             final List<String> lines = Files.readAllLines(metricFile.toPath());
 
             for (String line : lines) {
-                final String[] parts = line.split(", Values: ");
+                final String[] parts = line.split(", Values= ");
                 if (parts.length > 1 && !parts[1].equals("[]")) {
                     final String valuesPart = parts[1].replaceAll("\\[|\\]", ""); // Remove brackets
                     final String[] valueStrings = valuesPart.split(", ");

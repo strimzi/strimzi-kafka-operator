@@ -116,7 +116,7 @@ public abstract class BaseMetricsCollectionScheduler {
      * @param metrics The structured map of metrics to be stored.
      */
     protected void storeMetrics(Map<String, List<Double>> metrics) {
-        Long timeWhenMetricsWereCollected = System.nanoTime();
+        Long timeWhenMetricsWereCollected = System.nanoTime() / 1_000_000; // Convert nanoseconds to milliseconds
         this.metricsStore.put(timeWhenMetricsWereCollected, metrics);
     }
 
