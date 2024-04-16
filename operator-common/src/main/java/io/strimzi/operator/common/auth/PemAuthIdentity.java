@@ -121,7 +121,9 @@ public class PemAuthIdentity {
 
     /**
      * KeyStore to use for TLS connections.
+     *
      * @param password to use to secure the KeyStore
+     *
      * @return KeyStore file in JKS format
      * @throws GeneralSecurityException if something goes wrong when creating the truststore
      * @throws IOException if there is an I/O or format problem with the data used to load the truststore.

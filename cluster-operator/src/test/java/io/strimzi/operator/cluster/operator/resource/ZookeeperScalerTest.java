@@ -197,7 +197,7 @@ public class ZookeeperScalerTest {
         ZooKeeperAdmin mockZooAdmin = mock(ZooKeeperAdmin.class);
         when(mockZooAdmin.getState()).thenReturn(ZooKeeper.States.NOT_CONNECTED);
 
-        ZooKeeperAdminProvider zooKeeperAdminProvider = (connectString, sessionTimeout, watcher, operationTimout, trustStore, keyStore) -> mockZooAdmin;
+        ZooKeeperAdminProvider zooKeeperAdminProvider = (connectString, sessionTimeout, watcher, operationTimeout, trustStore, keyStore) -> mockZooAdmin;
 
         ZookeeperScaler scaler = new ZookeeperScaler(new Reconciliation("test", "TestResource", "my-namespace", "my-resource"),
                 vertx, zooKeeperAdminProvider, "zookeeper:2181", null, dummyPemIdentity, 1_000, 10_000);
@@ -219,7 +219,7 @@ public class ZookeeperScalerTest {
         when(mockZooAdmin.getConfig(false, null)).thenReturn(config.getBytes(StandardCharsets.US_ASCII));
         when(mockZooAdmin.getState()).thenReturn(ZooKeeper.States.CONNECTED);
 
-        ZooKeeperAdminProvider zooKeeperAdminProvider = (connectString, sessionTimeout, watcher, operationTimout, trustStore, keyStore) -> {
+        ZooKeeperAdminProvider zooKeeperAdminProvider = (connectString, sessionTimeout, watcher, operationTimeout, trustStore, keyStore) -> {
             watcher.process(new WatchedEvent(null, Watcher.Event.KeeperState.SyncConnected, null));
             return mockZooAdmin;
         };
@@ -249,7 +249,7 @@ public class ZookeeperScalerTest {
         when(mockZooAdmin.reconfigure(isNull(), isNull(), anyList(), anyLong(), isNull())).thenReturn(updated.getBytes(StandardCharsets.US_ASCII));
         when(mockZooAdmin.getState()).thenReturn(ZooKeeper.States.CONNECTED);
 
-        ZooKeeperAdminProvider zooKeeperAdminProvider = (connectString, sessionTimeout, watcher, operationTimout, trustStore, keyStore) -> {
+        ZooKeeperAdminProvider zooKeeperAdminProvider = (connectString, sessionTimeout, watcher, operationTimeout, trustStore, keyStore) -> {
             watcher.process(new WatchedEvent(null, Watcher.Event.KeeperState.SyncConnected, null));
             return mockZooAdmin;
         };
@@ -276,7 +276,7 @@ public class ZookeeperScalerTest {
         when(mockZooAdmin.reconfigure(isNull(), isNull(), anyList(), anyLong(), isNull())).thenThrow(new KeeperException.NewConfigNoQuorum());
         when(mockZooAdmin.getState()).thenReturn(ZooKeeper.States.CONNECTED);
 
-        ZooKeeperAdminProvider zooKeeperAdminProvider = (connectString, sessionTimeout, watcher, operationTimout, trustStore, keyStore) -> {
+        ZooKeeperAdminProvider zooKeeperAdminProvider = (connectString, sessionTimeout, watcher, operationTimeout, trustStore, keyStore) -> {
             watcher.process(new WatchedEvent(null, Watcher.Event.KeeperState.SyncConnected, null));
             return mockZooAdmin;
         };
@@ -311,7 +311,7 @@ public class ZookeeperScalerTest {
         when(mockZooAdmin.getConfig(false, null)).thenThrow(KeeperException.ConnectionLossException.class);
         when(mockZooAdmin.close(1_000)).thenThrow(InterruptedException.class);
 
-        ZooKeeperAdminProvider zooKeeperAdminProvider = (connectString, sessionTimeout, watcher, operationTimout, trustStore, keyStore) -> mockZooAdmin;
+        ZooKeeperAdminProvider zooKeeperAdminProvider = (connectString, sessionTimeout, watcher, operationTimeout, trustStore, keyStore) -> mockZooAdmin;
 
         ZookeeperScaler scaler = new ZookeeperScaler(new Reconciliation("test", "TestResource", "my-namespace", "my-resource"),
                 vertx, zooKeeperAdminProvider, "zookeeper:2181", null, dummyPemIdentity, 1_000, 10_000);
