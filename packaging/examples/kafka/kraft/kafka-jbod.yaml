@@ -1,3 +1,6 @@
+#########
+# IMPORTANT: JBOD storage with multiple volumes in KRaft mode is supported only in Apache Kafka 3.7.0 and newer!
+#########
 apiVersion: kafka.strimzi.io/v1beta2
 kind: KafkaNodePool
 metadata:
@@ -12,8 +15,10 @@ spec:
     type: jbod
     volumes:
       - id: 0
-        type: ephemeral
+        type: persistent-claim
+        size: 100Gi
         kraftMetadata: shared
+        deleteClaim: false
 ---
 
 apiVersion: kafka.strimzi.io/v1beta2
@@ -29,9 +34,17 @@ spec:
   storage:
     type: jbod
     volumes:
+      # IMPORTANT: JBOD storage with multiple volumes in KRaft mode is supported only in Apache Kafka 3.7.0 and newer!
       - id: 0
-        type: ephemeral
+        type: persistent-claim
+        size: 100Gi
+        # Indicates that this directory will be used to store Kraft metadata log
         kraftMetadata: shared
+        deleteClaim: false
+      - id: 1
+        type: persistent-claim
+        size: 100Gi
+        deleteClaim: false
 ---
 
 apiVersion: kafka.strimzi.io/v1beta2

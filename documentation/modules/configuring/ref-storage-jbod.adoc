@@ -65,3 +65,33 @@ The JBOD volumes are used by Kafka brokers as log directories mounted into the f
 ----
 
 Where `_id_` is the ID of the volume used for storing data for Kafka broker pod `_idx_`. For example `/var/lib/kafka/data-0/kafka-log0`.
+
+== Configuring the storage volume used to store the KRaft metadata log
+
+When running a Kafka cluster in a KRaft mode, each node must store the KRaft metadata log on one of its data volumes.
+By default, the KRaft metadata log is stored on the volume with the lowest ID.
+However, you can specify another volume using the `kraftMetadata` property.
+
+.Example JBOD storage configuration using volume with ID 1 to store the KRaft metadata
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaApiVersion}
+kind: KafkaNodePool
+metadata:
+  name: pool-a
+  # ...
+spec:
+  storage:
+    type: jbod
+    volumes:
+    - id: 0
+      type: persistent-claim
+      size: 100Gi
+      deleteClaim: false
+    - id: 1
+      type: persistent-claim
+      size: 100Gi
+      kraftMetadata: shared
+      deleteClaim: false
+  # ...
+----

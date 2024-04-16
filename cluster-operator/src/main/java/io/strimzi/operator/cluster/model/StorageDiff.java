@@ -32,12 +32,13 @@ public class StorageDiff extends AbstractJsonDiff {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(StorageDiff.class.getName());
 
     private static final Pattern IGNORABLE_PATHS = Pattern.compile(
-            "^(/deleteClaim|/)$");
+            "^(/deleteClaim|/kraftMetadata|/)$");
 
     private final boolean isEmpty;
     private final boolean changesType;
     private final boolean shrinkSize;
     private final boolean volumesAddedOrRemoved;
+    private final boolean tooManyKRaftMetadataVolumes;
 
     /**
      * Diffs the storage for allowed or not allowed changes. Examples of allowed changes is increasing volume size or
@@ -70,12 +71,15 @@ public class StorageDiff extends AbstractJsonDiff {
         boolean shrinkSize = false;
         boolean isEmpty = true;
         boolean volumesAddedOrRemoved = false;
+        boolean tooManyKRaftMetadataVolumes = false;
 
         if (current instanceof JbodStorage currentJbodStorage && desired instanceof JbodStorage desiredJbodStorage) {
             Set<Integer> volumeIds = new HashSet<>();
 
             volumeIds.addAll(currentJbodStorage.getVolumes().stream().map(SingleVolumeStorage::getId).collect(Collectors.toSet()));
             volumeIds.addAll(desiredJbodStorage.getVolumes().stream().map(SingleVolumeStorage::getId).collect(Collectors.toSet()));
+
+            tooManyKRaftMetadataVolumes = desiredJbodStorage.getVolumes().stream().filter(v -> v.getKraftMetadata() != null).count() > 1;
 
             for (Integer volumeId : volumeIds)  {
                 SingleVolumeStorage currentVolume = currentJbodStorage.getVolumes().stream()
@@ -148,6 +152,7 @@ public class StorageDiff extends AbstractJsonDiff {
         this.changesType = changesType;
         this.shrinkSize = shrinkSize;
         this.volumesAddedOrRemoved = volumesAddedOrRemoved;
+        this.tooManyKRaftMetadataVolumes = tooManyKRaftMetadataVolumes;
     }
 
     /**
@@ -185,6 +190,15 @@ public class StorageDiff extends AbstractJsonDiff {
      */
     public boolean isVolumesAddedOrRemoved() {
         return volumesAddedOrRemoved;
+    }
+
+    /**
+     * Indicates whether too many volumes of a JBOD storage are marked as KRaft metadata volumes
+     *
+     * @return true when multiple volumes are marked as KRaft metadata volumes. False if no or only one volume is marked.
+     */
+    public boolean isTooManyKRaftMetadataVolumes() {
+        return tooManyKRaftMetadataVolumes;
     }
 
     /**

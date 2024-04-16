@@ -6,6 +6,7 @@ package io.strimzi.operator.cluster.model;
 
 import io.strimzi.api.kafka.model.kafka.EphemeralStorageBuilder;
 import io.strimzi.api.kafka.model.kafka.JbodStorageBuilder;
+import io.strimzi.api.kafka.model.kafka.KRaftMetadataStorage;
 import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageOverrideBuilder;
 import io.strimzi.api.kafka.model.kafka.Storage;
@@ -473,5 +474,43 @@ public class StorageDiffTest {
 
         // Overrides removed for new nodes but added for old => not allowed
         assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent2, persistent, Set.of(0), Set.of(0, 3)).isEmpty(), is(false));
+    }
+
+    @ParallelTest
+    public void testKraftMetadataChanges()    {
+        Storage jbod = new JbodStorageBuilder().withVolumes(
+                        new PersistentClaimStorageBuilder().withStorageClass("gp2-ssd").withDeleteClaim(false).withKraftMetadata(KRaftMetadataStorage.SHARED).withId(0).withSize("100Gi").build(),
+                        new PersistentClaimStorageBuilder().withStorageClass("gp2-st1").withDeleteClaim(true).withId(1).withSize("1000Gi").build())
+                .build();
+
+        Storage jbod2 = new JbodStorageBuilder().withVolumes(
+                        new PersistentClaimStorageBuilder().withStorageClass("gp2-ssd").withDeleteClaim(false).withId(0).withSize("100Gi").build(),
+                        new PersistentClaimStorageBuilder().withStorageClass("gp2-st1").withDeleteClaim(true).withKraftMetadata(KRaftMetadataStorage.SHARED).withId(1).withSize("1000Gi").build())
+                .build();
+
+        StorageDiff diff = new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, jbod, jbod2, Set.of(0, 1, 5), Set.of(0, 1, 5));
+        assertThat(diff.changesType(), is(false));
+        assertThat(diff.isEmpty(), is(true));
+        assertThat(diff.shrinkSize(), is(false));
+        assertThat(diff.isVolumesAddedOrRemoved(), is(false));
+    }
+
+    @ParallelTest
+    public void testMultipleKraftMetadataVolumes()    {
+        Storage jbod = new JbodStorageBuilder().withVolumes(
+                        new PersistentClaimStorageBuilder().withStorageClass("gp2-ssd").withDeleteClaim(false).withKraftMetadata(KRaftMetadataStorage.SHARED).withId(0).withSize("100Gi").build(),
+                        new PersistentClaimStorageBuilder().withStorageClass("gp2-st1").withDeleteClaim(true).withId(1).withSize("1000Gi").build())
+                .build();
+
+        Storage jbod2 = new JbodStorageBuilder().withVolumes(
+                        new PersistentClaimStorageBuilder().withStorageClass("gp2-ssd").withDeleteClaim(false).withKraftMetadata(KRaftMetadataStorage.SHARED).withId(0).withSize("100Gi").build(),
+                        new PersistentClaimStorageBuilder().withStorageClass("gp2-st1").withDeleteClaim(true).withKraftMetadata(KRaftMetadataStorage.SHARED).withId(1).withSize("1000Gi").build())
+                .build();
+
+        StorageDiff diff = new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, jbod, jbod, Set.of(0, 1, 5), Set.of(0, 1, 5));
+        assertThat(diff.isTooManyKRaftMetadataVolumes(), is(false));
+
+        diff = new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, jbod, jbod2, Set.of(0, 1, 5), Set.of(0, 1, 5));
+        assertThat(diff.isTooManyKRaftMetadataVolumes(), is(true));
     }
 }

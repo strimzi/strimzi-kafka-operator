@@ -4,6 +4,7 @@
 
 * Add support for Apache Kafka 3.6.2
 * Provide metrics to monitor certificates expiration as well as modified `Strimzi Operators` dashboard to include certificate expiration per cluster.
+* Add support for JBOD storage in KRaft mode.
 * Added support for topic replication factor change to the Unidirectional Topic Operator when Cruise Control integration is enabled.
 * The `KafkaNodePools` feature gate moves to GA stage and is permanently enabled without the possibility to disable it.
   To use the Kafka Node Pool resources, you still need to use the `strimzi.io/node-pools: enabled` annotation on the `Kafka` custom resources.
