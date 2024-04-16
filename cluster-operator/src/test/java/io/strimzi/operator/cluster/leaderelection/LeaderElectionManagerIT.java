@@ -4,17 +4,20 @@
  */
 package io.strimzi.operator.cluster.leaderelection;
 
+import io.fabric8.kubernetes.api.model.DeletionPropagation;
+import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.coordination.v1.Lease;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
-import io.strimzi.test.k8s.KubeClusterResource;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -24,19 +27,20 @@ public class LeaderElectionManagerIT {
     private final static String NAMESPACE = "my-le-namespace";
     private final static String LEASE_NAME = "my-lease";
 
-    private final static KubeClusterResource CLUSTER = KubeClusterResource.getInstance();
-
     private static KubernetesClient client;
 
     @BeforeAll
     static void setupEnvironment() {
-        CLUSTER.createNamespace(NAMESPACE);
         client = new KubernetesClientBuilder().build();
+        client.namespaces().resource(new NamespaceBuilder().withNewMetadata().withName(NAMESPACE).endMetadata().build()).create();
+        client.namespaces().withName(NAMESPACE).waitUntilCondition(ns -> ns.getStatus() != null && "Active".equals(ns.getStatus().getPhase()), 30_000, TimeUnit.MILLISECONDS);
     }
 
     @AfterAll
     static void teardownEnvironment() {
-        CLUSTER.deleteNamespaces();
+        client.namespaces().withName(NAMESPACE).withPropagationPolicy(DeletionPropagation.BACKGROUND).delete();
+        client.namespaces().withName(NAMESPACE).waitUntilCondition(Objects::isNull, 30_000, TimeUnit.MILLISECONDS);
+        client.close();
     }
 
     @Test
