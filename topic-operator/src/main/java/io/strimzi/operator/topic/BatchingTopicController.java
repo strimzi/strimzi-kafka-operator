@@ -1139,17 +1139,17 @@ public class BatchingTopicController {
      * <p>This is useful in standalone mode when you have a Kafka service that restricts alter operations
      * to a subset of all the Kafka topic configurations.</p>
      *
-     * <p>The default value is "all", which means no restrictions in changing {@code .spec.config}.
-     * The opposite is "none", which can be set to explicitly disable any change.</p>
+     * <p>The default value is "ALL", which means no restrictions in changing {@code .spec.config}.
+     * The opposite is "NONE", which can be set to explicitly disable any change.</p>
      *
      * @param alterConfigOps Requested alter config operations.
      */
     private void skipNonAlterableConfigs(Set<AlterConfigOp> alterConfigOps) {
         var alterableConfigs = config.alterableTopicConfig();
         if (alterableConfigs != null && alterConfigOps != null && !alterableConfigs.isEmpty()) {
-            if (alterableConfigs.equalsIgnoreCase("none")) {
+            if (alterableConfigs.equalsIgnoreCase("NONE")) {
                 alterConfigOps.clear();
-            } else if (!alterableConfigs.equalsIgnoreCase("all")) {
+            } else if (!alterableConfigs.equalsIgnoreCase("ALL")) {
                 var alterablePropertySet = Arrays.stream(alterableConfigs.replaceAll("\\s", "").split(","))
                       .collect(Collectors.toSet());
                 alterConfigOps.removeIf(op -> !alterablePropertySet.contains(op.configEntry().name()));
@@ -1187,7 +1187,7 @@ public class BatchingTopicController {
 
         if (reconcilableTopic != null && reconcilableTopic.kt() != null
               && hasConfig(reconcilableTopic.kt()) && alterableConfigs != null) {
-            if (alterableConfigs.equalsIgnoreCase("none")) {
+            if (alterableConfigs.equalsIgnoreCase("NONE")) {
                 reconcilableTopic.kt().getSpec().getConfig().forEach((key, value) -> readOnlyConfigs.add(key));
             } else if (!alterableConfigs.equalsIgnoreCase("ALL") && !alterableConfigs.isBlank()) {
                 var alterablePropertySet = Arrays.stream(alterableConfigs.replaceAll("\\s", "").split(","))
