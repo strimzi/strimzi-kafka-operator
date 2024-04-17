@@ -154,9 +154,9 @@ class BatchingTopicControllerTest {
         Mockito.doReturn(NAMESPACE).when(config).namespace();
         Mockito.doReturn(true).when(config).useFinalizer();
         Mockito.doReturn(false).when(config).enableAdditionalMetrics();
-        var replicasChangeClient = Mockito.mock(ReplicasChangeHandler.class);
+        var replicasChangeHandler = Mockito.mock(ReplicasChangeHandler.class);
         
-        controller = new BatchingTopicController(config, Map.of("key", "VALUE"), admin, client, metrics, replicasChangeClient);
+        controller = new BatchingTopicController(config, Map.of("key", "VALUE"), admin, client, metrics, replicasChangeHandler);
         List<ReconcilableTopic> batch = List.of(new ReconcilableTopic(new Reconciliation("test", "KafkaTopic", NAMESPACE, "my-topic"), kt, topicName(kt)));
         assertThrows(InterruptedException.class, () -> controller.onUpdate(batch));
     }
@@ -485,7 +485,7 @@ class BatchingTopicControllerTest {
     @Test
     public void shouldNotCallGetClusterConfigWhenDisabled() {
         var admin = Mockito.mock(Admin.class);
-        var replicasChangeClient = mock(ReplicasChangeHandler.class);
+        var replicasChangeHandler = mock(ReplicasChangeHandler.class);
 
         var config = TopicOperatorConfig.buildFromMap(Map.of(
               TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
@@ -494,7 +494,7 @@ class BatchingTopicControllerTest {
               TopicOperatorConfig.SKIP_CLUSTER_CONFIG_REVIEW.key(), "true"
         ));
 
-        new BatchingTopicController(config, Map.of("key", "VALUE"), admin, client, metrics, replicasChangeClient);
+        new BatchingTopicController(config, Map.of("key", "VALUE"), admin, client, metrics, replicasChangeHandler);
 
         verifyNoInteractions(admin);
     }
@@ -530,9 +530,9 @@ class BatchingTopicControllerTest {
         Mockito.doReturn(NAMESPACE).when(config).namespace();
         Mockito.doReturn(true).when(config).skipClusterConfigReview();
         Mockito.doReturn(alterableTopicConfig).when(config).alterableTopicConfig();
-        var replicasChangeClient = Mockito.mock(ReplicasChangeHandler.class);
+        var replicasChangeHandler = Mockito.mock(ReplicasChangeHandler.class);
 
-        controller = new BatchingTopicController(config, Map.of("key", "VALUE"), adminSpy, client, metrics, replicasChangeClient);
+        controller = new BatchingTopicController(config, Map.of("key", "VALUE"), adminSpy, client, metrics, replicasChangeHandler);
         List<ReconcilableTopic> batch = List.of(new ReconcilableTopic(new Reconciliation("test", "KafkaTopic", NAMESPACE, MY_TOPIC), kt, topicName(kt)));
 
         controller.onUpdate(batch);
@@ -578,9 +578,9 @@ class BatchingTopicControllerTest {
         Mockito.doReturn(NAMESPACE).when(config).namespace();
         Mockito.doReturn(true).when(config).skipClusterConfigReview();
         Mockito.doReturn(alterableTopicConfig).when(config).alterableTopicConfig();
-        var replicasChangeClient = Mockito.mock(ReplicasChangeHandler.class);
+        var replicasChangeHandler = Mockito.mock(ReplicasChangeHandler.class);
 
-        controller = new BatchingTopicController(config, Map.of("key", "VALUE"), adminSpy, client, metrics, replicasChangeClient);
+        controller = new BatchingTopicController(config, Map.of("key", "VALUE"), adminSpy, client, metrics, replicasChangeHandler);
         List<ReconcilableTopic> batch = List.of(new ReconcilableTopic(new Reconciliation("test", "KafkaTopic", NAMESPACE, MY_TOPIC), kt, topicName(kt)));
 
         controller.onUpdate(batch);
@@ -630,9 +630,9 @@ class BatchingTopicControllerTest {
         Mockito.doReturn(NAMESPACE).when(config).namespace();
         Mockito.doReturn(true).when(config).skipClusterConfigReview();
         Mockito.doReturn(ALTERABLE_TOPIC_CONFIGS).when(config).alterableTopicConfig();
-        var replicasChangeClient = Mockito.mock(ReplicasChangeHandler.class);
+        var replicasChangeHandler = Mockito.mock(ReplicasChangeHandler.class);
 
-        controller = new BatchingTopicController(config, Map.of("key", "VALUE"), adminSpy, client, metrics, replicasChangeClient);
+        controller = new BatchingTopicController(config, Map.of("key", "VALUE"), adminSpy, client, metrics, replicasChangeHandler);
         List<ReconcilableTopic> batch = List.of(new ReconcilableTopic(new Reconciliation("test", "KafkaTopic", NAMESPACE, MY_TOPIC), kt, topicName(kt)));
 
         controller.onUpdate(batch);
