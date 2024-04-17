@@ -105,7 +105,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "7.3.7",
+      "pluginVersion": "7.4.5",
       "targets": [
         {
           "datasource": "${DS_PROMETHEUS}",
@@ -177,7 +177,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "7.3.7",
+      "pluginVersion": "7.4.5",
       "targets": [
         {
           "datasource": "${DS_PROMETHEUS}",
@@ -249,7 +249,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "7.3.7",
+      "pluginVersion": "7.4.5",
       "targets": [
         {
           "datasource": "${DS_PROMETHEUS}",
@@ -321,7 +321,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "7.3.7",
+      "pluginVersion": "7.4.5",
       "targets": [
         {
           "datasource": "${DS_PROMETHEUS}",
@@ -397,7 +397,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "7.3.7",
+      "pluginVersion": "7.4.5",
       "targets": [
         {
           "datasource": "${DS_PROMETHEUS}",
@@ -474,7 +474,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "7.3.7",
+      "pluginVersion": "7.4.5",
       "targets": [
         {
           "datasource": "${DS_PROMETHEUS}",
@@ -551,7 +551,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "7.3.7",
+      "pluginVersion": "7.4.5",
       "targets": [
         {
           "datasource": "${DS_PROMETHEUS}",
@@ -627,7 +627,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "7.3.7",
+      "pluginVersion": "7.4.5",
       "targets": [
         {
           "datasource": "${DS_PROMETHEUS}",
@@ -721,7 +721,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "7.3.7",
+      "pluginVersion": "7.4.5",
       "targets": [
         {
           "datasource": "${DS_PROMETHEUS}",
@@ -815,7 +815,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "7.3.7",
+      "pluginVersion": "7.4.5",
       "targets": [
         {
           "datasource": "${DS_PROMETHEUS}",
@@ -910,7 +910,7 @@
           "sort": "desc"
         }
       },
-      "pluginVersion": "7.3.7",
+      "pluginVersion": "7.4.5",
       "targets": [
         {
           "datasource": "${DS_PROMETHEUS}",
@@ -977,7 +977,7 @@
         "showHeader": true
       },
       "pageSize": 10,
-      "pluginVersion": "7.3.7",
+      "pluginVersion": "7.4.5",
       "scroll": true,
       "showHeader": true,
       "sort": {
@@ -1089,7 +1089,7 @@
         "showHeader": true
       },
       "pageSize": 10,
-      "pluginVersion": "7.3.7",
+      "pluginVersion": "7.4.5",
       "scroll": true,
       "showHeader": true,
       "sort": {
@@ -1200,7 +1200,7 @@
         },
         "showHeader": true
       },
-      "pluginVersion": "7.3.7",
+      "pluginVersion": "7.4.5",
       "scroll": true,
       "showHeader": true,
       "sort": {
@@ -1312,7 +1312,7 @@
         "showHeader": true
       },
       "pageSize": 10,
-      "pluginVersion": "7.3.7",
+      "pluginVersion": "7.4.5",
       "scroll": true,
       "showHeader": true,
       "sort": {
@@ -1424,7 +1424,7 @@
         "showHeader": true
       },
       "pageSize": 10,
-      "pluginVersion": "7.3.7",
+      "pluginVersion": "7.4.5",
       "scroll": true,
       "showHeader": true,
       "sort": {

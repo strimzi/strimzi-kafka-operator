@@ -141,7 +141,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "7.3.7",
+      "pluginVersion": "7.4.5",
       "targets": [
         {
           "datasource": "${DS_PROMETHEUS}",
@@ -233,7 +233,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "7.3.7",
+      "pluginVersion": "7.4.5",
       "targets": [
         {
           "datasource": "${DS_PROMETHEUS}",
@@ -325,11 +325,11 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "7.3.7",
+      "pluginVersion": "7.4.5",
       "targets": [
         {
           "datasource": "${DS_PROMETHEUS}",
-          "expr": "sum(kubelet_volume_stats_available_bytes{namespace=\"$kubernetes_namespace\",persistentvolumeclaim=~\"data(-[0-9]+)?-$strimzi_cluster_name-kafka-[0-9]+\"}) by (persistentvolumeclaim)",
+          "expr": "sum(kubelet_volume_stats_available_bytes{namespace=\"$kubernetes_namespace\",persistentvolumeclaim=~\"data(-[0-9]+)?-$strimzi_cluster_name-(kafka|$pool_name)-[0-9]+\"}) by (persistentvolumeclaim)",
           "format": "time_series",
           "hide": false,
           "intervalFactor": 1,
@@ -417,7 +417,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "7.3.7",
+      "pluginVersion": "7.4.5",
       "targets": [
         {
           "datasource": "${DS_PROMETHEUS}",
@@ -508,7 +508,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "7.3.7",
+      "pluginVersion": "7.4.5",
       "targets": [
         {
           "datasource": "${DS_PROMETHEUS}",
@@ -598,7 +598,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "7.3.7",
+      "pluginVersion": "7.4.5",
       "targets": [
         {
           "datasource": "${DS_PROMETHEUS}",
@@ -688,7 +688,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "7.3.7",
+      "pluginVersion": "7.4.5",
       "targets": [
         {
           "datasource": "${DS_PROMETHEUS}",
@@ -779,7 +779,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "7.3.7",
+      "pluginVersion": "7.4.5",
       "targets": [
         {
           "datasource": "${DS_PROMETHEUS}",
@@ -870,7 +870,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "7.3.7",
+      "pluginVersion": "7.4.5",
       "targets": [
         {
           "datasource": "${DS_PROMETHEUS}",
@@ -964,7 +964,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "7.3.7",
+      "pluginVersion": "7.4.5",
       "targets": [
         {
           "datasource": "${DS_PROMETHEUS}",
@@ -1056,7 +1056,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "7.3.7",
+      "pluginVersion": "7.4.5",
       "targets": [
         {
           "datasource": "${DS_PROMETHEUS}",
@@ -1151,7 +1151,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "7.3.7",
+      "pluginVersion": "7.4.5",
       "targets": [
         {
           "datasource": "${DS_PROMETHEUS}",
@@ -1245,7 +1245,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "7.3.7",
+      "pluginVersion": "7.4.5",
       "targets": [
         {
           "datasource": "${DS_PROMETHEUS}",
@@ -1339,7 +1339,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "7.3.7",
+      "pluginVersion": "7.4.5",
       "targets": [
         {
           "datasource": "${DS_PROMETHEUS}",
@@ -1432,7 +1432,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "7.3.7",
+      "pluginVersion": "7.4.5",
       "targets": [
         {
           "datasource": "${DS_PROMETHEUS}",
@@ -1525,7 +1525,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "7.3.7",
+      "pluginVersion": "7.4.5",
       "targets": [
         {
           "datasource": "${DS_PROMETHEUS}",
@@ -1618,7 +1618,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "7.3.7",
+      "pluginVersion": "7.4.5",
       "targets": [
         {
           "datasource": "${DS_PROMETHEUS}",
@@ -1711,7 +1711,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "7.3.7",
+      "pluginVersion": "7.4.5",
       "targets": [
         {
           "datasource": "${DS_PROMETHEUS}",
@@ -1804,7 +1804,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "7.3.7",
+      "pluginVersion": "7.4.5",
       "targets": [
         {
           "datasource": "${DS_PROMETHEUS}",
@@ -1897,7 +1897,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "7.3.7",
+      "pluginVersion": "7.4.5",
       "targets": [
         {
           "datasource": "${DS_PROMETHEUS}",
