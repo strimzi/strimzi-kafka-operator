@@ -49,7 +49,7 @@ public class AdminClientTemplates {
      * Creates a Deployment configuration for an AdminClient with TLS settings.
      */
     public static Deployment tlsAdminClient(String namespaceName, String userName, String adminName, String clusterName, String bootstrapName, String additionalConfig) {
-        final List<EnvVar> tlsEnvs = getTlsEnvironmentVariables(userName);
+        final List<EnvVar> tlsEnvs = buildTLSUserCredentials(userName);
         final String finalAdditionalConfig = "sasl.mechanism=GSSAPI\n" + "security.protocol=" + SecurityProtocol.SSL + "\n"  + "\n" + additionalConfig;
 
         return plainAdminClient(namespaceName, adminName, bootstrapName, finalAdditionalConfig)
@@ -248,8 +248,8 @@ public class AdminClientTemplates {
      * @param userName the name of the user, which corresponds to the Kubernetes secret names containing the user's TLS certificate and key
      * @return a {@link List} of {@link EnvVar} instances for configuring a Kafka client with TLS
      */
-    private static List<EnvVar> getTlsEnvironmentVariables(String userName) {
-        EnvVar userCrt = new EnvVarBuilder()
+    private static List<EnvVar> buildTLSUserCredentials(String userName) {
+        EnvVar userCertificate = new EnvVarBuilder()
             .withName("USER_CRT")
             .withNewValueFrom()
                 .withNewSecretKeyRef()
@@ -259,7 +259,7 @@ public class AdminClientTemplates {
             .endValueFrom()
             .build();
 
-        EnvVar userKey = new EnvVarBuilder()
+        EnvVar userPrivateKey = new EnvVarBuilder()
             .withName("USER_KEY")
             .withNewValueFrom()
                 .withNewSecretKeyRef()
@@ -269,6 +269,6 @@ public class AdminClientTemplates {
             .endValueFrom()
             .build();
 
-        return List.of(userCrt, userKey);
+        return List.of(userCertificate, userPrivateKey);
     }
 }
