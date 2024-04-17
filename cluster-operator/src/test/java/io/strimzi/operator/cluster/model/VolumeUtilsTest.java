@@ -8,7 +8,10 @@ import io.fabric8.kubernetes.api.model.KeyToPathBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.strimzi.api.kafka.model.kafka.EphemeralStorageBuilder;
+import io.strimzi.api.kafka.model.kafka.JbodStorage;
 import io.strimzi.api.kafka.model.kafka.JbodStorageBuilder;
+import io.strimzi.api.kafka.model.kafka.KRaftMetadataStorage;
+import io.strimzi.api.kafka.model.kafka.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.kafka.Storage;
 import io.strimzi.operator.common.model.InvalidResourceException;
@@ -226,5 +229,58 @@ public class VolumeUtilsTest {
         assertThat(volumes.size(), is(1));
         assertThat(volumes.get(0).getName(), is("data"));
         assertThat(volumes.get(0).getEmptyDir(), is(notNullValue()));
+    }
+
+    @ParallelTest
+    public void testKRaftMetadataPath() {
+        // Test with unmarked no-JBOD storage
+        assertThat(VolumeUtils.kraftMetadataPath(PERSISTENT_CLAIM_STORAGE), is("/var/lib/kafka/data"));
+        assertThat(VolumeUtils.kraftMetadataPath(EPHEMERAL_STORAGE), is("/var/lib/kafka/data"));
+
+        // Test with marked no-JBOD storage
+        PersistentClaimStorage markedSingleVolume = new PersistentClaimStorageBuilder()
+                .withDeleteClaim(false)
+                .withSize("20Gi")
+                .withKraftMetadata(KRaftMetadataStorage.SHARED)
+                .build();
+        assertThat(VolumeUtils.kraftMetadataPath(markedSingleVolume), is("/var/lib/kafka/data"));
+
+        // Tests with unmarked JBOD storage
+        assertThat(VolumeUtils.kraftMetadataPath(JBOD_STORAGE), is("/var/lib/kafka/data-0"));
+
+        JbodStorage jbodStorageWithMixedOrder = new JbodStorageBuilder().withVolumes(
+                new PersistentClaimStorageBuilder()
+                        .withDeleteClaim(false)
+                        .withId(20)
+                        .withSize("20Gi")
+                        .build(),
+                new PersistentClaimStorageBuilder()
+                        .withDeleteClaim(true)
+                        .withId(1)
+                        .withSize("10Gi")
+                        .build(),
+                new PersistentClaimStorageBuilder()
+                        .withDeleteClaim(true)
+                        .withId(10)
+                        .withSize("10Gi")
+                        .build())
+                .build();
+        assertThat(VolumeUtils.kraftMetadataPath(jbodStorageWithMixedOrder), is("/var/lib/kafka/data-1"));
+
+        // Marked JBOD storage
+        JbodStorage markedJbodStorage = new JbodStorageBuilder().withVolumes(
+                new PersistentClaimStorageBuilder()
+                        .withDeleteClaim(false)
+                        .withId(0)
+                        .withSize("20Gi")
+                        .build(),
+                new PersistentClaimStorageBuilder()
+                        .withDeleteClaim(true)
+                        .withId(1)
+                        .withKraftMetadata(KRaftMetadataStorage.SHARED)
+                        .withSize("10Gi")
+                        .build())
+                .build();
+        assertThat(VolumeUtils.kraftMetadataPath(markedJbodStorage), is("/var/lib/kafka/data-1"));
     }
 }

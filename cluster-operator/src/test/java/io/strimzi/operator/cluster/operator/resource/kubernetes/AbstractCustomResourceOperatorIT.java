@@ -5,6 +5,8 @@
 package io.strimzi.operator.cluster.operator.resource.kubernetes;
 
 import io.fabric8.kubernetes.api.model.DefaultKubernetesResourceList;
+import io.fabric8.kubernetes.api.model.DeletionPropagation;
+import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
@@ -29,12 +31,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import java.util.Objects;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -84,15 +85,15 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
         sharedWorkerExecutor = vertx.createSharedWorkerExecutor("kubernetes-ops-pool");
         client = new KubernetesClientBuilder().build();
 
-        if (cluster.getNamespace() != null && System.getenv("SKIP_TEARDOWN") == null) {
+        if (client.namespaces().withName(namespace).get() != null && System.getenv("SKIP_TEARDOWN") == null) {
             LOGGER.warn("Namespace {} is already created, going to delete it", namespace);
-            kubeClient().deleteNamespace(namespace);
-            cmdKubeClient().waitForResourceDeletion("Namespace", namespace);
+            client.namespaces().withName(namespace).withPropagationPolicy(DeletionPropagation.BACKGROUND).delete();
+            client.namespaces().withName(namespace).waitUntilCondition(Objects::isNull, 30_000, TimeUnit.MILLISECONDS);
         }
 
         LOGGER.info("Creating namespace: {}", namespace);
-        kubeClient().createNamespace(namespace);
-        cmdKubeClient().waitForResourceCreation("Namespace", namespace);
+        client.namespaces().resource(new NamespaceBuilder().withNewMetadata().withName(namespace).endMetadata().build()).create();
+        client.namespaces().withName(namespace).waitUntilCondition(ns -> ns.getStatus() != null && "Active".equals(ns.getStatus().getPhase()), 30_000, TimeUnit.MILLISECONDS);
 
         LOGGER.info("Creating CRD");
         cluster.createCustomResources(getCrd());
@@ -106,10 +107,10 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
         vertx.close();
 
         String namespace = getNamespace();
-        if (kubeClient().getNamespace(namespace) != null && System.getenv("SKIP_TEARDOWN") == null) {
+        if (client.namespaces().withName(namespace).get() != null && System.getenv("SKIP_TEARDOWN") == null) {
             LOGGER.warn("Deleting namespace {} after tests run", namespace);
-            kubeClient().deleteNamespace(namespace);
-            cmdKubeClient().waitForResourceDeletion("Namespace", namespace);
+            client.namespaces().withName(namespace).withPropagationPolicy(DeletionPropagation.BACKGROUND).delete();
+            client.namespaces().withName(namespace).waitUntilCondition(Objects::isNull, 30_000, TimeUnit.MILLISECONDS);
             LOGGER.info("Deleting CRD");
             KubeClusterResource.getInstance().deleteCustomResources();
         }

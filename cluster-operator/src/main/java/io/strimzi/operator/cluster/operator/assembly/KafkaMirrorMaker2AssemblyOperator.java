@@ -181,6 +181,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                         createOrUpdatePromise.fail(new ReconciliationException(kafkaMirrorMaker2Status, reconciliationResult.cause()));
                     }
                 });
+
         return createOrUpdatePromise.future();
     }
 
@@ -221,7 +222,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
      * @param kafkaMirrorMaker2Spec   KafkaMirrorMaker2Spec object
      * @return                        Future for tracking the asynchronous result of generating the TLS auth hash
      */
-    Future<Integer> generateAuthHash(String namespace, KafkaMirrorMaker2Spec kafkaMirrorMaker2Spec) {
+    private Future<Integer> generateAuthHash(String namespace, KafkaMirrorMaker2Spec kafkaMirrorMaker2Spec) {
         Promise<Integer> authHash = Promise.promise();
         if (kafkaMirrorMaker2Spec.getClusters() == null) {
             authHash.complete(0);
@@ -250,9 +251,9 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
      * @param kafkaMirrorMaker2 The MirrorMaker 2
      * @return A future, failed if any of the connectors could not be reconciled.
      */
-    protected Future<Void> reconcileConnectors(Reconciliation reconciliation, KafkaMirrorMaker2 kafkaMirrorMaker2, KafkaMirrorMaker2Cluster mirrorMaker2Cluster, KafkaMirrorMaker2Status mirrorMaker2Status, String desiredLogging) {
+    /* test */ Future<Void> reconcileConnectors(Reconciliation reconciliation, KafkaMirrorMaker2 kafkaMirrorMaker2, KafkaMirrorMaker2Cluster mirrorMaker2Cluster, KafkaMirrorMaker2Status mirrorMaker2Status, String desiredLogging) {
         String host = KafkaMirrorMaker2Resources.qualifiedServiceName(mirrorMaker2Cluster.getCluster(), reconciliation.namespace());
-        KafkaConnectApi apiClient = getKafkaConnectApi();
+        KafkaConnectApi apiClient = connectClientProvider.apply(vertx);
         List<KafkaConnector> desiredConnectors = mirrorMaker2Cluster.connectors().generateConnectorDefinitions();
 
         return apiClient.list(reconciliation, host, KafkaConnectCluster.REST_API_PORT).compose(currentConnectors -> {
@@ -265,7 +266,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
         });
     }
 
-    private Future<Void> deleteConnectors(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, List<String> connectorsForDeletion) {
+    private static Future<Void> deleteConnectors(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, List<String> connectorsForDeletion) {
         return Future.join(connectorsForDeletion.stream()
                         .map(connectorName -> {
                             LOGGER.debugCr(reconciliation, "Deleting connector {}", connectorName);
@@ -330,6 +331,137 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
     }
 
     /**
+     * Deletes the ClusterRoleBinding which as a cluster-scoped resource cannot be deleted by the ownerReference
+     *
+     * @param reconciliation    The Reconciliation identification
+     * @return                  Future indicating the result of the deletion
+     */
+    @Override
+    protected Future<Boolean> delete(Reconciliation reconciliation) {
+        return ReconcilerUtils.withIgnoreRbacError(reconciliation, clusterRoleBindingOperations.reconcile(reconciliation, KafkaMirrorMaker2Resources.initContainerClusterRoleBindingName(reconciliation.name(), reconciliation.namespace()), null), null)
+                .map(Boolean.FALSE); // Return FALSE since other resources are still deleted by garbage collection
+    }
+
+    // Methods for working with connector restarts
+
+    /**
+     * Checks whether the provided KafkaMirrorMaker2 resource has the strimzi.io/restart-connector annotation, and
+     * whether it's value matches the supplied connectorName
+     *
+     * @param resource          KafkaMirrorMaker2 resource instance to check
+     * @param connectorName     Connector name of the MM2 connector to check
+     *
+     * @return  True if the provided resource instance has the strimzi.io/restart-connector annotation. False otherwise.
+     */
+    @SuppressWarnings({ "rawtypes" })
+    @Override
+    protected boolean hasRestartAnnotation(CustomResource resource, String connectorName) {
+        String restartAnnotationConnectorName = Annotations.stringAnnotation(resource, ANNO_STRIMZI_IO_RESTART_CONNECTOR, null);
+        return connectorName.equals(restartAnnotationConnectorName);
+    }
+
+    /**
+     * Return the ID of the connector task to be restarted if the provided resource instance has the strimzi.io/restart-connector-task annotation
+     *
+     * @param resource          KafkaMirrorMaker2 resource instance to check
+     * @param connectorName     Connector name of the MM2 connector to check
+     *
+     * @return  The ID of the task to be restarted if the provided KafkaMirrorMaker2 resource instance has the strimzi.io/restart-connector-task annotation or -1 otherwise.
+     */
+    @SuppressWarnings({ "rawtypes" })
+    @Override
+    protected int getRestartTaskAnnotationTaskID(CustomResource resource, String connectorName) {
+        int taskID = -1;
+        String connectorTask = Annotations.stringAnnotation(resource, ANNO_STRIMZI_IO_RESTART_CONNECTOR_TASK, "").trim();
+        Matcher connectorTaskMatcher = ANNO_STRIMZI_IO_RESTART_CONNECTOR_TASK_PATTERN.matcher(connectorTask);
+        if (connectorTaskMatcher.matches() && connectorTaskMatcher.group(ANNO_STRIMZI_IO_RESTART_CONNECTOR_TASK_PATTERN_CONNECTOR).equals(connectorName)) {
+            taskID = Integer.parseInt(connectorTaskMatcher.group(ANNO_STRIMZI_IO_RESTART_CONNECTOR_TASK_PATTERN_TASK));
+        }
+        return taskID;
+    }
+
+    /**
+     * Patches the custom resource to remove the restart annotation
+     *
+     * @param reconciliation    Reconciliation marker
+     * @param resource          KafkaMirrorMaker2 resource from which the annotation should be removed
+     *
+     * @return  Future that indicates the operation completion
+     */
+    @SuppressWarnings({ "rawtypes" })
+    @Override
+    protected Future<Void> removeRestartAnnotation(Reconciliation reconciliation, CustomResource resource) {
+        return removeAnnotation(reconciliation, (KafkaMirrorMaker2) resource, ANNO_STRIMZI_IO_RESTART_CONNECTOR);
+    }
+
+
+    /**
+     * Patches the custom resource to remove the restart task annotation
+     *
+     * @param reconciliation    Reconciliation marker
+     * @param resource          KafkaMirrorMaker2 resource from which the annotation should be removed
+     *
+     * @return  Future that indicates the operation completion
+     */
+    @SuppressWarnings({ "rawtypes" })
+    @Override
+    protected Future<Void> removeRestartTaskAnnotation(Reconciliation reconciliation, CustomResource resource) {
+        return removeAnnotation(reconciliation, (KafkaMirrorMaker2) resource, ANNO_STRIMZI_IO_RESTART_CONNECTOR_TASK);
+    }
+
+    /**
+     * Patches the KafkaMirrorMaker2 CR to remove the supplied annotation.
+     *
+     * @param reconciliation    Reconciliation marker
+     * @param resource          KafkaMirrorMaker2 resource from which the annotation should be removed
+     * @param annotationKey     Annotation that should be removed
+     *
+     * @return  Future that indicates the operation completion
+     */
+    private Future<Void> removeAnnotation(Reconciliation reconciliation, KafkaMirrorMaker2 resource, String annotationKey) {
+        LOGGER.debugCr(reconciliation, "Removing annotation {}", annotationKey);
+        KafkaMirrorMaker2 patchedKafkaMirrorMaker2 = new KafkaMirrorMaker2Builder(resource)
+                .editMetadata()
+                .removeFromAnnotations(annotationKey)
+                .endMetadata()
+                .build();
+        return resourceOperator.patchAsync(reconciliation, patchedKafkaMirrorMaker2)
+                .compose(ignored -> Future.succeededFuture());
+    }
+
+    /**
+     * Returns the previous auto-restart status with the information about the previous restarts (number of restarts and
+     * last restart timestamp). For Mirror Maker 2, this information is gathered from the KafkaMirrorMaker2 resource
+     * passed to this method.
+     *
+     * @param reconciliation    Reconciliation marker
+     * @param connectorName     Name of the connector for which the restart should be returned
+     * @param resource          The KafkaMirrorMaker2 custom resource that configures the connector
+     *
+     * @return  The previous auto-restart status
+     */
+    @SuppressWarnings({ "rawtypes" })
+    @Override
+    protected Future<AutoRestartStatus> previousAutoRestartStatus(Reconciliation reconciliation, String connectorName, CustomResource resource)  {
+        if (resource instanceof KafkaMirrorMaker2 kafkaMirrorMaker2)    {
+            if (kafkaMirrorMaker2.getStatus() != null
+                    && kafkaMirrorMaker2.getStatus().getAutoRestartStatuses() != null)    {
+                AutoRestartStatus ars = kafkaMirrorMaker2.getStatus().getAutoRestartStatuses().stream().filter(c -> connectorName.equals(c.getConnectorName())).findFirst().orElse(null);
+                return Future.succeededFuture(ars);
+            } else {
+                // The status does not exist yet or has no auto-restarts stored
+                return Future.succeededFuture(null);
+            }
+        } else {
+            // Something went wrong and we return null as the auto-restart status
+            LOGGER.warnCr(reconciliation, "The Kafka Mirror Maker 2 resource is missing or has a wrong type.", reconciliation.namespace(), reconciliation.name());
+            return Future.succeededFuture(null);
+        }
+    }
+
+    // Static utility methods and classes
+
+    /**
      * This comparator compares two maps where connectors' configurations are stored.
      * The comparison is done by using only one property - 'name'
      */
@@ -343,85 +475,5 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
             String name2 = m2.get("name") == null ? "" : m2.get("name").toString();
             return name1.compareTo(name2);
         }
-    }
-
-
-    /**
-     * Whether the provided resource has the strimzi.io/restart-connector annotation, and it's value matches the supplied connectorName
-     *
-     * @param resource resource instance to check
-     * @param connectorName connectorName name of the MM2 connector to check
-     * @return true if the provided resource instance has the strimzi.io/restart-connector annotation; false otherwise
-     */
-    @Override
-    @SuppressWarnings({ "rawtypes" })
-    protected boolean hasRestartAnnotation(CustomResource resource, String connectorName) {
-        String restartAnnotationConnectorName = Annotations.stringAnnotation(resource, ANNO_STRIMZI_IO_RESTART_CONNECTOR, null);
-        return connectorName.equals(restartAnnotationConnectorName);
-    }
-
-    /**
-     * Return the ID of the connector task to be restarted if the provided resource instance has the strimzi.io/restart-connector-task annotation
-     *
-     * @param resource resource instance to check
-     * @param connectorName connectorName name of the MM2 connector to check
-     * @return the ID of the task to be restarted if the provided KafkaConnector resource instance has the strimzi.io/restart-connector-task annotation or -1 otherwise.
-     */
-    @SuppressWarnings({ "rawtypes" })
-    protected int getRestartTaskAnnotationTaskID(CustomResource resource, String connectorName) {
-        int taskID = -1;
-        String connectorTask = Annotations.stringAnnotation(resource, ANNO_STRIMZI_IO_RESTART_CONNECTOR_TASK, "").trim();
-        Matcher connectorTaskMatcher = ANNO_STRIMZI_IO_RESTART_CONNECTOR_TASK_PATTERN.matcher(connectorTask);
-        if (connectorTaskMatcher.matches() && connectorTaskMatcher.group(ANNO_STRIMZI_IO_RESTART_CONNECTOR_TASK_PATTERN_CONNECTOR).equals(connectorName)) {
-            taskID = Integer.parseInt(connectorTaskMatcher.group(ANNO_STRIMZI_IO_RESTART_CONNECTOR_TASK_PATTERN_TASK));
-        }
-        return taskID;
-    }
-
-    /**
-     * Patches the KafkaMirrorMaker2 CR to remove the strimzi.io/restart-connector annotation, as
-     * the restart action specified by user has been completed.
-     */
-    @Override
-    @SuppressWarnings({ "rawtypes" })
-    protected Future<Void> removeRestartAnnotation(Reconciliation reconciliation, CustomResource resource) {
-        return removeAnnotation(reconciliation, (KafkaMirrorMaker2) resource, ANNO_STRIMZI_IO_RESTART_CONNECTOR);
-    }
-
-
-    /**
-     * Patches the KafkaMirrorMaker2 CR to remove the strimzi.io/restart-connector-task annotation, as
-     * the restart action specified by user has been completed.
-     */
-    @Override
-    @SuppressWarnings({ "rawtypes" })
-    protected Future<Void> removeRestartTaskAnnotation(Reconciliation reconciliation, CustomResource resource) {
-        return removeAnnotation(reconciliation, (KafkaMirrorMaker2) resource, ANNO_STRIMZI_IO_RESTART_CONNECTOR_TASK);
-    }
-
-    /**
-     * Patches the KafkaMirrorMaker2 CR to remove the supplied annotation
-     */
-    protected Future<Void> removeAnnotation(Reconciliation reconciliation, KafkaMirrorMaker2 resource, String annotationKey) {
-        LOGGER.debugCr(reconciliation, "Removing annotation {}", annotationKey);
-        KafkaMirrorMaker2 patchedKafkaMirrorMaker2 = new KafkaMirrorMaker2Builder(resource)
-            .editMetadata()
-            .removeFromAnnotations(annotationKey)
-            .endMetadata()
-            .build();
-        return resourceOperator.patchAsync(reconciliation, patchedKafkaMirrorMaker2)
-            .compose(ignored -> Future.succeededFuture());
-    }
-
-    /**
-     * Deletes the ClusterRoleBinding which as a cluster-scoped resource cannot be deleted by the ownerReference
-     *
-     * @param reconciliation    The Reconciliation identification
-     * @return                  Future indicating the result of the deletion
-     */
-    @Override
-    protected Future<Boolean> delete(Reconciliation reconciliation) {
-        return ReconcilerUtils.withIgnoreRbacError(reconciliation, clusterRoleBindingOperations.reconcile(reconciliation, KafkaMirrorMaker2Resources.initContainerClusterRoleBindingName(reconciliation.name(), reconciliation.namespace()), null), null)
-                .map(Boolean.FALSE); // Return FALSE since other resources are still deleted by garbage collection
     }
 }

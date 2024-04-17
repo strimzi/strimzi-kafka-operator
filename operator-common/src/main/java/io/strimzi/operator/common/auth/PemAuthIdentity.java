@@ -8,9 +8,18 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.operator.common.Util;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
+import java.security.KeyFactory;
+import java.security.KeyStore;
+import java.security.PrivateKey;
+import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.util.Base64;
 import java.util.Objects;
 
 /**
@@ -18,7 +27,10 @@ import java.util.Objects;
  * This consists of an X509 end-entity certificate, corresponding private key, and a (possibly empty) chain of X509 intermediate CA certificates, all in PEM format.
  */
 public class PemAuthIdentity {
-
+    /**
+     * Filename suffix for certificate chain as PEM
+     */
+    public static final String PEM_SUFFIX = "pem";
     private final byte[] privateKeyAsPemBytes;
     private final byte[] certificateChainAsPemBytes;
     private final String secretCertName;
@@ -65,22 +77,6 @@ public class PemAuthIdentity {
 
     /**
      * End-entity certificate and (possibly empty) chain of intermediate CA certificates for this authentication identity.
-     * This also validates that the certificate chain is a valid X509 certificate.
-     *
-     * @return The certificate chain for this authentication identity as a X509Certificate
-     */
-    public X509Certificate certificateChain() {
-        try {
-            final CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
-            return (X509Certificate) certificateFactory.generateCertificate(new ByteArrayInputStream(certificateChainAsPemBytes));
-        } catch (CertificateException e) {
-            throw new RuntimeException("Bad/corrupt certificate found in data." + secretCertName + ".crt of Secret "
-                    + secretName + " in namespace " + secretNamespace);
-        }
-    }
-
-    /**
-     * End-entity certificate and (possibly empty) chain of intermediate CA certificates for this authentication identity.
      *
      * @return The certificate chain for this authentication identity as a byte array
      */
@@ -113,5 +109,54 @@ public class PemAuthIdentity {
      */
     public String privateKeyAsPem() {
         return Util.fromAsciiBytes(privateKeyAsPemBytes);
+    }
+
+    /**
+     * KeyStore to use for TLS connections.
+     * @return KeyStore file in PEM format
+     */
+    public byte[] pemKeyStore() {
+        return (privateKeyAsPem() + certificateChainAsPem()).getBytes(StandardCharsets.US_ASCII);
+    }
+
+    /**
+     * KeyStore to use for TLS connections.
+     *
+     * @param password to use to secure the KeyStore
+     *
+     * @return KeyStore file in JKS format
+     * @throws GeneralSecurityException if something goes wrong when creating the truststore
+     * @throws IOException if there is an I/O or format problem with the data used to load the truststore.
+     */
+    public KeyStore jksKeyStore(char[] password) throws GeneralSecurityException, IOException {
+        String strippedPrivateKey = privateKeyAsPem()
+                .replace("-----BEGIN PRIVATE KEY-----", "")
+                .replaceAll(System.lineSeparator(), "")
+                .replace("-----END PRIVATE KEY-----", "");
+        byte[] decodedKey = Base64.getDecoder().decode(strippedPrivateKey);
+        PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(decodedKey);
+        final KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+        final PrivateKey key = keyFactory.generatePrivate(keySpec);
+
+        KeyStore coKeyStore = KeyStore.getInstance("JKS");
+        coKeyStore.load(null);
+        coKeyStore.setKeyEntry("cluster-operator", key, password, new Certificate[]{certificateChain()});
+        return coKeyStore;
+    }
+
+    /**
+     * End-entity certificate and (possibly empty) chain of intermediate CA certificates for this authentication identity.
+     * This also validates that the certificate chain is a valid X509 certificate.
+     *
+     * @return The certificate chain for this authentication identity as a X509Certificate
+     */
+    private X509Certificate certificateChain() {
+        try {
+            final CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
+            return (X509Certificate) certificateFactory.generateCertificate(new ByteArrayInputStream(certificateChainAsPemBytes));
+        } catch (CertificateException e) {
+            throw new RuntimeException("Bad/corrupt certificate found in data." + secretCertName + ".crt of Secret "
+                    + secretName + " in namespace " + secretNamespace);
+        }
     }
 }

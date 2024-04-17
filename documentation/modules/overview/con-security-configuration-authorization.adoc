@@ -18,7 +18,7 @@ Supported authorization mechanisms:
 * Open Policy Agent (OPA) authorization
 * Custom authorization
 
-Simple authorization uses the`AclAuthorizer` and `StandardAuthorizer` Kafka plugins,
+Simple authorization uses the `AclAuthorizer` and `StandardAuthorizer` Kafka plugins,
 which are responsible for managing Access Control Lists (ACLs) that specify user access to various resources.
 For custom authorization, you configure your own `Authorizer` plugin to enforce ACL rules. 
 

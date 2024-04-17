@@ -21,6 +21,7 @@ import io.strimzi.api.kafka.model.common.CertSecretSource;
 import io.strimzi.api.kafka.model.common.template.PodTemplate;
 import io.strimzi.api.kafka.model.kafka.EphemeralStorage;
 import io.strimzi.api.kafka.model.kafka.JbodStorage;
+import io.strimzi.api.kafka.model.kafka.KRaftMetadataStorage;
 import io.strimzi.api.kafka.model.kafka.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.kafka.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.kafka.Storage;
@@ -28,6 +29,7 @@ import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.InvalidResourceException;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -40,6 +42,12 @@ public class VolumeUtils {
      * Base name used to name data volumes
      */
     public static final String DATA_VOLUME_NAME = "data";
+
+    /**
+     * The path where the Kafka data volumes are mounted
+     */
+    private static final String KAFKA_DATA_VOLUME_MOUNT_PATH = "/var/lib/kafka";
+
     /*
      * Default values for the Strimzi temporary directory
      */
@@ -323,23 +331,22 @@ public class VolumeUtils {
      * {@code true}. When called from outside, it should be set to {@code false}.
      *
      * @param storage   The storage configuration
-     * @param mountPath Path into which the volume should be mounted
      * @param jbod      Indicator whether the {@code storage} is part of JBOD array or not
      *
      * @return          List with Persistent Volume Claims templates
      */
-    public static List<VolumeMount> createVolumeMounts(Storage storage, String mountPath, boolean jbod) {
+    public static List<VolumeMount> createVolumeMounts(Storage storage, boolean jbod) {
         List<VolumeMount> volumeMounts = new ArrayList<>();
 
         if (storage != null) {
             if (storage instanceof JbodStorage) {
                 for (SingleVolumeStorage volume : ((JbodStorage) storage).getVolumes()) {
                     // it's called recursively for setting the information from the current volume
-                    volumeMounts.addAll(createVolumeMounts(volume, mountPath, true));
+                    volumeMounts.addAll(createVolumeMounts(volume, true));
                 }
             } else if (storage instanceof SingleVolumeStorage) {
                 String name = createVolumePrefix(((SingleVolumeStorage) storage).getId(), jbod);
-                String namedMountPath = mountPath + "/" + name;
+                String namedMountPath = KAFKA_DATA_VOLUME_MOUNT_PATH + "/" + name;
                 volumeMounts.add(createVolumeMount(name, namedMountPath));
             }
         }
@@ -512,6 +519,37 @@ public class VolumeUtils {
         if (volumeMountList.stream().noneMatch(vm -> vm.getName().equals(volumeMountName))) {
             volumeMountList.add(createVolumeMount(volumeMountName,
                     tlsVolumeMountPath + certSecretSource.getSecretName()));
+        }
+    }
+
+    /**
+     * Creates the mount path of the volume where the KRaft metadata should be stored. This is either the volume marked
+     * for KRaft metadata or the volume with the lowest available ID. The actual metadata will be stored in a
+     * subdirectory of this volume. The exact name of the subdirectory depends on the node ID.
+     *
+     * @param storage       Storage configuration
+     *
+     * @return  Mount path of the volume where the KRaft metadata will be stored
+     */
+    protected static String kraftMetadataPath(Storage storage)  {
+        if (storage instanceof JbodStorage jbodStorage) {
+            SingleVolumeStorage kraftMetadataVolume = jbodStorage.getVolumes()
+                    .stream()
+                    .filter(v -> KRaftMetadataStorage.SHARED.equals(v.getKraftMetadata()))
+                    .findFirst()
+                    .orElse(jbodStorage.getVolumes().stream().min(Comparator.comparing(SingleVolumeStorage::getId)).orElse(null));
+
+            if (kraftMetadataVolume != null)    {
+                String name = createVolumePrefix(kraftMetadataVolume.getId(), true);
+                return KAFKA_DATA_VOLUME_MOUNT_PATH + "/" + name;
+            } else {
+                throw new InvalidResourceException("Cannot find any data volumes for storing KRaft metadata.");
+            }
+        } else if (storage instanceof SingleVolumeStorage singleVolumeStorage)  {
+            String name = createVolumePrefix(singleVolumeStorage.getId(), false);
+            return KAFKA_DATA_VOLUME_MOUNT_PATH + "/" + name;
+        } else {
+            throw new InvalidResourceException("Cannot find any data volumes for storing KRaft metadata.");
         }
     }
 }

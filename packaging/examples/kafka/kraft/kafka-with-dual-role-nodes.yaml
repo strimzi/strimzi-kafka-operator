@@ -16,6 +16,7 @@ spec:
         type: persistent-claim
         size: 100Gi
         deleteClaim: false
+        kraftMetadata: shared
 ---
 
 apiVersion: kafka.strimzi.io/v1beta2
