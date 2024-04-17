@@ -4,6 +4,9 @@
  */
 package io.strimzi.operator.topic;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.config.ConfigParameter;
@@ -18,6 +21,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import static com.fasterxml.jackson.core.JsonParser.Feature.ALLOW_COMMENTS;
 import static io.strimzi.operator.common.config.ConfigParameterParser.BOOLEAN;
 import static io.strimzi.operator.common.config.ConfigParameterParser.INTEGER;
 import static io.strimzi.operator.common.config.ConfigParameterParser.LABEL_PREDICATE;
@@ -42,6 +46,7 @@ import static io.strimzi.operator.common.config.ConfigParameterParser.strictlyPo
  * @param sslEndpointIdentificationAlgorithm The SSL endpoint identification algorithm
  * @param saslEnabled                   Whether the Admin client should be configured to use SASL
  * @param saslMechanism                 The SASL mechanism for the Admin client
+ * @param saslCustomConfigJson          The SASL custom values for the Admin client when using alternate auth mechanisms.
  * @param saslUsername,                 The SASL username for the Admin client
  * @param saslPassword,                 The SASL password for the Admin client
  * @param securityProtocol              The security protocol for the Admin client
@@ -59,6 +64,8 @@ import static io.strimzi.operator.common.config.ConfigParameterParser.strictlyPo
  * @param cruiseControlCrtFilePath      Certificate chain to be trusted
  * @param cruiseControlApiUserPath      Api admin username file path
  * @param cruiseControlApiPassPath      Api admin password file path
+ * @param alterableTopicConfig          Comma separated list of the alterable Kafka topic properties
+ * @param skipClusterConfigReview       For some managed Kafka services the Cluster config is not callable, so this skips those calls.
  */
 public record TopicOperatorConfig(
         String namespace,
@@ -74,6 +81,7 @@ public record TopicOperatorConfig(
         String sslEndpointIdentificationAlgorithm,
         boolean saslEnabled,
         String saslMechanism,
+        String saslCustomConfigJson,
         String saslUsername,
         String saslPassword,
         String securityProtocol,
@@ -90,11 +98,15 @@ public record TopicOperatorConfig(
         boolean cruiseControlAuthEnabled,
         String cruiseControlCrtFilePath,
         String cruiseControlApiUserPath,
-        String cruiseControlApiPassPath
+        String cruiseControlApiPassPath,
+        String alterableTopicConfig,
+        boolean skipClusterConfigReview
 ) {
     private final static ReconciliationLogger LOGGER = ReconciliationLogger.create(TopicOperatorConfig.class);
 
     private static final Map<String, ConfigParameter<?>> CONFIG_VALUES = new HashMap<>();
+
+    private static final TypeReference<HashMap<String, String>> STRING_HASH_MAP_TYPE_REFERENCE = new TypeReference<>() { };
 
     static final ConfigParameter<String> NAMESPACE = new ConfigParameter<>("STRIMZI_NAMESPACE", NON_EMPTY_STRING, CONFIG_VALUES);
     static final ConfigParameter<Labels> RESOURCE_LABELS = new ConfigParameter<>("STRIMZI_RESOURCE_LABELS", LABEL_PREDICATE, "", CONFIG_VALUES);
@@ -109,6 +121,7 @@ public record TopicOperatorConfig(
     static final ConfigParameter<String> SSL_ENDPOINT_IDENTIFICATION_ALGORITHM = new ConfigParameter<>("STRIMZI_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM", STRING, "HTTPS", CONFIG_VALUES);
     static final ConfigParameter<Boolean> SASL_ENABLED = new ConfigParameter<>("STRIMZI_SASL_ENABLED", BOOLEAN, "false", CONFIG_VALUES);
     static final ConfigParameter<String> SASL_MECHANISM = new ConfigParameter<>("STRIMZI_SASL_MECHANISM", STRING, "", CONFIG_VALUES);
+    static final ConfigParameter<String> SASL_CUSTOM_CONFIG_JSON = new ConfigParameter<>("STRIMZI_SASL_CUSTOM_CONFIG_JSON", STRING, "", CONFIG_VALUES);
     static final ConfigParameter<String> SASL_USERNAME = new ConfigParameter<>("STRIMZI_SASL_USERNAME", STRING, "", CONFIG_VALUES);
     static final ConfigParameter<String> SASL_PASSWORD = new ConfigParameter<>("STRIMZI_SASL_PASSWORD", STRING, "", CONFIG_VALUES);
     static final ConfigParameter<String> SECURITY_PROTOCOL = new ConfigParameter<>("STRIMZI_SECURITY_PROTOCOL", STRING, "", CONFIG_VALUES);
@@ -117,7 +130,9 @@ public record TopicOperatorConfig(
     static final ConfigParameter<Integer> MAX_BATCH_SIZE = new ConfigParameter<>("STRIMZI_MAX_BATCH_SIZE", strictlyPositive(INTEGER), "100", CONFIG_VALUES);
     static final ConfigParameter<Long> MAX_BATCH_LINGER_MS = new ConfigParameter<>("STRIMZI_MAX_BATCH_LINGER_MS", strictlyPositive(LONG), "100", CONFIG_VALUES);
     static final ConfigParameter<Boolean> ENABLE_ADDITIONAL_METRICS = new ConfigParameter<>("STRIMZI_ENABLE_ADDITIONAL_METRICS", BOOLEAN, "false", CONFIG_VALUES);
-    
+    static final ConfigParameter<String> ALTERABLE_TOPIC_CONFIG = new ConfigParameter<>("STRIMZI_ALTERABLE_TOPIC_CONFIG", STRING, "ALL", CONFIG_VALUES);
+    static final ConfigParameter<Boolean> SKIP_CLUSTER_CONFIG_REVIEW = new ConfigParameter<>("STRIMZI_SKIP_CLUSTER_CONFIG_REVIEW", BOOLEAN, "false", CONFIG_VALUES);
+
     // Cruise Control integration
     static final ConfigParameter<Boolean> CRUISE_CONTROL_ENABLED = new ConfigParameter<>("STRIMZI_CRUISE_CONTROL_ENABLED", BOOLEAN, "false", CONFIG_VALUES);
     static final ConfigParameter<Boolean> CRUISE_CONTROL_RACK_ENABLED = new ConfigParameter<>("STRIMZI_CRUISE_CONTROL_RACK_ENABLED", BOOLEAN, "false", CONFIG_VALUES);
@@ -173,6 +188,7 @@ public record TopicOperatorConfig(
                 get(map, SSL_ENDPOINT_IDENTIFICATION_ALGORITHM),
                 get(map, SASL_ENABLED),
                 get(map, SASL_MECHANISM),
+                get(map, SASL_CUSTOM_CONFIG_JSON),
                 get(map, SASL_USERNAME),
                 get(map, SASL_PASSWORD),
                 get(map, SECURITY_PROTOCOL),
@@ -189,7 +205,9 @@ public record TopicOperatorConfig(
                 get(map, CRUISE_CONTROL_AUTH_ENABLED),
                 get(map, CRUISE_CONTROL_CRT_FILE_PATH),
                 get(map, CRUISE_CONTROL_API_USER_PATH),
-                get(map, CRUISE_CONTROL_API_PASS_PATH)
+                get(map, CRUISE_CONTROL_API_PASS_PATH),
+                get(map, ALTERABLE_TOPIC_CONFIG),
+                get(map, SKIP_CLUSTER_CONFIG_REVIEW)
         );
     }
 
@@ -235,10 +253,55 @@ public record TopicOperatorConfig(
         if (this.saslEnabled()) {
             putSaslConfigs(kafkaClientProps);
         }
+
         return kafkaClientProps;
     }
 
     private void putSaslConfigs(Map<String, Object> kafkaClientProps) {
+        TopicOperatorConfig config = this;
+        String customSaslConfigJson = config.saslCustomConfigJson();
+
+        if (customSaslConfigJson.isBlank()) {
+            setStandardSaslConfigs(kafkaClientProps);
+        } else {
+            setCustomSaslConfigs(kafkaClientProps);
+        }
+    }
+
+    private void setCustomSaslConfigs(Map<String, Object> kafkaClientProps) {
+        TopicOperatorConfig config = this;
+        String customPropsString = config.saslCustomConfigJson();
+
+        if (customPropsString.isEmpty()) {
+            throw new InvalidConfigurationException("Custom SASL config properties are not set");
+        }
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.configure(ALLOW_COMMENTS, true);
+
+        try {
+            Map<String, String> customProperties = objectMapper.readValue(customPropsString, STRING_HASH_MAP_TYPE_REFERENCE);
+
+            if (customProperties.isEmpty()) {
+                throw new InvalidConfigurationException("SASL custom config properties empty");
+            }
+
+            for (var entry : customProperties.entrySet()) {
+                String key = entry.getKey();
+                String value = entry.getValue();
+
+                if (key == null || key.isBlank() || !key.startsWith("sasl.")) {
+                    throw new InvalidConfigurationException("SASL custom config properties not SASL properties. customProperty: '" + key + "' = '" + value + "'");
+                }
+
+                kafkaClientProps.put(key, value);
+            }
+        } catch (JsonProcessingException e) {
+            throw new InvalidConfigurationException("SASL custom config properties deserialize failed. customProperties: '" + customPropsString + "'");
+        }
+    }
+
+    private void setStandardSaslConfigs(Map<String, Object> kafkaClientProps) {
         TopicOperatorConfig config = this;
         String saslMechanism;
         String jaasConfig;
@@ -286,6 +349,9 @@ public record TopicOperatorConfig(
                 "\n\tsslEndpointIdentificationAlgorithm='" + sslEndpointIdentificationAlgorithm + '\'' +
                 "\n\tsaslEnabled=" + saslEnabled +
                 "\n\tsaslMechanism='" + saslMechanism + '\'' +
+                "\n\tsaslCustomConfigJson='" + (saslCustomConfigJson == null ? null : mask) + '\'' +
+                "\n\talterableTopicConfig='" + alterableTopicConfig + '\'' +
+                "\n\tskipClusterConfigReview='" + skipClusterConfigReview + '\'' +
                 "\n\tsaslUsername='" + saslUsername + '\'' +
                 "\n\tsaslPassword='" + mask + '\'' +
                 "\n\tsecurityProtocol='" + securityProtocol + '\'' +

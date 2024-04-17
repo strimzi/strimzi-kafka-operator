@@ -141,6 +141,69 @@ env:
 <3> The keystore contains the private key for mTLS authentication.
 <4> The password for accessing the keystore.
 
+. If you need to configure custom SASL authentication, you can define the necessary authentication properties using the `STRIMZI_SASL_CUSTOM_CONFIG_JSON` environment variable for the standalone operator.
+For example, this configuration may be used for accessing a Kafka cluster in a cloud provider with a custom login module like the link:https://github.com/aws/aws-msk-iam-auth[Amazon MSK Library for AWS Identity and Access Management^] (`aws-msk_iam-auth`).
++
+The property `STRIMZI_ALTERABLE_TOPIC_CONFIG` defaults to `ALL`, allowing all `.spec.config` properties to be set in the `KafkaTopic` resource.  
+If this setting is not suitable for a managed Kafka service, do as follows:
++
+--
+* If only a subset of properties is configurable, list them as comma-separated values.
+* If no  properties are to be configured, use `NONE`, which is equivalent to an empty property list.
+--
++
+NOTE:  Only Kafka configuration properties starting with `sasl.` can be set with the `STRIMZI_SASL_CUSTOM_CONFIG_JSON` environment variable.
++
+.Example custom SASL configuration
+[source,shell,subs=+quotes]
+----
+# ....
+env:
+  - name: STRIMZI_SASL_ENABLED
+    value: "true"
+  - name: STRIMZI_SECURITY_PROTOCOL
+    value: SASL_SSL
+  - name: STRIMZI_SKIP_CLUSTER_CONFIG_REVIEW # <1>
+    value: "true"
+  - name: STRIMZI_ALTERABLE_TOPIC_CONFIG # <2>
+    value: compression.type, max.message.bytes, message.timestamp.difference.max.ms, message.timestamp.type, retention.bytes, retention.ms
+  - name: STRIMZI_SASL_CUSTOM_CONFIG_JSON # <3>
+    value: |
+      {
+        "sasl.mechanism": "AWS_MSK_IAM",
+        "sasl.jaas.config": "software.amazon.msk.auth.iam.IAMLoginModule required;",
+        "sasl.client.callback.handler.class": "software.amazon.msk.auth.iam.IAMClientCallbackHandler"
+      }
+  - name: STRIMZI_PUBLIC_CA
+    value: "true"
+  - name: STRIMZI_TRUSTSTORE_LOCATION
+    value: /etc/pki/java/cacerts
+  - name: STRIMZI_TRUSTSTORE_PASSWORD
+    value: changeit
+  - name: STRIMZI_KAFKA_BOOTSTRAP_SERVERS
+    value: my-kafka-cluster-.kafka-serverless.us-east-1.amazonaws.com:9098
+# ...
+----
+<1> Disables cluster configuration lookup for managed Kafka services that don't allow topic configuration changes.
+<2> Defines the topic configuration properties that can be updated based on the limitations set by managed Kafka services.
+<3> Specifies the SASL properties to be set in JSON format. Only properties starting with `sasl.` are allowed.
++
+.Example Dockerfile with external jars
+[source,shell,subs=+quotes]
+----
+FROM strimzi/operator:latest
+
+USER root
+
+RUN mkdir -p ${STRIMZI_HOME}/external-libs
+RUN chmod +rx ${STRIMZI_HOME}/external-libs
+
+COPY ./aws-msk-iam-auth-and-dependencies/* ${STRIMZI_HOME}/external-libs/
+ENV JAVA_CLASSPATH=${STRIMZI_HOME}/external-libs/*
+
+USER 1001
+----
+
 . Apply the changes to the `Deployment` configuration to deploy the Topic Operator.
 
 . Check the status of the deployment:
