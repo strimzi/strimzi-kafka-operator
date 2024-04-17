@@ -193,3 +193,15 @@ finish:
   discover+:
     test:
       - kraft_upgrade
+
+/performance:
+  summary: Run performance test suite with kraft
+  provision:
+    hardware:
+      memory: ">= 30 GiB"
+      cpu:
+        processors: ">= 8"
+  discover+:
+    test:
+      - performance
+

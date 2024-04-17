@@ -79,6 +79,7 @@ public class Environment {
      * Directory for store logs collected during the tests.
      */
     private static final String TEST_LOG_DIR_ENV = "TEST_LOG_DIR";
+    private static final String PERFORMANCE_DIR_ENV = "PERFORMANCE_DIR";
     /**
      * Kafka version used in images during the system tests.
      */
@@ -186,6 +187,7 @@ public class Environment {
     public static final String STRIMZI_REGISTRY_DEFAULT = "quay.io";
     public static final String TEST_CLIENTS_ORG_DEFAULT = "strimzi-test-clients";
     private static final String TEST_LOG_DIR_DEFAULT = TestUtils.USER_PATH + "/../systemtest/target/logs/";
+    private static final String PERFORMANCE_DIR_DEFAULT = TestUtils.USER_PATH + "/../systemtest/target/performance/";
     private static final String STRIMZI_LOG_LEVEL_DEFAULT = "DEBUG";
     public static final String COMPONENTS_IMAGE_PULL_POLICY_ENV_DEFAULT = TestConstants.IF_NOT_PRESENT_IMAGE_PULL_POLICY;
     public static final String OPERATOR_IMAGE_PULL_POLICY_ENV_DEFAULT = TestConstants.ALWAYS_IMAGE_PULL_POLICY;
@@ -217,6 +219,7 @@ public class Environment {
     public static final String STRIMZI_TAG = getOrDefault(STRIMZI_TAG_ENV, STRIMZI_TAG_DEFAULT);
     public static final String STRIMZI_REGISTRY = getOrDefault(STRIMZI_REGISTRY_ENV, STRIMZI_REGISTRY_DEFAULT);
     public static final String TEST_LOG_DIR = getOrDefault(TEST_LOG_DIR_ENV, TEST_LOG_DIR_DEFAULT);
+    public static final String PERFORMANCE_DIR = getOrDefault(PERFORMANCE_DIR_ENV, PERFORMANCE_DIR_DEFAULT);
     public static final String ST_KAFKA_VERSION = getOrDefault(ST_KAFKA_VERSION_ENV, ST_KAFKA_VERSION_DEFAULT);
     public static final String CLIENTS_KAFKA_VERSION = getOrDefault(CLIENTS_KAFKA_VERSION_ENV, ST_CLIENTS_KAFKA_VERSION_DEFAULT);
     public static final String STRIMZI_LOG_LEVEL = getOrDefault(STRIMZI_LOG_LEVEL_ENV, STRIMZI_LOG_LEVEL_DEFAULT);

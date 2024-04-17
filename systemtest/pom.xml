@@ -392,5 +392,16 @@
                 </groups>
             </properties>
         </profile>
+
+        <profile>
+            <id>performance</id>
+            <properties>
+                <skipTests>false</skipTests>
+                <groups>
+                    performance
+                </groups>
+            </properties>
+        </profile>
+
     </profiles>
 </project>
