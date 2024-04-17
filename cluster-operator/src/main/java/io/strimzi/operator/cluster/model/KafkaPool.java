@@ -159,11 +159,12 @@ public class KafkaPool extends AbstractModel {
 
             StorageDiff diff = new StorageDiff(reconciliation, oldStorage, newStorage, idAssignment.current(), idAssignment.desired());
 
-            if (!diff.isEmpty() || diff.isTooManyKRaftMetadataVolumes()) {
+            if (diff.issuesDetected()) {
                 LOGGER.warnCr(reconciliation, "Only the following changes to Kafka storage are allowed: " +
                         "changing the deleteClaim flag, " +
-                        "changing the kraftMetadata flag (but only one one volume can be marked to store the KRaft metadata log at a time) " +
+                        "changing the kraftMetadata flag (but only one one volume can be marked to store the KRaft metadata log at a time), " +
                         "adding volumes to Jbod storage or removing volumes from Jbod storage, " +
+                        "each volume in Jbod storage should have an unique ID, " +
                         "changing overrides to nodes which do not exist yet, " +
                         "and increasing size of persistent claim volumes (depending on the volume type and used storage class).");
                 LOGGER.warnCr(reconciliation, "The desired Kafka storage configuration in the KafkaNodePool resource {}/{} contains changes which are not allowed. As a " +
