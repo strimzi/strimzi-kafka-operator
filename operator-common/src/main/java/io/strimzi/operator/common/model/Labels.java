@@ -167,8 +167,10 @@ public class Labels extends ResourceLabels {
             labels = labels.entrySet().stream()
                 .filter(entry -> !STRIMZI_LABELS_EXCLUSION_PATTERN.matcher(entry.getKey()).matches())
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+            return new Labels(labels);
         }
-        return new Labels(labels);
+        return EMPTY;
     }
 
     /**

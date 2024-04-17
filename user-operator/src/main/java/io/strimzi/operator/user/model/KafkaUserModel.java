@@ -395,7 +395,7 @@ public class KafkaUserModel {
                 .withNewMetadata()
                     .withName(getSecretName())
                     .withNamespace(namespace)
-                    .withLabels(Util.mergeLabelsOrAnnotations(labels, templateSecretLabels))
+                    .withLabels(labels)
                     .withAnnotations(Util.mergeLabelsOrAnnotations(null, templateSecretAnnotations))
                     .withOwnerReferences(createOwnerReference())
                 .endMetadata()
