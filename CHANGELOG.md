@@ -11,7 +11,6 @@
 * The `UnidirectionalTopicOperator` feature gate moves to GA stage and is permanently enabled without the possibility to disable it.
   If the topics whose names start with `strimzi-store-topic` and `strimzi-topic-operator` still exist, you can delete them.
 * Don't allow MirrorMaker2 mirrors with target set to something else than the connect cluster. 
-* Implement functionality to exclude KafkaUser Secret labels through regular expression filtering.
 
 ### Changes, deprecations and removals
 

@@ -9,7 +9,6 @@ import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
-import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
@@ -295,49 +294,72 @@ public class LabelsTest {
     }
 
     @Test
-    public void testFilterLabelsNoExclusions() {
-        Map<String, String> inputLabels = Map.of(
-            "someLabel", "someValue",
-            "anotherLabel", "anotherValue"
-        );
-        Labels result = Labels.filterLabels(inputLabels);
-        assertThat(result.toMap(), is(inputLabels));
-        assertThat(result.toMap().size(), is(inputLabels.size()));
+    public void testFromResourceWithNoLabels() {
+        HasMetadata resource = new MockResource(new ObjectMetaBuilder().build());
+        Labels labels = Labels.fromResource(resource);
+        assertThat(labels, is(Labels.EMPTY));
     }
 
     @Test
-    public void testFilterLabelsWithExclusions() {
-        Map<String, String> inputLabels = new HashMap<>();
-        inputLabels.put("someLabel", "someValue");
-        inputLabels.put("anotherLabel", "anotherValue");
-        inputLabels.put("app.kubernetes.io/managed-by", "strimzi");
-        inputLabels.put("kustomize.toolkit.fluxcd.io/name", "someName");
-
-        Labels result = Labels.filterLabels(inputLabels);
-        assertThat(result.toMap().keySet(), Matchers.containsInAnyOrder("someLabel", "anotherLabel"));
-        assertThat(result.toMap().size(), is(2));
+    public void testFromResourceWithValidLabels() {
+        Map<String, String> labelsMap = new HashMap<>();
+        labelsMap.put("app.kubernetes.io/name", "my-app");
+        labelsMap.put("app.kubernetes.io/part-of", "my-part");
+        HasMetadata resource = new MockResource(new ObjectMetaBuilder().withLabels(labelsMap).build());
+        Labels labels = Labels.fromResource(resource);
+        assertThat(labels.toMap(), is(Collections.singletonMap("app.kubernetes.io/part-of", "my-part")));
     }
 
     @Test
-    public void testFilterLabelsAllExcluded() {
-        Map<String, String> inputLabels = Map.of(
-            "app.kubernetes.io/managed-by", "strimzi",
-            "kustomize.toolkit.fluxcd.io/name", "someName"
-        );
-        Labels result = Labels.filterLabels(inputLabels);
-        assertThat(result.toMap(), is(Collections.emptyMap()));
+    public void testFromResourceWithExcludedLabelsOnly() {
+        Map<String, String> labelsMap = new HashMap<>();
+        labelsMap.put("app.kubernetes.io/managed-by", "strimzi");
+        labelsMap.put("kustomize.toolkit.fluxcd.io/name", "flux");
+        HasMetadata resource = new MockResource(new ObjectMetaBuilder().withLabels(labelsMap).build());
+        Labels labels = Labels.fromResource(resource);
+        assertThat(labels.toMap().isEmpty(), is(true));
     }
 
     @Test
-    public void testFilterLabelsEmptyInput() {
-        Map<String, String> inputLabels = new HashMap<>();
-        Labels result = Labels.filterLabels(inputLabels);
-        assertThat(result.toMap(), is(Collections.emptyMap()));
+    public void testFromResourceWithMixedLabels() {
+        Map<String, String> labelsMap = new HashMap<>();
+        labelsMap.put("app.kubernetes.io/name", "my-app");
+        labelsMap.put("app.kubernetes.io/managed-by", "strimzi");
+        labelsMap.put("bob-app/strimzi", "strimzi");
+        HasMetadata resource = new MockResource(new ObjectMetaBuilder().withLabels(labelsMap).build());
+        Labels labels = Labels.fromResource(resource);
+        assertThat(labels.toMap().keySet(), is(java.util.Collections.singleton("bob-app/strimzi")));
     }
 
     @Test
-    public void testFilterLabelsNullInput() {
-        Labels result = Labels.filterLabels(null);
-        assertThat(result.toMap(), is(Collections.emptyMap()));
+    public void testFromResourceWithInvalidStrimziLabels() {
+        Map<String, String> labelsMap = new HashMap<>();
+        labelsMap.put(Labels.STRIMZI_DOMAIN + "something", "value");
+        HasMetadata resource = new MockResource(new ObjectMetaBuilder().withLabels(labelsMap).build());
+        assertThrows(IllegalArgumentException.class, () -> Labels.fromResource(resource));
+    }
+
+    // MockResource class to simulate Kubernetes resources
+    private static class MockResource implements HasMetadata {
+        private ObjectMeta meta;
+
+        MockResource(ObjectMeta meta) {
+            this.meta = meta;
+        }
+
+        @Override
+        public ObjectMeta getMetadata() {
+            return meta;
+        }
+
+        @Override
+        public void setMetadata(ObjectMeta objectMeta) {
+            this.meta = objectMeta;
+        }
+
+        @Override
+        public void setApiVersion(String s) {
+            // NOP, there is no need for such action
+        }
     }
 }
