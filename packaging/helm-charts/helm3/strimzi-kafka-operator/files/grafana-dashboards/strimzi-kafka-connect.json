@@ -123,7 +123,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "7.3.7",
+      "pluginVersion": "7.4.5",
       "targets": [
         {
           "datasource": "${DS_PROMETHEUS}",
@@ -198,7 +198,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "7.3.7",
+      "pluginVersion": "7.4.5",
       "targets": [
         {
           "datasource": "${DS_PROMETHEUS}",
@@ -291,7 +291,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "7.3.7",
+      "pluginVersion": "7.4.5",
       "targets": [
         {
           "datasource": "${DS_PROMETHEUS}",
@@ -400,7 +400,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "7.3.7",
+      "pluginVersion": "7.4.5",
       "targets": [
         {
           "datasource": "${DS_PROMETHEUS}",
@@ -494,7 +494,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "7.3.7",
+      "pluginVersion": "7.4.5",
       "targets": [
         {
           "datasource": "${DS_PROMETHEUS}",
@@ -573,7 +573,7 @@
         "sizing": "auto",
         "valueMode": "color"
       },
-      "pluginVersion": "7.3.7",
+      "pluginVersion": "7.4.5",
       "targets": [
         {
           "datasource": "${DS_PROMETHEUS}",
@@ -665,7 +665,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "7.3.7",
+      "pluginVersion": "7.4.5",
       "targets": [
         {
           "datasource": "${DS_PROMETHEUS}",
@@ -724,7 +724,7 @@
         "sizing": "auto",
         "valueMode": "color"
       },
-      "pluginVersion": "7.3.7",
+      "pluginVersion": "7.4.5",
       "targets": [
         {
           "datasource": "${DS_PROMETHEUS}",
@@ -809,7 +809,7 @@
         "frameIndex": 1,
         "showHeader": true
       },
-      "pluginVersion": "7.3.7",
+      "pluginVersion": "7.4.5",
       "showHeader": true,
       "sort": {
         "col": 0,
@@ -1002,7 +1002,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "7.3.7",
+      "pluginVersion": "7.4.5",
       "targets": [
         {
           "datasource": "${DS_PROMETHEUS}",
@@ -1107,7 +1107,7 @@
           }
         ]
       },
-      "pluginVersion": "7.3.7",
+      "pluginVersion": "7.4.5",
       "targets": [
         {
           "datasource": "${DS_PROMETHEUS}",
@@ -1248,7 +1248,7 @@
           }
         ]
       },
-      "pluginVersion": "7.3.7",
+      "pluginVersion": "7.4.5",
       "targets": [
         {
           "datasource": "${DS_PROMETHEUS}",
@@ -1403,7 +1403,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "7.3.7",
+      "pluginVersion": "7.4.5",
       "targets": [
         {
           "datasource": "${DS_PROMETHEUS}",
@@ -1498,7 +1498,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "7.3.7",
+      "pluginVersion": "7.4.5",
       "targets": [
         {
           "datasource": "${DS_PROMETHEUS}",
@@ -1595,7 +1595,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "7.3.7",
+      "pluginVersion": "7.4.5",
       "targets": [
         {
           "datasource": "${DS_PROMETHEUS}",
@@ -1691,7 +1691,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "7.3.7",
+      "pluginVersion": "7.4.5",
       "targets": [
         {
           "datasource": "${DS_PROMETHEUS}",
