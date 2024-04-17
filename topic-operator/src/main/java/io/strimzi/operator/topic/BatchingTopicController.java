@@ -1187,7 +1187,7 @@ public class BatchingTopicController {
 
         if (reconcilableTopic != null && reconcilableTopic.kt() != null
               && hasConfig(reconcilableTopic.kt()) && alterableConfigs != null) {
-            if (alterableConfigs.equalsIgnoreCase("NONE")) {
+            if (alterableConfigs.equalsIgnoreCase("none")) {
                 reconcilableTopic.kt().getSpec().getConfig().forEach((key, value) -> readOnlyConfigs.add(key));
             } else if (!alterableConfigs.equalsIgnoreCase("ALL") && !alterableConfigs.isBlank()) {
                 var alterablePropertySet = Arrays.stream(alterableConfigs.replaceAll("\\s", "").split(","))
