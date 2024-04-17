@@ -113,7 +113,6 @@ public class KafkaMirrorMaker2AssemblyOperatorConnectorAutoRestartTest {
         when(mockConnectApi.status(any(), any(), anyInt(), eq("source->target.MirrorSourceConnector"))).thenReturn(Future.succeededFuture(status));
         when(mockConnectApi.statusWithBackOff(any(), any(), any(), anyInt(), eq("source->target.MirrorSourceConnector"))).thenReturn(Future.succeededFuture(status));
         when(mockConnectApi.getConnectorTopics(any(), any(), anyInt(), eq("source->target.MirrorSourceConnector"))).thenReturn(Future.succeededFuture(List.of()));
-        when(mockConnectApi.updateConnectLoggers(any(), any(), anyInt(), any(), any())).thenReturn(Future.succeededFuture(true));
         when(mockConnectApi.restart(any(), anyInt(), any(), anyBoolean(), anyBoolean())).thenReturn(Future.succeededFuture(Map.of("connector", Map.of("state", "RESTARTING"))));
 
         return mockConnectApi;
@@ -131,7 +130,7 @@ public class KafkaMirrorMaker2AssemblyOperatorConnectorAutoRestartTest {
 
         Checkpoint checkpoint = context.checkpoint();
 
-        op.reconcileConnectors(Reconciliation.DUMMY_RECONCILIATION, MM2, mirrorMaker2Cluster, kafkaMirrorMaker2Status, "")
+        op.reconcileConnectors(Reconciliation.DUMMY_RECONCILIATION, MM2, mirrorMaker2Cluster, kafkaMirrorMaker2Status)
                 .onComplete(context.succeeding(r -> context.verify(() -> {
                     assertThat(kafkaMirrorMaker2Status.getAutoRestartStatuses(), is(List.of()));
 
@@ -165,7 +164,7 @@ public class KafkaMirrorMaker2AssemblyOperatorConnectorAutoRestartTest {
 
         Checkpoint checkpoint = context.checkpoint();
 
-        op.reconcileConnectors(Reconciliation.DUMMY_RECONCILIATION, mm2, mirrorMaker2Cluster, kafkaMirrorMaker2Status, "")
+        op.reconcileConnectors(Reconciliation.DUMMY_RECONCILIATION, mm2, mirrorMaker2Cluster, kafkaMirrorMaker2Status)
                 .onComplete(context.succeeding(r -> context.verify(() -> {
                     assertThat(kafkaMirrorMaker2Status.getAutoRestartStatuses(), is(List.of()));
 
@@ -199,7 +198,7 @@ public class KafkaMirrorMaker2AssemblyOperatorConnectorAutoRestartTest {
 
         Checkpoint checkpoint = context.checkpoint();
 
-        op.reconcileConnectors(Reconciliation.DUMMY_RECONCILIATION, mm2, mirrorMaker2Cluster, kafkaMirrorMaker2Status, "")
+        op.reconcileConnectors(Reconciliation.DUMMY_RECONCILIATION, mm2, mirrorMaker2Cluster, kafkaMirrorMaker2Status)
                 .onComplete(context.succeeding(r -> context.verify(() -> {
                     assertThat(kafkaMirrorMaker2Status.getAutoRestartStatuses().size(), is(1));
                     assertThat(kafkaMirrorMaker2Status.getAutoRestartStatuses().get(0).getConnectorName(), is("source->target.MirrorSourceConnector"));
@@ -243,7 +242,7 @@ public class KafkaMirrorMaker2AssemblyOperatorConnectorAutoRestartTest {
 
         Checkpoint checkpoint = context.checkpoint();
 
-        op.reconcileConnectors(Reconciliation.DUMMY_RECONCILIATION, mm2, mirrorMaker2Cluster, kafkaMirrorMaker2Status, "")
+        op.reconcileConnectors(Reconciliation.DUMMY_RECONCILIATION, mm2, mirrorMaker2Cluster, kafkaMirrorMaker2Status)
                 .onComplete(context.succeeding(r -> context.verify(() -> {
                     assertThat(kafkaMirrorMaker2Status.getAutoRestartStatuses().size(), is(1));
                     assertThat(kafkaMirrorMaker2Status.getAutoRestartStatuses().get(0).getConnectorName(), is("source->target.MirrorSourceConnector"));
@@ -288,7 +287,7 @@ public class KafkaMirrorMaker2AssemblyOperatorConnectorAutoRestartTest {
 
         Checkpoint checkpoint = context.checkpoint();
 
-        op.reconcileConnectors(Reconciliation.DUMMY_RECONCILIATION, mm2, mirrorMaker2Cluster, kafkaMirrorMaker2Status, "")
+        op.reconcileConnectors(Reconciliation.DUMMY_RECONCILIATION, mm2, mirrorMaker2Cluster, kafkaMirrorMaker2Status)
                 // This is failing because the connector is failing and was not restarted
                 .onComplete(context.failing(r -> context.verify(() -> {
                     assertThat(kafkaMirrorMaker2Status.getAutoRestartStatuses().size(), is(1));
@@ -333,7 +332,7 @@ public class KafkaMirrorMaker2AssemblyOperatorConnectorAutoRestartTest {
 
         Checkpoint checkpoint = context.checkpoint();
 
-        op.reconcileConnectors(Reconciliation.DUMMY_RECONCILIATION, mm2, mirrorMaker2Cluster, kafkaMirrorMaker2Status, "")
+        op.reconcileConnectors(Reconciliation.DUMMY_RECONCILIATION, mm2, mirrorMaker2Cluster, kafkaMirrorMaker2Status)
                 .onComplete(context.succeeding(r -> context.verify(() -> {
                     assertThat(kafkaMirrorMaker2Status.getAutoRestartStatuses().size(), is(0));
 
@@ -374,7 +373,7 @@ public class KafkaMirrorMaker2AssemblyOperatorConnectorAutoRestartTest {
 
         Checkpoint checkpoint = context.checkpoint();
 
-        op.reconcileConnectors(Reconciliation.DUMMY_RECONCILIATION, mm2, mirrorMaker2Cluster, kafkaMirrorMaker2Status, "")
+        op.reconcileConnectors(Reconciliation.DUMMY_RECONCILIATION, mm2, mirrorMaker2Cluster, kafkaMirrorMaker2Status)
                 .onComplete(context.succeeding(r -> context.verify(() -> {
                     assertThat(kafkaMirrorMaker2Status.getAutoRestartStatuses().size(), is(1));
                     assertThat(kafkaMirrorMaker2Status.getAutoRestartStatuses().get(0).getConnectorName(), is("source->target.MirrorSourceConnector"));

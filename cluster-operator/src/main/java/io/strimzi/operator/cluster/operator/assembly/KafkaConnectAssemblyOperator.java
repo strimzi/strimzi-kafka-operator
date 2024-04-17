@@ -18,7 +18,6 @@ import io.netty.channel.ConnectTimeoutException;
 import io.strimzi.api.kafka.model.common.CertSecretSource;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthentication;
-import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
 import io.strimzi.api.kafka.model.connect.KafkaConnect;
 import io.strimzi.api.kafka.model.connect.KafkaConnectList;
 import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
@@ -47,7 +46,6 @@ import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.NamespaceAndName;
-import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.operator.common.model.StatusDiff;
 import io.strimzi.operator.common.model.StatusUtils;
 import io.vertx.core.AsyncResult;
@@ -159,6 +157,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
         Map<String, String> controllerAnnotations = new HashMap<>();
 
         final boolean hasZeroReplicas = connect.getReplicas() == 0;
+        final boolean useConnectorResources = isUseResources(kafkaConnect);
         final AtomicReference<String> image = new AtomicReference<>();
         final AtomicReference<String> desiredLogging = new AtomicReference<>();
         final AtomicReference<Deployment> deployment = new AtomicReference<>();
@@ -215,7 +214,9 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                         )
                         .migrateFromDeploymentToStrimziPodSets(deployment.get(), podSet.get()))
                 .compose(i -> reconcilePodSet(reconciliation, connect, podAnnotations, controllerAnnotations, image.get()))
-                .compose(i -> reconcileConnectors(reconciliation, kafkaConnect, kafkaConnectStatus, hasZeroReplicas, desiredLogging.get(), connect.defaultLogConfig()))
+                .compose(i -> useConnectorResources && !hasZeroReplicas ? reconcileConnectLoggers(reconciliation, KafkaConnectResources.qualifiedServiceName(reconciliation.name(), namespace), desiredLogging.get(), connect.defaultLogConfig()) : Future.succeededFuture())
+                .compose(i -> useConnectorResources && !hasZeroReplicas ? reconcileAvailableConnectorPlugins(reconciliation, KafkaConnectResources.qualifiedServiceName(reconciliation.name(), namespace), kafkaConnectStatus) : Future.succeededFuture())
+                .compose(i -> useConnectorResources ? reconcileConnectors(reconciliation, kafkaConnect, hasZeroReplicas) : Future.succeededFuture())
                 .onComplete(reconciliationResult -> {
                     StatusUtils.setStatusConditionAndObservedGeneration(kafkaConnect, kafkaConnectStatus, reconciliationResult.cause());
 
@@ -342,22 +343,36 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
     }
 
     /**
+     * Gets the list of available connector plugins from the Connect REST API
+     *
+     * @param reconciliation    Reconciliation marker
+     * @param host              Kafka Connect REST API host
+     * @param connectStatus     Status of the KafkaConnect custom resource (will be used to set the available connector plugins)
+     *
+     * @return  Future that succeeds once the list of connector plugins from the Connect REST API is obtained and stored in the status.
+     */
+    private Future<Void> reconcileAvailableConnectorPlugins(Reconciliation reconciliation, String host, KafkaConnectStatus connectStatus)  {
+        KafkaConnectApi apiClient = connectClientProvider.apply(vertx);
+        return apiClient.listConnectorPlugins(reconciliation, host, port)
+                .compose(connectorPlugins -> {
+                    LOGGER.debugCr(reconciliation, "Setting list of connector plugins in Kafka Connect status");
+                    connectStatus.setConnectorPlugins(connectorPlugins);
+                    return Future.succeededFuture();
+                });
+    }
+
+    /**
      * Reconcile all the connectors selected by the given connect instance, updated each connectors status with the result.
-     * @param reconciliation The reconciliation
-     * @param connect The connector
-     * @param connectStatus Status of the KafkaConnect  resource (will be used to set the available
-     *                      connector plugins)
-     * @param scaledToZero  Indicated whether the related Connect cluster is currently scaled to 0 replicas
+     *
+     * @param reconciliation    Reconciliation marker
+     * @param connect           KafkaConnect custom resource
+     * @param scaledToZero      Indicated whether the related Connect cluster is currently scaled to 0 replicas
+     *
      * @return A future, failed if any of the connectors' statuses could not be updated.
      */
-    private Future<Void> reconcileConnectors(Reconciliation reconciliation, KafkaConnect connect, KafkaConnectStatus connectStatus, boolean scaledToZero, String desiredLogging, OrderedProperties defaultLogging) {
+    private Future<Void> reconcileConnectors(Reconciliation reconciliation, KafkaConnect connect, boolean scaledToZero) {
         String connectName = connect.getMetadata().getName();
         String namespace = connect.getMetadata().getNamespace();
-        String host = KafkaConnectResources.qualifiedServiceName(connectName, namespace);
-
-        if (!isUseResources(connect))    {
-            return Future.succeededFuture();
-        }
 
         if (scaledToZero)   {
             return connectorOperator.listAsync(namespace, new LabelSelectorBuilder().addToMatchLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName).build())
@@ -367,52 +382,47 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                             : maybeUpdateConnectorStatus(reconciliation, connector, null, zeroReplicas(namespace, connectName)))
                         .collect(Collectors.toList())
                 )).map((Void) null);
+        } else {
+            String host = KafkaConnectResources.qualifiedServiceName(connectName, namespace);
+            KafkaConnectApi apiClient = connectClientProvider.apply(vertx);
+
+            return Future.join(
+                    apiClient.list(reconciliation, host, port),
+                    connectorOperator.listAsync(namespace, new LabelSelectorBuilder().addToMatchLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName).build())
+            ).compose(cf -> {
+                List<String> runningConnectorNames = cf.resultAt(0);
+                List<KafkaConnector> desiredConnectors = cf.resultAt(1);
+
+                Set<String> deleteConnectorNames = new HashSet<>(runningConnectorNames);
+                deleteConnectorNames.removeAll(desiredConnectors.stream().map(c -> c.getMetadata().getName()).collect(Collectors.toSet()));
+                LOGGER.debugCr(reconciliation, "{} cluster: delete connectors: {}", kind(), deleteConnectorNames);
+                Stream<Future<Void>> deletionFutures = deleteConnectorNames.stream().map(connectorName ->
+                        reconcileConnectorAndHandleResult(reconciliation, host, apiClient, true, connectorName, null)
+                );
+
+                LOGGER.debugCr(reconciliation, "{} cluster: required connectors: {}", kind(), desiredConnectors);
+                Stream<Future<Void>> createUpdateFutures = desiredConnectors.stream()
+                        .map(connector -> reconcileConnectorAndHandleResult(reconciliation, host, apiClient, true, connector.getMetadata().getName(), connector));
+
+                return Future.join(Stream.concat(deletionFutures, createUpdateFutures).collect(Collectors.toList())).map((Void) null);
+            }).recover(error -> {
+                if (error instanceof ConnectTimeoutException) {
+                    Promise<Void> connectorStatuses = Promise.promise();
+                    LOGGER.warnCr(reconciliation, "Failed to connect to the REST API => trying to update the connector status");
+
+                    connectorOperator.listAsync(namespace, new LabelSelectorBuilder().addToMatchLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName).build())
+                            .compose(connectors -> Future.join(
+                                    connectors.stream().map(connector -> maybeUpdateConnectorStatus(reconciliation, connector, null, error))
+                                            .collect(Collectors.toList())
+                            ))
+                            .onComplete(ignore -> connectorStatuses.fail(error));
+
+                    return connectorStatuses.future();
+                } else {
+                    return Future.failedFuture(error);
+                }
+            });
         }
-
-        KafkaConnectApi apiClient = connectClientProvider.apply(vertx);
-
-        return Future.join(
-                apiClient.list(reconciliation, host, port),
-                connectorOperator.listAsync(namespace, new LabelSelectorBuilder().addToMatchLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName).build()),
-                apiClient.listConnectorPlugins(reconciliation, host, port),
-                apiClient.updateConnectLoggers(reconciliation, host, port, desiredLogging, defaultLogging)
-        ).compose(cf -> {
-            List<String> runningConnectorNames = cf.resultAt(0);
-            List<KafkaConnector> desiredConnectors = cf.resultAt(1);
-            List<ConnectorPlugin> connectorPlugins = cf.resultAt(2);
-
-            LOGGER.debugCr(reconciliation, "Setting list of connector plugins in Kafka Connect status");
-            connectStatus.setConnectorPlugins(connectorPlugins);
-
-            Set<String> deleteConnectorNames = new HashSet<>(runningConnectorNames);
-            deleteConnectorNames.removeAll(desiredConnectors.stream().map(c -> c.getMetadata().getName()).collect(Collectors.toSet()));
-            LOGGER.debugCr(reconciliation, "{} cluster: delete connectors: {}", kind(), deleteConnectorNames);
-            Stream<Future<Void>> deletionFutures = deleteConnectorNames.stream().map(connectorName ->
-                    reconcileConnectorAndHandleResult(reconciliation, host, apiClient, true, connectorName, null)
-            );
-
-            LOGGER.debugCr(reconciliation, "{} cluster: required connectors: {}", kind(), desiredConnectors);
-            Stream<Future<Void>> createUpdateFutures = desiredConnectors.stream()
-                    .map(connector -> reconcileConnectorAndHandleResult(reconciliation, host, apiClient, true, connector.getMetadata().getName(), connector));
-
-            return Future.join(Stream.concat(deletionFutures, createUpdateFutures).collect(Collectors.toList())).map((Void) null);
-        }).recover(error -> {
-            if (error instanceof ConnectTimeoutException) {
-                Promise<Void> connectorStatuses = Promise.promise();
-                LOGGER.warnCr(reconciliation, "Failed to connect to the REST API => trying to update the connector status");
-
-                connectorOperator.listAsync(namespace, new LabelSelectorBuilder().addToMatchLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName).build())
-                        .compose(connectors -> Future.join(
-                                connectors.stream().map(connector -> maybeUpdateConnectorStatus(reconciliation, connector, null, error))
-                                        .collect(Collectors.toList())
-                        ))
-                        .onComplete(ignore -> connectorStatuses.fail(error));
-
-                return connectorStatuses.future();
-            } else {
-                return Future.failedFuture(error);
-            }
-        });
     }
 
     /*test*/ Future<Void> reconcileConnectorAndHandleResult(Reconciliation reconciliation, String host, KafkaConnectApi apiClient,

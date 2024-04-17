@@ -160,7 +160,8 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                         )
                         .migrateFromDeploymentToStrimziPodSets(deployment.get(), podSet.get()))
                 .compose(i -> reconcilePodSet(reconciliation, mirrorMaker2Cluster, podAnnotations))
-                .compose(i -> hasZeroReplicas ? Future.succeededFuture() : reconcileConnectors(reconciliation, kafkaMirrorMaker2, mirrorMaker2Cluster, kafkaMirrorMaker2Status, desiredLogging.get()))
+                .compose(i -> hasZeroReplicas ? Future.succeededFuture() : reconcileConnectLoggers(reconciliation, KafkaMirrorMaker2Resources.qualifiedServiceName(reconciliation.name(), namespace), desiredLogging.get(), mirrorMaker2Cluster.defaultLogConfig()))
+                .compose(i -> hasZeroReplicas ? Future.succeededFuture() : reconcileConnectors(reconciliation, kafkaMirrorMaker2, mirrorMaker2Cluster, kafkaMirrorMaker2Status))
                 .map((Void) null)
                 .onComplete(reconciliationResult -> {
                     List<Condition> conditions = kafkaMirrorMaker2Status.getConditions();
@@ -247,11 +248,15 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
 
     /**
      * Reconcile all the MirrorMaker 2 connectors selected by the given MirrorMaker 2 instance.
-     * @param reconciliation The reconciliation
-     * @param kafkaMirrorMaker2 The MirrorMaker 2
+     *
+     * @param reconciliation        Reconciliation marker
+     * @param kafkaMirrorMaker2     KafkaMirrorMaker2 custom resource
+     * @param mirrorMaker2Cluster   The Mirror Maker 2 model class
+     * @param mirrorMaker2Status    The status of the Mirror Maker 2 custom resource that will store the connector states
+     *
      * @return A future, failed if any of the connectors could not be reconciled.
      */
-    /* test */ Future<Void> reconcileConnectors(Reconciliation reconciliation, KafkaMirrorMaker2 kafkaMirrorMaker2, KafkaMirrorMaker2Cluster mirrorMaker2Cluster, KafkaMirrorMaker2Status mirrorMaker2Status, String desiredLogging) {
+    /* test */ Future<Void> reconcileConnectors(Reconciliation reconciliation, KafkaMirrorMaker2 kafkaMirrorMaker2, KafkaMirrorMaker2Cluster mirrorMaker2Cluster, KafkaMirrorMaker2Status mirrorMaker2Status) {
         String host = KafkaMirrorMaker2Resources.qualifiedServiceName(mirrorMaker2Cluster.getCluster(), reconciliation.namespace());
         KafkaConnectApi apiClient = connectClientProvider.apply(vertx);
         List<KafkaConnector> desiredConnectors = mirrorMaker2Cluster.connectors().generateConnectorDefinitions();
@@ -260,7 +265,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
             currentConnectors.removeAll(desiredConnectors.stream().map(c -> c.getMetadata().getName()).collect(Collectors.toSet()));
 
             Future<Void> deletionFuture = deleteConnectors(reconciliation, host, apiClient, currentConnectors);
-            Future<Void> createOrUpdateFuture = reconcileConnectors(reconciliation, host, apiClient, kafkaMirrorMaker2, mirrorMaker2Cluster, desiredConnectors, mirrorMaker2Status, desiredLogging);
+            Future<Void> createOrUpdateFuture = reconcileConnectors(reconciliation, host, apiClient, kafkaMirrorMaker2, desiredConnectors, mirrorMaker2Status);
 
             return Future.join(deletionFuture, createOrUpdateFuture).map((Void) null);
         });
@@ -276,15 +281,13 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                 .map((Void) null);
     }
 
-    private Future<Void> reconcileConnectors(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, KafkaMirrorMaker2 mirrorMaker2, KafkaMirrorMaker2Cluster mirrorMaker2Cluster, List<KafkaConnector> connectors, KafkaMirrorMaker2Status mirrorMaker2Status, String desiredLogging) {
+    private Future<Void> reconcileConnectors(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, KafkaMirrorMaker2 mirrorMaker2, List<KafkaConnector> connectors, KafkaMirrorMaker2Status mirrorMaker2Status) {
         return Future.join(connectors.stream()
                         .map(connector -> {
                             LOGGER.debugCr(reconciliation, "Creating / updating connector {}", connector.getMetadata().getName());
                             return reconcileMirrorMaker2Connector(reconciliation, mirrorMaker2, apiClient, host, connector.getMetadata().getName(), connector.getSpec(), mirrorMaker2Status);
                         })
                         .collect(Collectors.toList()))
-                .map((Void) null)
-                .compose(i -> apiClient.updateConnectLoggers(reconciliation, host, KafkaConnectCluster.REST_API_PORT, desiredLogging, mirrorMaker2Cluster.defaultLogConfig()))
                 .compose(i -> {
                     boolean failedConnector = mirrorMaker2Status.getConnectors().stream()
                             .anyMatch(connector -> {
@@ -453,7 +456,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                 return Future.succeededFuture(null);
             }
         } else {
-            // Something went wrong and we return null as the auto-restart status
+            // Something went wrong, and we return null as the auto-restart status
             LOGGER.warnCr(reconciliation, "The Kafka Mirror Maker 2 resource is missing or has a wrong type.", reconciliation.namespace(), reconciliation.name());
             return Future.succeededFuture(null);
         }
