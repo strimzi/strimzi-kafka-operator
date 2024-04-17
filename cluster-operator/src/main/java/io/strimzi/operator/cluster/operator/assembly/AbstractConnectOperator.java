@@ -250,7 +250,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         KafkaConnectApi apiClient = connectClientProvider.apply(vertx);
         return apiClient.updateConnectLoggers(reconciliation, host, port, desiredLogging, defaultLogging)
                 .compose(updated -> {
-                    if (updated)    {
+                    if (Boolean.TRUE.equals(updated))    {
                         LOGGER.infoCr(reconciliation, "Logging configuration was updated");
                     }
 
