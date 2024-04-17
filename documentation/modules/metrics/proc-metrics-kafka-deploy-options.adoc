@@ -151,7 +151,7 @@ spec:
 <3> A regular expression to specify the topics to include in the metrics.
 <4> A regular expression to specify the consumer groups to exclude in the metrics.
 <5> A regular expression to specify the topics to exclude in the metrics.
-<6> By default, metrics are collected for all consumers regardless of their connection status. Setting `showAllOffsets` to `false` stops collecting metrics on disconnected consumers, preventing potentially misleading metrics from persisting and impairing the ability to detect lag in active consumers.
+<6> By default, metrics are collected for all consumers regardless of their connection status. Setting `showAllOffsets` to `false` stops collecting metrics on disconnected consumers.
 <7> CPU and memory resources to reserve.
 <8> Logging configuration, to log messages with a given severity (debug, info, warn, error, fatal) or above.
 <9> Boolean to enable Sarama logging, a Go client library used by Kafka Exporter.
