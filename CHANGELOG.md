@@ -13,6 +13,7 @@
   If the topics whose names start with `strimzi-store-topic` and `strimzi-topic-operator` still exist, you can delete them.
 * Don't allow MirrorMaker2 mirrors with target set to something else than the connect cluster. 
 * Added support for custom SASL config in standalone Topic Operator deployment to support alternate access controllers (i.e. `AWS_MSK_IAM`)
+* Remove Angular dependent plugins from Grafana example dashboard. This makes our dashboard compatible with Grafana 7.4.5 and higher.
 
 ### Changes, deprecations and removals
 
