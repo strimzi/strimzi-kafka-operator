@@ -387,15 +387,11 @@ public class KafkaUserModel {
      * @return The secret.
      */
     protected Secret createSecret(Map<String, String> data) {
-        Map<String, String> labels = this.labels.toMap();
-
-        labels = Labels.filterLabels(Util.mergeLabelsOrAnnotations(labels, templateSecretLabels)).toMap();
-
         return new SecretBuilder()
                 .withNewMetadata()
                     .withName(getSecretName())
                     .withNamespace(namespace)
-                    .withLabels(labels)
+                    .withLabels(Util.mergeLabelsOrAnnotations(labels.toMap(), templateSecretAnnotations))
                     .withAnnotations(Util.mergeLabelsOrAnnotations(null, templateSecretAnnotations))
                     .withOwnerReferences(createOwnerReference())
                 .endMetadata()
@@ -675,4 +671,5 @@ public class KafkaUserModel {
     public String getSaslJsonConfig() {
         return getSaslJsonConfig(getScramUserName(name), scramSha512Password);
     }
+
 }
