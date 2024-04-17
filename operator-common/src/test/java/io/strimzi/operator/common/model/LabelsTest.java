@@ -4,13 +4,18 @@
  */
 package io.strimzi.operator.common.model;
 
+import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import org.junit.jupiter.api.Test;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -204,6 +209,42 @@ public class LabelsTest {
 
         Labels l = Labels.fromResource(kafka);
         assertThat(l.toMap(), is(expectedLabels));
+    }
+    @Test
+    public void testFromResourceWithValidLabelsSecret() {
+        Map<String, String> labelsMap = new HashMap<>();
+        labelsMap.put(Labels.KUBERNETES_PART_OF_LABEL, "my-app");
+        Secret secret = new SecretBuilder().withNewMetadata().withLabels(labelsMap).endMetadata().build();
+        Labels labels = Labels.fromResource(secret);
+        assertThat(labels.toMap(), is(labelsMap));
+    }
+
+    @Test
+    public void testFromResourceWithExcludedLabelsConfigMap() {
+        Map<String, String> labelsMap = new HashMap<>();
+        labelsMap.put("app.kubernetes.io/managed-by", "strimzi");
+        ConfigMap configMap = new ConfigMapBuilder().withNewMetadata().withLabels(labelsMap).endMetadata().build();
+        Labels labels = Labels.fromResource(configMap);
+        assertThat(labels.toMap().isEmpty(), is(true));
+    }
+
+    @Test
+    public void testFromResourceWithMixedLabelsConfigMap() {
+        Map<String, String> labelsMap = new HashMap<>();
+        labelsMap.put("app.kubernetes.io/name", "my-app");
+        labelsMap.put("app.kubernetes.io/managed-by", "strimzi");
+        labelsMap.put("bob-app/strimzi", "strimzi");
+        ConfigMap configMap = new ConfigMapBuilder().withNewMetadata().withLabels(labelsMap).endMetadata().build();
+        Labels labels = Labels.fromResource(configMap);
+        assertThat(labels.toMap(), is(Collections.singletonMap("bob-app/strimzi", "strimzi")));
+    }
+
+    @Test
+    public void testFromResourceWithInvalidStrimziLabelsSecret() {
+        Map<String, String> labelsMap = new HashMap<>();
+        labelsMap.put(Labels.STRIMZI_DOMAIN + "something", "value");
+        Secret secret = new SecretBuilder().withNewMetadata().withLabels(labelsMap).endMetadata().build();
+        assertThrows(IllegalArgumentException.class, () -> Labels.fromResource(secret));
     }
 
     @Test
