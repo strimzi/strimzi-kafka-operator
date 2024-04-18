@@ -11,4 +11,6 @@ import lombok.ToString;
  * A {@code DefaultKubernetesResourceList<KafkaConnector>} required for using Fabric8 CRD support.
  */
 @ToString(callSuper = true)
-public class KafkaConnectorList extends DefaultKubernetesResourceList<KafkaConnector> { }
+public class KafkaConnectorList extends DefaultKubernetesResourceList<KafkaConnector> {
+    private static final long serialVersionUID = 1L;
+}

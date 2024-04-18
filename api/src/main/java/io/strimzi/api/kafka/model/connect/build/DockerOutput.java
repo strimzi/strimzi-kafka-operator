@@ -33,7 +33,6 @@ public class DockerOutput extends Output {
             "--skip-tls-verify, --skip-tls-verify-pull, --skip-tls-verify-registry, --verbosity, --snapshotMode, " +
             "--use-new-run";
 
-    private String image;
     private String pushSecret;
     private List<String> additionalKanikoOptions;
 

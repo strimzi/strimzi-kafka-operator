@@ -92,6 +92,7 @@ import static java.util.Collections.emptyMap;
 @Deprecated
 @DeprecatedType(replacedWithType = KafkaMirrorMaker2.class)
 public class KafkaMirrorMaker extends CustomResource<KafkaMirrorMakerSpec, KafkaMirrorMakerStatus> implements Namespaced, UnknownPropertyPreserving {
+    private static final long serialVersionUID = 1L;
 
     public static final String SCOPE = "Namespaced";
     public static final String V1ALPHA1 = Constants.V1ALPHA1;

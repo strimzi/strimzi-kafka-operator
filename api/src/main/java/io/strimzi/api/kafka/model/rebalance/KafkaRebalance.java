@@ -96,6 +96,7 @@ import java.util.function.Predicate;
 @Version(Constants.V1BETA2)
 @Group(Constants.RESOURCE_GROUP_NAME)
 public class KafkaRebalance extends CustomResource<KafkaRebalanceSpec, KafkaRebalanceStatus> implements Namespaced, UnknownPropertyPreserving {
+    private static final long serialVersionUID = 1L;
 
     public static final String SCOPE = "Namespaced";
     public static final String V1BETA2 = Constants.V1BETA2;
