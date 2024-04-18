@@ -664,15 +664,15 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     // Static utility methods and classes
 
     private static Function<Map<String, Object>, Future<ConnectorStatusAndConditions>> createConnectorStatusAndConditions() {
-        return statusResult -> io.vertx.core.Future.succeededFuture(new ConnectorStatusAndConditions(statusResult, List.of(), List.of(), null));
+        return statusResult -> Future.succeededFuture(new ConnectorStatusAndConditions(statusResult, List.of(), List.of(), null));
     }
 
     private static Function<Map<String, Object>, Future<ConnectorStatusAndConditions>> createConnectorStatusAndConditions(List<Condition> conditions) {
-        return statusResult -> io.vertx.core.Future.succeededFuture(new ConnectorStatusAndConditions(statusResult, List.of(), conditions, null));
+        return statusResult -> Future.succeededFuture(new ConnectorStatusAndConditions(statusResult, List.of(), conditions, null));
     }
 
     private static Function<List<String>, Future<ConnectorStatusAndConditions>> updateConnectorStatusAndConditions(ConnectorStatusAndConditions status) {
-        return topics -> io.vertx.core.Future.succeededFuture(new ConnectorStatusAndConditions(status.statusResult, topics, status.conditions, status.autoRestart));
+        return topics -> Future.succeededFuture(new ConnectorStatusAndConditions(status.statusResult, topics, status.conditions, status.autoRestart));
     }
 
     protected static boolean connectorHasFailed(JsonObject statusResult) {
