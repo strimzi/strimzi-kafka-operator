@@ -120,20 +120,20 @@
         <!-- Build tools -->
         <checkstyle.version>10.12.2</checkstyle.version>
         <spotbugs.version>4.7.3</spotbugs.version>
-        <sundrio.version>0.100.3</sundrio.version>
-        <lombok.version>1.18.24</lombok.version>
+        <sundrio.version>0.103.1</sundrio.version>
+        <lombok.version>1.18.32</lombok.version>
 
         <!-- Runtime dependencies -->
-        <fabric8.kubernetes-client.version>6.12.0</fabric8.kubernetes-client.version>
-        <fabric8.openshift-client.version>6.12.0</fabric8.openshift-client.version>
-        <fabric8.kubernetes-model.version>6.12.0</fabric8.kubernetes-model.version>
+        <fabric8.kubernetes-client.version>6.12.1</fabric8.kubernetes-client.version>
+        <fabric8.openshift-client.version>6.12.1</fabric8.openshift-client.version>
+        <fabric8.kubernetes-model.version>6.12.1</fabric8.kubernetes-model.version>
         <fabric8.zjsonpatch.version>0.3.0</fabric8.zjsonpatch.version>
-        <fasterxml.jackson-core.version>2.16.1</fasterxml.jackson-core.version>
-        <fasterxml.jackson-databind.version>2.16.1</fasterxml.jackson-databind.version>
-        <fasterxml.jackson-dataformat.version>2.16.1</fasterxml.jackson-dataformat.version>
-        <fasterxml.jackson-annotations.version>2.16.1</fasterxml.jackson-annotations.version>
-        <fasterxml.jackson-datatype.version>2.16.1</fasterxml.jackson-datatype.version>
-        <fasterxml.jackson-jaxrs.version>2.16.1</fasterxml.jackson-jaxrs.version>
+        <fasterxml.jackson-core.version>2.17.0</fasterxml.jackson-core.version>
+        <fasterxml.jackson-databind.version>2.17.0</fasterxml.jackson-databind.version>
+        <fasterxml.jackson-dataformat.version>2.17.0</fasterxml.jackson-dataformat.version>
+        <fasterxml.jackson-annotations.version>2.17.0</fasterxml.jackson-annotations.version>
+        <fasterxml.jackson-datatype.version>2.17.0</fasterxml.jackson-datatype.version>
+        <fasterxml.jackson-jaxrs.version>2.17.0</fasterxml.jackson-jaxrs.version>
         <vertx.version>4.5.7</vertx.version>
         <vertx-junit5.version>4.5.7</vertx-junit5.version>
         <kafka.version>3.7.0</kafka.version>
@@ -146,7 +146,7 @@
         <quartz.version>2.3.2</quartz.version>
         <opentelemetry.version>1.34.1</opentelemetry.version>
         <opentelemetry-alpha.version>${opentelemetry.version}-alpha</opentelemetry-alpha.version>
-        <jetty.version>9.4.53.v20231009</jetty.version>
+        <jetty.version>9.4.54.v20240208</jetty.version>
         <javax-servlet.version>3.1.0</javax-servlet.version>
         <strimzi-oauth.version>0.15.0</strimzi-oauth.version>
         <netty.version>4.1.108.Final</netty.version>
