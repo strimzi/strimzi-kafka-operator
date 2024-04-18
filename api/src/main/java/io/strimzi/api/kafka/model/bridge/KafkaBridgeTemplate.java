@@ -19,7 +19,7 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.io.Serializable;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -34,9 +34,7 @@ import java.util.Map;
 @JsonPropertyOrder({"deployment", "pod", "apiService", "podDisruptionBudget", "bridgeContainer", "clusterRoleBinding", "serviceAccount", "initContainer"})
 @EqualsAndHashCode
 @ToString
-public class KafkaBridgeTemplate implements Serializable, UnknownPropertyPreserving {
-    private static final long serialVersionUID = 1L;
-
+public class KafkaBridgeTemplate implements UnknownPropertyPreserving {
     private DeploymentTemplate deployment;
     private PodTemplate pod;
     private InternalServiceTemplate apiService;

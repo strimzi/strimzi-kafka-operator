@@ -27,7 +27,6 @@ import lombok.ToString;
 @Deprecated
 @DeprecatedType(replacedWithType = void.class)
 public class JaegerTracing extends Tracing {
-    private static final long serialVersionUID = 1L;
 
     public static final String TYPE_JAEGER = "jaeger";
 

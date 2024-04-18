@@ -85,7 +85,6 @@ import static java.util.Collections.emptyMap;
 @Version(Constants.V1BETA2)
 @Group(Constants.RESOURCE_CORE_GROUP_NAME)
 public class StrimziPodSet extends CustomResource<StrimziPodSetSpec, StrimziPodSetStatus> implements Namespaced, UnknownPropertyPreserving {
-    private static final long serialVersionUID = 1L;
 
     public static final String SCOPE = "Namespaced";
     public static final String V1BETA2 = Constants.V1BETA2;

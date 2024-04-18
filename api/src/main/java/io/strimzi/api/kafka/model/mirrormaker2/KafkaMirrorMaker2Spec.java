@@ -30,8 +30,6 @@ import java.util.List;
 @ToString(callSuper = true)
 public class KafkaMirrorMaker2Spec extends AbstractKafkaConnectSpec {
 
-    private static final long serialVersionUID = 1L;
-    
     private List<KafkaMirrorMaker2ClusterSpec> clusters;
     private String connectCluster;
     private List<KafkaMirrorMaker2MirrorSpec> mirrors;

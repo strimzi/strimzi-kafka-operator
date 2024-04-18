@@ -16,7 +16,7 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.io.Serializable;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -31,8 +31,7 @@ import static java.util.Collections.emptyMap;
     "topicsPattern", "topicsBlacklistPattern", "topicsExcludePattern", "groupsPattern", "groupsBlacklistPattern", "groupsExcludePattern"})
 @EqualsAndHashCode
 @ToString
-public class KafkaMirrorMaker2MirrorSpec implements Serializable, UnknownPropertyPreserving {
-    private static final long serialVersionUID = 1L;
+public class KafkaMirrorMaker2MirrorSpec implements UnknownPropertyPreserving {
 
     private String sourceCluster;
     private String targetCluster;

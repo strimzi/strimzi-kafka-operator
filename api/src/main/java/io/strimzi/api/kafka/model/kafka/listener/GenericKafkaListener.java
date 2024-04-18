@@ -19,7 +19,7 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.io.Serializable;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,8 +36,7 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @EqualsAndHashCode
 @ToString
-public class GenericKafkaListener implements UnknownPropertyPreserving, Serializable {
-    private static final long serialVersionUID = 1L;
+public class GenericKafkaListener implements UnknownPropertyPreserving {
 
     // maximal port name length is 15. The prefix of generic port name is 'tcp-'
     public final static String LISTENER_NAME_REGEX = "^[a-z0-9]{1,11}$";

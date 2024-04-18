@@ -27,7 +27,6 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class DockerOutput extends Output {
-    private static final long serialVersionUID = 1L;
 
     public static final String ALLOWED_KANIKO_OPTIONS = "--customPlatform, --insecure, --insecure-pull, " +
             "--insecure-registry, --log-format, --log-timestamp, --registry-mirror, --reproducible, --single-snapshot, " +

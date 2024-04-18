@@ -14,7 +14,7 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.io.Serializable;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,9 +31,7 @@ import java.util.Map;
 @JsonPropertyOrder({ "env", "volumes" })
 @EqualsAndHashCode
 @ToString
-public class ExternalConfiguration implements Serializable, UnknownPropertyPreserving {
-
-    private static final long serialVersionUID = 1L;
+public class ExternalConfiguration implements UnknownPropertyPreserving {
 
     private List<ExternalConfigurationEnv> env;
     private List<ExternalConfigurationVolumeSource> volumes;

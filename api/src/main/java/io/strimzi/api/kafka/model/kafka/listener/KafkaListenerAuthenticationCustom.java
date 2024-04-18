@@ -33,8 +33,6 @@ public class KafkaListenerAuthenticationCustom extends KafkaListenerAuthenticati
 
     public static final String FORBIDDEN_PREFIXES = "ssl.";
 
-    private static final long serialVersionUID = 1L;
-
     public static final String TYPE_CUSTOM = "custom";
 
     private Map<String, Object> listenerConfig;

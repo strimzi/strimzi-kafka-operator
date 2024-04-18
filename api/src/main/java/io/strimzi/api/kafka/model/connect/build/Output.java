@@ -13,7 +13,7 @@ import io.strimzi.crdgenerator.annotations.Description;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.io.Serializable;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -34,8 +34,7 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @EqualsAndHashCode
 @ToString
-public abstract class Output implements UnknownPropertyPreserving, Serializable {
-    private static final long serialVersionUID = 1L;
+public abstract class Output implements UnknownPropertyPreserving {
 
     public static final String TYPE_DOCKER = "docker";
     public static final String TYPE_IMAGESTREAM = "imagestream";

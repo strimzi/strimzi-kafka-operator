@@ -34,7 +34,6 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaAuthorizationKeycloak extends KafkaAuthorization {
-    private static final long serialVersionUID = 1L;
 
     public static final String TYPE_KEYCLOAK = "keycloak";
 

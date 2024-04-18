@@ -25,7 +25,6 @@ import lombok.ToString;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaBridgeStatus extends Status {
-    private static final long serialVersionUID = 1L;
 
     private String url;
     private int replicas;

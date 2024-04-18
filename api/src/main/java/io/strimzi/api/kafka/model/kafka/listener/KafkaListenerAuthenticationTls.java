@@ -24,7 +24,6 @@ import lombok.ToString;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaListenerAuthenticationTls extends KafkaListenerAuthentication {
-    private static final long serialVersionUID = 1L;
 
     public static final String TYPE_TLS = "tls";
 

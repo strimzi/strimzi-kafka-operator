@@ -24,7 +24,6 @@ import lombok.ToString;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class CertAndKeySecretSource extends CertSecretSource {
-    private static final long serialVersionUID = 1L;
 
     protected String key;
 

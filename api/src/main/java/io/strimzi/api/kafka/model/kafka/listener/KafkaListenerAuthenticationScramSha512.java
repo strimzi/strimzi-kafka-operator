@@ -25,8 +25,6 @@ import lombok.ToString;
 @ToString(callSuper = true)
 public class KafkaListenerAuthenticationScramSha512 extends KafkaListenerAuthentication {
 
-    private static final long serialVersionUID = 1L;
-
     public static final String SCRAM_SHA_512 = "scram-sha-512";
 
     @Description("Must be `" + SCRAM_SHA_512 + "`")

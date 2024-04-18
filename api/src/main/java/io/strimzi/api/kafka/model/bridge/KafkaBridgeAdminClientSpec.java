@@ -23,7 +23,6 @@ import java.util.Map;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaBridgeAdminClientSpec extends KafkaBridgeClientSpec {
-    private static final long serialVersionUID = 1L;
 
     public static final String FORBIDDEN_PREFIXES = "ssl., bootstrap.servers, sasl., security.";
     public static final String FORBIDDEN_PREFIX_EXCEPTIONS = "ssl.endpoint.identification.algorithm, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols";

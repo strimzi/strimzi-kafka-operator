@@ -29,7 +29,7 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.io.Serializable;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -47,9 +47,7 @@ import java.util.Map;
     "metricsConfig", "logging", "template"})
 @EqualsAndHashCode
 @ToString
-public class ZookeeperClusterSpec implements HasConfigurableMetrics, HasConfigurableLogging, HasJmxOptions, HasLivenessProbe, HasReadinessProbe, UnknownPropertyPreserving, Serializable {
-
-    private static final long serialVersionUID = 1L;
+public class ZookeeperClusterSpec implements HasConfigurableMetrics, HasConfigurableLogging, HasJmxOptions, HasLivenessProbe, HasReadinessProbe, UnknownPropertyPreserving {
 
     public static final String FORBIDDEN_PREFIXES = "server., dataDir, dataLogDir, clientPort, authProvider, " +
             "quorum.auth, requireClientAuthScheme, snapshot.trust.empty, standaloneEnabled, " +

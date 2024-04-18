@@ -12,7 +12,7 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.io.Serializable;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -27,9 +27,7 @@ import java.util.Map;
 @JsonPropertyOrder({"name", "value"})
 @EqualsAndHashCode
 @ToString
-public class ContainerEnvVar implements UnknownPropertyPreserving, Serializable {
-
-    private static final long serialVersionUID = 1L;
+public class ContainerEnvVar implements UnknownPropertyPreserving {
 
     private String name;
     private String value;

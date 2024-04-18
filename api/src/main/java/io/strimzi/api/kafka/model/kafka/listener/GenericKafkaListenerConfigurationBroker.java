@@ -15,7 +15,7 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.io.Serializable;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,8 +35,7 @@ import static java.util.Collections.emptyMap;
 )
 @EqualsAndHashCode
 @ToString
-public class GenericKafkaListenerConfigurationBroker implements Serializable, UnknownPropertyPreserving {
-    private static final long serialVersionUID = 1L;
+public class GenericKafkaListenerConfigurationBroker implements UnknownPropertyPreserving {
 
     private Integer broker;
     private String advertisedHost;

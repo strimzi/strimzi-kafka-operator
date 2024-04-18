@@ -20,7 +20,7 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.io.Serializable;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -35,8 +35,7 @@ import java.util.Map;
 @JsonPropertyOrder({"deployment", "pod", "apiService", "podDisruptionBudget", "mirrorMaker2Container", "serviceAccount", "jmxSecret"})
 @EqualsAndHashCode
 @ToString
-public class KafkaMirrorMaker2Template implements HasJmxSecretTemplate, Serializable, UnknownPropertyPreserving {
-    private static final long serialVersionUID = 1L;
+public class KafkaMirrorMaker2Template implements HasJmxSecretTemplate, UnknownPropertyPreserving {
 
     private DeploymentTemplate deployment;
     private PodTemplate pod;

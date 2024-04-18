@@ -13,7 +13,7 @@ import io.strimzi.crdgenerator.annotations.Description;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.io.Serializable;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -31,9 +31,8 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @EqualsAndHashCode
 @ToString
-public abstract class TieredStorage implements UnknownPropertyPreserving, Serializable {
+public abstract class TieredStorage implements UnknownPropertyPreserving {
 
-    private static final long serialVersionUID = 1L;
     public static final String TYPE_CUSTOM = "custom";
 
     private final Map<String, Object> additionalProperties = new HashMap<>(0);

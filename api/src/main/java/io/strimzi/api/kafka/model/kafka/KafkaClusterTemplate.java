@@ -21,7 +21,7 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.io.Serializable;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -40,8 +40,7 @@ import java.util.Map;
     "clusterRoleBinding", "podSet"})
 @EqualsAndHashCode
 @ToString
-public class KafkaClusterTemplate implements HasJmxSecretTemplate, Serializable, UnknownPropertyPreserving {
-    private static final long serialVersionUID = 1L;
+public class KafkaClusterTemplate implements HasJmxSecretTemplate, UnknownPropertyPreserving {
 
     private StatefulSetTemplate statefulset;
     private ResourceTemplate podSet;

@@ -14,7 +14,7 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.io.Serializable;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -29,8 +29,7 @@ import java.util.Map;
 @JsonPropertyOrder({"className", "classPath", "config"})
 @EqualsAndHashCode
 @ToString
-public class RemoteStorageManager implements UnknownPropertyPreserving, Serializable {
-    private static final long serialVersionUID = 1L;
+public class RemoteStorageManager implements UnknownPropertyPreserving {
 
     private String className;
     private String classPath;

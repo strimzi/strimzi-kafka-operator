@@ -27,7 +27,6 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaRebalanceSpec extends Spec {
-    private static final long serialVersionUID = 1L;
 
     // rebalancing modes
     private KafkaRebalanceMode mode = KafkaRebalanceMode.FULL;

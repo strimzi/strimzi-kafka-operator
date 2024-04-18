@@ -11,7 +11,7 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.io.Serializable;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -25,8 +25,7 @@ import static java.util.Collections.emptyMap;
 @JsonPropertyOrder({ "type", "status", "lastTransitionTime", "reason", "message" })
 @EqualsAndHashCode
 @ToString
-public class Condition implements UnknownPropertyPreserving, Serializable {
-    private static final long serialVersionUID = 1L;
+public class Condition implements UnknownPropertyPreserving {
 
     private String status;
     private String reason;

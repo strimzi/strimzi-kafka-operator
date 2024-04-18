@@ -15,7 +15,7 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.io.Serializable;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,8 +31,7 @@ import java.util.Map;
 @JsonPropertyOrder({ "name", "artifacts" })
 @EqualsAndHashCode
 @ToString
-public class Plugin implements Serializable, UnknownPropertyPreserving {
-    private static final long serialVersionUID = 1L;
+public class Plugin implements UnknownPropertyPreserving {
 
     private String name;
     private List<Artifact> artifacts;

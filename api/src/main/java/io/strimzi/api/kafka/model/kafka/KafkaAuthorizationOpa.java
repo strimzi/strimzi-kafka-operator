@@ -31,7 +31,6 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaAuthorizationOpa extends KafkaAuthorization {
-    private static final long serialVersionUID = 1L;
 
     public static final String TYPE_OPA = "opa";
 

@@ -14,7 +14,7 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.io.Serializable;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -30,8 +30,7 @@ import java.util.Map;
 @JsonPropertyOrder({"enabled", "maxRestarts"})
 @EqualsAndHashCode
 @ToString
-public class AutoRestart implements UnknownPropertyPreserving, Serializable {
-    private static final long serialVersionUID = 1L;
+public class AutoRestart implements UnknownPropertyPreserving {
 
     private boolean enabled = true;
     private Integer maxRestarts;

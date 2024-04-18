@@ -27,8 +27,6 @@ import java.util.List;
 @ToString(callSuper = true)
 public class JbodStorage extends Storage {
 
-    private static final long serialVersionUID = 1L;
-
     private List<SingleVolumeStorage> volumes;
 
     @Description("Must be `" + TYPE_JBOD + "`")

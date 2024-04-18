@@ -26,7 +26,7 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.io.Serializable;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -42,8 +42,7 @@ import java.util.Map;
     "brokerCapacity", "config", "metricsConfig"})
 @EqualsAndHashCode
 @ToString
-public class CruiseControlSpec implements HasConfigurableMetrics, HasConfigurableLogging, HasLivenessProbe, HasReadinessProbe, UnknownPropertyPreserving, Serializable {
-    private static final long serialVersionUID = 1L;
+public class CruiseControlSpec implements HasConfigurableMetrics, HasConfigurableLogging, HasLivenessProbe, HasReadinessProbe, UnknownPropertyPreserving {
 
     // For the full configuration list refer to https://github.com/linkedin/cruise-control/wiki/Configurations
     public static final String FORBIDDEN_PREFIXES = "bootstrap.servers, client.id, zookeeper., network., security., failed.brokers.zk.path,"

@@ -30,8 +30,6 @@ import java.util.Map;
 @ToString(callSuper = true)
 public class JmxPrometheusExporterMetrics extends MetricsConfig {
 
-    private static final long serialVersionUID = 1L;
-
     public static final String TYPE_JMX_EXPORTER = "jmxPrometheusExporter";
 
     private ExternalConfigurationReference valueFrom;

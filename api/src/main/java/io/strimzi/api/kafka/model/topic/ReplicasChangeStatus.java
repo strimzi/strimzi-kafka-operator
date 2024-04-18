@@ -13,7 +13,7 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.io.Serializable;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -27,8 +27,7 @@ import static java.util.Collections.emptyMap;
 @JsonPropertyOrder({ "targetReplicas", "state", "userTaskId", "message", "sessionId" })
 @EqualsAndHashCode
 @ToString(callSuper = true)
-public class ReplicasChangeStatus implements UnknownPropertyPreserving, Serializable {
-    private static final long serialVersionUID = 1L;
+public class ReplicasChangeStatus implements UnknownPropertyPreserving {
 
     private Integer targetReplicas;
     private ReplicasChangeState state;

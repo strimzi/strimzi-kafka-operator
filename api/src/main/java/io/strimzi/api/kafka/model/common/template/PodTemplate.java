@@ -24,7 +24,7 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.io.Serializable;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,8 +43,7 @@ import java.util.Map;
 @EqualsAndHashCode
 @ToString
 @DescriptionFile
-public class PodTemplate implements HasMetadataTemplate, Serializable, UnknownPropertyPreserving {
-    private static final long serialVersionUID = 1L;
+public class PodTemplate implements HasMetadataTemplate, UnknownPropertyPreserving {
 
     private MetadataTemplate metadata;
     private List<LocalObjectReference> imagePullSecrets;

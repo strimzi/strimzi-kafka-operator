@@ -30,8 +30,6 @@ import java.util.Map;
 @ToString(callSuper = true)
 public class KafkaRebalanceStatus extends Status {
 
-    private static final long serialVersionUID = 1L;
-
     private String sessionId;
     private Map<String, Object> optimizationResult = new HashMap<>(0);
 

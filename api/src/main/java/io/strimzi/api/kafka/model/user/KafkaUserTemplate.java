@@ -15,7 +15,7 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.io.Serializable;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -31,8 +31,7 @@ import java.util.Map;
 @DescriptionFile
 @EqualsAndHashCode
 @ToString
-public class KafkaUserTemplate implements Serializable, UnknownPropertyPreserving {
-    private static final long serialVersionUID = 1L;
+public class KafkaUserTemplate implements UnknownPropertyPreserving {
 
     private ResourceTemplate secret;
     private Map<String, Object> additionalProperties = new HashMap<>(0);

@@ -12,7 +12,7 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.io.Serializable;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -27,9 +27,7 @@ import java.util.Map;
 @JsonPropertyOrder({"secretName", "certificate"})
 @EqualsAndHashCode
 @ToString
-public class CertSecretSource implements UnknownPropertyPreserving, Serializable {
-
-    private static final long serialVersionUID = 1L;
+public class CertSecretSource implements UnknownPropertyPreserving {
 
     protected String secretName;
     protected String certificate;

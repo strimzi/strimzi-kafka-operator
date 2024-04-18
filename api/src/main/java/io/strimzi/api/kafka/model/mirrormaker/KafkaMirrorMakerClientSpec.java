@@ -15,7 +15,7 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.io.Serializable;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -28,9 +28,7 @@ import static java.util.Collections.emptyMap;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @EqualsAndHashCode
 @ToString
-public class KafkaMirrorMakerClientSpec implements UnknownPropertyPreserving, Serializable {
-
-    private static final long serialVersionUID = 1L;
+public class KafkaMirrorMakerClientSpec implements UnknownPropertyPreserving {
 
     private String bootstrapServers;
     protected Map<String, Object> config = new HashMap<>(0);

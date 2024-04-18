@@ -25,7 +25,6 @@ import lombok.ToString;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaTopicStatus extends Status {
-    private static final long serialVersionUID = 1L;
 
     private String topicName;
     private String topicId;

@@ -26,7 +26,6 @@ import lombok.ToString;
 @ToString(callSuper = true)
 public class ExternalLogging extends Logging {
 
-    private static final long serialVersionUID = 1L;
     public static final String TYPE_EXTERNAL = "external";
 
     private ExternalConfigurationReference valueFrom;

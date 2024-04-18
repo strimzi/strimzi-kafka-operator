@@ -17,7 +17,7 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.io.Serializable;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -32,8 +32,7 @@ import java.util.Map;
 @JsonPropertyOrder({"deployment", "pod", "topicOperatorContainer", "userOperatorContainer", "tlsSidecarContainer", "serviceAccount", "entityOperatorRole", "topicOperatorRoleBinding", "userOperatorRoleBinding"})
 @EqualsAndHashCode
 @ToString
-public class EntityOperatorTemplate implements Serializable, UnknownPropertyPreserving {
-    private static final long serialVersionUID = 1L;
+public class EntityOperatorTemplate implements UnknownPropertyPreserving {
     private DeploymentTemplate deployment;
     private PodTemplate pod;
     private ResourceTemplate entityOperatorRole;

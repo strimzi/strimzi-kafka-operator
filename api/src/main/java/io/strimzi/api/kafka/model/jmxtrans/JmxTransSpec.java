@@ -18,7 +18,7 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.io.Serializable;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,11 +36,11 @@ import java.util.Map;
 @ToString
 @Deprecated
 @DeprecatedType(replacedWithType = void.class)
-public class JmxTransSpec implements UnknownPropertyPreserving, Serializable {
+public class JmxTransSpec implements UnknownPropertyPreserving {
+
     public static final int DEFAULT_HEALTHCHECK_DELAY = 15;
     public static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
 
-    private static final long serialVersionUID = 1L;
     protected String image;
     private String logLevel;
     private List<JmxTransOutputDefinitionTemplate> outputDefinitions = null;

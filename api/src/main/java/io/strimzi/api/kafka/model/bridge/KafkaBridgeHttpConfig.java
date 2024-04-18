@@ -16,7 +16,7 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.io.Serializable;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -32,9 +32,7 @@ import java.util.Map;
 @JsonPropertyOrder({"port", "cors"})
 @EqualsAndHashCode
 @ToString
-public class KafkaBridgeHttpConfig implements UnknownPropertyPreserving, Serializable {
-
-    private static final long serialVersionUID = 1L;
+public class KafkaBridgeHttpConfig implements UnknownPropertyPreserving {
 
     public static final int HTTP_DEFAULT_PORT = 8080;
     public static final String HTTP_DEFAULT_HOST = "0.0.0.0";

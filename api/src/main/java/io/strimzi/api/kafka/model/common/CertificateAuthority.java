@@ -12,7 +12,7 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.io.Serializable;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -28,9 +28,7 @@ import java.util.Map;
     "renewalDays", "certificateExpirationPolicy" })
 @EqualsAndHashCode
 @ToString
-public class CertificateAuthority implements UnknownPropertyPreserving, Serializable {
-
-    private static final long serialVersionUID = 1L;
+public class CertificateAuthority implements UnknownPropertyPreserving {
 
     private int validityDays;
     private boolean generateCertificateAuthority = true;

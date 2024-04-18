@@ -26,8 +26,6 @@ import java.util.Map;
 @ToString(callSuper = true)
 public class InlineLogging extends Logging {
 
-    private static final long serialVersionUID = 1L;
-
     public static final String TYPE_INLINE = "inline";
 
     private Map<String, String> loggers = null;

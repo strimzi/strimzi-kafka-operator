@@ -37,7 +37,6 @@ import java.util.Map;
 @Deprecated
 @DeprecatedType(replacedWithType = void.class)
 public class TlsSidecar extends Sidecar implements HasLivenessProbe, HasReadinessProbe {
-    private static final long serialVersionUID = 1L;
 
     private TlsSidecarLogLevel logLevel = TlsSidecarLogLevel.NOTICE;
     private Probe livenessProbe;

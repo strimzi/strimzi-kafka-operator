@@ -25,7 +25,7 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.io.Serializable;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -44,9 +44,7 @@ import java.util.Map;
     "resources", "logging", "jvmOptions"})
 @EqualsAndHashCode
 @ToString
-public class EntityUserOperatorSpec implements HasConfigurableLogging, HasLivenessProbe, HasReadinessProbe, UnknownPropertyPreserving, Serializable {
-
-    private static final long serialVersionUID = 1L;
+public class EntityUserOperatorSpec implements HasConfigurableLogging, HasLivenessProbe, HasReadinessProbe, UnknownPropertyPreserving {
 
     public static final int DEFAULT_BOOTSTRAP_SERVERS_PORT = 9091;
     public static final long DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS = 120;

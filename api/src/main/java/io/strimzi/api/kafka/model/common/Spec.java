@@ -9,7 +9,7 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.io.Serializable;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -25,7 +25,8 @@ import static java.util.Collections.emptyMap;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @EqualsAndHashCode
 @ToString
-public abstract class Spec implements UnknownPropertyPreserving, Serializable {
+public abstract class Spec implements UnknownPropertyPreserving {
+
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Override

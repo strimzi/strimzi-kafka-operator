@@ -31,7 +31,6 @@ import java.util.Map;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaMirrorMaker2Status extends KafkaConnectStatus {
-    private static final long serialVersionUID = 1L;
 
     private List<Map<String, Object>> connectors = new ArrayList<>(3);
 

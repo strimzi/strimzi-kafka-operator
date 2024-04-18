@@ -25,7 +25,6 @@ import lombok.ToString;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public abstract class SingleVolumeStorage extends Storage {
-    private static final long serialVersionUID = 1L;
 
     private Integer id;
     private KRaftMetadataStorage kraftMetadata;

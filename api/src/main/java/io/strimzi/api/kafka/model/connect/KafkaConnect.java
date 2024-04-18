@@ -76,7 +76,6 @@ import java.util.function.Predicate;
 @Version(Constants.V1BETA2)
 @Group(Constants.RESOURCE_GROUP_NAME)
 public class KafkaConnect extends CustomResource<KafkaConnectSpec, KafkaConnectStatus> implements Namespaced, UnknownPropertyPreserving {
-    private static final long serialVersionUID = 1L;
 
     public static final String SCOPE = "Namespaced";
     public static final String V1ALPHA1 = Constants.V1ALPHA1;
