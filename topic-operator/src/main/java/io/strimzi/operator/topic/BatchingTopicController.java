@@ -557,8 +557,8 @@ public class BatchingTopicController {
         } else {
             okStream = differentRfResults.ok().map(pair -> {
                 var reconcilableTopic = pair.getKey();
-                var specPartitions = partitions(reconcilableTopic.kt());
-                var partitions = pair.getValue().partitionsWithDifferentRfThan(specPartitions);
+                var specReplicas = replicas(reconcilableTopic.kt());
+                var partitions = pair.getValue().partitionsWithDifferentRfThan(specReplicas);
                 return pair(reconcilableTopic, Either.ofLeft(new TopicOperatorException.NotSupported(
                     "Replication factor change not supported, but required for partitions " + partitions)));
             });
