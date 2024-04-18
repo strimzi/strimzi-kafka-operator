@@ -13,8 +13,10 @@ metadata:
   name: strimzi-cluster-operator-namespaced
   {{- else }}
   name: strimzi-cluster-operator
-  {{- end }}
+  {{- end }}  
+  {{- if not $root.Values.watchAnyNamespace }}
   namespace: {{ . }}
+  {{- end }}
   labels:
     app: {{ template "strimzi.name" $root }}
     chart: {{ template "strimzi.chart" $root }}
