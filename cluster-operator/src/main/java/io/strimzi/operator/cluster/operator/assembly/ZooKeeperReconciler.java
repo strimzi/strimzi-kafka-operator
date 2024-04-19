@@ -14,6 +14,7 @@ import io.strimzi.api.kafka.model.kafka.KafkaStatus;
 import io.strimzi.api.kafka.model.kafka.Storage;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
+import io.strimzi.operator.cluster.FeatureGates;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.model.CertUtils;
 import io.strimzi.operator.cluster.model.ClusterCa;
@@ -117,6 +118,8 @@ public class ZooKeeperReconciler {
 
     private final boolean isKRaftMigrationRollback;
 
+    private final FeatureGates featureGates;
+
     /**
      * Constructs the ZooKeeper reconciler
      *
@@ -176,6 +179,7 @@ public class ZooKeeperReconciler {
 
         this.zooScalerProvider = supplier.zkScalerProvider;
         this.zooLeaderFinder = supplier.zookeeperLeaderFinder;
+        this.featureGates = config.featureGates();
     }
 
     /**
@@ -300,7 +304,14 @@ public class ZooKeeperReconciler {
                         return maybeRollZooKeeper(pod -> {
                             LOGGER.debugCr(reconciliation, "Rolling Zookeeper pod {} due to manual rolling update", pod.getMetadata().getName());
                             return singletonList("manual rolling update");
-                        }, this.tlsPemIdentity);
+                        }, this.tlsPemIdentity).recover(error -> {
+                            if (featureGates.continueReconciliationOnManualRollingUpdateFailureEnabled()) {
+                                LOGGER.warnCr(reconciliation, "Reconciliation will be continued even though manual rolling update failed");
+                                return Future.succeededFuture();
+                            } else {
+                                return Future.failedFuture(error);
+                            }
+                        });
                     } else {
                         // The StrimziPodSet does not exist or is not annotated
                         // But maybe the individual pods are annotated to restart only some of them.
@@ -333,7 +344,14 @@ public class ZooKeeperReconciler {
                             } else {
                                 return null;
                             }
-                        }, this.tlsPemIdentity);
+                        }, this.tlsPemIdentity).recover(error -> {
+                            if (featureGates.continueReconciliationOnManualRollingUpdateFailureEnabled()) {
+                                LOGGER.warnCr(reconciliation, "Zookeeper reconciliation will be continued even though manual rolling update failed");
+                                return Future.succeededFuture();
+                            } else {
+                                return Future.failedFuture(error);
+                            }
+                        });
                     } else {
                         return Future.succeededFuture();
                     }

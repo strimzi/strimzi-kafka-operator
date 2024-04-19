@@ -17,9 +17,12 @@ public class FeatureGates {
     /* test */ static final FeatureGates NONE = new FeatureGates("");
 
     private static final String USE_KRAFT = "UseKRaft";
+    private static final String CONTINUE_RECONCILIATION_ON_MANUAL_ROLLING_UPDATE_FAILURE = "ContinueReconciliationOnManualRollingUpdateFailure";
 
     // When adding new feature gates, do not forget to add them to allFeatureGates() and toString() methods
     private final FeatureGate useKRaft = new FeatureGate(USE_KRAFT, true);
+    private final FeatureGate continueReconciliationOnManualRollingUpdateFailure =
+        new FeatureGate(CONTINUE_RECONCILIATION_ON_MANUAL_ROLLING_UPDATE_FAILURE, false);
 
     /**
      * Constructs the feature gates configuration.
@@ -43,6 +46,9 @@ public class FeatureGates {
                 switch (featureGate) {
                     case USE_KRAFT:
                         setValueOnlyOnce(useKRaft, value);
+                        break;
+                    case CONTINUE_RECONCILIATION_ON_MANUAL_ROLLING_UPDATE_FAILURE:
+                        setValueOnlyOnce(continueReconciliationOnManualRollingUpdateFailure, value);
                         break;
                     default:
                         throw new InvalidConfigurationException("Unknown feature gate " + featureGate + " found in the configuration");
@@ -84,6 +90,10 @@ public class FeatureGates {
         return useKRaft.isEnabled();
     }
 
+    public boolean continueReconciliationOnManualRollingUpdateFailureEnabled() {
+        return continueReconciliationOnManualRollingUpdateFailure.isEnabled();
+    }
+
     /**
      * Returns a list of all Feature gates. Used for testing.
      *
@@ -91,7 +101,8 @@ public class FeatureGates {
      */
     /*test*/ List<FeatureGate> allFeatureGates()  {
         return List.of(
-                useKRaft
+                useKRaft,
+                continueReconciliationOnManualRollingUpdateFailure
         );
     }
 

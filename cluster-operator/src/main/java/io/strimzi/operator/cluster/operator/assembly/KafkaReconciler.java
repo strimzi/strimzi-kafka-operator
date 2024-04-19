@@ -29,6 +29,7 @@ import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolStatusBuilder;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.api.kafka.model.podset.StrimziPodSetBuilder;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
+import io.strimzi.operator.cluster.FeatureGates;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.model.CertUtils;
 import io.strimzi.operator.cluster.model.ClusterCa;
@@ -152,6 +153,9 @@ public class KafkaReconciler {
     // State of the reconciliation => these objects might change during the reconciliation (the collection objects are
     // marked as final, but their contents is modified during the reconciliation)
     private final Set<String> fsResizingRestartRequest = new HashSet<>();
+
+    private final FeatureGates featureGates;
+
     private String logging = "";
     private String loggingHash = "";
     private final Map<Integer, String> brokerConfigurationHash = new HashMap<>();
@@ -227,6 +231,7 @@ public class KafkaReconciler {
 
         this.adminClientProvider = supplier.adminClientProvider;
         this.kafkaAgentClientProvider = supplier.kafkaAgentClientProvider;
+        this.featureGates = config.featureGates();
     }
 
     /**
@@ -364,7 +369,14 @@ public class KafkaReconciler {
                                 nodes.stream().collect(Collectors.toMap(NodeRef::nodeId, node -> Map.of())),
                                 nodes.stream().collect(Collectors.toMap(NodeRef::nodeId, node -> Map.of())),
                                 false
-                        );
+                        ).recover(error -> {
+                            if (featureGates.continueReconciliationOnManualRollingUpdateFailureEnabled()) {
+                                LOGGER.warnCr(reconciliation, "Kafka reconciliation will be continued even though manual rolling update failed");
+                                return Future.succeededFuture();
+                            } else {
+                                return Future.failedFuture(error);
+                            }
+                        });
                     } else {
                         return Future.succeededFuture();
                     }

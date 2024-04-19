@@ -28,6 +28,7 @@ import io.strimzi.api.kafka.model.connector.KafkaConnectorStatus;
 import io.strimzi.api.kafka.model.kafka.Status;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
+import io.strimzi.operator.cluster.FeatureGates;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
@@ -97,6 +98,8 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(AbstractConnectOperator.class.getName());
 
     private final boolean isNetworkPolicyGeneration;
+    private final FeatureGates featureGates;
+
     protected final Function<Vertx, KafkaConnectApi> connectClientProvider;
     protected final CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> connectorOperator;
     protected final ImagePullPolicy imagePullPolicy;
@@ -160,6 +163,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         this.versions = config.versions();
         this.sharedEnvironmentProvider = supplier.sharedEnvironmentProvider;
         this.port = port;
+        this.featureGates = config.featureGates();
     }
 
     @Override
@@ -266,7 +270,15 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                     if (!podNamesToRoll.isEmpty())  {
                         // There are some pods to roll
                         KafkaConnectRoller roller = new KafkaConnectRoller(reconciliation, connect, operationTimeoutMs, podOperations);
-                        return roller.maybeRoll(podNamesToRoll, pod -> RestartReasons.of(RestartReason.MANUAL_ROLLING_UPDATE));
+                        return roller.maybeRoll(podNamesToRoll, pod -> RestartReasons.of(RestartReason.MANUAL_ROLLING_UPDATE))
+                            .recover(error -> {
+                                if (featureGates.continueReconciliationOnManualRollingUpdateFailureEnabled()) {
+                                    LOGGER.warnCr(reconciliation, "Reconciliation will be continued even though manual rolling update failed");
+                                    return Future.succeededFuture();
+                                } else {
+                                    return Future.failedFuture(error);
+                                }
+                            });
                     } else {
                         return Future.succeededFuture();
                     }
