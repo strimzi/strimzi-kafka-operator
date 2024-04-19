@@ -102,7 +102,6 @@ class LoggingChangeST extends AbstractST {
             "log4j.appender.CONSOLE.layout=net.logstash.log4j.JSONEventLayoutV1\n" +
             "kafka.root.logger.level=INFO\n" +
             "log4j.rootLogger=${kafka.root.logger.level}, CONSOLE\n" +
-            "log4j.logger.org.I0Itec.zkclient.ZkClient=INFO\n" +
             "log4j.logger.org.apache.zookeeper=INFO\n" +
             "log4j.logger.kafka=INFO\n" +
             "log4j.logger.org.apache.kafka=INFO\n" +
@@ -785,7 +784,6 @@ class LoggingChangeST extends AbstractST {
             log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %X{connector.context}%m (%c) [%t]%n
             log4j.rootLogger=OFF, CONSOLE
             log4j.logger.org.apache.zookeeper=ERROR
-            log4j.logger.org.I0Itec.zkclient=ERROR
             log4j.logger.org.reflections=ERROR""";
 
         final String externalCmName = "external-cm";
@@ -833,7 +831,6 @@ class LoggingChangeST extends AbstractST {
         InlineLogging ilOff = new InlineLogging();
         Map<String, String> log4jConfig = new HashMap<>();
         log4jConfig.put("kafka.root.logger.level", "OFF");
-        log4jConfig.put("log4j.logger.org.I0Itec.zkclient.ZkClient", "OFF");
         log4jConfig.put("log4j.logger.org.apache.zookeeper", "OFF");
         log4jConfig.put("log4j.logger.kafka", "OFF");
         log4jConfig.put("log4j.logger.org.apache.kafka", "OFF");
@@ -915,7 +912,6 @@ class LoggingChangeST extends AbstractST {
                 "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\n" +
                 "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]%n\n" +
                 "log4j.rootLogger=INFO, CONSOLE\n" +
-                "log4j.logger.org.I0Itec.zkclient.ZkClient=INFO\n" +
                 "log4j.logger.org.apache.zookeeper=INFO\n" +
                 "log4j.logger.kafka=INFO\n" +
                 "log4j.logger.org.apache.kafka=INFO\n" +
@@ -1038,7 +1034,6 @@ class LoggingChangeST extends AbstractST {
                         "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\n" +
                         "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]%n\n" +
                         "log4j.rootLogger=INFO, CONSOLE\n" +
-                        "log4j.logger.org.I0Itec.zkclient.ZkClient=INFO\n" +
                         "log4j.logger.org.apache.zookeeper=INFO\n" +
                         "log4j.logger.kafka=INFO\n" +
                         "log4j.logger.org.apache.kafka=INFO\n" +
@@ -1098,7 +1093,6 @@ class LoggingChangeST extends AbstractST {
                         "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\n" +
                         "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]%n\n" +
                         "log4j.rootLogger=INFO, CONSOLE\n" +
-                        "log4j.logger.org.I0Itec.zkclient.ZkClient=ERROR\n" +
                         "log4j.logger.org.apache.zookeeper=ERROR\n" +
                         "log4j.logger.kafka=ERROR\n" +
                         "log4j.logger.org.apache.kafka=ERROR\n" +
@@ -1130,7 +1124,6 @@ class LoggingChangeST extends AbstractST {
                         "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\n" +
                         "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]\n" +
                         "log4j.rootLogger=INFO, CONSOLE\n" +
-                        "log4j.logger.org.I0Itec.zkclient.ZkClient=ERROR\n" +
                         "log4j.logger.org.apache.zookeeper=ERROR\n" +
                         "log4j.logger.kafka=ERROR\n" +
                         "log4j.logger.org.apache.kafka=ERROR\n" +
@@ -1164,7 +1157,6 @@ class LoggingChangeST extends AbstractST {
         Map<String, String> loggers = new HashMap<>();
         loggers.put("connect.root.logger.level", "OFF");
         loggers.put("log4j.logger.org.apache.zookeeper", "OFF");
-        loggers.put("log4j.logger.org.I0Itec.zkclient", "OFF");
         loggers.put("log4j.logger.org.reflections", "OFF");
 
         ilOff.setLoggers(loggers);
@@ -1229,7 +1221,6 @@ class LoggingChangeST extends AbstractST {
                         "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %X{connector.context}%m (%c) [%t]%n\n" +
                         "log4j.rootLogger=OFF, CONSOLE\n" +
                         "log4j.logger.org.apache.zookeeper=ERROR\n" +
-                        "log4j.logger.org.I0Itec.zkclient=ERROR\n" +
                         "log4j.logger.org.reflections=ERROR";
 
         String externalCmName = "external-cm";
@@ -1303,7 +1294,6 @@ class LoggingChangeST extends AbstractST {
                         "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]%n\n" +
                         "log4j.rootLogger=OFF, CONSOLE\n" +
                         "log4j.logger.org.apache.zookeeper=ERROR\n" +
-                        "log4j.logger.org.I0Itec.zkclient=ERROR\n" +
                         "log4j.logger.org.eclipse.jetty.util.thread=FATAL\n" +
                         "log4j.logger.org.apache.kafka.connect.runtime.WorkerTask=OFF\n" +
                         "log4j.logger.org.eclipse.jetty.util.thread.strategy.EatWhatYouKill=OFF\n" +
@@ -1356,7 +1346,6 @@ class LoggingChangeST extends AbstractST {
                         "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]%n\n" +
                         "log4j.rootLogger=INFO, CONSOLE\n" +
                         "log4j.logger.org.apache.zookeeper=ERROR\n" +
-                        "log4j.logger.org.I0Itec.zkclient=ERROR\n" +
                         "log4j.logger.org.eclipse.jetty.util.thread=WARN\n" +
                         "log4j.logger.org.reflections=ERROR";
 
@@ -1391,7 +1380,6 @@ class LoggingChangeST extends AbstractST {
             "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\n" +
             "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]%n\n" +
             "log4j.rootLogger=INFO, CONSOLE\n" +
-            "log4j.logger.org.I0Itec.zkclient.ZkClient=INFO\n" +
             "log4j.logger.org.apache.zookeeper=INFO\n" +
             "log4j.logger.kafka=INFO\n" +
             "log4j.logger.org.apache.kafka=INFO";
@@ -1590,7 +1578,6 @@ class LoggingChangeST extends AbstractST {
             "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]\n" +
             "kafka.root.logger.level=INFO\n" +
             "log4j.rootLogger=${kafka.root.logger.level}, CONSOLE\n" +
-            "log4j.logger.org.I0Itec.zkclient.ZkClient=INFO\n" +
             "log4j.logger.org.apache.zookeeper=INFO\n" +
             "log4j.logger.kafka=INFO\n" +
             "log4j.logger.org.apache.kafka=INFO\n" +

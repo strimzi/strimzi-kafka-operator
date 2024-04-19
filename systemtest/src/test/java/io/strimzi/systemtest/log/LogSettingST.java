@@ -106,7 +106,6 @@ class LogSettingST extends AbstractST {
         {
             put("kafka.root.logger.level", INFO);
             put("test.kafka.logger.level", INFO);
-            put("log4j.logger.org.I0Itec.zkclient.ZkClient", ERROR);
             put("log4j.logger.org.apache.zookeeper", WARN);
             put("log4j.logger.kafka", TRACE);
             put("log4j.logger.org.apache.kafka", DEBUG);
@@ -133,7 +132,6 @@ class LogSettingST extends AbstractST {
         {
             put("connect.root.logger.level", INFO);
             put("test.connect.logger.level", DEBUG);
-            put("log4j.logger.org.I0Itec.zkclient", ERROR);
             put("log4j.logger.org.reflections", WARN);
         }
     };
