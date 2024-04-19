@@ -120,7 +120,7 @@
         <!-- Build tools -->
         <checkstyle.version>10.12.2</checkstyle.version>
         <spotbugs.version>4.7.3</spotbugs.version>
-        <sundrio.version>0.103.1</sundrio.version>
+        <sundrio.version>0.101.3</sundrio.version>
         <lombok.version>1.18.32</lombok.version>
 
         <!-- Runtime dependencies -->
@@ -128,12 +128,12 @@
         <fabric8.openshift-client.version>6.12.1</fabric8.openshift-client.version>
         <fabric8.kubernetes-model.version>6.12.1</fabric8.kubernetes-model.version>
         <fabric8.zjsonpatch.version>0.3.0</fabric8.zjsonpatch.version>
-        <fasterxml.jackson-core.version>2.17.0</fasterxml.jackson-core.version>
-        <fasterxml.jackson-databind.version>2.17.0</fasterxml.jackson-databind.version>
-        <fasterxml.jackson-dataformat.version>2.17.0</fasterxml.jackson-dataformat.version>
-        <fasterxml.jackson-annotations.version>2.17.0</fasterxml.jackson-annotations.version>
-        <fasterxml.jackson-datatype.version>2.17.0</fasterxml.jackson-datatype.version>
-        <fasterxml.jackson-jaxrs.version>2.17.0</fasterxml.jackson-jaxrs.version>
+        <fasterxml.jackson-core.version>2.16.1</fasterxml.jackson-core.version>
+        <fasterxml.jackson-databind.version>2.16.1</fasterxml.jackson-databind.version>
+        <fasterxml.jackson-dataformat.version>2.16.1</fasterxml.jackson-dataformat.version>
+        <fasterxml.jackson-annotations.version>2.16.1</fasterxml.jackson-annotations.version>
+        <fasterxml.jackson-datatype.version>2.16.1</fasterxml.jackson-datatype.version>
+        <fasterxml.jackson-jaxrs.version>2.16.1</fasterxml.jackson-jaxrs.version>
         <vertx.version>4.5.7</vertx.version>
         <vertx-junit5.version>4.5.7</vertx-junit5.version>
         <kafka.version>3.7.0</kafka.version>
