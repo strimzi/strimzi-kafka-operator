@@ -14,7 +14,9 @@ metadata:
   {{- else }}
   name: strimzi-cluster-operator-watched
   {{- end }}
+  {{- if not $root.Values.watchAnyNamespace }}
   namespace: {{ . }}
+  {{- end }}
   labels:
     app: {{ template "strimzi.name" $root }}
     chart: {{ template "strimzi.chart" $root }}
