@@ -21,19 +21,52 @@ In each client application add the dependencies for the tracer:
 [source,xml,subs="attributes+"]
 ----
 <dependency>
+    <groupId>io.opentelemetry.semconv</groupId>
+    <artifactId>opentelemetry-semconv</artifactId>
+    <version>{OpenTelemetrySemConvVersion}</version>
+</dependency>
+<dependency>
+    <groupId>io.opentelemetry</groupId>
+    <artifactId>opentelemetry-exporter-otlp</artifactId>
+    <version>{OpenTelemetryVersion}</version>
+    <exclusions>
+        <exclusion>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-exporter-sender-okhttp</artifactId>
+        </exclusion>
+    </exclusions>
+</dependency>
+<dependency>
+    <groupId>io.opentelemetry</groupId>
+    <artifactId>opentelemetry-exporter-sender-grpc-managed-channel</artifactId>
+    <version>{OpenTelemetryVersion}</version>
+    <scope>runtime</scope>
+</dependency>
+<dependency>
     <groupId>io.opentelemetry</groupId>
     <artifactId>opentelemetry-sdk-extension-autoconfigure</artifactId>
     <version>{OpenTelemetryVersion}</version>
 </dependency>
 <dependency>
-  <groupId>io.opentelemetry.instrumentation</groupId>
-  <artifactId>opentelemetry-kafka-clients-{OpenTelemetryKafkaClientVersion}</artifactId>
-  <version>{OpenTelemetryAlphaVersion}</version>
+    <groupId>io.opentelemetry.instrumentation</groupId>
+    <artifactId>opentelemetry-kafka-clients-{OpenTelemetryKafkaClientVersion}</artifactId>
+    <version>{OpenTelemetryInstrumentationVersion}</version>
 </dependency>
 <dependency>
-  <groupId>io.opentelemetry</groupId>
-  <artifactId>opentelemetry-exporter-otlp</artifactId>
-  <version>{OpenTelemetryVersion}</version>
+    <groupId>io.opentelemetry</groupId>
+    <artifactId>opentelemetry-sdk</artifactId>
+    <version>{OpenTelemetryVersion}</version>
+</dependency>
+<dependency>
+    <groupId>io.opentelemetry</groupId>
+    <artifactId>opentelemetry-exporter-sender-jdk</artifactId>
+    <version>{OpenTelemetryAlphaVersion}</version>
+    <scope>runtime</scope>
+</dependency>
+<dependency>
+    <groupId>io.grpc</groupId>
+    <artifactId>grpc-netty-shaded</artifactId>
+    <version>{GRPCVersion}</version>
 </dependency>
 ----
 
