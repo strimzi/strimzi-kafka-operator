@@ -546,7 +546,9 @@ public class BatchingTopicController {
                 .filter(rt -> !differentRfMap.containsKey(rt.topicName()) && isFailedReplicasChange(rt.kt()))
                 .collect(Collectors.toList());
             completed.addAll(reverted);
-            LOGGER.debugOp("Pending but completed replicas changes, Topics: {}", topicNames(completed));
+            if (!completed.isEmpty()) {
+                LOGGER.debugOp("Pending but completed replicas changes, Topics: {}", topicNames(completed));
+            }
             completed.forEach(reconcilableTopic -> {
                 reconcilableTopic.kt().getStatus().setReplicasChange(null);
             });
