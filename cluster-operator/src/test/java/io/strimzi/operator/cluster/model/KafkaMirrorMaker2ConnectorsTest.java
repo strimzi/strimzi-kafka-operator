@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -116,7 +117,37 @@ public class KafkaMirrorMaker2ConnectorsTest {
         ex = assertThrows(InvalidResourceException.class, () -> KafkaMirrorMaker2Connectors.validateConnectors(kmm2WrongAlias));
         assertThat(ex.getMessage(), is("KafkaMirrorMaker2 resource validation failed: " +
                 "[Each MirrorMaker 2 mirror definition has to specify the source cluster alias, " +
-                "Target cluster alias wrong-target is used in a mirror definition, but cluster with this alias does not exist in cluster definitions]"));
+                "Target cluster alias wrong-target is used in a mirror definition, but cluster with this alias does not exist in cluster definitions, " +
+                "Connect cluster alias (currently set to target) has to be the same as the target cluster alias wrong-target]"));
+    }
+
+    @Test
+    public void testMirrorTargetClusterNotSameAsConnectCluster() {
+        // The most obvious error case, where connect cluster is set to the source cluster instead of target
+        KafkaMirrorMaker2 kmm2 = new KafkaMirrorMaker2Builder(KMM2)
+                .editSpec()
+                    .withConnectCluster("source")
+                .endSpec()
+                .build();
+        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> KafkaMirrorMaker2Connectors.validateConnectors(kmm2));
+        assertThat(ex.getMessage(), is("KafkaMirrorMaker2 resource validation failed: " +
+                "[Connect cluster alias (currently set to source) has to be the same as the target cluster alias target]"));
+
+        // A case where one mirror has the correct target cluster, but the other does not
+        KafkaMirrorMaker2 kmm2CorrectAndIncorrectMirror = new KafkaMirrorMaker2Builder(KMM2)
+                .editSpec()
+                .addToClusters(new KafkaMirrorMaker2ClusterSpecBuilder()
+                                .withAlias("third")
+                                .withBootstrapServers("third:9092")
+                                .build())
+                .addToMirrors(new KafkaMirrorMaker2MirrorSpecBuilder()
+                        .withSourceCluster("source")
+                        .withTargetCluster("third").build())
+                .endSpec()
+                .build();
+        ex = assertThrows(InvalidResourceException.class, () -> KafkaMirrorMaker2Connectors.validateConnectors(kmm2CorrectAndIncorrectMirror));
+        assertThat(ex.getMessage(), is("KafkaMirrorMaker2 resource validation failed: " +
+                "[Connect cluster alias (currently set to target) has to be the same as the target cluster alias third]"));
     }
 
     @Test
@@ -346,6 +377,50 @@ public class KafkaMirrorMaker2ConnectorsTest {
         assertThat(kc.getSpec().getClassName(), is("org.apache.kafka.connect.mirror.MirrorHeartbeatConnector"));
         assertThat(kc.getSpec().getPause(), is(true));
         assertThat(kc.getSpec().getState(), is(ConnectorState.STOPPED));
+    }
+
+    @Test
+    public void testConnectorsWithAutoRestart() {
+        KafkaMirrorMaker2 kmm2 = new KafkaMirrorMaker2Builder(KMM2)
+                .editSpec()
+                    .editMirror(0)
+                        .editSourceConnector()
+                            .withNewAutoRestart()
+                                .withEnabled()
+                                .withMaxRestarts(1874)
+                            .endAutoRestart()
+                        .endSourceConnector()
+                        .editCheckpointConnector()
+                            .withNewAutoRestart()
+                                .withEnabled(false)
+                            .endAutoRestart()
+                        .endCheckpointConnector()
+                    .endMirror()
+                .endSpec()
+                .build();
+
+        KafkaMirrorMaker2Connectors connectors = KafkaMirrorMaker2Connectors.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kmm2);
+        List<KafkaConnector> kcs = connectors.generateConnectorDefinitions();
+
+        assertThat(kcs.size(), is(3));
+
+        KafkaConnector kc = kcs.stream().filter(k -> k.getMetadata().getName().contains("source->target.MirrorSourceConnector")).findFirst().orElseThrow();
+        assertThat(kc.getMetadata().getName(), is("source->target.MirrorSourceConnector"));
+        assertThat(kc.getSpec().getClassName(), is("org.apache.kafka.connect.mirror.MirrorSourceConnector"));
+        assertThat(kc.getSpec().getAutoRestart(), is(notNullValue()));
+        assertThat(kc.getSpec().getAutoRestart().isEnabled(), is(true));
+        assertThat(kc.getSpec().getAutoRestart().getMaxRestarts(), is(1874));
+
+        kc = kcs.stream().filter(k -> k.getMetadata().getName().contains("source->target.MirrorCheckpointConnector")).findFirst().orElseThrow();
+        assertThat(kc.getMetadata().getName(), is("source->target.MirrorCheckpointConnector"));
+        assertThat(kc.getSpec().getClassName(), is("org.apache.kafka.connect.mirror.MirrorCheckpointConnector"));
+        assertThat(kc.getSpec().getAutoRestart(), is(notNullValue()));
+        assertThat(kc.getSpec().getAutoRestart().isEnabled(), is(false));
+
+        kc = kcs.stream().filter(k -> k.getMetadata().getName().contains("source->target.MirrorHeartbeatConnector")).findFirst().orElseThrow();
+        assertThat(kc.getMetadata().getName(), is("source->target.MirrorHeartbeatConnector"));
+        assertThat(kc.getSpec().getClassName(), is("org.apache.kafka.connect.mirror.MirrorHeartbeatConnector"));
+        assertThat(kc.getSpec().getAutoRestart(), is(nullValue()));
     }
 
     @Test

@@ -14,6 +14,7 @@ import io.strimzi.api.kafka.model.kafka.Storage;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolBuilder;
 import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
+import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.model.nodepools.NodePoolUtils;
 import io.strimzi.operator.cluster.model.nodepools.VirtualNodePoolConverter;
 import io.strimzi.operator.common.Annotations;
@@ -51,6 +52,19 @@ public class NodePoolUtilsTest {
                     .endKafka()
                 .endSpec()
                 .build();
+    private final static KafkaNodePool POOL_CONTROLLERS = new KafkaNodePoolBuilder()
+            .withNewMetadata()
+                .withName("controllers")
+                .withNamespace(NAMESPACE)
+            .endMetadata()
+            .withNewSpec()
+                .withReplicas(3)
+                .withNewJbodStorage()
+                    .withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build())
+                .endJbodStorage()
+                .withRoles(ProcessRoles.CONTROLLER)
+            .endSpec()
+            .build();
     private final static KafkaNodePool POOL_A = new KafkaNodePoolBuilder()
             .withNewMetadata()
                 .withName("pool-a")
@@ -80,7 +94,7 @@ public class NodePoolUtilsTest {
 
     @Test
     public void testNewVirtualNodePool()  {
-        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, null, Map.of(), Map.of(), false, SHARED_ENV_PROVIDER);
+        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, null, Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, false, SHARED_ENV_PROVIDER);
 
         assertThat(pools.size(), is(1));
         assertThat(pools.get(0).poolName, is(VirtualNodePoolConverter.DEFAULT_NODE_POOL_NAME));
@@ -102,7 +116,7 @@ public class NodePoolUtilsTest {
                 )
         );
 
-        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, null, Map.of(), existingPods, false, SHARED_ENV_PROVIDER);
+        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, null, Map.of(), existingPods, KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, false, SHARED_ENV_PROVIDER);
 
         assertThat(pools.size(), is(1));
         assertThat(pools.get(0).poolName, is(VirtualNodePoolConverter.DEFAULT_NODE_POOL_NAME));
@@ -123,7 +137,7 @@ public class NodePoolUtilsTest {
                 )
         );
 
-        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, null, Map.of(), existingPods, false, SHARED_ENV_PROVIDER);
+        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, null, Map.of(), existingPods, KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, false, SHARED_ENV_PROVIDER);
 
         assertThat(pools.size(), is(1));
         assertThat(pools.get(0).poolName, is(VirtualNodePoolConverter.DEFAULT_NODE_POOL_NAME));
@@ -150,7 +164,7 @@ public class NodePoolUtilsTest {
                 new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("1Ti").build()).build()
         );
 
-        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, null, existingStorage, existingPods, false, SHARED_ENV_PROVIDER);
+        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, null, existingStorage, existingPods, KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, false, SHARED_ENV_PROVIDER);
 
         assertThat(pools.size(), is(1));
         assertThat(pools.get(0).poolName, is(VirtualNodePoolConverter.DEFAULT_NODE_POOL_NAME));
@@ -161,7 +175,7 @@ public class NodePoolUtilsTest {
 
     @Test
     public void testNewNodePools()  {
-        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(POOL_A, POOL_B), Map.of(), Map.of(), false, SHARED_ENV_PROVIDER);
+        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(POOL_A, POOL_B), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, false, SHARED_ENV_PROVIDER);
 
         assertThat(pools.size(), is(2));
 
@@ -201,7 +215,7 @@ public class NodePoolUtilsTest {
                 new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("200Gi").build()).build()
         );
 
-        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(poolA, poolB), existingStorage, Map.of(), false, SHARED_ENV_PROVIDER);
+        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(poolA, poolB), existingStorage, Map.of(), KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, false, SHARED_ENV_PROVIDER);
 
         assertThat(pools.size(), is(2));
 
@@ -246,7 +260,7 @@ public class NodePoolUtilsTest {
                 .endStatus()
                 .build();
 
-        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(poolA, poolB), Map.of(), Map.of(), false, SHARED_ENV_PROVIDER);
+        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(poolA, poolB), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, false, SHARED_ENV_PROVIDER);
 
         assertThat(pools.size(), is(2));
 
@@ -293,7 +307,7 @@ public class NodePoolUtilsTest {
                 .endStatus()
                 .build();
 
-        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(poolA, poolB), Map.of(), Map.of(), false, SHARED_ENV_PROVIDER);
+        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(poolA, poolB), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, false, SHARED_ENV_PROVIDER);
 
         assertThat(pools.size(), is(2));
 
@@ -326,7 +340,7 @@ public class NodePoolUtilsTest {
                 .endSpec()
                 .build();
 
-        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(poolA, poolB), Map.of(), Map.of(), true, SHARED_ENV_PROVIDER);
+        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(poolA, poolB), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
 
         assertThat(pools.size(), is(2));
 
@@ -351,7 +365,7 @@ public class NodePoolUtilsTest {
                 .endSpec()
                 .build();
 
-        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(poolA, poolB), Map.of(), Map.of(), true, SHARED_ENV_PROVIDER);
+        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(poolA, poolB), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
 
         assertThat(pools.size(), is(2));
 
@@ -383,7 +397,7 @@ public class NodePoolUtilsTest {
                 new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("1Ti").build()).build()
         );
 
-        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(poolA, poolB), existingStorage, Map.of(), false, SHARED_ENV_PROVIDER);
+        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(poolA, poolB), existingStorage, Map.of(), KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, false, SHARED_ENV_PROVIDER);
 
         assertThat(pools.size(), is(2));
 
@@ -416,7 +430,7 @@ public class NodePoolUtilsTest {
                 .endSpec()
                 .build();
 
-        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> NodePoolUtils.validateNodePools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(poolA), false));
+        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> NodePoolUtils.validateNodePools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(poolA), KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, false));
         assertThat(ex.getMessage(), containsString("KafkaNodePool pool-a has no role defined in .spec.roles"));
     }
 
@@ -428,7 +442,7 @@ public class NodePoolUtilsTest {
                 .endSpec()
                 .build();
 
-        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> NodePoolUtils.validateNodePools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(poolA), false));
+        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> NodePoolUtils.validateNodePools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(poolA), KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, false));
         assertThat(ex.getMessage(), containsString("KafkaNodePool pool-a contains invalid roles configuration. In a ZooKeeper-based Kafka cluster, the KafkaNodePool role has to be always set only to the 'broker' role."));
     }
 
@@ -440,7 +454,7 @@ public class NodePoolUtilsTest {
                 .endSpec()
                 .build();
 
-        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> NodePoolUtils.validateNodePools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(poolA), false));
+        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> NodePoolUtils.validateNodePools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(poolA), KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, false));
         assertThat(ex.getMessage(), containsString("KafkaNodePool pool-a contains invalid roles configuration. In a ZooKeeper-based Kafka cluster, the KafkaNodePool role has to be always set only to the 'broker' role."));
     }
 
@@ -452,7 +466,7 @@ public class NodePoolUtilsTest {
                 .endSpec()
                 .build();
 
-        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> NodePoolUtils.validateNodePools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(poolA), true));
+        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> NodePoolUtils.validateNodePools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(poolA), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true));
         assertThat(ex.getMessage(), containsString("KafkaNodePool pool-a has no role defined in .spec.roles"));
     }
 
@@ -471,7 +485,7 @@ public class NodePoolUtilsTest {
                 .build();
 
 
-        assertDoesNotThrow(() -> NodePoolUtils.validateNodePools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(poolA, poolB), true));
+        assertDoesNotThrow(() -> NodePoolUtils.validateNodePools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(poolA, poolB), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true));
     }
 
     @Test
@@ -488,10 +502,10 @@ public class NodePoolUtilsTest {
                 .build();
 
 
-        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> NodePoolUtils.validateNodePools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(poolA), true));
+        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> NodePoolUtils.validateNodePools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(poolA), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true));
         assertThat(ex.getMessage(), containsString("At least one KafkaNodePool with the broker role and at least one replica is required when KRaft mode is enabled"));
 
-        ex = assertThrows(InvalidResourceException.class, () -> NodePoolUtils.validateNodePools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(poolB), true));
+        ex = assertThrows(InvalidResourceException.class, () -> NodePoolUtils.validateNodePools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(poolB), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true));
         assertThat(ex.getMessage(), containsString("At least one KafkaNodePool with the controller role and at least one replica is required when KRaft mode is enabled"));
     }
 
@@ -523,10 +537,10 @@ public class NodePoolUtilsTest {
                 .build();
 
 
-        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> NodePoolUtils.validateNodePools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(poolAWithReplicas, poolBWithoutReplicas), true));
+        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> NodePoolUtils.validateNodePools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(poolAWithReplicas, poolBWithoutReplicas), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true));
         assertThat(ex.getMessage(), containsString("At least one KafkaNodePool with the broker role and at least one replica is required when KRaft mode is enabled"));
 
-        ex = assertThrows(InvalidResourceException.class, () -> NodePoolUtils.validateNodePools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(poolAWithoutReplicas, poolBWithReplicas), true));
+        ex = assertThrows(InvalidResourceException.class, () -> NodePoolUtils.validateNodePools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(poolAWithoutReplicas, poolBWithReplicas), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true));
         assertThat(ex.getMessage(), containsString("At least one KafkaNodePool with the controller role and at least one replica is required when KRaft mode is enabled"));
     }
 
@@ -538,12 +552,14 @@ public class NodePoolUtilsTest {
                 .endSpec()
                 .build();
 
-        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> NodePoolUtils.validateNodePools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(poolA), false));
+        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> NodePoolUtils.validateNodePools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(poolA), KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, false));
         assertThat(ex.getMessage(), is("KafkaNodePools are enabled, but KafkaNodePools for Kafka cluster my-cluster either don't exist or have 0 replicas. Please make sure at least one KafkaNodePool resource exists, is in the same namespace as the Kafka resource, has at least one replica, and has the strimzi.io/cluster label set to the name of the Kafka resource."));
     }
 
     @Test
     public void testValidationKRaftJbodStorage()   {
+        KafkaVersionChange oldKafkaVersion = new KafkaVersionChange(KafkaVersionTestUtils.getKafkaVersionLookup().version("3.6.0"), KafkaVersionTestUtils.getKafkaVersionLookup().version("3.6.0"), null, null, "3.6.0");
+
         KafkaNodePool poolA = new KafkaNodePoolBuilder(POOL_A)
                 .editSpec()
                     .withNewJbodStorage()
@@ -553,19 +569,26 @@ public class NodePoolUtilsTest {
                 .endSpec()
                 .build();
 
-        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> NodePoolUtils.validateNodePools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(poolA, POOL_B), true));
-        assertThat(ex.getMessage(), containsString("The Kafka cluster my-cluster is invalid: [At least one KafkaNodePool with the controller role and at least one replica is required when KRaft mode is enabled, Using more than one disk in a JBOD storage is currently not supported when the UseKRaft feature gate is enabled (in KafkaNodePool pool-a)]"));
+        // Kafka 3.70 or newer => should pass
+        assertDoesNotThrow(() -> NodePoolUtils.validateNodePools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(POOL_CONTROLLERS, poolA, POOL_B), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true));
+
+        // Should fail on Kafka older than 3.7.0 with KRaft
+        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> NodePoolUtils.validateNodePools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(POOL_CONTROLLERS, poolA, POOL_B), oldKafkaVersion, true));
+        assertThat(ex.getMessage(), containsString("The Kafka cluster my-cluster is invalid: [Using more than one disk in a JBOD storage in KRaft mode is supported only with Apache Kafka 3.7.0 and newer (in KafkaNodePool pool-a)]"));
+
+        // Should pass on Kafka older than 3.7.0 without KRaft
+        assertDoesNotThrow(() -> NodePoolUtils.validateNodePools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(poolA, POOL_B), oldKafkaVersion, false));
     }
 
     @Test
     public void testValidationOnlyPoolsWithZeroReplicas()   {
-        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> NodePoolUtils.validateNodePools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(), false));
+        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> NodePoolUtils.validateNodePools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(), KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, false));
         assertThat(ex.getMessage(), is("KafkaNodePools are enabled, but KafkaNodePools for Kafka cluster my-cluster either don't exist or have 0 replicas. Please make sure at least one KafkaNodePool resource exists, is in the same namespace as the Kafka resource, has at least one replica, and has the strimzi.io/cluster label set to the name of the Kafka resource."));
     }
 
     @Test
     public void testValidationIsCalledFromMainMethod()   {
-        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(), Map.of(), Map.of(), false, SHARED_ENV_PROVIDER));
+        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, false, SHARED_ENV_PROVIDER));
         assertThat(ex.getMessage(), is("KafkaNodePools are enabled, but KafkaNodePools for Kafka cluster my-cluster either don't exist or have 0 replicas. Please make sure at least one KafkaNodePool resource exists, is in the same namespace as the Kafka resource, has at least one replica, and has the strimzi.io/cluster label set to the name of the Kafka resource."));
     }
 

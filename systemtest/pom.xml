@@ -288,17 +288,6 @@
     </build>
 
     <profiles>
-
-        <profile>
-            <id>none</id>
-            <properties>
-                <skipITs>true</skipITs>
-            </properties>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
-        </profile>
-
         <profile>
             <id>all</id>
             <properties>
@@ -335,14 +324,6 @@
             <properties>
                 <skipTests>false</skipTests>
                 <groups>sanity</groups>
-            </properties>
-        </profile>
-
-        <profile>
-            <id>bridge</id>
-            <properties>
-                <skipTests>false</skipTests>
-                <groups>bridge</groups>
             </properties>
         </profile>
 
@@ -403,180 +384,6 @@
         </profile>
 
         <profile>
-            <id>azp_kafka_oauth</id>
-            <properties>
-                <skipTests>false</skipTests>
-                <groups>regression,kafkasmoke</groups>
-                <it.test>
-                    kafka/**/*ST,
-                    !kafka/listeners/*ST,
-                    !kafka/dynamicconfiguration/**/*ST,
-                    !kafka/ConfigProviderST,
-                    security/oauth/**/*ST,
-                    security/custom/*ST,
-                    security/OpaIntegrationST
-                </it.test>
-            </properties>
-        </profile>
-
-        <profile>
-            <id>azp_security</id>
-            <properties>
-                <skipTests>false</skipTests>
-                <groups>regression</groups>
-                <it.test>
-                    security/**/*ST,
-                    !security/oauth/**/*ST,
-                    !security/custom/*ST,
-                    !security/OpaIntegrationST
-                </it.test>
-            </properties>
-        </profile>
-
-        <profile>
-            <id>azp_dynconfig_listeners_tracing_watcher</id>
-            <properties>
-                <skipTests>false</skipTests>
-                <groups>regression</groups>
-                <it.test>
-                    kafka/dynamicconfiguration/**/*ST,
-                    kafka/listeners/*ST,
-                    kafka/ConfigProviderST,
-                    operators/topic/ThrottlingQuotaST,
-                    tracing/**/*ST,
-                    watcher/**/*ST
-                </it.test>
-            </properties>
-        </profile>
-
-        <profile>
-            <id>azp_rolling_update_bridge</id>
-            <properties>
-                <skipTests>false</skipTests>
-                <groups>regression</groups>
-                <it.test>
-                    rollingupdate/**/*ST,
-                    bridge/**/*ST
-                </it.test>
-            </properties>
-        </profile>
-
-        <profile>
-            <id>azp_connect_mirrormaker</id>
-            <properties>
-                <skipTests>false</skipTests>
-                <groups>regression</groups>
-                <it.test>
-                    connect/**/*ST,
-                    mirrormaker/**/*ST
-                </it.test>
-            </properties>
-        </profile>
-
-        <profile>
-            <id>azp_operators</id>
-            <properties>
-                <skipTests>false</skipTests>
-                <groups>regression</groups>
-                <it.test>
-                    operators/**/*ST,
-                    !operators/topic/ThrottlingQuotaST
-                </it.test>
-            </properties>
-        </profile>
-
-        <profile>
-            <id>azp_remaining</id>
-            <properties>
-                <skipTests>false</skipTests>
-                <groups>regression</groups>
-                <it.test>
-                    !kafka/**/*ST,
-                    !mirrormaker/**/*ST,
-                    !connect/**/*ST,
-                    !security/**/*ST,
-                    !operators/**/*ST,
-                    !rollingupdate/**/*ST,
-                    !watcher/**/*ST,
-                    !tracing/**/*ST,
-                    !bridge/**/*ST
-                </it.test>
-            </properties>
-        </profile>
-
-        <profile>
-            <id>azp_rbac_remaining</id>
-            <properties>
-                <skipTests>false</skipTests>
-                <groups>regression</groups>
-                <it.test>
-                    !kafka/**/*ST,
-                    !mirrormaker/**/*ST,
-                    !connect/**/*ST,
-                    !security/**/*ST,
-                    !operators/**/*ST,
-                    !rollingupdate/**/*ST,
-                    !watcher/**/*ST,
-                    !tracing/**/*ST,
-                    !LoggingChangeST
-                </it.test>
-            </properties>
-        </profile>
-
-        <profile>
-            <id>azp_upgrade</id>
-            <properties>
-                <skipTests>false</skipTests>
-                <groups>upgrade</groups>
-                <it.test>
-                    !KafkaUpgradeDowngradeST
-                </it.test>
-            </properties>
-        </profile>
-
-        <profile>
-            <id>azp_kraft_upgrade</id>
-            <properties>
-                <skipTests>false</skipTests>
-                <groups>kraftupgrade</groups>
-                <it.test>
-                    !KRaftKafkaUpgradeDowngradeST
-                </it.test>
-            </properties>
-        </profile>
-
-        <profile>
-            <id>azp_kafka_upgrade</id>
-            <properties>
-                <skipTests>false</skipTests>
-                <groups>upgrade,kraftupgrade</groups>
-                <it.test>
-                    KafkaUpgradeDowngradeST,
-                    KRaftKafkaUpgradeDowngradeST
-                </it.test>
-            </properties>
-        </profile>
-
-        <profile>
-            <id>azp_bridge</id>
-            <properties>
-                <skipTests>false</skipTests>
-                <groups>bridge</groups>
-                <it.test>
-                    !olm/**/*ST,
-                </it.test>
-            </properties>
-        </profile>
-
-        <profile>
-            <id>azp_migration</id>
-            <properties>
-                <skipTests>false</skipTests>
-                <groups>migration</groups>
-            </properties>
-        </profile>
-
-        <profile>
             <id>scalability</id>
             <properties>
                 <skipTests>false</skipTests>
@@ -587,13 +394,11 @@
         </profile>
 
         <profile>
-            <id>olm_acceptance_upgrade</id>
+            <id>performance</id>
             <properties>
                 <skipTests>false</skipTests>
                 <groups>
-                    acceptance,
-                    olm,
-                    olmupgrade
+                    performance
                 </groups>
             </properties>
         </profile>

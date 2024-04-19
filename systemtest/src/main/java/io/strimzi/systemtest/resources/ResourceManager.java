@@ -416,6 +416,18 @@ public class ResourceManager {
         LOGGER.info(String.join("", Collections.nCopies(76, "#")));
     }
 
+    public void deleteResourcesOfTypeWithoutWait(final String resourceKind) {
+        // Delete all resources of the specified kind
+        cmdKubeClient().deleteAllByResource(resourceKind);
+        LOGGER.info("Deleted all resources of kind: {}", resourceKind);
+
+        // Clear the instance stack of such resources
+        STORED_RESOURCES.forEach((key, stack) -> stack.removeIf(resourceItem ->
+            resourceItem.getResource() != null && resourceKind.equals(resourceItem.getResource().getKind())
+        ));
+        LOGGER.info("Cleared all resources of kind: {} from the resource stack", resourceKind);
+    }
+
     /**
      * Log actual status of custom resource with Pods.
      * @param customResource - Kafka, KafkaConnect etc. - every resource that HasMetadata and HasStatus (Strimzi status)

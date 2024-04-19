@@ -20,10 +20,10 @@ function useKRaft {
   # controller is KRaft since PRE_MIGRATION
   if [[ "$roles" =~ "controller" ]] && [ "$STRIMZI_KAFKA_METADATA_CONFIG_STATE" -ge 1 ]; then
     echo "true"
-  # starting from MIGRATION, both controller and broker are KRaft
-  elif [ "$STRIMZI_KAFKA_METADATA_CONFIG_STATE" -ge 2 ]; then
+  # broker is KRaft starting from POST_MIGRATION
+  elif [[ "$roles" =~ "broker" ]] && [ "$STRIMZI_KAFKA_METADATA_CONFIG_STATE" -ge 3 ]; then
     echo "true"
-  # we should be here in ZK state only or broker in PRE_MIGRATION	
+  # we should be here in ZK state only or broker before POST_MIGRATION
   else
     echo "false"
   fi

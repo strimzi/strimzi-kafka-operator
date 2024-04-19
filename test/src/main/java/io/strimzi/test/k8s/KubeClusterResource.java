@@ -358,4 +358,8 @@ public class KubeClusterResource {
         }
         return false;
     }
+
+    public boolean isMultiNode() {
+        return kubeClusterResource.cluster().defaultClient().getClusterWorkers().size() > 1;
+    }
 }

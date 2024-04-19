@@ -861,6 +861,21 @@ public class KafkaBrokerConfigurationBuilder {
     }
 
     /**
+     * Configures the KRaft metadata log directory for storing KRaft metadata
+     *
+     * @param kraftMetadataLogDir    Path of the log dir to store the KRaft metadata
+     *
+     * @return  Returns the builder instance
+     */
+    public KafkaBrokerConfigurationBuilder withKRaftMetadataLogDir(String kraftMetadataLogDir)  {
+        printSectionHeader("KRaft metadata log dir configuration");
+        writer.println("metadata.log.dir=" + kraftMetadataLogDir + "/kafka-log" + node.nodeId());
+        writer.println();
+
+        return this;
+    }
+
+    /**
      * Configure the tiered storage configuration for Kafka brokers.
      *
      * @param clusterName     Name of the cluster

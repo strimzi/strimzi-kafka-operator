@@ -9,4 +9,7 @@
 Federal Information Processing Standards (FIPS) are a set of security standards established by the US government to ensure the confidentiality, integrity, and availability of sensitive data and information that is processed or transmitted by information systems. 
 The OpenJDK used in Strimzi container images automatically enables FIPS mode when running on a FIPS-enabled Kubernetes cluster.
 
-NOTE: If you don't want to use FIPS, you can disable it in the deployment configuration of the Cluster Operator using the `FIPS_MODE` environment variable.
+NOTE: If you don't want the FIPS mode enabled in the Java OpenJDK, you can disable it in the deployment configuration of the Cluster Operator using the `FIPS_MODE` environment variable.
+
+//FIPS NIST validation
+include::../../modules/deploying/con-fips-validation.adoc[leveloffset=+1]

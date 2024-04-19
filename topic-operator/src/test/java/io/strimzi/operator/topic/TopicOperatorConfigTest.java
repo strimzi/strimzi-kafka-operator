@@ -271,4 +271,105 @@ class TopicOperatorConfigTest {
         assertFalse(config.toString().contains("FORBIDDEN"));
     }
 
+    @Test
+    public void shouldConfigureCustomSasl() {
+        // given
+        var config = TopicOperatorConfig.buildFromMap(Map.of(
+              TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
+              TopicOperatorConfig.NAMESPACE.key(), "some-namespace",
+              TopicOperatorConfig.SASL_ENABLED.key(), "true",
+              TopicOperatorConfig.SASL_CUSTOM_CONFIG_JSON.key(), """
+                    {
+                        "sasl.mechanism": "WAS_SMK_IAM",
+                        "sasl.jaas.config": "some.custom.auth.iam.IAMLoginModule required;",
+                        "sasl.client.callback.handler.class": "some.other.nonstandard.iam.IAMClientCallbackHandler"
+                    }
+                    """
+        ));
+
+        // then
+        assertEquals("some-namespace", config.namespace());
+
+        var adminConfig = config.adminClientConfig();
+        adminConfig.put("client.id", "foo");
+        assertEquals(Map.of(
+              "client.id", "foo",
+              "security.protocol", "PLAINTEXT",
+              "bootstrap.servers", "localhost:1234",
+              "sasl.mechanism", "WAS_SMK_IAM",
+              "sasl.jaas.config", "some.custom.auth.iam.IAMLoginModule required;",
+              "sasl.client.callback.handler.class", "some.other.nonstandard.iam.IAMClientCallbackHandler"), adminConfig);
+    }
+
+    @Test
+    void shouldThrowIfCustomConfigPropertyEmpty() {
+        var config = TopicOperatorConfig.buildFromMap(Map.of(
+              TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
+              TopicOperatorConfig.NAMESPACE.key(), "some-namespace",
+              TopicOperatorConfig.SASL_ENABLED.key(), "true",
+              TopicOperatorConfig.SASL_CUSTOM_CONFIG_JSON.key(), "{}"
+        ));
+
+        var customMechanismException = assertThrows(InvalidConfigurationException.class, config::adminClientConfig);
+        assertEquals("SASL custom config properties empty", customMechanismException.getMessage());
+    }
+
+    @Test
+    void shouldThrowIfCustomConfigInvalid() {
+        var config = TopicOperatorConfig.buildFromMap(Map.of(
+              TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
+              TopicOperatorConfig.NAMESPACE.key(), "some-namespace",
+              TopicOperatorConfig.SASL_ENABLED.key(), "true",
+              TopicOperatorConfig.SASL_CUSTOM_CONFIG_JSON.key(), "{"
+        ));
+
+        var customMechanismException = assertThrows(InvalidConfigurationException.class, config::adminClientConfig);
+        assertEquals("SASL custom config properties deserialize failed. customProperties: '{'", customMechanismException.getMessage());
+    }
+
+    @Test
+    void shouldThrowIfCustomConfigHasNonSaslProperties() {
+        var config = TopicOperatorConfig.buildFromMap(Map.of(
+              TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
+              TopicOperatorConfig.NAMESPACE.key(), "some-namespace",
+              TopicOperatorConfig.SASL_ENABLED.key(), "true",
+              TopicOperatorConfig.SASL_CUSTOM_CONFIG_JSON.key(), "{ \"a\": \"b\" }"
+        ));
+
+        var customMechanismException = assertThrows(InvalidConfigurationException.class, config::adminClientConfig);
+        assertEquals("SASL custom config properties not SASL properties. customProperty: 'a' = 'b'", customMechanismException.getMessage());
+    }
+
+    @Test
+    void shouldThrowIfCustomConfigHasEmptyProperties() {
+        var config = TopicOperatorConfig.buildFromMap(Map.of(
+              TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
+              TopicOperatorConfig.NAMESPACE.key(), "some-namespace",
+              TopicOperatorConfig.SASL_ENABLED.key(), "true",
+              TopicOperatorConfig.SASL_CUSTOM_CONFIG_JSON.key(), "{ \"\": \"b\" }"
+        ));
+
+        var customMechanismException = assertThrows(InvalidConfigurationException.class, config::adminClientConfig);
+        assertEquals("SASL custom config properties not SASL properties. customProperty: '' = 'b'", customMechanismException.getMessage());
+    }
+
+    @Test
+    void shouldDefaultToFalseForSkipClusterConfigCheck() {
+        var config = TopicOperatorConfig.buildFromMap(Map.of(
+              TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
+              TopicOperatorConfig.NAMESPACE.key(), "some-namespace"
+        ));
+
+        assertFalse(config.skipClusterConfigReview());
+    }
+
+    @Test
+    void shouldDefaultToAllForAlterableTopicConfig() {
+        var config = TopicOperatorConfig.buildFromMap(Map.of(
+              TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
+              TopicOperatorConfig.NAMESPACE.key(), "some-namespace"
+        ));
+
+        assertEquals("ALL", config.alterableTopicConfig());
+    }
 }

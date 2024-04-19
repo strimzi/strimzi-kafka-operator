@@ -124,9 +124,9 @@
         <lombok.version>1.18.24</lombok.version>
 
         <!-- Runtime dependencies -->
-        <fabric8.kubernetes-client.version>6.11.0</fabric8.kubernetes-client.version>
-        <fabric8.openshift-client.version>6.11.0</fabric8.openshift-client.version>
-        <fabric8.kubernetes-model.version>6.11.0</fabric8.kubernetes-model.version>
+        <fabric8.kubernetes-client.version>6.12.0</fabric8.kubernetes-client.version>
+        <fabric8.openshift-client.version>6.12.0</fabric8.openshift-client.version>
+        <fabric8.kubernetes-model.version>6.12.0</fabric8.kubernetes-model.version>
         <fabric8.zjsonpatch.version>0.3.0</fabric8.zjsonpatch.version>
         <fasterxml.jackson-core.version>2.16.1</fasterxml.jackson-core.version>
         <fasterxml.jackson-databind.version>2.16.1</fasterxml.jackson-databind.version>
@@ -140,7 +140,6 @@
         <yammer-metrics.version>2.2.0</yammer-metrics.version>
         <zookeeper.version>3.8.4</zookeeper.version>
         <snappy.version>1.1.10.5</snappy.version>
-        <zkclient.version>0.11</zkclient.version>
         <slf4j.version>1.7.36</slf4j.version>
         <log4j.version>2.17.2</log4j.version>
         <quartz.version>2.3.2</quartz.version>
@@ -503,11 +502,6 @@
                 <groupId>org.apache.zookeeper</groupId>
                 <artifactId>zookeeper-jute</artifactId>
                 <version>${zookeeper.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.101tec</groupId>
-                <artifactId>zkclient</artifactId>
-                <version>${zkclient.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>

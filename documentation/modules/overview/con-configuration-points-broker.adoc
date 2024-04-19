@@ -9,57 +9,63 @@ A kafka cluster comprises one or more brokers.
 For producers and consumers to be able to access topics within the brokers, Kafka configuration must define how data is stored in the cluster, and how the data is accessed.
 You can configure a Kafka cluster to run with multiple broker nodes across racks.
 
-Storage::
-Kafka and ZooKeeper store data on disks.
-+
-Strimzi requires block storage provisioned through `StorageClass`.
-The file system format for storage must be _XFS_ or _EXT4_.
-Three types of data storage are supported:
-+
---
+== Storage
+Strimzi supports the following storage configuration options for managing Kafka and ZooKeeper data:
+
 Ephemeral (Recommended for development only):: Ephemeral storage stores data for the lifetime of an instance. Data is lost when the instance is restarted.
 Persistent:: Persistent storage relates to long-term data storage independent of the lifecycle of the instance.
 JBOD (Just a Bunch of Disks, suitable for Kafka only):: JBOD allows you to use multiple disks to store commit logs in each broker.
---
-+
+
+In addition to these options, you can configure Strimzi to use tiered storage. 
+Tiered storage is an *early access* feature in Kafka, providing more flexibility for data management by leveraging the parallel use of storage types with different characteristics. 
+While one of the basic storage options must be configured alongside tiered storage, it enables combinations such as block storage with object storage for enhanced performance and scalability.
+
+Storage types are specified in the custom resource using `storage` or `tieredStorage` configuration properties:
+
+* `storage` configuration types:
+** `type: ephemeral`
+** `type: persistent-claim` for persistent storage using {K8sPersistentVolumeClaims} (PVCs)
+** `type: jbod` for JBOD storage
+* `tieredStorage` configuration types:
+** `type: custom` for custom tiered storage
+
+For the Kafka and ZooKeeper data stored on disks, the file system format for storage must be XFS or EXT4.
 The disk capacity used by an existing Kafka cluster can be increased if supported by the infrastructure.
 
-Listeners:: Listeners configure how clients connect to a Kafka cluster.
-+
+== Listeners 
+
+Listeners configure how clients connect to a Kafka cluster.
+
 By specifying a unique name and port for each listener within a Kafka cluster,
 you can configure multiple listeners.
-+
+
 The following types of listener are supported:
-+
---
+
 * *Internal listeners* for access within Kubernetes
 * *External listeners* for access outside of Kubernetes
---
-+
+
 You can enable TLS encryption for listeners, and configure xref:security-configuration-authentication_{context}[authentication].
-+
+
 Internal listeners expose Kafka by specifying an `internal` type:
-+
---
+
 * `internal` to connect within the same Kubernetes cluster
 * `cluster-ip` to expose Kafka using per-broker `ClusterIP` services
---
-+
+
 External listeners expose Kafka by specifying an external `type`:
-+
---
+
 * `route` to use OpenShift routes and the default HAProxy router
 * `loadbalancer` to use loadbalancer services
 * `nodeport` to use ports on Kubernetes nodes
 * `ingress` to use Kubernetes _Ingress_ and the {NginxIngressController}
---
-+
+
 NOTE: With the `cluster-ip` type can add your own access mechanism.
 For example, you can use the listener with a custom Ingress controller or the Kubernetes Gateway API.
 
 If you are using xref:security-configuration-authentication_{context}[OAuth 2.0 for token-based authentication], you can configure listeners to use the authorization server.
 
-Rack awareness:: Racks represent data centers, or racks in data centers, or availability zones.
+== Rack awareness 
+
+Racks represent data centers, or racks in data centers, or availability zones.
 Configure rack awareness to distribute Kafka broker pods and topic replicas across racks.
 Enable rack awareness using the `rack` property to specify a `topologyKey`.
 The `topologyKey` is the name of the label assigned to Kubernetes worker nodes, which identifies the rack.  
@@ -70,7 +76,7 @@ The plugin matches the rack IDs of brokers and consumers, so that messages are c
 To use the plugin, consumers must also have rack awareness enabled. 
 You can enable rack awareness in Kafka Connect, MirrorMaker 2, and the Kafka Bridge.   
 
-[discrete]
+
 == Example YAML showing Kafka configuration
 [source,shell,subs="+attributes"]
 ----

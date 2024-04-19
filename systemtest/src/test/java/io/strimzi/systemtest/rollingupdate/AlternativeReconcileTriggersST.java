@@ -334,7 +334,8 @@ class AlternativeReconcileTriggersST extends AbstractST {
      *  - persistent-volume-claims
      */
     @ParallelNamespaceTest
-    @KRaftNotSupported("JBOD is not supported by KRaft mode and is used in this test case.")
+    // This test needs to be adapted to support KRaft: https://github.com/strimzi/strimzi-kafka-operator/issues/9938
+    @KRaftNotSupported("This test has not yet been adapted to support KRaft after JBOD support was added in KRaft mode.")
     void testAddingAndRemovingJbodVolumes() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 

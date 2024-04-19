@@ -10,7 +10,6 @@ import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.operator.cluster.model.DnsNameGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
-import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.auth.TlsPemIdentity;
 
 import javax.net.ssl.KeyManagerFactory;
@@ -23,16 +22,6 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.security.GeneralSecurityException;
-import java.security.KeyFactory;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.cert.Certificate;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.PKCS8EncodedKeySpec;
 
 /**
  * Creates HTTP client and interacts with Kafka Agent's REST endpoint
@@ -45,7 +34,6 @@ public class KafkaAgentClient {
     private static final String BROKER_STATE_REST_PATH = "/v1/broker-state/";
     private static final String KRAFT_MIGRATION_PATH = "/v1/kraft-migration/";
     private static final int KAFKA_AGENT_HTTPS_PORT = 8443;
-    private static final String KEYSTORE_TYPE_JKS = "JKS";
     private static final char[] KEYSTORE_PASSWORD = "changeit".toCharArray();
     private final String namespace;
     private final Reconciliation reconciliation;
@@ -88,13 +76,19 @@ public class KafkaAgentClient {
         }
 
         try {
+            if (tlsPemIdentity.pemTrustSet() == null) {
+                throw new RuntimeException("Missing cluster CA trust set certificates required to create connection to Kafka Agent");
+            }
             String trustManagerFactoryAlgorithm = TrustManagerFactory.getDefaultAlgorithm();
             TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(trustManagerFactoryAlgorithm);
-            trustManagerFactory.init(getTrustStore());
+            trustManagerFactory.init(tlsPemIdentity.pemTrustSet().jksTrustStore());
 
+            if (tlsPemIdentity.pemAuthIdentity() == null) {
+                throw new RuntimeException("Missing cluster operator authentication identity certificates required to create connection to Kafka Agent");
+            }
             String keyManagerFactoryAlgorithm = KeyManagerFactory.getDefaultAlgorithm();
             KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(keyManagerFactoryAlgorithm);
-            keyManagerFactory.init(getKeyStore(), KEYSTORE_PASSWORD);
+            keyManagerFactory.init(tlsPemIdentity.pemAuthIdentity().jksKeyStore(KEYSTORE_PASSWORD), KEYSTORE_PASSWORD);
 
             SSLContext sslContext = SSLContext.getInstance("TLS");
             sslContext.init(keyManagerFactory.getKeyManagers(), trustManagerFactory.getTrustManagers(), null);
@@ -105,36 +99,6 @@ public class KafkaAgentClient {
         } catch (GeneralSecurityException | IOException e) {
             throw new RuntimeException("Failed to configure HTTP client", e);
         }
-    }
-
-    private KeyStore getTrustStore() throws CertificateException, KeyStoreException, IOException, NoSuchAlgorithmException {
-        if (tlsPemIdentity.pemTrustSet() == null) {
-            throw new RuntimeException("Missing cluster CA trust set certificates required to create connection to Kafka Agent");
-        }
-        KeyStore trustStore = KeyStore.getInstance(KEYSTORE_TYPE_JKS);
-        trustStore.load(null);
-        int aliasIndex = 0;
-        for (X509Certificate certificate : tlsPemIdentity.pemTrustSet().trustedCertificates()) {
-            trustStore.setEntry(certificate.getSubjectX500Principal().getName() + "-" + aliasIndex, new KeyStore.TrustedCertificateEntry(certificate), null);
-            aliasIndex++;
-        }
-        return trustStore;
-    }
-
-    private KeyStore getKeyStore() throws KeyStoreException, CertificateException, NoSuchAlgorithmException, InvalidKeySpecException, IOException {
-        if (tlsPemIdentity.pemAuthIdentity() == null) {
-            throw new RuntimeException("Missing cluster operator authentication identity certificates required to create connection to Kafka Agent");
-        }
-        byte[] decodedKey = Util.decodePemPrivateKey(tlsPemIdentity.pemAuthIdentity().privateKeyAsPem());
-        PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(decodedKey);
-        final KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-        final PrivateKey key = keyFactory.generatePrivate(keySpec);
-
-        KeyStore coKeyStore = KeyStore.getInstance(KEYSTORE_TYPE_JKS);
-        coKeyStore.load(null);
-        coKeyStore.setKeyEntry("cluster-operator", key, KEYSTORE_PASSWORD, new Certificate[]{tlsPemIdentity.pemAuthIdentity().certificateChain()});
-
-        return coKeyStore;
     }
 
     String doGet(URI uri) {

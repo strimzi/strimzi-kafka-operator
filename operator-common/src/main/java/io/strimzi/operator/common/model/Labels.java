@@ -162,10 +162,10 @@ public class Labels extends ResourceLabels {
 
         if (additionalLabels != null) {
             additionalLabels = additionalLabels
-                    .entrySet()
-                    .stream()
-                    .filter(entryset -> !STRIMZI_LABELS_EXCLUSION_PATTERN.matcher(entryset.getKey()).matches())
-                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+                .entrySet()
+                .stream()
+                .filter(entryset -> !STRIMZI_LABELS_EXCLUSION_PATTERN.matcher(entryset.getKey()).matches())
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         }
 
         return additionalLabels(additionalLabels);

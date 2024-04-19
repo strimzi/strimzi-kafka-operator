@@ -236,6 +236,31 @@ public class MetricsCollector {
     }
 
     /**
+     * Parses out a specific metric with varying labels from the entire metrics data.
+     * @param metricName The name of the metric to collect.
+     * @return A map where each key represents the unique labels and the value is the corresponding metric value.
+     */
+    public Map<String, Double> collectMetricWithLabels(String metricName) {
+        // This pattern will match the metric name and capture the labels and value.
+        Pattern pattern = Pattern.compile(metricName + "\\{([^}]+)\\}\\s(\\d+(?:\\.\\d+)?(?:E-?\\d+)?)");
+        Map<String, Double> valuesWithLabels = new HashMap<>();
+
+        if (collectedData != null && !collectedData.isEmpty()) {
+            for (String dataLine : collectedData.values()) {
+                Matcher matcher = pattern.matcher(dataLine);
+                while (matcher.find()) {
+                    // Construct the key from the metric name and labels.
+                    String key = metricName + "{" + matcher.group(1) + "}";
+                    Double value = Double.parseDouble(matcher.group(2));
+                    valuesWithLabels.put(key, value);
+                }
+            }
+        }
+
+        return valuesWithLabels;
+    }
+
+    /**
      * Method checks already collected metrics data for Pattern containing desired metric
      * @param pattern Pattern of metric which is desired
      *

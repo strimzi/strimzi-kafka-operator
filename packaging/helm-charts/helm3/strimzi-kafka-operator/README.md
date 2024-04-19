@@ -91,6 +91,7 @@ the documentation for more details.
 | Parameter                                   | Description                                                                     | Default                      |
 |---------------------------------------------|---------------------------------------------------------------------------------|------------------------------|
 | `replicas`                                  | Number of replicas of the cluster operator                                      | 1                            |
+| `revisionHistoryLimit`                      | Number of replicaSet to keep of the operator deployment                         | 10                           |
 | `watchNamespaces`                           | Comma separated list of additional namespaces for the strimzi-operator to watch | []                           |
 | `watchAnyNamespace`                         | Watch the whole Kubernetes cluster (all namespaces)                             | `false`                      |
 | `defaultImageRegistry`                      | Default image registry for all the images                                       | `quay.io`                    |

@@ -292,6 +292,7 @@ public class MigrationST extends AbstractST {
         doSecondPartOfMigration(testStorage, deleteCoDuringProcess, zkDeleteClaim);
     }
 
+    @SuppressWarnings({"checkstyle:MethodLength"})
     private void setupMigrationTestCase(TestStorage testStorage, boolean zkDeleteClaim) {
         // we assume that users will have broker NodePool named "kafka", so we will name it completely same to follow this use-case
         String brokerPoolName = "kafka";
@@ -310,7 +311,7 @@ public class MigrationST extends AbstractST {
         brokerSelector = KafkaNodePoolResource.getLabelSelector(testStorage.getClusterName(), brokerPoolName, ProcessRoles.BROKER);
         controllerSelector = KafkaNodePoolResource.getLabelSelector(testStorage.getClusterName(), testStorage.getControllerPoolName(), ProcessRoles.CONTROLLER);
 
-        String clientsAdditionConfiguration = "delivery.timeout.ms=20000\nrequest.timeout.ms=20000\nacks=all\n";
+        String clientsAdditionConfiguration = "delivery.timeout.ms=30000\nrequest.timeout.ms=30000\nacks=all\n";
 
         immediateClients = new KafkaClientsBuilder()
             .withProducerName(testStorage.getProducerName())
@@ -328,7 +329,7 @@ public class MigrationST extends AbstractST {
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
             .withTopicName(continuousTopicName)
             .withMessageCount(continuousMessageCount)
-            .withDelayMs(1000)
+            .withDelayMs(500)
             .withConsumerGroup(continuousConsumerGroupName)
             .withUsername(continuousUserName)
             .withAdditionalConfig(clientsAdditionConfiguration)
@@ -374,6 +375,16 @@ public class MigrationST extends AbstractST {
                             .withDeleteClaim(zkDeleteClaim)
                             .endPersistentClaimStorage()
                         .endZookeeper()
+                        .editOrNewEntityOperator()
+                            .editOrNewTemplate()
+                                .editOrNewTopicOperatorContainer()
+                                    .addNewEnv()
+                                        .withName("STRIMZI_USE_FINALIZERS")
+                                        .withValue("false")
+                                    .endEnv()
+                                .endTopicOperatorContainer()
+                            .endTemplate()
+                        .endEntityOperator()
                     .endSpec()
                     .build());
 

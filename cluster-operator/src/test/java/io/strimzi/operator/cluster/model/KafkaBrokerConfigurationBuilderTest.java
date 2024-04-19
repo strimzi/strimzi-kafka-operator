@@ -598,7 +598,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.ZK)
-                .withLogDirs(VolumeUtils.createVolumeMounts(storage, "/var/lib/kafka", false))
+                .withLogDirs(VolumeUtils.createVolumeMounts(storage, false))
                 .build();
 
         assertThat(configuration, isEquivalent("broker.id=2",
@@ -615,7 +615,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.ZK)
-                .withLogDirs(VolumeUtils.createVolumeMounts(storage, "/var/lib/kafka", false))
+                .withLogDirs(VolumeUtils.createVolumeMounts(storage, false))
                 .build();
 
         assertThat(configuration, isEquivalent("broker.id=2",
@@ -649,7 +649,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.ZK)
-                .withLogDirs(VolumeUtils.createVolumeMounts(storage, "/var/lib/kafka", false))
+                .withLogDirs(VolumeUtils.createVolumeMounts(storage, false))
                 .build();
 
         assertThat(configuration, isEquivalent("broker.id=2",
@@ -2451,6 +2451,17 @@ public class KafkaBrokerConfigurationBuilderTest {
                 assertThat(configuration, containsString("authorizer.class.name=kafka.security.authorizer.AclAuthorizer"));
             }
         }
+    }
+
+    @ParallelTest
+    public void testWithKRaftMetadataLogDir() {
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.KRAFT)
+                .withKRaftMetadataLogDir("/my/kraft/metadata")
+                .build();
+
+        assertThat(configuration, isEquivalent("node.id=2",
+                "metadata.log.dir=/my/kraft/metadata/kafka-log2"
+        ));
     }
 
     static class IsEquivalent extends TypeSafeMatcher<String> {

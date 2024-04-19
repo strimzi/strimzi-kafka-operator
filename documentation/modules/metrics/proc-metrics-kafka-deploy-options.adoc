@@ -20,7 +20,7 @@ This configuration enables the {JMXExporter} to expose metrics through an HTTP e
 The port for the JMX exporter HTTP endpoint is 9404. 
 Prometheus scrapes this endpoint to collect Kafka metrics.
 
-You set the `enableMetrics` property to `true` in order to expose metrics for these components:
+Set the `enableMetrics` property to `true` in order to expose metrics for these components:
 
 * Kafka Bridge 
 * OAuth 2.0 authentication and authorization framework
@@ -44,7 +44,7 @@ The process is the same when deploying the example files for other resources.
 If you wish to include xref:con-metrics-kafka-exporter-lag-str[Kafka Exporter] metrics, add `kafkaExporter` configuration to your `Kafka` resource.
 
 IMPORTANT: Kafka Exporter only provides additional metrics related to consumer lag and consumer offsets.
-For regular Kafka metrics, you must configure the Prometheus metrics in xref:proc-metrics-kafka-deploy-options-{context}[Kafka brokers].
+For regular Kafka metrics, configure Prometheus metrics in the `Kafka` resource.
 
 .Procedure
 
@@ -58,7 +58,7 @@ For example, for each `Kafka` resource you can apply the `kafka-metrics.yaml` fi
 kubectl apply -f kafka-metrics.yaml
 ----
 +
-Alternatively, you can copy the example configuration in `kafka-metrics.yaml` to your own `Kafka` resource.
+Alternatively, copy the example configuration in `kafka-metrics.yaml` to your own `Kafka` resource.
 +
 .Copying the example configuration
 [source,shell]
@@ -95,12 +95,12 @@ data:
   kafka-metrics-config.yml: |
   # _metrics configuration..._
 ----
-<1> Copy the `metricsConfig` property that references the ConfigMap that contains metrics configuration.
-<2> Copy the whole `ConfigMap` that specifies the metrics configuration.
+<1> Copy the `metricsConfig` property that references the `ConfigMap` containing metrics configuration.
+<2> Copy the whole `ConfigMap` specifying the metrics configuration.
 
 . To deploy Kafka Exporter, add `kafkaExporter` configuration.
 +
-`kafkaExporter` configuration is only specified in the `Kafka` resource.
+`kafkaExporter` configuration is specified only in the `Kafka` resource.
 +
 .Example configuration for deploying Kafka Exporter
 [source,yaml,subs="attributes+"]
@@ -112,21 +112,22 @@ metadata:
 spec:
   # ...
   kafkaExporter:
-    image: my-registry.io/my-org/my-exporter-cluster:latest <1>
-    groupRegex: ".*" <2>
-    topicRegex: ".*" <3>
-    groupExcludeRegex: "^excluded-.*" <4>
-    topicExcludeRegex: "^excluded-.*" <5>
-    resources: <6>
+    image: my-registry.io/my-org/my-exporter-cluster:latest # <1>
+    groupRegex: ".*" # <2>
+    topicRegex: ".*" # <3>
+    groupExcludeRegex: "^excluded-.*" # <4>
+    topicExcludeRegex: "^excluded-.*" # <5>
+    showAllOffsets: false # <6>
+    resources: # <7>
       requests:
         cpu: 200m
         memory: 64Mi
       limits:
         cpu: 500m
         memory: 128Mi
-    logging: debug <7>
-    enableSaramaLogging: true <8>
-    template: <9>
+    logging: debug # <8>
+    enableSaramaLogging: true # <9>
+    template: # <10>
       pod:
         metadata:
           labels:
@@ -137,10 +138,10 @@ spec:
           runAsUser: 1000001
           fsGroup: 0
         terminationGracePeriodSeconds: 120
-    readinessProbe: <10>
+    readinessProbe: # <11>
       initialDelaySeconds: 15
       timeoutSeconds: 5
-    livenessProbe: <11>
+    livenessProbe: # <12>
       initialDelaySeconds: 15
       timeoutSeconds: 5
 # ...
@@ -150,12 +151,13 @@ spec:
 <3> A regular expression to specify the topics to include in the metrics.
 <4> A regular expression to specify the consumer groups to exclude in the metrics.
 <5> A regular expression to specify the topics to exclude in the metrics.
-<6> CPU and memory resources to reserve.
-<7> Logging configuration, to log messages with a given severity (debug, info, warn, error, fatal) or above.
-<8> Boolean to enable Sarama logging, a Go client library used by Kafka Exporter.
-<9> Customization of deployment templates and pods.
-<10> Healthcheck readiness probes.
-<11> Healthcheck liveness probes.
+<6> By default, metrics are collected for all consumers regardless of their connection status. Setting `showAllOffsets` to `false` stops collecting metrics on disconnected consumers.
+<7> CPU and memory resources to reserve.
+<8> Logging configuration, to log messages with a given severity (debug, info, warn, error, fatal) or above.
+<9> Boolean to enable Sarama logging, a Go client library used by Kafka Exporter.
+<10> Customization of deployment templates and pods.
+<11> Healthcheck readiness probes.
+<12> Healthcheck liveness probes.
 
 NOTE: For Kafka Exporter to be able to work properly, consumer groups need to be in use. 
 
@@ -184,9 +186,8 @@ spec:
 To expose metrics for OAuth 2.0 or OPA, set the `enableMetrics` property to `true` in the appropriate custom resource.
 
 OAuth 2.0 metrics:: Enable metrics for Kafka cluster authorization and Kafka listener authentication in the `Kafka` resource.
-+
 You can also enable metrics for OAuth 2.0 authentication in the custom resource of other xref:proc-oauth-kafka-config-{context}[supported components].   
-OPA metrics:: Enable metrics for Kafka cluster authorization the `Kafka` resource in the same way as for OAuth 2.0. 
+OPA metrics:: Enable metrics for Kafka cluster authorization in the `Kafka` resource similar to OAuth 2.0. 
 
 In the following example, metrics are enabled for OAuth 2.0 listener authentication and OAuth 2.0 (`keycloak`) cluster authorization.
 
@@ -217,7 +218,6 @@ spec:
   # ...
 ----
 
-To use the OAuth 2.0 metrics with Prometheus, you can use the `oauth-metrics.yaml` file to deploy example Prometheus metrics configuration.
-Copy the `ConfigMap` configuration the `oauth-metrics.yaml` file contains to the same `Kafka` resource configuration file where you enabled metrics for OAuth 2.0.
+To use OAuth 2.0 metrics with Prometheus, copy the `ConfigMap` configuration from the `oauth-metrics.yaml` file to the same `Kafka` resource configuration file where you enabled metrics for OAuth 2.0 and then apply the configuration.
 
 

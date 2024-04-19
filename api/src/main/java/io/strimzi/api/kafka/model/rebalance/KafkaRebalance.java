@@ -74,7 +74,12 @@ import java.util.function.Predicate;
                 name = "NotReady",
                 description = "There is an error on the custom resource",
                 jsonPath = ".status.conditions[?(@.type==\"NotReady\")].status",
-                type = "string")
+                type = "string"),
+            @Crd.Spec.AdditionalPrinterColumn(
+                    name = "Stopped",
+                    description = "Processing the proposal or running rebalancing was stopped",
+                    jsonPath = ".status.conditions[?(@.type==\"Stopped\")].status",
+                    type = "string")
         }
     )
 )

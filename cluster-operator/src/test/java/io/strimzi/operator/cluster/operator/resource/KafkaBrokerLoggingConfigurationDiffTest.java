@@ -97,7 +97,6 @@ public class KafkaBrokerLoggingConfigurationDiffTest {
                 "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]%n\n" +
                 "root.logger.level=INFO\n " +
                 "log4j.rootLogger=${root.logger.level}, CONSOLE\n" +
-                "log4j.logger.org.I0Itec.zkclient.ZkClient=INFO\n" +
                 "log4j.logger.org.apache.zookeeper=INFO\n" +
                 "log4j.logger.kafka=DEBUG\n" +
                 "log4j.logger.org.apache.kafka=DEBUG\n" +
@@ -124,7 +123,6 @@ public class KafkaBrokerLoggingConfigurationDiffTest {
             newAlterConfigOp("org.apache.kafka.clients.ClientUtils", "DEBUG"),
             newAlterConfigOp("org.apache.kafka.common.security.authenticator.LoginManager", "DEBUG"),
             newAlterConfigOp("io.strimzi.kafka.oauth.common.HttpUtil", "TRACE"),
-            newAlterConfigOp("org.I0Itec.zkclient.ZkClient", "INFO"),
             newAlterConfigOp("kafka.request.logger", "WARN"),
             newAlterConfigOp("kafka.network.Processor", "FATAL"),
             newAlterConfigOp("kafka.server.KafkaApis", "FATAL"),
@@ -151,7 +149,6 @@ public class KafkaBrokerLoggingConfigurationDiffTest {
                 "# Log levels\n" +
                 // level definition is afterwards its use
                 "kafka.root.logger.level=INFO\n" +
-                "log4j.logger.org.I0Itec.zkclient.ZkClient=INFO\n" +
                 "log4j.logger.org.apache.zookeeper=INFO\n" +
                 "log4j.logger.kafka=INFO\n" +
                 "log4j.logger.org.apache.kafka=INFO\n" +
