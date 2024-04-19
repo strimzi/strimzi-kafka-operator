@@ -18,7 +18,6 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -34,7 +33,6 @@ import static java.util.Collections.emptyMap;
 @EqualsAndHashCode
 @ToString
 public class KafkaMirrorMaker2ClusterSpec implements UnknownPropertyPreserving {
-
     public static final String FORBIDDEN_PREFIXES = "ssl., sasl., security., listeners, plugin.path, rest., bootstrap.servers, consumer.interceptor.classes, producer.interceptor.classes";
     public static final String FORBIDDEN_PREFIX_EXCEPTIONS = "ssl.endpoint.identification.algorithm, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols";
 

@@ -24,7 +24,6 @@ import lombok.ToString;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class AclRuleClusterResource extends AclRuleResource {
-
     public static final String TYPE_CLUSTER = "cluster";
 
     @Description("Must be `" + TYPE_CLUSTER + "`")

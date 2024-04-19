@@ -27,7 +27,6 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class DockerOutput extends Output {
-
     public static final String ALLOWED_KANIKO_OPTIONS = "--customPlatform, --insecure, --insecure-pull, " +
             "--insecure-registry, --log-format, --log-timestamp, --registry-mirror, --reproducible, --single-snapshot, " +
             "--skip-tls-verify, --skip-tls-verify-pull, --skip-tls-verify-registry, --verbosity, --snapshotMode, " +

@@ -25,7 +25,6 @@ import lombok.ToString;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class ImageStreamOutput extends Output {
-
     @Description("Must be `" + TYPE_IMAGESTREAM + "`")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @Override

@@ -26,7 +26,6 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -43,7 +42,6 @@ import java.util.Map;
 @EqualsAndHashCode
 @ToString
 public class CruiseControlSpec implements HasConfigurableMetrics, HasConfigurableLogging, HasLivenessProbe, HasReadinessProbe, UnknownPropertyPreserving {
-
     // For the full configuration list refer to https://github.com/linkedin/cruise-control/wiki/Configurations
     public static final String FORBIDDEN_PREFIXES = "bootstrap.servers, client.id, zookeeper., network., security., failed.brokers.zk.path,"
         + "webserver.http., webserver.api.urlprefix, webserver.session.path, webserver.accesslog., two.step., request.reason.required,"

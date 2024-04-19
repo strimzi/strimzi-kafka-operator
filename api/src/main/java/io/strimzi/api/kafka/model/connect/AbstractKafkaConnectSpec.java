@@ -40,7 +40,6 @@ import lombok.ToString;
 @EqualsAndHashCode(doNotUseGetters = true, callSuper = true)
 @ToString(callSuper = true)
 public abstract class AbstractKafkaConnectSpec extends Spec implements HasConfigurableMetrics, HasConfigurableLogging, HasJmxOptions, HasLivenessProbe, HasReadinessProbe {
-
     private Logging logging;
     private int replicas = 3;
     private String version;

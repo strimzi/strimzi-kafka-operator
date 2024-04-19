@@ -23,7 +23,6 @@ import lombok.ToString;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public abstract class DownloadableArtifact extends Artifact {
-
     private String url;
     private String sha512sum;
     private Boolean insecure;

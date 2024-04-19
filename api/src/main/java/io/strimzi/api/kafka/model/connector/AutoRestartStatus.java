@@ -13,7 +13,6 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -28,7 +27,6 @@ import static java.util.Collections.emptyMap;
 @EqualsAndHashCode
 @ToString
 public class AutoRestartStatus implements UnknownPropertyPreserving {
-
     private int count;
 
     private String connectorName;

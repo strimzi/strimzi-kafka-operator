@@ -13,7 +13,6 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;

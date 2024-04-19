@@ -13,7 +13,6 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -31,7 +30,6 @@ import static java.util.Collections.emptyMap;
 @EqualsAndHashCode
 @ToString
 public class ListenerAddress implements UnknownPropertyPreserving {
-
     private String host;
     private Integer port;
     private Map<String, Object> additionalProperties;

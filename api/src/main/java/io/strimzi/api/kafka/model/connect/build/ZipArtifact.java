@@ -24,7 +24,6 @@ import lombok.ToString;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class ZipArtifact extends DownloadableArtifact {
-
     @Description("Must be `" + TYPE_ZIP + "`")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @Override

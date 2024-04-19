@@ -25,7 +25,6 @@ import lombok.ToString;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class OtherArtifact extends DownloadableArtifact {
-
     String fileName;
 
     @Description("Must be `" + TYPE_OTHER + "`")

@@ -28,7 +28,6 @@ import java.util.Map;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class StrimziPodSetSpec extends Spec {
-
     private LabelSelector selector;
     private List<Map<String, Object>> pods;
 

@@ -29,7 +29,6 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaAuthorizationCustom extends KafkaAuthorization {
-
     public static final String TYPE_CUSTOM = "custom";
 
     private String authorizerClass;

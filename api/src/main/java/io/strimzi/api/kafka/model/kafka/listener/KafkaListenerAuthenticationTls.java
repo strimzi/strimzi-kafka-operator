@@ -24,7 +24,6 @@ import lombok.ToString;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaListenerAuthenticationTls extends KafkaListenerAuthentication {
-
     public static final String TYPE_TLS = "tls";
 
     @Description("Must be `" + TYPE_TLS + "`")

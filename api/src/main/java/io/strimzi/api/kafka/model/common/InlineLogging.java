@@ -25,7 +25,6 @@ import java.util.Map;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class InlineLogging extends Logging {
-
     public static final String TYPE_INLINE = "inline";
 
     private Map<String, String> loggers = null;

@@ -33,7 +33,6 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaNodePoolSpec extends Spec {
-
     private int replicas;
     private Storage storage;
     private List<ProcessRoles> roles;

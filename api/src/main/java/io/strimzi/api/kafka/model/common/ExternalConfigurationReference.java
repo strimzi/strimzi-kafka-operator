@@ -13,7 +13,6 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -29,7 +28,6 @@ import java.util.Map;
 @EqualsAndHashCode
 @ToString
 public class ExternalConfigurationReference implements UnknownPropertyPreserving {
-
     private ConfigMapKeySelector configMapKeyRef;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 

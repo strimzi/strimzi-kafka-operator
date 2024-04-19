@@ -27,7 +27,6 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaConnectStatus extends Status {
-
     private String url;
     private List<ConnectorPlugin> connectorPlugins;
     private int replicas;

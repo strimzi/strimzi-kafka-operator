@@ -13,7 +13,6 @@ import io.strimzi.crdgenerator.annotations.Description;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -35,7 +34,6 @@ import java.util.Map;
 @EqualsAndHashCode
 @ToString
 public abstract class Output implements UnknownPropertyPreserving {
-
     public static final String TYPE_DOCKER = "docker";
     public static final String TYPE_IMAGESTREAM = "imagestream";
 

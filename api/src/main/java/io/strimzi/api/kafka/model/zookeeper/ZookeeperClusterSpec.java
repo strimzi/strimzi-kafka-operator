@@ -29,7 +29,6 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -48,7 +47,6 @@ import java.util.Map;
 @EqualsAndHashCode
 @ToString
 public class ZookeeperClusterSpec implements HasConfigurableMetrics, HasConfigurableLogging, HasJmxOptions, HasLivenessProbe, HasReadinessProbe, UnknownPropertyPreserving {
-
     public static final String FORBIDDEN_PREFIXES = "server., dataDir, dataLogDir, clientPort, authProvider, " +
             "quorum.auth, requireClientAuthScheme, snapshot.trust.empty, standaloneEnabled, " +
             "reconfigEnabled, 4lw.commands.whitelist, secureClientPort, ssl., serverCnxnFactory, sslQuorum";

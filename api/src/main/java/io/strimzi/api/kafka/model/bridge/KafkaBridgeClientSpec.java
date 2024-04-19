@@ -11,7 +11,6 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -25,7 +24,6 @@ import static java.util.Collections.emptyMap;
 @EqualsAndHashCode
 @ToString
 public abstract class KafkaBridgeClientSpec implements UnknownPropertyPreserving {
-
     protected Map<String, Object> config = new HashMap<>(0);
 
     private Map<String, Object> additionalProperties;

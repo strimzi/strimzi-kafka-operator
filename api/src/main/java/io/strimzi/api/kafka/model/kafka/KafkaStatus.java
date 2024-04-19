@@ -27,7 +27,6 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaStatus extends Status {
-
     private List<ListenerStatus> listeners;
     private List<UsedNodePoolStatus> kafkaNodePools;
     

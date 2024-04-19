@@ -17,7 +17,6 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -33,7 +32,6 @@ import java.util.Map;
 @EqualsAndHashCode
 @ToString
 public class ExternalConfigurationVolumeSource implements UnknownPropertyPreserving {
-
     private String name;
     private SecretVolumeSource secret;
     private ConfigMapVolumeSource configMap;

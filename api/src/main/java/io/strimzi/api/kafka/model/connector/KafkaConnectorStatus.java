@@ -28,7 +28,6 @@ import java.util.Map;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaConnectorStatus extends Status {
-
     private Map<String, Object> connectorStatus;
     private int tasksMax;
     private List<String> topics;

@@ -27,7 +27,6 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaRebalanceSpec extends Spec {
-
     // rebalancing modes
     private KafkaRebalanceMode mode = KafkaRebalanceMode.FULL;
     private List<Integer> brokers;

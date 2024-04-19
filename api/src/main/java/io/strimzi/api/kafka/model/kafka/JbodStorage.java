@@ -26,7 +26,6 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class JbodStorage extends Storage {
-
     private List<SingleVolumeStorage> volumes;
 
     @Description("Must be `" + TYPE_JBOD + "`")

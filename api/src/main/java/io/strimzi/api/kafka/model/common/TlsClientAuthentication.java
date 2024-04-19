@@ -9,7 +9,6 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -21,7 +20,6 @@ import java.util.Map;
 @EqualsAndHashCode
 @ToString
 public class TlsClientAuthentication implements UnknownPropertyPreserving {
-
     private Map<String, Object> additionalProperties;
 
     @Override

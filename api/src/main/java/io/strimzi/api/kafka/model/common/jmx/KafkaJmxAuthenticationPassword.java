@@ -24,7 +24,6 @@ import lombok.ToString;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaJmxAuthenticationPassword extends KafkaJmxAuthentication {
-
     public static final String TYPE_PASSWORD = "password";
 
     @Description("Must be `" + TYPE_PASSWORD + "`")

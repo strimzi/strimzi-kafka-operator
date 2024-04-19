@@ -25,7 +25,6 @@ import lombok.ToString;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class StrimziPodSetStatus extends Status {
-
     private int pods;
     private int readyPods;
     private int currentPods;

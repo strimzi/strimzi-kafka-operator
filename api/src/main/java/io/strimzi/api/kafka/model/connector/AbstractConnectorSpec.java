@@ -32,7 +32,6 @@ import java.util.Map;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public abstract class AbstractConnectorSpec extends Spec {
-
     /**
      * Forbidden options in the connector configuration
      */

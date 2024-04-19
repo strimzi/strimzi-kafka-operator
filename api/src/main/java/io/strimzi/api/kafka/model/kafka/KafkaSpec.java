@@ -38,7 +38,6 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaSpec extends Spec {
-
     private KafkaClusterSpec kafka;
     private ZookeeperClusterSpec zookeeper;
     private EntityOperatorSpec entityOperator;

@@ -16,7 +16,6 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -33,7 +32,6 @@ import java.util.Map;
 @EqualsAndHashCode
 @ToString
 public class KafkaBridgeHttpConfig implements UnknownPropertyPreserving {
-
     public static final int HTTP_DEFAULT_PORT = 8080;
     public static final String HTTP_DEFAULT_HOST = "0.0.0.0";
     private int port = HTTP_DEFAULT_PORT;

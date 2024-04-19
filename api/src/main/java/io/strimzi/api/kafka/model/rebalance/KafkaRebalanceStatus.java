@@ -29,7 +29,6 @@ import java.util.Map;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaRebalanceStatus extends Status {
-
     private String sessionId;
     private Map<String, Object> optimizationResult = new HashMap<>(0);
 

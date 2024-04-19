@@ -9,7 +9,6 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -26,7 +25,6 @@ import static java.util.Collections.emptyMap;
 @EqualsAndHashCode
 @ToString
 public abstract class Spec implements UnknownPropertyPreserving {
-
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Override

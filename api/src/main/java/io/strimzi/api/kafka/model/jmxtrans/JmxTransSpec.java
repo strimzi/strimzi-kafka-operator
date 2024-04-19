@@ -18,7 +18,6 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,7 +36,6 @@ import java.util.Map;
 @Deprecated
 @DeprecatedType(replacedWithType = void.class)
 public class JmxTransSpec implements UnknownPropertyPreserving {
-
     public static final int DEFAULT_HEALTHCHECK_DELAY = 15;
     public static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
 

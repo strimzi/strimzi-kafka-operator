@@ -12,7 +12,6 @@ import io.strimzi.crdgenerator.annotations.Description;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -29,7 +28,6 @@ import java.util.Map;
 @EqualsAndHashCode
 @ToString
 public abstract class MetricsConfig implements UnknownPropertyPreserving {
-
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Metrics type. Only 'jmxPrometheusExporter' supported currently.")

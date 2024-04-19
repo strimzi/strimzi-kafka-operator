@@ -25,7 +25,6 @@ import lombok.ToString;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaMirrorMakerStatus extends Status {
-
     private int replicas;
     private String labelSelector;
 

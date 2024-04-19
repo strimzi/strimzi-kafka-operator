@@ -22,7 +22,6 @@ import lombok.ToString;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaUserSpec extends Spec {
-
     private KafkaUserAuthentication authentication;
     private KafkaUserAuthorization authorization;
     private KafkaUserQuotas quotas;

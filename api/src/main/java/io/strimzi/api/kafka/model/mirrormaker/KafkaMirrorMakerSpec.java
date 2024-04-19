@@ -43,7 +43,6 @@ import lombok.ToString;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaMirrorMakerSpec extends Spec implements HasConfigurableMetrics, HasConfigurableLogging, HasLivenessProbe, HasReadinessProbe {
-
     private static final int DEFAULT_REPLICAS = 3;
 
     private int replicas = DEFAULT_REPLICAS;

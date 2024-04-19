@@ -22,7 +22,6 @@ import lombok.ToString;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaConnectorSpec extends AbstractConnectorSpec {
-
     private String className;
 
     @Description("The Class for the Kafka Connector")

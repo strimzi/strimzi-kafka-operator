@@ -14,7 +14,6 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,7 +27,6 @@ import java.util.Map;
 @EqualsAndHashCode
 @ToString
 public class JmxTransQueryTemplate implements UnknownPropertyPreserving {
-
     private String targetMBean;
     private List<String> attributes;
     private List<String> outputs;

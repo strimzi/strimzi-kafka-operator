@@ -25,7 +25,6 @@ import lombok.ToString;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class MavenArtifact extends Artifact {
-
     public static final String DEFAULT_REPOSITORY = "https://repo1.maven.org/maven2/";
 
     private String group;

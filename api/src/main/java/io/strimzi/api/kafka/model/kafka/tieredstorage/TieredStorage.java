@@ -13,7 +13,6 @@ import io.strimzi.crdgenerator.annotations.Description;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -32,7 +31,6 @@ import java.util.Map;
 @EqualsAndHashCode
 @ToString
 public abstract class TieredStorage implements UnknownPropertyPreserving {
-
     public static final String TYPE_CUSTOM = "custom";
 
     private final Map<String, Object> additionalProperties = new HashMap<>(0);

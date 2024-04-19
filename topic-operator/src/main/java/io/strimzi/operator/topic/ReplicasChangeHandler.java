@@ -18,6 +18,7 @@ import io.strimzi.operator.common.model.cruisecontrol.CruiseControlParameters;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URI;

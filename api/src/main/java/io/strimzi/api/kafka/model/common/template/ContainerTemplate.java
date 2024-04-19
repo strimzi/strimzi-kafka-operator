@@ -17,7 +17,6 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,7 +34,6 @@ import java.util.Map;
 @EqualsAndHashCode
 @ToString
 public class ContainerTemplate implements UnknownPropertyPreserving {
-
     private List<ContainerEnvVar> env;
     private SecurityContext securityContext;
     private Map<String, Object> additionalProperties = new HashMap<>(0);

@@ -12,7 +12,6 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,7 +31,6 @@ import static java.util.Collections.emptyMap;
 @EqualsAndHashCode
 @ToString
 public class ClientTls implements UnknownPropertyPreserving {
-
     private List<CertSecretSource> trustedCertificates;
     private Map<String, Object> additionalProperties;
 

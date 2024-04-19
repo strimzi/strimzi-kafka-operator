@@ -12,7 +12,6 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -29,7 +28,6 @@ import java.util.Map;
 @EqualsAndHashCode
 @ToString
 public class CertificateAuthority implements UnknownPropertyPreserving {
-
     private int validityDays;
     private boolean generateCertificateAuthority = true;
     private boolean generateSecretOwnerReference = true;

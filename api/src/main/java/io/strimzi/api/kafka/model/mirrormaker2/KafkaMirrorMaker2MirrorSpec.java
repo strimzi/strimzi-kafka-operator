@@ -16,7 +16,6 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -32,7 +31,6 @@ import static java.util.Collections.emptyMap;
 @EqualsAndHashCode
 @ToString
 public class KafkaMirrorMaker2MirrorSpec implements UnknownPropertyPreserving {
-
     private String sourceCluster;
     private String targetCluster;
     private KafkaMirrorMaker2ConnectorSpec sourceConnector;

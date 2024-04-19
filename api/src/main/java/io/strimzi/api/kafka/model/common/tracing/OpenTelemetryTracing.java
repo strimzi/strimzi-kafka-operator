@@ -24,7 +24,6 @@ import lombok.ToString;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class OpenTelemetryTracing extends Tracing {
-
     public static final String TYPE_OPENTELEMETRY = "opentelemetry";
 
     public static final String CONSUMER_INTERCEPTOR_CLASS_NAME = "io.opentelemetry.instrumentation.kafkaclients.v2_6.TracingConsumerInterceptor";

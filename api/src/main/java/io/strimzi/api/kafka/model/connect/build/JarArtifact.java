@@ -24,7 +24,6 @@ import lombok.ToString;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class JarArtifact extends DownloadableArtifact {
-
     @Description("Must be `" + TYPE_JAR + "`")
     @Override
     @JsonInclude(JsonInclude.Include.NON_NULL)

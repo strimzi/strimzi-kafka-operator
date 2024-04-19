@@ -25,7 +25,6 @@ import lombok.ToString;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class ExternalLogging extends Logging {
-
     public static final String TYPE_EXTERNAL = "external";
 
     private ExternalConfigurationReference valueFrom;

@@ -19,6 +19,7 @@ import io.strimzi.operator.common.model.InvalidResourceException;
 import org.junit.jupiter.api.Test;
 
 import javax.security.auth.login.AppConfigurationEntry;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;

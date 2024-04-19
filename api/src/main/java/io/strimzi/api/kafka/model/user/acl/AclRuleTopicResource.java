@@ -25,7 +25,6 @@ import lombok.ToString;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class AclRuleTopicResource extends AclRuleResource {
-
     public static final String TYPE_TOPIC = "topic";
 
     private String name;

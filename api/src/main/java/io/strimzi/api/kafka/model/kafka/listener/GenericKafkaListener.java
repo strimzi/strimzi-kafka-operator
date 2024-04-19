@@ -19,7 +19,6 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,7 +36,6 @@ import java.util.Map;
 @EqualsAndHashCode
 @ToString
 public class GenericKafkaListener implements UnknownPropertyPreserving {
-
     // maximal port name length is 15. The prefix of generic port name is 'tcp-'
     public final static String LISTENER_NAME_REGEX = "^[a-z0-9]{1,11}$";
 

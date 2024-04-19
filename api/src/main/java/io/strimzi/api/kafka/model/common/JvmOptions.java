@@ -13,7 +13,6 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,7 +29,6 @@ import java.util.Map;
 @EqualsAndHashCode
 @ToString
 public class JvmOptions implements UnknownPropertyPreserving {
-
     /**
      * Configures the default value for the GC logging configuration. This is used in the model classes when the
      * jvmOptions section is not set at all. Storing it here ensures that the default value is the same when jvmOptions

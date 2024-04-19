@@ -12,7 +12,6 @@ import io.strimzi.crdgenerator.annotations.Description;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-
 import java.util.HashMap;
 import java.util.Map;
 

@@ -18,7 +18,6 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -38,7 +37,6 @@ import java.util.Map;
 @EqualsAndHashCode
 @ToString
 public class KafkaExporterSpec implements HasLivenessProbe, HasReadinessProbe, UnknownPropertyPreserving {
-
     private String image;
     private String groupRegex = ".*";
     private String topicRegex = ".*";

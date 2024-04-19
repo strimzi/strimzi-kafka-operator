@@ -26,7 +26,6 @@ import java.util.Map;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaTopicSpec extends Spec {
-
     private String topicName;
 
     private Integer partitions;

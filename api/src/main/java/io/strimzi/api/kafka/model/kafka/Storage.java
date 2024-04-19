@@ -12,7 +12,6 @@ import io.strimzi.crdgenerator.annotations.Description;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -33,7 +32,6 @@ import java.util.Map;
 @EqualsAndHashCode
 @ToString
 public abstract class Storage implements UnknownPropertyPreserving {
-
     public static final String TYPE_EPHEMERAL = "ephemeral";
     public static final String TYPE_PERSISTENT_CLAIM = "persistent-claim";
     public static final String TYPE_JBOD = "jbod";

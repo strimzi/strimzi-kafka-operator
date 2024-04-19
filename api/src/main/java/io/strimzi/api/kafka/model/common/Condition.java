@@ -11,7 +11,6 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -26,7 +25,6 @@ import static java.util.Collections.emptyMap;
 @EqualsAndHashCode
 @ToString
 public class Condition implements UnknownPropertyPreserving {
-
     private String status;
     private String reason;
     private String message;

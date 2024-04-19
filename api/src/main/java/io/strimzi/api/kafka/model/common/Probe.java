@@ -13,7 +13,6 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -29,7 +28,6 @@ import java.util.Map;
 @EqualsAndHashCode
 @ToString
 public class Probe implements UnknownPropertyPreserving {
-
     private int initialDelaySeconds = 15;
     private int timeoutSeconds = 5;
     private Integer periodSeconds;

@@ -29,7 +29,6 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true, doNotUseGetters = true)
 @ToString(callSuper = true)
 public class KafkaMirrorMaker2Spec extends AbstractKafkaConnectSpec {
-
     private List<KafkaMirrorMaker2ClusterSpec> clusters;
     private String connectCluster;
     private List<KafkaMirrorMaker2MirrorSpec> mirrors;

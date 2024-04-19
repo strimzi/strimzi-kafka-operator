@@ -39,7 +39,6 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthentication {
-
     public static final String TYPE_OAUTH = "oauth";
     public static final int DEFAULT_JWKS_EXPIRY_SECONDS = 360;
     public static final int DEFAULT_JWKS_REFRESH_SECONDS = 300;

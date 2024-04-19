@@ -14,7 +14,6 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,7 +31,6 @@ import java.util.Map;
 @EqualsAndHashCode
 @ToString
 public class InternalServiceTemplate implements HasMetadataTemplate, UnknownPropertyPreserving {
-
     private MetadataTemplate metadata;
     private IpFamilyPolicy ipFamilyPolicy;
     private List<IpFamily> ipFamilies;

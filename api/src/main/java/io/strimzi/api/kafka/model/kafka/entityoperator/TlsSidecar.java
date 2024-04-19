@@ -37,7 +37,6 @@ import java.util.Map;
 @Deprecated
 @DeprecatedType(replacedWithType = void.class)
 public class TlsSidecar extends Sidecar implements HasLivenessProbe, HasReadinessProbe {
-
     private TlsSidecarLogLevel logLevel = TlsSidecarLogLevel.NOTICE;
     private Probe livenessProbe;
     private Probe readinessProbe;

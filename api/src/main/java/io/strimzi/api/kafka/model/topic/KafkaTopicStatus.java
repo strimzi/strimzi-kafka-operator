@@ -25,7 +25,6 @@ import lombok.ToString;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaTopicStatus extends Status {
-
     private String topicName;
     private String topicId;
     private ReplicasChangeStatus replicasChange;

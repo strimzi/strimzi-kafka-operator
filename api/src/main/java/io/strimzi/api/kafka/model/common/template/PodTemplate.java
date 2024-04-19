@@ -24,7 +24,6 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,7 +43,6 @@ import java.util.Map;
 @ToString
 @DescriptionFile
 public class PodTemplate implements HasMetadataTemplate, UnknownPropertyPreserving {
-
     private MetadataTemplate metadata;
     private List<LocalObjectReference> imagePullSecrets;
     private PodSecurityContext securityContext;

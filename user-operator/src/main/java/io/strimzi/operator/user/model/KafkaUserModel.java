@@ -32,6 +32,7 @@ import io.strimzi.operator.user.model.acl.SimpleAclRule;
 
 import javax.naming.InvalidNameException;
 import javax.naming.ldap.LdapName;
+
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;

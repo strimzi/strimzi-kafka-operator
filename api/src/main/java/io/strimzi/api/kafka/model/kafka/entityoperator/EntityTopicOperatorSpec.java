@@ -26,7 +26,6 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -46,7 +45,6 @@ import java.util.Map;
 @EqualsAndHashCode
 @ToString
 public class EntityTopicOperatorSpec implements HasConfigurableLogging, HasLivenessProbe, HasReadinessProbe, HasStartupProbe, UnknownPropertyPreserving {
-
     public static final int DEFAULT_REPLICAS = 1;
     public static final int DEFAULT_ZOOKEEPER_PORT = 2181;
     public static final int DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS = 120;

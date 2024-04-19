@@ -14,7 +14,6 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -30,7 +29,6 @@ import java.util.Map;
 @EqualsAndHashCode
 @ToString
 public class RemoteStorageManager implements UnknownPropertyPreserving {
-
     private String className;
     private String classPath;
     private Map<String, String> config;

@@ -29,7 +29,6 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaAuthorizationSimple extends KafkaAuthorization {
-
     public static final String TYPE_SIMPLE = "simple";
 
     public static final String AUTHORIZER_CLASS_NAME = "kafka.security.authorizer.AclAuthorizer";

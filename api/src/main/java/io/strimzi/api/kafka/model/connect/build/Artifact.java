@@ -12,7 +12,6 @@ import io.strimzi.crdgenerator.annotations.Description;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -37,7 +36,6 @@ import java.util.Map;
 @EqualsAndHashCode
 @ToString
 public abstract class Artifact implements UnknownPropertyPreserving {
-
     public static final String TYPE_JAR = "jar";
     public static final String TYPE_TGZ = "tgz";
     public static final String TYPE_ZIP = "zip";

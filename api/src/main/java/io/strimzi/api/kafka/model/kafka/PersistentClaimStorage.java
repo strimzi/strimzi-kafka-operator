@@ -29,7 +29,6 @@ import java.util.Map;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class PersistentClaimStorage extends SingleVolumeStorage {
-
     private String size;
     private String storageClass;
     private Map<String, String> selector;

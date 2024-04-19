@@ -29,7 +29,6 @@ import java.util.Map;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class JmxPrometheusExporterMetrics extends MetricsConfig {
-
     public static final String TYPE_JMX_EXPORTER = "jmxPrometheusExporter";
 
     private ExternalConfigurationReference valueFrom;

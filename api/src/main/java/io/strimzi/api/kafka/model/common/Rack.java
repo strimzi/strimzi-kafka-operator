@@ -14,7 +14,6 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -31,7 +30,6 @@ import java.util.Map;
 @EqualsAndHashCode
 @ToString
 public class Rack implements UnknownPropertyPreserving {
-
     private String topologyKey;
 
     private Map<String, Object> additionalProperties = new HashMap<>(0);

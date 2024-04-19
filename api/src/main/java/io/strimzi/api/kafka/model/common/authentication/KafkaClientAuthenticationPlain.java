@@ -27,7 +27,6 @@ import lombok.ToString;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaClientAuthenticationPlain extends KafkaClientAuthentication {
-
     public static final String TYPE_PLAIN = "plain";
 
     private String username;
