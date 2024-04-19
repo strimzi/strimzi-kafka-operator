@@ -90,6 +90,9 @@ public class FeatureGates {
         return useKRaft.isEnabled();
     }
 
+    /**
+     * @return  Returns true when the ContinueReconciliationOnManualRollingUpdateFailure feature gate is enabled
+     */
     public boolean continueReconciliationOnManualRollingUpdateFailureEnabled() {
         return continueReconciliationOnManualRollingUpdateFailure.isEnabled();
     }
@@ -110,6 +113,7 @@ public class FeatureGates {
     public String toString() {
         return "FeatureGates(" +
                 "UseKRaft=" + useKRaft.isEnabled() +
+                "ContinueReconciliationOnManualRollingUpdateFailure=" + continueReconciliationOnManualRollingUpdateFailure.isEnabled() +
                 ")";
     }
 
