@@ -580,6 +580,7 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
                 })));
         }
     }
+
     @Test
     public void testManualPodRollingUpdateWithNodePools(VertxTestContext context) {
         Kafka kafka = new KafkaBuilder()
