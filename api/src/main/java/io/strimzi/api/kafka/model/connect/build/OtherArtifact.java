@@ -25,8 +25,6 @@ import lombok.ToString;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class OtherArtifact extends DownloadableArtifact {
-    private static final long serialVersionUID = 1L;
-
     String fileName;
 
     @Description("Must be `" + TYPE_OTHER + "`")

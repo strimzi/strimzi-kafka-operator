@@ -13,7 +13,6 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -28,9 +27,7 @@ import java.util.Map;
 @JsonPropertyOrder({"metadata", "pullSecret"})
 @EqualsAndHashCode
 @ToString
-public class BuildConfigTemplate implements HasMetadataTemplate, Serializable, UnknownPropertyPreserving {
-    private static final long serialVersionUID = 1L;
-
+public class BuildConfigTemplate implements HasMetadataTemplate, UnknownPropertyPreserving {
     private MetadataTemplate metadata;
     private String pullSecret;
     private Map<String, Object> additionalProperties = new HashMap<>(0);

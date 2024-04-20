@@ -34,8 +34,6 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaClientAuthenticationOAuth extends KafkaClientAuthentication {
-    private static final long serialVersionUID = 1L;
-
     public static final String TYPE_OAUTH = "oauth";
 
     private String clientId;

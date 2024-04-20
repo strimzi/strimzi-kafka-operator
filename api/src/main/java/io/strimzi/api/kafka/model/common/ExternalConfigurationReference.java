@@ -13,7 +13,6 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -28,10 +27,7 @@ import java.util.Map;
 @JsonPropertyOrder({"configMapKeyRef"})
 @EqualsAndHashCode
 @ToString
-public class ExternalConfigurationReference implements Serializable, UnknownPropertyPreserving {
-
-    private static final long serialVersionUID = 1L;
-
+public class ExternalConfigurationReference implements UnknownPropertyPreserving {
     private ConfigMapKeySelector configMapKeyRef;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 

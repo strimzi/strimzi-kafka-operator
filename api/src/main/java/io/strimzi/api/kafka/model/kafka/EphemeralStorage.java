@@ -26,8 +26,6 @@ import lombok.ToString;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class EphemeralStorage extends SingleVolumeStorage {
-    private static final long serialVersionUID = 1L;
-
     private String sizeLimit;
 
     @Description("Must be `" + TYPE_EPHEMERAL + "`")

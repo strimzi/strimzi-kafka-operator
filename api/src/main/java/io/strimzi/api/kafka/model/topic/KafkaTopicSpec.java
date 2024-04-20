@@ -26,9 +26,6 @@ import java.util.Map;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaTopicSpec extends Spec {
-
-    private static final long serialVersionUID = 1L;
-
     private String topicName;
 
     private Integer partitions;

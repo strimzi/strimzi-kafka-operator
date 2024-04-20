@@ -12,7 +12,6 @@ import io.strimzi.crdgenerator.annotations.Description;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -28,8 +27,7 @@ import java.util.Map;
     @JsonSubTypes.Type(name = KafkaJmxAuthenticationPassword.TYPE_PASSWORD, value = KafkaJmxAuthenticationPassword.class)
 })
 @ToString
-public abstract class KafkaJmxAuthentication implements UnknownPropertyPreserving, Serializable {
-    private static final long serialVersionUID = 1L;
+public abstract class KafkaJmxAuthentication implements UnknownPropertyPreserving {
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Authentication type. " +

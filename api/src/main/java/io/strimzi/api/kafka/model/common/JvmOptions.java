@@ -13,7 +13,6 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,9 +28,7 @@ import java.util.Map;
 @JsonPropertyOrder({"-XX", "-Xmx", "-Xms", "gcLoggingEnabled", "javaSystemProperties"})
 @EqualsAndHashCode
 @ToString
-public class JvmOptions implements UnknownPropertyPreserving, Serializable {
-    private static final long serialVersionUID = 1L;
-
+public class JvmOptions implements UnknownPropertyPreserving {
     /**
      * Configures the default value for the GC logging configuration. This is used in the model classes when the
      * jvmOptions section is not set at all. Storing it here ensures that the default value is the same when jvmOptions

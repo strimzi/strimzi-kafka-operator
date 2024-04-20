@@ -13,7 +13,6 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -30,9 +29,7 @@ import static java.util.Collections.emptyMap;
 @JsonPropertyOrder({ "address", "host", "port" })
 @EqualsAndHashCode
 @ToString
-public class ListenerAddress implements UnknownPropertyPreserving, Serializable {
-    private static final long serialVersionUID = 1L;
-
+public class ListenerAddress implements UnknownPropertyPreserving {
     private String host;
     private Integer port;
     private Map<String, Object> additionalProperties;

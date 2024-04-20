@@ -12,7 +12,6 @@ import io.strimzi.crdgenerator.annotations.Description;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -28,10 +27,7 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @EqualsAndHashCode
 @ToString
-public abstract class MetricsConfig implements UnknownPropertyPreserving, Serializable {
-
-    private static final long serialVersionUID = 1L;
-
+public abstract class MetricsConfig implements UnknownPropertyPreserving {
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Metrics type. Only 'jmxPrometheusExporter' supported currently.")

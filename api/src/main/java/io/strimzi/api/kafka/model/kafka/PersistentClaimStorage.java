@@ -29,9 +29,6 @@ import java.util.Map;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class PersistentClaimStorage extends SingleVolumeStorage {
-
-    private static final long serialVersionUID = 1L;
-
     private String size;
     private String storageClass;
     private Map<String, String> selector;

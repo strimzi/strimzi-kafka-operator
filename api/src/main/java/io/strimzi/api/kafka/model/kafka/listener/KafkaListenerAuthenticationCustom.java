@@ -30,10 +30,7 @@ import java.util.Map;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaListenerAuthenticationCustom extends KafkaListenerAuthentication {
-
     public static final String FORBIDDEN_PREFIXES = "ssl.";
-
-    private static final long serialVersionUID = 1L;
 
     public static final String TYPE_CUSTOM = "custom";
 

@@ -14,7 +14,6 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,9 +30,7 @@ import java.util.Map;
 @JsonPropertyOrder({"metadata", "ipFamilyPolicy", "ipFamilies"})
 @EqualsAndHashCode
 @ToString
-public class InternalServiceTemplate implements HasMetadataTemplate, Serializable, UnknownPropertyPreserving {
-    private static final long serialVersionUID = 1L;
-
+public class InternalServiceTemplate implements HasMetadataTemplate, UnknownPropertyPreserving {
     private MetadataTemplate metadata;
     private IpFamilyPolicy ipFamilyPolicy;
     private List<IpFamily> ipFamilies;

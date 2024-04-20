@@ -27,8 +27,6 @@ import lombok.ToString;
 @EqualsAndHashCode
 @ToString
 public class TieredStorageCustom extends TieredStorage {
-    private static final long serialVersionUID = 1L;
-
     private RemoteStorageManager remoteStorageManager;
 
     @Description("Must be `" + TYPE_CUSTOM + "`")

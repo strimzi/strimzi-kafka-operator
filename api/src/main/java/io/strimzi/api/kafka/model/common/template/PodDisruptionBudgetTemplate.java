@@ -16,7 +16,6 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -32,9 +31,7 @@ import java.util.Map;
 @DescriptionFile
 @EqualsAndHashCode
 @ToString
-public class PodDisruptionBudgetTemplate implements HasMetadataTemplate, Serializable, UnknownPropertyPreserving {
-    private static final long serialVersionUID = 1L;
-
+public class PodDisruptionBudgetTemplate implements HasMetadataTemplate, UnknownPropertyPreserving {
     private MetadataTemplate metadata;
     private int maxUnavailable = 1;
     private Map<String, Object> additionalProperties = new HashMap<>(0);

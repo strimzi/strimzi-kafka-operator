@@ -18,8 +18,6 @@ import lombok.ToString;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public abstract class KafkaClientAuthenticationScram extends KafkaClientAuthentication {
-    private static final long serialVersionUID = 1L;
-
     @Description("Reference to the `Secret` which holds the password.")
     public abstract PasswordSecretSource getPasswordSecret();
 

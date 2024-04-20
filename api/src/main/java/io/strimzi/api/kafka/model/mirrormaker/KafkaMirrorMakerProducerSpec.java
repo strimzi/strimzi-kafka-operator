@@ -25,8 +25,6 @@ import java.util.Map;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaMirrorMakerProducerSpec extends KafkaMirrorMakerClientSpec {
-    private static final long serialVersionUID = 1L;
-
     private Boolean abortOnSendFailure;
 
     public static final String FORBIDDEN_PREFIXES = "ssl., bootstrap.servers, sasl., security., interceptor.classes";

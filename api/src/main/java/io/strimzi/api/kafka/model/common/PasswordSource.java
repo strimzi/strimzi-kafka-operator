@@ -13,7 +13,6 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -28,9 +27,7 @@ import java.util.Map;
 @JsonPropertyOrder({"secretKeyRef"})
 @EqualsAndHashCode
 @ToString
-public class PasswordSource implements Serializable, UnknownPropertyPreserving {
-    private static final long serialVersionUID = 1L;
-
+public class PasswordSource implements UnknownPropertyPreserving {
     private SecretKeySelector secretKeyRef;
 
     private final Map<String, Object> additionalProperties = new HashMap<>(0);

@@ -41,7 +41,6 @@ import lombok.ToString;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaBridgeSpec extends Spec implements HasConfigurableLogging, HasLivenessProbe, HasReadinessProbe {
-    private static final long serialVersionUID = 1L;
     private static final int DEFAULT_REPLICAS = 1;
 
     private int replicas = DEFAULT_REPLICAS;

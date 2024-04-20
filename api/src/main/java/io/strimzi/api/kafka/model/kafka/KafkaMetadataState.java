@@ -12,7 +12,6 @@ import com.fasterxml.jackson.annotation.JsonValue;
  * or if a migration from ZooKeeper to KRaft is in progress and in which phase
  */
 public enum KafkaMetadataState {
-
     /**
      * The metadata are stored in ZooKeeper.
      * The strimzi.io/kraft: disabled annotation is set on the Kafka resource.

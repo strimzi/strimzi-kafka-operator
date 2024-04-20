@@ -12,7 +12,6 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -27,9 +26,7 @@ import java.util.Map;
 @JsonPropertyOrder({"key", "secretName"})
 @EqualsAndHashCode
 @ToString
-public class GenericSecretSource implements UnknownPropertyPreserving, Serializable {
-    private static final long serialVersionUID = 1L;
-
+public class GenericSecretSource implements UnknownPropertyPreserving {
     protected String secretName;
     protected String key;
 

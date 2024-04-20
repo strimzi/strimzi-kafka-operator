@@ -12,7 +12,6 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,9 +30,7 @@ import static java.util.Collections.emptyMap;
 @JsonPropertyOrder({"trustedCertificates"})
 @EqualsAndHashCode
 @ToString
-public class ClientTls implements UnknownPropertyPreserving, Serializable {
-    private static final long serialVersionUID = 1L;
-
+public class ClientTls implements UnknownPropertyPreserving {
     private List<CertSecretSource> trustedCertificates;
     private Map<String, Object> additionalProperties;
 

@@ -21,8 +21,6 @@ import lombok.ToString;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaUserTlsExternalClientAuthentication extends KafkaUserAuthentication {
-    private static final long serialVersionUID = 1L;
-
     public static final String TYPE_TLS_EXTERNAL = "tls-external";
 
     @Description("Must be `" + TYPE_TLS_EXTERNAL + "`")

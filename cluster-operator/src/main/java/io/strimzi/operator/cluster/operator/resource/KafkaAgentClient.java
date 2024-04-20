@@ -15,6 +15,7 @@ import io.strimzi.operator.common.auth.TlsPemIdentity;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
+
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;

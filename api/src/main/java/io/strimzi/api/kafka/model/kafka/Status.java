@@ -13,7 +13,6 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -33,7 +32,7 @@ import static java.util.Collections.emptyMap;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @EqualsAndHashCode
 @ToString
-public abstract class Status implements UnknownPropertyPreserving, Serializable {
+public abstract class Status implements UnknownPropertyPreserving {
     private List<Condition> conditions;
     private long observedGeneration;
     private Map<String, Object> additionalProperties;

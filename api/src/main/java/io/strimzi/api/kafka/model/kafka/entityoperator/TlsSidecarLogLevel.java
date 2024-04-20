@@ -9,7 +9,6 @@ import com.fasterxml.jackson.annotation.JsonValue;
 
 @Deprecated
 public enum TlsSidecarLogLevel {
-
     EMERG,
     ALERT,
     CRIT,

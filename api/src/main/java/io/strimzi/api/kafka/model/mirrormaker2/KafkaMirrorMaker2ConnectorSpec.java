@@ -20,6 +20,4 @@ import lombok.ToString;
 @JsonPropertyOrder({"tasksMax", "pause", "config", "state", "autoRestart"})
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
-public class KafkaMirrorMaker2ConnectorSpec extends AbstractConnectorSpec {
-    private static final long serialVersionUID = 1L;
-}
+public class KafkaMirrorMaker2ConnectorSpec extends AbstractConnectorSpec { }

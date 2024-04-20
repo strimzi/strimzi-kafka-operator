@@ -22,8 +22,6 @@ import lombok.ToString;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaUserScramSha512ClientAuthentication extends KafkaUserAuthentication {
-    private static final long serialVersionUID = 1L;
-
     public static final String TYPE_SCRAM_SHA_512 = "scram-sha-512";
 
     private Password password;

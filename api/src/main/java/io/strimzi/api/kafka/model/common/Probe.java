@@ -13,7 +13,6 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -28,10 +27,7 @@ import java.util.Map;
 @JsonPropertyOrder({"initialDelaySeconds", "timeoutSeconds", "periodSeconds", "successThreshold", "failureThreshold"})
 @EqualsAndHashCode
 @ToString
-public class Probe implements UnknownPropertyPreserving, Serializable {
-
-    private static final long serialVersionUID = 1L;
-
+public class Probe implements UnknownPropertyPreserving {
     private int initialDelaySeconds = 15;
     private int timeoutSeconds = 5;
     private Integer periodSeconds;

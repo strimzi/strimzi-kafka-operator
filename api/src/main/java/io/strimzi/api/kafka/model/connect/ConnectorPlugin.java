@@ -14,7 +14,6 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -29,9 +28,7 @@ import java.util.Map;
 @JsonPropertyOrder({ "class", "type", "version" })
 @EqualsAndHashCode
 @ToString
-public class ConnectorPlugin implements Serializable, UnknownPropertyPreserving {
-    private static final long serialVersionUID = 1L;
-
+public class ConnectorPlugin implements UnknownPropertyPreserving {
     private String connectorClass;
     private String type;
     private String version;

@@ -16,7 +16,6 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -34,9 +33,7 @@ import static java.util.Collections.emptyMap;
 @JsonPropertyOrder({"producerByteRate", "consumerByteRate", "requestPercentage", "controllerMutationRate"})
 @EqualsAndHashCode
 @ToString
-public class KafkaUserQuotas implements UnknownPropertyPreserving, Serializable {
-    private static final long serialVersionUID = 1L;
-
+public class KafkaUserQuotas implements UnknownPropertyPreserving {
     private Integer producerByteRate;
     private Integer consumerByteRate;
     private Integer requestPercentage;

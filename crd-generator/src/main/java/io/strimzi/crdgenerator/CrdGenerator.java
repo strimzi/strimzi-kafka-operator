@@ -647,8 +647,6 @@ class CrdGenerator {
             }
         }
 
-        checkInherits(crdClass, "java.io.Serializable");
-
         if (crdClass.getName().startsWith("io.strimzi.api.")) {
             checkInherits(crdClass, "io.strimzi.api.kafka.model.common.UnknownPropertyPreserving");
         }

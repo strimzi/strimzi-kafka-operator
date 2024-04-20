@@ -14,7 +14,6 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -30,10 +29,7 @@ import java.util.Map;
 @JsonPropertyOrder({"topologyKey"})
 @EqualsAndHashCode
 @ToString
-public class Rack implements UnknownPropertyPreserving, Serializable {
-
-    private static final long serialVersionUID = 1L;
-
+public class Rack implements UnknownPropertyPreserving {
     private String topologyKey;
 
     private Map<String, Object> additionalProperties = new HashMap<>(0);
