@@ -65,11 +65,11 @@ public class FeatureGatesTest {
         // TODO: Add more tests with various feature gate combinations once we have multiple feature gates again.
         //       The commented out code below shows the tests we used to have with multiple feature gates.
         assertThat(new FeatureGates("-UseKRaft,-ContinueReconciliationOnManualRollingUpdateFailure").useKRaftEnabled(), is(false));
-        assertThat(new FeatureGates("-UseKRaft,-ContinueReconciliationOnManualRollingUpdateFailure").continueReconciliationOnManualRollingUpdateFailureEnabled(), is(false));
-        assertThat(new FeatureGates("+UseKRaft,+ContinueReconciliationOnManualRollingUpdateFailure").useKRaftEnabled(), is(true));
-        assertThat(new FeatureGates("+UseKRaft,+ContinueReconciliationOnManualRollingUpdateFailure").continueReconciliationOnManualRollingUpdateFailureEnabled(), is(true));
+        assertThat(new FeatureGates("-UseKRaft,-ContinueReconciliationOnManualRollingUpdateFailure").continueOnManualRUFailureEnabled(), is(false));
+        assertThat(new FeatureGates("  +UseKRaft    ,    +ContinueReconciliationOnManualRollingUpdateFailure").useKRaftEnabled(), is(true));
+        assertThat(new FeatureGates("  +UseKRaft    ,    +ContinueReconciliationOnManualRollingUpdateFailure").continueOnManualRUFailureEnabled(), is(true));
         assertThat(new FeatureGates("+ContinueReconciliationOnManualRollingUpdateFailure,-UseKRaft").useKRaftEnabled(), is(false));
-        assertThat(new FeatureGates("+ContinueReconciliationOnManualRollingUpdateFailure,-UseKRaft").continueReconciliationOnManualRollingUpdateFailureEnabled(), is(true));
+        assertThat(new FeatureGates("+ContinueReconciliationOnManualRollingUpdateFailure,-UseKRaft").continueOnManualRUFailureEnabled(), is(true));
     }
 
     @ParallelTest

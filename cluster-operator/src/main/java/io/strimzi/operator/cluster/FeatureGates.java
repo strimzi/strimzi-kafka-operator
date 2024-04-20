@@ -17,12 +17,12 @@ public class FeatureGates {
     /* test */ static final FeatureGates NONE = new FeatureGates("");
 
     private static final String USE_KRAFT = "UseKRaft";
-    private static final String CONTINUE_RECONCILIATION_ON_MANUAL_ROLLING_UPDATE_FAILURE = "ContinueReconciliationOnManualRollingUpdateFailure";
+    private static final String CONTINUE_ON_MANUAL_RU_FAILURE = "ContinueReconciliationOnManualRollingUpdateFailure";
 
     // When adding new feature gates, do not forget to add them to allFeatureGates() and toString() methods
     private final FeatureGate useKRaft = new FeatureGate(USE_KRAFT, true);
-    private final FeatureGate continueReconciliationOnManualRollingUpdateFailure =
-        new FeatureGate(CONTINUE_RECONCILIATION_ON_MANUAL_ROLLING_UPDATE_FAILURE, false);
+    private final FeatureGate continueOnManualRUFailure =
+        new FeatureGate(CONTINUE_ON_MANUAL_RU_FAILURE, false);
 
     /**
      * Constructs the feature gates configuration.
@@ -47,8 +47,8 @@ public class FeatureGates {
                     case USE_KRAFT:
                         setValueOnlyOnce(useKRaft, value);
                         break;
-                    case CONTINUE_RECONCILIATION_ON_MANUAL_ROLLING_UPDATE_FAILURE:
-                        setValueOnlyOnce(continueReconciliationOnManualRollingUpdateFailure, value);
+                    case CONTINUE_ON_MANUAL_RU_FAILURE:
+                        setValueOnlyOnce(continueOnManualRUFailure, value);
                         break;
                     default:
                         throw new InvalidConfigurationException("Unknown feature gate " + featureGate + " found in the configuration");
@@ -93,8 +93,8 @@ public class FeatureGates {
     /**
      * @return  Returns true when the ContinueReconciliationOnManualRollingUpdateFailure feature gate is enabled
      */
-    public boolean continueReconciliationOnManualRollingUpdateFailureEnabled() {
-        return continueReconciliationOnManualRollingUpdateFailure.isEnabled();
+    public boolean continueOnManualRUFailureEnabled() {
+        return continueOnManualRUFailure.isEnabled();
     }
 
     /**
@@ -105,7 +105,7 @@ public class FeatureGates {
     /*test*/ List<FeatureGate> allFeatureGates()  {
         return List.of(
                 useKRaft,
-                continueReconciliationOnManualRollingUpdateFailure
+            continueOnManualRUFailure
         );
     }
 
@@ -113,7 +113,7 @@ public class FeatureGates {
     public String toString() {
         return "FeatureGates(" +
                 "UseKRaft=" + useKRaft.isEnabled() +
-                "ContinueReconciliationOnManualRollingUpdateFailure=" + continueReconciliationOnManualRollingUpdateFailure.isEnabled() +
+                "ContinueReconciliationOnManualRollingUpdateFailure=" + continueOnManualRUFailure.isEnabled() +
                 ")";
     }
 

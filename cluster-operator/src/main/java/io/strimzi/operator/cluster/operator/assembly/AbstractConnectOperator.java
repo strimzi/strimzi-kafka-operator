@@ -88,7 +88,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(AbstractConnectOperator.class.getName());
 
     private final boolean isNetworkPolicyGeneration;
-    private final FeatureGates featureGates;
+    private final boolean continueOnManualRUFailure;
 
     protected final Function<Vertx, KafkaConnectApi> connectClientProvider;
     protected final ImagePullPolicy imagePullPolicy;
@@ -151,7 +151,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         this.versions = config.versions();
         this.sharedEnvironmentProvider = supplier.sharedEnvironmentProvider;
         this.port = port;
-        this.featureGates = config.featureGates();
+        this.continueOnManualRUFailure = config.featureGates().continueOnManualRUFailureEnabled();
     }
 
     @Override
@@ -222,8 +222,8 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                         KafkaConnectRoller roller = new KafkaConnectRoller(reconciliation, connect, operationTimeoutMs, podOperations);
                         return roller.maybeRoll(podNamesToRoll, pod -> RestartReasons.of(RestartReason.MANUAL_ROLLING_UPDATE))
                             .recover(error -> {
-                                if (featureGates.continueReconciliationOnManualRollingUpdateFailureEnabled()) {
-                                    LOGGER.warnCr(reconciliation, "Reconciliation will be continued even though manual rolling update failed");
+                                if (continueOnManualRUFailure) {
+                                    LOGGER.warnCr(reconciliation, "Manual rolling update failed (reconciliation will be continued)", error);
                                     return Future.succeededFuture();
                                 } else {
                                     return Future.failedFuture(error);

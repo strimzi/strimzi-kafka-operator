@@ -29,7 +29,6 @@ import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolStatusBuilder;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.api.kafka.model.podset.StrimziPodSetBuilder;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
-import io.strimzi.operator.cluster.FeatureGates;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.model.CertUtils;
 import io.strimzi.operator.cluster.model.ClusterCa;
@@ -154,7 +153,7 @@ public class KafkaReconciler {
     // marked as final, but their contents is modified during the reconciliation)
     private final Set<String> fsResizingRestartRequest = new HashSet<>();
 
-    private final FeatureGates featureGates;
+    private final boolean continueOnManualRUFailure;
 
     private String logging = "";
     private String loggingHash = "";
@@ -231,7 +230,7 @@ public class KafkaReconciler {
 
         this.adminClientProvider = supplier.adminClientProvider;
         this.kafkaAgentClientProvider = supplier.kafkaAgentClientProvider;
-        this.featureGates = config.featureGates();
+        this.continueOnManualRUFailure = config.featureGates().continueOnManualRUFailureEnabled();
     }
 
     /**
@@ -370,8 +369,8 @@ public class KafkaReconciler {
                                 nodes.stream().collect(Collectors.toMap(NodeRef::nodeId, node -> Map.of())),
                                 false
                         ).recover(error -> {
-                            if (featureGates.continueReconciliationOnManualRollingUpdateFailureEnabled()) {
-                                LOGGER.warnCr(reconciliation, "Kafka reconciliation will be continued even though manual rolling update failed");
+                            if (continueOnManualRUFailure) {
+                                LOGGER.warnCr(reconciliation, "Manual rolling update failed (reconciliation will be continued)", error);
                                 return Future.succeededFuture();
                             } else {
                                 return Future.failedFuture(error);
