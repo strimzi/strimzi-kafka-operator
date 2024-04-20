@@ -23,7 +23,6 @@ import io.strimzi.api.kafka.model.connector.KafkaConnectorSpec;
 import io.strimzi.api.kafka.model.kafka.Status;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
-import io.strimzi.operator.cluster.FeatureGates;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;

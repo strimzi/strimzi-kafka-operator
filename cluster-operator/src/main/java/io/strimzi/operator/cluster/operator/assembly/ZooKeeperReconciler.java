@@ -14,7 +14,6 @@ import io.strimzi.api.kafka.model.kafka.KafkaStatus;
 import io.strimzi.api.kafka.model.kafka.Storage;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
-import io.strimzi.operator.cluster.FeatureGates;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.model.CertUtils;
 import io.strimzi.operator.cluster.model.ClusterCa;
