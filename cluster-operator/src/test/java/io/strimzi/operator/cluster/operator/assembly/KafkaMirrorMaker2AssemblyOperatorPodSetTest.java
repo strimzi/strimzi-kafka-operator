@@ -1039,12 +1039,12 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
         KafkaConnectApi mockConnectClient = createConnectClientMock();
 
         KafkaMirrorMaker2ClusterSpec sourceCluster =
-                new KafkaMirrorMaker2ClusterSpecBuilder(true)
+                new KafkaMirrorMaker2ClusterSpecBuilder()
                         .withAlias(sourceClusterAlias)
                         .withBootstrapServers(sourceClusterAlias + "." + sourceNamespace + ".svc:9092")
                         .build();
         KafkaMirrorMaker2ClusterSpec targetCluster =
-                new KafkaMirrorMaker2ClusterSpecBuilder(true)
+                new KafkaMirrorMaker2ClusterSpecBuilder()
                         .withAlias(targetClusterAlias)
                         .withBootstrapServers(targetClusterAlias + "." + targetNamespace + ".svc:9092")
                         .build();
@@ -1090,12 +1090,12 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
         KafkaConnectApi mockConnectClient = createConnectClientMock();
 
         KafkaMirrorMaker2ClusterSpec sourceCluster =
-                new KafkaMirrorMaker2ClusterSpecBuilder(true)
+                new KafkaMirrorMaker2ClusterSpecBuilder()
                         .withAlias(sourceClusterAlias)
                         .withBootstrapServers(sourceClusterAlias + "." + sourceNamespace + ".svc:9092")
                         .build();
         KafkaMirrorMaker2ClusterSpec targetCluster =
-                new KafkaMirrorMaker2ClusterSpecBuilder(true)
+                new KafkaMirrorMaker2ClusterSpecBuilder()
                         .withAlias(targetClusterAlias)
                         .withBootstrapServers(targetClusterAlias + "." + targetNamespace + ".svc:9092")
                         .build();
