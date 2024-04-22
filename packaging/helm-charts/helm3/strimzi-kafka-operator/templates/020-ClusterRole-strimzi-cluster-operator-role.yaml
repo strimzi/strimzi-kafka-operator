@@ -91,7 +91,6 @@ rules:
   - patch
   - update
 - apiGroups:
-  - ""   # legacy core events api, used by topic operator
   - "events.k8s.io" # new events api, used by cluster operator
   resources:
     # The cluster operator needs to be able to create events and delegate permissions to do so
