@@ -28,6 +28,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
@@ -219,5 +220,35 @@ public class KafkaUserUtils {
         }, ns);
 
         waitForKafkaUserReady(ns, kafkaUserResourceName);
+    }
+
+    /**
+     * Gets all KafkaUser resources in a specific namespace that start with a given prefix.
+     *
+     * @param namespace The Kubernetes namespace where the KafkaUser resources are located.
+     * @param prefix The prefix to filter KafkaUser resources by their names.
+     * @return A list of KafkaUser resources that start with the specified prefix.
+     */
+    public static List<KafkaUser> getAllKafkaUsersWithPrefix(String namespace, String prefix) {
+        return KafkaUserResource.kafkaUserClient().inNamespace(namespace).list().getItems()
+            .stream().filter(p -> p.getMetadata().getName().startsWith(prefix))
+            .collect(Collectors.toList());
+    }
+
+    /**
+     * Waits for the deletion of all KafkaUser resources with a specific prefix in a namespace.
+     *
+     * @param namespaceName The namespace where the KafkaUser resources are located.
+     * @param userPrefix The prefix of the KafkaUser resources to be deleted.
+     */
+    public static void waitForUserWithPrefixDeletion(String namespaceName, String userPrefix) {
+        TestUtils.waitFor("deletion of all users with prefix: " + userPrefix, TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
+            () -> {
+                try {
+                    return getAllKafkaUsersWithPrefix(namespaceName, userPrefix).size() == 0;
+                } catch (Exception e) {
+                    return e.getMessage().contains("Not Found") || e.getMessage().contains("the server doesn't have a resource type");
+                }
+            });
     }
 }

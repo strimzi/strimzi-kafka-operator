@@ -29,6 +29,8 @@ public class ParserFactory {
         switch (type) {
             case TOPIC_OPERATOR:
                 return new TopicOperatorMetricsParser();
+            case USER_OPERATOR:
+                return new UserOperatorMetricsParser();
             default:
                 throw new IllegalArgumentException("Unknown parser type: " + type);
         }

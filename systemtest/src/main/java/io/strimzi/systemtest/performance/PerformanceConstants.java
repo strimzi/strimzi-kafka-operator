@@ -9,6 +9,9 @@ package io.strimzi.systemtest.performance;
  */
 public interface PerformanceConstants {
 
+    // --------------------------------------------------------------------------------
+    // ------------------------------ TOPIC OPERATOR ----------------------------------
+    // --------------------------------------------------------------------------------
     /**
      * IN constants represent the input parameters provided to the topic operator during performance tests.
      */
@@ -72,6 +75,21 @@ public interface PerformanceConstants {
      */
     String TOPIC_OPERATOR_OUT_UPDATE_TIMES = "OUT: Bob Update Times (ms)";
 
+    // --------------------------------------------------------------------------------
+    // ------------------------------ USER OPERATOR -----------------------------------
+    // --------------------------------------------------------------------------------
+    String USER_OPERATOR_IN_NUMBER_OF_KAFKA_USERS = "IN: NUMBER OF KAFKA USERS";
+    String USER_OPERATOR_IN_OPERATION_TIMEOUT_MS = "IN: OPERATION_TIMEOUT_MS";
+    String USER_OPERATOR_IN_WORK_QUEUE_SIZE = "IN: WORK_QUEUE_SIZE";
+    String USER_OPERATOR_IN_CONTROLLER_THREAD_POOL_SIZE = "IN: CONTROLLER_THREAD_POOL_SIZE";
+    String USER_OPERATOR_IN_CACHE_REFRESH_INTERVAL_MS = "IN: CACHE_REFRESH_INTERVAL_MS";
+    String USER_OPERATOR_IN_BATCH_QUEUE_SIZE = "IN: BATCH_QUEUE_SIZE";
+    String USER_OPERATOR_IN_BATCH_MAXIMUM_BLOCK_SIZE = "IN: BATCH_MAXIMUM_BLOCK_SIZE";
+    String USER_OPERATOR_IN_BATCH_MAXIMUM_BLOCK_TIME_MS = "IN: BATCH_MAXIMUM_BLOCK_TIME_MS";
+    String USER_OPERATOR_IN_USER_OPERATIONS_THREAD_POOL_SIZE = "IN: USER_OPERATIONS_THREAD_POOL_SIZE";
+    String USER_OPERATOR_OUT_CREATION_TIME = "OUT: Creation Time (ms)";
+    String USER_OPERATOR_OUT_DELETION_TIME = "OUT: Deletion Time (ms)";
+
     String METRICS_HISTORY = "Metrics History";
 
     String KAFKA_IN_CONFIGURATION = "IN: Kafka Configuration";
@@ -128,6 +146,7 @@ public interface PerformanceConstants {
      */
     String TOPIC_OPERATOR_BOBS_STREAMING_USE_CASE = "bobStreamingUseCase";
     String TOPIC_OPERATOR_ALICE_BULK_USE_CASE = "aliceBulkUseCase";
+    String USER_OPERATOR_ALICE_BULK_USE_CASE = "aliceBulkUseCase";
 
     /**
      * Performance metrics file
@@ -144,4 +163,5 @@ public interface PerformanceConstants {
      * Parser types
      */
     String TOPIC_OPERATOR_PARSER = "topic-operator";
+    String USER_OPERATOR_PARSER = "user-operator";
 }
