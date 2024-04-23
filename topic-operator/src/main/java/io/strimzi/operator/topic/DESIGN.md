@@ -45,13 +45,17 @@ If there were concurrent controllers processing the queue (currently only a sing
 ## Assumptions
 
 The UTO assumes its Kafka credentials grant it the ability to:
-    * describe all topics 
-    * describe all topics configs
-    * create topics
-    * create partitions
-    * delete topics
-    * list partition reassignments
-    * Describe broker configs. This one isn't entirely required, it's used to determine whether to log a warning about `auto.create.topics.enable`.
 
+* describe all topics
+* describe all topics configs
+* create topics
+* create partitions
+* delete topics
+* list partition reassignments
+* describe broker configs
+
+Describe broker configs can be disabled setting `SKIP_CLUSTER_CONFIG_REVIEW` to true.
+It is used to raise a warning when `auto.create.topics.enable` is set to true (default).
+It is also used to raise a warning when Cruise Control integration is enabled, and replicas is changed to a value lower than `min.insync.replicas`.
 
 [proposal]: https://github.com/strimzi/proposals/blob/main/051-unidirectional-topic-operator.md
