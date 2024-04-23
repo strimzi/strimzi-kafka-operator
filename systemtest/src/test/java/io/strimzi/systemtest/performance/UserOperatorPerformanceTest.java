@@ -21,6 +21,7 @@ import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.specific.ScraperTemplates;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
+import io.strimzi.test.WaitException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
@@ -238,6 +239,163 @@ public class UserOperatorPerformanceTest extends AbstractST {
 
                 // Step 3: Now, it's safe to log performance data as the collection thread has been stopped
                 this.userOperatorPerformanceReporter.logPerformanceData(this.testStorage, performanceAttributes, UserOperatorPerformanceTest.REPORT_DIRECTORY + "/" + PerformanceConstants.USER_OPERATOR_ALICE_BULK_USE_CASE, ACTUAL_TIME, Environment.PERFORMANCE_DIR);
+            }
+        }
+    }
+
+    /**
+     * TODO:
+     *
+     * Parameters:
+     * $1 - Controller thread pool size
+     * $2 - Cache refresh interval (ms)
+     * $3 - Batch queue size
+     * $4 - Maximum batch block size
+     * $5 - Maximum batch block time (ms)
+     * $6 - User operations thread pool size
+     *
+     * @return a stream of {@link Arguments} instances, each representing a set of parameters for the test.
+     */
+    private static Stream<Arguments> provideConfigurationsForCapacity() {
+        return Stream.of(
+            // Default configuration
+            Arguments.of("50", "15000", "1024", "100", "100", "4"),
+            // Enhanced Parallel Processing
+            Arguments.of("100", "20000", "2048", "200", "50", "10"),
+            // Conservative Batching
+            Arguments.of("75", "15000", "1500", "150", "75", "8"),
+            // Aggressive Batching
+            Arguments.of("100", "30000", "4096", "300", "100", "12"),
+            // Low-Latency Operations
+            Arguments.of("50", "10000", "512", "50", "25", "6")
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideConfigurationsForCapacity")
+    void testCapacity(String controllerThreadPoolSize, String cacheRefreshIntervalMs, String batchQueueSize,
+                      String batchMaximumBlockSize, String batchMaximumBlockTimeMs, String userOperationsThreadPoolSize) throws IOException {
+        final int brokerReplicas = 3;
+        final int controllerReplicas = 3;
+        int successfulCreations = 0;
+        // we set worker queue size to high number as we measure performance and not memory or sizing...
+        final String workerQueueSize = "10000";
+
+        try {
+            resourceManager.createResourceWithWait(
+                NodePoolsConverter.convertNodePoolsIfNeeded(
+                    KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), brokerReplicas)
+                        .editSpec()
+                        .withNewPersistentClaimStorage()
+                        .withSize("10Gi")
+                        .endPersistentClaimStorage()
+                        .endSpec()
+                        .build(),
+                    KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), controllerReplicas).build()
+                )
+            );
+            resourceManager.createResourceWithWait(
+                KafkaTemplates.kafkaMetricsConfigMap(testStorage.getNamespaceName(), testStorage.getClusterName()),
+                KafkaTemplates.kafkaWithMetrics(testStorage.getNamespaceName(), testStorage.getClusterName(), brokerReplicas, controllerReplicas)
+                    .editSpec()
+                        .editEntityOperator()
+                            .editUserOperator()
+                                .withReconciliationIntervalSeconds(10)
+                            .endUserOperator()
+                            .editOrNewTemplate()
+                                .editOrNewUserOperatorContainer()
+                                    .addNewEnv()
+                                    .withName("STRIMZI_WORK_QUEUE_SIZE")
+                                    .withValue(workerQueueSize)
+                                    .endEnv()
+                                    .addNewEnv()
+                                    .withName("STRIMZI_CONTROLLER_THREAD_POOL_SIZE")
+                                    .withValue(controllerThreadPoolSize)
+                                    .endEnv()
+                                    .addNewEnv()
+                                    .withName("STRIMZI_CACHE_REFRESH_INTERVAL_MS")
+                                    .withValue(cacheRefreshIntervalMs)
+                                    .endEnv()
+                                    .addNewEnv()
+                                    .withName("STRIMZI_BATCH_QUEUE_SIZE")
+                                    .withValue(batchQueueSize)
+                                    .endEnv()
+                                    .addNewEnv()
+                                    .withName("STRIMZI_BATCH_MAXIMUM_BLOCK_SIZE")
+                                    .withValue(batchMaximumBlockSize)
+                                    .endEnv()
+                                    .addNewEnv()
+                                    .withName("STRIMZI_BATCH_MAXIMUM_BLOCK_TIME_MS")
+                                    .withValue(batchMaximumBlockTimeMs)
+                                    .endEnv()
+                                    .addNewEnv()
+                                    .withName("STRIMZI_USER_OPERATIONS_THREAD_POOL_SIZE")
+                                    .withValue(userOperationsThreadPoolSize)
+                                    .endEnv()
+                                    // TODO: -----
+                                .endUserOperatorContainer()
+                            .endTemplate()
+                        .endEntityOperator()
+                        .editKafka()
+                            .withNewKafkaAuthorizationSimple()
+                            .endKafkaAuthorizationSimple()
+                        .endKafka()
+                    .endSpec()
+                    .build(),
+                ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build()
+            );
+
+            this.testStorage.addToTestStorage(TestConstants.SCRAPER_POD_KEY,
+                kubeClient().listPodsByPrefixInName(this.testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName());
+
+            // -- Metrics POLL --
+            // Assuming 'testStorage' contains necessary details like namespace and scraperPodName
+            this.userOperatorCollector = new UserOperatorMetricsCollector.Builder()
+                .withScraperPodName(this.testStorage.getScraperPodName())
+                .withNamespaceName(this.testStorage.getNamespaceName())
+                .withComponentType(ComponentType.UserOperator)
+                .withComponentName(this.testStorage.getClusterName())
+                .build();
+
+            this.userOperatorMetricsGatherer = new UserOperatorMetricsCollectionScheduler(this.userOperatorCollector, "strimzi.io/cluster=" + this.testStorage.getClusterName());
+            this.userOperatorMetricsGatherer.startCollecting();
+
+            // we will create incrementally users
+            final int batchSize = 100;
+
+            while (true) { // Endless loop
+                int start = successfulCreations;
+                int end = successfulCreations + batchSize;
+                List<KafkaUser> users = UserOperatorPerformanceUtils.getListOfKafkaUsers(this.testStorage, this.testStorage.getUsername(), start, end, UserAuthType.Tls);
+                try {
+                    UserOperatorPerformanceUtils.createAllUsersInListWithWait(this.testStorage, users, this.testStorage.getUsername());
+                    successfulCreations += batchSize;
+                    LOGGER.info("Successfully created and verified batch from {} to {}", start, end);
+                } catch (WaitException e) {
+                    LOGGER.error("Failed to create Kafka users from index {} to {}: {}", start, end, e.getMessage());
+                    break; // Break out of the loop if an error occurs
+                }
+            }
+        } finally {
+            if (this.userOperatorMetricsGatherer != null) {
+                this.userOperatorMetricsGatherer.stopCollecting();
+
+                final Map<String, Object> performanceAttributes = new LinkedHashMap<>();
+
+                performanceAttributes.put(PerformanceConstants.USER_OPERATOR_IN_OPERATION_TIMEOUT_MS, "300000");
+                performanceAttributes.put(PerformanceConstants.USER_OPERATOR_IN_WORK_QUEUE_SIZE, workerQueueSize);
+                performanceAttributes.put(PerformanceConstants.USER_OPERATOR_IN_CONTROLLER_THREAD_POOL_SIZE, controllerThreadPoolSize);
+                performanceAttributes.put(PerformanceConstants.USER_OPERATOR_IN_CACHE_REFRESH_INTERVAL_MS, cacheRefreshIntervalMs);
+                performanceAttributes.put(PerformanceConstants.USER_OPERATOR_IN_BATCH_QUEUE_SIZE, batchQueueSize);
+                performanceAttributes.put(PerformanceConstants.USER_OPERATOR_IN_BATCH_MAXIMUM_BLOCK_SIZE, batchMaximumBlockSize);
+                performanceAttributes.put(PerformanceConstants.USER_OPERATOR_IN_BATCH_MAXIMUM_BLOCK_TIME_MS, batchMaximumBlockTimeMs);
+                performanceAttributes.put(PerformanceConstants.USER_OPERATOR_IN_USER_OPERATIONS_THREAD_POOL_SIZE, controllerThreadPoolSize);
+
+                performanceAttributes.put(PerformanceConstants.USER_OPERATOR_OUT_SUCCESSFUL_KAFKA_USERS_CREATED, successfulCreations);
+
+                performanceAttributes.put(PerformanceConstants.METRICS_HISTORY, this.userOperatorMetricsGatherer.getMetricsStore()); // Map of metrics history
+
+                this.userOperatorPerformanceReporter.logPerformanceData(this.testStorage, performanceAttributes, UserOperatorPerformanceTest.REPORT_DIRECTORY + "/" + PerformanceConstants.USER_OPERATOR_CAPACITY_DEFAULT_USE_CASE, ACTUAL_TIME, Environment.PERFORMANCE_DIR);
             }
         }
     }
