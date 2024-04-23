@@ -68,8 +68,6 @@ public class UserOperatorPerformanceTest extends AbstractST {
      *
      * Each test configuration varies the following parameters:
      * - Number of Kafka users to create
-     * - Operation timeout (ms)
-     * - Work queue size
      * - Controller thread pool size
      * - Cache refresh interval (ms)
      * - Batch queue size
@@ -82,18 +80,18 @@ public class UserOperatorPerformanceTest extends AbstractST {
     private static Stream<Arguments> provideConfigurationsForBulkBatchUseCase() {
         return Stream.of(
             // Configurations for low bulk batch creation (100 users)
-            Arguments.of(100, "300000", "1024", "50", "15000", "1024", "100", "100", "4"),  // Default configuration
-            Arguments.of(100, "300000", "2048", "100", "10000", "2048", "200", "50", "10"), // High throughput configuration
-            Arguments.of(100, "300000", "1024", "50", "15000", "1024", "100", "200", "4"),  // High batch time configuration
-            Arguments.of(100, "600000", "512",  "25", "30000", "512", "50", "100", "2"),     // Lower performance, higher timeout
-            Arguments.of(100, "300000", "4096", "100", "5000", "4096", "500", "10", "20"),   // Extremely high performance configuration
+            Arguments.of(100, "50", "15000", "1024", "100", "100", "4"),  // Default configuration
+            Arguments.of(100, "100", "10000", "2048", "200", "50", "10"), // High throughput configuration
+            Arguments.of(100, "50", "15000", "1024", "100", "200", "4"),  // High batch time configuration
+            Arguments.of(100,  "25", "30000", "512", "50", "100", "2"),     // Lower performance, higher timeout
+            Arguments.of(100, "100", "5000", "4096", "500", "10", "20"),   // Extremely high performance configuration
 
             // Configurations for medium bulk batch creation (500 users)
-            Arguments.of(500, "300000", "1024", "50", "15000", "1024", "100", "100", "4"),  // Default configuration
-            Arguments.of(500, "300000", "2048", "100", "10000", "2048", "200", "50", "10"), // High throughput configuration
-            Arguments.of(500, "300000", "1024", "50", "15000", "1024", "100", "200", "4"),  // High batch time configuration
-            Arguments.of(500, "600000", "512",  "25", "30000", "512", "50", "100", "2"),     // Lower performance, higher timeout
-            Arguments.of(500, "300000", "4096", "100", "5000", "4096", "500", "10", "20")   // Extremely high performance configuration
+            Arguments.of(500, "50", "15000", "1024", "100", "100", "4"),  // Default configuration
+            Arguments.of(500, "100", "10000", "2048", "200", "50", "10"), // High throughput configuration
+            Arguments.of(500, "50", "15000", "1024", "100", "200", "4"),  // High batch time configuration
+            Arguments.of(500,  "25", "30000", "512", "50", "100", "2"),     // Lower performance, higher timeout
+            Arguments.of(500, "100", "5000", "4096", "500", "10", "20")   // Extremely high performance configuration
         );
     }
 
@@ -142,11 +140,11 @@ public class UserOperatorPerformanceTest extends AbstractST {
                                 .editOrNewUserOperatorContainer()
                                     .addNewEnv()
                                         .withName("STRIMZI_OPERATION_TIMEOUT_MS")
-                                        .withValue(operationTimeoutMs)
+                                        .withValue("300000")
                                     .endEnv()
                                     .addNewEnv()
                                         .withName("STRIMZI_WORK_QUEUE_SIZE")
-                                        .withValue(workQueueSize)
+                                        .withValue(String.valueOf(Integer.MAX_VALUE))
                                     .endEnv()
                                     .addNewEnv()
                                         .withName("STRIMZI_CONTROLLER_THREAD_POOL_SIZE")

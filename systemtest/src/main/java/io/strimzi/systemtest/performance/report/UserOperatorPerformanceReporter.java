@@ -44,8 +44,6 @@ public class UserOperatorPerformanceReporter extends BasePerformanceReporter {
     protected Path resolveComponentUseCasePathDir(Path performanceLogDir, String useCaseName, Map<String, Object> performanceAttributes) {
         // Extract parameters to make the directory name more descriptive and unique
         final String numberOfKafkaUsersToCreate = performanceAttributes.getOrDefault(PerformanceConstants.USER_OPERATOR_IN_NUMBER_OF_KAFKA_USERS, "").toString();
-        final String operationTimeout = performanceAttributes.getOrDefault(PerformanceConstants.USER_OPERATOR_IN_OPERATION_TIMEOUT_MS, "").toString();
-        final String workQueueSize = performanceAttributes.getOrDefault(PerformanceConstants.USER_OPERATOR_IN_WORK_QUEUE_SIZE, "").toString();
         final String threadPoolSize = performanceAttributes.getOrDefault(PerformanceConstants.USER_OPERATOR_IN_CONTROLLER_THREAD_POOL_SIZE, "").toString();
         final String cacheRefreshInterval = performanceAttributes.getOrDefault(PerformanceConstants.USER_OPERATOR_IN_CACHE_REFRESH_INTERVAL_MS, "").toString();
         final String batchQueueSize = performanceAttributes.getOrDefault(PerformanceConstants.USER_OPERATOR_IN_BATCH_QUEUE_SIZE, "").toString();
@@ -54,11 +52,9 @@ public class UserOperatorPerformanceReporter extends BasePerformanceReporter {
         final String userOperationsThreadPoolSize = performanceAttributes.getOrDefault(PerformanceConstants.USER_OPERATOR_IN_USER_OPERATIONS_THREAD_POOL_SIZE, "").toString();
 
         // Construct a directory name using the extracted parameters
-        String directoryName = String.format("%s/users-%s-timeout-%s-wq-%s-tp-%s-cache-%s-bq-%s-bb-%s-bt-%s-utp-%s",
+        String directoryName = String.format("%s/users-%s-tp-%s-cache-%s-bq-%s-bb-%s-bt-%s-utp-%s",
             useCaseName,
             numberOfKafkaUsersToCreate,
-            operationTimeout,
-            workQueueSize,
             threadPoolSize,
             cacheRefreshInterval,
             batchQueueSize,
@@ -69,8 +65,8 @@ public class UserOperatorPerformanceReporter extends BasePerformanceReporter {
         final Path userOperatorUseCasePathDir = performanceLogDir.resolve(directoryName);
 
         // Log the resolved path for debugging purposes
-        LOGGER.info("Resolved performance log directory: {} for use case '{}'. KafkaUsers: {}, Timeout: {}, WorkQueue: {}, ThreadPool: {}, CacheInterval: {}, BatchQueue: {}, BatchBlock: {}, BatchTime: {}, UserOpsThreadPool: {}",
-            userOperatorUseCasePathDir, useCaseName, numberOfKafkaUsersToCreate, operationTimeout, workQueueSize, threadPoolSize, cacheRefreshInterval, batchQueueSize, batchBlockSize, batchBlockTime, userOperationsThreadPoolSize);
+        LOGGER.info("Resolved performance log directory: {} for use case '{}'. KafkaUsers: {}, ThreadPool: {}, CacheInterval: {}, BatchQueue: {}, BatchBlock: {}, BatchTime: {}, UserOpsThreadPool: {}",
+            userOperatorUseCasePathDir, useCaseName, numberOfKafkaUsersToCreate, threadPoolSize, cacheRefreshInterval, batchQueueSize, batchBlockSize, batchBlockTime, userOperationsThreadPoolSize);
 
         return userOperatorUseCasePathDir;
     }
