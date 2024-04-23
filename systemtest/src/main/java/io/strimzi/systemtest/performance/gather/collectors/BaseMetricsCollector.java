@@ -55,7 +55,7 @@ public abstract class BaseMetricsCollector extends MetricsCollector {
      * @return              A map with keys representing unique label combinations and their corresponding metric values for used memory.
      */
     public Map<String, Double> getJvmMemoryUsedBytes() {
-        return collectMetricWithLabels("jvm_memory_used_bytes");
+        return collectMetricWithLabels(PerformanceConstants.JVM_MEMORY_USED_BYTES);
     }
 
     /**
@@ -79,7 +79,7 @@ public abstract class BaseMetricsCollector extends MetricsCollector {
      * @return              A map with keys representing unique label combinations and their corresponding maximum GC pause times.
      */
     public Map<String, Double>  getJvmGcPauseSecondsMax() {
-        return collectMetricWithLabels("jvm_gc_pause_seconds_max");
+        return collectMetricWithLabels(PerformanceConstants.JVM_GC_PAUSE_SECONDS_MAX);
     }
 
     /**

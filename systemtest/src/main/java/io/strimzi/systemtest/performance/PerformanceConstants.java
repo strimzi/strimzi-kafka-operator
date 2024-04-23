@@ -127,6 +127,8 @@ public interface PerformanceConstants {
 
     String RESOURCES = "strimzi_resources";
     String JVM_GC_MEMORY_ALLOCATED_BYTES_TOTAL = "jvm_gc_memory_allocated_bytes_total";
+    String JVM_GC_PAUSE_SECONDS_MAX = "jvm_gc_pause_seconds_max";
+    String JVM_MEMORY_USED_BYTES = "jvm_memory_used_bytes";
     String JVM_THREADS_LIVE_THREADS = "jvm_threads_live_threads";
     String SYSTEM_CPU_USAGE = "system_cpu_usage";
     String SYSTEM_CPU_COUNT = "system_cpu_count";
