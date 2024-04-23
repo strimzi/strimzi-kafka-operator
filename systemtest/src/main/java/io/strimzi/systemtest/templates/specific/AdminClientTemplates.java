@@ -29,7 +29,7 @@ public class AdminClientTemplates {
     private AdminClientTemplates() {}
 
     ///////////////////////////////////////////
-    //              TlS (SSL)
+    //              TLS (SSL)
     ///////////////////////////////////////////
 
     /**
@@ -52,7 +52,7 @@ public class AdminClientTemplates {
         final List<EnvVar> tlsEnvs = buildTLSUserCredentials(userName);
         final String finalAdditionalConfig = "sasl.mechanism=GSSAPI\n" + "security.protocol=" + SecurityProtocol.SSL + "\n"  + "\n" + additionalConfig;
 
-        return plainAdminClient(namespaceName, adminName, bootstrapName, finalAdditionalConfig)
+        return defaultAdminClient(namespaceName, adminName, bootstrapName, finalAdditionalConfig)
             .editOrNewSpec()
                 .editOrNewTemplate()
                     .editOrNewSpec()
@@ -62,11 +62,12 @@ public class AdminClientTemplates {
                         .endContainer()
                     .endSpec()
                 .endTemplate()
-            .endSpec().build();
+            .endSpec()
+            .build();
     }
 
     ///////////////////////////////////////////
-    //    SCRAM-SHA over TlS (SASL_SSL)
+    //    SCRAM-SHA over TLS (SASL_SSL)
     ///////////////////////////////////////////
 
     /**
@@ -88,7 +89,7 @@ public class AdminClientTemplates {
     public static Deployment scramShaOverTlsAdminClient(String namespaceName, String userName, String adminName, String clusterName, String bootstrapName, String additionalConfig) {
         String finalAdditionalConfig = getAdminClientScramConfig(namespaceName, userName, SecurityProtocol.SASL_SSL) + "\n" + additionalConfig;
         // authenticating is taken care of (by SASL) thus only cluster needed
-        return plainAdminClient(namespaceName, adminName, bootstrapName, finalAdditionalConfig)
+        return defaultAdminClient(namespaceName, adminName, bootstrapName, finalAdditionalConfig)
             .editOrNewSpec()
                 .editOrNewTemplate()
                     .editOrNewSpec()
@@ -97,7 +98,8 @@ public class AdminClientTemplates {
                         .endContainer()
                     .endSpec()
                 .endTemplate()
-            .endSpec().build();
+            .endSpec()
+            .build();
     }
 
     ///////////////////////////////////////////
@@ -121,7 +123,7 @@ public class AdminClientTemplates {
      */
     public static Deployment scramShaOverPlainAdminClient(String namespaceName, String userName, String adminName, String bootstrapName, String additionalConfig) {
         String finalAdditionalConfig = getAdminClientScramConfig(namespaceName, userName, SecurityProtocol.SASL_PLAINTEXT) + "\n" + additionalConfig;
-        return plainAdminClient(namespaceName, adminName, bootstrapName, finalAdditionalConfig)
+        return defaultAdminClient(namespaceName, adminName, bootstrapName, finalAdditionalConfig)
             .build();
     }
 
@@ -137,13 +139,24 @@ public class AdminClientTemplates {
      * @param bootstrapName The name of the Kafka bootstrap server to use for the initial connection.
      */
     public static DeploymentBuilder plainAdminClient(String namespaceName, String adminName, String bootstrapName) {
-        return plainAdminClient(namespaceName, adminName, bootstrapName, "");
+        return defaultAdminClient(namespaceName, adminName, bootstrapName, "");
     }
 
     /**
-     * Creates a Deployment configuration for an AdminClient with PLAINTEXT settings and also serves as base for all the other admin clients (SCRAM_SHA and TLS).
+     * Creates a Deployment configuration for an AdminClient with PLAINTEXT communication and desired additional configuration.
      */
     public static DeploymentBuilder plainAdminClient(String namespaceName, String adminName, String bootstrapName, String additionalConfig) {
+        return defaultAdminClient(namespaceName, adminName, bootstrapName, additionalConfig);
+    }
+
+    ///////////////////////////////////////////
+    //          default admin client
+    ///////////////////////////////////////////
+
+    /**
+     * Serves as base for all types pf admin clients (SCRAM_SHA, TLS, PLAINTEXT).
+     */
+    private static DeploymentBuilder defaultAdminClient(String namespaceName, String adminName, String bootstrapName, String additionalConfig) {
         Map<String, String> adminLabels = new HashMap<>();
         adminLabels.put(TestConstants.APP_POD_LABEL, TestConstants.ADMIN_CLIENT_NAME);
         adminLabels.put(TestConstants.KAFKA_ADMIN_CLIENT_LABEL_KEY, TestConstants.KAFKA_ADMIN_CLIENT_LABEL_VALUE);

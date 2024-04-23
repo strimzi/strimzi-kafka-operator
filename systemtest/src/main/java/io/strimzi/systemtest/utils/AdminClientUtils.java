@@ -23,18 +23,43 @@ public class AdminClientUtils {
 
     private AdminClientUtils() {}
 
+    /**
+     * Checks if the specified Kafka topic is present.
+     *
+     * @param adminClient The Kafka {@link AdminClient} used to list topics.
+     * @param topicName The name of the topic to check for presence.
+     * @return {@code true} if the topic is present, {@code false} otherwise.
+     */
     public static boolean isTopicPresent(AdminClient adminClient, String topicName) {
         final String newLineSeparatedTopics = adminClient.listTopics();
         LOGGER.trace("topics present in Kafka:\n{}", newLineSeparatedTopics);
         return newLineSeparatedTopics.isEmpty() ? false : Arrays.asList(newLineSeparatedTopics.split("\n")).contains(topicName);
     }
 
+    /**
+     * Waits for a specified Kafka topic to be present
+     *
+     * Periodically checks if a Kafka topic is present and waits until it appears
+     * or until the timeout expires.
+     *
+     * @param adminClient The Kafka {@link AdminClient} used to check the topic's presence.
+     * @param topicName The name of the topic to wait for.
+     */
     public static void waitForTopicPresence(AdminClient adminClient, String topicName) {
         LOGGER.info("Waiting for topic: {} to be present in Kafka", topicName);
         TestUtils.waitFor("Topic: " + topicName + " to be present in Kafka", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT_SHORT,
             () -> isTopicPresent(adminClient, topicName));
     }
 
+    /**
+     * Waits for a specified Kafka topic to be absent.
+     *
+     * Periodically checks if a Kafka topic is absent and waits until it dissappears
+     * or until the timeout expires.
+     *
+     * @param adminClient The Kafka {@link AdminClient} used to check the topic's absence.
+     * @param topicName The name of the topic to wait for its absence.
+     */
     public static void waitForTopicAbsence(AdminClient adminClient, String topicName) {
         LOGGER.info("Waiting for topic: {} to be absent in Kafka", topicName);
         TestUtils.waitFor("Topic: " + topicName + " to be absent in Kafka", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT_SHORT,
@@ -73,6 +98,12 @@ public class AdminClientUtils {
         return targetClusterAdminClient;
     }
 
+    /**
+     * Creates a label selector for Kubernetes resources to later identify admin client Pod.
+     *
+     * @param adminName The name of the admin client controller.
+     * @return A {@link LabelSelector} configured with a set of labels.
+     */
     private static LabelSelector getLabelSelector(String adminName) {
         Map<String, String> matchLabels = new HashMap<>();
         matchLabels.put(TestConstants.APP_POD_LABEL, TestConstants.ADMIN_CLIENT_NAME);
