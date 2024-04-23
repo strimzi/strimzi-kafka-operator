@@ -558,7 +558,9 @@ public class NodePoolUtilsTest {
 
     @Test
     public void testValidationKRaftJbodStorage()   {
-        KafkaVersionChange oldKafkaVersion = new KafkaVersionChange(KafkaVersionTestUtils.getKafkaVersionLookup().version("3.6.0"), KafkaVersionTestUtils.getKafkaVersionLookup().version("3.6.0"), null, null, "3.6.0");
+        KafkaVersionChange oldKafkaVersion = new KafkaVersionChange(KafkaVersionTestUtils.getKafkaVersionLookup().version("3.6.0"), KafkaVersionTestUtils.getKafkaVersionLookup().version("3.6.0"), null, null, "3.6");
+        KafkaVersionChange inUpgradeKafkaVersion = new KafkaVersionChange(KafkaVersionTestUtils.getKafkaVersionLookup().version("3.6.0"), KafkaVersionTestUtils.getKafkaVersionLookup().version("3.7.0"), null, null, "3.6");
+        KafkaVersionChange oldMetadataKafkaVersion = new KafkaVersionChange(KafkaVersionTestUtils.getKafkaVersionLookup().version("3.7.0"), KafkaVersionTestUtils.getKafkaVersionLookup().version("3.7.0"), null, null, "3.6-IV0");
 
         KafkaNodePool poolA = new KafkaNodePoolBuilder(POOL_A)
                 .editSpec()
@@ -569,15 +571,23 @@ public class NodePoolUtilsTest {
                 .endSpec()
                 .build();
 
-        // Kafka 3.70 or newer => should pass
+        // Kafka 3.7.0 or newer => should pass
         assertDoesNotThrow(() -> NodePoolUtils.validateNodePools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(POOL_CONTROLLERS, poolA, POOL_B), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true));
-
-        // Should fail on Kafka older than 3.7.0 with KRaft
-        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> NodePoolUtils.validateNodePools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(POOL_CONTROLLERS, poolA, POOL_B), oldKafkaVersion, true));
-        assertThat(ex.getMessage(), containsString("The Kafka cluster my-cluster is invalid: [Using more than one disk in a JBOD storage in KRaft mode is supported only with Apache Kafka 3.7.0 and newer (in KafkaNodePool pool-a)]"));
 
         // Should pass on Kafka older than 3.7.0 without KRaft
         assertDoesNotThrow(() -> NodePoolUtils.validateNodePools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(poolA, POOL_B), oldKafkaVersion, false));
+
+        // Should fail on Kafka older than 3.7.0 with KRaft
+        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> NodePoolUtils.validateNodePools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(POOL_CONTROLLERS, poolA, POOL_B), oldKafkaVersion, true));
+        assertThat(ex.getMessage(), containsString("The Kafka cluster my-cluster is invalid: [Using more than one disk in a JBOD storage in KRaft mode is supported only with Apache Kafka 3.7.0 or newer and metadata version 3.7-IV2 or newer (in KafkaNodePool pool-a)]"));
+
+        // Should fail on Kafka during upgrade from 3.6.0 to 3.7.0 with KRaft
+        ex = assertThrows(InvalidResourceException.class, () -> NodePoolUtils.validateNodePools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(POOL_CONTROLLERS, poolA, POOL_B), inUpgradeKafkaVersion, true));
+        assertThat(ex.getMessage(), containsString("The Kafka cluster my-cluster is invalid: [Using more than one disk in a JBOD storage in KRaft mode is supported only with Apache Kafka 3.7.0 or newer and metadata version 3.7-IV2 or newer (in KafkaNodePool pool-a)]"));
+
+        // Should fail when old metadata are used
+        ex = assertThrows(InvalidResourceException.class, () -> NodePoolUtils.validateNodePools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(POOL_CONTROLLERS, poolA, POOL_B), oldMetadataKafkaVersion, true));
+        assertThat(ex.getMessage(), containsString("The Kafka cluster my-cluster is invalid: [Using more than one disk in a JBOD storage in KRaft mode is supported only with Apache Kafka 3.7.0 or newer and metadata version 3.7-IV2 or newer (in KafkaNodePool pool-a)]"));
     }
 
     @Test
