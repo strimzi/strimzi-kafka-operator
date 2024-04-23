@@ -808,11 +808,6 @@ public class EntityOperatorTest {
                 .addToApiGroups(Constants.RESOURCE_GROUP_NAME)
                 .build());
         rules.add(new PolicyRuleBuilder()
-                .addToResources("events")
-                .addToVerbs("create")
-                .addToApiGroups("")
-                .build());
-        rules.add(new PolicyRuleBuilder()
                 .addToResources("secrets")
                 .addToVerbs("get", "list", "watch", "create", "delete", "patch", "update")
                 .addToApiGroups("")
