@@ -2,7 +2,7 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.systemtest.performance.gather;
+package io.strimzi.systemtest.performance.gather.collectors;
 
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.systemtest.metrics.MetricsCollector;
@@ -16,9 +16,9 @@ import java.util.regex.Pattern;
 
 /**
  * Collects metrics related to the Topic Operator within Strimzi, facilitating the monitoring of various operational aspects.
- * This class extends {@link MetricsCollector} to gather metrics specific to topic operations, reconciliations, JVM, and system performance.
+ * This class extends {@link BaseMetricsCollector} to gather metrics specific to topic operations, reconciliations, JVM, and system performance.
  */
-public class TopicOperatorMetricsCollector extends MetricsCollector {
+public class TopicOperatorMetricsCollector extends BaseMetricsCollector {
 
     /**
      * Constructs a {@code TopicOperatorMetricsCollector} using the builder pattern for configuration.
@@ -168,50 +168,6 @@ public class TopicOperatorMetricsCollector extends MetricsCollector {
         return collectMetricValues(PerformanceConstants.REMOVE_FINALIZER_DURATION_SECONDS_MAX, selector);
     }
 
-    // -----------------------------------------------------------------------------------------------------
-    // ---------------------------------- JVM and System METRICS -------------------------------------------
-    // -----------------------------------------------------------------------------------------------------
-
-    public List<Double> getSystemCpuCount() {
-        return collectMetricSimpleValues(PerformanceConstants.SYSTEM_CPU_COUNT);
-    }
-
-    public List<Double> getJvmGcMemoryAllocatedBytesTotal() {
-        return collectMetricSimpleValues(PerformanceConstants.JVM_GC_MEMORY_ALLOCATED_BYTES_TOTAL);
-    }
-
-    /**
-     * Parses out the 'jvm_memory_used_bytes' metric from the collected data.
-     * @return A map with unique keys for each label combination and their corresponding metric values.
-     */
-    public Map<String, Double> getJvmMemoryUsedBytes() {
-        return collectMetricWithLabels("jvm_memory_used_bytes");
-    }
-
-    public List<Double> getJvmThreadsLiveThreads() {
-        return collectMetricSimpleValues(PerformanceConstants.JVM_THREADS_LIVE_THREADS);
-    }
-
-    public List<Double> getSystemCpuUsage() {
-        return collectMetricSimpleValues(PerformanceConstants.SYSTEM_CPU_USAGE);
-    }
-
-    public Map<String, Double>  getJvmGcPauseSecondsMax() {
-        return collectMetricWithLabels("jvm_gc_pause_seconds_max");
-    }
-
-    public List<Double> getJvmMemoryMaxBytes() {
-        return collectMetricValues(PerformanceConstants.JVM_MEMORY_MAX_BYTES);
-    }
-
-    public List<Double> getProcessCpuUsage() {
-        return collectMetricSimpleValues(PerformanceConstants.PROCESS_CPU_USAGE);
-    }
-
-    public List<Double> getSystemLoadAverage1m() {
-        return collectMetricSimpleValues(PerformanceConstants.SYSTEM_LOAD_AVERAGE_1M);
-    }
-
     // Example of a bucketed metric method
     public List<Double> getAlterConfigsDurationSecondsBucket(String selector, String le) {
         Pattern pattern = Pattern.compile("strimzi_alter_configs_duration_seconds_bucket\\{kind=\"" + KafkaTopic.RESOURCE_KIND + "\",namespace=\"" + this.getNamespaceName() + "\",selector=\"" + selector + "\",le=\"" + le + "\",\\}\\s(\\d+\\.?\\d*)");
@@ -226,22 +182,6 @@ public class TopicOperatorMetricsCollector extends MetricsCollector {
     }
 
     // -----------------------------------------------------------------------------------------------------
-
-    private List<Double> collectMetricValues(String metricName, String selector) {
-        Pattern pattern = Pattern.compile(metricName + "\\{kind=\"" + KafkaTopic.RESOURCE_KIND + "\",namespace=\"" + this.getNamespaceName() + "\",selector=\"" + selector + "\",.*\\}\\s(\\d+\\.?\\d*)");
-        return collectSpecificMetric(pattern);
-    }
-
-    private List<Double> collectMetricValues(String metricName) {
-        Pattern pattern = Pattern.compile(metricName + "\\{.*\\}\\s(\\d+\\.?\\d*)");
-        return collectSpecificMetric(pattern);
-    }
-
-    private List<Double> collectMetricSimpleValues(String metricName) {
-        // Updated pattern to match numbers in standard or scientific notation
-        Pattern pattern = Pattern.compile("^" + Pattern.quote(metricName) + "\\s+([\\d.]+(?:E-?\\d+)?)$", Pattern.MULTILINE);
-        return collectSpecificMetric(pattern);
-    }
 
     /**
      * Builder for {@link TopicOperatorMetricsCollector}, allowing for customizable configuration.

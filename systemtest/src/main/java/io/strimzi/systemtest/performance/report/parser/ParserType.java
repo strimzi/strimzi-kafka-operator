@@ -11,7 +11,8 @@ package io.strimzi.systemtest.performance.report.parser;
  */
 public enum ParserType {
 
-    TOPIC_OPERATOR("topic-operator");
+    TOPIC_OPERATOR("topic-operator"),
+    USER_OPERATOR("user-operator");
 
     private final String parserName;
 
