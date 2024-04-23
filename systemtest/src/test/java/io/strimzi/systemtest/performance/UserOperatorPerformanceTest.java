@@ -107,14 +107,15 @@ public class UserOperatorPerformanceTest extends AbstractST {
     //      beneficial in very large-scale environments to avoid timeouts and stale data.
     @ParameterizedTest
     @MethodSource("provideConfigurationsForBulkBatchUseCase")
-    public void testAliceBulkBatchUseCase(int numberOfKafkaUsersToCreate,
-                                      String operationTimeoutMs, String workQueueSize, String controllerThreadPoolSize,
+    public void testAliceBulkBatchUseCase(int numberOfKafkaUsersToCreate, String controllerThreadPoolSize,
                                       String cacheRefreshIntervalMs, String batchQueueSize, String batchMaximumBlockSize,
                                       String batchMaximumBlockTimeMs, String userOperationsThreadPoolSize) throws IOException {
         final int brokerReplicas = 3;
         final int controllerReplicas = 3;
         long creationUsersMs = 0;
         long deletionUsersMs = 0;
+        // we set worker queue size to high number as we measure performance and not memory or sizing...
+        final String workerQueueSize = "10000";
 
         try {
             resourceManager.createResourceWithWait(
@@ -145,7 +146,7 @@ public class UserOperatorPerformanceTest extends AbstractST {
                                     .endEnv()
                                     .addNewEnv()
                                         .withName("STRIMZI_WORK_QUEUE_SIZE")
-                                        .withValue(String.valueOf(Integer.MAX_VALUE))
+                                        .withValue(workerQueueSize)
                                     .endEnv()
                                     .addNewEnv()
                                         .withName("STRIMZI_CONTROLLER_THREAD_POOL_SIZE")
@@ -222,8 +223,8 @@ public class UserOperatorPerformanceTest extends AbstractST {
 
                 final Map<String, Object> performanceAttributes = new LinkedHashMap<>();
                 performanceAttributes.put(PerformanceConstants.USER_OPERATOR_IN_NUMBER_OF_KAFKA_USERS, numberOfKafkaUsersToCreate);
-                performanceAttributes.put(PerformanceConstants.USER_OPERATOR_IN_OPERATION_TIMEOUT_MS, operationTimeoutMs);
-                performanceAttributes.put(PerformanceConstants.USER_OPERATOR_IN_WORK_QUEUE_SIZE, workQueueSize);
+                performanceAttributes.put(PerformanceConstants.USER_OPERATOR_IN_OPERATION_TIMEOUT_MS, "300000");
+                performanceAttributes.put(PerformanceConstants.USER_OPERATOR_IN_WORK_QUEUE_SIZE, workerQueueSize);
                 performanceAttributes.put(PerformanceConstants.USER_OPERATOR_IN_CONTROLLER_THREAD_POOL_SIZE, controllerThreadPoolSize);
                 performanceAttributes.put(PerformanceConstants.USER_OPERATOR_IN_CACHE_REFRESH_INTERVAL_MS, cacheRefreshIntervalMs);
                 performanceAttributes.put(PerformanceConstants.USER_OPERATOR_IN_BATCH_QUEUE_SIZE, batchQueueSize);
