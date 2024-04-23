@@ -23,6 +23,7 @@ import io.strimzi.api.kafka.model.common.template.ResourceTemplateBuilder;
 import io.strimzi.api.kafka.model.kafka.JbodStorage;
 import io.strimzi.api.kafka.model.kafka.JbodStorageBuilder;
 import io.strimzi.api.kafka.model.kafka.Kafka;
+import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
@@ -37,7 +38,6 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
-import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.resources.NodePoolsConverter;
@@ -52,6 +52,7 @@ import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.systemtest.utils.VerificationUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.ConfigMapUtils;
@@ -86,6 +87,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.emptyOrNullString;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @Tag(REGRESSION)
 @SuppressWarnings("checkstyle:ClassFanOutComplexity")
@@ -400,9 +402,10 @@ class KafkaST extends AbstractST {
      *  - annotations
      */
     @ParallelNamespaceTest
-    // This test needs to be adapted to support KRaft: https://github.com/strimzi/strimzi-kafka-operator/issues/9938
-    @KRaftNotSupported("This test has not yet been adapted to support KRaft after JBOD support was added in KRaft mode.")
     void testKafkaJBODDeleteClaimsTrueFalse() {
+        // JBOD storage in KRaft is supported only from Kafka 3.7.0 and higher.
+        // So we want to run this test when KRaft is disabled or when it is with KRaft and Kafka 3.7.0+
+        assumeTrue(!Environment.isKRaftForCOEnabled() || TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "3.7.0") >= 0);
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final int kafkaReplicas = 2;
         final String diskSizeGi = "10";
@@ -424,7 +427,14 @@ class KafkaST extends AbstractST {
                 KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), kafkaReplicas).build()
             )
         );
-        resourceManager.createResourceWithWait(KafkaTemplates.kafkaJBOD(testStorage.getClusterName(), kafkaReplicas, 3, jbodStorage).build());
+
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), kafkaReplicas)
+            .editSpec()
+                .editKafka()
+                    .withStorage(jbodStorage)
+                .endKafka()
+            .endSpec()
+            .build());
 
         Map<String, String> brokerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
         // kafka cluster already deployed
@@ -545,11 +555,13 @@ class KafkaST extends AbstractST {
      *  - persistent-storage
      */
     @ParallelNamespaceTest
-    // This test needs to be adapted to support KRaft: https://github.com/strimzi/strimzi-kafka-operator/issues/9938
-    @KRaftNotSupported("This test has not yet been adapted to support KRaft after JBOD support was added in KRaft mode.")
-    @SuppressWarnings({"checkstyle:JavaNCSS", "checkstyle:NPathComplexity", "checkstyle:MethodLength"})
+    @SuppressWarnings({"checkstyle:JavaNCSS", "checkstyle:NPathComplexity", "checkstyle:MethodLength", "checkstyle:CyclomaticComplexity"})
     @Tag(INTERNAL_CLIENTS_USED)
     void testLabelsExistenceAndManipulation() {
+        // JBOD storage in KRaft is supported only from Kafka 3.7.0 and higher.
+        // So we want to run this test when KRaft is disabled or when it is with KRaft and Kafka 3.7.0+
+        assumeTrue(!Environment.isKRaftForCOEnabled() || TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "3.7.0") >= 0);
+
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
         // label key and values to be used as part of kafka CR
@@ -616,7 +628,8 @@ class KafkaST extends AbstractST {
                     .build()
             )
         );
-        resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3, 1)
+
+        final KafkaBuilder kafkaBuilder = KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3, 1)
             .editMetadata()
                 .withLabels(customSpecifiedLabels)
             .endMetadata()
@@ -627,15 +640,22 @@ class KafkaST extends AbstractST {
                     .endTemplate()
                     .withStorage(jbodStorage)
                 .endKafka()
-                .editZookeeper()
-                    .withNewTemplate()
-                        .withPersistentVolumeClaim(pvcResourceTemplate)
-                    .endTemplate()
-                    .withStorage(persistentClaimStorage)
-                .endZookeeper()
-            .endSpec()
-            .build());
+            .endSpec();
 
+        // KRaft disabled we also use ZK with JBOD (otherwise we use controller...)
+        if (!Environment.isKRaftModeEnabled()) {
+            kafkaBuilder
+                .editSpec()
+                    .editZookeeper()
+                        .withNewTemplate()
+                            .withPersistentVolumeClaim(pvcResourceTemplate)
+                        .endTemplate()
+                        .withStorage(persistentClaimStorage)
+                    .endZookeeper()
+                .endSpec();
+        }
+
+        resourceManager.createResourceWithWait(kafkaBuilder.build());
         resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage).build());
 
         LOGGER.info("--> Test Strimzi related expected labels of managed kubernetes resources <--");
@@ -666,8 +686,7 @@ class KafkaST extends AbstractST {
         LOGGER.info("---> SERVICES <---");
 
         List<Service> services = kubeClient().listServices(testStorage.getNamespaceName()).stream()
-            .filter(service -> service.getMetadata().getName().startsWith(testStorage.getClusterName()))
-            .collect(Collectors.toList());
+            .filter(service -> service.getMetadata().getName().startsWith(testStorage.getClusterName())).toList();
 
         for (Service service : services) {
             LOGGER.info("Verifying labels of Service: {}/{}", service.getMetadata().getNamespace(), service.getMetadata().getName());
@@ -677,8 +696,7 @@ class KafkaST extends AbstractST {
         LOGGER.info("---> SECRETS <---");
 
         List<Secret> secrets = kubeClient().listSecrets(testStorage.getNamespaceName()).stream()
-            .filter(secret -> secret.getMetadata().getName().startsWith(testStorage.getClusterName()) && secret.getType().equals("Opaque"))
-            .collect(Collectors.toList());
+            .filter(secret -> secret.getMetadata().getName().startsWith(testStorage.getClusterName()) && secret.getType().equals("Opaque")).toList();
 
         for (Secret secret : secrets) {
             LOGGER.info("Verifying labels of Secret: {}/{}", secret.getMetadata().getNamespace(), secret.getMetadata().getName());
@@ -762,6 +780,16 @@ class KafkaST extends AbstractST {
                 resource.getSpec().getTemplate().getPersistentVolumeClaim().getMetadata().setLabels(customSpecifiedLabelOrAnnotationPvc);
                 resource.getSpec().getTemplate().getPersistentVolumeClaim().getMetadata().setAnnotations(customSpecifiedLabelOrAnnotationPvc);
             }, testStorage.getNamespaceName());
+
+            if (Environment.isKRaftModeEnabled()) {
+                KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getControllerPoolName(), resource -> {
+                    for (Map.Entry<String, String> label : customSpecifiedLabels.entrySet()) {
+                        resource.getMetadata().getLabels().put(label.getKey(), label.getValue());
+                    }
+                    resource.getSpec().getTemplate().getPersistentVolumeClaim().getMetadata().setLabels(customSpecifiedLabelOrAnnotationPvc);
+                    resource.getSpec().getTemplate().getPersistentVolumeClaim().getMetadata().setAnnotations(customSpecifiedLabelOrAnnotationPvc);
+                }, testStorage.getNamespaceName());
+            }
         }
 
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), resource -> {
@@ -770,8 +798,12 @@ class KafkaST extends AbstractST {
             }
             resource.getSpec().getKafka().getTemplate().getPersistentVolumeClaim().getMetadata().setLabels(customSpecifiedLabelOrAnnotationPvc);
             resource.getSpec().getKafka().getTemplate().getPersistentVolumeClaim().getMetadata().setAnnotations(customSpecifiedLabelOrAnnotationPvc);
-            resource.getSpec().getZookeeper().getTemplate().getPersistentVolumeClaim().getMetadata().setLabels(customSpecifiedLabelOrAnnotationPvc);
-            resource.getSpec().getZookeeper().getTemplate().getPersistentVolumeClaim().getMetadata().setAnnotations(customSpecifiedLabelOrAnnotationPvc);
+
+            // if KRaft disabled we can also configure ZK spec
+            if (!Environment.isKRaftModeEnabled()) {
+                resource.getSpec().getZookeeper().getTemplate().getPersistentVolumeClaim().getMetadata().setLabels(customSpecifiedLabelOrAnnotationPvc);
+                resource.getSpec().getZookeeper().getTemplate().getPersistentVolumeClaim().getMetadata().setAnnotations(customSpecifiedLabelOrAnnotationPvc);
+            }
         }, testStorage.getNamespaceName());
 
         LOGGER.info("Waiting for rolling update of ZooKeeper and Kafka");
