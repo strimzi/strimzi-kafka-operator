@@ -5,7 +5,7 @@ metadata:
 spec:
   strategy: allInOne
   allInOne:
-    image: 'quay.io/jaegertracing/all-in-one:1.35'
+    image: 'quay.io/jaegertracing/all-in-one:1.56'
     options:
       log-level: debug
       query:
