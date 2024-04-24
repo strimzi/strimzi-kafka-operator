@@ -89,7 +89,6 @@ import java.io.IOException;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
-import java.util.Arrays; 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -4084,7 +4083,7 @@ public class KafkaClusterTest {
         // set externalIP
         GenericKafkaListenerConfigurationBootstrap bootstrapConfig = new GenericKafkaListenerConfigurationBootstrapBuilder()
                 .withNodePort(32100)
-                .withExternalIPs(Arrays.asList("10.0.0.1"))
+                .withExternalIPs(List.of("10.0.0.1"))
                 .build();
         
         Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
@@ -4107,7 +4106,7 @@ public class KafkaClusterTest {
        
         List<Service> services = kc.generateExternalBootstrapServices();
         assertThat(services.get(0).getSpec().getType(), is("NodePort"));
-        assertEquals(services.get(0).getSpec().getExternalIPs(), Arrays.asList("10.0.0.1"));
+        assertEquals(services.get(0).getSpec().getExternalIPs(), List.of("10.0.0.1"));
     }
     
     @ParallelTest
@@ -4117,7 +4116,7 @@ public class KafkaClusterTest {
         nodePortListenerBrokerConfig.setBroker(0);
         nodePortListenerBrokerConfig.setNodePort(32000);
         nodePortListenerBrokerConfig.setAdvertisedHost("advertised.host");
-        nodePortListenerBrokerConfig.setExternalIPs(Arrays.asList("10.0.0.1"));
+        nodePortListenerBrokerConfig.setExternalIPs(List.of("10.0.0.1"));
         
         Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
                 .editSpec()
@@ -4139,6 +4138,6 @@ public class KafkaClusterTest {
        
         List<Service> services = kc.generatePerPodServices();
         assertThat(services.get(0).getSpec().getType(), is("NodePort"));
-        assertEquals(services.get(0).getSpec().getExternalIPs(), Arrays.asList("10.0.0.1"));
+        assertEquals(services.get(0).getSpec().getExternalIPs(), List.of("10.0.0.1"));
     }
 }
