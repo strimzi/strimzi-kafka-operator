@@ -11,8 +11,10 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.enums.ClusterOperatorInstallType;
 import io.strimzi.systemtest.resources.NamespaceManager;
+import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.k8s.KubeClient;
+import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.logs.CollectorElement;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -114,6 +116,13 @@ public class LogCollector {
         if (!logTestCaseDirExist) {
             throw new IOException("Unable to create path");
         }
+    }
+
+    public LogCollector() throws IOException {
+        this(ResourceManager.getTestContext(), CollectorElement.createCollectorElement(
+                ResourceManager.getTestContext().getRequiredTestClass().getName(),
+                ResourceManager.getTestContext().getRequiredTestMethod().getName()),
+            KubeClusterResource.kubeClient(), Environment.TEST_LOG_DIR);
     }
 
     /**

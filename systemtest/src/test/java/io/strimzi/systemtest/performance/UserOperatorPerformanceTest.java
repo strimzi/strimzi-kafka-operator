@@ -9,6 +9,7 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.enums.UserAuthType;
+import io.strimzi.systemtest.logs.LogCollector;
 import io.strimzi.systemtest.performance.gather.collectors.UserOperatorMetricsCollector;
 import io.strimzi.systemtest.performance.gather.schedulers.UserOperatorMetricsCollectionScheduler;
 import io.strimzi.systemtest.performance.report.UserOperatorPerformanceReporter;
@@ -56,6 +57,7 @@ public class UserOperatorPerformanceTest extends AbstractST {
     private UserOperatorMetricsCollector userOperatorCollector;
     private UserOperatorMetricsCollectionScheduler userOperatorMetricsGatherer;
     private UserOperatorPerformanceReporter userOperatorPerformanceReporter = new UserOperatorPerformanceReporter();
+    private LogCollector logCollector;
 
     /**
      * Provides a stream of configurations for parameterized testing of Kafka User Operator's bulk batch operations.
@@ -245,15 +247,25 @@ public class UserOperatorPerformanceTest extends AbstractST {
     }
 
     /**
-     * TODO:
+     * Provides a stream of configurations for capacity testing, designed to evaluate
+     * different operational parameters and their impact on system performance. Each configuration
+     * is tailored to test various aspects of the system under conditions that mimic different
+     * operational requirements, such as varying levels of parallel processing, batching strategies,
+     * and operational latencies.
      *
      * Parameters:
-     * $1 - Controller thread pool size
-     * $2 - Cache refresh interval (ms)
-     * $3 - Batch queue size
-     * $4 - Maximum batch block size
-     * $5 - Maximum batch block time (ms)
-     * $6 - User operations thread pool size
+     * $1 - Controller thread pool size: Defines the size of the thread pool used by the controller.
+     *       Larger sizes allow more concurrent operations but require more system resources.
+     * $2 - Cache refresh interval (ms): Time interval in milliseconds between consecutive cache refreshes,
+     *       affecting how current the data seen by the controller is.
+     * $3 - Batch queue size: Specifies the size of the batch queue, influencing how many operations
+     *       can be batched together before being processed.
+     * $4 - Maximum batch block size: The maximum number of operations that can be included in a single batch,
+     *       affecting throughput and latency.
+     * $5 - Maximum batch block time (ms): The maximum time in milliseconds that a batch can be held before
+     *       processing must start, balancing between immediate and delayed execution for better resource usage.
+     * $6 - User operations thread pool size: Specifies the number of threads dedicated to user operations,
+     *       impacting the concurrency level of user-specific tasks.
      *
      * @return a stream of {@link Arguments} instances, each representing a set of parameters for the test.
      */
@@ -333,7 +345,6 @@ public class UserOperatorPerformanceTest extends AbstractST {
                                     .withName("STRIMZI_USER_OPERATIONS_THREAD_POOL_SIZE")
                                     .withValue(userOperationsThreadPoolSize)
                                     .endEnv()
-                                    // TODO: -----
                                 .endUserOperatorContainer()
                             .endTemplate()
                         .endEntityOperator()
@@ -374,10 +385,21 @@ public class UserOperatorPerformanceTest extends AbstractST {
                     LOGGER.info("Successfully created and verified batch from {} to {}", start, end);
                 } catch (WaitException e) {
                     LOGGER.error("Failed to create Kafka users from index {} to {}: {}", start, end, e.getMessage());
+
+                    // after a failure we will gather logs from all components under test (i.e., UO, Kafka pods) to observer behaviour
+                    // what might be a bottleneck of such performance
+                    this.logCollector = new LogCollector();
+                    this.logCollector.collect();
+
                     break; // Break out of the loop if an error occurs
                 }
             }
         } finally {
+            // to enchantment a process of deleting we should delete all resources at once
+            // I saw a behaviour where deleting one by one might lead to 10s delay for deleting each KafkaUser
+            resourceManager.deleteResourcesOfTypeWithoutWait(KafkaUser.RESOURCE_KIND);
+            KafkaUserUtils.waitForUserWithPrefixDeletion(testStorage.getNamespaceName(), testStorage.getUsername());
+
             if (this.userOperatorMetricsGatherer != null) {
                 this.userOperatorMetricsGatherer.stopCollecting();
 
@@ -396,7 +418,7 @@ public class UserOperatorPerformanceTest extends AbstractST {
 
                 performanceAttributes.put(PerformanceConstants.METRICS_HISTORY, this.userOperatorMetricsGatherer.getMetricsStore()); // Map of metrics history
 
-                this.userOperatorPerformanceReporter.logPerformanceData(this.testStorage, performanceAttributes, UserOperatorPerformanceTest.REPORT_DIRECTORY + "/" + PerformanceConstants.USER_OPERATOR_CAPACITY_DEFAULT_USE_CASE, ACTUAL_TIME, Environment.PERFORMANCE_DIR);
+                this.userOperatorPerformanceReporter.logPerformanceData(this.testStorage, performanceAttributes, UserOperatorPerformanceTest.REPORT_DIRECTORY + "/" + PerformanceConstants.USER_OPERATOR_CAPACITY_USE_CASE, ACTUAL_TIME, Environment.PERFORMANCE_DIR);
             }
         }
     }
