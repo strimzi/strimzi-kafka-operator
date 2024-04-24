@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.common.model;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
@@ -524,32 +525,46 @@ public abstract class Ca {
     }
 
     /**
-     * Create the CA {@code Secrets} if they don't exist, otherwise if within the renewal period then either renew the CA cert
-     * or replace the CA cert and key, according to the configured policy.
-     * After calling this method {@link #certRenewed()} and {@link #certsRemoved()}
-     * will return whether the certificate was renewed and whether expired secrets were removed from the Secret.
-     * @param namespace The namespace containing the cluster.
-     * @param clusterName The name of the cluster.
-     * @param labels The labels of the {@code Secrets} created.
-     * @param additionalLabels The additional labels of the {@code Secrets} created.
-     * @param additionalAnnotations The additional annotations of the {@code Secrets} created.
-     * @param ownerRef The owner of the {@code Secrets} created.
-     * @param maintenanceWindowSatisfied Flag indicating whether we are in the maintenance window
+     * Create the CA {@code Secrets} if they don't exist, otherwise if within the renewal period then either renew
+     * the CA cert or replace the CA cert and key, according to the configured policy. After calling this method
+     * {@link #certRenewed()} and {@link #certsRemoved()} will return whether the certificate was renewed and whether
+     * expired secrets were removed from the Secret.
+     *
+     * @param namespace                     The namespace containing the cluster.
+     * @param clusterName                   The name of the cluster.
+     * @param labels                        The labels of the {@code Secrets} created.
+     * @param additionalLabels              The additional labels of the {@code Secrets} created.
+     * @param additionalAnnotations         The additional annotations of the {@code Secrets} created.
+     * @param ownerRef                      The owner of the {@code Secrets} created.
+     * @param existingServerSecrets         List of existing Secrets with certificates signed by this CA. This is used
+     *                                      to compare the CA generation from their annotations with the CA generation.
+     * @param maintenanceWindowSatisfied    Flag indicating whether we are in the maintenance window
      */
-    public void createRenewOrReplace(String namespace, String clusterName, Map<String, String> labels, Map<String, String> additionalLabels, Map<String, String> additionalAnnotations, OwnerReference ownerRef, boolean maintenanceWindowSatisfied) {
+    public void createRenewOrReplace(
+            String namespace,
+            String clusterName,
+            Map<String, String> labels,
+            Map<String, String> additionalLabels,
+            Map<String, String> additionalAnnotations,
+            OwnerReference ownerRef,
+            List<HasMetadata> existingServerSecrets,
+            boolean maintenanceWindowSatisfied
+    ) {
         X509Certificate currentCert = cert(caCertSecret, CA_CRT);
         Map<String, String> certData;
         Map<String, String> keyData;
         int caCertGeneration = certGeneration();
         int caKeyGeneration = keyGeneration();
+
         if (!generateCa) {
             certData = caCertSecret != null ? caCertSecret.getData() : emptyMap();
             keyData = caKeySecret != null ? singletonMap(CA_KEY, caKeySecret.getData().get(CA_KEY)) : emptyMap();
-            renewalType = hasCaCertGenerationChanged() ? RenewalType.REPLACE_KEY : RenewalType.NOOP;
+            renewalType = hasCaCertGenerationChanged(existingServerSecrets) ? RenewalType.REPLACE_KEY : RenewalType.NOOP;
             caCertsRemoved = false;
         } else {
             this.renewalType = shouldCreateOrRenew(currentCert, namespace, clusterName, maintenanceWindowSatisfied);
             LOGGER.debugCr(reconciliation, "{} renewalType {}", this, renewalType);
+
             switch (renewalType) {
                 case CREATE:
                     keyData = new HashMap<>(1);
@@ -587,6 +602,7 @@ public abstract class Ca {
         if (caCertsRemoved) {
             LOGGER.infoCr(reconciliation, "{}: Expired CA certificates removed", this);
         }
+
         if (renewalType != RenewalType.NOOP && renewalType != RenewalType.POSTPONED) {
             LOGGER.debugCr(reconciliation, "{}: {}", this, renewalType.postDescription(caKeySecretName, caCertSecretName));
         }
@@ -783,7 +799,7 @@ public abstract class Ca {
     }
 
     /**
-     * True if the last call to {@link #createRenewOrReplace(String, String, Map, Map, Map, OwnerReference, boolean)}
+     * True if the last call to {@link #createRenewOrReplace(String, String, Map, Map, Map, OwnerReference, List, boolean)}
      * resulted in expired certificates being removed from the CA {@code Secret}.
      * @return Whether any expired certificates were removed.
      */
@@ -792,7 +808,7 @@ public abstract class Ca {
     }
 
     /**
-     * True if the last call to {@link #createRenewOrReplace(String, String, Map, Map, Map, OwnerReference, boolean)}
+     * True if the last call to {@link #createRenewOrReplace(String, String, Map, Map, Map, OwnerReference, List, boolean)}
      * resulted in a renewed CA certificate.
      * @return Whether the certificate was renewed.
      */
@@ -801,7 +817,7 @@ public abstract class Ca {
     }
 
     /**
-     * True if the last call to {@link #createRenewOrReplace(String, String, Map, Map, Map, OwnerReference, boolean)}
+     * True if the last call to {@link #createRenewOrReplace(String, String, Map, Map, Map, OwnerReference, List, boolean)}
      * resulted in a replaced CA key.
      * @return Whether the key was replaced.
      */
@@ -1127,10 +1143,22 @@ public abstract class Ca {
     protected abstract String caCertGenerationAnnotation();
 
     /**
-     * @return if the current (cluster or clients) CA certificate generation is changed compared to the one
-     *         brought on Secrets containing certificates signed by that CA (i.e. ZooKeeper nodes, Kafka brokers, ...)
+     * Checks if the CA generation on any of the existing Secrets with server certificates signed by this CA changed or
+     * not.
+     *
+     * @param existingServerSecrets     List of existing Secrets with server certificates
+     *
+     * @return  True if any Secret has different CA generation. False otherwise.
      */
-    protected abstract boolean hasCaCertGenerationChanged();
+    private boolean hasCaCertGenerationChanged(List<HasMetadata> existingServerSecrets) {
+        boolean hasChanged = false;
+
+        for (HasMetadata secret : existingServerSecrets)    {
+            hasChanged |= hasCaCertGenerationChanged(secret);
+        }
+
+        return hasChanged;
+    }
 
     /**
      * It checks if the current (cluster or clients) CA certificate generation is changed compared to the one
@@ -1140,7 +1168,7 @@ public abstract class Ca {
      * @return if the current (cluster or clients) CA certificate generation is changed compared to the one
      *         brought by the corresponding annotation on the provided Secret
      */
-    public boolean hasCaCertGenerationChanged(Secret secret) {
+    public boolean hasCaCertGenerationChanged(HasMetadata secret) {
         if (secret != null) {
             String caCertGenerationAnno = Annotations.stringAnnotation(secret, caCertGenerationAnnotation(), null);
             int currentCaCertGeneration = certGeneration();

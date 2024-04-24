@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
@@ -234,7 +235,8 @@ public class CaReconciler {
                     Secret clusterCaKeySecret = null;
                     Secret clientsCaCertSecret = null;
                     Secret clientsCaKeySecret = null;
-                    Secret brokersSecret = null;
+                    List<HasMetadata> clusterCaSecrets = new ArrayList<>();
+                    List<HasMetadata> clientsCaSecrets = new ArrayList<>();
 
                     for (Secret secret : clusterSecrets) {
                         String secretName = secret.getMetadata().getName();
@@ -247,7 +249,10 @@ public class CaReconciler {
                         } else if (secretName.equals(clientsCaKeyName)) {
                             clientsCaKeySecret = secret;
                         } else if (secretName.equals(KafkaResources.kafkaSecretName(reconciliation.name()))) {
-                            brokersSecret = secret;
+                            clusterCaSecrets.add(secret);
+                            clientsCaSecrets.add(secret);
+                        } else {
+                            clusterCaSecrets.add(secret);
                         }
                     }
 
@@ -259,11 +264,11 @@ public class CaReconciler {
                             ModelUtils.getCertificateValidity(clusterCaConfig),
                             ModelUtils.getRenewalDays(clusterCaConfig),
                             clusterCaConfig == null || clusterCaConfig.isGenerateCertificateAuthority(), clusterCaConfig != null ? clusterCaConfig.getCertificateExpirationPolicy() : null);
-                    clusterCa.initCaSecrets(clusterSecrets);
                     clusterCa.createRenewOrReplace(
                             reconciliation.namespace(), reconciliation.name(), caLabels,
                             clusterCaCertLabels, clusterCaCertAnnotations,
                             clusterCaConfig != null && !clusterCaConfig.isGenerateSecretOwnerReference() ? null : ownerRef,
+                            clusterCaSecrets,
                             Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant()));
 
                     // When we are not supposed to generate the CA, but it does not exist, we should just throw an error
@@ -277,10 +282,10 @@ public class CaReconciler {
                             ModelUtils.getRenewalDays(clientsCaConfig),
                             clientsCaConfig == null || clientsCaConfig.isGenerateCertificateAuthority(),
                             clientsCaConfig != null ? clientsCaConfig.getCertificateExpirationPolicy() : null);
-                    clientsCa.initBrokerSecret(brokersSecret);
                     clientsCa.createRenewOrReplace(reconciliation.namespace(), reconciliation.name(),
                             caLabels, Map.of(), Map.of(),
                             clientsCaConfig != null && !clientsCaConfig.isGenerateSecretOwnerReference() ? null : ownerRef,
+                            clientsCaSecrets,
                             Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant()));
 
                     return null;
@@ -340,26 +345,30 @@ public class CaReconciler {
                        That time is used for checking maintenance windows
      */
     Future<Void> reconcileClusterOperatorSecret(Clock clock) {
-        coSecret = clusterCa.clusterOperatorSecret();
-        if (coSecret != null && this.isClusterCaNeedFullTrust) {
-            LOGGER.warnCr(reconciliation, "Cluster CA needs to be fully trusted across the cluster, keeping current CO secret and certs");
-            return Future.succeededFuture();
-        }
-        coSecret = CertUtils.buildTrustedCertificateSecret(
-                reconciliation,
-                clusterCa,
-                clusterCa.clusterOperatorSecret(),
-                reconciliation.namespace(),
-                KafkaResources.secretName(reconciliation.name()),
-                "cluster-operator",
-                "cluster-operator",
-                clusterOperatorSecretLabels,
-                ownerRef,
-                Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant())
-        );
+        return secretOperator.getAsync(reconciliation.namespace(), KafkaResources.secretName(reconciliation.name()))
+                .compose(oldSecret -> {
+                    coSecret = oldSecret;
+                    if (oldSecret != null && this.isClusterCaNeedFullTrust) {
+                        LOGGER.warnCr(reconciliation, "Cluster CA needs to be fully trusted across the cluster, keeping current CO secret and certs");
+                        return Future.succeededFuture();
+                    }
 
-        return secretOperator.reconcile(reconciliation, reconciliation.namespace(), KafkaResources.secretName(reconciliation.name()), coSecret)
-                .map((Void) null);
+                    coSecret = CertUtils.buildTrustedCertificateSecret(
+                            reconciliation,
+                            clusterCa,
+                            coSecret,
+                            reconciliation.namespace(),
+                            KafkaResources.secretName(reconciliation.name()),
+                            "cluster-operator",
+                            "cluster-operator",
+                            clusterOperatorSecretLabels,
+                            ownerRef,
+                            Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant())
+                    );
+
+                    return secretOperator.reconcile(reconciliation, reconciliation.namespace(), KafkaResources.secretName(reconciliation.name()), coSecret)
+                            .map((Void) null);
+                });
     }
 
     /**
