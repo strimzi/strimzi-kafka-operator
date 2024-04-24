@@ -5,7 +5,6 @@
 package io.strimzi.systemtest.kafkaclients.internalClients.admin;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.strimzi.test.executor.ExecResult;
 
@@ -20,10 +19,6 @@ public class AdminClient {
     private final String podName;
     private final static String CMD = "admin-client";
     private final static ObjectMapper MAPPER = new ObjectMapper();
-
-    static {
-        MAPPER.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-    }
 
     public AdminClient(String namespaceName, String podName) {
         this.namespaceName = namespaceName;
