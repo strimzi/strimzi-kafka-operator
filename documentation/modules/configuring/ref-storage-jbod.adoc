@@ -72,6 +72,8 @@ When running a Kafka cluster in a KRaft mode, each node must store the KRaft met
 By default, the KRaft metadata log is stored on the volume with the lowest ID.
 However, you can specify another volume using the `kraftMetadata` property.
 
+NOTE: JBOD storage in KRaft mode is considered early-access in Apache Kafka 3.7.x.
+
 .Example JBOD storage configuration using volume with ID 1 to store the KRaft metadata
 [source,yaml,subs="attributes+"]
 ----
