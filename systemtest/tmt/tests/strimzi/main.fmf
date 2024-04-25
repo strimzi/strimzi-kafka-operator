@@ -75,3 +75,12 @@ adjust:
   environment+:
     TEST_PROFILE: performance
     PARALLELISM_ENABLED: false
+
+/performance-capacity:
+  summary: Run performance capacity strimzi test suite
+  tags: [strimzi, kafka, kraft, performance, performance-capacity]
+  duration: 24h
+  tier: 1
+  environment+:
+    TEST_PROFILE: performance-capacity
+    PARALLELISM_ENABLED: false

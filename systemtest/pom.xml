@@ -403,5 +403,15 @@
             </properties>
         </profile>
 
+        <profile>
+            <id>performance-capacity</id>
+            <properties>
+                <skipTests>false</skipTests>
+                <groups>
+                    performance-capacity
+                </groups>
+            </properties>
+        </profile>
+
     </profiles>
 </project>

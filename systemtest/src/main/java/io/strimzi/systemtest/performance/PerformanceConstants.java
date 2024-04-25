@@ -168,4 +168,10 @@ public interface PerformanceConstants {
      */
     String TOPIC_OPERATOR_PARSER = "topic-operator";
     String USER_OPERATOR_PARSER = "user-operator";
+
+    /**
+     * Performance specific related tags
+     */
+    String PERFORMANCE_CAPACITY = "performance-capacity";
+
 }

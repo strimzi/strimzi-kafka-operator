@@ -43,6 +43,7 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 import static io.strimzi.systemtest.TestConstants.PERFORMANCE;
+import static io.strimzi.systemtest.performance.PerformanceConstants.PERFORMANCE_CAPACITY;
 import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 
 @Tag(PERFORMANCE)
@@ -284,6 +285,7 @@ public class UserOperatorPerformanceTest extends AbstractST {
         );
     }
 
+    @Tag(PERFORMANCE_CAPACITY)
     @ParameterizedTest
     @MethodSource("provideConfigurationsForCapacity")
     void testCapacity(String controllerThreadPoolSize, String cacheRefreshIntervalMs, String batchQueueSize,
@@ -318,32 +320,32 @@ public class UserOperatorPerformanceTest extends AbstractST {
                             .editOrNewTemplate()
                                 .editOrNewUserOperatorContainer()
                                     .addNewEnv()
-                                    .withName("STRIMZI_WORK_QUEUE_SIZE")
-                                    .withValue(workerQueueSize)
+                                        .withName("STRIMZI_WORK_QUEUE_SIZE")
+                                        .withValue(workerQueueSize)
                                     .endEnv()
                                     .addNewEnv()
-                                    .withName("STRIMZI_CONTROLLER_THREAD_POOL_SIZE")
-                                    .withValue(controllerThreadPoolSize)
+                                        .withName("STRIMZI_CONTROLLER_THREAD_POOL_SIZE")
+                                        .withValue(controllerThreadPoolSize)
                                     .endEnv()
                                     .addNewEnv()
-                                    .withName("STRIMZI_CACHE_REFRESH_INTERVAL_MS")
-                                    .withValue(cacheRefreshIntervalMs)
+                                        .withName("STRIMZI_CACHE_REFRESH_INTERVAL_MS")
+                                        .withValue(cacheRefreshIntervalMs)
                                     .endEnv()
                                     .addNewEnv()
-                                    .withName("STRIMZI_BATCH_QUEUE_SIZE")
-                                    .withValue(batchQueueSize)
+                                        .withName("STRIMZI_BATCH_QUEUE_SIZE")
+                                        .withValue(batchQueueSize)
                                     .endEnv()
                                     .addNewEnv()
-                                    .withName("STRIMZI_BATCH_MAXIMUM_BLOCK_SIZE")
-                                    .withValue(batchMaximumBlockSize)
+                                        .withName("STRIMZI_BATCH_MAXIMUM_BLOCK_SIZE")
+                                        .withValue(batchMaximumBlockSize)
                                     .endEnv()
                                     .addNewEnv()
-                                    .withName("STRIMZI_BATCH_MAXIMUM_BLOCK_TIME_MS")
-                                    .withValue(batchMaximumBlockTimeMs)
+                                        .withName("STRIMZI_BATCH_MAXIMUM_BLOCK_TIME_MS")
+                                        .withValue(batchMaximumBlockTimeMs)
                                     .endEnv()
                                     .addNewEnv()
-                                    .withName("STRIMZI_USER_OPERATIONS_THREAD_POOL_SIZE")
-                                    .withValue(userOperationsThreadPoolSize)
+                                        .withName("STRIMZI_USER_OPERATIONS_THREAD_POOL_SIZE")
+                                        .withValue(userOperationsThreadPoolSize)
                                     .endEnv()
                                 .endUserOperatorContainer()
                             .endTemplate()

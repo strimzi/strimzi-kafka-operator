@@ -198,10 +198,27 @@ finish:
   summary: Run performance test suite with kraft
   provision:
     hardware:
-      memory: ">= 30 GiB"
+      memory: ">= 36 GiB"
       cpu:
         processors: ">= 8"
+     # it seems that default disk size (i.e., 50GB) is not enough for capacity tests
+      disk:
+        size: ">= 100 GB"
   discover+:
     test:
       - performance
+
+/performance-capacity:
+  summary: Run performance test suite with kraft
+  provision:
+    hardware:
+      memory: ">= 36 GiB"
+      cpu:
+        processors: ">= 8"
+     # it seems that default disk size (i.e., 50GB) is not enough for capacity tests
+      disk:
+        size: ">= 100 GB"
+  discover+:
+    test:
+      - performance-capacity
 
