@@ -18,6 +18,7 @@ import org.apache.logging.log4j.Logger;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
@@ -78,7 +79,7 @@ public class PersistentVolumeClaimUtils {
         });
     }
 
-    public static void waitForPersistentVolumeClaimDeletion(String namespaceName, String pvcName) {
+    public static void waitForPvcCount(String namespaceName, String pvcName) {
         TestUtils.waitFor("PVC deletion", TestConstants.POLL_INTERVAL_FOR_RESOURCE_DELETION, TestConstants.GLOBAL_TIMEOUT_SHORT, () -> {
             if (kubeClient().getPersistentVolumeClaim(namespaceName, pvcName) != null) {
                 LOGGER.warn("PVC: {}/{} has not been deleted yet! Triggering force delete using cmd client!", namespaceName, pvcName);
@@ -122,7 +123,47 @@ public class PersistentVolumeClaimUtils {
         }
 
         for (PersistentVolumeClaim persistentVolumeClaim : persistentVolumeClaimsList) {
-            waitForPersistentVolumeClaimDeletion(namespaceName, persistentVolumeClaim.getMetadata().getName());
+            waitForPvcCount(namespaceName, persistentVolumeClaim.getMetadata().getName());
         }
+    }
+
+    /**
+     * Waits until the size of a specific PVC changes to the expected size.
+     *
+     * @param testStorage           The TestStorage instance containing the cluster name and namespace information.
+     * @param pvcNamePattern        A regex pattern that matches the name of the PVC, which may include unique identifiers.
+     * @param expectedSize          The expected size to which the PVC should change, specified in a format understood by Kubernetes, e.g., "10Gi".
+     */
+    public static void waitUntilSpecificPvcSizeChange(final TestStorage testStorage, final String pvcNamePattern, final String expectedSize) {
+        LOGGER.info("Waiting for size of PVCs matching {} to change to {}", pvcNamePattern, expectedSize);
+        Pattern pattern = Pattern.compile(pvcNamePattern); // Compile regex pattern once for efficiency
+
+        TestUtils.waitFor("size change of PVCs matching " + pvcNamePattern + " to " + expectedSize,
+            TestConstants.GLOBAL_POLL_INTERVAL,
+            TestConstants.GLOBAL_TIMEOUT,
+            () -> {
+                // Fetch PVCs once and filter using the precompiled pattern
+                List<PersistentVolumeClaim> pvcs = kubeClient(testStorage.getNamespaceName())
+                    .listPersistentVolumeClaims(testStorage.getNamespaceName(), testStorage.getClusterName()).stream()
+                    .filter(pvc -> pattern.matcher(pvc.getMetadata().getName()).find()).toList();
+
+                if (pvcs.isEmpty()) {
+                    LOGGER.warn("No PVCs found matching the pattern: {}", pvcNamePattern);
+                    return false;
+                }
+
+                // Check if all PVCs match the expected size
+                for (PersistentVolumeClaim pvc : pvcs) {
+                    String currentSize = pvc.getSpec().getResources().getRequests().get("storage").getAmount();
+                    LOGGER.debug("Current size of PVC {}: {}", pvc.getMetadata().getName(), currentSize);
+                    if (!currentSize.equals(expectedSize)) {
+                        LOGGER.info("PVC {} size {} does not match expected size {}", pvc.getMetadata().getName(), currentSize, expectedSize);
+                        return false;
+                    }
+                }
+
+                return true;
+            });
+        LOGGER.info("Size of all matched PVC(s) successfully changed to {}", expectedSize);
     }
 }

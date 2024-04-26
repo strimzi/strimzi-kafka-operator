@@ -226,7 +226,7 @@ public class Environment {
     public static final boolean SKIP_TEARDOWN = getOrDefault(SKIP_TEARDOWN_ENV, Boolean::parseBoolean, false);
     public static final String STRIMZI_RBAC_SCOPE = getOrDefault(STRIMZI_RBAC_SCOPE_ENV, STRIMZI_RBAC_SCOPE_DEFAULT);
     public static final String STRIMZI_FEATURE_GATES = getOrDefault(STRIMZI_FEATURE_GATES_ENV, STRIMZI_FEATURE_GATES_DEFAULT);
-    public static final boolean STRIMZI_USE_KRAFT_IN_TESTS = getOrDefault(STRIMZI_USE_KRAFT_IN_TESTS_ENV, Boolean::parseBoolean, false);
+    public static final boolean STRIMZI_USE_KRAFT_IN_TESTS = getOrDefault(STRIMZI_USE_KRAFT_IN_TESTS_ENV, Boolean::parseBoolean, true);
     public static final boolean STRIMZI_USE_NODE_POOLS_IN_TESTS = getOrDefault(STRIMZI_USE_NODE_POOLS_IN_TESTS_ENV, Boolean::parseBoolean, true);
     public static final NodePoolsRoleMode STRIMZI_NODE_POOLS_ROLE_MODE = getOrDefault(STRIMZI_NODE_POOLS_ROLE_MODE_ENV, value -> NodePoolsRoleMode.valueOf(value.toUpperCase(Locale.ENGLISH)), NodePoolsRoleMode.SEPARATE);
 
