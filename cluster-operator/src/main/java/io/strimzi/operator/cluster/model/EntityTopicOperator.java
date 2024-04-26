@@ -251,20 +251,18 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
     }
 
     /**
-     * Generate the Secret containing the Entity Topic Operator certificate signed by the cluster CA certificate used for TLS based
-     * internal communication with Kafka.
-     * It also contains the related Entity Topic Operator private key.
+     * Generate the Secret containing the Entity Topic Operator certificate signed by the cluster CA certificate used
+     * for TLS based internal communication with Kafka.
      *
-     * Note: This certificate will be used by both Topic Operator Container and the TLS sidecar container. The User Operator Container use a separate certificate.
+     * @param clusterCa                             The cluster CA.
+     * @param existingSecret                        The existing secret with Kafka certificates
+     * @param isMaintenanceTimeWindowsSatisfied     Indicates whether we are in the maintenance window or not.
+     *                                              This is used for certificate renewals
      *
-     * @param clusterCa The cluster CA.
-     * @param isMaintenanceTimeWindowsSatisfied Indicates whether we are in the maintenance window or not.
-     *                                          This is used for certificate renewals
      * @return The generated Secret.
      */
-    public Secret generateSecret(ClusterCa clusterCa, boolean isMaintenanceTimeWindowsSatisfied) {
-        Secret secret = clusterCa.entityTopicOperatorSecret();
-        return CertUtils.buildTrustedCertificateSecret(reconciliation, clusterCa, secret, namespace, KafkaResources.entityTopicOperatorSecretName(cluster), componentName,
+    public Secret generateCertificatesSecret(ClusterCa clusterCa, Secret existingSecret, boolean isMaintenanceTimeWindowsSatisfied) {
+        return CertUtils.buildTrustedCertificateSecret(reconciliation, clusterCa, existingSecret, namespace, KafkaResources.entityTopicOperatorSecretName(cluster), componentName,
             CERT_SECRET_KEY_NAME, labels, ownerReference, isMaintenanceTimeWindowsSatisfied);
     }
 

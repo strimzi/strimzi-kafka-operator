@@ -18,6 +18,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
+import java.util.List;
 
 import static java.util.Collections.emptyMap;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -47,11 +48,6 @@ class CaTest {
         protected String caCertGenerationAnnotation() {
             return "mock";
         }
-
-        @Override
-        protected boolean hasCaCertGenerationChanged() {
-            return false;
-        }
     }
 
     private Ca ca;
@@ -68,7 +64,7 @@ class CaTest {
     @Test
     @DisplayName("Should return certificate expiration date as epoch when certificate is present")
     void shouldReturnCertificateExpirationDateEpoch() {
-        ca.createRenewOrReplace("mock", "mock", emptyMap(), emptyMap(), emptyMap(), null, true);
+        ca.createRenewOrReplace("mock", "mock", emptyMap(), emptyMap(), emptyMap(), null, List.of(), true);
 
         Instant inOneYear = Clock.offset(now, oneYear).instant();
         long expectedEpoch = inOneYear.truncatedTo(ChronoUnit.SECONDS).toEpochMilli();

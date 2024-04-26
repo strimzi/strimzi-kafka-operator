@@ -9,7 +9,6 @@ import io.strimzi.api.kafka.model.common.CertificateAuthority;
 import io.strimzi.api.kafka.model.common.CertificateExpirationPolicy;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
-import io.strimzi.api.kafka.model.kafka.exporter.KafkaExporterResources;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.CertManager;
 import io.strimzi.certs.IpAndDnsValidation;
@@ -43,16 +42,6 @@ public class ClusterCa extends Ca {
      * and delete it when it is not needed anymore.
      */
     private static final Pattern OLD_CA_CERT_PATTERN = Pattern.compile("^ca-\\d{4}-\\d{2}-\\d{2}T\\d{2}-\\d{2}-\\d{2}Z.crt$");
-
-    private final String clusterName;
-    private Secret entityTopicOperatorSecret;
-    private Secret entityUserOperatorSecret;
-    private Secret clusterOperatorSecret;
-    private Secret kafkaExporterSecret;
-    private Secret cruiseControlSecret;
-
-    private Secret brokersSecret;
-    private Secret zkNodesSecret;
 
     /**
      * Constructor
@@ -97,7 +86,6 @@ public class ClusterCa extends Ca {
                 clusterCaCert,
                 AbstractModel.clusterCaKeySecretName(clusterName),
                 clusterCaKey, validityDays, renewalDays, generateCa, policy);
-        this.clusterName = clusterName;
     }
 
     @Override
@@ -106,63 +94,36 @@ public class ClusterCa extends Ca {
     }
 
     /**
-     * Initializes the CA Secrets inside this class
+     * Prepares the Cruise Control certificate. It either reuses the existing certificate, renews it or generates new
+     * certificate if needed.
      *
-     * @param secrets   List with the secrets
+     * @param namespace                             Namespace of the Kafka cluster
+     * @param clusterName                           Name of the Kafka cluster
+     * @param existingSecret                        Existing Secret with the existing certificates (or null if it does not exist yet)
+     * @param isMaintenanceTimeWindowsSatisfied     Flag indicating whether we can do maintenance tasks or not
+     *
+     * @return  Map with CertAndKey object containing the public and private key
+     *
+     * @throws IOException  IOException is thrown when it is raised while working with the certificates
      */
-    public void initCaSecrets(List<Secret> secrets) {
-        for (Secret secret: secrets) {
-            String name = secret.getMetadata().getName();
-            if (KafkaResources.kafkaSecretName(clusterName).equals(name)) {
-                brokersSecret = secret;
-            } else if (KafkaResources.entityTopicOperatorSecretName(clusterName).equals(name)) {
-                entityTopicOperatorSecret = secret;
-            } else if (KafkaResources.entityUserOperatorSecretName(clusterName).equals(name)) {
-                entityUserOperatorSecret = secret;
-            } else if (KafkaResources.zookeeperSecretName(clusterName).equals(name)) {
-                zkNodesSecret = secret;
-            } else if (KafkaResources.secretName(clusterName).equals(name)) {
-                clusterOperatorSecret = secret;
-            } else if (KafkaExporterResources.secretName(clusterName).equals(name)) {
-                kafkaExporterSecret = secret;
-            } else if (CruiseControlResources.secretName(clusterName).equals(name)) {
-                cruiseControlSecret = secret;
-            }
-        }
-    }
-
-    protected Secret entityTopicOperatorSecret() {
-        return entityTopicOperatorSecret;
-    }
-
-    protected Secret entityUserOperatorSecret() {
-        return entityUserOperatorSecret;
-    }
-
-    /**
-     * @return  The secret with the Cluster Operator certificate
-     */
-    public Secret clusterOperatorSecret() {
-        return clusterOperatorSecret;
-    }
-
-    protected Secret kafkaExporterSecret() {
-        return kafkaExporterSecret;
-    }
-
-    protected Map<String, CertAndKey> generateCcCerts(String namespace, String kafkaName, boolean isMaintenanceTimeWindowsSatisfied) throws IOException {
-        DnsNameGenerator ccDnsGenerator = DnsNameGenerator.of(namespace, CruiseControlResources.serviceName(kafkaName));
+    protected Map<String, CertAndKey> generateCcCerts(
+            String namespace,
+            String clusterName,
+            Secret existingSecret,
+            boolean isMaintenanceTimeWindowsSatisfied
+    ) throws IOException {
+        DnsNameGenerator ccDnsGenerator = DnsNameGenerator.of(namespace, CruiseControlResources.serviceName(clusterName));
 
         Function<NodeRef, Subject> subjectFn = node -> {
             Subject.Builder subject = new Subject.Builder()
                     .withOrganizationName("io.strimzi")
-                    .withCommonName(CruiseControlResources.serviceName(kafkaName));
+                    .withCommonName(CruiseControlResources.serviceName(clusterName));
 
-            subject.addDnsName(CruiseControlResources.serviceName(kafkaName));
-            subject.addDnsName(String.format("%s.%s", CruiseControlResources.serviceName(kafkaName), namespace));
+            subject.addDnsName(CruiseControlResources.serviceName(clusterName));
+            subject.addDnsName(String.format("%s.%s", CruiseControlResources.serviceName(clusterName), namespace));
             subject.addDnsName(ccDnsGenerator.serviceDnsNameWithoutClusterDomain());
             subject.addDnsName(ccDnsGenerator.serviceDnsName());
-            subject.addDnsName(CruiseControlResources.serviceName(kafkaName));
+            subject.addDnsName(CruiseControlResources.serviceName(clusterName));
             subject.addDnsName("localhost");
             return subject.build();
         };
@@ -172,30 +133,45 @@ public class ClusterCa extends Ca {
             reconciliation,
             Set.of(new NodeRef("cruise-control", 0, null, false, false)),
             subjectFn,
-            cruiseControlSecret,
+            existingSecret,
             isMaintenanceTimeWindowsSatisfied);
     }
 
+    /**
+     * Prepares the ZooKeeper node certificates. It either reuses the existing certificates, renews them or generates new
+     * certificates if needed.
+     *
+     * @param namespace                             Namespace of the Kafka cluster
+     * @param clusterName                           Name of the Kafka cluster
+     * @param existingSecret                        Existing Secret with the existing certificates (or null if it does not exist yet)
+     * @param nodes                                 Nodes that are part of the ZooKeeper cluster
+     * @param isMaintenanceTimeWindowsSatisfied     Flag indicating whether we can do maintenance tasks or not
+     *
+     * @return  Map with CertAndKey objects containing the public and private keys for the different nodes
+     *
+     * @throws IOException  IOException is thrown when it is raised while working with the certificates
+     */
     protected Map<String, CertAndKey> generateZkCerts(
             String namespace,
-            String crName,
+            String clusterName,
+            Secret existingSecret,
             Set<NodeRef> nodes,
             boolean isMaintenanceTimeWindowsSatisfied
     ) throws IOException {
-        DnsNameGenerator zkDnsGenerator = DnsNameGenerator.of(namespace, KafkaResources.zookeeperServiceName(crName));
-        DnsNameGenerator zkHeadlessDnsGenerator = DnsNameGenerator.of(namespace, KafkaResources.zookeeperHeadlessServiceName(crName));
+        DnsNameGenerator zkDnsGenerator = DnsNameGenerator.of(namespace, KafkaResources.zookeeperServiceName(clusterName));
+        DnsNameGenerator zkHeadlessDnsGenerator = DnsNameGenerator.of(namespace, KafkaResources.zookeeperHeadlessServiceName(clusterName));
 
         Function<NodeRef, Subject> subjectFn = node -> {
             Subject.Builder subject = new Subject.Builder()
                     .withOrganizationName("io.strimzi")
-                    .withCommonName(KafkaResources.zookeeperComponentName(crName));
-            subject.addDnsName(KafkaResources.zookeeperServiceName(crName));
-            subject.addDnsName(String.format("%s.%s", KafkaResources.zookeeperServiceName(crName), namespace));
+                    .withCommonName(KafkaResources.zookeeperComponentName(clusterName));
+            subject.addDnsName(KafkaResources.zookeeperServiceName(clusterName));
+            subject.addDnsName(String.format("%s.%s", KafkaResources.zookeeperServiceName(clusterName), namespace));
             subject.addDnsName(zkDnsGenerator.serviceDnsNameWithoutClusterDomain());
             subject.addDnsName(zkDnsGenerator.serviceDnsName());
             subject.addDnsName(node.podName());
-            subject.addDnsName(DnsNameGenerator.podDnsName(namespace, KafkaResources.zookeeperHeadlessServiceName(crName), node.podName()));
-            subject.addDnsName(DnsNameGenerator.podDnsNameWithoutClusterDomain(namespace, KafkaResources.zookeeperHeadlessServiceName(crName), node.podName()));
+            subject.addDnsName(DnsNameGenerator.podDnsName(namespace, KafkaResources.zookeeperHeadlessServiceName(clusterName), node.podName()));
+            subject.addDnsName(DnsNameGenerator.podDnsNameWithoutClusterDomain(namespace, KafkaResources.zookeeperHeadlessServiceName(clusterName), node.podName()));
             subject.addDnsName(zkDnsGenerator.wildcardServiceDnsNameWithoutClusterDomain());
             subject.addDnsName(zkDnsGenerator.wildcardServiceDnsName());
             subject.addDnsName(zkHeadlessDnsGenerator.wildcardServiceDnsNameWithoutClusterDomain());
@@ -203,18 +179,35 @@ public class ClusterCa extends Ca {
             return subject.build();
         };
 
-        LOGGER.debugCr(reconciliation, "{}: Reconciling zookeeper certificates", this);
+        LOGGER.debugCr(reconciliation, "{}: Reconciling ZooKeeper certificates", this);
         return maybeCopyOrGenerateCerts(
             reconciliation,
             nodes,
             subjectFn,
-            zkNodesSecret,
+            existingSecret,
             isMaintenanceTimeWindowsSatisfied);
     }
 
+    /**
+     * Prepares the Kafka broker certificates. It either reuses the existing certificates, renews them or generates new
+     * certificates if needed.
+     *
+     * @param namespace                             Namespace of the Kafka cluster
+     * @param clusterName                           Name of the Kafka cluster
+     * @param existingSecret                        Existing Secret with the existing certificates (or null if it does not exist yet)
+     * @param nodes                                 Nodes that are part of the Kafka cluster
+     * @param externalBootstrapAddresses            List of external bootstrap addresses (used for certificate SANs)
+     * @param externalAddresses                     Map with external listener addresses for the different nodes (used for certificate SANs)
+     * @param isMaintenanceTimeWindowsSatisfied     Flag indicating whether we can do maintenance tasks or not
+     *
+     * @return  Map with CertAndKey objects containing the public and private keys for the different brokers
+     *
+     * @throws IOException  IOException is thrown when it is raised while working with the certificates
+     */
     protected Map<String, CertAndKey> generateBrokerCerts(
             String namespace,
-            String crName,
+            String clusterName,
+            Secret existingSecret,
             Set<NodeRef> nodes,
             Set<String> externalBootstrapAddresses,
             Map<Integer, Set<String>> externalAddresses,
@@ -223,13 +216,13 @@ public class ClusterCa extends Ca {
         Function<NodeRef, Subject> subjectFn = node -> {
             Subject.Builder subject = new Subject.Builder()
                     .withOrganizationName("io.strimzi")
-                    .withCommonName(KafkaResources.kafkaComponentName(crName));
+                    .withCommonName(KafkaResources.kafkaComponentName(clusterName));
 
-            subject.addDnsNames(ModelUtils.generateAllServiceDnsNames(namespace, KafkaResources.bootstrapServiceName(crName)));
-            subject.addDnsNames(ModelUtils.generateAllServiceDnsNames(namespace, KafkaResources.brokersServiceName(crName)));
+            subject.addDnsNames(ModelUtils.generateAllServiceDnsNames(namespace, KafkaResources.bootstrapServiceName(clusterName)));
+            subject.addDnsNames(ModelUtils.generateAllServiceDnsNames(namespace, KafkaResources.brokersServiceName(clusterName)));
 
-            subject.addDnsName(DnsNameGenerator.podDnsName(namespace, KafkaResources.brokersServiceName(crName), node.podName()));
-            subject.addDnsName(DnsNameGenerator.podDnsNameWithoutClusterDomain(namespace, KafkaResources.brokersServiceName(crName), node.podName()));
+            subject.addDnsName(DnsNameGenerator.podDnsName(namespace, KafkaResources.brokersServiceName(clusterName), node.podName()));
+            subject.addDnsName(DnsNameGenerator.podDnsNameWithoutClusterDomain(namespace, KafkaResources.brokersServiceName(clusterName), node.podName()));
 
             // Controller-only nodes do not have the SANs for external listeners.
             // That helps us to avoid unnecessary rolling updates when the SANs change
@@ -264,24 +257,13 @@ public class ClusterCa extends Ca {
             reconciliation,
             nodes,
             subjectFn,
-            brokersSecret,
+            existingSecret,
             isMaintenanceTimeWindowsSatisfied);
     }
 
     @Override
     protected String caCertGenerationAnnotation() {
         return ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION;
-    }
-
-    @SuppressWarnings("BooleanExpressionComplexity")
-    @Override
-    protected boolean hasCaCertGenerationChanged() {
-        // at least one Secret has a different cluster CA certificate thumbprint.
-        // it is useful when a renewal cluster CA certificate process needs to be recovered after an operator crash
-        return hasCaCertGenerationChanged(zkNodesSecret) || hasCaCertGenerationChanged(brokersSecret) ||
-                hasCaCertGenerationChanged(entityTopicOperatorSecret) || hasCaCertGenerationChanged(entityUserOperatorSecret) ||
-                hasCaCertGenerationChanged(kafkaExporterSecret) || hasCaCertGenerationChanged(cruiseControlSecret) ||
-                hasCaCertGenerationChanged(clusterOperatorSecret);
     }
 
     /**

@@ -76,6 +76,7 @@ public class KafkaExporterReconcilerTest {
         when(mockSaOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), saCaptor.capture())).thenReturn(Future.succeededFuture());
 
         SecretOperator mockSecretOps = supplier.secretOperations;
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaExporterResources.secretName(NAME)))).thenReturn(Future.succeededFuture());
         ArgumentCaptor<Secret> secretCaptor = ArgumentCaptor.forClass(Secret.class);
         when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.secretName(NAME)), secretCaptor.capture())).thenReturn(Future.succeededFuture());
 
@@ -143,6 +144,7 @@ public class KafkaExporterReconcilerTest {
         when(mockSaOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), saCaptor.capture())).thenReturn(Future.succeededFuture());
 
         SecretOperator mockSecretOps = supplier.secretOperations;
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaExporterResources.secretName(NAME)))).thenReturn(Future.succeededFuture());
         ArgumentCaptor<Secret> secretCaptor = ArgumentCaptor.forClass(Secret.class);
         when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.secretName(NAME)), secretCaptor.capture())).thenReturn(Future.succeededFuture());
 
