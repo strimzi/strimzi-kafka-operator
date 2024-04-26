@@ -219,7 +219,7 @@ finish:
         processors: ">= 8"
       # it seems that default disk size (i.e., 50GB) is not enough for capacity tests
       disk:
-       - size: ">= 100 GB"
+       - size: ">= 150 GB"
   discover+:
     test:
       - performance-capacity

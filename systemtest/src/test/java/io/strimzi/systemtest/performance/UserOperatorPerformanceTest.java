@@ -273,15 +273,13 @@ public class UserOperatorPerformanceTest extends AbstractST {
     private static Stream<Arguments> provideConfigurationsForCapacity() {
         return Stream.of(
             // Default configuration
-            Arguments.of("50", "15000", "1024", "100", "100", "4"),
+//            Arguments.of("50", "15000", "1024", "100", "100", "4"),     // Successfully deployed 23,900 users.
             // Enhanced Parallel Processing
-            Arguments.of("100", "20000", "2048", "200", "50", "10"),
+//            Arguments.of("100", "20000", "2048", "200", "50", "10"),    // Successfully provisioned 44,100 users.
             // Conservative Batching
-            Arguments.of("75", "15000", "1500", "150", "75", "8"),
+            Arguments.of("75", "15000", "1500", "150", "75", "8"),      // Managed to support 46,200 users before the machine experienced a crash.
             // Aggressive Batching
-            Arguments.of("100", "30000", "4096", "300", "100", "12"),
-            // Low-Latency Operations
-            Arguments.of("50", "10000", "512", "50", "25", "6")
+            Arguments.of("100", "30000", "4096", "300", "100", "12")
         );
     }
 
