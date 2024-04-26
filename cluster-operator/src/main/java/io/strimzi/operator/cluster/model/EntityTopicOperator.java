@@ -258,9 +258,10 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
      * @param existingSecret                        The existing secret with Kafka certificates
      * @param isMaintenanceTimeWindowsSatisfied     Indicates whether we are in the maintenance window or not.
      *                                              This is used for certificate renewals
+     *
      * @return The generated Secret.
      */
-    public Secret generateSecret(ClusterCa clusterCa, Secret existingSecret, boolean isMaintenanceTimeWindowsSatisfied) {
+    public Secret generateCertificatesSecret(ClusterCa clusterCa, Secret existingSecret, boolean isMaintenanceTimeWindowsSatisfied) {
         return CertUtils.buildTrustedCertificateSecret(reconciliation, clusterCa, existingSecret, namespace, KafkaResources.entityTopicOperatorSecretName(cluster), componentName,
             CERT_SECRET_KEY_NAME, labels, ownerReference, isMaintenanceTimeWindowsSatisfied);
     }

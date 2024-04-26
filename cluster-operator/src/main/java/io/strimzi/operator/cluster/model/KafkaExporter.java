@@ -268,9 +268,10 @@ public class KafkaExporter extends AbstractModel {
      * @param existingSecret                        The existing secret with Kafka certificates
      * @param isMaintenanceTimeWindowsSatisfied     Indicates whether we are in the maintenance window or not.
      *                                              This is used for certificate renewals
+     *
      * @return The generated Secret.
      */
-    public Secret generateSecret(ClusterCa clusterCa, Secret existingSecret, boolean isMaintenanceTimeWindowsSatisfied) {
+    public Secret generateCertificatesSecret(ClusterCa clusterCa, Secret existingSecret, boolean isMaintenanceTimeWindowsSatisfied) {
         return CertUtils.buildTrustedCertificateSecret(reconciliation, clusterCa, existingSecret, namespace, KafkaExporterResources.secretName(cluster), componentName,
                 "kafka-exporter", labels, ownerReference, isMaintenanceTimeWindowsSatisfied);
     }
