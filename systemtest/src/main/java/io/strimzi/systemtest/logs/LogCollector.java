@@ -80,6 +80,13 @@ public class LogCollector {
     private final CollectorElement collectorElement;
     private final ExtensionContext extensionContext;
 
+    public LogCollector() throws IOException {
+        this(ResourceManager.getTestContext(), CollectorElement.createCollectorElement(
+                ResourceManager.getTestContext().getRequiredTestClass().getName(),
+                ResourceManager.getTestContext().getRequiredTestMethod().getName()),
+            KubeClusterResource.kubeClient(), Environment.TEST_LOG_DIR);
+    }
+
     public LogCollector(ExtensionContext extensionContext, CollectorElement collectorElement, KubeClient kubeClient, String logDir) throws IOException {
         this.extensionContext = extensionContext;
         this.collectorElement = collectorElement;
@@ -116,13 +123,6 @@ public class LogCollector {
         if (!logTestCaseDirExist) {
             throw new IOException("Unable to create path");
         }
-    }
-
-    public LogCollector() throws IOException {
-        this(ResourceManager.getTestContext(), CollectorElement.createCollectorElement(
-                ResourceManager.getTestContext().getRequiredTestClass().getName(),
-                ResourceManager.getTestContext().getRequiredTestMethod().getName()),
-            KubeClusterResource.kubeClient(), Environment.TEST_LOG_DIR);
     }
 
     /**

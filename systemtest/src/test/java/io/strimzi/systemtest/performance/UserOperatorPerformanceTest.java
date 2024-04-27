@@ -272,14 +272,14 @@ public class UserOperatorPerformanceTest extends AbstractST {
      */
     private static Stream<Arguments> provideConfigurationsForCapacity() {
         return Stream.of(
-            // Default configuration
-//            Arguments.of("50", "15000", "1024", "100", "100", "4"),     // Successfully deployed 23,900 users.
-            // Enhanced Parallel Processing
-//            Arguments.of("100", "20000", "2048", "200", "50", "10"),    // Successfully provisioned 44,100 users.
-            // Conservative Batching
-            Arguments.of("75", "15000", "1500", "150", "75", "8"),      // Managed to support 46,200 users before the machine experienced a crash.
-            // Aggressive Batching
-            Arguments.of("100", "30000", "4096", "300", "100", "12")
+            // Default configuration (Successfully deployed 23,900 users.)
+            Arguments.of("50", "15000", "1024", "100", "100", "4")
+            //  Enhanced Parallel Processing (Successfully provisioned 44,100 users.)
+//            Arguments.of("100", "20000", "2048", "200", "50", "10"),
+            // Conservative Batching (Managed to support 46,200 users before the machine experienced a crash but with stronger machine 55100 users with UO 12 GiB memory consumption )
+//            Arguments.of("75", "15000", "1500", "150", "75", "8"),
+            // Aggressive Batching (very similar to Conservative Batching)
+//            Arguments.of("100", "30000", "4096", "300", "100", "12")
         );
     }
 
@@ -299,9 +299,9 @@ public class UserOperatorPerformanceTest extends AbstractST {
                 NodePoolsConverter.convertNodePoolsIfNeeded(
                     KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), brokerReplicas)
                         .editSpec()
-                        .withNewPersistentClaimStorage()
-                        .withSize("10Gi")
-                        .endPersistentClaimStorage()
+                            .withNewPersistentClaimStorage()
+                                .withSize("10Gi")
+                            .endPersistentClaimStorage()
                         .endSpec()
                         .build(),
                     KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), controllerReplicas).build()
