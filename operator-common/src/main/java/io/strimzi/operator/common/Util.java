@@ -19,10 +19,12 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.math.BigInteger;
+import java.net.URI;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.ParseException;
@@ -34,6 +36,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
 import java.util.TreeMap;
@@ -41,6 +44,10 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
+
+import static java.lang.String.format;
+import static java.lang.String.join;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Class with various utility methods
@@ -539,4 +546,56 @@ public class Util {
         return new String(bytes, StandardCharsets.US_ASCII);
     }
 
+    /**
+     * Build basic HTTP authentication header value.
+     * 
+     * @param username Username.
+     * @param password Password.
+     * 
+     * @return Header value.
+     */
+    public static String buildBasicAuthValue(String username, String password) {
+        String credentials = join(":", username, password);
+        return format("Basic %s", Util.encodeToBase64(credentials));
+    }
+
+    /**
+     * Get file content as string.
+     * 
+     * @param filePath File path.
+     * 
+     * @return Content as string.
+     */
+    public static String stringFromFile(File filePath) {
+        try {
+            URI resourceURI = Objects.requireNonNull(filePath).toURI();
+            Optional<String> content = Files.lines(Paths.get(resourceURI), UTF_8).reduce((x, y) -> x + y);
+            if (content.isEmpty()) {
+                throw new IOException(format("File %s was empty", filePath.getAbsolutePath()));
+            }
+            return content.get();
+        } catch (Throwable t) {
+            throw new RuntimeException(t);
+        }
+    }
+
+    /**
+     * Get JSON content as string from resource.
+     * 
+     * @param resourcePath Resource path.
+     * 
+     * @return JSON content as string.
+     */
+    public static String jsonFromResource(String resourcePath) {
+        try {
+            URI resourceURI = Objects.requireNonNull(Util.class.getClassLoader().getResource(resourcePath)).toURI();
+            Optional<String> content = Files.lines(Paths.get(resourceURI), UTF_8).reduce((x, y) -> x + y);
+            if (content.isEmpty()) {
+                throw new IOException(format("File %s from resources was empty", resourcePath));
+            }
+            return content.get();
+        } catch (Throwable t) {
+            throw new RuntimeException(t);
+        }
+    }
 }

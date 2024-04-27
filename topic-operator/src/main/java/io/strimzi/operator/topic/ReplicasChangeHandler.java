@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.model.topic.KafkaTopicStatusBuilder;
 import io.strimzi.api.kafka.model.topic.ReplicasChangeStatusBuilder;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
+import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlEndpoints;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlParameters;
 
@@ -43,7 +44,6 @@ import java.util.stream.Collectors;
 
 import static io.strimzi.api.kafka.model.topic.ReplicasChangeState.ONGOING;
 import static io.strimzi.api.kafka.model.topic.ReplicasChangeState.PENDING;
-import static io.strimzi.operator.topic.TopicOperatorUtil.buildBasicAuthValue;
 import static io.strimzi.operator.topic.TopicOperatorUtil.getFileContent;
 import static io.strimzi.operator.topic.TopicOperatorUtil.hasReplicasChange;
 import static io.strimzi.operator.topic.TopicOperatorUtil.topicNames;
@@ -267,7 +267,7 @@ public class ReplicasChangeHandler {
         if (config.cruiseControlAuthEnabled()) {
             String apiUsername = new String(getFileContent(config.cruiseControlApiUserPath()), UTF_8);
             String apiPassword = new String(getFileContent(config.cruiseControlApiPassPath()), UTF_8);
-            builder.header("Authorization", buildBasicAuthValue(apiUsername, apiPassword));
+            builder.header("Authorization", Util.buildBasicAuthValue(apiUsername, apiPassword));
         }
     }
 

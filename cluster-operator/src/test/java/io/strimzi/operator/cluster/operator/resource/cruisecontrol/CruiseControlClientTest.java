@@ -4,8 +4,13 @@
  */
 package io.strimzi.operator.cluster.operator.resource.cruisecontrol;
 
+import io.strimzi.certs.Subject;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlEndpoints;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlRebalanceKeys;
+import io.strimzi.operator.common.model.cruisecontrol.CruiseControlUserTaskStatus;
+import io.strimzi.operator.common.operator.MockCertManager;
+import io.strimzi.test.TestUtils;
+import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
@@ -16,6 +21,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.List;
@@ -33,27 +39,38 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @ExtendWith(VertxExtension.class)
 public class CruiseControlClientTest {
 
-    private static final int PORT = 1080;
     private static final String HOST = "localhost";
 
     private static final boolean API_AUTH_ENABLED = true;
     private static final boolean API_SSL_ENABLED = true;
 
+    private static int serverPort;
     private static MockCruiseControl ccServer;
 
     @BeforeAll
     public static void setupServer() throws IOException {
-        ccServer = new MockCruiseControl(PORT);
+        serverPort = TestUtils.getFreePort();
+        File tlsKeyFile = TestUtils.tempFile(".key");
+        File tlsCrtFile = TestUtils.tempFile(".crt");
+        
+        new MockCertManager().generateSelfSignedCert(tlsKeyFile, tlsCrtFile,
+            new Subject.Builder().withCommonName("Trusted Test CA").build(), 365);
+
+        ccServer = new MockCruiseControl(serverPort, tlsKeyFile, tlsCrtFile);
     }
 
     @AfterAll
     public static void stopServer() {
-        ccServer.stop();
+        if (ccServer != null && ccServer.isRunning()) {
+            ccServer.stop();
+        }
     }
 
     @BeforeEach
     public void resetServer() {
-        ccServer.reset();
+        if (ccServer != null && ccServer.isRunning()) {
+            ccServer.reset();
+        }
     }
 
     private CruiseControlApi cruiseControlClientProvider(Vertx vertx) {
@@ -67,7 +84,7 @@ public class CruiseControlClientTest {
         CruiseControlApi client = cruiseControlClientProvider(vertx);
 
         Checkpoint checkpoint = context.checkpoint();
-        client.getCruiseControlState(HOST, PORT, false)
+        client.getCruiseControlState(HOST, serverPort, false)
             .onComplete(context.succeeding(result -> context.verify(() -> {
                 assertThat(result.getJson().getJsonObject("ExecutorState"),
                         hasEntry("state", "NO_TASK_IN_PROGRESS"));
@@ -120,7 +137,7 @@ public class CruiseControlClientTest {
         String userTaskID = MockCruiseControl.REBALANCE_NO_GOALS_RESPONSE_UTID;
 
         Checkpoint checkpoint = context.checkpoint();
-        client.getUserTaskStatus(HOST, PORT, userTaskID).onComplete(context.succeeding(result -> {
+        client.getUserTaskStatus(HOST, serverPort, userTaskID).onComplete(context.succeeding(result -> {
             context.verify(() -> assertThat(result.getUserTaskId(), is(MockCruiseControl.USER_TASK_REBALANCE_NO_GOALS_RESPONSE_UTID)));
             context.verify(() -> assertThat(result.getJson().getJsonObject(CruiseControlRebalanceKeys.SUMMARY.getKey()), is(notNullValue())));
             checkpoint.flag();
@@ -249,21 +266,21 @@ public class CruiseControlClientTest {
         Checkpoint checkpoint = context.checkpoint();
         switch (endpoint) {
             case REBALANCE:
-                client.rebalance(HOST, PORT, (RebalanceOptions) options, null)
+                client.rebalance(HOST, serverPort, (RebalanceOptions) options, null)
                         .onComplete(context.succeeding(result -> context.verify(() -> {
                             assertion.accept(result);
                             checkpoint.flag();
                         })));
                 break;
             case ADD_BROKER:
-                client.addBroker(HOST, PORT, (AddBrokerOptions) options, null)
+                client.addBroker(HOST, serverPort, (AddBrokerOptions) options, null)
                         .onComplete(context.succeeding(result -> context.verify(() -> {
                             assertion.accept(result);
                             checkpoint.flag();
                         })));
                 break;
             case REMOVE_BROKER:
-                client.removeBroker(HOST, PORT, (RemoveBrokerOptions) options, null)
+                client.removeBroker(HOST, serverPort, (RemoveBrokerOptions) options, null)
                         .onComplete(context.succeeding(result -> context.verify(() -> {
                             assertion.accept(result);
                             checkpoint.flag();
@@ -280,21 +297,21 @@ public class CruiseControlClientTest {
         Checkpoint checkpoint = context.checkpoint();
         switch (endpoint) {
             case REBALANCE:
-                client.rebalance(HOST, PORT, (RebalanceOptions) options, null)
+                client.rebalance(HOST, serverPort, (RebalanceOptions) options, null)
                         .onComplete(context.succeeding(result -> context.verify(() -> {
                             assertion.accept(result);
                             checkpoint.flag();
                         })));
                 break;
             case ADD_BROKER:
-                client.addBroker(HOST, PORT, (AddBrokerOptions) options, null)
+                client.addBroker(HOST, serverPort, (AddBrokerOptions) options, null)
                         .onComplete(context.succeeding(result -> context.verify(() -> {
                             assertion.accept(result);
                             checkpoint.flag();
                         })));
                 break;
             case REMOVE_BROKER:
-                client.removeBroker(HOST, PORT, (RemoveBrokerOptions) options, null)
+                client.removeBroker(HOST, serverPort, (RemoveBrokerOptions) options, null)
                         .onComplete(context.succeeding(result -> context.verify(() -> {
                             assertion.accept(result);
                             checkpoint.flag();
@@ -311,21 +328,21 @@ public class CruiseControlClientTest {
         Checkpoint checkpoint = context.checkpoint();
         switch (endpoint) {
             case REBALANCE:
-                client.rebalance(HOST, PORT, (RebalanceOptions) options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
+                client.rebalance(HOST, serverPort, (RebalanceOptions) options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
                         .onComplete(context.succeeding(result -> context.verify(() -> {
                             assertion.accept(result);
                             checkpoint.flag();
                         })));
                 break;
             case ADD_BROKER:
-                client.addBroker(HOST, PORT, (AddBrokerOptions) options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
+                client.addBroker(HOST, serverPort, (AddBrokerOptions) options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
                         .onComplete(context.succeeding(result -> context.verify(() -> {
                             assertion.accept(result);
                             checkpoint.flag();
                         })));
                 break;
             case REMOVE_BROKER:
-                client.removeBroker(HOST, PORT, (RemoveBrokerOptions) options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
+                client.removeBroker(HOST, serverPort, (RemoveBrokerOptions) options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
                         .onComplete(context.succeeding(result -> context.verify(() -> {
                             assertion.accept(result);
                             checkpoint.flag();
@@ -342,21 +359,21 @@ public class CruiseControlClientTest {
         Checkpoint checkpoint = context.checkpoint();
         switch (endpoint) {
             case REBALANCE:
-                client.rebalance(HOST, PORT, (RebalanceOptions) options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
+                client.rebalance(HOST, serverPort, (RebalanceOptions) options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
                         .onComplete(context.succeeding(result -> context.verify(() -> {
                             assertion.accept(result);
                             checkpoint.flag();
                         })));
                 break;
             case ADD_BROKER:
-                client.addBroker(HOST, PORT, (AddBrokerOptions) options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
+                client.addBroker(HOST, serverPort, (AddBrokerOptions) options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
                         .onComplete(context.succeeding(result -> context.verify(() -> {
                             assertion.accept(result);
                             checkpoint.flag();
                         })));
                 break;
             case REMOVE_BROKER:
-                client.removeBroker(HOST, PORT, (RemoveBrokerOptions) options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
+                client.removeBroker(HOST, serverPort, (RemoveBrokerOptions) options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
                         .onComplete(context.succeeding(result -> context.verify(() -> {
                             assertion.accept(result);
                             checkpoint.flag();
@@ -373,14 +390,14 @@ public class CruiseControlClientTest {
         Checkpoint checkpoint = context.checkpoint();
         switch (endpoint) {
             case ADD_BROKER:
-                client.addBroker(HOST, PORT, (AddBrokerOptions) options, MockCruiseControl.BROKERS_NOT_EXIST_ERROR)
+                client.addBroker(HOST, serverPort, (AddBrokerOptions) options, MockCruiseControl.BROKERS_NOT_EXIST_ERROR)
                         .onComplete(context.failing(result -> context.verify(() -> {
                             assertion.accept(result);
                             checkpoint.flag();
                         })));
                 break;
             case REMOVE_BROKER:
-                client.removeBroker(HOST, PORT, (RemoveBrokerOptions) options, MockCruiseControl.BROKERS_NOT_EXIST_ERROR)
+                client.removeBroker(HOST, serverPort, (RemoveBrokerOptions) options, MockCruiseControl.BROKERS_NOT_EXIST_ERROR)
                         .onComplete(context.failing(result -> context.verify(() -> {
                             assertion.accept(result);
                             checkpoint.flag();
@@ -389,5 +406,125 @@ public class CruiseControlClientTest {
             default:
                 throw new IllegalArgumentException("The " + endpoint + " endpoint is invalid for this test");
         }
+    }
+
+    @Test
+    public void testCCUserTaskNoDelay(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+        runTest(vertx, context, MockCruiseControl.REBALANCE_NO_GOALS_RESPONSE_UTID, 0);
+    }
+
+    @Test
+    public void testCCUserTaskNoDelayVerbose(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+        runTest(vertx, context, MockCruiseControl.REBALANCE_NO_GOALS_VERBOSE_RESPONSE_UTID, 0);
+    }
+
+    @Test
+    public void testCCUserTaskDelay(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+        runTest(vertx, context, MockCruiseControl.REBALANCE_NO_GOALS_RESPONSE_UTID, 3);
+    }
+
+    @Test
+    public void testCCUserTaskDelayVerbose(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+        runTest(vertx, context, MockCruiseControl.REBALANCE_NO_GOALS_VERBOSE_RESPONSE_UTID, 3);
+    }
+
+    @Test
+    public void testMockCCServerPendingCallsOverride(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+        CruiseControlApi client = cruiseControlClientProvider(vertx);
+        String userTaskID = MockCruiseControl.REBALANCE_NO_GOALS_RESPONSE_UTID;
+
+        int pendingCalls1 = 2;
+        Checkpoint firstPending = context.checkpoint(pendingCalls1);
+        int pendingCalls2 = 4;
+        Checkpoint secondPending = context.checkpoint(pendingCalls2);
+
+        //When last checkpoint is flagged, then test is marked as completed, so create another checkpoint
+        //for test end to prevent premature test success
+        Checkpoint completeTest = context.checkpoint();
+
+        ccServer.setupCCUserTasksResponseNoGoals(0, pendingCalls1);
+
+        Future<CruiseControlResponse> statusFuture = client.getUserTaskStatus(HOST, serverPort, userTaskID);
+
+        for (int i = 1; i <= pendingCalls1; i++) {
+            statusFuture = statusFuture.compose(response -> {
+                context.verify(() -> assertThat(
+                    response.getJson().getString("Status"),
+                    is(CruiseControlUserTaskStatus.IN_EXECUTION.toString()))
+                );
+                firstPending.flag();
+                return client.getUserTaskStatus(HOST, serverPort, userTaskID);
+            });
+        }
+
+        statusFuture = statusFuture.compose(response -> {
+            context.verify(() -> assertThat(
+                response.getJson().getString("Status"),
+                is(CruiseControlUserTaskStatus.COMPLETED.toString()))
+            );
+            return Future.succeededFuture(response);
+        });
+
+        statusFuture = statusFuture.compose(response -> {
+            try {
+                ccServer.reset();
+                ccServer.setupCCUserTasksResponseNoGoals(0, pendingCalls2);
+            } catch (IOException | URISyntaxException e) {
+                return Future.failedFuture(e);
+            }
+            return Future.succeededFuture();
+        });
+
+        statusFuture = statusFuture.compose(ignore -> client.getUserTaskStatus(HOST, serverPort, userTaskID));
+
+        for (int i = 1; i <= pendingCalls2; i++) {
+            statusFuture = statusFuture.compose(response -> {
+                context.verify(() -> assertThat(
+                    response.getJson().getString("Status"),
+                    is(CruiseControlUserTaskStatus.IN_EXECUTION.toString()))
+                );
+                secondPending.flag();
+                return client.getUserTaskStatus(HOST, serverPort, userTaskID);
+            });
+        }
+
+        statusFuture.compose(response -> {
+            context.verify(() -> assertThat(
+                response.getJson().getString("Status"),
+                is(CruiseControlUserTaskStatus.COMPLETED.toString()))
+            );
+            return Future.succeededFuture(response);
+        }).onComplete(context.succeeding(result -> completeTest.flag()));
+    }
+
+    private void runTest(Vertx vertx, VertxTestContext context, String userTaskID, int pendingCalls) throws IOException, URISyntaxException {
+        ccServer.setupCCUserTasksResponseNoGoals(0, pendingCalls);
+
+        CruiseControlApi client = cruiseControlClientProvider(vertx);
+
+        Future<CruiseControlResponse> statusFuture = client.getUserTaskStatus(HOST, serverPort, userTaskID);
+
+        // One interaction is always expected at the end of the test, hence the +1
+        Checkpoint expectedInteractions = context.checkpoint(pendingCalls + 1);
+
+        for (int i = 1; i <= pendingCalls; i++) {
+            statusFuture = statusFuture.compose(response -> {
+                context.verify(() -> assertThat(
+                    response.getJson().getString("Status"),
+                    is(CruiseControlUserTaskStatus.IN_EXECUTION.toString()))
+                );
+                expectedInteractions.flag();
+                return client.getUserTaskStatus(HOST, serverPort, userTaskID);
+            });
+        }
+
+        statusFuture.compose(response -> {
+            context.verify(() -> assertThat(
+                response.getJson().getString("Status"),
+                is(CruiseControlUserTaskStatus.COMPLETED.toString()))
+            );
+            expectedInteractions.flag();
+            return Future.succeededFuture(response);
+        });
     }
 }

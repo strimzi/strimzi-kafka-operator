@@ -21,6 +21,7 @@ import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceSpec;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceSpecBuilder;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceStatus;
+import io.strimzi.certs.Subject;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
@@ -38,6 +39,7 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlEndpoints;
+import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.platform.KubernetesVersion;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.mockkube3.MockKube3;
@@ -56,6 +58,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.Collections;
@@ -92,7 +95,6 @@ public class KafkaRebalanceAssemblyOperatorTest {
     private static final int HEALTH_DELAY = 120;
     private static final int HEALTH_TIMEOUT = 30;
     private static final PlatformFeaturesAvailability PFA = new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION);
-    private static MockCruiseControl ccServer;
     private static KubernetesClient client;
     private static MockKube3 mockKube;
     private static Vertx vertx;
@@ -101,8 +103,13 @@ public class KafkaRebalanceAssemblyOperatorTest {
     private KafkaRebalanceAssemblyOperator krao;
     private ResourceOperatorSupplier supplier;
 
+    private static int serverPort;
+    private static File tlsKeyFile;
+    private static File tlsCrtFile;
+    private static MockCruiseControl ccServer;
+
     @BeforeAll
-    public static void beforeAll() {
+    public static void beforeAll() throws IOException {
         // Configure the Kubernetes Mock
         mockKube = new MockKube3.MockKube3Builder()
                 .withKafkaCrd()
@@ -114,8 +121,16 @@ public class KafkaRebalanceAssemblyOperatorTest {
 
         vertx = Vertx.vertx();
         sharedWorkerExecutor = vertx.createSharedWorkerExecutor("kubernetes-ops-pool");
+        
+        // Configure Cruise Control mock
+        serverPort = CruiseControl.REST_API_PORT;
+        tlsKeyFile = TestUtils.tempFile(".key");
+        tlsCrtFile = TestUtils.tempFile(".crt");
 
-        ccServer = new MockCruiseControl(CruiseControl.REST_API_PORT);
+        new MockCertManager().generateSelfSignedCert(tlsKeyFile, tlsCrtFile,
+            new Subject.Builder().withCommonName("Trusted Test CA").build(), 365);
+
+        ccServer = new MockCruiseControl(serverPort, tlsKeyFile, tlsCrtFile);
     }
 
     @AfterAll
@@ -123,7 +138,9 @@ public class KafkaRebalanceAssemblyOperatorTest {
         sharedWorkerExecutor.close();
         vertx.close();
         mockKube.stop();
-        ccServer.stop();
+        if (ccServer != null && ccServer.isRunning()) {
+            ccServer.stop();
+        }
     }
 
     @BeforeEach
@@ -135,7 +152,9 @@ public class KafkaRebalanceAssemblyOperatorTest {
         }
         mockKube.prepareNamespace(namespace);
 
-        ccServer.reset();
+        if (ccServer != null && ccServer.isRunning()) {
+            ccServer.reset();
+        }
 
         supplier =  new ResourceOperatorSupplier(vertx, client, ResourceUtils.zookeeperLeaderFinder(vertx, client), ResourceUtils.adminClientProvider(),
                 ResourceUtils.zookeeperScalerProvider(), ResourceUtils.kafkaAgentClientProvider(), ResourceUtils.metricsProvider(), PFA, 2_000);
@@ -1512,7 +1531,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
         krao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, RESOURCE_NAME))
             .onComplete(context.succeeding(v -> {
                 try {
-                    ccServer = new MockCruiseControl(CruiseControl.REST_API_PORT);
+                    ccServer = new MockCruiseControl(serverPort, tlsKeyFile, tlsCrtFile);
                 } catch (Throwable t) {
                     context.failNow(t);
                 }

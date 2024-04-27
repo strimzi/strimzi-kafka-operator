@@ -12,6 +12,7 @@ import io.strimzi.certs.Subject;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.StatusUtils;
 import io.strimzi.operator.common.operator.MockCertManager;
+import io.strimzi.test.TestUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,14 +23,12 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
 import static io.strimzi.api.kafka.model.topic.KafkaTopic.RESOURCE_KIND;
 import static io.strimzi.api.kafka.model.topic.ReplicasChangeState.ONGOING;
-import static io.strimzi.test.TestUtils.getFreePort;
 import static java.util.Map.entry;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -37,39 +36,34 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 public class ReplicasChangeHandlerTest {
-    private static final String TEST_PREFIX = "cruise-control-";
     private static final String TEST_NAMESPACE = "replicas-change";
     private static final String TEST_NAME = "my-topic";
     
     private static int serverPort;
-    private static File sslCrtFile;
+    private static File tlsCrtFile;
     private static File apiUserFile;
     private static File apiPassFile;
     private static MockCruiseControl server;
 
     @BeforeAll
     public static void beforeAll() throws IOException {
-        serverPort = getFreePort();
+        serverPort = TestUtils.getFreePort();
 
-        MockCertManager certManager = new MockCertManager();
-        File tlsKeyFile = Files.createTempFile(TEST_PREFIX, ".key").toFile();
-        sslCrtFile = Files.createTempFile(TEST_PREFIX, "-valid.crt").toFile();
-        sslCrtFile.deleteOnExit();
-        new MockCertManager().generateSelfSignedCert(tlsKeyFile, sslCrtFile, 
+        File tlsKeyFile = TestUtils.tempFile(".key");
+        tlsCrtFile = TestUtils.tempFile(".crt");
+        new MockCertManager().generateSelfSignedCert(tlsKeyFile, tlsCrtFile, 
             new Subject.Builder().withCommonName("Trusted Test CA").build(), 365);
 
-        apiUserFile = Files.createTempFile(TEST_PREFIX, ".username").toFile();
-        apiUserFile.deleteOnExit();
+        apiUserFile = TestUtils.tempFile(".username");
         try (PrintWriter out = new PrintWriter(apiUserFile.getAbsolutePath())) {
             out.print("topic-operator-admin");
         }
-        apiPassFile = Files.createTempFile(TEST_PREFIX, ".password").toFile();
-        apiPassFile.deleteOnExit();
+        apiPassFile = TestUtils.tempFile(".password");
         try (PrintWriter out = new PrintWriter(apiPassFile.getAbsolutePath())) {
             out.print("changeit");
         }
         
-        server = new MockCruiseControl(serverPort, tlsKeyFile, sslCrtFile);
+        server = new MockCruiseControl(serverPort, tlsKeyFile, tlsCrtFile);
     }
 
     @AfterAll
@@ -81,7 +75,9 @@ public class ReplicasChangeHandlerTest {
 
     @BeforeEach
     public void beforeEach() {
-        server.reset();
+        if (server != null && server.isRunning()) {
+            server.reset();
+        }
     }
 
     @ParameterizedTest
@@ -197,7 +193,7 @@ public class ReplicasChangeHandlerTest {
             entry(TopicOperatorConfig.CRUISE_CONTROL_PORT.key(), String.valueOf(serverPort)),
             entry(TopicOperatorConfig.CRUISE_CONTROL_SSL_ENABLED.key(), "true"),
             entry(TopicOperatorConfig.CRUISE_CONTROL_AUTH_ENABLED.key(), "true"),
-            entry(TopicOperatorConfig.CRUISE_CONTROL_CRT_FILE_PATH.key(), sslCrtFile.getAbsolutePath()),
+            entry(TopicOperatorConfig.CRUISE_CONTROL_CRT_FILE_PATH.key(), tlsCrtFile.getAbsolutePath()),
             entry(TopicOperatorConfig.CRUISE_CONTROL_API_USER_PATH.key(), apiUserFile.getAbsolutePath()),
             entry(TopicOperatorConfig.CRUISE_CONTROL_API_PASS_PATH.key(), apiPassFile.getAbsolutePath())
         ));
@@ -225,7 +221,7 @@ public class ReplicasChangeHandlerTest {
             entry(TopicOperatorConfig.CRUISE_CONTROL_PORT.key(), String.valueOf(serverPort)),
             entry(TopicOperatorConfig.CRUISE_CONTROL_SSL_ENABLED.key(), "true"),
             entry(TopicOperatorConfig.CRUISE_CONTROL_AUTH_ENABLED.key(), "true"),
-            entry(TopicOperatorConfig.CRUISE_CONTROL_CRT_FILE_PATH.key(), sslCrtFile.getAbsolutePath()),
+            entry(TopicOperatorConfig.CRUISE_CONTROL_CRT_FILE_PATH.key(), tlsCrtFile.getAbsolutePath()),
             entry(TopicOperatorConfig.CRUISE_CONTROL_API_USER_PATH.key(), apiUserFile.getAbsolutePath()),
             entry(TopicOperatorConfig.CRUISE_CONTROL_API_PASS_PATH.key(), apiPassFile.getAbsolutePath())
         ));
@@ -252,7 +248,7 @@ public class ReplicasChangeHandlerTest {
             entry(TopicOperatorConfig.CRUISE_CONTROL_PORT.key(), String.valueOf(serverPort)),
             entry(TopicOperatorConfig.CRUISE_CONTROL_SSL_ENABLED.key(), "true"),
             entry(TopicOperatorConfig.CRUISE_CONTROL_AUTH_ENABLED.key(), "true"),
-            entry(TopicOperatorConfig.CRUISE_CONTROL_CRT_FILE_PATH.key(), sslCrtFile.getAbsolutePath()),
+            entry(TopicOperatorConfig.CRUISE_CONTROL_CRT_FILE_PATH.key(), tlsCrtFile.getAbsolutePath()),
             entry(TopicOperatorConfig.CRUISE_CONTROL_API_USER_PATH.key(), apiUserFile.getAbsolutePath()),
             entry(TopicOperatorConfig.CRUISE_CONTROL_API_PASS_PATH.key(), apiPassFile.getAbsolutePath())
         ));
@@ -371,7 +367,7 @@ public class ReplicasChangeHandlerTest {
                 entry(TopicOperatorConfig.CRUISE_CONTROL_PORT.key(), String.valueOf(serverPort)),
                 entry(TopicOperatorConfig.CRUISE_CONTROL_SSL_ENABLED.key(), "true"),
                 entry(TopicOperatorConfig.CRUISE_CONTROL_AUTH_ENABLED.key(), "true"),
-                entry(TopicOperatorConfig.CRUISE_CONTROL_CRT_FILE_PATH.key(), sslCrtFile.getAbsolutePath()),
+                entry(TopicOperatorConfig.CRUISE_CONTROL_CRT_FILE_PATH.key(), tlsCrtFile.getAbsolutePath()),
                 entry(TopicOperatorConfig.CRUISE_CONTROL_API_USER_PATH.key(), apiUserFile.getAbsolutePath()),
                 entry(TopicOperatorConfig.CRUISE_CONTROL_API_PASS_PATH.key(), apiPassFile.getAbsolutePath())
             )),
@@ -393,7 +389,7 @@ public class ReplicasChangeHandlerTest {
                 entry(TopicOperatorConfig.CRUISE_CONTROL_PORT.key(), String.valueOf(serverPort)),
                 entry(TopicOperatorConfig.CRUISE_CONTROL_SSL_ENABLED.key(), "true"),
                 entry(TopicOperatorConfig.CRUISE_CONTROL_AUTH_ENABLED.key(), "false"),
-                entry(TopicOperatorConfig.CRUISE_CONTROL_CRT_FILE_PATH.key(), sslCrtFile.getAbsolutePath())
+                entry(TopicOperatorConfig.CRUISE_CONTROL_CRT_FILE_PATH.key(), tlsCrtFile.getAbsolutePath())
             )),
 
             // authentication only
