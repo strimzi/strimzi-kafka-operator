@@ -118,7 +118,7 @@ public class ConnectBuildOperator {
             // Extract information from the current controllerResource. This is used to figure out if new build needs to be run or not.
             currentBuildRevision = Annotations.stringAnnotation(controllerResource, Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, null);
             currentImage = Annotations.stringAnnotation(controllerResource, Annotations.STRIMZI_IO_CONNECT_BUILD_IMAGE, null);
-            forceRebuild = Annotations.hasAnnotation(controllerResource, Annotations.STRIMZI_IO_CONNECT_FORCE_REBUILD);
+            forceRebuild = Annotations.booleanAnnotation(controllerResource, Annotations.STRIMZI_IO_CONNECT_FORCE_REBUILD, false);
         }
 
         KafkaConnectDockerfile dockerfile = connectBuild.generateDockerfile();
