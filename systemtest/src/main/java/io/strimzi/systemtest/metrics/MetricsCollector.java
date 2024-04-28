@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Resources;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.resources.ComponentType;
+import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -291,7 +292,7 @@ public class MetricsCollector {
      * Collect metrics from specific pod
      * @return collected metrics
      */
-    protected String collectMetrics(String metricsPodIp, String podName) throws InterruptedException, ExecutionException, IOException {
+    private String collectMetrics(String metricsPodIp, String podName) throws InterruptedException, ExecutionException, IOException {
         List<String> executableCommand = Arrays.asList(cmdKubeClient(namespaceName).toString(), "exec", scraperPodName,
             "-n", namespaceName,
             "--", "curl", metricsPodIp + ":" + metricsPort + metricsPath);
@@ -302,7 +303,7 @@ public class MetricsCollector {
         // 20 seconds should be enough for collect data from the pod
         int ret = exec.execute(null, executableCommand, 20_000);
 
-        LOGGER.info("Metrics collection for Pod: {}/{}({}) from Pod: {}/{} finished with return code: {}", namespaceName, podName, metricsPodIp, namespaceName, scraperPodName, ret);
+        LOGGER.log(ResourceManager.getInstance().determineLogLevel(), "Metrics collection for Pod: {}/{}({}) from Pod: {}/{} finished with return code: {}", namespaceName, podName, metricsPodIp, namespaceName, scraperPodName, ret);
         return exec.out();
     }
 

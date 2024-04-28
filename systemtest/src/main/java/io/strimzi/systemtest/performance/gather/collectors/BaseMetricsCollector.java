@@ -7,18 +7,12 @@ package io.strimzi.systemtest.performance.gather.collectors;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.systemtest.metrics.MetricsCollector;
 import io.strimzi.systemtest.performance.PerformanceConstants;
-import io.strimzi.test.executor.Exec;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 import java.util.regex.Pattern;
-
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 
 /**
  * Abstract base class for metrics collection tailored to gather various JVM and system metrics.
@@ -38,20 +32,6 @@ public abstract class BaseMetricsCollector extends MetricsCollector {
      */
     protected BaseMetricsCollector(Builder builder) {
         super(builder);
-    }
-
-    @Override
-    protected String collectMetrics(String metricsPodIp, String podName) throws InterruptedException, ExecutionException, IOException {
-        final List<String> executableCommand = Arrays.asList(cmdKubeClient(namespaceName).toString(), "exec", scraperPodName,
-            "-n", namespaceName,
-            "--", "curl", metricsPodIp + ":" + metricsPort + metricsPath);
-
-        final Exec exec = new Exec();
-        final int ret = exec.execute(null, executableCommand, 20_000);
-
-        LOGGER.debug("Metrics collection for Pod: {}/{}({}) from Pod: {}/{} finished with return code: {}", namespaceName, podName, metricsPodIp, namespaceName, scraperPodName, ret);
-
-        return exec.out();
     }
 
     // -----------------------------------------------------------------------------------------------------
