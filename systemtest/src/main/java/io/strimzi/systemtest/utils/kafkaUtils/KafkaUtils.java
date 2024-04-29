@@ -35,7 +35,6 @@ import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -47,7 +46,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -616,15 +614,9 @@ public class KafkaUtils {
         int kafkaIndex = 0; // Ensure this index is managed appropriately if used outside this method context.
 
         for (final Pod kafkaPod : kafkaPods) {
-            List<String> directories = new ArrayList<>();
-
-            // Dynamically create a list of volume directories to check, based on the total number of volumes.
+            // Directly iterate over volumes instead of creating a list
             for (int volumeId = 0; volumeId < numberOfVolumes; volumeId++) {
-                directories.add(buildDirectoryPath(volumeId, kafkaIndex));
-            }
-
-            // Check each directory in the current Kafka pod for the presence or absence of the metadata log.
-            for (final String dir : directories) {
+                final String dir = buildDirectoryPath(volumeId, kafkaIndex);
                 final int result = cmdKubeClient().namespace(testStorage.getNamespaceName()).execInPodContainer(false,
                     kafkaPod.getMetadata().getName(),
                     "kafka",
@@ -633,10 +625,10 @@ public class KafkaUtils {
                 LOGGER.info("Kafka pod: {} the directory: {} - {}", kafkaPod.getMetadata().getName(), dir, result);
 
                 // Assert the condition that metadata should only exist in the specified KRaft metadata volume.
-                if (dir.equals(buildDirectoryPath(kraftMetadataVolumeId, kafkaIndex))) {
-                    assertThat(result, CoreMatchers.is(0));
+                if (volumeId == kraftMetadataVolumeId) {
+                    assertThat("Metadata should exist in KRaft metadata volume", result, CoreMatchers.is(0));
                 } else {
-                    assertThat(result, CoreMatchers.is(1));
+                    assertThat("Metadata should not exist in non-KRaft metadata volume", result, CoreMatchers.is(1));
                 }
             }
             kafkaIndex++;
