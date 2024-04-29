@@ -64,6 +64,7 @@ import io.strimzi.test.k8s.HelmClient;
 import io.strimzi.test.k8s.KubeClient;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.cmdClient.KubeCmdClient;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -175,13 +176,7 @@ public class ResourceManager {
 
             setNamespaceInResource(resource);
 
-            if (resource.getMetadata().getNamespace() == null) {
-                LOGGER.info("Creating/Updating {} {}",
-                        resource.getKind(), resource.getMetadata().getName());
-            } else {
-                LOGGER.info("Creating/Updating {} {}/{}",
-                        resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName());
-            }
+            logResourceCreationOrUpdate(resource);
 
             labelResource(resource);
 
@@ -272,13 +267,7 @@ public class ResourceManager {
                 continue;
             }
 
-            if (resource.getMetadata().getNamespace() == null) {
-                LOGGER.info("Deleting of {} {}",
-                        resource.getKind(), resource.getMetadata().getName());
-            } else {
-                LOGGER.info("Deleting of {} {}/{}",
-                        resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName());
-            }
+            logResourceDeletion(resource);
 
             try {
                 type.delete(resource);
@@ -586,5 +575,52 @@ public class ResourceManager {
             }
         }
         return null;
+    }
+
+    /**
+     * Logs the creation or updating process of a Kubernetes resource at an appropriate log level.
+     * The log level is dynamically determined based on the presence of the PERFORMANCE tag
+     * in the test context's tags, switching between DEBUG for performance tests and INFO otherwise.
+     *
+     * @param <T>       The type parameter extending HasMetadata, representing Kubernetes resources.
+     * @param resource  The Kubernetes resource being created or updated. This includes details such
+     *                  as the resource kind and name, and optionally, the namespace.
+     */
+    private <T extends HasMetadata> void logResourceCreationOrUpdate(T resource) {
+        final String namespace = resource.getMetadata().getNamespace();
+        final String message = namespace == null ?
+            String.format("Creating/Updating %s %s", resource.getKind(), resource.getMetadata().getName()) :
+            String.format("Creating/Updating %s %s/%s", resource.getKind(), namespace, resource.getMetadata().getName());
+
+        LOGGER.log(determineLogLevel(), message);
+    }
+
+    /**
+     * Logs the deletion process of a Kubernetes resource at an appropriate log level.
+     * Similar to creation/updating, the log level is determined by whether the PERFORMANCE
+     * tag is present in the test context's tags, using DEBUG for performance tests and INFO for others.
+     *
+     * @param <T>       The type parameter extending HasMetadata, representing Kubernetes resources.
+     * @param resource  The Kubernetes resource being deleted. This method logs the resource's kind,
+     *                  name, and if available, the namespace, to provide detailed traceability of the operation.
+     */
+    private <T extends HasMetadata> void logResourceDeletion(T resource) {
+        String namespace = resource.getMetadata().getNamespace();
+        String message = namespace == null ?
+            String.format("Deleting of %s %s", resource.getKind(), resource.getMetadata().getName()) :
+            String.format("Deleting of %s %s/%s", resource.getKind(), namespace, resource.getMetadata().getName());
+
+        LOGGER.log(determineLogLevel(), message);
+    }
+
+    /**
+     * Determines the appropriate log level based on the presence of the PERFORMANCE tag
+     * in the current test context. Uses DEBUG level for performance tests and INFO level
+     * for other tests.
+     *
+     * @return          The appropriate logging level (DEBUG or INFO) for the current test context.
+     */
+    public Level determineLogLevel() {
+        return ResourceManager.getTestContext().getTags().contains(TestConstants.PERFORMANCE) ? Level.DEBUG : Level.INFO;
     }
 }

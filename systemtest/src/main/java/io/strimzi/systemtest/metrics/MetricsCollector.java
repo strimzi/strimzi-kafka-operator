@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Resources;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.resources.ComponentType;
+import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -44,14 +45,14 @@ public class MetricsCollector {
 
     private static final Object LOCK = new Object();
 
-    private String namespaceName;
-    private String scraperPodName;
-    private ComponentType componentType;
-    private String componentName;
-    private int metricsPort;
-    private String metricsPath;
-    private LabelSelector componentLabelSelector;
-    private Map<String, String> collectedData;
+    protected String namespaceName;
+    protected String scraperPodName;
+    protected ComponentType componentType;
+    protected String componentName;
+    protected int metricsPort;
+    protected String metricsPath;
+    protected LabelSelector componentLabelSelector;
+    protected Map<String, String> collectedData;
 
     public static class Builder {
         private String namespaceName;
@@ -220,7 +221,7 @@ public class MetricsCollector {
      * @param pattern regex pattern for specific metric
      * @return list of parsed values
      */
-    public ArrayList<Double> collectSpecificMetric(Pattern pattern) {
+    public final ArrayList<Double> collectSpecificMetric(Pattern pattern) {
         ArrayList<Double> values = new ArrayList<>();
 
         if (collectedData != null && !collectedData.isEmpty()) {
@@ -240,7 +241,7 @@ public class MetricsCollector {
      * @param metricName The name of the metric to collect.
      * @return A map where each key represents the unique labels and the value is the corresponding metric value.
      */
-    public Map<String, Double> collectMetricWithLabels(String metricName) {
+    public final Map<String, Double> collectMetricWithLabels(String metricName) {
         // This pattern will match the metric name and capture the labels and value.
         Pattern pattern = Pattern.compile(metricName + "\\{([^}]+)\\}\\s(\\d+(?:\\.\\d+)?(?:E-?\\d+)?)");
         Map<String, Double> valuesWithLabels = new HashMap<>();
@@ -266,7 +267,7 @@ public class MetricsCollector {
      *
      * @return ArrayList of values collected from the metrics
      */
-    public synchronized ArrayList<Double> waitForSpecificMetricAndCollect(Pattern pattern) {
+    public final synchronized ArrayList<Double> waitForSpecificMetricAndCollect(Pattern pattern) {
         ArrayList<Double> values = collectSpecificMetric(pattern);
 
         if (values.isEmpty()) {
@@ -302,7 +303,7 @@ public class MetricsCollector {
         // 20 seconds should be enough for collect data from the pod
         int ret = exec.execute(null, executableCommand, 20_000);
 
-        LOGGER.info("Metrics collection for Pod: {}/{}({}) from Pod: {}/{} finished with return code: {}", namespaceName, podName, metricsPodIp, namespaceName, scraperPodName, ret);
+        LOGGER.log(ResourceManager.getInstance().determineLogLevel(), "Metrics collection for Pod: {}/{}({}) from Pod: {}/{} finished with return code: {}", namespaceName, podName, metricsPodIp, namespaceName, scraperPodName, ret);
         return exec.out();
     }
 
@@ -310,7 +311,7 @@ public class MetricsCollector {
      * Collect metrics from all Pods with specific selector with wait
      */
     @SuppressWarnings("unchecked")
-    public void collectMetricsFromPods() {
+    public final void collectMetricsFromPods() {
         Map<String, String>[] metricsData = (Map<String, String>[]) new HashMap[1];
         TestUtils.waitFor("metrics to contain data", GLOBAL_POLL_INTERVAL, GLOBAL_TIMEOUT,
             () -> {
@@ -332,7 +333,7 @@ public class MetricsCollector {
         collectedData = metricsData[0];
     }
 
-    public Map<String, String> collectMetricsFromPodsWithoutWait() {
+    public final Map<String, String> collectMetricsFromPodsWithoutWait() {
         Map<String, String> map = new HashMap<>();
         kubeClient(namespaceName).listPods(namespaceName, componentLabelSelector).forEach(p -> {
             try {

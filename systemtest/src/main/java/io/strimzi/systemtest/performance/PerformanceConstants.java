@@ -89,6 +89,7 @@ public interface PerformanceConstants {
     String USER_OPERATOR_IN_USER_OPERATIONS_THREAD_POOL_SIZE = "IN: USER_OPERATIONS_THREAD_POOL_SIZE";
     String USER_OPERATOR_OUT_CREATION_TIME = "OUT: Creation Time (ms)";
     String USER_OPERATOR_OUT_DELETION_TIME = "OUT: Deletion Time (ms)";
+    String USER_OPERATOR_OUT_SUCCESSFUL_KAFKA_USERS_CREATED = "OUT: Successful KafkaUsers Created";
 
     String METRICS_HISTORY = "Metrics History";
 
@@ -149,6 +150,7 @@ public interface PerformanceConstants {
     String TOPIC_OPERATOR_BOBS_STREAMING_USE_CASE = "bobStreamingUseCase";
     String TOPIC_OPERATOR_ALICE_BULK_USE_CASE = "aliceBulkUseCase";
     String USER_OPERATOR_ALICE_BULK_USE_CASE = "aliceBulkUseCase";
+    String USER_OPERATOR_CAPACITY_USE_CASE = "capacityUseCase";
 
     /**
      * Performance metrics file
@@ -166,4 +168,10 @@ public interface PerformanceConstants {
      */
     String TOPIC_OPERATOR_PARSER = "topic-operator";
     String USER_OPERATOR_PARSER = "user-operator";
+
+    /**
+     * Performance specific related tags
+     */
+    String PERFORMANCE_CAPACITY = "performance-capacity";
+
 }

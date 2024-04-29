@@ -7,6 +7,8 @@ package io.strimzi.systemtest.performance.gather.collectors;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.systemtest.metrics.MetricsCollector;
 import io.strimzi.systemtest.performance.PerformanceConstants;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.List;
 import java.util.Map;
@@ -21,6 +23,8 @@ import java.util.regex.Pattern;
  * system performance indicators.
  */
 public abstract class BaseMetricsCollector extends MetricsCollector {
+
+    private static final Logger LOGGER = LogManager.getLogger(BaseMetricsCollector.class);
 
     /**
      * Constructs a new {@code BaseMetricsCollector} instance configured via the provided builder.

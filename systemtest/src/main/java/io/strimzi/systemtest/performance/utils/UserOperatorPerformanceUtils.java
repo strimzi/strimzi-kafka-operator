@@ -66,7 +66,12 @@ public class UserOperatorPerformanceUtils {
     }
 
     public static List<KafkaUser> getListOfKafkaUsers(final TestStorage testStorage, final String userName,
-                                                final int numberOfUsers, final UserAuthType userAuthType) {
+                                                      final int numberOfUsers, final UserAuthType userAuthType) {
+        return getListOfKafkaUsers(testStorage, userName, 0, numberOfUsers, userAuthType);
+    }
+
+    public static List<KafkaUser> getListOfKafkaUsers(final TestStorage testStorage, final String userName,
+                                                      final int startPointer, final int endPointer, final UserAuthType userAuthType) {
         List<KafkaUser> usersList = new ArrayList<>();
 
         KafkaUserAuthorizationSimple usersAcl = new KafkaUserAuthorizationSimpleBuilder()
@@ -78,7 +83,8 @@ public class UserOperatorPerformanceUtils {
             .endAcl()
             .build();
 
-        for (int i = 0; i < numberOfUsers; i++) {
+        // Loop over the specific range from startPointer to endPointer
+        for (int i = startPointer; i < endPointer; i++) {
             if (userAuthType.equals(UserAuthType.Tls)) {
                 usersList.add(
                     KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), testStorage.getClusterName(), userName + "-" + i)
