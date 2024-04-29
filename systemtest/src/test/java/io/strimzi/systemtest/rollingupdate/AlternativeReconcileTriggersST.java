@@ -4,11 +4,11 @@
  */
 package io.strimzi.systemtest.rollingupdate;
 
-import io.fabric8.kubernetes.api.model.PersistentVolume;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.strimzi.api.kafka.model.kafka.JbodStorage;
 import io.strimzi.api.kafka.model.kafka.JbodStorageBuilder;
+import io.strimzi.api.kafka.model.kafka.KRaftMetadataStorage;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
@@ -44,6 +44,7 @@ import io.strimzi.test.TestUtils;
 import io.vertx.core.cli.annotations.Description;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 
@@ -52,7 +53,6 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -61,12 +61,11 @@ import java.util.stream.Collectors;
 import static io.strimzi.systemtest.TestConstants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.TestConstants.REGRESSION;
 import static io.strimzi.systemtest.TestConstants.ROLLING_UPDATE;
+import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
@@ -460,28 +459,33 @@ class AlternativeReconcileTriggersST extends AbstractST {
     }
 
     /**
-     * @description This test verifies the functionality of resizing JBOD storage volumes on a Kafka cluster.
-     * It checks that the system can handle volume size changes and performs a rolling update to apply these changes.
+     * @description Tests the resilience and relocation of KRaft metadata logs in a Kafka cluster configured with JBOD storage.
+     * This test verifies that Kafka can handle the simulated disk failure of a KRaft metadata volume and successfully
+     * relocate the metadata log to another volume in the JBOD setup. The test ensures that the cluster remains operational
+     * and that metadata is correctly managed even after a significant storage disruption.
      *
      * @steps
-     *  1. - Deploy a Kafka cluster with JBOD storage and initial volume sizes.
-     *     - Kafka cluster is operational.
-     *  2. - Produce and consume messages continuously to simulate cluster activity.
-     *     - Message traffic is consistent.
-     *  3. - Increase the size of one of the JBOD volumes.
-     *     - Volume size change is applied.
-     *  4. - Verify that the updated volume size is reflected.
-     *     - PVC reflects the new size.
-     *  5. - Ensure continuous message production and consumption are unaffected during the update process.
-     *     - Message flow continues without interruption.
+     * 1. Deploy a Kafka cluster with multiple JBOD volumes, specifically designating one volume for KRaft metadata.
+     *    - Ensure the cluster is operational and the metadata volume is correctly used.
+     * 2. Attach Kafka clients to continuously produce and consume messages, simulating normal cluster activity.
+     *    - Verify consistent message traffic to ensure cluster stability.
+     * 3. Simulate a disk failure by removing the KRaft metadata volume from the cluster configuration.
+     *    - Trigger a rolling update and ensure the cluster starts relocating the metadata to a new volume.
+     * 4. Verify that the KRaft metadata log has been successfully reassigned to a new volume with the lowest available ID.
+     *    - Check the reassignment and integrity of the metadata.
+     * 5. Confirm that Kafka continues to function correctly, with ongoing message production and consumption unaffected.
+     *    - Ensure no data loss or interruption in service.
      *
      * @usecase
-     *  - jbod
-     *  - volume-resize
-     *  - persistent-volume-claims
+     * - jbod
+     * - rolling update
+     * - persistent-volumes
+     * - persistent-volume-claims
+     * - storage failure
+     * - KRaft metadata log
      */
     @ParallelNamespaceTest
-    void testRezizeJbodVolumes() {
+    void testJbodMetadataLogRelocation() {
         // JBOD storage in KRaft is supported only from Kafka 3.7.0 and higher.
         // So we want to run this test when KRaft is disabled or when it is with KRaft and Kafka 3.7.0+
         assumeTrue(!Environment.isKRaftForCOEnabled() || TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "3.7.0") >= 0);
@@ -489,12 +493,15 @@ class AlternativeReconcileTriggersST extends AbstractST {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final int numberOfKafkaReplicas = 3;
 
-        // 500 messages will take 500 seconds in that case
-        final int continuousClientsMessageCount = 500;
+        // Setup JBOD with multiple volumes, ensuring metadata is on a non-lowest ID volume
+        PersistentClaimStorage vol = new PersistentClaimStorageBuilder().withId(0).withSize("1Gi").withDeleteClaim(true).build();
+        PersistentClaimStorage otherVol = new PersistentClaimStorageBuilder().withId(1).withSize("1Gi").withDeleteClaim(true).build();
+        // volume with id=2 will be using for KRaft metadata storage
+        PersistentClaimStorage metadataVol = new PersistentClaimStorageBuilder().withId(2).withSize("1Gi").withDeleteClaim(false)
+            .withKraftMetadata(KRaftMetadataStorage.SHARED).build();
 
-        PersistentClaimStorage vol0 = new PersistentClaimStorageBuilder().withId(0).withSize("1Gi").withDeleteClaim(true).build();
-        PersistentClaimStorage vol1 = new PersistentClaimStorageBuilder().withId(1).withSize("1Gi").withDeleteClaim(true).build();
-        PersistentClaimStorage vol1Modified = new PersistentClaimStorageBuilder().withId(1).withSize("5Gi").withDeleteClaim(true).build();
+        // 300 messages will take 300 seconds in that case
+        final int continuousClientsMessageCount = 300;
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
@@ -502,8 +509,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
                     .editSpec()
                     .withStorage(
                         new JbodStorageBuilder()
-                            // add two small volumes
-                            .addToVolumes(vol0, vol1).build())
+                            .addToVolumes(vol, otherVol, metadataVol).build())
                     .endSpec()
                     .build(),
                 KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
@@ -513,8 +519,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
             .editSpec()
                 .editKafka()
                     .withStorage(new JbodStorageBuilder()
-                        // add two small volumes
-                        .addToVolumes(vol0, vol1).build())
+                        .addToVolumes(vol, otherVol, metadataVol).build())
                 .endKafka()
             .endSpec()
             .build());
@@ -545,41 +550,30 @@ class AlternativeReconcileTriggersST extends AbstractST {
         resourceManager.createResourceWithWait(clients.producerStrimzi());
         ClientUtils.waitForInstantProducerClientSuccess(testStorage);
 
-        // Replace Jbod to bigger one volume to Kafka => triggers RU
-        LOGGER.info("Replace JBOD to bigger one volume to the Kafka cluster {}", testStorage.getBrokerComponentName());
+        Map<String, String> brokerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
+
+        verifyKafkaKraftMetadataLog(testStorage, 2, 3);
+
+        // Remove Jbod KRaft volume to Kafka => triggers RU
+        LOGGER.info("Remove JBOD volume (i.e., simulating disk failure for KRaft metadata volume) to the Kafka cluster {}", testStorage.getBrokerComponentName());
 
         if (Environment.isKafkaNodePoolsEnabled()) {
             KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getBrokerPoolName(), kafkaNodePool -> {
                 JbodStorage storage = (JbodStorage) kafkaNodePool.getSpec().getStorage();
-
-                // set modified volume
-                storage.setVolumes(List.of(vol0, vol1Modified));
-
-                // override storage
-                kafkaNodePool.getSpec().setStorage(storage);
+                storage.getVolumes().remove(metadataVol);
             }, testStorage.getNamespaceName());
         } else {
             KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> {
                 JbodStorage storage = (JbodStorage) kafka.getSpec().getKafka().getStorage();
-
-                // set modified volume
-                storage.setVolumes(List.of(vol0, vol1Modified));
-
-                // override storage
-                kafka.getSpec().getKafka().setStorage(storage);
+                storage.getVolumes().remove(metadataVol);
             }, testStorage.getNamespaceName());
         }
 
-        // check that volume with index 1 change its size
-        PersistentVolumeClaimUtils.waitUntilSpecificPvcSizeChange(
-            testStorage,
-            "data-" + vol1Modified.getId() + "-" + testStorage.getClusterName() + "-[0-" + (numberOfKafkaReplicas - 1) + "]",
-            vol1Modified.getSize());
-        // and volume with index 0 did not change its size
-        PersistentVolumeClaimUtils.waitUntilSpecificPvcSizeChange(
-            testStorage,
-            "data-" + vol0.getId() + "-" + testStorage.getClusterName() + "-[0-" + (numberOfKafkaReplicas - 1) + "]",
-            vol0.getSize());
+        // Wait util it rolls
+        brokerPods = RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, brokerPods);
+
+        // verify that Kraft metadata log will be re-assigned to another volume (the minimum id, which is 0 now that's why data-0)
+        verifyKafkaKraftMetadataLog(testStorage, 0, 2);
 
         resourceManager.createResourceWithWait(clients.consumerStrimzi());
         ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
@@ -589,6 +583,51 @@ class AlternativeReconcileTriggersST extends AbstractST {
         // ##############################
         ClientUtils.waitForContinuousClientSuccess(testStorage, continuousClientsMessageCount);
         // ##############################
+    }
+
+    /**
+     * Verifies the presence or absence of KRaft metadata logs across specified volume directories within Kafka pods.
+     * This method iterates through all Kafka pods retrieved based on the broker selector from the test storage configuration,
+     * checking each configured volume for the presence of KRaft metadata files. The method asserts that the metadata log
+     * exists only in the specified KRaft metadata volume and not in others, ensuring correct metadata log placement
+     * according to the test configuration.
+     *
+     * @param testStorage               An instance of TestStorage containing configuration and context for the current test,
+     *                                  including namespace and broker selector for identifying relevant Kafka pods.
+     * @param kraftMetadataVolumeId     The volume ID expected to contain the KRaft metadata log. This method will
+     *                                  assert the presence of metadata logs in this volume and their absence in others.
+     * @param numberOfVolumes           The total number of volumes configured in the JBOD (Just a Bunch Of Disks) for each Kafka broker.
+     *                                  This dictates how many volume directories the method will check within each Kafka pod.
+     */
+    private void verifyKafkaKraftMetadataLog(final TestStorage testStorage, final int kraftMetadataVolumeId, final int numberOfVolumes) {
+        final List<Pod> kafkaPods = kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
+        int kafkaIndex = 0; // Ensure this index is managed appropriately if used outside this method context.
+
+        for (final Pod kafkaPod : kafkaPods) {
+            List<String> directories = new ArrayList<>();
+
+            // Dynamically create a list of volume directories to check, based on the total number of volumes.
+            for (int volumeId = 0; volumeId < numberOfVolumes; volumeId++) {
+                directories.add("/var/lib/kafka/data-" + volumeId + "/kafka-log" + kafkaIndex + "/__cluster_metadata-0");
+            }
+
+            // Check each directory in the current Kafka pod for the presence or absence of the metadata log.
+            for (final String dir : directories) {
+                final String result = cmdKubeClient().namespace(testStorage.getNamespaceName()).execInPodContainer(kafkaPod.getMetadata().getName(),
+                    "kafka",
+                    "/bin/bash", "-c", "ls " + dir + " && echo exists || echo not exists").out().trim();
+
+                LOGGER.info("Kafka pod: {} the directory: {} - {}", kafkaPod.getMetadata().getName(), dir, result);
+
+                // Assert the condition that metadata should only exist in the specified KRaft metadata volume.
+                if (dir.equals("/var/lib/kafka/data-" + kraftMetadataVolumeId + "/kafka-log" + kafkaIndex + "/__cluster_metadata-0")) {
+                    assertThat(result, CoreMatchers.containsString("exists"));
+                } else {
+                    assertThat(result, CoreMatchers.containsString("not exists"));
+                }
+            }
+            kafkaIndex++;
+        }
     }
 
     @BeforeAll
