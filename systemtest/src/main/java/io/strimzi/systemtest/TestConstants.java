@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest;
 
-import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.strimzi.test.TestUtils;
 
 import java.time.Duration;
@@ -120,11 +119,7 @@ public interface TestConstants {
      */
     String APP_POD_LABEL = "app";
     String APP_KUBERNETES_INSTANCE_LABEL = "app.kubernetes.io/instance";
-
-    /**
-     * Label selectors for our resources
-     */
-    LabelSelector ADMIN_CLIENT_LABEL_SELECTOR = new LabelSelector(null, Map.of(APP_POD_LABEL, ADMIN_CLIENT_NAME));
+    String APP_CONTROLLER_LABEL = "controlled-by";
 
     /**
      * Cluster operator config images

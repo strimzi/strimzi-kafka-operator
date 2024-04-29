@@ -26,10 +26,13 @@ import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
+import io.strimzi.systemtest.kafkaclients.internalClients.admin.AdminClient;
+import io.strimzi.systemtest.kafkaclients.internalClients.admin.KafkaTopicDescription;
 import io.strimzi.systemtest.resources.NodePoolsConverter;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.StrimziPodSetResource;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaMirrorMaker2Templates;
@@ -37,7 +40,9 @@ import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
+import io.strimzi.systemtest.templates.specific.AdminClientTemplates;
 import io.strimzi.systemtest.templates.specific.ScraperTemplates;
+import io.strimzi.systemtest.utils.AdminClientUtils;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.StUtils;
@@ -177,17 +182,22 @@ class MirrorMaker2ST extends AbstractST {
 
         RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getMM2Selector(), mirrorMakerReplicasCount, mm2PodsSnapshot);
 
-        // TODO: https://github.com/strimzi/strimzi-kafka-operator/issues/8864
-        // currently disabled for UTO, as KafkaTopic CR is not created -> we should check it directly in Kafka
-        /*if (!Environment.isKRaftModeEnabled()) {
-            KafkaTopic mirroredTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getMirroredSourceTopicName()).get();
-            assertThat(mirroredTopic.getSpec().getPartitions(), is(3));
-            assertThat(mirroredTopic.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL), is(testStorage.getTargetClusterName()));
+        resourceManager.createResourceWithWait(
+            AdminClientTemplates.plainAdminClient(
+                testStorage.getNamespaceName(),
+                testStorage.getAdminName(),
+                KafkaResources.plainBootstrapAddress(testStorage.getTargetClusterName())
+            ).build()
+        );
+        final AdminClient targetClusterAdminClient = AdminClientUtils.getConfiguredAdminClient(testStorage.getNamespaceName(), testStorage.getAdminName());
 
-            // Replace source topic resource with new data and check that mm2 update target topi
-            KafkaTopicResource.replaceTopicResourceInSpecificNamespace(testStorage.getTopicName(), kt -> kt.getSpec().setPartitions(8), testStorage.getNamespaceName());
-            KafkaTopicUtils.waitForKafkaTopicPartitionChange(testStorage.getNamespaceName(), testStorage.getMirroredSourceTopicName(), 8);
-        }*/
+        LOGGER.info("Verifying topic {} has expected partitions: {}", testStorage.getMirroredSourceTopicName(), 3);
+        final KafkaTopicDescription mirroredTopic = targetClusterAdminClient.describeTopic(testStorage.getMirroredSourceTopicName());
+        assertThat(mirroredTopic.partitionCount(), is(3));
+
+        // Replace source topic resource with new data and check that mm2 update target topic as well
+        KafkaTopicResource.replaceTopicResourceInSpecificNamespace(testStorage.getTopicName(), kt -> kt.getSpec().setPartitions(8), testStorage.getNamespaceName());
+        AdminClientUtils.waitForTopicPartitionInKafka(targetClusterAdminClient, testStorage.getMirroredSourceTopicName(), 8);
     }
 
     /**
@@ -304,25 +314,34 @@ class MirrorMaker2ST extends AbstractST {
             .build();
         resourceManager.createResourceWithWait(targetClients.consumerTlsStrimzi(testStorage.getTargetClusterName()));
         ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
-        LOGGER.info("Messages successfully mirrored");
 
-        // TODO https://github.com/strimzi/strimzi-kafka-operator/issues/8864
-        // currently disabled for UTO, as KafkaTopic CR is not created -> we should check it directly in Kafka
-        /*if (!Environment.isKRaftModeEnabled()) {
-            KafkaTopicUtils.waitForKafkaTopicCreation(testStorage.getNamespaceName(), testStorage.getMirroredSourceTopicName());
-            KafkaTopic mirroredTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getMirroredSourceTopicName()).get();
+        LOGGER.info("Checking topic is mirrored correctly in target cluster");
 
-            assertThat(mirroredTopic.getSpec().getPartitions(), is(3));
-            assertThat(mirroredTopic.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL), is(testStorage.getTargetClusterName()));
-        }*/
+        // Deploy kafka admin on communicating with target kafka cluster.
+
+        resourceManager.createResourceWithWait(
+            AdminClientTemplates.tlsAdminClient(
+                testStorage.getNamespaceName(),
+                testStorage.getTargetUsername(),
+                testStorage.getAdminName(),
+                testStorage.getTargetClusterName(),
+                KafkaResources.tlsBootstrapAddress(testStorage.getTargetClusterName())
+            ));
+
+        final AdminClient targetClusterAdminClient = AdminClientUtils.getConfiguredAdminClient(testStorage.getNamespaceName(), testStorage.getAdminName());
+
+        AdminClientUtils.waitForTopicPresence(targetClusterAdminClient, testStorage.getMirroredSourceTopicName());
+        assertThat(targetClusterAdminClient.describeTopic(testStorage.getMirroredSourceTopicName()).partitionCount(), is(3));
     }
 
     /**
      * Test mirroring messages by MirrorMaker 2 over tls transport using scram-sha-512 auth
      */
+    @SuppressWarnings({"checkstyle:MethodLength"})
     @ParallelNamespaceTest
     void testMirrorMaker2TlsAndScramSha512Auth() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final int partitionCount = 3;
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
@@ -362,7 +381,7 @@ class MirrorMaker2ST extends AbstractST {
         );
 
         resourceManager.createResourceWithWait(
-            KafkaTopicTemplates.topic(testStorage.getSourceClusterName(), testStorage.getTopicName(), 3, testStorage.getNamespaceName()).build(),
+            KafkaTopicTemplates.topic(testStorage.getSourceClusterName(), testStorage.getTopicName(), partitionCount, testStorage.getNamespaceName()).build(),
             KafkaUserTemplates.scramShaUser(testStorage.getNamespaceName(), testStorage.getSourceClusterName(), testStorage.getSourceUsername()).build(),
             KafkaUserTemplates.scramShaUser(testStorage.getNamespaceName(), testStorage.getTargetClusterName(), testStorage.getTargetUsername()).build()
         );
@@ -425,16 +444,22 @@ class MirrorMaker2ST extends AbstractST {
             .build();
         resourceManager.createResourceWithWait(targetClients.consumerScramShaTlsStrimzi(testStorage.getTargetClusterName()));
         ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
-        LOGGER.info("Messages successfully mirrored");
 
-        // TODO https://github.com/strimzi/strimzi-kafka-operator/issues/8864
-        /*if (!Environment.isUnidirectionalTopicOperatorEnabled()) {
-            KafkaTopicUtils.waitForKafkaTopicCreation(testStorage.getNamespaceName(), testStorage.getMirroredSourceTopicName());
-            KafkaTopic mirroredTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getMirroredSourceTopicName()).get();
+        LOGGER.info("Checking topic is mirrored correctly in target cluster");
 
-            assertThat(mirroredTopic.getSpec().getPartitions(), is(3));
-            assertThat(mirroredTopic.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL), is(testStorage.getTargetClusterName()));
-        }*/
+        // deploy admin client
+        resourceManager.createResourceWithWait(
+            AdminClientTemplates.scramShaOverTlsAdminClient(
+                testStorage.getNamespaceName(),
+                testStorage.getTargetUsername(),
+                testStorage.getAdminName(),
+                testStorage.getTargetClusterName(),
+                KafkaResources.tlsBootstrapAddress(testStorage.getTargetClusterName())
+        ));
+        final AdminClient targetClusterAdminClient = AdminClientUtils.getConfiguredAdminClient(testStorage.getNamespaceName(), testStorage.getAdminName());
+
+        AdminClientUtils.waitForTopicPresence(targetClusterAdminClient, testStorage.getMirroredSourceTopicName());
+        assertThat(targetClusterAdminClient.describeTopic(testStorage.getMirroredSourceTopicName()).partitionCount(), is(partitionCount));
     }
 
     @ParallelNamespaceTest

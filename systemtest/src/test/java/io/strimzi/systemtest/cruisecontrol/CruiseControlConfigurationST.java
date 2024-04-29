@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.cruisecontrol;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlSpec;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlSpecBuilder;
@@ -12,12 +13,15 @@ import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfiguration
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
+import io.strimzi.systemtest.kafkaclients.internalClients.admin.AdminClient;
 import io.strimzi.systemtest.resources.NodePoolsConverter;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
+import io.strimzi.systemtest.templates.specific.AdminClientTemplates;
+import io.strimzi.systemtest.utils.AdminClientUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
@@ -91,11 +95,17 @@ public class CruiseControlConfigurationST extends AbstractST {
         LOGGER.info("Verifying that there is no configuration to CruiseControl metric reporter in Kafka ConfigMap");
         assertThrows(WaitException.class, () -> CruiseControlUtils.verifyCruiseControlMetricReporterConfigurationInKafkaConfigMapIsPresent(CruiseControlUtils.getKafkaCruiseControlMetricsReporterConfiguration(testStorage.getNamespaceName(), testStorage.getClusterName())));
 
-        // TODO https://github.com/strimzi/strimzi-kafka-operator/issues/8864
-        /*if (!Environment.isKRaftModeEnabled()) {
-            LOGGER.info("Cruise Control Topics will not be deleted and will stay in the Kafka cluster");
-            CruiseControlUtils.verifyThatCruiseControlTopicsArePresent(testStorage.getNamespaceName(), defaultBrokerReplicaCount);
-        }*/
+        resourceManager.createResourceWithWait(
+            AdminClientTemplates.plainAdminClient(
+                testStorage.getNamespaceName(),
+                testStorage.getAdminName(),
+                KafkaResources.plainBootstrapAddress(testStorage.getClusterName())
+            ).build()
+        );
+        final AdminClient adminClient = AdminClientUtils.getConfiguredAdminClient(testStorage.getNamespaceName(), testStorage.getAdminName());
+
+        LOGGER.info("Cruise Control Topics will not be deleted and will stay in the Kafka cluster");
+        CruiseControlUtils.verifyThatCruiseControlTopicsArePresent(adminClient, defaultBrokerReplicaCount);
 
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> {
             LOGGER.info("Adding CruiseControl to the classic Kafka");
@@ -107,11 +117,8 @@ public class CruiseControlConfigurationST extends AbstractST {
         LOGGER.info("Verifying that configuration of CruiseControl metric reporter is present in Kafka ConfigMap");
         CruiseControlUtils.verifyCruiseControlMetricReporterConfigurationInKafkaConfigMapIsPresent(CruiseControlUtils.getKafkaCruiseControlMetricsReporterConfiguration(testStorage.getNamespaceName(), testStorage.getClusterName()));
 
-        // TODO https://github.com/strimzi/strimzi-kafka-operator/issues/8864
-        /*if (!Environment.isKRaftModeEnabled()) {
-            LOGGER.info("Verifying that {} Topics are created after CC is instantiated", TestConstants.CRUISE_CONTROL_NAME);
-            CruiseControlUtils.verifyThatCruiseControlTopicsArePresent(testStorage.getNamespaceName(), defaultBrokerReplicaCount);
-        }*/
+        LOGGER.info("Verifying that {} Topics are created after CC is instantiated", TestConstants.CRUISE_CONTROL_NAME);
+        CruiseControlUtils.verifyThatCruiseControlTopicsArePresent(adminClient, defaultBrokerReplicaCount);
     }
 
     @ParallelNamespaceTest
