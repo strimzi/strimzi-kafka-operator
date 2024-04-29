@@ -78,14 +78,13 @@ public class PersistentVolumeClaimUtils {
         });
     }
 
-    public static void waitForPvcCount(String namespaceName, String pvcName) {
+    public static void waitForPersistentVolumeClaimDeletion(String namespaceName, String pvcName) {
         TestUtils.waitFor("PVC deletion", TestConstants.POLL_INTERVAL_FOR_RESOURCE_DELETION, TestConstants.GLOBAL_TIMEOUT_SHORT, () -> {
             if (kubeClient().getPersistentVolumeClaim(namespaceName, pvcName) != null) {
                 LOGGER.warn("PVC: {}/{} has not been deleted yet! Triggering force delete using cmd client!", namespaceName, pvcName);
                 cmdKubeClient(namespaceName).deleteByName("pvc", pvcName);
                 return false;
             }
-
             return true;
         });
     }
@@ -95,6 +94,14 @@ public class PersistentVolumeClaimUtils {
         TestUtils.waitFor("PVC(s) to be created/deleted", TestConstants.GLOBAL_POLL_INTERVAL_MEDIUM, TestConstants.GLOBAL_TIMEOUT,
             () -> KubeClusterResource.kubeClient().listPersistentVolumeClaims(testStorage.getNamespaceName(), testStorage.getClusterName()).stream()
                 .filter(pvc -> pvc.getMetadata().getName().contains("data-") && pvc.getMetadata().getName().contains(testStorage.getBrokerComponentName())).collect(Collectors.toList()).size() == expectedNum
+        );
+    }
+
+    public static void waitForPvcCount(TestStorage testStorage, int expectedNum) {
+        LOGGER.info("Waiting for PVC(s): {}/{} to reach expected amount: {}", testStorage.getClusterName(), testStorage.getNamespaceName(), expectedNum);
+        TestUtils.waitFor("PVC(s) to be created/deleted", TestConstants.GLOBAL_POLL_INTERVAL_MEDIUM, TestConstants.GLOBAL_TIMEOUT,
+            () -> KubeClusterResource.kubeClient().listPersistentVolumeClaims(testStorage.getNamespaceName(), testStorage.getClusterName()).stream()
+                .filter(pvc -> pvc.getMetadata().getName().contains("data-") && pvc.getMetadata().getName().contains(testStorage.getBrokerComponentName())).toList().size() == expectedNum
         );
     }
 
@@ -122,7 +129,7 @@ public class PersistentVolumeClaimUtils {
         }
 
         for (PersistentVolumeClaim persistentVolumeClaim : persistentVolumeClaimsList) {
-            waitForPvcCount(namespaceName, persistentVolumeClaim.getMetadata().getName());
+            waitForPersistentVolumeClaimDeletion(namespaceName, persistentVolumeClaim.getMetadata().getName());
         }
     }
 

@@ -405,6 +405,7 @@ class KafkaST extends AbstractST {
     void testKafkaJBODDeleteClaimsTrueFalse() {
         // JBOD storage in KRaft is supported only from Kafka 3.7.0 and higher.
         // So we want to run this test when KRaft is disabled or when it is with KRaft and Kafka 3.7.0+
+        // TODO: remove once support for 3.6.x is removed - https://github.com/strimzi/strimzi-kafka-operator/issues/9921
         assumeTrue(!Environment.isKRaftForCOEnabled() || TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "3.7.0") >= 0);
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final int kafkaReplicas = 2;
@@ -560,6 +561,7 @@ class KafkaST extends AbstractST {
     void testLabelsExistenceAndManipulation() {
         // JBOD storage in KRaft is supported only from Kafka 3.7.0 and higher.
         // So we want to run this test when KRaft is disabled or when it is with KRaft and Kafka 3.7.0+
+        // TODO: remove once support for 3.6.x is removed - https://github.com/strimzi/strimzi-kafka-operator/issues/9921
         assumeTrue(!Environment.isKRaftForCOEnabled() || TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "3.7.0") >= 0);
 
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
@@ -1126,6 +1128,7 @@ class KafkaST extends AbstractST {
     void testResizeJbodVolumes() {
         // JBOD storage in KRaft is supported only from Kafka 3.7.0 and higher.
         // So we want to run this test when KRaft is disabled or when it is with KRaft and Kafka 3.7.0+
+        // TODO: remove once support for 3.6.x is removed - https://github.com/strimzi/strimzi-kafka-operator/issues/9921
         assumeTrue(!Environment.isKRaftForCOEnabled() || TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "3.7.0") >= 0);
 
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
@@ -1145,7 +1148,8 @@ class KafkaST extends AbstractST {
                     .withStorage(
                         new JbodStorageBuilder()
                             // add two small volumes
-                            .addToVolumes(vol0, vol1).build())
+                            .addToVolumes(vol0, vol1)
+                            .build())
                     .endSpec()
                     .build(),
                 KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
@@ -1154,9 +1158,11 @@ class KafkaST extends AbstractST {
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), numberOfKafkaReplicas, 3)
             .editSpec()
                 .editKafka()
-                    .withStorage(new JbodStorageBuilder()
-                        // add two small volumes
-                        .addToVolumes(vol0, vol1).build())
+                    .withStorage(
+                        new JbodStorageBuilder()
+                            // add two small volumes
+                            .addToVolumes(vol0, vol1)
+                            .build())
                 .endKafka()
             .endSpec()
             .build());

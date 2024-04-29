@@ -44,7 +44,6 @@ import io.strimzi.test.TestUtils;
 import io.vertx.core.cli.annotations.Description;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 
@@ -52,16 +51,13 @@ import java.io.ByteArrayInputStream;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.TestConstants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.TestConstants.REGRESSION;
 import static io.strimzi.systemtest.TestConstants.ROLLING_UPDATE;
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.containsString;
@@ -343,6 +339,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
     void testAddingAndRemovingJbodVolumes() {
         // JBOD storage in KRaft is supported only from Kafka 3.7.0 and higher.
         // So we want to run this test when KRaft is disabled or when it is with KRaft and Kafka 3.7.0+
+        // TODO: remove once support for 3.6.x is removed - https://github.com/strimzi/strimzi-kafka-operator/issues/9921
         assumeTrue(!Environment.isKRaftForCOEnabled() || TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "3.7.0") >= 0);
 
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
@@ -442,7 +439,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
         RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, brokerPods);
 
         // ensure there are 3 Kafka Volumes (1 per each of 3 broker)
-        PersistentVolumeClaimUtils.waitForPersistentVolumeClaimDeletion(testStorage, 3);
+        PersistentVolumeClaimUtils.waitForPvcCount(testStorage, 3);
         kafkaPvcs = kubeClient().listClaimedPersistentVolumes(testStorage.getNamespaceName(), testStorage.getClusterName()).stream()
             .filter(pv -> pv.getSpec().getClaimRef().getName().contains(testStorage.getBrokerComponentName()) && pv.getStatus().getPhase().equals("Bound")).collect(Collectors.toList());
         LOGGER.debug("Obtained Volumes total '{}' claimed by claims Belonging to Kafka {}", kafkaPvcs.size(), testStorage.getClusterName());
@@ -488,6 +485,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
     void testJbodMetadataLogRelocation() {
         // JBOD storage in KRaft is supported only from Kafka 3.7.0 and higher.
         // So we want to run this test when KRaft is disabled or when it is with KRaft and Kafka 3.7.0+
+        // TODO: remove once support for 3.6.x is removed - https://github.com/strimzi/strimzi-kafka-operator/issues/9921
         assumeTrue(!Environment.isKRaftForCOEnabled() || TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "3.7.0") >= 0);
 
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
@@ -509,7 +507,8 @@ class AlternativeReconcileTriggersST extends AbstractST {
                     .editSpec()
                     .withStorage(
                         new JbodStorageBuilder()
-                            .addToVolumes(vol, otherVol, metadataVol).build())
+                            .addToVolumes(vol, otherVol, metadataVol)
+                            .build())
                     .endSpec()
                     .build(),
                 KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
@@ -518,8 +517,10 @@ class AlternativeReconcileTriggersST extends AbstractST {
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), numberOfKafkaReplicas, 3)
             .editSpec()
                 .editKafka()
-                    .withStorage(new JbodStorageBuilder()
-                        .addToVolumes(vol, otherVol, metadataVol).build())
+                    .withStorage(
+                        new JbodStorageBuilder()
+                            .addToVolumes(vol, otherVol, metadataVol)
+                            .build())
                 .endKafka()
             .endSpec()
             .build());
@@ -552,7 +553,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
 
         Map<String, String> brokerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
 
-        verifyKafkaKraftMetadataLog(testStorage, 2, 3);
+        KafkaUtils.verifyKafkaKraftMetadataLog(testStorage, 2, 3);
 
         // Remove Jbod KRaft volume to Kafka => triggers RU
         LOGGER.info("Remove JBOD volume (i.e., simulating disk failure for KRaft metadata volume) to the Kafka cluster {}", testStorage.getBrokerComponentName());
@@ -573,7 +574,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
         brokerPods = RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, brokerPods);
 
         // verify that Kraft metadata log will be re-assigned to another volume (the minimum id, which is 0 now that's why data-0)
-        verifyKafkaKraftMetadataLog(testStorage, 0, 2);
+        KafkaUtils.verifyKafkaKraftMetadataLog(testStorage, 0, 2);
 
         resourceManager.createResourceWithWait(clients.consumerStrimzi());
         ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
@@ -583,51 +584,6 @@ class AlternativeReconcileTriggersST extends AbstractST {
         // ##############################
         ClientUtils.waitForContinuousClientSuccess(testStorage, continuousClientsMessageCount);
         // ##############################
-    }
-
-    /**
-     * Verifies the presence or absence of KRaft metadata logs across specified volume directories within Kafka pods.
-     * This method iterates through all Kafka pods retrieved based on the broker selector from the test storage configuration,
-     * checking each configured volume for the presence of KRaft metadata files. The method asserts that the metadata log
-     * exists only in the specified KRaft metadata volume and not in others, ensuring correct metadata log placement
-     * according to the test configuration.
-     *
-     * @param testStorage               An instance of TestStorage containing configuration and context for the current test,
-     *                                  including namespace and broker selector for identifying relevant Kafka pods.
-     * @param kraftMetadataVolumeId     The volume ID expected to contain the KRaft metadata log. This method will
-     *                                  assert the presence of metadata logs in this volume and their absence in others.
-     * @param numberOfVolumes           The total number of volumes configured in the JBOD (Just a Bunch Of Disks) for each Kafka broker.
-     *                                  This dictates how many volume directories the method will check within each Kafka pod.
-     */
-    private void verifyKafkaKraftMetadataLog(final TestStorage testStorage, final int kraftMetadataVolumeId, final int numberOfVolumes) {
-        final List<Pod> kafkaPods = kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
-        int kafkaIndex = 0; // Ensure this index is managed appropriately if used outside this method context.
-
-        for (final Pod kafkaPod : kafkaPods) {
-            List<String> directories = new ArrayList<>();
-
-            // Dynamically create a list of volume directories to check, based on the total number of volumes.
-            for (int volumeId = 0; volumeId < numberOfVolumes; volumeId++) {
-                directories.add("/var/lib/kafka/data-" + volumeId + "/kafka-log" + kafkaIndex + "/__cluster_metadata-0");
-            }
-
-            // Check each directory in the current Kafka pod for the presence or absence of the metadata log.
-            for (final String dir : directories) {
-                final String result = cmdKubeClient().namespace(testStorage.getNamespaceName()).execInPodContainer(kafkaPod.getMetadata().getName(),
-                    "kafka",
-                    "/bin/bash", "-c", "ls " + dir + " && echo exists || echo not exists").out().trim();
-
-                LOGGER.info("Kafka pod: {} the directory: {} - {}", kafkaPod.getMetadata().getName(), dir, result);
-
-                // Assert the condition that metadata should only exist in the specified KRaft metadata volume.
-                if (dir.equals("/var/lib/kafka/data-" + kraftMetadataVolumeId + "/kafka-log" + kafkaIndex + "/__cluster_metadata-0")) {
-                    assertThat(result, CoreMatchers.containsString("exists"));
-                } else {
-                    assertThat(result, CoreMatchers.containsString("not exists"));
-                }
-            }
-            kafkaIndex++;
-        }
     }
 
     @BeforeAll
