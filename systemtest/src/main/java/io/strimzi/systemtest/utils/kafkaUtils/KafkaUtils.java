@@ -35,6 +35,7 @@ import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -624,17 +625,18 @@ public class KafkaUtils {
 
             // Check each directory in the current Kafka pod for the presence or absence of the metadata log.
             for (final String dir : directories) {
-                final String result = cmdKubeClient().namespace(testStorage.getNamespaceName()).execInPodContainer(kafkaPod.getMetadata().getName(),
+                final int result = cmdKubeClient().namespace(testStorage.getNamespaceName()).execInPodContainer(false,
+                    kafkaPod.getMetadata().getName(),
                     "kafka",
-                    "/bin/bash", "-c", "ls " + dir + " && echo exists || echo not exists").out().trim();
+                    "/bin/bash", "-c", "test -d " + dir).returnCode();
 
                 LOGGER.info("Kafka pod: {} the directory: {} - {}", kafkaPod.getMetadata().getName(), dir, result);
 
                 // Assert the condition that metadata should only exist in the specified KRaft metadata volume.
                 if (dir.equals(buildDirectoryPath(kraftMetadataVolumeId, kafkaIndex))) {
-                    assertThat(result, CoreMatchers.containsString("exists"));
+                    assertThat(result, CoreMatchers.is(0));
                 } else {
-                    assertThat(result, CoreMatchers.containsString("not exists"));
+                    assertThat(result, CoreMatchers.is(1));
                 }
             }
             kafkaIndex++;
