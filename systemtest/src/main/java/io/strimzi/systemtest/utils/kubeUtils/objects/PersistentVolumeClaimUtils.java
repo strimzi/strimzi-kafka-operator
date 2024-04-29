@@ -145,7 +145,6 @@ public class PersistentVolumeClaimUtils {
             TestConstants.GLOBAL_POLL_INTERVAL,
             TestConstants.GLOBAL_TIMEOUT,
             () -> {
-                // Fetch PVCs once and filter using the precompiled pattern
                 final List<PersistentVolumeClaim> pvcs = kubeClient(testStorage.getNamespaceName())
                     .listPersistentVolumeClaims(testStorage.getNamespaceName(), testStorage.getClusterName()).stream()
                     .filter(pvc -> pvc.getMetadata().getName().startsWith(pvcPrefixName)).toList();
