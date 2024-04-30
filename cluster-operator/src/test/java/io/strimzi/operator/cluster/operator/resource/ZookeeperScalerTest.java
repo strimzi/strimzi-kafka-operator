@@ -26,6 +26,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -294,8 +295,47 @@ public class ZookeeperScalerTest {
 
     @Test
     public void testConnectionToNonExistingHost(VertxTestContext context)  {
+        // Real "dummy" certificates to test the non-TLS connection error
+        String certificate = """
+                -----BEGIN CERTIFICATE-----
+                MIIB+DCCAaKgAwIBAgIUM7rPDjaMHJdrfgoO6IDeE19O47EwDQYJKoZIhvcNAQEL
+                BQAwQDEPMA0GA1UEAwwGY2xpZW50MQswCQYDVQQGEwJDWjEPMA0GA1UECAwGUHJh
+                Z3VlMQ8wDQYDVQQHDAZQcmFndWUwHhcNMjQwNDMwMjMxNTM5WhcNNDQwNDI1MjMx
+                NTM5WjBAMQ8wDQYDVQQDDAZjbGllbnQxCzAJBgNVBAYTAkNaMQ8wDQYDVQQIDAZQ
+                cmFndWUxDzANBgNVBAcMBlByYWd1ZTBcMA0GCSqGSIb3DQEBAQUAA0sAMEgCQQDM
+                EloEmtwrsWf5ry0iiLuf3H5GoSotCKzodWEXkVxZFjhscZZ5yon9JXp7rIiK4847
+                yzAkMhw53+fur315jzsVAgMBAAGjdDByMB0GA1UdDgQWBBRU7rjtLujQcx/wAeqx
+                Oy8OGJaWYjAfBgNVHSMEGDAWgBRU7rjtLujQcx/wAeqxOy8OGJaWYjAOBgNVHQ8B
+                Af8EBAMCBaAwIAYDVR0lAQH/BBYwFAYIKwYBBQUHAwEGCCsGAQUFBwMCMA0GCSqG
+                SIb3DQEBCwUAA0EApdR0AvYNrxzv8v4iknZrMpjUe14Em5M40vhe/tzsI3NYvnCK
+                eMYtGeFBbgBiG7R4nviUdbrXDqSeIfGQlZZpcA==
+                -----END CERTIFICATE-----
+                """;
+        String privateKey = """
+                -----BEGIN PRIVATE KEY-----
+                MIIBVQIBADANBgkqhkiG9w0BAQEFAASCAT8wggE7AgEAAkEAzBJaBJrcK7Fn+a8t
+                Ioi7n9x+RqEqLQis6HVhF5FcWRY4bHGWecqJ/SV6e6yIiuPOO8swJDIcOd/n7q99
+                eY87FQIDAQABAkAZPaPYsfbNiLHdlic1AEiEq1cLEWAQFeSdE/egXKBZfEeDjfEr
+                UYJY+GklzmVojaXOq1xZTJoiUwPnfvnoxwQBAiEA7hzOg38uXIEKClDnMrZatXcp
+                e2jataWv8bEes6WOvIECIQDbZuXw5Ox38F3RnvEx/JxZoGb+zR+VGc3cxQXJA8mE
+                lQIhAK7hH1d6oA02hK5A7xzSy1o9s4y83OzOTKOhJ2Bftq6BAiAKg+r/Walvsih8
+                9HYw5B+GOCbXjXM3DS6Npy+4y6Kr5QIhAKmn4b+0Kwtwo1G7SUb7Gujkitg/K/fz
+                xrwTW5qklBSa
+                -----END PRIVATE KEY-----
+                """;
+        PemAuthIdentity pemAuthIdentity = PemAuthIdentity.clusterOperator(
+                new SecretBuilder()
+                        .withNewMetadata()
+                            .withName("my-secret")
+                        .endMetadata()
+                        .addToData("cluster-operator.crt", Base64.getEncoder().encodeToString(certificate.getBytes(Charset.defaultCharset())))
+                        .addToData("cluster-operator.key", Base64.getEncoder().encodeToString(privateKey.getBytes(Charset.defaultCharset())))
+                        .build()
+        );
+        TlsPemIdentity pemIdentity = new TlsPemIdentity(dummyPemTrustSet, pemAuthIdentity);
+
         ZookeeperScaler scaler = new ZookeeperScaler(new Reconciliation("test", "TestResource", "my-namespace", "my-resource"),
-                vertx, new DefaultZooKeeperAdminProvider(), "i-do-not-exist.com:2181", null, dummyPemIdentity, 2_000, 10_000);
+                vertx, new DefaultZooKeeperAdminProvider(), "i-do-not-exist.com:2181", null, pemIdentity, 2_000, 10_000);
 
         Checkpoint check = context.checkpoint();
         scaler.scale(5).onComplete(context.failing(cause -> context.verify(() -> {
@@ -308,7 +348,7 @@ public class ZookeeperScalerTest {
     public void testConnectionClosedOnGetConfigFailure(VertxTestContext context) throws KeeperException, InterruptedException  {
         ZooKeeperAdmin mockZooAdmin = mock(ZooKeeperAdmin.class);
         when(mockZooAdmin.getState()).thenReturn(ZooKeeper.States.CONNECTED);
-        when(mockZooAdmin.getConfig(false, null)).thenThrow(KeeperException.ConnectionLossException.class);
+        when(mockZooAdmin.getConfig(false, null)).thenThrow(new KeeperException.ConnectionLossException());
         when(mockZooAdmin.close(1_000)).thenThrow(InterruptedException.class);
 
         ZooKeeperAdminProvider zooKeeperAdminProvider = (connectString, sessionTimeout, watcher, operationTimeout, trustStore, keyStore) -> mockZooAdmin;
