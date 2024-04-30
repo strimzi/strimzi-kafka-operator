@@ -460,6 +460,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
      * This test verifies that Kafka can handle the simulated disk failure of a KRaft metadata volume and successfully
      * relocate the metadata log to another volume in the JBOD setup. The test ensures that the cluster remains operational
      * and that metadata is correctly managed even after a significant storage disruption.
+     * Note: This test case runs only in KRaft mode.
      *
      * @steps
      * 1. Deploy a Kafka cluster with multiple JBOD volumes, specifically designating one volume for KRaft metadata.
@@ -483,10 +484,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
      */
     @ParallelNamespaceTest
     void testJbodMetadataLogRelocation() {
-        // JBOD storage in KRaft is supported only from Kafka 3.7.0 and higher.
-        // So we want to run this test when KRaft is disabled or when it is with KRaft and Kafka 3.7.0+
-        // TODO: remove once support for 3.6.x is removed - https://github.com/strimzi/strimzi-kafka-operator/issues/9921
-        assumeTrue(!Environment.isKRaftForCOEnabled() || TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "3.7.0") >= 0);
+        assumeTrue(Environment.isKRaftModeEnabled());
 
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final int numberOfKafkaReplicas = 3;

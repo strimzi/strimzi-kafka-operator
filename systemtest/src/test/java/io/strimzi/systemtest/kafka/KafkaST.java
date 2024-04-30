@@ -38,6 +38,8 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
+import io.strimzi.systemtest.annotations.KindNotSupported;
+import io.strimzi.systemtest.annotations.MultiNodeClusterOnly;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.resources.NodePoolsConverter;
@@ -1124,6 +1126,8 @@ class KafkaST extends AbstractST {
       *  - volume-resize
       *  - persistent-volume-claims
       */
+    @KindNotSupported       // Storage Class standard does not support resizing of volumes
+    @MultiNodeClusterOnly   // in multi-node we use different Storage Class, which support re-sizing of volumes
     @ParallelNamespaceTest
     void testResizeJbodVolumes() {
         // JBOD storage in KRaft is supported only from Kafka 3.7.0 and higher.
