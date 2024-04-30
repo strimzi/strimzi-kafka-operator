@@ -400,6 +400,7 @@
                 <groups>
                     performance
                 </groups>
+                <it.test>performance/**/*Performance*</it.test>
             </properties>
         </profile>
 
@@ -410,6 +411,7 @@
                 <groups>
                     performance-capacity
                 </groups>
+                <it.test>performance/**/*Performance*</it.test>
             </properties>
         </profile>
 
