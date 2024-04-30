@@ -104,20 +104,7 @@ public class CertUtils {
 
             LOGGER.debugCr(reconciliation, "End generating certificates");
         } else {
-            CertAndKey keyStoreCertAndKey = keyStoreCertAndKey(secret, keyCertName);
-            if (keyStoreCertAndKey.keyStore().length != 0
-                    && keyStoreCertAndKey.storePassword() != null) {
-                certAndKey = keyStoreCertAndKey;
-            } else {
-                try {
-                    // coming from an older operator version, the secret exists but without keystore and password
-                    certAndKey = clusterCa.addKeyAndCertToKeyStore(commonName,
-                            keyStoreCertAndKey.key(),
-                            keyStoreCertAndKey.cert());
-                } catch (IOException e) {
-                    LOGGER.errorCr(reconciliation, "Error generating the keystore for {}", keyCertName, e);
-                }
-            }
+            certAndKey = keyStoreCertAndKey(secret, keyCertName);
         }
 
         Map<String, String> secretData = certAndKey == null ? Map.of() : buildSecretData(Map.of(keyCertName, certAndKey));
@@ -136,8 +123,6 @@ public class CertUtils {
         certificates.forEach((keyCertName, certAndKey) -> {
             data.put(Ca.SecretEntry.KEY.asKey(keyCertName), certAndKey.keyAsBase64String());
             data.put(Ca.SecretEntry.CRT.asKey(keyCertName), certAndKey.certAsBase64String());
-            data.put(Ca.SecretEntry.P12_KEYSTORE.asKey(keyCertName), certAndKey.keyStoreAsBase64String());
-            data.put(Ca.SecretEntry.P12_KEYSTORE_PASSWORD.asKey(keyCertName), certAndKey.storePasswordAsBase64String());
         });
         return data;
     }
@@ -148,10 +133,6 @@ public class CertUtils {
         } else {
             return new byte[]{};
         }
-    }
-    
-    private static String decodeStringFromSecret(Secret secret, String key) {
-        return secret.getData().get(key) == null ? null : Util.decodeFromBase64(secret.getData().get(key));
     }
 
     /**
@@ -165,9 +146,9 @@ public class CertUtils {
         return new CertAndKey(
                 decodeFromSecret(secret, Ca.SecretEntry.KEY.asKey(keyCertName)),
                 decodeFromSecret(secret, Ca.SecretEntry.CRT.asKey(keyCertName)),
-                new byte[]{},
-                decodeFromSecret(secret, Ca.SecretEntry.P12_KEYSTORE.asKey(keyCertName)),
-                decodeStringFromSecret(secret, Ca.SecretEntry.P12_KEYSTORE_PASSWORD.asKey(keyCertName))
+                null,
+                null,
+                null
         );
     }
 

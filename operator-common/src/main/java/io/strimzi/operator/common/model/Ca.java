@@ -372,40 +372,6 @@ public abstract class Ca {
     }
 
     /**
-     * Returns the given {@code cert} and {@code key} values from the given {@code Secret} as a {@code CertAndKey},
-     * or null if the given {@code secret} is null.
-     * An exception is thrown if the given {@code secret} is non-null, but does not contain the given
-     * entries in its {@code data}.
-     *
-     * @param secret The secret.
-     * @param key The key.
-     * @param cert The cert.
-     * @param keyStore The keyStore.
-     * @param keyStorePassword The store password.
-     * @return The CertAndKey.
-     */
-    public static CertAndKey asCertAndKey(Secret secret, String key, String cert, String keyStore, String keyStorePassword) {
-        if (secret == null || secret.getData() == null) {
-            return null;
-        } else {
-            String keyData = secret.getData().get(key);
-            if (keyData == null) {
-                throw new RuntimeException("The Secret " + secret.getMetadata().getNamespace() + "/" + secret.getMetadata().getName() + " is missing the key " + key);
-            }
-            String certData = secret.getData().get(cert);
-            if (certData == null) {
-                throw new RuntimeException("The Secret " + secret.getMetadata().getNamespace() + "/" + secret.getMetadata().getName() + " is missing the key " + cert);
-            }
-            return new CertAndKey(
-                    Util.decodeBytesFromBase64(keyData),
-                    Util.decodeBytesFromBase64(certData),
-                    null,
-                    Util.decodeBytesFromBase64(secret.getData().get(keyStore)),
-                    Util.decodeFromBase64(secret.getData().get(keyStorePassword)));
-        }
-    }
-
-    /**
      * Adds a certificate into a PKCS12 keystore
      *
      * @param alias     Alias under which it should be stored in the PKCS12 store

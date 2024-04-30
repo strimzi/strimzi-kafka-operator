@@ -309,16 +309,7 @@ public class ClusterCa extends Ca {
                 // A certificate for this node already exists, so we will try to reuse it
                 LOGGER.debugCr(reconciliation, "Certificate for node {} already exists", node);
 
-                CertAndKey certAndKey;
-
-                if (isNewVersion(secret, podName)) {
-                    certAndKey = asCertAndKey(secret, podName);
-                } else {
-                    // coming from an older operator version, the secret exists but without keystore and password
-                    certAndKey = addKeyAndCertToKeyStore(subject.commonName(), 
-                            Util.decodeBytesFromBase64(secretEntryDataForPod(secret, podName, SecretEntry.KEY)),
-                            Util.decodeBytesFromBase64(secretEntryDataForPod(secret, podName, SecretEntry.CRT)));
-                }
+                CertAndKey certAndKey = asCertAndKey(secret.getData(), podName);
 
                 List<String> reasons = new ArrayList<>(2);
 
@@ -360,34 +351,30 @@ public class ClusterCa extends Ca {
     }
 
     /**
-     * Check if this secret is coming from newer versions of the operator or older ones. Secrets from an older version
-     * don't have a keystore and password.
-     *
-     * @param secret    Secret resource to check
-     * @param podName   Name of the pod with certificate and key entries in the secret
-     *
-     * @return  True if this secret was created by a newer version of the operator and false otherwise.
-     */
-    private boolean isNewVersion(Secret secret, String podName) {
-        String store = secretEntryDataForPod(secret, podName, SecretEntry.P12_KEYSTORE);
-        String password = secretEntryDataForPod(secret, podName, SecretEntry.P12_KEYSTORE_PASSWORD);
-
-        return store != null && !store.isEmpty() && password != null && !password.isEmpty();
-    }
-
-    /**
      * Return given secret for pod as a CertAndKey object
      *
-     * @param secret    Kubernetes Secret
-     * @param podName   Name of the pod
+     * @param certificateData   The Map with the certificate data from the Kubernetes Secret(s)
+     * @param podName           Name of the pod
      *
      * @return  CertAndKey instance
      */
-    private static CertAndKey asCertAndKey(Secret secret, String podName) {
-        return asCertAndKey(secret, SecretEntry.KEY.asKey(podName),
-                SecretEntry.CRT.asKey(podName),
-                SecretEntry.P12_KEYSTORE.asKey(podName),
-                SecretEntry.P12_KEYSTORE_PASSWORD.asKey(podName));
+    private static CertAndKey asCertAndKey(Map<String, String> certificateData, String podName) {
+        String keyData = certificateData.get(SecretEntry.KEY.asKey(podName));
+        if (keyData == null) {
+            throw new RuntimeException("Certificate for node " + podName + " is missing the private key");
+        }
+
+        String certData = certificateData.get(SecretEntry.CRT.asKey(podName));
+        if (certData == null) {
+            throw new RuntimeException("Certificate for node " + podName + " is missing the public key");
+        }
+
+        return new CertAndKey(
+                Util.decodeBytesFromBase64(keyData),
+                Util.decodeBytesFromBase64(certData),
+                null,
+                null,
+                null);
     }
 
     /**
@@ -450,19 +437,6 @@ public class ClusterCa extends Ca {
      */
     private static boolean secretEntryExists(Secret secret, String podName, SecretEntry entry) {
         return secret.getData().containsKey(entry.asKey(podName));
-    }
-
-    /**
-     * Retrieve a specific secret entry for pod from the given Secret.
-     *
-     * @param secret    Kubernetes Secret containing desired entry
-     * @param podName   Name of the pod which secret entry is looked for
-     * @param entry     The SecretEntry type
-     *
-     * @return  The data of the secret entry if found or null otherwise
-     */
-    private static String secretEntryDataForPod(Secret secret, String podName, SecretEntry entry) {
-        return secret.getData().get(entry.asKey(podName));
     }
 
     /**
