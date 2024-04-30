@@ -282,7 +282,7 @@ public class TopicOperatorPerformance extends AbstractST {
                 performanceAttributes.put(PerformanceConstants.METRICS_HISTORY, this.topicOperatorMetricsGatherer.getMetricsStore()); // Map of metrics history
 
                 // Step 3: Now, it's safe to log performance data as the collection thread has been stopped
-                this.topicOperatorPerformanceReporter.logPerformanceData(this.testStorage, performanceAttributes, TopicOperatorPerformance.REPORT_DIRECTORY + "/" + PerformanceConstants.TOPIC_OPERATOR_ALICE_BULK_USE_CASE, ACTUAL_TIME, Environment.PERFORMANCE_DIR);
+                this.topicOperatorPerformanceReporter.logPerformanceData(this.testStorage, performanceAttributes, REPORT_DIRECTORY + "/" + PerformanceConstants.TOPIC_OPERATOR_ALICE_BULK_USE_CASE, ACTUAL_TIME, Environment.PERFORMANCE_DIR);
             }
         }
     }
