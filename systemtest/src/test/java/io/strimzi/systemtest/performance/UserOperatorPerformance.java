@@ -47,9 +47,9 @@ import static io.strimzi.systemtest.performance.PerformanceConstants.PERFORMANCE
 import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 
 @Tag(PERFORMANCE)
-public class UserOperatorPerformanceTest extends AbstractST {
+public class UserOperatorPerformance extends AbstractST {
 
-    private static final Logger LOGGER = LogManager.getLogger(UserOperatorPerformanceTest.class);
+    private static final Logger LOGGER = LogManager.getLogger(UserOperatorPerformance.class);
     private static final TemporalAccessor ACTUAL_TIME = LocalDateTime.now();
 
     private static final String REPORT_DIRECTORY = "user-operator";
@@ -242,7 +242,7 @@ public class UserOperatorPerformanceTest extends AbstractST {
                 performanceAttributes.put(PerformanceConstants.METRICS_HISTORY, this.userOperatorMetricsGatherer.getMetricsStore()); // Map of metrics history
 
                 // Step 3: Now, it's safe to log performance data as the collection thread has been stopped
-                this.userOperatorPerformanceReporter.logPerformanceData(this.testStorage, performanceAttributes, UserOperatorPerformanceTest.REPORT_DIRECTORY + "/" + PerformanceConstants.USER_OPERATOR_ALICE_BULK_USE_CASE, ACTUAL_TIME, Environment.PERFORMANCE_DIR);
+                this.userOperatorPerformanceReporter.logPerformanceData(this.testStorage, performanceAttributes, UserOperatorPerformance.REPORT_DIRECTORY + "/" + PerformanceConstants.USER_OPERATOR_ALICE_BULK_USE_CASE, ACTUAL_TIME, Environment.PERFORMANCE_DIR);
             }
         }
     }
@@ -418,7 +418,7 @@ public class UserOperatorPerformanceTest extends AbstractST {
 
                 performanceAttributes.put(PerformanceConstants.METRICS_HISTORY, this.userOperatorMetricsGatherer.getMetricsStore()); // Map of metrics history
 
-                this.userOperatorPerformanceReporter.logPerformanceData(this.testStorage, performanceAttributes, UserOperatorPerformanceTest.REPORT_DIRECTORY + "/" + PerformanceConstants.USER_OPERATOR_CAPACITY_USE_CASE, ACTUAL_TIME, Environment.PERFORMANCE_DIR);
+                this.userOperatorPerformanceReporter.logPerformanceData(this.testStorage, performanceAttributes, UserOperatorPerformance.REPORT_DIRECTORY + "/" + PerformanceConstants.USER_OPERATOR_CAPACITY_USE_CASE, ACTUAL_TIME, Environment.PERFORMANCE_DIR);
             }
         }
     }
