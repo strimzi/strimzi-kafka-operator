@@ -51,9 +51,9 @@ import static io.strimzi.systemtest.TestConstants.PERFORMANCE;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 @Tag(PERFORMANCE)
-public class TopicOperatorPerformanceTest extends AbstractST {
+public class TopicOperatorPerformance extends AbstractST {
 
-    private static final Logger LOGGER = LogManager.getLogger(TopicOperatorPerformanceTest.class);
+    private static final Logger LOGGER = LogManager.getLogger(TopicOperatorPerformance.class);
     private static final int NUMBER_OF_MESSAGES = 10000;
     private static final TemporalAccessor ACTUAL_TIME = LocalDateTime.now();
 
@@ -282,7 +282,7 @@ public class TopicOperatorPerformanceTest extends AbstractST {
                 performanceAttributes.put(PerformanceConstants.METRICS_HISTORY, this.topicOperatorMetricsGatherer.getMetricsStore()); // Map of metrics history
 
                 // Step 3: Now, it's safe to log performance data as the collection thread has been stopped
-                this.topicOperatorPerformanceReporter.logPerformanceData(this.testStorage, performanceAttributes, TopicOperatorPerformanceTest.REPORT_DIRECTORY + "/" + PerformanceConstants.TOPIC_OPERATOR_ALICE_BULK_USE_CASE, ACTUAL_TIME, Environment.PERFORMANCE_DIR);
+                this.topicOperatorPerformanceReporter.logPerformanceData(this.testStorage, performanceAttributes, REPORT_DIRECTORY + "/" + PerformanceConstants.TOPIC_OPERATOR_ALICE_BULK_USE_CASE, ACTUAL_TIME, Environment.PERFORMANCE_DIR);
             }
         }
     }
@@ -535,7 +535,7 @@ public class TopicOperatorPerformanceTest extends AbstractST {
                 performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_OUT_UPDATE_TIMES, bobUpdateTimerMsArr); // Array of update times
                 performanceAttributes.put(PerformanceConstants.METRICS_HISTORY, topicOperatorMetricsGatherer.getMetricsStore()); // Map of metrics history
                 // Step 3: Now, it's safe to log performance data as the collection thread has been stopped
-                this.topicOperatorPerformanceReporter.logPerformanceData(this.testStorage, performanceAttributes, TopicOperatorPerformanceTest.REPORT_DIRECTORY + "/" + PerformanceConstants.TOPIC_OPERATOR_BOBS_STREAMING_USE_CASE, ACTUAL_TIME, Environment.PERFORMANCE_DIR);
+                this.topicOperatorPerformanceReporter.logPerformanceData(this.testStorage, performanceAttributes, REPORT_DIRECTORY + "/" + PerformanceConstants.TOPIC_OPERATOR_BOBS_STREAMING_USE_CASE, ACTUAL_TIME, Environment.PERFORMANCE_DIR);
             }
         }
     }
