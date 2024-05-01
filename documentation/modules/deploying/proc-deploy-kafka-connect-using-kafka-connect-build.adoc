@@ -64,6 +64,13 @@ $ kubectl apply -f <kafka_connect_configuration_file>
 
 . Use the Kafka Connect REST API or `KafkaConnector` custom resources to use the connector plugins you added.
 
+.Rebuilding the container image with new artifacts
+
+To update a base image and download the latest connector plugin artifacts, you can trigger a rebuild of the container image associated with the Kafka Connect cluster by applying the annotation `strimzi.io/force-rebuild=true` to the Kafka Connect `StrimziPodSet` resource.
+
+The annotation triggers the rebuilding process, fetching any new artifacts for plugins specified in the `KafkaConnect` custom resource and incorporating them into the container image.
+The rebuild includes downloads of new plugin artifacts without versions. 
+
 [role="_additional-resources"]
 .Additional resources
 
