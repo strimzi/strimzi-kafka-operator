@@ -6,7 +6,7 @@
 = Accessing Kafka using OpenShift routes
 
 [role="_abstract"]
-Use OpenShift routes to access a Strimzi Kafka cluster from clients outside the OpenShift cluster.
+Use OpenShift routes to access a Kafka cluster from clients outside the OpenShift cluster.
 
 To be able to use routes, add configuration for a `route` type listener in the `Kafka` custom resource. 
 When applied, the configuration creates a dedicated route and service for an external bootstrap and each broker in the cluster. 

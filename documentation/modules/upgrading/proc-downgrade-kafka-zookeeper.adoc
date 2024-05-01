@@ -6,8 +6,8 @@
 = Downgrading ZooKeeper-based Kafka clusters and client applications
 
 [role="_abstract"]
-Downgrade a ZooKeeper-based Strimzi Kafka cluster to an earlier version.
-When downgrading a ZooKeeper-based Strimzi Kafka cluster to a lower version, like moving from {KafkaVersionHigher} to {KafkaVersionLower}, ensure that the inter-broker protocol version used by the Kafka cluster is a version supported by the Kafka version you want to downgrade to.  
+Downgrade a ZooKeeper-based Kafka cluster to an earlier version.
+When downgrading a ZooKeeper-based Kafka cluster to a lower version, like moving from {KafkaVersionHigher} to {KafkaVersionLower}, ensure that the inter-broker protocol version used by the Kafka cluster is a version supported by the Kafka version you want to downgrade to.  
 The inter-broker protocol version for the Kafka version you are downgrading from must not be higher than the version you are downgrading to.
 
 NOTE: Consult the Apache Kafka documentation for information regarding the support and limitations associated with ZooKeeper-based downgrades.
@@ -15,7 +15,7 @@ NOTE: Consult the Apache Kafka documentation for information regarding the suppo
 .Prerequisites
 
 * The Cluster Operator is up and running.
-* Before you downgrade the Strimzi Kafka cluster, check the following for the `Kafka` resource:
+* Before you downgrade the Kafka cluster, check the following for the `Kafka` resource:
 
 ** IMPORTANT: xref:con-target-downgrade-version-{context}[Compatibility of Kafka versions].
 ** The `Kafka` custom resource does not contain options that are not supported by the Kafka version being downgraded to.
