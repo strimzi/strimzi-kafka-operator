@@ -236,4 +236,4 @@ finish:
        - size: ">= 60 GB"
   discover+:
     test:
-      - performance-capacity
+      - performance-topic-operator-capacity
