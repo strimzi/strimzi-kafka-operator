@@ -29,7 +29,7 @@ import java.util.concurrent.TimeUnit;
  * of metrics collection events.</p>
  *
  * <p>Usage: Extend this class and implement the abstract methods to collect and map metrics.
- * Start the metrics collection process by calling {@link #startCollecting(ExtensionContext, long, long, TimeUnit)} with
+ * Start the metrics collection process by calling {@link #startCollecting(long, long, TimeUnit)} with
  * desired timing configurations.</p>
  *
  * <p>Note: Because it uses a TreeMap for storing metrics history, which is not thread-safe,
