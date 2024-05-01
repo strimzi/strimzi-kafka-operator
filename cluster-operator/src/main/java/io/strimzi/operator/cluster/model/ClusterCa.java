@@ -369,12 +369,7 @@ public class ClusterCa extends Ca {
             throw new RuntimeException("Certificate for node " + podName + " is missing the public key");
         }
 
-        return new CertAndKey(
-                Util.decodeBytesFromBase64(keyData),
-                Util.decodeBytesFromBase64(certData),
-                null,
-                null,
-                null);
+        return new CertAndKey(Util.decodeBytesFromBase64(keyData), Util.decodeBytesFromBase64(certData));
     }
 
     /**

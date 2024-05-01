@@ -143,13 +143,8 @@ public class CertUtils {
      * may have empty key, cert or keystore and null store password.
      */
     public static CertAndKey keyStoreCertAndKey(Secret secret, String keyCertName) {
-        return new CertAndKey(
-                decodeFromSecret(secret, Ca.SecretEntry.KEY.asKey(keyCertName)),
-                decodeFromSecret(secret, Ca.SecretEntry.CRT.asKey(keyCertName)),
-                null,
-                null,
-                null
-        );
+        return new CertAndKey(decodeFromSecret(secret, Ca.SecretEntry.KEY.asKey(keyCertName)),
+                decodeFromSecret(secret, Ca.SecretEntry.CRT.asKey(keyCertName)));
     }
 
     /**
