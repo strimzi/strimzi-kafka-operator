@@ -6,7 +6,7 @@
 = Upgrading KRaft-based Kafka clusters and client applications
 
 [role="_abstract"]
-Upgrade a KRaft-based Strimzi Kafka cluster to a newer supported Kafka version and KRaft metadata version.
+Upgrade a KRaft-based Kafka cluster to a newer supported Kafka version and KRaft metadata version.
 
 You should also choose a xref:con-strategies-for-upgrading-clients-{context}[strategy for upgrading clients].
 Kafka clients are upgraded in step 6 of this procedure.
@@ -16,7 +16,7 @@ NOTE: Refer to the Apache Kafka documentation for the latest on support for KRaf
 .Prerequisites
 
 * The Cluster Operator is up and running.
-* Before you upgrade the Strimzi Kafka cluster, check that the properties of the `Kafka` resource do _not_ contain configuration options that are not supported in the new Kafka version.
+* Before you upgrade the Kafka cluster, check that the properties of the `Kafka` resource do _not_ contain configuration options that are not supported in the new Kafka version.
 
 .Procedure
 

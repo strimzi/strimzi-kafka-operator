@@ -6,7 +6,7 @@
 = Upgrading ZooKeeper-based Kafka clusters and client applications
 
 [role="_abstract"]
-Upgrade a ZooKeeper-based Strimzi Kafka cluster to a newer supported Kafka version and inter-broker protocol version.
+Upgrade a ZooKeeper-based Kafka cluster to a newer supported Kafka version and inter-broker protocol version.
 
 You should also choose a xref:con-strategies-for-upgrading-clients-{context}[strategy for upgrading clients].
 Kafka clients are upgraded in step 6 of this procedure.
@@ -14,7 +14,7 @@ Kafka clients are upgraded in step 6 of this procedure.
 .Prerequisites
 
 * The Cluster Operator is up and running.
-* Before you upgrade the Strimzi Kafka cluster, check that the properties of the `Kafka` resource do _not_ contain configuration options that are not supported in the new Kafka version.
+* Before you upgrade the Kafka cluster, check that the properties of the `Kafka` resource do _not_ contain configuration options that are not supported in the new Kafka version.
 
 .Procedure
 
