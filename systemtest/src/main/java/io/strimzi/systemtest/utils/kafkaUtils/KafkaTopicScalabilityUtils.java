@@ -17,9 +17,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 /**
  * This class contains crucial methods to create, modify and check large amount of KafkaTopics
@@ -47,7 +44,7 @@ public class KafkaTopicScalabilityUtils {
         LOGGER.info("Creating topics from {} to {} via Kubernetes", start, end - 1);
 
         for (int i = start; i < end; i++) {
-            String currentTopicName = topicPrefix + i;
+            String currentTopicName = topicPrefix + "-" + i;
             ResourceManager.getInstance().createResourceWithoutWait(KafkaTopicTemplates.topic(
                 clusterName, currentTopicName, numberOfPartitions, numberOfReplicas, minInSyncReplicas, namespaceName).build());
         }
@@ -75,40 +72,9 @@ public class KafkaTopicScalabilityUtils {
     public static void waitForTopicStatus(String namespaceName, String topicPrefix, int start, int end, Enum<?> conditionType, ConditionStatus conditionStatus) {
         LOGGER.info("Verifying that topics from {} to {} are in {} state", start, end - 1, conditionType.toString());
 
-        // Determine the appropriate number of threads
-        int numberOfTopics = end - start;
-        int numberOfThreads = Math.min(Runtime.getRuntime().availableProcessors(), numberOfTopics);
-        ExecutorService customExecutor = Executors.newFixedThreadPool(numberOfThreads);
-
-        try {
-            List<CompletableFuture<?>> topics = new ArrayList<>();
-
-            for (int i = start; i < end; i++) {
-                final String currentTopic = topicPrefix + i;
-                topics.add(CompletableFuture.runAsync(() ->
-                        KafkaTopicUtils.waitForKafkaTopicStatus(namespaceName, currentTopic, conditionType, conditionStatus),
-                    customExecutor // Use the custom executor
-                ));
-            }
-
-            CompletableFuture<Void> allTopics = CompletableFuture.allOf(topics.toArray(new CompletableFuture[0]))
-                .thenRunAsync(() -> LOGGER.info("All topics from {} to {} are in the correct state", start, end - 1), customExecutor);
-
-            allTopics.join();
-        } finally {
-            // Attempt to shut down now to immediately terminate ongoing tasks
-            List<Runnable> notExecutedTasks = customExecutor.shutdownNow();
-            if (!notExecutedTasks.isEmpty()) {
-                LOGGER.warn("There were {} tasks that did not start", notExecutedTasks.size());
-            }
-            try {
-                // Wait a while for tasks to respond to being cancelled
-                if (!customExecutor.awaitTermination(30, TimeUnit.SECONDS))
-                    LOGGER.error("Executor did not terminate");
-            } catch (InterruptedException ie) {
-                // Preserve interrupt status
-                Thread.currentThread().interrupt();
-            }
+        for (int i = start; i < end; i++) {
+            final String currentTopic = topicPrefix + "-" + i;
+            KafkaTopicUtils.waitForKafkaTopicStatus(namespaceName, currentTopic, conditionType, conditionStatus);
         }
     }
 

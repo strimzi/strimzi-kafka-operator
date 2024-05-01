@@ -573,9 +573,35 @@ public class TopicOperatorPerformance extends AbstractST {
         }
     }
 
+    /**
+     * Provides a set of configurations for capacity tests, focusing on different levels of batching
+     * to understand the Kafka Topic Operator's performance under varying conditions.
+     * Each configuration is designed to test the impact of different max batch sizes and linger times
+     * on the system's throughput and responsiveness.
+     *
+     * @return Stream of Arguments where each pair consists of:
+     *         - Max Batch Size (String): The maximum number of topic operations (e.g., creation, deletion)
+     *           that the Topic Operator will batch together before processing.
+     *         - Max Batch Linger ms (String): The maximum time, in milliseconds, that the Topic Operator
+     *           will wait before processing a batch, allowing more operations to accumulate and thus increasing
+     *           batching efficiency.
+     *
+     * Configurations include:
+     * - Default configuration: A balanced setup for typical use cases.
+     * - Minimal batching: Configured for high responsiveness with very small batch sizes and minimal linger times.
+     * - Moderate batching: A balance between batching efficiency and responsiveness.
+     * - Heavier batching: Larger batches and linger times aimed at higher throughput.
+     * - Extreme batching: Tests the upper limits of performance with very large batch sizes.
+     * - Maximum possible batching: Pushes the system to its stress limits to evaluate performance under extreme conditions.
+     */
     private static Stream<Arguments> provideConfigurationsForCapacity() {
         return Stream.of(
-            Arguments.of("100", "100") // default configuration
+            Arguments.of("100", "100"),     // Default configuration
+            Arguments.of("10", "1"),        // Minimal batching for high responsiveness
+            Arguments.of("50", "100"),      // Moderate batching for balanced performance
+            Arguments.of("100", "500"),     // Heavier batching for throughput focus
+            Arguments.of("500", "1000"),    // Extreme batching to test upper limits of performance
+            Arguments.of("1000", "2000")    // Maximum possible batching for stress testing
         );
     }
 
@@ -594,11 +620,17 @@ public class TopicOperatorPerformance extends AbstractST {
                     KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), brokerReplicas)
                         .editSpec()
                             .withNewPersistentClaimStorage()
-                                .withSize("20Gi")
+                                .withSize("50Gi")
                             .endPersistentClaimStorage()
                         .endSpec()
                         .build(),
-                    KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), controllerReplicas).build()
+                    KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), controllerReplicas)
+                        .editSpec()
+                            .withNewPersistentClaimStorage()
+                                .withSize("5Gi")
+                            .endPersistentClaimStorage()
+                        .endSpec()
+                        .build()
                 )
             );
             resourceManager.createResourceWithWait(
@@ -649,14 +681,14 @@ public class TopicOperatorPerformance extends AbstractST {
             this.topicOperatorCollector = new TopicOperatorMetricsCollector.Builder()
                 .withScraperPodName(this.testStorage.getScraperPodName())
                 .withNamespaceName(this.testStorage.getNamespaceName())
-                .withComponentType(ComponentType.UserOperator)
+                .withComponentType(ComponentType.TopicOperator)
                 .withComponentName(this.testStorage.getClusterName())
                 .build();
 
             this.topicOperatorMetricsGatherer = new TopicOperatorMetricsCollectionScheduler(this.topicOperatorCollector, "strimzi.io/cluster=" + this.testStorage.getClusterName());
             this.topicOperatorMetricsGatherer.startCollecting();
 
-            // we will create incrementally users
+            // we will create incrementally topics
             final int batchSize = 100;
 
             while (true) { // Endless loop
@@ -675,7 +707,7 @@ public class TopicOperatorPerformance extends AbstractST {
                 } catch (WaitException e) {
                     LOGGER.error("Failed to create Kafka topics from index {} to {}: {}", start, end, e.getMessage());
 
-                    // after a failure we will gather logs from all components under test (i.e., UO, Kafka pods) to observer behaviour
+                    // after a failure we will gather logs from all components under test (i.e., TO, Kafka pods) to observer behaviour
                     // what might be a bottleneck of such performance
                     this.logCollector = new LogCollector();
                     this.logCollector.collect();

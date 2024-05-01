@@ -250,7 +250,9 @@ public class KafkaTopicUtils {
         TestUtils.waitFor("deletion of all topics with prefix: " + topicPrefix, TestConstants.GLOBAL_POLL_INTERVAL, DELETION_TIMEOUT,
             () -> {
                 try {
-                    return getAllKafkaTopicsWithPrefix(namespaceName, topicPrefix).size() == 0;
+                    final int numberOfTopicsToDelete = getAllKafkaTopicsWithPrefix(namespaceName, topicPrefix).size();
+                    LOGGER.info("Remaining KafkaTopic's to delete: {} !", numberOfTopicsToDelete);
+                    return numberOfTopicsToDelete == 0;
                 } catch (Exception e) {
                     return e.getMessage().contains("Not Found") || e.getMessage().contains("the server doesn't have a resource type");
                 }
