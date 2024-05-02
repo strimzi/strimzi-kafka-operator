@@ -5,8 +5,10 @@
 package io.strimzi.systemtest.performance.gather.schedulers;
 
 import io.strimzi.systemtest.performance.PerformanceConstants;
+import io.strimzi.systemtest.resources.ResourceManager;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.Collections;
 import java.util.List;
@@ -79,7 +81,15 @@ public abstract class BaseMetricsCollectionScheduler {
      * @param unit the time unit of the initial delay and interval.
      */
     public void startCollecting(long initialDelay, long interval, TimeUnit unit) {
-        final Runnable task = this::executeMetricsCollection;
+        // Capture the context in the thread where startCollecting is called
+        final ExtensionContext currentContext = ResourceManager.getTestContext();
+
+        final Runnable task = () -> {
+            // Set the context specifically for a new thread to ensure thread-local data is available
+            ResourceManager.setTestContext(currentContext);
+            executeMetricsCollection();
+        };
+
         this.scheduler.scheduleAtFixedRate(task, initialDelay, interval, unit);
         LOGGER.info("Started collecting metrics every {} {}.", interval, unit);
     }
