@@ -464,12 +464,12 @@ public class KafkaClusterWithKRaftTest {
 
         Secret secret = kc.generateCertificatesSecret(clusterCa, clientsCa, null, TestUtils.set("123.10.125.140", "my-bootstrap"), externalAddresses, true);
         assertThat(secret.getData().keySet(), is(set(
-                "my-cluster-controllers-0.crt",  "my-cluster-controllers-0.key", "my-cluster-controllers-0.p12", "my-cluster-controllers-0.password",
-                "my-cluster-controllers-1.crt", "my-cluster-controllers-1.key", "my-cluster-controllers-1.p12", "my-cluster-controllers-1.password",
-                "my-cluster-controllers-2.crt", "my-cluster-controllers-2.key", "my-cluster-controllers-2.p12", "my-cluster-controllers-2.password",
-                "my-cluster-brokers-1000.crt",  "my-cluster-brokers-1000.key", "my-cluster-brokers-1000.p12", "my-cluster-brokers-1000.password",
-                "my-cluster-brokers-1001.crt", "my-cluster-brokers-1001.key", "my-cluster-brokers-1001.p12", "my-cluster-brokers-1001.password",
-                "my-cluster-brokers-1002.crt", "my-cluster-brokers-1002.key", "my-cluster-brokers-1002.p12", "my-cluster-brokers-1002.password")));
+                "my-cluster-controllers-0.crt",  "my-cluster-controllers-0.key",
+                "my-cluster-controllers-1.crt", "my-cluster-controllers-1.key",
+                "my-cluster-controllers-2.crt", "my-cluster-controllers-2.key",
+                "my-cluster-brokers-1000.crt",  "my-cluster-brokers-1000.key",
+                "my-cluster-brokers-1001.crt", "my-cluster-brokers-1001.key",
+                "my-cluster-brokers-1002.crt", "my-cluster-brokers-1002.key")));
 
         // Controller cert
         X509Certificate cert = Ca.cert(secret, "my-cluster-controllers-0.crt");

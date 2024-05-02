@@ -552,7 +552,7 @@ public class KafkaAssemblyOperatorMockTest {
                 // removing one pod, the related private and public keys, keystore and password (4 entries) should not be in the Secrets
                 assertThat(client.secrets().inNamespace(namespace).withName(KafkaResources.kafkaSecretName(CLUSTER_NAME)).get()
                                 .getData(),
-                        aMapWithSize(brokersInternalCertsCount.get() - 4));
+                        aMapWithSize(brokersInternalCertsCount.get() - 2));
 
                 // TODO assert no rolling update
                 async.flag();
@@ -597,7 +597,7 @@ public class KafkaAssemblyOperatorMockTest {
 
                 // adding one pod, the related private and public keys, keystore and password should be added to the Secrets
                 assertThat(client.secrets().inNamespace(namespace).withName(KafkaResources.kafkaSecretName(CLUSTER_NAME)).get().getData(),
-                        aMapWithSize(brokersInternalCertsCount.get() + 4));
+                        aMapWithSize(brokersInternalCertsCount.get() + 2));
 
                 // TODO assert no rolling update
                 async.flag();
