@@ -30,6 +30,7 @@ import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.StrimziPodSetResource;
+import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
@@ -37,6 +38,7 @@ import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.hamcrest.CoreMatchers;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -62,6 +64,7 @@ import static io.strimzi.test.TestUtils.indent;
 import static io.strimzi.test.TestUtils.waitFor;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class KafkaUtils {
 
@@ -590,5 +593,56 @@ public class KafkaUtils {
     public static String getKafkaLogFolderNameInPod(String namespaceName, String kafkaPodName) {
         return ResourceManager.cmdKubeClient().namespace(namespaceName)
             .execInPod(kafkaPodName, "/bin/bash", "-c", "ls /var/lib/kafka/data | grep \"kafka-log[0-9]\\+\" -o").out().trim();
+    }
+
+    /**
+     * Verifies the presence or absence of KRaft metadata logs across specified volume directories within Kafka pods.
+     * This method iterates through all Kafka pods retrieved based on the broker selector from the test storage configuration,
+     * checking each configured volume for the presence of KRaft metadata files. The method asserts that the metadata log
+     * exists only in the specified KRaft metadata volume and not in others, ensuring correct metadata log placement
+     * according to the test configuration.
+     *
+     * @param testStorage               An instance of TestStorage containing configuration and context for the current test,
+     *                                  including namespace and broker selector for identifying relevant Kafka pods.
+     * @param kraftMetadataVolumeId     The volume ID expected to contain the KRaft metadata log. This method will
+     *                                  assert the presence of metadata logs in this volume and their absence in others.
+     * @param numberOfVolumes           The total number of volumes configured in the JBOD (Just a Bunch Of Disks) for each Kafka broker.
+     *                                  This dictates how many volume directories the method will check within each Kafka pod.
+     */
+    public static void verifyKafkaKraftMetadataLog(final TestStorage testStorage, final int kraftMetadataVolumeId, final int numberOfVolumes) {
+        final List<Pod> kafkaPods = kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
+        int kafkaIndex = 0; // Ensure this index is managed appropriately if used outside this method context.
+
+        for (final Pod kafkaPod : kafkaPods) {
+            // Directly iterate over volumes instead of creating a list
+            for (int volumeId = 0; volumeId < numberOfVolumes; volumeId++) {
+                final String dir = buildDirectoryPath(volumeId, kafkaIndex);
+                final int result = cmdKubeClient().namespace(testStorage.getNamespaceName()).execInPodContainer(false,
+                    kafkaPod.getMetadata().getName(),
+                    "kafka",
+                    "/bin/bash", "-c", "test -d " + dir).returnCode();
+
+                LOGGER.info("Kafka pod: {} the directory: {} - {}", kafkaPod.getMetadata().getName(), dir, result);
+
+                // Assert the condition that metadata should only exist in the specified KRaft metadata volume.
+                if (volumeId == kraftMetadataVolumeId) {
+                    assertThat("Metadata should exist in KRaft metadata volume", result, CoreMatchers.is(0));
+                } else {
+                    assertThat("Metadata should not exist in non-KRaft metadata volume", result, CoreMatchers.is(1));
+                }
+            }
+            kafkaIndex++;
+        }
+    }
+
+    /**
+     * Constructs the directory path for a given volume and Kafka index.
+     *
+     * @param volumeId      The volume ID for which the directory path is constructed.
+     * @param kafkaIndex    The index of the Kafka broker.
+     * @return              The constructed directory path as a String.
+     */
+    private static String buildDirectoryPath(int volumeId, int kafkaIndex) {
+        return String.format("/var/lib/kafka/data-%d/kafka-log%d/__cluster_metadata-0", volumeId, kafkaIndex);
     }
 }

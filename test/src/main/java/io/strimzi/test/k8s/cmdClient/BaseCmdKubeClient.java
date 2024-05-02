@@ -312,10 +312,20 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
     }
 
     @Override
+    public ExecResult execInPodContainer(boolean throwErrors, String pod, String container, String... command) {
+        return execInPodContainer(throwErrors, Level.INFO, pod, container, command);
+    }
+
+    @Override
     public ExecResult execInPodContainer(Level logLevel, String pod, String container, String... command) {
+        return execInPodContainer(true, logLevel, pod, container, command);
+    }
+
+    @Override
+    public ExecResult execInPodContainer(boolean throwErrors, Level logLevel, String pod, String container, String... command) {
         List<String> cmd = namespacedCommand("exec", pod, "-c", container, "--");
         cmd.addAll(asList(command));
-        return Exec.exec(null, cmd, 0, logLevel);
+        return Exec.exec(null, cmd, 0, logLevel, throwErrors);
     }
 
     @Override

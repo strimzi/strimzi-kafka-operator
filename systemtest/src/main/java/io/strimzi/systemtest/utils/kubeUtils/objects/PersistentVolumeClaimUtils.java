@@ -85,7 +85,6 @@ public class PersistentVolumeClaimUtils {
                 cmdKubeClient(namespaceName).deleteByName("pvc", pvcName);
                 return false;
             }
-
             return true;
         });
     }
@@ -95,6 +94,14 @@ public class PersistentVolumeClaimUtils {
         TestUtils.waitFor("PVC(s) to be created/deleted", TestConstants.GLOBAL_POLL_INTERVAL_MEDIUM, TestConstants.GLOBAL_TIMEOUT,
             () -> KubeClusterResource.kubeClient().listPersistentVolumeClaims(testStorage.getNamespaceName(), testStorage.getClusterName()).stream()
                 .filter(pvc -> pvc.getMetadata().getName().contains("data-") && pvc.getMetadata().getName().contains(testStorage.getBrokerComponentName())).collect(Collectors.toList()).size() == expectedNum
+        );
+    }
+
+    public static void waitForPvcCount(TestStorage testStorage, int expectedNum) {
+        LOGGER.info("Waiting for PVC(s): {}/{} to reach expected amount: {}", testStorage.getClusterName(), testStorage.getNamespaceName(), expectedNum);
+        TestUtils.waitFor("PVC(s) to be created/deleted", TestConstants.GLOBAL_POLL_INTERVAL_MEDIUM, TestConstants.GLOBAL_TIMEOUT,
+            () -> KubeClusterResource.kubeClient().listPersistentVolumeClaims(testStorage.getNamespaceName(), testStorage.getClusterName()).stream()
+                .filter(pvc -> pvc.getMetadata().getName().contains("data-") && pvc.getMetadata().getName().contains(testStorage.getBrokerComponentName())).toList().size() == expectedNum
         );
     }
 
@@ -124,5 +131,47 @@ public class PersistentVolumeClaimUtils {
         for (PersistentVolumeClaim persistentVolumeClaim : persistentVolumeClaimsList) {
             waitForPersistentVolumeClaimDeletion(namespaceName, persistentVolumeClaim.getMetadata().getName());
         }
+    }
+
+    /**
+     * Waits until the size of specific Persistent Volume Claims (PVCs) changes to the expected size. This method continuously checks
+     * the size of all PVCs that start with a given prefix within the specified namespace and cluster until all match the expected size or
+     * until the global timeout is reached.
+     *
+     * @param testStorage                       The TestStorage instance containing the cluster name and namespace information,
+     *                                          used to identify the cluster and namespace in which the PVCs are managed.
+     * @param pvcPrefixName                     The prefix of the PVC names to filter the PVCs that need to be checked.
+     *                                          Only PVCs whose names start with this prefix will be considered.
+     * @param expectedSize                      The expected size to which the PVC should change, specified in a format
+     *                                          understood by Kubernetes, e.g., "10Gi". This is the size
+     *                                          that all matching PVCs must reach for the method to stop waiting and return successfully.
+     * @throws io.strimzi.test.WaitException    if the timeout is reached before all PVCs match the expected size.
+     */
+    public static void waitUntilSpecificPvcSizeChange(final TestStorage testStorage, final String pvcPrefixName, final String expectedSize) {
+        TestUtils.waitFor("size change of PVCs matching " + pvcPrefixName + " to " + expectedSize,
+            TestConstants.GLOBAL_POLL_INTERVAL,
+            TestConstants.GLOBAL_TIMEOUT,
+            () -> {
+                final List<PersistentVolumeClaim> pvcs = kubeClient(testStorage.getNamespaceName())
+                    .listPersistentVolumeClaims(testStorage.getNamespaceName(), testStorage.getClusterName()).stream()
+                    .filter(pvc -> pvc.getMetadata().getName().startsWith(pvcPrefixName)).toList();
+
+                if (pvcs.isEmpty()) {
+                    LOGGER.warn("No PVCs found by the prefix: {}", pvcPrefixName);
+                    return false;
+                }
+
+                // Check if all PVCs match the expected size
+                for (final PersistentVolumeClaim pvc : pvcs) {
+                    final String currentSize = pvc.getSpec().getResources().getRequests().get("storage").toString();
+                    LOGGER.debug("Current size of PVC {}: {}", pvc.getMetadata().getName(), currentSize);
+                    if (!currentSize.equals(expectedSize)) {
+                        LOGGER.info("PVC {} size {} does not match expected size {}", pvc.getMetadata().getName(), currentSize, expectedSize);
+                        return false;
+                    }
+                }
+                return true;
+            });
+        LOGGER.info("Size of all matched PVC(s) successfully changed to {}", expectedSize);
     }
 }

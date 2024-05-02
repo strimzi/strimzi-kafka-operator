@@ -38,6 +38,8 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
+import io.strimzi.systemtest.annotations.KindNotSupported;
+import io.strimzi.systemtest.annotations.MultiNodeClusterOnly;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.resources.NodePoolsConverter;
@@ -405,6 +407,7 @@ class KafkaST extends AbstractST {
     void testKafkaJBODDeleteClaimsTrueFalse() {
         // JBOD storage in KRaft is supported only from Kafka 3.7.0 and higher.
         // So we want to run this test when KRaft is disabled or when it is with KRaft and Kafka 3.7.0+
+        // TODO: remove once support for 3.6.x is removed - https://github.com/strimzi/strimzi-kafka-operator/issues/9921
         assumeTrue(!Environment.isKRaftForCOEnabled() || TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "3.7.0") >= 0);
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final int kafkaReplicas = 2;
@@ -560,6 +563,7 @@ class KafkaST extends AbstractST {
     void testLabelsExistenceAndManipulation() {
         // JBOD storage in KRaft is supported only from Kafka 3.7.0 and higher.
         // So we want to run this test when KRaft is disabled or when it is with KRaft and Kafka 3.7.0+
+        // TODO: remove once support for 3.6.x is removed - https://github.com/strimzi/strimzi-kafka-operator/issues/9921
         assumeTrue(!Environment.isKRaftForCOEnabled() || TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "3.7.0") >= 0);
 
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
@@ -1099,6 +1103,144 @@ class KafkaST extends AbstractST {
 
         KafkaUtils.waitForKafkaNotReady(testStorage.getNamespaceName(), testStorage.getClusterName());
         KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(testStorage.getClusterName(), testStorage.getNamespaceName(), nonExistingVersionMessage);
+    }
+
+    /**
+      * @description This test verifies the functionality of resizing JBOD storage volumes on a Kafka cluster.
+      * It checks that the system can handle volume size changes and performs a rolling update to apply these changes.
+      *
+      * @steps
+      *  1. - Deploy a Kafka cluster with JBOD storage and initial volume sizes.
+      *     - Kafka cluster is operational.
+      *  2. - Produce and consume messages continuously to simulate cluster activity.
+      *     - Message traffic is consistent.
+      *  3. - Increase the size of one of the JBOD volumes.
+      *     - Volume size change is applied.
+      *  4. - Verify that the updated volume size is reflected.
+      *     - PVC reflects the new size.
+      *  5. - Ensure continuous message production and consumption are unaffected during the update process.
+      *     - Message flow continues without interruption.
+      *
+      * @usecase
+      *  - jbod
+      *  - volume-resize
+      *  - persistent-volume-claims
+      */
+    @KindNotSupported       // Storage Class standard does not support resizing of volumes
+    @MultiNodeClusterOnly   // in multi-node we use different Storage Class, which support re-sizing of volumes
+    @ParallelNamespaceTest
+    void testResizeJbodVolumes() {
+        // JBOD storage in KRaft is supported only from Kafka 3.7.0 and higher.
+        // So we want to run this test when KRaft is disabled or when it is with KRaft and Kafka 3.7.0+
+        // TODO: remove once support for 3.6.x is removed - https://github.com/strimzi/strimzi-kafka-operator/issues/9921
+        assumeTrue(!Environment.isKRaftForCOEnabled() || TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "3.7.0") >= 0);
+
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final int numberOfKafkaReplicas = 3;
+
+        // 300 messages will take 300 seconds in that case
+        final int continuousClientsMessageCount = 300;
+
+        PersistentClaimStorage vol0 = new PersistentClaimStorageBuilder().withId(0).withSize("1Gi").withDeleteClaim(true).build();
+        PersistentClaimStorage vol1 = new PersistentClaimStorageBuilder().withId(1).withSize("1Gi").withDeleteClaim(true).build();
+        PersistentClaimStorage vol1Modified = new PersistentClaimStorageBuilder().withId(1).withSize("5Gi").withDeleteClaim(true).build();
+
+        resourceManager.createResourceWithWait(
+            NodePoolsConverter.convertNodePoolsIfNeeded(
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), numberOfKafkaReplicas)
+                    .editSpec()
+                    .withStorage(
+                        new JbodStorageBuilder()
+                            // add two small volumes
+                            .addToVolumes(vol0, vol1)
+                            .build())
+                    .endSpec()
+                    .build(),
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
+            )
+        );
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), numberOfKafkaReplicas, 3)
+            .editSpec()
+                .editKafka()
+                    .withStorage(
+                        new JbodStorageBuilder()
+                            // add two small volumes
+                            .addToVolumes(vol0, vol1)
+                            .build())
+                .endKafka()
+            .endSpec()
+            .build());
+
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage).build());
+
+        // ##############################
+        // Attach clients which will continuously produce/consume messages to/from Kafka brokers
+        // ##############################
+        // Setup topic, which has 3 replicas and 2 min.isr
+
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getContinuousTopicName(), 3, 3, 2, testStorage.getNamespaceName()).build());
+
+        String producerAdditionConfiguration = "delivery.timeout.ms=20000\nrequest.timeout.ms=20000";
+        // Add transactional id to make producer transactional
+        producerAdditionConfiguration = producerAdditionConfiguration.concat("\ntransactional.id=" + testStorage.getContinuousTopicName() + ".1");
+        producerAdditionConfiguration = producerAdditionConfiguration.concat("\nenable.idempotence=true");
+
+        KafkaClients kafkaBasicClientJob = ClientUtils.getContinuousPlainClientBuilder(testStorage)
+            .withMessageCount(continuousClientsMessageCount)
+            .withAdditionalConfig(producerAdditionConfiguration)
+            .build();
+
+        resourceManager.createResourceWithWait(kafkaBasicClientJob.producerStrimzi(), kafkaBasicClientJob.consumerStrimzi());
+
+        // ##############################
+        KafkaClients clients = ClientUtils.getInstantPlainClientBuilder(testStorage).build();
+        resourceManager.createResourceWithWait(clients.producerStrimzi());
+        ClientUtils.waitForInstantProducerClientSuccess(testStorage);
+
+        // Replace Jbod to bigger one volume to Kafka => triggers RU
+        LOGGER.info("Replace JBOD to bigger one volume to the Kafka cluster {}", testStorage.getBrokerComponentName());
+
+        if (Environment.isKafkaNodePoolsEnabled()) {
+            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getBrokerPoolName(), kafkaNodePool -> {
+                JbodStorage storage = (JbodStorage) kafkaNodePool.getSpec().getStorage();
+
+                // set modified volume
+                storage.setVolumes(List.of(vol0, vol1Modified));
+
+                // override storage
+                kafkaNodePool.getSpec().setStorage(storage);
+            }, testStorage.getNamespaceName());
+        } else {
+            KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> {
+                JbodStorage storage = (JbodStorage) kafka.getSpec().getKafka().getStorage();
+
+                // set modified volume
+                storage.setVolumes(List.of(vol0, vol1Modified));
+
+                // override storage
+                kafka.getSpec().getKafka().setStorage(storage);
+            }, testStorage.getNamespaceName());
+        }
+
+        // check that volume with index 1 change its size
+        PersistentVolumeClaimUtils.waitUntilSpecificPvcSizeChange(
+            testStorage,
+            "data-" + vol1Modified.getId() + "-" + testStorage.getClusterName() + "-",
+            vol1Modified.getSize());
+        // and volume with index 0 did not change its size
+        PersistentVolumeClaimUtils.waitUntilSpecificPvcSizeChange(
+            testStorage,
+            "data-" + vol0.getId() + "-" + testStorage.getClusterName() + "-",
+            vol0.getSize());
+
+        resourceManager.createResourceWithWait(clients.consumerStrimzi());
+        ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
+
+        // ##############################
+        // Validate that continuous clients finished successfully
+        // ##############################
+        ClientUtils.waitForContinuousClientSuccess(testStorage, continuousClientsMessageCount);
+        // ##############################
     }
 
     void verifyVolumeNamesAndLabels(String namespaceName, String clusterName, String podSetName, int kafkaReplicas, int diskCountPerReplica, String diskSizeGi) {

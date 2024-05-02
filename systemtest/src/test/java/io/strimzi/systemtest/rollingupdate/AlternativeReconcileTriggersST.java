@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.strimzi.api.kafka.model.kafka.JbodStorage;
 import io.strimzi.api.kafka.model.kafka.JbodStorageBuilder;
+import io.strimzi.api.kafka.model.kafka.KRaftMetadataStorage;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
@@ -338,6 +339,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
     void testAddingAndRemovingJbodVolumes() {
         // JBOD storage in KRaft is supported only from Kafka 3.7.0 and higher.
         // So we want to run this test when KRaft is disabled or when it is with KRaft and Kafka 3.7.0+
+        // TODO: remove once support for 3.6.x is removed - https://github.com/strimzi/strimzi-kafka-operator/issues/9921
         assumeTrue(!Environment.isKRaftForCOEnabled() || TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "3.7.0") >= 0);
 
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
@@ -437,11 +439,140 @@ class AlternativeReconcileTriggersST extends AbstractST {
         RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, brokerPods);
 
         // ensure there are 3 Kafka Volumes (1 per each of 3 broker)
-        PersistentVolumeClaimUtils.waitForPersistentVolumeClaimDeletion(testStorage, 3);
+        PersistentVolumeClaimUtils.waitForPvcCount(testStorage, 3);
         kafkaPvcs = kubeClient().listClaimedPersistentVolumes(testStorage.getNamespaceName(), testStorage.getClusterName()).stream()
             .filter(pv -> pv.getSpec().getClaimRef().getName().contains(testStorage.getBrokerComponentName()) && pv.getStatus().getPhase().equals("Bound")).collect(Collectors.toList());
         LOGGER.debug("Obtained Volumes total '{}' claimed by claims Belonging to Kafka {}", kafkaPvcs.size(), testStorage.getClusterName());
         assertThat("There are not 3 volumes used by Kafka Cluster", kafkaPvcs.size() == 3);
+
+        resourceManager.createResourceWithWait(clients.consumerStrimzi());
+        ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
+
+        // ##############################
+        // Validate that continuous clients finished successfully
+        // ##############################
+        ClientUtils.waitForContinuousClientSuccess(testStorage, continuousClientsMessageCount);
+        // ##############################
+    }
+
+    /**
+     * @description Tests the resilience and relocation of KRaft metadata logs in a Kafka cluster configured with JBOD storage.
+     * This test verifies that Kafka can handle the simulated disk failure of a KRaft metadata volume and successfully
+     * relocate the metadata log to another volume in the JBOD setup. The test ensures that the cluster remains operational
+     * and that metadata is correctly managed even after a significant storage disruption.
+     * Note: This test case runs only in KRaft mode.
+     *
+     * @steps
+     * 1. Deploy a Kafka cluster with multiple JBOD volumes, specifically designating one volume for KRaft metadata.
+     *    - Ensure the cluster is operational and the metadata volume is correctly used.
+     * 2. Attach Kafka clients to continuously produce and consume messages, simulating normal cluster activity.
+     *    - Verify consistent message traffic to ensure cluster stability.
+     * 3. Simulate a disk failure by removing the KRaft metadata volume from the cluster configuration.
+     *    - Trigger a rolling update and ensure the cluster starts relocating the metadata to a new volume.
+     * 4. Verify that the KRaft metadata log has been successfully reassigned to a new volume with the lowest available ID.
+     *    - Check the reassignment and integrity of the metadata.
+     * 5. Confirm that Kafka continues to function correctly, with ongoing message production and consumption unaffected.
+     *    - Ensure no data loss or interruption in service.
+     *
+     * @usecase
+     * - jbod
+     * - rolling update
+     * - persistent-volumes
+     * - persistent-volume-claims
+     * - storage failure
+     * - KRaft metadata log
+     */
+    @ParallelNamespaceTest
+    void testJbodMetadataLogRelocation() {
+        assumeTrue(Environment.isKRaftModeEnabled());
+
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final int numberOfKafkaReplicas = 3;
+
+        // Setup JBOD with multiple volumes, ensuring metadata is on a non-lowest ID volume
+        PersistentClaimStorage vol = new PersistentClaimStorageBuilder().withId(0).withSize("1Gi").withDeleteClaim(true).build();
+        PersistentClaimStorage otherVol = new PersistentClaimStorageBuilder().withId(1).withSize("1Gi").withDeleteClaim(true).build();
+        // volume with id=2 will be using for KRaft metadata storage
+        PersistentClaimStorage metadataVol = new PersistentClaimStorageBuilder().withId(2).withSize("1Gi").withDeleteClaim(false)
+            .withKraftMetadata(KRaftMetadataStorage.SHARED).build();
+
+        // 300 messages will take 300 seconds in that case
+        final int continuousClientsMessageCount = 300;
+
+        resourceManager.createResourceWithWait(
+            NodePoolsConverter.convertNodePoolsIfNeeded(
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), numberOfKafkaReplicas)
+                    .editSpec()
+                    .withStorage(
+                        new JbodStorageBuilder()
+                            .addToVolumes(vol, otherVol, metadataVol)
+                            .build())
+                    .endSpec()
+                    .build(),
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
+            )
+        );
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), numberOfKafkaReplicas, 3)
+            .editSpec()
+                .editKafka()
+                    .withStorage(
+                        new JbodStorageBuilder()
+                            .addToVolumes(vol, otherVol, metadataVol)
+                            .build())
+                .endKafka()
+            .endSpec()
+            .build());
+
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage).build());
+
+        // ##############################
+        // Attach clients which will continuously produce/consume messages to/from Kafka brokers
+        // ##############################
+        // Setup topic, which has 3 replicas and 2 min.isr
+
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getContinuousTopicName(), 3, 3, 2, testStorage.getNamespaceName()).build());
+
+        String producerAdditionConfiguration = "delivery.timeout.ms=20000\nrequest.timeout.ms=20000";
+        // Add transactional id to make producer transactional
+        producerAdditionConfiguration = producerAdditionConfiguration.concat("\ntransactional.id=" + testStorage.getContinuousTopicName() + ".1");
+        producerAdditionConfiguration = producerAdditionConfiguration.concat("\nenable.idempotence=true");
+
+        KafkaClients kafkaBasicClientJob = ClientUtils.getContinuousPlainClientBuilder(testStorage)
+            .withMessageCount(continuousClientsMessageCount)
+            .withAdditionalConfig(producerAdditionConfiguration)
+            .build();
+
+        resourceManager.createResourceWithWait(kafkaBasicClientJob.producerStrimzi(), kafkaBasicClientJob.consumerStrimzi());
+
+        // ##############################
+        KafkaClients clients = ClientUtils.getInstantPlainClientBuilder(testStorage).build();
+        resourceManager.createResourceWithWait(clients.producerStrimzi());
+        ClientUtils.waitForInstantProducerClientSuccess(testStorage);
+
+        Map<String, String> brokerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
+
+        KafkaUtils.verifyKafkaKraftMetadataLog(testStorage, 2, 3);
+
+        // Remove Jbod KRaft volume to Kafka => triggers RU
+        LOGGER.info("Remove JBOD volume (i.e., simulating disk failure for KRaft metadata volume) to the Kafka cluster {}", testStorage.getBrokerComponentName());
+
+        if (Environment.isKafkaNodePoolsEnabled()) {
+            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getBrokerPoolName(), kafkaNodePool -> {
+                JbodStorage storage = (JbodStorage) kafkaNodePool.getSpec().getStorage();
+                storage.getVolumes().remove(metadataVol);
+            }, testStorage.getNamespaceName());
+        } else {
+            KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> {
+                JbodStorage storage = (JbodStorage) kafka.getSpec().getKafka().getStorage();
+                storage.getVolumes().remove(metadataVol);
+            }, testStorage.getNamespaceName());
+        }
+
+        // Wait util it rolls
+        brokerPods = RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, brokerPods);
+
+        // verify that Kraft metadata log will be re-assigned to another volume (the minimum id, which is 0 now that's why data-0)
+        KafkaUtils.verifyKafkaKraftMetadataLog(testStorage, 0, 2);
 
         resourceManager.createResourceWithWait(clients.consumerStrimzi());
         ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
