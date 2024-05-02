@@ -42,15 +42,14 @@ public class KRaftMigrationUtils {
 
         // Setup keystore from PEM in cluster-operator secret
         File keyStoreFile = Util.createFileStore(KRaftMigrationUtils.class.getName(), PemAuthIdentity.PEM_SUFFIX, coTlsPemIdentity.pemAuthIdentity().pemKeyStore());
-        try {
-            ZooKeeperAdmin admin = new DefaultZooKeeperAdminProvider().createZookeeperAdmin(
+        try (ZooKeeperAdmin admin = new DefaultZooKeeperAdminProvider().createZookeeperAdmin(
                     zkConnectionString,
                     10000,
                     watchedEvent -> LOGGER.debugCr(reconciliation, "Received event {} from ZooKeeperAdmin client connected to {}", watchedEvent, zkConnectionString),
                     operationTimeoutMs,
                     trustStoreFile.getAbsolutePath(),
                     keyStoreFile.getAbsolutePath()
-                    );
+                    ))  {
             admin.delete("/controller", -1);
             admin.close();
             LOGGER.infoCr(reconciliation, "Deleted the '/controller' znode as part of the KRaft migration rollback");
