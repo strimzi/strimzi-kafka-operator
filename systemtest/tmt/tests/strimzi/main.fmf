@@ -93,4 +93,4 @@ adjust:
   environment+:
     TEST_PROFILE: performance-capacity
     PARALLELISM_ENABLED: false
-    TESTS: TopicOperatorPerformanceTest#testCapacity
+    TESTS: TopicOperatorPerformance#testCapacity
