@@ -66,7 +66,9 @@ $ kubectl apply -f <kafka_connect_configuration_file>
 
 .Rebuilding the container image with new artifacts
 
-To update a base image and download the latest connector plugin artifacts, you can trigger a rebuild of the container image associated with the Kafka Connect cluster by applying the annotation `strimzi.io/force-rebuild=true` to the Kafka Connect `StrimziPodSet` resource.
+A new container image is built automatically when you change the base image (`.spec.image`) or change the connector plugin artifacts configuration (`.spec.build.plugins`).
+
+To pull an upgraded base image or to download the latest connector plugin artifacts without changing the `KafkaConnect` resource, you can trigger a rebuild of the container image associated with the Kafka Connect cluster by applying the annotation `strimzi.io/force-rebuild=true` to the Kafka Connect `StrimziPodSet` resource.
 
 The annotation triggers the rebuilding process, fetching any new artifacts for plugins specified in the `KafkaConnect` custom resource and incorporating them into the container image.
 The rebuild includes downloads of new plugin artifacts without versions. 
