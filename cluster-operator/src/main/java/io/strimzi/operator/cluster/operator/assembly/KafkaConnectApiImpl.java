@@ -442,10 +442,10 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                                             LOGGER.debugCr(reconciliation, "Got {} response to GET request to {}", response.result().statusCode(), path);
                                             Map<String, Map<String, String>> fetchedLoggers = mapper.readValue(buffer.getBytes(), MAP_OF_MAP_OF_STRINGS);
                                             Map<String, String> loggerMap = new HashMap<>(fetchedLoggers.size());
-                                            for (var e : fetchedLoggers.entrySet()) {
-                                                String level = e.getValue().get("level");
+                                            for (var loggerEntry : fetchedLoggers.entrySet()) {
+                                                String level = loggerEntry.getValue().get("level");
                                                 if (level != null) {
-                                                    loggerMap.put(e.getKey(), level);
+                                                    loggerMap.put(loggerEntry.getKey(), level);
                                                 }
                                             }
                                             result.tryComplete(loggerMap);
