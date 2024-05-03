@@ -45,6 +45,7 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
+import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -72,7 +73,9 @@ public class MigrationST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(MigrationST.class);
     private static final String CONTINUOUS_SUFFIX = "-continuous";
     private static final int METADATA_VOLUME_ID = 0;
-    private static final String METADATA_FOLDER_NAME = "data-" + METADATA_VOLUME_ID;
+    private static final String METADATA_FOLDER_NAME_JBOD = "data-" + METADATA_VOLUME_ID;
+    private static final String METADATA_FOLDER_NAME = "data";
+    private String metadataFolderName;
     private KafkaClients immediateClients;
     private KafkaClients continuousClients;
     private String postMigrationTopicName;
@@ -283,6 +286,7 @@ public class MigrationST extends AbstractST {
         // we assume that users will have broker NodePool named "kafka", so we will name it completely same to follow this use-case
         String brokerPoolName = "kafka";
 
+        metadataFolderName = withJbodStorage ? METADATA_FOLDER_NAME_JBOD : METADATA_FOLDER_NAME;
         postMigrationTopicName = testStorage.getTopicName() + "-post-migration";
         kraftTopicName = testStorage.getTopicName() + "-kraft";
         String immediateConsumerGroup = ClientUtils.generateRandomConsumerGroup();
@@ -640,9 +644,19 @@ public class MigrationST extends AbstractST {
 
         LOGGER.info("Waiting until all ZK resources: {} will be deleted", String.join(",", listOfZkResources));
 
-        cmdKubeClient().namespace(testStorage.getNamespaceName())
-            .execInCurrentNamespace(Level.INFO, "wait", "--for", "delete", String.join(",", listOfZkResources),
-                "-l", Labels.STRIMZI_NAME_LABEL + "=" + KafkaResources.zookeeperComponentName(testStorage.getClusterName()), "--timeout=300s");
+        try {
+            cmdKubeClient().namespace(testStorage.getNamespaceName())
+                .execInCurrentNamespace(Level.INFO, "wait", "--for", "delete", String.join(",", listOfZkResources),
+                    "-l", Labels.STRIMZI_NAME_LABEL + "=" + KafkaResources.zookeeperComponentName(testStorage.getClusterName()), "--timeout=300s");
+        } catch (KubeClusterException e) {
+            if (!e.getMessage().contains("no matching resources found")) {
+                // in case that the exception contains message about "no matching resources found", the ZK resources were deleted before execution of the command
+                // otherwise we should throw the exception
+                throw e;
+            }
+        }
+
+        LOGGER.info("All ZK related resources were deleted");
 
         if (!deleteClaim) {
             LOGGER.info("Checking that ZK PVCs are not deleted, because deleteClaim was set to: false");
@@ -741,13 +755,13 @@ public class MigrationST extends AbstractST {
 
     private void assertThatTopicIsPresentInKRaftMetadata(String namespaceName, LabelSelector controllerSelector, String topicName) {
         String controllerPodName = kubeClient().namespace(namespaceName).listPods(controllerSelector).get(0).getMetadata().getName();
-        String kafkaLogDirName = KafkaUtils.getKafkaLogFolderNameInPod(namespaceName, controllerPodName, METADATA_FOLDER_NAME);
+        String kafkaLogDirName = KafkaUtils.getKafkaLogFolderNameInPod(namespaceName, controllerPodName, metadataFolderName);
 
         TestUtils.waitFor(String.join("KafkaTopic: %s to be present in KRaft metadata"), TestConstants.GLOBAL_POLL_INTERVAL_MEDIUM, TestConstants.GLOBAL_STATUS_TIMEOUT,
             () -> {
                 try {
                     String commandOutput = cmdKubeClient().namespace(namespaceName).execInPod(controllerPodName, "/bin/bash", "-c", "./bin/kafka-dump-log.sh --cluster-metadata-decoder --skip-record-metadata" +
-                        " --files /var/lib/kafka/" + METADATA_FOLDER_NAME + "/" + kafkaLogDirName + "/__cluster_metadata-0/00000000000000000000.log | grep " + topicName).out().trim();
+                        " --files /var/lib/kafka/" + metadataFolderName + "/" + kafkaLogDirName + "/__cluster_metadata-0/00000000000000000000.log | grep " + topicName).out().trim();
                     return commandOutput.contains(topicName);
                 } catch (Exception e) {
                     LOGGER.warn("Exception caught during command execution, message: {}", e.getMessage());
@@ -760,9 +774,9 @@ public class MigrationST extends AbstractST {
         List<Pod> brokerPods = kubeClient().namespace(namespaceName).listPods(brokerSelector);
 
         for (Pod brokerPod : brokerPods) {
-            String kafkaLogDirName = KafkaUtils.getKafkaLogFolderNameInPod(namespaceName, brokerPod.getMetadata().getName(), METADATA_FOLDER_NAME);
+            String kafkaLogDirName = KafkaUtils.getKafkaLogFolderNameInPod(namespaceName, brokerPod.getMetadata().getName(), metadataFolderName);
 
-            String commandOutput = cmdKubeClient().namespace(namespaceName).execInPod(brokerPod.getMetadata().getName(), "/bin/bash", "-c", "ls /var/lib/kafka/" + METADATA_FOLDER_NAME + "/" + kafkaLogDirName).out().trim();
+            String commandOutput = cmdKubeClient().namespace(namespaceName).execInPod(brokerPod.getMetadata().getName(), "/bin/bash", "-c", "ls /var/lib/kafka/" + metadataFolderName + "/" + kafkaLogDirName).out().trim();
 
             assertThat(String.join("__cluster_metadata topic is present in Kafka Pod: %s, but it shouldn't", brokerPod.getMetadata().getName()),
                 commandOutput.contains("__cluster_metadata"), is(clusterMetadataShouldExist));
