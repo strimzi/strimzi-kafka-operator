@@ -896,12 +896,12 @@ public class ZooKeeperReconciler {
     protected Future<Void> deleteControllerZnode() {
         // migration rollback process ongoing
         String zkConnectionString = KafkaResources.zookeeperServiceName(reconciliation.name()) + ":" + ZookeeperCluster.CLIENT_TLS_PORT;
-        KRaftMigrationUtils.deleteZooKeeperControllerZnode(
+        return KRaftMigrationUtils.deleteZooKeeperControllerZnode(
                 reconciliation,
+                vertx,
                 this.tlsPemIdentity,
                 operationTimeoutMs,
                 zkConnectionString
         );
-        return Future.succeededFuture();
     }
 }
