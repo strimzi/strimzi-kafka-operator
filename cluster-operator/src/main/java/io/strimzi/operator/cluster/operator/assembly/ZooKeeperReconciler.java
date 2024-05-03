@@ -22,6 +22,7 @@ import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.KafkaVersionChange;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
+import io.strimzi.operator.cluster.operator.resource.ZooKeeperAdminProvider;
 import io.strimzi.operator.cluster.operator.resource.ZooKeeperRoller;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperLeaderFinder;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperScaler;
@@ -101,6 +102,7 @@ public class ZooKeeperReconciler {
 
     private final ZookeeperScalerProvider zooScalerProvider;
     private final ZookeeperLeaderFinder zooLeaderFinder;
+    private final ZooKeeperAdminProvider zooKeeperAdminProvider;
 
     private final Integer currentReplicas;
 
@@ -174,6 +176,7 @@ public class ZooKeeperReconciler {
 
         this.zooScalerProvider = supplier.zkScalerProvider;
         this.zooLeaderFinder = supplier.zookeeperLeaderFinder;
+        this.zooKeeperAdminProvider = supplier.zooKeeperAdminProvider;
         this.continueOnManualRUFailure = config.featureGates().continueOnManualRUFailureEnabled();
     }
 
@@ -899,6 +902,7 @@ public class ZooKeeperReconciler {
         return KRaftMigrationUtils.deleteZooKeeperControllerZnode(
                 reconciliation,
                 vertx,
+                this.zooKeeperAdminProvider,
                 this.tlsPemIdentity,
                 operationTimeoutMs,
                 zkConnectionString

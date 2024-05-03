@@ -34,6 +34,7 @@ import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.cluster.operator.resource.DefaultKafkaAgentClientProvider;
+import io.strimzi.operator.cluster.operator.resource.DefaultZooKeeperAdminProvider;
 import io.strimzi.operator.cluster.operator.resource.DefaultZookeeperScalerProvider;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperLeaderFinder;
@@ -178,6 +179,7 @@ public class ConnectorMockTest {
                 new DefaultZookeeperScalerProvider(),
                 new DefaultKafkaAgentClientProvider(),
                 metricsProvider,
+                new DefaultZooKeeperAdminProvider(),
                 pfa, 10_000);
 
         podSetController = new StrimziPodSetController(namespace, Labels.EMPTY, ros.kafkaOperator, ros.connectOperator, ros.mirrorMaker2Operator, ros.strimziPodSetOperator, ros.podOperations, ros.metricsProvider, Integer.parseInt(ClusterOperatorConfig.POD_SET_CONTROLLER_WORK_QUEUE_SIZE.defaultValue()));

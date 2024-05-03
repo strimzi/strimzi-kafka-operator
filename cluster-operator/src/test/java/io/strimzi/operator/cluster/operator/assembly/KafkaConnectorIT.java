@@ -15,6 +15,7 @@ import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.operator.resource.DefaultKafkaAgentClientProvider;
+import io.strimzi.operator.cluster.operator.resource.DefaultZooKeeperAdminProvider;
 import io.strimzi.operator.cluster.operator.resource.DefaultZookeeperScalerProvider;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperLeaderFinder;
@@ -154,6 +155,7 @@ public class KafkaConnectorIT {
                 new DefaultZookeeperScalerProvider(),
                 new DefaultKafkaAgentClientProvider(),
                 metrics,
+                new DefaultZooKeeperAdminProvider(),
                 pfa, 10_000
         );
 
@@ -224,6 +226,7 @@ public class KafkaConnectorIT {
                 new DefaultZookeeperScalerProvider(),
                 new DefaultKafkaAgentClientProvider(),
                 metrics,
+                new DefaultZooKeeperAdminProvider(),
                 pfa, 10_000
         );
 
@@ -273,6 +276,7 @@ public class KafkaConnectorIT {
                 new DefaultZookeeperScalerProvider(),
                 new DefaultKafkaAgentClientProvider(),
                 metrics,
+                new DefaultZooKeeperAdminProvider(),
                 pfa, 10_000
         );
 
@@ -333,6 +337,7 @@ public class KafkaConnectorIT {
             new DefaultZookeeperScalerProvider(),
             new DefaultKafkaAgentClientProvider(),
             metrics,
+            new DefaultZooKeeperAdminProvider(),
             pfa, 10_000
         );
 
@@ -382,6 +387,7 @@ public class KafkaConnectorIT {
             new DefaultZookeeperScalerProvider(),
             new DefaultKafkaAgentClientProvider(),
             metrics,
+            new DefaultZooKeeperAdminProvider(),
             pfa, 10_000
         );
 

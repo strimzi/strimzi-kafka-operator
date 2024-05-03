@@ -207,7 +207,7 @@ public class KafkaAssemblyOperatorWithPoolsMockTest {
     private ResourceOperatorSupplier supplierWithMocks() {
         return new ResourceOperatorSupplier(vertx, client, ResourceUtils.zookeeperLeaderFinder(vertx, client),
                 ResourceUtils.adminClientProvider(), ResourceUtils.zookeeperScalerProvider(), ResourceUtils.kafkaAgentClientProvider(),
-                ResourceUtils.metricsProvider(), new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION), 2_000);
+                ResourceUtils.metricsProvider(), ResourceUtils.zooKeeperAdminProvider(), new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION), 2_000);
     }
 
 

@@ -52,6 +52,7 @@ import io.strimzi.operator.cluster.operator.resource.KRaftMigrationState;
 import io.strimzi.operator.cluster.operator.resource.KafkaAgentClient;
 import io.strimzi.operator.cluster.operator.resource.KafkaAgentClientProvider;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
+import io.strimzi.operator.cluster.operator.resource.ZooKeeperAdminProvider;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperLeaderFinder;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperScaler;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperScalerProvider;
@@ -108,6 +109,9 @@ import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.Node;
 import org.apache.kafka.common.internals.KafkaFutureImpl;
 import org.apache.kafka.server.common.MetadataVersion;
+import org.apache.zookeeper.Watcher;
+import org.apache.zookeeper.ZooKeeper;
+import org.apache.zookeeper.admin.ZooKeeperAdmin;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
@@ -620,6 +624,25 @@ public class ResourceUtils {
         };
     }
 
+    public static ZooKeeperAdmin zooKeeperAdmin() {
+        ZooKeeperAdmin mock = mock(ZooKeeperAdmin.class);
+        when(mock.getState()).thenReturn(ZooKeeper.States.CONNECTED);
+        return mock;
+    }
+
+    public static ZooKeeperAdminProvider zooKeeperAdminProvider() {
+        return zooKeeperAdminProvider(zooKeeperAdmin());
+    }
+
+    public static ZooKeeperAdminProvider zooKeeperAdminProvider(ZooKeeperAdmin mockZooKeeperAdmin) {
+        return new ZooKeeperAdminProvider() {
+            @Override
+            public ZooKeeperAdmin createZookeeperAdmin(String connectString, int sessionTimeout, Watcher watcher, long operationTimeoutMs, String trustStoreFile, String keyStoreFile) throws IOException {
+                return mockZooKeeperAdmin;
+            }
+        };
+    }
+
     public static MetricsProvider metricsProvider() {
         return new MicrometerMetricsProvider(new SimpleMeterRegistry());
     }
@@ -664,6 +687,7 @@ public class ResourceUtils {
                 metricsProvider(),
                 adminClientProvider(),
                 mock(ZookeeperLeaderFinder.class),
+                mock(ZooKeeperAdminProvider.class),
                 mock(KubernetesRestartEventPublisher.class),
                 new MockSharedEnvironmentProvider(),
                 mock(BrokersInUseCheck.class));
