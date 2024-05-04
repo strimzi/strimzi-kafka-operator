@@ -110,7 +110,7 @@ public class KRaftMigrationUtils {
                     return null;
                 } catch (Exception e) {
                     LOGGER.warnCr(reconciliation, "Failed to close the ZooKeeperAdmin", e);
-                    throw e;
+                    return null;
                 } finally {
                     if (trustStoreFile != null) {
                         if (!trustStoreFile.delete())   {
