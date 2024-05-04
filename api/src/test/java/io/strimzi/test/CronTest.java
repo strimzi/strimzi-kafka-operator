@@ -4,8 +4,8 @@
  */
 package io.strimzi.test;
 
-import org.apache.logging.log4j.core.util.CronExpression;
 import org.junit.jupiter.api.Test;
+import org.quartz.CronExpression;
 
 import java.text.ParseException;
 import java.time.LocalDateTime;
