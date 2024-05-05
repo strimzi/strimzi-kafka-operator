@@ -152,6 +152,9 @@ public class KafkaReconciler {
     // State of the reconciliation => these objects might change during the reconciliation (the collection objects are
     // marked as final, but their contents is modified during the reconciliation)
     private final Set<String> fsResizingRestartRequest = new HashSet<>();
+
+    private final boolean continueOnManualRUFailure;
+
     private String logging = "";
     private String loggingHash = "";
     private final Map<Integer, String> brokerConfigurationHash = new HashMap<>();
@@ -227,6 +230,7 @@ public class KafkaReconciler {
 
         this.adminClientProvider = supplier.adminClientProvider;
         this.kafkaAgentClientProvider = supplier.kafkaAgentClientProvider;
+        this.continueOnManualRUFailure = config.featureGates().continueOnManualRUFailureEnabled();
     }
 
     /**
@@ -364,7 +368,14 @@ public class KafkaReconciler {
                                 nodes.stream().collect(Collectors.toMap(NodeRef::nodeId, node -> Map.of())),
                                 nodes.stream().collect(Collectors.toMap(NodeRef::nodeId, node -> Map.of())),
                                 false
-                        );
+                        ).recover(error -> {
+                            if (continueOnManualRUFailure) {
+                                LOGGER.warnCr(reconciliation, "Manual rolling update failed (reconciliation will be continued)", error);
+                                return Future.succeededFuture();
+                            } else {
+                                return Future.failedFuture(error);
+                            }
+                        });
                     } else {
                         return Future.succeededFuture();
                     }

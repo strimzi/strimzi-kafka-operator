@@ -87,6 +87,8 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(AbstractConnectOperator.class.getName());
 
     private final boolean isNetworkPolicyGeneration;
+    private final boolean continueOnManualRUFailure;
+
     protected final Function<Vertx, KafkaConnectApi> connectClientProvider;
     protected final ImagePullPolicy imagePullPolicy;
     protected final DeploymentOperator deploymentOperations;
@@ -148,6 +150,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         this.versions = config.versions();
         this.sharedEnvironmentProvider = supplier.sharedEnvironmentProvider;
         this.port = port;
+        this.continueOnManualRUFailure = config.featureGates().continueOnManualRUFailureEnabled();
     }
 
     @Override
@@ -216,7 +219,15 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                     if (!podNamesToRoll.isEmpty())  {
                         // There are some pods to roll
                         KafkaConnectRoller roller = new KafkaConnectRoller(reconciliation, connect, operationTimeoutMs, podOperations);
-                        return roller.maybeRoll(podNamesToRoll, pod -> RestartReasons.of(RestartReason.MANUAL_ROLLING_UPDATE));
+                        return roller.maybeRoll(podNamesToRoll, pod -> RestartReasons.of(RestartReason.MANUAL_ROLLING_UPDATE))
+                            .recover(error -> {
+                                if (continueOnManualRUFailure) {
+                                    LOGGER.warnCr(reconciliation, "Manual rolling update failed (reconciliation will be continued)", error);
+                                    return Future.succeededFuture();
+                                } else {
+                                    return Future.failedFuture(error);
+                                }
+                            });
                     } else {
                         return Future.succeededFuture();
                     }

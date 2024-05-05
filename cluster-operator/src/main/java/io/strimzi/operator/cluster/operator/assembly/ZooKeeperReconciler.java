@@ -113,6 +113,8 @@ public class ZooKeeperReconciler {
 
     private final boolean isKRaftMigrationRollback;
 
+    private final boolean continueOnManualRUFailure;
+
     /**
      * Constructs the ZooKeeper reconciler
      *
@@ -172,6 +174,7 @@ public class ZooKeeperReconciler {
 
         this.zooScalerProvider = supplier.zkScalerProvider;
         this.zooLeaderFinder = supplier.zookeeperLeaderFinder;
+        this.continueOnManualRUFailure = config.featureGates().continueOnManualRUFailureEnabled();
     }
 
     /**
@@ -290,7 +293,14 @@ public class ZooKeeperReconciler {
                         return maybeRollZooKeeper(pod -> {
                             LOGGER.debugCr(reconciliation, "Rolling Zookeeper pod {} due to manual rolling update", pod.getMetadata().getName());
                             return singletonList("manual rolling update");
-                        }, this.tlsPemIdentity);
+                        }, this.tlsPemIdentity).recover(error -> {
+                            if (continueOnManualRUFailure) {
+                                LOGGER.warnCr(reconciliation, "Reconciliation will be continued even though manual rolling update failed");
+                                return Future.succeededFuture();
+                            } else {
+                                return Future.failedFuture(error);
+                            }
+                        });
                     } else {
                         // The StrimziPodSet does not exist or is not annotated
                         // But maybe the individual pods are annotated to restart only some of them.
@@ -323,7 +333,14 @@ public class ZooKeeperReconciler {
                             } else {
                                 return null;
                             }
-                        }, this.tlsPemIdentity);
+                        }, this.tlsPemIdentity).recover(error -> {
+                            if (continueOnManualRUFailure) {
+                                LOGGER.warnCr(reconciliation, "Manual rolling update failed (reconciliation will be continued)", error);
+                                return Future.succeededFuture();
+                            } else {
+                                return Future.failedFuture(error);
+                            }
+                        });
                     } else {
                         return Future.succeededFuture();
                     }
