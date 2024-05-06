@@ -118,6 +118,7 @@ public class KafkaAssemblyOperatorCustomCertMockTest {
                 ResourceUtils.zookeeperLeaderFinder(vertx, bootstrapClient),
                 ResourceUtils.adminClientProvider(), ResourceUtils.zookeeperScalerProvider(), ResourceUtils.kafkaAgentClientProvider(),
                 ResourceUtils.metricsProvider(),
+                ResourceUtils.zooKeeperAdminProvider(),
                 pfa,
                 60_000L);
     }

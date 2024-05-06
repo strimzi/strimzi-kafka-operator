@@ -233,6 +233,11 @@ public class ResourceOperatorSupplier {
     public final KafkaAgentClientProvider kafkaAgentClientProvider;
 
     /**
+     * ZooKeeper Admin client provider
+     */
+    public final ZooKeeperAdminProvider zooKeeperAdminProvider;
+
+    /**
      * Restart Events publisher
      */
     public final KubernetesRestartEventPublisher restartEventsPublisher;
@@ -267,6 +272,7 @@ public class ResourceOperatorSupplier {
                 new DefaultZookeeperScalerProvider(),
                 new DefaultKafkaAgentClientProvider(),
                 metricsProvider,
+                new DefaultZooKeeperAdminProvider(),
                 pfa,
                 operationTimeoutMs,
                 new KubernetesRestartEventPublisher(client, operatorName)
@@ -283,6 +289,7 @@ public class ResourceOperatorSupplier {
      * @param zkScalerProvider          ZooKeeper Scaler provider
      * @param kafkaAgentClientProvider  Kafka Agent client provider
      * @param metricsProvider           Metrics provider
+     * @param zkAdminProvider           ZooKeeper Admin client provider
      * @param pfa                       Platform Availability Features
      * @param operationTimeoutMs        Operation timeout in milliseconds
      */
@@ -293,6 +300,7 @@ public class ResourceOperatorSupplier {
                                     ZookeeperScalerProvider zkScalerProvider,
                                     KafkaAgentClientProvider kafkaAgentClientProvider,
                                     MetricsProvider metricsProvider,
+                                    ZooKeeperAdminProvider zkAdminProvider,
                                     PlatformFeaturesAvailability pfa,
                                     long operationTimeoutMs) {
         this(vertx,
@@ -302,6 +310,7 @@ public class ResourceOperatorSupplier {
                 zkScalerProvider,
                 kafkaAgentClientProvider,
                 metricsProvider,
+                zkAdminProvider,
                 pfa,
                 operationTimeoutMs,
                 new KubernetesRestartEventPublisher(client, "operatorName")
@@ -315,6 +324,7 @@ public class ResourceOperatorSupplier {
                                      ZookeeperScalerProvider zkScalerProvider,
                                      KafkaAgentClientProvider kafkaAgentClientProvider,
                                      MetricsProvider metricsProvider,
+                                     ZooKeeperAdminProvider zkAdminProvider,
                                      PlatformFeaturesAvailability pfa,
                                      long operationTimeoutMs,
                                      KubernetesRestartEventPublisher restartEventPublisher) {
@@ -352,6 +362,7 @@ public class ResourceOperatorSupplier {
                 metricsProvider,
                 adminClientProvider,
                 zlf,
+                zkAdminProvider,
                 restartEventPublisher,
                 new DefaultSharedEnvironmentProvider(),
                 new BrokersInUseCheck());
@@ -394,9 +405,10 @@ public class ResourceOperatorSupplier {
      * @param metricsProvider                       Metrics provider
      * @param adminClientProvider                   Kafka Admin client provider
      * @param zookeeperLeaderFinder                 ZooKeeper Leader Finder
+     * @param zooKeeperAdminProvider                ZooKeeper Admin client provider
      * @param restartEventsPublisher                Kubernetes Events publisher
      * @param sharedEnvironmentProvider             Shared environment provider
-     * @param brokersInUseCheck             Broker scale down operations
+     * @param brokersInUseCheck                     Broker scale down operations
      */
     @SuppressWarnings({"checkstyle:ParameterNumber"})
     public ResourceOperatorSupplier(ServiceOperator serviceOperations,
@@ -433,6 +445,7 @@ public class ResourceOperatorSupplier {
                                     MetricsProvider metricsProvider,
                                     AdminClientProvider adminClientProvider,
                                     ZookeeperLeaderFinder zookeeperLeaderFinder,
+                                    ZooKeeperAdminProvider zooKeeperAdminProvider,
                                     KubernetesRestartEventPublisher restartEventsPublisher,
                                     SharedEnvironmentProvider sharedEnvironmentProvider,
                                     BrokersInUseCheck brokersInUseCheck) {
@@ -470,6 +483,7 @@ public class ResourceOperatorSupplier {
         this.metricsProvider = metricsProvider;
         this.adminClientProvider = adminClientProvider;
         this.zookeeperLeaderFinder = zookeeperLeaderFinder;
+        this.zooKeeperAdminProvider = zooKeeperAdminProvider;
         this.restartEventsPublisher = restartEventsPublisher;
         this.sharedEnvironmentProvider = sharedEnvironmentProvider;
         this.brokersInUseCheck = brokersInUseCheck;

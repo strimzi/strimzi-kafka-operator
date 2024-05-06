@@ -188,6 +188,7 @@ public class KubernetesRestartEventsMockTest {
                 ResourceUtils.zookeeperScalerProvider(),
                 ResourceUtils.kafkaAgentClientProvider(),
                 ResourceUtils.metricsProvider(),
+                ResourceUtils.zooKeeperAdminProvider(),
                 PFA,
                 60_000);
 
@@ -613,6 +614,7 @@ public class KubernetesRestartEventsMockTest {
                 ResourceUtils.zookeeperScalerProvider(),
                 ResourceUtils.kafkaAgentClientProvider(),
                 ResourceUtils.metricsProvider(),
+                ResourceUtils.zooKeeperAdminProvider(),
                 PFA,
                 60_000);
     }
