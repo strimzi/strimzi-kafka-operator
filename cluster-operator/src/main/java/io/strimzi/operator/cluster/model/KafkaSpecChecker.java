@@ -5,7 +5,10 @@
 package io.strimzi.operator.cluster.model;
 
 import io.strimzi.api.kafka.model.common.Condition;
+import io.strimzi.api.kafka.model.kafka.EphemeralStorage;
+import io.strimzi.api.kafka.model.kafka.JbodStorage;
 import io.strimzi.api.kafka.model.kafka.KafkaSpec;
+import io.strimzi.api.kafka.model.kafka.PersistentClaimStorage;
 import io.strimzi.operator.common.model.StatusUtils;
 
 import java.util.ArrayList;
@@ -69,6 +72,7 @@ public class KafkaSpecChecker {
             // Additional checks done for ZooKeeper-based clusters
             checkKafkaLogMessageFormatVersion(warnings);
             checkKafkaInterBrokerProtocolVersion(warnings);
+            checkKRaftMetadataStorageConfiguredForZooBasedCLuster(warnings);
         }
 
         return warnings;
@@ -234,6 +238,25 @@ public class KafkaSpecChecker {
         if (interBrokerProtocolVersion != null) {
             warnings.add(StatusUtils.buildWarningCondition("KafkaLogMessageFormatVersionInKRaft",
                     "log.message.format.version is not used in KRaft-based Kafka clusters and should be removed from the Kafka custom resource."));
+        }
+    }
+
+    private void checkKRaftMetadataStorageConfiguredForZooBasedCLuster(List<Condition> warnings)   {
+        boolean usesKRaftMetadataStorage = kafkaCluster.getStorageByPoolName().entrySet().stream().anyMatch(e -> {
+            if (e.getValue() instanceof EphemeralStorage storage)  {
+                return storage.getKraftMetadata() != null;
+            } else if (e.getValue() instanceof PersistentClaimStorage storage)  {
+                return storage.getKraftMetadata() != null;
+            } else if (e.getValue() instanceof JbodStorage storage) {
+                return storage.getVolumes().stream().anyMatch(vol -> vol.getKraftMetadata() != null);
+            } else {
+                return false;
+            }
+        });
+
+        if (usesKRaftMetadataStorage)   {
+            warnings.add(StatusUtils.buildWarningCondition("KRaftMetadataStorageConfiguredWithoutKRaft",
+                    "The Kafka custom resource or one or more of the KafkaNodePool custom resources contain the kraftMetadata configuration. This configuration is supported only for KRaft-based Kafka clusters."));
         }
     }
 }
