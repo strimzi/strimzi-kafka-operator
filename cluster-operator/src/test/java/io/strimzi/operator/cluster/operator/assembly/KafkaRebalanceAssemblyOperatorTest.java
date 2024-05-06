@@ -126,7 +126,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
         serverPort = CruiseControl.REST_API_PORT;
         tlsKeyFile = TestUtils.tempFile(".key");
         tlsCrtFile = TestUtils.tempFile(".crt");
-
+        
         new MockCertManager().generateSelfSignedCert(tlsKeyFile, tlsCrtFile,
             new Subject.Builder().withCommonName("Trusted Test CA").build(), 365);
 

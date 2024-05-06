@@ -10,12 +10,8 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.test.TestUtils;
 import org.junit.jupiter.api.Test;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -26,7 +22,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.aMapWithSize;
 import static org.hamcrest.Matchers.hasEntry;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class UtilTest {
@@ -190,31 +185,5 @@ public class UtilTest {
 
         selector = new LabelSelectorBuilder().withMatchLabels(Map.of("label2", "value2", "label1", "value1", "label3", "value3")).build();
         assertThat(matchesSelector(selector, testResource), is(false));
-    }
-
-    @Test
-    public void testBuildBasicAuthValue() {
-        String username = "testUser";
-        String password = "testPassword";
-        String expectedHeaderValue = "Basic dGVzdFVzZXI6dGVzdFBhc3N3b3Jk";
-        String actualHeaderValue = Util.buildBasicAuthValue(username, password);
-        assertEquals(expectedHeaderValue, actualHeaderValue);
-    }
-
-    @Test
-    public void testStringFromFile() throws IOException {
-        File tempFile = TestUtils.tempFile(".txt");
-        String expectedContent = "This is a test content.";
-        Files.write(tempFile.toPath(), expectedContent.getBytes());
-        String actualContent = Util.stringFromFile(tempFile);
-        assertEquals(expectedContent, actualContent);
-    }
-
-    @Test
-    public void testJsonFromResource() throws IOException {
-        String jsonPath = "example.json";
-        String expectedJsonContent = "{\"key\": \"value\"}";
-        String actualJsonContent = Util.jsonFromResource(jsonPath);
-        assertEquals(expectedJsonContent, actualJsonContent);
     }
 }

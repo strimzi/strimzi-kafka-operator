@@ -10,24 +10,28 @@ import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
 import io.strimzi.operator.cluster.model.CruiseControl;
 import io.strimzi.operator.cluster.model.ModelUtils;
-import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlEndpoints;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlParameters;
 import io.strimzi.operator.common.operator.MockCertManager;
-import io.strimzi.operator.common.operator.resource.cruisecontrol.AbstractMockCruiseControl;
+import io.strimzi.test.TestUtils;
+import org.mockserver.configuration.ConfigurationProperties;
+import org.mockserver.integration.ClientAndServer;
 import org.mockserver.matchers.Times;
 import org.mockserver.model.Header;
 import org.mockserver.model.JsonBody;
 import org.mockserver.model.Parameter;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.LogManager;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.mockserver.model.Header.header;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
@@ -35,7 +39,7 @@ import static org.mockserver.model.HttpResponse.response;
 /**
  * Cruise Control mock.
  */
-public class MockCruiseControl extends AbstractMockCruiseControl {
+public class MockCruiseControl {
     private static final String CC_JSON_ROOT = "io/strimzi/operator/cluster/operator/assembly/CruiseControlJSON/";
 
     private static final String SEP = "-";
@@ -64,8 +68,8 @@ public class MockCruiseControl extends AbstractMockCruiseControl {
 
     public static final Secret CC_SECRET = new SecretBuilder()
             .withNewMetadata()
-              .withName(CruiseControlResources.secretName(CLUSTER))
-              .withNamespace(NAMESPACE)
+                .withName(CruiseControlResources.secretName(CLUSTER))
+                .withNamespace(NAMESPACE)
             .endMetadata()
             .addToData("cruise-control.crt", MockCertManager.clusterCaCert())
             .build();
@@ -73,6 +77,8 @@ public class MockCruiseControl extends AbstractMockCruiseControl {
             CruiseControl.generateCruiseControlApiCredentials(new PasswordGenerator(16), null, null), Collections.emptyMap(), Collections.emptyMap());
 
     private static final Header AUTH_HEADER = convertToHeader(CruiseControlApiImpl.getAuthHttpHeader(true, CC_API_SECRET));
+
+    private ClientAndServer server;
 
     /**
      * Sets up and returns a Cruise Control mock server.
@@ -83,7 +89,35 @@ public class MockCruiseControl extends AbstractMockCruiseControl {
      * @return             The mock CruiseControl instance.
      */
     public MockCruiseControl(int serverPort, File tlsKeyFile, File tlsCrtFile) {
-        super(serverPort, tlsKeyFile, tlsCrtFile);
+        try {
+            ConfigurationProperties.logLevel("WARN");
+            ConfigurationProperties.certificateAuthorityPrivateKey(tlsKeyFile.getAbsolutePath());
+            ConfigurationProperties.certificateAuthorityCertificate(tlsCrtFile.getAbsolutePath());
+
+            String loggingConfiguration = "handlers=org.mockserver.logging.StandardOutConsoleHandler\n" +
+                "org.mockserver.logging.StandardOutConsoleHandler.level=WARNING\n" +
+                "org.mockserver.logging.StandardOutConsoleHandler.formatter=java.util.logging.SimpleFormatter\n" +
+                "java.util.logging.SimpleFormatter.format=%1$tF %1$tT  %3$s  %4$s  %5$s %6$s%n\n" +
+                ".level=" + ConfigurationProperties.javaLoggerLogLevel() + "\n" +
+                "io.netty.handler.ssl.SslHandler.level=WARNING";
+            LogManager.getLogManager().readConfiguration(new ByteArrayInputStream(loggingConfiguration.getBytes(UTF_8)));
+
+            this.server = new ClientAndServer(serverPort);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void reset() {
+        server.reset();
+    }
+
+    public void stop() {
+        server.stop();
+    }
+
+    public boolean isRunning() {
+        return server.isRunning();
     }
 
     /**
@@ -91,7 +125,7 @@ public class MockCruiseControl extends AbstractMockCruiseControl {
      */
     public void setupCCStateResponse() {
         // Non-verbose response
-        JsonBody jsonProposalNotReady = new JsonBody(Util.jsonFromResource(CC_JSON_ROOT + "CC-State-proposal-not-ready.json"));
+        JsonBody jsonProposalNotReady = new JsonBody(TestUtils.jsonFromResource(CC_JSON_ROOT + "CC-State-proposal-not-ready.json"));
 
         server
                 .when(
@@ -111,7 +145,7 @@ public class MockCruiseControl extends AbstractMockCruiseControl {
 
 
         // Non-verbose response
-        JsonBody json = new JsonBody(Util.jsonFromResource(CC_JSON_ROOT + "CC-State.json"));
+        JsonBody json = new JsonBody(TestUtils.jsonFromResource(CC_JSON_ROOT + "CC-State.json"));
 
         server
                 .when(
@@ -129,7 +163,7 @@ public class MockCruiseControl extends AbstractMockCruiseControl {
                                 .withDelay(TimeUnit.SECONDS, 0));
 
         // Verbose response
-        JsonBody jsonVerbose = new JsonBody(Util.jsonFromResource(CC_JSON_ROOT + "CC-State-verbose.json"));
+        JsonBody jsonVerbose = new JsonBody(TestUtils.jsonFromResource(CC_JSON_ROOT + "CC-State-verbose.json"));
 
         server
                 .when(
@@ -153,7 +187,7 @@ public class MockCruiseControl extends AbstractMockCruiseControl {
      */
     public void setupCCRebalanceNotEnoughDataError(CruiseControlEndpoints endpoint) {
         // Rebalance response with no goal that returns an error
-        JsonBody jsonError = new JsonBody(Util.jsonFromResource(CC_JSON_ROOT + "CC-Rebalance-NotEnoughValidWindows-error.json"));
+        JsonBody jsonError = new JsonBody(TestUtils.jsonFromResource(CC_JSON_ROOT + "CC-Rebalance-NotEnoughValidWindows-error.json"));
 
         server
                 .when(
@@ -179,7 +213,7 @@ public class MockCruiseControl extends AbstractMockCruiseControl {
      */
     public void setupCCBrokerDoesNotExist(CruiseControlEndpoints endpoint) {
         // Add/remove broker response with no goal that returns an error
-        JsonBody jsonError = new JsonBody(Util.jsonFromResource(CC_JSON_ROOT + "CC-Broker-not-exist.json"));
+        JsonBody jsonError = new JsonBody(TestUtils.jsonFromResource(CC_JSON_ROOT + "CC-Broker-not-exist.json"));
 
         server
                 .when(
@@ -213,7 +247,7 @@ public class MockCruiseControl extends AbstractMockCruiseControl {
      */
     public void setupCCRebalanceResponse(int pendingCalls, int responseDelay, CruiseControlEndpoints endpoint) {
         // Rebalance in progress response with no goals set - non-verbose
-        JsonBody pendingJson = new JsonBody(Util.jsonFromResource(CC_JSON_ROOT + "CC-Rebalance-no-goals-in-progress.json"));
+        JsonBody pendingJson = new JsonBody(TestUtils.jsonFromResource(CC_JSON_ROOT + "CC-Rebalance-no-goals-in-progress.json"));
         server
                 .when(
                         request()
@@ -234,7 +268,7 @@ public class MockCruiseControl extends AbstractMockCruiseControl {
                                 .withDelay(TimeUnit.SECONDS, responseDelay));
 
         // Rebalance response with no goals set - non-verbose
-        JsonBody json = new JsonBody(Util.jsonFromResource(CC_JSON_ROOT + "CC-Rebalance-no-goals.json"));
+        JsonBody json = new JsonBody(TestUtils.jsonFromResource(CC_JSON_ROOT + "CC-Rebalance-no-goals.json"));
 
         server
                 .when(
@@ -255,7 +289,7 @@ public class MockCruiseControl extends AbstractMockCruiseControl {
                                 .withDelay(TimeUnit.SECONDS, responseDelay));
 
         // Rebalance response with no goals set - verbose
-        JsonBody jsonVerbose = new JsonBody(Util.jsonFromResource(CC_JSON_ROOT + "CC-Rebalance-no-goals-verbose.json"));
+        JsonBody jsonVerbose = new JsonBody(TestUtils.jsonFromResource(CC_JSON_ROOT + "CC-Rebalance-no-goals-verbose.json"));
 
         server
                 .when(
@@ -281,7 +315,7 @@ public class MockCruiseControl extends AbstractMockCruiseControl {
      */
     public void setupCCRebalanceBadGoalsError(CruiseControlEndpoints endpoint) {
         // Response if the user has set custom goals which do not include all configured hard.goals
-        JsonBody jsonError = new JsonBody(Util.jsonFromResource(CC_JSON_ROOT + "CC-Rebalance-bad-goals-error.json"));
+        JsonBody jsonError = new JsonBody(TestUtils.jsonFromResource(CC_JSON_ROOT + "CC-Rebalance-bad-goals-error.json"));
 
         server
                 .when(
@@ -304,7 +338,7 @@ public class MockCruiseControl extends AbstractMockCruiseControl {
 
         // Response if the user has set custom goals which do not include all configured hard.goals
         // Note: This uses the no-goals example response but the difference between custom goals and default goals is not tested here
-        JsonBody jsonSummary = new JsonBody(Util.jsonFromResource(CC_JSON_ROOT + "CC-Rebalance-no-goals-verbose.json"));
+        JsonBody jsonSummary = new JsonBody(TestUtils.jsonFromResource(CC_JSON_ROOT + "CC-Rebalance-no-goals-verbose.json"));
 
         server
                 .when(
@@ -337,9 +371,9 @@ public class MockCruiseControl extends AbstractMockCruiseControl {
      */
     public void setupCCUserTasksResponseNoGoals(int activeCalls, int inExecutionCalls) throws IOException, URISyntaxException {
         // User tasks response for the rebalance request with no goals set (non-verbose)
-        JsonBody jsonActive = new JsonBody(Util.jsonFromResource(CC_JSON_ROOT + "CC-User-task-rebalance-no-goals-Active.json"));
-        JsonBody jsonInExecution = new JsonBody(Util.jsonFromResource(CC_JSON_ROOT + "CC-User-task-rebalance-no-goals-inExecution.json"));
-        JsonBody jsonCompleted = new JsonBody(Util.jsonFromResource(CC_JSON_ROOT + "CC-User-task-rebalance-no-goals-completed.json"));
+        JsonBody jsonActive = new JsonBody(TestUtils.jsonFromResource(CC_JSON_ROOT + "CC-User-task-rebalance-no-goals-Active.json"));
+        JsonBody jsonInExecution = new JsonBody(TestUtils.jsonFromResource(CC_JSON_ROOT + "CC-User-task-rebalance-no-goals-inExecution.json"));
+        JsonBody jsonCompleted = new JsonBody(TestUtils.jsonFromResource(CC_JSON_ROOT + "CC-User-task-rebalance-no-goals-completed.json"));
 
         // The first activeCalls times respond that with a status of "Active"
         server
@@ -396,9 +430,9 @@ public class MockCruiseControl extends AbstractMockCruiseControl {
                                 .withDelay(TimeUnit.SECONDS, 0));
 
         // User tasks response for the rebalance request with no goals set (verbose)
-        JsonBody jsonActiveVerbose = new JsonBody(Util.jsonFromResource(CC_JSON_ROOT + "CC-User-task-rebalance-no-goals-verbose-Active.json"));
-        JsonBody jsonInExecutionVerbose = new JsonBody(Util.jsonFromResource(CC_JSON_ROOT + "CC-User-task-rebalance-no-goals-verbose-inExecution.json"));
-        JsonBody jsonCompletedVerbose = new JsonBody(Util.jsonFromResource(CC_JSON_ROOT + "CC-User-task-rebalance-no-goals-verbose-completed.json"));
+        JsonBody jsonActiveVerbose = new JsonBody(TestUtils.jsonFromResource(CC_JSON_ROOT + "CC-User-task-rebalance-no-goals-verbose-Active.json"));
+        JsonBody jsonInExecutionVerbose = new JsonBody(TestUtils.jsonFromResource(CC_JSON_ROOT + "CC-User-task-rebalance-no-goals-verbose-inExecution.json"));
+        JsonBody jsonCompletedVerbose = new JsonBody(TestUtils.jsonFromResource(CC_JSON_ROOT + "CC-User-task-rebalance-no-goals-verbose-completed.json"));
 
         // The first activeCalls times respond that with a status of "Active"
         server
@@ -461,7 +495,7 @@ public class MockCruiseControl extends AbstractMockCruiseControl {
      */
     public void setupCCUserTasksCompletedWithError() throws IOException, URISyntaxException {
         // This simulates asking for the status of a task that has Complete with error and fetch_completed_task=true
-        JsonBody compWithErrorJson = new JsonBody(Util.jsonFromResource(CC_JSON_ROOT + "CC-User-task-status-completed-with-error.json"));
+        JsonBody compWithErrorJson = new JsonBody(TestUtils.jsonFromResource(CC_JSON_ROOT + "CC-User-task-status-completed-with-error.json"));
 
         server
                 .when(
@@ -484,7 +518,7 @@ public class MockCruiseControl extends AbstractMockCruiseControl {
      * Setup response of task being stopped.
      */
     public void setupCCStopResponse() {
-        JsonBody jsonStop = new JsonBody(Util.jsonFromResource(CC_JSON_ROOT + "CC-Stop.json"));
+        JsonBody jsonStop = new JsonBody(TestUtils.jsonFromResource(CC_JSON_ROOT + "CC-Stop.json"));
 
         server
                 .when(
