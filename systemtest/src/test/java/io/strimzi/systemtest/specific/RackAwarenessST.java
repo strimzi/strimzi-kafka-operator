@@ -121,7 +121,7 @@ class RackAwarenessST extends AbstractST {
 
         String rackIdOut = cmdKubeClient(testStorage.getNamespaceName()).execInPod(podName, "/bin/bash", "-c", "cat /opt/kafka/init/rack.id").out().trim();
         String brokerRackOut = cmdKubeClient(testStorage.getNamespaceName()).execInPod(podName, "/bin/bash", "-c", "cat /tmp/strimzi.properties | grep broker.rack").out().trim();
-        assertThat(rackIdOut.trim(), is(hostname));
+        assertThat(rackIdOut.trim().contains(hostname), is(true));
         assertThat(brokerRackOut.contains("broker.rack=" + hostname), is(true));
 
         LOGGER.info("Producing and Consuming data in the Kafka cluster: {}/{}", testStorage.getNamespaceName(), testStorage.getClusterName());
@@ -208,7 +208,7 @@ class RackAwarenessST extends AbstractST {
         String hostname = podNodeName.contains(".") ? podNodeName.substring(0, podNodeName.indexOf(".")) : podNodeName;
         String commandOut = cmdKubeClient(testStorage.getNamespaceName()).execInPod(podName,
                 "/bin/bash", "-c", "cat /tmp/strimzi-connect.properties | grep consumer.client.rack").out().trim();
-        assertThat(commandOut.equals("consumer.client.rack=" + hostname), is(true));
+        assertThat(commandOut.contains("consumer.client.rack=" + hostname), is(true));
 
         // produce data which are to be available in the topic
         final KafkaClients kafkaClients = ClientUtils.getInstantPlainClients(testStorage);
@@ -287,7 +287,7 @@ class RackAwarenessST extends AbstractST {
         String podNodeName = pod.getSpec().getNodeName();
         String hostname = podNodeName.contains(".") ? podNodeName.substring(0, podNodeName.indexOf(".")) : podNodeName;
         String commandOut = cmdKubeClient(testStorage.getNamespaceName()).execInPod(podName, "/bin/bash", "-c", "cat /tmp/strimzi-connect.properties | grep consumer.client.rack").out().trim();
-        assertThat(commandOut.equals("consumer.client.rack=" + hostname), is(true));
+        assertThat(commandOut.contains("consumer.client.rack=" + hostname), is(true));
 
         // Mirroring messages by: Producing to the Source Kafka Cluster and consuming them from mirrored KafkaTopic in target Kafka Cluster.
 

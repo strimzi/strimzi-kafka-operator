@@ -9,6 +9,6 @@ ARG KAFKA_VERSION
 USER root:root
 RUN mkdir -p /opt/kafka/plugins/file-sink
 
-RUN cp /opt/kafka/libs/connect-file-${KAFKA_VERSION}.jar /opt/kafka/plugins/file-sink
+RUN ls /opt/kafka/libs/* -d | grep .*connect-file-${KAFKA_VERSION}.*.jar -o | xargs cp -t /opt/kafka/plugins/file-sink
 
 USER 1001
