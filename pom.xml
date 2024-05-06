@@ -240,6 +240,11 @@
                 </exclusions>
             </dependency>
             <dependency>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <version>${lombok.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.strimzi</groupId>
                 <artifactId>crd-generator</artifactId>
                 <version>${project.version}</version>
@@ -798,18 +803,6 @@
             </dependency>
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
-                <artifactId>junit-jupiter-engine</artifactId>
-                <version>${jupiter.version}</version>
-                <scope>test</scope>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.apiguardian</groupId>
-                        <artifactId>apiguardian-api</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-api</artifactId>
                 <version>${jupiter.version}</version>
                 <scope>test</scope>
@@ -1158,41 +1151,6 @@
                         </goals>
                         <configuration>
                             <failOnWarning>true</failOnWarning>
-                            <ignoredUnusedDeclaredDependencies>
-                                <ignoredUnusedDeclaredDependency>io.fabric8:kubernetes-client</ignoredUnusedDeclaredDependency>
-                                <ignoredUnusedDeclaredDependency>io.fabric8:kubernetes-httpclient-jdk</ignoredUnusedDeclaredDependency>
-                                <ignoredUnusedDeclaredDependency>io.fabric8:openshift-client</ignoredUnusedDeclaredDependency>
-                                <ignoredUnusedDeclaredDependency>org.apache.kafka:kafka-clients</ignoredUnusedDeclaredDependency>
-                                <ignoredUnusedDeclaredDependency>org.apache.kafka:kafka-streams</ignoredUnusedDeclaredDependency>
-                                <!-- Used in Kafka Agent through reflection -->
-                                <ignoredUnusedDeclaredDependency>org.apache.kafka:kafka-server-common</ignoredUnusedDeclaredDependency>
-                                <ignoredUnusedDeclaredDependency>org.apache.logging.log4j:log4j-core</ignoredUnusedDeclaredDependency>
-                                <ignoredUnusedDeclaredDependency>org.apache.logging.log4j:log4j-slf4j-impl</ignoredUnusedDeclaredDependency>
-                                <ignoredUnusedDeclaredDependency>io.sundr:builder-annotations</ignoredUnusedDeclaredDependency>
-                                <ignoredUnusedDeclaredDependency>io.sundr:sundr-codegen</ignoredUnusedDeclaredDependency>
-                                <ignoredUnusedDeclaredDependency>org.projectlombok:lombok</ignoredUnusedDeclaredDependency>
-                                <ignoredUnusedDeclaredDependency>org.slf4j:slf4j-api:jar</ignoredUnusedDeclaredDependency>
-                                <ignoredUnusedDeclaredDependency>org.glassfish:javax.json:jar</ignoredUnusedDeclaredDependency>
-                                <ignoredUnusedDeclaredDependency>org.apache.kafka:kafka_2.13:jar</ignoredUnusedDeclaredDependency>
-                                <ignoredUnusedDeclaredDependency>io.netty:netty-transport-native-epoll:jar</ignoredUnusedDeclaredDependency>
-                                <ignoredDependency>org.junit.platform</ignoredDependency>
-                                <ignoredUnusedDeclaredDependency>org.apache.kafka:connect-file</ignoredUnusedDeclaredDependency>
-                                <ignoredDependency>org.junit.jupiter</ignoredDependency>
-                                <ignoredDependency>org.junit.platform</ignoredDependency>
-                                <ignoredUnusedDeclaredDependency>io.micrometer:micrometer-registry-prometheus</ignoredUnusedDeclaredDependency>
-                                <ignoredUnusedDeclaredDependency>org.mockito:mockito-inline</ignoredUnusedDeclaredDependency>
-                                <ignoredUnusedDeclaredDependency>junit:junit</ignoredUnusedDeclaredDependency>
-                            </ignoredUnusedDeclaredDependencies>
-                            <ignoredUsedUndeclaredDependencies>
-                                <ignoredUsedUndeclaredDependency>org.apache.kafka:kafka-raft:jar</ignoredUsedUndeclaredDependency>
-                            </ignoredUsedUndeclaredDependencies>
-                            <ignoredNonTestScopedDependencies>
-                                <ignoredNonTestScopedDependency>com.fasterxml.jackson.core:jackson-core</ignoredNonTestScopedDependency>
-                                <ignoredNonTestScopedDependency>org.apache.zookeeper:zookeeper-jute</ignoredNonTestScopedDependency>
-                                <ignoredNonTestScopedDependency>io.fabric8:kubernetes-model-coordination</ignoredNonTestScopedDependency>
-                                <ignoredNonTestScopedDependency>io.fabric8:kubernetes-model-common</ignoredNonTestScopedDependency>
-                                <ignoredNonTestScopedDependency>org.apache.logging.log4j:log4j-core</ignoredNonTestScopedDependency>
-                            </ignoredNonTestScopedDependencies>
                         </configuration>
                     </execution>
                 </executions>
