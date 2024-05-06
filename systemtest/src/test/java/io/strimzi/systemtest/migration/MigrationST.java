@@ -91,10 +91,11 @@ public class MigrationST extends AbstractST {
      * disrupted.
      *
      * This is a parametrized test with following arguments:
-     *      - ZK delete claim - when set to true, the PVs of ZK should be deleted at the end of the test by the operator; if set to false, the PVs should be kept
-     *      - delete CO during process - inside the test-case there are situations (typically when some rolling update starts) when the CO will be deleted
-     *              -> this will test that the migration will be finished even if the CO will be deleted/rolled
-     *      - use JBOD storage - last argument determines if the Kafka brokers & controllers should use single PV or JBOD storage (with 2 PVs)
+     * <ul>
+     *     <li>$1 - Delete Zookeeper claim: true, false</li>
+     *     <li>$2 - Delete Cluster Operator during the process: false, true</li>
+     *     <li>$3 - Use JBOD storage configuration: true, false</li>
+     * </ul>
      *
      * Based on the checks, the steps can be a bit different.
      *
@@ -156,9 +157,10 @@ public class MigrationST extends AbstractST {
      * disrupted.
      *
      * This is a parametrized test with following arguments:
-     *      - delete CO during process - inside the test-case there are situations (typically when some rolling update starts) when the CO will be deleted
-     *              -> this will test that the migration/rollback will be finished even if the CO will be deleted/rolled
-     *      - use JBOD storage - last argument determines if the Kafka brokers & controllers should use single PV or JBOD storage (with 2 PVs)
+     * <ul>
+     *     <li>$1 - Delete Cluster Operator during the process: false, true</li>
+     *     <li>$2 - Use JBOD storage configuration: true, false</li>
+     * </ul>
      *
      * Based on the checks, the steps can be a bit different.
      * @steps
