@@ -18,7 +18,6 @@ import io.strimzi.operator.common.auth.TlsPemIdentity;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
-import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.admin.ZooKeeperAdmin;
 
 import java.io.File;
@@ -58,7 +57,7 @@ public class KRaftMigrationUtils {
                         zkAdmin.delete("/controller", -1);
                         LOGGER.infoCr(reconciliation, "Deleted the '/controller' znode as part of the KRaft migration rollback");
                         znodeDeleted.complete();
-                    } catch (KeeperException | InterruptedException e)    {
+                    } catch (Exception e)    {
                         LOGGER.warnCr(reconciliation, "Failed to delete '/controller' znode", e);
                         znodeDeleted.fail(e);
                     } finally {
