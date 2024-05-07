@@ -29,6 +29,16 @@ All other supported options are forwarded to Kafka Bridge, including the followi
 
 * Any `ssl` configuration for xref:con-common-configuration-ssl-reference[supported TLS versions and cipher suites]
 
+[id='property-kafka-bridge-consumer-enabled-config-{context}']
+= `enabled`
+
+Enablement of the producer can be controlled by setting the `enabled` field to `true` or `false`. Default is `true`.
+
+[id='property-kafka-bridge-consumer-timeout-config-{context}']
+= `timeoutSeconds`
+
+The timeout for deleting inactive consumers can be configured using `timeoutSeconds`, by default it is not enabled.
+
 .Example Kafka Bridge consumer configuration
 [source,yaml,subs="attributes+"]
 ----
@@ -39,6 +49,8 @@ metadata:
 spec:
   # ...
   consumer:
+    enabled: true
+    timeoutSeconds: 60
     config:
       auto.offset.reset: earliest
       enable.auto.commit: true
