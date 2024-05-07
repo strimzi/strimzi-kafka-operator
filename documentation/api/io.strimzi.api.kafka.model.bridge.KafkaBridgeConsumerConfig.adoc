@@ -1,0 +1,28 @@
+Configures Consumer access to a Kafka cluster for the Kafka Bridge.
+
+The consumer configuration is used to configure the Kafka consumer that is used to consume messages from the Kafka cluster.
+
+[id='property-kafka-bridge-consumer-enabled-config-{context}']
+= `enabled`
+
+Enablement of the producer can be controlled by setting the `enabled` field to `true` or `false`. Default is `true`.
+
+[id='property-kafka-bridge-consumer-timeout-config-{context}']
+= `timeoutSeconds`
+
+The timeout for deleting inactive consumers can be configured using `timeoutSeconds`, by default it is not enabled.
+
+.Example Kafka Bridge HTTP Consumer configuration
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaBridgeApiVersion}
+kind: KafkaBridge
+metadata:
+  name: my-bridge
+spec:
+  # ...
+  consumer:
+    enabled: true
+    timeoutSeconds: 60
+  # ...
+----

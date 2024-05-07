@@ -1,0 +1,22 @@
+Configures Producer access to a Kafka cluster for the Kafka Bridge.
+
+The producer configuration is used to configure the Kafka producer that the Kafka Bridge uses to produce messages to the Kafka cluster.
+
+[id='property-kafka-bridge-producer-enabled-config-{context}']
+= `enabled`
+
+Enablement of the producer can be controlled by setting the `enabled` field to `true` or `false`. Default is `true`.
+
+.Example Kafka Bridge HTTP Consumer configuration
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaBridgeApiVersion}
+kind: KafkaBridge
+metadata:
+  name: my-bridge
+spec:
+  # ...
+  producer:
+    enabled: true
+  # ...
+----
