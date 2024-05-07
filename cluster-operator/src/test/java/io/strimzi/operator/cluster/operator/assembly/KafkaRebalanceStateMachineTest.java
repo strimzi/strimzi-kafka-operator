@@ -82,8 +82,8 @@ public class KafkaRebalanceStateMachineTest {
 
     @BeforeAll
     public static void before() throws IOException {
-        File tlsKeyFile = TestUtils.tempFile(".key");
-        File tlsCrtFile = TestUtils.tempFile(".crt");
+        File tlsKeyFile = TestUtils.tempFile(KafkaRebalanceStateMachineTest.class.getSimpleName(), ".key");
+        File tlsCrtFile = TestUtils.tempFile(KafkaRebalanceStateMachineTest.class.getSimpleName(), ".crt");
 
         new MockCertManager().generateSelfSignedCert(tlsKeyFile, tlsCrtFile,
             new Subject.Builder().withCommonName("Trusted Test CA").build(), 365);

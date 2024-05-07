@@ -50,8 +50,8 @@ public class CruiseControlClientTest {
     @BeforeAll
     public static void setupServer() throws IOException {
         serverPort = TestUtils.getFreePort();
-        File tlsKeyFile = TestUtils.tempFile(".key");
-        File tlsCrtFile = TestUtils.tempFile(".crt");
+        File tlsKeyFile = TestUtils.tempFile(CruiseControlClientTest.class.getSimpleName(), ".key");
+        File tlsCrtFile = TestUtils.tempFile(CruiseControlClientTest.class.getSimpleName(), ".crt");
         
         new MockCertManager().generateSelfSignedCert(tlsKeyFile, tlsCrtFile,
             new Subject.Builder().withCommonName("Trusted Test CA").build(), 365);

@@ -21,12 +21,10 @@ import org.junit.jupiter.api.TestInfo;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
@@ -139,14 +137,13 @@ class TopicOperatorTestUtil {
         return topics.stream().filter(kt -> kt.getMetadata().getName().equals(name)).findFirst().orElse(null);
     }
     
-    static String stringFromFile(File filePath) {
+    static String contentFromTextFile(File filePath) {
         try {
-            URI resourceURI = Objects.requireNonNull(filePath).toURI();
-            Optional<String> content = Files.lines(Paths.get(resourceURI), UTF_8).reduce((x, y) -> x + y);
-            if (content.isEmpty()) {
-                throw new IOException(format("File %s was empty", filePath.getAbsolutePath()));
+            var resourceURI = Objects.requireNonNull(filePath).toURI();
+            try (var lines = Files.lines(Paths.get(resourceURI), UTF_8)) {
+                var content = lines.reduce((x, y) -> x + y);
+                return content.orElseThrow(() -> new IOException(format("File %s is empty", filePath.getAbsolutePath())));
             }
-            return content.get();
         } catch (Throwable t) {
             throw new RuntimeException(t);
         }
