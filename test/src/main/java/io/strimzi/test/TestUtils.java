@@ -32,6 +32,7 @@ import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.StringWriter;
 import java.net.ServerSocket;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -45,9 +46,11 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -55,6 +58,8 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.BooleanSupplier;
 import java.util.function.Function;
 
+import static java.lang.String.format;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -519,5 +524,66 @@ public final class TestUtils {
      */
     public static void assertSuccessful(Object unused, Throwable error) {
         assertThat(error, is(nullValue()));
+    }
+
+    /**
+     * Creates an empty file in the default temporary-file directory with an UUID as prefix and .tmp as suffix.
+     * 
+     * @return The empty file just created.
+     */
+    public static File tempFile() {
+        return tempFile(null);
+    }
+
+    /**
+     * Creates an empty file in the default temporary-file directory with an UUID as prefix and given suffix.
+     * 
+     * @param suffix The suffix of the empty file (default: .tmp).
+     * 
+     * @return The empty file just created.
+     */
+    public static File tempFile(String suffix) {
+        return tempFile(null, suffix);
+    }
+
+    /**
+     * Creates an empty file in the default temporary-file directory, using the given prefix and suffix.
+     * 
+     * @param prefix The prefix of the empty file (default: UUID).
+     * @param suffix The suffix of the empty file (default: .tmp).
+     * 
+     * @return The empty file just created.
+     */
+    public static File tempFile(String prefix, String suffix) {
+        File file;
+        prefix = prefix == null ? UUID.randomUUID().toString() : prefix;
+        suffix = suffix == null ? ".tmp" : suffix;
+        try {
+            file = Files.createTempFile(prefix, suffix).toFile();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        file.deleteOnExit();
+        return file;
+    }
+
+    /**
+     * Get JSON content as string from resource.
+     *
+     * @param resourcePath Resource path.
+     *
+     * @return JSON content as string.
+     */
+    public static String jsonFromResource(String resourcePath) {
+        try {
+            URI resourceURI = Objects.requireNonNull(TestUtils.class.getClassLoader().getResource(resourcePath)).toURI();
+            Optional<String> content = Files.lines(Paths.get(resourceURI), UTF_8).reduce((x, y) -> x + y);
+            if (content.isEmpty()) {
+                throw new IOException(format("File %s from resources was empty", resourcePath));
+            }
+            return content.get();
+        } catch (Throwable t) {
+            throw new RuntimeException(t);
+        }
     }
 }

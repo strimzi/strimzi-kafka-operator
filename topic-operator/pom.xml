@@ -100,6 +100,7 @@
         <dependency>
             <groupId>io.strimzi</groupId>
             <artifactId>test</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>

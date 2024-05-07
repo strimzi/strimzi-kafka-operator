@@ -16,6 +16,7 @@ import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceSpec;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceSpecBuilder;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceStatus;
+import io.strimzi.certs.Subject;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.CruiseControl;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
@@ -29,6 +30,8 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlEndpoints;
+import io.strimzi.operator.common.operator.MockCertManager;
+import io.strimzi.test.TestUtils;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -40,6 +43,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -77,18 +81,28 @@ public class KafkaRebalanceStateMachineTest {
     private static MockCruiseControl ccServer;
 
     @BeforeAll
-    public static void before() throws IOException, URISyntaxException {
-        ccServer = new MockCruiseControl(CruiseControl.REST_API_PORT);
+    public static void before() throws IOException {
+        File tlsKeyFile = TestUtils.tempFile(KafkaRebalanceStateMachineTest.class.getSimpleName(), ".key");
+        File tlsCrtFile = TestUtils.tempFile(KafkaRebalanceStateMachineTest.class.getSimpleName(), ".crt");
+
+        new MockCertManager().generateSelfSignedCert(tlsKeyFile, tlsCrtFile,
+            new Subject.Builder().withCommonName("Trusted Test CA").build(), 365);
+
+        ccServer = new MockCruiseControl(CruiseControl.REST_API_PORT, tlsKeyFile, tlsCrtFile);
     }
 
     @AfterAll
     public static void after() {
-        ccServer.stop();
+        if (ccServer != null && ccServer.isRunning()) {
+            ccServer.stop();
+        }
     }
 
     @BeforeEach
     public void resetServer() {
-        ccServer.reset();
+        if (ccServer != null && ccServer.isRunning()) {
+            ccServer.reset();
+        }
     }
 
     /**

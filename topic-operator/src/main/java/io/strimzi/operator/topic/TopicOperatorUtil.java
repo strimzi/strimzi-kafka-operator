@@ -8,7 +8,6 @@ import io.micrometer.core.instrument.Timer;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.api.kafka.model.topic.KafkaTopicStatus;
 import io.strimzi.operator.common.Annotations;
-import io.strimzi.operator.common.Util;
 import io.strimzi.operator.topic.metrics.TopicOperatorMetricsHolder;
 
 import java.io.IOException;
@@ -19,7 +18,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static java.lang.String.format;
-import static java.lang.String.join;
 
 /**
  * Provides utility methods for managing and interacting with KafkaTopic resources within a Topic Operator context. 
@@ -166,23 +164,9 @@ public class TopicOperatorUtil {
      * Whether the {@link KafkaTopic} status has replicas change.
      * 
      * @param status Topic status.
-     *               
      * @return True if there is replicas change status.
      */
     public static boolean hasReplicasChange(KafkaTopicStatus status) {
         return status != null && status.getReplicasChange() != null;
-    }
-    
-    /**
-     * Build Basic HTTP authentication header value.
-     * 
-     * @param username Username.
-     * @param password Password.
-     * 
-     * @return Header value.
-     */
-    public static String buildBasicAuthValue(String username, String password) {
-        String credentials = join(":", username, password);
-        return format("Basic %s", Util.encodeToBase64(credentials));
     }
 }
