@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
+import io.strimzi.operator.common.Util;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.keycloak.KeycloakInstance;
@@ -127,10 +128,10 @@ public class SetupKeycloak {
         Secret keycloakSecret = kubeClient().getSecret(namespaceName, KEYCLOAK_SECRET_NAME);
 
         String usernameEncoded = keycloakSecret.getData().get("username");
-        String username = new String(Base64.getDecoder().decode(usernameEncoded.getBytes(StandardCharsets.UTF_8)), StandardCharsets.UTF_8);
+        String username = Util.decodeFromBase64(usernameEncoded, StandardCharsets.UTF_8);
 
         String passwordEncoded = keycloakSecret.getData().get("password");
-        String password = new String(Base64.getDecoder().decode(passwordEncoded.getBytes(StandardCharsets.UTF_8)), StandardCharsets.UTF_8);
+        String password = Util.decodeFromBase64(passwordEncoded, StandardCharsets.UTF_8);
 
         return new KeycloakInstance(username, password, namespaceName);
     }

@@ -33,4 +33,6 @@ if [[ -z "$STRIMZI_OPERATOR_NAME" ]]; then
   export STRIMZI_OPERATOR_NAME
 fi
 
+export JAVA_OPTS="${JAVA_OPTS} -Dvertx.cacheDirBase=/tmp/vertx-cache"
+
 exec "${STRIMZI_HOME}/bin/launch_java.sh"

@@ -23,12 +23,10 @@ import java.util.List;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "conditions", "observedGeneration", "url", "connectorPlugins" })
+@JsonPropertyOrder({ "conditions", "observedGeneration", "url", "connectorPlugins", "replicas", "labelSelector" })
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaConnectStatus extends Status {
-    private static final long serialVersionUID = 1L;
-
     private String url;
     private List<ConnectorPlugin> connectorPlugins;
     private int replicas;

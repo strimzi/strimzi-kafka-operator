@@ -19,37 +19,37 @@ import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceAnnotation;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceMode;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceStatus;
-import io.strimzi.api.kafka.model.topic.KafkaTopicSpec;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
-import io.strimzi.systemtest.annotations.KRaftNotSupported;
-import io.strimzi.systemtest.annotations.KRaftWithoutUTONotSupported;
 import io.strimzi.systemtest.annotations.MixedRoleNotSupported;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
-import io.strimzi.systemtest.annotations.UTONotSupported;
+import io.strimzi.systemtest.kafkaclients.internalClients.admin.AdminClient;
 import io.strimzi.systemtest.resources.NodePoolsConverter;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
 import io.strimzi.systemtest.resources.crd.KafkaRebalanceResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaRebalanceTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
+import io.strimzi.systemtest.templates.specific.AdminClientTemplates;
 import io.strimzi.systemtest.templates.specific.ScraperTemplates;
+import io.strimzi.systemtest.utils.AdminClientUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
+import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.systemtest.utils.VerificationUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaRebalanceUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
+import io.strimzi.systemtest.utils.specific.CruiseControlUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -74,19 +74,15 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @Tag(REGRESSION)
 @Tag(CRUISE_CONTROL)
 public class CruiseControlST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(CruiseControlST.class);
-    private static final String CRUISE_CONTROL_METRICS_TOPIC = "strimzi.cruisecontrol.metrics"; // partitions 1 , rf - 1
-    private static final String CRUISE_CONTROL_MODEL_TRAINING_SAMPLES_TOPIC = "strimzi.cruisecontrol.modeltrainingsamples"; // partitions 32 , rf - 2
-    private static final String CRUISE_CONTROL_PARTITION_METRICS_SAMPLES_TOPIC = "strimzi.cruisecontrol.partitionmetricsamples"; // partitions 32 , rf - 2
 
     @IsolatedTest
-    @KRaftWithoutUTONotSupported
-    @UTONotSupported("https://github.com/strimzi/strimzi-kafka-operator/issues/8864")
     void testAutoCreationOfCruiseControlTopicsWithResources() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         // number of brokers to be created and also number of default replica count for each topic created
@@ -128,29 +124,16 @@ public class CruiseControlST extends AbstractST {
         VerificationUtils.assertJvmOptions(Environment.TEST_SUITE_NAMESPACE, ccPodName, "cruise-control",
                 "-Xmx200M", "-Xms128M", "-XX:+UseG1GC");
 
-        KafkaTopicUtils.waitForKafkaTopicReady(Environment.TEST_SUITE_NAMESPACE, CRUISE_CONTROL_METRICS_TOPIC);
-        KafkaTopicSpec metricsTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(Environment.TEST_SUITE_NAMESPACE)
-            .withName(CRUISE_CONTROL_METRICS_TOPIC).get().getSpec();
-
-        KafkaTopicUtils.waitForKafkaTopicReady(Environment.TEST_SUITE_NAMESPACE, CRUISE_CONTROL_MODEL_TRAINING_SAMPLES_TOPIC);
-        KafkaTopicSpec modelTrainingTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(Environment.TEST_SUITE_NAMESPACE)
-            .withName(CRUISE_CONTROL_MODEL_TRAINING_SAMPLES_TOPIC).get().getSpec();
-
-        KafkaTopicUtils.waitForKafkaTopicReady(Environment.TEST_SUITE_NAMESPACE, CRUISE_CONTROL_PARTITION_METRICS_SAMPLES_TOPIC);
-        KafkaTopicSpec partitionMetricsTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(Environment.TEST_SUITE_NAMESPACE)
-            .withName(CRUISE_CONTROL_PARTITION_METRICS_SAMPLES_TOPIC).get().getSpec();
-
-        LOGGER.info("Checking partitions and replicas for {}", CRUISE_CONTROL_METRICS_TOPIC);
-        assertThat(metricsTopic.getPartitions(), is(1));
-        assertThat(metricsTopic.getReplicas(), is(defaultBrokerReplicaCount));
-
-        LOGGER.info("Checking partitions and replicas for {}", CRUISE_CONTROL_MODEL_TRAINING_SAMPLES_TOPIC);
-        assertThat(modelTrainingTopic.getPartitions(), is(32));
-        assertThat(modelTrainingTopic.getReplicas(), is(defaultBrokerReplicaCount));
-
-        LOGGER.info("Checking partitions and replicas for {}", CRUISE_CONTROL_PARTITION_METRICS_SAMPLES_TOPIC);
-        assertThat(partitionMetricsTopic.getPartitions(), is(32));
-        assertThat(partitionMetricsTopic.getReplicas(), is(defaultBrokerReplicaCount));
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage).build());
+        resourceManager.createResourceWithWait(
+            AdminClientTemplates.plainAdminClient(
+                testStorage.getNamespaceName(),
+                testStorage.getAdminName(),
+                KafkaResources.plainBootstrapAddress(testStorage.getClusterName())
+            ).build()
+        );
+        final AdminClient adminClient = AdminClientUtils.getConfiguredAdminClient(testStorage.getNamespaceName(), testStorage.getAdminName());
+        CruiseControlUtils.verifyThatCruiseControlTopicsArePresent(adminClient, defaultBrokerReplicaCount);
     }
 
     @IsolatedTest
@@ -295,7 +278,6 @@ public class CruiseControlST extends AbstractST {
     }
 
     @ParallelNamespaceTest
-    @KRaftWithoutUTONotSupported
     void testCruiseControlTopicExclusion() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -379,8 +361,12 @@ public class CruiseControlST extends AbstractST {
     }
 
     @ParallelNamespaceTest
-    @KRaftNotSupported("JBOD is not supported by KRaft mode and is used in this test case.")
     void testCruiseControlIntraBrokerBalancing() {
+        // JBOD storage in KRaft is supported only from Kafka 3.7.0 and higher.
+        // So we want to run this test when KRaft is disabled or when it is with KRaft and Kafka 3.7.0+
+        // TODO: remove once support for 3.6.x is removed - https://github.com/strimzi/strimzi-kafka-operator/issues/9921
+        assumeTrue(!Environment.isKRaftForCOEnabled() || TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "3.7.0") >= 0);
+
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         String diskSize = "6Gi";
 

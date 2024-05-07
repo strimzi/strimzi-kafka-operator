@@ -6,17 +6,16 @@ package io.strimzi.operator.cluster.operator.resource;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.operator.cluster.model.DnsNameGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
-import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.auth.TlsPemIdentity;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
-import java.io.ByteArrayInputStream;
+
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -24,16 +23,6 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.security.GeneralSecurityException;
-import java.security.KeyFactory;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.cert.Certificate;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.PKCS8EncodedKeySpec;
 
 /**
  * Creates HTTP client and interacts with Kafka Agent's REST endpoint
@@ -46,14 +35,11 @@ public class KafkaAgentClient {
     private static final String BROKER_STATE_REST_PATH = "/v1/broker-state/";
     private static final String KRAFT_MIGRATION_PATH = "/v1/kraft-migration/";
     private static final int KAFKA_AGENT_HTTPS_PORT = 8443;
-    private static final String KEYSTORE_TYPE_JKS = "JKS";
-    private static final String CERT_TYPE_X509 = "X.509";
     private static final char[] KEYSTORE_PASSWORD = "changeit".toCharArray();
     private final String namespace;
     private final Reconciliation reconciliation;
     private final String cluster;
-    private Secret clusterCaCertSecret;
-    private Secret coKeySecret;
+    private TlsPemIdentity tlsPemIdentity;
     private HttpClient httpClient;
 
     /**
@@ -62,15 +48,13 @@ public class KafkaAgentClient {
      * @param reconciliation    Reconciliation marker
      * @param cluster   Cluster name
      * @param namespace Cluster namespace
-     * @param clusterCaCertSecret   Secret containing the cluster CA certificate
-     * @param coKeySecret   Secret containing the cluster operator certificate key
+     * @param tlsPemIdentity Trust set and identity for TLS client authentication for connecting to the Kafka cluster
      */
-    public KafkaAgentClient(Reconciliation reconciliation, String cluster, String namespace, Secret clusterCaCertSecret, Secret coKeySecret) {
+    public KafkaAgentClient(Reconciliation reconciliation, String cluster, String namespace, TlsPemIdentity tlsPemIdentity) {
         this.reconciliation = reconciliation;
         this.cluster = cluster;
         this.namespace = namespace;
-        this.clusterCaCertSecret = clusterCaCertSecret;
-        this.coKeySecret = coKeySecret;
+        this.tlsPemIdentity = tlsPemIdentity;
         this.httpClient = createHttpClient();
     }
 
@@ -88,18 +72,24 @@ public class KafkaAgentClient {
     }
 
     private HttpClient createHttpClient() {
-        if (clusterCaCertSecret == null || coKeySecret == null) {
-            throw new RuntimeException("Missing secrets for cluster CA and operator certificates required to create connection to Kafka Agent");
+        if (tlsPemIdentity == null) {
+            throw new RuntimeException("Missing cluster CA and operator certificates required to create connection to Kafka Agent");
         }
 
         try {
+            if (tlsPemIdentity.pemTrustSet() == null) {
+                throw new RuntimeException("Missing cluster CA trust set certificates required to create connection to Kafka Agent");
+            }
             String trustManagerFactoryAlgorithm = TrustManagerFactory.getDefaultAlgorithm();
             TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(trustManagerFactoryAlgorithm);
-            trustManagerFactory.init(getTrustStore());
+            trustManagerFactory.init(tlsPemIdentity.pemTrustSet().jksTrustStore());
 
+            if (tlsPemIdentity.pemAuthIdentity() == null) {
+                throw new RuntimeException("Missing cluster operator authentication identity certificates required to create connection to Kafka Agent");
+            }
             String keyManagerFactoryAlgorithm = KeyManagerFactory.getDefaultAlgorithm();
             KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(keyManagerFactoryAlgorithm);
-            keyManagerFactory.init(getKeyStore(), KEYSTORE_PASSWORD);
+            keyManagerFactory.init(tlsPemIdentity.pemAuthIdentity().jksKeyStore(KEYSTORE_PASSWORD), KEYSTORE_PASSWORD);
 
             SSLContext sslContext = SSLContext.getInstance("TLS");
             sslContext.init(keyManagerFactory.getKeyManagers(), trustManagerFactory.getTrustManagers(), null);
@@ -110,33 +100,6 @@ public class KafkaAgentClient {
         } catch (GeneralSecurityException | IOException e) {
             throw new RuntimeException("Failed to configure HTTP client", e);
         }
-    }
-
-    private KeyStore getTrustStore() throws CertificateException, KeyStoreException, IOException, NoSuchAlgorithmException {
-        final CertificateFactory caCertFactory = CertificateFactory.getInstance(CERT_TYPE_X509);
-        final Certificate caCert = caCertFactory.generateCertificate(new ByteArrayInputStream(
-                Util.decodeFromSecret(clusterCaCertSecret, "ca.crt")));
-        KeyStore trustStore = KeyStore.getInstance(KEYSTORE_TYPE_JKS);
-        trustStore.load(null);
-        trustStore.setCertificateEntry("ca", caCert);
-        return trustStore;
-    }
-
-    private KeyStore getKeyStore() throws KeyStoreException, CertificateException, NoSuchAlgorithmException, InvalidKeySpecException, IOException {
-        final CertificateFactory coCertFactory = CertificateFactory.getInstance(CERT_TYPE_X509);
-        final Certificate coCert = coCertFactory.generateCertificate(new ByteArrayInputStream(
-                Util.decodeFromSecret(coKeySecret, "cluster-operator.crt")));
-
-        byte[] decodedKey = Util.decodePemPrivateKeyFromSecret(coKeySecret, "cluster-operator.key");
-        PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(decodedKey);
-        final KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-        final PrivateKey key = keyFactory.generatePrivate(keySpec);
-
-        KeyStore coKeyStore = KeyStore.getInstance(KEYSTORE_TYPE_JKS);
-        coKeyStore.load(null);
-        coKeyStore.setKeyEntry("cluster-operator", key, KEYSTORE_PASSWORD, new Certificate[]{coCert});
-
-        return coKeyStore;
     }
 
     String doGet(URI uri) {

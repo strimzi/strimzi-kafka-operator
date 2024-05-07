@@ -121,12 +121,12 @@
         <checkstyle.version>10.12.2</checkstyle.version>
         <spotbugs.version>4.7.3</spotbugs.version>
         <sundrio.version>0.100.3</sundrio.version>
-        <lombok.version>1.18.24</lombok.version>
+        <lombok.version>1.18.32</lombok.version>
 
         <!-- Runtime dependencies -->
-        <fabric8.kubernetes-client.version>6.10.0</fabric8.kubernetes-client.version>
-        <fabric8.openshift-client.version>6.10.0</fabric8.openshift-client.version>
-        <fabric8.kubernetes-model.version>6.10.0</fabric8.kubernetes-model.version>
+        <fabric8.kubernetes-client.version>6.12.1</fabric8.kubernetes-client.version>
+        <fabric8.openshift-client.version>6.12.1</fabric8.openshift-client.version>
+        <fabric8.kubernetes-model.version>6.12.1</fabric8.kubernetes-model.version>
         <fabric8.zjsonpatch.version>0.3.0</fabric8.zjsonpatch.version>
         <fasterxml.jackson-core.version>2.16.1</fasterxml.jackson-core.version>
         <fasterxml.jackson-databind.version>2.16.1</fasterxml.jackson-databind.version>
@@ -134,22 +134,21 @@
         <fasterxml.jackson-annotations.version>2.16.1</fasterxml.jackson-annotations.version>
         <fasterxml.jackson-datatype.version>2.16.1</fasterxml.jackson-datatype.version>
         <fasterxml.jackson-jaxrs.version>2.16.1</fasterxml.jackson-jaxrs.version>
-        <vertx.version>4.5.4</vertx.version>
-        <vertx-junit5.version>4.5.4</vertx-junit5.version>
+        <vertx.version>4.5.7</vertx.version>
+        <vertx-junit5.version>4.5.7</vertx-junit5.version>
         <kafka.version>3.7.0</kafka.version>
         <yammer-metrics.version>2.2.0</yammer-metrics.version>
-        <zookeeper.version>3.8.3</zookeeper.version>
+        <zookeeper.version>3.8.4</zookeeper.version>
         <snappy.version>1.1.10.5</snappy.version>
-        <zkclient.version>0.11</zkclient.version>
         <slf4j.version>1.7.36</slf4j.version>
         <log4j.version>2.17.2</log4j.version>
         <quartz.version>2.3.2</quartz.version>
         <opentelemetry.version>1.34.1</opentelemetry.version>
         <opentelemetry-alpha.version>${opentelemetry.version}-alpha</opentelemetry-alpha.version>
-        <jetty.version>9.4.53.v20231009</jetty.version>
+        <jetty.version>9.4.54.v20240208</jetty.version>
         <javax-servlet.version>3.1.0</javax-servlet.version>
         <strimzi-oauth.version>0.15.0</strimzi-oauth.version>
-        <netty.version>4.1.107.Final</netty.version>
+        <netty.version>4.1.108.Final</netty.version>
         <micrometer.version>1.12.3</micrometer.version>
         <jayway-jsonpath.version>2.9.0</jayway-jsonpath.version>
         <registry.version>1.3.2.Final</registry.version>
@@ -239,6 +238,11 @@
                         <artifactId>tools</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <version>${lombok.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.strimzi</groupId>
@@ -503,11 +507,6 @@
                 <groupId>org.apache.zookeeper</groupId>
                 <artifactId>zookeeper-jute</artifactId>
                 <version>${zookeeper.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.101tec</groupId>
-                <artifactId>zkclient</artifactId>
-                <version>${zkclient.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
@@ -801,18 +800,6 @@
                 <artifactId>hamcrest</artifactId>
                 <version>${hamcrest.version}</version>
                 <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.junit.jupiter</groupId>
-                <artifactId>junit-jupiter-engine</artifactId>
-                <version>${jupiter.version}</version>
-                <scope>test</scope>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.apiguardian</groupId>
-                        <artifactId>apiguardian-api</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
@@ -1164,41 +1151,6 @@
                         </goals>
                         <configuration>
                             <failOnWarning>true</failOnWarning>
-                            <ignoredUnusedDeclaredDependencies>
-                                <ignoredUnusedDeclaredDependency>io.fabric8:kubernetes-client</ignoredUnusedDeclaredDependency>
-                                <ignoredUnusedDeclaredDependency>io.fabric8:kubernetes-httpclient-jdk</ignoredUnusedDeclaredDependency>
-                                <ignoredUnusedDeclaredDependency>io.fabric8:openshift-client</ignoredUnusedDeclaredDependency>
-                                <ignoredUnusedDeclaredDependency>org.apache.kafka:kafka-clients</ignoredUnusedDeclaredDependency>
-                                <ignoredUnusedDeclaredDependency>org.apache.kafka:kafka-streams</ignoredUnusedDeclaredDependency>
-                                <!-- Used in Kafka Agent through reflection -->
-                                <ignoredUnusedDeclaredDependency>org.apache.kafka:kafka-server-common</ignoredUnusedDeclaredDependency>
-                                <ignoredUnusedDeclaredDependency>org.apache.logging.log4j:log4j-core</ignoredUnusedDeclaredDependency>
-                                <ignoredUnusedDeclaredDependency>org.apache.logging.log4j:log4j-slf4j-impl</ignoredUnusedDeclaredDependency>
-                                <ignoredUnusedDeclaredDependency>io.sundr:builder-annotations</ignoredUnusedDeclaredDependency>
-                                <ignoredUnusedDeclaredDependency>io.sundr:sundr-codegen</ignoredUnusedDeclaredDependency>
-                                <ignoredUnusedDeclaredDependency>org.projectlombok:lombok</ignoredUnusedDeclaredDependency>
-                                <ignoredUnusedDeclaredDependency>org.slf4j:slf4j-api:jar</ignoredUnusedDeclaredDependency>
-                                <ignoredUnusedDeclaredDependency>org.glassfish:javax.json:jar</ignoredUnusedDeclaredDependency>
-                                <ignoredUnusedDeclaredDependency>org.apache.kafka:kafka_2.13:jar</ignoredUnusedDeclaredDependency>
-                                <ignoredUnusedDeclaredDependency>io.netty:netty-transport-native-epoll:jar</ignoredUnusedDeclaredDependency>
-                                <ignoredDependency>org.junit.platform</ignoredDependency>
-                                <ignoredUnusedDeclaredDependency>org.apache.kafka:connect-file</ignoredUnusedDeclaredDependency>
-                                <ignoredDependency>org.junit.jupiter</ignoredDependency>
-                                <ignoredDependency>org.junit.platform</ignoredDependency>
-                                <ignoredUnusedDeclaredDependency>io.micrometer:micrometer-registry-prometheus</ignoredUnusedDeclaredDependency>
-                                <ignoredUnusedDeclaredDependency>org.mockito:mockito-inline</ignoredUnusedDeclaredDependency>
-                                <ignoredUnusedDeclaredDependency>junit:junit</ignoredUnusedDeclaredDependency>
-                            </ignoredUnusedDeclaredDependencies>
-                            <ignoredUsedUndeclaredDependencies>
-                                <ignoredUsedUndeclaredDependency>org.apache.kafka:kafka-raft:jar</ignoredUsedUndeclaredDependency>
-                            </ignoredUsedUndeclaredDependencies>
-                            <ignoredNonTestScopedDependencies>
-                                <ignoredNonTestScopedDependency>com.fasterxml.jackson.core:jackson-core</ignoredNonTestScopedDependency>
-                                <ignoredNonTestScopedDependency>org.apache.zookeeper:zookeeper-jute</ignoredNonTestScopedDependency>
-                                <ignoredNonTestScopedDependency>io.fabric8:kubernetes-model-coordination</ignoredNonTestScopedDependency>
-                                <ignoredNonTestScopedDependency>io.fabric8:kubernetes-model-common</ignoredNonTestScopedDependency>
-                                <ignoredNonTestScopedDependency>org.apache.logging.log4j:log4j-core</ignoredNonTestScopedDependency>
-                            </ignoredNonTestScopedDependencies>
                         </configuration>
                     </execution>
                 </executions>

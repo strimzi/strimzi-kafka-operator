@@ -15,8 +15,8 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.io.Serializable;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static java.util.Collections.emptyMap;
@@ -25,7 +25,8 @@ import static java.util.Collections.emptyMap;
  * Configures listener per-broker configuration
  */
 @DescriptionFile
-@JsonPropertyOrder({"broker", "advertisedHost", "advertisedPort", "host", "dnsAnnotations", "nodePort", "loadBalancerIP"})
+@JsonPropertyOrder({"broker", "advertisedHost", "advertisedPort", "host", "dnsAnnotations", "nodePort",
+    "loadBalancerIP", "annotations", "labels", "externalIPs"})
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Buildable(
     editableEnabled = false,
@@ -33,9 +34,7 @@ import static java.util.Collections.emptyMap;
 )
 @EqualsAndHashCode
 @ToString
-public class GenericKafkaListenerConfigurationBroker implements Serializable, UnknownPropertyPreserving {
-    private static final long serialVersionUID = 1L;
-
+public class GenericKafkaListenerConfigurationBroker implements UnknownPropertyPreserving {
     private Integer broker;
     private String advertisedHost;
     private Integer advertisedPort;
@@ -44,6 +43,7 @@ public class GenericKafkaListenerConfigurationBroker implements Serializable, Un
     private Map<String, String> labels = new HashMap<>(0);
     private Integer nodePort;
     private String loadBalancerIP;
+    private List<String> externalIPs;
 
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
@@ -135,6 +135,19 @@ public class GenericKafkaListenerConfigurationBroker implements Serializable, Un
 
     public void setLoadBalancerIP(String loadBalancerIP) {
         this.loadBalancerIP = loadBalancerIP;
+    }
+
+    @Description("External IPs associated to the nodeport service. " + 
+            "These IPs are used by clients external to the Kubernetes cluster to access the Kafka brokers. " +
+            "This field is helpful when `nodeport` without `externalIP` is not sufficient. For example on bare-metal Kubernetes clusters that do not support Loadbalancer service types. " +
+            "This field can only be used with `nodeport` type listener.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public List<String> getExternalIPs() {
+        return externalIPs;
+    }
+
+    public void setExternalIPs(List<String> externalIPs) {
+        this.externalIPs = externalIPs;
     }
 
     @Override

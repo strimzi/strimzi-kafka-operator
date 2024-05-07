@@ -9,7 +9,11 @@ spec:
   roles:
     - controller
   storage:
-    type: ephemeral
+    type: jbod
+    volumes:
+      - id: 0
+        type: ephemeral
+        kraftMetadata: shared
 ---
 
 apiVersion: kafka.strimzi.io/v1beta2
@@ -23,7 +27,11 @@ spec:
   roles:
     - broker
   storage:
-    type: ephemeral
+    type: jbod
+    volumes:
+      - id: 0
+        type: ephemeral
+        kraftMetadata: shared
 ---
 
 apiVersion: kafka.strimzi.io/v1beta2

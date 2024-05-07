@@ -79,6 +79,7 @@ public class Environment {
      * Directory for store logs collected during the tests.
      */
     private static final String TEST_LOG_DIR_ENV = "TEST_LOG_DIR";
+    private static final String PERFORMANCE_DIR_ENV = "PERFORMANCE_DIR";
     /**
      * Kafka version used in images during the system tests.
      */
@@ -186,6 +187,7 @@ public class Environment {
     public static final String STRIMZI_REGISTRY_DEFAULT = "quay.io";
     public static final String TEST_CLIENTS_ORG_DEFAULT = "strimzi-test-clients";
     private static final String TEST_LOG_DIR_DEFAULT = TestUtils.USER_PATH + "/../systemtest/target/logs/";
+    private static final String PERFORMANCE_DIR_DEFAULT = TestUtils.USER_PATH + "/../systemtest/target/performance/";
     private static final String STRIMZI_LOG_LEVEL_DEFAULT = "DEBUG";
     public static final String COMPONENTS_IMAGE_PULL_POLICY_ENV_DEFAULT = TestConstants.IF_NOT_PRESENT_IMAGE_PULL_POLICY;
     public static final String OPERATOR_IMAGE_PULL_POLICY_ENV_DEFAULT = TestConstants.ALWAYS_IMAGE_PULL_POLICY;
@@ -201,9 +203,9 @@ public class Environment {
 
     private static final String ST_KAFKA_VERSION_DEFAULT = TestKafkaVersion.getDefaultSupportedKafkaVersion();
     private static final String ST_CLIENTS_KAFKA_VERSION_DEFAULT = "3.7.0";
-    public static final String TEST_CLIENTS_VERSION_DEFAULT = "0.7.0";
+    public static final String TEST_CLIENTS_VERSION_DEFAULT = "0.8.0";
     public static final String ST_FILE_PLUGIN_URL_DEFAULT = "https://repo1.maven.org/maven2/org/apache/kafka/connect-file/" + ST_KAFKA_VERSION_DEFAULT + "/connect-file-" + ST_KAFKA_VERSION_DEFAULT + ".jar";
-    public static final String OLM_OPERATOR_VERSION_DEFAULT = "0.38.0";
+    public static final String OLM_OPERATOR_VERSION_DEFAULT = "0.40.0";
 
     public static final String IP_FAMILY_DEFAULT = "ipv4";
     public static final String IP_FAMILY_VERSION_6 = "ipv6";
@@ -217,6 +219,7 @@ public class Environment {
     public static final String STRIMZI_TAG = getOrDefault(STRIMZI_TAG_ENV, STRIMZI_TAG_DEFAULT);
     public static final String STRIMZI_REGISTRY = getOrDefault(STRIMZI_REGISTRY_ENV, STRIMZI_REGISTRY_DEFAULT);
     public static final String TEST_LOG_DIR = getOrDefault(TEST_LOG_DIR_ENV, TEST_LOG_DIR_DEFAULT);
+    public static final String PERFORMANCE_DIR = getOrDefault(PERFORMANCE_DIR_ENV, PERFORMANCE_DIR_DEFAULT);
     public static final String ST_KAFKA_VERSION = getOrDefault(ST_KAFKA_VERSION_ENV, ST_KAFKA_VERSION_DEFAULT);
     public static final String CLIENTS_KAFKA_VERSION = getOrDefault(CLIENTS_KAFKA_VERSION_ENV, ST_CLIENTS_KAFKA_VERSION_DEFAULT);
     public static final String STRIMZI_LOG_LEVEL = getOrDefault(STRIMZI_LOG_LEVEL_ENV, STRIMZI_LOG_LEVEL_DEFAULT);
@@ -224,7 +227,7 @@ public class Environment {
     public static final String STRIMZI_RBAC_SCOPE = getOrDefault(STRIMZI_RBAC_SCOPE_ENV, STRIMZI_RBAC_SCOPE_DEFAULT);
     public static final String STRIMZI_FEATURE_GATES = getOrDefault(STRIMZI_FEATURE_GATES_ENV, STRIMZI_FEATURE_GATES_DEFAULT);
     public static final boolean STRIMZI_USE_KRAFT_IN_TESTS = getOrDefault(STRIMZI_USE_KRAFT_IN_TESTS_ENV, Boolean::parseBoolean, false);
-    public static final boolean STRIMZI_USE_NODE_POOLS_IN_TESTS = getOrDefault(STRIMZI_USE_NODE_POOLS_IN_TESTS_ENV, Boolean::parseBoolean, false);
+    public static final boolean STRIMZI_USE_NODE_POOLS_IN_TESTS = getOrDefault(STRIMZI_USE_NODE_POOLS_IN_TESTS_ENV, Boolean::parseBoolean, true);
     public static final NodePoolsRoleMode STRIMZI_NODE_POOLS_ROLE_MODE = getOrDefault(STRIMZI_NODE_POOLS_ROLE_MODE_ENV, value -> NodePoolsRoleMode.valueOf(value.toUpperCase(Locale.ENGLISH)), NodePoolsRoleMode.SEPARATE);
 
     // variables for kafka client app images
@@ -305,10 +308,6 @@ public class Environment {
 
     public static boolean isKafkaNodePoolsEnabled() {
         return STRIMZI_USE_NODE_POOLS_IN_TESTS;
-    }
-
-    public static boolean isUnidirectionalTopicOperatorEnabled() {
-        return !STRIMZI_FEATURE_GATES.contains(TestConstants.DONT_USE_UNIDIRECTIONAL_TOPIC_OPERATOR);
     }
 
     /**

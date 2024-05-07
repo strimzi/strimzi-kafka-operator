@@ -66,6 +66,7 @@ include::../../modules/configuring/proc-manual-delete-pod-pvc-zookeeper.adoc[lev
 //configuring node pools
 include::../../modules/configuring/con-config-node-pools.adoc[leveloffset=+1]
 include::../../modules/configuring/proc-managing-node-pools-ids.adoc[leveloffset=+2]
+include::../../modules/configuring/con-node-pools-racks.adoc[leveloffset=+2]
 include::../../modules/configuring/proc-scaling-up-node-pools.adoc[leveloffset=+2]
 include::../../modules/configuring/proc-scaling-down-node-pools.adoc[leveloffset=+2]
 include::../../modules/configuring/proc-moving-node-pools.adoc[leveloffset=+2]
@@ -141,6 +142,9 @@ include::../../assemblies/configuring/assembly-storage.adoc[leveloffset=+1]
 
 //configuring CPU and memory resources and limits
 include::../../modules/configuring/con-config-resources.adoc[leveloffset=+1]
+
+//Kubernetes labels
+include::../../modules/configuring/ref-kubernetes-labels.adoc[leveloffset=+1]
 
 //scheduling separate Kafka pods 
 include::assembly-scheduling.adoc[leveloffset=+1]

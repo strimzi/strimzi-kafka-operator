@@ -5,6 +5,7 @@
 package io.strimzi.api.kafka.model.kafka;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Minimum;
@@ -21,14 +22,10 @@ import lombok.ToString;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonPropertyOrder({"id", "sizeLimit", "type", "kraftMetadata"})
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class EphemeralStorage extends SingleVolumeStorage {
-
-    private static final long serialVersionUID = 1L;
-
-    private Integer id;
-
     private String sizeLimit;
 
     @Description("Must be `" + TYPE_EPHEMERAL + "`")
@@ -59,5 +56,20 @@ public class EphemeralStorage extends SingleVolumeStorage {
 
     public void setSizeLimit(String sizeLimit) {
         this.sizeLimit = sizeLimit;
+    }
+
+    @Override
+    @Description("Specifies whether this volume should be used for storing KRaft metadata. " +
+            "This property is optional. " +
+            "When set, the only currently supported value is `shared`. " +
+            "At most one volume can have this property set.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public KRaftMetadataStorage getKraftMetadata() {
+        return super.getKraftMetadata();
+    }
+
+    @Override
+    public void setKraftMetadata(KRaftMetadataStorage kraftMetadata) {
+        super.setKraftMetadata(kraftMetadata);
     }
 }

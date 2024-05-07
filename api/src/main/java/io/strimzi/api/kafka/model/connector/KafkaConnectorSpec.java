@@ -18,12 +18,10 @@ import lombok.ToString;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"class", "tasksMax", "autoRestart", "config"})
+@JsonPropertyOrder({"class", "tasksMax", "autoRestart", "config", "pause", "state"})
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaConnectorSpec extends AbstractConnectorSpec {
-    private static final long serialVersionUID = 1L;
-
     private String className;
 
     @Description("The Class for the Kafka Connector")

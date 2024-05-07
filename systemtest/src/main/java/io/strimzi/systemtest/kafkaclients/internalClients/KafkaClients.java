@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.api.model.PodSpecBuilder;
 import io.fabric8.kubernetes.api.model.batch.v1.Job;
 import io.fabric8.kubernetes.api.model.batch.v1.JobBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.operator.common.Util;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.enums.PodSecurityProfile;
@@ -21,9 +22,7 @@ import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.nio.charset.StandardCharsets;
 import java.security.InvalidParameterException;
-import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -84,6 +83,12 @@ public class KafkaClients extends BaseClients {
 
     public String getConsumerGroup() {
         return consumerGroup;
+    }
+
+    public void generateNewConsumerGroup() {
+        final String newConsumerGroup = ClientUtils.generateRandomConsumerGroup();
+        LOGGER.info("Regenerating new consumer group {} for clients {} {}", newConsumerGroup, this.getProducerName(), this.getConsumerName());
+        this.setConsumerGroup(newConsumerGroup);
     }
 
     public void setConsumerGroup(String consumerGroup) {
@@ -423,7 +428,7 @@ public class KafkaClients extends BaseClients {
         }
 
         final String saslJaasConfigEncrypted = ResourceManager.kubeClient().getSecret(this.getNamespaceName(), this.getUsername()).getData().get("sasl.jaas.config");
-        final String saslJaasConfigDecrypted = new String(Base64.getDecoder().decode(saslJaasConfigEncrypted), StandardCharsets.US_ASCII);
+        final String saslJaasConfigDecrypted = Util.decodeFromBase64(saslJaasConfigEncrypted);
 
         this.setAdditionalConfig(this.getAdditionalConfig() +
             // scram-sha

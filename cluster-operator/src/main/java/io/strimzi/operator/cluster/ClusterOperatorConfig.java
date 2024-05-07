@@ -12,9 +12,9 @@ import io.strimzi.operator.cluster.model.NoImageException;
 import io.strimzi.operator.cluster.model.UnsupportedVersionException;
 import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.config.ConfigParameter;
+import io.strimzi.operator.common.config.ConfigParameterParser;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.operator.common.operator.resource.ConfigParameter;
-import io.strimzi.operator.common.operator.resource.ConfigParameterParser;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -25,13 +25,13 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.BOOLEAN;
-import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.INTEGER;
-import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.LABEL_PREDICATE;
-import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.LOCAL_OBJECT_REFERENCE_LIST;
-import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.LONG;
-import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.NAMESPACE_SET;
-import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.STRING;
+import static io.strimzi.operator.common.config.ConfigParameterParser.BOOLEAN;
+import static io.strimzi.operator.common.config.ConfigParameterParser.INTEGER;
+import static io.strimzi.operator.common.config.ConfigParameterParser.LABEL_PREDICATE;
+import static io.strimzi.operator.common.config.ConfigParameterParser.LOCAL_OBJECT_REFERENCE_LIST;
+import static io.strimzi.operator.common.config.ConfigParameterParser.LONG;
+import static io.strimzi.operator.common.config.ConfigParameterParser.NAMESPACE_SET;
+import static io.strimzi.operator.common.config.ConfigParameterParser.STRING;
 
 /**
  * Cluster Operator configuration
@@ -64,11 +64,12 @@ public class ClusterOperatorConfig {
     public static final String STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES = "STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES";
 
     /**
-     * Configures the Entity Operator TLS sidecar container images
+     * Configures the Entity Operator TLS sidecar container images.
+     * Used only to produce warning if defined at startup.
      */
-    public static final String STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE";
-    private static final String STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE"; // Used only to produce warning if defined at startup
-    private static final String STRIMZI_DEFAULT_TLS_SIDECAR_CRUISE_CONTROL_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_CRUISE_CONTROL_IMAGE"; // Used only to produce warning if defined at startup
+    private static final String STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE";
+    private static final String STRIMZI_DEFAULT_TLS_SIDECAR_CRUISE_CONTROL_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_CRUISE_CONTROL_IMAGE";
+    private static final String STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE";
 
     /**
      * Configures the Kafka Exporter container image
@@ -135,7 +136,7 @@ public class ClusterOperatorConfig {
     /**
      * Namespace in which the operator will run and create resources
      */
-    public static final ConfigParameter<Set<String>> NAMESPACE = new ConfigParameter<>("STRIMZI_NAMESPACE", NAMESPACE_SET, "*",  CONFIG_VALUES);
+    public static final ConfigParameter<Set<String>> NAMESPACE = new ConfigParameter<>("STRIMZI_NAMESPACE", NAMESPACE_SET, ConfigParameter.ANY_NAMESPACE,  CONFIG_VALUES);
 
     /**
      * Specify every how many milliseconds the reconciliation runs
@@ -269,6 +270,10 @@ public class ClusterOperatorConfig {
         if (map.containsKey(STRIMZI_DEFAULT_TLS_SIDECAR_CRUISE_CONTROL_IMAGE))    {
             LOGGER.warn("Cruise Control TLS sidecar container has been removed and the environment variable {} is not used anymore. " +
                     "You can remove it from the Strimzi Cluster Operator deployment.", STRIMZI_DEFAULT_TLS_SIDECAR_CRUISE_CONTROL_IMAGE);
+        }
+        if (map.containsKey(STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE))    {
+            LOGGER.warn("Entity Operator TLS sidecar container has been removed and the environment variable {} is not used anymore. " +
+                "You can remove it from the Strimzi Cluster Operator deployment.", STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE);
         }
     }
 

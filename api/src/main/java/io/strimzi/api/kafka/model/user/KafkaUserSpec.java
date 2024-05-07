@@ -18,12 +18,10 @@ import lombok.ToString;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "authentication", "authorization", "quotas" })
+@JsonPropertyOrder({ "authentication", "authorization", "quotas", "template" })
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaUserSpec extends Spec {
-    private static final long serialVersionUID = 1L;
-
     private KafkaUserAuthentication authentication;
     private KafkaUserAuthorization authorization;
     private KafkaUserQuotas quotas;

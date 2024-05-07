@@ -2,9 +2,24 @@
 
 ## 0.41.0
 
+* Add support for Apache Kafka 3.6.2
+* Provide metrics to monitor certificates expiration as well as modified `Strimzi Operators` dashboard to include certificate expiration per cluster.
+* Add support for JBOD storage in KRaft mode.
+  (Note: JBOD support in KRaft mode is considered early-access in Apache Kafka 3.7.x)
 * Added support for topic replication factor change to the Unidirectional Topic Operator when Cruise Control integration is enabled.
 * The `KafkaNodePools` feature gate moves to GA stage and is permanently enabled without the possibility to disable it.
   To use the Kafka Node Pool resources, you still need to use the `strimzi.io/node-pools: enabled` annotation on the `Kafka` custom resources.
+* Added support for configuring the `externalIPs` field in node port type services.
+* The `UnidirectionalTopicOperator` feature gate moves to GA stage and is permanently enabled without the possibility to disable it.
+  If the topics whose names start with `strimzi-store-topic` and `strimzi-topic-operator` still exist, you can delete them.
+* Don't allow MirrorMaker2 mirrors with target set to something else than the connect cluster. 
+* Added support for custom SASL config in standalone Topic Operator deployment to support alternate access controllers (i.e. `AWS_MSK_IAM`)
+* Remove Angular dependent plugins from Grafana example dashboard. This makes our dashboard compatible with Grafana 7.4.5 and higher.
+
+### Changes, deprecations and removals
+
+* The `tlsSidecar` configuration for the Entity Operator is now deprecated and will be ignored.
+* The `zookeeperSessionTimeoutSeconds` and `topicMetadataMaxAttempts` configurations for the Entity Topic Operator have been removed and will be ignored.
 
 ## 0.40.0
 

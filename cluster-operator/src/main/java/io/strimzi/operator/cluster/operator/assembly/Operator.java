@@ -6,6 +6,7 @@ package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.config.ConfigParameter;
 import io.strimzi.operator.common.metrics.OperatorMetricsHolder;
 import io.strimzi.operator.common.model.NamespaceAndName;
 import io.vertx.core.AsyncResult;
@@ -47,6 +48,14 @@ public interface Operator {
     Future<Void> reconcile(Reconciliation reconciliation);
 
     /**
+     * Remove the metrics specific to the kind implementing it.
+     *
+     * @param desiredNames  Set of resources which should be reconciled
+     * @param namespace     The namespace to reconcile, or {@code *} to reconcile across all namespaces.
+     */
+    void removeMetrics(Set<NamespaceAndName> desiredNames, String namespace);
+
+    /**
      * Triggers the asynchronous reconciliation of all resources which this operator consumes.
      * The resources to reconcile are identified by {@link #allResourceNames(String)}.
      * @param trigger The cause of this reconciliation (for logging).
@@ -73,12 +82,14 @@ public interface Operator {
      * @param handler       Handler called on completion.
      */
     default void reconcileThese(String trigger, Set<NamespaceAndName> desiredNames, String namespace, Handler<AsyncResult<Void>> handler) {
-        if (namespace.equals("*")) {
+        if (namespace.equals(ConfigParameter.ANY_NAMESPACE)) {
             metrics().resetResourceAndPausedResourceCounters();
         } else {
             metrics().resourceCounter(namespace).set(0);
             metrics().pausedResourceCounter(namespace).set(0);
         }
+
+        removeMetrics(desiredNames, namespace);
 
         if (desiredNames.size() > 0) {
             List<Future<Void>> futures = new ArrayList<>();

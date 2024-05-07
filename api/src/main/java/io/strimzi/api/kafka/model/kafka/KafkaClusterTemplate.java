@@ -21,7 +21,6 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -36,12 +35,11 @@ import java.util.Map;
 @JsonPropertyOrder({
     "statefulset", "pod", "bootstrapService", "brokersService", "externalBootstrapService", "perPodService",
     "externalBootstrapRoute", "perPodRoute", "externalBootstrapIngress", "perPodIngress", "persistentVolumeClaim",
-    "podDisruptionBudget", "kafkaContainer", "initContainer", "clusterCaCert", "serviceAccount", "jmxSecret"})
+    "podDisruptionBudget", "kafkaContainer", "initContainer", "clusterCaCert", "serviceAccount", "jmxSecret",
+    "clusterRoleBinding", "podSet"})
 @EqualsAndHashCode
 @ToString
-public class KafkaClusterTemplate implements HasJmxSecretTemplate, Serializable, UnknownPropertyPreserving {
-    private static final long serialVersionUID = 1L;
-
+public class KafkaClusterTemplate implements HasJmxSecretTemplate, UnknownPropertyPreserving {
     private StatefulSetTemplate statefulset;
     private ResourceTemplate podSet;
     private PodTemplate pod;

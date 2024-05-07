@@ -303,7 +303,7 @@ For the `image` property in the custom resources for other components, the given
 If the `image` property is not set, the container `image` specified as an environment variable in the Cluster Operator configuration is used.
 If an `image` name is not defined in the Cluster Operator configuration, then a default value is used.
 
-For more information on image environment variables, see link:{BookURLDeploying}#con-common-configuration-images-reference[Configuring the Cluster Operator^]. 
+For more information on image environment variables, see link:{BookURLDeploying}#ref-operator-cluster-str[Configuring the Cluster Operator^]. 
 
 .Image environment variables and defaults
 [cols="2,4m,4m",options="header"]
@@ -320,10 +320,6 @@ For more information on image environment variables, see link:{BookURLDeploying}
 | User Operator
 | STRIMZI_DEFAULT_USER_OPERATOR_IMAGE
 | {DockerUserOperator}
-
-| Entity Operator TLS sidecar
-| STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE
-| {DockerEntityOperatorStunnel}
 
 | Kafka Exporter
 | STRIMZI_DEFAULT_KAFKA_EXPORTER_IMAGE
@@ -576,10 +572,10 @@ For such containers, the requested memory should be significantly higher than th
 ----
 jvmOptions:
   "-XX":
-    "UseG1GC": true
-    "MaxGCPauseMillis": 20
-    "InitiatingHeapOccupancyPercent": 35
-    "ExplicitGCInvokesConcurrent": true
+    "UseG1GC": "true"
+    "MaxGCPauseMillis": "20"
+    "InitiatingHeapOccupancyPercent": "35"
+    "ExplicitGCInvokesConcurrent": "true"
 ----
 
 .JVM options resulting from the `-XX` configuration

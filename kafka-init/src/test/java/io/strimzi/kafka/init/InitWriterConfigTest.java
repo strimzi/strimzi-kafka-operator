@@ -4,6 +4,7 @@
  */
 package io.strimzi.kafka.init;
 
+import io.strimzi.operator.common.InvalidConfigurationException;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
@@ -15,11 +16,10 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class InitWriterConfigTest {
-
     private static final Map<String, String> ENV_VARS = Map.of(
-            InitWriterConfig.NODE_NAME, "localhost",
-            InitWriterConfig.RACK_TOPOLOGY_KEY, "failure-domain.beta.kubernetes.io/zone",
-            InitWriterConfig.EXTERNAL_ADDRESS, "TRUE"
+        InitWriterConfig.NODE_NAME.key(), "localhost",
+        InitWriterConfig.RACK_TOPOLOGY_KEY.key(), "failure-domain.beta.kubernetes.io/zone",
+        InitWriterConfig.EXTERNAL_ADDRESS.key(), "TRUE"
     );
 
     @Test
@@ -35,7 +35,7 @@ public class InitWriterConfigTest {
     @Test
     public void testFromMapWithAddressTypeEnvVar() {
         Map<String, String> envs = new HashMap<>(ENV_VARS);
-        envs.put(InitWriterConfig.EXTERNAL_ADDRESS_TYPE, "InternalDNS");
+        envs.put(InitWriterConfig.EXTERNAL_ADDRESS_TYPE.key(), "InternalDNS");
 
         InitWriterConfig config = InitWriterConfig.fromMap(envs);
         assertThat(config.getAddressType(), is("InternalDNS"));
@@ -43,14 +43,14 @@ public class InitWriterConfigTest {
 
     @Test
     public void testFromMapEmptyEnvVarsThrows() {
-        assertThrows(IllegalArgumentException.class, () -> InitWriterConfig.fromMap(Map.of()));
+        assertThrows(InvalidConfigurationException.class, () -> InitWriterConfig.fromMap(Map.of()));
     }
 
     @Test
     public void testFromMapMissingNodeNameThrows() {
         Map<String, String> envVars = new HashMap<>(ENV_VARS);
-        envVars.remove(InitWriterConfig.NODE_NAME);
+        envVars.remove(InitWriterConfig.NODE_NAME.key());
 
-        assertThrows(IllegalArgumentException.class, () -> InitWriterConfig.fromMap(envVars));
+        assertThrows(InvalidConfigurationException.class, () -> InitWriterConfig.fromMap(envVars));
     }
 }

@@ -155,10 +155,6 @@
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-engine</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
             <scope>test</scope>
         </dependency>
@@ -232,6 +228,7 @@
             <groupId>org.apache.zookeeper</groupId>
             <artifactId>zookeeper</artifactId>
         </dependency>
+        <!-- ZooKeeper Jute is needed for the ZooKeeper client to work -->
         <dependency>
             <groupId>org.apache.zookeeper</groupId>
             <artifactId>zookeeper-jute</artifactId>
@@ -315,6 +312,37 @@
                     <execution>
                         <id>set-classpath</id>
                         <phase>package</phase>
+                    </execution>
+                    <execution>
+                        <id>analyze</id>
+                        <goals>
+                            <goal>analyze-only</goal>
+                        </goals>
+                        <configuration>
+                            <failOnWarning>true</failOnWarning>
+                            <ignoredUnusedDeclaredDependencies>
+                                <!-- Fabric8 Kubernetes Client, OpenShift Client, and HttpClient are required by the ExamplesTest -->
+                                <ignoredUnusedDeclaredDependency>io.fabric8:kubernetes-client</ignoredUnusedDeclaredDependency>
+                                <ignoredUnusedDeclaredDependency>io.fabric8:openshift-client</ignoredUnusedDeclaredDependency>
+                                <ignoredUnusedDeclaredDependency>io.fabric8:kubernetes-httpclient-jdk</ignoredUnusedDeclaredDependency>
+                                <!-- Needed for logging -->
+                                <ignoredUnusedDeclaredDependency>org.apache.logging.log4j:log4j-core</ignoredUnusedDeclaredDependency>
+                                <!-- Needed for logging using the Kubernetes Client (uses SLF4J) -->
+                                <ignoredUnusedDeclaredDependency>org.apache.logging.log4j:log4j-slf4j-impl</ignoredUnusedDeclaredDependency>
+                                <!-- Used to provide native epoll for Netty-->
+                                <ignoredUnusedDeclaredDependency>io.netty:netty-transport-native-epoll:jar</ignoredUnusedDeclaredDependency>
+                                <!-- Used by KafkaConnectApiIT -->
+                                <ignoredUnusedDeclaredDependency>org.apache.kafka:connect-file</ignoredUnusedDeclaredDependency>
+                            </ignoredUnusedDeclaredDependencies>
+                            <ignoredNonTestScopedDependencies>
+                                <!-- Needed for builders used in the code -->
+                                <ignoredUnusedDeclaredDependency>io.fabric8:kubernetes-model-common</ignoredUnusedDeclaredDependency>
+                                <!-- Needed at runtime by Fabric8 -->
+                                <ignoredUnusedDeclaredDependency>io.fabric8:kubernetes-model-coordination</ignoredUnusedDeclaredDependency>
+                                <!-- Jute is needed for the ZooKeeper client to work (not just in tests) - but Maven believes it is only a test dependency -->
+                                <ignoredNonTestScopedDependency>org.apache.zookeeper:zookeeper-jute</ignoredNonTestScopedDependency>
+                            </ignoredNonTestScopedDependencies>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>

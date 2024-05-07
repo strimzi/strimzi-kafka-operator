@@ -28,14 +28,12 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"type", "clientId", "tokenEndpointUri",
     "tlsTrustedCertificates", "disableTlsHostnameVerification",
-    "delegateToKafkaAcls", "grantsRefreshPeriodSeconds", "grantsRefreshPoolSize",
-    "grantsMaxIdleSeconds", "grantsGcPeriodSeconds", "grantsAlwaysLatest", "superUsers",
+    "delegateToKafkaAcls", "grantsRefreshPeriodSeconds", "grantsRefreshPoolSize", "grantsMaxIdleTimeSeconds",
+    "grantsMaxIdleSeconds", "grantsGcPeriodSeconds", "grantsAlwaysLatest", "KafkaAuthorizationKeycloak", "superUsers",
     "connectTimeoutSeconds", "readTimeoutSeconds", "httpRetries", "enableMetrics", "includeAcceptHeader"})
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaAuthorizationKeycloak extends KafkaAuthorization {
-    private static final long serialVersionUID = 1L;
-
     public static final String TYPE_KEYCLOAK = "keycloak";
 
     public static final String AUTHORIZER_CLASS_NAME = "io.strimzi.kafka.oauth.server.authorizer.KeycloakAuthorizer";

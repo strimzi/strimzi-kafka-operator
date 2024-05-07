@@ -12,7 +12,6 @@ import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetricsBuilder;
-import io.strimzi.api.kafka.model.kafka.JbodStorage;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
@@ -141,23 +140,6 @@ public class KafkaTemplates {
     public static KafkaBuilder kafkaPersistentKRaft(String clusterName, int kafkaReplicas) {
         Kafka kafka = getKafkaFromYaml(PATH_TO_KAFKA_PERSISTENT_KRAFT_EXAMPLE, true);
         return defaultKafkaKRaft(kafka, clusterName, kafkaReplicas);
-    }
-
-    // -------------------------------------------------------------------------------------------
-    // Kafka JBOD
-    // -------------------------------------------------------------------------------------------
-
-    public static KafkaBuilder kafkaJBOD(String clusterName, int kafkaReplicas, int zookeeperReplicas, JbodStorage jbodStorage) {
-        if (Environment.isKafkaNodePoolsEnabled()) {
-            return kafkaPersistentNodePools(clusterName, kafkaReplicas, zookeeperReplicas);
-        } else {
-            return kafkaPersistentWithoutNodePools(clusterName, kafkaReplicas, kafkaReplicas)
-                .editSpec()
-                    .editKafka()
-                        .withStorage(jbodStorage)
-                    .endKafka()
-                .endSpec();
-        }
     }
 
     // -------------------------------------------------------------------------------------------
@@ -488,10 +470,6 @@ public class KafkaTemplates {
             kafka.getSpec().setZookeeper(null);
             kafka.getSpec().getKafka().getConfig().remove("log.message.format.version");
             kafka.getSpec().getKafka().getConfig().remove("inter.broker.protocol.version");
-
-            if (!Environment.isUnidirectionalTopicOperatorEnabled()) {
-                kafka.getSpec().getEntityOperator().setTopicOperator(null);
-            }
         }
 
         kafka.getSpec().getKafka().setStorage(null);

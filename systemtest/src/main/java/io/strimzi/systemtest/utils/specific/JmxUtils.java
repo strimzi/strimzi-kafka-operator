@@ -5,13 +5,13 @@
 package io.strimzi.systemtest.utils.specific;
 
 import io.fabric8.kubernetes.api.model.Secret;
+import io.strimzi.operator.common.Util;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 
 import static io.strimzi.systemtest.resources.ResourceManager.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -64,8 +64,8 @@ public class JmxUtils {
         Secret jmxSecret = kubeClient(namespace).getSecret(secretName);
 
         LOGGER.info("Getting username and password for Service: {}/{} and Secret: {}/{}", namespace, serviceName, namespace, secretName);
-        String userName = new String(Base64.getDecoder().decode(jmxSecret.getData().get("jmx-username")), StandardCharsets.UTF_8);
-        String password = new String(Base64.getDecoder().decode(jmxSecret.getData().get("jmx-password")), StandardCharsets.UTF_8);
+        String userName = Util.decodeFromBase64(jmxSecret.getData().get("jmx-username"), StandardCharsets.UTF_8);
+        String password = Util.decodeFromBase64(jmxSecret.getData().get("jmx-password"), StandardCharsets.UTF_8);
 
         LOGGER.info("Creating script file for Service: {}/{}", namespace, serviceName);
         createScriptForJMXTermInPod(namespace, podName, serviceName, userName, password, commands);

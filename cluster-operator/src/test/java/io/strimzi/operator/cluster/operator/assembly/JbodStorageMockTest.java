@@ -150,7 +150,7 @@ public class JbodStorageMockTest {
                 new ResourceOperatorSupplier(JbodStorageMockTest.vertx, client,
                         ResourceUtils.zookeeperLeaderFinder(JbodStorageMockTest.vertx, client),
                         ResourceUtils.adminClientProvider(), ResourceUtils.zookeeperScalerProvider(), ResourceUtils.kafkaAgentClientProvider(),
-                        ResourceUtils.metricsProvider(), pfa, 60_000L);
+                        ResourceUtils.metricsProvider(), ResourceUtils.zooKeeperAdminProvider(), pfa, 60_000L);
 
         podSetController = new StrimziPodSetController(namespace, Labels.EMPTY, ros.kafkaOperator, ros.connectOperator, ros.mirrorMaker2Operator, ros.strimziPodSetOperator, ros.podOperations, ros.metricsProvider, Integer.parseInt(ClusterOperatorConfig.POD_SET_CONTROLLER_WORK_QUEUE_SIZE.defaultValue()));
         podSetController.start();

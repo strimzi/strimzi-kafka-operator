@@ -22,13 +22,10 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"partitions", "replicas", "config"})
+@JsonPropertyOrder({"topicName", "partitions", "replicas", "config"})
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaTopicSpec extends Spec {
-
-    private static final long serialVersionUID = 1L;
-
     private String topicName;
 
     private Integer partitions;

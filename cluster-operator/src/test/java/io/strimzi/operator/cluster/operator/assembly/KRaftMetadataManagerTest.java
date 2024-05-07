@@ -4,12 +4,9 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
-import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.api.kafka.model.kafka.KafkaStatus;
 import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.operator.resource.SecretOperator;
-import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
@@ -30,6 +27,7 @@ import org.mockito.ArgumentCaptor;
 
 import java.util.Map;
 
+import static io.strimzi.operator.common.auth.TlsPemIdentity.DUMMY_IDENTITY;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -56,16 +54,9 @@ public class KRaftMetadataManagerTest {
         vertx.close();
     }
 
-    private SecretOperator mockSecretOperator() {
-        SecretOperator mockSecretOps = mock(SecretOperator.class);
-        when(mockSecretOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(new Secret()));
-
-        return mockSecretOps;
-    }
-
     private AdminClientProvider mockAdminClientProvider(Admin adminClient)  {
         AdminClientProvider mockAdminClientProvider = mock(AdminClientProvider.class);
-        when(mockAdminClientProvider.createAdminClient(anyString(), any(), any(), anyString())).thenReturn(adminClient);
+        when(mockAdminClientProvider.createAdminClient(anyString(), any(), any())).thenReturn(adminClient);
 
         return mockAdminClientProvider;
     }
@@ -91,15 +82,14 @@ public class KRaftMetadataManagerTest {
         // Mock describing the current metadata version
         mockDescribeVersion(mockAdminClient);
 
-        // Mock the Admin client provider and Secret ops
+        // Mock the Admin client provider
         AdminClientProvider mockAdminClientProvider = mockAdminClientProvider(mockAdminClient);
-        SecretOperator mockSecretOps = mockSecretOperator();
 
         // Dummy KafkaStatus to check the values from
         KafkaStatus status = new KafkaStatus();
 
         Checkpoint checkpoint = context.checkpoint();
-        KRaftMetadataManager.maybeUpdateMetadataVersion(Reconciliation.DUMMY_RECONCILIATION, vertx, mockSecretOps, mockAdminClientProvider, "3.6-IV1", status)
+        KRaftMetadataManager.maybeUpdateMetadataVersion(Reconciliation.DUMMY_RECONCILIATION, vertx, DUMMY_IDENTITY, mockAdminClientProvider, "3.6-IV1", status)
                 .onComplete(context.succeeding(s -> {
                     assertThat(status.getKafkaMetadataVersion(), is("3.6-IV1"));
 
@@ -125,15 +115,14 @@ public class KRaftMetadataManagerTest {
         ArgumentCaptor<Map<String, FeatureUpdate>> updateCaptor = ArgumentCaptor.forClass(Map.class);
         when(mockAdminClient.updateFeatures(updateCaptor.capture(), any())).thenReturn(ufr);
 
-        // Mock the Admin client provider and Secret ops
+        // Mock the Admin client provider
         AdminClientProvider mockAdminClientProvider = mockAdminClientProvider(mockAdminClient);
-        SecretOperator mockSecretOps = mockSecretOperator();
 
         // Dummy KafkaStatus to check the values from
         KafkaStatus status = new KafkaStatus();
 
         Checkpoint checkpoint = context.checkpoint();
-        KRaftMetadataManager.maybeUpdateMetadataVersion(Reconciliation.DUMMY_RECONCILIATION, vertx, mockSecretOps, mockAdminClientProvider, "3.6", status)
+        KRaftMetadataManager.maybeUpdateMetadataVersion(Reconciliation.DUMMY_RECONCILIATION, vertx, DUMMY_IDENTITY, mockAdminClientProvider, "3.6", status)
                 .onComplete(context.succeeding(s -> {
                     assertThat(status.getKafkaMetadataVersion(), is("3.6-IV2"));
 
@@ -163,15 +152,14 @@ public class KRaftMetadataManagerTest {
         ArgumentCaptor<Map<String, FeatureUpdate>> updateCaptor = ArgumentCaptor.forClass(Map.class);
         when(mockAdminClient.updateFeatures(updateCaptor.capture(), any())).thenReturn(ufr);
 
-        // Mock the Admin client provider and Secret ops
+        // Mock the Admin client provider
         AdminClientProvider mockAdminClientProvider = mockAdminClientProvider(mockAdminClient);
-        SecretOperator mockSecretOps = mockSecretOperator();
 
         // Dummy KafkaStatus to check the values from
         KafkaStatus status = new KafkaStatus();
 
         Checkpoint checkpoint = context.checkpoint();
-        KRaftMetadataManager.maybeUpdateMetadataVersion(Reconciliation.DUMMY_RECONCILIATION, vertx, mockSecretOps, mockAdminClientProvider, "3.5", status)
+        KRaftMetadataManager.maybeUpdateMetadataVersion(Reconciliation.DUMMY_RECONCILIATION, vertx, DUMMY_IDENTITY, mockAdminClientProvider, "3.5", status)
                 .onComplete(context.succeeding(s -> {
                     assertThat(status.getKafkaMetadataVersion(), is("3.5-IV2"));
 
@@ -206,15 +194,14 @@ public class KRaftMetadataManagerTest {
         when(ufr.values()).thenReturn(Map.of(KRaftMetadataManager.METADATA_VERSION_KEY, kf));
         when(mockAdminClient.updateFeatures(any(), any())).thenReturn(ufr);
 
-        // Mock the Admin client provider and Secret ops
+        // Mock the Admin client provider
         AdminClientProvider mockAdminClientProvider = mockAdminClientProvider(mockAdminClient);
-        SecretOperator mockSecretOps = mockSecretOperator();
 
         // Dummy KafkaStatus to check the values from
         KafkaStatus status = new KafkaStatus();
 
         Checkpoint checkpoint = context.checkpoint();
-        KRaftMetadataManager.maybeUpdateMetadataVersion(Reconciliation.DUMMY_RECONCILIATION, vertx, mockSecretOps, mockAdminClientProvider, "3.6", status)
+        KRaftMetadataManager.maybeUpdateMetadataVersion(Reconciliation.DUMMY_RECONCILIATION, vertx, DUMMY_IDENTITY, mockAdminClientProvider, "3.6", status)
                 .onComplete(context.succeeding(s -> {
                     assertThat(status.getKafkaMetadataVersion(), is("3.6-IV1"));
                     assertThat(status.getConditions().size(), is(1));
@@ -246,15 +233,14 @@ public class KRaftMetadataManagerTest {
         when(dfr.featureMetadata()).thenReturn(kf);
         when(mockAdminClient.describeFeatures()).thenReturn(dfr);
 
-        // Mock the Admin client provider and Secret ops
+        // Mock the Admin client provider
         AdminClientProvider mockAdminClientProvider = mockAdminClientProvider(mockAdminClient);
-        SecretOperator mockSecretOps = mockSecretOperator();
 
         // Dummy KafkaStatus to check the values from
         KafkaStatus status = new KafkaStatus();
 
         Checkpoint checkpoint = context.checkpoint();
-        KRaftMetadataManager.maybeUpdateMetadataVersion(Reconciliation.DUMMY_RECONCILIATION, vertx, mockSecretOps, mockAdminClientProvider, "3.5", status)
+        KRaftMetadataManager.maybeUpdateMetadataVersion(Reconciliation.DUMMY_RECONCILIATION, vertx, DUMMY_IDENTITY, mockAdminClientProvider, "3.5", status)
                 .onComplete(context.failing(s -> {
                     assertThat(s, instanceOf(RuntimeException.class));
                     assertThat(s.getMessage(), is("Test error ..."));

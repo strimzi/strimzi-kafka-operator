@@ -5,6 +5,7 @@
 package io.strimzi.api.kafka.model.common;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.ConfigMapKeySelector;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.KubeLink;
@@ -12,7 +13,6 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -24,12 +24,10 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+@JsonPropertyOrder({"configMapKeyRef"})
 @EqualsAndHashCode
 @ToString
-public class ExternalConfigurationReference implements Serializable, UnknownPropertyPreserving {
-
-    private static final long serialVersionUID = 1L;
-
+public class ExternalConfigurationReference implements UnknownPropertyPreserving {
     private ConfigMapKeySelector configMapKeyRef;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 

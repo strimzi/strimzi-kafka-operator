@@ -83,7 +83,6 @@ import static java.util.Collections.emptyMap;
 @Version(Constants.V1BETA2)
 @Group(Constants.RESOURCE_GROUP_NAME)
 public class KafkaTopic extends CustomResource<KafkaTopicSpec, KafkaTopicStatus> implements Namespaced, UnknownPropertyPreserving {
-
     private static final long serialVersionUID = 1L;
 
     public static final String SCOPE = "Namespaced";

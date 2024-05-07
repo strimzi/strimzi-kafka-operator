@@ -9,13 +9,19 @@ import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.model.Labels;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * A metrics holder for controllers.
  */
 public class ControllerMetricsHolder extends MetricsHolder {
-    private final Map<String, Counter> alreadyQueuedReconciliationsCounterMap = new ConcurrentHashMap<>(1);
+    /**
+     * Metric name for reconciliations which are already queued when we try to enqueue them again.
+     */
+    public static final String METRICS_RECONCILIATIONS_ALREADY_ENQUEUED = METRICS_PREFIX + "reconciliations.already.enqueued";
+
+    private final Map<MetricKey, Counter> alreadyQueuedReconciliationsCounterMap = new ConcurrentHashMap<>(1);
 
     /**
      * Constructs the controller metrics holder
@@ -38,7 +44,8 @@ public class ControllerMetricsHolder extends MetricsHolder {
      * @return  Metrics counter
      */
     public Counter alreadyEnqueuedReconciliationsCounter(String namespace) {
-        return getCounter(namespace, kind, METRICS_PREFIX + "reconciliations.already.enqueued", metricsProvider, selectorLabels, alreadyQueuedReconciliationsCounterMap,
-                "Number of reconciliations skipped because another reconciliation for the same resource was still running");
+        return getCounter(new MetricKey(kind, namespace), METRICS_RECONCILIATIONS_ALREADY_ENQUEUED,
+                "Number of reconciliations skipped because another reconciliation for the same resource was still running",
+                Optional.of(getLabelSelectorValues()), alreadyQueuedReconciliationsCounterMap);
     }
 }

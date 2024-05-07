@@ -97,7 +97,7 @@ public class ResourceOperation {
                 timeout = Duration.ofMinutes(5).toMillis();
                 break;
             default:
-                timeout = Duration.ofMinutes(3).toMillis();
+                timeout = Duration.ofMinutes(2).toMillis();
         }
 
         return timeout;

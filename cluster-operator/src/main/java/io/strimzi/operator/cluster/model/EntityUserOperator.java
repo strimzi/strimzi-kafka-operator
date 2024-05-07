@@ -254,18 +254,18 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
     }
 
     /**
-     * Generate the Secret containing the Entity User Operator certificate signed by the cluster CA certificate used for TLS based
-     * internal communication with Kafka and Zookeeper.
-     * It also contains the related Entity User Operator private key.
+     * Generate the Secret containing the Entity User Operator certificate signed by the cluster CA certificate used for
+     * TLS based internal communication with Kafka.
      *
-     * @param clusterCa The cluster CA.
-     * @param isMaintenanceTimeWindowsSatisfied Indicates whether we are in the maintenance window or not.
-     *                                          This is used for certificate renewals
+     * @param clusterCa                             The cluster CA.
+     * @param existingSecret                        The existing secret with Kafka certificates
+     * @param isMaintenanceTimeWindowsSatisfied     Indicates whether we are in the maintenance window or not.
+     *                                              This is used for certificate renewals
+     *
      * @return The generated Secret.
      */
-    public Secret generateSecret(ClusterCa clusterCa, boolean isMaintenanceTimeWindowsSatisfied) {
-        Secret secret = clusterCa.entityUserOperatorSecret();
-        return CertUtils.buildTrustedCertificateSecret(reconciliation, clusterCa, secret, namespace, KafkaResources.entityUserOperatorSecretName(cluster), componentName,
+    public Secret generateCertificatesSecret(ClusterCa clusterCa, Secret existingSecret, boolean isMaintenanceTimeWindowsSatisfied) {
+        return CertUtils.buildTrustedCertificateSecret(reconciliation, clusterCa, existingSecret, namespace, KafkaResources.entityUserOperatorSecretName(cluster), componentName,
             CERT_SECRET_KEY_NAME, labels, ownerReference, isMaintenanceTimeWindowsSatisfied);
     }
 

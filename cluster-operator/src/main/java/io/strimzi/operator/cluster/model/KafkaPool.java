@@ -159,11 +159,13 @@ public class KafkaPool extends AbstractModel {
 
             StorageDiff diff = new StorageDiff(reconciliation, oldStorage, newStorage, idAssignment.current(), idAssignment.desired());
 
-            if (!diff.isEmpty()) {
+            if (diff.issuesDetected()) {
                 LOGGER.warnCr(reconciliation, "Only the following changes to Kafka storage are allowed: " +
                         "changing the deleteClaim flag, " +
+                        "changing the kraftMetadata flag (but only one one volume can be marked to store the KRaft metadata log at a time), " +
                         "adding volumes to Jbod storage or removing volumes from Jbod storage, " +
-                        "changing overrides to nodes which do not exist yet " +
+                        "each volume in Jbod storage should have an unique ID, " +
+                        "changing overrides to nodes which do not exist yet, " +
                         "and increasing size of persistent claim volumes (depending on the volume type and used storage class).");
                 LOGGER.warnCr(reconciliation, "The desired Kafka storage configuration in the KafkaNodePool resource {}/{} contains changes which are not allowed. As a " +
                         "result, all storage changes will be ignored. Use DEBUG level logging for more information " +
@@ -171,12 +173,17 @@ public class KafkaPool extends AbstractModel {
 
                 Condition warning = StatusUtils.buildWarningCondition("KafkaStorage",
                         "The desired Kafka storage configuration in the KafkaNodePool resource " + pool.getMetadata().getNamespace() + "/" + pool.getMetadata().getName() + " contains changes which are not allowed. As a " +
-                        "result, all storage changes will be ignored. Use DEBUG level logging for more information " +
-                        "about the detected changes.");
+                                "result, all storage changes will be ignored. Use DEBUG level logging for more information " +
+                                "about the detected changes.");
                 result.warningConditions.add(warning);
 
                 result.setStorage(oldStorage);
             } else {
+                if (!VolumeUtils.kraftMetadataPath(oldStorage).equals(VolumeUtils.kraftMetadataPath(newStorage)))    {
+                    // The volume for the KRaft metadata log is changing. We should log it.
+                    LOGGER.warnCr(reconciliation, "The KRaft metadata log for KafkaNodePool {}/{} will be moved from volume {} to volume {}.", pool.getMetadata().getNamespace(), pool.getMetadata().getName(), VolumeUtils.kraftMetadataPath(oldStorage), VolumeUtils.kraftMetadataPath(newStorage));
+                }
+
                 result.setStorage(newStorage);
             }
         } else {

@@ -6,6 +6,8 @@ package io.strimzi.api.kafka.model.kafka.entityoperator;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import io.strimzi.api.annotations.DeprecatedType;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.HasLivenessProbe;
 import io.strimzi.api.kafka.model.common.HasReadinessProbe;
@@ -29,14 +31,12 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+@JsonPropertyOrder({"image", "resources", "livenessProbe", "readinessProbe", "logLevel"})
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
+@Deprecated
+@DeprecatedType(replacedWithType = void.class)
 public class TlsSidecar extends Sidecar implements HasLivenessProbe, HasReadinessProbe {
-    private static final long serialVersionUID = 1L;
-
-    public static final int DEFAULT_HEALTHCHECK_DELAY = 15;
-    public static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
-
     private TlsSidecarLogLevel logLevel = TlsSidecarLogLevel.NOTICE;
     private Probe livenessProbe;
     private Probe readinessProbe;

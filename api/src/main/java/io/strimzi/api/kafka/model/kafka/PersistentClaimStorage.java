@@ -24,21 +24,16 @@ import java.util.Map;
         editableEnabled = false,
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
-@JsonPropertyOrder({"type", "size", "storageClass", "selector", "deleteClaim"})
+@JsonPropertyOrder({"id", "type", "size", "kraftMetadata", "class", "selector", "deleteClaim", "overrides"})
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class PersistentClaimStorage extends SingleVolumeStorage {
-
-    private static final long serialVersionUID = 1L;
-
     private String size;
     private String storageClass;
     private Map<String, String> selector;
     private boolean deleteClaim;
     private List<PersistentClaimStorageOverride> overrides;
-
-    private Integer id;
 
     @Description("Must be `" + TYPE_PERSISTENT_CLAIM + "`")
     @Override
@@ -68,6 +63,21 @@ public class PersistentClaimStorage extends SingleVolumeStorage {
 
     public void setSize(String size) {
         this.size = size;
+    }
+
+    @Override
+    @Description("Specifies whether this volume should be used for storing KRaft metadata. " +
+            "This property is optional. " +
+            "When set, the only currently supported value is `shared`. " +
+            "At most one volume can have this property set.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public KRaftMetadataStorage getKraftMetadata() {
+        return super.getKraftMetadata();
+    }
+
+    @Override
+    public void setKraftMetadata(KRaftMetadataStorage kraftMetadata) {
+        super.setKraftMetadata(kraftMetadata);
     }
 
     @JsonProperty("class")

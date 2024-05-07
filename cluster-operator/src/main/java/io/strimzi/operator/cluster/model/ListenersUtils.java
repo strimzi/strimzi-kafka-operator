@@ -699,4 +699,34 @@ public class ListenersUtils {
 
         return String.valueOf(advertisedPort != null ? advertisedPort : port);
     }
+
+    /**
+     * Returns bootstrap service external IPs
+     * 
+     * @param listener  Listener for which the external IPs should be found
+     * 
+     * @return  External IPs or null if not specified
+     */
+    public static List<String> bootstrapExternalIPs(GenericKafkaListener listener) {
+        return (listener.getConfiguration() != null && listener.getConfiguration().getBootstrap() != null)
+            ? listener.getConfiguration().getBootstrap().getExternalIPs()
+                : null;
+    }
+
+     /**
+     * Returns broker service external IPs
+     * 
+     * @param listener  Listener for which the external IPs should be found
+     * @param nodeId       Node ID for which we should get the configuration option
+     * 
+     * @return          External IPs or null if not specified
+     */
+    public static List<String> brokerExternalIPs(GenericKafkaListener listener, int nodeId) {
+        return (listener.getConfiguration() != null && listener.getConfiguration().getBrokers() != null)
+                ? listener.getConfiguration().getBrokers().stream()
+                    .filter(broker -> broker != null && broker.getBroker() != null && broker.getBroker() == nodeId && broker.getExternalIPs() != null)
+                    .map(GenericKafkaListenerConfigurationBroker::getExternalIPs)
+                    .findAny()
+                    .orElse(null) : null;
+    }
 }

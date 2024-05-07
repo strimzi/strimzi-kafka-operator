@@ -15,10 +15,8 @@ import io.strimzi.operator.common.model.Labels;
 
 import java.io.IOException;
 import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
 import java.security.cert.CertificateEncodingException;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -106,20 +104,7 @@ public class CertUtils {
 
             LOGGER.debugCr(reconciliation, "End generating certificates");
         } else {
-            CertAndKey keyStoreCertAndKey = keyStoreCertAndKey(secret, keyCertName);
-            if (keyStoreCertAndKey.keyStore().length != 0
-                    && keyStoreCertAndKey.storePassword() != null) {
-                certAndKey = keyStoreCertAndKey;
-            } else {
-                try {
-                    // coming from an older operator version, the secret exists but without keystore and password
-                    certAndKey = clusterCa.addKeyAndCertToKeyStore(commonName,
-                            keyStoreCertAndKey.key(),
-                            keyStoreCertAndKey.cert());
-                } catch (IOException e) {
-                    LOGGER.errorCr(reconciliation, "Error generating the keystore for {}", keyCertName, e);
-                }
-            }
+            certAndKey = keyStoreCertAndKey(secret, keyCertName);
         }
 
         Map<String, String> secretData = certAndKey == null ? Map.of() : buildSecretData(Map.of(keyCertName, certAndKey));
@@ -138,15 +123,13 @@ public class CertUtils {
         certificates.forEach((keyCertName, certAndKey) -> {
             data.put(Ca.SecretEntry.KEY.asKey(keyCertName), certAndKey.keyAsBase64String());
             data.put(Ca.SecretEntry.CRT.asKey(keyCertName), certAndKey.certAsBase64String());
-            data.put(Ca.SecretEntry.P12_KEYSTORE.asKey(keyCertName), certAndKey.keyStoreAsBase64String());
-            data.put(Ca.SecretEntry.P12_KEYSTORE_PASSWORD.asKey(keyCertName), certAndKey.storePasswordAsBase64String());
         });
         return data;
     }
 
     private static byte[] decodeFromSecret(Secret secret, String key) {
         if (secret.getData().get(key) != null && !secret.getData().get(key).isEmpty()) {
-            return Base64.getDecoder().decode(secret.getData().get(key));
+            return Util.decodeBytesFromBase64(secret.getData().get(key));
         } else {
             return new byte[]{};
         }
@@ -160,15 +143,8 @@ public class CertUtils {
      * may have empty key, cert or keystore and null store password.
      */
     public static CertAndKey keyStoreCertAndKey(Secret secret, String keyCertName) {
-        byte[] passwordBytes = decodeFromSecret(secret, Ca.SecretEntry.P12_KEYSTORE_PASSWORD.asKey(keyCertName));
-        String password = passwordBytes.length == 0 ? null : new String(passwordBytes, StandardCharsets.US_ASCII);
-        return new CertAndKey(
-                decodeFromSecret(secret, Ca.SecretEntry.KEY.asKey(keyCertName)),
-                decodeFromSecret(secret, Ca.SecretEntry.CRT.asKey(keyCertName)),
-                new byte[]{},
-                decodeFromSecret(secret, Ca.SecretEntry.P12_KEYSTORE.asKey(keyCertName)),
-                password
-        );
+        return new CertAndKey(decodeFromSecret(secret, Ca.SecretEntry.KEY.asKey(keyCertName)),
+                decodeFromSecret(secret, Ca.SecretEntry.CRT.asKey(keyCertName)));
     }
 
     /**

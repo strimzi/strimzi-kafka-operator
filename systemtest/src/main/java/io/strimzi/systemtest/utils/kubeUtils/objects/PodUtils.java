@@ -62,6 +62,16 @@ public class PodUtils {
         waitForPodsReady(namespaceName, selector, expectPods, containers, () -> { });
     }
 
+
+    /**
+     * Waits for a specified number of pods in a given namespace to become ready.
+     *
+     * @param namespaceName The name of the Kubernetes namespace in which to wait for pods.
+     * @param selector The label selector to identify the pods of interest.
+     * @param expectPods The expected number of pods that should be ready.
+     * @param containers If true, checks individual container readiness within the pods.
+     * @param onTimeout The action to be executed if the pods do not become ready before the timeout.
+     */
     public static void waitForPodsReady(String namespaceName, LabelSelector selector, int expectPods, boolean containers, Runnable onTimeout) {
         TestUtils.waitFor("readiness of all Pods matching: " + selector,
             TestConstants.POLL_INTERVAL_FOR_RESOURCE_READINESS, ResourceOperation.timeoutForPodsOperation(expectPods),

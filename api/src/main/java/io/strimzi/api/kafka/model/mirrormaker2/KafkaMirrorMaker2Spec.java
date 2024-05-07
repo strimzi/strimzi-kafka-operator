@@ -24,14 +24,11 @@ import java.util.List;
 @JsonPropertyOrder({"version", "replicas", "image", "connectCluster",
     "clusters", "mirrors", "resources", "livenessProbe", "readinessProbe",
     "jvmOptions", "jmxOptions", "affinity", "tolerations", "logging",
-    "clientRackInitImage", "rack", "metrics", "tracing",
+    "clientRackInitImage", "rack", "metricsConfig", "tracing",
     "template", "externalConfiguration" })
 @EqualsAndHashCode(callSuper = true, doNotUseGetters = true)
 @ToString(callSuper = true)
 public class KafkaMirrorMaker2Spec extends AbstractKafkaConnectSpec {
-
-    private static final long serialVersionUID = 1L;
-    
     private List<KafkaMirrorMaker2ClusterSpec> clusters;
     private String connectCluster;
     private List<KafkaMirrorMaker2MirrorSpec> mirrors;

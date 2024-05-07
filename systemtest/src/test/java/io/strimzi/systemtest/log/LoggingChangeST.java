@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.common.ExternalLogging;
 import io.strimzi.api.kafka.model.common.ExternalLoggingBuilder;
 import io.strimzi.api.kafka.model.common.InlineLogging;
+import io.strimzi.api.kafka.model.common.InlineLoggingBuilder;
 import io.strimzi.api.kafka.model.connect.KafkaConnect;
 import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
 import io.strimzi.api.kafka.model.kafka.Kafka;
@@ -24,7 +25,6 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
-import io.strimzi.systemtest.annotations.KRaftWithoutUTONotSupported;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.enums.CustomResourceStatus;
@@ -45,7 +45,9 @@ import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.specific.ScraperTemplates;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
@@ -61,6 +63,7 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 import static io.strimzi.systemtest.TestConstants.BRIDGE;
@@ -89,7 +92,6 @@ class LoggingChangeST extends AbstractST {
 
     @ParallelNamespaceTest
     @SuppressWarnings({"checkstyle:MethodLength"})
-    @KRaftWithoutUTONotSupported
     void testJSONFormatLogging() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -100,7 +102,6 @@ class LoggingChangeST extends AbstractST {
             "log4j.appender.CONSOLE.layout=net.logstash.log4j.JSONEventLayoutV1\n" +
             "kafka.root.logger.level=INFO\n" +
             "log4j.rootLogger=${kafka.root.logger.level}, CONSOLE\n" +
-            "log4j.logger.org.I0Itec.zkclient.ZkClient=INFO\n" +
             "log4j.logger.org.apache.zookeeper=INFO\n" +
             "log4j.logger.kafka=INFO\n" +
             "log4j.logger.org.apache.kafka=INFO\n" +
@@ -243,9 +244,6 @@ class LoggingChangeST extends AbstractST {
 
         if (Environment.isKRaftModeEnabled()) {
             kafka.getSpec().setZookeeper(null);
-            if (!Environment.isUnidirectionalTopicOperatorEnabled()) {
-                kafka.getSpec().getEntityOperator().setTopicOperator(null);
-            }
         }
 
         resourceManager.createResourceWithWait(kafka);
@@ -268,7 +266,6 @@ class LoggingChangeST extends AbstractST {
 
     @ParallelNamespaceTest
     @Tag(ROLLING_UPDATE)
-    @KRaftWithoutUTONotSupported
     @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:CyclomaticComplexity"})
     void testDynamicallySetEOloggingLevels() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
@@ -688,20 +685,41 @@ class LoggingChangeST extends AbstractST {
             });
     }
 
+    /**
+     * @description This test case verifies dynamic changes in KafkaConnect logging level.
+     *
+     * @steps
+     *  1. - Deploy Kafka cluster and KafkaConnect cluster, the latter with Log level Off.
+     *  2. - Deploy all additional resources, scraper Pod and network policies.
+     *  3. - Verify that no logs are present in KafkaConnect Pods.
+     *  4. - Set inline log level to Debug in KafkaConnect custom resource.
+     *     - log4j.properties file for given cluster has log level Debug, and pods provide logs on respective level.
+     *  5. - Change inline log level from Debug to Info in KafkaConnect custom resource.
+     *     - log4j.properties file for given cluster has log level Info, and pods provide logs on respective level.
+     *  6. - Create ConfigMap with necessary data for external logging and modify KafkaConnect custom resource to use external logging setting log level Off.
+     *     - log4j.properties file for given cluster has log level Off, and pods provide no more logs.
+     * @usecase
+     *  - logging
+     *  - logging-change
+     *  - kafka-connect
+     */
     @ParallelNamespaceTest
     @Tag(ROLLING_UPDATE)
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
     void testDynamicallySetConnectLoggingLevels() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
-        InlineLogging ilOff = new InlineLogging();
-        Map<String, String> loggers = new HashMap<>();
-        loggers.put("connect.root.logger.level", "OFF");
-        ilOff.setLoggers(loggers);
+        final Pattern log4jPatternDebugLevel = Pattern.compile("^(?<date>[\\d-]+) (?<time>[\\d:,]+) DEBUG (?<message>.+)");
+        final Pattern log4jPatternInfoLevel = Pattern.compile("^(?<date>[\\d-]+) (?<time>[\\d:,]+) INFO (?<message>.+)");
 
-        KafkaConnect connect = KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), testStorage.getNamespaceName(), 1)
+        // logging changes on multiple Connect instances are possible from Kafka 3.7.0
+        // TODO: change once support for Kafka 3.6.x is removed - https://github.com/strimzi/strimzi-kafka-operator/issues/9921
+        final int connectReplicas = TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "3.7.0") >= 0 ? 3 : 1;
+
+        final KafkaConnect connect = KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), testStorage.getNamespaceName(), connectReplicas)
             .editSpec()
-                .withLogging(ilOff)
+                .withLogging(new InlineLoggingBuilder()
+                    .withLoggers(Map.of("connect.root.logger.level", "OFF")).build())
             .endSpec()
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
@@ -725,58 +743,63 @@ class LoggingChangeST extends AbstractST {
         LOGGER.info("Deploying NetworkPolicies for KafkaConnect");
         NetworkPolicyResource.deployNetworkPolicyForResource(connect, KafkaConnectResources.componentName(testStorage.getClusterName()));
 
-        String scraperPodName = PodUtils.getPodsByPrefixInNameWithDynamicWait(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
+        final String scraperPodName = PodUtils.getPodsByPrefixInNameWithDynamicWait(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
+        final Map<String, String> connectPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getKafkaConnectSelector());
 
-        Map<String, String> connectSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getKafkaConnectSelector());
-        final String connectPodName = connectSnapshot.keySet().iterator().next();
-
-        LOGGER.info("Asserting if log is without records");
-        assertFalse(DEFAULT_LOG4J_PATTERN.matcher(StUtils.getLogFromPodByTime(testStorage.getNamespaceName(), connectPodName, "", "30s")).find());
+        LOGGER.info("Asserting if logs in connect Pods are without records in last 60 seconds");
+        final Predicate<String> logsDisabled = pod -> !DEFAULT_LOG4J_PATTERN.matcher(StUtils.getLogFromPodByTime(testStorage.getNamespaceName(), pod, "", "60s")).find();
+        connectPods.keySet().forEach(pod -> assertTrue(logsDisabled.test(pod)));
 
         LOGGER.info("Changing rootLogger level to DEBUG with inline logging");
-        InlineLogging ilDebug = new InlineLogging();
-        loggers.put("connect.root.logger.level", "DEBUG");
-        ilDebug.setLoggers(loggers);
-
+        final InlineLogging inlineLoggingDebugLevel = new InlineLoggingBuilder().addToLoggers("connect.root.logger.level", "DEBUG").build();
         KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(testStorage.getClusterName(), conn -> {
-            conn.getSpec().setLogging(ilDebug);
+            conn.getSpec().setLogging(inlineLoggingDebugLevel);
         }, testStorage.getNamespaceName());
 
-        LOGGER.info("Waiting for log4j.properties will contain desired settings");
-        TestUtils.waitFor("Logger change", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
-            () -> cmdKubeClient().namespace(testStorage.getNamespaceName()).execInPod(scraperPodName, "curl", "http://" + KafkaConnectResources.serviceName(testStorage.getClusterName())
-                        + ":8083/admin/loggers/root").out().contains("DEBUG")
-        );
+        // check if lines from Logs contain messages with log level DEBUG
+        final Predicate<String> hasLogLevelDebug = connectLogs -> connectLogs != null && !connectLogs.isEmpty() && log4jPatternDebugLevel.matcher(connectLogs).find();
+        KafkaConnectUtils.waitForConnectLogLevelChangePropagation(testStorage, connectPods, scraperPodName, hasLogLevelDebug, "DEBUG");
 
-        TestUtils.waitFor("log to not be empty", Duration.ofMillis(100).toMillis(), TestConstants.SAFETY_RECONCILIATION_INTERVAL,
-            () -> {
-                String kcLog = StUtils.getLogFromPodByTime(testStorage.getNamespaceName(), connectPodName, "", "30s");
-                return kcLog != null && !kcLog.isEmpty() && DEFAULT_LOG4J_PATTERN.matcher(kcLog).find();
-            });
+        assertThat("Connect Pod should not roll", PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getKafkaConnectSelector()), equalTo(connectPods));
 
-        String log4jConfig =
-                "log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender\n" +
-                        "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\n" +
-                        "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %X{connector.context}%m (%c) [%t]%n\n" +
-                        "log4j.rootLogger=OFF, CONSOLE\n" +
-                        "log4j.logger.org.apache.zookeeper=ERROR\n" +
-                        "log4j.logger.org.I0Itec.zkclient=ERROR\n" +
-                        "log4j.logger.org.reflections=ERROR";
+        LOGGER.info("Changing rootLogger level from DEBUG to INFO with inline logging");
+        final InlineLogging inlineLoggingInfoLevel = new InlineLoggingBuilder().addToLoggers("connect.root.logger.level", "INFO").build();
+        KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(testStorage.getClusterName(), conn -> {
+            conn.getSpec().setLogging(inlineLoggingInfoLevel);
+        }, testStorage.getNamespaceName());
 
-        String externalCmName = "external-cm";
+        // check if lines from Logs contain log Level INFO but no longer DEBUG
+        final Predicate<String> hasLogLevelInfo = connectLogs -> connectLogs != null && !connectLogs.isEmpty() &&
+            !log4jPatternDebugLevel.matcher(connectLogs).find() &&
+            log4jPatternInfoLevel.matcher(connectLogs).find();
+        KafkaConnectUtils.waitForConnectLogLevelChangePropagation(testStorage, connectPods, scraperPodName, hasLogLevelInfo, "INFO");
 
-        ConfigMap connectLoggingMap = new ConfigMapBuilder()
-                .withNewMetadata()
+        assertThat("Connect Pod should not roll", PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getKafkaConnectSelector()), equalTo(connectPods));
+
+        // external logging
+
+        final String log4jConfig = """
+            log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender
+            log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout
+            log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %X{connector.context}%m (%c) [%t]%n
+            log4j.rootLogger=OFF, CONSOLE
+            log4j.logger.org.apache.zookeeper=ERROR
+            log4j.logger.org.reflections=ERROR""";
+
+        final String externalCmName = "external-cm";
+
+        final ConfigMap connectLoggingMap = new ConfigMapBuilder()
+            .withNewMetadata()
                 .addToLabels("app", "strimzi")
                 .withName(externalCmName)
                 .withNamespace(testStorage.getNamespaceName())
-                .endMetadata()
-                .withData(Collections.singletonMap("log4j.properties", log4jConfig))
-                .build();
+            .endMetadata()
+            .addToData("log4j.properties", log4jConfig)
+            .build();
 
         kubeClient().createConfigMapInNamespace(testStorage.getNamespaceName(), connectLoggingMap);
 
-        ExternalLogging connectXternalLogging = new ExternalLoggingBuilder()
+        final ExternalLogging connectXternalLogging = new ExternalLoggingBuilder()
             .withNewValueFrom()
                 .withConfigMapKeyRef(
                     new ConfigMapKeySelectorBuilder()
@@ -788,23 +811,17 @@ class LoggingChangeST extends AbstractST {
             .build();
 
         LOGGER.info("Setting log level of Connect to OFF");
+
         // change to the external logging
         KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(testStorage.getClusterName(), conn -> {
             conn.getSpec().setLogging(connectXternalLogging);
         }, testStorage.getNamespaceName());
 
-        TestUtils.waitFor("Logger change", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
-            () -> cmdKubeClient().namespace(testStorage.getNamespaceName()).execInPod(scraperPodName, "curl", "http://" + KafkaConnectResources.serviceName(testStorage.getClusterName())
-                + ":8083/admin/loggers/root").out().contains("OFF")
-        );
+        // check if there are no more new lines in Logs
+        final Predicate<String> hasLogLevelOff = connectLogs -> connectLogs != null && connectLogs.isEmpty();
+        KafkaConnectUtils.waitForConnectLogLevelChangePropagation(testStorage, connectPods, scraperPodName, hasLogLevelOff, "OFF");
 
-        TestUtils.waitFor("log to be empty", Duration.ofMillis(100).toMillis(), TestConstants.SAFETY_RECONCILIATION_INTERVAL,
-            () -> {
-                String kcLog = StUtils.getLogFromPodByTime(testStorage.getNamespaceName(), connectPodName, "", "30s");
-                return kcLog != null && kcLog.isEmpty() && !DEFAULT_LOG4J_PATTERN.matcher(kcLog).find();
-            });
-
-        assertThat("Connect Pod should not roll", PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getKafkaConnectSelector()), equalTo(connectSnapshot));
+        assertThat("Connect Pod should not roll", PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getKafkaConnectSelector()), equalTo(connectPods));
     }
 
     @ParallelNamespaceTest
@@ -814,7 +831,6 @@ class LoggingChangeST extends AbstractST {
         InlineLogging ilOff = new InlineLogging();
         Map<String, String> log4jConfig = new HashMap<>();
         log4jConfig.put("kafka.root.logger.level", "OFF");
-        log4jConfig.put("log4j.logger.org.I0Itec.zkclient.ZkClient", "OFF");
         log4jConfig.put("log4j.logger.org.apache.zookeeper", "OFF");
         log4jConfig.put("log4j.logger.kafka", "OFF");
         log4jConfig.put("log4j.logger.org.apache.kafka", "OFF");
@@ -896,7 +912,6 @@ class LoggingChangeST extends AbstractST {
                 "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\n" +
                 "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]%n\n" +
                 "log4j.rootLogger=INFO, CONSOLE\n" +
-                "log4j.logger.org.I0Itec.zkclient.ZkClient=INFO\n" +
                 "log4j.logger.org.apache.zookeeper=INFO\n" +
                 "log4j.logger.kafka=INFO\n" +
                 "log4j.logger.org.apache.kafka=INFO\n" +
@@ -1019,7 +1034,6 @@ class LoggingChangeST extends AbstractST {
                         "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\n" +
                         "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]%n\n" +
                         "log4j.rootLogger=INFO, CONSOLE\n" +
-                        "log4j.logger.org.I0Itec.zkclient.ZkClient=INFO\n" +
                         "log4j.logger.org.apache.zookeeper=INFO\n" +
                         "log4j.logger.kafka=INFO\n" +
                         "log4j.logger.org.apache.kafka=INFO\n" +
@@ -1079,7 +1093,6 @@ class LoggingChangeST extends AbstractST {
                         "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\n" +
                         "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]%n\n" +
                         "log4j.rootLogger=INFO, CONSOLE\n" +
-                        "log4j.logger.org.I0Itec.zkclient.ZkClient=ERROR\n" +
                         "log4j.logger.org.apache.zookeeper=ERROR\n" +
                         "log4j.logger.kafka=ERROR\n" +
                         "log4j.logger.org.apache.kafka=ERROR\n" +
@@ -1111,7 +1124,6 @@ class LoggingChangeST extends AbstractST {
                         "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\n" +
                         "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]\n" +
                         "log4j.rootLogger=INFO, CONSOLE\n" +
-                        "log4j.logger.org.I0Itec.zkclient.ZkClient=ERROR\n" +
                         "log4j.logger.org.apache.zookeeper=ERROR\n" +
                         "log4j.logger.kafka=ERROR\n" +
                         "log4j.logger.org.apache.kafka=ERROR\n" +
@@ -1145,7 +1157,6 @@ class LoggingChangeST extends AbstractST {
         Map<String, String> loggers = new HashMap<>();
         loggers.put("connect.root.logger.level", "OFF");
         loggers.put("log4j.logger.org.apache.zookeeper", "OFF");
-        loggers.put("log4j.logger.org.I0Itec.zkclient", "OFF");
         loggers.put("log4j.logger.org.reflections", "OFF");
 
         ilOff.setLoggers(loggers);
@@ -1210,7 +1221,6 @@ class LoggingChangeST extends AbstractST {
                         "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %X{connector.context}%m (%c) [%t]%n\n" +
                         "log4j.rootLogger=OFF, CONSOLE\n" +
                         "log4j.logger.org.apache.zookeeper=ERROR\n" +
-                        "log4j.logger.org.I0Itec.zkclient=ERROR\n" +
                         "log4j.logger.org.reflections=ERROR";
 
         String externalCmName = "external-cm";
@@ -1284,7 +1294,6 @@ class LoggingChangeST extends AbstractST {
                         "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]%n\n" +
                         "log4j.rootLogger=OFF, CONSOLE\n" +
                         "log4j.logger.org.apache.zookeeper=ERROR\n" +
-                        "log4j.logger.org.I0Itec.zkclient=ERROR\n" +
                         "log4j.logger.org.eclipse.jetty.util.thread=FATAL\n" +
                         "log4j.logger.org.apache.kafka.connect.runtime.WorkerTask=OFF\n" +
                         "log4j.logger.org.eclipse.jetty.util.thread.strategy.EatWhatYouKill=OFF\n" +
@@ -1337,7 +1346,6 @@ class LoggingChangeST extends AbstractST {
                         "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]%n\n" +
                         "log4j.rootLogger=INFO, CONSOLE\n" +
                         "log4j.logger.org.apache.zookeeper=ERROR\n" +
-                        "log4j.logger.org.I0Itec.zkclient=ERROR\n" +
                         "log4j.logger.org.eclipse.jetty.util.thread=WARN\n" +
                         "log4j.logger.org.reflections=ERROR";
 
@@ -1372,7 +1380,6 @@ class LoggingChangeST extends AbstractST {
             "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\n" +
             "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]%n\n" +
             "log4j.rootLogger=INFO, CONSOLE\n" +
-            "log4j.logger.org.I0Itec.zkclient.ZkClient=INFO\n" +
             "log4j.logger.org.apache.zookeeper=INFO\n" +
             "log4j.logger.kafka=INFO\n" +
             "log4j.logger.org.apache.kafka=INFO";
@@ -1571,7 +1578,6 @@ class LoggingChangeST extends AbstractST {
             "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]\n" +
             "kafka.root.logger.level=INFO\n" +
             "log4j.rootLogger=${kafka.root.logger.level}, CONSOLE\n" +
-            "log4j.logger.org.I0Itec.zkclient.ZkClient=INFO\n" +
             "log4j.logger.org.apache.zookeeper=INFO\n" +
             "log4j.logger.kafka=INFO\n" +
             "log4j.logger.org.apache.kafka=INFO\n" +

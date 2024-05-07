@@ -64,12 +64,12 @@ public class FeatureGatesTest {
         assertThat(new FeatureGates("  -UseKRaft    ").useKRaftEnabled(), is(false));
         // TODO: Add more tests with various feature gate combinations once we have multiple feature gates again.
         //       The commented out code below shows the tests we used to have with multiple feature gates.
-        //assertThat(new FeatureGates("-UseKRaft,-KafkaNodePools").useKRaftEnabled(), is(false));
-        //assertThat(new FeatureGates("-UseKRaft,-KafkaNodePools").kafkaNodePoolsEnabled(), is(false));
-        //assertThat(new FeatureGates("  +UseKRaft    ,    +KafkaNodePools").useKRaftEnabled(), is(true));
-        //assertThat(new FeatureGates("  -UseKRaft    ,    -KafkaNodePools").kafkaNodePoolsEnabled(), is(false));
-        //assertThat(new FeatureGates("+KafkaNodePools,-UseKRaft").useKRaftEnabled(), is(false));
-        //assertThat(new FeatureGates("+KafkaNodePools,-UseKRaft").kafkaNodePoolsEnabled(), is(true));
+        assertThat(new FeatureGates("-UseKRaft,-ContinueReconciliationOnManualRollingUpdateFailure").useKRaftEnabled(), is(false));
+        assertThat(new FeatureGates("-UseKRaft,-ContinueReconciliationOnManualRollingUpdateFailure").continueOnManualRUFailureEnabled(), is(false));
+        assertThat(new FeatureGates("  +UseKRaft    ,    +ContinueReconciliationOnManualRollingUpdateFailure").useKRaftEnabled(), is(true));
+        assertThat(new FeatureGates("  +UseKRaft    ,    +ContinueReconciliationOnManualRollingUpdateFailure").continueOnManualRUFailureEnabled(), is(true));
+        assertThat(new FeatureGates("+ContinueReconciliationOnManualRollingUpdateFailure,-UseKRaft").useKRaftEnabled(), is(false));
+        assertThat(new FeatureGates("+ContinueReconciliationOnManualRollingUpdateFailure,-UseKRaft").continueOnManualRUFailureEnabled(), is(true));
     }
 
     @ParallelTest

@@ -63,7 +63,7 @@ openssl req -new -key tls.key -subj "/CN=strimzi-drain-cleaner.strimzi-drain-cle
 +
 A `tls.crt` file is created.
 +
-NOTE: If you change the name of the Strimzi Drain Cleaner service or install it into a different namespace, you must change the SAN (Subject Alternative Name) of the certificate, following the format `<service_name>.<namespace_name>.svc`.
+NOTE: If you change the name of the Strimzi Drain Cleaner service or install it into a different namespace, you must change the SAN (Subject Alternative Name) of the certificate, following the format `<service_name>.<namespace>.svc`.
 
 . Encode the CA public certificate into base64.
 +

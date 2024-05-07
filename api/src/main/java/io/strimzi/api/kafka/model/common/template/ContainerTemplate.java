@@ -5,6 +5,7 @@
 package io.strimzi.api.kafka.model.common.template;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.ContainerEnvVar;
@@ -16,7 +17,6 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,12 +29,11 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonPropertyOrder({"env", "securityContext"})
 @DescriptionFile
 @EqualsAndHashCode
 @ToString
-public class ContainerTemplate implements Serializable, UnknownPropertyPreserving {
-    private static final long serialVersionUID = 1L;
-
+public class ContainerTemplate implements UnknownPropertyPreserving {
     private List<ContainerEnvVar> env;
     private SecurityContext securityContext;
     private Map<String, Object> additionalProperties = new HashMap<>(0);

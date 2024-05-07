@@ -6,6 +6,7 @@
 package io.strimzi.api.kafka.model.kafka.tieredstorage;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
@@ -13,7 +14,6 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -25,14 +25,15 @@ import java.util.Map;
     builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonPropertyOrder({"className", "classPath", "config"})
 @EqualsAndHashCode
 @ToString
-public class RemoteStorageManager implements UnknownPropertyPreserving, Serializable {
-    private static final long serialVersionUID = 1L;
-    protected Map<String, Object> additionalProperties;
+public class RemoteStorageManager implements UnknownPropertyPreserving {
     private String className;
     private String classPath;
     private Map<String, String> config;
+
+    protected Map<String, Object> additionalProperties;
 
     @Override
     public Map<String, Object> getAdditionalProperties() {

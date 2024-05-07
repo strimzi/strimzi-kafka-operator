@@ -24,7 +24,6 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,13 +37,12 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @JsonPropertyOrder({"metadata", "imagePullSecrets", "securityContext", "terminationGracePeriodSeconds", "affinity",
-    "tolerations", "topologySpreadConstraint", "priorityClassName", "schedulerName", "hostAliases", "tmpDirSizeLimit"})
+    "tolerations", "topologySpreadConstraints", "priorityClassName", "schedulerName", "hostAliases",
+    "enableServiceLinks", "tmpDirSizeLimit"})
 @EqualsAndHashCode
 @ToString
 @DescriptionFile
-public class PodTemplate implements HasMetadataTemplate, Serializable, UnknownPropertyPreserving {
-    private static final long serialVersionUID = 1L;
-
+public class PodTemplate implements HasMetadataTemplate, UnknownPropertyPreserving {
     private MetadataTemplate metadata;
     private List<LocalObjectReference> imagePullSecrets;
     private PodSecurityContext securityContext;
@@ -57,6 +55,7 @@ public class PodTemplate implements HasMetadataTemplate, Serializable, UnknownPr
     private List<HostAlias> hostAliases;
     private Boolean enableServiceLinks;
     private String tmpDirSizeLimit;
+
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Metadata applied to the resource.")

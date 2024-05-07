@@ -14,7 +14,6 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -37,9 +36,7 @@ import java.util.Map;
 )
 @EqualsAndHashCode
 @ToString
-public abstract class KafkaListenerAuthentication implements UnknownPropertyPreserving, Serializable {
-    private static final long serialVersionUID = 1L;
-
+public abstract class KafkaListenerAuthentication implements UnknownPropertyPreserving {
     private Map<String, Object> additionalProperties;
 
     @Description("Authentication type. " +

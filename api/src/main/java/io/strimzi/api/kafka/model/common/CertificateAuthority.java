@@ -12,7 +12,6 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -24,19 +23,19 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-@JsonPropertyOrder({ "generateCertificateAuthority", "generateSecretOwnerReference", "validityDays", "renewalDays" })
+@JsonPropertyOrder({ "generateCertificateAuthority", "generateSecretOwnerReference", "validityDays",
+    "renewalDays", "certificateExpirationPolicy" })
 @EqualsAndHashCode
 @ToString
-public class CertificateAuthority implements UnknownPropertyPreserving, Serializable {
-
-    private static final long serialVersionUID = 1L;
-
+public class CertificateAuthority implements UnknownPropertyPreserving {
     private int validityDays;
     private boolean generateCertificateAuthority = true;
     private boolean generateSecretOwnerReference = true;
     private int renewalDays;
-    private Map<String, Object> additionalProperties = new HashMap<>(0);
     private CertificateExpirationPolicy certificateExpirationPolicy;
+
+    private Map<String, Object> additionalProperties = new HashMap<>(0);
+
     public static final int DEFAULT_CERTS_VALIDITY_DAYS = 365;
     public static final int DEFAULT_CERTS_RENEWAL_DAYS = 30;
 

@@ -6,13 +6,13 @@ package io.strimzi.api.kafka.model.common;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -24,12 +24,10 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+@JsonPropertyOrder({"initialDelaySeconds", "timeoutSeconds", "periodSeconds", "successThreshold", "failureThreshold"})
 @EqualsAndHashCode
 @ToString
-public class Probe implements UnknownPropertyPreserving, Serializable {
-
-    private static final long serialVersionUID = 1L;
-
+public class Probe implements UnknownPropertyPreserving {
     private int initialDelaySeconds = 15;
     private int timeoutSeconds = 5;
     private Integer periodSeconds;

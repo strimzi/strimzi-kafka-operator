@@ -19,17 +19,17 @@ import io.strimzi.operator.cluster.model.KafkaConnectBuild;
 import io.strimzi.operator.cluster.model.KafkaConnectBuildUtils;
 import io.strimzi.operator.cluster.model.KafkaConnectDockerfile;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
+import io.strimzi.operator.cluster.operator.resource.kubernetes.BuildConfigOperator;
+import io.strimzi.operator.cluster.operator.resource.kubernetes.BuildOperator;
+import io.strimzi.operator.cluster.operator.resource.kubernetes.ConfigMapOperator;
+import io.strimzi.operator.cluster.operator.resource.kubernetes.ImageStreamOperator;
+import io.strimzi.operator.cluster.operator.resource.kubernetes.PodOperator;
+import io.strimzi.operator.cluster.operator.resource.kubernetes.ServiceAccountOperator;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
-import io.strimzi.operator.common.operator.resource.BuildConfigOperator;
-import io.strimzi.operator.common.operator.resource.BuildOperator;
-import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
-import io.strimzi.operator.common.operator.resource.ImageStreamOperator;
-import io.strimzi.operator.common.operator.resource.PodOperator;
-import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
 import io.vertx.core.Future;
 
 import java.util.List;
@@ -118,7 +118,7 @@ public class ConnectBuildOperator {
             // Extract information from the current controllerResource. This is used to figure out if new build needs to be run or not.
             currentBuildRevision = Annotations.stringAnnotation(controllerResource, Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, null);
             currentImage = Annotations.stringAnnotation(controllerResource, Annotations.STRIMZI_IO_CONNECT_BUILD_IMAGE, null);
-            forceRebuild = Annotations.hasAnnotation(controllerResource, Annotations.STRIMZI_IO_CONNECT_FORCE_REBUILD);
+            forceRebuild = Annotations.booleanAnnotation(controllerResource, Annotations.STRIMZI_IO_CONNECT_FORCE_REBUILD, false);
         }
 
         KafkaConnectDockerfile dockerfile = connectBuild.generateDockerfile();

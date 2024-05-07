@@ -8,12 +8,12 @@ metadata:
 spec:
   replicas: 3
   storage:
+    type: "jbod"
     volumes:
-    - type: "persistent-claim"
+    - id: 0
+      type: "persistent-claim"
       size: "100Gi"
       deleteClaim: true
-      id: 0
-    type: "jbod"
   roles:
   - "broker"
   - "controller"

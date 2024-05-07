@@ -26,12 +26,11 @@ import java.util.List;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-@JsonPropertyOrder({"type", "url", "allowOnError", "initialCacheCapacity", "maximumCacheSize", "expireAfterMs", "tlsTrustedCertificates", "superUsers"})
+@JsonPropertyOrder({"type", "url", "allowOnError", "initialCacheCapacity", "maximumCacheSize", "expireAfterMs",
+    "tlsTrustedCertificates", "superUsers", "enableMetrics"})
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaAuthorizationOpa extends KafkaAuthorization {
-    private static final long serialVersionUID = 1L;
-
     public static final String TYPE_OPA = "opa";
 
     public static final String AUTHORIZER_CLASS_NAME = "org.openpolicyagent.kafka.OpaAuthorizer";

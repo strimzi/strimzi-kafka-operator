@@ -32,8 +32,6 @@ import java.util.Map;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaNodePoolTemplate extends Spec {
-    private static final long serialVersionUID = 1L;
-
     private ResourceTemplate podSet;
     private PodTemplate pod;
     private ResourceTemplate perPodService;

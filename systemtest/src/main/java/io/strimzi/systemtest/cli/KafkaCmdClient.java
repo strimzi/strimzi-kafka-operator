@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest.cli;
 
-import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import org.apache.logging.log4j.Level;
 
 import java.util.Arrays;
@@ -20,26 +19,6 @@ public class KafkaCmdClient {
     public static List<String> listTopicsUsingPodCli(String namespaceName, String podName, String bootstrapServer) {
         return Arrays.asList(cmdKubeClient(namespaceName).execInPod(podName, "/bin/bash", "-c",
             "bin/kafka-topics.sh --list --bootstrap-server " + bootstrapServer).out().split("\\s+"));
-    }
-
-    public static String createTopicUsingPodCli(String namespaceName, String podName, String bootstrapServer, String topic, int replicationFactor, int partitions) {
-        String response = cmdKubeClient(namespaceName).execInPod(podName, "/bin/bash", "-c",
-            "bin/kafka-topics.sh --bootstrap-server " + bootstrapServer + " --create " + " --topic " + topic +
-                " --replication-factor " + replicationFactor + " --partitions " + partitions).out();
-
-        KafkaTopicUtils.waitForKafkaTopicCreation(namespaceName, topic);
-
-        return response;
-    }
-
-    public static String deleteTopicUsingPodCli(String namespaceName, String podName, String bootstrapServer, String topic) {
-        return cmdKubeClient(namespaceName).execInPod(podName, "/bin/bash", "-c",
-            "bin/kafka-topics.sh --bootstrap-server " + bootstrapServer + " --delete --topic " + topic).out();
-    }
-
-    public static String updateTopicPartitionsCountUsingPodCli(String namespaceName, String podName, String bootstrapServer, String topic, int partitions) {
-        return cmdKubeClient(namespaceName).execInPod(podName, "/bin/bash", "-c",
-            "bin/kafka-topics.sh --bootstrap-server " + bootstrapServer + " --alter --topic " + topic + " --partitions " + partitions).out();
     }
 
     public static String listTopicsUsingPodCliWithConfigProperties(String namespaceName, String podName, String bootstrapServer, String properties) {

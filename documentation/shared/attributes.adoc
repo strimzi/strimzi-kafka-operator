@@ -119,9 +119,12 @@
 :HelmCustomResourceDefinitions: link:https://helm.sh/docs/chart_best_practices/custom_resource_definitions/[Custom Resource Definitions for Helm^]
 
 //distributed tracing versions and links
-:OpenTelemetryAlphaVersion: 1.19.0-alpha
-:OpenTelemetryVersion: 1.19.0
+:OpenTelemetryAlphaVersion: 1.34.1-alpha
+:OpenTelemetryVersion: 1.34.1
+:OpenTelemetryInstrumentationVersion: 1.32.0-alpha
+:OpenTelemetrySemConvVersion: 1.21.0-alpha
 :OpenTelemetryKafkaClientVersion: 2.6
+:GRPCVersion: 1.61.0
 
 :OpenTelemetryDocs: link:https://opentelemetry.io/docs/[OpenTelemetry documentation^]
 :JaegerDocs: link:https://www.jaegertracing.io/docs/[Jaeger documentation^]
@@ -149,7 +152,6 @@
 :DockerKafkaInit: quay.io/strimzi/operator:{DockerTag}
 :DockerTopicOperator: quay.io/strimzi/operator:{DockerTag}
 :DockerUserOperator: quay.io/strimzi/operator:{DockerTag}
-:DockerEntityOperatorStunnel: quay.io/strimzi/kafka:{DockerTag}-kafka-{DefaultKafkaVersion}
 :DockerKafkaBridge: quay.io/strimzi/kafka-bridge:{BridgeDockerTag}
 
 :DockerImageUser: 1001

@@ -6,6 +6,7 @@ package io.strimzi.api.kafka.model.kafka.entityoperator;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
@@ -13,7 +14,6 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -28,10 +28,7 @@ import java.util.Map;
 @JsonPropertyOrder({"topicOperator", "userOperator", "tlsSidecar", "template"})
 @EqualsAndHashCode
 @ToString
-public class EntityOperatorSpec implements UnknownPropertyPreserving, Serializable {
-
-    private static final long serialVersionUID = 1L;
-
+public class EntityOperatorSpec implements UnknownPropertyPreserving {
     private EntityTopicOperatorSpec topicOperator;
     private EntityUserOperatorSpec userOperator;
     private TlsSidecar tlsSidecar;
@@ -58,6 +55,8 @@ public class EntityOperatorSpec implements UnknownPropertyPreserving, Serializab
         this.userOperator = userOperator;
     }
 
+    @Deprecated
+    @DeprecatedProperty(description = "TLS sidecar was removed in Strimzi 0.41.0. This property is ignored.")
     @Description("TLS sidecar configuration")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public TlsSidecar getTlsSidecar() {

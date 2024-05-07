@@ -20,12 +20,10 @@ import lombok.ToString;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "url", "sha512sum", "insecure" })
+@JsonPropertyOrder({ "type", "url", "sha512sum", "insecure" })
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class JarArtifact extends DownloadableArtifact {
-    private static final long serialVersionUID = 1L;
-
     @Description("Must be `" + TYPE_JAR + "`")
     @Override
     @JsonInclude(JsonInclude.Include.NON_NULL)

@@ -27,8 +27,6 @@ import lombok.ToString;
 @Deprecated
 @DeprecatedType(replacedWithType = void.class)
 public class JaegerTracing extends Tracing {
-    private static final long serialVersionUID = 1L;
-
     public static final String TYPE_JAEGER = "jaeger";
 
     public static final String CONSUMER_INTERCEPTOR_CLASS_NAME = "io.opentracing.contrib.kafka.TracingConsumerInterceptor";

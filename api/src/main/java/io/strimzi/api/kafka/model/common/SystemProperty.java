@@ -6,12 +6,12 @@
 package io.strimzi.api.kafka.model.common;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -23,12 +23,10 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+@JsonPropertyOrder({"name", "value"})
 @EqualsAndHashCode
 @ToString
-public class SystemProperty implements UnknownPropertyPreserving, Serializable {
-
-    private static final long serialVersionUID = 1L;
-
+public class SystemProperty implements UnknownPropertyPreserving {
     private String name;
     private String value;
     private Map<String, Object> additionalProperties = new HashMap<>(0);

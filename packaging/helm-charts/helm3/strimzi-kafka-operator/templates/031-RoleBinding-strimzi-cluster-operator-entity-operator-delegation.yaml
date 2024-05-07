@@ -10,7 +10,9 @@ kind: RoleBinding
 {{- end }}
 metadata:
   name: strimzi-cluster-operator-entity-operator-delegation
+  {{- if not $root.Values.watchAnyNamespace }}
   namespace: {{ . }}
+  {{- end }}
   labels:
     app: {{ template "strimzi.name" $root }}
     chart: {{ template "strimzi.chart" $root }}

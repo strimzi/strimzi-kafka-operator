@@ -43,6 +43,71 @@ spec:
             description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds"
           metadata:
             type: object
+          stringProperty:
+            type: string
+            pattern: .*
+          intProperty:
+            type: integer
+            example: 42
+            minimum: 42
+            description: An example int property.
+          longProperty:
+            type: integer
+            example: 42
+            minimum: 42
+            description: An example long property.
+          booleanProperty:
+            type: boolean
+          normalEnum:
+            type: string
+            enum:
+            - FOO
+            - BAR
+          customisedEnum:
+            type: string
+            enum:
+            - one
+            - two
+          objectProperty:
+            type: object
+            properties:
+              foo:
+                type: string
+              bar:
+                type: string
+          mapStringObject:
+            x-kubernetes-preserve-unknown-fields: true
+            type: object
+          mapStringString:
+            additionalProperties:
+              type: string
+            type: object
+          mapStringQuantity:
+            additionalProperties:
+              anyOf:
+              - type: integer
+              - type: string
+              pattern: "^(\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))))?$"
+              x-kubernetes-int-or-string: true
+            type: object
+          polymorphicProperty:
+            type: object
+            properties:
+              commonProperty:
+                type: string
+              discrim:
+                type: string
+                enum:
+                - left
+                - right
+              leftProperty:
+                type: string
+                description: "when descrim=left, the left-hand property."
+              rightProperty:
+                type: string
+                description: "when descrim=right, the right-hand property."
+            required:
+            - discrim
           affinity:
             type: object
             properties:
@@ -371,34 +436,9 @@ spec:
                             type: string
                         topologyKey:
                           type: string
-          arrayOfBoundTypeVar:
-            type: array
-            items:
-              type: object
-              properties: {}
-          arrayOfBoundTypeVar2:
-            type: array
-            items:
-              type: object
-              properties: {}
-          arrayOfList:
-            type: array
-            items:
-              type: array
-              items:
-                type: string
-          arrayOfRawList:
-            type: array
-            items:
-              type: array
-              items:
-                type: object
-                properties: {}
-          arrayOfTypeVar:
-            type: array
-            items:
-              type: object
-              properties: {}
+          fieldProperty:
+            type: string
+            description: Example of field property.
           arrayProperty:
             type: array
             minItems: 1
@@ -410,46 +450,6 @@ spec:
               type: array
               items:
                 type: string
-          booleanProperty:
-            type: boolean
-          customisedEnum:
-            type: string
-            enum:
-            - one
-            - two
-          either:
-            type: string
-          fieldProperty:
-            type: string
-            description: Example of field property.
-          intProperty:
-            type: integer
-            example: 42
-            minimum: 42
-            description: An example int property.
-          listOfArray:
-            type: array
-            items:
-              type: array
-              items:
-                type: string
-          listOfBoundTypeVar:
-            type: array
-            items:
-              type: object
-              properties: {}
-          listOfBoundTypeVar2:
-            type: array
-            items:
-              type: object
-              properties: {}
-          listOfCustomizedEnum:
-            type: array
-            items:
-              type: string
-              enum:
-              - one
-              - two
           listOfInts:
             type: array
             items:
@@ -460,26 +460,14 @@ spec:
               type: array
               items:
                 type: integer
-          listOfMaps:
-            type: array
-            items:
-              x-kubernetes-preserve-unknown-fields: true
-              type: object
-          listOfNormalEnum:
-            type: array
-            items:
-              type: string
-              enum:
-              - FOO
-              - BAR
           listOfObjects:
             type: array
             items:
               type: object
               properties:
-                bar:
-                  type: string
                 foo:
+                  type: string
+                bar:
                   type: string
           listOfPolymorphic:
             type: array
@@ -501,6 +489,11 @@ spec:
                   description: "when descrim=right, the right-hand property."
               required:
               - discrim
+          rawList:
+            type: array
+            items:
+              type: object
+              properties: {}
           listOfRawList:
             type: array
             items:
@@ -508,7 +501,51 @@ spec:
               items:
                 type: object
                 properties: {}
+          arrayOfList:
+            type: array
+            items:
+              type: array
+              items:
+                type: string
+          arrayOfRawList:
+            type: array
+            items:
+              type: array
+              items:
+                type: object
+                properties: {}
+          listOfArray:
+            type: array
+            items:
+              type: array
+              items:
+                type: string
+          arrayOfTypeVar:
+            type: array
+            items:
+              type: object
+              properties: {}
           listOfTypeVar:
+            type: array
+            items:
+              type: object
+              properties: {}
+          arrayOfBoundTypeVar:
+            type: array
+            items:
+              type: object
+              properties: {}
+          listOfBoundTypeVar:
+            type: array
+            items:
+              type: object
+              properties: {}
+          arrayOfBoundTypeVar2:
+            type: array
+            items:
+              type: object
+              properties: {}
+          listOfBoundTypeVar2:
             type: array
             items:
               type: object
@@ -534,64 +571,35 @@ spec:
               items:
                 type: object
                 properties: {}
-          longProperty:
-            type: integer
-            example: 42
-            minimum: 42
-            description: An example long property.
-          mapStringObject:
-            x-kubernetes-preserve-unknown-fields: true
-            type: object
-          mapStringString:
-            additionalProperties:
-              type: string
-            type: object
-          normalEnum:
-            type: string
-            enum:
-            - FOO
-            - BAR
-          objectProperty:
-            type: object
-            properties:
-              bar:
-                type: string
-              foo:
-                type: string
-          or:
-            type: string
-          polymorphicProperty:
-            type: object
-            properties:
-              commonProperty:
-                type: string
-              discrim:
-                type: string
-                enum:
-                - left
-                - right
-              leftProperty:
-                type: string
-                description: "when descrim=left, the left-hand property."
-              rightProperty:
-                type: string
-                description: "when descrim=right, the right-hand property."
-            required:
-            - discrim
-          rawList:
+          listOfCustomizedEnum:
             type: array
             items:
+              type: string
+              enum:
+              - one
+              - two
+          listOfNormalEnum:
+            type: array
+            items:
+              type: string
+              enum:
+              - FOO
+              - BAR
+          listOfMaps:
+            type: array
+            items:
+              x-kubernetes-preserve-unknown-fields: true
               type: object
-              properties: {}
-          spec:
-            type: object
-            properties: {}
+          either:
+            type: string
+          or:
+            type: string
           status:
             type: object
             properties: {}
-          stringProperty:
-            type: string
-            pattern: .*
+          spec:
+            type: object
+            properties: {}
         oneOf:
         - properties:
             either: {}
@@ -637,6 +645,71 @@ spec:
             description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds"
           metadata:
             type: object
+          stringProperty:
+            type: string
+            pattern: .*
+          intProperty:
+            type: integer
+            example: 42
+            minimum: 42
+            description: An example int property.
+          longProperty:
+            type: integer
+            example: 42
+            minimum: 42
+            description: An example long property.
+          booleanProperty:
+            type: boolean
+          normalEnum:
+            type: string
+            enum:
+            - FOO
+            - BAR
+          customisedEnum:
+            type: string
+            enum:
+            - one
+            - two
+          objectProperty:
+            type: object
+            properties:
+              foo:
+                type: string
+              bar:
+                type: string
+          mapStringObject:
+            x-kubernetes-preserve-unknown-fields: true
+            type: object
+          mapStringString:
+            additionalProperties:
+              type: string
+            type: object
+          mapStringQuantity:
+            additionalProperties:
+              anyOf:
+              - type: integer
+              - type: string
+              pattern: "^(\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))))?$"
+              x-kubernetes-int-or-string: true
+            type: object
+          polymorphicProperty:
+            type: object
+            properties:
+              commonProperty:
+                type: string
+              discrim:
+                type: string
+                enum:
+                - left
+                - right
+              leftProperty:
+                type: string
+                description: "when descrim=left, the left-hand property."
+              rightProperty:
+                type: string
+                description: "when descrim=right, the right-hand property."
+            required:
+            - discrim
           affinity:
             type: object
             properties:
@@ -965,34 +1038,9 @@ spec:
                             type: string
                         topologyKey:
                           type: string
-          arrayOfBoundTypeVar:
-            type: array
-            items:
-              type: object
-              properties: {}
-          arrayOfBoundTypeVar2:
-            type: array
-            items:
-              type: object
-              properties: {}
-          arrayOfList:
-            type: array
-            items:
-              type: array
-              items:
-                type: string
-          arrayOfRawList:
-            type: array
-            items:
-              type: array
-              items:
-                type: object
-                properties: {}
-          arrayOfTypeVar:
-            type: array
-            items:
-              type: object
-              properties: {}
+          fieldProperty:
+            type: string
+            description: Example of field property.
           arrayProperty:
             type: array
             minItems: 1
@@ -1004,46 +1052,6 @@ spec:
               type: array
               items:
                 type: string
-          booleanProperty:
-            type: boolean
-          customisedEnum:
-            type: string
-            enum:
-            - one
-            - two
-          either:
-            type: string
-          fieldProperty:
-            type: string
-            description: Example of field property.
-          intProperty:
-            type: integer
-            example: 42
-            minimum: 42
-            description: An example int property.
-          listOfArray:
-            type: array
-            items:
-              type: array
-              items:
-                type: string
-          listOfBoundTypeVar:
-            type: array
-            items:
-              type: object
-              properties: {}
-          listOfBoundTypeVar2:
-            type: array
-            items:
-              type: object
-              properties: {}
-          listOfCustomizedEnum:
-            type: array
-            items:
-              type: string
-              enum:
-              - one
-              - two
           listOfInts:
             type: array
             items:
@@ -1054,26 +1062,14 @@ spec:
               type: array
               items:
                 type: integer
-          listOfMaps:
-            type: array
-            items:
-              x-kubernetes-preserve-unknown-fields: true
-              type: object
-          listOfNormalEnum:
-            type: array
-            items:
-              type: string
-              enum:
-              - FOO
-              - BAR
           listOfObjects:
             type: array
             items:
               type: object
               properties:
-                bar:
-                  type: string
                 foo:
+                  type: string
+                bar:
                   type: string
           listOfPolymorphic:
             type: array
@@ -1095,6 +1091,11 @@ spec:
                   description: "when descrim=right, the right-hand property."
               required:
               - discrim
+          rawList:
+            type: array
+            items:
+              type: object
+              properties: {}
           listOfRawList:
             type: array
             items:
@@ -1102,7 +1103,51 @@ spec:
               items:
                 type: object
                 properties: {}
+          arrayOfList:
+            type: array
+            items:
+              type: array
+              items:
+                type: string
+          arrayOfRawList:
+            type: array
+            items:
+              type: array
+              items:
+                type: object
+                properties: {}
+          listOfArray:
+            type: array
+            items:
+              type: array
+              items:
+                type: string
+          arrayOfTypeVar:
+            type: array
+            items:
+              type: object
+              properties: {}
           listOfTypeVar:
+            type: array
+            items:
+              type: object
+              properties: {}
+          arrayOfBoundTypeVar:
+            type: array
+            items:
+              type: object
+              properties: {}
+          listOfBoundTypeVar:
+            type: array
+            items:
+              type: object
+              properties: {}
+          arrayOfBoundTypeVar2:
+            type: array
+            items:
+              type: object
+              properties: {}
+          listOfBoundTypeVar2:
             type: array
             items:
               type: object
@@ -1128,64 +1173,35 @@ spec:
               items:
                 type: object
                 properties: {}
-          longProperty:
-            type: integer
-            example: 42
-            minimum: 42
-            description: An example long property.
-          mapStringObject:
-            x-kubernetes-preserve-unknown-fields: true
-            type: object
-          mapStringString:
-            additionalProperties:
-              type: string
-            type: object
-          normalEnum:
-            type: string
-            enum:
-            - FOO
-            - BAR
-          objectProperty:
-            type: object
-            properties:
-              bar:
-                type: string
-              foo:
-                type: string
-          or:
-            type: string
-          polymorphicProperty:
-            type: object
-            properties:
-              commonProperty:
-                type: string
-              discrim:
-                type: string
-                enum:
-                - left
-                - right
-              leftProperty:
-                type: string
-                description: "when descrim=left, the left-hand property."
-              rightProperty:
-                type: string
-                description: "when descrim=right, the right-hand property."
-            required:
-            - discrim
-          rawList:
+          listOfCustomizedEnum:
             type: array
             items:
+              type: string
+              enum:
+              - one
+              - two
+          listOfNormalEnum:
+            type: array
+            items:
+              type: string
+              enum:
+              - FOO
+              - BAR
+          listOfMaps:
+            type: array
+            items:
+              x-kubernetes-preserve-unknown-fields: true
               type: object
-              properties: {}
-          spec:
-            type: object
-            properties: {}
+          either:
+            type: string
+          or:
+            type: string
           status:
             type: object
             properties: {}
-          stringProperty:
-            type: string
-            pattern: .*
+          spec:
+            type: object
+            properties: {}
         oneOf:
         - properties:
             either: {}

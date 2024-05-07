@@ -7,7 +7,6 @@ package io.strimzi.operator.cluster.model;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaSpec;
 import io.strimzi.api.kafka.model.kafka.KafkaStatus;
-import io.strimzi.api.kafka.model.kafka.entityoperator.EntityOperatorSpec;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.StatusUtils;
 import org.apache.kafka.server.common.MetadataVersion;
@@ -24,32 +23,16 @@ public class KRaftUtils {
      * unsupported features and if they are used, throws an InvalidResourceException exception.
      *
      * @param kafkaSpec   The .spec section of the Kafka CR which should be checked
-     * @param utoEnabled  Flag indicating whether Unidirectional Topic Operator is enabled or not
      */
-    public static void validateKafkaCrForKRaft(KafkaSpec kafkaSpec, boolean utoEnabled)   {
+    public static void validateKafkaCrForKRaft(KafkaSpec kafkaSpec)   {
         Set<String> errors = new HashSet<>(0);
 
-        if (kafkaSpec != null)  {
-            validateEntityOperatorSpec(errors, kafkaSpec.getEntityOperator(), utoEnabled);
-        } else {
+        if (kafkaSpec == null)  {
             errors.add("The .spec section of the Kafka custom resource is missing");
         }
 
         if (!errors.isEmpty())  {
             throw new InvalidResourceException("Kafka configuration is not valid: " + errors);
-        }
-    }
-
-    /**
-     * Checks whether the Topic Operator is configured or not
-     *
-     * @param errors            Set with detected errors to which any new errors should be added
-     * @param entityOperator    The Entity Operator spec which should be checked
-     * @param utoEnabled        Flag indicating whether Unidirectional Topic Operator is enabled or not
-     */
-    /* test */ static void validateEntityOperatorSpec(Set<String> errors, EntityOperatorSpec entityOperator, boolean utoEnabled) {
-        if (entityOperator != null && entityOperator.getTopicOperator() != null && !utoEnabled) {
-            errors.add("Only Unidirectional Topic Operator is supported when the UseKRaft feature gate is enabled.");
         }
     }
 
@@ -169,7 +152,7 @@ public class KRaftUtils {
 
         MetadataVersion kafkaVersion = MetadataVersion.fromVersionString(kafkaVersionFromCr);
         // this should check that spec.kafka.version is >= 3.7.0
-        boolean isMigrationSupported = kafkaVersion.isMigrationSupported();
+        boolean isMigrationSupported = kafkaVersion.isAtLeast(MetadataVersion.IBP_3_7_IV0);
 
         MetadataVersion metadataVersion = MetadataVersion.fromVersionString(metadataVersionFromCr);
         MetadataVersion interBrokerProtocolVersion = MetadataVersion.fromVersionString(interBrokerProtocolVersionFromCr);

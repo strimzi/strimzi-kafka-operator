@@ -13,6 +13,8 @@ provision:
     memory: ">= 24 GiB"
     cpu:
       processors: ">= 8"
+    disk:
+     - size: ">= 50 GB"
 
 # Install required packages and scripts for running strimzi suite
 prepare:
@@ -193,3 +195,32 @@ finish:
   discover+:
     test:
       - kraft_upgrade
+
+/performance:
+  summary: Run performance test suite with kraft
+  provision:
+    hardware:
+      memory: ">= 30 GiB"
+      cpu:
+        processors: ">= 8"
+      # it seems that default disk size (i.e., 50GB) is not enough for capacity tests
+      disk:
+        size: ">= 60 GB"
+  discover+:
+    test:
+      - performance
+
+/performance-capacity:
+  summary: Run performance test suite with kraft
+  provision:
+    hardware:
+      memory: ">= 30 GiB"
+      cpu:
+        processors: ">= 8"
+      # it seems that default disk size (i.e., 50GB) is not enough for capacity tests
+      disk:
+       - size: ">= 60 GB"
+  discover+:
+    test:
+      - performance-capacity
+

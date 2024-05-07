@@ -437,15 +437,16 @@ public class ZookeeperCluster extends AbstractModel implements SupportsMetrics, 
      * based internal communication with Kafka. It contains both the public and private keys.
      *
      * @param clusterCa                         The CA for cluster certificates
+     * @param existingSecret                    The existing secret with ZooKeeper certificates
      * @param isMaintenanceTimeWindowsSatisfied Indicates whether we are in the maintenance window or not.
      *
      * @return The generated Secret with the ZooKeeper node certificates
      */
-    public Secret generateCertificatesSecret(ClusterCa clusterCa, boolean isMaintenanceTimeWindowsSatisfied) {
+    public Secret generateCertificatesSecret(ClusterCa clusterCa, Secret existingSecret, boolean isMaintenanceTimeWindowsSatisfied) {
         Map<String, CertAndKey> certs;
 
         try {
-            certs = clusterCa.generateZkCerts(namespace, cluster, nodes(), isMaintenanceTimeWindowsSatisfied);
+            certs = clusterCa.generateZkCerts(namespace, cluster, existingSecret, nodes(), isMaintenanceTimeWindowsSatisfied);
         } catch (IOException e) {
             LOGGER.warnCr(reconciliation, "Error while generating certificates", e);
             throw new RuntimeException("Failed to prepare ZooKeeper certificates", e);

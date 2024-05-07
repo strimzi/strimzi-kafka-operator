@@ -12,17 +12,13 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
-import io.strimzi.systemtest.annotations.BTONotSupported;
 import io.strimzi.systemtest.annotations.IsolatedTest;
-import io.strimzi.systemtest.annotations.KRaftWithoutUTONotSupported;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.annotations.ParallelTest;
-import io.strimzi.systemtest.annotations.UTONotSupported;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.enums.ConditionStatus;
 import io.strimzi.systemtest.enums.CustomResourceStatus;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
-import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.kafkaclients.internalClients.admin.AdminClient;
 import io.strimzi.systemtest.metrics.MetricsCollector;
 import io.strimzi.systemtest.resources.ComponentType;
@@ -36,11 +32,12 @@ import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.specific.AdminClientTemplates;
 import io.strimzi.systemtest.templates.specific.ScraperTemplates;
+import io.strimzi.systemtest.utils.AdminClientUtils;
 import io.strimzi.systemtest.utils.ClientUtils;
+import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.specific.ScraperUtils;
-import io.strimzi.test.TestUtils;
-import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hamcrest.CoreMatchers;
@@ -48,36 +45,35 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 
 import java.util.List;
+import java.util.Map;
 
 import static io.strimzi.systemtest.TestConstants.ARM64_UNSUPPORTED;
 import static io.strimzi.systemtest.TestConstants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.TestConstants.REGRESSION;
 import static io.strimzi.systemtest.enums.ConditionStatus.False;
 import static io.strimzi.systemtest.enums.ConditionStatus.True;
-import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
+import static io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils.hasTopicInCRK8s;
+import static io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils.hasTopicInKafka;
 import static io.strimzi.systemtest.utils.specific.MetricsUtils.assertMetricResourceNotNull;
-import static io.strimzi.systemtest.utils.specific.MetricsUtils.assertMetricResourceState;
 import static io.strimzi.systemtest.utils.specific.MetricsUtils.assertMetricResourcesHigherThanOrEqualTo;
 import static io.strimzi.systemtest.utils.specific.MetricsUtils.assertMetricValueHigherThan;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Tag(REGRESSION)
-@KRaftWithoutUTONotSupported
 public class TopicST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(TopicST.class);
     private TestStorage sharedTestStorage;
+    private AdminClient adminClient;
     private String scraperPodName;
     private static int topicOperatorReconciliationInterval;
 
@@ -91,9 +87,9 @@ public class TopicST extends AbstractST {
         resourceManager.createResourceWithoutWait(kafkaTopic);
 
         assertThat("Topic exists in Kafka CR (Kubernetes)", hasTopicInCRK8s(kafkaTopic, testStorage.getTopicName()));
-        assertThat("Topic doesn't exists in Kafka itself", !hasTopicInKafka(testStorage.getTopicName(), sharedTestStorage.getClusterName()));
+        assertThat("Topic doesn't exists in Kafka itself", !hasTopicInKafka(testStorage.getTopicName(), sharedTestStorage.getClusterName(), scraperPodName));
 
-        String errorMessage = Environment.isUnidirectionalTopicOperatorEnabled() && Environment.isKRaftModeEnabled() ?
+        String errorMessage = Environment.isKRaftModeEnabled() ?
             "org.apache.kafka.common.errors.InvalidReplicationFactorException: Unable to replicate the partition 5 time(s): The target replication factor of 5 cannot be reached because only 3 broker(s) are registered." :
             "org.apache.kafka.common.errors.InvalidReplicationFactorException: Replication factor: 5 larger than available brokers: 3";
 
@@ -101,7 +97,7 @@ public class TopicST extends AbstractST {
         KafkaTopicStatus kafkaTopicStatus = KafkaTopicResource.kafkaTopicClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(testStorage.getTopicName()).get().getStatus();
 
         assertThat(kafkaTopicStatus.getConditions().get(0).getMessage(), containsString(errorMessage));
-        assertThat(kafkaTopicStatus.getConditions().get(0).getReason(), containsString(Environment.isUnidirectionalTopicOperatorEnabled() ? "KafkaError" : "CompletionException"));
+        assertThat(kafkaTopicStatus.getConditions().get(0).getReason(), containsString("KafkaError"));
 
         LOGGER.info("Delete Topic: {}", testStorage.getTopicName());
         cmdKubeClient(Environment.TEST_SUITE_NAMESPACE).deleteByName("kafkatopic", testStorage.getTopicName());
@@ -113,46 +109,14 @@ public class TopicST extends AbstractST {
         kafkaTopic = KafkaTopicTemplates.topic(sharedTestStorage.getClusterName(), newTopicName, topicPartitions, topicReplicationFactor, Environment.TEST_SUITE_NAMESPACE).build();
         resourceManager.createResourceWithWait(kafkaTopic);
 
-        assertThat("Topic exists in Kafka itself", hasTopicInKafka(newTopicName, sharedTestStorage.getClusterName()));
+        assertThat("Topic exists in Kafka itself", hasTopicInKafka(newTopicName, sharedTestStorage.getClusterName(), scraperPodName));
         assertThat("Topic exists in Kafka CR (Kubernetes)", hasTopicInCRK8s(kafkaTopic, newTopicName));
-    }
-
-    @ParallelTest
-    @UTONotSupported
-    void testCreateTopicViaKafka() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
-        int topicPartitions = 3;
-
-        LOGGER.debug("Creating Topic: {} with {} replicas and {} partitions", testStorage.getTopicName(), 3, topicPartitions);
-        KafkaCmdClient.createTopicUsingPodCli(Environment.TEST_SUITE_NAMESPACE, scraperPodName, KafkaResources.plainBootstrapAddress(sharedTestStorage.getClusterName()), testStorage.getTopicName(), 3, topicPartitions);
-
-        KafkaTopic kafkaTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(testStorage.getTopicName()).get();
-
-        verifyTopicViaKafkaTopicCRK8s(kafkaTopic, testStorage.getTopicName(), topicPartitions, sharedTestStorage.getClusterName());
-
-        topicPartitions = 5;
-        LOGGER.info("Editing Topic via Kafka, settings to partitions {}", topicPartitions);
-
-        KafkaCmdClient.updateTopicPartitionsCountUsingPodCli(Environment.TEST_SUITE_NAMESPACE, scraperPodName, KafkaResources.plainBootstrapAddress(sharedTestStorage.getClusterName()), testStorage.getTopicName(), topicPartitions);
-        LOGGER.debug("Topic: {} updated from {} to {} partitions", testStorage.getTopicName(), 3, topicPartitions);
-
-        KafkaTopicUtils.waitForKafkaTopicPartitionChange(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName(), topicPartitions);
-        verifyTopicViaKafka(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName(), topicPartitions, sharedTestStorage.getClusterName());
     }
 
     @Tag(ARM64_UNSUPPORTED) // Due to https://github.com/strimzi/test-clients/issues/75
     @ParallelTest
     void testCreateDeleteCreate() throws InterruptedException {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
-
-        resourceManager.createResourceWithWait(
-            AdminClientTemplates.defaultAdminClient(testStorage.getNamespaceName(), testStorage.getAdminName(), KafkaResources.plainBootstrapAddress(sharedTestStorage.getClusterName())).build()
-        );
-
-        String adminClientPodName = kubeClient().listPods(testStorage.getNamespaceName(), TestConstants.ADMIN_CLIENT_LABEL_SELECTOR).get(0).getMetadata().getName();
-
-        AdminClient adminClient = new AdminClient(testStorage.getNamespaceName(), adminClientPodName);
-        adminClient.configureFromEnv();
 
         resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(sharedTestStorage.getClusterName(), testStorage.getTopicName(), Environment.TEST_SUITE_NAMESPACE)
             .editMetadata()
@@ -190,55 +154,34 @@ public class TopicST extends AbstractST {
 
     @ParallelTest
     @Tag(INTERNAL_CLIENTS_USED)
-    @UTONotSupported
     void testSendingMessagesToNonExistingTopic() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
-        KafkaClients clients = new KafkaClientsBuilder()
-            .withProducerName(testStorage.getProducerName())
-            .withConsumerName(testStorage.getConsumerName())
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(sharedTestStorage.getClusterName()))
-            .withNamespaceName(testStorage.getNamespaceName())
-            .withTopicName(testStorage.getTopicName())
-            .withMessageCount(testStorage.getMessageCount())
-            .build();
-
-        LOGGER.info("Checking if {} is on Topic list", testStorage.getTopicName());
-        assertFalse(hasTopicInKafka(testStorage.getTopicName(), sharedTestStorage.getClusterName()));
+        LOGGER.info("Checking if topic {} is present in Kafka", testStorage.getTopicName());
+        assertFalse(AdminClientUtils.isTopicPresent(adminClient, testStorage.getTopicName()));
         LOGGER.info("Topic with name {} is not created yet", testStorage.getTopicName());
 
-        LOGGER.info("Trying to send messages to non-existing Topic: {}", testStorage.getTopicName());
-
+        LOGGER.info("Sending messages to non-existing Topic: {}, with auto.topic.creation configuration enabled", testStorage.getTopicName());
+        final KafkaClients clients = ClientUtils.getInstantPlainClients(testStorage, KafkaResources.plainBootstrapAddress(sharedTestStorage.getClusterName()));
         resourceManager.createResourceWithWait(clients.producerStrimzi(), clients.consumerStrimzi());
-        ClientUtils.waitForClientsSuccess(testStorage);
+        ClientUtils.waitForInstantClientSuccess(testStorage);
 
-        LOGGER.info("Checking if {} is on Topic list", testStorage.getTopicName());
-        assertTrue(hasTopicInKafka(testStorage.getTopicName(), sharedTestStorage.getClusterName()));
-
-        KafkaTopicUtils.waitForKafkaTopicCreation(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName());
-        KafkaTopic kafkaTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(testStorage.getTopicName()).get();
-        assertThat(kafkaTopic, notNullValue());
-
-        assertThat(kafkaTopic.getStatus(), notNullValue());
-        assertThat(kafkaTopic.getStatus().getConditions(), notNullValue());
-        assertThat(kafkaTopic.getStatus().getConditions().isEmpty(), is(false));
-        assertThat(kafkaTopic.getStatus().getConditions().get(0).getType(), is(Ready.toString()));
-        LOGGER.info("Topic successfully created");
+        LOGGER.info("Checking if topic {} is present in Kafka", testStorage.getTopicName());
+        assertTrue(AdminClientUtils.isTopicPresent(adminClient, testStorage.getTopicName()));
     }
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(INTERNAL_CLIENTS_USED)
-    @UTONotSupported
     void testDeleteTopicEnableFalse() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
                 KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
-                KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 1).build()
+                KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
             )
         );
-        resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3, 1)
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3, 3)
             .editMetadata()
                 .withNamespace(Environment.TEST_SUITE_NAMESPACE)
             .endMetadata()
@@ -253,31 +196,38 @@ public class TopicST extends AbstractST {
             .endSpec()
             .build());
 
-        KafkaClients clients = new KafkaClientsBuilder()
-            .withProducerName(testStorage.getProducerName())
-            .withConsumerName(testStorage.getConsumerName())
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
-            .withNamespaceName(testStorage.getNamespaceName())
-            .withTopicName(testStorage.getTopicName())
-            .withMessageCount(testStorage.getMessageCount())
-            .build();
+        // create Kafka Topic CR and wait for its presence in Kafka cluster.
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage).build());
 
+        resourceManager.createResourceWithWait(
+            AdminClientTemplates.plainAdminClient(
+                testStorage.getNamespaceName(),
+                testStorage.getAdminName(),
+                KafkaResources.plainBootstrapAddress(testStorage.getClusterName())
+            ).build()
+        );
+        final AdminClient localKafkaAdminClient = AdminClientUtils.getConfiguredAdminClient(testStorage.getNamespaceName(), testStorage.getAdminName());
+
+        AdminClientUtils.waitForTopicPresence(localKafkaAdminClient, testStorage.getTopicName());
+
+        final KafkaClients clients = ClientUtils.getInstantPlainClients(testStorage);
         resourceManager.createResourceWithWait(clients.producerStrimzi());
-        ClientUtils.waitForProducerClientSuccess(testStorage);
+        ClientUtils.waitForInstantProducerClientSuccess(testStorage);
 
-        String topicUid = KafkaTopicUtils.topicSnapshot(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName());
-        LOGGER.info("Deleting KafkaTopic: {}/{}", Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName());
+        LOGGER.info("Try to delete KafkaTopic: {}/{}", Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName());
         KafkaTopicResource.kafkaTopicClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(testStorage.getTopicName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
-        LOGGER.info("KafkaTopic: {}/{} deleted", Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName());
-
-        KafkaTopicUtils.waitTopicHasRolled(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName(), topicUid);
-
-        LOGGER.info("Waiting for KafkaTopic: {}/{} recreation", Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName());
-        KafkaTopicUtils.waitForKafkaTopicCreation(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName());
-        LOGGER.info("KafkaTopic: {}/{} recreated", Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName());
+        KafkaTopicUtils.waitForTopicStatusMessage(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName(), "TopicDeletionDisabledException");
 
         resourceManager.createResourceWithWait(clients.consumerStrimzi());
-        ClientUtils.waitForConsumerClientSuccess(testStorage);
+        ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
+
+        LOGGER.info("Enable automatic topic deletion");
+        Map<String, String> kafkaPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> k.getSpec().getKafka().setConfig(Map.of("delete.topic.enable", true)), testStorage.getNamespaceName());
+        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, kafkaPods);
+
+        LOGGER.info("Deleting KafkaTopic: {}/{}", Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName());
+        KafkaTopicResource.kafkaTopicClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(testStorage.getTopicName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
     }
 
     @ParallelTest
@@ -301,7 +251,7 @@ public class TopicST extends AbstractST {
         }, Environment.TEST_SUITE_NAMESPACE);
         KafkaTopicUtils.waitForKafkaTopicNotReady(Environment.TEST_SUITE_NAMESPACE, topicName);
 
-        String exceptedMessage = Environment.isUnidirectionalTopicOperatorEnabled() ? "Decreasing partitions not supported" : "Number of partitions cannot be decreased";
+        String exceptedMessage = "Decreasing partitions not supported";
         assertThat(KafkaTopicResource.kafkaTopicClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(topicName).get().getStatus().getConditions().get(0).getMessage(), is(exceptedMessage));
 
         String topicCRDMessage = KafkaTopicResource.kafkaTopicClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(topicName).get().getStatus().getConditions().get(0).getMessage();
@@ -312,142 +262,15 @@ public class TopicST extends AbstractST {
 
         resourceManager.createResourceWithWait(newKafkaTopic);
 
-        assertThat("Topic exists in Kafka itself", hasTopicInKafka(topicName, sharedTestStorage.getClusterName()));
+        assertThat("Topic exists in Kafka itself", hasTopicInKafka(topicName, sharedTestStorage.getClusterName(), scraperPodName));
         assertThat("Topic exists in Kafka CR (Kubernetes)", hasTopicInCRK8s(kafkaTopic, topicName));
-        assertThat("Topic exists in Kafka itself", hasTopicInKafka(newTopicName, sharedTestStorage.getClusterName()));
+        assertThat("Topic exists in Kafka itself", hasTopicInKafka(newTopicName, sharedTestStorage.getClusterName(), scraperPodName));
         assertThat("Topic exists in Kafka CR (Kubernetes)", hasTopicInCRK8s(newKafkaTopic, newTopicName));
 
         cmdKubeClient(Environment.TEST_SUITE_NAMESPACE).deleteByName(KafkaTopic.RESOURCE_SINGULAR, topicName);
         KafkaTopicUtils.waitForKafkaTopicDeletion(Environment.TEST_SUITE_NAMESPACE, topicName);
         cmdKubeClient(Environment.TEST_SUITE_NAMESPACE).deleteByName(KafkaTopic.RESOURCE_SINGULAR, newTopicName);
         KafkaTopicUtils.waitForKafkaTopicDeletion(Environment.TEST_SUITE_NAMESPACE, newTopicName);
-    }
-
-    /**
-     * @description This test case checks Bidirectional Topic Operator metrics regarding different states of KafkaTopic.
-     *
-     * @steps
-     *  1. - Create KafkaTopic
-     *     - KafkaTopic is ready
-     *  2. - Create metrics collector for Topic Operator and collect the metrics
-     *     - Metrics collected
-     *  3. - Check that TOpic Operator metrics contains data about reconciliations
-     *     - Metrics contains proper data
-     *  4. - Check that metrics contain info about KafkaTopic with name stored in 'topicName' is Ready
-     *     - Metrics contains proper data
-     *  5. - Change spec.topicName for topic 'topicName' and wait for NotReady status
-     *     - KafkaTopic is in NotReady state
-     *  6. - Check that metrics contain info about KafkaTopic 'topicName' cannot be renamed and that KT status has proper values
-     *     - Metrics contains proper data and status contains proper values
-     *  7. - Revert changes in KafkaTopic and change number of Replicas
-     *     - KafkaTopic CR replica count is changed
-     *  8. - Check that metrics contain info about KafkaTopic 'topicName' replicas count cannot be changed and KT status has proper values
-     *     - Metrics contains proper data and KT status has proper values
-     *  9. - Decrease KT number of partitions
-     *     - Partitions count changed
-     *  10. - Check that metrics contains info about KafkaTopic NotReady status and KT status has proper values (cannot change partition count)
-     *      - Metrics contains proper data and KT status has proper values
-     *  11. - Set KafkaTopic configuration to default one
-     *      - KafkaTopic is in Ready state
-     *  12. - Check that metrics contain info about KafkaTopic 'topicName' is Ready
-     *      - Metrics contains proper data
-     *
-     * @testcase
-     *  - topic-operator-metrics
-     *  - kafkatopic-ready
-     *  - kafkatopic-not-ready
-     */
-    @IsolatedTest
-    @UTONotSupported
-    void testKafkaTopicDifferentStatesInBTOMode() throws InterruptedException {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
-        int initialReplicas = 1;
-        int initialPartitions = 5;
-        int decreasePartitions = 1;
-
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(sharedTestStorage.getClusterName(), testStorage.getTopicName(), initialPartitions, initialReplicas, Environment.TEST_SUITE_NAMESPACE).build());
-        KafkaTopicUtils.waitForKafkaTopicReady(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName());
-
-        LOGGER.info("Found the following Topics:");
-        cmdKubeClient().list(KafkaTopic.RESOURCE_KIND).forEach(item -> {
-            LOGGER.info("{}: {}", KafkaTopic.RESOURCE_KIND, item);
-        });
-
-        MetricsCollector toMetricsCollector = new MetricsCollector.Builder()
-            .withNamespaceName(Environment.TEST_SUITE_NAMESPACE)
-            .withScraperPodName(scraperPodName)
-            .withComponentName(sharedTestStorage.getClusterName())
-            .withComponentType(ComponentType.TopicOperator)
-            .build();
-
-        assertMetricResourceNotNull(toMetricsCollector, "strimzi_reconciliations_successful_total", KafkaTopic.RESOURCE_KIND);
-        assertMetricResourceNotNull(toMetricsCollector, "strimzi_reconciliations_duration_seconds_count", KafkaTopic.RESOURCE_KIND);
-        assertMetricResourceNotNull(toMetricsCollector, "strimzi_reconciliations_duration_seconds_sum", KafkaTopic.RESOURCE_KIND);
-        assertMetricResourceNotNull(toMetricsCollector, "strimzi_reconciliations_duration_seconds_max", KafkaTopic.RESOURCE_KIND);
-        assertMetricResourceNotNull(toMetricsCollector, "strimzi_reconciliations_periodical_total", KafkaTopic.RESOURCE_KIND);
-        assertMetricResourceNotNull(toMetricsCollector, "strimzi_reconciliations_total", KafkaTopic.RESOURCE_KIND);
-        assertMetricResourcesHigherThanOrEqualTo(toMetricsCollector, KafkaTopic.RESOURCE_KIND, 3);
-
-        String reasonMessage = "none";
-        String reason = "";
-
-        LOGGER.info("Checking if resource state metric reason message is \"none\" and KafkaTopic is ready");
-        assertMetricResourceState(toMetricsCollector, KafkaTopic.RESOURCE_KIND, testStorage.getTopicName(), Environment.TEST_SUITE_NAMESPACE, 1, reasonMessage);
-        assertKafkaTopicStatus(testStorage.getTopicName(), Environment.TEST_SUITE_NAMESPACE, Ready, True, 1);
-
-        LOGGER.info("Changing Topic name in spec.topicName");
-        KafkaTopicResource.replaceTopicResourceInSpecificNamespace(testStorage.getTopicName(), kafkaTopic -> kafkaTopic.getSpec().setTopicName("some-other-name"), Environment.TEST_SUITE_NAMESPACE);
-        KafkaTopicUtils.waitForKafkaTopicNotReady(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName());
-
-        reason = "IllegalArgumentException";
-        reasonMessage = "Kafka topics cannot be renamed, but KafkaTopic's spec.topicName has changed.";
-        assertMetricResourceState(toMetricsCollector, KafkaTopic.RESOURCE_KIND, testStorage.getTopicName(), Environment.TEST_SUITE_NAMESPACE, 0, reasonMessage);
-        assertKafkaTopicStatus(testStorage.getTopicName(), Environment.TEST_SUITE_NAMESPACE, NotReady, True, reason, reasonMessage, 2);
-
-        LOGGER.info("Changing back to it's original name and scaling replicas to be higher number");
-        KafkaTopicResource.replaceTopicResourceInSpecificNamespace(testStorage.getTopicName(), kafkaTopic -> {
-            kafkaTopic.getSpec().setTopicName(testStorage.getTopicName());
-            kafkaTopic.getSpec().setReplicas(12);
-        }, Environment.TEST_SUITE_NAMESPACE);
-
-        KafkaTopicUtils.waitForKafkaTopicReplicasChange(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName(), 12);
-
-        reason = "ReplicationFactorChangeException";
-        reasonMessage = "Changing 'spec.replicas' is not supported.";
-        KafkaTopicUtils.waitForKafkaTopicNotReady(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName());
-        assertMetricResourceState(toMetricsCollector, KafkaTopic.RESOURCE_KIND, testStorage.getTopicName(), Environment.TEST_SUITE_NAMESPACE, 0, reasonMessage);
-        assertKafkaTopicStatus(testStorage.getTopicName(), Environment.TEST_SUITE_NAMESPACE, NotReady, True, reason, reasonMessage, 3);
-
-        LOGGER.info("Changing KafkaTopic's spec to correct state");
-        KafkaTopicResource.replaceTopicResourceInSpecificNamespace(testStorage.getTopicName(), kafkaTopic -> kafkaTopic.getSpec().setReplicas(initialReplicas), Environment.TEST_SUITE_NAMESPACE);
-        KafkaTopicUtils.waitForKafkaTopicReady(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName());
-        assertKafkaTopicStatus(testStorage.getTopicName(), Environment.TEST_SUITE_NAMESPACE, Ready, True, 4);
-
-        reasonMessage = "none";
-        assertMetricResourceState(toMetricsCollector, KafkaTopic.RESOURCE_KIND, testStorage.getTopicName(), Environment.TEST_SUITE_NAMESPACE, 1, reasonMessage);
-        KafkaTopicUtils.waitForKafkaTopicReady(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName());
-
-        LOGGER.info("Decreasing number of partitions to {}", decreasePartitions);
-        KafkaTopicResource.replaceTopicResourceInSpecificNamespace(testStorage.getTopicName(), kafkaTopic -> kafkaTopic.getSpec().setPartitions(decreasePartitions), Environment.TEST_SUITE_NAMESPACE);
-        KafkaTopicUtils.waitForKafkaTopicPartitionChange(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName(), decreasePartitions);
-        KafkaTopicUtils.waitForKafkaTopicNotReady(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName());
-
-        reason = "PartitionDecreaseException";
-        reasonMessage = "Number of partitions cannot be decreased";
-        assertKafkaTopicStatus(testStorage.getTopicName(), Environment.TEST_SUITE_NAMESPACE, NotReady, True, reason, reasonMessage, 5);
-
-        // Wait some time to check if error is still present in KafkaTopic status
-        LOGGER.info("Waiting {} ms for next reconciliation", topicOperatorReconciliationInterval);
-        Thread.sleep(topicOperatorReconciliationInterval);
-        assertKafkaTopicStatus(testStorage.getTopicName(), Environment.TEST_SUITE_NAMESPACE, NotReady, True, reason, reasonMessage, 5);
-
-        LOGGER.info("Changing KafkaTopic's spec to correct state");
-        KafkaTopicResource.replaceTopicResourceInSpecificNamespace(testStorage.getTopicName(), kafkaTopic -> {
-            kafkaTopic.getSpec().setReplicas(initialReplicas);
-            kafkaTopic.getSpec().setPartitions(initialPartitions);
-        }, Environment.TEST_SUITE_NAMESPACE);
-        KafkaTopicUtils.waitForKafkaTopicReady(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName());
-        assertKafkaTopicStatus(testStorage.getTopicName(), Environment.TEST_SUITE_NAMESPACE, Ready, True, 6);
     }
 
     /**
@@ -485,8 +308,6 @@ public class TopicST extends AbstractST {
      *  - kafkatopic-not-ready
      */
     @IsolatedTest
-    @KRaftWithoutUTONotSupported
-    @BTONotSupported
     void testKafkaTopicDifferentStatesInUTOMode() throws InterruptedException {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         int initialReplicas = 1;
@@ -581,11 +402,10 @@ public class TopicST extends AbstractST {
         resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(sharedTestStorage.getClusterName(), testStorage.getTopicName(), 5, Environment.TEST_SUITE_NAMESPACE).build());
         KafkaTopicUtils.waitForKafkaTopicReady(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName());
         String invalidValue = "x";
-        String reason = Environment.isUnidirectionalTopicOperatorEnabled() ? "KafkaError" : "InvalidConfigurationException";
+        String reason = "KafkaError";
 
-        // When using UTO, KafkaTopic instead of having condition type "NotReady" and condition status "True", has condition type "Ready" with condition status "False"
-        CustomResourceStatus resourceStatus = Environment.isUnidirectionalTopicOperatorEnabled() ? Ready : NotReady;
-        ConditionStatus conditionStatus = Environment.isUnidirectionalTopicOperatorEnabled() ? False : True;
+        CustomResourceStatus resourceStatus = Ready;
+        ConditionStatus conditionStatus = False;
 
         String reasonMessage = String.format("Invalid value %s for configuration min.insync.replicas", invalidValue);
 
@@ -645,7 +465,7 @@ public class TopicST extends AbstractST {
                 .endSpec().build()
         );
 
-        final String scraperPodName =  kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
+        final String scraperPodName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
 
         LOGGER.info("Creating KafkaTopic: {}/{} in without any label", testStorage.getNamespaceName(), testStorage.getTargetTopicName());
         resourceManager.createResourceWithoutWait(KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTargetTopicName(), 1, 1, 1, testStorage.getNamespaceName())
@@ -695,41 +515,6 @@ public class TopicST extends AbstractST {
         }
     }
 
-    boolean hasTopicInKafka(String topicName, String clusterName) {
-        LOGGER.info("Checking Topic: {} in Kafka", topicName);
-        return KafkaCmdClient.listTopicsUsingPodCli(Environment.TEST_SUITE_NAMESPACE, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName)).contains(topicName);
-    }
-
-    boolean hasTopicInCRK8s(KafkaTopic kafkaTopic, String topicName) {
-        LOGGER.info("Checking in KafkaTopic CR that Topic: {} exists", topicName);
-        return kafkaTopic.getMetadata().getName().equals(topicName);
-    }
-
-    void verifyTopicViaKafka(final String namespaceName, String topicName, int topicPartitions, String clusterName) {
-        TestUtils.waitFor("Describing Topic: " + topicName + " using pod CLI", TestConstants.POLL_INTERVAL_FOR_RESOURCE_READINESS, TestConstants.GLOBAL_TIMEOUT,
-            () -> {
-                try {
-                    String topicInfo =  KafkaCmdClient.describeTopicUsingPodCli(namespaceName, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName), topicName);
-                    LOGGER.info("Checking Topic: {} in Kafka: {}", topicName, clusterName);
-                    LOGGER.debug("Topic: {} info: {}", topicName, topicInfo);
-                    assertThat(topicInfo, containsString("Topic: " + topicName));
-                    assertThat(topicInfo, containsString("PartitionCount: " + topicPartitions));
-                    return true;
-                } catch (KubeClusterException e) {
-                    LOGGER.info("Describing Topic using Pod cli occurred following error: {}", e.getMessage());
-                    return false;
-                }
-            });
-    }
-
-    void verifyTopicViaKafkaTopicCRK8s(KafkaTopic kafkaTopic, String topicName, int topicPartitions, String clusterName) {
-        LOGGER.info("Checking in KafkaTopic CR that Topic: {} was created with expected settings", topicName);
-        assertThat(kafkaTopic, is(notNullValue()));
-        assertThat(KafkaCmdClient.listTopicsUsingPodCli(Environment.TEST_SUITE_NAMESPACE, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName)), hasItem(topicName));
-        assertThat(kafkaTopic.getMetadata().getName(), is(topicName));
-        assertThat(kafkaTopic.getSpec().getPartitions(), is(topicPartitions));
-    }
-
     @BeforeAll
     void setup() {
         sharedTestStorage = new TestStorage(ResourceManager.getTestContext(), Environment.TEST_SUITE_NAMESPACE);
@@ -761,6 +546,16 @@ public class TopicST extends AbstractST {
             .build(),
             ScraperTemplates.scraperPod(Environment.TEST_SUITE_NAMESPACE, sharedTestStorage.getScraperName()).build()
         );
+
+        LOGGER.info("Deploying admin client across all test cases for namespace: {}", sharedTestStorage.getClusterName());
+        resourceManager.createResourceWithWait(
+            AdminClientTemplates.plainAdminClient(
+                sharedTestStorage.getNamespaceName(),
+                sharedTestStorage.getAdminName(),
+                KafkaResources.plainBootstrapAddress(sharedTestStorage.getClusterName())
+            ).build()
+        );
+        adminClient = AdminClientUtils.getConfiguredAdminClient(sharedTestStorage.getNamespaceName(), sharedTestStorage.getAdminName());
 
         scraperPodName = ScraperUtils.getScraperPod(Environment.TEST_SUITE_NAMESPACE).getMetadata().getName();
         topicOperatorReconciliationInterval = KafkaResource.kafkaClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(sharedTestStorage.getClusterName()).get()

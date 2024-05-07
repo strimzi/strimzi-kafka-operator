@@ -14,7 +14,6 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,7 +22,8 @@ import java.util.Map;
  * Configures listener bootstrap configuration
  */
 @DescriptionFile
-@JsonPropertyOrder({"alternativeNames", "host", "dnsAnnotations", "nodePort", "loadBalancerIP"})
+@JsonPropertyOrder({"alternativeNames", "host", "dnsAnnotations", "nodePort", "loadBalancerIP",
+    "annotations", "labels", "externalIPs"})
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Buildable(
     editableEnabled = false,
@@ -31,15 +31,14 @@ import java.util.Map;
 )
 @EqualsAndHashCode
 @ToString
-public class GenericKafkaListenerConfigurationBootstrap implements Serializable, UnknownPropertyPreserving {
-    private static final long serialVersionUID = 1L;
-
+public class GenericKafkaListenerConfigurationBootstrap implements UnknownPropertyPreserving {
     private List<String> alternativeNames;
     private String host;
     private Map<String, String> annotations = new HashMap<>(0);
     private Map<String, String> labels = new HashMap<>(0);
     private Integer nodePort;
     private String loadBalancerIP;
+    private List<String> externalIPs;
 
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
@@ -111,6 +110,19 @@ public class GenericKafkaListenerConfigurationBootstrap implements Serializable,
 
     public void setLoadBalancerIP(String loadBalancerIP) {
         this.loadBalancerIP = loadBalancerIP;
+    }
+
+    @Description("External IPs associated to the nodeport service. " + 
+            "These IPs are used by clients external to the Kubernetes cluster to access the Kafka brokers. " +
+            "This field is helpful when `nodeport` without `externalIP` is not sufficient. For example on bare-metal Kubernetes clusters that do not support Loadbalancer service types. " +
+            "This field can only be used with `nodeport` type listener.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public List<String> getExternalIPs() {
+        return externalIPs;
+    }
+
+    public void setExternalIPs(List<String> externalIPs) {
+        this.externalIPs = externalIPs;
     }
 
     @Override

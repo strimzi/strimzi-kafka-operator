@@ -21,7 +21,6 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -34,13 +33,11 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
-    "statefulset", "pod", "clientService", "nodesService", "persistentVolumeClaim",
+    "statefulset", "podSet", "pod", "clientService", "nodesService", "persistentVolumeClaim",
     "podDisruptionBudget", "zookeeperContainer", "serviceAccount", "jmxSecret"})
 @EqualsAndHashCode
 @ToString
-public class ZookeeperClusterTemplate implements HasJmxSecretTemplate, Serializable, UnknownPropertyPreserving {
-    private static final long serialVersionUID = 1L;
-
+public class ZookeeperClusterTemplate implements HasJmxSecretTemplate, UnknownPropertyPreserving {
     private StatefulSetTemplate statefulset;
     private ResourceTemplate podSet;
     private PodTemplate pod;

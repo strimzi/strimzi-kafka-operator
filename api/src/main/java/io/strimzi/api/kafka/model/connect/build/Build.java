@@ -17,7 +17,6 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,13 +29,11 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-@JsonPropertyOrder({ "output", "connectorPlugins", "resources" })
+@JsonPropertyOrder({ "output", "plugins", "resources" })
 @DescriptionFile
 @EqualsAndHashCode
 @ToString
-public class Build implements Serializable, UnknownPropertyPreserving {
-    private static final long serialVersionUID = 1L;
-
+public class Build implements UnknownPropertyPreserving {
     private Output output;
     private List<Plugin> plugins;
     private ResourceRequirements resources;

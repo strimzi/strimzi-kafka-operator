@@ -20,6 +20,6 @@ mvn verify -pl systemtest -P ${TEST_PROFILE} \
     -DexcludedGroups="${EXCLUDED_TEST_GROUPS}" \
     -Dmaven.javadoc.skip=true \
     -Dfailsafe.rerunFailingTestsCount="${RERUN_FAILED_TEST_COUNT}" \
-    -Djunit.jupiter.execution.parallel.enabled=true \
+    -Djunit.jupiter.execution.parallel.enabled="${PARALLELISM_ENABLED}" \
     -Djunit.jupiter.execution.parallel.config.fixed.parallelism="${PARALLEL_TEST_COUNT}" \
     --no-transfer-progress

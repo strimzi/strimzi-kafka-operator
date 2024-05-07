@@ -9,8 +9,13 @@ import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
+import io.strimzi.api.kafka.model.kafka.JbodStorageBuilder;
+import io.strimzi.api.kafka.model.kafka.KRaftMetadataStorage;
 import io.strimzi.api.kafka.model.kafka.KafkaMetadataState;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.api.kafka.model.kafka.PersistentClaimStorage;
+import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
+import io.strimzi.api.kafka.model.kafka.Storage;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
@@ -40,15 +45,20 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
+import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import static io.strimzi.systemtest.TestConstants.MIGRATION;
 import static io.strimzi.systemtest.resources.ResourceManager.cmdKubeClient;
@@ -62,7 +72,10 @@ public class MigrationST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(MigrationST.class);
     private static final String CONTINUOUS_SUFFIX = "-continuous";
-
+    private static final int METADATA_VOLUME_ID = 0;
+    private static final String METADATA_FOLDER_NAME_JBOD = "data-" + METADATA_VOLUME_ID;
+    private static final String METADATA_FOLDER_NAME = "data";
+    private String metadataFolderName;
     private KafkaClients immediateClients;
     private KafkaClients continuousClients;
     private String postMigrationTopicName;
@@ -77,75 +90,44 @@ public class MigrationST extends AbstractST {
      * It goes through whole process, together with checking that message transmission throughout the test will not be
      * disrupted.
      *
+     * This is a parametrized test with following arguments:
+     * <ul>
+     *     <li>$1 - Delete Zookeeper claim: true, false</li>
+     *     <li>$2 - Delete Cluster Operator during the process: false, true</li>
+     *     <li>$3 - Use JBOD storage configuration: true, false</li>
+     * </ul>
+     *
+     * Based on the checks, the steps can be a bit different.
+     *
      * @steps
-     *  1. - Deploys Kafka resource (with enabled NodePools and KRaft set to disabled) with Broker NodePool
-     *  2. - Deploys Controller NodePool - it's created here, so we will firstly delete KafkaTopics in our ResourceManager;
-     *       the Pods will not be created until the migration starts
-     *  3. - Creates topics for continuous and immediate message transmission, TLS user
+     *  1. - Deploys Kafka resource (with enabled NodePools and KRaft set to disabled) with Broker NodePool (with particular storage - JBOD/single PV)
+     *  2. - Creates topics for continuous and immediate message transmission, TLS user
+     *  3. - Starts continuous producer & consumer
      *  4. - Does immediate message transmission
-     *  5. - Starts continuous producer & consumer
-     *  6. - Starts the migration
+     *  5. - Starts the migration
+     *  6. - Creates Controller NodePool (with particular storage - JBOD/single PV) - the Pods will not be created until the migration starts (after we apply the migration annotation)
      *  7. - Annotates the Kafka resource with strimzi.io/kraft:migration
      *  8. - Controllers will be created and moved to RUNNING state
      *  9. - Checks that Kafka CR has .status.kafkaMetadataState set to KRaftMigration
-     *  10. - Waits for first rolling update of Broker Pods - bringing the Brokers to DualWrite mode
-     *  11. - Checks that Kafka CR has .status.kafkaMetadataState set to KRaftDualWriting
-     *  12. - Waits for second rolling update of Broker Pods - removing dependency on ZK
-     *  13. - Checks that Kafka CR has .status.kafkaMetadataState set to KRaftPostMigration
-     *  14. - Creates a new KafkaTopic and checks both ZK and KRaft metadata for presence of the KafkaTopic
-     *  15. - Does immediate message transmission to the new KafkaTopic
-     *  16. - Finishes the migration - annotates the Kafka resource with strimzi.io/kraft:enabled
-     *  17. - Controller Pods will be rolled
-     *  18. - ZK related resources will be deleted
-     *  19. - Checks that Kafka CR has .status.kafkaMetadataState set to KRaft
-     *  20. - Removes LMFV and IBPV from Kafka configuration
-     *  21. - Broker and Controller Pods will be rolled
-     *  22. - Creates a new KafkaTopic and checks KRaft metadata for presence of the KafkaTopic
-     *  23. - Does immediate message transmission to the new KafkaTopic
-     *  24. - Waits until continuous clients are finished successfully
-     *
-     * @usecase
-     *  - zk-to-kraft-migration
-     */
-    @IsolatedTest
-    @SuppressWarnings("checkstyle:MethodLength")
-    void testMigrationWithZkDeleteClaimTrue() {
-        TestStorage testStorage = new TestStorage(ResourceManager.getTestContext(), TestConstants.CO_NAMESPACE);
-
-        doTestMigrationFromZkToKRaft(testStorage, true, false);
-    }
-
-    /**
-     * @description This testcase is similar to the first one {@link #testMigrationWithZkDeleteClaimTrue()} - it is focused on migration process from ZK to KRaft.
-     * It goes through whole process, together with checking that message transmission throughout the test will not be
-     * disrupted. There are two changes to the first test -> the deleteClaim in ZK is set to `false`, so the PVCs should not
-     * be deleted at the end of the testcases, and ClusterOperator Pod is deleted during every rolling update, so we verify that
-     * even if the CO is deleted, it is able to recover and finish the rolling updates.
-     *
-     * @steps
-     *  1. - Deploys Kafka resource (with enabled NodePools and KRaft set to disabled) with Broker NodePool
-     *  2. - Deploys Controller NodePool - it's created here, so we will firstly delete KafkaTopics in our ResourceManager;
-     *       the Pods will not be created until the migration starts
-     *  3. - Creates topics for continuous and immediate message transmission, TLS user
-     *  4. - Does immediate message transmission
-     *  5. - Starts continuous producer & consumer
-     *  6. - Starts the migration
-     *  7. - Annotates the Kafka resource with strimzi.io/kraft:migration
-     *  8. - Controllers will be created and moved to RUNNING state
-     *  9. - Checks that Kafka CR has .status.kafkaMetadataState set to KRaftMigration
+     *  ------------------------------- delete CO during process is set to true -------------------------------
      *  10. - Waits for one of the broker Pods to start rolling update
      *  11. - Deletes the ClusterOperator Pod
+     *  -------------------------------------------------------------------------------------------------------
      *  12. - Waits for first rolling update of Broker Pods to be finished - bringing the Brokers to DualWrite mode
      *  13. - Checks that Kafka CR has .status.kafkaMetadataState set to KRaftDualWriting
+     *  ------------------------------- delete CO during process is set to true -------------------------------
      *  14. - Waits for one of the broker Pods to start rolling update
      *  15. - Deletes the ClusterOperator Pod
+     *  -------------------------------------------------------------------------------------------------------
      *  16. - Waits for second rolling update of Broker Pods to be finished - removing dependency on ZK
      *  17. - Checks that Kafka CR has .status.kafkaMetadataState set to KRaftPostMigration
      *  18. - Creates a new KafkaTopic and checks both ZK and KRaft metadata for presence of the KafkaTopic
      *  19. - Does immediate message transmission to the new KafkaTopic
      *  20. - Finishes the migration - annotates the Kafka resource with strimzi.io/kraft:enabled
+     *  ------------------------------- delete CO during process is set to true -------------------------------
      *  21. - Waits for one of the controller Pods to start rolling update
      *  22. - Deletes the ClusterOperator Pod
+     *  -------------------------------------------------------------------------------------------------------
      *  23. - Waits for rolling update of Controller Pods will be finished
      *  24. - ZK related resources will be deleted (except of the PVCs)
      *  25. - Check that ZK PVCs are not deleted
@@ -159,16 +141,13 @@ public class MigrationST extends AbstractST {
      * @usecase
      *  - zk-to-kraft-migration
      */
-    @IsolatedTest
-    void testMigrationWithDeletionOfCOAndZkDeleteClaimFalse() {
+    @ParameterizedTest(name = "with: ZK delete claim - {0}, CO deletion during process - {1}, JBOD storage - {2}")
+    @MethodSource("getArgumentsForMigrationParametrizedTests")
+    void testMigration(Boolean zkDeleteClaim, Boolean deleteCoDuringProcess, Boolean withJbodStorage) {
         TestStorage testStorage = new TestStorage(ResourceManager.getTestContext(), TestConstants.CO_NAMESPACE);
 
-        doTestMigrationFromZkToKRaft(testStorage, false, true);
-    }
-
-    private void doTestMigrationFromZkToKRaft(TestStorage testStorage, boolean zkDeleteClaim, boolean deleteCoDuringProcess) {
-        setupMigrationTestCase(testStorage, zkDeleteClaim);
-        doFirstPartOfMigration(testStorage, deleteCoDuringProcess);
+        setupMigrationTestCase(testStorage, zkDeleteClaim, withJbodStorage);
+        doFirstPartOfMigration(testStorage, deleteCoDuringProcess, withJbodStorage);
         doSecondPartOfMigration(testStorage, deleteCoDuringProcess, zkDeleteClaim);
     }
 
@@ -177,43 +156,66 @@ public class MigrationST extends AbstractST {
      * It goes through whole process, together with checking that message transmission throughout the test will not be
      * disrupted.
      *
+     * This is a parametrized test with following arguments:
+     * <ul>
+     *     <li>$1 - Delete Cluster Operator during the process: false, true</li>
+     *     <li>$2 - Use JBOD storage configuration: true, false</li>
+     * </ul>
+     *
+     * Based on the checks, the steps can be a bit different.
      * @steps
-     *  1. - Deploys Kafka resource (with enabled NodePools and KRaft set to disabled) with Broker NodePool
-     *  2. - Deploys Controller NodePool - it's created here, so we will firstly delete KafkaTopics in our ResourceManager;
-     *       the Pods will not be created until the migration starts
-     *  3. - Creates topics for continuous and immediate message transmission, TLS user
+     *  1. - Deploys Kafka resource (with enabled NodePools and KRaft set to disabled) with Broker NodePool (with particular storage - JBOD/single PV)
+     *  2. - Creates topics for continuous and immediate message transmission, TLS user
+     *  3. - Starts continuous producer & consumer
      *  4. - Does immediate message transmission
-     *  5. - Starts continuous producer & consumer
-     *  6. - Starts the migration
+     *  5. - Starts the migration
+     *  6. - Creates Controller NodePool (with particular storage - JBOD/single PV) - the Pods will not be created until the migration starts (after we apply the migration annotation)
      *  7. - Annotates the Kafka resource with strimzi.io/kraft:migration
      *  8. - Controllers will be created and moved to RUNNING state
      *  9. - Checks that Kafka CR has .status.kafkaMetadataState set to KRaftMigration
-     *  10. - Waits for first rolling update of Broker Pods - bringing the Brokers to DualWrite mode
-     *  11. - Checks that Kafka CR has .status.kafkaMetadataState set to KRaftDualWriting
-     *  12. - Waits for second rolling update of Broker Pods - removing dependency on ZK
-     *  13. - Checks that Kafka CR has .status.kafkaMetadataState set to KRaftPostMigration
-     *  14. - Creates a new KafkaTopic and checks both ZK and KRaft metadata for presence of the KafkaTopic
-     *  15. - Does immediate message transmission to the new KafkaTopic
+     *  ------------------------------- delete CO during process is set to true -------------------------------
+     *  10. - Waits for one of the Broker Pods to start rolling update
+     *  11. - Deletes the ClusterOperator Pod
+     *  -------------------------------------------------------------------------------------------------------
+     *  12. - Waits for first rolling update of Broker Pods to be finished - bringing the Brokers to DualWrite mode
+     *  13. - Checks that Kafka CR has .status.kafkaMetadataState set to KRaftDualWriting
+     *  ------------------------------- delete CO during process is set to true -------------------------------
+     *  14. - Waits for one of the Broker Pods to start rolling update
+     *  15. - Deletes the ClusterOperator Pod
+     *  -------------------------------------------------------------------------------------------------------
+     *  16. - Waits for second rolling update of Broker Pods to be finished - removing dependency on ZK
+     *  17. - Checks that Kafka CR has .status.kafkaMetadataState set to KRaftPostMigration
+     *  18. - Creates a new KafkaTopic and checks both ZK and KRaft metadata for presence of the KafkaTopic
+     *  19. - Does immediate message transmission to the new KafkaTopic
      *  16. - Rolling back the migration - annotates the Kafka resource with strimzi.io/kraft:rollback
-     *  17. - Waits for rolling update of Broker Pods - adding dependency on ZK back
-     *  18. - Checks that Kafka CR has .status.kafkaMetadataState set to KRaftDualWriting
+     *  ------------------------------- delete CO during process is set to true -------------------------------
+     *  17. - Waits for one of the Broker Pods to start rolling update
+     *  18. - Deletes the ClusterOperator Pod
+     *  -------------------------------------------------------------------------------------------------------
+     *  19. - Waits for rolling update of Broker Pods - adding dependency on ZK back
+     *  20. - Checks that Kafka CR has .status.kafkaMetadataState set to KRaftDualWriting
      *  19. - Deletes the Controller NodePool
      *  20. - Finishes rollback - annotates the Kafka resource with strimzi.io/kraft:disabled
-     *  21. - Waits for rolling update of Broker Pods - rolling back from DualWrite mode to ZooKeeper
-     *  22. - Checks that Kafka CR has .status.kafkaMetadataState set to ZooKeeper
-     *  23. - Checks that __cluster_metadata topic doesn't exist in Kafka Brokers
-     *  24. - Waits until continuous clients are finished successfully
+     *  ------------------------------- delete CO during process is set to true -------------------------------
+     *  21. - Waits for one of the Broker Pods to start rolling update
+     *  22. - Deletes the ClusterOperator Pod
+     *  -------------------------------------------------------------------------------------------------------
+     *  23. - Waits for rolling update of Broker Pods - rolling back from DualWrite mode to ZooKeeper
+     *  24. - Checks that Kafka CR has .status.kafkaMetadataState set to ZooKeeper
+     *  25. - Checks that __cluster_metadata topic doesn't exist in Kafka Brokers
+     *  26. - Waits until continuous clients are finished successfully
      *
      * @usecase
      *  - zk-to-kraft-migration
      */
-    @IsolatedTest
-    void testRollbackDuringMigration() {
+    @ParameterizedTest(name = "with: CO deletion during process - {0}, JBOD storage - {1}")
+    @MethodSource("getArgumentsForRollbackParametrizedTests")
+    void testRollback(Boolean deleteCoDuringProcess, Boolean withJbodStorage) {
         TestStorage testStorage = new TestStorage(ResourceManager.getTestContext(), TestConstants.CO_NAMESPACE);
 
-        setupMigrationTestCase(testStorage, true);
-        doFirstPartOfMigration(testStorage, false);
-        doRollback(testStorage);
+        setupMigrationTestCase(testStorage, true, withJbodStorage);
+        doFirstPartOfMigration(testStorage, deleteCoDuringProcess, withJbodStorage);
+        doRollback(testStorage, deleteCoDuringProcess);
     }
 
     /**
@@ -225,12 +227,11 @@ public class MigrationST extends AbstractST {
      *
      * @steps
      *  1. - Deploys Kafka resource (with enabled NodePools and KRaft set to disabled) with Broker NodePool
-     *  2. - Deploys Controller NodePool - it's created here, so we will firstly delete KafkaTopics in our ResourceManager;
-     *       the Pods will not be created until the migration starts
-     *  3. - Creates topics for continuous and immediate message transmission, TLS user
-     *  4. - Starts continuous producer & consumer
-     *  5. - Does immediate message transmission
-     *  6. - Starts the migration
+     *  2. - Creates topics for continuous and immediate message transmission, TLS user
+     *  3. - Starts continuous producer & consumer
+     *  4. - Does immediate message transmission
+     *  5. - Starts the migration
+     *  6. - Creates Controller NodePool - the Pods will not be created until the migration starts (after we apply the migration annotation)
      *  7. - Annotates the Kafka resource with strimzi.io/kraft:migration
      *  8. - Controllers will be created and moved to RUNNING state
      *  9. - Checks that Kafka CR has .status.kafkaMetadataState set to KRaftMigration
@@ -268,10 +269,11 @@ public class MigrationST extends AbstractST {
         TestStorage testStorage = new TestStorage(ResourceManager.getTestContext(), TestConstants.CO_NAMESPACE);
         boolean zkDeleteClaim = true;
         boolean deleteCoDuringProcess = false;
+        boolean withJbodStorage = false;
 
-        setupMigrationTestCase(testStorage, zkDeleteClaim);
-        doFirstPartOfMigration(testStorage, deleteCoDuringProcess);
-        doFirstPartOfRollback(testStorage);
+        setupMigrationTestCase(testStorage, zkDeleteClaim, withJbodStorage);
+        doFirstPartOfMigration(testStorage, deleteCoDuringProcess, withJbodStorage);
+        doFirstPartOfRollback(testStorage, deleteCoDuringProcess);
 
         LOGGER.info("Applying the {} annotation with value: {}", Annotations.ANNO_STRIMZI_IO_KRAFT, "migration");
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(),
@@ -281,21 +283,12 @@ public class MigrationST extends AbstractST {
         doSecondPartOfMigration(testStorage, deleteCoDuringProcess, zkDeleteClaim);
     }
 
-    @IsolatedTest
-    void testMigrationWithDeletionOfCODuringProcedure() {
-        TestStorage testStorage = new TestStorage(ResourceManager.getTestContext(), TestConstants.CO_NAMESPACE);
-        boolean zkDeleteClaim = false;
-        boolean deleteCoDuringProcess = true;
-
-        setupMigrationTestCase(testStorage, zkDeleteClaim);
-        doFirstPartOfMigration(testStorage, deleteCoDuringProcess);
-        doSecondPartOfMigration(testStorage, deleteCoDuringProcess, zkDeleteClaim);
-    }
-
-    private void setupMigrationTestCase(TestStorage testStorage, boolean zkDeleteClaim) {
+    @SuppressWarnings({"checkstyle:MethodLength"})
+    private void setupMigrationTestCase(TestStorage testStorage, boolean zkDeleteClaim, boolean withJbodStorage) {
         // we assume that users will have broker NodePool named "kafka", so we will name it completely same to follow this use-case
         String brokerPoolName = "kafka";
 
+        metadataFolderName = withJbodStorage ? METADATA_FOLDER_NAME_JBOD : METADATA_FOLDER_NAME;
         postMigrationTopicName = testStorage.getTopicName() + "-post-migration";
         kraftTopicName = testStorage.getTopicName() + "-kraft";
         String immediateConsumerGroup = ClientUtils.generateRandomConsumerGroup();
@@ -310,7 +303,7 @@ public class MigrationST extends AbstractST {
         brokerSelector = KafkaNodePoolResource.getLabelSelector(testStorage.getClusterName(), brokerPoolName, ProcessRoles.BROKER);
         controllerSelector = KafkaNodePoolResource.getLabelSelector(testStorage.getClusterName(), testStorage.getControllerPoolName(), ProcessRoles.CONTROLLER);
 
-        String clientsAdditionConfiguration = "delivery.timeout.ms=20000\nrequest.timeout.ms=20000\nacks=all\n";
+        String clientsAdditionConfiguration = "delivery.timeout.ms=30000\nrequest.timeout.ms=30000\nacks=all\n";
 
         immediateClients = new KafkaClientsBuilder()
             .withProducerName(testStorage.getProducerName())
@@ -328,7 +321,7 @@ public class MigrationST extends AbstractST {
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
             .withTopicName(continuousTopicName)
             .withMessageCount(continuousMessageCount)
-            .withDelayMs(1000)
+            .withDelayMs(500)
             .withConsumerGroup(continuousConsumerGroupName)
             .withUsername(continuousUserName)
             .withAdditionalConfig(clientsAdditionConfiguration)
@@ -338,7 +331,11 @@ public class MigrationST extends AbstractST {
 
         // create Kafka resource with ZK and Broker NodePool
         resourceManager.createResourceWithWait(
-                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), brokerPoolName, testStorage.getClusterName(), 3).build(),
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), brokerPoolName, testStorage.getClusterName(), 3)
+                    .editSpec()
+                        .withStorage(getStorageBasedOnTestCase(withJbodStorage))
+                    .endSpec()
+                    .build(),
                 KafkaTemplates.kafkaPersistentNodePools(testStorage.getClusterName(), 3, 3)
                     .editMetadata()
                         .addToAnnotations(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled")
@@ -374,6 +371,16 @@ public class MigrationST extends AbstractST {
                             .withDeleteClaim(zkDeleteClaim)
                             .endPersistentClaimStorage()
                         .endZookeeper()
+                        .editOrNewEntityOperator()
+                            .editOrNewTemplate()
+                                .editOrNewTopicOperatorContainer()
+                                    .addNewEnv()
+                                        .withName("STRIMZI_USE_FINALIZERS")
+                                        .withValue("false")
+                                    .endEnv()
+                                .endTopicOperatorContainer()
+                            .endTemplate()
+                        .endEntityOperator()
                     .endSpec()
                     .build());
 
@@ -438,7 +445,7 @@ public class MigrationST extends AbstractST {
         ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName(), testStorage.getMessageCount());
     }
 
-    private void doFirstPartOfMigration(TestStorage testStorage, boolean deleteCoDuringProcess) {
+    private void doFirstPartOfMigration(TestStorage testStorage, boolean deleteCoDuringProcess, boolean withJbodStorage) {
         // starting the migration
         LOGGER.info("Starting the migration process");
 
@@ -453,6 +460,7 @@ public class MigrationST extends AbstractST {
         // creating it here (before KafkaTopics) to correctly delete KafkaTopics and prevent stuck because UTO cannot connect to controllers
         resourceManager.createResourceWithoutWait(KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3)
             .editSpec()
+                .withStorage(getStorageBasedOnTestCase(withJbodStorage))
                 // for controllers we have 256Mi set in the memory limits/requests, but during migration, more memory is needed
                 .withResources(new ResourceRequirementsBuilder()
                     .addToLimits("memory", new Quantity("384Mi"))
@@ -543,12 +551,12 @@ public class MigrationST extends AbstractST {
         ClientUtils.waitForClientsSuccess(continuousClients.getProducerName(), continuousClients.getConsumerName(), testStorage.getNamespaceName(), continuousClients.getMessageCount());
     }
 
-    private void doRollback(TestStorage testStorage) {
-        doFirstPartOfRollback(testStorage);
-        doSecondPartOfRollback(testStorage);
+    private void doRollback(TestStorage testStorage, boolean deleteCoDuringProcess) {
+        doFirstPartOfRollback(testStorage, deleteCoDuringProcess);
+        doSecondPartOfRollback(testStorage, deleteCoDuringProcess);
     }
 
-    private void doFirstPartOfRollback(TestStorage testStorage) {
+    private void doFirstPartOfRollback(TestStorage testStorage, boolean deleteCoDuringProcess) {
         LOGGER.info("Checking that __cluster_metadata topic does exist in Kafka Brokers");
         assertThatClusterMetadataTopicPresentInBrokerPod(testStorage.getNamespaceName(), brokerSelector, true);
 
@@ -558,6 +566,13 @@ public class MigrationST extends AbstractST {
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(),
             kafka -> kafka.getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_KRAFT, "rollback"), testStorage.getNamespaceName());
 
+        if (deleteCoDuringProcess) {
+            LOGGER.info("Waiting for first broker Pod starts with rolling update, so CO can be deleted");
+            RollingUpdateUtils.waitTillComponentHasStartedRolling(testStorage.getNamespaceName(), brokerSelector, brokerPodsSnapshot);
+            LOGGER.info("Deleting ClusterOperator's Pod - it should be recreated and continue with the rolling update of the broker Pods");
+            deleteClusterOperator();
+        }
+
         LOGGER.info("Waiting for Broker Pods to be rolled - bringing back dependency on ZK");
         brokerPodsSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), brokerSelector, 3, brokerPodsSnapshot);
 
@@ -565,7 +580,7 @@ public class MigrationST extends AbstractST {
         KafkaUtils.waitUntilKafkaStatusContainsKafkaMetadataState(testStorage.getNamespaceName(), testStorage.getClusterName(), KafkaMetadataState.KRaftDualWriting);
     }
 
-    private void doSecondPartOfRollback(TestStorage testStorage) {
+    private void doSecondPartOfRollback(TestStorage testStorage, boolean deleteCoDuringProcess) {
         LOGGER.info("Deleting Controller's NodePool");
         KafkaNodePool controllerPool = KafkaNodePoolResource.kafkaNodePoolClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getControllerPoolName()).get();
         resourceManager.deleteResource(controllerPool);
@@ -573,6 +588,13 @@ public class MigrationST extends AbstractST {
         LOGGER.info("Finishing the rollback - applying the {} annotation with value: {}", Annotations.ANNO_STRIMZI_IO_KRAFT, "disabled");
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(),
             kafka -> kafka.getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_KRAFT, "disabled"), testStorage.getNamespaceName());
+
+        if (deleteCoDuringProcess) {
+            LOGGER.info("Waiting for first broker Pod starts with rolling update, so CO can be deleted");
+            RollingUpdateUtils.waitTillComponentHasStartedRolling(testStorage.getNamespaceName(), brokerSelector, brokerPodsSnapshot);
+            LOGGER.info("Deleting ClusterOperator's Pod - it should be recreated and continue with the rolling update of the broker Pods");
+            deleteClusterOperator();
+        }
 
         LOGGER.info("Waiting for Broker Pods to be rolled - rolling back from DualWrite mode to Zookeeper");
         brokerPodsSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), brokerSelector, 3, brokerPodsSnapshot);
@@ -624,9 +646,19 @@ public class MigrationST extends AbstractST {
 
         LOGGER.info("Waiting until all ZK resources: {} will be deleted", String.join(",", listOfZkResources));
 
-        cmdKubeClient().namespace(testStorage.getNamespaceName())
-            .execInCurrentNamespace(Level.INFO, "wait", "--for", "delete", String.join(",", listOfZkResources),
-                "-l", Labels.STRIMZI_NAME_LABEL + "=" + KafkaResources.zookeeperComponentName(testStorage.getClusterName()), "--timeout=300s");
+        try {
+            cmdKubeClient().namespace(testStorage.getNamespaceName())
+                .execInCurrentNamespace(Level.INFO, "wait", "--for", "delete", String.join(",", listOfZkResources),
+                    "-l", Labels.STRIMZI_NAME_LABEL + "=" + KafkaResources.zookeeperComponentName(testStorage.getClusterName()), "--timeout=300s");
+        } catch (KubeClusterException e) {
+            if (!e.getMessage().contains("no matching resources found")) {
+                // in case that the exception contains message about "no matching resources found", the ZK resources were deleted before execution of the command
+                // otherwise we should throw the exception
+                throw e;
+            }
+        }
+
+        LOGGER.info("All ZK related resources were deleted");
 
         if (!deleteClaim) {
             LOGGER.info("Checking that ZK PVCs are not deleted, because deleteClaim was set to: false");
@@ -641,6 +673,71 @@ public class MigrationST extends AbstractST {
         Pod coPod = KubeClusterResource.kubeClient().listPodsByPrefixInName(clusterOperator.getDeploymentNamespace(), clusterOperator.getClusterOperatorName()).get(0);
         KubeClusterResource.kubeClient().deletePod(clusterOperator.getDeploymentNamespace(), coPod);
         LOGGER.info("Cluster Operator Pod deleted");
+    }
+
+    /**
+     * Based on {@param withJbodStorage} it returns the {@link Storage} - either with just one Persistent Volume, or with
+     * JBOD storage containing two Persistent Volumes.
+     *
+     * @param withJbodStorage   boolean parameter determining if the JBOD storage should be used in the test case
+     *
+     * @return  {@link Storage} for the particular testcase (single PV/JBOD)
+     */
+    private Storage getStorageBasedOnTestCase(boolean withJbodStorage) {
+        String pvSize = "1Gi";
+
+        PersistentClaimStorage volume = new PersistentClaimStorageBuilder()
+            .withDeleteClaim(true)
+            .withId(METADATA_VOLUME_ID)
+            .withKraftMetadata(KRaftMetadataStorage.SHARED)
+            .withSize(pvSize)
+            .build();
+
+        if (withJbodStorage) {
+            PersistentClaimStorage secondVolume = new PersistentClaimStorageBuilder()
+                .withDeleteClaim(true)
+                .withId(1)
+                .withSize(pvSize)
+                .build();
+
+            return new JbodStorageBuilder()
+                .withVolumes(volume, secondVolume)
+                .build();
+        }
+
+        return volume;
+    }
+
+    /**
+     * Method returning simple stream of arguments for migration parametrized tests.
+     * First argument determines if the ZK delete claim should be set to true/false, second if
+     * the CO should be deleted during the migration/rollback process, and third if the JBOD storage should be used.
+     *
+     * @return  {@link Stream} of {@link Arguments} for each test case.
+     */
+    private Stream<Arguments> getArgumentsForMigrationParametrizedTests() {
+        // ZK delete claim: true, delete CO during process: false, with JBOD storage: true
+        Arguments firstTest = Arguments.of(true, false, true);
+        // ZK delete claim: false, delete CO during process: true, with JBOD storage: false
+        Arguments secondTest = Arguments.of(false, true, false);
+
+        return Stream.of(firstTest, secondTest);
+    }
+
+    /**
+     * Method returning simple stream of arguments for rollback parametrized tests.
+     * First argument determines if the CO should be deleted during the migration/rollback process
+     * and second if the JBOD storage should be used.
+     *
+     * @return  {@link Stream} of {@link Arguments} for each test case.
+     */
+    private Stream<Arguments> getArgumentsForRollbackParametrizedTests() {
+        // delete CO during process: false, with JBOD storage: true
+        Arguments firstTest = Arguments.of(false, true);
+        // delete CO during process: true, with JBOD storage: false
+        Arguments secondTest = Arguments.of(true, false);
+
+        return Stream.of(firstTest, secondTest);
     }
 
     private void assertThatTopicIsPresentInZKMetadata(String namespaceName, LabelSelector zkSelector, String topicName) {
@@ -660,13 +757,13 @@ public class MigrationST extends AbstractST {
 
     private void assertThatTopicIsPresentInKRaftMetadata(String namespaceName, LabelSelector controllerSelector, String topicName) {
         String controllerPodName = kubeClient().namespace(namespaceName).listPods(controllerSelector).get(0).getMetadata().getName();
-        String kafkaLogDirName = KafkaUtils.getKafkaLogFolderNameInPod(namespaceName, controllerPodName);
+        String kafkaLogDirName = KafkaUtils.getKafkaLogFolderNameInPod(namespaceName, controllerPodName, metadataFolderName);
 
         TestUtils.waitFor(String.join("KafkaTopic: %s to be present in KRaft metadata"), TestConstants.GLOBAL_POLL_INTERVAL_MEDIUM, TestConstants.GLOBAL_STATUS_TIMEOUT,
             () -> {
                 try {
                     String commandOutput = cmdKubeClient().namespace(namespaceName).execInPod(controllerPodName, "/bin/bash", "-c", "./bin/kafka-dump-log.sh --cluster-metadata-decoder --skip-record-metadata" +
-                        " --files /var/lib/kafka/data/" + kafkaLogDirName + "/__cluster_metadata-0/00000000000000000000.log | grep " + topicName).out().trim();
+                        " --files /var/lib/kafka/" + metadataFolderName + "/" + kafkaLogDirName + "/__cluster_metadata-0/00000000000000000000.log | grep " + topicName).out().trim();
                     return commandOutput.contains(topicName);
                 } catch (Exception e) {
                     LOGGER.warn("Exception caught during command execution, message: {}", e.getMessage());
@@ -679,9 +776,9 @@ public class MigrationST extends AbstractST {
         List<Pod> brokerPods = kubeClient().namespace(namespaceName).listPods(brokerSelector);
 
         for (Pod brokerPod : brokerPods) {
-            String kafkaLogDirName = KafkaUtils.getKafkaLogFolderNameInPod(namespaceName, brokerPod.getMetadata().getName());
+            String kafkaLogDirName = KafkaUtils.getKafkaLogFolderNameInPod(namespaceName, brokerPod.getMetadata().getName(), metadataFolderName);
 
-            String commandOutput = cmdKubeClient().namespace(namespaceName).execInPod(brokerPod.getMetadata().getName(), "/bin/bash", "-c", "ls /var/lib/kafka/data/" + kafkaLogDirName).out().trim();
+            String commandOutput = cmdKubeClient().namespace(namespaceName).execInPod(brokerPod.getMetadata().getName(), "/bin/bash", "-c", "ls /var/lib/kafka/" + metadataFolderName + "/" + kafkaLogDirName).out().trim();
 
             assertThat(String.join("__cluster_metadata topic is present in Kafka Pod: %s, but it shouldn't", brokerPod.getMetadata().getName()),
                 commandOutput.contains("__cluster_metadata"), is(clusterMetadataShouldExist));
@@ -691,6 +788,7 @@ public class MigrationST extends AbstractST {
     @BeforeAll
     void setup() {
         // skip if Kafka version is lower than 3.7.0
+        // TODO: remove once support for Kafka 3.6.x is removed - https://github.com/strimzi/strimzi-kafka-operator/issues/9921
         assumeTrue(TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "3.7.0") >= 0);
         assumeTrue(Environment.isKafkaNodePoolsEnabled() && Environment.isKRaftForCOEnabled());
         this.clusterOperator = this.clusterOperator

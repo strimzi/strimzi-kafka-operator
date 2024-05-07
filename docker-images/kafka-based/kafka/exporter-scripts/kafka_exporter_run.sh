@@ -30,8 +30,9 @@ if [ "$KAFKA_EXPORTER_ENABLE_SARAMA" = "true" ]; then
     saramaenable="--log.enable-sarama"
 fi
 
-if [ "$KAFKA_EXPORTER_OFFSET_SHOW_ALL" = "true" ]; then
-    allgroups="--offset.show-all"
+if [ "$KAFKA_EXPORTER_OFFSET_SHOW_ALL" = "false" ]; then
+    # This is enabled by default, so we have to disable it if it is set to false
+    allgroups="--no-offset.show-all"
 fi
 
 if [ -n "$KAFKA_EXPORTER_LOGGING" ]; then

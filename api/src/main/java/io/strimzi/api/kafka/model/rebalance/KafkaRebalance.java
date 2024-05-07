@@ -74,7 +74,12 @@ import java.util.function.Predicate;
                 name = "NotReady",
                 description = "There is an error on the custom resource",
                 jsonPath = ".status.conditions[?(@.type==\"NotReady\")].status",
-                type = "string")
+                type = "string"),
+            @Crd.Spec.AdditionalPrinterColumn(
+                    name = "Stopped",
+                    description = "Processing the proposal or running rebalancing was stopped",
+                    jsonPath = ".status.conditions[?(@.type==\"Stopped\")].status",
+                    type = "string")
         }
     )
 )
@@ -91,7 +96,6 @@ import java.util.function.Predicate;
 @Version(Constants.V1BETA2)
 @Group(Constants.RESOURCE_GROUP_NAME)
 public class KafkaRebalance extends CustomResource<KafkaRebalanceSpec, KafkaRebalanceStatus> implements Namespaced, UnknownPropertyPreserving {
-
     private static final long serialVersionUID = 1L;
 
     public static final String SCOPE = "Namespaced";

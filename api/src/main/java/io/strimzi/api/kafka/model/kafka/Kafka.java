@@ -86,7 +86,6 @@ import java.util.function.Predicate;
 @Version(Constants.V1BETA2)
 @Group(Constants.RESOURCE_GROUP_NAME)
 public class Kafka extends CustomResource<KafkaSpec, KafkaStatus> implements Namespaced, UnknownPropertyPreserving {
-
     public static final String V1BETA2 = Constants.V1BETA2;
     public static final String V1BETA1 = Constants.V1BETA1;
     public static final String V1ALPHA1 = Constants.V1ALPHA1;

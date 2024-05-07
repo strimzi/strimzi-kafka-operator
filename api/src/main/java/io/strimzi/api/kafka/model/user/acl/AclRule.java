@@ -6,6 +6,7 @@ package io.strimzi.api.kafka.model.user.acl;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
@@ -16,7 +17,6 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,12 +30,10 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+@JsonPropertyOrder({"type", "resource", "host", "operation", "operations"})
 @EqualsAndHashCode
 @ToString
-public class AclRule implements UnknownPropertyPreserving, Serializable {
-
-    private static final long serialVersionUID = 1L;
-
+public class AclRule implements UnknownPropertyPreserving {
     private AclRuleType type = AclRuleType.ALLOW;
     private AclRuleResource resource;
     private String host = "*";

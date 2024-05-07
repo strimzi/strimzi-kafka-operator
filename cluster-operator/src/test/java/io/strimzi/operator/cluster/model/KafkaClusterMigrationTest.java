@@ -67,6 +67,8 @@ public class KafkaClusterMigrationTest {
             .withNewSpec()
                 .withReplicas(REPLICAS)
                 .withRoles(ProcessRoles.BROKER)
+                .withNewEphemeralStorage()
+                .endEphemeralStorage()
             .endSpec()
             .build();
     private final static KafkaPool KAFKA_POOL_BROKERS = KafkaPool.fromCrd(
@@ -86,6 +88,8 @@ public class KafkaClusterMigrationTest {
             .withNewSpec()
                 .withReplicas(REPLICAS)
                 .withRoles(ProcessRoles.CONTROLLER)
+                .withNewEphemeralStorage()
+                .endEphemeralStorage()
             .endSpec()
             .build();
     private final static KafkaPool KAFKA_POOL_CONTROLLERS = KafkaPool.fromCrd(

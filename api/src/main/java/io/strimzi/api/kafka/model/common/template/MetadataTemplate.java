@@ -14,7 +14,6 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -30,9 +29,7 @@ import java.util.Map;
 @DescriptionFile
 @EqualsAndHashCode
 @ToString
-public class MetadataTemplate implements Serializable, UnknownPropertyPreserving {
-    private static final long serialVersionUID = 1L;
-
+public class MetadataTemplate implements UnknownPropertyPreserving {
     private Map<String, String> labels = new HashMap<>(0);
     private Map<String, String> annotations = new HashMap<>(0);
     private Map<String, Object> additionalProperties = new HashMap<>(0);

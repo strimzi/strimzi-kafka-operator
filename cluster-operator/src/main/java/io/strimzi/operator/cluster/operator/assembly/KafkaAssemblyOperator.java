@@ -36,23 +36,25 @@ import io.strimzi.operator.cluster.model.KafkaVersionChange;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.model.PodSetUtils;
+import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
-import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
+import io.strimzi.operator.cluster.operator.resource.kubernetes.CrdOperator;
+import io.strimzi.operator.cluster.operator.resource.kubernetes.StatefulSetOperator;
+import io.strimzi.operator.cluster.operator.resource.kubernetes.StrimziPodSetOperator;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationException;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
-import io.strimzi.operator.common.VertxUtil;
+import io.strimzi.operator.common.config.ConfigParameter;
 import io.strimzi.operator.common.model.ClientsCa;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.model.NamespaceAndName;
 import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.model.StatusDiff;
 import io.strimzi.operator.common.model.StatusUtils;
-import io.strimzi.operator.common.operator.resource.CrdOperator;
-import io.strimzi.operator.common.operator.resource.StrimziPodSetOperator;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -102,6 +104,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         OPERATOR_VERSION = PROPERTIES.getProperty("version");
     }
 
+    /**
+     * Intentionally shadowing inherited field to make it in specific implementation dedicated for the Kafka assembly
+     */
+    private final KafkaAssemblyOperatorMetricsHolder metrics;
 
     /* test */ final ClusterOperatorConfig config;
     /* test */ final ResourceOperatorSupplier supplier;
@@ -136,6 +142,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         this.kafkaOperator = supplier.kafkaOperator;
         this.nodePoolOperator = supplier.kafkaNodePoolOperator;
         this.strimziPodSetOperator = supplier.strimziPodSetOperator;
+        this.metrics = new KafkaAssemblyOperatorMetricsHolder(Kafka.RESOURCE_KIND, config.getCustomResourceSelector(), supplier.metricsProvider);
         this.clock = Clock.systemUTC();
     }
 
@@ -228,7 +235,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
             // Validates features which are currently not supported in KRaft mode
             try {
-                KRaftUtils.validateKafkaCrForKRaft(reconcileState.kafkaAssembly.getSpec(), featureGates.unidirectionalTopicOperatorEnabled());
+                KRaftUtils.validateKafkaCrForKRaft(reconcileState.kafkaAssembly.getSpec());
                 // Validations which need to be done only in full KRaft and not during a migration (i.e. ZooKeeper removal)
                 if (kafkaMetadataConfigState.isKRaft()) {
                     KRaftUtils.kraftWarnings(reconcileState.kafkaAssembly, reconcileState.kafkaStatus);
@@ -254,6 +261,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         reconcileState.initialStatus()
                 // Preparation steps => prepare cluster descriptions, handle CA creation or changes
                 .compose(state -> state.reconcileCas(clock))
+                .compose(state -> state.emitCertificateSecretMetrics())
                 .compose(state -> state.versionChange(kafkaMetadataConfigState.isKRaft()))
 
                 // Run reconciliations of the different components
@@ -470,6 +478,21 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         this.clientsCa = cas.clientsCa();
                         return Future.succeededFuture(this);
                     });
+        }
+
+        /**
+         * Emits the certificate expiration metric for cluster CA and client CA
+         *
+         * @return  Future with Reconciliation State
+         */
+        Future<ReconciliationState> emitCertificateSecretMetrics() {
+            long serverCertificateExpiration = this.clusterCa.getCertificateExpirationDateEpoch();
+            metrics.clusterCaCertificateExpiration(this.name, this.namespace).set(serverCertificateExpiration);
+
+            long clientCertificateExpiration = this.clientsCa.getCertificateExpirationDateEpoch();
+            metrics.clientCaCertificateExpiration(this.name, this.namespace).set(clientCertificateExpiration);
+
+            return Future.succeededFuture(this);
         }
 
         /**
@@ -818,6 +841,26 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     protected Future<Boolean> delete(Reconciliation reconciliation) {
         return ReconcilerUtils.withIgnoreRbacError(reconciliation, clusterRoleBindingOperations.reconcile(reconciliation, KafkaResources.initContainerClusterRoleBindingName(reconciliation.name(), reconciliation.namespace()), null), null)
                 .map(Boolean.FALSE); // Return FALSE since other resources are still deleted by garbage collection
+    }
+
+    /**
+     * Remove the metrics specific to the kind implementing it.
+     *
+     * @param desiredNames  Set of resources which should be reconciled
+     * @param namespace     The namespace to reconcile, or {@code *} to reconcile across all namespaces.
+     */
+    @Override
+    public void removeMetrics(Set<NamespaceAndName> desiredNames, String namespace) {
+        if (ConfigParameter.ANY_NAMESPACE.equals(namespace)) {
+            metrics.removeMetricsForCertificates(key ->
+                    // When watching all namespaces, we remove all metrics that do not belong to existing clusters
+                    !desiredNames.contains(new NamespaceAndName(key.getNamespace(), key.getClusterName())));
+        } else {
+            metrics.removeMetricsForCertificates(key ->
+                    // When watching only one namespace, we remove all metrics that belong to our namespace but not to an existing cluster
+                    // We ignore the metrics from other namespaces
+                    namespace.equals(key.getNamespace()) && !desiredNames.contains(new NamespaceAndName(key.getNamespace(), key.getClusterName())));
+        }
     }
 
     /**

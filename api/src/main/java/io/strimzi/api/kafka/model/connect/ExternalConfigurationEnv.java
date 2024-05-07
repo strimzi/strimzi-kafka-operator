@@ -6,6 +6,7 @@ package io.strimzi.api.kafka.model.connect;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
@@ -13,7 +14,6 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -25,12 +25,10 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+@JsonPropertyOrder({"name", "valueFrom"})
 @EqualsAndHashCode
 @ToString
-public class ExternalConfigurationEnv implements Serializable, UnknownPropertyPreserving {
-
-    private static final long serialVersionUID = 1L;
-
+public class ExternalConfigurationEnv implements UnknownPropertyPreserving {
     private String name;
     private ExternalConfigurationEnvVarSource valueFrom;
     private Map<String, Object> additionalProperties = new HashMap<>(0);

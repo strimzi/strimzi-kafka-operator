@@ -5,7 +5,6 @@
 package io.strimzi.systemtest.utils.kafkaUtils;
 
 import io.strimzi.api.kafka.model.topic.KafkaTopicSpec;
-import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.enums.ConditionStatus;
 import io.strimzi.systemtest.enums.CustomResourceStatus;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -18,6 +17,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 /**
  * This class contains crucial methods to create, modify and check large amount of KafkaTopics
@@ -45,28 +47,43 @@ public class KafkaTopicScalabilityUtils {
 
     public static void waitForTopicStatus(String namespaceName, String topicPrefix, int numberOfTopics, Enum<?> conditionType, ConditionStatus conditionStatus) {
         LOGGER.info("Verifying that {} Topics are in {} state", numberOfTopics, conditionType.toString());
-        List<CompletableFuture<?>> topics = new ArrayList<>();
 
-        for (int i = 0; i < numberOfTopics; i++) {
-            String currentTopic = topicPrefix + i;
-            topics.add(CompletableFuture.runAsync(() ->
-                KafkaTopicUtils.waitForKafkaTopicStatus(namespaceName, currentTopic, conditionType, conditionStatus)
-            ));
+        // Determine the appropriate number of threads
+        int numberOfThreads = Math.min(Runtime.getRuntime().availableProcessors(), numberOfTopics);
+        ExecutorService customExecutor = Executors.newFixedThreadPool(numberOfThreads);
+
+        try {
+            List<CompletableFuture<?>> topics = new ArrayList<>();
+
+            for (int i = 0; i < numberOfTopics; i++) {
+                final String currentTopic = topicPrefix + i;
+                topics.add(CompletableFuture.runAsync(() ->
+                    KafkaTopicUtils.waitForKafkaTopicStatus(namespaceName, currentTopic, conditionType, conditionStatus),
+                        customExecutor // Use the custom executor
+                ));
+            }
+
+            CompletableFuture<Void> allTopics = CompletableFuture.allOf(topics.toArray(new CompletableFuture[0]))
+                    .thenRunAsync(() -> LOGGER.info("All Topics are in correct state"), customExecutor);
+
+            allTopics.join();
+        } finally {
+            // Attempt to shut down now to immediately terminate ongoing tasks
+            List<Runnable> notExecutedTasks = customExecutor.shutdownNow();
+            if (!notExecutedTasks.isEmpty()) {
+                LOGGER.warn("There were {} tasks that did not start", notExecutedTasks.size());
+            }
+            try {
+                // Wait a while for tasks to respond to being cancelled
+                if (!customExecutor.awaitTermination(30, TimeUnit.SECONDS))
+                    LOGGER.error("Executor did not terminate");
+            } catch (InterruptedException ie) {
+                // Preserve interrupt status
+                Thread.currentThread().interrupt();
+            }
         }
-
-        CompletableFuture<Void> allTopics = CompletableFuture.allOf(topics.toArray(new CompletableFuture[0]))
-                .thenRun(() -> LOGGER.info("All Topics are in correct state"));
-
-        allTopics.join();
     }
 
-    public static void waitForTopicsNotReady(String namespaceName, String topicPrefix, int numberOfTopics) {
-        if (Environment.isUnidirectionalTopicOperatorEnabled()) {
-            waitForTopicStatus(namespaceName, topicPrefix, numberOfTopics, CustomResourceStatus.Ready, ConditionStatus.False);
-        } else {
-            waitForTopicStatus(namespaceName, topicPrefix, numberOfTopics, CustomResourceStatus.NotReady);
-        }
-    }
 
     public static void waitForTopicsReady(String namespaceName, String topicPrefix, int numberOfTopics) {
         waitForTopicStatus(namespaceName, topicPrefix, numberOfTopics, CustomResourceStatus.Ready);

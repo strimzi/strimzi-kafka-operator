@@ -27,8 +27,6 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaStatus extends Status {
-    private static final long serialVersionUID = 1L;
-
     private List<ListenerStatus> listeners;
     private List<UsedNodePoolStatus> kafkaNodePools;
     

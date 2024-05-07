@@ -35,6 +35,6 @@ public class ControllerQueueTest {
         assertThat(q.queue.contains(r3), is(true));
 
         // Test metric
-        assertThat(metricsRegistry.get("strimzi.reconciliations.already.enqueued").tag("kind", "kind").tag("namespace", "my-namespace").counter().count(), is(1.0));
+        assertThat(metricsRegistry.get(ControllerMetricsHolder.METRICS_RECONCILIATIONS_ALREADY_ENQUEUED).tag("kind", "kind").tag("namespace", "my-namespace").counter().count(), is(1.0));
     }
 }

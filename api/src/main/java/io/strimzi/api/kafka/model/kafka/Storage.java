@@ -12,7 +12,6 @@ import io.strimzi.crdgenerator.annotations.Description;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -32,10 +31,7 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @EqualsAndHashCode
 @ToString
-public abstract class Storage implements UnknownPropertyPreserving, Serializable {
-
-    private static final long serialVersionUID = 1L;
-
+public abstract class Storage implements UnknownPropertyPreserving {
     public static final String TYPE_EPHEMERAL = "ephemeral";
     public static final String TYPE_PERSISTENT_CLAIM = "persistent-claim";
     public static final String TYPE_JBOD = "jbod";

@@ -20,7 +20,6 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,8 +30,9 @@ import static java.util.Collections.emptyMap;
  * Configures Kafka listeners
  */
 @DescriptionFile
-@JsonPropertyOrder({"brokerCertChainAndKey", "ingressClass", "preferredAddressType", "externalTrafficPolicy",
-    "loadBalancerSourceRanges", "bootstrap", "brokers", "ipFamilyPolicy", "ipFamilies", "createBootstrapService"})
+@JsonPropertyOrder({"brokerCertChainAndKey", "class", "preferredAddressType", "externalTrafficPolicy",
+    "loadBalancerSourceRanges", "bootstrap", "brokers", "ipFamilyPolicy", "ipFamilies", "createBootstrapService",
+    "finalizers", "useServiceDnsDomain", "maxConnections", "maxConnectionCreationRate", "preferredNodePortAddressType"})
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Buildable(
     editableEnabled = false,
@@ -40,9 +40,7 @@ import static java.util.Collections.emptyMap;
 )
 @EqualsAndHashCode
 @ToString
-public class GenericKafkaListenerConfiguration implements Serializable, UnknownPropertyPreserving {
-    private static final long serialVersionUID = 1L;
-
+public class GenericKafkaListenerConfiguration implements UnknownPropertyPreserving {
     private CertAndKeySecretSource brokerCertChainAndKey;
     private String controllerClass;
     private NodeAddressType preferredNodePortAddressType;

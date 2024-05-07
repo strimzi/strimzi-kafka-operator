@@ -4,20 +4,19 @@
  */
 package io.strimzi.operator.cluster.operator.resource;
 
-import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
+import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
-import io.strimzi.operator.common.VertxUtil;
-import io.strimzi.operator.common.model.Ca;
-import io.strimzi.operator.common.model.PasswordGenerator;
+import io.strimzi.operator.common.auth.PemAuthIdentity;
+import io.strimzi.operator.common.auth.PemTrustSet;
+import io.strimzi.operator.common.auth.TlsPemIdentity;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.admin.ZooKeeperAdmin;
-import org.apache.zookeeper.client.ZKClientConfig;
 
 import java.io.File;
 import java.io.IOException;
@@ -43,11 +42,7 @@ public class ZookeeperScaler implements AutoCloseable {
 
     private final long operationTimeoutMs;
     private final int zkAdminSessionTimeoutMs;
-
-    private final String trustStorePassword;
     private final File trustStoreFile;
-
-    private final String keyStorePassword;
     private final File keyStoreFile;
 
     private final Reconciliation reconciliation;
@@ -57,18 +52,17 @@ public class ZookeeperScaler implements AutoCloseable {
      *
      * @param reconciliation                The reconciliation
      * @param vertx                         Vertx instance
+     * @param zooAdminProvider              ZooKeeper Admin Client Provider
      * @param zookeeperConnectionString     Connection string to connect to the right Zookeeper
      * @param zkNodeAddress                 Function for generating the Zookeeper node addresses
-     * @param clusterCaCertSecret           Secret with Kafka cluster CA public key
-     * @param coKeySecret                   Secret with Cluster Operator public and private key
+     * @param coTlsPemIdentity              Trust set and identity for TLS client authentication for connecting to ZooKeeper
      * @param operationTimeoutMs            Operation timeout
      * @param zkAdminSessionTimeoutMs       Zookeeper Admin session timeout
      *
      */
     protected ZookeeperScaler(Reconciliation reconciliation, Vertx vertx, ZooKeeperAdminProvider zooAdminProvider,
                               String zookeeperConnectionString, Function<Integer, String> zkNodeAddress,
-                              Secret clusterCaCertSecret, Secret coKeySecret, long operationTimeoutMs,
-                              int zkAdminSessionTimeoutMs) {
+                              TlsPemIdentity coTlsPemIdentity, long operationTimeoutMs, int zkAdminSessionTimeoutMs) {
         this.reconciliation = reconciliation;
 
         LOGGER.debugCr(reconciliation, "Creating Zookeeper Scaler for cluster {}", zookeeperConnectionString);
@@ -81,14 +75,9 @@ public class ZookeeperScaler implements AutoCloseable {
         this.zkAdminSessionTimeoutMs = zkAdminSessionTimeoutMs;
 
         // Setup truststore from PEM file in cluster CA secret
-        // We cannot use P12 because of custom CAs which for simplicity provide only PEM
-        PasswordGenerator pg = new PasswordGenerator(12);
-        trustStorePassword = pg.generate();
-        trustStoreFile = Util.createFileTrustStore(getClass().getName(), "p12", Ca.certs(clusterCaCertSecret), trustStorePassword.toCharArray());
-
-        // Setup keystore from PKCS12 in cluster-operator secret
-        keyStorePassword = new String(Util.decodeFromSecret(coKeySecret, "cluster-operator.password"), StandardCharsets.US_ASCII);
-        keyStoreFile = Util.createFileStore(getClass().getName(), "p12", Util.decodeFromSecret(coKeySecret, "cluster-operator.p12"));
+        trustStoreFile = Util.createFileStore(getClass().getName(), PemTrustSet.CERT_SUFFIX, coTlsPemIdentity.pemTrustSet().trustedCertificatesPemBytes());
+        // Setup keystore from PEM in cluster-operator secret
+        keyStoreFile = Util.createFileStore(getClass().getName(), PemAuthIdentity.PEM_SUFFIX, coTlsPemIdentity.pemAuthIdentity().pemKeyStore());
     }
 
     /**
@@ -100,8 +89,7 @@ public class ZookeeperScaler implements AutoCloseable {
      * @return          Future which succeeds / fails when the scaling is finished
      */
     public Future<Void> scale(int scaleTo) {
-        return getClientConfig()
-                .compose(this::connect)
+        return connect()
                 .compose(zkAdmin -> {
                     Promise<Void> scalePromise = Promise.promise();
 
@@ -145,7 +133,7 @@ public class ZookeeperScaler implements AutoCloseable {
      *
      * @return      Future indicating success or failure
      */
-    private Future<ZooKeeperAdmin> connect(ZKClientConfig clientConfig)    {
+    private Future<ZooKeeperAdmin> connect()    {
         Promise<ZooKeeperAdmin> connected = Promise.promise();
 
         try {
@@ -153,7 +141,9 @@ public class ZookeeperScaler implements AutoCloseable {
                 this.zookeeperConnectionString,
                 zkAdminSessionTimeoutMs,
                 watchedEvent -> LOGGER.debugCr(reconciliation, "Received event {} from ZooKeeperAdmin client connected to {}", watchedEvent, zookeeperConnectionString),
-                clientConfig);
+                operationTimeoutMs,
+                trustStoreFile.getAbsolutePath(),
+                keyStoreFile.getAbsolutePath());
 
             VertxUtil.waitFor(reconciliation, vertx,
                 String.format("ZooKeeperAdmin connection to %s", zookeeperConnectionString),
@@ -256,35 +246,6 @@ public class ZookeeperScaler implements AutoCloseable {
         } else {
             return Future.succeededFuture();
         }
-    }
-
-    /**
-     * Generates the TLS configuration for Zookeeper.
-     *
-     * @return  A future with the ZooKeeper Client Configuration
-     */
-    private Future<ZKClientConfig> getClientConfig()  {
-        return vertx.executeBlocking(() -> {
-            try {
-                ZKClientConfig clientConfig = new ZKClientConfig();
-
-                clientConfig.setProperty("zookeeper.clientCnxnSocket", "org.apache.zookeeper.ClientCnxnSocketNetty");
-                clientConfig.setProperty("zookeeper.client.secure", "true");
-                clientConfig.setProperty("zookeeper.sasl.client", "false");
-                clientConfig.setProperty("zookeeper.ssl.trustStore.location", trustStoreFile.getAbsolutePath());
-                clientConfig.setProperty("zookeeper.ssl.trustStore.password", trustStorePassword);
-                clientConfig.setProperty("zookeeper.ssl.trustStore.type", "PKCS12");
-                clientConfig.setProperty("zookeeper.ssl.keyStore.location", keyStoreFile.getAbsolutePath());
-                clientConfig.setProperty("zookeeper.ssl.keyStore.password", keyStorePassword);
-                clientConfig.setProperty("zookeeper.ssl.keyStore.type", "PKCS12");
-                clientConfig.setProperty("zookeeper.request.timeout", String.valueOf(operationTimeoutMs));
-
-                return clientConfig;
-            } catch (Exception e)    {
-                LOGGER.warnCr(reconciliation, "Failed to create Zookeeper client configuration", e);
-                throw new ZookeeperScalingException("Failed to create Zookeeper client configuration", e);
-            }
-        }, false);
     }
 
     /**

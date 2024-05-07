@@ -21,13 +21,13 @@ import io.strimzi.operator.cluster.model.KafkaVersionChange;
 import io.strimzi.operator.cluster.model.SharedEnvironmentProvider;
 import io.strimzi.operator.cluster.model.nodepools.NodePoolUtils;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
+import io.strimzi.operator.cluster.operator.resource.kubernetes.SecretOperator;
 import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.StatusUtils;
-import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 
@@ -180,7 +180,8 @@ public class KafkaClusterCreator {
             usedToBeBrokersCheckFailed = false;
             return Future.succeededFuture(kafka);
         } else {
-            return brokerScaleDownOperations.brokersInUse(reconciliation, vertx, secretOperator, adminClientProvider)
+            return ReconcilerUtils.coTlsPemIdentity(reconciliation, secretOperator)
+                    .compose(coTlsPemIdentity -> brokerScaleDownOperations.brokersInUse(reconciliation, vertx, coTlsPemIdentity, adminClientProvider))
                     .compose(brokersInUse -> {
                         // Check nodes that are being scaled down
                         Set<Integer> scaledDownBrokersInUse = kafka.removedNodes().stream().filter(brokersInUse::contains).collect(Collectors.toSet());
@@ -350,7 +351,7 @@ public class KafkaClusterCreator {
         // We prepare the KafkaPool models and create the KafkaCluster model
         // KRaft to be considered not only when fully enabled (KRAFT = 4) but also when a migration is about to start (PRE_MIGRATION = 1)
         // NOTE: this is important to drive the right validation happening in node pools (i.e. roles on node pools, storage, number of controllers, ...)
-        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(reconciliation, kafkaCr, nodePoolCrs, oldStorage, currentPods, kafkaMetadataConfigState.isPreMigrationToKRaft(), sharedEnvironmentProvider);
+        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(reconciliation, kafkaCr, nodePoolCrs, oldStorage, currentPods, versionChange, kafkaMetadataConfigState.isPreMigrationToKRaft(), sharedEnvironmentProvider);
         String clusterId = kafkaMetadataConfigState.isPreMigrationToKRaft() ? NodePoolUtils.getOrGenerateKRaftClusterId(kafkaCr, nodePoolCrs) : NodePoolUtils.getClusterIdIfSet(kafkaCr, nodePoolCrs);
         return KafkaCluster.fromCrd(reconciliation, kafkaCr, pools, versions, versionChange, kafkaMetadataConfigState, clusterId, sharedEnvironmentProvider);
     }

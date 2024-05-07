@@ -6,6 +6,7 @@ package io.strimzi.api.kafka.model.common.jmx;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
@@ -14,7 +15,6 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -24,11 +24,12 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonPropertyOrder({"authentication"})
 @EqualsAndHashCode
 @ToString
-public class KafkaJmxOptions implements UnknownPropertyPreserving, Serializable {
-    private static final long serialVersionUID = 1L;
+public class KafkaJmxOptions implements UnknownPropertyPreserving {
     private KafkaJmxAuthentication authentication;
+
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Authentication configuration for connecting to the JMX port")

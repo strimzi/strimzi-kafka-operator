@@ -49,7 +49,7 @@ You can generate an optimization proposal in one of three modes.
 * *`remove-brokers`* is the mode you use before removing brokers when scaling down a Kafka cluster.
 --
 
-Other Cruise Control features are not currently supported, including self healing, notifications, write-your-own goals, and changing the topic replication factor.
+Other Cruise Control features are not currently supported, including self healing, notifications, and write-your-own goals.
 
 [role="_additional-resources"]
 .Additional resources

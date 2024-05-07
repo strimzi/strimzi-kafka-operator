@@ -149,9 +149,9 @@ public class ZookeeperClusterTest {
 
     private Secret generateCertificatesSecret() {
         ClusterCa clusterCa = new ClusterCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertManager(), new PasswordGenerator(10, "a", "a"), CLUSTER, null, null);
-        clusterCa.createRenewOrReplace(NAMESPACE, CLUSTER, emptyMap(), emptyMap(), emptyMap(), null, true);
+        clusterCa.createRenewOrReplace(NAMESPACE, CLUSTER, emptyMap(), emptyMap(), emptyMap(), null, List.of(), true);
 
-        return ZC.generateCertificatesSecret(clusterCa, true);
+        return ZC.generateCertificatesSecret(clusterCa, null, true);
     }
 
     //////////
@@ -413,11 +413,11 @@ public class ZookeeperClusterTest {
     public void testGenerateBrokerSecret() throws CertificateParsingException {
         Secret secret = generateCertificatesSecret();
         assertThat(secret.getData().keySet(), is(set(
-                "foo-zookeeper-0.crt",  "foo-zookeeper-0.key", "foo-zookeeper-0.p12", "foo-zookeeper-0.password",
-                "foo-zookeeper-1.crt", "foo-zookeeper-1.key", "foo-zookeeper-1.p12", "foo-zookeeper-1.password",
-                "foo-zookeeper-2.crt", "foo-zookeeper-2.key", "foo-zookeeper-2.p12", "foo-zookeeper-2.password")));
+                "foo-zookeeper-0.crt",  "foo-zookeeper-0.key",
+                "foo-zookeeper-1.crt", "foo-zookeeper-1.key",
+                "foo-zookeeper-2.crt", "foo-zookeeper-2.key")));
         X509Certificate cert = Ca.cert(secret, "foo-zookeeper-0.crt");
-        assertThat(cert.getSubjectDN().getName(), is("CN=foo-zookeeper, O=io.strimzi"));
+        assertThat(cert.getSubjectX500Principal().getName(), is("CN=foo-zookeeper,O=io.strimzi"));
         assertThat(new HashSet<Object>(cert.getSubjectAlternativeNames()), is(set(
                 asList(2, "foo-zookeeper-0"),
                 asList(2, "foo-zookeeper-0.foo-zookeeper-nodes.test.svc"),

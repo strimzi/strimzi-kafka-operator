@@ -18,14 +18,13 @@ import io.strimzi.operator.cluster.operator.assembly.KafkaMirrorMaker2AssemblyOp
 import io.strimzi.operator.cluster.operator.assembly.KafkaMirrorMakerAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceAssemblyOperator;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
+import io.strimzi.operator.cluster.operator.resource.kubernetes.ClusterRoleOperator;
 import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.MicrometerMetricsProvider;
 import io.strimzi.operator.common.OperatorKubernetesClientBuilder;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.ShutdownHook;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.PasswordGenerator;
-import io.strimzi.operator.common.operator.resource.ClusterRoleOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
@@ -35,6 +34,7 @@ import io.vertx.core.VertxOptions;
 import io.vertx.core.http.HttpServer;
 import io.vertx.micrometer.MicrometerMetricsOptions;
 import io.vertx.micrometer.VertxPrometheusOptions;
+import io.vertx.micrometer.backends.BackendRegistries;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -91,7 +91,7 @@ public class Main {
         shutdownHook.register(() -> ShutdownHook.shutdownVertx(vertx, SHUTDOWN_TIMEOUT));
 
         // Setup Micrometer Metrics provider
-        MetricsProvider metricsProvider = new MicrometerMetricsProvider();
+        MetricsProvider metricsProvider = new MicrometerMetricsProvider(BackendRegistries.getDefaultNow());
         KubernetesClient client = new OperatorKubernetesClientBuilder("strimzi-cluster-operator", strimziVersion).build();
 
         maybeCreateClusterRoles(vertx, config, client)

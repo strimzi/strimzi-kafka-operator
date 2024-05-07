@@ -1,9 +1,14 @@
-To configure the tiered storage feature, set the `type` property to `custom`.
+Enables custom tiered storage for Kafka.
 
-`RemoteStorageManager` is a Kafka interface for managing the interaction between Kafka and remote tiered storage solutions.
-Custom tiered storage enables the use of a custom `RemoteStorageManager` configuration.
-If custom tiered storage is enabled, Strimzi uses the link:https://github.com/apache/kafka/blob/trunk/storage/src/main/java/org/apache/kafka/server/log/remote/metadata/storage/TopicBasedRemoteLogMetadataManager.java[`TopicBasedRemoteLogMetadataManager`] for Remote Log Metadata Management (RLMM) configuration.
-If you want to use custom tiered storage, you must first add the tiered storage plugin to the Strimzi image by building a custom container image.
+If you want to use custom tiered storage, you must first add a tiered storage for Kafka plugin to the Strimzi image by building a custom container image.
+
+Custom tiered storage configuration enables the use of a custom `RemoteStorageManager` configuration.
+`RemoteStorageManager` is a Kafka interface for managing the interaction between Kafka and remote tiered storage.
+
+If custom tiered storage is enabled, Strimzi uses the https://github.com/apache/kafka/blob/trunk/storage/src/main/java/org/apache/kafka/server/log/remote/metadata/storage/TopicBasedRemoteLogMetadataManager.java[`TopicBasedRemoteLogMetadataManager`^] for Remote Log Metadata Management (RLMM).
+
+WARNING: Tiered storage is an early access Kafka feature, which is also available in Strimzi. 
+Due to its https://kafka.apache.org/documentation/#tiered_storage_limitation[current limitations^], it is not recommended for production environments.
 
 .Example custom tiered storage configuration
 [source,yaml,subs="attributes+"]
@@ -16,10 +21,12 @@ kafka:
       classPath: /opt/kafka/plugins/tiered-storage-s3/*
       config:
         # A map with String keys and String values.
-        # Key properties are automatically prefixed with `rsm.config.` and appended to Kafka broker config.
+        # Key properties are automatically prefixed with `rsm.config.` 
+        # and appended to Kafka broker config.
         storage.bucket.name: my-bucket
   config:
     ...
-    # Additional RLMM configuration can be added through the Kafka config under `spec.kafka.config` using the `rlmm.config.` prefix.
+    # Additional RLMM configuration can be added through the Kafka config 
+    # under `spec.kafka.config` using the `rlmm.config.` prefix.
     rlmm.config.remote.log.metadata.topic.replication.factor: 1
 ----

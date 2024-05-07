@@ -9,8 +9,8 @@ import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.WatcherException;
+import io.strimzi.operator.cluster.operator.resource.kubernetes.AbstractWatchableNamespacedResourceOperator;
 import io.strimzi.operator.common.ReconciliationLogger;
-import io.strimzi.operator.common.operator.resource.AbstractWatchableNamespacedResourceOperator;
 
 import java.util.function.BiConsumer;
 

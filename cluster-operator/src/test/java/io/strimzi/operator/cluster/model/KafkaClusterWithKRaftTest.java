@@ -425,7 +425,7 @@ public class KafkaClusterWithKRaftTest {
 
         // Test exception being raised when only one broker is present
         InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> {
-            List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, List.of(POOL_CONTROLLERS, poolBrokers), Map.of(), Map.of(), true, SHARED_ENV_PROVIDER);
+            List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, List.of(POOL_CONTROLLERS, poolBrokers), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
             KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
         });
 
@@ -435,7 +435,7 @@ public class KafkaClusterWithKRaftTest {
 
         // Test if works fine with controller pool and broker pool with more than 1 node
         assertDoesNotThrow(() -> {
-            List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, List.of(POOL_CONTROLLERS, POOL_BROKERS), Map.of(), Map.of(), true, SHARED_ENV_PROVIDER);
+            List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, List.of(POOL_CONTROLLERS, POOL_BROKERS), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
             KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
         });
     }
@@ -443,9 +443,9 @@ public class KafkaClusterWithKRaftTest {
     @Test
     public void testGenerateBrokerSecretExternalWithManyDNS() throws CertificateParsingException {
         ClusterCa clusterCa = new ClusterCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertManager(), new PasswordGenerator(10, "a", "a"), CLUSTER_NAME, null, null);
-        clusterCa.createRenewOrReplace(NAMESPACE, CLUSTER_NAME, emptyMap(), emptyMap(), emptyMap(), null, true);
+        clusterCa.createRenewOrReplace(NAMESPACE, CLUSTER_NAME, emptyMap(), emptyMap(), emptyMap(), null, List.of(), true);
         ClientsCa clientsCa = new ClientsCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertManager(), new PasswordGenerator(10, "a", "a"), null, null, null, null, 365, 30, true, CertificateExpirationPolicy.RENEW_CERTIFICATE);
-        clientsCa.createRenewOrReplace(NAMESPACE, CLUSTER_NAME, emptyMap(), emptyMap(), emptyMap(), null, true);
+        clientsCa.createRenewOrReplace(NAMESPACE, CLUSTER_NAME, emptyMap(), emptyMap(), emptyMap(), null, List.of(), true);
 
         KafkaCluster kc = KafkaCluster.fromCrd(
                 Reconciliation.DUMMY_RECONCILIATION,
@@ -462,14 +462,14 @@ public class KafkaClusterWithKRaftTest {
         externalAddresses.put(1001, TestUtils.set("123.10.125.131", "my-broker-1001"));
         externalAddresses.put(1002, TestUtils.set("123.10.125.132", "my-broker-1002"));
 
-        Secret secret = kc.generateCertificatesSecret(clusterCa, clientsCa, TestUtils.set("123.10.125.140", "my-bootstrap"), externalAddresses, true);
+        Secret secret = kc.generateCertificatesSecret(clusterCa, clientsCa, null, TestUtils.set("123.10.125.140", "my-bootstrap"), externalAddresses, true);
         assertThat(secret.getData().keySet(), is(set(
-                "my-cluster-controllers-0.crt",  "my-cluster-controllers-0.key", "my-cluster-controllers-0.p12", "my-cluster-controllers-0.password",
-                "my-cluster-controllers-1.crt", "my-cluster-controllers-1.key", "my-cluster-controllers-1.p12", "my-cluster-controllers-1.password",
-                "my-cluster-controllers-2.crt", "my-cluster-controllers-2.key", "my-cluster-controllers-2.p12", "my-cluster-controllers-2.password",
-                "my-cluster-brokers-1000.crt",  "my-cluster-brokers-1000.key", "my-cluster-brokers-1000.p12", "my-cluster-brokers-1000.password",
-                "my-cluster-brokers-1001.crt", "my-cluster-brokers-1001.key", "my-cluster-brokers-1001.p12", "my-cluster-brokers-1001.password",
-                "my-cluster-brokers-1002.crt", "my-cluster-brokers-1002.key", "my-cluster-brokers-1002.p12", "my-cluster-brokers-1002.password")));
+                "my-cluster-controllers-0.crt",  "my-cluster-controllers-0.key",
+                "my-cluster-controllers-1.crt", "my-cluster-controllers-1.key",
+                "my-cluster-controllers-2.crt", "my-cluster-controllers-2.key",
+                "my-cluster-brokers-1000.crt",  "my-cluster-brokers-1000.key",
+                "my-cluster-brokers-1001.crt", "my-cluster-brokers-1001.key",
+                "my-cluster-brokers-1002.crt", "my-cluster-brokers-1002.key")));
 
         // Controller cert
         X509Certificate cert = Ca.cert(secret, "my-cluster-controllers-0.crt");

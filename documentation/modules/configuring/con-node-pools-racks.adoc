@@ -1,0 +1,15 @@
+[id='config-node-pools-dependencies-{context}']
+= Impact on racks when moving nodes from node pools
+
+[role="_abstract"]
+If rack awareness is enabled on a Kafka cluster, replicas can be spread across different racks, data centers, or availability zones.
+When moving nodes from node pools, consider the implications on the cluster topology, particularly regarding rack awareness. 
+Removing specific pods from node pools, especially out of order, may break the cluster topology or cause an imbalance in distribution across racks. 
+An imbalance can impact both the distribution of nodes themselves and the partition replicas within the cluster.
+An uneven distribution of nodes and partitions across racks can affect the performance and resilience of the Kafka cluster.
+
+Plan the removal of nodes strategically to maintain the required balance and resilience across racks.
+Use the `strimzi.io/remove-node-ids` annotation to move nodes with specific IDs with caution.
+Ensure that configuration to spread partition replicas across racks and for clients to consume from the closest replicas is not broken. 
+
+TIP: Use Cruise Control and the `KafkaRebalance` resource with the `RackAwareGoal` to make sure that replicas remain distributed across different racks.

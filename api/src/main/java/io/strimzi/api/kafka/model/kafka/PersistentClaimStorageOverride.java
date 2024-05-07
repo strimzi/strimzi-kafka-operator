@@ -14,7 +14,6 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -23,7 +22,7 @@ import static java.util.Collections.emptyMap;
 /**
  * Configures persistent claim overrides for storage - allows to override storage class with per broker configuration
  */
-@JsonPropertyOrder({"class"})
+@JsonPropertyOrder({"class", "broker"})
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Buildable(
         editableEnabled = false,
@@ -31,9 +30,7 @@ import static java.util.Collections.emptyMap;
 )
 @EqualsAndHashCode
 @ToString
-public class PersistentClaimStorageOverride  implements Serializable, UnknownPropertyPreserving {
-    private static final long serialVersionUID = 1L;
-
+public class PersistentClaimStorageOverride  implements UnknownPropertyPreserving {
     private Integer broker;
     private String storageClass;
     private Map<String, Object> additionalProperties = new HashMap<>(0);

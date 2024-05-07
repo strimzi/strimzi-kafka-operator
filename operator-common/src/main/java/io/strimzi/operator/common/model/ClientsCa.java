@@ -13,8 +13,6 @@ import io.strimzi.operator.common.Reconciliation;
  * Represents the Strimzi Clients CA
  */
 public class ClientsCa extends Ca {
-    private Secret brokersSecret;
-
     /**
      * Creates a ClientsCA instance
      *
@@ -39,23 +37,9 @@ public class ClientsCa extends Ca {
                 clientsCaKey, validityDays, renewalDays, generateCa, policy);
     }
 
-    /**
-     * Passes the current broker Secret during reconciliation
-     *
-     * @param secret    Kubernetes Secret
-     */
-    public void initBrokerSecret(Secret secret) {
-        this.brokersSecret = secret;
-    }
-
     @Override
     public String caCertGenerationAnnotation() {
         return ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION;
-    }
-
-    @Override
-    protected boolean hasCaCertGenerationChanged() {
-        return hasCaCertGenerationChanged(brokersSecret);
     }
 
     @Override

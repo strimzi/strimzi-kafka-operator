@@ -38,13 +38,11 @@ import lombok.ToString;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
     "version", "replicas", "image", "consumer", "producer", "resources", "whitelist", "include", "jvmOptions",
-    "logging", "metricsConfig", "tracing", "template"})
+    "logging", "metricsConfig", "tracing", "template", "livenessProbe", "readinessProbe"})
 @OneOf({@OneOf.Alternative(@OneOf.Alternative.Property("include")), @OneOf.Alternative(@OneOf.Alternative.Property("whitelist"))})
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaMirrorMakerSpec extends Spec implements HasConfigurableMetrics, HasConfigurableLogging, HasLivenessProbe, HasReadinessProbe {
-    private static final long serialVersionUID = 1L;
-
     private static final int DEFAULT_REPLICAS = 3;
 
     private int replicas = DEFAULT_REPLICAS;

@@ -21,11 +21,10 @@ import lombok.ToString;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "repository", "group", "artifact", "version" })
+@JsonPropertyOrder({ "type", "repository", "group", "artifact", "version", "insecure" })
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class MavenArtifact extends Artifact {
-    private static final long serialVersionUID = 1L;
     public static final String DEFAULT_REPOSITORY = "https://repo1.maven.org/maven2/";
 
     private String group;

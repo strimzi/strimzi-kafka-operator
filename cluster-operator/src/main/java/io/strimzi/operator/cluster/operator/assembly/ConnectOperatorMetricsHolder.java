@@ -8,10 +8,13 @@ import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Timer;
 import io.strimzi.api.kafka.model.connector.KafkaConnector;
 import io.strimzi.operator.common.MetricsProvider;
+import io.strimzi.operator.common.config.ConfigParameter;
+import io.strimzi.operator.common.metrics.MetricKey;
 import io.strimzi.operator.common.metrics.OperatorMetricsHolder;
 import io.strimzi.operator.common.model.Labels;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -19,13 +22,18 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Util class which holds the different metrics used by operators which deal with connectors
  */
 public class ConnectOperatorMetricsHolder extends OperatorMetricsHolder {
-    private final Map<String, Counter> connectorsReconciliationsCounterMap = new ConcurrentHashMap<>(1);
-    private final Map<String, Counter> connectorsFailedReconciliationsCounterMap = new ConcurrentHashMap<>(1);
-    private final Map<String, Counter> connectorsSuccessfulReconciliationsCounterMap = new ConcurrentHashMap<>(1);
-    private final Map<String, Counter> connectorsAutoRestartsCounterMap = new ConcurrentHashMap<>(1);
-    private final Map<String, Timer> connectorsReconciliationsTimerMap = new ConcurrentHashMap<>(1);
-    private final Map<String, AtomicInteger> connectorsResourceCounterMap = new ConcurrentHashMap<>(1);
-    private final Map<String, AtomicInteger> pausedConnectorsResourceCounterMap = new ConcurrentHashMap<>(1);
+    /**
+     * Metric name for auto restarts.
+     */
+    public static final String METRIC_AUTO_RESTARTS = METRICS_PREFIX + "auto.restarts";
+
+    private final Map<MetricKey, Counter> connectorsReconciliationsCounterMap = new ConcurrentHashMap<>(1);
+    private final Map<MetricKey, Counter> connectorsFailedReconciliationsCounterMap = new ConcurrentHashMap<>(1);
+    private final Map<MetricKey, Counter> connectorsSuccessfulReconciliationsCounterMap = new ConcurrentHashMap<>(1);
+    private final Map<MetricKey, Counter> connectorsAutoRestartsCounterMap = new ConcurrentHashMap<>(1);
+    private final Map<MetricKey, Timer> connectorsReconciliationsTimerMap = new ConcurrentHashMap<>(1);
+    private final Map<MetricKey, AtomicInteger> connectorsResourceCounterMap = new ConcurrentHashMap<>(1);
+    private final Map<MetricKey, AtomicInteger> pausedConnectorsResourceCounterMap = new ConcurrentHashMap<>(1);
 
     /**
      * Constructs the operator metrics holder for connect operators
@@ -47,8 +55,9 @@ public class ConnectOperatorMetricsHolder extends OperatorMetricsHolder {
      * @return  Metrics counter
      */
     public Counter connectorsReconciliationsCounter(String namespace) {
-        return getCounter(namespace, KafkaConnector.RESOURCE_KIND, METRICS_PREFIX + "reconciliations", metricsProvider, null, connectorsReconciliationsCounterMap,
-                "Number of reconciliations done by the operator for individual resources");
+        return getCounter(new MetricKey(KafkaConnector.RESOURCE_KIND, namespace), METRICS_RECONCILIATIONS,
+                "Number of reconciliations done by the operator for individual resources",
+                Optional.of(getLabelSelectorValues()), connectorsReconciliationsCounterMap);
     }
 
     /**
@@ -59,8 +68,9 @@ public class ConnectOperatorMetricsHolder extends OperatorMetricsHolder {
      * @return  Metrics counter
      */
     public Counter connectorsFailedReconciliationsCounter(String namespace) {
-        return getCounter(namespace, KafkaConnector.RESOURCE_KIND, METRICS_PREFIX + "reconciliations.failed", metricsProvider, null, connectorsFailedReconciliationsCounterMap,
-                "Number of reconciliations done by the operator for individual resources which failed");
+        return getCounter(new MetricKey(KafkaConnector.RESOURCE_KIND, namespace), METRICS_RECONCILIATIONS,
+                "Number of reconciliations done by the operator for individual resources which failed",
+                Optional.of(getLabelSelectorValues()), connectorsFailedReconciliationsCounterMap);
     }
 
     /**
@@ -71,8 +81,9 @@ public class ConnectOperatorMetricsHolder extends OperatorMetricsHolder {
      * @return  Metrics counter
      */
     public Counter connectorsSuccessfulReconciliationsCounter(String namespace) {
-        return getCounter(namespace, KafkaConnector.RESOURCE_KIND, METRICS_PREFIX + "reconciliations.successful", metricsProvider, null, connectorsSuccessfulReconciliationsCounterMap,
-                "Number of reconciliations done by the operator for individual resources which were successful");
+        return getCounter(new MetricKey(KafkaConnector.RESOURCE_KIND, namespace), METRICS_RECONCILIATIONS_SUCCESSFUL,
+                "Number of reconciliations done by the operator for individual resources which were successful",
+                Optional.of(getLabelSelectorValues()), connectorsSuccessfulReconciliationsCounterMap);
     }
 
     /**
@@ -83,8 +94,9 @@ public class ConnectOperatorMetricsHolder extends OperatorMetricsHolder {
      * @return  Metrics counter
      */
     public Counter connectorsAutoRestartsCounter(String namespace) {
-        return getCounter(namespace, KafkaConnector.RESOURCE_KIND, METRICS_PREFIX + "auto.restarts", metricsProvider, null, connectorsAutoRestartsCounterMap,
-                "Number of auto restarts of the connector");
+        return getCounter(new MetricKey(KafkaConnector.RESOURCE_KIND, namespace), METRIC_AUTO_RESTARTS,
+                "Number of auto restarts of the connector",
+                Optional.of(getLabelSelectorValues()), connectorsAutoRestartsCounterMap);
     }
 
     /**
@@ -95,9 +107,9 @@ public class ConnectOperatorMetricsHolder extends OperatorMetricsHolder {
      * @return  Metrics counter
      */
     public AtomicInteger connectorsResourceCounter(String namespace) {
-        return getGauge(namespace, KafkaConnector.RESOURCE_KIND, METRICS_PREFIX + "resources",
-                metricsProvider, null, connectorsResourceCounterMap,
-                "Number of custom resources the operator sees");
+        return getGauge(new MetricKey(KafkaConnector.RESOURCE_KIND, namespace), METRICS_RESOURCES,
+                "Number of custom resources the operator sees",
+                Optional.of(getLabelSelectorValues()), connectorsResourceCounterMap);
     }
 
     /**
@@ -108,9 +120,9 @@ public class ConnectOperatorMetricsHolder extends OperatorMetricsHolder {
      * @return  Metrics counter
      */
     public AtomicInteger pausedConnectorsResourceCounter(String namespace) {
-        return getGauge(namespace, KafkaConnector.RESOURCE_KIND, METRICS_PREFIX + "resources.paused",
-                metricsProvider, null, pausedConnectorsResourceCounterMap,
-                "Number of connectors the connect operator sees but does not reconcile due to paused reconciliations");
+        return getGauge(new MetricKey(KafkaConnector.RESOURCE_KIND, namespace), METRICS_RESOURCES_PAUSED,
+                "Number of connectors the connect operator sees but does not reconcile due to paused reconciliations",
+                Optional.of(getLabelSelectorValues()), pausedConnectorsResourceCounterMap);
     }
 
     /**
@@ -121,9 +133,9 @@ public class ConnectOperatorMetricsHolder extends OperatorMetricsHolder {
      * @return  Metrics timer
      */
     public Timer connectorsReconciliationsTimer(String namespace) {
-        return getTimer(namespace, KafkaConnector.RESOURCE_KIND, METRICS_PREFIX + "reconciliations.duration",
-                metricsProvider, null, connectorsReconciliationsTimerMap,
-                "The time the reconciliation takes to complete");
+        return getTimer(new MetricKey(KafkaConnector.RESOURCE_KIND, namespace), METRICS_RECONCILIATIONS_DURATION,
+                "The time the reconciliation takes to complete",
+                Optional.of(getLabelSelectorValues()), connectorsReconciliationsTimerMap);
     }
 
     /**
@@ -133,7 +145,7 @@ public class ConnectOperatorMetricsHolder extends OperatorMetricsHolder {
      * @param namespace Namespace for which should the metrics be reset to 0
      */
     public void resetConnectorsCounters(String namespace) {
-        if (namespace.equals("*")) {
+        if (namespace.equals(ConfigParameter.ANY_NAMESPACE)) {
             connectorsResourceCounterMap.forEach((key, counter) -> counter.set(0));
             pausedConnectorsResourceCounterMap.forEach((key, counter) -> counter.set(0));
         } else {

@@ -50,6 +50,8 @@ import io.strimzi.operator.cluster.operator.assembly.StrimziPodSetController;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.auth.PemAuthIdentity;
+import io.strimzi.operator.common.auth.PemTrustSet;
 import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.common.model.ClientsCa;
 import io.strimzi.operator.common.model.Labels;
@@ -186,6 +188,7 @@ public class KubernetesRestartEventsMockTest {
                 ResourceUtils.zookeeperScalerProvider(),
                 ResourceUtils.kafkaAgentClientProvider(),
                 ResourceUtils.metricsProvider(),
+                ResourceUtils.zooKeeperAdminProvider(),
                 PFA,
                 60_000);
 
@@ -398,7 +401,7 @@ public class KubernetesRestartEventsMockTest {
     @Test
     void testEventEmittedWhenConfigChangeRequiresRestart(Vertx vertx, VertxTestContext context) {
         // Modify mocked configs call to return a new property to trigger a reconfiguration reconciliation that requires a restart
-        Admin adminClient = withChangedBrokerConf(ResourceUtils.adminClientProvider().createAdminClient(null, null, null, null));
+        Admin adminClient = withChangedBrokerConf(ResourceUtils.adminClientProvider().createAdminClient(null, null, null));
         ResourceOperatorSupplier supplierWithModifiedAdmin = supplierWithAdmin(vertx, () -> adminClient);
 
         KafkaCluster kafkaCluster = KafkaClusterCreator.createKafkaCluster(reconciliation,
@@ -594,12 +597,12 @@ public class KubernetesRestartEventsMockTest {
     private ResourceOperatorSupplier supplierWithAdmin(Vertx vertx, Supplier<Admin> adminClientSupplier) {
         AdminClientProvider adminClientProvider = new AdminClientProvider() {
             @Override
-            public Admin createAdminClient(String bootstrapHostnames, Secret clusterCaCertSecret, Secret keyCertSecret, String keyCertName) {
+            public Admin createAdminClient(String bootstrapHostnames, PemTrustSet kafkaCaTrustSet, PemAuthIdentity authIdentity) {
                 return adminClientSupplier.get();
             }
 
             @Override
-            public Admin createAdminClient(String bootstrapHostnames, Secret clusterCaCertSecret, Secret keyCertSecret, String keyCertName, Properties config) {
+            public Admin createAdminClient(String bootstrapHostnames, PemTrustSet kafkaCaTrustSet, PemAuthIdentity authIdentity, Properties config) {
                 return adminClientSupplier.get();
             }
         };
@@ -611,6 +614,7 @@ public class KubernetesRestartEventsMockTest {
                 ResourceUtils.zookeeperScalerProvider(),
                 ResourceUtils.kafkaAgentClientProvider(),
                 ResourceUtils.metricsProvider(),
+                ResourceUtils.zooKeeperAdminProvider(),
                 PFA,
                 60_000);
     }

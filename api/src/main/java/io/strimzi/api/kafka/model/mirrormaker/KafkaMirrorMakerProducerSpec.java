@@ -21,12 +21,10 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "bootstrapServers", "abortOnSendFailure", "logging"})
+@JsonPropertyOrder({ "bootstrapServers", "abortOnSendFailure", "logging", "authentication", "config", "tls"})
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaMirrorMakerProducerSpec extends KafkaMirrorMakerClientSpec {
-    private static final long serialVersionUID = 1L;
-
     private Boolean abortOnSendFailure;
 
     public static final String FORBIDDEN_PREFIXES = "ssl., bootstrap.servers, sasl., security., interceptor.classes";

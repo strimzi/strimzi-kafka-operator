@@ -17,19 +17,19 @@ import io.strimzi.operator.cluster.model.EntityOperator;
 import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
+import io.strimzi.operator.cluster.operator.resource.kubernetes.ConfigMapOperator;
+import io.strimzi.operator.cluster.operator.resource.kubernetes.DeploymentOperator;
+import io.strimzi.operator.cluster.operator.resource.kubernetes.NetworkPolicyOperator;
+import io.strimzi.operator.cluster.operator.resource.kubernetes.RoleBindingOperator;
+import io.strimzi.operator.cluster.operator.resource.kubernetes.RoleOperator;
+import io.strimzi.operator.cluster.operator.resource.kubernetes.SecretOperator;
+import io.strimzi.operator.cluster.operator.resource.kubernetes.ServiceAccountOperator;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Ca;
-import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
-import io.strimzi.operator.common.operator.resource.DeploymentOperator;
-import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
-import io.strimzi.operator.common.operator.resource.RoleBindingOperator;
-import io.strimzi.operator.common.operator.resource.RoleOperator;
-import io.strimzi.operator.common.operator.resource.SecretOperator;
-import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
 import io.vertx.core.Future;
 
 import java.time.Clock;
@@ -56,7 +56,6 @@ public class EntityOperatorReconciler {
     private final RoleBindingOperator roleBindingOperator;
     private final ConfigMapOperator configMapOperator;
     private final NetworkPolicyOperator networkPolicyOperator;
-    private final boolean unidirectionalTopicOperator;
     private final boolean isCruiseControlEnabled;
     
     private boolean existingEntityTopicOperatorCertsChanged = false;
@@ -83,12 +82,10 @@ public class EntityOperatorReconciler {
     ) {
         this.reconciliation = reconciliation;
         this.operationTimeoutMs = config.getOperationTimeoutMs();
-        this.entityOperator = EntityOperator.fromCrd(reconciliation, kafkaAssembly, versions, supplier.sharedEnvironmentProvider,
-                config.featureGates().unidirectionalTopicOperatorEnabled());
+        this.entityOperator = EntityOperator.fromCrd(reconciliation, kafkaAssembly, versions, supplier.sharedEnvironmentProvider);
         this.clusterCa = clusterCa;
         this.maintenanceWindows = kafkaAssembly.getSpec().getMaintenanceTimeWindows();
         this.isNetworkPolicyGeneration = config.isNetworkPolicyGeneration();
-        this.unidirectionalTopicOperator = config.featureGates().unidirectionalTopicOperatorEnabled();
         this.isCruiseControlEnabled = kafkaAssembly.getSpec().getCruiseControl() != null;
         
         this.deploymentOperator = supplier.deploymentOperations;
@@ -137,7 +134,7 @@ public class EntityOperatorReconciler {
      * @return Future which completes when the reconciliation is done.
      */
     protected Future<Void> topicOperatorCruiseControlApiSecret() {
-        if (unidirectionalTopicOperator && isCruiseControlEnabled) {
+        if (isCruiseControlEnabled) {
             String ccApiSecretName = KafkaResources.entityTopicOperatorCcApiSecretName(reconciliation.name());
             if (entityOperator != null && entityOperator.topicOperator() != null) {
                 return secretOperator.getAsync(reconciliation.namespace(), ccApiSecretName)
@@ -376,7 +373,7 @@ public class EntityOperatorReconciler {
                     .compose(oldSecret -> {
                         return secretOperator
                                 .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.entityTopicOperatorSecretName(reconciliation.name()),
-                                        entityOperator.topicOperator().generateSecret(clusterCa, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant())))
+                                        entityOperator.topicOperator().generateCertificatesSecret(clusterCa, oldSecret, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant())))
                                 .compose(patchResult -> {
                                     if (patchResult instanceof ReconcileResult.Patched) {
                                         // The secret is patched and some changes to the existing certificates actually occurred
@@ -409,7 +406,7 @@ public class EntityOperatorReconciler {
                     .compose(oldSecret -> {
                         return secretOperator
                                 .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.entityUserOperatorSecretName(reconciliation.name()),
-                                        entityOperator.userOperator().generateSecret(clusterCa, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant())))
+                                        entityOperator.userOperator().generateCertificatesSecret(clusterCa, oldSecret, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant())))
                                 .compose(patchResult -> {
                                     if (patchResult instanceof ReconcileResult.Patched) {
                                         // The secret is patched and some changes to the existing certificates actually occurred
@@ -459,7 +456,7 @@ public class EntityOperatorReconciler {
             int caKeyGeneration = clusterCa.caKeyGeneration();
             Annotations.annotations(deployment.getSpec().getTemplate()).put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, String.valueOf(caKeyGeneration));
             
-            if (entityOperator.topicOperator() != null && unidirectionalTopicOperator && isCruiseControlEnabled) {
+            if (entityOperator.topicOperator() != null && isCruiseControlEnabled) {
                 Annotations.annotations(deployment.getSpec().getTemplate()).put(Annotations.ANNO_STRIMZI_AUTH_HASH, ccApiSecretHash);
             }
 

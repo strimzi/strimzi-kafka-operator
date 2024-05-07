@@ -14,11 +14,8 @@ import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
-import io.strimzi.systemtest.annotations.KRaftWithoutUTONotSupported;
-import io.strimzi.systemtest.annotations.UTONotSupported;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
-import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.systemtest.resources.NodePoolsConverter;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -29,9 +26,7 @@ import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
-import io.strimzi.systemtest.templates.specific.ScraperTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
-import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PersistentVolumeClaimUtils;
 import org.apache.logging.log4j.LogManager;
@@ -55,7 +50,6 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
  * These tests does not have to be run every time with PRs and so on, the nature of the tests is sufficient for recovery profile only.
  */
 @Tag(RECOVERY)
-@KRaftWithoutUTONotSupported
 class NamespaceDeletionRecoveryST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(NamespaceDeletionRecoveryST.class);
     private String storageClassName = "retain";
@@ -67,14 +61,11 @@ class NamespaceDeletionRecoveryST extends AbstractST {
      */
     @IsolatedTest("We need for each test case its own Cluster Operator")
     @Tag(INTERNAL_CLIENTS_USED)
-    @UTONotSupported("https://github.com/strimzi/strimzi-kafka-operator/issues/8864")
     void testTopicAvailable() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
         prepareEnvironmentForRecovery(testStorage);
 
-        // Wait till consumer offset topic is created
-        KafkaTopicUtils.waitForKafkaTopicCreationByNamePrefix(testStorage.getNamespaceName(), "consumer-offsets");
         // Get list of topics and list of PVC needed for recovery
         List<KafkaTopic> kafkaTopicList = KafkaTopicResource.kafkaTopicClient().inNamespace(testStorage.getNamespaceName()).list().getItems();
         List<PersistentVolumeClaim> persistentVolumeClaimList = kubeClient().getClient().persistentVolumeClaims().list().getItems();
@@ -127,28 +118,22 @@ class NamespaceDeletionRecoveryST extends AbstractST {
             .endSpec()
             .build());
 
-        verifyStabilityBySendingAndReceivingMessages(testStorage);
+        final KafkaClients clients = ClientUtils.getInstantPlainClients(testStorage);
+        resourceManager.createResourceWithWait(clients.producerStrimzi(), clients.consumerStrimzi());
+        ClientUtils.waitForInstantClientSuccess(testStorage);
     }
 
     /**
      * In case we don't have KafkaTopic resources from before the cluster loss, we do these steps:
      *  1. deploy the Kafka cluster without Topic Operator - otherwise topics will be deleted
-     *  2. delete KafkaTopic Store topics - `__strimzi-topic-operator-kstreams-topic-store-changelog` and `__strimzi_store_topic`
-     *  3. enable Topic Operator by redeploying Kafka cluster
-     * @throws InterruptedException - sleep
-     */
+     *  2. enable Topic Operator by redeploying Kafka cluster
+     *
+     **/
     @IsolatedTest("We need for each test case its own Cluster Operator")
     @Tag(INTERNAL_CLIENTS_USED)
-    @UTONotSupported("https://github.com/strimzi/strimzi-kafka-operator/issues/8864")
     void testTopicNotAvailable() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
-
-        final List<String> topicsToRemove = List.of("__strimzi-topic-operator-kstreams-topic-store-changelog", "__strimzi_store_topic");
-
         prepareEnvironmentForRecovery(testStorage);
-
-        // Wait till consumer offset topic is created
-        KafkaTopicUtils.waitForKafkaTopicCreationByNamePrefix(testStorage.getNamespaceName(), "consumer-offsets");
 
         // Get list of topics and list of PVC needed for recovery
         List<PersistentVolumeClaim> persistentVolumeClaimList = kubeClient().listPersistentVolumeClaims(testStorage.getNamespaceName(), testStorage.getClusterName());
@@ -163,11 +148,6 @@ class NamespaceDeletionRecoveryST extends AbstractST {
 
         LOGGER.info("Currently present Topics inside Kafka: {}/{} are: {}", testStorage.getNamespaceName(), kafkaPodName,
             KafkaCmdClient.listTopicsUsingPodCli(testStorage.getNamespaceName(), kafkaPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName())));
-
-        LOGGER.info("Waiting for correct Topics to be present inside Kafka");
-        for (String topicName : topicsToRemove) {
-            KafkaTopicUtils.waitForTopicWillBePresentInKafka(testStorage.getNamespaceName(), topicName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), kafkaPodName);
-        }
 
         LOGGER.info("Deleting namespace and recreating for recovery");
         deleteAndRecreateNamespace(testStorage.getNamespaceName());
@@ -193,25 +173,11 @@ class NamespaceDeletionRecoveryST extends AbstractST {
                 .withNewEntityOperator()
                 .endEntityOperator()
             .endSpec()
-            .build(),
-            ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build()
+            .build()
         );
-
-        String scraperPodName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
 
         LOGGER.info("Currently present Topics inside Kafka: {}/{} are: {}", testStorage.getNamespaceName(), kafkaPodName,
             KafkaCmdClient.listTopicsUsingPodCli(testStorage.getNamespaceName(), kafkaPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName())));
-
-        LOGGER.info("Removing store Topics before deploying Topic Operator");
-        // Remove all topic data from topic store and wait for the deletion -> must do before deploying topic operator
-        for (String topicName : topicsToRemove) {
-            // First check topic is present in kafka
-            KafkaTopicUtils.waitForTopicWillBePresentInKafka(testStorage.getNamespaceName(), topicName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), scraperPodName);
-            // Then delete it using Pod cli
-            KafkaCmdClient.deleteTopicUsingPodCli(testStorage.getNamespaceName(), scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), topicName);
-            // Wait for it to be deleted
-            KafkaTopicUtils.waitForTopicsByPrefixDeletionUsingPodCli(testStorage.getNamespaceName(), topicName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), scraperPodName, "");
-        }
 
         LOGGER.info("Adding Topic Operator to existing Kafka");
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> {
@@ -224,7 +190,9 @@ class NamespaceDeletionRecoveryST extends AbstractST {
 
         DeploymentUtils.waitForDeploymentAndPodsReady(testStorage.getNamespaceName(), testStorage.getEoDeploymentName(), 1);
 
-        verifyStabilityBySendingAndReceivingMessages(testStorage);
+        final KafkaClients clients = ClientUtils.getInstantPlainClients(testStorage);
+        resourceManager.createResourceWithWait(clients.producerStrimzi(), clients.consumerStrimzi());
+        ClientUtils.waitForInstantClientSuccess(testStorage);
     }
 
     private void prepareEnvironmentForRecovery(TestStorage testStorage) {
@@ -279,36 +247,15 @@ class NamespaceDeletionRecoveryST extends AbstractST {
 
         resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage).build());
 
-        KafkaClients clients = new KafkaClientsBuilder()
-            .withProducerName(testStorage.getProducerName())
-            .withConsumerName(testStorage.getConsumerName())
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
-            .withNamespaceName(testStorage.getNamespaceName())
-            .withTopicName(testStorage.getTopicName())
-            .withMessageCount(testStorage.getMessageCount())
-            .build();
-
+        final KafkaClients clients = ClientUtils.getInstantPlainClients(testStorage);
         resourceManager.createResourceWithWait(clients.producerStrimzi(), clients.consumerStrimzi());
-        ClientUtils.waitForClientsSuccess(testStorage);
+        ClientUtils.waitForInstantClientSuccess(testStorage);
 
         LOGGER.info("##################################################");
         LOGGER.info("Environment for recovery was successfully created");
         LOGGER.info("##################################################");
     }
 
-    private void verifyStabilityBySendingAndReceivingMessages(TestStorage testStorage) {
-        KafkaClients clients = new KafkaClientsBuilder()
-            .withProducerName(testStorage.getProducerName())
-            .withConsumerName(testStorage.getConsumerName())
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
-            .withNamespaceName(testStorage.getNamespaceName())
-            .withTopicName(testStorage.getTopicName())
-            .withMessageCount(testStorage.getMessageCount())
-            .build();
-
-        resourceManager.createResourceWithWait(clients.producerStrimzi(), clients.consumerStrimzi());
-        ClientUtils.waitForClientsSuccess(testStorage);
-    }
 
     private void recreatePvcAndUpdatePv(List<PersistentVolumeClaim> persistentVolumeClaimList, String namespace) {
         for (PersistentVolumeClaim pvc : persistentVolumeClaimList) {

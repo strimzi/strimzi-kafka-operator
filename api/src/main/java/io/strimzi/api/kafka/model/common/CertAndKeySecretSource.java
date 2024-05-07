@@ -6,6 +6,7 @@ package io.strimzi.api.kafka.model.common;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
@@ -19,11 +20,10 @@ import lombok.ToString;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonPropertyOrder({"key", "secretName", "certificate"})
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class CertAndKeySecretSource extends CertSecretSource {
-    private static final long serialVersionUID = 1L;
-
     protected String key;
 
     @Description("The name of the private key in the Secret.")

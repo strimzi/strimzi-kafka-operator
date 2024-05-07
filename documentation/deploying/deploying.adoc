@@ -44,6 +44,8 @@ include::assemblies/configuring/assembly-security-providers.adoc[leveloffset=+1]
 include::modules/configuring/con-scaling-kafka-clusters.adoc[leveloffset=+1]
 //Using Cruise Control for rebalancing
 include::assemblies/cruise-control/assembly-cruise-control-concepts.adoc[leveloffset=+1]
+//Using Cruise Control for changing topic replication factor
+include::modules/cruise-control/proc-cruise-control-topic-replication.adoc[leveloffset=+1]
 //Using the reassign tool to change topic replicas
 include::assemblies/configuring/assembly-reassign-tool.adoc[leveloffset=+1]
 //Introduce metrics and monitoring to your deployment

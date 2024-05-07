@@ -48,7 +48,7 @@ spec:
         deleteClaim: false
 ----
 +
-WARNING: To migrate a cluster while preserving its data along with the names of its nodes and resources, the node pool name must be `kafka`, and the `strimzi.io/cluster` label must use the name of the Kafka resource. 
+WARNING: To preserve cluster data and the names of its nodes and resources, the node pool name must be `kafka`, and the `strimzi.io/cluster` label matches the Kafka resource name. 
 Otherwise, nodes and resources are created with new names, including the persistent volume storage used by the nodes. 
 Consequently, your previous data may not be available.       
 
@@ -90,3 +90,15 @@ kubectl apply -f <kafka_configuration_file>
 +
 There is no change or rolling update.
 The resources remain identical to how they were before.
+
+. Remove the replicated properties from the `Kafka` custom resource.
+When the `KafkaNodePool` resource is in use, you can remove the properties that you copied to the `KafkaNodePool` resource, such as the `.spec.kafka.replicas` and `.spec.kafka.storage` properties.
+
+.Reversing the migration
+
+To revert to managing Kafka nodes using only `Kafka` custom resources:
+
+. If you have multiple node pools, consolidate them into a single `KafkaNodePool` named `kafka` with node IDs from 0 to N (where N is the number of replicas).
+. Ensure that the `.spec.kafka` configuration in the `Kafka` resource matches the `KafkaNodePool` configuration, including storage, resources, and replicas.
+. Disable support for node pools in the `Kafka` resource using the `strimzi.io/node-pools: disabled` annotation.
+. Delete the Kafka node pool named `kafka`.

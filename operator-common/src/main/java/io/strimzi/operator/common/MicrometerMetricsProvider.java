@@ -9,23 +9,16 @@ import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
-import io.vertx.micrometer.backends.BackendRegistries;
 
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Wraps creation of Micrometer metrics.
  */
 public class MicrometerMetricsProvider implements MetricsProvider {
     protected final MeterRegistry metrics;
-
-    /**
-     * Constructor of the Micrometer metrics provider which uses the Vert.x provided metrics registry
-     */
-    public MicrometerMetricsProvider() {
-        this.metrics = BackendRegistries.getDefaultNow();
-    }
 
     /**
      * Constructor of the Micrometer metrics provider.
@@ -90,6 +83,25 @@ public class MicrometerMetricsProvider implements MetricsProvider {
     @Override
     public AtomicInteger gauge(String name, String description, Tags tags) {
         AtomicInteger gauge = new AtomicInteger(0);
+        Gauge.builder(name, () -> gauge)
+                .description(description)
+                .tags(tags)
+                .register(metrics);
+
+        return gauge;
+    }
+
+    /**
+     * Creates new Gauge type metric of type Long
+     *
+     * @param name          Name of the metric
+     * @param description   Description of the metric
+     * @param tags          Tags used for the metric
+     * @return              AtomicInteger which represents the Gauge metric
+     */
+    @Override
+    public AtomicLong gaugeLong(String name, String description, Tags tags) {
+        AtomicLong gauge = new AtomicLong(0);
         Gauge.builder(name, () -> gauge)
                 .description(description)
                 .tags(tags)

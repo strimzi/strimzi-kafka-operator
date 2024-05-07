@@ -1,0 +1,136 @@
+[id='proc-cruise-control-topic-replication-{context}']
+
+= Using Cruise Control to modify topic replication factor
+
+[role="_abstract"]
+Change the replication factor of topics by updating the `KafkaTopic` resource managed by the Topic Operator. 
+You can adjust the replication factor for specific purposes, such as:
+
+* Setting a lower replication factor for non-critical topics or because of resource shortages
+* Setting a higher replication factor to improve data durability and fault tolerance
+
+The Topic Operator uses Cruise Control to make the necessary changes, so Cruise Control must be deployed with Strimzi.
+
+The Topic Operator watches and periodically reconciles all managed and unpaused `KafkaTopic` resources to detect changes to `.spec.replicas` configuration by comparing the replication factor of the topic in Kafka.
+One or more replication factor updates are then sent to Cruise Control for processing in a single request.
+
+Progress is reflected in the status of the `KafkaTopic` resource.
+
+.Prerequisites
+
+* xref:deploying-cluster-operator-str[The Cluster Operator must be deployed.]
+* xref:deploying-the-topic-operator-using-the-cluster-operator-str[The Topic Operator must be deployed] to manage topics through the `KafkaTopic` custom resource. 
+* xref:proc-configuring-deploying-cruise-control-str[Cruise Control is deployed with Kafka.]
+
+.Procedure
+
+. Edit the `KafkaTopic` resource to change the `replicas` value. 
++
+In this procedure, we change the `replicas` value for `my-topic` from 1 to 3. 
++
+.Kafka topic replication factor configuration
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaTopicApiVersion}
+kind: KafkaTopic
+metadata:
+  name: my-topic
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  partitions: 1
+  replicas: 3
+  # ...
+----
+
+. Apply the change to the `KafkaTopic` configuration and wait for the Topic Operator to update the topic.
+. Check the status of the `KafkaTopic` resource to make sure the request was successful: 
++
+[source,shell,subs="+quotes"]
+----
+oc get kafkatopics my-topic -o yaml
+----
++
+.Status for the replication factor change
+[source,shell,subs="+attributes"]
+----
+apiVersion: {KafkaTopicApiVersion}
+kind: KafkaTopic
+metadata:
+  name: my-topic
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  partitions: 1
+  replicas: 3
+  # ...
+
+# ...
+status:
+  conditions:
+  - lastTransitionTime: "2024-01-18T16:13:50.490918232Z"
+    status: "True"
+    type: Ready
+  observedGeneration: 2
+  replicasChange: 
+    sessionId: 1aa418ca-53ed-4b93-b0a4-58413c4fc0cb # <1>
+    state: ongoing # <2>
+    targetReplicas: 3 # <3>
+  topicName: my-topic
+----
+<1> The session ID for the Cruise Control operation, which is shown when process moves out of a pending state.
+<2> The state of the update. Moves from `pending` to `ongoing`, and then the entire `replicasChange` status is removed when the change is complete. 
+<3> The requested change to the number of replicas.
++
+An error message is shown in the status if the request fails before completion.
+The request is periodically retried if it enters a failed state.
+
+.Changing topic replication factor using the standalone Topic Operator
+
+If you are using the standalone Topic Operator and aim to change the topic replication factor through configuration, you still need to use the Topic Operator in unidirectional mode alongside a Cruise Control deployment.
+You also need to include the following environment variables in the standalone Topic Operator deployment so that it can integrate with Cruise Control.
+
+.Example standalone Topic Operator deployment configuration
+[source,shell,subs=+quotes]
+----
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: strimzi-topic-operator
+  labels:
+    app: strimzi
+spec:
+  # ...
+  template:
+    # ...
+    spec:
+      # ...
+      containers:
+        - name: strimzi-topic-operator
+          # ...
+          env:
+            # ...
+            - name: STRIMZI_CRUISE_CONTROL_ENABLED # <1>
+              value: true
+            - name: STRIMZI_CRUISE_CONTROL_RACK_ENABLED # <2>
+              value: false
+            - name: STRIMZI_CRUISE_CONTROL_HOSTNAME # <3>
+              value: cruise-control-api.namespace.svc
+            - name: STRIMZI_CRUISE_CONTROL_PORT # <4>
+              value: 9090
+            - name: STRIMZI_CRUISE_CONTROL_SSL_ENABLED # <5>
+              value: true
+            - name: STRIMZI_CRUISE_CONTROL_AUTH_ENABLED # <6>
+              value: true    
+----
+<1> Integrates Cruise Control with the Topic Operator.
+<2> Flag to indicate whether rack awareness is enabled on the Kafka cluster. If so, replicas can be spread across different racks, data centers, or availability zones.
+<3> Cruise Control hostname.
+<4> Cruise control port.
+<5> Enables TLS authentication and encryption for accessing the Kafka cluster.
+<6> Enables basic authorization for accessing the Cruise Control API. 
+
+If you enable TLS authentication and authorization, mount the required certificates as follows:
+
+* Public certificates of the Cluster CA (certificate authority) in `/etc/tls-sidecar/cluster-ca-certs/ca.crt`
+* Basic authorization credentials (user name and password) in `/etc/eto-cc-api/topic-operator.apiAdminName` and `/etc/eto-cc-api/topic-operator.apiAdminPassword`

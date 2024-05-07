@@ -4,26 +4,54 @@
  */
 package io.strimzi.kafka.init;
 
+import io.strimzi.operator.common.config.ConfigParameter;
+
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+
+import static io.strimzi.operator.common.config.ConfigParameterParser.BOOLEAN;
+import static io.strimzi.operator.common.config.ConfigParameterParser.NON_EMPTY_STRING;
+import static io.strimzi.operator.common.config.ConfigParameterParser.STRING;
 
 /**
  * Init Writer configuration
  */
 public class InitWriterConfig {
-    static final String INIT_FOLDER = "INIT_FOLDER";
-    static final String RACK_TOPOLOGY_KEY = "RACK_TOPOLOGY_KEY";
-    static final String NODE_NAME = "NODE_NAME";
-    static final String EXTERNAL_ADDRESS = "EXTERNAL_ADDRESS";
-    static final String EXTERNAL_ADDRESS_TYPE = "EXTERNAL_ADDRESS_TYPE";
+    private static final Map<String, ConfigParameter<?>> CONFIG_VALUES = new HashMap<>();
+    /**
+     * Folder where the rackid file is written
+     */
+    public static final ConfigParameter<String> INIT_FOLDER = new ConfigParameter<>("INIT_FOLDER", STRING, "/opt/kafka/init", CONFIG_VALUES);
+    /**
+     * Kubernetes cluster node name from which getting the rack related label
+     */
+    public static final ConfigParameter<String> NODE_NAME = new ConfigParameter<>("NODE_NAME", NON_EMPTY_STRING, CONFIG_VALUES);
+    /**
+     * Kubernetes cluster node label to use as topology key for rack definition
+     */
+    public static final ConfigParameter<String> RACK_TOPOLOGY_KEY = new ConfigParameter<>("RACK_TOPOLOGY_KEY", STRING, null, CONFIG_VALUES);
+    /**
+     * Whether external address should be acquired
+     */
+    public static final ConfigParameter<Boolean> EXTERNAL_ADDRESS = new ConfigParameter<>("EXTERNAL_ADDRESS", BOOLEAN, "false", CONFIG_VALUES);
+    /**
+     * The address type which should be preferred in the selection
+     */
+    public static final ConfigParameter<String> EXTERNAL_ADDRESS_TYPE = new ConfigParameter<>("EXTERNAL_ADDRESS_TYPE", STRING, null, CONFIG_VALUES);
+    private final Map<String, Object> map;
 
-    static final String DEFAULT_INIT_FOLDER = "/opt/kafka/init";
+    /**
+     * @return Set of configuration key/names
+     */
+    public static Set<String> keyNames() {
+        return Collections.unmodifiableSet(CONFIG_VALUES.keySet());
+    }
 
-    private final String nodeName;
-    private final String rackTopologyKey;
-    private final boolean externalAddress;
-    private final String addressType;
-    private final String initFolder;
-
+    private InitWriterConfig(Map<String, Object> map) {
+        this.map = map;
+    }
     /**
      * Load configuration parameters from a related map
      *
@@ -31,78 +59,68 @@ public class InitWriterConfig {
      * @return Rack Writer configuration instance
      */
     static InitWriterConfig fromMap(Map<String, String> map) {
+        Map<String, String> envMap = new HashMap<>(map);
+        envMap.keySet().retainAll(InitWriterConfig.keyNames());
 
-        String nodeName = map.get(InitWriterConfig.NODE_NAME);
-        if (nodeName == null || nodeName.equals("")) {
-            throw new IllegalArgumentException(InitWriterConfig.NODE_NAME + " cannot be null or empty");
-        }
+        Map<String, Object> generatedMap = ConfigParameter.define(envMap, CONFIG_VALUES);
 
-        String rackTopologyKey = map.get(InitWriterConfig.RACK_TOPOLOGY_KEY);
-
-        boolean externalAddress = map.containsKey(InitWriterConfig.EXTERNAL_ADDRESS);
-
-        String initFolder = DEFAULT_INIT_FOLDER;
-        String initFolderEnvVar = map.get(InitWriterConfig.INIT_FOLDER);
-        if (initFolderEnvVar != null) {
-            initFolder = initFolderEnvVar;
-        }
-
-        String externalAddressType = map.get(InitWriterConfig.EXTERNAL_ADDRESS_TYPE);
-
-        return new InitWriterConfig(nodeName, rackTopologyKey, externalAddress, initFolder, externalAddressType);
+        return new InitWriterConfig(generatedMap);
     }
 
-    InitWriterConfig(String nodeName, String rackTopologyKey, boolean externalAddress, String initFolder, String externalAddressType) {
-        this.nodeName = nodeName;
-        this.rackTopologyKey = rackTopologyKey;
-        this.externalAddress = externalAddress;
-        this.initFolder = initFolder;
-        this.addressType = externalAddressType;
+    /**
+     * Gets the configuration value corresponding to the key
+     * @param <T>      Type of value
+     * @param value    Instance of Config Parameter class
+     * @return         Configuration value w.r.t to the key
+     */
+    @SuppressWarnings("unchecked")
+    public <T> T get(ConfigParameter<T> value) {
+        return (T) this.map.get(value.key());
     }
 
     /**
      * @return Kubernetes cluster node name from which getting the rack related label
      */
     public String getNodeName() {
-        return nodeName;
+        return get(NODE_NAME);
     }
 
     /**
      * @return the Kubernetes cluster node label to use as topology key for rack definition
      */
     public String getRackTopologyKey() {
-        return rackTopologyKey;
+        return get(RACK_TOPOLOGY_KEY);
     }
 
     /**
      * @return folder where the rackid file is written
      */
     public String getInitFolder() {
-        return initFolder;
+        return get(INIT_FOLDER);
     }
 
     /**
      * @return Return whether external address should be acquired
      */
     public boolean isExternalAddress() {
-        return externalAddress;
+        return get(EXTERNAL_ADDRESS);
     }
 
     /**
      * @return The address type which should be preferred in the selection
      */
     public String getAddressType() {
-        return addressType;
+        return get(EXTERNAL_ADDRESS_TYPE);
     }
 
     @Override
     public String toString() {
         return "InitWriterConfig(" +
-                "nodeName=" + nodeName +
-                ",rackTopologyKey=" + rackTopologyKey +
-                ",externalAddress=" + externalAddress +
-                ",initFolder=" + initFolder +
-                ",addressType=" + addressType +
+                "nodeName=" + getNodeName() +
+                ",rackTopologyKey=" + getRackTopologyKey() +
+                ",externalAddress=" + isExternalAddress() +
+                ",initFolder=" + getInitFolder() +
+                ",addressType=" + getAddressType() +
                 ")";
     }
 }

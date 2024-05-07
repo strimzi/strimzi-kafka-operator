@@ -122,18 +122,12 @@ class UserST extends AbstractST {
         final long observedGeneration = KafkaUserResource.kafkaUserClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(testStorage.getKafkaUsername()).get().getStatus().getObservedGeneration();
 
         // Send and receive messages
-        KafkaClients kafkaClients = new KafkaClientsBuilder()
-            .withNamespaceName(testStorage.getNamespaceName())
-            .withProducerName(testStorage.getProducerName())
-            .withConsumerName(testStorage.getConsumerName())
-            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(sharedTestStorage.getClusterName()))
-            .withTopicName(testStorage.getTopicName())
-            .withMessageCount(testStorage.getMessageCount())
+        KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage, KafkaResources.tlsBootstrapAddress(sharedTestStorage.getClusterName()))
             .withUsername(testStorage.getKafkaUsername())
             .build();
 
         resourceManager.createResourceWithWait(kafkaClients.producerTlsStrimzi(sharedTestStorage.getClusterName()), kafkaClients.consumerTlsStrimzi(sharedTestStorage.getClusterName()));
-        ClientUtils.waitForClientsSuccess(testStorage);
+        ClientUtils.waitForInstantClientSuccess(testStorage);
 
         KafkaUserResource.replaceUserResourceInSpecificNamespace(testStorage.getKafkaUsername(), ku -> {
             ku.getSpec().setAuthentication(new KafkaUserScramSha512ClientAuthentication());
@@ -157,7 +151,7 @@ class UserST extends AbstractST {
             .build();
 
         resourceManager.createResourceWithWait(kafkaClients.producerScramShaTlsStrimzi(sharedTestStorage.getClusterName()), kafkaClients.consumerScramShaTlsStrimzi(sharedTestStorage.getClusterName()));
-        ClientUtils.waitForClientsSuccess(testStorage);
+        ClientUtils.waitForInstantClientSuccess(testStorage);
     }
 
     @ParallelTest
@@ -208,13 +202,7 @@ class UserST extends AbstractST {
                     result.contains("controller_mutation_rate=" + mutRate);
             });
 
-        KafkaClients kafkaClients = new KafkaClientsBuilder()
-            .withNamespaceName(testStorage.getNamespaceName())
-            .withProducerName(testStorage.getProducerName())
-            .withConsumerName(testStorage.getConsumerName())
-            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(sharedTestStorage.getClusterName()))
-            .withTopicName(testStorage.getTopicName())
-            .withMessageCount(testStorage.getMessageCount())
+        final KafkaClients kafkaClients = ClientUtils.getInstantScramShaClientBuilder(testStorage, KafkaResources.tlsBootstrapAddress(sharedTestStorage.getClusterName()))
             .withUsername(userName)
             .build();
 
@@ -235,7 +223,7 @@ class UserST extends AbstractST {
                                                                      kafkaClients.consumerTlsStrimzi(sharedTestStorage.getClusterName()));
         }
 
-        ClientUtils.waitForClientsSuccess(testStorage);
+        ClientUtils.waitForInstantClientSuccess(testStorage);
 
         // delete user
         KafkaUserResource.kafkaUserClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(userName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
@@ -309,28 +297,22 @@ class UserST extends AbstractST {
         assertNotNull(tlsSecret);
         assertNotNull(scramShaSecret);
 
-        KafkaClients clients = new KafkaClientsBuilder()
-            .withProducerName(testStorage.getProducerName())
-            .withConsumerName(testStorage.getConsumerName())
-            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
-            .withNamespaceName(testStorage.getNamespaceName())
-            .withTopicName(testStorage.getTopicName())
-            .withMessageCount(testStorage.getMessageCount())
+        KafkaClients clients = ClientUtils.getInstantTlsClientBuilder(testStorage)
             .withUsername(secretPrefix + tlsUserName)
             .build();
 
         LOGGER.info("Checking if TLS user is able to send messages");
         resourceManager.createResourceWithWait(clients.producerTlsStrimzi(testStorage.getClusterName()), clients.consumerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForClientsSuccess(testStorage);
+        ClientUtils.waitForInstantClientSuccess(testStorage);
 
-        clients = new KafkaClientsBuilder(clients)
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+
+        clients = ClientUtils.getInstantScramShaOverPlainClientBuilder(testStorage)
             .withUsername(secretPrefix + scramShaUserName)
             .build();
 
         LOGGER.info("Checking if SCRAM-SHA user is able to send messages");
         resourceManager.createResourceWithWait(clients.producerScramShaPlainStrimzi(), clients.consumerScramShaPlainStrimzi());
-        ClientUtils.waitForClientsSuccess(testStorage);
+        ClientUtils.waitForInstantClientSuccess(testStorage);
 
         LOGGER.info("Checking owner reference - if the Secret will be deleted when we delete KafkaUser");
 
@@ -407,19 +389,13 @@ class UserST extends AbstractST {
 
         SecretUtils.createExternalTlsUserSecret(testStorage.getNamespaceName(), testStorage.getKafkaUsername(), testStorage.getClusterName());
 
-        KafkaClients kafkaClients = new KafkaClientsBuilder()
-            .withProducerName(testStorage.getProducerName())
-            .withConsumerName(testStorage.getConsumerName())
-            .withNamespaceName(testStorage.getNamespaceName())
-            .withMessageCount(testStorage.getMessageCount())
-            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
-            .withTopicName(testStorage.getTopicName())
+        KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage)
             .withUsername(testStorage.getKafkaUsername())
             .withConsumerGroup(consumerGroupName)
             .build();
 
         resourceManager.createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()), kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForClientsSuccess(testStorage);
+        ClientUtils.waitForInstantClientSuccess(testStorage);
 
         KafkaUserResource.replaceUserResourceInSpecificNamespace(testStorage.getKafkaUsername(),
             user -> {
@@ -439,7 +415,7 @@ class UserST extends AbstractST {
         PodUtils.waitUntilMessageIsInPodLogs(testStorage.getNamespaceName(),
             PodUtils.getPodNameByPrefix(testStorage.getNamespaceName(), testStorage.getProducerName()), "authorization failed");
 
-        ClientUtils.waitForProducerClientTimeout(testStorage);
+        ClientUtils.waitForInstantProducerClientTimeout(testStorage);
     }
 
     @BeforeAll

@@ -6,6 +6,7 @@ package io.strimzi.api.kafka.model.kafka.listener;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.kafka.model.common.CertSecretSource;
 import io.strimzi.api.kafka.model.common.Constants;
@@ -27,11 +28,17 @@ import java.util.List;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonPropertyOrder({"type", "clientId", "clientSecret", "validIssuerUri", "checkIssuer", "checkAudience",
+    "jwksEndpointUri", "jwksRefreshSeconds", "jwksMinRefreshPauseSeconds", "jwksExpirySeconds", "jwksIgnoreKeyUse",
+    "introspectionEndpointUri", "userNameClaim", "fallbackUserNameClaim", "fallbackUserNamePrefix",
+    "groupsClaim", "groupsClaimDelimiter", "userInfoEndpointUri", "checkAccessTokenType", "validTokenType",
+    "accessTokenIsJwt", "tlsTrustedCertificates", "disableTlsHostnameVerification", "enableECDSA",
+    "maxSecondsWithoutReauthentication", "enablePlain", "tokenEndpointUri", "enableOauthBearer", "customClaimCheck",
+    "connectTimeoutSeconds", "readTimeoutSeconds", "httpRetries", "httpRetryPauseMs", "clientScope", "clientAudience",
+    "enableMetrics", "failFast", "includeAcceptHeader"})
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthentication {
-    private static final long serialVersionUID = 1L;
-
     public static final String TYPE_OAUTH = "oauth";
     public static final int DEFAULT_JWKS_EXPIRY_SECONDS = 360;
     public static final int DEFAULT_JWKS_REFRESH_SECONDS = 300;

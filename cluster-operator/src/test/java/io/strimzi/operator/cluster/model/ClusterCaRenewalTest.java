@@ -80,17 +80,11 @@ public class ClusterCaRenewalTest {
         Map<String, String> initialCerts = new HashMap<>();
         initialCerts.put("pod0.crt", Base64.getEncoder().encodeToString("old-cert".getBytes()));
         initialCerts.put("pod0.key", Base64.getEncoder().encodeToString("old-key".getBytes()));
-        initialCerts.put("pod0.p12", Base64.getEncoder().encodeToString("old-keystore".getBytes()));
-        initialCerts.put("pod0.password", Base64.getEncoder().encodeToString("old-password".getBytes()));
         initialCerts.put("pod1.crt", Base64.getEncoder().encodeToString("old-cert".getBytes()));
         initialCerts.put("pod1.key", Base64.getEncoder().encodeToString("old-key".getBytes()));
-        initialCerts.put("pod1.p12", Base64.getEncoder().encodeToString("old-keystore".getBytes()));
-        initialCerts.put("pod1.password", Base64.getEncoder().encodeToString("old-password".getBytes()));
         initialCerts.put("pod2.crt", Base64.getEncoder().encodeToString("old-cert".getBytes()));
         initialCerts.put("pod2.key", Base64.getEncoder().encodeToString("old-key".getBytes()));
-        initialCerts.put("pod2.p12", Base64.getEncoder().encodeToString("old-keystore".getBytes()));
-        initialCerts.put("pod2.password", Base64.getEncoder().encodeToString("old-password".getBytes()));
-                
+
         Secret initialSecret = initialSecret(initialCerts);
 
         boolean isMaintenanceTimeWindowsSatisfied = true;
@@ -126,16 +120,10 @@ public class ClusterCaRenewalTest {
         Map<String, String> initialCerts = new HashMap<>();
         initialCerts.put("pod0.crt", Base64.getEncoder().encodeToString("old-cert".getBytes()));
         initialCerts.put("pod0.key", Base64.getEncoder().encodeToString("old-key".getBytes()));
-        initialCerts.put("pod0.p12", Base64.getEncoder().encodeToString("old-keystore".getBytes()));
-        initialCerts.put("pod0.password", Base64.getEncoder().encodeToString("old-password".getBytes()));
         initialCerts.put("pod1.crt", Base64.getEncoder().encodeToString("old-cert".getBytes()));
         initialCerts.put("pod1.key", Base64.getEncoder().encodeToString("old-key".getBytes()));
-        initialCerts.put("pod1.p12", Base64.getEncoder().encodeToString("old-keystore".getBytes()));
-        initialCerts.put("pod1.password", Base64.getEncoder().encodeToString("old-password".getBytes()));
         initialCerts.put("pod2.crt", Base64.getEncoder().encodeToString("old-cert".getBytes()));
         initialCerts.put("pod2.key", Base64.getEncoder().encodeToString("old-key".getBytes()));
-        initialCerts.put("pod2.p12", Base64.getEncoder().encodeToString("old-keystore".getBytes()));
-        initialCerts.put("pod2.password", Base64.getEncoder().encodeToString("old-password".getBytes()));
 
         Secret initialSecret = initialSecret(1, initialCerts);
 
@@ -172,16 +160,10 @@ public class ClusterCaRenewalTest {
         Map<String, String> initialCerts = new HashMap<>();
         initialCerts.put("pod0.crt", Base64.getEncoder().encodeToString("old-cert".getBytes()));
         initialCerts.put("pod0.key", Base64.getEncoder().encodeToString("old-key".getBytes()));
-        initialCerts.put("pod0.p12", Base64.getEncoder().encodeToString("old-keystore".getBytes()));
-        initialCerts.put("pod0.password", Base64.getEncoder().encodeToString("old-password".getBytes()));
         initialCerts.put("pod1.crt", Base64.getEncoder().encodeToString("old-cert".getBytes()));
         initialCerts.put("pod1.key", Base64.getEncoder().encodeToString("old-key".getBytes()));
-        initialCerts.put("pod1.p12", Base64.getEncoder().encodeToString("old-keystore".getBytes()));
-        initialCerts.put("pod1.password", Base64.getEncoder().encodeToString("old-password".getBytes()));
         initialCerts.put("pod2.crt", Base64.getEncoder().encodeToString("old-cert".getBytes()));
         initialCerts.put("pod2.key", Base64.getEncoder().encodeToString("old-key".getBytes()));
-        initialCerts.put("pod2.p12", Base64.getEncoder().encodeToString("old-keystore".getBytes()));
-        initialCerts.put("pod2.password", Base64.getEncoder().encodeToString("old-password".getBytes()));
 
         Secret initialSecret = initialSecret(initialCerts);
 
@@ -218,16 +200,10 @@ public class ClusterCaRenewalTest {
         Map<String, String> initialCerts = new HashMap<>();
         initialCerts.put("pod0.crt", Base64.getEncoder().encodeToString("old-cert".getBytes()));
         initialCerts.put("pod0.key", Base64.getEncoder().encodeToString("old-key".getBytes()));
-        initialCerts.put("pod0.p12", Base64.getEncoder().encodeToString("old-keystore".getBytes()));
-        initialCerts.put("pod0.password", Base64.getEncoder().encodeToString("old-password".getBytes()));
         initialCerts.put("pod1.crt", Base64.getEncoder().encodeToString("old-cert".getBytes()));
         initialCerts.put("pod1.key", Base64.getEncoder().encodeToString("old-key".getBytes()));
-        initialCerts.put("pod1.p12", Base64.getEncoder().encodeToString("old-keystore".getBytes()));
-        initialCerts.put("pod1.password", Base64.getEncoder().encodeToString("old-password".getBytes()));
         initialCerts.put("pod2.crt", Base64.getEncoder().encodeToString("old-cert".getBytes()));
         initialCerts.put("pod2.key", Base64.getEncoder().encodeToString("old-key".getBytes()));
-        initialCerts.put("pod2.p12", Base64.getEncoder().encodeToString("old-keystore".getBytes()));
-        initialCerts.put("pod2.password", Base64.getEncoder().encodeToString("old-password".getBytes()));
 
         Secret initialSecret = initialSecret(initialCerts);
         
@@ -242,18 +218,12 @@ public class ClusterCaRenewalTest {
 
         assertThat(new String(newCerts.get("pod0").cert()), is("old-cert"));
         assertThat(new String(newCerts.get("pod0").key()), is("old-key"));
-        assertThat(new String(newCerts.get("pod0").keyStore()), is("old-keystore"));
-        assertThat(newCerts.get("pod0").storePassword(), is("old-password"));
 
         assertThat(new String(newCerts.get("pod1").cert()), is("old-cert"));
         assertThat(new String(newCerts.get("pod1").key()), is("old-key"));
-        assertThat(new String(newCerts.get("pod1").keyStore()), is("old-keystore"));
-        assertThat(newCerts.get("pod1").storePassword(), is("old-password"));
 
         assertThat(new String(newCerts.get("pod2").cert()), is("old-cert"));
         assertThat(new String(newCerts.get("pod2").key()), is("old-key"));
-        assertThat(new String(newCerts.get("pod2").keyStore()), is("old-keystore"));
-        assertThat(newCerts.get("pod2").storePassword(), is("old-password"));
     }
 
     @ParallelTest
@@ -264,12 +234,8 @@ public class ClusterCaRenewalTest {
         Map<String, String> initialCerts = new HashMap<>();
         initialCerts.put("pod0.crt", Base64.getEncoder().encodeToString("old-cert".getBytes()));
         initialCerts.put("pod0.key", Base64.getEncoder().encodeToString("old-key".getBytes()));
-        initialCerts.put("pod0.p12", Base64.getEncoder().encodeToString("old-keystore".getBytes()));
-        initialCerts.put("pod0.password", Base64.getEncoder().encodeToString("old-password".getBytes()));
         initialCerts.put("pod1.crt", Base64.getEncoder().encodeToString("old-cert".getBytes()));
         initialCerts.put("pod1.key", Base64.getEncoder().encodeToString("old-key".getBytes()));
-        initialCerts.put("pod1.p12", Base64.getEncoder().encodeToString("old-keystore".getBytes()));
-        initialCerts.put("pod1.password", Base64.getEncoder().encodeToString("old-password".getBytes()));
 
         Secret initialSecret = initialSecret(initialCerts);
 
@@ -284,18 +250,12 @@ public class ClusterCaRenewalTest {
 
         assertThat(new String(newCerts.get("pod0").cert()), is("old-cert"));
         assertThat(new String(newCerts.get("pod0").key()), is("old-key"));
-        assertThat(new String(newCerts.get("pod0").keyStore()), is("old-keystore"));
-        assertThat(newCerts.get("pod0").storePassword(), is("old-password"));
 
         assertThat(new String(newCerts.get("pod1").cert()), is("old-cert"));
         assertThat(new String(newCerts.get("pod1").key()), is("old-key"));
-        assertThat(new String(newCerts.get("pod1").keyStore()), is("old-keystore"));
-        assertThat(newCerts.get("pod1").storePassword(), is("old-password"));
 
         assertThat(new String(newCerts.get("pod2").cert()), is("new-cert0"));
         assertThat(new String(newCerts.get("pod2").key()), is("new-key0"));
-        assertThat(new String(newCerts.get("pod2").keyStore()), is("new-keystore0"));
-        assertThat(newCerts.get("pod2").storePassword(), is("new-password0"));
     }
 
     @ParallelTest
@@ -305,16 +265,10 @@ public class ClusterCaRenewalTest {
         Map<String, String> initialCerts = new HashMap<>();
         initialCerts.put("pod0.crt", Base64.getEncoder().encodeToString("old-cert".getBytes()));
         initialCerts.put("pod0.key", Base64.getEncoder().encodeToString("old-key".getBytes()));
-        initialCerts.put("pod0.p12", Base64.getEncoder().encodeToString("old-keystore".getBytes()));
-        initialCerts.put("pod0.password", Base64.getEncoder().encodeToString("old-password".getBytes()));
         initialCerts.put("pod1.crt", Base64.getEncoder().encodeToString("old-cert".getBytes()));
         initialCerts.put("pod1.key", Base64.getEncoder().encodeToString("old-key".getBytes()));
-        initialCerts.put("pod1.p12", Base64.getEncoder().encodeToString("old-keystore".getBytes()));
-        initialCerts.put("pod1.password", Base64.getEncoder().encodeToString("old-password".getBytes()));
         initialCerts.put("pod2.crt", Base64.getEncoder().encodeToString("old-cert".getBytes()));
         initialCerts.put("pod2.key", Base64.getEncoder().encodeToString("old-key".getBytes()));
-        initialCerts.put("pod2.p12", Base64.getEncoder().encodeToString("old-keystore".getBytes()));
-        initialCerts.put("pod2.password", Base64.getEncoder().encodeToString("old-password".getBytes()));
 
         Secret initialSecret = initialSecret(initialCerts);
 
@@ -327,18 +281,12 @@ public class ClusterCaRenewalTest {
 
         assertThat(new String(newCerts.get("pod0").cert()), is("old-cert"));
         assertThat(new String(newCerts.get("pod0").key()), is("old-key"));
-        assertThat(new String(newCerts.get("pod0").keyStore()), is("old-keystore"));
-        assertThat(newCerts.get("pod0").storePassword(), is("old-password"));
 
         assertThat(new String(newCerts.get("pod1").cert()), is("old-cert"));
         assertThat(new String(newCerts.get("pod1").key()), is("old-key"));
-        assertThat(new String(newCerts.get("pod1").keyStore()), is("old-keystore"));
-        assertThat(newCerts.get("pod1").storePassword(), is("old-password"));
 
         assertThat(new String(newCerts.get("pod2").cert()), is("old-cert"));
         assertThat(new String(newCerts.get("pod2").key()), is("old-key"));
-        assertThat(new String(newCerts.get("pod2").keyStore()), is("old-keystore"));
-        assertThat(newCerts.get("pod2").storePassword(), is("old-password"));
     }
 
     @ParallelTest
@@ -348,8 +296,6 @@ public class ClusterCaRenewalTest {
         Map<String, String> initialCerts = new HashMap<>();
         initialCerts.put("pod0.crt", Base64.getEncoder().encodeToString("old-cert".getBytes()));
         initialCerts.put("pod0.key", Base64.getEncoder().encodeToString("old-key".getBytes()));
-        initialCerts.put("pod0.p12", Base64.getEncoder().encodeToString("old-keystore".getBytes()));
-        initialCerts.put("pod0.password", Base64.getEncoder().encodeToString("old-password".getBytes()));
 
         Secret initialSecret = initialSecret(initialCerts);
 
@@ -362,18 +308,12 @@ public class ClusterCaRenewalTest {
 
         assertThat(new String(newCerts.get("pod0").cert()), is("old-cert"));
         assertThat(new String(newCerts.get("pod0").key()), is("old-key"));
-        assertThat(new String(newCerts.get("pod0").keyStore()), is("old-keystore"));
-        assertThat(newCerts.get("pod0").storePassword(), is("old-password"));
 
         assertThat(new String(newCerts.get("pod1").cert()), is("new-cert0"));
         assertThat(new String(newCerts.get("pod1").key()), is("new-key0"));
-        assertThat(new String(newCerts.get("pod1").keyStore()), is("new-keystore0"));
-        assertThat(newCerts.get("pod1").storePassword(), is("new-password0"));
 
         assertThat(new String(newCerts.get("pod2").cert()), is("new-cert1"));
         assertThat(new String(newCerts.get("pod2").key()), is("new-key1"));
-        assertThat(new String(newCerts.get("pod2").keyStore()), is("new-keystore1"));
-        assertThat(newCerts.get("pod2").storePassword(), is("new-password1"));
     }
 
     @ParallelTest
@@ -383,12 +323,8 @@ public class ClusterCaRenewalTest {
         Map<String, String> initialCerts = new HashMap<>();
         initialCerts.put("pod0.crt", Base64.getEncoder().encodeToString("old-cert".getBytes()));
         initialCerts.put("pod0.key", Base64.getEncoder().encodeToString("old-key".getBytes()));
-        initialCerts.put("pod0.p12", Base64.getEncoder().encodeToString("old-keystore".getBytes()));
-        initialCerts.put("pod0.password", Base64.getEncoder().encodeToString("old-password".getBytes()));
         initialCerts.put("pod2.crt", Base64.getEncoder().encodeToString("old-cert".getBytes()));
         initialCerts.put("pod2.key", Base64.getEncoder().encodeToString("old-key".getBytes()));
-        initialCerts.put("pod2.p12", Base64.getEncoder().encodeToString("old-keystore".getBytes()));
-        initialCerts.put("pod2.password", Base64.getEncoder().encodeToString("old-password".getBytes()));
 
         Secret initialSecret = initialSecret(initialCerts);
 
@@ -401,18 +337,12 @@ public class ClusterCaRenewalTest {
 
         assertThat(new String(newCerts.get("pod0").cert()), is("old-cert"));
         assertThat(new String(newCerts.get("pod0").key()), is("old-key"));
-        assertThat(new String(newCerts.get("pod0").keyStore()), is("old-keystore"));
-        assertThat(newCerts.get("pod0").storePassword(), is("old-password"));
 
         assertThat(new String(newCerts.get("pod1").cert()), is("new-cert0"));
         assertThat(new String(newCerts.get("pod1").key()), is("new-key0"));
-        assertThat(new String(newCerts.get("pod1").keyStore()), is("new-keystore0"));
-        assertThat(newCerts.get("pod1").storePassword(), is("new-password0"));
 
         assertThat(new String(newCerts.get("pod2").cert()), is("old-cert"));
         assertThat(new String(newCerts.get("pod2").key()), is("old-key"));
-        assertThat(new String(newCerts.get("pod2").keyStore()), is("old-keystore"));
-        assertThat(newCerts.get("pod2").storePassword(), is("old-password"));
     }
 
     @ParallelTest
@@ -422,16 +352,10 @@ public class ClusterCaRenewalTest {
         Map<String, String> initialCerts = new HashMap<>();
         initialCerts.put("pod0.crt", Base64.getEncoder().encodeToString("old-cert".getBytes()));
         initialCerts.put("pod0.key", Base64.getEncoder().encodeToString("old-key".getBytes()));
-        initialCerts.put("pod0.p12", Base64.getEncoder().encodeToString("old-keystore".getBytes()));
-        initialCerts.put("pod0.password", Base64.getEncoder().encodeToString("old-password".getBytes()));
         initialCerts.put("pod1.crt", Base64.getEncoder().encodeToString("old-cert".getBytes()));
         initialCerts.put("pod1.key", Base64.getEncoder().encodeToString("old-key".getBytes()));
-        initialCerts.put("pod1.p12", Base64.getEncoder().encodeToString("old-keystore".getBytes()));
-        initialCerts.put("pod1.password", Base64.getEncoder().encodeToString("old-password".getBytes()));
         initialCerts.put("pod2.crt", Base64.getEncoder().encodeToString("old-cert".getBytes()));
         initialCerts.put("pod2.key", Base64.getEncoder().encodeToString("old-key".getBytes()));
-        initialCerts.put("pod2.p12", Base64.getEncoder().encodeToString("old-keystore".getBytes()));
-        initialCerts.put("pod2.password", Base64.getEncoder().encodeToString("old-password".getBytes()));
 
         Secret initialSecret = initialSecret(initialCerts);
 
@@ -446,47 +370,8 @@ public class ClusterCaRenewalTest {
 
         assertThat(new String(newCerts.get("pod1").cert()), is("old-cert"));
         assertThat(new String(newCerts.get("pod1").key()), is("old-key"));
-        assertThat(new String(newCerts.get("pod1").keyStore()), is("old-keystore"));
-        assertThat(newCerts.get("pod1").storePassword(), is("old-password"));
 
         assertThat(newCerts.get("pod2"), is(nullValue()));
-    }
-
-    @ParallelTest
-    public void oldVersionWithoutPkcs12() throws IOException {
-        MockedClusterCa mockedCa = new MockedClusterCa(Reconciliation.DUMMY_RECONCILIATION, null, null, null, null, null, 2, 1, true, null);
-
-        Map<String, String> initialCerts = new HashMap<>();
-        initialCerts.put("pod0.crt", Base64.getEncoder().encodeToString("old-cert".getBytes()));
-        initialCerts.put("pod0.key", Base64.getEncoder().encodeToString("old-key".getBytes()));
-        initialCerts.put("pod1.crt", Base64.getEncoder().encodeToString("old-cert".getBytes()));
-        initialCerts.put("pod1.key", Base64.getEncoder().encodeToString("old-key".getBytes()));
-        initialCerts.put("pod2.crt", Base64.getEncoder().encodeToString("old-cert".getBytes()));
-        initialCerts.put("pod2.key", Base64.getEncoder().encodeToString("old-key".getBytes()));
-
-        Secret initialSecret = initialSecret(initialCerts);
-
-        Map<String, CertAndKey> newCerts = mockedCa.maybeCopyOrGenerateCerts(
-                Reconciliation.DUMMY_RECONCILIATION,
-                NODES,
-                SUBJECT_FN,
-                initialSecret,
-                true);
-
-        assertThat(new String(newCerts.get("pod0").cert()), is("old-cert"));
-        assertThat(new String(newCerts.get("pod0").key()), is("old-key"));
-        assertThat(new String(newCerts.get("pod0").keyStore()), is("new-keystore0"));
-        assertThat(newCerts.get("pod0").storePassword(), is("new-password0"));
-
-        assertThat(new String(newCerts.get("pod1").cert()), is("old-cert"));
-        assertThat(new String(newCerts.get("pod1").key()), is("old-key"));
-        assertThat(new String(newCerts.get("pod1").keyStore()), is("new-keystore1"));
-        assertThat(newCerts.get("pod1").storePassword(), is("new-password1"));
-
-        assertThat(new String(newCerts.get("pod2").cert()), is("old-cert"));
-        assertThat(new String(newCerts.get("pod2").key()), is("old-key"));
-        assertThat(new String(newCerts.get("pod2").keyStore()), is("new-keystore2"));
-        assertThat(newCerts.get("pod2").storePassword(), is("new-password2"));
     }
 
     @ParallelTest
@@ -497,16 +382,10 @@ public class ClusterCaRenewalTest {
         Map<String, String> initialCerts = new HashMap<>();
         initialCerts.put("pod0.crt", Base64.getEncoder().encodeToString("old-cert".getBytes()));
         initialCerts.put("pod0.key", Base64.getEncoder().encodeToString("old-key".getBytes()));
-        initialCerts.put("pod0.p12", Base64.getEncoder().encodeToString("old-keystore".getBytes()));
-        initialCerts.put("pod0.password", Base64.getEncoder().encodeToString("old-password".getBytes()));
         initialCerts.put("pod1.crt", Base64.getEncoder().encodeToString("old-cert".getBytes()));
         initialCerts.put("pod1.key", Base64.getEncoder().encodeToString("old-key".getBytes()));
-        initialCerts.put("pod1.p12", Base64.getEncoder().encodeToString("old-keystore".getBytes()));
-        initialCerts.put("pod1.password", Base64.getEncoder().encodeToString("old-password".getBytes()));
         initialCerts.put("pod2.crt", Base64.getEncoder().encodeToString("old-cert".getBytes()));
         initialCerts.put("pod2.key", Base64.getEncoder().encodeToString("old-key".getBytes()));
-        initialCerts.put("pod2.p12", Base64.getEncoder().encodeToString("old-keystore".getBytes()));
-        initialCerts.put("pod2.password", Base64.getEncoder().encodeToString("old-password".getBytes()));
 
         Secret initialSecret = initialSecret(initialCerts);
 
@@ -521,18 +400,12 @@ public class ClusterCaRenewalTest {
 
         assertThat(new String(newCerts.get("pod0").cert()), is("new-cert0"));
         assertThat(new String(newCerts.get("pod0").key()), is("new-key0"));
-        assertThat(new String(newCerts.get("pod0").keyStore()), is("new-keystore0"));
-        assertThat(newCerts.get("pod0").storePassword(), is("new-password0"));
 
         assertThat(new String(newCerts.get("pod1").cert()), is("new-cert1"));
         assertThat(new String(newCerts.get("pod1").key()), is("new-key1"));
-        assertThat(new String(newCerts.get("pod1").keyStore()), is("new-keystore1"));
-        assertThat(newCerts.get("pod1").storePassword(), is("new-password1"));
 
         assertThat(new String(newCerts.get("pod2").cert()), is("new-cert2"));
         assertThat(new String(newCerts.get("pod2").key()), is("new-key2"));
-        assertThat(new String(newCerts.get("pod2").keyStore()), is("new-keystore2"));
-        assertThat(newCerts.get("pod2").storePassword(), is("new-password2"));
     }
 
     public static Secret initialSecret(Map<String, String> data)   {

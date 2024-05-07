@@ -5,6 +5,7 @@
 package io.strimzi.api.kafka.model.kafka.listener;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.GenericSecretSource;
 import io.strimzi.crdgenerator.annotations.Description;
@@ -25,13 +26,11 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonPropertyOrder({"type", "sasl", "listenerConfig", "secrets"})
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaListenerAuthenticationCustom extends KafkaListenerAuthentication {
-
     public static final String FORBIDDEN_PREFIXES = "ssl.";
-
-    private static final long serialVersionUID = 1L;
 
     public static final String TYPE_CUSTOM = "custom";
 

@@ -21,12 +21,10 @@ import lombok.ToString;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"conditions", "observedGeneration"})
+@JsonPropertyOrder({"conditions", "observedGeneration", "labelSelector", "replicas"})
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaMirrorMakerStatus extends Status {
-    private static final long serialVersionUID = 1L;
-
     private int replicas;
     private String labelSelector;
 

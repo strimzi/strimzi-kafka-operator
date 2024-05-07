@@ -495,22 +495,22 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
 
     /**
      * Generate the Secret containing the Cruise Control certificate signed by the cluster CA certificate used for TLS based
-     * internal communication with Kafka
-     * It also contains the related Cruise Control private key.
+     * internal communication with Kafka. It also contains the related Cruise Control private key.
      *
-     * @param namespace Namespace in which the Cruise Control cluster runs
-     * @param kafkaName Name of the Kafka cluster (it is used for the SANs in the certificate)
-     * @param clusterCa The cluster CA.
-     * @param isMaintenanceTimeWindowsSatisfied Indicates whether we are in the maintenance window or not.
-     *                                          This is used for certificate renewals
+     * @param namespace                             Namespace in which the Cruise Control cluster runs
+     * @param clusterName                           Name of the Kafka cluster (it is used for the SANs in the certificate)
+     * @param clusterCa                             The cluster CA.
+     * @param existingSecret                        The existing secret with Kafka certificates
+     * @param isMaintenanceTimeWindowsSatisfied     Indicates whether we are in the maintenance window or not.
+     *                                              This is used for certificate renewals
      *
      * @return The generated Secret.
      */
-    public Secret generateCertificatesSecret(String namespace, String kafkaName, ClusterCa clusterCa, boolean isMaintenanceTimeWindowsSatisfied) {
+    public Secret generateCertificatesSecret(String namespace, String clusterName, ClusterCa clusterCa, Secret existingSecret, boolean isMaintenanceTimeWindowsSatisfied) {
         Map<String, CertAndKey> ccCerts = new HashMap<>(4);
         LOGGER.debugCr(reconciliation, "Generating certificates");
         try {
-            ccCerts = clusterCa.generateCcCerts(namespace, kafkaName, isMaintenanceTimeWindowsSatisfied);
+            ccCerts = clusterCa.generateCcCerts(namespace, clusterName, existingSecret, isMaintenanceTimeWindowsSatisfied);
         } catch (IOException e) {
             LOGGER.warnCr(reconciliation, "Error while generating certificates", e);
         }

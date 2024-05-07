@@ -7,17 +7,22 @@ package io.strimzi.systemtest.utils.kafkaUtils;
 import io.fabric8.kubernetes.api.model.PodCondition;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.connect.KafkaConnect;
+import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
+import io.strimzi.systemtest.storage.TestStorage;
+import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.List;
+import java.util.Map;
+import java.util.function.Predicate;
 
 import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
@@ -57,10 +62,11 @@ public class KafkaConnectUtils {
         LOGGER.info("KafkaConnect API is available");
     }
 
-    public static void waitForMessagesInKafkaConnectFileSink(String namespaceName, String kafkaConnectPodName, String sinkFileName, String message) {
+    public static void waitForMessagesInKafkaConnectFileSink(String namespaceName, String kafkaConnectPodName, String sinkFileName, int sinkReceivedMsgCount) {
+        final String lastReceivedMessageIndex = Integer.toString(sinkReceivedMsgCount - 1);
         LOGGER.info("Waiting for messages to be present in file sink on {}/{}", namespaceName, kafkaConnectPodName);
         TestUtils.waitFor("messages to be present in file sink", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.TIMEOUT_FOR_SEND_RECEIVE_MSG,
-            () -> cmdKubeClient(namespaceName).execInPod(Level.TRACE, kafkaConnectPodName, "/bin/bash", "-c", "cat " + sinkFileName).out().contains(message),
+            () -> cmdKubeClient(namespaceName).execInPod(Level.TRACE, kafkaConnectPodName, "/bin/bash", "-c", "cat " + sinkFileName).out().contains(lastReceivedMessageIndex),
             () -> LOGGER.warn(cmdKubeClient(namespaceName).execInPod(Level.TRACE, kafkaConnectPodName, "/bin/bash", "-c", "cat " + sinkFileName).out()));
         LOGGER.info("Expected messages are in file sink on {}/{}", namespaceName, kafkaConnectPodName);
     }
@@ -126,6 +132,32 @@ public class KafkaConnectUtils {
         TestUtils.waitFor(String.join("for Connect: %s/%s contains plugins in its status", namespaceName, clusterName),
             TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
             () -> KafkaConnectResource.kafkaConnectClient().inNamespace(namespaceName).withName(clusterName).get().getStatus().getConnectorPlugins() != null
+        );
+    }
+
+    /**
+     * Waits for the propagation of log level changes within the Kafka Connect configuration and verifies the change across all specified Connect pods.
+     * This method first checks if the log level change is reflected in the Kafka Connect REST API's logger settings. Then, it validates
+     * that the new log level is being applied in the actual log outputs in last 60 seconds.
+     *
+     * @param testStorage      The {@link TestStorage} contains test details.
+     * @param connectPods      A map of Kafka Connect Pods.
+     * @param scraperPodName   The name of the pod used to perform network requests within the cluster.
+     * @param connectLogMatch  A {@link Predicate <String>} that tests log entries to confirm the presence of the new log level.
+     * @param logLevel         The desired log level (e.g., "INFO", "DEBUG") that the method waits to be propagated to the Kafka Connect
+     *                         configuration and reflected in the logs.
+     */
+    public static void waitForConnectLogLevelChangePropagation(TestStorage testStorage, Map<String, String> connectPods, String scraperPodName, Predicate<String> connectLogMatch, String logLevel) {
+        LOGGER.info("Waiting for log4j.properties will contain desired settings");
+        TestUtils.waitFor("Logger change", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
+            () -> cmdKubeClient().namespace(testStorage.getNamespaceName()).execInPod(scraperPodName, "curl", "http://" + KafkaConnectResources.serviceName(testStorage.getClusterName())
+                + ":8083/admin/loggers/root").out().contains(logLevel)
+        );
+
+        TestUtils.waitFor(String.format("wait till change in Log level %s takes place in actual Pods", logLevel), TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.SAFETY_RECONCILIATION_INTERVAL,
+            () -> connectPods.keySet().stream()
+                .map(cPod -> StUtils.getLogFromPodByTime(testStorage.getNamespaceName(), cPod, "", "60s"))
+                .allMatch(connectLogMatch)
         );
     }
 }

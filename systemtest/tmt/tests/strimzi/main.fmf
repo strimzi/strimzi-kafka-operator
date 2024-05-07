@@ -9,6 +9,7 @@ environment:
   TEST_GROUPS: ""
   EXCLUDED_TEST_GROUPS: "loadbalancer"
   CLUSTER_OPERATOR_INSTALL_TYPE: bundle
+  PARALLELISM_ENABLED: true
   PARALLEL_TEST_COUNT: 2
   RERUN_FAILED_TEST_COUNT: 2
   # All tests on TF will use KRaft mode because ZK is not working reliably on it's infra
@@ -65,3 +66,21 @@ adjust:
   tier: 2
   environment+:
     TEST_PROFILE: sanity
+
+/performance:
+  summary: Run performance strimzi test suite
+  tags: [strimzi, kafka, kraft, performance]
+  duration: 24h
+  tier: 1
+  environment+:
+    TEST_PROFILE: performance
+    PARALLELISM_ENABLED: false
+
+/performance-capacity:
+  summary: Run performance capacity strimzi test suite
+  tags: [strimzi, kafka, kraft, performance, performance-capacity]
+  duration: 24h
+  tier: 1
+  environment+:
+    TEST_PROFILE: performance-capacity
+    PARALLELISM_ENABLED: false

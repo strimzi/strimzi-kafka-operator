@@ -34,12 +34,10 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "kafka", "zookeeper", "topicOperator",
     "entityOperator", "clusterCa", "clientsCa",
-    "maintenance"})
+    "maintenance", "cruiseControl", "jmxTrans", "kafkaExporter", "maintenanceTimeWindows"})
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaSpec extends Spec {
-    private static final long serialVersionUID = 1L;
-
     private KafkaClusterSpec kafka;
     private ZookeeperClusterSpec zookeeper;
     private EntityOperatorSpec entityOperator;

@@ -6,7 +6,7 @@
 = Accessing Kafka using node ports
 
 [role="_abstract"]
-Use node ports to access a Strimzi Kafka cluster from an external client outside the Kubernetes cluster.
+Use node ports to access a Kafka cluster from an external client outside the Kubernetes cluster.
 
 To connect to a broker, you specify a hostname and port number for the Kafka bootstrap address, as well as the certificate used for TLS encryption.
 
