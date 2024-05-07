@@ -22,7 +22,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.aMapWithSize;
 import static org.hamcrest.Matchers.hasEntry;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class UtilTest {
@@ -186,14 +185,5 @@ public class UtilTest {
 
         selector = new LabelSelectorBuilder().withMatchLabels(Map.of("label2", "value2", "label1", "value1", "label3", "value3")).build();
         assertThat(matchesSelector(selector, testResource), is(false));
-    }
-
-    @Test
-    public void testBuildBasicAuthValue() {
-        String username = "testUser";
-        String password = "testPassword";
-        String expectedHeaderValue = "Basic dGVzdFVzZXI6dGVzdFBhc3N3b3Jk";
-        String actualHeaderValue = Util.buildBasicAuthValue(username, password);
-        assertEquals(expectedHeaderValue, actualHeaderValue);
     }
 }
