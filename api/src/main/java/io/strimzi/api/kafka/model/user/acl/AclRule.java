@@ -75,7 +75,8 @@ public class AclRule implements UnknownPropertyPreserving {
         this.resource = resource;
     }
 
-    @Description("The host from which the action described in the ACL rule is allowed or denied.")
+    @Description("The host from which the action described in the ACL rule is allowed or denied. " +
+            "If not set, it defaults to `*` and the action will be allowed or denied from any host.")
     @JsonProperty(defaultValue = "*")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public String getHost() {
