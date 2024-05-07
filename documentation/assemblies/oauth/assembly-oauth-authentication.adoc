@@ -7,17 +7,6 @@
 
 [role="_abstract"]
 Strimzi supports the use of link:https://oauth.net/2/[OAuth 2.0 authentication^] using the _OAUTHBEARER_ and _PLAIN_ mechanisms.
-
-OAuth 2.0 enables standardized token-based authentication and authorization between applications, using a central authorization server to issue tokens that grant limited access to resources.
-
-Kafka brokers and clients both need to be configured to use OAuth 2.0.
-You can configure OAuth 2.0 authentication, then xref:assembly-oauth-authorization_{context}[OAuth 2.0 authorization].
-
-[NOTE]
-====
-OAuth 2.0 authentication can be used in conjunction with xref:con-securing-kafka-authorization-str[Kafka authorization].
-====
-
 Using OAuth 2.0 authentication, application clients can access resources on application servers (called _resource servers_) without exposing account credentials.
 
 The application client passes an access token as a means of authenticating, which application servers can also use to determine the level of access to grant.

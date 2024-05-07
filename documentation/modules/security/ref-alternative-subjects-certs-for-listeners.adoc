@@ -4,13 +4,14 @@
 
 [id='ref-alternative-subjects-certs-for-listeners-{context}']
 
-= Alternative subjects in server certificates for Kafka listeners
+= Specifying SANs for custom listener certificates
 
 [role="_abstract"]
-In order to use TLS hostname verification with your own xref:proc-installing-certs-per-listener-{context}[Kafka listener certificates], you must use the correct Subject Alternative Names (SANs) for each listener. The certificate SANs must specify hostnames for the following:
+In order to use TLS hostname verification with custom xref:proc-installing-certs-per-listener-{context}[Kafka listener certificates], you must specify the correct Subject Alternative Names (SANs) for each listener. 
+
+The certificate SANs must specify hostnames for the following:
 
 * All of the Kafka brokers in your cluster
-
 * The Kafka cluster bootstrap service
 
 You can use wildcard certificates if they are supported by your CA.
@@ -23,47 +24,47 @@ Replace `<cluster-name>` with the name of the Kafka cluster and `<namespace>` wi
 
 .Wildcards example for a `type: internal` listener
 
-[source,shell,subs="+quotes,attributes+"]
+[source,shell]
 ----
 //Kafka brokers
-*._<cluster-name>_-kafka-brokers
-*._<cluster-name>_-kafka-brokers._<namespace>_.svc
+*.<cluster_name>-kafka-brokers
+*.<cluster_name>-kafka-brokers.<namespace>.svc
 
 // Bootstrap service
-_<cluster-name>_-kafka-bootstrap
-_<cluster-name>_-kafka-bootstrap._<namespace>_.svc
+<cluster_name>-kafka-bootstrap
+<cluster_name>-kafka-bootstrap.<namespace>.svc
 ----
 
 .Non-wildcards example for a `type: internal` listener
 
-[source,shell,subs="+quotes,attributes+"]
+[source,shell]
 ----
 // Kafka brokers
-_<cluster-name>_-kafka-0._<cluster-name>_-kafka-brokers
-_<cluster-name>_-kafka-0._<cluster-name>_-kafka-brokers._<namespace>_.svc
-_<cluster-name>_-kafka-1._<cluster-name>_-kafka-brokers
-_<cluster-name>_-kafka-1._<cluster-name>_-kafka-brokers._<namespace>_.svc
+<cluster_name>-kafka-0.<cluster_name>-kafka-brokers
+<cluster_name>-kafka-0.<cluster_name>-kafka-brokers.<namespace>.svc
+<cluster_name>-kafka-1.<cluster_name>-kafka-brokers
+<cluster_name>-kafka-1.<cluster_name>-kafka-brokers.<namespace>.svc
 # ...
 
 // Bootstrap service
-_<cluster-name>_-kafka-bootstrap
-_<cluster-name>_-kafka-bootstrap._<namespace>_.svc
+<cluster_name>-kafka-bootstrap
+<cluster_name>-kafka-bootstrap.<namespace>.svc
 ----
 
 .Non-wildcards example for a `type: cluster-ip` listener
 
-[source,shell,subs="+quotes,attributes+"]
+[source,shell]
 ----
 // Kafka brokers
-_<cluster-name>_-kafka-_<listener-name>_-0
-_<cluster-name>_-kafka-_<listener-name>_-0._<namespace>_.svc
-_<cluster-name>_-kafka-_<listener-name>_-1
-_<cluster-name>_-kafka-_<listener-name>_-1._<namespace>_.svc
+<cluster_name>-kafka-<listener-name>-0
+<cluster_name>-kafka-<listener-name>-0.<namespace>.svc
+<cluster_name>-kafka-_listener-name>-1
+<cluster_name>-kafka-<listener-name>-1.<namespace>.svc
 # ...
 
 // Bootstrap service
-_<cluster-name>_-kafka-_<listener-name>_-bootstrap
-_<cluster-name>_-kafka-_<listener-name>_-bootstrap._<namespace>_.svc
+<cluster_name>-kafka-<listener-name>-bootstrap
+<cluster_name>-kafka-<listener-name>-bootstrap.<namespace>.svc
 ----
 
 == Examples of SANs for external listeners
@@ -98,8 +99,3 @@ m¦`nodeport`
 You can use a matching wildcard name.
 
 |===
-
-[role="_additional-resources"]
-.Additional resources
-
-* xref:proc-installing-certs-per-listener-{context}[]

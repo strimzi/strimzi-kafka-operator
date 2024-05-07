@@ -16,8 +16,6 @@ include::../../modules/deploying/proc-deploy-example-clients.adoc[leveloffset=+1
 include::../../modules/overview/con-configuration-points-listeners.adoc[leveloffset=+1]
 //listener naming conventions
 include::../../modules/overview/con-configuration-points-listener-names.adoc[leveloffset=+1]
-//how to set up external clients that can access and use the deployment
-include::../../modules/deploying/proc-deploy-setup-external-clients.adoc[leveloffset=+1]
 //access through external listeners
 include::../../modules/security/proc-accessing-kafka-using-nodeports.adoc[leveloffset=+1]
 include::../../modules/security/proc-accessing-kafka-using-loadbalancers.adoc[leveloffset=+1]
@@ -25,6 +23,7 @@ include::../../modules/security/proc-accessing-kafka-using-loadbalancers.adoc[le
 ifdef::Section[]
 include::../../modules/security/proc-accessing-kafka-using-ingress.adoc[leveloffset=+1]
 endif::Section[]
+//openshift only
 include::../../modules/security/proc-accessing-kafka-using-routes.adoc[leveloffset=+1]
 //discover internal bootstrap service and Bridge
 include::../../modules/deploying/con-service-discovery.adoc[leveloffset=+1]

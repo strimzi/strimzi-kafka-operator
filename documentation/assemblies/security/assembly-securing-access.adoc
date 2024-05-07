@@ -3,48 +3,56 @@
 // configuring/configuring.adoc
 
 [id='assembly-securing-access-{context}']
-= Securing access to Kafka
+= Securing access to a Kafka cluster
 
 [role="_abstract"]
-Secure your Kafka cluster by managing the access a client has to Kafka brokers.
-A secure connection between Kafka brokers and clients can encompass the following:
+Secure connections by configuring Kafka and Kafka users.
+Through configuration, you can implement encryption, authentication, and authorization mechanisms.
 
-* Encryption for data exchange
-* Authentication to prove identity
-* Authorization to allow or decline actions executed by users
+.Kafka configuration 
 
-In Strimzi, securing a connection involves configuring listeners and user accounts:
+To establish secure access to Kafka, configure the `Kafka` resource to set up the following configurations based on your specific requirements:
 
-Listener configuration:: Use the `Kafka` resource to configure listeners for client connections to Kafka brokers.
-Listeners define how clients authenticate, such as using mTLS, SCRAM-SHA-512, OAuth 2.0, or custom authentication methods.
-To enhance security, configure TLS encryption to secure communication between Kafka brokers and clients.
-You can further secure TLS-based communication by specifying the supported TLS versions and cipher suites in the Kafka broker configuration.
-+
-For an added layer of protection, use the `Kafka` resource to specify authorization methods for the Kafka cluster, such as simple, OAuth 2.0, OPA, or custom authorization.
+* Listeners with specified authentication types to define how clients authenticate
+** TLS encryption for communication between Kafka and clients
+** Supported TLS versions and cipher suites for additional security
+* Authorization for the entire Kafka cluster
+* Network policies for restricting access
+* Super users for unconstrained access to brokers
 
-User accounts:: Set up user accounts and credentials with `KafkaUser` resources in Strimzi. 
-Users represent your clients and determine how they should authenticate and authorize with the Kafka cluster. 
-The authentication and authorization mechanisms specified in the user configuration must match the Kafka configuration. 
-Additionally, define Access Control Lists (ACLs) to control user access to specific topics and actions for more fine-grained authorization.
-To further enhance security, specify user quotas to limit client access to Kafka brokers based on byte rates or CPU utilization.
-+
-You can also add producer or consumer configuration to your clients if you wish to limit the TLS versions and cipher suites they use.
-The configuration on the clients must only use protocols and cipher suites that are enabled on the broker.
+Authentication is configured independently for each listener, while authorization is set up for the whole Kafka cluster.
 
-NOTE: If you are using an OAuth 2.0 to manage client access, user authentication and authorization credentials are managed through the authorization server.
+For more information on access configuration for Kafka, see the link:{BookURLConfiguring}#type-Kafka-reference[`Kafka` schema reference^] and link:{BookURLConfiguring}#type-GenericKafkaListener-reference[`GenericKafkaListener` schema reference^].
 
-Strimzi operators automate the configuration process and create the certificates required for authentication.
-The Cluster Operator automatically sets up TLS certificates for data encryption and authentication within your cluster.
+.User (client-side) configuration
 
-//Config options for securing Kafka
-include::assembly-securing-kafka-brokers.adoc[leveloffset=+1]
+To enable secure client access to Kafka, configure `KafkaUser` resources. 
+These resources represent clients and determine how they authenticate and authorize with the Kafka cluster.
+
+Configure the `KafkaUser` resource to set up the following configurations based on your specific requirements:
+
+* Authentication that must match the enabled listener authentication
+** Supported TLS versions and cipher suites that must match the Kafka configuration
+* Authorization that must match the enabled Kafka authorization
+* Access Control Lists (ACLs) for fine-grained control over user access to topics and actions
+* Quotas to limit client access based on byte rates or CPU utilization
+
+The User Operator creates the user representing the client and the security credentials used for client authentication, based on the chosen authentication type.
+
+For more information on access configuration for users, see the link:{BookURLConfiguring}#type-KafkaUser-reference[`KafkaUser` schema reference^].
+
+//listener authn config
+include::../../modules/security/con-securing-kafka-authentication.adoc[leveloffset=+1]
+include::../../modules/security/proc-restricting-access-to-listeners-using-network-policies.adoc[leveloffset=+2]
+include::../../modules/security/proc-installing-certs-per-listener.adoc[leveloffset=+2]
+include::../../modules/security/ref-alternative-subjects-certs-for-listeners.adoc[leveloffset=+2]
+
+//Kafka authz config
+include::../../modules/security/con-securing-kafka-authorization.adoc[leveloffset=+1]
 
 //Config options for clients
 include::assembly-securing-kafka-clients.adoc[leveloffset=+1]
 
-//Config to secure access
-include::assembly-securing-kafka.adoc[leveloffset=+1]
+//client set up example with kafka and user config
+include::../../modules/deploying/proc-deploy-setup-external-clients.adoc[leveloffset=+1]
 
-//oauth options
-include::../oauth/assembly-oauth-authentication.adoc[leveloffset=+1]
-include::../oauth/assembly-oauth-authorization.adoc[leveloffset=+1]

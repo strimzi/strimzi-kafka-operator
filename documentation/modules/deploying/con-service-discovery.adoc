@@ -3,20 +3,18 @@
 // managing/assembly-management-tasks.adoc
 
 [id='proc-add-service-discovery-{context}']
-= Returning connection details for services
+= Discovering connection details for clients
 
 [role="_abstract"]
 Service discovery makes it easier for client applications running in the same Kubernetes cluster as Strimzi to interact with a Kafka cluster.
 
-A _service discovery_ label and annotation are generated for services used to access the Kafka cluster:
+A service discovery label and annotation are created for the following services:
 
 * Internal Kafka bootstrap service
 * Kafka Bridge service
 
-The label helps to make the service discoverable, while the annotation provides connection details for client applications to establish connections.
-
-The service discovery label, `strimzi.io/discovery`, is set as `true` for the `Service` resources.
-The service discovery annotation has the same key, providing connection details in JSON format for each service.
+Service discovery label:: The service discovery label, `strimzi.io/discovery`, is set to `true` for `Service` resources to make them discoverable for client connections.
+Service discovery annotation:: The service discovery annotation provides connection details in JSON format for each service for client applications to use to establish connections.
 
 .Example internal Kafka bootstrap service
 [source,yaml,subs="attributes+"]

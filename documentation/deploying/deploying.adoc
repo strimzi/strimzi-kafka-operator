@@ -36,6 +36,8 @@ include::assemblies/operators/assembly-using-the-user-operator.adoc[leveloffset=
 include::assemblies/deploying/assembly-deploy-client-access.adoc[leveloffset=+1]
 //Securing the deployment
 include::assemblies/security/assembly-securing-access.adoc[leveloffset=+1]
+//using OAuth
+include::assemblies/security/assembly-oauth-security.adoc[leveloffset=+1]
 //managing tls certificates
 include::assemblies/security/assembly-security.adoc[leveloffset=+1]
 //security context for all pods

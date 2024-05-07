@@ -3,10 +3,10 @@
 // assembly-securing-access.adoc
 
 [id='con-securing-kafka-authorization-{context}']
-= Kafka authorization
+= Configuring authorized access to Kafka
 
 [role="_abstract"]
-Configure authorization for Kafka brokers using the `Kafka.spec.kafka.authorization` property in the `Kafka` resource.
+Configure authorized access to a Kafka cluster using the `Kafka.spec.kafka.authorization` property in the `Kafka` resource.
 If the `authorization` property is missing, no authorization is enabled and clients have no restrictions.
 When enabled, authorization is applied to all enabled listeners.
 The authorization method is defined in the `type` field.
@@ -21,7 +21,7 @@ Supported authorization options:
 .Kafka cluster authorization options
 image::kafka-authorization-config-options.png[options for kafka authorization configuration]
 
-== Super users
+== Designating super users
 
 Super users can access all resources in your Kafka cluster regardless of any access restrictions,
 and are supported by all authorization mechanisms.

@@ -26,7 +26,7 @@ The names are assigned to the services, routes, load balancers, and ingresses cr
 
 You can use certain backwards compatible names and port numbers to transition listeners initially configured under the retired `KafkaListeners` schema.
 The resulting external listener naming convention varies slightly. 
-These specific combinations of listener name and port configuration values are backwards compatible:
+The specific combinations of listener name and port configuration values in the following table are backwards compatible.
 
 .Backwards compatible listener name and port combinations
 [cols="2a,2a,4,4", options="header"]
