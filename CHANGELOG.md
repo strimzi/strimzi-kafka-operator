@@ -2,6 +2,7 @@
 
 ## 0.41.0
 
+* Enhance `KafkaBridge` resource with consumer inactivity timeout and HTTP consumer/producer enablement.
 * Add support for Apache Kafka 3.6.2
 * Provide metrics to monitor certificates expiration as well as modified `Strimzi Operators` dashboard to include certificate expiration per cluster.
 * Add support for JBOD storage in KRaft mode.
