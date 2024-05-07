@@ -40,7 +40,7 @@ Creates the image name from the registry, repository, image, tag, and digest
 To use, add the following key/value pairs to the scope:
 - "key" [optional]: the key to lookup under .Values for the image map
 - "tagSuffix" [optional]: the suffix to add to tagPrefix or the default tag
-- Example: `template "strimzi.image" (merge . (dict "key" "tlsSidecarEntityOperator" "tagSuffix" "-kafka-3.1.0"))`
+- Example: `template "strimzi.image" (merge . (dict "key" "cruiseControl" "tagSuffix" "-kafka-3.1.0"))`
 */}}
 {{- define "strimzi.image" -}}
 {{- $vals := ternary .Values.image (index .Values .key).image (empty .key) -}}

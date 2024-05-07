@@ -18,7 +18,6 @@ Strimzi image for running Kafka, including:
 * Kafka Connect
 * Kafka MirrorMaker
 * ZooKeeper
-* TLS Sidecars
 * Cruise Control
 
 |Operator
