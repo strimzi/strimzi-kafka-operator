@@ -28,19 +28,17 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"host", "port", "cors", "timeoutSeconds", "producer", "consumer"})
+@JsonPropertyOrder({"host", "port", "cors", "producer", "consumer"})
 @EqualsAndHashCode
 @ToString
 public class KafkaBridgeHttpConfig implements UnknownPropertyPreserving {
     public static final int HTTP_DEFAULT_PORT = 8080;
     public static final String HTTP_DEFAULT_HOST = "0.0.0.0";
-    public static final long HTTP_DEFAULT_TIMEOUT = -1L;
 
     private int port = HTTP_DEFAULT_PORT;
     private KafkaBridgeHttpCors cors;
-    private long timeoutSeconds = HTTP_DEFAULT_TIMEOUT;
-    private KafkaBridgeProducerEnablement producer = new KafkaBridgeProducerEnablement();
-    private KafkaBridgeConsumerEnablement consumer = new KafkaBridgeConsumerEnablement();
+    private KafkaBridgeProducerConfig producer = new KafkaBridgeProducerConfig();
+    private KafkaBridgeConsumerConfig consumer = new KafkaBridgeConsumerConfig();
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     public KafkaBridgeHttpConfig() {
@@ -61,30 +59,21 @@ public class KafkaBridgeHttpConfig implements UnknownPropertyPreserving {
         this.port = port;
     }
 
-    @Description("The timeout in seconds for deleting inactive consumers.")
-    public long getTimeoutSeconds() {
-        return timeoutSeconds;
-    }
-
-    public void setTimeoutSeconds(long timeoutSeconds) {
-        this.timeoutSeconds = timeoutSeconds;
-    }
-
     @Description("Configurations for the HTTP Producer.")
-    public KafkaBridgeProducerEnablement getProducer() {
+    public KafkaBridgeProducerConfig getProducer() {
         return producer;
     }
 
-    public void setProducer(KafkaBridgeProducerEnablement producer) {
+    public void setProducer(KafkaBridgeProducerConfig producer) {
         this.producer = producer;
     }
 
     @Description("Configurations for the HTTP Consumer.")
-    public KafkaBridgeConsumerEnablement getConsumer() {
+    public KafkaBridgeConsumerConfig getConsumer() {
         return consumer;
     }
 
-    public void setConsumer(KafkaBridgeConsumerEnablement consumer) {
+    public void setConsumer(KafkaBridgeConsumerConfig consumer) {
         this.consumer = consumer;
     }
 

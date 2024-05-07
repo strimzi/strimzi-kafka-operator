@@ -29,7 +29,7 @@ import static java.util.Collections.emptyMap;
 @JsonPropertyOrder({"enabled"})
 @EqualsAndHashCode
 @ToString
-public class KafkaBridgeProducerEnablement implements UnknownPropertyPreserving, Serializable {
+public class KafkaBridgeProducerConfig implements UnknownPropertyPreserving, Serializable {
 
     private static final long serialVersionUID = 1L;
     

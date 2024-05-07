@@ -90,12 +90,6 @@ public class ModelUtils {
                 Labels.STRIMZI_CLUSTER_LABEL, cluster);
     }
 
-    static EnvVar tlsSidecarLogEnvVar(TlsSidecar tlsSidecar) {
-        return ContainerUtils.createEnvVar(TLS_SIDECAR_LOG_LEVEL,
-                (tlsSidecar != null && tlsSidecar.getLogLevel() != null ?
-                        tlsSidecar.getLogLevel() : TlsSidecarLogLevel.NOTICE).toValue());
-    }
-
     static String tlsToString(List<CertSecretSource> trustedCertificates) {
         Objects.requireNonNull(trustedCertificates, "trustedCertificates cannot be null");
         return trustedCertificates.stream()

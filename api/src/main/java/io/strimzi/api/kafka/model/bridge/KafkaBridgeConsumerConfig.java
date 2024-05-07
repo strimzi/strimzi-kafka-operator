@@ -26,14 +26,17 @@ import static java.util.Collections.emptyMap;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"enabled"})
+@JsonPropertyOrder({"enabled", "timeoutSeconds"})
 @EqualsAndHashCode
 @ToString
-public class KafkaBridgeConsumerEnablement implements UnknownPropertyPreserving, Serializable {
+public class KafkaBridgeConsumerConfig implements UnknownPropertyPreserving, Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    public static final long HTTP_DEFAULT_TIMEOUT = -1L;
+
     private boolean enabled = true;
+    private long timeoutSeconds = HTTP_DEFAULT_TIMEOUT;
     private Map<String, Object> additionalProperties;
 
     @Description("Whether the HTTP consumer should be enabled or disabled")
@@ -43,6 +46,16 @@ public class KafkaBridgeConsumerEnablement implements UnknownPropertyPreserving,
 
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
+    }
+
+
+    @Description("The timeout in seconds for deleting inactive consumers.")
+    public long getTimeoutSeconds() {
+        return timeoutSeconds;
+    }
+
+    public void setTimeoutSeconds(long timeoutSeconds) {
+        this.timeoutSeconds = timeoutSeconds;
     }
 
     @Override

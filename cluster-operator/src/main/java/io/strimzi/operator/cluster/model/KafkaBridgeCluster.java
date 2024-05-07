@@ -439,8 +439,8 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
             varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BRIDGE_CONSUMER_ENABLED, String.valueOf(http.getConsumer().isEnabled())));
             varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BRIDGE_PRODUCER_ENABLED, String.valueOf(http.getProducer().isEnabled())));
 
-            if (http.getTimeoutSeconds() != -1) {
-                varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BRIDGE_HTTP_CONSUMER_TIMEOUT, String.valueOf(http.getTimeoutSeconds())));
+            if (http.getConsumer().getTimeoutSeconds() != -1) {
+                varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BRIDGE_HTTP_CONSUMER_TIMEOUT, String.valueOf(http.getConsumer().getTimeoutSeconds())));
             }
 
             addCorsEnvVars(varList);
