@@ -13,7 +13,8 @@ spec:
     volumes:
       - id: 0
         type: persistent-claim
-        size: 20Gi
+        size: 100Gi
+        kraftMetadata: shared
         deleteClaim: false
 ---
 
@@ -33,6 +34,7 @@ spec:
       - id: 0
         type: persistent-claim
         size: 100Gi
+        kraftMetadata: shared
         deleteClaim: false
 ---
 

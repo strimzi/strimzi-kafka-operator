@@ -27,7 +27,7 @@ spec:
             name: strimzi-cluster-operator
       containers:
         - name: strimzi-cluster-operator
-          image: quay.io/strimzi/operator:0.40.0
+          image: quay.io/strimzi/operator:0.41.0
           ports:
             - containerPort: 8080
               name: http
@@ -48,43 +48,47 @@ spec:
             - name: STRIMZI_OPERATION_TIMEOUT_MS
               value: "300000"
             - name: STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE
-              value: quay.io/strimzi/kafka:0.40.0-kafka-3.7.0
+              value: quay.io/strimzi/kafka:0.41.0-kafka-3.7.0
             - name: STRIMZI_DEFAULT_KAFKA_EXPORTER_IMAGE
-              value: quay.io/strimzi/kafka:0.40.0-kafka-3.7.0
+              value: quay.io/strimzi/kafka:0.41.0-kafka-3.7.0
             - name: STRIMZI_DEFAULT_CRUISE_CONTROL_IMAGE
-              value: quay.io/strimzi/kafka:0.40.0-kafka-3.7.0
+              value: quay.io/strimzi/kafka:0.41.0-kafka-3.7.0
             - name: STRIMZI_KAFKA_IMAGES
               value: |
-                3.6.0=quay.io/strimzi/kafka:0.40.0-kafka-3.6.0
-                3.6.1=quay.io/strimzi/kafka:0.40.0-kafka-3.6.1
-                3.7.0=quay.io/strimzi/kafka:0.40.0-kafka-3.7.0
+                3.6.0=quay.io/strimzi/kafka:0.41.0-kafka-3.6.0
+                3.6.1=quay.io/strimzi/kafka:0.41.0-kafka-3.6.1
+                3.6.2=quay.io/strimzi/kafka:0.41.0-kafka-3.6.2
+                3.7.0=quay.io/strimzi/kafka:0.41.0-kafka-3.7.0
             - name: STRIMZI_KAFKA_CONNECT_IMAGES
               value: |
-                3.6.0=quay.io/strimzi/kafka:0.40.0-kafka-3.6.0
-                3.6.1=quay.io/strimzi/kafka:0.40.0-kafka-3.6.1
-                3.7.0=quay.io/strimzi/kafka:0.40.0-kafka-3.7.0
+                3.6.0=quay.io/strimzi/kafka:0.41.0-kafka-3.6.0
+                3.6.1=quay.io/strimzi/kafka:0.41.0-kafka-3.6.1
+                3.6.2=quay.io/strimzi/kafka:0.41.0-kafka-3.6.2
+                3.7.0=quay.io/strimzi/kafka:0.41.0-kafka-3.7.0
             - name: STRIMZI_KAFKA_MIRROR_MAKER_IMAGES
               value: |
-                3.6.0=quay.io/strimzi/kafka:0.40.0-kafka-3.6.0
-                3.6.1=quay.io/strimzi/kafka:0.40.0-kafka-3.6.1
-                3.7.0=quay.io/strimzi/kafka:0.40.0-kafka-3.7.0
+                3.6.0=quay.io/strimzi/kafka:0.41.0-kafka-3.6.0
+                3.6.1=quay.io/strimzi/kafka:0.41.0-kafka-3.6.1
+                3.6.2=quay.io/strimzi/kafka:0.41.0-kafka-3.6.2
+                3.7.0=quay.io/strimzi/kafka:0.41.0-kafka-3.7.0
             - name: STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES
               value: |
-                3.6.0=quay.io/strimzi/kafka:0.40.0-kafka-3.6.0
-                3.6.1=quay.io/strimzi/kafka:0.40.0-kafka-3.6.1
-                3.7.0=quay.io/strimzi/kafka:0.40.0-kafka-3.7.0
+                3.6.0=quay.io/strimzi/kafka:0.41.0-kafka-3.6.0
+                3.6.1=quay.io/strimzi/kafka:0.41.0-kafka-3.6.1
+                3.6.2=quay.io/strimzi/kafka:0.41.0-kafka-3.6.2
+                3.7.0=quay.io/strimzi/kafka:0.41.0-kafka-3.7.0
             - name: STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE
-              value: quay.io/strimzi/operator:0.40.0
+              value: quay.io/strimzi/operator:0.41.0
             - name: STRIMZI_DEFAULT_USER_OPERATOR_IMAGE
-              value: quay.io/strimzi/operator:0.40.0
+              value: quay.io/strimzi/operator:0.41.0
             - name: STRIMZI_DEFAULT_KAFKA_INIT_IMAGE
-              value: quay.io/strimzi/operator:0.40.0
+              value: quay.io/strimzi/operator:0.41.0
             - name: STRIMZI_DEFAULT_KAFKA_BRIDGE_IMAGE
               value: quay.io/strimzi/kafka-bridge:0.28.0
             - name: STRIMZI_DEFAULT_KANIKO_EXECUTOR_IMAGE
-              value: quay.io/strimzi/kaniko-executor:0.40.0
+              value: quay.io/strimzi/kaniko-executor:0.41.0
             - name: STRIMZI_DEFAULT_MAVEN_BUILDER
-              value: quay.io/strimzi/maven-builder:0.40.0
+              value: quay.io/strimzi/maven-builder:0.41.0
             - name: STRIMZI_OPERATOR_NAMESPACE
               valueFrom:
                 fieldRef:
