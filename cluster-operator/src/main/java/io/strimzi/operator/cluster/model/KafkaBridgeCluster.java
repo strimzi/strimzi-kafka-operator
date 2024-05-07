@@ -450,16 +450,18 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
     }
 
     private void addCorsEnvVars(List<EnvVar> varList) {
-        if (http.getCors() != null) {
-            varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BRIDGE_CORS_ENABLED, "true"));
-            if (http.getCors().getAllowedOrigins() != null) {
-                varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BRIDGE_CORS_ALLOWED_ORIGINS, String.join(",", http.getCors().getAllowedOrigins())));
+        if (http != null) {
+            if (http.getCors() != null) {
+                varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BRIDGE_CORS_ENABLED, "true"));
+                if (http.getCors().getAllowedOrigins() != null) {
+                    varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BRIDGE_CORS_ALLOWED_ORIGINS, String.join(",", http.getCors().getAllowedOrigins())));
+                }
+                if (http.getCors().getAllowedMethods() != null) {
+                    varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BRIDGE_CORS_ALLOWED_METHODS, String.join(",", http.getCors().getAllowedMethods())));
+                }
+            } else {
+                varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BRIDGE_CORS_ENABLED, "false"));
             }
-            if (http.getCors().getAllowedMethods() != null) {
-                varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BRIDGE_CORS_ALLOWED_METHODS, String.join(",", http.getCors().getAllowedMethods())));
-            }
-        } else {
-            varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BRIDGE_CORS_ENABLED, "false"));
         }
     }
 
