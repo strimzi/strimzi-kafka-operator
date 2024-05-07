@@ -43,6 +43,7 @@ import java.util.stream.Collectors;
 
 import static io.strimzi.api.kafka.model.topic.ReplicasChangeState.ONGOING;
 import static io.strimzi.api.kafka.model.topic.ReplicasChangeState.PENDING;
+import static io.strimzi.operator.common.Util.buildBasicAuthValue;
 import static io.strimzi.operator.topic.TopicOperatorUtil.getFileContent;
 import static io.strimzi.operator.topic.TopicOperatorUtil.hasReplicasChange;
 import static io.strimzi.operator.topic.TopicOperatorUtil.topicNames;
@@ -266,7 +267,7 @@ public class ReplicasChangeHandler {
         if (config.cruiseControlAuthEnabled()) {
             String apiUsername = new String(getFileContent(config.cruiseControlApiUserPath()), UTF_8);
             String apiPassword = new String(getFileContent(config.cruiseControlApiPassPath()), UTF_8);
-            builder.header("Authorization", TopicOperatorUtil.buildBasicAuthValue(apiUsername, apiPassword));
+            builder.header("Authorization", buildBasicAuthValue(apiUsername, apiPassword));
         }
     }
 

@@ -86,8 +86,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
 
     private static HTTPHeader generateAuthHttpHeader(String user, String password) {
         String headerName = "Authorization";
-        String headerValue = "Basic " + Util.encodeToBase64(String.join(":", user, password));
-
+        String headerValue = Util.buildBasicAuthValue(user, password);
         return new HTTPHeader(headerName, headerValue);
     }
 

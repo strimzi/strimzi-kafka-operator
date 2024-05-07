@@ -42,6 +42,9 @@ import java.util.concurrent.CompletionStage;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
+import static java.lang.String.format;
+import static java.lang.String.join;
+
 /**
  * Class with various utility methods
  */
@@ -539,4 +542,16 @@ public class Util {
         return new String(bytes, StandardCharsets.US_ASCII);
     }
 
+    /**
+     * Build basic HTTP authentication header value.
+     *
+     * @param username Username.
+     * @param password Password.
+     *
+     * @return Header value.
+     */
+    public static String buildBasicAuthValue(String username, String password) {
+        String credentials = join(":", username, password);
+        return format("Basic %s", Util.encodeToBase64(credentials));
+    }
 }
