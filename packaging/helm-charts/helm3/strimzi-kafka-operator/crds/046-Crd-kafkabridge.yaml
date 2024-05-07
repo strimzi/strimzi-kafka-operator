@@ -253,9 +253,6 @@ spec:
                         - allowedOrigins
                         - allowedMethods
                       description: CORS configuration for the HTTP Bridge.
-                    timeoutSeconds:
-                      type: integer
-                      description: The timeout in seconds for deleting inactive consumers.
                     producer:
                       type: object
                       properties:
@@ -269,6 +266,9 @@ spec:
                         enabled:
                           type: boolean
                           description: Whether the HTTP consumer should be enabled or disabled.
+                        timeoutSeconds:
+                          type: integer
+                          description: The timeout in seconds for deleting inactive consumers.
                       description: Configurations for the HTTP Consumer.
                   description: The HTTP related configuration.
                 adminClient:

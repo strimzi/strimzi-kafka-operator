@@ -3620,14 +3620,11 @@ include::../api/io.strimzi.api.kafka.model.bridge.KafkaBridgeHttpConfig.adoc[lev
 |cors
 |xref:type-KafkaBridgeHttpCors-{context}[`KafkaBridgeHttpCors`]
 |CORS configuration for the HTTP Bridge.
-|timeoutSeconds
-|integer
-|The timeout in seconds for deleting inactive consumers.
 |producer
-|xref:type-KafkaBridgeProducerEnablement-{context}[`KafkaBridgeProducerEnablement`]
+|xref:type-KafkaBridgeProducerConfig-{context}[`KafkaBridgeProducerConfig`]
 |Configurations for the HTTP Producer.
 |consumer
-|xref:type-KafkaBridgeConsumerEnablement-{context}[`KafkaBridgeConsumerEnablement`]
+|xref:type-KafkaBridgeConsumerConfig-{context}[`KafkaBridgeConsumerConfig`]
 |Configurations for the HTTP Consumer.
 |====
 
@@ -3648,17 +3645,17 @@ Used in: xref:type-KafkaBridgeHttpConfig-{context}[`KafkaBridgeHttpConfig`]
 |List of allowed HTTP methods.
 |====
 
-[id='type-KafkaBridgeProducerEnablement-{context}']
-= `KafkaBridgeProducerEnablement` schema reference
+[id='type-KafkaBridgeProducerConfig-{context}']
+= `KafkaBridgeProducerConfig` schema reference
 
 Used in: xref:type-KafkaBridgeHttpConfig-{context}[`KafkaBridgeHttpConfig`]
 
-xref:type-KafkaBridgeProducerEnablement-schema-{context}[Full list of `KafkaBridgeProducerEnablement` schema properties]
+xref:type-KafkaBridgeProducerConfig-schema-{context}[Full list of `KafkaBridgeProducerConfig` schema properties]
 
-include::../api/io.strimzi.api.kafka.model.bridge.KafkaBridgeProducerEnablement.adoc[leveloffset=+1]
+include::../api/io.strimzi.api.kafka.model.bridge.KafkaBridgeProducerConfig.adoc[leveloffset=+1]
 
-[id='type-KafkaBridgeProducerEnablement-schema-{context}']
-== `KafkaBridgeProducerEnablement` schema properties
+[id='type-KafkaBridgeProducerConfig-schema-{context}']
+== `KafkaBridgeProducerConfig` schema properties
 
 
 [cols="2,2,3a",options="header"]
@@ -3669,17 +3666,17 @@ include::../api/io.strimzi.api.kafka.model.bridge.KafkaBridgeProducerEnablement.
 |Whether the HTTP producer should be enabled or disabled.
 |====
 
-[id='type-KafkaBridgeConsumerEnablement-{context}']
-= `KafkaBridgeConsumerEnablement` schema reference
+[id='type-KafkaBridgeConsumerConfig-{context}']
+= `KafkaBridgeConsumerConfig` schema reference
 
 Used in: xref:type-KafkaBridgeHttpConfig-{context}[`KafkaBridgeHttpConfig`]
 
-xref:type-KafkaBridgeConsumerEnablement-schema-{context}[Full list of `KafkaBridgeConsumerEnablement` schema properties]
+xref:type-KafkaBridgeConsumerConfig-schema-{context}[Full list of `KafkaBridgeConsumerConfig` schema properties]
 
-include::../api/io.strimzi.api.kafka.model.bridge.KafkaBridgeConsumerEnablement.adoc[leveloffset=+1]
+include::../api/io.strimzi.api.kafka.model.bridge.KafkaBridgeConsumerConfig.adoc[leveloffset=+1]
 
-[id='type-KafkaBridgeConsumerEnablement-schema-{context}']
-== `KafkaBridgeConsumerEnablement` schema properties
+[id='type-KafkaBridgeConsumerConfig-schema-{context}']
+== `KafkaBridgeConsumerConfig` schema properties
 
 
 [cols="2,2,3a",options="header"]
@@ -3688,6 +3685,9 @@ include::../api/io.strimzi.api.kafka.model.bridge.KafkaBridgeConsumerEnablement.
 |enabled
 |boolean
 |Whether the HTTP consumer should be enabled or disabled.
+|timeoutSeconds
+|integer
+|The timeout in seconds for deleting inactive consumers.
 |====
 
 [id='type-KafkaBridgeAdminClientSpec-{context}']
