@@ -8,9 +8,12 @@ spec:
   image: "foo"
   bootstrapServers: "my-cluster-kafka:9092"
   consumer:
+    enabled: true
+    timeoutSeconds: 60
     config:
       foo: "bur"
   producer:
+    enabled: true
     config:
       foo: "buz"
   enableMetrics: false
