@@ -3620,12 +3620,6 @@ include::../api/io.strimzi.api.kafka.model.bridge.KafkaBridgeHttpConfig.adoc[lev
 |cors
 |xref:type-KafkaBridgeHttpCors-{context}[`KafkaBridgeHttpCors`]
 |CORS configuration for the HTTP Bridge.
-|producer
-|xref:type-KafkaBridgeProducerConfig-{context}[`KafkaBridgeProducerConfig`]
-|Configurations for the HTTP Producer.
-|consumer
-|xref:type-KafkaBridgeConsumerConfig-{context}[`KafkaBridgeConsumerConfig`]
-|Configurations for the HTTP Consumer.
 |====
 
 [id='type-KafkaBridgeHttpCors-{context}']
@@ -3643,51 +3637,6 @@ Used in: xref:type-KafkaBridgeHttpConfig-{context}[`KafkaBridgeHttpConfig`]
 |allowedMethods
 |string array
 |List of allowed HTTP methods.
-|====
-
-[id='type-KafkaBridgeProducerConfig-{context}']
-= `KafkaBridgeProducerConfig` schema reference
-
-Used in: xref:type-KafkaBridgeHttpConfig-{context}[`KafkaBridgeHttpConfig`]
-
-xref:type-KafkaBridgeProducerConfig-schema-{context}[Full list of `KafkaBridgeProducerConfig` schema properties]
-
-include::../api/io.strimzi.api.kafka.model.bridge.KafkaBridgeProducerConfig.adoc[leveloffset=+1]
-
-[id='type-KafkaBridgeProducerConfig-schema-{context}']
-== `KafkaBridgeProducerConfig` schema properties
-
-
-[cols="2,2,3a",options="header"]
-|====
-|Property |Property type |Description
-|enabled
-|boolean
-|Whether the HTTP producer should be enabled or disabled.
-|====
-
-[id='type-KafkaBridgeConsumerConfig-{context}']
-= `KafkaBridgeConsumerConfig` schema reference
-
-Used in: xref:type-KafkaBridgeHttpConfig-{context}[`KafkaBridgeHttpConfig`]
-
-xref:type-KafkaBridgeConsumerConfig-schema-{context}[Full list of `KafkaBridgeConsumerConfig` schema properties]
-
-include::../api/io.strimzi.api.kafka.model.bridge.KafkaBridgeConsumerConfig.adoc[leveloffset=+1]
-
-[id='type-KafkaBridgeConsumerConfig-schema-{context}']
-== `KafkaBridgeConsumerConfig` schema properties
-
-
-[cols="2,2,3a",options="header"]
-|====
-|Property |Property type |Description
-|enabled
-|boolean
-|Whether the HTTP consumer should be enabled or disabled.
-|timeoutSeconds
-|integer
-|The timeout in seconds for deleting inactive consumers.
 |====
 
 [id='type-KafkaBridgeAdminClientSpec-{context}']
@@ -3720,6 +3669,12 @@ include::../api/io.strimzi.api.kafka.model.bridge.KafkaBridgeConsumerSpec.adoc[l
 [cols="2,2,3a",options="header"]
 |====
 |Property |Property type |Description
+|enabled
+|boolean
+|Whether the HTTP consumer should be enabled or disabled.
+|timeoutSeconds
+|integer
+|The timeout in seconds for deleting inactive consumers.
 |config
 |map
 |The Kafka consumer configuration used for consumer instances created by the bridge. Properties with the following prefixes cannot be set: ssl., bootstrap.servers, group.id, sasl., security. (with the exception of: ssl.endpoint.identification.algorithm, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols).
@@ -3741,6 +3696,9 @@ include::../api/io.strimzi.api.kafka.model.bridge.KafkaBridgeProducerSpec.adoc[l
 [cols="2,2,3a",options="header"]
 |====
 |Property |Property type |Description
+|enabled
+|boolean
+|Whether the HTTP producer should be enabled or disabled.
 |config
 |map
 |The Kafka producer configuration used for producer instances created by the bridge. Properties with the following prefixes cannot be set: ssl., bootstrap.servers, sasl., security. (with the exception of: ssl.endpoint.identification.algorithm, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols).

@@ -30,11 +30,10 @@ import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.strimzi.api.kafka.model.bridge.KafkaBridge;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeBuilder;
-import io.strimzi.api.kafka.model.bridge.KafkaBridgeConsumerConfig;
-import io.strimzi.api.kafka.model.bridge.KafkaBridgeConsumerConfigBuilder;
+import io.strimzi.api.kafka.model.bridge.KafkaBridgeConsumerSpec;
+import io.strimzi.api.kafka.model.bridge.KafkaBridgeConsumerSpecBuilder;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeHttpConfig;
-import io.strimzi.api.kafka.model.bridge.KafkaBridgeHttpConfigBuilder;
-import io.strimzi.api.kafka.model.bridge.KafkaBridgeProducerConfigBuilder;
+import io.strimzi.api.kafka.model.bridge.KafkaBridgeProducerSpecBuilder;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.common.CertSecretSource;
 import io.strimzi.api.kafka.model.common.CertSecretSourceBuilder;
@@ -140,16 +139,15 @@ public class KafkaBridgeClusterTest {
         expected.add(new EnvVarBuilder().withName(KafkaBridgeCluster.ENV_VAR_STRIMZI_GC_LOG_ENABLED).withValue(String.valueOf(JvmOptions.DEFAULT_GC_LOGGING_ENABLED)).build());
         expected.add(new EnvVarBuilder().withName(KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_BOOTSTRAP_SERVERS).withValue(bootstrapServers).build());
         expected.add(new EnvVarBuilder().withName(KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_ADMIN_CLIENT_CONFIG).withValue(defaultAdminclientConfiguration).build());
-        expected.add(new EnvVarBuilder().withName(KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_CONSUMER_CONFIG).withValue(defaultConsumerConfiguration).build());
-        expected.add(new EnvVarBuilder().withName(KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_PRODUCER_CONFIG).withValue(defaultProducerConfiguration).build());
         expected.add(new EnvVarBuilder().withName(KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_ID).withValue(cluster).build());
+        expected.add(new EnvVarBuilder().withName(KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_CONSUMER_CONFIG).withValue(defaultConsumerConfiguration).build());
+        expected.add(new EnvVarBuilder().withName(KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_CONSUMER_ENABLED).withValue(String.valueOf(true)).build());
+        expected.add(new EnvVarBuilder().withName(KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_HTTP_CONSUMER_TIMEOUT).withValue(String.valueOf(KafkaBridgeConsumerSpec.HTTP_DEFAULT_TIMEOUT)).build());
+        expected.add(new EnvVarBuilder().withName(KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_PRODUCER_CONFIG).withValue(defaultProducerConfiguration).build());
+        expected.add(new EnvVarBuilder().withName(KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_PRODUCER_ENABLED).withValue(String.valueOf(true)).build());
         expected.add(new EnvVarBuilder().withName(KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_HTTP_HOST).withValue(KafkaBridgeHttpConfig.HTTP_DEFAULT_HOST).build());
         expected.add(new EnvVarBuilder().withName(KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_HTTP_PORT).withValue(String.valueOf(KafkaBridgeHttpConfig.HTTP_DEFAULT_PORT)).build());
         expected.add(new EnvVarBuilder().withName(KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_CORS_ENABLED).withValue(String.valueOf(false)).build());
-        expected.add(new EnvVarBuilder().withName(KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_CONSUMER_ENABLED).withValue(String.valueOf(true)).build());
-        expected.add(new EnvVarBuilder().withName(KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_HTTP_CONSUMER_TIMEOUT).withValue(String.valueOf(KafkaBridgeConsumerConfig.HTTP_DEFAULT_TIMEOUT)).build());
-        expected.add(new EnvVarBuilder().withName(KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_PRODUCER_ENABLED).withValue(String.valueOf(true)).build());
-
         return expected;
     }
 
@@ -163,9 +161,9 @@ public class KafkaBridgeClusterTest {
         assertThat(kbc.readinessProbeOptions.getTimeoutSeconds(), is(5));
         assertThat(kbc.livenessProbeOptions.getInitialDelaySeconds(), is(15));
         assertThat(kbc.livenessProbeOptions.getTimeoutSeconds(), is(5));
-        assertThat(kbc.getHttp().getConsumer().getTimeoutSeconds(), is(-1L));
-        assertThat(kbc.getHttp().getConsumer().isEnabled(), is(true));
-        assertThat(kbc.getHttp().getProducer().isEnabled(), is(true));
+        assertThat(kbc.getKafkaBridgeConsumer().isEnabled(), is(true));
+        assertThat(kbc.getKafkaBridgeConsumer().getTimeoutSeconds(), is(-1L));
+        assertThat(kbc.getKafkaBridgeProducer().isEnabled(), is(true));
     }
 
     @ParallelTest
@@ -1316,10 +1314,8 @@ public class KafkaBridgeClusterTest {
     public void testConsumerProducerOptions() {
         KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
                 .editSpec()
-                .withHttp(new KafkaBridgeHttpConfigBuilder()
-                        .withConsumer(new KafkaBridgeConsumerConfigBuilder().withTimeoutSeconds(60).build())
-                        .withProducer(new KafkaBridgeProducerConfigBuilder().build())
-                    .build())
+                .withConsumer(new KafkaBridgeConsumerSpecBuilder().withTimeoutSeconds(60).build())
+                .withProducer(new KafkaBridgeProducerSpecBuilder().build())
                 .endSpec()
                 .build();
 

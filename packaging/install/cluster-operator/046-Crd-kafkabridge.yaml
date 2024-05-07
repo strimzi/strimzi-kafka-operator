@@ -252,23 +252,6 @@ spec:
                     - allowedOrigins
                     - allowedMethods
                     description: CORS configuration for the HTTP Bridge.
-                  producer:
-                    type: object
-                    properties:
-                      enabled:
-                        type: boolean
-                        description: Whether the HTTP producer should be enabled or disabled.
-                    description: Configurations for the HTTP Producer.
-                  consumer:
-                    type: object
-                    properties:
-                      enabled:
-                        type: boolean
-                        description: Whether the HTTP consumer should be enabled or disabled.
-                      timeoutSeconds:
-                        type: integer
-                        description: The timeout in seconds for deleting inactive consumers.
-                    description: Configurations for the HTTP Consumer.
                 description: The HTTP related configuration.
               adminClient:
                 type: object
@@ -281,6 +264,12 @@ spec:
               consumer:
                 type: object
                 properties:
+                  enabled:
+                    type: boolean
+                    description: Whether the HTTP consumer should be enabled or disabled.
+                  timeoutSeconds:
+                    type: integer
+                    description: The timeout in seconds for deleting inactive consumers.
                   config:
                     x-kubernetes-preserve-unknown-fields: true
                     type: object
@@ -289,6 +278,9 @@ spec:
               producer:
                 type: object
                 properties:
+                  enabled:
+                    type: boolean
+                    description: Whether the HTTP producer should be enabled or disabled.
                   config:
                     x-kubernetes-preserve-unknown-fields: true
                     type: object

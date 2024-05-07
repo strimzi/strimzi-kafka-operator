@@ -28,17 +28,14 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"host", "port", "cors", "producer", "consumer"})
+@JsonPropertyOrder({"port", "cors"})
 @EqualsAndHashCode
 @ToString
 public class KafkaBridgeHttpConfig implements UnknownPropertyPreserving {
     public static final int HTTP_DEFAULT_PORT = 8080;
     public static final String HTTP_DEFAULT_HOST = "0.0.0.0";
-
     private int port = HTTP_DEFAULT_PORT;
     private KafkaBridgeHttpCors cors;
-    private KafkaBridgeProducerConfig producer = new KafkaBridgeProducerConfig();
-    private KafkaBridgeConsumerConfig consumer = new KafkaBridgeConsumerConfig();
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     public KafkaBridgeHttpConfig() {
@@ -49,7 +46,7 @@ public class KafkaBridgeHttpConfig implements UnknownPropertyPreserving {
     }
 
     @Description("The port which is the server listening on.")
-    @JsonProperty(defaultValue = HTTP_DEFAULT_PORT + "")
+    @JsonProperty(defaultValue = "8080")
     @Minimum(1023)
     public int getPort() {
         return port;
@@ -57,24 +54,6 @@ public class KafkaBridgeHttpConfig implements UnknownPropertyPreserving {
 
     public void setPort(int port) {
         this.port = port;
-    }
-
-    @Description("Configurations for the HTTP Producer.")
-    public KafkaBridgeProducerConfig getProducer() {
-        return producer;
-    }
-
-    public void setProducer(KafkaBridgeProducerConfig producer) {
-        this.producer = producer;
-    }
-
-    @Description("Configurations for the HTTP Consumer.")
-    public KafkaBridgeConsumerConfig getConsumer() {
-        return consumer;
-    }
-
-    public void setConsumer(KafkaBridgeConsumerConfig consumer) {
-        this.consumer = consumer;
     }
 
     @Description("CORS configuration for the HTTP Bridge.")
