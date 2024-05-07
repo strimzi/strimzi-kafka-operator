@@ -13,7 +13,7 @@
 :toclevels: 3
 
 //Latest Strimzi version
-:ProductVersion: 0.41.0
+:ProductVersion: 0.42.0
 //Strimzi versions used in upgrades sections
 :ConvertAfterProductVersion: 0.22
 :LastReleaseWithCRDUpgrade: 0.24
