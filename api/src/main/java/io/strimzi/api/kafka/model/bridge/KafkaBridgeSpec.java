@@ -50,8 +50,8 @@ public class KafkaBridgeSpec extends Spec implements HasConfigurableLogging, Has
     private String bootstrapServers;
     private ClientTls tls;
     private KafkaClientAuthentication authentication;
-    private KafkaBridgeConsumerSpec consumer;
-    private KafkaBridgeProducerSpec producer;
+    private KafkaBridgeConsumerSpec consumer = new KafkaBridgeConsumerSpec();
+    private KafkaBridgeProducerSpec producer = new KafkaBridgeProducerSpec();
     private KafkaBridgeAdminClientSpec adminClient;
     private ResourceRequirements resources;
     private JvmOptions jvmOptions;
