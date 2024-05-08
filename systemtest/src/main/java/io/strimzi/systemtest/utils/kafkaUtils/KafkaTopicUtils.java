@@ -349,7 +349,6 @@ public class KafkaTopicUtils {
         if (kafkaTopic != null && kafkaTopic.getStatus() != null && kafkaTopic.getStatus().getReplicasChange() != null) {
             String message = kafkaTopic.getStatus().getReplicasChange().getMessage();
             return message != null &&
-                    message.contains("Replicas change failed (500), Error processing POST request") &&
                     message.contains("Requested RF cannot be more than number of alive brokers") &&
                     kafkaTopic.getStatus().getReplicasChange().getState().toValue().equals("pending") &&
                     kafkaTopic.getStatus().getReplicasChange().getTargetReplicas() == targetReplicas;

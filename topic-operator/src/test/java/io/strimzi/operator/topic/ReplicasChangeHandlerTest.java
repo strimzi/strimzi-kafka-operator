@@ -34,6 +34,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class ReplicasChangeHandlerTest {
     private static final String TEST_NAMESPACE = "replicas-change";
@@ -51,7 +52,7 @@ public class ReplicasChangeHandlerTest {
 
         File tlsKeyFile = TestUtils.tempFile(ReplicasChangeHandlerTest.class.getSimpleName(), ".key");
         tlsCrtFile = TestUtils.tempFile(ReplicasChangeHandlerTest.class.getSimpleName(), ".crt");
-        new MockCertManager().generateSelfSignedCert(tlsKeyFile, tlsCrtFile, 
+        new MockCertManager().generateSelfSignedCert(tlsKeyFile, tlsCrtFile,
             new Subject.Builder().withCommonName("Trusted Test CA").build(), 365);
 
         apiUserFile = TestUtils.tempFile(ReplicasChangeHandlerTest.class.getSimpleName(), ".username");
@@ -106,16 +107,9 @@ public class ReplicasChangeHandlerTest {
             entry(TopicOperatorConfig.CRUISE_CONTROL_SSL_ENABLED.key(), "true"),
             entry(TopicOperatorConfig.CRUISE_CONTROL_CRT_FILE_PATH.key(), "/invalid/ca.crt")
         ));
-        
-        var handler = new ReplicasChangeHandler(config);
-        
-        var pending = buildPendingReconcilableTopics();
-        var pendingAndOngoing = handler.requestPendingChanges(pending);
-        assertFailedWithMessage(pendingAndOngoing, "Replicas change failed, File not found: /invalid/ca.crt");
 
-        var ongoing = buildOngoingReconcilableTopics();
-        var completedAndFailed = handler.requestOngoingChanges(ongoing);
-        assertFailedWithMessage(completedAndFailed, "Replicas change failed, File not found: /invalid/ca.crt");
+        RuntimeException thrown = assertThrows(RuntimeException.class, () -> new ReplicasChangeHandler(config));
+        assertThat(thrown.getMessage(), is("File not found: /invalid/ca.crt"));
     }
 
     @Test
@@ -129,16 +123,9 @@ public class ReplicasChangeHandlerTest {
             entry(TopicOperatorConfig.CRUISE_CONTROL_API_USER_PATH.key(), "/invalid/username"),
             entry(TopicOperatorConfig.CRUISE_CONTROL_API_PASS_PATH.key(), apiPassFile.getAbsolutePath())
         ));
-        
-        var handler = new ReplicasChangeHandler(config);
-        
-        var pending = buildPendingReconcilableTopics();
-        var pendingAndOngoing = handler.requestPendingChanges(pending);
-        assertFailedWithMessage(pendingAndOngoing, "Replicas change failed, File not found: /invalid/username");
 
-        var ongoing = buildOngoingReconcilableTopics();
-        var completedAndFailed = handler.requestOngoingChanges(ongoing);
-        assertFailedWithMessage(completedAndFailed, "Replicas change failed, File not found: /invalid/username");
+        RuntimeException thrown = assertThrows(RuntimeException.class, () -> new ReplicasChangeHandler(config));
+        assertThat(thrown.getMessage(), is("File not found: /invalid/username"));
     }
 
     @Test
@@ -152,16 +139,9 @@ public class ReplicasChangeHandlerTest {
             entry(TopicOperatorConfig.CRUISE_CONTROL_API_USER_PATH.key(), apiUserFile.getAbsolutePath()),
             entry(TopicOperatorConfig.CRUISE_CONTROL_API_PASS_PATH.key(), "/invalid/password")
         ));
-        
-        var handler = new ReplicasChangeHandler(config);
-        
-        var pending = buildPendingReconcilableTopics();
-        var pendingAndOngoing = handler.requestPendingChanges(pending);
-        assertFailedWithMessage(pendingAndOngoing, "Replicas change failed, File not found: /invalid/password");
 
-        var ongoing = buildOngoingReconcilableTopics();
-        var completedAndFailed = handler.requestOngoingChanges(ongoing);
-        assertFailedWithMessage(completedAndFailed, "Replicas change failed, File not found: /invalid/password");
+        RuntimeException thrown = assertThrows(RuntimeException.class, () -> new ReplicasChangeHandler(config));
+        assertThat(thrown.getMessage(), is("File not found: /invalid/password"));
     }
 
     @Test
@@ -177,11 +157,11 @@ public class ReplicasChangeHandlerTest {
         
         var pending = buildPendingReconcilableTopics();
         var pendingAndOngoing = handler.requestPendingChanges(pending);
-        assertFailedWithMessage(pendingAndOngoing, "Replicas change failed, java.net.ConnectException");
+        assertFailedWithMessage(pendingAndOngoing, "Replicas change failed, Connection failed");
 
         var ongoing = buildOngoingReconcilableTopics();
         var completedAndFailed = handler.requestOngoingChanges(ongoing);
-        assertFailedWithMessage(completedAndFailed, "Replicas change failed, java.net.ConnectException");
+        assertFailedWithMessage(completedAndFailed, "Replicas change failed, Connection failed");
     }
 
     @Test
@@ -203,13 +183,13 @@ public class ReplicasChangeHandlerTest {
         server.expectTopicConfigErrorResponse(apiUserFile, apiPassFile);
         var pending = buildPendingReconcilableTopics();
         var pendingAndOngoing = handler.requestPendingChanges(pending);
-        assertFailedWithMessage(pendingAndOngoing, "Replicas change failed (500), Cluster model not ready");
+        assertFailedWithMessage(pendingAndOngoing, "Replicas change failed, Request failed (500), Cluster model not ready");
 
         server.expectUserTasksErrorResponse(apiUserFile, apiPassFile);
         var ongoing = buildOngoingReconcilableTopics();
         var completedAndFailed = handler.requestOngoingChanges(ongoing);
-        assertFailedWithMessage(completedAndFailed, "Replicas change failed (500), Error processing GET " +
-            "request '/user_tasks' due to: 'Error happened in fetching response for task 9730e4fb-ea41-4e2d-b053-9be2310589b5'.");
+        assertFailedWithMessage(completedAndFailed, "Replicas change failed, Request failed (500), " +
+            "Error processing GET request '/user_tasks' due to: 'Error happened in fetching response for task 9730e4fb-ea41-4e2d-b053-9be2310589b5'.");
     }
 
     @Test
@@ -231,12 +211,12 @@ public class ReplicasChangeHandlerTest {
         server.expectTopicConfigRequestTimeout(apiUserFile, apiPassFile);
         var pending = buildPendingReconcilableTopics();
         var pendingAndOngoing = handler.requestPendingChanges(pending);
-        assertFailedWithMessage(pendingAndOngoing, "Replicas change failed (408)");
+        assertFailedWithMessage(pendingAndOngoing, "Replicas change failed, Request failed (408)");
 
         server.expectUserTasksRequestTimeout(apiUserFile, apiPassFile);
         var ongoing = buildOngoingReconcilableTopics();
         var completedAndFailed = handler.requestOngoingChanges(ongoing);
-        assertFailedWithMessage(completedAndFailed, "Replicas change failed (408)");
+        assertFailedWithMessage(completedAndFailed, "Replicas change failed, Request failed (408)");
     }
 
     @Test
@@ -258,12 +238,12 @@ public class ReplicasChangeHandlerTest {
         server.expectTopicConfigRequestUnauthorized(apiUserFile, apiPassFile);
         var pending = buildPendingReconcilableTopics();
         var pendingAndOngoing = handler.requestPendingChanges(pending);
-        assertFailedWithMessage(pendingAndOngoing, "Replicas change failed (401)");
+        assertFailedWithMessage(pendingAndOngoing, "Replicas change failed, Request failed (401)");
 
         server.expectUserTasksRequestUnauthorized(apiUserFile, apiPassFile);
         var ongoing = buildOngoingReconcilableTopics();
         var completedAndFailed = handler.requestOngoingChanges(ongoing);
-        assertFailedWithMessage(completedAndFailed, "Replicas change failed (401)");
+        assertFailedWithMessage(completedAndFailed, "Replicas change failed, Request failed (401)");
     }
 
     private static void assertOngoing(List<ReconcilableTopic> input, List<ReconcilableTopic> output) {
