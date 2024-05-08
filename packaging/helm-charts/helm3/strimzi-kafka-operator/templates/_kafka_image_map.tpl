@@ -5,8 +5,6 @@
 
 {{/* Generate the kafka image map */}}
 {{- define "strimzi.kafka.image.map" }}
-            - name: STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE
-              value: {{ template "strimzi.image" (merge . (dict "key" "tlsSidecarEntityOperator" "tagSuffix" "-kafka-3.7.0")) }}
             - name: STRIMZI_DEFAULT_KAFKA_EXPORTER_IMAGE
               value: {{ template "strimzi.image" (merge . (dict "key" "kafkaExporter" "tagSuffix" "-kafka-3.7.0")) }}
             - name: STRIMZI_DEFAULT_CRUISE_CONTROL_IMAGE

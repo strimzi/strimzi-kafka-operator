@@ -137,18 +137,10 @@ spec:
     metricsConfig:
       # ...
   entityOperator: # <27>
-    tlsSidecar: # <28>
-      resources:
-        requests:
-          cpu: 200m
-          memory: 64Mi
-        limits:
-          cpu: 500m
-          memory: 128Mi
     topicOperator:
       watchedNamespace: my-topic-namespace
       reconciliationIntervalSeconds: 60
-      logging: # <29>
+      logging: # <28>
         type: inline
         loggers:
           rootLogger.level: INFO
@@ -162,7 +154,7 @@ spec:
     userOperator:
       watchedNamespace: my-topic-namespace
       reconciliationIntervalSeconds: 60
-      logging: # <30>
+      logging: # <29>
         type: inline
         loggers:
           rootLogger.level: INFO
@@ -173,9 +165,9 @@ spec:
         limits:
           memory: 512Mi
           cpu: "1"
-  kafkaExporter: # <31>
+  kafkaExporter: # <30>
     # ...
-  cruiseControl: # <32>
+  cruiseControl: # <31>
     # ...
 ----
 <1> The number of replica nodes.
@@ -207,8 +199,7 @@ If the ZooKeeper cluster loses its quorum, it will stop responding to clients an
 Having a stable and highly available ZooKeeper cluster is crucial for Strimzi.
 <26> ZooKeeper loggers and log levels.
 <27> Entity Operator configuration, which specifies the configuration for the Topic Operator and User Operator.
-<28> Entity Operator TLS sidecar configuration. Entity Operator uses the TLS sidecar for secure communication with ZooKeeper.
-<29> Specified Topic Operator loggers and log levels. This example uses `inline` logging.
-<30> Specified User Operator loggers and log levels.
-<31> Kafka Exporter configuration. Kafka Exporter is an optional component for extracting metrics data from Kafka brokers, in particular consumer lag data. For Kafka Exporter to be able to work properly, consumer groups need to be in use. 
-<32> Optional configuration for Cruise Control, which is used to rebalance the Kafka cluster.
+<28> Specified Topic Operator loggers and log levels. This example uses `inline` logging.
+<29> Specified User Operator loggers and log levels.
+<30> Kafka Exporter configuration. Kafka Exporter is an optional component for extracting metrics data from Kafka brokers, in particular consumer lag data. For Kafka Exporter to be able to work properly, consumer groups need to be in use.
+<31> Optional configuration for Cruise Control, which is used to rebalance the Kafka cluster.
