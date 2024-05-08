@@ -7,7 +7,7 @@
 
 [role="_abstract"]
 JBOD storage allows you to configure your Kafka cluster to use multiple disks or volumes. 
-This approach provides increased data storage capacity for Kafka brokers, and can lead to performance improvements.
+This approach provides increased data storage capacity for Kafka nodes, and can lead to performance improvements.
 A JBOD configuration is defined by one or more volumes, each of which can be either xref:ref-ephemeral-storage-{context}[ephemeral] or xref:ref-persistent-storage-{context}[persistent]. 
 The rules and constraints for JBOD volume declarations are the same as those for ephemeral and persistent storage. 
 For example, you cannot decrease the size of a persistent storage volume after it has been provisioned, nor can you change the value of `sizeLimit` when the type is `ephemeral`.
@@ -15,7 +15,7 @@ For example, you cannot decrease the size of a persistent storage volume after i
 NOTE: JBOD storage is supported for *Kafka only*, not for ZooKeeper.
 
 To use JBOD storage, you set the storage type configuration in the `Kafka` resource to `jbod`.
-If you are using node pools, you can also specify `jbod` in the storage configuration of individual node pools.
+If you are using node pools, you can also specify `jbod` in the storage configuration for nodes belonging to a specific node pool.
 
 The `volumes` property allows you to describe the disks that make up your JBOD storage array or configuration. 
 
@@ -68,9 +68,18 @@ Where `_id_` is the ID of the volume used for storing data for Kafka broker pod 
 
 == Configuring the storage volume used to store the KRaft metadata log
 
-When running a Kafka cluster in a KRaft mode, each node must store the KRaft metadata log on one of its data volumes.
-By default, the KRaft metadata log is stored on the volume with the lowest ID.
+In KRaft mode, a Kafka cluster stores its metadata in a log present on all nodes, including brokers and controllers.
+Each node reserves one of its data volumes for the KRaft metadata log. 
+By default, the log is stored on the volume with the lowest ID. 
 However, you can specify another volume using the `kraftMetadata` property.
+
+For controller-only nodes, which don't handle data, dedicating a single volume to the metadata log is generally sufficient for storage. 
+Meanwhile, for broker nodes or nodes combining broker and controller roles, although they may require multiple volumes, they still share the same volume for storing both the metadata log and partition replica data. 
+This sharing optimizes disk utilization.  
+
+Changing the volume that stores the metadata log triggers a rolling update of nodes in the cluster.
+This process involves deleting the old metadata log and creating a new one in the new location. 
+If `kraftMetadata` isn't specified on any volume, adding a new volume with a lower ID also triggers an update and relocation of the metadata log.
 
 NOTE: JBOD storage in KRaft mode is considered early-access in Apache Kafka 3.7.x.
 
