@@ -115,12 +115,6 @@ kafkaInit:
     repository: ""
     name: operator
     tag: ""
-tlsSidecarEntityOperator:
-  image:
-    registry: ""
-    repository: ""
-    name: kafka
-    tagPrefix: ""
 kafkaMirrorMaker:
   image:
     registry: ""
