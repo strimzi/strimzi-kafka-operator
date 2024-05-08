@@ -20,12 +20,9 @@ For more information, see xref:con-operators-namespaces-str[].
 
 The `entityOperator` property supports several sub-properties:
 
-* `tlsSidecar`
 * `topicOperator`
 * `userOperator`
 * `template`
-
-The `tlsSidecar` property contains the configuration of the TLS sidecar container, which is used to communicate with ZooKeeper.
 
 The `template` property contains the configuration of the Entity Operator pod, such as labels, annotations, affinity, and tolerations.
 For more information on configuring templates, see xref:assembly-customizing-kubernetes-resources-str[].

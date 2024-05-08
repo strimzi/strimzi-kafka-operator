@@ -15,12 +15,10 @@ get_default_kafka_version
 get_kafka_does_not_support
 
 # Set the default images
-entity_operator_tls_sidecar_version="{{ template \"strimzi.image\" (merge . (dict \"key\" \"tlsSidecarEntityOperator\" \"tagSuffix\" \"-kafka-${default_kafka_version}\")) }}"
 kafka_exporter_version="{{ template \"strimzi.image\" (merge . (dict \"key\" \"kafkaExporter\" \"tagSuffix\" \"-kafka-${default_kafka_version}\")) }}"
 
 for version in "${versions[@]}"
 do
-    entity_operator_tls_sidecar_version="{{ template \"strimzi.image\" (merge . (dict \"key\" \"tlsSidecarEntityOperator\" \"tagSuffix\" \"-kafka-${version}\")) }}"
     kafka_exporter_version="{{ template \"strimzi.image\" (merge . (dict \"key\" \"kafkaExporter\" \"tagSuffix\" \"-kafka-${version}\")) }}"
     cruise_control_version="{{ template \"strimzi.image\" (merge . (dict \"key\" \"cruiseControl\" \"tagSuffix\" \"-kafka-${version}\")) }}"
     kafka_versions="${kafka_versions}
@@ -51,8 +49,6 @@ cat >"$out" <<EOF
 
 {{/* Generate the kafka image map */}}
 {{- define "strimzi.kafka.image.map" }}
-            - name: STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE
-              value: ${entity_operator_tls_sidecar_version}
             - name: STRIMZI_DEFAULT_KAFKA_EXPORTER_IMAGE
               value: ${kafka_exporter_version}
             - name: STRIMZI_DEFAULT_CRUISE_CONTROL_IMAGE

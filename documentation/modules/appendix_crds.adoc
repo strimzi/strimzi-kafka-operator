@@ -1621,7 +1621,7 @@ Used in: xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`]
 |Template for the Entity User Operator container.
 |tlsSidecarContainer
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
-|Template for the Entity Operator TLS sidecar container.
+|**The `tlsSidecarContainer` property has been deprecated.** TLS sidecar was removed in Strimzi 0.41.0. This property is ignored. Template for the Entity Operator TLS sidecar container.
 |serviceAccount
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |Template for the Entity Operator service account.

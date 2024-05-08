@@ -157,12 +157,6 @@ the documentation for more details.
 | `kafkaInit.image.name`                      | Init Kafka image name                                                           | `operator`                   |
 | `kafkaInit.image.tag`                       | Override default Init Kafka image tag                                           | `nil`                        |
 | `kafkaInit.image.digest`                    | Override Init Kafka image tag with digest                                       | `nil`                        |
-| `tlsSidecarEntityOperator.image.registry`   | Override default TLS Sidecar Entity Operator image registry                     | `nil`                        |
-| `tlsSidecarEntityOperator.image.repository` | Override default TLS Sidecar Entity Operator image repository                   | `nil`                        |
-| `tlsSidecarEntityOperator.image.name`       | TLS Sidecar Entity Operator image name                                          | `kafka`                      |
-| `tlsSidecarEntityOperator.image.tagPrefix`  | Override default TLS Sidecar Entity Operator image tag prefix                   | `nil`                        |
-| `tlsSidecarEntityOperator.image.tag`        | Override default TLS Sidecar Entity Operator image tag and ignore suffix        | `nil`                        |
-| `tlsSidecarEntityOperator.image.digest`     | Override TLS Sidecar Entity Operator image tag with digest                      | `nil`                        |
 | `kafkaBridge.image.registry`                | Override default Kafka Bridge image registry                                    | `quay.io`                    |
 | `kafkaBridge.image.repository`              | Override default Kafka Bridge image repository                                  | `strimzi`                    |
 | `kafkaBridge.image.name`                    | Kafka Bridge image name                                                         | `kafka-bridge`               |
