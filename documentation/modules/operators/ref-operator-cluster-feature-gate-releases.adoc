@@ -27,6 +27,7 @@ Alpha and beta stage features are removed if they do not prove to be useful.
   It is now permanently enabled and cannot be disabled.
 * The `UnidirectionalTopicOperator` feature gate moved to GA stage in Strimzi 0.41.
   It is now permanently enabled and cannot be disabled.
+* The `ContinueReconciliationOnManualRollingUpdateFailure` feature was introduced in Strimzi 0.41 and is disabled by default.
 
 NOTE: Feature gates might be removed when they reach GA. This means that the feature was incorporated into the Strimzi core features and can no longer be disabled.
 
@@ -73,6 +74,11 @@ NOTE: Feature gates might be removed when they reach GA. This means that the fea
 ¦0.36
 ¦0.39
 ¦0.41
+
+¦`ContinueReconciliationOnManualRollingUpdateFailure`
+¦0.41
+¦0.43 (planned)
+¦n/a
 
 |===
 
