@@ -15,7 +15,6 @@ import io.strimzi.operator.cluster.model.CertUtils;
 import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.EntityOperator;
 import io.strimzi.operator.cluster.model.ImagePullPolicy;
-import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ConfigMapOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.DeploymentOperator;
@@ -69,7 +68,6 @@ public class EntityOperatorReconciler {
      * @param config                    Cluster Operator Configuration
      * @param supplier                  Supplier with Kubernetes Resource Operators
      * @param kafkaAssembly             The Kafka custom resource
-     * @param versions                  The supported Kafka versions
      * @param clusterCa                 The Cluster CA instance
      */
     public EntityOperatorReconciler(
@@ -77,12 +75,11 @@ public class EntityOperatorReconciler {
             ClusterOperatorConfig config,
             ResourceOperatorSupplier supplier,
             Kafka kafkaAssembly,
-            KafkaVersion.Lookup versions,
             ClusterCa clusterCa
     ) {
         this.reconciliation = reconciliation;
         this.operationTimeoutMs = config.getOperationTimeoutMs();
-        this.entityOperator = EntityOperator.fromCrd(reconciliation, kafkaAssembly, versions, supplier.sharedEnvironmentProvider);
+        this.entityOperator = EntityOperator.fromCrd(reconciliation, kafkaAssembly, supplier.sharedEnvironmentProvider);
         this.clusterCa = clusterCa;
         this.maintenanceWindows = kafkaAssembly.getSpec().getMaintenanceTimeWindows();
         this.isNetworkPolicyGeneration = config.isNetworkPolicyGeneration();

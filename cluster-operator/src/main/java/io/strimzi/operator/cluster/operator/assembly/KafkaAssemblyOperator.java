@@ -799,7 +799,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     config,
                     supplier,
                     kafkaAssembly,
-                    versions,
                     clusterCa
             );
         }

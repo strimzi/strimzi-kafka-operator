@@ -62,13 +62,6 @@ public class EntityOperator extends AbstractModel {
     protected static final String TLS_SIDECAR_CA_CERTS_VOLUME_NAME = "cluster-ca-certs";
     protected static final String TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT = "/etc/tls-sidecar/cluster-ca-certs/";
 
-    // Volume name of the temporary volume used by the TLS sidecar container
-    // Because the container shares the pod with other containers, it needs to have unique name
-    /* test */ static final String TLS_SIDECAR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME = "strimzi-tls-sidecar-tmp";
-
-    // Entity Operator configuration keys
-    /* test */ static final String ENV_VAR_ZOOKEEPER_CONNECT = "STRIMZI_ZOOKEEPER_CONNECT";
-
     protected static final String CO_ENV_VAR_CUSTOM_ENTITY_OPERATOR_POD_LABELS = "STRIMZI_CUSTOM_ENTITY_OPERATOR_LABELS";
 
     /**
@@ -105,20 +98,18 @@ public class EntityOperator extends AbstractModel {
 
         this.zookeeperConnect = KafkaResources.zookeeperServiceName(cluster) + ":" + ZookeeperCluster.CLIENT_TLS_PORT;
     }
-    
+
     /**
      * Create an Entity Operator from given desired resource
      *
-     * @param reconciliation The reconciliation
-     * @param kafkaAssembly desired resource with cluster configuration containing the Entity Operator one
-     * @param versions The versions.
-     * @param sharedEnvironmentProvider     Shared environment provider.
+     * @param reconciliation                The reconciliation marker
+     * @param kafkaAssembly                 Desired resource with cluster configuration containing the Entity Operator one
+     * @param sharedEnvironmentProvider     Shared environment provider
      *
      * @return Entity Operator instance, null if not configured in the ConfigMap
      */
     public static EntityOperator fromCrd(Reconciliation reconciliation,
                                          Kafka kafkaAssembly,
-                                         KafkaVersion.Lookup versions,
                                          SharedEnvironmentProvider sharedEnvironmentProvider) {
         EntityOperatorSpec entityOperatorSpec = kafkaAssembly.getSpec().getEntityOperator();
 
