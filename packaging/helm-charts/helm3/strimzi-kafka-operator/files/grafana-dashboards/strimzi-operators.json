@@ -1293,6 +1293,20 @@
       "type": "timeseries"
     },
     {
+      "collapsed": false,
+      "datasource": null,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 24
+      },
+      "id": 59,
+      "panels": [],
+      "title": "Certificates",
+      "type": "row"
+    },
+    {
       "datasource": "$DS_PROMETHEUS",
       "fieldConfig": {
         "defaults": {
@@ -1349,7 +1363,7 @@
       "options": {
         "showHeader": true
       },
-      "pluginVersion": "7.3.7",
+      "pluginVersion": "7.4.5",
       "targets": [
         {
           "expr": "sort (min by (cluster, type, resource_namespace) (strimzi_certificate_expiration_timestamp_ms))",
@@ -1411,7 +1425,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 24
+        "y": 33
       },
       "id": 18,
       "panels": [],
@@ -1489,7 +1503,7 @@
         "h": 7,
         "w": 8,
         "x": 0,
-        "y": 25
+        "y": 34
       },
       "id": 20,
       "options": {
@@ -1580,7 +1594,7 @@
         "h": 7,
         "w": 8,
         "x": 8,
-        "y": 25
+        "y": 34
       },
       "id": 21,
       "options": {
@@ -1671,7 +1685,7 @@
         "h": 7,
         "w": 8,
         "x": 16,
-        "y": 25
+        "y": 34
       },
       "id": 22,
       "options": {
