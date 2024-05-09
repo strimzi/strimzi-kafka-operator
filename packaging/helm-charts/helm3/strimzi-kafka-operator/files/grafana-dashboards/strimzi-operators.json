@@ -1293,6 +1293,115 @@
       "type": "timeseries"
     },
     {
+      "datasource": "$DS_PROMETHEUS",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": null,
+            "filterable": true
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "string"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Expiry Time"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "dateTimeAsIso"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Time To Expiry"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "dateTimeFromNow"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 25
+      },
+      "id": 57,
+      "options": {
+        "showHeader": true
+      },
+      "pluginVersion": "7.3.7",
+      "targets": [
+        {
+          "expr": "sort (min by (cluster, type, resource_namespace) (strimzi_certificate_expiration_timestamp_ms))",
+          "format": "table",
+          "instant": true,
+          "interval": "",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Cert Expiry",
+      "transformations": [
+        {
+          "id": "calculateField",
+          "options": {
+            "alias": "time_to_expiry",
+            "mode": "reduceRow",
+            "reduce": {
+              "reducer": "last"
+            }
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "indexByName": {
+              "Time": 0,
+              "Value": 4,
+              "cluster": 1,
+              "resource_namespace": 2,
+              "time_to_expiry": 5,
+              "type": 3
+            },
+            "renameByName": {
+              "Value": "Expiry Time",
+              "cluster": "Cluster Name",
+              "resource_namespace": "Namespace",
+              "time_to_expiry": "Time To Expiry",
+              "type": "Type"
+            }
+          }
+        }
+      ],
+      "type": "table"
+    },
+
+    {
       "collapsed": false,
       "datasource": {
         "type": "datasource",
