@@ -124,17 +124,17 @@ An early access feature gate provides an opportunity for assessment before its f
 
 The `ContinueReconciliationOnManualRollingUpdateFailure` feature gate has a default state of _disabled_.
 
-The `ContinueReconciliationOnManualRollingUpdateFailure` feature gate allows the Strimzi Cluster Operator to continue the reconciliation if the manual rolling update of the operands fails.
+The `ContinueReconciliationOnManualRollingUpdateFailure` feature gate allows the Cluster Operator to continue a reconciliation if the manual rolling update of the operands fails.
 It applies to the following operands that support manual rolling updates using the `strimzi.io/manual-rolling-update` annotation:
 * ZooKeeper
-* Kafka brokers
+* Kafka
 * Kafka Connect
 * Kafka MirrorMaker 2
 
-Continuing the reconciliation after the manual rolling update failure allows the operator to recover from various situations that might prevent the manual rolling update to succeed.
-For example, a missing Persistent Volume Claim (PVC) / Persistent Volume (PV) might cause the manual rolling update to fail.
-But the PVCs / PVs are created only in a later stage of the reconciliation.
-Continuing the reconciliation after the failure would allow to recreate the missing PVC / PV and recover from the failure.
+Continuing the reconciliation after the manual rolling update failure allows the operator to recover from various situations that might prevent the manual rolling update from succeeding.
+For example, a missing Persistent Volume Claim (PVC) or Persistent Volume (PV) might cause the manual rolling update to fail.
+But the PVCs and PVs are created only in a later stage of the reconciliation.
+Continuing the reconciliation after the failure would allow to recreate the missing PVC or PV and recover from the failure.
 
 .Enabling the ContinueReconciliationOnManualRollingUpdateFailure feature gate
 To enable the `ContinueReconciliationOnManualRollingUpdateFailure` feature gate, specify `+ContinueReconciliationOnManualRollingUpdateFailure` in the `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.
