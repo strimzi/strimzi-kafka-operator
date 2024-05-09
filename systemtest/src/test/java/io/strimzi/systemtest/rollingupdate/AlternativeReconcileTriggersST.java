@@ -484,7 +484,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
      */
     @ParallelNamespaceTest
     void testJbodMetadataLogRelocation() {
-        assumeTrue(Environment.isKRaftModeEnabled());
+        assumeTrue(Environment.isKRaftModeEnabled() && TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "3.7.0") >= 0);
 
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final int numberOfKafkaReplicas = 3;
@@ -586,10 +586,10 @@ class AlternativeReconcileTriggersST extends AbstractST {
 
     @BeforeAll
     void setup() {
-        this.clusterOperator = this.clusterOperator
-                .defaultInstallation()
-                .createInstallation()
-                .runInstallation();
+//        this.clusterOperator = this.clusterOperator
+//                .defaultInstallation()
+//                .createInstallation()
+//                .runInstallation();
     }
 }
 
