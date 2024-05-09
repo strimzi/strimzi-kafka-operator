@@ -6,7 +6,7 @@
 = Configuring user quotas
 
 [role="_abstract"]
-Configure the `spec` for the `KafkaUser` resource to enforce quotas so that a user does not exceed a configured level of access to Kafka brokers.
+Configure the `spec` for the `KafkaUser` resource to enforce quotas so that a user does not overload the Kafka brokers.
 Set size-based network usage and time-based CPU utilization thresholds.
 You can also add a partition mutation quota to control the rate at which requests to change partitions are accepted for user requests.
 

@@ -125,4 +125,4 @@ Instead the client and the server are each challenged by the other to offer proo
 * The server and client each generate a new challenge for each authentication exchange.
 This means that the exchange is resilient against replay attacks.
 
-When `KafkaUser.spec.authentication.type` is configured with `scram-sha-512` the User Operator will generate a random 12-character password consisting of upper and lowercase ASCII letters and numbers.
+When `KafkaUser.spec.authentication.type` is configured with `scram-sha-512` the User Operator will generate a random 32-character password consisting of upper and lowercase ASCII letters and numbers.

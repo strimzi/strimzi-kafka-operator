@@ -6,7 +6,7 @@
 = Configuring user (client-side) security mechanisms
 
 [role="_abstract"]
-When configuring client-side security mechanisms, clients are represented as users.
+When configuring security mechanisms in clients, the clients are represented as users.
 Use the `KafkaUser` resource to configure the authentication, authorization, and access rights for Kafka clients.
 
 Authentication permits user access, and authorization constrains user access to permissible actions.

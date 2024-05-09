@@ -33,8 +33,8 @@ Configure the `KafkaUser` resource to set up the following configurations based 
 
 * Authentication that must match the enabled listener authentication
 ** Supported TLS versions and cipher suites that must match the Kafka configuration
-* Authorization that must match the enabled Kafka authorization
-* Access Control Lists (ACLs) for fine-grained control over user access to topics and actions
+* Simple authorization to apply Access Control List (ACL) rules
+** ACLs for fine-grained control over user access to topics and actions
 * Quotas to limit client access based on byte rates or CPU utilization
 
 The User Operator creates the user representing the client and the security credentials used for client authentication, based on the chosen authentication type.

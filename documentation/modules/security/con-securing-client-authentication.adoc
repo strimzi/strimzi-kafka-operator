@@ -69,7 +69,7 @@ metadata:
     strimzi.io/cluster: my-cluster
 type: Opaque
 data:
-  ca.crt: <public_key> # Public key of the clients CA
+  ca.crt: <public_key> # Public key of the clients CA used to sign this user certificate
   user.crt: <user_certificate> # Public key of the user
   user.key: <user_private_key> # Private key of the user
   user.p12: <store> # PKCS #12 store for user certificates and keys

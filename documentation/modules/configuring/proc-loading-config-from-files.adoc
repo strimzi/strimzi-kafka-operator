@@ -21,7 +21,7 @@ Volumes are mounted on the path `/opt/kafka/external-configuration/<volume-name>
 * You have a secret containing the user credentials.
 
 .Example secret with user credentials
-[source,yaml,subs="+quotes,attributes"]
+[source,yaml,subs="+attributes"]
 ----
 apiVersion: v1
 kind: Secret
@@ -32,11 +32,11 @@ metadata:
     strimzi.io/cluster: my-cluster
 type: Opaque
 data:
-  ca.crt: _<public_key>_ # Public key of the clients CA
-  user.crt: _<user_certificate>_ # Public key of the user
-  user.key: _<user_private_key>_ # Private key of the user
-  user.p12: _<store>_ # PKCS #12 store for user certificates and keys
-  user.password: _<password_for_store>_ # Protects the PKCS #12 store
+  ca.crt: <public_key> # Public key of the clients CA used to sign this user certificate
+  user.crt: <user_certificate> # Public key of the user
+  user.key: <user_private_key> # Private key of the user
+  user.p12: <store> # PKCS #12 store for user certificates and keys
+  user.password: <password_for_store> # Protects the PKCS #12 store
 ----
 
 The `my-user` secret provides the keystore credentials (`user.crt` and `user.key`) for the connector.
