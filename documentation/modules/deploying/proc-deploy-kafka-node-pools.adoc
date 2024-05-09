@@ -17,11 +17,14 @@ To deploy a Kafka cluster in KRaft mode, you must use the `KafkaNodePool` resour
 Strimzi provides the following xref:config-examples-{context}[example files] that you can use to create a Kafka cluster that uses node pools:
 
 `kafka/kafka-with-node-pools.yaml`:: Deploys ZooKeeper with 3 nodes, and 2 different pools of Kafka brokers. Each of the pools has 3 brokers. The pools in the example use different storage configuration.
-`kafka/kraft/kafka-with-dual-role-kraft-nodes.yaml`:: Deploys a KRaft-based Kafka cluster with one pool of KRaft nodes that share the broker and controller roles.
+`kafka/kraft/kafka-with-dual-role-nodes.yaml`:: Deploys a KRaft-based Kafka cluster with one pool of KRaft nodes that share the broker and controller roles.
 `kafka/kraft/kafka.yaml`:: Deploys a persistent KRaft-based Kafka cluster with one pool of controller nodes and one pool of broker nodes.
 `kafka/kraft/kafka-ephemeral.yaml`:: Deploys an ephemeral KRaft-based Kafka cluster with one pool of controller nodes and one pool of broker nodes.
 `kafka/kraft/kafka-single-node.yaml`:: Deploys a KRaft-based Kafka cluster with a single node.
 `kafka/kraft/kafka-jbod.yaml`:: Deploys a KRaft-based Kafka cluster with multiple volumes in each broker node.
+
+The `Kafka` resource configuration for each example includes the `strimzi.io/node-pools: enabled` annotation, which is required when using node pools.
+`Kafka` resources using KRaft mode must also have the annotation `strimzi.io/kraft: enabled`.
 
 NOTE: You can perform the steps outlined here to deploy a new Kafka cluster with `KafkaNodePool` resources or xref:proc-migrating-clusters-node-pools-{context}[migrate your existing Kafka cluster].  
 

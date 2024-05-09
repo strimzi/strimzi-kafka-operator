@@ -67,12 +67,13 @@ Configuration options not set in the `KafkaNodePool` resource are inherited from
 
 The `KafkaNodePool` resources use a `strimzi.io/cluster` label to indicate to which Kafka cluster they belong.
 The label must be set to the name of the `Kafka` custom resource.
+The `Kafka` resource configuration must also include the `strimzi.io/node-pools: enabled` annotation, which is required when using node pools.
 
 Examples of the `KafkaNodePool` resources can be found in the xref:config-examples-{context}[example configuration files] provided by Strimzi.
 
 .Downgrading from KafkaNodePools
 
-If your cluster already uses `KafkaNodePool` custom resources, and you wish to downgrade to an older version of Strimzi that does not support them or with the `KafkaNodePools` feature gate disabled, you must first migrate from `KafkaNodePool` custom resources to managing Kafka nodes using only `Kafka` custom resources.
+If your cluster already uses `KafkaNodePool` custom resources, and you wish to downgrade to an older version of Strimzi that does not support them or with the `KafkaNodePools` feature gate disabled, you must first migrate from `KafkaNodePool` custom resources to managing Kafka nodes using only `Kafka` custom resources. For more information, see the instructions for xref:proc-migrating-clusters-node-pools-str[reversing a migration to node pools].
 
 [id='ref-operator-unidirectional-topic-operator-feature-gate-{context}']
 === UnidirectionalTopicOperator feature gate
@@ -102,7 +103,7 @@ Controllers are responsible for coordinating operations and maintaining the clus
 
 To deploy a Kafka cluster in KRaft mode, you must use the `KafkaNodePool` resources.
 For more details and examples, see xref:deploying-kafka-node-pools-{context}[].
-The `Kafka` custom resource using KRaft mode must also have the annotation `strimzi.io/kraft="enabled"`.
+The `Kafka` custom resource using KRaft mode must also have the annotation `strimzi.io/kraft: enabled`.
 
 Currently, the KRaft mode in Strimzi has the following major limitations:
 
