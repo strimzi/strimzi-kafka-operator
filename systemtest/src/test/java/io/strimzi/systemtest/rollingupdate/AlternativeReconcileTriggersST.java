@@ -484,6 +484,9 @@ class AlternativeReconcileTriggersST extends AbstractST {
      */
     @ParallelNamespaceTest
     void testJbodMetadataLogRelocation() {
+        // JBOD storage in KRaft is supported only from Kafka 3.7.0 and higher.
+        // So we want to run this test when KRaft is disabled or when it is with KRaft and Kafka 3.7.0+
+        // TODO: remove once support for 3.6.x is removed - https://github.com/strimzi/strimzi-kafka-operator/issues/9921
         assumeTrue(Environment.isKRaftModeEnabled() && TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "3.7.0") >= 0);
 
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
