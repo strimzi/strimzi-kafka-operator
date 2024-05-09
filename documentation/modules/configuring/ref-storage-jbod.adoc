@@ -68,14 +68,17 @@ Where `_id_` is the ID of the volume used for storing data for Kafka broker pod 
 
 == Configuring the storage volume used to store the KRaft metadata log
 
-In KRaft mode, a Kafka cluster stores its metadata in a log present on all nodes, including brokers and controllers.
-Each node reserves one of its data volumes for the KRaft metadata log. 
+In KRaft mode, a copy of the Kafka cluster's metadata log is stored on every node, including brokers and controllers. 
+Each node uses one of its data volumes for the KRaft metadata log. 
 By default, the log is stored on the volume with the lowest ID. 
 However, you can specify another volume using the `kraftMetadata` property.
 
-For controller-only nodes, which don't handle data, dedicating a single volume to the metadata log is generally sufficient for storage. 
-Meanwhile, for broker nodes or nodes combining broker and controller roles, although they may require multiple volumes, they still share the same volume for storing both the metadata log and partition replica data. 
+For controller-only nodes, which don't handle data, storage is used only used for the metadata log. 
+The metadata log is always stored only on one volume, so using JBOD storage with multiple volumes does not improve the performance or increase the available disk space. 
+
+Meanwhile, broker nodes or nodes combining broker and controller roles share the same volume for storing both the metadata log and partition replica data.
 This sharing optimizes disk utilization.  
+They can also utilize JBOD storage with multiple volumes so that one of the volumes is shared by the metadata log and partition replica data and any additional volumes are used for partition replica data only. 
 
 Changing the volume that stores the metadata log triggers a rolling update of nodes in the cluster.
 This process involves deleting the old metadata log and creating a new one in the new location. 
