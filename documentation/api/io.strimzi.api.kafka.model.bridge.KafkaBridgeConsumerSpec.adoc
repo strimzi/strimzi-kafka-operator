@@ -32,7 +32,7 @@ All other supported options are forwarded to Kafka Bridge, including the followi
 [id='property-kafka-bridge-consumer-enabled-config-{context}']
 = `enabled`
 
-Enablement of the producer can be controlled by setting the `enabled` field to `true` or `false`. Default is `true`.
+Enablement of the consumer can be controlled by setting the `enabled` field to `true` or `false`. Default is `true`.
 
 [id='property-kafka-bridge-consumer-timeout-config-{context}']
 = `timeoutSeconds`
