@@ -36,6 +36,7 @@ public class KafkaBridgeProducerSpec extends KafkaBridgeClientSpec {
         return config;
     }
 
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     @Description("Whether the HTTP producer should be enabled or disabled, default is enabled.")
     public boolean isEnabled() {
         return enabled;
