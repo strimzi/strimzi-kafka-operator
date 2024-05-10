@@ -54,14 +54,16 @@ include::assemblies/metrics/assembly-metrics.adoc[leveloffset=+1]
 include::assemblies/tracing/assembly-distributed-tracing.adoc[leveloffset=+1]
 //using drain cleaner to drain pods
 include::assemblies/deploying/assembly-drain-cleaner.adoc[leveloffset=+1]
+//Managing rolling updates
+include::assemblies/deploying/assembly-rolling-updates.adoc[leveloffset=+1]
+//How to monitor restart events
+include::assemblies/deploying/assembly-deploy-restart-events.adoc[leveloffset=+1]
 //Upgrading the deployment
 include::assemblies/upgrading/assembly-upgrade.adoc[leveloffset=+1]
 //Downgrading the deployment
 include::assemblies/upgrading/assembly-downgrade.adoc[leveloffset=+1]
 //uninstalling the product
 include::assemblies/deploying/assembly-uninstalling.adoc[leveloffset=+1]
-//How to monitor restart events
-include::assemblies/deploying/assembly-deploy-restart-events.adoc[leveloffset=+1]
 //tuning configuration
 include::assemblies/managing/assembly-tuning-config.adoc[leveloffset=+1]
 //admin -- managing an installation

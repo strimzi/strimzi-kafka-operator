@@ -7,13 +7,6 @@
 
 [role="_abstract"]
 Managing Strimzi requires performing various tasks to keep the Kafka clusters and associated resources running smoothly. 
-Use `kubectl` commands to check the status of resources, configure maintenance windows for rolling updates, and leverage tools such as the Strimzi Drain Cleaner and Kafka Static Quota plugin to manage your deployment effectively.
-
-//windows (time) for maintenance
-include::assembly-maintenance-time-windows.adoc[leveloffset=+1]
-
-//performing manual rolling updates
-include::assembly-rolling-updates.adoc[leveloffset=+1]
 
 //recover a cluster from a PV
 include::assembly-cluster-recovery-volume.adoc[leveloffset=+1]
