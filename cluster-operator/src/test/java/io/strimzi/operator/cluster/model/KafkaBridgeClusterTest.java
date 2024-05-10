@@ -1314,8 +1314,8 @@ public class KafkaBridgeClusterTest {
     public void testConsumerProducerOptions() {
         KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
                 .editSpec()
-                .withConsumer(new KafkaBridgeConsumerSpecBuilder().withTimeoutSeconds(60).build())
-                .withProducer(new KafkaBridgeProducerSpecBuilder().build())
+                    .withConsumer(new KafkaBridgeConsumerSpecBuilder().withTimeoutSeconds(60).build())
+                    .withProducer(new KafkaBridgeProducerSpecBuilder().build())
                 .endSpec()
                 .build();
 
