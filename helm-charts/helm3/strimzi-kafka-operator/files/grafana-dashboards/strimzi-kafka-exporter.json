@@ -1570,7 +1570,13 @@
         "useTags": false
       },
       {
-        "current": {},
+        "allValue": ".*",
+        "current": {
+          "text": "All",
+          "value": [
+            "$__all"
+          ]
+        },
         "datasource": "${DS_PROMETHEUS}",
         "definition": "label_values(kafka_topic_partition_current_offset{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\"}, topic)",
         "hide": 0,
