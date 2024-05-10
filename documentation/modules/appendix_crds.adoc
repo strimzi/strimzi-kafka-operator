@@ -3671,10 +3671,10 @@ include::../api/io.strimzi.api.kafka.model.bridge.KafkaBridgeConsumerSpec.adoc[l
 |Property |Property type |Description
 |enabled
 |boolean
-|Whether the HTTP consumer should be enabled or disabled.
+|Whether the HTTP consumer should be enabled or disabled, default is enabled.
 |timeoutSeconds
 |integer
-|The timeout in seconds for deleting inactive consumers.
+|The timeout in seconds for deleting inactive consumers, default is -1 (disabled).
 |config
 |map
 |The Kafka consumer configuration used for consumer instances created by the bridge. Properties with the following prefixes cannot be set: ssl., bootstrap.servers, group.id, sasl., security. (with the exception of: ssl.endpoint.identification.algorithm, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols).
@@ -3698,7 +3698,7 @@ include::../api/io.strimzi.api.kafka.model.bridge.KafkaBridgeProducerSpec.adoc[l
 |Property |Property type |Description
 |enabled
 |boolean
-|Whether the HTTP producer should be enabled or disabled.
+|Whether the HTTP producer should be enabled or disabled, default is enabled.
 |config
 |map
 |The Kafka producer configuration used for producer instances created by the bridge. Properties with the following prefixes cannot be set: ssl., bootstrap.servers, sasl., security. (with the exception of: ssl.endpoint.identification.algorithm, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols).
