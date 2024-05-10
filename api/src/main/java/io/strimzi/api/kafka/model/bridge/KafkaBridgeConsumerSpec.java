@@ -39,7 +39,7 @@ public class KafkaBridgeConsumerSpec extends KafkaBridgeClientSpec {
         return config;
     }
 
-    @Description("Whether the HTTP consumer should be enabled or disabled")
+    @Description("Whether the HTTP consumer should be enabled or disabled, default is enabled.")
     public boolean isEnabled() {
         return enabled;
     }
@@ -48,7 +48,7 @@ public class KafkaBridgeConsumerSpec extends KafkaBridgeClientSpec {
         this.enabled = enabled;
     }
 
-    @Description("The timeout in seconds for deleting inactive consumers.")
+    @Description("The timeout in seconds for deleting inactive consumers, default is -1 (disabled).")
     public long getTimeoutSeconds() {
         return timeoutSeconds;
     }
