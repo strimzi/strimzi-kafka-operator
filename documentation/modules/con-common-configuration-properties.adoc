@@ -254,7 +254,6 @@ You can specify which container image to use for a component using the `image` p
 * `Kafka.spec.zookeeper`
 * `Kafka.spec.entityOperator.topicOperator`
 * `Kafka.spec.entityOperator.userOperator`
-* `Kafka.spec.entityOperator.tlsSidecar`
 * `Kafka.spec.cruiseControl`
 * `Kafka.spec.kafkaExporter`
 * `Kafka.spec.kafkaBridge`

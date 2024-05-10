@@ -16,11 +16,9 @@ import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlSpecBuilder;
 import io.strimzi.certs.OpenSslCertManager;
-import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.ClusterCa;
-import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ConfigMapOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.DeploymentOperator;
@@ -58,7 +56,6 @@ import static org.mockito.Mockito.when;
 public class EntityOperatorReconcilerTest {
     private static final String NAMESPACE = "namespace";
     private static final String NAME = "name";
-    private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
 
     private final static ClusterCa CLUSTER_CA = new ClusterCa(
             Reconciliation.DUMMY_RECONCILIATION,
@@ -129,7 +126,6 @@ public class EntityOperatorReconcilerTest {
                 ResourceUtils.dummyClusterOperatorConfig(),
                 supplier,
                 kafka,
-                VERSIONS,
                 CLUSTER_CA
         );
 
@@ -240,7 +236,6 @@ public class EntityOperatorReconcilerTest {
                 ResourceUtils.dummyClusterOperatorConfig(),
                 supplier,
                 kafka,
-                VERSIONS,
                 CLUSTER_CA
         );
 
@@ -355,7 +350,6 @@ public class EntityOperatorReconcilerTest {
                 ResourceUtils.dummyClusterOperatorConfig(),
                 supplier,
                 kafka,
-                VERSIONS,
                 CLUSTER_CA
         );
 
@@ -458,7 +452,6 @@ public class EntityOperatorReconcilerTest {
                 ResourceUtils.dummyClusterOperatorConfig(),
                 supplier,
                 kafka,
-                VERSIONS,
                 CLUSTER_CA
         );
 
@@ -552,7 +545,6 @@ public class EntityOperatorReconcilerTest {
                 ResourceUtils.dummyClusterOperatorConfig(),
                 supplier,
                 kafka,
-                VERSIONS,
                 CLUSTER_CA
         );
 
@@ -641,7 +633,6 @@ public class EntityOperatorReconcilerTest {
                 ResourceUtils.dummyClusterOperatorConfig(),
                 supplier,
                 kafka,
-                VERSIONS,
                 CLUSTER_CA
         );
 

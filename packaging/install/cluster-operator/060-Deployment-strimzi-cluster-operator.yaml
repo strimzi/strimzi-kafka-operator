@@ -47,8 +47,6 @@ spec:
               value: "120000"
             - name: STRIMZI_OPERATION_TIMEOUT_MS
               value: "300000"
-            - name: STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE
-              value: quay.io/strimzi/kafka:latest-kafka-3.7.0
             - name: STRIMZI_DEFAULT_KAFKA_EXPORTER_IMAGE
               value: quay.io/strimzi/kafka:latest-kafka-3.7.0
             - name: STRIMZI_DEFAULT_CRUISE_CONTROL_IMAGE

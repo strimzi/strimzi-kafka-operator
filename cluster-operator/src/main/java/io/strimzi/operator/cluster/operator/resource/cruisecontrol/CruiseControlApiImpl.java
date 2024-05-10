@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.operator.resource.cruisecontrol;
 import io.fabric8.kubernetes.api.model.HTTPHeader;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.operator.cluster.operator.resource.HttpClientUtils;
+import io.strimzi.operator.common.CruiseControlUtil;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlEndpoints;
@@ -86,8 +87,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
 
     private static HTTPHeader generateAuthHttpHeader(String user, String password) {
         String headerName = "Authorization";
-        String headerValue = "Basic " + Util.encodeToBase64(String.join(":", user, password));
-
+        String headerValue = CruiseControlUtil.buildBasicAuthValue(user, password);
         return new HTTPHeader(headerName, headerValue);
     }
 

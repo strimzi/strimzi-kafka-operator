@@ -6,6 +6,7 @@ package io.strimzi.api.kafka.model.kafka.entityoperator;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
 import io.strimzi.api.kafka.model.common.template.ContainerTemplate;
@@ -113,6 +114,8 @@ public class EntityOperatorTemplate implements UnknownPropertyPreserving {
         this.userOperatorContainer = userOperatorContainer;
     }
 
+    @Deprecated
+    @DeprecatedProperty(description = "TLS sidecar was removed in Strimzi 0.41.0. This property is ignored.")
     @Description("Template for the Entity Operator TLS sidecar container")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public ContainerTemplate getTlsSidecarContainer() {

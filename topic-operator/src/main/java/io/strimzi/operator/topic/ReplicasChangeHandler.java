@@ -43,7 +43,7 @@ import java.util.stream.Collectors;
 
 import static io.strimzi.api.kafka.model.topic.ReplicasChangeState.ONGOING;
 import static io.strimzi.api.kafka.model.topic.ReplicasChangeState.PENDING;
-import static io.strimzi.operator.topic.TopicOperatorUtil.buildBasicAuthValue;
+import static io.strimzi.operator.common.CruiseControlUtil.buildBasicAuthValue;
 import static io.strimzi.operator.topic.TopicOperatorUtil.getFileContent;
 import static io.strimzi.operator.topic.TopicOperatorUtil.hasReplicasChange;
 import static io.strimzi.operator.topic.TopicOperatorUtil.topicNames;
