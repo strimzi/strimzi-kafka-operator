@@ -3,41 +3,38 @@
 // assembly-deploy-client-access.adoc
 
 [id="configuration-points-listeners-{context}"]
-= Configuring listeners to connect to Kafka brokers
+= Configuring listeners to connect to Kafka
 
 [role="_abstract"]
-Use listeners for client connection to Kafka brokers.
+Use listeners to enable client connections to Kafka.
 Strimzi provides a generic `GenericKafkaListener` schema with properties to configure listeners through the `Kafka` resource.
-The `GenericKafkaListener` provides a flexible approach to listener configuration.
-You can specify properties to configure _internal_ listeners for connecting within the Kubernetes cluster or _external_ listeners for connecting outside the Kubernetes cluster.
 
-Specify a connection `type` to expose Kafka in the listener configuration.
-The type chosen depends on your requirements, and your environment and infrastructure.
-The following listener types are supported:
+When configuring a Kafka cluster, you specify a listener `type` based on your requirements, environment, and infrastructure. 
+Services, routes, load balancers, and ingresses for clients to connect to a cluster are created according to the listener type.
 
-Internal listeners::
+Internal and external listener types are supported.
+
+Internal listeners:: Use internal listener types to connect clients within a kubernetes cluster.
 +
 * `internal` to connect within the same Kubernetes cluster
 * `cluster-ip` to expose Kafka using per-broker `ClusterIP` services
-External listeners::
++
+Internal listeners use a headless service and the DNS names assigned to the broker pods. 
+By default, they do not use the Kubernetes service DNS domain (typically `.cluster.local`). 
+However, you can customize this configuration using the `useServiceDnsDomain` property. 
+Consider using a `cluster-ip` type listener if routing through the headless service isn't feasible or if you require a custom access mechanism, such as when integrating with specific Ingress controllers or the Kubernetes Gateway API.
+
+External listeners:: Use external listener types to connect clients outside a Kubernetes cluster.
 +
 * `nodeport` to use ports on Kubernetes nodes
 * `loadbalancer` to use loadbalancer services
 * `ingress` to use Kubernetes `Ingress` and the {NginxIngressController} (Kubernetes only)
 * `route` to use OpenShift `Route` and the default HAProxy router (OpenShift only)
-
-IMPORTANT: Do not use `ingress` on OpenShift, use the `route` type instead. The Ingress NGINX Controller is only intended for use on Kubernetes. The `route` type is only supported on OpenShift.
-
-An `internal` type listener configuration uses a headless service and the DNS names given to the broker pods. 
-You might want to join your Kubernetes network to an outside network.
-In which case, you can configure an `internal` type listener (using the `useServiceDnsDomain` property) so that the Kubernetes service DNS domain (typically `.cluster.local`) is not used.
-You can also configure a `cluster-ip` type of listener that exposes a Kafka cluster based on per-broker `ClusterIP` services.
-This is a useful option when you can't route through the headless service or you wish to incorporate a custom access mechanism. 
-For example, you might use this listener when building your own type of external listener for a specific Ingress controller or the Kubernetes Gateway API.
-
++
 External listeners handle access to a Kafka cluster from networks that require different authentication mechanisms.
-You can configure external listeners for client access outside a Kubernetes environment using a specified connection mechanism, such as a loadbalancer or route.
 For example, loadbalancers might not be suitable for certain infrastructure, such as bare metal, where node ports provide a better option.
+
+IMPORTANT: Do not use the built-in `ingress` controller on OpenShift, use the `route` type instead. The Ingress NGINX Controller is only intended for use on Kubernetes. The `route` type is only supported on OpenShift.
 
 Each listener is defined as an array in the `Kafka` resource.
 
@@ -78,8 +75,6 @@ spec:
 
 You can configure as many listeners as required, as long as their names and ports are unique.
 You can also configure listeners for secure connection using authentication.
-
-If you want to know more about the pros and cons of each connection type, refer to {Externallisteners}.
 
 NOTE: If you scale your Kafka cluster while using external listeners, it might trigger a rolling update of all Kafka brokers. This depends on the configuration.
 

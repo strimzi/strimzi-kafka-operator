@@ -3,7 +3,7 @@
 // assembly-securing-kafka-clients.adoc
 
 [id='con-securing-client-labels-{context}']
-= Identifying a Kafka cluster for user handling
+= Associating users with Kafka clusters
 
 A `KafkaUser` resource includes a label that defines the appropriate name of the Kafka cluster (derived from the name of the `Kafka` resource) to which it belongs.
 
@@ -17,8 +17,9 @@ metadata:
     strimzi.io/cluster: my-cluster
 ----
 
-The label is used by the User Operator to identify the `KafkaUser` resource and create a new user, and also in subsequent handling of the user.
+The label enables the User Operator to identify the `KafkaUser` resource and create and manager the user.
 
-If the label does not match the Kafka cluster, the User Operator cannot identify the `KafkaUser` and the user is not created.
+If the label does not match the Kafka cluster, the User Operator cannot identify the `KafkaUser`, and the user is not created.
 
-If the status of the `KafkaUser` resource remains empty, check your label.
+If the status of the `KafkaUser` resource remains empty, check your label configuration.
+

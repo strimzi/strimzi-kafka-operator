@@ -7,8 +7,10 @@
 = Deploying example clients
 
 [role="_abstract"]
-Deploy example producer and consumer clients to send and receive messages.
-You can use these clients to verify a deployment of Strimzi. 
+Send and receive messages from a Kafka cluster installed on Kubernetes.
+
+This procedure describes how to deploy Kafka clients to the Kubernetes cluster, then produce and consume messages to test your installation.
+The clients are deployed using the Kafka container image.  
 
 .Prerequisites
 
@@ -18,16 +20,24 @@ You can use these clients to verify a deployment of Strimzi.
 
 . Deploy a Kafka producer.
 +
-[source,shell,subs="+quotes,attributes+"]
-kubectl run kafka-producer -ti --image={DockerKafka} --rm=true --restart=Never -- bin/kafka-console-producer.sh --bootstrap-server _cluster-name_-kafka-bootstrap:9092 --topic _my-topic_
+This example deploys a Kafka producer that connects to the Kafka cluster `my-cluster`.
++
+A topic named `my-topic` is created.
++
+.Deploying a Kafka producer to Kubernetes
+[source,shell,subs="+attributes"]
+kubectl run kafka-producer -ti --image={DockerKafka} --rm=true --restart=Never -- bin/kafka-console-producer.sh --bootstrap-server my-cluster-kafka-bootstrap:9092 --topic my-topic
 
 . Type a message into the console where the producer is running.
 
-. Press _Enter_ to send the message.
+. Press *Enter* to send the message.
 
 . Deploy a Kafka consumer.
 +
-[source,shell,subs="+quotes,attributes+"]
-kubectl run kafka-consumer -ti --image={DockerKafka} --rm=true --restart=Never -- bin/kafka-console-consumer.sh --bootstrap-server _cluster-name_-kafka-bootstrap:9092 --topic _my-topic_ --from-beginning
+The consumer should consume messages produced to `my-topic` in the Kafka cluster `my-cluster`.
++
+.Deploying a Kafka consumer to Kubernetes
+[source,shell,subs="+attributes"]
+kubectl run kafka-consumer -ti --image={DockerKafka} --rm=true --restart=Never -- bin/kafka-console-consumer.sh --bootstrap-server my-cluster-kafka-bootstrap:9092 --topic my-topic --from-beginning
 
 . Confirm that you see the incoming messages in the consumer console.

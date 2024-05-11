@@ -110,7 +110,6 @@
 :CruiseControlSensorsDocs: link:https://github.com/linkedin/cruise-control/wiki/Sensors[Cruise Control documentation^]
 :CruiseControlApiDocs: https://github.com/linkedin/cruise-control/wiki/REST-APIs[REST APIs in the Cruise Control Wiki^]
 :CronExpression: link:http://www.quartz-scheduler.org/documentation/quartz-2.3.0/tutorials/tutorial-lesson-06.html[cron expression^]
-:ExternalListeners: link:https://strimzi.io/2019/04/17/accessing-kafka-part-1.html[Accessing Apache Kafka in Strimzi^]
 :OperatorHub: link:https://operatorhub.io/operator/strimzi-kafka-operator[OperatorHub.io^]
 :OperatorLifecycleManager: link:https://github.com/operator-framework/operator-lifecycle-manager[Operator Lifecycle Manager^]
 :OLMOperatorDocs: link:https://olm.operatorframework.io/docs/[Operator Lifecycle Manager documentation^]

@@ -18,7 +18,7 @@ For example:
 Users represent Kafka clients.
 When you configure Kafka users, you enable the user authentication and authorization mechanisms required by clients to access Kafka.
 The mechanism used must match the equivalent `Kafka` configuration.
-For more information on using `Kafka` and `KafkaUser` resources to secure access to Kafka brokers, see xref:assembly-securing-kafka-{context}[Securing access to Kafka brokers].
+For more information on using `Kafka` and `KafkaUser` resources to secure access to Kafka brokers, see xref:assembly-securing-access-{context}[].
 
 .Prerequisites
 

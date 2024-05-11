@@ -3,10 +3,21 @@
 // assembly-kafka-broker-listener-network-policies.adoc
 
 [id='proc-restricting-access-to-listeners-using-network-policies-{context}']
-= Restricting access to Kafka listeners using network policies
+= Restricting access to listeners with network policies
 
 [role="_abstract"]
-You can restrict access to a listener to only selected applications by using the `networkPolicyPeers` property.
+Control listener access by configuring the `networkPolicyPeers` property in the `Kafka` resource.
+
+By default, Strimzi automatically creates a `NetworkPolicy` resource for every enabled Kafka listener, allowing connections from all namespaces.
+
+To restrict listener access to specific applications or namespaces at the network level, configure the `networkPolicyPeers` property.
+Each listener can have its own link:{BookURLConfiguring}#configuration-listener-network-policy-reference[`networkPolicyPeers` configuration].
+For more information on network policy peers, refer to the {K8sNetworkPolicyPeerAPI}.
+
+If you want to use custom network policies, you can set the `STRIMZI_NETWORK_POLICY_GENERATION` environment variable to `false` in the Cluster Operator configuration.
+For more information, see xref:ref-operator-cluster-{context}[].
+
+NOTE: Your configuration of Kubernetes must support ingress `NetworkPolicies` in order to use network policies.
 
 .Prerequisites
 
@@ -15,11 +26,9 @@ You can restrict access to a listener to only selected applications by using the
 
 .Procedure
 
-. Open the `Kafka` resource.
-
-. In the `networkPolicyPeers` property, define the application pods or namespaces that will be allowed to access the Kafka cluster.
+. Configure the `networkPolicyPeers` property to define the application pods or namespaces allowed to access the Kafka cluster.
 +
-For example, to configure a `tls` listener to allow connections only from application pods with the label `app` set to `kafka-client`:
+This example shows configuration for a `tls` listener to allow connections only from application pods with the label `app` set to `kafka-client`:
 +
 [source,yaml,subs=attributes+]
 ----
@@ -44,11 +53,7 @@ spec:
     # ...
 ----
 
-. Create or update the resource.
-+
-Use `kubectl apply`:
-[source,shell,subs=+quotes]
-kubectl apply -f _your-file_
+. Apply the changes to the `Kafka` resource configuration.
 
 [role="_additional-resources"]
 .Additional resources

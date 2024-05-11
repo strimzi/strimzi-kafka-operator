@@ -3,7 +3,7 @@
 // assembly-securing-kafka-brokers.adoc
 
 [id='con-securing-kafka-authentication-{context}']
-= Listener authentication
+= Configuring client authentication on listeners
 
 [role="_abstract"]
 Configure client authentication for Kafka brokers when creating listeners.
@@ -24,6 +24,8 @@ Supported authentication options:
 . xref:assembly-oauth-authentication_str[OAuth 2.0 token-based authentication]
 . link:{BookURLConfiguring}#type-KafkaListenerAuthenticationCustom-reference[Custom authentication^]
 . link:{BookURLConfiguring}#con-common-configuration-ssl-reference[TLS versions and cipher suites^]
+
+If you're using OAuth 2.0 for client access management, user authentication and authorization credentials are handled through the authorization server.
 
 The authentication option you choose depends on how you wish to authenticate client access to Kafka brokers.
 
@@ -123,29 +125,4 @@ Instead the client and the server are each challenged by the other to offer proo
 * The server and client each generate a new challenge for each authentication exchange.
 This means that the exchange is resilient against replay attacks.
 
-When `KafkaUser.spec.authentication.type` is configured with `scram-sha-512` the User Operator will generate a random 12-character password consisting of upper and lowercase ASCII letters and numbers.
-
-[id='assembly-kafka-broker-listener-network-policies-{context}']
-== Network policies
-
-By default, Strimzi automatically creates a `NetworkPolicy` resource for every listener that is enabled on a Kafka broker.
-This `NetworkPolicy` allows applications to connect to listeners in all namespaces.
-Use network policies as part of the listener configuration.
-
-If you want to restrict access to a listener at the network level to only selected applications or namespaces, use the `networkPolicyPeers` property.
-Each listener can have a different link:{BookURLConfiguring}#configuration-listener-network-policy-reference[`networkPolicyPeers` configuration].
-For more information on network policy peers, refer to the {K8sNetworkPolicyPeerAPI}.
-
-If you want to use custom network policies, you can set the `STRIMZI_NETWORK_POLICY_GENERATION` environment variable to `false` in the Cluster Operator configuration.
-For more information, see xref:ref-operator-cluster-{context}[].
-
-NOTE: Your configuration of Kubernetes must support ingress `NetworkPolicies` in order to use network policies in Strimzi.
-
-== Providing listener certificates
-You can provide your own server certificates, called _Kafka listener certificates_, for TLS listeners or external listeners which have TLS encryption enabled.
-For more information, see xref:proc-installing-certs-per-listener-{context}[].
-
-[role="_additional-resources"]
-.Additional resources
-
-* link:{BookURLConfiguring}#type-GenericKafkaListener-reference[`GenericKafkaListener` schema reference]
+When `KafkaUser.spec.authentication.type` is configured with `scram-sha-512` the User Operator will generate a random 32-character password consisting of upper and lowercase ASCII letters and numbers.
