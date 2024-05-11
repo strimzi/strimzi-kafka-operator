@@ -249,7 +249,7 @@ public class KafkaClusterCreator {
                         newNodePools.add(
                                 new KafkaNodePoolBuilder(nodePool)
                                         .editSpec()
-                                        .withReplicas(newReplicasCount)
+                                            .withReplicas(newReplicasCount)
                                         .endSpec()
                                         .build());
                     } else {
@@ -281,12 +281,12 @@ public class KafkaClusterCreator {
                 if (nodePool.getStatus() != null
                         && nodePool.getStatus().getRoles().contains(ProcessRoles.BROKER)
                         && !nodePool.getSpec().getRoles().contains(ProcessRoles.BROKER)) {
-                    warningConditions.add(StatusUtils.buildWarningCondition("ScaleDownPreventionCheck", "Reverting role change of KafkaNodePool " + nodePool.getMetadata().getName() + " by adding the broker role to it"));
-                    LOGGER.warnCr(reconciliation, "Reverting role change of KafkaNodePool {} by adding the broker role to it", nodePool.getMetadata().getName());
+                    warningConditions.add(StatusUtils.buildWarningCondition("ScaleDownPreventionCheck", "Reverting role change of KafkaNodePool " + nodePool.getMetadata().getName() + " (setting roles to " + nodePool.getStatus().getRoles() + ")"));
+                    LOGGER.warnCr(reconciliation, "Reverting role change of KafkaNodePool {} (setting roles to {})", nodePool.getMetadata().getName(), nodePool.getStatus().getRoles());
                     newNodePools.add(
                             new KafkaNodePoolBuilder(nodePool)
                                     .editSpec()
-                                    .addToRoles(ProcessRoles.BROKER)
+                                        .withRoles(nodePool.getStatus().getRoles())
                                     .endSpec()
                                     .build());
                 } else {
