@@ -10,6 +10,7 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.enums.UserAuthType;
 import io.strimzi.systemtest.logs.LogCollector;
+import io.strimzi.systemtest.metrics.UserOperatorMetricsComponent;
 import io.strimzi.systemtest.performance.gather.collectors.UserOperatorMetricsCollector;
 import io.strimzi.systemtest.performance.gather.schedulers.UserOperatorMetricsCollectionScheduler;
 import io.strimzi.systemtest.performance.report.UserOperatorPerformanceReporter;
@@ -195,8 +196,7 @@ public class UserOperatorPerformance extends AbstractST {
             this.userOperatorCollector = new UserOperatorMetricsCollector.Builder()
                 .withScraperPodName(this.testStorage.getScraperPodName())
                 .withNamespaceName(this.testStorage.getNamespaceName())
-                .withComponentType(ComponentType.UserOperator)
-                .withComponentName(this.testStorage.getClusterName())
+                .withComponent(UserOperatorMetricsComponent.create(this.testStorage.getNamespaceName(), this.testStorage.getClusterName()))
                 .build();
 
             this.userOperatorMetricsGatherer = new UserOperatorMetricsCollectionScheduler(this.userOperatorCollector, "strimzi.io/cluster=" + this.testStorage.getClusterName());
@@ -365,8 +365,7 @@ public class UserOperatorPerformance extends AbstractST {
             this.userOperatorCollector = new UserOperatorMetricsCollector.Builder()
                 .withScraperPodName(this.testStorage.getScraperPodName())
                 .withNamespaceName(this.testStorage.getNamespaceName())
-                .withComponentType(ComponentType.UserOperator)
-                .withComponentName(this.testStorage.getClusterName())
+                .withComponent(UserOperatorMetricsComponent.create(this.testStorage.getNamespaceName(), this.testStorage.getClusterName()))
                 .build();
 
             this.userOperatorMetricsGatherer = new UserOperatorMetricsCollectionScheduler(this.userOperatorCollector, "strimzi.io/cluster=" + this.testStorage.getClusterName());

@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMapKeySelector;
 import io.fabric8.kubernetes.api.model.ConfigMapKeySelectorBuilder;
 import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.skodjob.testframe.MetricsCollector;
 import io.strimzi.api.kafka.model.bridge.KafkaBridge;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetrics;
@@ -37,7 +38,6 @@ import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClientsBuilder;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
-import io.strimzi.systemtest.resources.ComponentType;
 import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.systemtest.resources.NodePoolsConverter;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -257,7 +257,7 @@ public class MetricsST extends AbstractST {
         resourceManager.createResourceWithWait(KafkaConnectorTemplates.kafkaConnector(kafkaClusterFirstName).build());
 
         MetricsCollector kafkaConnectCollector = kafkaCollector.toBuilder()
-                .withComponentType(ComponentType.KafkaConnect)
+                .withComponent(KafkaConnectMetricsComponent.create(namespaceFirst, kafkaClusterFirstName))
                 .build();
 
         kafkaConnectCollector.collectMetricsFromPods();
@@ -454,7 +454,7 @@ public class MetricsST extends AbstractST {
     @ParallelTest
     void testUserOperatorMetrics() {
         MetricsCollector userOperatorCollector = kafkaCollector.toBuilder()
-            .withComponentType(ComponentType.UserOperator)
+            .withComponent(UserOperatorMetricsComponent.create(namespaceFirst, kafkaClusterFirstName))
             .build();
 
         userOperatorCollector.collectMetricsFromPods();
@@ -501,8 +501,7 @@ public class MetricsST extends AbstractST {
                     .build());
 
         MetricsCollector kmm2Collector = kafkaCollector.toBuilder()
-            .withComponentName(mm2ClusterName)
-            .withComponentType(ComponentType.KafkaMirrorMaker2)
+            .withComponent(KafkaMirrorMaker2MetricsComponent.create(namespaceFirst, mm2ClusterName))
             .build();
 
         assertMetricValue(kmm2Collector, "kafka_connect_worker_connector_count", 3);
@@ -554,8 +553,7 @@ public class MetricsST extends AbstractST {
         NetworkPolicyResource.allowNetworkPolicySettingsForBridgeScraper(namespaceFirst, scraperPodName, KafkaBridgeResources.componentName(bridgeClusterName));
 
         MetricsCollector bridgeCollector = kafkaCollector.toBuilder()
-            .withComponentName(bridgeClusterName)
-            .withComponentType(ComponentType.KafkaBridge)
+            .withComponent(KafkaBridgeMetricsComponent.create(namespaceFirst, bridgeClusterName))
             .build();
 
         // Attach consumer before producer
@@ -778,26 +776,24 @@ public class MetricsST extends AbstractST {
         kafkaCollector = new MetricsCollector.Builder()
             .withScraperPodName(scraperPodName)
             .withNamespaceName(namespaceFirst)
-            .withComponentType(ComponentType.Kafka)
-            .withComponentName(kafkaClusterFirstName)
+            .withComponent(KafkaMetricsComponent.create(namespaceFirst, kafkaClusterFirstName))
             .build();
 
         if (!Environment.isKRaftModeEnabled()) {
             zookeeperCollector = kafkaCollector.toBuilder()
-                .withComponentType(ComponentType.Zookeeper)
+                .withComponent(ZookeeperMetricsComponent.create(namespaceFirst, kafkaClusterFirstName))
                 .build();
             zookeeperCollector.collectMetricsFromPods();
         }
 
         kafkaExporterCollector = kafkaCollector.toBuilder()
-            .withComponentType(ComponentType.KafkaExporter)
+            .withComponent(KafkaExporterMetricsComponent.create(namespaceFirst, kafkaClusterFirstName))
             .build();
 
         clusterOperatorCollector = new MetricsCollector.Builder()
             .withScraperPodName(coScraperPodName)
             .withNamespaceName(TestConstants.CO_NAMESPACE)
-            .withComponentType(ComponentType.ClusterOperator)
-            .withComponentName(clusterOperator.getClusterOperatorName())
+            .withComponent(ClusterOperatorMetricsComponent.create(namespaceFirst, clusterOperator.getClusterOperatorName()))
             .build();
 
         kafkaCollector.collectMetricsFromPods();

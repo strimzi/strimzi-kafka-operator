@@ -5,9 +5,9 @@
 package io.strimzi.systemtest.utils.specific;
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.skodjob.testframe.MetricsCollector;
 import io.strimzi.systemtest.TestConstants;
-import io.strimzi.systemtest.metrics.MetricsCollector;
-import io.strimzi.systemtest.resources.ComponentType;
+import io.strimzi.systemtest.metrics.ClusterOperatorMetricsComponent;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.executor.Exec;
@@ -65,8 +65,7 @@ public class MetricsUtils {
         return new MetricsCollector.Builder()
             .withScraperPodName(coScraperPodName)
             .withNamespaceName(coNamespace)
-            .withComponentType(ComponentType.ClusterOperator)
-            .withComponentName(coName)
+            .withComponent(ClusterOperatorMetricsComponent.create(coNamespace, coName))
             .build();
     }
 
