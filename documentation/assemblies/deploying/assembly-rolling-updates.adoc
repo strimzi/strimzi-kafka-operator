@@ -3,10 +3,9 @@
 // using/assembly-management-tasks.adoc
 
 [id='assembly-rolling-updates-{context}']
-= Starting rolling updates of Kafka and other operands using annotations
-
-Strimzi supports the use of annotations to manually trigger a rolling update of Kafka and other operands through the Cluster Operator.
-Use annotations to initiate rolling updates of Kafka, Kafka Connect, MirrorMaker 2, and ZooKeeper clusters.
+= Managing rolling updates 
+Use annotations to manually trigger a rolling update of Kafka and other operands through the Cluster Operator.
+Initiate rolling updates of Kafka, Kafka Connect, MirrorMaker 2, and ZooKeeper clusters.
 
 Manually performing a rolling update on a specific pod or set of pods is usually only required in exceptional circumstances.
 However, rather than deleting the pods directly, if you perform the rolling update through the Cluster Operator you ensure the following:

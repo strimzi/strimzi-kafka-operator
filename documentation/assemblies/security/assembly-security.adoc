@@ -60,6 +60,8 @@ include::../../modules/security/con-certificate-authorities.adoc[leveloffset=+1]
 include::../../modules/security/ref-certificates-and-secrets.adoc[leveloffset=+1]
 
 include::../../modules/security/con-certificate-renewal.adoc[leveloffset=+1]
+//scheduling maintenance time windows
+include::../../modules/configuring/con-maintenance-time-window-definition.adoc[leveloffset=+2]
 
 include::../../modules/security/proc-renewing-ca-certs-manually.adoc[leveloffset=+2]
 

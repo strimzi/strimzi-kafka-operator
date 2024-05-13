@@ -3,23 +3,40 @@
 // assembly-maintenance-time-windows.adoc
 
 [id='con-maintenance-time-window-definition-{context}']
-= Maintenance time window definition
+= Scheduling maintenance time windows
 
-You configure maintenance time windows by entering an array of strings in the `Kafka.spec.maintenanceTimeWindows` property.
-Each string is a {CronExpression} interpreted as being in UTC (Coordinated Universal Time, which for practical purposes is the same as Greenwich Mean Time).
+[role="_abstract"]
+Schedule certificate renewal updates by the Cluster Operator to Kafka or ZooKeeper clusters for minimal impact on client applications.
+Use time windows in conjunction with the xref:con-certificate-renewal-str[renewal periods of the CA certificates created by the Cluster Operator] (`Kafka.spec.clusterCa.renewalDays` and `Kafka.spec.clusterCa.renewalDays`).
 
-The following example configures a single maintenance time window that starts at midnight and ends at 01:59am (UTC), on Sundays, Mondays, Tuesdays, Wednesdays, and Thursdays:
+Updates are usually triggered by changes to the `Kafka` resource by the user or through user tooling.
+Rolling restarts for certificate expiration may occur without `Kafka` resource changes.
+While unscheduled restarts shouldn't affect service availability, they could impact the performance of client applications.
+Maintenance time windows allow scheduling of these updates for convenient times.
 
-[source,yaml,subs="attributes+"]
+Configure maintenance time windows as follows:
+
+* Configure an array of strings using the `Kafka.spec.maintenanceTimeWindows` property of the `Kafka` resource.
+* Each string is a {CronExpression} interpreted as being in UTC (Coordinated Universal Time)
+
+The following example configures a single maintenance time window that starts at midnight and ends at 01:59am (UTC), on Sundays, Mondays, Tuesdays, Wednesdays, and Thursdays.
+
+.Example maintenance time window configuration
+[source,yaml,subs=attributes+]
 ----
-# ...
-maintenanceTimeWindows:
-  - "* * 0-1 ? * SUN,MON,TUE,WED,THU *"
-# ...
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    #...
+  maintenanceTimeWindows:
+    - "* * 0-1 ? * SUN,MON,TUE,WED,THU *"
+  #...
 ----
 
-In practice, maintenance windows should be set in conjunction with the `Kafka.spec.clusterCa.renewalDays` and `Kafka.spec.clientsCa.renewalDays` properties of the `Kafka` resource, to ensure that the necessary CA certificate renewal can be completed in the configured maintenance time windows.
-
-NOTE: Strimzi does not schedule maintenance operations exactly according to the given windows. Instead, for each reconciliation, it checks whether a maintenance window is currently "open".
-This means that the start of maintenance operations within a given time window can be delayed by up to the Cluster Operator reconciliation interval.
-Maintenance time windows must therefore be at least this long.
+NOTE: The Cluster Operator doesn't adhere strictly to the given time windows for maintenance operations. 
+Maintenance operations are triggered by the first reconciliation that occurs within the specified time window. 
+If the time window is shorter than the interval between reconciliations, there's a risk that the reconciliation may happen outside of the time window, 
+Therefore, maintenance time windows must be at least as long as the interval between reconciliations.
