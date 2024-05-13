@@ -77,15 +77,15 @@ spec:
                       items:
                         type: object
                         properties:
-                          certificate:
-                            type: string
-                            description: The name of the file certificate in the Secret.
                           secretName:
                             type: string
                             description: The name of the Secret containing the certificate.
+                          certificate:
+                            type: string
+                            description: The name of the file certificate in the Secret.
                         required:
-                          - certificate
                           - secretName
+                          - certificate
                       description: Trusted certificates for TLS connection.
                   description: TLS configuration for connecting Kafka Bridge to the cluster.
                 authentication:
@@ -113,19 +113,19 @@ spec:
                     certificateAndKey:
                       type: object
                       properties:
-                        certificate:
-                          type: string
-                          description: The name of the file certificate in the Secret.
                         key:
                           type: string
                           description: The name of the private key in the Secret.
                         secretName:
                           type: string
                           description: The name of the Secret containing the certificate.
+                        certificate:
+                          type: string
+                          description: The name of the file certificate in the Secret.
                       required:
-                        - certificate
                         - key
                         - secretName
+                        - certificate
                       description: Reference to the `Secret` which holds the certificate and private key pair.
                     clientId:
                       type: string
@@ -167,15 +167,15 @@ spec:
                     passwordSecret:
                       type: object
                       properties:
-                        password:
-                          type: string
-                          description: The name of the key in the Secret under which the password is stored.
                         secretName:
                           type: string
                           description: The name of the Secret containing the password.
+                        password:
+                          type: string
+                          description: The name of the key in the Secret under which the password is stored.
                       required:
-                        - password
                         - secretName
+                        - password
                       description: Reference to the `Secret` which holds the password.
                     readTimeoutSeconds:
                       type: integer
@@ -201,15 +201,15 @@ spec:
                       items:
                         type: object
                         properties:
-                          certificate:
-                            type: string
-                            description: The name of the file certificate in the Secret.
                           secretName:
                             type: string
                             description: The name of the Secret containing the certificate.
+                          certificate:
+                            type: string
+                            description: The name of the file certificate in the Secret.
                         required:
-                          - certificate
                           - secretName
+                          - certificate
                       description: Trusted certificates for TLS connection to the OAuth server.
                     tokenEndpointUri:
                       type: string
@@ -289,10 +289,20 @@ spec:
                           name:
                             type: string
                     limits:
-                      x-kubernetes-preserve-unknown-fields: true
+                      additionalProperties:
+                        anyOf:
+                          - type: integer
+                          - type: string
+                        pattern: "^(\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))))?$"
+                        x-kubernetes-int-or-string: true
                       type: object
                     requests:
-                      x-kubernetes-preserve-unknown-fields: true
+                      additionalProperties:
+                        anyOf:
+                          - type: integer
+                          - type: string
+                        pattern: "^(\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))))?$"
+                        x-kubernetes-int-or-string: true
                       type: object
                   description: CPU and memory resources to reserve.
                 jvmOptions:
@@ -303,14 +313,14 @@ spec:
                         type: string
                       type: object
                       description: A map of -XX options to the JVM.
-                    "-Xms":
-                      type: string
-                      pattern: "^[0-9]+[mMgG]?$"
-                      description: -Xms option to to the JVM.
                     "-Xmx":
                       type: string
                       pattern: "^[0-9]+[mMgG]?$"
                       description: -Xmx option to to the JVM.
+                    "-Xms":
+                      type: string
+                      pattern: "^[0-9]+[mMgG]?$"
+                      description: -Xms option to to the JVM.
                     gcLoggingEnabled:
                       type: boolean
                       description: Specifies whether the Garbage Collection logging is enabled. The default is false.
@@ -377,14 +387,14 @@ spec:
                 livenessProbe:
                   type: object
                   properties:
-                    failureThreshold:
-                      type: integer
-                      minimum: 1
-                      description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
                     initialDelaySeconds:
                       type: integer
                       minimum: 0
                       description: The initial delay before first the health is first checked. Default to 15 seconds. Minimum value is 0.
+                    timeoutSeconds:
+                      type: integer
+                      minimum: 1
+                      description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
                     periodSeconds:
                       type: integer
                       minimum: 1
@@ -393,22 +403,22 @@ spec:
                       type: integer
                       minimum: 1
                       description: Minimum consecutive successes for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness. Minimum value is 1.
-                    timeoutSeconds:
+                    failureThreshold:
                       type: integer
                       minimum: 1
-                      description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
+                      description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
                   description: Pod liveness checking.
                 readinessProbe:
                   type: object
                   properties:
-                    failureThreshold:
-                      type: integer
-                      minimum: 1
-                      description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
                     initialDelaySeconds:
                       type: integer
                       minimum: 0
                       description: The initial delay before first the health is first checked. Default to 15 seconds. Minimum value is 0.
+                    timeoutSeconds:
+                      type: integer
+                      minimum: 1
+                      description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
                     periodSeconds:
                       type: integer
                       minimum: 1
@@ -417,10 +427,10 @@ spec:
                       type: integer
                       minimum: 1
                       description: Minimum consecutive successes for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness. Minimum value is 1.
-                    timeoutSeconds:
+                    failureThreshold:
                       type: integer
                       minimum: 1
-                      description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
+                      description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
                   description: Pod readiness checking.
                 template:
                   type: object
@@ -879,31 +889,6 @@ spec:
                               value:
                                 type: string
                           description: The pod's tolerations.
-                        priorityClassName:
-                          type: string
-                          description: 'The name of the priority class used to assign priority to the pods. '
-                        schedulerName:
-                          type: string
-                          description: "The name of the scheduler used to dispatch this `Pod`. If not specified, the default scheduler will be used."
-                        hostAliases:
-                          type: array
-                          items:
-                            type: object
-                            properties:
-                              hostnames:
-                                type: array
-                                items:
-                                  type: string
-                              ip:
-                                type: string
-                          description: The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the Pod's hosts file if specified.
-                        tmpDirSizeLimit:
-                          type: string
-                          pattern: "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"
-                          description: Defines the total amount (for example `1Gi`) of local storage required for temporary EmptyDir volume (`/tmp`). Default value is `5Mi`.
-                        enableServiceLinks:
-                          type: boolean
-                          description: Indicates whether information about services should be injected into Pod's environment variables.
                         topologySpreadConstraints:
                           type: array
                           items:
@@ -946,6 +931,31 @@ spec:
                               whenUnsatisfiable:
                                 type: string
                           description: The pod's topology spread constraints.
+                        priorityClassName:
+                          type: string
+                          description: 'The name of the priority class used to assign priority to the pods. '
+                        schedulerName:
+                          type: string
+                          description: "The name of the scheduler used to dispatch this `Pod`. If not specified, the default scheduler will be used."
+                        hostAliases:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              hostnames:
+                                type: array
+                                items:
+                                  type: string
+                              ip:
+                                type: string
+                          description: The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the Pod's hosts file if specified.
+                        enableServiceLinks:
+                          type: boolean
+                          description: Indicates whether information about services should be injected into Pod's environment variables.
+                        tmpDirSizeLimit:
+                          type: string
+                          pattern: "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"
+                          description: Defines the total amount (for example `1Gi`) of local storage required for temporary EmptyDir volume (`/tmp`). Default value is `5Mi`.
                       description: Template for Kafka Bridge `Pods`.
                     apiService:
                       type: object
@@ -1232,10 +1242,10 @@ spec:
                 url:
                   type: string
                   description: The URL at which external client applications can access the Kafka Bridge.
-                labelSelector:
-                  type: string
-                  description: Label selector for pods providing this resource.
                 replicas:
                   type: integer
                   description: The current number of pods being used to provide this resource.
+                labelSelector:
+                  type: string
+                  description: Label selector for pods providing this resource.
               description: The status of the Kafka Bridge.

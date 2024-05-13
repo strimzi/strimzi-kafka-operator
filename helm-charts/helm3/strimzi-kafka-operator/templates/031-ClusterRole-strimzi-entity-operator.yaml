@@ -49,13 +49,6 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
-  verbs:
-    # The entity operator needs to be able to create events
-  - create
-- apiGroups:
-  - ""
-  resources:
     # The entity operator user-operator needs to access and manage secrets to store generated credentials
   - secrets
   verbs:
