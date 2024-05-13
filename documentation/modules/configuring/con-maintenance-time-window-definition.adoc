@@ -6,14 +6,13 @@
 = Scheduling maintenance time windows
 
 [role="_abstract"]
-Schedule updates by the Cluster Operator to Kafka or ZooKeeper clusters for minimal impact on client applications.
+Schedule certificate renewal updates by the Cluster Operator to Kafka or ZooKeeper clusters for minimal impact on client applications.
+Use time windows in conjunction with the xref:con-certificate-renewal-str[renewal periods of the CA certificates created by the Cluster Operator] (`Kafka.spec.clusterCa.renewalDays` and `Kafka.spec.clusterCa.renewalDays`).
 
-Updates are usually triggered by changes to the `Kafka` resource.
-Some updates, like rolling restarts for certificate expiration, may occur without `Kafka` resource changes.
+Updates are usually triggered by changes to the `Kafka` resource by the user or through user tooling.
+Rolling restarts for certificate expiration may occur without `Kafka` resource changes.
 While unscheduled restarts shouldn't affect service availability, they could impact the performance of client applications.
-Maintenance time windows allow scheduling of updates for convenient times.
-
-For example, time windows should be used in conjunction with the xref:con-certificate-renewal-str[renewal periods of the CA certificates created by the Cluster Operator] (`Kafka.spec.clusterCa.renewalDays` and `Kafka.spec.clusterCa.renewalDays`).
+Maintenance time windows allow scheduling of these updates for convenient times.
 
 Configure maintenance time windows as follows:
 

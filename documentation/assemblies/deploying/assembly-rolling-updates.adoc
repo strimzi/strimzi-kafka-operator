@@ -4,18 +4,14 @@
 
 [id='assembly-rolling-updates-{context}']
 = Managing rolling updates 
-Maintenance time windows allow you to schedule rolling updates of your Kafka and ZooKeeper clusters to start at a convenient time.
-You can also use annotations to manually trigger a rolling update of Kafka and other operands through the Cluster Operator.
-Use annotations to initiate rolling updates of Kafka, Kafka Connect, MirrorMaker 2, and ZooKeeper clusters.
+Use annotations to manually trigger a rolling update of Kafka and other operands through the Cluster Operator.
+Initiate rolling updates of Kafka, Kafka Connect, MirrorMaker 2, and ZooKeeper clusters.
 
 Manually performing a rolling update on a specific pod or set of pods is usually only required in exceptional circumstances.
 However, rather than deleting the pods directly, if you perform the rolling update through the Cluster Operator you ensure the following:
 
 * The manual deletion of the pod does not conflict with simultaneous Cluster Operator operations, such as deleting other pods in parallel.
 * The Cluster Operator logic handles the Kafka configuration specifications, such as the number of in-sync replicas.
-
-//scheduling maintenance time windows
-include::../../modules/configuring/con-maintenance-time-window-definition.adoc[leveloffset=+1]
 
 //steps for manual rolling updates with strimzipodset
 include::../../modules/managing/proc-manual-rolling-update-strimzipodset.adoc[leveloffset=+1]
