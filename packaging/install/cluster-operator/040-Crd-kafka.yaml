@@ -1426,6 +1426,95 @@ spec:
                             type: string
                             pattern: "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"
                             description: Defines the total amount (for example `1Gi`) of local storage required for temporary EmptyDir volume (`/tmp`). Default value is `5Mi`.
+                          additionalVolumes:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                name:
+                                  type: string
+                                  description: Name to use for the volume. Required.
+                                path:
+                                  type: string
+                                  description: Path in the container to mount the volume at. Required.
+                                subPath:
+                                  type: string
+                                  description: SubPath of the referenced volume to mount.
+                                secret:
+                                  type: object
+                                  properties:
+                                    defaultMode:
+                                      type: integer
+                                    items:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          key:
+                                            type: string
+                                          mode:
+                                            type: integer
+                                          path:
+                                            type: string
+                                    optional:
+                                      type: boolean
+                                    secretName:
+                                      type: string
+                                  description: Secret to use populate the volume.
+                                configMap:
+                                  type: object
+                                  properties:
+                                    defaultMode:
+                                      type: integer
+                                    items:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          key:
+                                            type: string
+                                          mode:
+                                            type: integer
+                                          path:
+                                            type: string
+                                    name:
+                                      type: string
+                                    optional:
+                                      type: boolean
+                                  description: ConfigMap to use to populate the volume.
+                                emptyDir:
+                                  type: object
+                                  properties:
+                                    medium:
+                                      type: string
+                                    sizeLimit:
+                                      type: object
+                                      properties:
+                                        amount:
+                                          type: string
+                                        format:
+                                          type: string
+                                  description: EmptyDir to use to populate the volume.
+                                csi:
+                                  type: object
+                                  properties:
+                                    driver:
+                                      type: string
+                                    fsType:
+                                      type: string
+                                    nodePublishSecretRef:
+                                      type: object
+                                      properties:
+                                        name:
+                                          type: string
+                                    readOnly:
+                                      type: boolean
+                                    volumeAttributes:
+                                      additionalProperties:
+                                        type: string
+                                      type: object
+                                  description: CSI object to use to populate the volume.
+                            description: Additional volumes that can be mounted to the pod.
                         description: Template for Kafka `Pods`.
                       bootstrapService:
                         type: object
@@ -2695,6 +2784,95 @@ spec:
                             type: string
                             pattern: "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"
                             description: Defines the total amount (for example `1Gi`) of local storage required for temporary EmptyDir volume (`/tmp`). Default value is `5Mi`.
+                          additionalVolumes:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                name:
+                                  type: string
+                                  description: Name to use for the volume. Required.
+                                path:
+                                  type: string
+                                  description: Path in the container to mount the volume at. Required.
+                                subPath:
+                                  type: string
+                                  description: SubPath of the referenced volume to mount.
+                                secret:
+                                  type: object
+                                  properties:
+                                    defaultMode:
+                                      type: integer
+                                    items:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          key:
+                                            type: string
+                                          mode:
+                                            type: integer
+                                          path:
+                                            type: string
+                                    optional:
+                                      type: boolean
+                                    secretName:
+                                      type: string
+                                  description: Secret to use populate the volume.
+                                configMap:
+                                  type: object
+                                  properties:
+                                    defaultMode:
+                                      type: integer
+                                    items:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          key:
+                                            type: string
+                                          mode:
+                                            type: integer
+                                          path:
+                                            type: string
+                                    name:
+                                      type: string
+                                    optional:
+                                      type: boolean
+                                  description: ConfigMap to use to populate the volume.
+                                emptyDir:
+                                  type: object
+                                  properties:
+                                    medium:
+                                      type: string
+                                    sizeLimit:
+                                      type: object
+                                      properties:
+                                        amount:
+                                          type: string
+                                        format:
+                                          type: string
+                                  description: EmptyDir to use to populate the volume.
+                                csi:
+                                  type: object
+                                  properties:
+                                    driver:
+                                      type: string
+                                    fsType:
+                                      type: string
+                                    nodePublishSecretRef:
+                                      type: object
+                                      properties:
+                                        name:
+                                          type: string
+                                    readOnly:
+                                      type: boolean
+                                    volumeAttributes:
+                                      additionalProperties:
+                                        type: string
+                                      type: object
+                                  description: CSI object to use to populate the volume.
+                            description: Additional volumes that can be mounted to the pod.
                         description: Template for ZooKeeper `Pods`.
                       clientService:
                         type: object
@@ -3881,6 +4059,95 @@ spec:
                             type: string
                             pattern: "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"
                             description: Defines the total amount (for example `1Gi`) of local storage required for temporary EmptyDir volume (`/tmp`). Default value is `5Mi`.
+                          additionalVolumes:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                name:
+                                  type: string
+                                  description: Name to use for the volume. Required.
+                                path:
+                                  type: string
+                                  description: Path in the container to mount the volume at. Required.
+                                subPath:
+                                  type: string
+                                  description: SubPath of the referenced volume to mount.
+                                secret:
+                                  type: object
+                                  properties:
+                                    defaultMode:
+                                      type: integer
+                                    items:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          key:
+                                            type: string
+                                          mode:
+                                            type: integer
+                                          path:
+                                            type: string
+                                    optional:
+                                      type: boolean
+                                    secretName:
+                                      type: string
+                                  description: Secret to use populate the volume.
+                                configMap:
+                                  type: object
+                                  properties:
+                                    defaultMode:
+                                      type: integer
+                                    items:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          key:
+                                            type: string
+                                          mode:
+                                            type: integer
+                                          path:
+                                            type: string
+                                    name:
+                                      type: string
+                                    optional:
+                                      type: boolean
+                                  description: ConfigMap to use to populate the volume.
+                                emptyDir:
+                                  type: object
+                                  properties:
+                                    medium:
+                                      type: string
+                                    sizeLimit:
+                                      type: object
+                                      properties:
+                                        amount:
+                                          type: string
+                                        format:
+                                          type: string
+                                  description: EmptyDir to use to populate the volume.
+                                csi:
+                                  type: object
+                                  properties:
+                                    driver:
+                                      type: string
+                                    fsType:
+                                      type: string
+                                    nodePublishSecretRef:
+                                      type: object
+                                      properties:
+                                        name:
+                                          type: string
+                                    readOnly:
+                                      type: boolean
+                                    volumeAttributes:
+                                      additionalProperties:
+                                        type: string
+                                      type: object
+                                  description: CSI object to use to populate the volume.
+                            description: Additional volumes that can be mounted to the pod.
                         description: Template for Entity Operator `Pods`.
                       topicOperatorContainer:
                         type: object
@@ -4988,6 +5255,95 @@ spec:
                             type: string
                             pattern: "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"
                             description: Defines the total amount (for example `1Gi`) of local storage required for temporary EmptyDir volume (`/tmp`). Default value is `5Mi`.
+                          additionalVolumes:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                name:
+                                  type: string
+                                  description: Name to use for the volume. Required.
+                                path:
+                                  type: string
+                                  description: Path in the container to mount the volume at. Required.
+                                subPath:
+                                  type: string
+                                  description: SubPath of the referenced volume to mount.
+                                secret:
+                                  type: object
+                                  properties:
+                                    defaultMode:
+                                      type: integer
+                                    items:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          key:
+                                            type: string
+                                          mode:
+                                            type: integer
+                                          path:
+                                            type: string
+                                    optional:
+                                      type: boolean
+                                    secretName:
+                                      type: string
+                                  description: Secret to use populate the volume.
+                                configMap:
+                                  type: object
+                                  properties:
+                                    defaultMode:
+                                      type: integer
+                                    items:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          key:
+                                            type: string
+                                          mode:
+                                            type: integer
+                                          path:
+                                            type: string
+                                    name:
+                                      type: string
+                                    optional:
+                                      type: boolean
+                                  description: ConfigMap to use to populate the volume.
+                                emptyDir:
+                                  type: object
+                                  properties:
+                                    medium:
+                                      type: string
+                                    sizeLimit:
+                                      type: object
+                                      properties:
+                                        amount:
+                                          type: string
+                                        format:
+                                          type: string
+                                  description: EmptyDir to use to populate the volume.
+                                csi:
+                                  type: object
+                                  properties:
+                                    driver:
+                                      type: string
+                                    fsType:
+                                      type: string
+                                    nodePublishSecretRef:
+                                      type: object
+                                      properties:
+                                        name:
+                                          type: string
+                                    readOnly:
+                                      type: boolean
+                                    volumeAttributes:
+                                      additionalProperties:
+                                        type: string
+                                      type: object
+                                  description: CSI object to use to populate the volume.
+                            description: Additional volumes that can be mounted to the pod.
                         description: Template for Cruise Control `Pods`.
                       apiService:
                         type: object
@@ -5904,6 +6260,95 @@ spec:
                             type: string
                             pattern: "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"
                             description: Defines the total amount (for example `1Gi`) of local storage required for temporary EmptyDir volume (`/tmp`). Default value is `5Mi`.
+                          additionalVolumes:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                name:
+                                  type: string
+                                  description: Name to use for the volume. Required.
+                                path:
+                                  type: string
+                                  description: Path in the container to mount the volume at. Required.
+                                subPath:
+                                  type: string
+                                  description: SubPath of the referenced volume to mount.
+                                secret:
+                                  type: object
+                                  properties:
+                                    defaultMode:
+                                      type: integer
+                                    items:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          key:
+                                            type: string
+                                          mode:
+                                            type: integer
+                                          path:
+                                            type: string
+                                    optional:
+                                      type: boolean
+                                    secretName:
+                                      type: string
+                                  description: Secret to use populate the volume.
+                                configMap:
+                                  type: object
+                                  properties:
+                                    defaultMode:
+                                      type: integer
+                                    items:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          key:
+                                            type: string
+                                          mode:
+                                            type: integer
+                                          path:
+                                            type: string
+                                    name:
+                                      type: string
+                                    optional:
+                                      type: boolean
+                                  description: ConfigMap to use to populate the volume.
+                                emptyDir:
+                                  type: object
+                                  properties:
+                                    medium:
+                                      type: string
+                                    sizeLimit:
+                                      type: object
+                                      properties:
+                                        amount:
+                                          type: string
+                                        format:
+                                          type: string
+                                  description: EmptyDir to use to populate the volume.
+                                csi:
+                                  type: object
+                                  properties:
+                                    driver:
+                                      type: string
+                                    fsType:
+                                      type: string
+                                    nodePublishSecretRef:
+                                      type: object
+                                      properties:
+                                        name:
+                                          type: string
+                                    readOnly:
+                                      type: boolean
+                                    volumeAttributes:
+                                      additionalProperties:
+                                        type: string
+                                      type: object
+                                  description: CSI object to use to populate the volume.
+                            description: Additional volumes that can be mounted to the pod.
                         description: Template for JmxTrans `Pods`.
                       container:
                         type: object
@@ -6628,6 +7073,95 @@ spec:
                             type: string
                             pattern: "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"
                             description: Defines the total amount (for example `1Gi`) of local storage required for temporary EmptyDir volume (`/tmp`). Default value is `5Mi`.
+                          additionalVolumes:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                name:
+                                  type: string
+                                  description: Name to use for the volume. Required.
+                                path:
+                                  type: string
+                                  description: Path in the container to mount the volume at. Required.
+                                subPath:
+                                  type: string
+                                  description: SubPath of the referenced volume to mount.
+                                secret:
+                                  type: object
+                                  properties:
+                                    defaultMode:
+                                      type: integer
+                                    items:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          key:
+                                            type: string
+                                          mode:
+                                            type: integer
+                                          path:
+                                            type: string
+                                    optional:
+                                      type: boolean
+                                    secretName:
+                                      type: string
+                                  description: Secret to use populate the volume.
+                                configMap:
+                                  type: object
+                                  properties:
+                                    defaultMode:
+                                      type: integer
+                                    items:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          key:
+                                            type: string
+                                          mode:
+                                            type: integer
+                                          path:
+                                            type: string
+                                    name:
+                                      type: string
+                                    optional:
+                                      type: boolean
+                                  description: ConfigMap to use to populate the volume.
+                                emptyDir:
+                                  type: object
+                                  properties:
+                                    medium:
+                                      type: string
+                                    sizeLimit:
+                                      type: object
+                                      properties:
+                                        amount:
+                                          type: string
+                                        format:
+                                          type: string
+                                  description: EmptyDir to use to populate the volume.
+                                csi:
+                                  type: object
+                                  properties:
+                                    driver:
+                                      type: string
+                                    fsType:
+                                      type: string
+                                    nodePublishSecretRef:
+                                      type: object
+                                      properties:
+                                        name:
+                                          type: string
+                                    readOnly:
+                                      type: boolean
+                                    volumeAttributes:
+                                      additionalProperties:
+                                        type: string
+                                      type: object
+                                  description: CSI object to use to populate the volume.
+                            description: Additional volumes that can be mounted to the pod.
                         description: Template for Kafka Exporter `Pods`.
                       service:
                         type: object
@@ -6840,3 +7374,4 @@ spec:
                 - KRaft
                 description: "Defines where cluster metadata are stored. Possible values are: ZooKeeper if the metadata are stored in ZooKeeper; KRaftMigration if the controllers are connected to ZooKeeper, brokers are being rolled with Zookeeper migration enabled and connection information to controllers, and the metadata migration process is running; KRaftDualWriting if the metadata migration process finished and the cluster is in dual-write mode; KRaftPostMigration if the brokers are fully KRaft-based but controllers being rolled to disconnect from ZooKeeper; PreKRaft if brokers and controller are fully KRaft-based, metadata are stored in KRaft, but ZooKeeper must be deleted; KRaft if the metadata are stored in KRaft."
             description: "The status of the Kafka and ZooKeeper clusters, and Topic Operator."
+P

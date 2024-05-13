@@ -1277,6 +1277,43 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         volumeList.add(VolumeUtils.createSecretVolume(CLIENT_CA_CERTS_VOLUME, KafkaResources.clientsCaCertificateSecretName(cluster), isOpenShift));
         volumeList.add(VolumeUtils.createConfigMapVolume(LOG_AND_METRICS_CONFIG_VOLUME_NAME, podName));
         volumeList.add(VolumeUtils.createEmptyDirVolume("ready-files", "1Ki", "Memory"));
+        for (int i = 0; i < templatePod.getAdditionalVolumes().size(); i++) {
+            AdditionalVolume volumeConfig = templatePod.getAdditionalVolumes().get(i);
+
+            if (volumeConfig.getConfigMap() != null) {
+                volumeList.add(new VolumeBuilder()
+                    .withName(volumeConfig.getName())
+                    .withNewConfigMap()
+                    .withName(volumeConfig.getConfigMap().getName())
+                    .endConfigMap()
+                    .build());
+            }
+
+            if (volumeConfig.getSecret() != null) {
+                volumeList.add(new VolumeBuilder()
+                    .withName(volumeConfig.getName())
+                    .withNewSecret()
+                    .withSecretName(volumeConfig.getSecret().getSecretName())
+                    .endSecret()
+                    .build());
+            }
+
+            if (volumeConfig.getEmptyDir() != null) {
+                volumeList.add(new VolumeBuilder()
+                    .withName(volumeConfig.getName())
+                    .withNewEmptyDir()
+                    .withMedium(volumeConfig.getEmptyDir().getMedium())
+                    .endEmptyDir()
+                    .build());
+            }
+
+            if (volumeConfig.getCsi() != null) {
+                volumeList.add(new VolumeBuilder()
+                    .withName(volumeConfig.getName())
+                    .withCsi(volumeConfig.getCsi())
+                    .build());
+            }
+        }
 
         for (GenericKafkaListener listener : listeners) {
             if (listener.isTls()
@@ -1320,6 +1357,8 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         return volumeList;
     }
 
+
+
     /**
      * Generates a list of volumes used by PodSets. For StrimziPodSet, it needs to include also all persistent claim
      * volumes which StatefulSet would generate on its own.
@@ -1348,6 +1387,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      * @return  List of volume mounts
      */
     private List<VolumeMount> getVolumeMounts(Storage storage) {
+        //todo additionalVolumes
         List<VolumeMount> volumeMountList = new ArrayList<>(VolumeUtils.createVolumeMounts(storage, false));
         volumeMountList.add(VolumeUtils.createTempDirVolumeMount());
         volumeMountList.add(VolumeUtils.createVolumeMount(CLUSTER_CA_CERTS_VOLUME, CLUSTER_CA_CERTS_VOLUME_MOUNT));
@@ -1355,6 +1395,28 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         volumeMountList.add(VolumeUtils.createVolumeMount(CLIENT_CA_CERTS_VOLUME, CLIENT_CA_CERTS_VOLUME_MOUNT));
         volumeMountList.add(VolumeUtils.createVolumeMount(LOG_AND_METRICS_CONFIG_VOLUME_NAME, LOG_AND_METRICS_CONFIG_VOLUME_MOUNT));
         volumeMountList.add(VolumeUtils.createVolumeMount("ready-files", "/var/opt/kafka"));
+
+        for (int i = 0; i < templatePod.getAdditionalVolumes().size(); i++) {
+            AdditionalVolume volumeConfig = templatePod.getAdditionalVolumes().get(i);
+            boolean readOnly = true;
+            String subPath = "";
+
+            if (volumeConfig.getEmptyDir() != null) {
+                readOnly = false;
+            }
+
+            // SubPaths are only supported for ConfigMaps, Secrets and CSI volumes
+            if (volumeConfig.getConfigMap() != null || volumeConfig.getSecret() != null || volumeConfig.getCsi() != null) {
+                subPath = volumeConfig.getSubPath().trim();
+            }
+
+            volumeMountList.add(new VolumeMountBuilder()
+                .withName(volumeConfig.getName())
+                .withReadOnly(readOnly)
+                .withMountPath(volumeConfig.getPath())
+                .withSubPath(subPath)
+                .build());
+        }
 
         if (rack != null || isExposedWithNodePort()) {
             volumeMountList.add(VolumeUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT));

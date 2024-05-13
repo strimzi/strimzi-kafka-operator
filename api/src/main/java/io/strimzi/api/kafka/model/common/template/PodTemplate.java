@@ -38,7 +38,7 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @JsonPropertyOrder({"metadata", "imagePullSecrets", "securityContext", "terminationGracePeriodSeconds", "affinity",
     "tolerations", "topologySpreadConstraints", "priorityClassName", "schedulerName", "hostAliases",
-    "enableServiceLinks", "tmpDirSizeLimit"})
+    "enableServiceLinks", "tmpDirSizeLimit", "additionalVolumes"})
 @EqualsAndHashCode
 @ToString
 @DescriptionFile
@@ -51,10 +51,12 @@ public class PodTemplate implements HasMetadataTemplate, UnknownPropertyPreservi
     private List<Toleration> tolerations;
     private List<TopologySpreadConstraint> topologySpreadConstraints;
     private String priorityClassName;
+    private String priorityClassName2;
     private String schedulerName;
     private List<HostAlias> hostAliases;
     private Boolean enableServiceLinks;
     private String tmpDirSizeLimit;
+    private List<AdditionalVolume> additionalVolumes;
 
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
@@ -194,6 +196,17 @@ public class PodTemplate implements HasMetadataTemplate, UnknownPropertyPreservi
 
     public void setTmpDirSizeLimit(String tmpDirSizeLimit) {
         this.tmpDirSizeLimit = tmpDirSizeLimit;
+    }
+
+    @Description("Additional volumes that can be mounted to the pod.")
+    @JsonProperty("additionalVolumes")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public List<AdditionalVolume> getAdditionalVolumes() {
+        return additionalVolumes;
+    }
+
+    public void setAdditionalVolumes(List<AdditionalVolume> additionalVolumes) {
+        this.additionalVolumes = additionalVolumes;
     }
 
     @Override

@@ -955,6 +955,95 @@ spec:
                         type: string
                         pattern: "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"
                         description: Defines the total amount (for example `1Gi`) of local storage required for temporary EmptyDir volume (`/tmp`). Default value is `5Mi`.
+                      additionalVolumes:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                              description: Name to use for the volume. Required.
+                            path:
+                              type: string
+                              description: Path in the container to mount the volume at. Required.
+                            subPath:
+                              type: string
+                              description: SubPath of the referenced volume to mount.
+                            secret:
+                              type: object
+                              properties:
+                                defaultMode:
+                                  type: integer
+                                items:
+                                  type: array
+                                  items:
+                                    type: object
+                                    properties:
+                                      key:
+                                        type: string
+                                      mode:
+                                        type: integer
+                                      path:
+                                        type: string
+                                optional:
+                                  type: boolean
+                                secretName:
+                                  type: string
+                              description: Secret to use populate the volume.
+                            configMap:
+                              type: object
+                              properties:
+                                defaultMode:
+                                  type: integer
+                                items:
+                                  type: array
+                                  items:
+                                    type: object
+                                    properties:
+                                      key:
+                                        type: string
+                                      mode:
+                                        type: integer
+                                      path:
+                                        type: string
+                                name:
+                                  type: string
+                                optional:
+                                  type: boolean
+                              description: ConfigMap to use to populate the volume.
+                            emptyDir:
+                              type: object
+                              properties:
+                                medium:
+                                  type: string
+                                sizeLimit:
+                                  type: object
+                                  properties:
+                                    amount:
+                                      type: string
+                                    format:
+                                      type: string
+                              description: EmptyDir to use to populate the volume.
+                            csi:
+                              type: object
+                              properties:
+                                driver:
+                                  type: string
+                                fsType:
+                                  type: string
+                                nodePublishSecretRef:
+                                  type: object
+                                  properties:
+                                    name:
+                                      type: string
+                                readOnly:
+                                  type: boolean
+                                volumeAttributes:
+                                  additionalProperties:
+                                    type: string
+                                  type: object
+                              description: CSI object to use to populate the volume.
+                        description: Additional volumes that can be mounted to the pod.
                     description: Template for Kafka Bridge `Pods`.
                   apiService:
                     type: object
