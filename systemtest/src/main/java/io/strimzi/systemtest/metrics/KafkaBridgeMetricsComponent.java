@@ -8,7 +8,8 @@ import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.skodjob.testframe.MetricsComponent;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeResources;
 import io.strimzi.systemtest.TestConstants;
-import io.strimzi.systemtest.resources.ResourceManager;
+
+import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class KafkaBridgeMetricsComponent implements MetricsComponent {
 
@@ -36,7 +37,6 @@ public class KafkaBridgeMetricsComponent implements MetricsComponent {
 
     @Override
     public LabelSelector getLabelSelector() {
-        return ResourceManager.kubeClient().getDeploymentSelectors(namespaceName, KafkaBridgeResources.componentName(componentName));
-
+        return kubeClient().getDeploymentSelectors(namespaceName, KafkaBridgeResources.componentName(componentName));
     }
 }

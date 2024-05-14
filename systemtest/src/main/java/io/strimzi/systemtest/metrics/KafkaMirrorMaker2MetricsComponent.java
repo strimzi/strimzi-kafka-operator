@@ -8,19 +8,17 @@ import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.skodjob.testframe.MetricsComponent;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Resources;
 import io.strimzi.systemtest.TestConstants;
-import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
 
 public class KafkaMirrorMaker2MetricsComponent implements MetricsComponent {
 
-    private String namespaceName;
     private String componentName;
 
-    public static KafkaMirrorMaker2MetricsComponent create(final String namespaceName, final String componentName) {
-        return new KafkaMirrorMaker2MetricsComponent(namespaceName, componentName);
+    public static KafkaMirrorMaker2MetricsComponent create(final String componentName) {
+        return new KafkaMirrorMaker2MetricsComponent(componentName);
     }
 
-    private KafkaMirrorMaker2MetricsComponent(String namespaceName, String componentName) {
-        this.namespaceName = namespaceName;
+    private KafkaMirrorMaker2MetricsComponent(String componentName) {
         this.componentName = componentName;
     }
 
@@ -36,6 +34,6 @@ public class KafkaMirrorMaker2MetricsComponent implements MetricsComponent {
 
     @Override
     public LabelSelector getLabelSelector() {
-        return ResourceManager.kubeClient().getDeploymentSelectors(namespaceName, KafkaMirrorMaker2Resources.componentName(componentName));
+        return KafkaMirrorMaker2Resource.getLabelSelector(componentName, KafkaMirrorMaker2Resources.componentName(componentName));
     }
 }

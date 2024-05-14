@@ -789,11 +789,11 @@ class RollingUpdateST extends AbstractST {
         MetricsCollector kafkaCollector = new MetricsCollector.Builder()
             .withNamespaceName(testStorage.getNamespaceName())
             .withScraperPodName(metricsScraperPodName)
-            .withComponent(KafkaMetricsComponent.create(testStorage.getNamespaceName(), testStorage.getClusterName()))
+            .withComponent(KafkaMetricsComponent.create(testStorage.getClusterName()))
             .build();
 
         MetricsCollector zkCollector = kafkaCollector.toBuilder()
-            .withComponent(ZookeeperMetricsComponent.create(testStorage.getNamespaceName(), testStorage.getClusterName()))
+            .withComponent(ZookeeperMetricsComponent.create(testStorage.getClusterName()))
             .build();
 
         LOGGER.info("Check if metrics are present in Pod of Kafka and ZooKeeper");

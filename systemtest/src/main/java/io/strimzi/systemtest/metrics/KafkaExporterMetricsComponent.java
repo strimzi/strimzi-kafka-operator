@@ -8,7 +8,8 @@ import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.skodjob.testframe.MetricsComponent;
 import io.strimzi.api.kafka.model.kafka.exporter.KafkaExporterResources;
 import io.strimzi.systemtest.TestConstants;
-import io.strimzi.systemtest.resources.ResourceManager;
+
+import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class KafkaExporterMetricsComponent implements MetricsComponent {
 
@@ -36,7 +37,6 @@ public class KafkaExporterMetricsComponent implements MetricsComponent {
 
     @Override
     public LabelSelector getLabelSelector() {
-        return ResourceManager.kubeClient().getDeploymentSelectors(namespaceName, KafkaExporterResources.componentName(componentName));
-
+        return kubeClient().getDeploymentSelectors(namespaceName, KafkaExporterResources.componentName(componentName));
     }
 }

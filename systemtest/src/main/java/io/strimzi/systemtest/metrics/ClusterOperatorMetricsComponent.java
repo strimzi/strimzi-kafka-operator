@@ -7,7 +7,8 @@ package io.strimzi.systemtest.metrics;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.skodjob.testframe.MetricsComponent;
 import io.strimzi.systemtest.TestConstants;
-import io.strimzi.systemtest.resources.ResourceManager;
+
+import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class ClusterOperatorMetricsComponent implements MetricsComponent {
 
@@ -35,6 +36,6 @@ public class ClusterOperatorMetricsComponent implements MetricsComponent {
 
     @Override
     public LabelSelector getLabelSelector() {
-        return ResourceManager.kubeClient().getDeploymentSelectors(namespaceName, componentName);
+        return kubeClient().getDeploymentSelectors(namespaceName, componentName);
     }
 }

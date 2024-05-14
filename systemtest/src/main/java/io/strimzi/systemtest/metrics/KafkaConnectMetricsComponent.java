@@ -8,19 +8,17 @@ import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.skodjob.testframe.MetricsComponent;
 import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
 import io.strimzi.systemtest.TestConstants;
-import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 
 public class KafkaConnectMetricsComponent implements MetricsComponent {
 
-    private String namespaceName;
     private String componentName;
 
-    public static KafkaConnectMetricsComponent create(final String namespaceName, final String componentName) {
-        return new KafkaConnectMetricsComponent(namespaceName, componentName);
+    public static KafkaConnectMetricsComponent create(final String componentName) {
+        return new KafkaConnectMetricsComponent(componentName);
     }
 
-    private KafkaConnectMetricsComponent(String namespaceName, String componentName) {
-        this.namespaceName = namespaceName;
+    private KafkaConnectMetricsComponent(String componentName) {
         this.componentName = componentName;
     }
 
@@ -36,6 +34,6 @@ public class KafkaConnectMetricsComponent implements MetricsComponent {
 
     @Override
     public LabelSelector getLabelSelector() {
-        return ResourceManager.kubeClient().getDeploymentSelectors(namespaceName, KafkaConnectResources.componentName(componentName));
+        return KafkaConnectResource.getLabelSelector(componentName, KafkaConnectResources.componentName(componentName));
     }
 }

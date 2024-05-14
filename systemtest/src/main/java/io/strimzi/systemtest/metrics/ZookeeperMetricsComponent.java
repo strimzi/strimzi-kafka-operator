@@ -8,19 +8,17 @@ import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.skodjob.testframe.MetricsComponent;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.systemtest.TestConstants;
-import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.crd.KafkaResource;
 
 public class ZookeeperMetricsComponent implements MetricsComponent {
 
-    private String namespaceName;
     private String componentName;
 
-    public static ZookeeperMetricsComponent create(final String namespaceName, final String componentName) {
-        return new ZookeeperMetricsComponent(namespaceName, componentName);
+    public static ZookeeperMetricsComponent create(final String componentName) {
+        return new ZookeeperMetricsComponent(componentName);
     }
 
-    private ZookeeperMetricsComponent(String namespaceName, String componentName) {
-        this.namespaceName = namespaceName;
+    private ZookeeperMetricsComponent(String componentName) {
         this.componentName = componentName;
     }
 
@@ -36,7 +34,6 @@ public class ZookeeperMetricsComponent implements MetricsComponent {
 
     @Override
     public LabelSelector getLabelSelector() {
-        return ResourceManager.kubeClient().getDeploymentSelectors(namespaceName, KafkaResources.zookeeperComponentName(componentName));
-
+        return KafkaResource.getLabelSelector(componentName, KafkaResources.zookeeperComponentName(componentName));
     }
 }

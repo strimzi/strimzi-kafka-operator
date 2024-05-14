@@ -257,7 +257,7 @@ public class MetricsST extends AbstractST {
         resourceManager.createResourceWithWait(KafkaConnectorTemplates.kafkaConnector(kafkaClusterFirstName).build());
 
         MetricsCollector kafkaConnectCollector = kafkaCollector.toBuilder()
-                .withComponent(KafkaConnectMetricsComponent.create(namespaceFirst, kafkaClusterFirstName))
+                .withComponent(KafkaConnectMetricsComponent.create(kafkaClusterFirstName))
                 .build();
 
         kafkaConnectCollector.collectMetricsFromPods();
@@ -501,7 +501,7 @@ public class MetricsST extends AbstractST {
                     .build());
 
         MetricsCollector kmm2Collector = kafkaCollector.toBuilder()
-            .withComponent(KafkaMirrorMaker2MetricsComponent.create(namespaceFirst, mm2ClusterName))
+            .withComponent(KafkaMirrorMaker2MetricsComponent.create(mm2ClusterName))
             .build();
 
         assertMetricValue(kmm2Collector, "kafka_connect_worker_connector_count", 3);
@@ -776,12 +776,12 @@ public class MetricsST extends AbstractST {
         kafkaCollector = new MetricsCollector.Builder()
             .withScraperPodName(scraperPodName)
             .withNamespaceName(namespaceFirst)
-            .withComponent(KafkaMetricsComponent.create(namespaceFirst, kafkaClusterFirstName))
+            .withComponent(KafkaMetricsComponent.create(kafkaClusterFirstName))
             .build();
 
         if (!Environment.isKRaftModeEnabled()) {
             zookeeperCollector = kafkaCollector.toBuilder()
-                .withComponent(ZookeeperMetricsComponent.create(namespaceFirst, kafkaClusterFirstName))
+                .withComponent(ZookeeperMetricsComponent.create(kafkaClusterFirstName))
                 .build();
             zookeeperCollector.collectMetricsFromPods();
         }
@@ -793,7 +793,7 @@ public class MetricsST extends AbstractST {
         clusterOperatorCollector = new MetricsCollector.Builder()
             .withScraperPodName(coScraperPodName)
             .withNamespaceName(TestConstants.CO_NAMESPACE)
-            .withComponent(ClusterOperatorMetricsComponent.create(namespaceFirst, clusterOperator.getClusterOperatorName()))
+            .withComponent(ClusterOperatorMetricsComponent.create(TestConstants.CO_NAMESPACE, clusterOperator.getClusterOperatorName()))
             .build();
 
         kafkaCollector.collectMetricsFromPods();

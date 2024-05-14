@@ -149,7 +149,7 @@ public class OauthPlainST extends OauthAbstractST {
 
         assertOauthMetricsForComponent(
             metricsCollector.toBuilder()
-                .withComponent(KafkaMetricsComponent.create(Environment.TEST_SUITE_NAMESPACE, oauthClusterName))
+                .withComponent(KafkaMetricsComponent.create(oauthClusterName))
                 .build()
         );
     }
@@ -377,7 +377,7 @@ public class OauthPlainST extends OauthAbstractST {
 
         assertOauthMetricsForComponent(
             metricsCollector.toBuilder()
-                .withComponent(KafkaConnectMetricsComponent.create(Environment.TEST_SUITE_NAMESPACE, oauthClusterName))
+                .withComponent(KafkaConnectMetricsComponent.create(oauthClusterName))
                 .build()
         );
     }
@@ -689,7 +689,7 @@ public class OauthPlainST extends OauthAbstractST {
 
         assertOauthMetricsForComponent(
             metricsCollector.toBuilder()
-                .withComponent(KafkaMirrorMaker2MetricsComponent.create(Environment.TEST_SUITE_NAMESPACE, oauthClusterName))
+                .withComponent(KafkaMirrorMaker2MetricsComponent.create(oauthClusterName))
                 .build()
         );
     }
@@ -903,7 +903,7 @@ public class OauthPlainST extends OauthAbstractST {
         metricsCollector = new MetricsCollector.Builder()
             .withNamespaceName(Environment.TEST_SUITE_NAMESPACE)
             .withScraperPodName(scraperPodName)
-            .withComponent(KafkaMetricsComponent.create(Environment.TEST_SUITE_NAMESPACE, oauthClusterName))
+            .withComponent(KafkaMetricsComponent.create(oauthClusterName))
             .build();
 
         String brokerPodName = kubeClient().listPods(Environment.TEST_SUITE_NAMESPACE,

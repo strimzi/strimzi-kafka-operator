@@ -7,20 +7,18 @@ package io.strimzi.systemtest.metrics;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.skodjob.testframe.MetricsComponent;
 import io.strimzi.systemtest.TestConstants;
-import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.StrimziPodSetResource;
 
 public class KafkaMetricsComponent implements MetricsComponent {
 
-    private String namespaceName;
     private String componentName;
 
-    public static KafkaMetricsComponent create(final String namespaceName, final String componentName) {
-        return new KafkaMetricsComponent(namespaceName, componentName);
+    public static KafkaMetricsComponent create(final String componentName) {
+        return new KafkaMetricsComponent(componentName);
     }
 
-    private KafkaMetricsComponent(String namespaceName, String componentName) {
-        this.namespaceName = namespaceName;
+    private KafkaMetricsComponent(String componentName) {
         this.componentName = componentName;
     }
 
@@ -36,7 +34,6 @@ public class KafkaMetricsComponent implements MetricsComponent {
 
     @Override
     public LabelSelector getLabelSelector() {
-        return ResourceManager.kubeClient().getDeploymentSelectors(namespaceName, StrimziPodSetResource.getBrokerComponentName(componentName));
-
+        return KafkaResource.getLabelSelector(componentName, StrimziPodSetResource.getBrokerComponentName(componentName));
     }
 }
