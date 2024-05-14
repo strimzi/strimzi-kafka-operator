@@ -26,7 +26,6 @@ import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolList;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
-import io.strimzi.operator.cluster.FeatureGates;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.KRaftUtils;
@@ -112,8 +111,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     /* test */ final ClusterOperatorConfig config;
     /* test */ final ResourceOperatorSupplier supplier;
 
-    private final FeatureGates featureGates;
-
     private final StatefulSetOperator stsOperations;
     private final CrdOperator<KubernetesClient, Kafka, KafkaList> kafkaOperator;
     private final StrimziPodSetOperator strimziPodSetOperator;
@@ -137,7 +134,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         this.supplier = supplier;
 
         this.operationTimeoutMs = config.getOperationTimeoutMs();
-        this.featureGates = config.featureGates();
         this.stsOperations = supplier.stsOperations;
         this.kafkaOperator = supplier.kafkaOperator;
         this.nodePoolOperator = supplier.kafkaNodePoolOperator;
@@ -230,7 +226,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         if (kafkaMetadataConfigState.isPreMigrationToKRaft()) {
             // Makes sure KRaft is used only with KafkaNodePool custom resources and not with virtual node pools
             if (!nodePoolsEnabled)  {
-                throw new InvalidConfigurationException("The UseKRaft feature gate can be used only together with a Kafka cluster based on the KafkaNodePool resources.");
+                throw new InvalidConfigurationException("KRaft can be used only together with a Kafka cluster based on the KafkaNodePool resources.");
             }
 
             // Validates features which are currently not supported in KRaft mode
@@ -310,7 +306,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             this.kafkaAssembly = kafkaAssembly;
             this.namespace = kafkaAssembly.getMetadata().getNamespace();
             this.name = kafkaAssembly.getMetadata().getName();
-            this.kafkaMetadataStateManager = new KafkaMetadataStateManager(reconciliation, kafkaAssembly, featureGates.useKRaftEnabled());
+            this.kafkaMetadataStateManager = new KafkaMetadataStateManager(reconciliation, kafkaAssembly);
         }
 
         /**

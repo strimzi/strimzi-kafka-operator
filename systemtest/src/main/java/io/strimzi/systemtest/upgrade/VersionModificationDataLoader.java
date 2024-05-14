@@ -8,7 +8,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.CollectionType;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
@@ -35,7 +34,6 @@ public class VersionModificationDataLoader {
     private static final Logger LOGGER = LogManager.getLogger(VersionModificationDataLoader.class);
     private OlmVersionModificationData olmUpgradeData;
     private List<BundleVersionModificationData> bundleVersionModificationDataList;
-    private static final String KRAFT_UPGRADE_FEATURE_GATES = String.join(",", TestConstants.USE_KRAFT_MODE);
 
     public VersionModificationDataLoader(ModificationType upgradeType) {
         if (upgradeType == ModificationType.OLM_UPGRADE) {
@@ -112,7 +110,7 @@ public class VersionModificationDataLoader {
     public BundleVersionModificationData buildDataForUpgradeAcrossVersionsForKRaft() {
         BundleVersionModificationData acrossUpgradeData = buildDataForUpgradeAcrossVersions();
 
-        acrossUpgradeData = updateUpgradeDataWithFeatureGates(acrossUpgradeData, KRAFT_UPGRADE_FEATURE_GATES);
+        acrossUpgradeData = updateUpgradeDataWithFeatureGates(acrossUpgradeData, null);
 
         return acrossUpgradeData;
     }
@@ -144,7 +142,7 @@ public class VersionModificationDataLoader {
     }
 
     public BundleVersionModificationData buildDataForDowngradeUsingFirstScenarioForKRaft() {
-        return buildDataForDowngradeUsingFirstScenario(KRAFT_UPGRADE_FEATURE_GATES);
+        return buildDataForDowngradeUsingFirstScenario(null);
     }
 
     /**
@@ -165,7 +163,7 @@ public class VersionModificationDataLoader {
     }
 
     public static Stream<Arguments> loadYamlDowngradeDataForKRaft() {
-        return loadYamlDowngradeDataWithFeatureGates(KRAFT_UPGRADE_FEATURE_GATES, true);
+        return loadYamlDowngradeDataWithFeatureGates(null, true);
     }
 
     public static Stream<Arguments> loadYamlDowngradeDataWithFeatureGates(String featureGates, boolean isKRaft) {
@@ -200,7 +198,7 @@ public class VersionModificationDataLoader {
     }
 
     public static Stream<Arguments> loadYamlUpgradeDataForKRaft() {
-        return loadYamlUpgradeDataWithFeatureGates(KRAFT_UPGRADE_FEATURE_GATES, true);
+        return loadYamlUpgradeDataWithFeatureGates(null, true);
     }
 
     public static Stream<Arguments> loadYamlUpgradeDataWithFeatureGates(String featureGates, boolean isKRaft) {

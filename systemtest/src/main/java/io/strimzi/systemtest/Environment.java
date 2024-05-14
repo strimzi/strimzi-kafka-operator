@@ -299,11 +299,7 @@ public class Environment {
      * @return true if KRaft mode is enabled, otherwise false
      */
     public static boolean isKRaftModeEnabled() {
-        return isKRaftForCOEnabled() && STRIMZI_USE_KRAFT_IN_TESTS;
-    }
-
-    public static boolean isKRaftForCOEnabled() {
-        return !STRIMZI_FEATURE_GATES.contains(TestConstants.DONT_USE_KRAFT_MODE);
+        return STRIMZI_USE_KRAFT_IN_TESTS;
     }
 
     public static boolean isKafkaNodePoolsEnabled() {

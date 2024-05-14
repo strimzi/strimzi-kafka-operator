@@ -22,11 +22,12 @@ Alpha and beta stage features are removed if they do not prove to be useful.
 * The `UseStrimziPodSets` feature gate moved to GA stage in Strimzi 0.35 and the support for StatefulSets is completely removed. It is now permanently enabled and cannot be disabled.
 * The `StableConnectIdentities` feature gate moved to GA stage in Strimzi 0.39.
   It is now permanently enabled and cannot be disabled.
-* The `UseKRaft` feature gate is in beta stage and is enabled by default.
 * The `KafkaNodePools` feature gate moved to GA stage in Strimzi 0.41.
   It is now permanently enabled and cannot be disabled.
 * The `UnidirectionalTopicOperator` feature gate moved to GA stage in Strimzi 0.41.
   It is now permanently enabled and cannot be disabled.
+* The `UseKRaft` feature gate moved to GA stage in Strimzi 0.42.
+It is now permanently enabled and cannot be disabled.
 * The `ContinueReconciliationOnManualRollingUpdateFailure` feature was introduced in Strimzi 0.41 and is disabled by default.
 
 NOTE: Feature gates might be removed when they reach GA. This means that the feature was incorporated into the Strimzi core features and can no longer be disabled.
@@ -58,7 +59,7 @@ NOTE: Feature gates might be removed when they reach GA. This means that the fea
 ¦`UseKRaft`
 ¦0.29
 ¦0.40
-¦0.42 (planned)
+¦0.42
 
 ¦`StableConnectIdentities`
 ¦0.34

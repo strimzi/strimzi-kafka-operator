@@ -22,14 +22,7 @@ public class FeatureGatesTest {
     public void testIndividualFeatureGates() {
         for (FeatureGates.FeatureGate gate : FeatureGates.NONE.allFeatureGates()) {
             FeatureGates enabled = new FeatureGates("+" + gate.getName());
-            FeatureGates disabled;
-
-            // KafkaNodePools FG can be disabled only together with UseKRaft FG
-            if (gate.getName().equals("KafkaNodePools")) {
-                disabled = new FeatureGates("-" + gate.getName() + ",-UseKRaft");
-            } else {
-                disabled = new FeatureGates("-" + gate.getName());
-            }
+            FeatureGates disabled = new FeatureGates("-" + gate.getName());
 
             assertThat(enabled.allFeatureGates().stream().filter(g -> gate.getName().equals(g.getName())).findFirst().orElseThrow().isEnabled(), is(true));
             assertThat(disabled.allFeatureGates().stream().filter(g -> gate.getName().equals(g.getName())).findFirst().orElseThrow().isEnabled(), is(false));
@@ -59,17 +52,17 @@ public class FeatureGatesTest {
 
     @ParallelTest
     public void testFeatureGatesParsing() {
-        assertThat(new FeatureGates("+UseKRaft").useKRaftEnabled(), is(true));
-        assertThat(new FeatureGates("-UseKRaft").useKRaftEnabled(), is(false));
-        assertThat(new FeatureGates("  -UseKRaft    ").useKRaftEnabled(), is(false));
+        assertThat(new FeatureGates("+ContinueReconciliationOnManualRollingUpdateFailure").continueOnManualRUFailureEnabled(), is(true));
+        assertThat(new FeatureGates("-ContinueReconciliationOnManualRollingUpdateFailure").continueOnManualRUFailureEnabled(), is(false));
+        assertThat(new FeatureGates("  -ContinueReconciliationOnManualRollingUpdateFailure    ").continueOnManualRUFailureEnabled(), is(false));
         // TODO: Add more tests with various feature gate combinations once we have multiple feature gates again.
         //       The commented out code below shows the tests we used to have with multiple feature gates.
-        assertThat(new FeatureGates("-UseKRaft,-ContinueReconciliationOnManualRollingUpdateFailure").useKRaftEnabled(), is(false));
-        assertThat(new FeatureGates("-UseKRaft,-ContinueReconciliationOnManualRollingUpdateFailure").continueOnManualRUFailureEnabled(), is(false));
-        assertThat(new FeatureGates("  +UseKRaft    ,    +ContinueReconciliationOnManualRollingUpdateFailure").useKRaftEnabled(), is(true));
-        assertThat(new FeatureGates("  +UseKRaft    ,    +ContinueReconciliationOnManualRollingUpdateFailure").continueOnManualRUFailureEnabled(), is(true));
-        assertThat(new FeatureGates("+ContinueReconciliationOnManualRollingUpdateFailure,-UseKRaft").useKRaftEnabled(), is(false));
-        assertThat(new FeatureGates("+ContinueReconciliationOnManualRollingUpdateFailure,-UseKRaft").continueOnManualRUFailureEnabled(), is(true));
+        //assertThat(new FeatureGates("-UseKRaft,-ContinueReconciliationOnManualRollingUpdateFailure").useKRaftEnabled(), is(false));
+        //assertThat(new FeatureGates("-UseKRaft,-ContinueReconciliationOnManualRollingUpdateFailure").continueOnManualRUFailureEnabled(), is(false));
+        //assertThat(new FeatureGates("  +UseKRaft    ,    +ContinueReconciliationOnManualRollingUpdateFailure").useKRaftEnabled(), is(true));
+        //assertThat(new FeatureGates("  +UseKRaft    ,    +ContinueReconciliationOnManualRollingUpdateFailure").continueOnManualRUFailureEnabled(), is(true));
+        //assertThat(new FeatureGates("+ContinueReconciliationOnManualRollingUpdateFailure,-UseKRaft").useKRaftEnabled(), is(false));
+        //assertThat(new FeatureGates("+ContinueReconciliationOnManualRollingUpdateFailure,-UseKRaft").continueOnManualRUFailureEnabled(), is(true));
     }
 
     @ParallelTest
@@ -90,20 +83,20 @@ public class FeatureGatesTest {
 
     @ParallelTest
     public void testDuplicateFeatureGateWithSameValue() {
-        InvalidConfigurationException e = assertThrows(InvalidConfigurationException.class, () -> new FeatureGates("+UseKRaft,+UseKRaft"));
-        assertThat(e.getMessage(), containsString("Feature gate UseKRaft is configured multiple times"));
+        InvalidConfigurationException e = assertThrows(InvalidConfigurationException.class, () -> new FeatureGates("+ContinueReconciliationOnManualRollingUpdateFailure,+ContinueReconciliationOnManualRollingUpdateFailure"));
+        assertThat(e.getMessage(), containsString("Feature gate ContinueReconciliationOnManualRollingUpdateFailure is configured multiple times"));
     }
 
     @ParallelTest
     public void testDuplicateFeatureGateWithDifferentValue() {
-        InvalidConfigurationException e = assertThrows(InvalidConfigurationException.class, () -> new FeatureGates("+UseKRaft,-UseKRaft"));
-        assertThat(e.getMessage(), containsString("Feature gate UseKRaft is configured multiple times"));
+        InvalidConfigurationException e = assertThrows(InvalidConfigurationException.class, () -> new FeatureGates("+ContinueReconciliationOnManualRollingUpdateFailure,-ContinueReconciliationOnManualRollingUpdateFailure"));
+        assertThat(e.getMessage(), containsString("Feature gate ContinueReconciliationOnManualRollingUpdateFailure is configured multiple times"));
     }
 
     @ParallelTest
     public void testMissingSign() {
-        InvalidConfigurationException e = assertThrows(InvalidConfigurationException.class, () -> new FeatureGates("UseKRaft"));
-        assertThat(e.getMessage(), containsString("UseKRaft is not a valid feature gate configuration"));
+        InvalidConfigurationException e = assertThrows(InvalidConfigurationException.class, () -> new FeatureGates("ContinueReconciliationOnManualRollingUpdateFailure"));
+        assertThat(e.getMessage(), containsString("ContinueReconciliationOnManualRollingUpdateFailure is not a valid feature gate configuration"));
     }
 
     @ParallelTest

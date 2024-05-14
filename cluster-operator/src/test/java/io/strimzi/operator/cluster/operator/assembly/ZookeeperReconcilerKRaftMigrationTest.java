@@ -124,7 +124,7 @@ public class ZookeeperReconcilerKRaftMigrationTest {
         when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.secretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
         KafkaVersionChange versionChange = new KafkaVersionChange(VERSIONS.defaultVersion(), VERSIONS.defaultVersion(), VERSIONS.defaultVersion().protocolVersion(), VERSIONS.defaultVersion().messageVersion(), VERSIONS.defaultVersion().metadataVersion());
 
-        KafkaMetadataStateManager stateManager = new KafkaMetadataStateManager(RECONCILIATION, patchedKafka, CO_CONFIG.featureGates().useKRaftEnabled());
+        KafkaMetadataStateManager stateManager = new KafkaMetadataStateManager(RECONCILIATION, patchedKafka);
 
         MockZooKeeperReconciler zookeeperReconciler = spy(new MockZooKeeperReconciler(
                 RECONCILIATION,
@@ -170,7 +170,7 @@ public class ZookeeperReconcilerKRaftMigrationTest {
         when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.secretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
         KafkaVersionChange versionChange = new KafkaVersionChange(VERSIONS.defaultVersion(), VERSIONS.defaultVersion(), VERSIONS.defaultVersion().protocolVersion(), VERSIONS.defaultVersion().messageVersion(), VERSIONS.defaultVersion().metadataVersion());
 
-        KafkaMetadataStateManager stateManager = new KafkaMetadataStateManager(RECONCILIATION, patchedKafka, CO_CONFIG.featureGates().useKRaftEnabled());
+        KafkaMetadataStateManager stateManager = new KafkaMetadataStateManager(RECONCILIATION, patchedKafka);
 
         MockZooKeeperReconciler zookeeperReconciler = spy(new MockZooKeeperReconciler(
                 RECONCILIATION,
