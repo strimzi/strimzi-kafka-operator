@@ -882,7 +882,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "listener.name.controlplane-9090.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
                 "listener.name.controlplane-9090.ssl.truststore.password=${CERTS_STORE_PASSWORD}",
                 "listener.name.controlplane-9090.ssl.truststore.type=PKCS12",
-                "listeners=CONTROLPLANE-9090://0.0.0.0:9090",
+                "listeners=CONTROLPLANE-9090://my-cluster-controllers-2.my-cluster-kafka-brokers.my-namespace.svc:9090",
                 "listener.security.protocol.map=CONTROLPLANE-9090:SSL",
                 "sasl.enabled.mechanisms=",
                 "ssl.endpoint.identification.algorithm=HTTPS"));
@@ -975,7 +975,7 @@ public class KafkaBrokerConfigurationBuilderTest {
             "listener.name.controlplane-9090.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
             "listener.name.controlplane-9090.ssl.truststore.password=${CERTS_STORE_PASSWORD}",
             "listener.name.controlplane-9090.ssl.truststore.type=PKCS12",
-            "listeners=CONTROLPLANE-9090://0.0.0.0:9090",
+            "listeners=CONTROLPLANE-9090://my-cluster-controllers-2.my-cluster-kafka-brokers.my-namespace.svc:9090",
             "listener.security.protocol.map=CONTROLPLANE-9090:SSL",
             "sasl.enabled.mechanisms=",
             "ssl.endpoint.identification.algorithm=HTTPS",
@@ -2396,7 +2396,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 }
 
                 assertThat(configuration, containsString("listener.name.controlplane-9090"));
-                assertThat(configuration, containsString("listeners=CONTROLPLANE-9090://0.0.0.0:9090"));
+                assertThat(configuration, containsString("listeners=CONTROLPLANE-9090://my-cluster-controllers-1.my-cluster-kafka-brokers.my-namespace.svc:9090"));
                 // controllers never advertises listeners
                 assertThat(configuration, not(containsString("advertised.listeners")));
             }

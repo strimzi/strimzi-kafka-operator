@@ -930,9 +930,33 @@ public class KafkaRollerTest {
         }
 
         @Override
-        protected Admin adminClient(Set<NodeRef> nodes, boolean b) throws ForceableProblem, FatalProblem {
+        protected Admin brokerAdminClient(Set<NodeRef> nodes) throws ForceableProblem, FatalProblem {
             if (delegateAdminClientCall) {
-                return super.adminClient(nodes, b);
+                return super.brokerAdminClient(nodes);
+            }
+            RuntimeException exception = acOpenException.apply(nodes);
+            if (exception != null) {
+                throw new ForceableProblem("An error while try to create the admin client", exception);
+            }
+            Admin ac = mock(AdminClient.class, invocation -> {
+                if ("close".equals(invocation.getMethod().getName())) {
+                    Admin mock = (Admin) invocation.getMock();
+                    unclosedAdminClients.remove(mock);
+                    if (acCloseException != null) {
+                        throw acCloseException;
+                    }
+                    return null;
+                }
+                throw new RuntimeException("Not mocked " + invocation.getMethod());
+            });
+            unclosedAdminClients.put(ac, new Throwable("Pod " + nodes));
+            return ac;
+        }
+
+        @Override
+        protected Admin controllerAdminClient(Set<NodeRef> nodes) throws ForceableProblem, FatalProblem {
+            if (delegateAdminClientCall) {
+                return super.controllerAdminClient(nodes);
             }
             RuntimeException exception = acOpenException.apply(nodes);
             if (exception != null) {
@@ -974,7 +998,7 @@ public class KafkaRollerTest {
         }
 
         @Override
-        protected KafkaQuorumCheck quorumCheck(Admin ac, long controllerQuorumFetchTimeoutMs) {
+        protected KafkaQuorumCheck quorumCheck(Admin ac, NodeRef nodeRef) {
             Admin admin = mock(Admin.class);
             DescribeMetadataQuorumResult qrmResult = mock(DescribeMetadataQuorumResult.class);
             when(admin.describeMetadataQuorum()).thenReturn(qrmResult);
