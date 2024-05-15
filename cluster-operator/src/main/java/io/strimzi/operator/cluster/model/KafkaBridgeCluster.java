@@ -549,20 +549,6 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
     }
 
     /**
-     * @return The Consumer configuration of the Bridge
-     */
-    public KafkaBridgeConsumerSpec getKafkaBridgeConsumer() {
-        return this.kafkaBridgeConsumer;
-    }
-
-    /**
-     * @return The Producer configuration of the Bridge
-     */
-    public KafkaBridgeProducerSpec getKafkaBridgeProducer() {
-        return this.kafkaBridgeProducer;
-    }
-
-    /**
      * Returns a combined affinity: Adding the affinity needed for the "kafka-rack" to the user-provided affinity.
      */
     protected Affinity getMergedAffinity() {

@@ -161,9 +161,6 @@ public class KafkaBridgeClusterTest {
         assertThat(kbc.readinessProbeOptions.getTimeoutSeconds(), is(5));
         assertThat(kbc.livenessProbeOptions.getInitialDelaySeconds(), is(15));
         assertThat(kbc.livenessProbeOptions.getTimeoutSeconds(), is(5));
-        assertThat(kbc.getKafkaBridgeConsumer().isEnabled(), is(true));
-        assertThat(kbc.getKafkaBridgeConsumer().getTimeoutSeconds(), is(-1L));
-        assertThat(kbc.getKafkaBridgeProducer().isEnabled(), is(true));
     }
 
     @ParallelTest
