@@ -10,5 +10,6 @@ spec:
     config:
       foo: buz
   consumer:
+    timeoutSeconds: 60
     config:
       foo: bur

@@ -1,7 +1,7 @@
 # CHANGELOG
 
 ## 0.42.0
-
+* Enhance `KafkaBridge` resource with consumer inactivity timeout and HTTP consumer/producer enablement.
 
 ## 0.41.0
 
