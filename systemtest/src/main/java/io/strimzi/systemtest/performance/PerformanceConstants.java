@@ -46,6 +46,8 @@ public interface PerformanceConstants {
      */
     String TOPIC_OPERATOR_IN_NUMBER_OF_TOPICS_TO_UPDATE = "IN: UPDATE NUMBER OF TOPICS";
 
+    String TOPIC_OPERATOR_IN_MAX_QUEUE_SIZE = "IN: MAX QUEUE SIZE";
+
     /**
      * OUT constants represent the output metrics or results measured after the performance tests involving the topic operator.
      */
@@ -74,6 +76,8 @@ public interface PerformanceConstants {
      * The time taken, in milliseconds, to update the configurations or parameters of existing Kafka topics during the test.
      */
     String TOPIC_OPERATOR_OUT_UPDATE_TIMES = "OUT: Bob Update Times (ms)";
+
+    String TOPIC_OPERATOR_OUT_SUCCESSFUL_KAFKA_TOPICS_CREATED = "OUT: Successful KafkaTopics Created";
 
     // --------------------------------------------------------------------------------
     // ------------------------------ USER OPERATOR -----------------------------------
@@ -150,7 +154,7 @@ public interface PerformanceConstants {
     String TOPIC_OPERATOR_BOBS_STREAMING_USE_CASE = "bobStreamingUseCase";
     String TOPIC_OPERATOR_ALICE_BULK_USE_CASE = "aliceBulkUseCase";
     String USER_OPERATOR_ALICE_BULK_USE_CASE = "aliceBulkUseCase";
-    String USER_OPERATOR_CAPACITY_USE_CASE = "capacityUseCase";
+    String GENERAL_CAPACITY_USE_CASE = "capacityUseCase";
 
     /**
      * Performance metrics file

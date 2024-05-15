@@ -84,3 +84,13 @@ adjust:
   environment+:
     TEST_PROFILE: performance-capacity
     PARALLELISM_ENABLED: false
+
+/performance-topic-operator-capacity:
+  summary: Run topic operator performance capacity strimzi test suite
+  tags: [strimzi, kafka, kraft, performance, performance-capacity]
+  duration: 24h
+  tier: 1
+  environment+:
+    TEST_PROFILE: performance-capacity
+    PARALLELISM_ENABLED: false
+    TESTS: TopicOperatorPerformance#testCapacity
