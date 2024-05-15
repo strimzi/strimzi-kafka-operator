@@ -148,7 +148,7 @@ public class CruiseControlClientImpl implements CruiseControlClient {
                     : format("Request failed (%s)", response.statusCode())
                 );
             }
-            return response.headers().firstValue(CruiseControlHeaders.USER_TASK_ID_HEADER.toString()).get();
+            return response.headers().firstValue(CruiseControlHeaders.USER_TASK_ID_HEADER).get();
         }).exceptionally(t -> {
             if (t.getCause() instanceof ConnectException) {
                 throw new RuntimeException("Connection failed");

@@ -123,7 +123,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                     request.result().send(response -> {
                         if (response.succeeded()) {
                             if (response.result().statusCode() == 200 || response.result().statusCode() == 201) {
-                                String userTaskID = response.result().getHeader(USER_TASK_ID_HEADER.toString());
+                                String userTaskID = response.result().getHeader(USER_TASK_ID_HEADER);
                                 response.result().bodyHandler(buffer -> {
                                     JsonObject json = buffer.toJsonObject();
                                     if (json.containsKey(CC_REST_API_ERROR_KEY)) {
@@ -153,7 +153,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                 }
 
                 if (userTaskId != null) {
-                    request.result().putHeader(USER_TASK_ID_HEADER.toString(), userTaskId);
+                    request.result().putHeader(USER_TASK_ID_HEADER, userTaskId);
                 }
             });
         });
@@ -167,7 +167,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
             }
 
             if (userTaskId != null) {
-                request.result().putHeader(USER_TASK_ID_HEADER.toString(), userTaskId);
+                request.result().putHeader(USER_TASK_ID_HEADER, userTaskId);
             }
 
             if (authHttpHeader != null) {
@@ -178,14 +178,14 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                 if (response.succeeded()) {
                     if (response.result().statusCode() == 200 || response.result().statusCode() == 201) {
                         response.result().bodyHandler(buffer -> {
-                            String userTaskID = response.result().getHeader(USER_TASK_ID_HEADER.toString());
+                            String userTaskID = response.result().getHeader(USER_TASK_ID_HEADER);
                             JsonObject json = buffer.toJsonObject();
                             CruiseControlRebalanceResponse ccResponse = new CruiseControlRebalanceResponse(userTaskID, json);
                             result.complete(ccResponse);
                         });
                     } else if (response.result().statusCode() == 202) {
                         response.result().bodyHandler(buffer -> {
-                            String userTaskID = response.result().getHeader(USER_TASK_ID_HEADER.toString());
+                            String userTaskID = response.result().getHeader(USER_TASK_ID_HEADER);
                             JsonObject json = buffer.toJsonObject();
                             CruiseControlRebalanceResponse ccResponse = new CruiseControlRebalanceResponse(userTaskID, json);
                             if (json.containsKey(CC_REST_API_PROGRESS_KEY)) {
@@ -201,7 +201,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                         });
                     } else if (response.result().statusCode() == 500) {
                         response.result().bodyHandler(buffer -> {
-                            String userTaskID = response.result().getHeader(USER_TASK_ID_HEADER.toString());
+                            String userTaskID = response.result().getHeader(USER_TASK_ID_HEADER);
                             JsonObject json = buffer.toJsonObject();
                             if (json.containsKey(CC_REST_API_ERROR_KEY)) {
                                 // If there was a client side error, check whether it was due to not enough data being available ...
@@ -323,7 +323,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                     request.result().send(response -> {
                         if (response.succeeded()) {
                             if (response.result().statusCode() == 200 || response.result().statusCode() == 201) {
-                                String userTaskID = response.result().getHeader(USER_TASK_ID_HEADER.toString());
+                                String userTaskID = response.result().getHeader(USER_TASK_ID_HEADER);
                                 response.result().bodyHandler(buffer -> {
                                     JsonObject json = buffer.toJsonObject();
                                     JsonObject jsonUserTask = json.getJsonArray("userTasks").getJsonObject(0);
@@ -420,7 +420,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                     request.result().send(response -> {
                         if (response.succeeded()) {
                             if (response.result().statusCode() == 200 || response.result().statusCode() == 201) {
-                                String userTaskID = response.result().getHeader(USER_TASK_ID_HEADER.toString());
+                                String userTaskID = response.result().getHeader(USER_TASK_ID_HEADER);
                                 response.result().bodyHandler(buffer -> {
                                     JsonObject json = buffer.toJsonObject();
                                     if (json.containsKey(CC_REST_API_ERROR_KEY)) {

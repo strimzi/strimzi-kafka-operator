@@ -5,27 +5,11 @@
 package io.strimzi.operator.common.model.cruisecontrol;
 
 /**
- * Enum with Cruise Control headers
+ * Cruise Control headers.
  */
-public enum CruiseControlHeaders {
+public class CruiseControlHeaders {
     /**
-     * User task id
+     * User task id.
      */
-    USER_TASK_ID_HEADER("User-Task-ID");
-
-    private final String name;
-
-    /**
-     * Creates the Enum from String
-     *
-     * @param name String with the path
-     */
-    CruiseControlHeaders(String name) {
-        this.name = name;
-    }
-
-    @Override
-    public String toString() {
-        return name;
-    }
+    public static final String USER_TASK_ID_HEADER = "User-Task-ID";
 }
