@@ -18,11 +18,11 @@
 #  Kubernetes cluster.
 #  --- Prerequisites ---
 
-fromVersion: 0.40.0
-fromOlmChannelName: strimzi-0.40.x
-fromExamples: strimzi-0.40.0
-fromUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.40.0/strimzi-0.40.0.zip
-fromKafkaVersionsUrl: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/0.40.0/kafka-versions.yaml
+fromVersion: 0.41.0
+fromOlmChannelName: strimzi-0.41.x
+fromExamples: strimzi-0.41.0
+fromUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.41.0/strimzi-0.41.0.zip
+fromKafkaVersionsUrl: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/0.41.0/kafka-versions.yaml
 filePaths:
   kafkaBefore: "/examples/kafka/kafka-persistent.yaml"
   kafkaAfter: "/examples/kafka/kafka-persistent.yaml"
