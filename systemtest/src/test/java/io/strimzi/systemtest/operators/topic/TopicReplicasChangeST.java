@@ -12,7 +12,6 @@ import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.api.kafka.model.topic.KafkaTopicStatus;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
@@ -442,6 +441,7 @@ public class TopicReplicasChangeST extends AbstractST {
                         KafkaNodePoolTemplates.controllerPool(sharedTestStorage.getNamespaceName(), sharedTestStorage.getControllerPoolName(), sharedTestStorage.getClusterName(), 1).build()
                 )
         );
+        
         // we need to deploy Kafka with CC enabled (to have RF feature)
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaWithCruiseControl(sharedTestStorage.getClusterName(), 3, 3)
                     .editMetadata()
@@ -449,27 +449,29 @@ public class TopicReplicasChangeST extends AbstractST {
                     .endMetadata()
                     .editSpec()
                         .editKafka()
-                            // The interval of collecting and sending the interested metrics.
-                            // this reduce test execution time approximately from 15m to 4m
-                            .addToConfig("cruise.control.metrics.reporter.metrics.reporting.interval.ms", 10000)
+                            // faster cluster model generation tuning: reduce reporting and metadata refresh intervals
+                            .addToConfig("cruise.control.metrics.reporter.metrics.reporting.interval.ms", 5_000)
+                            .addToConfig("cruise.control.metrics.reporter.metadata.max.age.ms", 4_000)
                         .endKafka()
                         .editEntityOperator()
                             .editOrNewTopicOperator()
-                                .withReconciliationIntervalSeconds((int) TestConstants.RECONCILIATION_INTERVAL / 1000)
+                                .withReconciliationIntervalSeconds(10)
                             .endTopicOperator()
                         .endEntityOperator()
                         .editCruiseControl()
-                            // add fixed more resources at startup to make CC faster in building cluster model
+                            // faster cluster model generation tuning: reserve some resources at startup
                             .withResources(new ResourceRequirementsBuilder()
                                 .addToLimits("memory", new Quantity("1Gi"))
                                 .addToRequests("memory", new Quantity("1Gi"))
                                 .build())
-                            // fine tune CC to make it quicker to build inner Cluster model with this settings
-                            .addToConfig("metric.sampling.interval.ms", 60000)
+                            // faster cluster model generation tuning: reduce sampling and metadata refresh intervals
+                            .addToConfig("metric.sampling.interval.ms", 5_000)
+                            .addToConfig("cruise.control.metrics.reporter.metrics.reporting.interval.ms", 5_000)
+                            .addToConfig("metadata.max.age.ms", 4_000)
                         .endCruiseControl()
                         .endSpec()
                     .build(),
-                ScraperTemplates.scraperPod(sharedTestStorage.getNamespaceName(), sharedTestStorage.getScraperName()).build()
+            ScraperTemplates.scraperPod(sharedTestStorage.getNamespaceName(), sharedTestStorage.getScraperName()).build()
         );
 
         scraperPodName = ScraperUtils.getScraperPod(sharedTestStorage.getNamespaceName()).getMetadata().getName();
