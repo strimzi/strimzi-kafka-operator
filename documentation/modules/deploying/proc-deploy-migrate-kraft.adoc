@@ -18,6 +18,7 @@ Note also, the following:
 
 * Migration is only supported on dedicated controller nodes, not on nodes with dual roles as brokers and controllers.
 * Throughout the migration process, ZooKeeper and controller nodes operate in parallel for a period, requiring sufficient compute resources in the cluster.
+* *Once KRaft mode is enabled, rollback to ZooKeeper is not possible. Consider this carefully before proceeding with the migration.*
 
 .Prerequisites
 
