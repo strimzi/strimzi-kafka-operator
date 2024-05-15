@@ -5,33 +5,44 @@
 package io.strimzi.systemtest.metrics;
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
-import io.skodjob.testframe.MetricsComponent;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 
-public class ZookeeperMetricsComponent implements MetricsComponent {
+/**
+ * Concrete implementation of BaseMetricsComponent for Zookeeper.
+ */
+public class ZookeeperMetricsComponent extends BaseMetricsComponent {
 
-    private String componentName;
-
+    /**
+     * Factory method to create a new instance of ZookeeperMetricsComponent.
+     * @param componentName     the name of the component
+     * @return                  a new instance of ZookeeperMetricsComponent
+     */
     public static ZookeeperMetricsComponent create(final String componentName) {
         return new ZookeeperMetricsComponent(componentName);
     }
 
+    /**
+     * Private constructor to enforce the use of the factory method.
+     */
     private ZookeeperMetricsComponent(String componentName) {
-        this.componentName = componentName;
+        super(null, componentName);
     }
 
+    /**
+     * Provides the default metrics port specifically for Zookeeper.
+     * @return int representing the Zookeeper metrics port
+     */
     @Override
     public int getDefaultMetricsPort() {
         return TestConstants.COMPONENTS_METRICS_PORT;
     }
 
-    @Override
-    public String getDefaultMetricsPath() {
-        return "/metrics";
-    }
-
+    /**
+     * Provides the label selector specific to Zookeeper.
+     * @return LabelSelector for the Zookeeper deployment
+     */
     @Override
     public LabelSelector getLabelSelector() {
         return KafkaResource.getLabelSelector(componentName, KafkaResources.zookeeperComponentName(componentName));

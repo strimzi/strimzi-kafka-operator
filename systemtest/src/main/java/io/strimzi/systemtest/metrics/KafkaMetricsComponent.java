@@ -5,33 +5,34 @@
 package io.strimzi.systemtest.metrics;
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
-import io.skodjob.testframe.MetricsComponent;
-import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.StrimziPodSetResource;
 
-public class KafkaMetricsComponent implements MetricsComponent {
+/**
+ * Concrete implementation of BaseMetricsComponent for Kafka general metrics.
+ */
+public class KafkaMetricsComponent extends BaseMetricsComponent {
 
-    private String componentName;
-
+    /**
+     * Factory method to create a new instance of KafkaMetricsComponent.
+     * @param componentName     the name of the component
+     * @return                  a new instance of KafkaMetricsComponent
+     */
     public static KafkaMetricsComponent create(final String componentName) {
         return new KafkaMetricsComponent(componentName);
     }
 
+    /**
+     * Private constructor to enforce the use of the factory method.
+     */
     private KafkaMetricsComponent(String componentName) {
-        this.componentName = componentName;
+        super(null, componentName);
     }
 
-    @Override
-    public int getDefaultMetricsPort() {
-        return TestConstants.COMPONENTS_METRICS_PORT;
-    }
-
-    @Override
-    public String getDefaultMetricsPath() {
-        return "/metrics";
-    }
-
+    /**
+     * Provides the label selector specific to Kafka.
+     * @return LabelSelector for the Kafka deployment
+     */
     @Override
     public LabelSelector getLabelSelector() {
         return KafkaResource.getLabelSelector(componentName, StrimziPodSetResource.getBrokerComponentName(componentName));

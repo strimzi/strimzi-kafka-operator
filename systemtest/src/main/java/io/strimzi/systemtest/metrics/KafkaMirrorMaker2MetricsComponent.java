@@ -5,33 +5,34 @@
 package io.strimzi.systemtest.metrics;
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
-import io.skodjob.testframe.MetricsComponent;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Resources;
-import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
 
-public class KafkaMirrorMaker2MetricsComponent implements MetricsComponent {
+/**
+ * Concrete implementation of BaseMetricsComponent for Kafka MirrorMaker 2.
+ */
+public class KafkaMirrorMaker2MetricsComponent extends BaseMetricsComponent {
 
-    private String componentName;
-
+    /**
+     * Factory method to create a new instance of KafkaMirrorMaker2MetricsComponent.
+     * @param componentName     the name of the component
+     * @return                  a new instance of KafkaMirrorMaker2MetricsComponent
+     */
     public static KafkaMirrorMaker2MetricsComponent create(final String componentName) {
         return new KafkaMirrorMaker2MetricsComponent(componentName);
     }
 
+    /**
+     * Private constructor to enforce the use of the factory method.
+     */
     private KafkaMirrorMaker2MetricsComponent(String componentName) {
-        this.componentName = componentName;
+        super(null, componentName);
     }
 
-    @Override
-    public int getDefaultMetricsPort() {
-        return TestConstants.COMPONENTS_METRICS_PORT;
-    }
-
-    @Override
-    public String getDefaultMetricsPath() {
-        return "/metrics";
-    }
-
+    /**
+     * Provides the label selector specific to Kafka MirrorMaker 2.
+     * @return LabelSelector for the Kafka MirrorMaker 2 deployment
+     */
     @Override
     public LabelSelector getLabelSelector() {
         return KafkaMirrorMaker2Resource.getLabelSelector(componentName, KafkaMirrorMaker2Resources.componentName(componentName));
