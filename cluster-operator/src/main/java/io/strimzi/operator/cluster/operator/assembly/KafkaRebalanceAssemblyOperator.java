@@ -176,12 +176,13 @@ public class KafkaRebalanceAssemblyOperator
      * @param config Cluster Operator configuration
      * @param cruiseControlPort Cruise Control server port
      */
-    public KafkaRebalanceAssemblyOperator(Vertx vertx,
-                                          ResourceOperatorSupplier supplier, 
-                                          ClusterOperatorConfig config,
-                                          int cruiseControlPort) {
+    /* test */ KafkaRebalanceAssemblyOperator(Vertx vertx,
+                                              ResourceOperatorSupplier supplier, 
+                                              ClusterOperatorConfig config,
+                                              int cruiseControlPort) {
         super(vertx, KafkaRebalance.RESOURCE_KIND, supplier.kafkaRebalanceOperator, supplier.metricsProvider, null);
-        this.kafkaSelector = (config.getCustomResourceSelector() == null || config.getCustomResourceSelector().toMap().isEmpty()) ? null : new LabelSelector(null, config.getCustomResourceSelector().toMap());
+        this.kafkaSelector = (config.getCustomResourceSelector() == null || config.getCustomResourceSelector().toMap().isEmpty()) 
+            ? null : new LabelSelector(null, config.getCustomResourceSelector().toMap());
         this.kafkaRebalanceOperator = supplier.kafkaRebalanceOperator;
         this.kafkaOperator = supplier.kafkaOperator;
         this.configMapOperator = supplier.configMapOperations;
