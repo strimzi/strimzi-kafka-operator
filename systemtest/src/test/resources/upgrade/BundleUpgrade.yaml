@@ -72,8 +72,8 @@
     status: stable
     flakyEnvVariable: none
     reason: Test is working on environment, where k8s server version is < 1.22
-  featureGatesBefore: "-UnidirectionalTopicOperator"
-  featureGatesAfter: ""
+  featureGatesBefore: "-ContinueReconciliationOnManualRollingUpdateFailure"
+  featureGatesAfter: "+ContinueReconciliationOnManualRollingUpdateFailure"
   filePaths:
     kafkaBefore: "/examples/kafka/kafka-persistent.yaml"
     kafkaAfter: "/examples/kafka/kafka-persistent.yaml"

@@ -78,8 +78,8 @@
     status: stable
     flakyEnvVariable: none
     reason: Test is working on all environment used by QE.
-  featureGatesBefore: ""
-  featureGatesAfter: "-UnidirectionalTopicOperator"
+  featureGatesBefore: "+ContinueReconciliationOnManualRollingUpdateFailure"
+  featureGatesAfter: "-ContinueReconciliationOnManualRollingUpdateFailure"
   filePaths:
     kafkaBefore: "/examples/kafka/kafka-persistent.yaml"
     kafkaAfter: "/examples/kafka/kafka-persistent.yaml"
