@@ -12,7 +12,6 @@ import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.topic.cruisecontrol.CruiseControlClient;
 import io.strimzi.operator.topic.cruisecontrol.CruiseControlClient.TaskState;
 import io.strimzi.operator.topic.cruisecontrol.CruiseControlClient.UserTasksResponse;
-import io.strimzi.operator.topic.cruisecontrol.CruiseControlClientImpl;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -42,15 +41,15 @@ import static org.apache.logging.log4j.core.util.Throwables.getRootCause;
 public class ReplicasChangeHandler {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(ReplicasChangeHandler.class);
     
-    private final CruiseControlClient apiClient;
+    private final CruiseControlClient cruiseControlClient;
     
     /**
      * Create a new replicas change handler instance.
      * 
      * @param config Topic Operator configuration.
      */
-    ReplicasChangeHandler(TopicOperatorConfig config) {
-        this.apiClient = new CruiseControlClientImpl(
+    public ReplicasChangeHandler(TopicOperatorConfig config) {
+        this.cruiseControlClient = CruiseControlClient.create(
             config.cruiseControlHostname(),
             config.cruiseControlPort(),
             config.cruiseControlRackEnabled(),
@@ -67,7 +66,7 @@ public class ReplicasChangeHandler {
      */
     public void stop() {
         try {
-            apiClient.close();
+            cruiseControlClient.close();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -92,7 +91,7 @@ public class ReplicasChangeHandler {
         try {
             LOGGER.debugOp("Sending topic configuration request, topics {}", topicNames(reconcilableTopics));
             List<KafkaTopic> kafkaTopics = reconcilableTopics.stream().map(rt -> rt.kt()).collect(Collectors.toList());
-            String userTaskId = apiClient.topicConfiguration(kafkaTopics);
+            String userTaskId = cruiseControlClient.topicConfiguration(kafkaTopics);
             updateToOngoing(result, "Replicas change ongoing", userTaskId);
         } catch (Throwable t) {
             updateToFailed(result, format("Replicas change failed, %s", getRootCause(t).getMessage()));
@@ -122,7 +121,7 @@ public class ReplicasChangeHandler {
 
         try {
             LOGGER.debugOp("Sending user tasks request, Tasks {}", groupByUserTaskId.keySet());
-            UserTasksResponse utr = apiClient.userTasks(new ArrayList<>(groupByUserTaskId.keySet()));
+            UserTasksResponse utr = cruiseControlClient.userTasks(groupByUserTaskId.keySet());
 
             if (utr.userTasks().isEmpty()) {
                 // Cruise Control restarted: reset the state because the tasks queue is not persisted

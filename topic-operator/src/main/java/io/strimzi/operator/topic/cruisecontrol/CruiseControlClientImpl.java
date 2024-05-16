@@ -28,10 +28,12 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -60,27 +62,15 @@ public class CruiseControlClientImpl implements CruiseControlClient {
     private ExecutorService httpClientExecutor;
     private HttpClient httpClient;
     private ObjectMapper objectMapper;
-
-    /**
-     * Create Cruise Control client instance.
-     * 
-     * @param serverHostname Server hostname.
-     * @param serverPort Server port.
-     * @param rackEnabled Whether rack awareness is enabled.
-     * @param sslEnabled Whether SSL is enabled.
-     * @param sslCertificate SSL certificate.
-     * @param authEnabled Whether authentication is enabled.
-     * @param authUsername Authentication username.
-     * @param authPassword Authentication password.
-     */
-    public CruiseControlClientImpl(String serverHostname,
-                                   int serverPort,
-                                   boolean rackEnabled,
-                                   boolean sslEnabled,
-                                   byte[] sslCertificate,
-                                   boolean authEnabled,
-                                   String authUsername,
-                                   String authPassword) {
+    
+    CruiseControlClientImpl(String serverHostname,
+                            int serverPort,
+                            boolean rackEnabled,
+                            boolean sslEnabled,
+                            byte[] sslCertificate,
+                            boolean authEnabled,
+                            String authUsername,
+                            String authPassword) {
         this.serverHostname = serverHostname;
         this.serverPort = serverPort;
         this.rackEnabled = rackEnabled;
@@ -159,10 +149,10 @@ public class CruiseControlClientImpl implements CruiseControlClient {
     }
 
     @Override
-    public UserTasksResponse userTasks(List<String> userTaskIds) {
+    public UserTasksResponse userTasks(Set<String> userTaskIds) {
         // build request
         URI requestUrl = new UrlBuilder(serverHostname, serverPort, CruiseControlEndpoints.USER_TASKS, sslEnabled)
-            .withParameter(CruiseControlParameters.USER_TASK_IDS, userTaskIds)
+            .withParameter(CruiseControlParameters.USER_TASK_IDS, new ArrayList<>(userTaskIds))
             .withParameter(CruiseControlParameters.FETCH_COMPLETE, "false")
             .withParameter(CruiseControlParameters.JSON, "true")
             .build();

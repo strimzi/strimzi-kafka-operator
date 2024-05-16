@@ -11,6 +11,7 @@ import java.net.http.HttpResponse;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Cruise Control REST API client.
@@ -25,8 +26,41 @@ public interface CruiseControlClient extends AutoCloseable {
     long HTTP_REQUEST_TIMEOUT_SEC = 60;
 
     /**
+     * Create default Cruise Control client instance.
+     *
+     * @param serverHostname Server hostname.
+     * @param serverPort Server port.
+     * @param rackEnabled Whether rack awareness is enabled.
+     * @param sslEnabled Whether SSL is enabled.
+     * @param sslCertificate SSL certificate.
+     * @param authEnabled Whether authentication is enabled.
+     * @param authUsername Authentication username.
+     * @param authPassword Authentication password.
+     * @return Cruise Control client.
+     */
+    static CruiseControlClient create(String serverHostname,
+                                      int serverPort,
+                                      boolean rackEnabled,
+                                      boolean sslEnabled,
+                                      byte[] sslCertificate,
+                                      boolean authEnabled,
+                                      String authUsername,
+                                      String authPassword) {
+        return new CruiseControlClientImpl(
+            serverHostname,
+            serverPort,
+            rackEnabled,
+            sslEnabled,
+            sslCertificate,
+            authEnabled,
+            authUsername,
+            authPassword
+        );
+    }
+
+    /**
      * Send a POST request to {@code topic_configuration} endpoint.
-     * This can be used to request replication factor changes.
+     * This can be used to request replication factor changes (async operation).
      * 
      * @param kafkaTopics List of Kafka topics.
      * @return The user task id.
@@ -35,12 +69,12 @@ public interface CruiseControlClient extends AutoCloseable {
 
     /**
      * Send a GET request to {@code user_tasks} endpoint.
-     * This can be used to check the asynchronous task execution result.
+     * This can be used to check a task execution result (sync operation).
      * 
-     * @param userTaskIds List of user task ids.
+     * @param userTaskIds Set of user task ids.
      * @return User tasks response.
      */
-    UserTasksResponse userTasks(List<String> userTaskIds);
+    UserTasksResponse userTasks(Set<String> userTaskIds);
 
     /**
      * Get the error message from HTTP response.

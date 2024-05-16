@@ -16,7 +16,7 @@ import static java.lang.String.format;
 /**
  * Cruise Control URL builder.
  */
-public class UrlBuilder {
+class UrlBuilder {
     private String uri;
     private boolean firstParam;
 
