@@ -3,13 +3,10 @@
 // assembly-upgrade-zookeeper.adoc
 
 [id='proc-upgrade-kafka-zookeeper-{context}']
-= Upgrading ZooKeeper-based Kafka clusters and client applications
+= Upgrading ZooKeeper-based Kafka clusters
 
 [role="_abstract"]
 Upgrade a ZooKeeper-based Kafka cluster to a newer supported Kafka version and inter-broker protocol version.
-
-You should also choose a xref:con-strategies-for-upgrading-clients-{context}[strategy for upgrading clients].
-Kafka clients are upgraded in step 6 of this procedure.
 
 .Prerequisites
 
@@ -92,9 +89,7 @@ kubectl get pods my-cluster-kafka-0 -o jsonpath='{.spec.containers[0].image}'
 +
 The rolling updates ensure that each pod is using the broker binaries for the new version of Kafka.
 
-. Depending on your chosen xref:con-strategies-for-upgrading-clients-{context}[strategy for upgrading clients], upgrade all client applications to use the new version of the client binaries.
-+
-If required, set the `version` property for Kafka Connect and MirrorMaker as the new version of Kafka:
+. If required, set the `version` property for Kafka Connect and MirrorMaker as the new version of Kafka:
 +
 .. For Kafka Connect, update `KafkaConnect.spec.version`.
 .. For MirrorMaker, update `KafkaMirrorMaker.spec.version`.
@@ -102,8 +97,6 @@ If required, set the `version` property for Kafka Connect and MirrorMaker as the
 +
 NOTE: If you are using custom images that are built manually, you must rebuild those images to ensure that they are up-to-date with the latest Strimzi base image. 
 For example, if you xref:creating-new-image-from-base-str[created a container image from the base Kafka Connect image], update the Dockerfile to point to the latest base image and build configuration.
-
-. Verify that the upgraded client applications work correctly with the new Kafka brokers.
 
 . If configured, update the Kafka resource to use the new `inter.broker.protocol.version` version. Otherwise, go to step 9.
 +
@@ -147,4 +140,12 @@ IMPORTANT: From Kafka 3.0.0, when the `inter.broker.protocol.version` is set to 
 
 . Wait for the Cluster Operator to update the cluster.
 +
-You can xref:con-upgrade-status-{context}[check the upgrade has completed successfully from the status of the `Kafka` resource].
+Check the upgrade has completed successfully from the xref:con-upgrade-status-{context}[status of the `Kafka` resource].
+
+.Upgrading Kafka client applications
+
+Ensure all Kafka client applications are updated to use the new version of the client binaries as part of the upgrade process and verify their compatibility with the Kafka upgrade. 
+If needed, coordinate with the team responsible for managing the client applications.
+
+TIP: To check that a client is using the latest message format, use the `kafka.server:type=BrokerTopicMetrics,name={Produce|Fetch}MessageConversionsPerSec` metric. 
+The metric shows `0` if the latest message format is being used.
