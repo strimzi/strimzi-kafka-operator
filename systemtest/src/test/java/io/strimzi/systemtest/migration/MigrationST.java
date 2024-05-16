@@ -790,7 +790,7 @@ public class MigrationST extends AbstractST {
         // skip if Kafka version is lower than 3.7.0
         // TODO: remove once support for Kafka 3.6.x is removed - https://github.com/strimzi/strimzi-kafka-operator/issues/9921
         assumeTrue(TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "3.7.0") >= 0);
-        assumeTrue(Environment.isKafkaNodePoolsEnabled() && Environment.isKRaftForCOEnabled());
+        assumeTrue(Environment.isKafkaNodePoolsEnabled() && Environment.isKRaftModeEnabled());
         this.clusterOperator = this.clusterOperator
             .defaultInstallation()
             .createInstallation()

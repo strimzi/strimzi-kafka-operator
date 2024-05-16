@@ -4,12 +4,10 @@
  */
 package io.strimzi.systemtest.upgrade.kraft;
 
-import io.fabric8.kubernetes.api.model.EnvVar;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.operator.common.Annotations;
-import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
@@ -29,7 +27,6 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -112,13 +109,8 @@ public class KRaftKafkaUpgradeDowngradeST extends AbstractKRaftUpgradeST {
 
     @BeforeAll
     void setupEnvironment() {
-        List<EnvVar> coEnvVars = new ArrayList<>();
-        coEnvVars.add(new EnvVar(Environment.STRIMZI_FEATURE_GATES_ENV, String.join(",",
-            TestConstants.USE_KRAFT_MODE), null));
-
         clusterOperator
             .defaultInstallation()
-            .withExtraEnvVars(coEnvVars)
             .createInstallation()
             .runInstallation();
     }

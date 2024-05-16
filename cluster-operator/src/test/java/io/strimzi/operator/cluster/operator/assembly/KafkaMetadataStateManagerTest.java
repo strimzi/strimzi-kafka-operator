@@ -20,7 +20,6 @@ import static io.strimzi.api.kafka.model.kafka.KafkaMetadataState.KRaftPostMigra
 import static io.strimzi.api.kafka.model.kafka.KafkaMetadataState.PreKRaft;
 import static io.strimzi.api.kafka.model.kafka.KafkaMetadataState.ZooKeeper;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
@@ -60,7 +59,7 @@ public class KafkaMetadataStateManagerTest {
                 .endMetadata()
                 .build();
 
-        KafkaMetadataStateManager kafkaMetadataStateManager = new KafkaMetadataStateManager(Reconciliation.DUMMY_RECONCILIATION, kafka, true);
+        KafkaMetadataStateManager kafkaMetadataStateManager = new KafkaMetadataStateManager(Reconciliation.DUMMY_RECONCILIATION, kafka);
         assertEquals(kafkaMetadataStateManager.computeNextMetadataState(kafka.getStatus()), KRaftMigration);
 
         // test with ZooKeeper metadata state set
@@ -73,26 +72,8 @@ public class KafkaMetadataStateManagerTest {
                 .endStatus()
                 .build();
 
-        kafkaMetadataStateManager = new KafkaMetadataStateManager(Reconciliation.DUMMY_RECONCILIATION, kafka, true);
+        kafkaMetadataStateManager = new KafkaMetadataStateManager(Reconciliation.DUMMY_RECONCILIATION, kafka);
         assertEquals(kafkaMetadataStateManager.computeNextMetadataState(kafka.getStatus()), KRaftMigration);
-    }
-
-    @Test
-    public void testFromZookeeperToKRaftMigrationFailsKRaftDisabled() {
-        Kafka kafka = new KafkaBuilder(KAFKA)
-                .editMetadata()
-                    .addToAnnotations(Annotations.ANNO_STRIMZI_IO_KRAFT, "migration")
-                .endMetadata()
-                .withNewStatus()
-                    .withKafkaMetadataState(ZooKeeper)
-                .endStatus()
-                .build();
-
-        var exception = assertThrows(IllegalArgumentException.class, () ->
-                new KafkaMetadataStateManager(Reconciliation.DUMMY_RECONCILIATION, kafka, false));
-
-        assertEquals("Failed to reconcile a KRaft enabled cluster or migration to KRaft because useKRaft feature gate is disabled",
-                exception.getMessage());
     }
 
     @Test
@@ -106,7 +87,7 @@ public class KafkaMetadataStateManagerTest {
                 .endStatus()
                 .build();
 
-        KafkaMetadataStateManager kafkaMetadataStateManager = new KafkaMetadataStateManager(Reconciliation.DUMMY_RECONCILIATION, kafka, true);
+        KafkaMetadataStateManager kafkaMetadataStateManager = new KafkaMetadataStateManager(Reconciliation.DUMMY_RECONCILIATION, kafka);
         // check staying in KRaftMigration, migration is not done yet
         assertEquals(kafkaMetadataStateManager.computeNextMetadataState(kafka.getStatus()), KRaftMigration);
         // set migration done and check move to KRaftDualWriting
@@ -125,7 +106,7 @@ public class KafkaMetadataStateManagerTest {
                 .endStatus()
                 .build();
 
-        KafkaMetadataStateManager kafkaMetadataStateManager = new KafkaMetadataStateManager(Reconciliation.DUMMY_RECONCILIATION, kafka, true);
+        KafkaMetadataStateManager kafkaMetadataStateManager = new KafkaMetadataStateManager(Reconciliation.DUMMY_RECONCILIATION, kafka);
         assertEquals(kafkaMetadataStateManager.computeNextMetadataState(kafka.getStatus()), KRaftPostMigration);
     }
 
@@ -140,7 +121,7 @@ public class KafkaMetadataStateManagerTest {
                 .endStatus()
                 .build();
 
-        KafkaMetadataStateManager kafkaMetadataStateManager = new KafkaMetadataStateManager(Reconciliation.DUMMY_RECONCILIATION, kafka, true);
+        KafkaMetadataStateManager kafkaMetadataStateManager = new KafkaMetadataStateManager(Reconciliation.DUMMY_RECONCILIATION, kafka);
         assertEquals(kafkaMetadataStateManager.computeNextMetadataState(kafka.getStatus()), PreKRaft);
     }
 
@@ -155,7 +136,7 @@ public class KafkaMetadataStateManagerTest {
                 .endStatus()
                 .build();
 
-        KafkaMetadataStateManager kafkaMetadataStateManager = new KafkaMetadataStateManager(Reconciliation.DUMMY_RECONCILIATION, kafka, true);
+        KafkaMetadataStateManager kafkaMetadataStateManager = new KafkaMetadataStateManager(Reconciliation.DUMMY_RECONCILIATION, kafka);
         assertEquals(kafkaMetadataStateManager.computeNextMetadataState(kafka.getStatus()), KRaft);
     }
 
@@ -170,7 +151,7 @@ public class KafkaMetadataStateManagerTest {
                 .endStatus()
                 .build();
 
-        KafkaMetadataStateManager kafkaMetadataStateManager = new KafkaMetadataStateManager(Reconciliation.DUMMY_RECONCILIATION, kafka, true);
+        KafkaMetadataStateManager kafkaMetadataStateManager = new KafkaMetadataStateManager(Reconciliation.DUMMY_RECONCILIATION, kafka);
         assertEquals(kafkaMetadataStateManager.computeNextMetadataState(kafka.getStatus()), KRaftDualWriting);
     }
 
@@ -185,7 +166,7 @@ public class KafkaMetadataStateManagerTest {
                 .endStatus()
                 .build();
 
-        KafkaMetadataStateManager kafkaMetadataStateManager = new KafkaMetadataStateManager(Reconciliation.DUMMY_RECONCILIATION, kafka, true);
+        KafkaMetadataStateManager kafkaMetadataStateManager = new KafkaMetadataStateManager(Reconciliation.DUMMY_RECONCILIATION, kafka);
         assertEquals(kafkaMetadataStateManager.computeNextMetadataState(kafka.getStatus()), ZooKeeper);
     }
 
@@ -200,7 +181,7 @@ public class KafkaMetadataStateManagerTest {
                 .endStatus()
                 .build();
 
-        KafkaMetadataStateManager kafkaMetadataStateManager = new KafkaMetadataStateManager(Reconciliation.DUMMY_RECONCILIATION, kafka, true);
+        KafkaMetadataStateManager kafkaMetadataStateManager = new KafkaMetadataStateManager(Reconciliation.DUMMY_RECONCILIATION, kafka);
         kafkaMetadataStateManager.computeNextMetadataState(kafka.getStatus());
         assertTrue(kafka.getStatus().getConditions().stream().anyMatch(condition -> "KafkaMetadataStateWarning".equals(condition.getReason())));
         assertEquals(kafka.getStatus().getConditions().get(0).getMessage(),
@@ -217,7 +198,7 @@ public class KafkaMetadataStateManagerTest {
                 .endStatus()
                 .build();
 
-        kafkaMetadataStateManager = new KafkaMetadataStateManager(Reconciliation.DUMMY_RECONCILIATION, kafka, true);
+        kafkaMetadataStateManager = new KafkaMetadataStateManager(Reconciliation.DUMMY_RECONCILIATION, kafka);
         kafkaMetadataStateManager.computeNextMetadataState(kafka.getStatus());
         assertTrue(kafka.getStatus().getConditions().stream().anyMatch(condition -> "KafkaMetadataStateWarning".equals(condition.getReason())));
         assertEquals(kafka.getStatus().getConditions().get(0).getMessage(),
@@ -237,7 +218,7 @@ public class KafkaMetadataStateManagerTest {
                 .endStatus()
                 .build();
 
-        KafkaMetadataStateManager kafkaMetadataStateManager = new KafkaMetadataStateManager(Reconciliation.DUMMY_RECONCILIATION, kafka, true);
+        KafkaMetadataStateManager kafkaMetadataStateManager = new KafkaMetadataStateManager(Reconciliation.DUMMY_RECONCILIATION, kafka);
         kafkaMetadataStateManager.computeNextMetadataState(kafka.getStatus());
         assertTrue(kafka.getStatus().getConditions().stream().anyMatch(condition -> "KafkaMetadataStateWarning".equals(condition.getReason())));
         assertEquals(kafka.getStatus().getConditions().get(0).getMessage(),
@@ -253,7 +234,7 @@ public class KafkaMetadataStateManagerTest {
                 .endStatus()
                 .build();
 
-        kafkaMetadataStateManager = new KafkaMetadataStateManager(Reconciliation.DUMMY_RECONCILIATION, kafka, true);
+        kafkaMetadataStateManager = new KafkaMetadataStateManager(Reconciliation.DUMMY_RECONCILIATION, kafka);
         kafkaMetadataStateManager.computeNextMetadataState(kafka.getStatus());
         assertTrue(kafka.getStatus().getConditions().stream().anyMatch(condition -> "KafkaMetadataStateWarning".equals(condition.getReason())));
         assertEquals(kafka.getStatus().getConditions().get(0).getMessage(),
@@ -272,7 +253,7 @@ public class KafkaMetadataStateManagerTest {
                 .endStatus()
                 .build();
 
-        KafkaMetadataStateManager kafkaMetadataStateManager = new KafkaMetadataStateManager(Reconciliation.DUMMY_RECONCILIATION, kafka, true);
+        KafkaMetadataStateManager kafkaMetadataStateManager = new KafkaMetadataStateManager(Reconciliation.DUMMY_RECONCILIATION, kafka);
         kafkaMetadataStateManager.computeNextMetadataState(kafka.getStatus());
         assertTrue(kafka.getStatus().getConditions().stream().anyMatch(condition -> "KafkaMetadataStateWarning".equals(condition.getReason())));
         assertEquals(kafka.getStatus().getConditions().get(0).getMessage(),
@@ -288,7 +269,7 @@ public class KafkaMetadataStateManagerTest {
                 .endStatus()
                 .build();
 
-        kafkaMetadataStateManager = new KafkaMetadataStateManager(Reconciliation.DUMMY_RECONCILIATION, kafka, true);
+        kafkaMetadataStateManager = new KafkaMetadataStateManager(Reconciliation.DUMMY_RECONCILIATION, kafka);
         kafkaMetadataStateManager.computeNextMetadataState(kafka.getStatus());
         assertTrue(kafka.getStatus().getConditions().stream().anyMatch(condition -> "KafkaMetadataStateWarning".equals(condition.getReason())));
         assertEquals(kafka.getStatus().getConditions().get(0).getMessage(),
@@ -307,7 +288,7 @@ public class KafkaMetadataStateManagerTest {
                 .endStatus()
                 .build();
 
-        KafkaMetadataStateManager kafkaMetadataStateManager = new KafkaMetadataStateManager(Reconciliation.DUMMY_RECONCILIATION, kafka, true);
+        KafkaMetadataStateManager kafkaMetadataStateManager = new KafkaMetadataStateManager(Reconciliation.DUMMY_RECONCILIATION, kafka);
         kafkaMetadataStateManager.computeNextMetadataState(kafka.getStatus());
         assertTrue(kafka.getStatus().getConditions().stream().anyMatch(condition -> "KafkaMetadataStateWarning".equals(condition.getReason())));
         assertEquals(kafka.getStatus().getConditions().get(0).getMessage(),
@@ -328,7 +309,7 @@ public class KafkaMetadataStateManagerTest {
                     .endStatus()
                     .build();
 
-            KafkaMetadataStateManager kafkaMetadataStateManager = new KafkaMetadataStateManager(Reconciliation.DUMMY_RECONCILIATION, kafka, true);
+            KafkaMetadataStateManager kafkaMetadataStateManager = new KafkaMetadataStateManager(Reconciliation.DUMMY_RECONCILIATION, kafka);
             kafkaMetadataStateManager.computeNextMetadataState(kafka.getStatus());
             assertTrue(kafka.getStatus().getConditions().stream().anyMatch(condition -> "KafkaMetadataStateWarning".equals(condition.getReason())));
             assertEquals(kafka.getStatus().getConditions().get(0).getMessage(),
@@ -351,7 +332,7 @@ public class KafkaMetadataStateManagerTest {
                     .endStatus()
                     .build();
 
-            KafkaMetadataStateManager kafkaMetadataStateManager = new KafkaMetadataStateManager(Reconciliation.DUMMY_RECONCILIATION, kafka, true);
+            KafkaMetadataStateManager kafkaMetadataStateManager = new KafkaMetadataStateManager(Reconciliation.DUMMY_RECONCILIATION, kafka);
             kafkaMetadataStateManager.computeNextMetadataState(kafka.getStatus());
             assertTrue(kafka.getStatus().getConditions().stream().anyMatch(condition -> "KafkaMetadataStateWarning".equals(condition.getReason())));
             assertEquals(kafka.getStatus().getConditions().get(0).getMessage(),
