@@ -6,7 +6,14 @@ package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
+import io.fabric8.kubernetes.api.model.Volume;
+import io.fabric8.kubernetes.api.model.VolumeMount;
+import io.strimzi.api.kafka.model.common.CertSecretSource;
+import io.strimzi.api.kafka.model.common.CertSecretSourceBuilder;
 import org.junit.jupiter.api.Test;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -105,5 +112,133 @@ public class CertUtilsTest {
         assertThat(CertUtils.doExistingCertificatesDiffer(defaultSecret, changedSecret), is(true));
         assertThat(CertUtils.doExistingCertificatesDiffer(defaultSecret, changedScaleUpSecret), is(true));
         assertThat(CertUtils.doExistingCertificatesDiffer(defaultSecret, changedScaleDownSecret), is(true));
+    }
+
+    @Test
+    public void testTrustedCertificatesVolumes()    {
+        CertSecretSource cert1 = new CertSecretSourceBuilder()
+                .withSecretName("first-certificate")
+                .withCertificate("ca.crt")
+                .build();
+
+        CertSecretSource cert2 = new CertSecretSourceBuilder()
+                .withSecretName("second-certificate")
+                .withCertificate("tls.crt")
+                .build();
+
+        CertSecretSource cert3 = new CertSecretSourceBuilder()
+                .withSecretName("first-certificate")
+                .withCertificate("ca2.crt")
+                .build();
+
+        List<Volume> volumes = new ArrayList<>();
+        CertUtils.createTrustedCertificatesVolumes(volumes, List.of(cert1, cert2, cert3), false);
+
+        assertThat(volumes.size(), is(2));
+        assertThat(volumes.get(0).getName(), is("first-certificate"));
+        assertThat(volumes.get(0).getSecret().getSecretName(), is("first-certificate"));
+        assertThat(volumes.get(1).getName(), is("second-certificate"));
+        assertThat(volumes.get(1).getSecret().getSecretName(), is("second-certificate"));
+    }
+
+    @Test
+    public void testTrustedCertificatesVolumesWithPrefix()    {
+        CertSecretSource cert1 = new CertSecretSourceBuilder()
+                .withSecretName("first-certificate")
+                .withCertificate("ca.crt")
+                .build();
+
+        CertSecretSource cert2 = new CertSecretSourceBuilder()
+                .withSecretName("second-certificate")
+                .withCertificate("tls.crt")
+                .build();
+
+        CertSecretSource cert3 = new CertSecretSourceBuilder()
+                .withSecretName("first-certificate")
+                .withCertificate("ca2.crt")
+                .build();
+
+        List<Volume> volumes = new ArrayList<>();
+        CertUtils.createTrustedCertificatesVolumes(volumes, List.of(cert1, cert2, cert3), false, "prefixed");
+
+        assertThat(volumes.size(), is(2));
+        assertThat(volumes.get(0).getName(), is("prefixed-first-certificate"));
+        assertThat(volumes.get(0).getSecret().getSecretName(), is("first-certificate"));
+        assertThat(volumes.get(1).getName(), is("prefixed-second-certificate"));
+        assertThat(volumes.get(1).getSecret().getSecretName(), is("second-certificate"));
+    }
+
+    @Test
+    public void testTrustedCertificatesVolumeMountsWithPrefix()    {
+        CertSecretSource cert1 = new CertSecretSourceBuilder()
+                .withSecretName("first-certificate")
+                .withCertificate("ca.crt")
+                .build();
+
+        CertSecretSource cert2 = new CertSecretSourceBuilder()
+                .withSecretName("second-certificate")
+                .withCertificate("tls.crt")
+                .build();
+
+        CertSecretSource cert3 = new CertSecretSourceBuilder()
+                .withSecretName("first-certificate")
+                .withCertificate("ca2.crt")
+                .build();
+
+        List<VolumeMount> mounts = new ArrayList<>();
+        CertUtils.createTrustedCertificatesVolumeMounts(mounts, List.of(cert1, cert2, cert3), "/my/path/", "prefixed");
+
+        assertThat(mounts.size(), is(2));
+        assertThat(mounts.get(0).getName(), is("prefixed-first-certificate"));
+        assertThat(mounts.get(0).getMountPath(), is("/my/path/first-certificate"));
+        assertThat(mounts.get(1).getName(), is("prefixed-second-certificate"));
+        assertThat(mounts.get(1).getMountPath(), is("/my/path/second-certificate"));
+    }
+
+    @Test
+    public void testTrustedCertificatesVolumeMounts()    {
+        CertSecretSource cert1 = new CertSecretSourceBuilder()
+                .withSecretName("first-certificate")
+                .withCertificate("ca.crt")
+                .build();
+
+        CertSecretSource cert2 = new CertSecretSourceBuilder()
+                .withSecretName("second-certificate")
+                .withCertificate("tls.crt")
+                .build();
+
+        CertSecretSource cert3 = new CertSecretSourceBuilder()
+                .withSecretName("first-certificate")
+                .withCertificate("ca2.crt")
+                .build();
+
+        List<VolumeMount> mounts = new ArrayList<>();
+        CertUtils.createTrustedCertificatesVolumeMounts(mounts, List.of(cert1, cert2, cert3), "/my/path/");
+
+        assertThat(mounts.size(), is(2));
+        assertThat(mounts.get(0).getName(), is("first-certificate"));
+        assertThat(mounts.get(0).getMountPath(), is("/my/path/first-certificate"));
+        assertThat(mounts.get(1).getName(), is("second-certificate"));
+        assertThat(mounts.get(1).getMountPath(), is("/my/path/second-certificate"));
+    }
+
+    @Test
+    public void testTrustedCertsEnvVar()    {
+        CertSecretSource cert1 = new CertSecretSourceBuilder()
+                .withSecretName("first-certificate")
+                .withCertificate("ca.crt")
+                .build();
+
+        CertSecretSource cert2 = new CertSecretSourceBuilder()
+                .withSecretName("second-certificate")
+                .withCertificate("tls.crt")
+                .build();
+
+        CertSecretSource cert3 = new CertSecretSourceBuilder()
+                .withSecretName("first-certificate")
+                .withCertificate("ca2.crt")
+                .build();
+
+        assertThat(CertUtils.trustedCertsEnvVar(List.of(cert1, cert2, cert3)), is("first-certificate/ca.crt;second-certificate/tls.crt;first-certificate/ca2.crt"));
     }
 }

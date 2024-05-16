@@ -31,7 +31,6 @@ import io.strimzi.api.kafka.model.bridge.KafkaBridgeProducerSpec;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeSpec;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeTemplate;
-import io.strimzi.api.kafka.model.common.CertSecretSource;
 import io.strimzi.api.kafka.model.common.ClientTls;
 import io.strimzi.api.kafka.model.common.JvmOptions;
 import io.strimzi.api.kafka.model.common.Rack;
@@ -300,12 +299,15 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
         volumeList.add(VolumeUtils.createConfigMapVolume(LOG_AND_METRICS_CONFIG_VOLUME_NAME, KafkaBridgeResources.metricsAndLogConfigMapName(cluster)));
 
         if (tls != null) {
-            VolumeUtils.createSecretVolume(volumeList, tls.getTrustedCertificates(), isOpenShift);
+            CertUtils.createTrustedCertificatesVolumes(volumeList, tls.getTrustedCertificates(), isOpenShift);
         }
+
         if (rack != null) {
             volumeList.add(VolumeUtils.createEmptyDirVolume(INIT_VOLUME_NAME, "1Mi", "Memory"));
         }
+
         AuthenticationUtils.configureClientAuthenticationVolumes(authentication, volumeList, "oauth-certs", isOpenShift);
+
         return volumeList;
     }
 
@@ -314,13 +316,17 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
 
         volumeMountList.add(VolumeUtils.createTempDirVolumeMount());
         volumeMountList.add(VolumeUtils.createVolumeMount(LOG_AND_METRICS_CONFIG_VOLUME_NAME, LOG_AND_METRICS_CONFIG_VOLUME_MOUNT));
+
         if (tls != null) {
-            VolumeUtils.createSecretVolumeMount(volumeMountList, tls.getTrustedCertificates(), TLS_CERTS_BASE_VOLUME_MOUNT);
+            CertUtils.createTrustedCertificatesVolumeMounts(volumeMountList, tls.getTrustedCertificates(), TLS_CERTS_BASE_VOLUME_MOUNT);
         }
+
         if (rack != null) {
             volumeMountList.add(VolumeUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT));
         }
+
         AuthenticationUtils.configureClientAuthenticationVolumeMounts(authentication, volumeMountList, TLS_CERTS_BASE_VOLUME_MOUNT, PASSWORD_VOLUME_MOUNT, OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT, "oauth-certs");
+
         return volumeMountList;
     }
 
@@ -444,19 +450,8 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
         if (tls != null) {
             varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BRIDGE_TLS, "true"));
 
-            List<CertSecretSource> trustedCertificates = tls.getTrustedCertificates();
-
-            if (trustedCertificates != null && trustedCertificates.size() > 0) {
-                StringBuilder sb = new StringBuilder();
-                boolean separator = false;
-                for (CertSecretSource certSecretSource : trustedCertificates) {
-                    if (separator) {
-                        sb.append(";");
-                    }
-                    sb.append(certSecretSource.getSecretName() + "/" + certSecretSource.getCertificate());
-                    separator = true;
-                }
-                varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BRIDGE_TRUSTED_CERTS, sb.toString()));
+            if (tls.getTrustedCertificates() != null && !tls.getTrustedCertificates().isEmpty()) {
+                varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BRIDGE_TRUSTED_CERTS, CertUtils.trustedCertsEnvVar(tls.getTrustedCertificates())));
             }
         }
 

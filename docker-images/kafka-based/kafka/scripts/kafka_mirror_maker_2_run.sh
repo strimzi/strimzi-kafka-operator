@@ -42,6 +42,16 @@ if [ -n "$KAFKA_MIRRORMAKER_2_TRUSTED_CERTS_CLUSTERS" ]; then
     done
 fi
 
+declare -A OAUTH_TRUSTED_CERTS
+if [ -n "$KAFKA_MIRRORMAKER_2_OAUTH_TRUSTED_CERTS_CLUSTERS" ]; then
+    IFS=$'\n' read -rd '' -a OAUTH_TRUSTED_CERTS_CLUSTERS <<< "$KAFKA_MIRRORMAKER_2_OAUTH_TRUSTED_CERTS_CLUSTERS" || true
+    for cluster in "${OAUTH_TRUSTED_CERTS_CLUSTERS[@]}"
+    do
+        IFS='=' read -ra TRUSTED_CERTS_CLUSTER <<< "${cluster}" || true
+        OAUTH_TRUSTED_CERTS["${OAUTH_TRUSTED_CERTS_CLUSTERS[0]}"]="${OAUTH_TRUSTED_CERTS_CLUSTERS[1]}"
+    done
+fi
+
 if [ -n "$KAFKA_MIRRORMAKER_2_CLUSTERS" ]; then
     IFS=';' read -ra CLUSTERS <<< "$KAFKA_MIRRORMAKER_2_CLUSTERS" || true
     for clusterAlias in "${CLUSTERS[@]}"
@@ -58,6 +68,7 @@ if [ -n "$KAFKA_MIRRORMAKER_2_CLUSTERS" ]; then
             "/tmp/kafka/clusters/${clusterAlias}.truststore.p12" \
             "/tmp/kafka/clusters/${clusterAlias}.keystore.p12" \
             "/opt/kafka/mm2-certs/${clusterAlias}" \
+            "${OAUTH_TRUSTED_CERTS["${clusterAlias}"]}" \
             "/opt/kafka/mm2-oauth-certs/${clusterAlias}" \
             "/tmp/kafka/clusters/${clusterAlias}-oauth.truststore.p12"
     done
