@@ -226,7 +226,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         if (kafkaMetadataConfigState.isPreMigrationToKRaft()) {
             // Makes sure KRaft is used only with KafkaNodePool custom resources and not with virtual node pools
             if (!nodePoolsEnabled)  {
-                throw new InvalidConfigurationException("KRaft can be used only together with a Kafka cluster based on the KafkaNodePool resources.");
+                throw new InvalidConfigurationException("KRaft can only be used with a Kafka cluster that uses KafkaNodePool resources.");
             }
 
             // Validates features which are currently not supported in KRaft mode
