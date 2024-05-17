@@ -71,5 +71,5 @@ fi
 
 if [ -n "$STRIMZI_KEYCLOAK_AUTHZ_TRUSTED_CERTS" ]; then
   echo "Preparing Keycloak authorization truststore"
-  prepare_truststore "/opt/kafka/certificates/authz-keycloak-certs" "$CERTS_STORE_PASSWORD" "/opt/kafka/certificates/authz-keycloak-certs" "$STRIMZI_KEYCLOAK_AUTHZ_TRUSTED_CERTS"
+  prepare_truststore "/tmp/kafka/authz-keycloak.truststore.p12" "$CERTS_STORE_PASSWORD" "/opt/kafka/certificates/authz-keycloak-certs" "$STRIMZI_KEYCLOAK_AUTHZ_TRUSTED_CERTS"
 fi
