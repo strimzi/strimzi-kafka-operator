@@ -47,7 +47,7 @@ if [ -n "$KAFKA_MIRRORMAKER_2_OAUTH_TRUSTED_CERTS_CLUSTERS" ]; then
     IFS=$'\n' read -rd '' -a OAUTH_TRUSTED_CERTS_CLUSTERS <<< "$KAFKA_MIRRORMAKER_2_OAUTH_TRUSTED_CERTS_CLUSTERS" || true
     for cluster in "${OAUTH_TRUSTED_CERTS_CLUSTERS[@]}"
     do
-        IFS='=' read -ra TRUSTED_CERTS_CLUSTER <<< "${cluster}" || true
+        IFS='=' read -ra OAUTH_TRUSTED_CERTS_CLUSTERS <<< "${cluster}" || true
         OAUTH_TRUSTED_CERTS["${OAUTH_TRUSTED_CERTS_CLUSTERS[0]}"]="${OAUTH_TRUSTED_CERTS_CLUSTERS[1]}"
     done
 fi
