@@ -233,6 +233,12 @@
             <groupId>io.skodjob</groupId>
             <artifactId>test-frame-metrics-collector</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.skodjob</groupId>
+            <artifactId>test-docs-generator-maven-plugin</artifactId>
+            <version>0.0.4-SNAPSHOT</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -292,6 +298,24 @@
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>io.skodjob</groupId>
+                <artifactId>test-docs-generator-maven-plugin</artifactId>
+                <version>0.0.4-SNAPSHOT</version>
+                <executions>
+                    <execution>
+                        <phase>post-integration-test</phase>
+                        <goals>
+                            <goal>test-docs-generator</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <testsPath>./systemtest/src/test/java/io/strimzi/systemtest/</testsPath>
+                    <docsPath>./docs/</docsPath>
+                    <generateFmf>false</generateFmf>
+                </configuration>
             </plugin>
         </plugins>
         <resources>
