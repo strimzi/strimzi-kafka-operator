@@ -465,6 +465,7 @@ public class BatchingTopicController {
         var partitionedByManaged = remainingAfterDeletions.stream().collect(Collectors.partitioningBy(reconcilableTopic -> TopicOperatorUtil.isManaged(reconcilableTopic.kt())));
         var unmanaged = partitionedByManaged.get(false);
         addOrRemoveFinalizer(useFinalizer, unmanaged).forEach(rt -> putResult(results, rt, Either.ofRight(null)));
+        metrics.reconciliationsCounter(namespace).increment(unmanaged.size());
 
         // skip reconciliation of paused KafkaTopics
         var partitionedByPaused = validateManagedTopics(partitionedByManaged).stream().filter(hasTopicSpec)
