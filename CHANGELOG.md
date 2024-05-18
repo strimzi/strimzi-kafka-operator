@@ -4,6 +4,7 @@
 
 * The `UseKRaft` feature gate moves to GA stage and is permanently enabled without the possibility to disable it.
   To use KRaft (ZooKeeper-less Apache Kafka), you still need to use the `strimzi.io/kraft: enabled` annotation on the `Kafka` custom resources or migrate from an existing ZooKeeper-based cluster using the `strimzi.io/kraft: migration` annotation.
+* Update the base image used by Strimzi containers from UBI8 to UBI9
 * Enhance `KafkaBridge` resource with consumer inactivity timeout and HTTP consumer/producer enablement.
 
 ## 0.41.0
