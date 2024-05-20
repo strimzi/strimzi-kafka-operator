@@ -169,7 +169,7 @@ include::../api/io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener.a
 |boolean
 |Enables TLS encryption on the listener. This is a required property.
 |authentication
-|xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`], xref:type-KafkaListenerAuthenticationOAuth-{context}[`KafkaListenerAuthenticationOAuth`], xref:type-KafkaListenerAuthenticationCustom-{context}[`KafkaListenerAuthenticationCustom`]
+|xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`], xref:type-KafkaListenerAuthenticationOAuth-{context}[`KafkaListenerAuthenticationOAuth`], xref:type-KafkaListenerAuthenticationServiceAccountOAuth-{context}[`KafkaListenerAuthenticationServiceAccountOAuth`], xref:type-KafkaListenerAuthenticationCustom-{context}[`KafkaListenerAuthenticationCustom`]
 |Authentication configuration for this listener.
 |configuration
 |xref:type-GenericKafkaListenerConfiguration-{context}[`GenericKafkaListenerConfiguration`]
@@ -185,7 +185,7 @@ include::../api/io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener.a
 Used in: xref:type-GenericKafkaListener-{context}[`GenericKafkaListener`]
 
 
-The `type` property is a discriminator that distinguishes use of the `KafkaListenerAuthenticationTls` type from xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`], xref:type-KafkaListenerAuthenticationOAuth-{context}[`KafkaListenerAuthenticationOAuth`], xref:type-KafkaListenerAuthenticationCustom-{context}[`KafkaListenerAuthenticationCustom`].
+The `type` property is a discriminator that distinguishes use of the `KafkaListenerAuthenticationTls` type from xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`], xref:type-KafkaListenerAuthenticationOAuth-{context}[`KafkaListenerAuthenticationOAuth`], xref:type-KafkaListenerAuthenticationServiceAccountOAuth-{context}[`KafkaListenerAuthenticationServiceAccountOAuth`], xref:type-KafkaListenerAuthenticationCustom-{context}[`KafkaListenerAuthenticationCustom`].
 It must have the value `tls` for the type `KafkaListenerAuthenticationTls`.
 [cols="2,2,3a",options="header"]
 |====
@@ -201,7 +201,7 @@ It must have the value `tls` for the type `KafkaListenerAuthenticationTls`.
 Used in: xref:type-GenericKafkaListener-{context}[`GenericKafkaListener`]
 
 
-The `type` property is a discriminator that distinguishes use of the `KafkaListenerAuthenticationScramSha512` type from xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationOAuth-{context}[`KafkaListenerAuthenticationOAuth`], xref:type-KafkaListenerAuthenticationCustom-{context}[`KafkaListenerAuthenticationCustom`].
+The `type` property is a discriminator that distinguishes use of the `KafkaListenerAuthenticationScramSha512` type from xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationOAuth-{context}[`KafkaListenerAuthenticationOAuth`], xref:type-KafkaListenerAuthenticationServiceAccountOAuth-{context}[`KafkaListenerAuthenticationServiceAccountOAuth`], xref:type-KafkaListenerAuthenticationCustom-{context}[`KafkaListenerAuthenticationCustom`].
 It must have the value `scram-sha-512` for the type `KafkaListenerAuthenticationScramSha512`.
 [cols="2,2,3a",options="header"]
 |====
@@ -217,7 +217,7 @@ It must have the value `scram-sha-512` for the type `KafkaListenerAuthentication
 Used in: xref:type-GenericKafkaListener-{context}[`GenericKafkaListener`]
 
 
-The `type` property is a discriminator that distinguishes use of the `KafkaListenerAuthenticationOAuth` type from xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`], xref:type-KafkaListenerAuthenticationCustom-{context}[`KafkaListenerAuthenticationCustom`].
+The `type` property is a discriminator that distinguishes use of the `KafkaListenerAuthenticationOAuth` type from xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`], xref:type-KafkaListenerAuthenticationServiceAccountOAuth-{context}[`KafkaListenerAuthenticationServiceAccountOAuth`], xref:type-KafkaListenerAuthenticationCustom-{context}[`KafkaListenerAuthenticationCustom`].
 It must have the value `oauth` for the type `KafkaListenerAuthenticationOAuth`.
 [cols="2,2,3a",options="header"]
 |====
@@ -336,12 +336,15 @@ It must have the value `oauth` for the type `KafkaListenerAuthenticationOAuth`.
 |includeAcceptHeader
 |boolean
 |Whether the Accept header should be set in requests to the authorization servers. The default value is `true`.
+|serverBearerTokenLocation
+|string
+|Path to the file on the local filesystem that contains a bearer token to be used instead of client_id and secret when authenticating to authorization server.
 |====
 
 [id='type-GenericSecretSource-{context}']
 = `GenericSecretSource` schema reference
 
-Used in: xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`], xref:type-KafkaListenerAuthenticationCustom-{context}[`KafkaListenerAuthenticationCustom`], xref:type-KafkaListenerAuthenticationOAuth-{context}[`KafkaListenerAuthenticationOAuth`]
+Used in: xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`], xref:type-KafkaClientAuthenticationServiceAccountOAuth-{context}[`KafkaClientAuthenticationServiceAccountOAuth`], xref:type-KafkaListenerAuthenticationCustom-{context}[`KafkaListenerAuthenticationCustom`], xref:type-KafkaListenerAuthenticationOAuth-{context}[`KafkaListenerAuthenticationOAuth`], xref:type-KafkaListenerAuthenticationServiceAccountOAuth-{context}[`KafkaListenerAuthenticationServiceAccountOAuth`]
 
 
 [cols="2,2,3a",options="header"]
@@ -358,7 +361,7 @@ Used in: xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenti
 [id='type-CertSecretSource-{context}']
 = `CertSecretSource` schema reference
 
-Used in: xref:type-ClientTls-{context}[`ClientTls`], xref:type-KafkaAuthorizationKeycloak-{context}[`KafkaAuthorizationKeycloak`], xref:type-KafkaAuthorizationOpa-{context}[`KafkaAuthorizationOpa`], xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`], xref:type-KafkaListenerAuthenticationOAuth-{context}[`KafkaListenerAuthenticationOAuth`]
+Used in: xref:type-ClientTls-{context}[`ClientTls`], xref:type-KafkaAuthorizationKeycloak-{context}[`KafkaAuthorizationKeycloak`], xref:type-KafkaAuthorizationOpa-{context}[`KafkaAuthorizationOpa`], xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`], xref:type-KafkaClientAuthenticationServiceAccountOAuth-{context}[`KafkaClientAuthenticationServiceAccountOAuth`], xref:type-KafkaListenerAuthenticationOAuth-{context}[`KafkaListenerAuthenticationOAuth`], xref:type-KafkaListenerAuthenticationServiceAccountOAuth-{context}[`KafkaListenerAuthenticationServiceAccountOAuth`]
 
 
 [cols="2,2,3a",options="header"]
@@ -375,6 +378,134 @@ Used in: xref:type-ClientTls-{context}[`ClientTls`], xref:type-KafkaAuthorizatio
 |Pattern for the certificate files in the secret. Use the link:https://en.wikipedia.org/wiki/Glob_(programming)[_glob syntax_] for the pattern. All files in the secret that match the pattern are used.
 |====
 
+[id='type-KafkaListenerAuthenticationServiceAccountOAuth-{context}']
+= `KafkaListenerAuthenticationServiceAccountOAuth` schema reference
+
+Used in: xref:type-GenericKafkaListener-{context}[`GenericKafkaListener`]
+
+
+[cols="2,2,3a",options="header"]
+|====
+|Property |Property type |Description
+|type
+|string
+|Must be `serviceaccount-oauth`.
+|clientId
+|string
+|OAuth Client ID which the Kafka broker can use to authenticate against the authorization server and use the introspect endpoint URI.
+|clientSecret
+|xref:type-GenericSecretSource-{context}[`GenericSecretSource`]
+|Link to Kubernetes Secret containing the OAuth client secret which the Kafka broker can use to authenticate against the authorization server and use the introspect endpoint URI.
+|validIssuerUri
+|string
+|URI of the token issuer used for authentication.
+|checkIssuer
+|boolean
+|Enable or disable issuer checking. By default issuer is checked using the value configured by `validIssuerUri`. Default value is `true`.
+|checkAudience
+|boolean
+|Enable or disable audience checking. Audience checks identify the recipients of tokens. If audience checking is enabled, the OAuth Client ID also has to be configured using the `clientId` property. The Kafka broker will reject tokens that do not have its `clientId` in their `aud` (audience) claim.Default value is `false`.
+|jwksEndpointUri
+|string
+|URI of the JWKS certificate endpoint, which can be used for local JWT validation.
+|jwksRefreshSeconds
+|integer
+|Configures how often are the JWKS certificates refreshed. The refresh interval has to be at least 60 seconds shorter then the expiry interval specified in `jwksExpirySeconds`. Defaults to 300 seconds.
+|jwksMinRefreshPauseSeconds
+|integer
+|The minimum pause between two consecutive refreshes. When an unknown signing key is encountered the refresh is scheduled immediately, but will always wait for this minimum pause. Defaults to 1 second.
+|jwksExpirySeconds
+|integer
+|Configures how often are the JWKS certificates considered valid. The expiry interval has to be at least 60 seconds longer then the refresh interval specified in `jwksRefreshSeconds`. Defaults to 360 seconds.
+|jwksIgnoreKeyUse
+|boolean
+|Flag to ignore the 'use' attribute of `key` declarations in a JWKS endpoint response. Default value is `false`.
+|introspectionEndpointUri
+|string
+|URI of the token introspection endpoint which can be used to validate opaque non-JWT tokens.
+|userNameClaim
+|string
+|Name of the claim from the JWT authentication token, Introspection Endpoint response or User Info Endpoint response which will be used to extract the user id. Defaults to `sub`.
+|fallbackUserNameClaim
+|string
+|The fallback username claim to be used for the user id if the claim specified by `userNameClaim` is not present. This is useful when `client_credentials` authentication only results in the client id being provided in another claim. It only takes effect if `userNameClaim` is set.
+|fallbackUserNamePrefix
+|string
+|The prefix to use with the value of `fallbackUserNameClaim` to construct the user id. This only takes effect if `fallbackUserNameClaim` is true, and the value is present for the claim. Mapping usernames and client ids into the same user id space is useful in preventing name collisions.
+|groupsClaim
+|string
+|JsonPath query used to extract groups for the user during authentication. Extracted groups can be used by a custom authorizer. By default no groups are extracted.
+|groupsClaimDelimiter
+|string
+|A delimiter used to parse groups when they are extracted as a single String value rather than a JSON array. Default value is ',' (comma).
+|userInfoEndpointUri
+|string
+|URI of the User Info Endpoint to use as a fallback to obtaining the user id when the Introspection Endpoint does not return information that can be used for the user id. 
+|checkAccessTokenType
+|boolean
+|Configure whether the access token type check is performed or not. This should be set to `false` if the authorization server does not include 'typ' claim in JWT token. Defaults to `true`.
+|validTokenType
+|string
+|Valid value for the `token_type` attribute returned by the Introspection Endpoint. No default value, and not checked by default.
+|accessTokenIsJwt
+|boolean
+|Configure whether the access token is treated as JWT. This must be set to `false` if the authorization server returns opaque tokens. Defaults to `true`.
+|tlsTrustedCertificates
+|xref:type-CertSecretSource-{context}[`CertSecretSource`] array
+|Trusted certificates for TLS connection to the OAuth server.
+|disableTlsHostnameVerification
+|boolean
+|Enable or disable TLS hostname verification. Default value is `false`.
+|enableECDSA
+|boolean
+|**The `enableECDSA` property has been deprecated.** Enable or disable ECDSA support by installing BouncyCastle crypto provider. ECDSA support is always enabled. The BouncyCastle libraries are no longer packaged with Strimzi. Value is ignored.
+|maxSecondsWithoutReauthentication
+|integer
+|Maximum number of seconds the authenticated session remains valid without re-authentication. This enables Apache Kafka re-authentication feature, and causes sessions to expire when the access token expires. If the access token expires before max time or if max time is reached, the client has to re-authenticate, otherwise the server will drop the connection. Not set by default - the authenticated session does not expire when the access token expires. This option only applies to SASL_OAUTHBEARER authentication mechanism (when `enableOauthBearer` is `true`).
+|enablePlain
+|boolean
+|Enable or disable OAuth authentication over SASL_PLAIN. There is no re-authentication support when this mechanism is used. Default value is `false`.
+|tokenEndpointUri
+|string
+|URI of the Token Endpoint to use with SASL_PLAIN mechanism when the client authenticates with `clientId` and a `secret`. If set, the client can authenticate over SASL_PLAIN by either setting `username` to `clientId`, and setting `password` to client `secret`, or by setting `username` to account username, and `password` to access token prefixed with `$accessToken:`. If this option is not set, the `password` is always interpreted as an access token (without a prefix), and `username` as the account username (a so called 'no-client-credentials' mode).
+|enableOauthBearer
+|boolean
+|Enable or disable OAuth authentication over SASL_OAUTHBEARER. Default value is `true`.
+|customClaimCheck
+|string
+|JsonPath filter query to be applied to the JWT token or to the response of the introspection endpoint for additional token validation. Not set by default.
+|connectTimeoutSeconds
+|integer
+|The connect timeout in seconds when connecting to authorization server. If not set, the effective connect timeout is 60 seconds.
+|readTimeoutSeconds
+|integer
+|The read timeout in seconds when connecting to authorization server. If not set, the effective read timeout is 60 seconds.
+|httpRetries
+|integer
+|The maximum number of retries to attempt if an initial HTTP request fails. If not set, the default is to not attempt any retries.
+|httpRetryPauseMs
+|integer
+|The pause to take before retrying a failed HTTP request. If not set, the default is to not pause at all but to immediately repeat a request.
+|clientScope
+|string
+|The scope to use when making requests to the authorization server's token endpoint. Used for inter-broker authentication and for configuring OAuth 2.0 over PLAIN using the `clientId` and `secret` method.
+|clientAudience
+|string
+|The audience to use when making requests to the authorization server's token endpoint. Used for inter-broker authentication and for configuring OAuth 2.0 over PLAIN using the `clientId` and `secret` method.
+|enableMetrics
+|boolean
+|Enable or disable OAuth metrics. Default value is `false`.
+|failFast
+|boolean
+|Enable or disable termination of Kafka broker processes due to potentially recoverable runtime errors during startup. Default value is `true`.
+|includeAcceptHeader
+|boolean
+|Whether the Accept header should be set in requests to the authorization servers. The default value is `true`.
+|serverBearerTokenLocation
+|string
+|Path to the file on the local filesystem that contains a bearer token to be used instead of client_id and secret when authenticating to authorization server.
+|====
+
 [id='type-KafkaListenerAuthenticationCustom-{context}']
 = `KafkaListenerAuthenticationCustom` schema reference
 
@@ -388,7 +519,7 @@ include::../api/io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthentic
 == `KafkaListenerAuthenticationCustom` schema properties
 
 
-The `type` property is a discriminator that distinguishes use of the `KafkaListenerAuthenticationCustom` type from xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`], xref:type-KafkaListenerAuthenticationOAuth-{context}[`KafkaListenerAuthenticationOAuth`].
+The `type` property is a discriminator that distinguishes use of the `KafkaListenerAuthenticationCustom` type from xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`], xref:type-KafkaListenerAuthenticationOAuth-{context}[`KafkaListenerAuthenticationOAuth`], xref:type-KafkaListenerAuthenticationServiceAccountOAuth-{context}[`KafkaListenerAuthenticationServiceAccountOAuth`].
 It must have the value `custom` for the type `KafkaListenerAuthenticationCustom`.
 [cols="2,2,3a",options="header"]
 |====
@@ -2240,7 +2371,7 @@ include::../api/io.strimzi.api.kafka.model.connect.KafkaConnectSpec.adoc[levelof
 |xref:type-ClientTls-{context}[`ClientTls`]
 |TLS configuration.
 |authentication
-|xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`], xref:type-KafkaClientAuthenticationScramSha256-{context}[`KafkaClientAuthenticationScramSha256`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`], xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`]
+|xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`], xref:type-KafkaClientAuthenticationScramSha256-{context}[`KafkaClientAuthenticationScramSha256`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`], xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`], xref:type-KafkaClientAuthenticationServiceAccountOAuth-{context}[`KafkaClientAuthenticationServiceAccountOAuth`]
 |Authentication configuration for Kafka Connect.
 |config
 |map
@@ -2320,7 +2451,7 @@ include::../api/io.strimzi.api.kafka.model.common.authentication.KafkaClientAuth
 == `KafkaClientAuthenticationTls` schema properties
 
 
-The `type` property is a discriminator that distinguishes use of the `KafkaClientAuthenticationTls` type from xref:type-KafkaClientAuthenticationScramSha256-{context}[`KafkaClientAuthenticationScramSha256`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`], xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`].
+The `type` property is a discriminator that distinguishes use of the `KafkaClientAuthenticationTls` type from xref:type-KafkaClientAuthenticationScramSha256-{context}[`KafkaClientAuthenticationScramSha256`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`], xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`], xref:type-KafkaClientAuthenticationServiceAccountOAuth-{context}[`KafkaClientAuthenticationServiceAccountOAuth`].
 It must have the value `tls` for the type `KafkaClientAuthenticationTls`.
 [cols="2,2,3a",options="header"]
 |====
@@ -2363,7 +2494,7 @@ include::../api/io.strimzi.api.kafka.model.common.authentication.KafkaClientAuth
 [id='type-PasswordSecretSource-{context}']
 = `PasswordSecretSource` schema reference
 
-Used in: xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`], xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`], xref:type-KafkaClientAuthenticationScramSha256-{context}[`KafkaClientAuthenticationScramSha256`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`]
+Used in: xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`], xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`], xref:type-KafkaClientAuthenticationScramSha256-{context}[`KafkaClientAuthenticationScramSha256`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationServiceAccountOAuth-{context}[`KafkaClientAuthenticationServiceAccountOAuth`]
 
 
 [cols="2,2,3a",options="header"]
@@ -2417,7 +2548,7 @@ include::../api/io.strimzi.api.kafka.model.common.authentication.KafkaClientAuth
 == `KafkaClientAuthenticationPlain` schema properties
 
 
-The `type` property is a discriminator that distinguishes use of the `KafkaClientAuthenticationPlain` type from xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`], xref:type-KafkaClientAuthenticationScramSha256-{context}[`KafkaClientAuthenticationScramSha256`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`].
+The `type` property is a discriminator that distinguishes use of the `KafkaClientAuthenticationPlain` type from xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`], xref:type-KafkaClientAuthenticationScramSha256-{context}[`KafkaClientAuthenticationScramSha256`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`], xref:type-KafkaClientAuthenticationServiceAccountOAuth-{context}[`KafkaClientAuthenticationServiceAccountOAuth`].
 It must have the value `plain` for the type `KafkaClientAuthenticationPlain`.
 [cols="2,2,3a",options="header"]
 |====
@@ -2446,7 +2577,7 @@ include::../api/io.strimzi.api.kafka.model.common.authentication.KafkaClientAuth
 == `KafkaClientAuthenticationOAuth` schema properties
 
 
-The `type` property is a discriminator that distinguishes use of the `KafkaClientAuthenticationOAuth` type from xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`], xref:type-KafkaClientAuthenticationScramSha256-{context}[`KafkaClientAuthenticationScramSha256`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`].
+The `type` property is a discriminator that distinguishes use of the `KafkaClientAuthenticationOAuth` type from xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`], xref:type-KafkaClientAuthenticationScramSha256-{context}[`KafkaClientAuthenticationScramSha256`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`], xref:type-KafkaClientAuthenticationServiceAccountOAuth-{context}[`KafkaClientAuthenticationServiceAccountOAuth`].
 It must have the value `oauth` for the type `KafkaClientAuthenticationOAuth`.
 [cols="2,2,3a",options="header"]
 |====
@@ -2511,6 +2642,90 @@ It must have the value `oauth` for the type `KafkaClientAuthenticationOAuth`.
 |includeAcceptHeader
 |boolean
 |Whether the Accept header should be set in requests to the authorization servers. The default value is `true`.
+|accessTokenLocation
+|string
+|Path to the token file containing an access token to be used for authentication.
+|====
+
+[id='type-KafkaClientAuthenticationServiceAccountOAuth-{context}']
+= `KafkaClientAuthenticationServiceAccountOAuth` schema reference
+
+Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2ClusterSpec-{context}[`KafkaMirrorMaker2ClusterSpec`], xref:type-KafkaMirrorMakerConsumerSpec-{context}[`KafkaMirrorMakerConsumerSpec`], xref:type-KafkaMirrorMakerProducerSpec-{context}[`KafkaMirrorMakerProducerSpec`]
+
+xref:type-KafkaClientAuthenticationServiceAccountOAuth-schema-{context}[Full list of `KafkaClientAuthenticationServiceAccountOAuth` schema properties]
+
+include::../api/io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationServiceAccountOAuth.adoc[leveloffset=+1]
+
+[id='type-KafkaClientAuthenticationServiceAccountOAuth-schema-{context}']
+== `KafkaClientAuthenticationServiceAccountOAuth` schema properties
+
+
+[cols="2,2,3a",options="header"]
+|====
+|Property |Property type |Description
+|type
+|string
+|Must be `serviceaccount-oauth`.
+|clientId
+|string
+|OAuth Client ID which the Kafka client can use to authenticate against the OAuth server and use the token endpoint URI.
+|username
+|string
+|Username used for the authentication.
+|scope
+|string
+|OAuth scope to use when authenticating against the authorization server. Some authorization servers require this to be set. The possible values depend on how authorization server is configured. By default `scope` is not specified when doing the token endpoint request.
+|audience
+|string
+|OAuth audience to use when authenticating against the authorization server. Some authorization servers require the audience to be explicitly set. The possible values depend on how the authorization server is configured. By default, `audience` is not specified when performing the token endpoint request.
+|tokenEndpointUri
+|string
+|Authorization server token endpoint URI.
+|connectTimeoutSeconds
+|integer
+|The connect timeout in seconds when connecting to authorization server. If not set, the effective connect timeout is 60 seconds.
+|readTimeoutSeconds
+|integer
+|The read timeout in seconds when connecting to authorization server. If not set, the effective read timeout is 60 seconds.
+|httpRetries
+|integer
+|The maximum number of retries to attempt if an initial HTTP request fails. If not set, the default is to not attempt any retries.
+|httpRetryPauseMs
+|integer
+|The pause to take before retrying a failed HTTP request. If not set, the default is to not pause at all but to immediately repeat a request.
+|clientSecret
+|xref:type-GenericSecretSource-{context}[`GenericSecretSource`]
+|Link to Kubernetes Secret containing the OAuth client secret which the Kafka client can use to authenticate against the OAuth server and use the token endpoint URI.
+|passwordSecret
+|xref:type-PasswordSecretSource-{context}[`PasswordSecretSource`]
+|Reference to the `Secret` which holds the password.
+|accessToken
+|xref:type-GenericSecretSource-{context}[`GenericSecretSource`]
+|Link to Kubernetes Secret containing the access token which was obtained from the authorization server.
+|refreshToken
+|xref:type-GenericSecretSource-{context}[`GenericSecretSource`]
+|Link to Kubernetes Secret containing the refresh token which can be used to obtain access token from the authorization server.
+|tlsTrustedCertificates
+|xref:type-CertSecretSource-{context}[`CertSecretSource`] array
+|Trusted certificates for TLS connection to the OAuth server.
+|disableTlsHostnameVerification
+|boolean
+|Enable or disable TLS hostname verification. Default value is `false`.
+|maxTokenExpirySeconds
+|integer
+|Set or limit time-to-live of the access tokens to the specified number of seconds. This should be set if the authorization server returns opaque tokens.
+|accessTokenIsJwt
+|boolean
+|Configure whether access token should be treated as JWT. This should be set to `false` if the authorization server returns opaque tokens. Defaults to `true`.
+|enableMetrics
+|boolean
+|Enable or disable OAuth metrics. Default value is `false`.
+|includeAcceptHeader
+|boolean
+|Whether the Accept header should be set in requests to the authorization servers. The default value is `true`.
+|accessTokenLocation
+|string
+|Path to the token file containing an access token to be used for authentication.
 |====
 
 [id='type-JaegerTracing-{context}']
@@ -3490,7 +3705,7 @@ include::../api/io.strimzi.api.kafka.model.mirrormaker.KafkaMirrorMakerConsumerS
 |string
 |A unique string that identifies the consumer group this consumer belongs to.
 |authentication
-|xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`], xref:type-KafkaClientAuthenticationScramSha256-{context}[`KafkaClientAuthenticationScramSha256`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`], xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`]
+|xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`], xref:type-KafkaClientAuthenticationScramSha256-{context}[`KafkaClientAuthenticationScramSha256`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`], xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`], xref:type-KafkaClientAuthenticationServiceAccountOAuth-{context}[`KafkaClientAuthenticationServiceAccountOAuth`]
 |Authentication configuration for connecting to the cluster.
 |tls
 |xref:type-ClientTls-{context}[`ClientTls`]
@@ -3523,7 +3738,7 @@ include::../api/io.strimzi.api.kafka.model.mirrormaker.KafkaMirrorMakerProducerS
 |boolean
 |Flag to set the MirrorMaker to exit on a failed send. Default value is `true`.
 |authentication
-|xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`], xref:type-KafkaClientAuthenticationScramSha256-{context}[`KafkaClientAuthenticationScramSha256`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`], xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`]
+|xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`], xref:type-KafkaClientAuthenticationScramSha256-{context}[`KafkaClientAuthenticationScramSha256`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`], xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`], xref:type-KafkaClientAuthenticationServiceAccountOAuth-{context}[`KafkaClientAuthenticationServiceAccountOAuth`]
 |Authentication configuration for connecting to the cluster.
 |config
 |map
@@ -3626,7 +3841,7 @@ include::../api/io.strimzi.api.kafka.model.bridge.KafkaBridgeSpec.adoc[leveloffs
 |xref:type-ClientTls-{context}[`ClientTls`]
 |TLS configuration for connecting Kafka Bridge to the cluster.
 |authentication
-|xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`], xref:type-KafkaClientAuthenticationScramSha256-{context}[`KafkaClientAuthenticationScramSha256`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`], xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`]
+|xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`], xref:type-KafkaClientAuthenticationScramSha256-{context}[`KafkaClientAuthenticationScramSha256`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`], xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`], xref:type-KafkaClientAuthenticationServiceAccountOAuth-{context}[`KafkaClientAuthenticationServiceAccountOAuth`]
 |Authentication configuration for connecting to the cluster.
 |http
 |xref:type-KafkaBridgeHttpConfig-{context}[`KafkaBridgeHttpConfig`]
@@ -4062,7 +4277,7 @@ include::../api/io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Cluster
 |xref:type-ClientTls-{context}[`ClientTls`]
 |TLS configuration for connecting MirrorMaker 2 connectors to a cluster.
 |authentication
-|xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`], xref:type-KafkaClientAuthenticationScramSha256-{context}[`KafkaClientAuthenticationScramSha256`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`], xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`]
+|xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`], xref:type-KafkaClientAuthenticationScramSha256-{context}[`KafkaClientAuthenticationScramSha256`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`], xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`], xref:type-KafkaClientAuthenticationServiceAccountOAuth-{context}[`KafkaClientAuthenticationServiceAccountOAuth`]
 |Authentication configuration for connecting to the cluster.
 |config
 |map
