@@ -73,12 +73,7 @@ public class ReplicasChangeHandler {
     private final ExecutorService httpClientExecutor;
     private final ObjectMapper mapper;
     
-    /**
-     * Create a new replicas change client instance.
-     * 
-     * @param config Topic Operator configuration.
-     */
-    public ReplicasChangeHandler(TopicOperatorConfig config) {
+    ReplicasChangeHandler(TopicOperatorConfig config) {
         this.config = config;
         this.httpClientExecutor = Executors.newCachedThreadPool();
         this.mapper = new ObjectMapper();
