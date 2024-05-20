@@ -86,6 +86,8 @@ public interface CruiseControlClient extends AutoCloseable {
     
     /**
      * Topic names grouped by replication factor value.
+     * In order to support batch requests, we send a JSON payload where, for each RF value, 
+     * we have a simple regex like topic1|topic2|topic3 (i.e. a group by operation).
      * 
      * @param topicByReplicationFactor Topic names grouped by replication factor value.
      */
@@ -112,7 +114,7 @@ public interface CruiseControlClient extends AutoCloseable {
         @JsonProperty("ClientIdentity") String clientIdentity,
         @JsonProperty("RequestURL") String requestURL,
         @JsonProperty("UserTaskId") String userTaskId,
-        @JsonProperty("StartMs") String startMs
+        @JsonProperty("StartMs") long startMs
     ) { }
 
     /**
@@ -155,8 +157,7 @@ public interface CruiseControlClient extends AutoCloseable {
          * The task has been completed with errors.
          */
         COMPLETED_WITH_ERROR("CompletedWithError");
-
-        private static final List<TaskState> CACHED_VALUES = List.of(values());
+        
         private final String value;
         TaskState(String value) {
             this.value = value;
@@ -168,25 +169,15 @@ public interface CruiseControlClient extends AutoCloseable {
         }
 
         /**
-         * Use this instead of values() to avoid creating a new array each time.
-         * 
-         * @return enumerated values in the same order as values()
-         */
-        public static List<TaskState> cachedValues() {
-            return CACHED_VALUES;
-        }
-
-        /**
          * Get the enum constant by value.
          * 
          * @param value Value.
          * @return Constant.
          */
         public static TaskState get(String value) {
-            Optional<TaskState> constant = cachedValues().stream()
+            Optional<TaskState> constant = List.of(values()).stream()
                 .filter(v -> v.toString().equals(value)).findFirst();
             return constant.orElseThrow();
         }
     }
 }
-

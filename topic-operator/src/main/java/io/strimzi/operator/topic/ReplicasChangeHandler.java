@@ -14,6 +14,7 @@ import io.strimzi.operator.topic.cruisecontrol.CruiseControlClient.TaskState;
 import io.strimzi.operator.topic.cruisecontrol.CruiseControlClient.UserTasksResponse;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -154,7 +155,7 @@ public class ReplicasChangeHandler {
         try {
             return Files.readAllBytes(Path.of(filePath));
         } catch (IOException ioe) {
-            throw new RuntimeException(format("File not found: %s", filePath));
+            throw new UncheckedIOException(format("File not found: %s", filePath), ioe);
         }
     }
 
