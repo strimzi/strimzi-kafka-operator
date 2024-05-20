@@ -22,8 +22,8 @@ import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static io.strimzi.operator.cluster.model.ListenersUtils.isListenerWithK8sOIDC;
 import static io.strimzi.operator.cluster.model.ListenersUtils.isListenerWithOAuth;
+import static io.strimzi.operator.cluster.model.ListenersUtils.isListenerWithServiceAccountOAuth;
 
 /**
  * Util methods for validating Kafka listeners
@@ -559,12 +559,12 @@ public class ListenersValidator {
      */
     @SuppressWarnings({"checkstyle:BooleanExpressionComplexity", "checkstyle:NPathComplexity", "checkstyle:CyclomaticComplexity"})
     private static void validateOauth(Set<String> errors, GenericKafkaListener listener) {
-        if (isListenerWithOAuth(listener) || isListenerWithK8sOIDC(listener)) {
+        if (isListenerWithOAuth(listener) || isListenerWithServiceAccountOAuth(listener)) {
             KafkaListenerAuthenticationOAuth oAuth = (KafkaListenerAuthenticationOAuth) listener.getAuth();
             String listenerName = listener.getName();
 
-            if (isListenerWithK8sOIDC(listener)) {
-                validateAndOverrideK8sOIDC(oAuth);
+            if (isListenerWithServiceAccountOAuth(listener)) {
+                validateAndOverrideServiceAccountOAuth(oAuth);
             }
 
             if (!oAuth.isEnablePlain() && !oAuth.isEnableOauthBearer()) {
@@ -661,7 +661,7 @@ public class ListenersValidator {
         }
     }
 
-    private static void validateAndOverrideK8sOIDC(KafkaListenerAuthenticationOAuth oAuth) {
+    private static void validateAndOverrideServiceAccountOAuth(KafkaListenerAuthenticationOAuth oAuth) {
         if (oAuth.getValidIssuerUri() == null) {
             oAuth.setValidIssuerUri("https://kubernetes.default.svc.cluster.local");
         }
@@ -674,13 +674,13 @@ public class ListenersValidator {
 
         if (oAuth.getIncludeAcceptHeader() == null || oAuth.getIncludeAcceptHeader()) {
             if (oAuth.getIncludeAcceptHeader() != null && oAuth.getIncludeAcceptHeader()) {
-                LOGGER.warnOp("'includeAcceptHeader' force-set to 'false' for compatibility with 'k8s-oidc'");
+                LOGGER.warnOp("'includeAcceptHeader' force-set to 'false' for compatibility with 'serviceaccount-oauth'");
             }
             oAuth.setIncludeAcceptHeader(false);
         }
         if (oAuth.getCheckAccessTokenType() == null || oAuth.getCheckAccessTokenType()) {
             if (oAuth.getCheckAccessTokenType() != null && oAuth.getCheckAccessTokenType()) {
-                LOGGER.warnOp("'checkAccessTokenType' force-set to 'false' for compatibility with 'k8s-oidc'");
+                LOGGER.warnOp("'checkAccessTokenType' force-set to 'false' for compatibility with 'serviceaccount-oauth'");
             }
             oAuth.setCheckAccessTokenType(false);
         }

@@ -27,7 +27,7 @@ import java.util.List;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-// Make sure this is in sync with KafkaClientAuthenticationK8sOIDC
+// Make sure this is in sync with KafkaClientAuthenticationServiceAccountOAuth
 @JsonPropertyOrder({"type", "clientId", "username", "scope", "audience", "tokenEndpointUri", "connectTimeoutSeconds",
     "readTimeoutSeconds", "httpRetries", "httpRetryPauseMs", "clientSecret", "passwordSecret", "accessToken",
     "refreshToken", "tlsTrustedCertificates", "disableTlsHostnameVerification", "maxTokenExpirySeconds",

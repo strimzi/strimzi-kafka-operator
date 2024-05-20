@@ -39,8 +39,8 @@ import io.strimzi.api.kafka.model.common.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.common.ContainerEnvVar;
 import io.strimzi.api.kafka.model.common.JvmOptions;
 import io.strimzi.api.kafka.model.common.Probe;
-import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationK8sOIDCBuilder;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationOAuthBuilder;
+import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationServiceAccountOAuthBuilder;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationTlsBuilder;
 import io.strimzi.api.kafka.model.common.jmx.KafkaJmxAuthenticationPasswordBuilder;
 import io.strimzi.api.kafka.model.common.jmx.KafkaJmxOptionsBuilder;
@@ -1543,11 +1543,11 @@ public class KafkaConnectClusterTest {
     }
 
     @ParallelTest
-    public void testPodSetWithK8sOIDC() {
+    public void testPodSetWithServiceAccountOAuth() {
         KafkaConnect resource = new KafkaConnectBuilder(this.resource)
                 .editSpec()
                 .withAuthentication(
-                        new KafkaClientAuthenticationK8sOIDCBuilder()
+                        new KafkaClientAuthenticationServiceAccountOAuthBuilder()
                                 .build())
                 .endSpec()
                 .build();

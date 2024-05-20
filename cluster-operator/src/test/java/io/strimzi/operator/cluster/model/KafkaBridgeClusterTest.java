@@ -40,8 +40,8 @@ import io.strimzi.api.kafka.model.common.ContainerEnvVar;
 import io.strimzi.api.kafka.model.common.JvmOptions;
 import io.strimzi.api.kafka.model.common.JvmOptionsBuilder;
 import io.strimzi.api.kafka.model.common.SystemPropertyBuilder;
-import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationK8sOIDCBuilder;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationOAuthBuilder;
+import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationServiceAccountOAuthBuilder;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationTlsBuilder;
 import io.strimzi.api.kafka.model.common.template.ContainerTemplate;
 import io.strimzi.api.kafka.model.common.template.DeploymentStrategy;
@@ -946,11 +946,11 @@ public class KafkaBridgeClusterTest {
     }
 
     @ParallelTest
-    public void testGenerateDeploymentWithK8sOIDC() {
+    public void testGenerateDeploymentWithServiceAccountOAuth() {
         KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
                 .editSpec()
                 .withAuthentication(
-                        new KafkaClientAuthenticationK8sOIDCBuilder()
+                        new KafkaClientAuthenticationServiceAccountOAuthBuilder()
                                 .build())
                 .endSpec()
                 .build();
