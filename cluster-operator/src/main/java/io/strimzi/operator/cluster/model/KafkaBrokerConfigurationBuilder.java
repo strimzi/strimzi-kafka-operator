@@ -17,9 +17,9 @@ import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerConfiguration;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthentication;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationCustom;
-import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationK8sOIDC;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationOAuth;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationScramSha512;
+import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationServiceAccountOAuth;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.kafka.tieredstorage.RemoteStorageManager;
 import io.strimzi.api.kafka.model.kafka.tieredstorage.TieredStorage;
@@ -485,7 +485,7 @@ public class KafkaBrokerConfigurationBuilder {
                 addOptionIfNotNull(jaasOptions, "oauth.ssl.truststore.location", String.format("/tmp/kafka/oauth-%s.truststore.p12", listenerNameInProperty));
                 addOptionIfNotNull(jaasOptions, "oauth.ssl.truststore.password", PLACEHOLDER_CERT_STORE_PASSWORD);
                 addOptionIfNotNull(jaasOptions, "oauth.ssl.truststore.type", "PKCS12");
-            } else if (auth instanceof KafkaListenerAuthenticationK8sOIDC) {
+            } else if (auth instanceof KafkaListenerAuthenticationServiceAccountOAuth) {
                 addOptionIfNotNull(jaasOptions, "oauth.ssl.truststore.location", "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt");
                 addOptionIfNotNull(jaasOptions, "oauth.ssl.truststore.type", "PEM");
             }

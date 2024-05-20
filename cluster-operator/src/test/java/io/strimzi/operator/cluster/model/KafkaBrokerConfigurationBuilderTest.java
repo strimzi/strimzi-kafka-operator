@@ -2154,13 +2154,13 @@ public class KafkaBrokerConfigurationBuilderTest {
     }
 
     @ParallelTest
-    public void testK8sOIDCConfiguration() {
+    public void testServiceAccountOAuthConfiguration() {
         GenericKafkaListener listener = new GenericKafkaListenerBuilder()
                 .withName("plain")
                 .withPort(9092)
                 .withType(KafkaListenerType.INTERNAL)
                 .withTls(false)
-                .withNewKafkaListenerAuthenticationK8sOIDCAuth()
+                .withNewKafkaListenerAuthenticationServiceAccountOAuth()
                 .withMaxSecondsWithoutReauthentication(3600)
                 .withJwksMinRefreshPauseSeconds(5)
                 .withEnablePlain(true)
@@ -2169,7 +2169,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withEnableMetrics(true)
                 .withIncludeAcceptHeader(true)  // should automatically get overridden to 'false' during validation
                 .withCheckAccessTokenType(true) // should automatically get overridden to 'false' during validation
-                .endKafkaListenerAuthenticationK8sOIDCAuth()
+                .endKafkaListenerAuthenticationServiceAccountOAuth()
                 .build();
 
         // It is the validation phase that sets some of the default values, and overrides some of the incompatibly set values
@@ -2213,14 +2213,14 @@ public class KafkaBrokerConfigurationBuilderTest {
     }
 
     @ParallelTest
-    public void testK8sOIDCConfigurationWithoutOptions()  {
+    public void testServiceAccountOAuthConfigurationWithoutOptions()  {
         GenericKafkaListener listener = new GenericKafkaListenerBuilder()
                 .withName("plain")
                 .withPort(9092)
                 .withType(KafkaListenerType.INTERNAL)
                 .withTls(false)
-                .withNewKafkaListenerAuthenticationK8sOIDCAuth()
-                .endKafkaListenerAuthenticationK8sOIDCAuth()
+                .withNewKafkaListenerAuthenticationServiceAccountOAuth()
+                .endKafkaListenerAuthenticationServiceAccountOAuth()
                 .build();
 
         // It is the validation phase that sets some of the default values, and overrides some of the incompatibly set values

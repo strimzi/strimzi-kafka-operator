@@ -10,8 +10,8 @@ import io.strimzi.api.kafka.model.common.template.IpFamilyPolicy;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerConfigurationBroker;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationCustom;
-import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationK8sOIDC;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationOAuth;
+import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationServiceAccountOAuth;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.kafka.listener.NodeAddressType;
 
@@ -62,11 +62,11 @@ public class ListenersUtils {
      *
      * @return  True if the listener is configured to use OAuth authentication with Kubernetes OIDC JWKS endpoint. False otherwise.
      */
-    public static boolean isListenerWithK8sOIDC(GenericKafkaListener listener) {
+    public static boolean isListenerWithServiceAccountOAuth(GenericKafkaListener listener) {
         if (listener.getAuth() == null || listener.getAuth().getType() == null)
             return false;
 
-        return KafkaListenerAuthenticationK8sOIDC.TYPE_K8S_OIDC.equals(listener.getAuth().getType());
+        return KafkaListenerAuthenticationServiceAccountOAuth.TYPE_SERVICEACCOUNT_OAUTH.equals(listener.getAuth().getType());
     }
 
     /**

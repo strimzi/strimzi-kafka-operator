@@ -33,8 +33,8 @@ import io.strimzi.api.kafka.model.common.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.common.ContainerEnvVar;
 import io.strimzi.api.kafka.model.common.JvmOptions;
 import io.strimzi.api.kafka.model.common.Probe;
-import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationK8sOIDCBuilder;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationOAuthBuilder;
+import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationServiceAccountOAuthBuilder;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationTlsBuilder;
 import io.strimzi.api.kafka.model.common.jmx.KafkaJmxAuthenticationPasswordBuilder;
 import io.strimzi.api.kafka.model.common.jmx.KafkaJmxOptionsBuilder;
@@ -1637,15 +1637,15 @@ public class KafkaMirrorMaker2ClusterTest {
     }
 
     @ParallelTest
-    public void testPodSetWithK8sOIDC() {
-        KafkaMirrorMaker2ClusterSpec targetClusterWithK8sOIDC = new KafkaMirrorMaker2ClusterSpecBuilder(this.targetCluster)
+    public void testPodSetWithServiceAccountOAuth() {
+        KafkaMirrorMaker2ClusterSpec targetClusterWithServiceAccountOAuth = new KafkaMirrorMaker2ClusterSpecBuilder(this.targetCluster)
                 .withAuthentication(
-                        new KafkaClientAuthenticationK8sOIDCBuilder()
+                        new KafkaClientAuthenticationServiceAccountOAuthBuilder()
                                 .build())
                 .build();
         KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(this.resource)
                 .editSpec()
-                .withClusters(targetClusterWithK8sOIDC)
+                .withClusters(targetClusterWithServiceAccountOAuth)
                 .endSpec()
                 .build();
 

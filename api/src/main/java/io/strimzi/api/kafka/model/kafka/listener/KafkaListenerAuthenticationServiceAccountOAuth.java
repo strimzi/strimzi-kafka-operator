@@ -26,16 +26,16 @@ import lombok.EqualsAndHashCode;
     "connectTimeoutSeconds", "readTimeoutSeconds", "httpRetries", "httpRetryPauseMs", "clientScope", "clientAudience",
     "enableMetrics", "failFast", "includeAcceptHeader", "serverBearerTokenLocation"})
 @EqualsAndHashCode(callSuper = true)
-public class KafkaListenerAuthenticationK8sOIDC extends KafkaListenerAuthenticationOAuth {
+public class KafkaListenerAuthenticationServiceAccountOAuth extends KafkaListenerAuthenticationOAuth {
     private static final long serialVersionUID = 1L;
 
-    public static final String TYPE_K8S_OIDC = "k8s-oidc";
+    public static final String TYPE_SERVICEACCOUNT_OAUTH = "serviceaccount-oauth";
 
-    @Description("Must be `" + TYPE_K8S_OIDC + "`")
+    @Description("Must be `" + TYPE_SERVICEACCOUNT_OAUTH + "`")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @Override
     public String getType() {
-        return TYPE_K8S_OIDC;
+        return TYPE_SERVICEACCOUNT_OAUTH;
     }
 
 }

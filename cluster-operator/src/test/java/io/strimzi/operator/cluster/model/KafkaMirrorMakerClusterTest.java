@@ -24,8 +24,8 @@ import io.strimzi.api.kafka.model.common.CertSecretSource;
 import io.strimzi.api.kafka.model.common.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.common.ContainerEnvVar;
 import io.strimzi.api.kafka.model.common.JvmOptions;
-import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationK8sOIDCBuilder;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationOAuthBuilder;
+import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationServiceAccountOAuthBuilder;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationTlsBuilder;
 import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetricsBuilder;
@@ -1064,12 +1064,12 @@ public class KafkaMirrorMakerClusterTest {
     }
 
     @ParallelTest
-    public void testGenerateDeploymentWithConsumerK8sOIDC() {
+    public void testGenerateDeploymentWithConsumerServiceAccountOAuth() {
         KafkaMirrorMaker resource = new KafkaMirrorMakerBuilder(this.resource)
                 .editSpec()
                 .editConsumer()
                 .withAuthentication(
-                        new KafkaClientAuthenticationK8sOIDCBuilder()
+                        new KafkaClientAuthenticationServiceAccountOAuthBuilder()
                                 .build())
                 .endConsumer()
                 .endSpec()
