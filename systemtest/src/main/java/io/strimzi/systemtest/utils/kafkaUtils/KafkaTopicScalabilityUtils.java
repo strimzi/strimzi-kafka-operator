@@ -86,21 +86,26 @@ public class KafkaTopicScalabilityUtils {
         waitForTopicStatus(namespaceName, topicPrefix, numberOfTopics, CustomResourceStatus.Ready);
     }
 
-    public static void waitForTopicsContainConfig(String namespaceName, String topicPrefix, int numberOfTopics, Map<String, Object> config) {
-        LOGGER.info("Verifying that {} Topics contain right config", numberOfTopics);
-        List<CompletableFuture<?>> topics = new ArrayList<>();
+    /**
+     * Waits for a specific range of Kafka topics to contain the specified configurations.
+     *
+     * @param namespaceName The namespace in which the topics reside.
+     * @param topicPrefix The common prefix of the topic names.
+     * @param startIndex The starting index of topics to check.
+     * @param endIndex The ending index of topics to check (exclusive).
+     * @param config The configurations to verify within the topics.
+     */
+    public static void waitForTopicsContainConfig(String namespaceName, String topicPrefix, int startIndex, int endIndex, Map<String, Object> config) {
+        LOGGER.info("Verifying that Topics from index {} to {} contain the correct config", startIndex, endIndex - 1);
 
-        for (int i = 0; i < numberOfTopics; i++) {
+        for (int i = startIndex; i < endIndex; i++) {
             String currentTopic = topicPrefix + i;
-            topics.add(CompletableFuture.runAsync(() -> {
-                KafkaTopicUtils.waitForTopicConfigContains(namespaceName, currentTopic, config);
-            }));
+            KafkaTopicUtils.waitForTopicConfigContains(namespaceName, currentTopic, config);
         }
+    }
 
-        CompletableFuture<Void> allTopics = CompletableFuture.allOf(topics.toArray(new CompletableFuture[0]))
-                .thenRun(() -> LOGGER.info("All Topics contain right config"));
-
-        allTopics.join();
+    public static void waitForTopicsContainConfig(String namespaceName, String topicPrefix, int numberOfTopics, Map<String, Object> config) {
+        waitForTopicsContainConfig(namespaceName, topicPrefix, 0, numberOfTopics, config);
     }
 
     public static void waitForTopicsPartitions(String namespaceName, String topicPrefix, int numberOfTopics, int numberOfPartitions) {
@@ -120,13 +125,26 @@ public class KafkaTopicScalabilityUtils {
         allTopics.join();
     }
 
-    public static void modifyBigAmountOfTopics(String namespaceName, String topicPrefix, int numberOfTopics, KafkaTopicSpec topicSpec) {
-        LOGGER.info("Modify {} Topics via Kubernetes", numberOfTopics);
+    /**
+     * Modifies a specified range of Kafka topics with a given topic specification.
+     *
+     * @param namespaceName The namespace in which the topics reside.
+     * @param topicPrefix The common prefix of the topic names.
+     * @param startIndex The starting index of topics to modify.
+     * @param endIndex The ending index of topics to modify (exclusive).
+     * @param topicSpec The new specifications to apply to each topic.
+     */
+    public static void modifyBigAmountOfTopics(String namespaceName, String topicPrefix, int startIndex, int endIndex, KafkaTopicSpec topicSpec) {
+        LOGGER.info("Modifying Topics from index {} to {} via Kubernetes", startIndex, endIndex - 1);
 
-        for (int i = 0; i < numberOfTopics; i++) {
+        for (int i = startIndex; i < endIndex; i++) {
             String currentTopicName = topicPrefix + i;
             KafkaTopicResource.replaceTopicResourceInSpecificNamespace(namespaceName, currentTopicName, kafkaTopic -> kafkaTopic.setSpec(topicSpec));
         }
+    }
+
+    public static void modifyBigAmountOfTopics(String namespaceName, String topicPrefix, int numberOfTopics, KafkaTopicSpec topicSpec) {
+        modifyBigAmountOfTopics(namespaceName, topicPrefix, 0, numberOfTopics, topicSpec);
     }
 
 }
