@@ -220,7 +220,7 @@ public class CertUtils {
      * @param prefix            Prefix used to generate the volume name
      */
     private static void maybeAddTrustedCertificateVolume(List<Volume> volumeList, CertSecretSource certSecretSource, boolean isOpenShift, String prefix) {
-        String volumeName = prefix != null ? prefix + '-' + certSecretSource.getSecretName() : certSecretSource.getSecretName();
+        String volumeName = trustedCertificateVolumeName(certSecretSource, prefix);
 
         // skipping if a volume with same name was already added
         if (volumeList.stream().noneMatch(v -> v.getName().equals(volumeName))) {
@@ -267,12 +267,24 @@ public class CertUtils {
      * @param prefix                Prefix used to generate the volume name
      */
     private static void maybeAddTrustedCertificateVolumeMount(List<VolumeMount> volumeMountList, CertSecretSource certSecretSource, String tlsVolumeMountPath, String prefix) {
-        String volumeName = prefix != null ? prefix + '-' + certSecretSource.getSecretName() : certSecretSource.getSecretName();
+        String volumeName = trustedCertificateVolumeName(certSecretSource, prefix);
 
         // skipping if a volume mount with same Secret name was already added
         if (volumeMountList.stream().noneMatch(vm -> vm.getName().equals(volumeName))) {
             volumeMountList.add(VolumeUtils.createVolumeMount(volumeName, tlsVolumeMountPath + certSecretSource.getSecretName()));
         }
+    }
+
+    /**
+     * Generates the volume name that is used in the Volume definition and in the Volume mounts
+     *
+     * @param certSecretSource      Represents a certificate inside a Secret
+     * @param prefix                Prefix used to generate the volume name
+
+     * @return  The generated volume name
+     */
+    private static String trustedCertificateVolumeName(CertSecretSource certSecretSource, String prefix)    {
+        return prefix != null ? prefix + '-' + certSecretSource.getSecretName() : certSecretSource.getSecretName();
     }
 
     /**
