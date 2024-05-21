@@ -2,7 +2,7 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.operator.cluster;
+package io.strimzi.operator.common.featuregates;
 
 import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.test.annotations.ParallelSuite;
@@ -13,6 +13,7 @@ import java.util.List;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -66,6 +67,14 @@ public class FeatureGatesTest {
     }
 
     @ParallelTest
+    public void testFeatureGatesEquals() {
+        FeatureGates fg = new FeatureGates("+ContinueReconciliationOnManualRollingUpdateFailure");
+        assertThat(fg, is(fg));
+        assertThat(fg, is(new FeatureGates("+ContinueReconciliationOnManualRollingUpdateFailure")));
+        assertThat(fg, is(not(new FeatureGates("-ContinueReconciliationOnManualRollingUpdateFailure"))));
+    }
+
+    @ParallelTest
     public void testEmptyFeatureGates() {
         List<FeatureGates> emptyFeatureGates = List.of(
                 new FeatureGates(null),
@@ -103,5 +112,12 @@ public class FeatureGatesTest {
     public void testNonExistingGate() {
         InvalidConfigurationException e = assertThrows(InvalidConfigurationException.class, () -> new FeatureGates("+RandomGate"));
         assertThat(e.getMessage(), containsString("Unknown feature gate RandomGate found in the configuration"));
+    }
+
+    @ParallelTest
+    public void testEnvironmentVariable()   {
+        assertThat(new FeatureGates("").toEnvironmentVariable(), is(""));
+        assertThat(new FeatureGates("-ContinueReconciliationOnManualRollingUpdateFailure").toEnvironmentVariable(), is(""));
+        assertThat(new FeatureGates("+ContinueReconciliationOnManualRollingUpdateFailure").toEnvironmentVariable(), is("+ContinueReconciliationOnManualRollingUpdateFailure"));
     }
 }

@@ -15,6 +15,10 @@ The state (enabled or disabled) of a feature gate may vary by default, depending
 As a feature gate graduates and reaches General Availability (GA), it transitions to an enabled state by default and becomes a permanent part of the Strimzi deployment.
 A feature gate at the GA stage cannot be disabled. 
 
+The supported feature gates apply for all Strimzi operators.
+While a particular feature gate might be used for example only in one of them, it can be configured in all operators.
+When the User and Topic Operators are deployed by the Cluster Operator as part of the `Kafka` custom resource, the feature gates configuration will be automatically propagated to them from the Cluster Operator.
+
 == Graduated feature gates (GA)
 
 Graduated feature gates have reached General Availability (GA) and are permanently enabled features.
@@ -132,6 +136,9 @@ Continuing the reconciliation after the manual rolling update failure allows the
 For example, a missing Persistent Volume Claim (PVC) or Persistent Volume (PV) might cause the manual rolling update to fail.
 But the PVCs and PVs are created only in a later stage of the reconciliation.
 Continuing the reconciliation after the failure would allow to recreate the missing PVC or PV and recover from the failure.
+
+The `ContinueReconciliationOnManualRollingUpdateFailure` feature gate is used by the Strimzi Cluster Operator.
+It will be ignored by the User and Topic Operators.
 
 .Enabling the ContinueReconciliationOnManualRollingUpdateFailure feature gate
 To enable the `ContinueReconciliationOnManualRollingUpdateFailure` feature gate, specify `+ContinueReconciliationOnManualRollingUpdateFailure` in the `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.

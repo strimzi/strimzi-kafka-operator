@@ -83,6 +83,7 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
     /* test */ String kafkaBootstrapServers;
     private boolean cruiseControlEnabled;
     private boolean rackAwarenessEnabled;
+    private String featureGatesEnvVarValue;
 
     private String watchedNamespace;
     /* test */ int reconciliationIntervalMs;
@@ -110,15 +111,18 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
     /**
      * Create an Entity Topic Operator from given desired resource. When Topic Operator (Or Entity Operator) are not
      * enabled, it returns null.
-     * @param reconciliation The reconciliation
-     * @param kafkaAssembly desired resource with cluster configuration containing the Entity Topic Operator one
-     *                      @param sharedEnvironmentProvider Shared environment provider
+     *
+     * @param reconciliation                The reconciliation marker
+     * @param kafkaAssembly                 Desired resource with cluster configuration containing the Entity Topic Operator one
+     * @param sharedEnvironmentProvider     Shared environment provider
+     * @param config                        Cluster Operator configuration
      *
      * @return Entity Topic Operator instance, null if not configured
      */
     public static EntityTopicOperator fromCrd(Reconciliation reconciliation,
                                               Kafka kafkaAssembly,
-                                              SharedEnvironmentProvider sharedEnvironmentProvider) {
+                                              SharedEnvironmentProvider sharedEnvironmentProvider,
+                                              ClusterOperatorConfig config) {
         if (kafkaAssembly.getSpec().getEntityOperator() != null
                 && kafkaAssembly.getSpec().getEntityOperator().getTopicOperator() != null) {
             EntityTopicOperatorSpec topicOperatorSpec = kafkaAssembly.getSpec().getEntityOperator().getTopicOperator();
@@ -145,6 +149,7 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
             
             result.cruiseControlEnabled = kafkaAssembly.getSpec().getCruiseControl() != null;
             result.rackAwarenessEnabled = result.cruiseControlEnabled && kafkaAssembly.getSpec().getKafka().getRack() != null;
+            result.featureGatesEnvVarValue = config.featureGates().toEnvironmentVariable();
 
             return result;
         } else {
@@ -180,7 +185,12 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_SECURITY_PROTOCOL, EntityTopicOperatorSpec.DEFAULT_SECURITY_PROTOCOL));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_TLS_ENABLED, Boolean.toString(true)));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_GC_LOG_ENABLED, Boolean.toString(gcLoggingEnabled)));
-        
+
+        // Add feature gates configuration if not empty
+        if (featureGatesEnvVarValue != null && !featureGatesEnvVarValue.isEmpty()) {
+            varList.add(ContainerUtils.createEnvVar(ClusterOperatorConfig.FEATURE_GATES.key(), featureGatesEnvVarValue));
+        }
+
         // Add environment variables required for Cruise Control integration
         if (this.cruiseControlEnabled) {
             varList.add(ContainerUtils.createEnvVar(ENV_VAR_CRUISE_CONTROL_ENABLED, Boolean.toString(cruiseControlEnabled)));
