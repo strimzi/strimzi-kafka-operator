@@ -211,7 +211,7 @@ public class CertUtils {
 
     /**
      * Creates the Volume used for trusted certificates and adds it to the list. It checks if the Secret where the
-     * certificate is stored has been already used or not and makes sure to mount it only once to avid duplicates and
+     * certificate is stored has been already used or not and makes sure to mount it only once to avoid duplicates and
      * naming conflicts.
      *
      * @param volumeList        List where the volume will be added
@@ -258,7 +258,7 @@ public class CertUtils {
 
     /**
      * Creates the VolumeMount used for trusted TLS certificates and adds it to the list. It checks if the Secret where
-     * the certificate is stored has been already used or not and makes sure to mount it only once to avid duplicates
+     * the certificate is stored has been already used or not and makes sure to mount it only once to avoid duplicates
      * and naming conflicts.
      *
      * @param volumeMountList       List where the volume mount will be added
