@@ -20,6 +20,8 @@ import io.strimzi.systemtest.performance.gather.collectors.TopicOperatorMetricsC
 import io.strimzi.systemtest.performance.gather.schedulers.TopicOperatorMetricsCollectionScheduler;
 import io.strimzi.systemtest.performance.report.TopicOperatorPerformanceReporter;
 import io.strimzi.systemtest.performance.report.parser.TopicOperatorMetricsParser;
+import io.strimzi.systemtest.performance.utils.PerformanceUtils;
+import io.strimzi.systemtest.resources.ComponentType;
 import io.strimzi.systemtest.resources.NodePoolsConverter;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
@@ -45,6 +47,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.temporal.TemporalAccessor;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -736,6 +739,161 @@ public class TopicOperatorPerformance extends AbstractST {
             }
         }
     }
+
+    @Tag(PERFORMANCE_CAPACITY)
+    @ParameterizedTest
+    @MethodSource("provideConfigurationsForCapacity")
+    void testCapacityCreateAndUpdateTopics(String maxBatchSize, String maxBatchLingerMs) throws IOException {
+        final int brokerReplicas = 3;
+        final int controllerReplicas = 3;
+        int successfulCreationsAndModifications = 0;
+        final String maxQueueSize = String.valueOf(Integer.MAX_VALUE);
+        final List<Long> capacityCreateTimerMsArr = new ArrayList<>();
+        final List<Long> capacityModificationTimerMsArr = new ArrayList<>();
+
+        try {
+            resourceManager.createResourceWithWait(
+                NodePoolsConverter.convertNodePoolsIfNeeded(
+                    KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), brokerReplicas)
+                        .editSpec()
+                            .withNewPersistentClaimStorage()
+                                .withSize("50Gi")
+                            .endPersistentClaimStorage()
+                        .endSpec()
+                        .build(),
+                    KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), controllerReplicas)
+                        .editSpec()
+                            .withNewPersistentClaimStorage()
+                                .withSize("5Gi")
+                            .endPersistentClaimStorage()
+                        .endSpec()
+                        .build()
+                )
+            );
+            resourceManager.createResourceWithWait(
+                KafkaTemplates.kafkaMetricsConfigMap(testStorage.getNamespaceName(), testStorage.getClusterName()),
+                KafkaTemplates.kafkaWithMetrics(testStorage.getNamespaceName(), testStorage.getClusterName(), brokerReplicas, controllerReplicas)
+                    .editSpec()
+                        .editEntityOperator()
+                            .editTopicOperator()
+                                .withReconciliationIntervalSeconds(10)
+                            .endTopicOperator()
+                            .editOrNewTemplate()
+                                .editOrNewTopicOperatorContainer()
+                                    // Finalizers ensure orderly and controlled deletion of KafkaTopic resources.
+                                    // In this case we would delete them automatically via ResourceManager
+                                    .addNewEnv()
+                                        .withName("STRIMZI_USE_FINALIZERS")
+                                        .withValue("false")
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("STRIMZI_ENABLE_ADDITIONAL_METRICS")
+                                        .withValue("true")
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("STRIMZI_MAX_QUEUE_SIZE")
+                                        .withValue(maxQueueSize)
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("STRIMZI_MAX_BATCH_SIZE")
+                                        .withValue(maxBatchSize)
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("MAX_BATCH_LINGER_MS")
+                                        .withValue(maxBatchLingerMs)
+                                    .endEnv()
+                                .endTopicOperatorContainer()
+                            .endTemplate()
+                        .endEntityOperator()
+                    .endSpec()
+                    .build(),
+                ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build()
+            );
+
+            this.testStorage.addToTestStorage(TestConstants.SCRAPER_POD_KEY,
+                kubeClient().listPodsByPrefixInName(this.testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName());
+
+            // -- Metrics POLL --
+            // Assuming 'testStorage' contains necessary details like namespace and scraperPodName
+            this.topicOperatorCollector = new TopicOperatorMetricsCollector.Builder()
+                .withScraperPodName(this.testStorage.getScraperPodName())
+                .withNamespaceName(this.testStorage.getNamespaceName())
+                .withComponentType(ComponentType.TopicOperator)
+                .withComponentName(this.testStorage.getClusterName())
+                .build();
+
+            this.topicOperatorMetricsGatherer = new TopicOperatorMetricsCollectionScheduler(this.topicOperatorCollector, "strimzi.io/cluster=" + this.testStorage.getClusterName());
+            this.topicOperatorMetricsGatherer.startCollecting();
+            final int batchSize = 100;
+            final Map<String, Object> kafkaTopicConfigToModify = Map.of(
+                "compression.type", "gzip", "cleanup.policy", "delete", "min.insync.replicas", 2,
+                "max.compaction.lag.ms", 54321L, "min.compaction.lag.ms", 54L, "retention.ms", 3690L,
+                "segment.ms", 123456L, "retention.bytes", 9876543L, "segment.bytes", 321654L, "flush.messages", 456123L);
+            while (true) { // Endless loop
+                int start = successfulCreationsAndModifications;
+                int end = successfulCreationsAndModifications + batchSize;
+
+                try {
+                    // 1st - Create topics
+                    long timeTakenForBatchCreation = OperationTimer.measureTimeInMillis(() -> {
+                        KafkaTopicScalabilityUtils.createTopicsViaK8s(testStorage.getNamespaceName(), testStorage.getClusterName(),
+                            testStorage.getTopicName(), start, end, 12, 3, 2);
+                        KafkaTopicScalabilityUtils.waitForTopicStatus(testStorage.getNamespaceName(), testStorage.getTopicName(),
+                            start, end, CustomResourceStatus.Ready, ConditionStatus.True);
+                    });
+
+                    // 2nd - Modification of topics
+                    long timeTakenForBatchModification = OperationTimer.measureTimeInMillis(() -> {
+                        KafkaTopicScalabilityUtils.modifyBigAmountOfTopics(
+                            testStorage.getNamespaceName(), testStorage.getTopicName(), start, end,
+                            new KafkaTopicSpecBuilder().withConfig(kafkaTopicConfigToModify).build()
+                        );
+                        // Wait for topics to reflect the updated configurations, or for readiness
+                        KafkaTopicScalabilityUtils.waitForTopicsContainConfig(
+                            testStorage.getNamespaceName(), testStorage.getTopicName(), start, end, kafkaTopicConfigToModify
+                        );
+                    });
+
+                    capacityCreateTimerMsArr.add(timeTakenForBatchCreation);
+                    capacityModificationTimerMsArr.add(timeTakenForBatchModification);
+
+                    successfulCreationsAndModifications += batchSize;
+                    LOGGER.info("Successfully created, modified and verified batch from {} to {}", start, end);
+                } catch (WaitException e) {
+                    LOGGER.error("Failed to create, modified Kafka topics from index {} to {}: {}", start, end, e.getMessage());
+
+                    // after a failure we will gather logs from all components under test (i.e., TO, Kafka pods) to observer behaviour
+                    // what might be a bottleneck of such performance
+                    this.logCollector = new LogCollector();
+                    this.logCollector.collect();
+
+                    break; // Break out of the loop if an error occurs
+                }
+            }
+        } finally {
+            // to enchantment a process of deleting we should delete all resources at once
+            // I saw a behaviour where deleting one by one might lead to 10s delay for deleting each KafkaTopic
+            LOGGER.info("Start deletion KafkaTopics in namespace:{}", testStorage.getNamespaceName());
+            resourceManager.deleteResourcesOfTypeWithoutWait(KafkaTopic.RESOURCE_KIND);
+            KafkaTopicUtils.waitForTopicWithPrefixDeletion(testStorage.getNamespaceName(), testStorage.getTopicName());
+            if (this.topicOperatorMetricsGatherer != null) {
+                this.topicOperatorMetricsGatherer.stopCollecting();
+
+                final Map<String, Object> performanceAttributes = new LinkedHashMap<>();
+
+                performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_IN_MAX_QUEUE_SIZE, maxQueueSize);
+                performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_IN_MAX_BATCH_SIZE, maxBatchSize);
+                performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_IN_MAX_BATCH_LINGER_MS, maxBatchLingerMs);
+
+                performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_OUT_SUCCESSFUL_KAFKA_TOPICS_CREATED_AND_MODIFIED, successfulCreationsAndModifications);
+                performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_OUT_CREATION_TIMES, PerformanceUtils.convertListToPrimitiveArray(capacityCreateTimerMsArr));
+                performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_OUT_UPDATE_TIMES, PerformanceUtils.convertListToPrimitiveArray(capacityModificationTimerMsArr));
+                performanceAttributes.put(PerformanceConstants.METRICS_HISTORY, this.topicOperatorMetricsGatherer.getMetricsStore()); // Map of metrics history
+                this.topicOperatorPerformanceReporter.logPerformanceData(this.testStorage, performanceAttributes, REPORT_DIRECTORY + "/" + PerformanceConstants.GENERAL_CAPACITY_USE_CASE, ACTUAL_TIME, Environment.PERFORMANCE_DIR);
+            }
+        }
+    }
+
 
     @BeforeEach
     public void setUp(ExtensionContext extensionContext) {

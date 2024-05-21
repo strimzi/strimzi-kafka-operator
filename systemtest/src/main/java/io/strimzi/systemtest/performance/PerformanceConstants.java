@@ -75,9 +75,11 @@ public interface PerformanceConstants {
     /**
      * The time taken, in milliseconds, to update the configurations or parameters of existing Kafka topics during the test.
      */
-    String TOPIC_OPERATOR_OUT_UPDATE_TIMES = "OUT: Bob Update Times (ms)";
+    String TOPIC_OPERATOR_OUT_UPDATE_TIMES = "OUT: Update Times (ms)";
 
     String TOPIC_OPERATOR_OUT_SUCCESSFUL_KAFKA_TOPICS_CREATED = "OUT: Successful KafkaTopics Created";
+    String TOPIC_OPERATOR_OUT_SUCCESSFUL_KAFKA_TOPICS_CREATED_AND_MODIFIED = "OUT: Successful KafkaTopics Created and Modified";
+    String TOPIC_OPERATOR_OUT_CREATION_TIMES = "OUT: Capacity Creation Times (ms)";
 
     // --------------------------------------------------------------------------------
     // ------------------------------ USER OPERATOR -----------------------------------
