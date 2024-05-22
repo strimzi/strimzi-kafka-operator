@@ -18,6 +18,7 @@ import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.TimeoutException;
+import io.strimzi.operator.common.model.InvalidResourceException;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
@@ -25,8 +26,12 @@ import io.vertx.core.Vertx;
 import org.apache.kafka.common.KafkaFuture;
 
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileSystems;
+import java.nio.file.PathMatcher;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.function.BooleanSupplier;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -257,31 +262,57 @@ public final class VertxUtil {
      */
     /* test */ static Future<Secret> getValidatedSecret(SecretOperator secretOperator, String namespace, String name, String... items) {
         return secretOperator.getAsync(namespace, name)
-                .compose(secret -> {
-                    if (secret == null) {
-                        return Future.failedFuture(new InvalidConfigurationException("Secret " + name + " not found"));
-                    } else {
-                        List<String> errors = new ArrayList<>(0);
+                .compose(secret -> validatedSecret(namespace, name, secret, items));
+    }
 
-                        for (String item : items)   {
-                            if (!secret.getData().containsKey(item))    {
-                                // Item not found => error will be raised
-                                errors.add(item);
-                            }
-                        }
+    /**
+     * Utility method which validates that the required fields are present in a Secret passed to it
+     *
+     * @param namespace         Namespace of the Secret
+     * @param name              Name of the Secret (used for error message in case the Secret is null)
+     * @param secret            Secret that should be validated or null if the Secret does not exist
+     * @param items             List of items which should be present in the Secret
+     *
+     * @return      Future with the Secret if is exits and has the required items. Failed future with an error message otherwise.
+     */
+    /* test */ static Future<Secret> validatedSecret(String namespace, String name, Secret secret, String... items) {
+        if (secret == null) {
+            return Future.failedFuture(new InvalidConfigurationException("Secret " + name + " not found in namespace " + namespace));
+        } else {
+            List<String> errors = new ArrayList<>(0);
 
-                        if (errors.isEmpty()) {
-                            return Future.succeededFuture(secret);
-                        } else {
-                            return Future.failedFuture(new InvalidConfigurationException(String.format("Items with key(s) %s are missing in Secret %s", errors, name)));
-                        }
+            if (items != null) {
+                for (String item : items) {
+                    if (!secret.getData().containsKey(item)) {
+                        // Item not found => error will be raised
+                        errors.add(item);
                     }
-                });
+                }
+            }
+
+            if (errors.isEmpty()) {
+                return Future.succeededFuture(secret);
+            } else {
+                return Future.failedFuture(new InvalidConfigurationException(String.format("Items with key(s) %s are missing in Secret %s", errors, name)));
+            }
+        }
     }
 
     private static Future<String> getCertificateAsync(SecretOperator secretOperator, String namespace, CertSecretSource certSecretSource) {
-        return getValidatedSecret(secretOperator, namespace, certSecretSource.getSecretName(), certSecretSource.getCertificate())
-                .compose(secret -> Future.succeededFuture(secret.getData().get(certSecretSource.getCertificate())));
+        return secretOperator.getAsync(namespace, certSecretSource.getSecretName())
+                .compose(secret -> {
+                    if (certSecretSource.getCertificate() != null)  {
+                        return validatedSecret(namespace, certSecretSource.getSecretName(), secret, certSecretSource.getCertificate())
+                                .compose(validatedSecret -> Future.succeededFuture(validatedSecret.getData().get(certSecretSource.getCertificate())));
+                    } else if (certSecretSource.getPattern() != null)    {
+                        PathMatcher matcher = FileSystems.getDefault().getPathMatcher("glob:" + certSecretSource.getPattern());
+
+                        return validatedSecret(namespace, certSecretSource.getSecretName(), secret)
+                                .compose(validatedSecret -> Future.succeededFuture(validatedSecret.getData().entrySet().stream().filter(e -> matcher.matches(Paths.get(e.getKey()))).map(Map.Entry::getValue).collect(Collectors.joining())));
+                    } else {
+                        throw new InvalidResourceException("Certificate source does not contain the certificate or the pattern.");
+                    }
+                });
     }
 
     private static Future<CertAndKey> getCertificateAndKeyAsync(SecretOperator secretOperator, String namespace, KafkaClientAuthenticationTls auth) {

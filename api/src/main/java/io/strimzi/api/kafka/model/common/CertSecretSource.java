@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.OneOf;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -23,14 +24,16 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"secretName", "certificate"})
+@JsonPropertyOrder({"secretName", "certificate", "pattern"})
+@OneOf({@OneOf.Alternative(@OneOf.Alternative.Property("certificate")), @OneOf.Alternative(@OneOf.Alternative.Property("pattern"))})
 @EqualsAndHashCode
 @ToString
 public class CertSecretSource implements UnknownPropertyPreserving {
-    protected String secretName;
-    protected String certificate;
+    private String secretName;
+    private String certificate;
+    private String pattern;
 
-    protected Map<String, Object> additionalProperties;
+    private Map<String, Object> additionalProperties;
 
     @Description("The name of the Secret containing the certificate.")
     @JsonProperty(required = true)
@@ -43,13 +46,23 @@ public class CertSecretSource implements UnknownPropertyPreserving {
     }
 
     @Description("The name of the file certificate in the Secret.")
-    @JsonProperty(required = true)
     public String getCertificate() {
         return certificate;
     }
 
     public void setCertificate(String certificate) {
         this.certificate = certificate;
+    }
+
+    @Description("Pattern of the certificate files in the Secret that should be used. " +
+            "The pattern should be specified using the link:https://en.wikipedia.org/wiki/Glob_(programming)[_glob syntax_]. " +
+            "All files in the Secret matching the pattern will be used.")
+    public String getPattern() {
+        return pattern;
+    }
+
+    public void setPattern(String pattern) {
+        this.pattern = pattern;
     }
 
     @Override

@@ -247,9 +247,20 @@ spec:
                                     certificate:
                                       type: string
                                       description: The name of the file certificate in the Secret.
+                                    pattern:
+                                      type: string
+                                      description: "Pattern of the certificate files in the Secret that should be used. The pattern should be specified using the link:https://en.wikipedia.org/wiki/Glob_(programming)[_glob syntax_]. All files in the Secret matching the pattern will be used."
+                                  oneOf:
+                                    - properties:
+                                        certificate: {}
+                                      required:
+                                        - certificate
+                                    - properties:
+                                        pattern: {}
+                                      required:
+                                        - pattern
                                   required:
                                     - secretName
-                                    - certificate
                                 description: Trusted certificates for TLS connection to the OAuth server.
                               tokenEndpointUri:
                                 type: string
@@ -283,19 +294,19 @@ spec:
                               brokerCertChainAndKey:
                                 type: object
                                 properties:
-                                  key:
-                                    type: string
-                                    description: The name of the private key in the Secret.
                                   secretName:
                                     type: string
                                     description: The name of the Secret containing the certificate.
                                   certificate:
                                     type: string
                                     description: The name of the file certificate in the Secret.
+                                  key:
+                                    type: string
+                                    description: The name of the private key in the Secret.
                                 required:
-                                  - key
                                   - secretName
                                   - certificate
+                                  - key
                                 description: Reference to the `Secret` which holds the certificate and private key pair which will be used for this listener. The certificate can optionally contain the whole chain. This field can be used only with listeners with enabled TLS encryption.
                               class:
                                 type: string
@@ -689,9 +700,20 @@ spec:
                               certificate:
                                 type: string
                                 description: The name of the file certificate in the Secret.
+                              pattern:
+                                type: string
+                                description: "Pattern of the certificate files in the Secret that should be used. The pattern should be specified using the link:https://en.wikipedia.org/wiki/Glob_(programming)[_glob syntax_]. All files in the Secret matching the pattern will be used."
+                            oneOf:
+                              - properties:
+                                  certificate: {}
+                                required:
+                                  - certificate
+                              - properties:
+                                  pattern: {}
+                                required:
+                                  - pattern
                             required:
                               - secretName
-                              - certificate
                           description: Trusted certificates for TLS connection to the OAuth server.
                         tokenEndpointUri:
                           type: string

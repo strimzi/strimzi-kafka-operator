@@ -17,7 +17,11 @@ import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticatio
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationScramSha512;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.SecretOperator;
 import io.vertx.core.Future;
+import io.vertx.junit5.Checkpoint;
+import io.vertx.junit5.VertxExtension;
+import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.HashMap;
 import java.util.List;
@@ -35,6 +39,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+@ExtendWith(VertxExtension.class)
 class VertxUtilTest {
 
     @Test
@@ -126,6 +131,52 @@ class VertxUtilTest {
             assertThat(v.succeeded(), is(false));
             assertThat(v.cause().getMessage(), is("Secret top-secret-cs not found"));
         });
+    }
+
+    @Test
+    void getHashForPattern(VertxTestContext context) {
+        String namespace = "ns";
+
+        CertSecretSource cert1 = new CertSecretSourceBuilder()
+                .withSecretName("cert-secret")
+                .withPattern("*.crt")
+                .build();
+
+        Secret secret = new SecretBuilder()
+                .withData(Map.of("ca.crt", "value", "ca2.crt", "value2"))
+                .build();
+
+        SecretOperator secretOps = mock(SecretOperator.class);
+        when(secretOps.getAsync(eq(namespace), eq("cert-secret"))).thenReturn(Future.succeededFuture(secret));
+
+        Checkpoint async = context.checkpoint();
+        VertxUtil.authTlsHash(secretOps, "ns", null, singletonList(cert1)).onComplete(context.succeeding(res -> {
+            assertThat(res, is("value2value".hashCode()));
+            async.flag();
+        }));
+    }
+
+    @Test
+    void getHashPatternNotMatching(VertxTestContext context) {
+        String namespace = "ns";
+
+        CertSecretSource cert1 = new CertSecretSourceBuilder()
+                .withSecretName("cert-secret")
+                .withPattern("*.pem")
+                .build();
+
+        Secret secret = new SecretBuilder()
+                .withData(Map.of("ca.crt", "value", "ca2.crt", "value2"))
+                .build();
+
+        SecretOperator secretOps = mock(SecretOperator.class);
+        when(secretOps.getAsync(eq(namespace), eq("cert-secret"))).thenReturn(Future.succeededFuture(secret));
+
+        Checkpoint async = context.checkpoint();
+        VertxUtil.authTlsHash(secretOps, "ns", null, singletonList(cert1)).onComplete(context.succeeding(res -> {
+            assertThat(res, is(0));
+            async.flag();
+        }));
     }
 
     @Test
@@ -246,7 +297,7 @@ class VertxUtilTest {
         VertxUtil.getValidatedSecret(secretOps, namespace, secretName, "key1", "key2")
                 .onComplete(r -> {
                     assertThat(r.succeeded(), is(false));
-                    assertThat(r.cause().getMessage(), is("Secret my-secret not found"));
+                    assertThat(r.cause().getMessage(), is("Secret my-secret not found in namespace ns"));
                 });
     }
 
