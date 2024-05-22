@@ -16,7 +16,7 @@ As a feature gate graduates and reaches General Availability (GA), it transition
 A feature gate at the GA stage cannot be disabled. 
 
 The supported feature gates apply for all Strimzi operators.
-While a particular feature gate might be used for example only in one of them, it can be configured in all operators.
+While a particular feature gate might be used for example only in one of them and ignored by the others, it can be configured in all operators.
 When the User and Topic Operators are deployed by the Cluster Operator as part of the `Kafka` custom resource, the feature gates configuration will be automatically propagated to them from the Cluster Operator.
 
 == Graduated feature gates (GA)
