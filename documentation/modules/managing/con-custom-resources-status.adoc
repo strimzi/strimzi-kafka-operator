@@ -54,7 +54,7 @@ m¦KafkaMirrorMaker
 
 m¦KafkaBridge
 ¦`KafkaBridgeStatus` schema reference
-¦The Strimzi Kafka Bridge
+¦The Kafka Bridge
 
 m¦KafkaRebalance
 ¦`KafkaRebalance` schema reference

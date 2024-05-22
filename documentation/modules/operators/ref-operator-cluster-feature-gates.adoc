@@ -123,6 +123,7 @@ The `ContinueReconciliationOnManualRollingUpdateFailure` feature gate has a defa
 
 The `ContinueReconciliationOnManualRollingUpdateFailure` feature gate allows the Cluster Operator to continue a reconciliation if the manual rolling update of the operands fails.
 It applies to the following operands that support manual rolling updates using the `strimzi.io/manual-rolling-update` annotation:
+
 * ZooKeeper
 * Kafka
 * Kafka Connect

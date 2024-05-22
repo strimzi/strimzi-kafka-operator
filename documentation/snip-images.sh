@@ -53,7 +53,7 @@ a|
 * {DockerOrg}/kafka-bridge:{BridgeDockerTag}
 
 a|
-Strimzi image for running the Strimzi kafka Bridge
+Strimzi image for running the Kafka Bridge
 
 |Strimzi Drain Cleaner
 a|
