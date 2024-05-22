@@ -11,18 +11,13 @@ tls_auth_key="$3"
 truststore_path="$4"
 keystore_path="$5"
 certs_key_path="$6"
-oauth_certs_path="$7"
-oauth_keystore_path="$8"
+oauth_trusted_certs="$7"
+oauth_certs_path="$8"
+oauth_truststore_path="$9"
 
 if [ -n "$trusted_certs" ]; then
-    echo "Preparing truststore"
-    rm -f "$truststore_path"
-    IFS=';' read -ra CERTS <<< "${trusted_certs}"
-    for cert in "${CERTS[@]}"
-    do
-        create_truststore "$truststore_path" "$CERTS_STORE_PASSWORD" "$certs_key_path/$cert" "$cert"
-    done
-    echo "Preparing truststore is complete"
+    echo "Preparing $truststore_path truststore"
+    prepare_truststore "$truststore_path" "$CERTS_STORE_PASSWORD" "$certs_key_path" "$trusted_certs"
 fi
 
 if [ -n "$tls_auth_cert" ] && [ -n "$tls_auth_key" ]; then
@@ -32,16 +27,7 @@ if [ -n "$tls_auth_cert" ] && [ -n "$tls_auth_key" ]; then
     echo "Preparing keystore is complete"
 fi
 
-if [ -d "$oauth_certs_path" ]; then
-  echo "Preparing truststore for OAuth"
-  rm -f "$oauth_keystore_path"
-  # Add each certificate to the trust store
-  declare -i INDEX=0
-  for CRT in "$oauth_certs_path"/**/*; do
-    ALIAS="oauth-${INDEX}"
-    echo "Adding $CRT to truststore $oauth_keystore_path with alias $ALIAS"
-    create_truststore "$oauth_keystore_path" "$CERTS_STORE_PASSWORD" "$CRT" "$ALIAS"
-    INDEX+=1
-  done
-  echo "Preparing truststore for OAuth is complete"
+if [ -n "$oauth_trusted_certs" ]; then
+    echo "Preparing $oauth_truststore_path truststore for OAuth"
+    prepare_truststore "$oauth_truststore_path" "$CERTS_STORE_PASSWORD" "$oauth_certs_path" "$oauth_trusted_certs"
 fi

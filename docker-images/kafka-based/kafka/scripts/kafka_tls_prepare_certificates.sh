@@ -44,16 +44,10 @@ for CERT_DIR in /opt/kafka/certificates/*; do
       rm -f /tmp/kafka/"$listener".keystore.p12
       create_keystore_without_ca_file /tmp/kafka/"$listener".keystore.p12 "$CERTS_STORE_PASSWORD" "${CERT_DIR}/tls.crt" "${CERT_DIR}/tls.key" custom-key
     elif [[ ${BASH_REMATCH[1]} == "oauth"  ]]; then
-      OAUTH_STORE="/tmp/kafka/$listener.truststore.p12"
-      rm -f "$OAUTH_STORE"
-      # Add each certificate to the trust store
-      declare -i INDEX=0
-      for CRT in "$CERT_DIR"/**/*; do
-        ALIAS="oauth-${INDEX}"
-        echo "Adding $CRT to truststore $OAUTH_STORE with alias $ALIAS"
-        create_truststore "$OAUTH_STORE" "$CERTS_STORE_PASSWORD" "$CRT" "$ALIAS"
-        INDEX+=1
-      done
+      trusted_certs="STRIMZI_${BASH_REMATCH[2]^^}_${BASH_REMATCH[3]}_OAUTH_TRUSTED_CERTS"
+      if [ -n "${!trusted_certs}" ]; then
+        prepare_truststore "/tmp/kafka/$listener.truststore.p12" "$CERTS_STORE_PASSWORD" "$CERT_DIR" "${!trusted_certs}"
+      fi
     fi
     echo "Preparing store for ${BASH_REMATCH[1]} ${BASH_REMATCH[2]} listener is complete"  
   fi
@@ -70,36 +64,12 @@ for CRT in /opt/kafka/client-ca-certs/*.crt; do
 done
 echo "Preparing truststore for client authentication is complete"
 
-AUTHZ_OPA_DIR="/opt/kafka/certificates/authz-opa-certs"
-AUTHZ_OPA_STORE="/tmp/kafka/authz-opa.truststore.p12"
-rm -f "$AUTHZ_OPA_STORE"
-if [ -d "$AUTHZ_OPA_DIR" ]; then
-  echo "Preparing truststore for Authorization with OPA"
-
-  # Add each certificate to the trust store
-  declare -i INDEX=0
-  for CRT in "$AUTHZ_OPA_DIR"/**/*; do
-    ALIAS="authz-opa-${INDEX}"
-    echo "Adding $CRT to truststore $AUTHZ_OPA_STORE with alias $ALIAS"
-    create_truststore "$AUTHZ_OPA_STORE" "$CERTS_STORE_PASSWORD" "$CRT" "$ALIAS"
-    INDEX+=1
-  done
-  echo "Preparing truststore for Authorization with OPA is complete"
+if [ -n "$STRIMZI_OPA_AUTHZ_TRUSTED_CERTS" ]; then
+  echo "Preparing Open Policy Agent authorization truststore"
+  prepare_truststore "/tmp/kafka/authz-opa.truststore.p12" "$CERTS_STORE_PASSWORD" "/opt/kafka/certificates/authz-opa-certs" "$STRIMZI_OPA_AUTHZ_TRUSTED_CERTS"
 fi
 
-AUTHZ_KEYCLOAK_DIR="/opt/kafka/certificates/authz-keycloak-certs"
-AUTHZ_KEYCLOAK_STORE="/tmp/kafka/authz-keycloak.truststore.p12"
-rm -f "$AUTHZ_KEYCLOAK_STORE"
-if [ -d "$AUTHZ_KEYCLOAK_DIR" ]; then
-  echo "Preparing truststore for Authorization with Keycloak"
-
-  # Add each certificate to the trust store
-  declare -i INDEX=0
-  for CRT in "$AUTHZ_KEYCLOAK_DIR"/**/*; do
-    ALIAS="authz-keycloak-${INDEX}"
-    echo "Adding $CRT to truststore $AUTHZ_KEYCLOAK_STORE with alias $ALIAS"
-    create_truststore "$AUTHZ_KEYCLOAK_STORE" "$CERTS_STORE_PASSWORD" "$CRT" "$ALIAS"
-    INDEX+=1
-  done
-  echo "Preparing truststore for Authorization with Keycloak is complete"
+if [ -n "$STRIMZI_KEYCLOAK_AUTHZ_TRUSTED_CERTS" ]; then
+  echo "Preparing Keycloak authorization truststore"
+  prepare_truststore "/tmp/kafka/authz-keycloak.truststore.p12" "$CERTS_STORE_PASSWORD" "/opt/kafka/certificates/authz-keycloak-certs" "$STRIMZI_KEYCLOAK_AUTHZ_TRUSTED_CERTS"
 fi

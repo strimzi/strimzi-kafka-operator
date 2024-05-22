@@ -39,7 +39,7 @@ EOF
     done
 fi
 
-if [ -n "$KAFKA_MIRRORMAKER_2_OAUTH_TRUSTED_CERTS" ]; then
+if [ -n "$KAFKA_MIRRORMAKER_2_OAUTH_TRUSTED_CERTS_CLUSTERS" ]; then
     OAUTH_TRUSTED_CERTS_CONFIGURATION=$(cat <<EOF
 # OAuth trusted certs
 oauth.ssl.truststore.password=${CERTS_STORE_PASSWORD}
