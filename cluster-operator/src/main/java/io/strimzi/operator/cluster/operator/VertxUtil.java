@@ -308,7 +308,7 @@ public final class VertxUtil {
                         PathMatcher matcher = FileSystems.getDefault().getPathMatcher("glob:" + certSecretSource.getPattern());
 
                         return validatedSecret(namespace, certSecretSource.getSecretName(), secret)
-                                .compose(validatedSecret -> Future.succeededFuture(validatedSecret.getData().entrySet().stream().filter(e -> matcher.matches(Paths.get(e.getKey()))).map(Map.Entry::getValue).collect(Collectors.joining())));
+                                .compose(validatedSecret -> Future.succeededFuture(validatedSecret.getData().entrySet().stream().filter(e -> matcher.matches(Paths.get(e.getKey()))).map(Map.Entry::getValue).sorted().collect(Collectors.joining())));
                     } else {
                         throw new InvalidResourceException("Certificate source does not contain the certificate or the pattern.");
                     }

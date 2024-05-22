@@ -141,17 +141,33 @@ class VertxUtilTest {
                 .withSecretName("cert-secret")
                 .withPattern("*.crt")
                 .build();
+        CertSecretSource cert2 = new CertSecretSourceBuilder()
+                .withSecretName("cert-secret2")
+                .withPattern("*.crt")
+                .build();
+        CertSecretSource cert3 = new CertSecretSourceBuilder()
+                .withSecretName("cert-secret3")
+                .withCertificate("my.crt")
+                .build();
 
         Secret secret = new SecretBuilder()
                 .withData(Map.of("ca.crt", "value", "ca2.crt", "value2"))
                 .build();
+        Secret secret2 = new SecretBuilder()
+                .withData(Map.of("ca3.crt", "value3", "ca4.crt", "value4"))
+                .build();
+        Secret secret3 = new SecretBuilder()
+                .withData(Map.of("my.crt", "value5"))
+                .build();
 
         SecretOperator secretOps = mock(SecretOperator.class);
         when(secretOps.getAsync(eq(namespace), eq("cert-secret"))).thenReturn(Future.succeededFuture(secret));
+        when(secretOps.getAsync(eq(namespace), eq("cert-secret2"))).thenReturn(Future.succeededFuture(secret2));
+        when(secretOps.getAsync(eq(namespace), eq("cert-secret3"))).thenReturn(Future.succeededFuture(secret3));
 
         Checkpoint async = context.checkpoint();
-        VertxUtil.authTlsHash(secretOps, "ns", null, singletonList(cert1)).onComplete(context.succeeding(res -> {
-            assertThat(res, is("value2value".hashCode()));
+        VertxUtil.authTlsHash(secretOps, "ns", null, List.of(cert1, cert2, cert3)).onComplete(context.succeeding(res -> {
+            assertThat(res, is("valuevalue2".hashCode() + "value3value4".hashCode() + "value5".hashCode()));
             async.flag();
         }));
     }
