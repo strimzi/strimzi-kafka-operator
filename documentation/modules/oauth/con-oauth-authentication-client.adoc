@@ -3,26 +3,186 @@
 // assembly-oauth-authentication.adoc
 
 [id='con-oauth-authentication-client-{context}']
-= OAuth 2.0 Kafka client configuration
+= Configuring OAuth 2.0 on client applications
 
-A Kafka client is configured with either:
+[role="_abstract"]
+To configure OAuth 2.0 on client applications, you must specify the following:
 
-* The credentials required to obtain a valid access token from an authorization server (client ID and Secret)
-* A valid long-lived access token or refresh token, obtained using tools provided by an authorization server
+* SASL (Simple Authentication and Security Layer) security protocols
+* SASL mechanisms
+* A JAAS (Java Authentication and Authorization Service) module
+* Authentication properties to access the authorization server  
 
-The only information ever sent to the Kafka broker is an access token.
-The credentials used to authenticate with the authorization server to obtain the access token are never sent to the broker.
+.Configuring SASL protocols
 
+Specify SASL protocols in the client configuration:
+
+* `SASL_SSL` for authentication over TLS encrypted connections
+* `SASL_PLAINTEXT` for authentication over unencrypted connections
+
+Use `SASL_SSL` for production and `SASL_PLAINTEXT` for local development only.
+
+When using `SASL_SSL`, additional `ssl.truststore` configuration is needed.
+The truststore configuration is required for secure connection (`https://`) to the OAuth 2.0 authorization server.
+To verify the OAuth 2.0 authorization server, add the CA certificate for the authorization server to the truststore in your client configuration.
+You can configure a truststore in PEM or PKCS #12 format.
+
+.Configuring SASL authentication mechanisms
+
+Specify SASL mechanisms in the client configuration:
+
+* `OAUTHBEARER` for credentials exchange using a bearer token
+* `PLAIN` to pass client credentials (clientId + secret) or an access token
+
+.Configuring a JAAS module
+
+Specify a JAAS module that implements the SASL authentication mechanism as a `sasl.jaas.config` property value:
+
+* `org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule` implements the `OAUTHBEARER` mechanism
+* `org.apache.kafka.common.security.plain.PlainLoginModule` implements the `PLAIN` mechanism
+
+NOTE: For the `OAUTHBEARER` mechanism, Strimzi provides a callback handler for clients that use Kafka Client Java libraries to enable credentials exchange. 
+For clients in other languages, custom code may be required to obtain the access token.
+For the `PLAIN` mechanism, Strimzi provides server-side callbacks to enable credentials exchange.
+
+To be able to use the `OAUTHBEARER` mechanism, you must also add the custom `io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler` class as the callback handler.
+`JaasClientOauthLoginCallbackHandler` handles OAuth callbacks to the authorization server for access tokens during client login. 
+This enables automatic token renewal, ensuring continuous authentication without user intervention. 
+Additionally, it handles login credentials for clients using the OAuth 2.0 password grant method. 
+
+.Configuring authentication properties
+
+Configure the client to use credentials or access tokens for OAuth 2.0 authentication. 
+
+Using client credentials:: Using client credentials involves configuring the client with the necessary credentials (client ID and secret) to obtain a valid access token from an authorization server. This is the simplest mechanism.
+Using access tokens:: Using access tokens, the client is configured with a valid long-lived access token or refresh token obtained from an authorization server. 
+Using access tokens adds more complexity because there is an additional dependency on authorization server tools.
+If you are using long-lived access tokens, you may need to configure the client in the authorization server to increase the maximum lifetime of the token.
+
+The only information ever sent to Kafka is the access token. 
+The credentials used to obtain the token are never sent to Kafka.
 When a client obtains an access token, no further communication with the authorization server is needed.
 
-The simplest mechanism is authentication with a client ID and Secret.
-Using a long-lived access token, or a long-lived refresh token, adds more complexity because there is an additional dependency on authorization server tools.
+SASL authentication properties support the following authentication methods:  
 
-NOTE: If you are using long-lived access tokens, you may need to configure the client in the authorization server to increase the maximum lifetime of the token.
+* OAuth 2.0 client credentials
+* OAuth 2.0 password grant (deprecated)
+* Access token
+* Refresh token
 
-If the Kafka client is not configured with an access token directly, the client exchanges credentials for an access token during Kafka session initiation by contacting the authorization server.
-The Kafka client exchanges either:
+Add the authentication properties as JAAS configuration (`sasl.jaas.config` and `sasl.login.callback.handler.class`).
 
-* Client ID and Secret
+If the client application is not configured with an access token directly, the client exchanges one of the following sets of credentials for an access token during Kafka session initiation:
+
+* Client ID and secret
 * Client ID, refresh token, and (optionally) a secret
 * Username and password, with client ID and (optionally) a secret
+
+NOTE: You can also specify authentication properties as environment variables, or as Java system properties. 
+For Java system properties, you can set them using `setProperty` and pass them on the command line using the `-D` option.
+
+[id='con-oauth-authentication-client-credentials-{context}']
+.Example client credentials configuration 
+[source,properties,subs="+quotes,attributes"]
+----
+security.protocol=SASL_SSL # <1>
+sasl.mechanism=OAUTHBEARER # <2>
+ssl.truststore.location=/tmp/truststore.p12 <3>
+ssl.truststore.password=$STOREPASS
+ssl.truststore.type=PKCS12
+sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required \
+  oauth.token.endpoint.uri="<token_endpoint_url>" \ # <4>
+  oauth.client.id="<client_id>" \ # <5>
+  oauth.client.secret="<client_secret>" \ # <6> 
+  oauth.ssl.truststore.location="/tmp/oauth-truststore.p12" \ <7>
+  oauth.ssl.truststore.password="$STOREPASS" \ <8>
+  oauth.ssl.truststore.type="PKCS12" \ <9>
+  oauth.scope="<scope>" \ # <10> 
+  oauth.audience="<audience>" ; # <11>
+sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler  
+----
+<1> `SASL_SSL` security protocol for TLS-encrypted connections. Use `SASL_PLAINTEXT` over unencrypted connections for local development only.
+<2> The SASL mechanism specified as `OAUTHBEARER` or `PLAIN`. 
+<3> The truststore configuration for secure access to the Kafka cluster. 
+<4> URI of the authorization server token endpoint.
+<5> Client ID, which is the name used when creating the _client_ in the authorization server.
+<6> Client secret created when creating the _client_ in the authorization server.
+<7> The location contains the public key certificate (`truststore.p12`) for the authorization server.
+<8> The password for accessing the truststore.
+<9> The truststore type.
+<10> (Optional) The `scope` for requesting the token from the token endpoint.
+An authorization server may require a client to specify the scope.
+<11> (Optional) The `audience` for requesting the token from the token endpoint.
+An authorization server may require a client to specify the audience.
+
+[id='con-oauth-authentication-password-grants-{context}']
+.Example password grants configuration 
+[source,properties,subs="+quotes,attributes"]
+----
+security.protocol=SASL_SSL
+sasl.mechanism=OAUTHBEARER
+ssl.truststore.location=/tmp/truststore.p12
+ssl.truststore.password=$STOREPASS
+ssl.truststore.type=PKCS12
+sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required \
+  oauth.token.endpoint.uri="<token_endpoint_url>" \
+  oauth.client.id="<client_id>" \ # <1>
+  oauth.client.secret="<client_secret>" \ # <2>
+  oauth.password.grant.username="<username>" \ # <3> 
+  oauth.password.grant.password="<password>" \ # <4> 
+  oauth.ssl.truststore.location="/tmp/oauth-truststore.p12" \
+  oauth.ssl.truststore.password="$STOREPASS" \
+  oauth.ssl.truststore.type="PKCS12" \
+  oauth.scope="<scope>" \
+  oauth.audience="<audience>" ;
+sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler  
+----
+<1> Client ID, which is the name used when creating the _client_ in the authorization server.
+<2> (Optional) Client secret created when creating the _client_ in the authorization server.
+<3> Username for password grant authentication. OAuth password grant configuration (username and password) uses the OAuth 2.0 password grant method. To use password grants, create a user account for a client on your authorization server with limited permissions. The account should act like a service account. Use in environments where user accounts are required for authentication, but consider using a refresh token first.
+<4> Password for password grant authentication. 
++
+NOTE: SASL `PLAIN` does not support passing a username and password (password grants) using the OAuth 2.0 password grant method.
+
+[id='con-oauth-authentication-access-token-{context}']
+.Example access token configuration
+[source,properties,subs="+quotes,attributes"]
+----
+security.protocol=SASL_SSL
+sasl.mechanism=OAUTHBEARER
+ssl.truststore.location=/tmp/truststore.p12
+ssl.truststore.password=$STOREPASS
+ssl.truststore.type=PKCS12
+sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required \
+  oauth.token.endpoint.uri="<token_endpoint_url>" \
+  oauth.access.token="<access_token>" \ # <1>
+  oauth.ssl.truststore.location="/tmp/oauth-truststore.p12" \
+  oauth.ssl.truststore.password="$STOREPASS" \
+  oauth.ssl.truststore.type="PKCS12" ;
+sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler  
+----
+<1> Long-lived access token for Kafka clients.
+
+[id='con-oauth-authentication-refresh-token-{context}']
+.Example refresh token configuration 
+[source,properties,subs="+quotes,attributes"]
+----
+security.protocol=SASL_SSL
+sasl.mechanism=OAUTHBEARER
+ssl.truststore.location=/tmp/truststore.p12
+ssl.truststore.password=$STOREPASS
+ssl.truststore.type=PKCS12
+sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required \
+  oauth.token.endpoint.uri="<token_endpoint_url>" \
+  oauth.client.id="<client_id>" \ # <1> 
+  oauth.client.secret="<client_secret>" \ # <2> 
+  oauth.refresh.token="<refresh_token>" \ # <3>
+  oauth.ssl.truststore.location="/tmp/oauth-truststore.p12" \
+  oauth.ssl.truststore.password="$STOREPASS" \
+  oauth.ssl.truststore.type="PKCS12" ;
+sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler
+----
+<1> Client ID, which is the name used when creating the _client_ in the authorization server.
+<2> (Optional) Client secret created when creating the _client_ in the authorization server.
+<3> Long-lived refresh token for Kafka clients.
+

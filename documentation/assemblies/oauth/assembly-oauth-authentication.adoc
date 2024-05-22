@@ -1,34 +1,23 @@
 // This assembly is included in the following assemblies:
 //
-// assembly-deployment-configuration.adoc
+// assembly-oauth-security.adoc
 
 [id='assembly-oauth-authentication_{context}']
 = Using OAuth 2.0 token-based authentication
 
 [role="_abstract"]
-Strimzi supports the use of link:https://oauth.net/2/[OAuth 2.0 authentication^] using the _OAUTHBEARER_ and _PLAIN_ mechanisms.
-Using OAuth 2.0 authentication, application clients can access resources on application servers (called _resource servers_) without exposing account credentials.
-
-The application client passes an access token as a means of authenticating, which application servers can also use to determine the level of access to grant.
-The authorization server handles the granting of access and inquiries about access.
-
-In the context of Strimzi:
-
-* Kafka brokers act as OAuth 2.0 resource servers
-* Kafka clients act as OAuth 2.0 application clients
-
+Strimzi supports the use of link:https://oauth.net/2/[OAuth 2.0^] for token-based authentication.
+An OAuth 2.0 authorization server handles the granting of access and inquiries about access.
 Kafka clients authenticate to Kafka brokers.
-The brokers and clients communicate with the OAuth 2.0 authorization server, as necessary, to obtain or validate access tokens.
+Brokers and clients communicate with the authorization server, as necessary, to obtain or validate access tokens.
 
-For a deployment of Strimzi, OAuth 2.0 integration provides:
+For a deployment of Strimzi, OAuth 2.0 integration provides the following support:
 
-* Server-side OAuth 2.0 support for Kafka brokers
-* Client-side OAuth 2.0 support for Kafka MirrorMaker, Kafka Connect, and the Kafka Bridge
+* Server-side OAuth 2.0 authentication for Kafka brokers
+* Client-side OAuth 2.0 authentication for Kafka MirrorMaker, Kafka Connect, and the Kafka Bridge
 
-include::../../modules/oauth/con-oauth-authentication-flow.adoc[leveloffset=+1]
 include::../../modules/oauth/con-oauth-authentication-broker.adoc[leveloffset=+1]
-include::../../modules/oauth/con-oauth-reauthentication.adoc[leveloffset=+1]
 include::../../modules/oauth/con-oauth-authentication-client.adoc[leveloffset=+1]
 include::../../modules/oauth/con-oauth-authentication-client-options.adoc[leveloffset=+1]
+include::../../modules/oauth/con-oauth-reauthentication.adoc[leveloffset=+1]
 include::../../modules/oauth/con-oauth-config.adoc[leveloffset=+1]
-include::../../modules/oauth/con-oauth-server-examples.adoc[leveloffset=+1]

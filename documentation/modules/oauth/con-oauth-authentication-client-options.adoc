@@ -12,8 +12,8 @@ The flows must also be supported by the authorization server used.
 The Kafka broker listener configuration determines how clients authenticate using an access token.
 The client can pass a client ID and secret to request an access token.
 
-If a listener is configured to use PLAIN authentication, the client can authenticate with a client ID and secret or username and access token.
-These values are passed as the `username` and `password` properties of the PLAIN mechanism.
+If a listener is configured to use `PLAIN` authentication, the client can authenticate with a client ID and secret or username and access token.
+These values are passed as the `username` and `password` properties of the `PLAIN` mechanism.
 
 Listener configuration supports the following token validation options:
 
@@ -30,14 +30,9 @@ Kafka client credentials can also be configured for the following types of authe
 * Direct local access using a previously generated long-lived access token
 * Contact with the authorization server for a new access token to be issued (using a client ID and a secret, or a refresh token, or a username and a password)
 
-== Example client authentication flows using the SASL OAUTHBEARER mechanism
+== Example client authentication flows using the SASL `OAUTHBEARER` mechanism
 
-You can use the following communication flows for Kafka authentication using the SASL OAUTHBEARER mechanism.
-
-* xref:oauth-introspection-endpoint-{context}[Client using client ID and secret, with broker delegating validation to authorization server]
-* xref:oauth-jwt-{context}[Client using client ID and secret, with broker performing fast local token validation]
-* xref:oauth-token-endpoint-{context}[Client using long-lived access token, with broker delegating validation to authorization server]
-* xref:oauth-token-jwt-{context}[Client using long-lived access token, with broker performing fast local validation]
+You can use the following communication flows for Kafka authentication using the SASL `OAUTHBEARER` mechanism.
 
 [id='oauth-introspection-endpoint-{context}']
 .Client using client ID and secret, with broker delegating validation to authorization server
@@ -46,7 +41,7 @@ image:oauth-introspection-endpoint.png[Client using client ID and secret with br
 
 . The Kafka client requests an access token from the authorization server using a client ID and secret, and optionally a refresh token. Alternatively, the client may authenticate using a username and a password.
 . The authorization server generates a new access token.
-. The Kafka client authenticates with the Kafka broker using the SASL OAUTHBEARER mechanism to pass the access token.
+. The Kafka client authenticates with the Kafka broker using the SASL `OAUTHBEARER` mechanism to pass the access token.
 . The Kafka broker validates the access token by calling a token introspection endpoint on the authorization server using its own client ID and secret.
 . A Kafka client session is established if the token is valid.
 
@@ -57,7 +52,7 @@ image:oauth-jwt-signature.png[Client using client ID and secret with broker perf
 
 . The Kafka client authenticates with the authorization server from the token endpoint, using a client ID and secret, and optionally a refresh token. Alternatively, the client may authenticate using a username and a password.
 . The authorization server generates a new access token.
-. The Kafka client authenticates with the Kafka broker using the SASL OAUTHBEARER mechanism to pass the access token.
+. The Kafka client authenticates with the Kafka broker using the SASL `OAUTHBEARER` mechanism to pass the access token.
 . The Kafka broker validates the access token locally using a JWT token signature check, and local token introspection.
 
 [id='oauth-token-endpoint-{context}']
@@ -65,7 +60,7 @@ image:oauth-jwt-signature.png[Client using client ID and secret with broker perf
 
 image:oauth-introspection-endpoint-long-token.png[Client using long-lived access token with broker delegating validation to authorization server]
 
-. The Kafka client authenticates with the Kafka broker using the SASL OAUTHBEARER mechanism to pass the long-lived access token.
+. The Kafka client authenticates with the Kafka broker using the SASL `OAUTHBEARER` mechanism to pass the long-lived access token.
 . The Kafka broker validates the access token by calling a token introspection endpoint on the authorization server, using its own client ID and secret.
 . A Kafka client session is established if the token is valid.
 
@@ -74,19 +69,17 @@ image:oauth-introspection-endpoint-long-token.png[Client using long-lived access
 
 image:oauth-jwt-signature-token.png[Client using long-lived access token with broker performing fast local validation]
 
-. The Kafka client authenticates with the Kafka broker using the SASL OAUTHBEARER mechanism to pass the long-lived access token.
+. The Kafka client authenticates with the Kafka broker using the SASL `OAUTHBEARER` mechanism to pass the long-lived access token.
 . The Kafka broker validates the access token locally using a JWT token signature check and local token introspection.
 
 WARNING: Fast local JWT token signature validation is suitable only for short-lived tokens as there is no check with the authorization server if a token has been revoked.
 Token expiration is written into the token, but revocation can happen at any time, so cannot be accounted for without contacting the authorization server.
 Any issued token would be considered valid until it expires.
 
-== Example client authentication flows using the SASL PLAIN mechanism
+== Example client authentication flows using the SASL `PLAIN` mechanism
 
-You can use the following communication flows for Kafka authentication using the OAuth PLAIN mechanism.
+You can use the following communication flows for Kafka authentication using the OAuth `PLAIN` mechanism.
 
-* xref:oauth-plain-client-id-{context}[Client using a client ID and secret, with the broker obtaining the access token for the client]
-* xref:oauth-plain-access-token-{context}[Client using a long-lived access token without a client ID and secret]
 
 [id='oauth-plain-client-id-{context}']
 .Client using a client ID and secret, with the broker obtaining the access token for the client

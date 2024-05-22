@@ -1,13 +1,12 @@
 [id="con-mapping-keycloak-authz-services-to-kafka-model_{context}"]
-= Map Keycloak Authorization Services to the Kafka authorization model
+= Mapping authorization models
 
 [role="_abstract"]
+The Kafka authorization model is used as a basis for defining the Keycloak roles and resources that control access to Kafka.
 
-The Kafka authorization model is used as a basis for defining the Keycloak roles and resources that will control access to Kafka.
-
-To grant Kafka permissions to user accounts or service accounts, you first create an _OAuth client specification_ in Keycloak for the Kafka broker.
+To grant Kafka permissions to user accounts or service accounts, you first create an _OAuth client specification_ in Keycloak for the Kafka cluster.
 You then specify Keycloak Authorization Services rules on the client.
-Typically, the client id of the OAuth client that represents the broker is `kafka`.
+Typically, the client ID of the OAuth client that represents the Kafka cluster is `kafka`.
 The xref:proc-oauth-authorization-keycloak-example_str[example configuration files] provided with Strimzi use `kafka` as the OAuth client id.
 
 [NOTE]
@@ -24,7 +23,7 @@ All permissions exist within the scope of the `kafka` client. If you have differ
 When the Kafka client uses OAUTHBEARER authentication, the Keycloak authorizer (`KeycloakAuthorizer`) uses the access token of the current session to retrieve a list of grants from the Keycloak server.
 To retrieve the grants, the authorizer evaluates the Keycloak Authorization Services policies and permissions.
 
-.Authorization scopes for Kafka permissions
+.Uploading authorization scopes for Kafka permissions
 
 An initial Keycloak configuration usually involves uploading authorization scopes to create a list of all possible actions that can be performed on each Kafka resource type.
 This step is performed once only, before defining any permissions.
@@ -38,10 +37,13 @@ Authorization scopes must contain all the possible Kafka permissions regardless 
 * `Delete`
 * `Describe`
 * `Alter`
-* `DescribeConfig`
-* `AlterConfig`
+* `DescribeConfigs`
+* `AlterConfigs`
 * `ClusterAction`
 * `IdempotentWrite`
+* `CreateTokens`
+* `DescribeTokens`
+* `All`
 
 [NOTE]
 ====
@@ -93,7 +95,6 @@ Targeting can refer to:
 * Specific user or service accounts
 * Realm roles or client roles
 * User groups
-* JavaScript rules to match a client IP address
 
 A policy is given a unique name and can be reused to target multiple permissions to multiple resources.
 
@@ -103,8 +104,3 @@ Use fine-grained permissions to pull together the policies, resources, and autho
 
 The name of each permission should clearly define which permissions it grants to which users.
 For example, `Dev Team B can read from topics starting with x`.
-
-[role="_additional-resources"]
-.Additional resources
-
-* For more information about how to configure permissions through Keycloak Authorization Services, see xref:proc-oauth-authorization-keycloak-example_str[].
