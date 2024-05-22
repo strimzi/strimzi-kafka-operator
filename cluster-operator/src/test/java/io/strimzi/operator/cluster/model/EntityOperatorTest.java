@@ -39,6 +39,7 @@ import io.strimzi.api.kafka.model.kafka.entityoperator.EntityTopicOperatorSpec;
 import io.strimzi.api.kafka.model.kafka.entityoperator.EntityTopicOperatorSpecBuilder;
 import io.strimzi.api.kafka.model.kafka.entityoperator.EntityUserOperatorSpec;
 import io.strimzi.api.kafka.model.kafka.entityoperator.EntityUserOperatorSpecBuilder;
+import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.Reconciliation;
@@ -834,6 +835,7 @@ public class EntityOperatorTest {
         role = eo.generateRole(namespace, "some-other-namespace");
         assertThat(role.getMetadata().getOwnerReferences().size(), is(0));
     }
+
     @ParallelTest
     public void testTopicOperatorNetworkPolicy() {
         Kafka resource = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
@@ -857,6 +859,7 @@ public class EntityOperatorTest {
         assertThat(rules.size(), is(0));
 
     }
+
     @ParallelTest
     public void testUserOperatorNetworkPolicy() {
         Kafka resource = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
@@ -902,8 +905,29 @@ public class EntityOperatorTest {
         assertThat(np.getSpec().getIngress().size(), is(2));
         assertThat(np.getSpec().getIngress().get(0).getPorts().get(0).getPort(), is(new IntOrString(EntityTopicOperator.HEALTHCHECK_PORT)));
         assertThat(np.getSpec().getIngress().get(1).getPorts().get(0).getPort(), is(new IntOrString(EntityUserOperator.HEALTHCHECK_PORT)));
+    }
 
+    @ParallelTest
+    public void testFeatureGateEnvVars() {
+        Kafka resource = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                .editSpec()
+                    .withNewEntityOperator()
+                        .withNewTopicOperator()
+                        .endTopicOperator()
+                        .withNewUserOperator()
+                        .endUserOperator()
+                    .endEntityOperator()
+                .endSpec()
+                .build();
+
+        ClusterOperatorConfig config = new ClusterOperatorConfig.ClusterOperatorConfigBuilder(ResourceUtils.dummyClusterOperatorConfig(), VERSIONS)
+                .with(ClusterOperatorConfig.FEATURE_GATES.key(), "+ContinueReconciliationOnManualRollingUpdateFailure")
+                .build();
+
+        EntityOperator eo = EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, config);
+        Deployment dep = eo.generateDeployment(false, null, null);
+
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().stream().filter(env -> "STRIMZI_FEATURE_GATES".equals(env.getName())).map(EnvVar::getValue).findFirst().orElseThrow(), is("+ContinueReconciliationOnManualRollingUpdateFailure"));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(1).getEnv().stream().filter(env -> "STRIMZI_FEATURE_GATES".equals(env.getName())).map(EnvVar::getValue).findFirst().orElseThrow(), is("+ContinueReconciliationOnManualRollingUpdateFailure"));
     }
 }
-
-
