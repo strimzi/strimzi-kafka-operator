@@ -6,6 +6,7 @@
   To use KRaft (ZooKeeper-less Apache Kafka), you still need to use the `strimzi.io/kraft: enabled` annotation on the `Kafka` custom resources or migrate from an existing ZooKeeper-based cluster using the `strimzi.io/kraft: migration` annotation.
 * Update the base image used by Strimzi containers from UBI8 to UBI9
 * Enhance `KafkaBridge` resource with consumer inactivity timeout and HTTP consumer/producer enablement.
+* Add support for feature gates to User and Topic Operators
 
 ## 0.41.0
 

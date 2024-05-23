@@ -119,7 +119,7 @@ public class EntityTopicOperatorTest {
                     .build();
 
     private final EntityTopicOperator entityTopicOperator = EntityTopicOperator.fromCrd(
-        new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER);
+        new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig());
 
     private List<EnvVar> getExpectedEnvVars() {
         List<EnvVar> expected = new ArrayList<>();
@@ -177,7 +177,7 @@ public class EntityTopicOperatorTest {
                         .endSpec()
                         .build();
         EntityTopicOperator entityTopicOperator = EntityTopicOperator.fromCrd(
-            new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER);
+            new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig());
 
         assertThat(entityTopicOperator.watchedNamespace(), is(namespace));
         assertThat(entityTopicOperator.getImage(), is("quay.io/strimzi/operator:latest"));
@@ -196,7 +196,7 @@ public class EntityTopicOperatorTest {
         Kafka resource = ResourceUtils.createKafka(namespace, cluster, replicas, image,
                 healthDelay, healthTimeout);
         EntityTopicOperator entityTopicOperator = EntityTopicOperator.fromCrd(
-            new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER);
+            new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig());
         assertThat(entityTopicOperator, is(nullValue()));
     }
 
@@ -210,7 +210,7 @@ public class EntityTopicOperatorTest {
                         .endSpec()
                         .build();
         EntityTopicOperator entityTopicOperator = EntityTopicOperator.fromCrd(
-            new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER);
+            new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig());
         assertThat(entityTopicOperator, is(nullValue()));
     }
 
@@ -227,7 +227,7 @@ public class EntityTopicOperatorTest {
                         .build();
 
         EntityTopicOperator entityTopicOperator = EntityTopicOperator.fromCrd(
-            new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER);
+            new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig());
 
         assertThat(entityTopicOperator.watchedNamespace(), is(namespace));
     }
@@ -246,7 +246,7 @@ public class EntityTopicOperatorTest {
                 .build();
 
         EntityTopicOperator entityTopicOperator = EntityTopicOperator.fromCrd(
-            new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER);
+            new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig());
 
         assertThat(entityTopicOperator.watchedNamespace(), is("some-other-namespace"));
     }
@@ -321,7 +321,7 @@ public class EntityTopicOperatorTest {
                 .build();
         EntityTopicOperator entityTopicOperator = EntityTopicOperator.fromCrd(
             new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), 
-                resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER);
+                resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig());
 
         List<EnvVar> expectedEnvVars = new ArrayList<>();
         expectedEnvVars.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_RESOURCE_LABELS).withValue(ModelUtils.defaultResourceLabels(cluster)).build());
@@ -366,7 +366,7 @@ public class EntityTopicOperatorTest {
                 .build();
         EntityTopicOperator entityTopicOperator = EntityTopicOperator.fromCrd(
             new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(),
-                resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER);
+                resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig());
 
         var newSecret = entityTopicOperator.generateCruiseControlApiSecret(null);
         assertThat(newSecret, is(notNullValue()));

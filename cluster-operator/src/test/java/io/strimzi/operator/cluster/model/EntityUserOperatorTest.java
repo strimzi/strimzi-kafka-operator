@@ -123,7 +123,7 @@ public class EntityUserOperatorTest {
                     .endSpec()
                     .build();
 
-    private final EntityUserOperator entityUserOperator = EntityUserOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER);
+    private final EntityUserOperator entityUserOperator = EntityUserOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig());
 
     private List<EnvVar> getExpectedEnvVars() {
         List<EnvVar> expected = new ArrayList<>();
@@ -197,7 +197,7 @@ public class EntityUserOperatorTest {
                         .endSpec()
                         .build();
 
-        EntityUserOperator entityUserOperator = EntityUserOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER);
+        EntityUserOperator entityUserOperator = EntityUserOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig());
 
         assertThat(entityUserOperator.watchedNamespace(), is(namespace));
         assertThat(entityUserOperator.getImage(), is("quay.io/strimzi/operator:latest"));
@@ -216,7 +216,7 @@ public class EntityUserOperatorTest {
         Kafka resource = ResourceUtils.createKafka(namespace, cluster, replicas, image,
                 healthDelay, healthTimeout);
 
-        EntityUserOperator entityUserOperator = EntityUserOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER);
+        EntityUserOperator entityUserOperator = EntityUserOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig());
 
         assertThat(entityUserOperator, is(nullValue()));
     }
@@ -231,7 +231,7 @@ public class EntityUserOperatorTest {
                         .endSpec()
                         .build();
 
-        EntityUserOperator entityUserOperator = EntityUserOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER);
+        EntityUserOperator entityUserOperator = EntityUserOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig());
 
         assertThat(entityUserOperator, is(nullValue()));
     }
@@ -275,7 +275,7 @@ public class EntityUserOperatorTest {
                         .endSpec()
                         .build();
 
-        EntityUserOperator entityUserOperator = EntityUserOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), customValues, SHARED_ENV_PROVIDER);
+        EntityUserOperator entityUserOperator = EntityUserOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), customValues, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig());
 
         Kafka defaultValues =
                 new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
@@ -284,7 +284,7 @@ public class EntityUserOperatorTest {
                         .endSpec()
                         .build();
 
-        EntityUserOperator entityUserOperator2 = EntityUserOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), defaultValues, SHARED_ENV_PROVIDER);
+        EntityUserOperator entityUserOperator2 = EntityUserOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), defaultValues, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig());
 
         assertThat(entityUserOperator.clientsCaValidityDays, is(42));
         assertThat(entityUserOperator.clientsCaRenewalDays, is(69));
@@ -311,7 +311,7 @@ public class EntityUserOperatorTest {
                 .endSpec()
                 .build();
 
-        EntityUserOperator f = EntityUserOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), kafkaAssembly, SHARED_ENV_PROVIDER);
+        EntityUserOperator f = EntityUserOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), kafkaAssembly, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig());
 
         List<EnvVar> envvar = f.getEnvVars();
         assertThat(Integer.parseInt(envvar.stream().filter(a -> a.getName().equals(EntityUserOperator.ENV_VAR_CLIENTS_CA_VALIDITY)).findFirst().orElseThrow().getValue()), is(validity));
@@ -370,7 +370,7 @@ public class EntityUserOperatorTest {
                 .endSpec()
                 .build();
 
-        EntityUserOperator f = EntityUserOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), kafkaAssembly, SHARED_ENV_PROVIDER);
+        EntityUserOperator f = EntityUserOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), kafkaAssembly, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig());
 
         assertThat(f.getEnvVars()
                     .stream()
@@ -393,7 +393,7 @@ public class EntityUserOperatorTest {
                 .endSpec()
                 .build();
 
-        EntityUserOperator f = EntityUserOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), kafkaAssembly, SHARED_ENV_PROVIDER);
+        EntityUserOperator f = EntityUserOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), kafkaAssembly, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig());
         assertThat(f.getEnvVars().stream().anyMatch(a -> EntityUserOperator.ENV_VAR_MAINTENANCE_TIME_WINDOWS.equals(a.getName())), is(false));
 
         kafkaAssembly = new KafkaBuilder(kafkaAssembly)
@@ -402,7 +402,7 @@ public class EntityUserOperatorTest {
                 .endSpec()
                 .build();
 
-        f = EntityUserOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), kafkaAssembly, SHARED_ENV_PROVIDER);
+        f = EntityUserOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), kafkaAssembly, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig());
         assertThat(f.getEnvVars().stream().filter(a -> EntityUserOperator.ENV_VAR_MAINTENANCE_TIME_WINDOWS.equals(a.getName())).findFirst().orElseThrow().getValue(), is("* * 8-10 * * ?;* * 14-15 * * ?"));
     }
 
@@ -418,7 +418,7 @@ public class EntityUserOperatorTest {
                 .endSpec()
                 .build();
 
-        EntityUserOperator entityUserOperator = EntityUserOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER);
+        EntityUserOperator entityUserOperator = EntityUserOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig());
 
         assertThat(entityUserOperator.watchedNamespace(), is(namespace));
     }
@@ -436,7 +436,7 @@ public class EntityUserOperatorTest {
                 .endSpec()
                 .build();
 
-        EntityUserOperator entityUserOperator = EntityUserOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER);
+        EntityUserOperator entityUserOperator = EntityUserOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig());
 
         assertThat(entityUserOperator.watchedNamespace(), is("some-other-namespace"));
     }

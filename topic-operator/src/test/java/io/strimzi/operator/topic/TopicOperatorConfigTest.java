@@ -9,6 +9,7 @@ import io.kroxylicious.testing.kafka.common.SaslPlainAuth;
 import io.kroxylicious.testing.kafka.common.Tls;
 import io.kroxylicious.testing.kafka.junit5ext.KafkaClusterExtension;
 import io.strimzi.operator.common.InvalidConfigurationException;
+import io.strimzi.operator.common.featuregates.FeatureGates;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.common.config.SslConfigs;
 import org.junit.jupiter.api.Test;
@@ -371,5 +372,21 @@ class TopicOperatorConfigTest {
         ));
 
         assertEquals("ALL", config.alterableTopicConfig());
+    }
+
+    @Test
+    public void testDefaultFeatureGates()    {
+        TopicOperatorConfig config = TopicOperatorConfig.buildFromMap(Map.of(TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234", TopicOperatorConfig.NAMESPACE.key(), "some-namespace"));
+        assertEquals(config.featureGates(), new FeatureGates(""));
+    }
+
+    @Test
+    public void testFeatureGatesParsing()    {
+        // We test that the configuration is really parsing the feature gates environment variable. We test it on
+        // non-existing feature gate instead of a real one so that we do not have to change it when the FGs are promoted
+        Map<String, String> envVars = Map.of(TopicOperatorConfig.FEATURE_GATES.key(), "-NonExistingGate");
+
+        InvalidConfigurationException e = assertThrows(InvalidConfigurationException.class, () -> TopicOperatorConfig.buildFromMap(envVars));
+        assertEquals(e.getMessage(), "Unknown feature gate NonExistingGate found in the configuration");
     }
 }

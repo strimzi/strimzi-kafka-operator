@@ -5,6 +5,7 @@
 package io.strimzi.operator.user;
 
 import io.strimzi.operator.common.InvalidConfigurationException;
+import io.strimzi.operator.common.featuregates.FeatureGates;
 import io.strimzi.operator.common.model.Labels;
 import org.junit.jupiter.api.Test;
 
@@ -63,6 +64,7 @@ public class UserOperatorConfigTest {
         assertThat(config.getBatchMaxBlockSize(), is(100));
         assertThat(config.getBatchMaxBlockTime(), is(100));
         assertThat(config.getUserOperationsThreadPoolSize(), is(4));
+        assertThat(config.featureGates(), is(new FeatureGates("")));
     }
 
     @Test
@@ -227,5 +229,16 @@ public class UserOperatorConfigTest {
         envVars.put(UserOperatorConfig.OPERATION_TIMEOUT_MS.key(), "abcdefg");
 
         assertThrows(InvalidConfigurationException.class, () -> UserOperatorConfig.buildFromMap(envVars));
+    }
+
+    @Test
+    public void testFeatureGatesParsing()    {
+        // We test that the configuration is really parsing the feature gates environment variable. We test it on
+        // non-existing feature gate instead of a real one so that we do not have to change it when the FGs are promoted
+        Map<String, String> envVars = new HashMap<>(UserOperatorConfigTest.ENV_VARS);
+        envVars.put(UserOperatorConfig.FEATURE_GATES.key(), "-NonExistingGate");
+
+        InvalidConfigurationException e = assertThrows(InvalidConfigurationException.class, () -> UserOperatorConfig.buildFromMap(envVars));
+        assertThat(e.getMessage(), is("Unknown feature gate NonExistingGate found in the configuration"));
     }
 }
