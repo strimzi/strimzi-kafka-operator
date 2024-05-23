@@ -694,7 +694,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 .prepareKafkaCluster(kafkaAssembly, nodePools, oldStorage, currentPods, versionChange, kafkaStatus, true)
                                 .compose(kafkaCluster -> {
                                     // We store this for use with Cruise Control later. As these configurations might
-                                    // not be exactly hte same as in the original custom resource (for example because
+                                    // not be exactly the same as in the original custom resource (for example because
                                     // of un-allowed storage changes being reverted) they are passed this way from the
                                     // KafkaCluster object and not from the custom resource.
                                     kafkaBrokerNodes = kafkaCluster.brokerNodes();

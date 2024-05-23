@@ -808,8 +808,10 @@ public class KafkaReconciler {
     }
 
     /**
-     * Create or update the StrimziPodSet for the Kafka cluster. If set, it uses the old replica count since scaling-up
-     * happens only later in a separate step.
+     * Create or update the StrimziPodSet for the Kafka cluster.
+     * If the StrimziPodSet is updated with additional pods (Kafka cluster scaled up), it's the StrimziPodSet controller
+     * taking care of reconciling within this method and starting up the new nodes.
+     * The opposite (Kafka cluster scaled down) is handled by a dedicated scaleDown() method instead.
      *
      * @return  Future which completes when the PodSet is created, updated or deleted
      */
