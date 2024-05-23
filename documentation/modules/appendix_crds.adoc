@@ -366,10 +366,10 @@ Used in: xref:type-ClientTls-{context}[`ClientTls`], xref:type-KafkaAuthorizatio
 |The name of the Secret containing the certificate.
 |certificate
 |string
-|The name of the file certificate in the Secret.
+|The name of the file certificate in the secret.
 |pattern
 |string
-|Pattern of the certificate files in the Secret that should be used. The pattern should be specified using the link:https://en.wikipedia.org/wiki/Glob_(programming)[_glob syntax_]. All files in the Secret matching the pattern will be used.
+|Pattern for the certificate files in the secret. Use the link:https://en.wikipedia.org/wiki/Glob_(programming)[_glob syntax_] for the pattern. All files in the secret that match the pattern are used.
 |====
 
 [id='type-KafkaListenerAuthenticationCustom-{context}']

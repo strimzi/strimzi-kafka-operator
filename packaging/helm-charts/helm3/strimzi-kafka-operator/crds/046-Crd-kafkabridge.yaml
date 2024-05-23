@@ -82,10 +82,10 @@ spec:
                             description: The name of the Secret containing the certificate.
                           certificate:
                             type: string
-                            description: The name of the file certificate in the Secret.
+                            description: The name of the file certificate in the secret.
                           pattern:
                             type: string
-                            description: "Pattern of the certificate files in the Secret that should be used. The pattern should be specified using the link:https://en.wikipedia.org/wiki/Glob_(programming)[_glob syntax_]. All files in the Secret matching the pattern will be used."
+                            description: "Pattern for the certificate files in the secret. Use the link:https://en.wikipedia.org/wiki/Glob_(programming)[_glob syntax_] for the pattern. All files in the secret that match the pattern are used."
                         oneOf:
                           - properties:
                               certificate: {}
@@ -217,10 +217,10 @@ spec:
                             description: The name of the Secret containing the certificate.
                           certificate:
                             type: string
-                            description: The name of the file certificate in the Secret.
+                            description: The name of the file certificate in the secret.
                           pattern:
                             type: string
-                            description: "Pattern of the certificate files in the Secret that should be used. The pattern should be specified using the link:https://en.wikipedia.org/wiki/Glob_(programming)[_glob syntax_]. All files in the Secret matching the pattern will be used."
+                            description: "Pattern for the certificate files in the secret. Use the link:https://en.wikipedia.org/wiki/Glob_(programming)[_glob syntax_] for the pattern. All files in the secret that match the pattern are used."
                         oneOf:
                           - properties:
                               certificate: {}

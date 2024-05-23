@@ -45,7 +45,7 @@ public class CertSecretSource implements UnknownPropertyPreserving {
         this.secretName = secretName;
     }
 
-    @Description("The name of the file certificate in the Secret.")
+    @Description("The name of the file certificate in the secret.")
     public String getCertificate() {
         return certificate;
     }
@@ -54,9 +54,9 @@ public class CertSecretSource implements UnknownPropertyPreserving {
         this.certificate = certificate;
     }
 
-    @Description("Pattern of the certificate files in the Secret that should be used. " +
-            "The pattern should be specified using the link:https://en.wikipedia.org/wiki/Glob_(programming)[_glob syntax_]. " +
-            "All files in the Secret matching the pattern will be used.")
+    @Description("Pattern for the certificate files in the secret. " +
+            "Use the link:https://en.wikipedia.org/wiki/Glob_(programming)[_glob syntax_] for the pattern. " +
+            "All files in the secret that match the pattern are used.")
     public String getPattern() {
         return pattern;
     }
