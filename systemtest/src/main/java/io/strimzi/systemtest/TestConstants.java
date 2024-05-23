@@ -26,6 +26,7 @@ public interface TestConstants {
     long TIMEOUT_TEARDOWN = Duration.ofSeconds(10).toMillis();
     long GLOBAL_TIMEOUT = Duration.ofMinutes(5).toMillis();
     long GLOBAL_TIMEOUT_SHORT = Duration.ofMinutes(2).toMillis();
+    long GLOBAL_TIMEOUT_LONG = Duration.ofMinutes(10).toMillis();
     long GLOBAL_CMD_CLIENT_TIMEOUT = Duration.ofMinutes(5).toMillis();
     long GLOBAL_STATUS_TIMEOUT = Duration.ofMinutes(3).toMillis();
     long GLOBAL_POLL_INTERVAL = Duration.ofSeconds(1).toMillis();
@@ -164,6 +165,8 @@ public interface TestConstants {
     String REPLICA_SET = "ReplicaSet";
     String SUBSCRIPTION = "Subscription";
     String OPERATOR_GROUP = "OperatorGroup";
+    String BUILD_CONFIG = "BuildConfig";
+    String IMAGE_STREAM = "ImageStream";
 
     /**
      * KafkaBridge JSON encoding with JSON embedded format

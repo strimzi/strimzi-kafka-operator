@@ -13,4 +13,5 @@ public enum DeploymentTypes {
     DrainCleaner,
     Scraper,
     AdminClient,
+    Minio,
 }

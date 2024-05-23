@@ -70,6 +70,17 @@ public class JobUtils {
     }
 
     /**
+     * Wait for specific Job success
+     * @param jobName job name
+     * @param timeout timeout in ms after which we assume that job failed
+     */
+    public static void waitForJobSuccess(String jobName, String namespace, long timeout) {
+        LOGGER.info("Waiting for Job: {}/{} to success", namespace, jobName);
+        TestUtils.waitFor("success of Job: " + namespace + "/" + jobName, TestConstants.GLOBAL_POLL_INTERVAL, timeout,
+                () -> kubeClient().checkSucceededJobStatus(namespace, jobName, 1));
+    }
+
+    /**
      * Wait for specific Job failure
      * @param jobName job name
      * @param timeout timeout in ms after which we assume that job failed
