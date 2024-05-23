@@ -13,11 +13,12 @@ The purpose of feature gates is to facilitate the trial and testing of a feature
 The state (enabled or disabled) of a feature gate may vary by default, depending on its maturity level.
 
 As a feature gate graduates and reaches General Availability (GA), it transitions to an enabled state by default and becomes a permanent part of the Strimzi deployment.
-A feature gate at the GA stage cannot be disabled. 
+A feature gate at the GA stage cannot be disabled.
 
-The supported feature gates apply for all Strimzi operators.
-While a particular feature gate might be used for example only in one of them and ignored by the others, it can be configured in all operators.
-When the User and Topic Operators are deployed by the Cluster Operator as part of the `Kafka` custom resource, the feature gates configuration will be automatically propagated to them from the Cluster Operator.
+The supported feature gates are applicable to all Strimzi operators.
+While a particular feature gate might be used by one operator and ignored by the others, it can still be configured in all operators.
+When deploying the User Operator and Topic Operator within the context of the`Kafka` custom resource, the Cluster Operator automatically propagates the feature gates configuration to them.
+When the User Operator and Topic Operator are deployed standalone, without a Cluster Operator available to configure the feature gates, they must be directly configured within their deployments.
 
 == Graduated feature gates (GA)
 
