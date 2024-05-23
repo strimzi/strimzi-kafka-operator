@@ -456,7 +456,7 @@ The following Strimzi components run inside a Java Virtual Machine (JVM):
 * Apache ZooKeeper
 * Apache Kafka Connect
 * Apache Kafka MirrorMaker
-* Strimzi Kafka Bridge
+* Kafka Bridge
 
 To optimize their performance on different platforms and architectures, you configure the `jvmOptions` property in the following resources:
 

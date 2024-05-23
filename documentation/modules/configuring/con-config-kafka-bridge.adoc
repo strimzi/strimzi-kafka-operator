@@ -114,4 +114,4 @@ By default, the Kafka Bridge connects to Kafka brokers without authentication.
 [role="_additional-resources"]
 .Additional resources
 
-* link:{BookURLBridge}[Using the Strimzi Kafka Bridge^]
+* link:{BookURLBridge}[Using the Kafka Bridge^]
