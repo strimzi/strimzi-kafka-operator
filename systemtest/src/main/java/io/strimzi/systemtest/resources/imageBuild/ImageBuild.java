@@ -27,6 +27,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
@@ -120,7 +121,7 @@ public class ImageBuild {
      * @throws IOException
      */
     public static void buildImageOpenshift(String name, String namespace, String dockerfilePath, String imageTag, String baseImage) throws IOException {
-        String dockerfileContent = new String(Files.readAllBytes(Paths.get(dockerfilePath)));
+        String dockerfileContent = Files.readString(Paths.get(dockerfilePath), StandardCharsets.UTF_8);
 
         BuildConfig buildConfig = new BuildConfigBuilder()
             .withNewMetadata()
@@ -176,7 +177,7 @@ public class ImageBuild {
      * @throws IOException
      */
     private static void createDockerfileConfigMap(String namespace, String configMapName, String dockerfilePath) throws IOException {
-        String dockerfileContent = new String(Files.readAllBytes(Paths.get(dockerfilePath)));
+        String dockerfileContent = Files.readString(Paths.get(dockerfilePath), StandardCharsets.UTF_8);
 
         ConfigMap configMap = new ConfigMapBuilder()
                 .withNewMetadata()

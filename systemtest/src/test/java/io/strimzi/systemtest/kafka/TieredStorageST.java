@@ -125,7 +125,7 @@ public class TieredStorageST extends AbstractST {
             .build());
 
         final KafkaClients clients = ClientUtils.getInstantPlainClientBuilder(testStorage)
-            .withMessageCount(10000000)
+            .withMessageCount(10000)
             .withDelayMs(1)
             .withMessage(String.join("", Collections.nCopies(5000, "#")))
             .build();
@@ -133,6 +133,10 @@ public class TieredStorageST extends AbstractST {
         resourceManager.createResourceWithWait(clients.producerStrimzi());
 
         SetupMinio.waitForDataInMinio(testStorage.getNamespaceName(), BUCKET_NAME);
+        ClientUtils.waitForInstantProducerClientSuccess(testStorage);
+
+        resourceManager.createResourceWithWait(clients.consumerStrimzi());
+        ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
     }
 
     @BeforeAll
