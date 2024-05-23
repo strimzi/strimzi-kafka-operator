@@ -7,8 +7,6 @@ package io.strimzi.systemtest.resources.imageBuild;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.EnvVar;
-import io.fabric8.kubernetes.api.model.SecurityContext;
-import io.fabric8.kubernetes.api.model.SecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.VolumeBuilder;
 import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.fabric8.kubernetes.api.model.batch.v1.Job;
@@ -31,7 +29,6 @@ import org.apache.logging.log4j.Logger;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Arrays;
 
 public class ImageBuild {
     private static final Logger LOGGER = LogManager.getLogger(ImageBuild.class);
@@ -67,18 +64,6 @@ public class ImageBuild {
     public static void buildImageKaniko(String name, String namespace, String dockerfilePath, String imageTag, String baseImage) throws IOException {
         createDockerfileConfigMap(namespace, name, dockerfilePath);
 
-        SecurityContext securityContext = new SecurityContextBuilder()
-                .withNewCapabilities()
-                .addAllToAdd(Arrays.asList("CHOWN", "DAC_OVERRIDE", "FOWNER", "SETFCAP", "SETGID", "SETUID", "NET_ADMIN", "SYS_TIME"))
-                .endCapabilities()
-                .build();
-
-        String secretName = ResourceManager.kubeClient().getServiceAccount(namespace, "builder").getSecrets().stream()
-                .filter(secretReference -> secretReference.getName().contains("dockercfg") || secretReference.getName().contains("dockerconfigjson"))
-                .findFirst()
-                .map(it -> it.getName())
-                .orElse(null);
-
         Job kanikoJob = new JobBuilder()
             .withNewMetadata()
                 .withName(name)
@@ -90,18 +75,8 @@ public class ImageBuild {
                         .withName(name)
                     .endMetadata()
                     .withNewSpec()
-                        .withServiceAccount("builder")
-                        .withServiceAccountName("builder")
-
                         .withRestartPolicy("Never")
                         .withVolumes(
-//                        new VolumeBuilder()
-//                                .withName("kaniko-secret")
-//                                .withNewSecret()
-//                                    .withSecretName(secretName)
-//                                    .addNewItem(".dockercfg", 0440, "config.json")
-//                                .endSecret()
-//                                .build(),
                             new VolumeBuilder()
                                     .withName(name)
                                     .withNewConfigMap()
@@ -112,7 +87,6 @@ public class ImageBuild {
                         .addNewContainer()
                             .withName(name)
                             .withImage(KANIKO_IMAGE)
-    //                        .withSecurityContext(securityContext)
                             .withArgs(
                                 "--dockerfile=/workspace/Dockerfile",
                                 "--destination=" + Environment.getImageOutputRegistry(namespace, name, imageTag),
@@ -120,10 +94,6 @@ public class ImageBuild {
                                 "--skip-tls-verify",
                                 "-v=debug")
                             .withVolumeMounts(
-    //                        new VolumeMountBuilder()
-    //                                .withName("kaniko-secret")
-    //                                .withMountPath("/kaniko/.docker")
-    //                                .build(),
                                 new VolumeMountBuilder()
                                         .withName(name)
                                         .withSubPath("Dockerfile")

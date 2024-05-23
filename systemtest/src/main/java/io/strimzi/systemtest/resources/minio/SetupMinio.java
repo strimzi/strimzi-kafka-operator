@@ -56,7 +56,7 @@ public class SetupMinio {
                     .withNewSpec()
                         .addNewContainer()
                             .withName("minio")
-                                .withImage("minio/minio:latest")
+                                .withImage("quay.io/minio/minio:latest")
                                 .withArgs("server", "/data")
                                 .addToEnv(new EnvVar("MINIO_ACCESS_KEY", ADMIN_CREDS, null))
                                 .addToEnv(new EnvVar("MINIO_SECRET_KEY", ADMIN_CREDS, null))
