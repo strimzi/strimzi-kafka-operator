@@ -21,11 +21,6 @@ public interface CruiseControlApi {
     String CC_REST_API_PROGRESS_KEY = "progress";
 
     /**
-     * User ID header key
-     */
-    String CC_REST_API_USER_ID_HEADER = "User-Task-ID";
-
-    /**
      *  Gets the state of the Cruise Control server.
      *
      * @param host The address of the Cruise Control server.

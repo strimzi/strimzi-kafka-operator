@@ -10,14 +10,9 @@ import io.strimzi.api.kafka.model.topic.KafkaTopicStatus;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.topic.metrics.TopicOperatorMetricsHolder;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
-import static java.lang.String.format;
 
 /**
  * Provides utility methods for managing and interacting with KafkaTopic resources within a Topic Operator context. 
@@ -144,20 +139,6 @@ public class TopicOperatorUtil {
      */
     public static boolean isPaused(KafkaTopic kt) {
         return Annotations.isReconciliationPausedWithAnnotation(kt);
-    }
-
-    /**
-     * Get file content.
-     * 
-     * @param filePath Absolute file path.
-     * @return File content.
-     */
-    public static byte[] getFileContent(String filePath) {
-        try {
-            return Files.readAllBytes(Path.of(filePath));
-        } catch (IOException ioe) {
-            throw new RuntimeException(format("File not found: %s", filePath));
-        }
     }
 
     /**
