@@ -407,6 +407,11 @@ public interface TestConstants {
     String QUOTAS_PLUGIN = "quotasplugin";
 
     /**
+     * Tag for tests that covers Tiered Storage integration
+     */
+    String TIERED_STORAGE = "tiered-storage";
+
+    /**
      * Tag for tests, without ARM,AARCH64 support
      */
     String ARM64_UNSUPPORTED = "arm64unsupported";

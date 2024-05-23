@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.util.Collections;
 
 import static io.strimzi.systemtest.TestConstants.REGRESSION;
+import static io.strimzi.systemtest.TestConstants.TIERED_STORAGE;
 
 /**
  * @description This test suite covers scenarios for Tiered Storage integration implemented within Strimzi.
@@ -43,6 +44,7 @@ import static io.strimzi.systemtest.TestConstants.REGRESSION;
  *  - tiered-storage-integration
  */
 @Tag(REGRESSION)
+@Tag(TIERED_STORAGE)
 public class TieredStorageST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(TieredStorageST.class);
 
