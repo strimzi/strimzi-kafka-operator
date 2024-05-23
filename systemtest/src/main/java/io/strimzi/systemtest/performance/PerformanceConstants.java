@@ -157,6 +157,7 @@ public interface PerformanceConstants {
     String TOPIC_OPERATOR_ALICE_BULK_USE_CASE = "aliceBulkUseCase";
     String USER_OPERATOR_ALICE_BULK_USE_CASE = "aliceBulkUseCase";
     String GENERAL_CAPACITY_USE_CASE = "capacityUseCase";
+    String CREATE_AND_MODIFY_CAPACITY_USE_CASE = "createAndModifyCapacityUseCase";
 
     /**
      * Performance metrics file

@@ -889,7 +889,7 @@ public class TopicOperatorPerformance extends AbstractST {
                 performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_OUT_CREATION_TIMES, PerformanceUtils.convertListToPrimitiveArray(capacityCreateTimerMsArr));
                 performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_OUT_UPDATE_TIMES, PerformanceUtils.convertListToPrimitiveArray(capacityModificationTimerMsArr));
                 performanceAttributes.put(PerformanceConstants.METRICS_HISTORY, this.topicOperatorMetricsGatherer.getMetricsStore()); // Map of metrics history
-                this.topicOperatorPerformanceReporter.logPerformanceData(this.testStorage, performanceAttributes, REPORT_DIRECTORY + "/" + PerformanceConstants.GENERAL_CAPACITY_USE_CASE, ACTUAL_TIME, Environment.PERFORMANCE_DIR);
+                this.topicOperatorPerformanceReporter.logPerformanceData(this.testStorage, performanceAttributes, REPORT_DIRECTORY + "/" + PerformanceConstants.CREATE_AND_MODIFY_CAPACITY_USE_CASE, ACTUAL_TIME, Environment.PERFORMANCE_DIR);
             }
         }
     }
