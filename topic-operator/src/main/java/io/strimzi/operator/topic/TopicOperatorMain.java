@@ -67,7 +67,7 @@ public class TopicOperatorMain implements Liveness, Readiness {
         this.admin = admin;
         TopicOperatorMetricsProvider metricsProvider = createMetricsProvider();
         TopicOperatorMetricsHolder metrics = new TopicOperatorMetricsHolder(KafkaTopic.RESOURCE_KIND, Labels.fromMap(selector), metricsProvider);
-        this.replicasChangeHandler = new ReplicasChangeHandler(config);
+        this.replicasChangeHandler = new ReplicasChangeHandler(config, metrics);
         this.controller = new BatchingTopicController(config, selector, admin, kubeClient, metrics, replicasChangeHandler);
         this.itemStore = new BasicItemStore<>(Cache::metaNamespaceKeyFunc);
         this.queue = new BatchingLoop(config.maxQueueSize(), controller, 1, config.maxBatchSize(), config.maxBatchLingerMs(), itemStore, this::stop, metrics, namespace);

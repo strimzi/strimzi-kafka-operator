@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.topic;
 
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.strimzi.api.kafka.model.common.ConditionBuilder;
 import io.strimzi.api.kafka.model.topic.KafkaTopicBuilder;
 import io.strimzi.api.kafka.model.topic.KafkaTopicStatusBuilder;
@@ -12,6 +13,8 @@ import io.strimzi.certs.Subject;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.StatusUtils;
 import io.strimzi.operator.common.operator.MockCertManager;
+import io.strimzi.operator.topic.metrics.TopicOperatorMetricsHolder;
+import io.strimzi.operator.topic.metrics.TopicOperatorMetricsProvider;
 import io.strimzi.test.TestUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -39,7 +42,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class ReplicasChangeHandlerTest {
     private static final String TEST_NAMESPACE = "replicas-change";
     private static final String TEST_NAME = "my-topic";
-    
+
+    private static TopicOperatorMetricsHolder metricsHolder;
     private static int serverPort;
     private static File tlsCrtFile;
     private static File apiUserFile;
@@ -48,13 +52,14 @@ public class ReplicasChangeHandlerTest {
 
     @BeforeAll
     public static void beforeAll() throws IOException {
+        metricsHolder = new TopicOperatorMetricsHolder(RESOURCE_KIND, null,
+            new TopicOperatorMetricsProvider(new SimpleMeterRegistry()));
+        
         serverPort = TestUtils.getFreePort();
-
         File tlsKeyFile = TestUtils.tempFile(ReplicasChangeHandlerTest.class.getSimpleName(), ".key");
         tlsCrtFile = TestUtils.tempFile(ReplicasChangeHandlerTest.class.getSimpleName(), ".crt");
         new MockCertManager().generateSelfSignedCert(tlsKeyFile, tlsCrtFile,
             new Subject.Builder().withCommonName("Trusted Test CA").build(), 365);
-
         apiUserFile = TestUtils.tempFile(ReplicasChangeHandlerTest.class.getSimpleName(), ".username");
         try (PrintWriter out = new PrintWriter(apiUserFile.getAbsolutePath())) {
             out.print("topic-operator-admin");
@@ -63,7 +68,6 @@ public class ReplicasChangeHandlerTest {
         try (PrintWriter out = new PrintWriter(apiPassFile.getAbsolutePath())) {
             out.print("changeit");
         }
-        
         server = new MockCruiseControl(serverPort, tlsKeyFile, tlsCrtFile);
     }
 
@@ -84,7 +88,7 @@ public class ReplicasChangeHandlerTest {
     @ParameterizedTest
     @MethodSource("validConfigs")
     public void shouldSucceedWithValidConfig(TopicOperatorConfig config) {
-        var handler = new ReplicasChangeHandler(config);
+        var handler = new ReplicasChangeHandler(config, metricsHolder);
 
         server.expectTopicConfigSuccessResponse(apiUserFile, apiPassFile);
         var pending = buildPendingReconcilableTopics();
@@ -108,7 +112,7 @@ public class ReplicasChangeHandlerTest {
             entry(TopicOperatorConfig.CRUISE_CONTROL_CRT_FILE_PATH.key(), "/invalid/ca.crt")
         ));
 
-        RuntimeException thrown = assertThrows(RuntimeException.class, () -> new ReplicasChangeHandler(config));
+        RuntimeException thrown = assertThrows(RuntimeException.class, () -> new ReplicasChangeHandler(config, metricsHolder));
         assertThat(thrown.getMessage(), is("File not found: /invalid/ca.crt"));
     }
 
@@ -124,7 +128,7 @@ public class ReplicasChangeHandlerTest {
             entry(TopicOperatorConfig.CRUISE_CONTROL_API_PASS_PATH.key(), apiPassFile.getAbsolutePath())
         ));
 
-        RuntimeException thrown = assertThrows(RuntimeException.class, () -> new ReplicasChangeHandler(config));
+        RuntimeException thrown = assertThrows(RuntimeException.class, () -> new ReplicasChangeHandler(config, metricsHolder));
         assertThat(thrown.getMessage(), is("File not found: /invalid/username"));
     }
 
@@ -140,7 +144,7 @@ public class ReplicasChangeHandlerTest {
             entry(TopicOperatorConfig.CRUISE_CONTROL_API_PASS_PATH.key(), "/invalid/password")
         ));
 
-        RuntimeException thrown = assertThrows(RuntimeException.class, () -> new ReplicasChangeHandler(config));
+        RuntimeException thrown = assertThrows(RuntimeException.class, () -> new ReplicasChangeHandler(config, metricsHolder));
         assertThat(thrown.getMessage(), is("File not found: /invalid/password"));
     }
 
@@ -153,7 +157,7 @@ public class ReplicasChangeHandlerTest {
             entry(TopicOperatorConfig.CRUISE_CONTROL_PORT.key(), String.valueOf(serverPort))
         ));
         
-        var handler = new ReplicasChangeHandler(config);
+        var handler = new ReplicasChangeHandler(config, metricsHolder);
         
         var pending = buildPendingReconcilableTopics();
         var pendingAndOngoing = handler.requestPendingChanges(pending);
@@ -178,7 +182,7 @@ public class ReplicasChangeHandlerTest {
             entry(TopicOperatorConfig.CRUISE_CONTROL_API_PASS_PATH.key(), apiPassFile.getAbsolutePath())
         ));
 
-        var handler = new ReplicasChangeHandler(config);
+        var handler = new ReplicasChangeHandler(config, metricsHolder);
 
         server.expectTopicConfigErrorResponse(apiUserFile, apiPassFile);
         var pending = buildPendingReconcilableTopics();
@@ -206,7 +210,7 @@ public class ReplicasChangeHandlerTest {
             entry(TopicOperatorConfig.CRUISE_CONTROL_API_PASS_PATH.key(), apiPassFile.getAbsolutePath())
         ));
 
-        var handler = new ReplicasChangeHandler(config);
+        var handler = new ReplicasChangeHandler(config, metricsHolder);
 
         server.expectTopicConfigRequestTimeout(apiUserFile, apiPassFile);
         var pending = buildPendingReconcilableTopics();
@@ -233,7 +237,7 @@ public class ReplicasChangeHandlerTest {
             entry(TopicOperatorConfig.CRUISE_CONTROL_API_PASS_PATH.key(), apiPassFile.getAbsolutePath())
         ));
 
-        var handler = new ReplicasChangeHandler(config);
+        var handler = new ReplicasChangeHandler(config, metricsHolder);
 
         server.expectTopicConfigRequestUnauthorized(apiUserFile, apiPassFile);
         var pending = buildPendingReconcilableTopics();
