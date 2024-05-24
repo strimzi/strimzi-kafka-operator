@@ -9,6 +9,6 @@ USER root
 RUN useradd -r -m -u 1001 -g 0 strimzi
 
 RUN microdnf update -y \
-    && microdnf clean all
+    && microdnf clean all -y
 
 USER 1001
