@@ -45,16 +45,12 @@ import java.util.Map;
 @EqualsAndHashCode
 @ToString
 public class EntityTopicOperatorSpec implements HasConfigurableLogging, HasLivenessProbe, HasReadinessProbe, HasStartupProbe, UnknownPropertyPreserving {
-    public static final int DEFAULT_REPLICAS = 1;
-    public static final int DEFAULT_ZOOKEEPER_PORT = 2181;
-    public static final int DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS = 120;
-    public static final int DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_SECONDS = 18;
-    public static final int DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS = 6;
+    public static final long DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS = 120;
     public static final String DEFAULT_SECURITY_PROTOCOL = "SSL";
 
     protected String watchedNamespace;
     protected String image;
-    protected int reconciliationIntervalSeconds = DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS;
+    protected long reconciliationIntervalSeconds = DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS;
     protected Integer zookeeperSessionTimeoutSeconds;
     protected Integer topicMetadataMaxAttempts;
     private Probe startupProbe;
@@ -86,11 +82,11 @@ public class EntityTopicOperatorSpec implements HasConfigurableLogging, HasLiven
     @Description("Interval between periodic reconciliations.")
     @Minimum(0)
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-    public int getReconciliationIntervalSeconds() {
+    public long getReconciliationIntervalSeconds() {
         return reconciliationIntervalSeconds;
     }
 
-    public void setReconciliationIntervalSeconds(int reconciliationIntervalSeconds) {
+    public void setReconciliationIntervalSeconds(long reconciliationIntervalSeconds) {
         this.reconciliationIntervalSeconds = reconciliationIntervalSeconds;
     }
     

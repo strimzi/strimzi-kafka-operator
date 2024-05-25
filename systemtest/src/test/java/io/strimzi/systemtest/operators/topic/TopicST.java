@@ -75,7 +75,7 @@ public class TopicST extends AbstractST {
     private TestStorage sharedTestStorage;
     private AdminClient adminClient;
     private String scraperPodName;
-    private static int topicOperatorReconciliationInterval;
+    private static long topicOperatorReconciliationIntervalMs;
 
     @ParallelTest
     void testMoreReplicasThanAvailableBrokers() {
@@ -380,8 +380,8 @@ public class TopicST extends AbstractST {
         assertKafkaTopicStatus(testStorage.getTopicName(), Environment.TEST_SUITE_NAMESPACE, Ready, False, reason, reasonMessage, ++expectedObservedGeneration);
 
         // Wait some time to check if error is still present in KafkaTopic status
-        LOGGER.info("Waiting {} ms for next reconciliation", topicOperatorReconciliationInterval);
-        Thread.sleep(topicOperatorReconciliationInterval);
+        LOGGER.info("Waiting {} ms for next reconciliation", topicOperatorReconciliationIntervalMs);
+        Thread.sleep(topicOperatorReconciliationIntervalMs);
         assertKafkaTopicStatus(testStorage.getTopicName(), Environment.TEST_SUITE_NAMESPACE, Ready, False, reason, reasonMessage, expectedObservedGeneration);
 
         LOGGER.info("Changing KafkaTopic's spec to correct state");
@@ -417,8 +417,8 @@ public class TopicST extends AbstractST {
         assertKafkaTopicStatus(testStorage.getTopicName(), Environment.TEST_SUITE_NAMESPACE, resourceStatus, conditionStatus, reason, reasonMessage, 2);
 
         // Wait some time to check if error is still present in KafkaTopic status
-        LOGGER.info("Waiting {} ms for next reconciliation", topicOperatorReconciliationInterval);
-        Thread.sleep(topicOperatorReconciliationInterval);
+        LOGGER.info("Waiting {} ms for next reconciliation", topicOperatorReconciliationIntervalMs);
+        Thread.sleep(topicOperatorReconciliationIntervalMs);
         assertKafkaTopicStatus(testStorage.getTopicName(), Environment.TEST_SUITE_NAMESPACE, resourceStatus, conditionStatus, reason, reasonMessage, 2);
     }
 
@@ -558,7 +558,7 @@ public class TopicST extends AbstractST {
         adminClient = AdminClientUtils.getConfiguredAdminClient(sharedTestStorage.getNamespaceName(), sharedTestStorage.getAdminName());
 
         scraperPodName = ScraperUtils.getScraperPod(Environment.TEST_SUITE_NAMESPACE).getMetadata().getName();
-        topicOperatorReconciliationInterval = KafkaResource.kafkaClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(sharedTestStorage.getClusterName()).get()
+        topicOperatorReconciliationIntervalMs = KafkaResource.kafkaClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(sharedTestStorage.getClusterName()).get()
                 .getSpec().getEntityOperator().getTopicOperator().getReconciliationIntervalSeconds() * 1000 + 5_000;
     }
 }

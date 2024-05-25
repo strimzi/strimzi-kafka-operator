@@ -86,8 +86,8 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
     private String featureGatesEnvVarValue;
 
     private String watchedNamespace;
-    /* test */ int reconciliationIntervalMs;
-    /* test */ final String resourceLabels;
+    /* test */ long reconciliationIntervalMs;
+    /* test */ String resourceLabels;
     private ResourceTemplate templateRoleBinding;
 
     private LoggingModel logging;
@@ -181,7 +181,7 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_RESOURCE_LABELS, resourceLabels));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BOOTSTRAP_SERVERS, kafkaBootstrapServers));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_WATCHED_NAMESPACE, watchedNamespace));
-        varList.add(ContainerUtils.createEnvVar(ENV_VAR_FULL_RECONCILIATION_INTERVAL_MS, Integer.toString(reconciliationIntervalMs)));
+        varList.add(ContainerUtils.createEnvVar(ENV_VAR_FULL_RECONCILIATION_INTERVAL_MS, Long.toString(reconciliationIntervalMs)));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_SECURITY_PROTOCOL, EntityTopicOperatorSpec.DEFAULT_SECURITY_PROTOCOL));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_TLS_ENABLED, Boolean.toString(true)));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_GC_LOG_ENABLED, Boolean.toString(gcLoggingEnabled)));
