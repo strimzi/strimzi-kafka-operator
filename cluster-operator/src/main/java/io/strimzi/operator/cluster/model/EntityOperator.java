@@ -47,7 +47,6 @@ import static io.strimzi.operator.cluster.model.EntityUserOperator.USER_OPERATOR
 /**
  * Represents the Entity Operator deployment
  */
-@SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
 public class EntityOperator extends AbstractModel {
     protected static final String COMPONENT_TYPE = "entity-operator";
     // Certificates for the Entity Topic Operator
@@ -70,7 +69,6 @@ public class EntityOperator extends AbstractModel {
      */
     protected static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new io.strimzi.api.kafka.model.common.ProbeBuilder().withTimeoutSeconds(5).withInitialDelaySeconds(10).build();
 
-    /* test */ String zookeeperConnect;
     private EntityTopicOperator topicOperator;
     private EntityUserOperator userOperator;
     /* test */ boolean cruiseControlEnabled;
@@ -96,8 +94,6 @@ public class EntityOperator extends AbstractModel {
      */
     protected EntityOperator(Reconciliation reconciliation, HasMetadata resource, SharedEnvironmentProvider sharedEnvironmentProvider) {
         super(reconciliation, resource, KafkaResources.entityOperatorDeploymentName(resource.getMetadata().getName()), COMPONENT_TYPE, sharedEnvironmentProvider);
-
-        this.zookeeperConnect = KafkaResources.zookeeperServiceName(cluster) + ":" + ZookeeperCluster.CLIENT_TLS_PORT;
     }
 
     /**

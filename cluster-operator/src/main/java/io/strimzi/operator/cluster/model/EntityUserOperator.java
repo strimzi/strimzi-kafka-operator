@@ -69,9 +69,9 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
     // Because the container shares the pod with other containers, it needs to have unique name
     /*test*/ static final String USER_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME = "strimzi-uo-tmp";
 
-    /* test */ String kafkaBootstrapServers;
+    /* test */ final String kafkaBootstrapServers;
     private String watchedNamespace;
-    /* test */ String resourceLabels;
+    private String resourceLabels;
     /* test */ String secretPrefix;
     /* test */ long reconciliationIntervalMs;
     /* test */ int clientsCaValidityDays;

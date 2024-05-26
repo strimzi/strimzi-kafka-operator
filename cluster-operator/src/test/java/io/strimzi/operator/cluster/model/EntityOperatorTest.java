@@ -143,7 +143,6 @@ public class EntityOperatorTest {
     public void testFromCrd() {
         assertThat(entityOperator.namespace, is(namespace));
         assertThat(entityOperator.cluster, is(cluster));
-        assertThat(entityOperator.zookeeperConnect, is(KafkaResources.zookeeperServiceName(cluster) + ":" + ZookeeperCluster.CLIENT_TLS_PORT));
     }
 
     @ParallelTest
@@ -220,9 +219,6 @@ public class EntityOperatorTest {
 
         Map<String, String> rLabels = TestUtils.map("l7", "v7", "l8", "v8");
         Map<String, String> rAnots = TestUtils.map("a7", "v7", "a8", "v8");
-
-        Map<String, String> rbLabels = TestUtils.map("l9", "v9", "l10", "v10");
-        Map<String, String> rbAnots = TestUtils.map("a9", "v9", "a10", "v10");
 
         Toleration toleration = new TolerationBuilder()
                 .withEffect("NoSchedule")

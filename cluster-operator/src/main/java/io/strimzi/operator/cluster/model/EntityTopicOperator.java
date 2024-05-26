@@ -80,14 +80,14 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
     /* test */ static final String ENV_VAR_CRUISE_CONTROL_AUTH_ENABLED = "STRIMZI_CRUISE_CONTROL_AUTH_ENABLED";
 
     // Kafka bootstrap servers can't be specified in the JSON
-    /* test */ String kafkaBootstrapServers;
+    /* test */ final String kafkaBootstrapServers;
     private boolean cruiseControlEnabled;
     private boolean rackAwarenessEnabled;
     private String featureGatesEnvVarValue;
 
     private String watchedNamespace;
     /* test */ int reconciliationIntervalMs;
-    /* test */ String resourceLabels;
+    /* test */ final String resourceLabels;
     private ResourceTemplate templateRoleBinding;
 
     private LoggingModel logging;
