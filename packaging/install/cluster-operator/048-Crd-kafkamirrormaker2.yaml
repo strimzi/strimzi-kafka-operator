@@ -90,10 +90,21 @@ spec:
                                 description: The name of the Secret containing the certificate.
                               certificate:
                                 type: string
-                                description: The name of the file certificate in the Secret.
+                                description: The name of the file certificate in the secret.
+                              pattern:
+                                type: string
+                                description: "Pattern for the certificate files in the secret. Use the link:https://en.wikipedia.org/wiki/Glob_(programming)[_glob syntax_] for the pattern. All files in the secret that match the pattern are used."
+                            oneOf:
+                            - properties:
+                                certificate: {}
+                              required:
+                              - certificate
+                            - properties:
+                                pattern: {}
+                              required:
+                              - pattern
                             required:
                             - secretName
-                            - certificate
                           description: Trusted certificates for TLS connection.
                       description: TLS configuration for connecting MirrorMaker 2 connectors to a cluster.
                     authentication:
@@ -121,19 +132,19 @@ spec:
                         certificateAndKey:
                           type: object
                           properties:
-                            key:
-                              type: string
-                              description: The name of the private key in the Secret.
                             secretName:
                               type: string
                               description: The name of the Secret containing the certificate.
                             certificate:
                               type: string
                               description: The name of the file certificate in the Secret.
+                            key:
+                              type: string
+                              description: The name of the private key in the Secret.
                           required:
-                          - key
                           - secretName
                           - certificate
+                          - key
                           description: Reference to the `Secret` which holds the certificate and private key pair.
                         clientId:
                           type: string
@@ -214,10 +225,21 @@ spec:
                                 description: The name of the Secret containing the certificate.
                               certificate:
                                 type: string
-                                description: The name of the file certificate in the Secret.
+                                description: The name of the file certificate in the secret.
+                              pattern:
+                                type: string
+                                description: "Pattern for the certificate files in the secret. Use the link:https://en.wikipedia.org/wiki/Glob_(programming)[_glob syntax_] for the pattern. All files in the secret that match the pattern are used."
+                            oneOf:
+                            - properties:
+                                certificate: {}
+                              required:
+                              - certificate
+                            - properties:
+                                pattern: {}
+                              required:
+                              - pattern
                             required:
                             - secretName
-                            - certificate
                           description: Trusted certificates for TLS connection to the OAuth server.
                         tokenEndpointUri:
                           type: string

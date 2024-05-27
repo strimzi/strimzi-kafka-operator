@@ -239,6 +239,16 @@ public class CertUtilsTest {
                 .withCertificate("ca2.crt")
                 .build();
 
-        assertThat(CertUtils.trustedCertsEnvVar(List.of(cert1, cert2, cert3)), is("first-certificate/ca.crt;second-certificate/tls.crt;first-certificate/ca2.crt"));
+        CertSecretSource cert4 = new CertSecretSourceBuilder()
+                .withSecretName("third-certificate")
+                .withCertificate("*.crt")
+                .build();
+
+        CertSecretSource cert5 = new CertSecretSourceBuilder()
+                .withSecretName("first-certificate")
+                .withCertificate("*.pem")
+                .build();
+
+        assertThat(CertUtils.trustedCertsEnvVar(List.of(cert1, cert2, cert3, cert4, cert5)), is("first-certificate/ca.crt;second-certificate/tls.crt;first-certificate/ca2.crt;third-certificate/*.crt;first-certificate/*.pem"));
     }
 }

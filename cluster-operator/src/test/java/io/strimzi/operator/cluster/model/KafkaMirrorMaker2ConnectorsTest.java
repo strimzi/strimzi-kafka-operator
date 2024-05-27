@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import io.strimzi.api.kafka.model.common.CertAndKeySecretSourceBuilder;
 import io.strimzi.api.kafka.model.common.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.common.ConnectorState;
 import io.strimzi.api.kafka.model.connector.KafkaConnector;
@@ -731,7 +730,7 @@ public class KafkaMirrorMaker2ConnectorsTest {
                     .endPasswordSecret()
                 .endKafkaClientAuthenticationScramSha512()
                 .withNewTls()
-                    .withTrustedCertificates(new CertAndKeySecretSourceBuilder().withSecretName("my-tls").withCertificate("ca.crt").build())
+                    .withTrustedCertificates(new CertSecretSourceBuilder().withSecretName("my-tls").withCertificate("ca.crt").build())
                 .endTls()
                 .build();
 

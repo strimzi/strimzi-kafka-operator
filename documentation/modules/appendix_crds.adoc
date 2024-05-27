@@ -366,7 +366,10 @@ Used in: xref:type-ClientTls-{context}[`ClientTls`], xref:type-KafkaAuthorizatio
 |The name of the Secret containing the certificate.
 |certificate
 |string
-|The name of the file certificate in the Secret.
+|The name of the file certificate in the secret.
+|pattern
+|string
+|Pattern for the certificate files in the secret. Use the link:https://en.wikipedia.org/wiki/Glob_(programming)[_glob syntax_] for the pattern. All files in the secret that match the pattern are used.
 |====
 
 [id='type-KafkaListenerAuthenticationCustom-{context}']
@@ -478,15 +481,15 @@ Used in: xref:type-GenericKafkaListenerConfiguration-{context}[`GenericKafkaList
 [cols="2,2,3a",options="header"]
 |====
 |Property |Property type |Description
-|key
-|string
-|The name of the private key in the Secret.
 |secretName
 |string
 |The name of the Secret containing the certificate.
 |certificate
 |string
 |The name of the file certificate in the Secret.
+|key
+|string
+|The name of the private key in the Secret.
 |====
 
 [id='type-GenericKafkaListenerConfigurationBootstrap-{context}']
