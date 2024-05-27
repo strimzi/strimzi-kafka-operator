@@ -56,7 +56,7 @@ public class SetupMinio {
                     .endMetadata()
                     .withNewSpec()
                         .addNewContainer()
-                            .withName("minio")
+                            .withName(MINIO)
                                 .withImage(MINIO_IMAGE)
                                 .withArgs("server", "/data")
                                 .addToEnv(new EnvVar("MINIO_ACCESS_KEY", ADMIN_CREDS, null))
