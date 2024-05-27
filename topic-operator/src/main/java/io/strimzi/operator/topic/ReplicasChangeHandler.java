@@ -96,17 +96,17 @@ public class ReplicasChangeHandler {
         }
         updateToPending(reconcilableTopics, "Replicas change pending");
         result.addAll(reconcilableTopics);
-        
+
+        Timer.Sample timerSample = TopicOperatorUtil.startExternalRequestTimer(metrics, config.enableAdditionalMetrics());
         try {
             LOGGER.debugOp("Sending topic configuration request, topics {}", topicNames(reconcilableTopics));
             List<KafkaTopic> kafkaTopics = reconcilableTopics.stream().map(rt -> rt.kt()).collect(Collectors.toList());
-            Timer.Sample timerSample = TopicOperatorUtil.startExternalRequestTimer(metrics, config.enableAdditionalMetrics());
             String userTaskId = cruiseControlClient.topicConfiguration(kafkaTopics);
-            TopicOperatorUtil.stopExternalRequestTimer(timerSample, metrics::cruiseControlTopicConfig, config.enableAdditionalMetrics(), config.namespace());
             updateToOngoing(result, "Replicas change ongoing", userTaskId);
         } catch (Throwable t) {
             updateToFailed(result, format("Replicas change failed, %s", getRootCause(t).getMessage()));
         }
+        TopicOperatorUtil.stopExternalRequestTimer(timerSample, metrics::cruiseControlTopicConfig, config.enableAdditionalMetrics(), config.namespace());
         return result;
     }
 
@@ -130,11 +130,10 @@ public class ReplicasChangeHandler {
             .map(rt -> new ReconcilableTopic(new Reconciliation("", KafkaTopic.RESOURCE_KIND, "", ""), rt.kt(), rt.topicName()))
             .collect(Collectors.groupingBy(rt -> rt.kt().getStatus().getReplicasChange().getSessionId(), HashMap::new, Collectors.toList()));
 
+        Timer.Sample timerSample = TopicOperatorUtil.startExternalRequestTimer(metrics, config.enableAdditionalMetrics());
         try {
             LOGGER.debugOp("Sending user tasks request, Tasks {}", groupByUserTaskId.keySet());
-            Timer.Sample timerSample = TopicOperatorUtil.startExternalRequestTimer(metrics, config.enableAdditionalMetrics());
             UserTasksResponse utr = cruiseControlClient.userTasks(groupByUserTaskId.keySet());
-            TopicOperatorUtil.stopExternalRequestTimer(timerSample, metrics::cruiseControlUserTasks, config.enableAdditionalMetrics(), config.namespace());
             if (utr.userTasks().isEmpty()) {
                 // Cruise Control restarted: reset the state because the tasks queue is not persisted
                 updateToPending(result, "Task not found, Resetting the state");
@@ -159,6 +158,7 @@ public class ReplicasChangeHandler {
         } catch (Throwable t) {
             updateToFailed(result, format("Replicas change failed, %s", getRootCause(t).getMessage()));
         }
+        TopicOperatorUtil.stopExternalRequestTimer(timerSample, metrics::cruiseControlUserTasks, config.enableAdditionalMetrics(), config.namespace());
         return result;
     }
     
