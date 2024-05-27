@@ -47,6 +47,7 @@ public interface PerformanceConstants {
     String TOPIC_OPERATOR_IN_NUMBER_OF_TOPICS_TO_UPDATE = "IN: UPDATE NUMBER OF TOPICS";
 
     String TOPIC_OPERATOR_IN_MAX_QUEUE_SIZE = "IN: MAX QUEUE SIZE";
+    String TOPIC_OPERATOR_IN_BATCH_EVENTS_SIZE  = "IN: BATCH EVENTS SIZE";
 
     /**
      * OUT constants represent the output metrics or results measured after the performance tests involving the topic operator.
@@ -78,8 +79,8 @@ public interface PerformanceConstants {
     String TOPIC_OPERATOR_OUT_UPDATE_TIMES = "OUT: Update Times (ms)";
 
     String TOPIC_OPERATOR_OUT_SUCCESSFUL_KAFKA_TOPICS_CREATED = "OUT: Successful KafkaTopics Created";
-    String TOPIC_OPERATOR_OUT_SUCCESSFUL_KAFKA_TOPICS_CREATED_AND_MODIFIED = "OUT: Successful KafkaTopics Created and Modified";
-    String TOPIC_OPERATOR_OUT_CREATION_TIMES = "OUT: Capacity Creation Times (ms)";
+    String TOPIC_OPERATOR_OUT_SUCCESSFUL_KAFKA_TOPICS_CREATED_AND_MODIFIED_AND_DELETED = "OUT: Successful KafkaTopics Created and Modified and Deleted (ms)";
+    String TOPIC_OPERATOR_OUT_UPDATE_TIME = "OUT: Update Time (ms)";
 
     // --------------------------------------------------------------------------------
     // ------------------------------ USER OPERATOR -----------------------------------
@@ -157,7 +158,7 @@ public interface PerformanceConstants {
     String TOPIC_OPERATOR_ALICE_BULK_USE_CASE = "aliceBulkUseCase";
     String USER_OPERATOR_ALICE_BULK_USE_CASE = "aliceBulkUseCase";
     String GENERAL_CAPACITY_USE_CASE = "capacityUseCase";
-    String CREATE_AND_MODIFY_CAPACITY_USE_CASE = "createAndModifyCapacityUseCase";
+    String TOPIC_OPERATOR_FIXED_SIZE_OF_EVENTS_USE_CASE = "fixedSizeOfEventsUseCase";
 
     /**
      * Performance metrics file

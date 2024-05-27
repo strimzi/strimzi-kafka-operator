@@ -99,7 +99,7 @@ public class KafkaTopicScalabilityUtils {
         LOGGER.info("Verifying that Topics from index {} to {} contain the correct config", startIndex, endIndex - 1);
 
         for (int i = startIndex; i < endIndex; i++) {
-            String currentTopic = topicPrefix + i;
+            String currentTopic = topicPrefix + "-" + i;
             KafkaTopicUtils.waitForTopicConfigContains(namespaceName, currentTopic, config);
         }
     }
@@ -138,7 +138,7 @@ public class KafkaTopicScalabilityUtils {
         LOGGER.info("Modifying Topics from index {} to {} via Kubernetes", startIndex, endIndex - 1);
 
         for (int i = startIndex; i < endIndex; i++) {
-            String currentTopicName = topicPrefix + i;
+            String currentTopicName = topicPrefix + "-" + i;
             KafkaTopicResource.replaceTopicResourceInSpecificNamespace(namespaceName, currentTopicName, kafkaTopic -> kafkaTopic.setSpec(topicSpec));
         }
     }
