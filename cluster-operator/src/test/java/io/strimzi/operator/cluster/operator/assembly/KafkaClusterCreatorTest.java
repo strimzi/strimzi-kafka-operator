@@ -259,6 +259,7 @@ public class KafkaClusterCreatorTest {
                     assertThat(kc.nodes().size(), is(3));
                     assertThat(kc.nodes().stream().map(NodeRef::nodeId).collect(Collectors.toSet()), is(Set.of(0, 1, 2)));
                     assertThat(kc.removedNodes(), is(Set.of()));
+                    assertThat(kc.addedNodes(), is(Set.of(0, 1, 2)));
 
                     // Check the status conditions
                     assertThat(kafkaStatus.getConditions(), is(nullValue()));
@@ -285,6 +286,7 @@ public class KafkaClusterCreatorTest {
                     assertThat(kc.nodes().size(), is(3));
                     assertThat(kc.nodes().stream().map(NodeRef::nodeId).collect(Collectors.toSet()), is(Set.of(0, 1, 2)));
                     assertThat(kc.removedNodes(), is(Set.of()));
+                    assertThat(kc.addedNodes(), is(Set.of()));
 
                     // Check the status conditions
                     assertThat(kafkaStatus.getConditions(), is(nullValue()));
@@ -315,6 +317,7 @@ public class KafkaClusterCreatorTest {
                     assertThat(kc.nodes().size(), is(5));
                     assertThat(kc.nodes().stream().map(NodeRef::nodeId).collect(Collectors.toSet()), is(Set.of(0, 1, 2, 3, 4)));
                     assertThat(kc.removedNodes(), is(Set.of()));
+                    assertThat(kc.addedNodes(), is(Set.of()));
 
                     // Check the status conditions
                     assertThat(kafkaStatus.getConditions().size(), is(1));
@@ -349,6 +352,7 @@ public class KafkaClusterCreatorTest {
                     assertThat(kc.nodes().size(), is(3));
                     assertThat(kc.nodes().stream().map(NodeRef::nodeId).collect(Collectors.toSet()), is(Set.of(0, 1, 2)));
                     assertThat(kc.removedNodes(), is(Set.of(3, 4)));
+                    assertThat(kc.addedNodes(), is(Set.of()));
 
                     // Check the status conditions
                     assertThat(kafkaStatus.getConditions(), is(nullValue()));
@@ -413,6 +417,7 @@ public class KafkaClusterCreatorTest {
                     assertThat(kc.nodes().size(), is(3));
                     assertThat(kc.nodes().stream().map(NodeRef::nodeId).collect(Collectors.toSet()), is(Set.of(0, 1, 2)));
                     assertThat(kc.removedNodes(), is(Set.of(3, 4)));
+                    assertThat(kc.addedNodes(), is(Set.of()));
 
                     // Check the status conditions
                     assertThat(kafkaStatus.getConditions(), is(nullValue()));
@@ -443,6 +448,7 @@ public class KafkaClusterCreatorTest {
                     assertThat(kc.nodes().size(), is(6));
                     assertThat(kc.nodes().stream().map(NodeRef::nodeId).collect(Collectors.toSet()), is(Set.of(0, 1, 2, 3, 4, 5)));
                     assertThat(kc.removedNodes(), is(Set.of()));
+                    assertThat(kc.addedNodes(), is(Set.of(0, 1, 2, 3, 4, 5)));
 
                     // Check the status conditions
                     assertThat(kafkaStatus.getConditions(), is(nullValue()));
@@ -469,6 +475,7 @@ public class KafkaClusterCreatorTest {
                     assertThat(kc.nodes().size(), is(6));
                     assertThat(kc.nodes().stream().map(NodeRef::nodeId).collect(Collectors.toSet()), is(Set.of(1000, 1001, 1002, 2000, 2001, 2002)));
                     assertThat(kc.removedNodes(), is(Set.of()));
+                    assertThat(kc.addedNodes(), is(Set.of()));
 
                     // Check the status conditions
                     assertThat(kafkaStatus.getConditions(), is(nullValue()));
@@ -499,6 +506,7 @@ public class KafkaClusterCreatorTest {
                     assertThat(kc.nodes().size(), is(10));
                     assertThat(kc.nodes().stream().map(NodeRef::nodeId).collect(Collectors.toSet()), is(Set.of(1000, 1001, 1002, 1003, 1004, 2000, 2001, 2002, 2003, 2004)));
                     assertThat(kc.removedNodes(), is(Set.of()));
+                    assertThat(kc.addedNodes(), is(Set.of()));
 
                     // Check the status conditions
                     assertThat(kafkaStatus.getConditions().size(), is(2));
@@ -537,6 +545,7 @@ public class KafkaClusterCreatorTest {
                     assertThat(kc.nodes().size(), is(6));
                     assertThat(kc.nodes().stream().map(NodeRef::nodeId).collect(Collectors.toSet()), is(Set.of(1000, 1001, 1002, 2000, 2001, 2002)));
                     assertThat(kc.removedNodes(), is(Set.of(1003, 1004, 2003, 2004)));
+                    assertThat(kc.addedNodes(), is(Set.of()));
 
                     // Check the status conditions
                     assertThat(kafkaStatus.getConditions(), is(nullValue()));
@@ -601,6 +610,7 @@ public class KafkaClusterCreatorTest {
                     assertThat(kc.nodes().size(), is(6));
                     assertThat(kc.nodes().stream().map(NodeRef::nodeId).collect(Collectors.toSet()), is(Set.of(1000, 1001, 1002, 2000, 2001, 2002)));
                     assertThat(kc.removedNodes(), is(Set.of(1003, 1004, 2003, 2004)));
+                    assertThat(kc.addedNodes(), is(Set.of()));
 
                     // Check the status conditions
                     assertThat(kafkaStatus.getConditions(), is(nullValue()));
@@ -631,6 +641,7 @@ public class KafkaClusterCreatorTest {
                     assertThat(kc.nodes().size(), is(9));
                     assertThat(kc.nodes().stream().map(NodeRef::nodeId).collect(Collectors.toSet()), is(Set.of(0, 1, 2, 3, 4, 5, 6, 7, 8)));
                     assertThat(kc.removedNodes(), is(Set.of()));
+                    assertThat(kc.addedNodes(), is(Set.of(0, 1, 2, 3, 4, 5, 6, 7, 8)));
 
                     // Check the status conditions
                     assertThat(kafkaStatus.getConditions(), is(nullValue()));
@@ -687,6 +698,7 @@ public class KafkaClusterCreatorTest {
                     assertThat(kc.nodes().size(), is(13));
                     assertThat(kc.nodes().stream().map(NodeRef::nodeId).collect(Collectors.toSet()), is(Set.of(1000, 1001, 1002, 1003, 1004, 2000, 2001, 2002, 2003, 2004, 3000, 3001, 3002)));
                     assertThat(kc.removedNodes(), is(Set.of(3003, 3004))); // Controllers are not affected
+                    assertThat(kc.addedNodes(), is(Set.of()));
 
                     // Check the status conditions
                     assertThat(kafkaStatus.getConditions().size(), is(2));
@@ -725,6 +737,7 @@ public class KafkaClusterCreatorTest {
                     assertThat(kc.nodes().size(), is(5));
                     assertThat(kc.nodes().stream().map(NodeRef::nodeId).collect(Collectors.toSet()), is(Set.of(3000, 3001, 3002, 3003, 3004)));
                     assertThat(kc.removedNodes(), is(Set.of()));
+                    assertThat(kc.addedNodes(), is(Set.of()));
 
                     // Check the status conditions
                     assertThat(kafkaStatus.getConditions().size(), is(1));
@@ -759,6 +772,7 @@ public class KafkaClusterCreatorTest {
                     assertThat(kc.nodes().size(), is(9));
                     assertThat(kc.nodes().stream().map(NodeRef::nodeId).collect(Collectors.toSet()), is(Set.of(1000, 1001, 1002, 2000, 2001, 2002, 3000, 3001, 3002)));
                     assertThat(kc.removedNodes(), is(Set.of(1003, 1004, 2003, 2004, 3003, 3004)));
+                    assertThat(kc.addedNodes(), is(Set.of()));
 
                     // Check the status conditions
                     assertThat(kafkaStatus.getConditions(), is(nullValue()));
@@ -819,6 +833,7 @@ public class KafkaClusterCreatorTest {
                     assertThat(kc.nodes().size(), is(9));
                     assertThat(kc.nodes().stream().map(NodeRef::nodeId).collect(Collectors.toSet()), is(Set.of(1000, 1001, 1002, 2000, 2001, 2002, 3000, 3001, 3002)));
                     assertThat(kc.removedNodes(), is(Set.of(1003, 1004, 2003, 2004, 3003, 3004)));
+                    assertThat(kc.addedNodes(), is(Set.of()));
 
                     // Check the status conditions
                     assertThat(kafkaStatus.getConditions(), is(nullValue()));
@@ -852,6 +867,7 @@ public class KafkaClusterCreatorTest {
                     assertThat(kc.controllerNodes().stream().map(NodeRef::nodeId).collect(Collectors.toSet()), is(Set.of(3000, 3001, 3002)));
                     assertThat(kc.removedNodes(), is(Set.of()));
                     assertThat(kc.usedToBeBrokerNodes(), is(Set.of()));
+                    assertThat(kc.addedNodes(), is(Set.of()));
 
                     // Check the status conditions
                     assertThat(kafkaStatus.getConditions().size(), is(1));
@@ -895,6 +911,7 @@ public class KafkaClusterCreatorTest {
                     assertThat(kc.controllerNodes().stream().map(NodeRef::nodeId).collect(Collectors.toSet()), is(Set.of(3000, 3001, 3002)));
                     assertThat(kc.removedNodes(), is(Set.of()));
                     assertThat(kc.usedToBeBrokerNodes(), is(Set.of()));
+                    assertThat(kc.addedNodes(), is(Set.of()));
 
                     // Check the status conditions
                     assertThat(kafkaStatus.getConditions().size(), is(1));
@@ -930,6 +947,7 @@ public class KafkaClusterCreatorTest {
                     assertThat(kc.nodes().stream().map(NodeRef::nodeId).collect(Collectors.toSet()), is(Set.of(1000, 1001, 1002, 2000, 2001, 2002, 3000, 3001, 3002)));
                     assertThat(kc.removedNodes(), is(Set.of()));
                     assertThat(kc.usedToBeBrokerNodes(), is(Set.of(3000, 3001, 3002)));
+                    assertThat(kc.addedNodes(), is(Set.of()));
 
                     // Check the status conditions
                     assertThat(kafkaStatus.getConditions(), is(nullValue()));
@@ -991,6 +1009,7 @@ public class KafkaClusterCreatorTest {
                     assertThat(kc.nodes().stream().map(NodeRef::nodeId).collect(Collectors.toSet()), is(Set.of(1000, 1001, 1002, 2000, 2001, 2002, 3000, 3001, 3002)));
                     assertThat(kc.removedNodes(), is(Set.of()));
                     assertThat(kc.usedToBeBrokerNodes(), is(Set.of(3000, 3001, 3002)));
+                    assertThat(kc.addedNodes(), is(Set.of()));
 
                     // Check the status conditions
                     assertThat(kafkaStatus.getConditions(), is(nullValue()));

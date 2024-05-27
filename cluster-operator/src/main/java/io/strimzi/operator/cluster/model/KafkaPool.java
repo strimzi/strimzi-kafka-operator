@@ -326,6 +326,15 @@ public class KafkaPool extends AbstractModel {
     }
 
     /**
+     * Generates set of Kafka node IDs going to be added to the Kafka cluster.
+     *
+     * @return  Set of Kafka node IDs which are going to be added
+     */
+    public Set<Integer> scaledUpNodes() {
+        return idAssignment.toBeAdded();
+    }
+
+    /**
      * Generates set of Kafka node IDs that used to have the broker role but do not have it anymore.
      *
      * @return  Set of Kafka node IDs which are removing the broker role
