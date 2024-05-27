@@ -18,6 +18,7 @@ import io.fabric8.openshift.api.model.BuildRequestBuilder;
 import io.fabric8.openshift.api.model.ImageStream;
 import io.fabric8.openshift.api.model.ImageStreamBuilder;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.openshift.BuildConfigResource;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
@@ -107,8 +108,8 @@ public class ImageBuild {
             .endSpec()
             .build();
 
-        ResourceManager.getInstance().createResourceWithoutWait(kanikoJob);
-        JobUtils.waitForJobSuccess(name, namespace, 120_000);
+        ResourceManager.getInstance().createResourceWithWait(kanikoJob);
+        JobUtils.waitForJobSuccess(name, namespace, TestConstants.GLOBAL_TIMEOUT);
     }
 
     /**
@@ -144,7 +145,7 @@ public class ImageBuild {
                     .withType("Docker")
                     .withNewDockerStrategy()
                         .addToBuildArgs(new EnvVar("BASE_IMAGE", baseImage, null))
-                .endDockerStrategy()
+                    .endDockerStrategy()
                 .endStrategy()
             .endSpec()
             .build();
@@ -153,7 +154,8 @@ public class ImageBuild {
                 .withNewMetadata()
                     .withName(name)
                     .withNamespace(namespace)
-                .endMetadata().build();
+                .endMetadata()
+                .build();
 
         BuildRequest buildRequest = new BuildRequestBuilder()
             .withNewMetadata()
@@ -180,13 +182,13 @@ public class ImageBuild {
         String dockerfileContent = Files.readString(Paths.get(dockerfilePath), StandardCharsets.UTF_8);
 
         ConfigMap configMap = new ConfigMapBuilder()
-                .withNewMetadata()
+            .withNewMetadata()
                 .withName(configMapName)
                 .withNamespace(namespace)
-                .endMetadata()
-                .addToData("Dockerfile", dockerfileContent)
-                .build();
+            .endMetadata()
+            .addToData("Dockerfile", dockerfileContent)
+            .build();
 
-        ResourceManager.getInstance().createResourceWithoutWait(configMap);
+        ResourceManager.getInstance().createResourceWithWait(configMap);
     }
 }

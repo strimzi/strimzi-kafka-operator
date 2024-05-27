@@ -39,11 +39,7 @@ public class BuildUtils {
 
             LOGGER.info("Build status of {} is '{}'", buildName, buildStatus.getPhase());
 
-            if (buildStatus.getPhase().equals("Complete")) {
-                return true;
-            }
-
-            return false;
+            return buildStatus.getPhase().equals("Complete");
         });
     }
 }

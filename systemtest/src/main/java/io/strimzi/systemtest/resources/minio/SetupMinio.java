@@ -31,6 +31,7 @@ public class SetupMinio {
     public static final String ADMIN_CREDS = "minioadmin";
     public static final String MINIO_STORAGE_ALIAS = "local";
     public static final int MINIO_PORT = 9000;
+    private static final String MINIO_IMAGE = "quay.io/minio/minio:latest";
 
     /**
      * Deploy minio to a specific namespace, creates service for it and init client inside the Minio pod
@@ -56,7 +57,7 @@ public class SetupMinio {
                     .withNewSpec()
                         .addNewContainer()
                             .withName("minio")
-                                .withImage("quay.io/minio/minio:latest")
+                                .withImage(MINIO_IMAGE)
                                 .withArgs("server", "/data")
                                 .addToEnv(new EnvVar("MINIO_ACCESS_KEY", ADMIN_CREDS, null))
                                 .addToEnv(new EnvVar("MINIO_SECRET_KEY", ADMIN_CREDS, null))

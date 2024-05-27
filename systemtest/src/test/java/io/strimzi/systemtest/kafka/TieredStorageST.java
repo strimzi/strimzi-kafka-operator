@@ -80,7 +80,7 @@ public class TieredStorageST extends AbstractST {
                             .withDeleteClaim(true)
                         .endPersistentClaimStorage()
                     .endSpec()
-                        .build(),
+                    .build(),
                 KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 1).build()
             )
         );
@@ -92,22 +92,22 @@ public class TieredStorageST extends AbstractST {
             .editSpec()
                 .editKafka()
                     .withImage(Environment.getImageOutputRegistry(testStorage.getNamespaceName(), IMAGE_NAME, BUILT_IMAGE_TAG))
-                        .withNewTieredStorageCustomTiered()
-                            .withNewRemoteStorageManager()
-                                .withClassName("io.aiven.kafka.tieredstorage.RemoteStorageManager")
-                                .withClassPath("/opt/kafka/plugins/tiered-storage/*")
-                                .addToConfig("storage.backend.class", "io.aiven.kafka.tieredstorage.storage.s3.S3Storage")
-                                .addToConfig("chunk.size", "4194304")
-                                // s3 config
-                                .addToConfig("storage.s3.endpoint.url",
-                                        "http://" + SetupMinio.MINIO + "." + testStorage.getNamespaceName() + ".svc.cluster.local:" + SetupMinio.MINIO_PORT)
-                                .addToConfig("storage.s3.bucket.name", BUCKET_NAME)
-                                .addToConfig("storage.s3.region", "us-east-1")
-                                .addToConfig("storage.s3.path.style.access.enabled", "true")
-                                .addToConfig("storage.aws.access.key.id", SetupMinio.ADMIN_CREDS)
-                                .addToConfig("storage.aws.secret.access.key", SetupMinio.ADMIN_CREDS)
-                            .endRemoteStorageManager()
-                        .endTieredStorageCustomTiered()
+                    .withNewTieredStorageCustomTiered()
+                        .withNewRemoteStorageManager()
+                            .withClassName("io.aiven.kafka.tieredstorage.RemoteStorageManager")
+                            .withClassPath("/opt/kafka/plugins/tiered-storage/*")
+                            .addToConfig("storage.backend.class", "io.aiven.kafka.tieredstorage.storage.s3.S3Storage")
+                            .addToConfig("chunk.size", "4194304")
+                            // s3 config
+                            .addToConfig("storage.s3.endpoint.url",
+                                    "http://" + SetupMinio.MINIO + "." + testStorage.getNamespaceName() + ".svc.cluster.local:" + SetupMinio.MINIO_PORT)
+                            .addToConfig("storage.s3.bucket.name", BUCKET_NAME)
+                            .addToConfig("storage.s3.region", "us-east-1")
+                            .addToConfig("storage.s3.path.style.access.enabled", "true")
+                            .addToConfig("storage.aws.access.key.id", SetupMinio.ADMIN_CREDS)
+                            .addToConfig("storage.aws.secret.access.key", SetupMinio.ADMIN_CREDS)
+                        .endRemoteStorageManager()
+                    .endTieredStorageCustomTiered()
                 .endKafka()
             .endSpec()
             .build());

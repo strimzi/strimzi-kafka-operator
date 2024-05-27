@@ -409,7 +409,7 @@ public interface TestConstants {
     /**
      * Tag for tests that covers Tiered Storage integration
      */
-    String TIERED_STORAGE = "tiered-storage";
+    String TIERED_STORAGE = "tieredstorage";
 
     /**
      * Tag for tests, without ARM,AARCH64 support
