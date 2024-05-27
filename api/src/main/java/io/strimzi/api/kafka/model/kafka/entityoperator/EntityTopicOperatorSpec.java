@@ -45,12 +45,12 @@ import java.util.Map;
 @EqualsAndHashCode
 @ToString
 public class EntityTopicOperatorSpec implements HasConfigurableLogging, HasLivenessProbe, HasReadinessProbe, HasStartupProbe, UnknownPropertyPreserving {
-    public static final long DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS = 120;
+    public static final int DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS = 120;
     public static final String DEFAULT_SECURITY_PROTOCOL = "SSL";
 
     protected String watchedNamespace;
     protected String image;
-    protected long reconciliationIntervalSeconds = DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS;
+    protected int reconciliationIntervalSeconds = DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS;
     protected Integer zookeeperSessionTimeoutSeconds;
     protected Integer topicMetadataMaxAttempts;
     private Probe startupProbe;
@@ -82,11 +82,11 @@ public class EntityTopicOperatorSpec implements HasConfigurableLogging, HasLiven
     @Description("Interval between periodic reconciliations.")
     @Minimum(0)
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-    public long getReconciliationIntervalSeconds() {
+    public int getReconciliationIntervalSeconds() {
         return reconciliationIntervalSeconds;
     }
 
-    public void setReconciliationIntervalSeconds(long reconciliationIntervalSeconds) {
+    public void setReconciliationIntervalSeconds(int reconciliationIntervalSeconds) {
         this.reconciliationIntervalSeconds = reconciliationIntervalSeconds;
     }
     

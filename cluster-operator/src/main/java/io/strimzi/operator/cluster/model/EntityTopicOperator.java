@@ -87,7 +87,7 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
 
     private String watchedNamespace;
     /* test */ long reconciliationIntervalMs;
-    /* test */ String resourceLabels;
+    /* test */ final String resourceLabels;
     private ResourceTemplate templateRoleBinding;
 
     private LoggingModel logging;
@@ -134,7 +134,7 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
             }
             result.image = image;
             result.watchedNamespace = topicOperatorSpec.getWatchedNamespace() != null ? topicOperatorSpec.getWatchedNamespace() : kafkaAssembly.getMetadata().getNamespace();
-            result.reconciliationIntervalMs = topicOperatorSpec.getReconciliationIntervalSeconds() * 1_000;
+            result.reconciliationIntervalMs = topicOperatorSpec.getReconciliationIntervalSeconds() * 1_000L;
             result.logging = new LoggingModel(topicOperatorSpec, result.getClass().getSimpleName(), true, false);
             result.gcLoggingEnabled = topicOperatorSpec.getJvmOptions() == null ? JvmOptions.DEFAULT_GC_LOGGING_ENABLED : topicOperatorSpec.getJvmOptions().isGcLoggingEnabled();
             result.jvmOptions = topicOperatorSpec.getJvmOptions();

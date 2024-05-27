@@ -559,6 +559,6 @@ public class TopicST extends AbstractST {
 
         scraperPodName = ScraperUtils.getScraperPod(Environment.TEST_SUITE_NAMESPACE).getMetadata().getName();
         topicOperatorReconciliationIntervalMs = KafkaResource.kafkaClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(sharedTestStorage.getClusterName()).get()
-                .getSpec().getEntityOperator().getTopicOperator().getReconciliationIntervalSeconds() * 1000 + 5_000;
+                .getSpec().getEntityOperator().getTopicOperator().getReconciliationIntervalSeconds() * 1_000L + 5_000L;
     }
 }
