@@ -20,7 +20,6 @@ import io.strimzi.systemtest.performance.gather.collectors.TopicOperatorMetricsC
 import io.strimzi.systemtest.performance.gather.schedulers.TopicOperatorMetricsCollectionScheduler;
 import io.strimzi.systemtest.performance.report.TopicOperatorPerformanceReporter;
 import io.strimzi.systemtest.performance.report.parser.TopicOperatorMetricsParser;
-import io.strimzi.systemtest.performance.utils.PerformanceUtils;
 import io.strimzi.systemtest.resources.ComponentType;
 import io.strimzi.systemtest.resources.NodePoolsConverter;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -47,11 +46,12 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.temporal.TemporalAccessor;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static io.strimzi.systemtest.TestConstants.PERFORMANCE;
@@ -740,16 +740,38 @@ public class TopicOperatorPerformance extends AbstractST {
         }
     }
 
-    @Tag(PERFORMANCE_CAPACITY)
+    private static Stream<Arguments> provideConfigurationsFortestPerformanceInFixedSizeOfEvents() {
+        final int seed = 50;
+        final int limit = 1000;
+
+        // this means we would invoke create/update/delete operations x times in one iteration
+        int[] batchEventSizes = IntStream.iterate(seed, n -> n + seed).limit(limit).toArray();
+        return Stream.of(
+            new Object[][]{
+                    {"100", "100"},     // Default configuration
+                    {"10", "1"},        // Minimal batching for high responsiveness
+                    {"50", "100"},      // Moderate batching for balanced performance
+                    {"100", "500"},     // Heavier batching for throughput focus
+                    {"500", "1000"},    // Extreme batching to test upper limits of performance
+                    {"1000", "2000"}    // Maximum possible batching for stress testing
+                }
+            )
+            .flatMap(config -> Arrays.stream(batchEventSizes)
+                .mapToObj(batchSize ->
+                    Arguments.of(config[0], config[1], batchSize)));
+    }
+
+    @Tag(PERFORMANCE)
     @ParameterizedTest
-    @MethodSource("provideConfigurationsForCapacity")
-    void testCapacityCreateAndUpdateTopics(String maxBatchSize, String maxBatchLingerMs) throws IOException {
+    @MethodSource("provideConfigurationsFortestPerformanceInFixedSizeOfEvents")
+    void testPerformanceInFixedSizeOfEvents(String maxBatchSize, String maxBatchLingerMs, int batchEventsSize) throws IOException {
         final int brokerReplicas = 3;
         final int controllerReplicas = 3;
-        int successfulCreationsAndModifications = 0;
         final String maxQueueSize = String.valueOf(Integer.MAX_VALUE);
-        final List<Long> capacityCreateTimerMsArr = new ArrayList<>();
-        final List<Long> capacityModificationTimerMsArr = new ArrayList<>();
+        long timeTakenForBatchCreation = 0;
+        long timeTakenForBatchModification = 0;
+        long timeTakeForBatchDeletion = 0;
+        long allTasksTimeMs = 0;
 
         try {
             resourceManager.createResourceWithWait(
@@ -757,17 +779,11 @@ public class TopicOperatorPerformance extends AbstractST {
                     KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), brokerReplicas)
                         .editSpec()
                             .withNewPersistentClaimStorage()
-                                .withSize("50Gi")
-                            .endPersistentClaimStorage()
-                        .endSpec()
-                        .build(),
-                    KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), controllerReplicas)
-                        .editSpec()
-                            .withNewPersistentClaimStorage()
                                 .withSize("5Gi")
                             .endPersistentClaimStorage()
                         .endSpec()
-                        .build()
+                        .build(),
+                    KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), controllerReplicas).build()
                 )
             );
             resourceManager.createResourceWithWait(
@@ -824,52 +840,41 @@ public class TopicOperatorPerformance extends AbstractST {
 
             this.topicOperatorMetricsGatherer = new TopicOperatorMetricsCollectionScheduler(this.topicOperatorCollector, "strimzi.io/cluster=" + this.testStorage.getClusterName());
             this.topicOperatorMetricsGatherer.startCollecting();
-            final int batchSize = 100;
             final Map<String, Object> kafkaTopicConfigToModify = Map.of(
                 "compression.type", "gzip", "cleanup.policy", "delete", "min.insync.replicas", 2,
                 "max.compaction.lag.ms", 54321L, "min.compaction.lag.ms", 54L, "retention.ms", 3690L,
                 "segment.ms", 123456L, "retention.bytes", 9876543L, "segment.bytes", 321654L, "flush.messages", 456123L);
-            while (true) { // Endless loop
-                int start = successfulCreationsAndModifications;
-                int end = successfulCreationsAndModifications + batchSize;
 
-                try {
-                    // 1st - Create topics
-                    long timeTakenForBatchCreation = OperationTimer.measureTimeInMillis(() -> {
-                        KafkaTopicScalabilityUtils.createTopicsViaK8s(testStorage.getNamespaceName(), testStorage.getClusterName(),
-                            testStorage.getTopicName(), start, end, 12, 3, 2);
-                        KafkaTopicScalabilityUtils.waitForTopicStatus(testStorage.getNamespaceName(), testStorage.getTopicName(),
-                            start, end, CustomResourceStatus.Ready, ConditionStatus.True);
-                    });
+            long startTime = System.currentTimeMillis();
+            int start = 0;
+            int end = start + batchEventsSize;
 
-                    // 2nd - Modification of topics
-                    long timeTakenForBatchModification = OperationTimer.measureTimeInMillis(() -> {
-                        KafkaTopicScalabilityUtils.modifyBigAmountOfTopics(
-                            testStorage.getNamespaceName(), testStorage.getTopicName(), start, end,
-                            new KafkaTopicSpecBuilder().withConfig(kafkaTopicConfigToModify).build()
-                        );
-                        // Wait for topics to reflect the updated configurations, or for readiness
-                        KafkaTopicScalabilityUtils.waitForTopicsContainConfig(
-                            testStorage.getNamespaceName(), testStorage.getTopicName(), start, end, kafkaTopicConfigToModify
-                        );
-                    });
+            timeTakenForBatchCreation = OperationTimer.measureTimeInMillis(() -> {
+                KafkaTopicScalabilityUtils.createTopicsViaK8s(testStorage.getNamespaceName(), testStorage.getClusterName(),
+                    testStorage.getTopicName(), start, end, 12, 3, 2);
+                KafkaTopicScalabilityUtils.waitForTopicStatus(testStorage.getNamespaceName(), testStorage.getTopicName(),
+                    start, end, CustomResourceStatus.Ready, ConditionStatus.True);
+            });
 
-                    capacityCreateTimerMsArr.add(timeTakenForBatchCreation);
-                    capacityModificationTimerMsArr.add(timeTakenForBatchModification);
+            timeTakenForBatchModification = OperationTimer.measureTimeInMillis(() -> {
+                KafkaTopicScalabilityUtils.modifyBigAmountOfTopics(
+                    testStorage.getNamespaceName(), testStorage.getTopicName(), start, end,
+                    new KafkaTopicSpecBuilder().withConfig(kafkaTopicConfigToModify).build()
+                );
+                KafkaTopicScalabilityUtils.waitForTopicsContainConfig(
+                    testStorage.getNamespaceName(), testStorage.getTopicName(), start, end, kafkaTopicConfigToModify
+                );
+            });
 
-                    successfulCreationsAndModifications += batchSize;
-                    LOGGER.info("Successfully created, modified and verified batch from {} to {}", start, end);
-                } catch (WaitException e) {
-                    LOGGER.error("Failed to create, modified Kafka topics from index {} to {}: {}", start, end, e.getMessage());
+            timeTakeForBatchDeletion = OperationTimer.measureTimeInMillis(() -> {
+                resourceManager.deleteResourcesOfTypeWithoutWait(KafkaTopic.RESOURCE_KIND);
+                KafkaTopicUtils.waitForTopicWithPrefixDeletion(testStorage.getNamespaceName(), testStorage.getTopicName());
+            });
 
-                    // after a failure we will gather logs from all components under test (i.e., TO, Kafka pods) to observer behaviour
-                    // what might be a bottleneck of such performance
-                    this.logCollector = new LogCollector();
-                    this.logCollector.collect();
+            // Calculate total execution time
+            allTasksTimeMs = System.currentTimeMillis() - startTime;
 
-                    break; // Break out of the loop if an error occurs
-                }
-            }
+            LOGGER.info("Total time taken for all tasks (i.e., {} for each operation; creation, modification and deletion) {} ms", batchEventsSize, allTasksTimeMs);
         } finally {
             // to enchantment a process of deleting we should delete all resources at once
             // I saw a behaviour where deleting one by one might lead to 10s delay for deleting each KafkaTopic
@@ -883,13 +888,15 @@ public class TopicOperatorPerformance extends AbstractST {
 
                 performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_IN_MAX_QUEUE_SIZE, maxQueueSize);
                 performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_IN_MAX_BATCH_SIZE, maxBatchSize);
+                performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_IN_BATCH_EVENTS_SIZE, batchEventsSize);
                 performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_IN_MAX_BATCH_LINGER_MS, maxBatchLingerMs);
 
-                performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_OUT_SUCCESSFUL_KAFKA_TOPICS_CREATED_AND_MODIFIED, successfulCreationsAndModifications);
-                performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_OUT_CREATION_TIMES, PerformanceUtils.convertListToPrimitiveArray(capacityCreateTimerMsArr));
-                performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_OUT_UPDATE_TIMES, PerformanceUtils.convertListToPrimitiveArray(capacityModificationTimerMsArr));
+                performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_OUT_SUCCESSFUL_KAFKA_TOPICS_CREATED_AND_MODIFIED_AND_DELETED, allTasksTimeMs);
+                performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_OUT_CREATION_TIME, timeTakenForBatchCreation);
+                performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_OUT_UPDATE_TIME, timeTakenForBatchModification);
+                performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_OUT_DELETION_TIME, timeTakeForBatchDeletion);
                 performanceAttributes.put(PerformanceConstants.METRICS_HISTORY, this.topicOperatorMetricsGatherer.getMetricsStore()); // Map of metrics history
-                this.topicOperatorPerformanceReporter.logPerformanceData(this.testStorage, performanceAttributes, REPORT_DIRECTORY + "/" + PerformanceConstants.CREATE_AND_MODIFY_CAPACITY_USE_CASE, ACTUAL_TIME, Environment.PERFORMANCE_DIR);
+                this.topicOperatorPerformanceReporter.logPerformanceData(this.testStorage, performanceAttributes, REPORT_DIRECTORY + "/" + PerformanceConstants.TOPIC_OPERATOR_FIXED_SIZE_OF_EVENTS_USE_CASE, ACTUAL_TIME, Environment.PERFORMANCE_DIR);
             }
         }
     }
