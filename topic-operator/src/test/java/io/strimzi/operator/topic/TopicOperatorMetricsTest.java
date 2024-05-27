@@ -179,12 +179,28 @@ public class TopicOperatorMetricsTest {
         var t3 = createTopic("t3", 2, 1);
         controller.onUpdate(List.of(reconcilableTopic(t1), reconcilableTopic(t2), reconcilableTopic(t3)));
         
+        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS, "counter", is(3.0));
+        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS_SUCCESSFUL, "counter", is(3.0));
+        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS_DURATION, "timer", greaterThan(0.0));
+        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_DESCRIBE_TOPICS_DURATION, "timer", greaterThan(0.0));
+        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_DESCRIBE_CONFIGS_DURATION, "timer", greaterThan(0.0));
+        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_CREATE_TOPICS_DURATION, "timer", greaterThan(0.0));
+        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_ADD_FINALIZER_DURATION, "timer", greaterThan(0.0));
+        
         // config change, 1 reconciliation, success
         var t1ConfigChanged = updateTopic("t1", kt -> {
             kt.getSpec().setConfig(Map.of("retention.ms", "86400000"));
             return kt;
         });
         controller.onUpdate(List.of(reconcilableTopic(t1ConfigChanged)));
+        
+        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS, "counter", is(4.0));
+        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS_SUCCESSFUL, "counter", is(4.0));
+        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS_DURATION, "timer", greaterThan(0.0));
+        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_DESCRIBE_TOPICS_DURATION, "timer", greaterThan(0.0));
+        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_DESCRIBE_CONFIGS_DURATION, "timer", greaterThan(0.0));
+        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_ALTER_CONFIGS_DURATION, "timer", greaterThan(0.0));
+        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_UPDATE_TOPICS_DURATION, "timer", greaterThan(0.0));
         
         // increase partitions, 1 reconciliation, success
         var t2PartIncreased = updateTopic("t2", kt -> {
@@ -193,12 +209,26 @@ public class TopicOperatorMetricsTest {
         });
         controller.onUpdate(List.of(reconcilableTopic(t2PartIncreased)));
 
+        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS, "counter", is(5.0));
+        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS_SUCCESSFUL, "counter", is(5.0));
+        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS_DURATION, "timer", greaterThan(0.0));
+        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_DESCRIBE_TOPICS_DURATION, "timer", greaterThan(0.0));
+        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_DESCRIBE_CONFIGS_DURATION, "timer", greaterThan(0.0));
+        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_CREATE_PARTITIONS_DURATION, "timer", greaterThan(0.0));
+
         // decrease partitions, 1 reconciliation, fail
         var t2PartDecreased = updateTopic("t2", kt -> {
             kt.getSpec().setPartitions(4);
             return kt;
         });
         controller.onUpdate(List.of(reconcilableTopic(t2PartDecreased)));
+
+        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS, "counter", is(6.0));
+        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS_SUCCESSFUL, "counter", is(5.0));
+        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS_FAILED, "counter", is(1.0));
+        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS_DURATION, "timer", greaterThan(0.0));
+        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_DESCRIBE_TOPICS_DURATION, "timer", greaterThan(0.0));
+        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_DESCRIBE_CONFIGS_DURATION, "timer", greaterThan(0.0));
 
         // increase replicas, 1 reconciliation, success
         var t3ReplIncreased = updateTopic("t3", kt -> {
@@ -207,15 +237,40 @@ public class TopicOperatorMetricsTest {
         });
         controller.onUpdate(List.of(reconcilableTopic(t3ReplIncreased)));
 
+        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS, "counter", is(7.0));
+        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS_SUCCESSFUL, "counter", is(6.0));
+        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS_FAILED, "counter", is(1.0));
+        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS_DURATION, "timer", greaterThan(0.0));
+        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_DESCRIBE_TOPICS_DURATION, "timer", greaterThan(0.0));
+        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_DESCRIBE_CONFIGS_DURATION, "timer", greaterThan(0.0));
+        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_LIST_REASSIGNMENTS_DURATION, "timer", greaterThan(0.0));
+        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_CC_TOPIC_CONFIG_DURATION, "timer", greaterThan(0.0));
+        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_CC_USER_TASKS_DURATION, "timer", greaterThan(0.0));
+
         // unmanage topic, 1 reconciliation, success
         var t1Unmanaged = updateTopic("t1", kt -> {
             kt.getMetadata().setAnnotations(Map.of(TopicOperatorUtil.MANAGED, "false"));
             return kt;
         });
         controller.onUpdate(List.of(reconcilableTopic(t1Unmanaged)));
+
+        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS, "counter", is(8.0));
+        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS_SUCCESSFUL, "counter", is(7.0));
+        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS_FAILED, "counter", is(1.0));
+        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS_DURATION, "timer", greaterThan(0.0));
+        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_DESCRIBE_TOPICS_DURATION, "timer", greaterThan(0.0));
+        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_DESCRIBE_CONFIGS_DURATION, "timer", greaterThan(0.0));
         
         // delete managed topics, 1 reconciliation, success
         controller.onDelete(List.of(reconcilableTopic(t2)));
+
+        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS, "counter", is(9.0));
+        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS_SUCCESSFUL, "counter", is(8.0));
+        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS_FAILED, "counter", is(1.0));
+        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS_DURATION, "timer", greaterThan(0.0));
+        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_DESCRIBE_TOPICS_DURATION, "timer", greaterThan(0.0));
+        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_DESCRIBE_CONFIGS_DURATION, "timer", greaterThan(0.0));
+        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_DELETE_TOPICS_DURATION, "timer", greaterThan(0.0));
 
         // delete unmanaged topic, 1 reconciliation, success
         var t3Unmanaged = updateTopic("t3", kt -> {
@@ -224,25 +279,13 @@ public class TopicOperatorMetricsTest {
         });
         controller.onDelete(List.of(reconcilableTopic(t3Unmanaged)));
 
-        // check standard metrics
         assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS, "counter", is(10.0));
         assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS_SUCCESSFUL, "counter", is(9.0));
         assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS_FAILED, "counter", is(1.0));
         assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS_DURATION, "timer", greaterThan(0.0));
-        
-        // check additional metrics
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_ADD_FINALIZER_DURATION, "timer", greaterThan(0.0));
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_REMOVE_FINALIZER_DURATION, "timer", greaterThan(0.0));
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_CREATE_TOPICS_DURATION, "timer", greaterThan(0.0));
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_UPDATE_TOPICS_DURATION, "timer", greaterThan(0.0));
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_LIST_REASSIGNMENTS_DURATION, "timer", greaterThan(0.0));
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_ALTER_CONFIGS_DURATION, "timer", greaterThan(0.0));
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_CREATE_PARTITIONS_DURATION, "timer", greaterThan(0.0));
         assertMetricMatches(TopicOperatorMetricsHolder.METRICS_DESCRIBE_TOPICS_DURATION, "timer", greaterThan(0.0));
         assertMetricMatches(TopicOperatorMetricsHolder.METRICS_DESCRIBE_CONFIGS_DURATION, "timer", greaterThan(0.0));
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_DELETE_TOPICS_DURATION, "timer", greaterThan(0.0));
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_CC_TOPIC_CONFIG_DURATION, "timer", greaterThan(0.0));
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_CC_USER_TASKS_DURATION, "timer", greaterThan(0.0));
+        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_REMOVE_FINALIZER_DURATION, "timer", greaterThan(0.0));
     }
     
     private KafkaTopic createTopic(String name, int partitions, int replicas) {
