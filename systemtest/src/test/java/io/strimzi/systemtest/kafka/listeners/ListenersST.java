@@ -451,24 +451,34 @@ public class ListenersST extends AbstractST {
             externalKafkaClient.receiveMessagesPlain()
         );
 
-        // Check that Kafka status has correct addresses in NodePort external listener part
-        for (ListenerStatus listenerStatus : KafkaResource.getKafkaStatus(testStorage.getClusterName(), testStorage.getNamespaceName()).getListeners()) {
-            if (listenerStatus.getName().equals(TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME)) {
-                List<String> listStatusAddresses = listenerStatus.getAddresses().stream().map(ListenerAddress::getHost).collect(Collectors.toList());
-                listStatusAddresses.sort(Comparator.comparing(String::toString));
-                List<Integer> listStatusPorts = listenerStatus.getAddresses().stream().map(ListenerAddress::getPort).collect(Collectors.toList());
-                Integer nodePort = kubeClient(testStorage.getNamespaceName()).getService(testStorage.getNamespaceName(), KafkaResources.externalBootstrapServiceName(testStorage.getClusterName())).getSpec().getPorts().get(0).getNodePort();
+        StUtils.waitUntilSupplierIsSatisfied(() -> {
+            // Check that Kafka status has correct addresses in NodePort external listener part
+            for (ListenerStatus listenerStatus : KafkaResource.getKafkaStatus(testStorage.getClusterName(), testStorage.getNamespaceName()).getListeners()) {
+                if (listenerStatus.getName().equals(TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME)) {
+                    List<String> listStatusAddresses = listenerStatus.getAddresses().stream().map(ListenerAddress::getHost).collect(Collectors.toList());
+                    listStatusAddresses.sort(Comparator.comparing(String::toString));
+                    List<Integer> listStatusPorts = listenerStatus.getAddresses().stream().map(ListenerAddress::getPort).collect(Collectors.toList());
+                    Integer nodePort = kubeClient(testStorage.getNamespaceName()).getService(testStorage.getNamespaceName(), KafkaResources.externalBootstrapServiceName(testStorage.getClusterName())).getSpec().getPorts().get(0).getNodePort();
 
-                List<String> nodeIps = kubeClient(testStorage.getNamespaceName()).listPods(testStorage.getBrokerSelector())
-                        .stream().map(pods -> pods.getStatus().getHostIP()).distinct().collect(Collectors.toList());
-                nodeIps.sort(Comparator.comparing(String::toString));
+                    List<String> nodeIps = kubeClient(testStorage.getNamespaceName()).listPods(testStorage.getBrokerSelector())
+                            .stream().map(pods -> pods.getStatus().getHostIP()).distinct().collect(Collectors.toList());
+                    nodeIps.sort(Comparator.comparing(String::toString));
 
-                assertThat(listStatusAddresses, is(nodeIps));
-                for (Integer port : listStatusPorts) {
-                    assertThat(port, is(nodePort));
+                    if (!listStatusAddresses.equals(nodeIps)) {
+                        LOGGER.info("Expected IPs: {}, actual IPs: {}. Waiting for next round of validation", nodeIps, listStatusAddresses);
+                        return false;
+                    }
+
+                    for (Integer port : listStatusPorts) {
+                        if (!listStatusAddresses.equals(nodeIps)) {
+                            LOGGER.info("Expected Port: {}, actual Port: {}. Waiting for next round of validation", nodePort, port);
+                            return false;
+                        }
+                    }
                 }
             }
-        }
+            return true;
+        });
 
         // check the ClusterRoleBinding annotations and labels in Kafka cluster
         Map<String, String> actualLabel = KafkaResource.kafkaClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getSpec().getKafka().getTemplate().getClusterRoleBinding().getMetadata().getLabels();

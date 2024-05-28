@@ -625,13 +625,14 @@ public class MirrorMakerST extends AbstractST {
         PodUtils.waitForPodsReady(testStorage.getNamespaceName(), kubeClient().getDeploymentSelectors(testStorage.getNamespaceName(), mmDepName), 0, true);
 
         mmPods = kubeClient().listPodNames(testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker.RESOURCE_KIND);
-        KafkaMirrorMakerStatus mmStatus = KafkaMirrorMakerResource.kafkaMirrorMakerClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus();
-        actualObsGen = KafkaMirrorMakerResource.kafkaMirrorMakerClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus().getObservedGeneration();
-
         assertThat(mmPods.size(), is(0));
-        assertThat(mmStatus.getConditions().get(0).getType(), is(Ready.toString()));
-        assertThat(actualObsGen, is(not(mmObsGen)));
 
+        // Needed for using it in lambda
+        long finalMmObsGen = mmObsGen;
+        StUtils.waitUntilSupplierIsSatisfied(() -> KafkaMirrorMakerResource.kafkaMirrorMakerClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus().getObservedGeneration() == finalMmObsGen);
+
+        KafkaMirrorMakerStatus mmStatus = KafkaMirrorMakerResource.kafkaMirrorMakerClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus();
+        assertThat(mmStatus.getConditions().get(0).getType(), is(Ready.toString()));
     }
 
     @ParallelNamespaceTest
