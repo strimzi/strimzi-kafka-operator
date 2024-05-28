@@ -15,6 +15,8 @@ public class BuildUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(BuildUtils.class);
 
+    private BuildUtils() { }
+
     /**
      * Gets OpenShift build name based on name and version
      * @param name
