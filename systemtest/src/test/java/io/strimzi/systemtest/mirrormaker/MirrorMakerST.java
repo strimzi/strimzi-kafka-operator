@@ -629,7 +629,15 @@ public class MirrorMakerST extends AbstractST {
 
         // Needed for using it in lambda
         long finalMmObsGen = mmObsGen;
-        StUtils.waitUntilSupplierIsSatisfied(() -> KafkaMirrorMakerResource.kafkaMirrorMakerClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus().getObservedGeneration() == finalMmObsGen);
+        StUtils.waitUntilSupplierIsSatisfied("ObservedGeneration of MM is higher than" + finalMmObsGen,
+            () -> {
+                long observedGeneration = KafkaMirrorMakerResource.kafkaMirrorMakerClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus().getObservedGeneration();
+                boolean isHigherThan = observedGeneration > finalMmObsGen;
+                if (!isHigherThan) {
+                    LOGGER.info("Expected ObservedGeneration: {}, actual ObservedGeneration: {}. Waiting for next round of validation", finalMmObsGen, observedGeneration);
+                }
+                return isHigherThan;
+            });
 
         KafkaMirrorMakerStatus mmStatus = KafkaMirrorMakerResource.kafkaMirrorMakerClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus();
         assertThat(mmStatus.getConditions().get(0).getType(), is(Ready.toString()));

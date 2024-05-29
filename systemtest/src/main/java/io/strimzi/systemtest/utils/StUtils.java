@@ -559,6 +559,11 @@ public class StUtils {
                 TestConstants.GLOBAL_STATUS_TIMEOUT, sup);
     }
 
+    public static void waitUntilSupplierIsSatisfied(String message, final BooleanSupplier sup) {
+        TestUtils.waitFor(message, TestConstants.GLOBAL_POLL_INTERVAL,
+                TestConstants.GLOBAL_STATUS_TIMEOUT, sup);
+    }
+
     /**
      * Checks env variables of Topic operator container (inside EO Pod) and based on that determines, if BTO or UTO is used.
      *
