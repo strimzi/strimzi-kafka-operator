@@ -980,6 +980,13 @@ spec:
                             securityContext:
                               type: object
                               properties:
+                                appArmorProfile:
+                                  type: object
+                                  properties:
+                                    localhostProfile:
+                                      type: string
+                                    type:
+                                      type: string
                                 fsGroup:
                                   type: integer
                                 fsGroupChangePolicy:
@@ -1684,6 +1691,13 @@ spec:
                               properties:
                                 allowPrivilegeEscalation:
                                   type: boolean
+                                appArmorProfile:
+                                  type: object
+                                  properties:
+                                    localhostProfile:
+                                      type: string
+                                    type:
+                                      type: string
                                 capabilities:
                                   type: object
                                   properties:
@@ -1758,6 +1772,13 @@ spec:
                               properties:
                                 allowPrivilegeEscalation:
                                   type: boolean
+                                appArmorProfile:
+                                  type: object
+                                  properties:
+                                    localhostProfile:
+                                      type: string
+                                    type:
+                                      type: string
                                 capabilities:
                                   type: object
                                   properties:
@@ -2249,6 +2270,13 @@ spec:
                             securityContext:
                               type: object
                               properties:
+                                appArmorProfile:
+                                  type: object
+                                  properties:
+                                    localhostProfile:
+                                      type: string
+                                    type:
+                                      type: string
                                 fsGroup:
                                   type: integer
                                 fsGroupChangePolicy:
@@ -2845,6 +2873,13 @@ spec:
                               properties:
                                 allowPrivilegeEscalation:
                                   type: boolean
+                                appArmorProfile:
+                                  type: object
+                                  properties:
+                                    localhostProfile:
+                                      type: string
+                                    type:
+                                      type: string
                                 capabilities:
                                   type: object
                                   properties:
@@ -3435,6 +3470,13 @@ spec:
                             securityContext:
                               type: object
                               properties:
+                                appArmorProfile:
+                                  type: object
+                                  properties:
+                                    localhostProfile:
+                                      type: string
+                                    type:
+                                      type: string
                                 fsGroup:
                                   type: integer
                                 fsGroupChangePolicy:
@@ -3925,6 +3967,13 @@ spec:
                               properties:
                                 allowPrivilegeEscalation:
                                   type: boolean
+                                appArmorProfile:
+                                  type: object
+                                  properties:
+                                    localhostProfile:
+                                      type: string
+                                    type:
+                                      type: string
                                 capabilities:
                                   type: object
                                   properties:
@@ -3999,6 +4048,13 @@ spec:
                               properties:
                                 allowPrivilegeEscalation:
                                   type: boolean
+                                appArmorProfile:
+                                  type: object
+                                  properties:
+                                    localhostProfile:
+                                      type: string
+                                    type:
+                                      type: string
                                 capabilities:
                                   type: object
                                   properties:
@@ -4073,6 +4129,13 @@ spec:
                               properties:
                                 allowPrivilegeEscalation:
                                   type: boolean
+                                appArmorProfile:
+                                  type: object
+                                  properties:
+                                    localhostProfile:
+                                      type: string
+                                    type:
+                                      type: string
                                 capabilities:
                                   type: object
                                   properties:
@@ -4542,6 +4605,13 @@ spec:
                             securityContext:
                               type: object
                               properties:
+                                appArmorProfile:
+                                  type: object
+                                  properties:
+                                    localhostProfile:
+                                      type: string
+                                    type:
+                                      type: string
                                 fsGroup:
                                   type: integer
                                 fsGroupChangePolicy:
@@ -5087,6 +5157,13 @@ spec:
                               properties:
                                 allowPrivilegeEscalation:
                                   type: boolean
+                                appArmorProfile:
+                                  type: object
+                                  properties:
+                                    localhostProfile:
+                                      type: string
+                                    type:
+                                      type: string
                                 capabilities:
                                   type: object
                                   properties:
@@ -5161,6 +5238,13 @@ spec:
                               properties:
                                 allowPrivilegeEscalation:
                                   type: boolean
+                                appArmorProfile:
+                                  type: object
+                                  properties:
+                                    localhostProfile:
+                                      type: string
+                                    type:
+                                      type: string
                                 capabilities:
                                   type: object
                                   properties:
@@ -5458,6 +5542,13 @@ spec:
                             securityContext:
                               type: object
                               properties:
+                                appArmorProfile:
+                                  type: object
+                                  properties:
+                                    localhostProfile:
+                                      type: string
+                                    type:
+                                      type: string
                                 fsGroup:
                                   type: integer
                                 fsGroupChangePolicy:
@@ -5948,6 +6039,13 @@ spec:
                               properties:
                                 allowPrivilegeEscalation:
                                   type: boolean
+                                appArmorProfile:
+                                  type: object
+                                  properties:
+                                    localhostProfile:
+                                      type: string
+                                    type:
+                                      type: string
                                 capabilities:
                                   type: object
                                   properties:
@@ -6182,6 +6280,13 @@ spec:
                             securityContext:
                               type: object
                               properties:
+                                appArmorProfile:
+                                  type: object
+                                  properties:
+                                    localhostProfile:
+                                      type: string
+                                    type:
+                                      type: string
                                 fsGroup:
                                   type: integer
                                 fsGroupChangePolicy:
@@ -6690,6 +6795,13 @@ spec:
                               properties:
                                 allowPrivilegeEscalation:
                                   type: boolean
+                                appArmorProfile:
+                                  type: object
+                                  properties:
+                                    localhostProfile:
+                                      type: string
+                                    type:
+                                      type: string
                                 capabilities:
                                   type: object
                                   properties:
