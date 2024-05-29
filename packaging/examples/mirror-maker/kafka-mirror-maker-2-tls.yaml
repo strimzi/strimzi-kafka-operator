@@ -12,13 +12,13 @@ spec:
     tls:
       trustedCertificates:
         - secretName: cluster-a-cluster-ca-cert
-          certificate: ca.crt
+          pattern: "*.crt"
   - alias: "cluster-b" # Target cluster
     bootstrapServers: cluster-b-kafka-bootstrap:9093
     tls:
       trustedCertificates:
         - secretName: cluster-b-cluster-ca-cert
-          certificate: ca.crt
+          pattern: "*.crt"
     config:
       # -1 means it will use the default replication factor configured in the broker
       config.storage.replication.factor: -1
