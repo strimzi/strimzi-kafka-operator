@@ -1,0 +1,62 @@
+// This assembly is included in the following assemblies:
+//
+// deploying/assembly-deploy-kafka-cluster.adoc
+
+[id='assembly-kraft-mode-{context}']
+= Using Kafka in KRaft mode
+
+[role="_abstract"]
+KRaft (Kafka Raft metadata) mode replaces Kafka's dependency on ZooKeeper for cluster management. 
+KRaft mode simplifies the deployment and management of Kafka clusters by bringing metadata management and coordination of clusters into Kafka.
+
+Kafka in KRaft mode is designed to offer enhanced reliability, scalability, and throughput.
+Metadata operations become more efficient as they are directly integrated.
+And by removing the need to maintain a ZooKeeper cluster, there's also a reduction in the operational and security overhead.
+
+To deploy a Kafka cluster in KRaft mode, you must use `Kafka` and `KafkaNodePool` custom resources.
+The `Kafka` resource using KRaft mode must also have the annotation `strimzi.io/kraft: enabled`.
+For more details and examples, see xref:deploying-kafka-cluster-kraft-{context}[].
+
+Through xref:config-node-pools-{context}[node pool configuration using `KafkaNodePool` resources], nodes are assigned the role of broker, controller, or both:
+
+* *Controller* nodes operate in the control plane to manage cluster metadata and the state of the cluster using a Raft-based consensus protocol.
+* *Broker* nodes operate in the data plane to manage the streaming of messages, receiving and storing data in topic partitions.
+* *Dual-role* nodes fulfill the responsibilities of controllers and brokers.
+
+Controllers use a metadata log, stored as a single-partition topic (`__cluster_metadata`) on every node, which records the state of the cluster. 
+An active lead controller manages updates to the metadata log, and follower controllers replicate these updates. 
+The metadata log stores information on brokers, replicas, topics, and partitions, including the state of in-sync replicas and partition leadership. 
+Kafka uses this metadata to coordinate changes and manage the cluster effectively.
+
+Brokers store the metadata log passively to stay up-to-date with the cluster's state.
+Each node fetches updates to the log independently.
+
+NOTE: The KRaft metadata version used in the Kafka cluster must be supported by the Kafka version in use. 
+Both versions are managed through the `Kafka` resource configuration.
+For more information, see xref:con-config-kafka-kraft-{context}[].
+
+In a typical configuration, a Kafka cluster includes a quorum of controller and broker nodes for fault tolerance and high availability. 
+
+.Example cluster with separate broker and controller nodes
+image::kraft-single-role-quorum.png[KRaft quorums for broker and controller]
+
+In a production environment, avoid using nodes that operate in a combined mode. 
+However, you might want to use nodes in a dual-role configuration for development or testing.
+You can use a combination of nodes that combine roles with nodes that perform a single role.
+
+.Example cluster with nodes that combine roles
+image::kraft-dual-role-quorum.png[KRaft cluster with nodes that combine roles]
+
+== KRaft limitations
+
+Currently, the KRaft mode in Strimzi has the following major limitations:
+
+* JBOD storage is supported only with Apache Kafka 3.7.0 and higher.
+It is considered early-access in Apache Kafka 3.7.x.
+(Storage with `type: jbod` configuration can be used also with older Kafka versions, but the JBOD array can contain only one disk.)
+* Scaling of KRaft controller-only nodes up or down is not supported.
+
+NOTE: If you are using JBOD storage, you can xref:ref-jbod-storage-str[change the volume that stores the metadata log]. 
+
+//migrating to KRaft
+include::../../modules/deploying/proc-deploy-migrate-kraft.adoc[leveloffset=+1]

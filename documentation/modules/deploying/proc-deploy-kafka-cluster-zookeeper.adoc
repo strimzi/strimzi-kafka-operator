@@ -1,0 +1,94 @@
+// Module included in the following assemblies:
+//
+// deploying/assembly_deploy-kafka-cluster.adoc
+
+[id='deploying-kafka-cluster-zookeeper-{context}']
+= Deploying a ZooKeeper-based Kafka cluster
+
+[role="_abstract"]
+This procedure shows how to deploy a ZooKeeper-based Kafka cluster to your Kubernetes cluster using the Cluster Operator.
+
+The deployment uses a YAML file to provide the specification to create a `Kafka` resource.
+
+Strimzi provides the following xref:config-examples-{context}[example deployment files] to create a Kafka cluster that uses ZooKeeper for cluster management:
+
+`kafka-persistent.yaml`:: Deploys a persistent cluster with three ZooKeeper and three Kafka nodes.
+`kafka-jbod.yaml`:: Deploys a persistent cluster with three ZooKeeper and three Kafka nodes (each using multiple persistent volumes).
+`kafka-persistent-single.yaml`:: Deploys a persistent cluster with a single ZooKeeper node and a single Kafka node.
+`kafka-ephemeral.yaml`:: Deploys an ephemeral cluster with three ZooKeeper and three Kafka nodes.
+`kafka-ephemeral-single.yaml`:: Deploys an ephemeral cluster with three ZooKeeper nodes and a single Kafka node.
+
+To deploy a Kafka cluster that uses node pools, the following example YAML file provides the specification to create a `Kafka` resource and `KafkaNodePool` resources:
+
+`kafka/kafka-with-node-pools.yaml`:: Deploys ZooKeeper with 3 nodes, and 2 different pools of Kafka brokers. Each of the pools has 3 brokers. The pools in the example use different storage configuration.
+
+In this procedure, we use the examples for an ephemeral and persistent Kafka cluster deployment.
+
+The example YAML files specify the latest supported Kafka version and inter-broker protocol version.
+
+NOTE: From Kafka 3.0.0, when the `inter.broker.protocol.version` is set to `3.0` or higher, the `log.message.format.version` option is ignored and doesn't need to be set.
+
+.Prerequisites
+
+* xref:deploying-cluster-operator-str[The Cluster Operator must be deployed.]
+
+.Before you begin
+
+By default, the example deployment files specify `my-cluster` as the Kafka cluster name.
+The name cannot be changed after the cluster has been deployed.
+To change the cluster name before you deploy the cluster, edit the `Kafka.metadata.name` property of the `Kafka` resource in the relevant YAML file.
+
+.Procedure
+
+. Deploy a ZooKeeper-based Kafka cluster.
++
+--
+* To deploy an ephemeral cluster:
++
+[source,shell]
+----
+kubectl apply -f examples/kafka/kafka-ephemeral.yaml
+----
+
+* To deploy a persistent cluster:
++
+[source,shell]
+----
+kubectl apply -f examples/kafka/kafka-persistent.yaml
+----
+--
+
+. Check the status of the deployment:
++
+[source,shell]
+----
+kubectl get pods -n <my_cluster_operator_namespace>
+----
++
+.Output shows the pod names and readiness
+[source,shell]
+----
+NAME                        READY   STATUS    RESTARTS
+my-cluster-entity-operator  3/3     Running   0
+my-cluster-kafka-0          1/1     Running   0
+my-cluster-kafka-1          1/1     Running   0
+my-cluster-kafka-2          1/1     Running   0
+my-cluster-zookeeper-0      1/1     Running   0
+my-cluster-zookeeper-1      1/1     Running   0
+my-cluster-zookeeper-2      1/1     Running   0
+----
++
+`my-cluster` is the name of the Kafka cluster.
++
+A sequential index number starting with `0` identifies each Kafka and ZooKeeper pod created.
++
+With the default deployment, you create an Entity Operator cluster, 3 Kafka pods, and 3 ZooKeeper pods.
++
+`READY` shows the number of replicas that are ready/expected.
+The deployment is successful when the `STATUS` displays as `Running`.
+
+[role="_additional-resources"]
+.Additional resources
+
+* xref:con-config-kafka-str[Kafka cluster configuration]
+* xref:config-node-pools-{context}[Node pool configuration]

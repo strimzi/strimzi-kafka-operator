@@ -2,42 +2,30 @@
 //
 // assembly-config.adoc
 
-[id='con-config-kafka-{context}']
-= Configuring Kafka
+[id='con-config-kafka-kraft-{context}']
+= Configuring Kafka in KRaft mode
 
 [role="_abstract"]
-Update the `spec` properties of the `Kafka` custom resource to configure your Kafka deployment.
+Update the `spec` properties of the `Kafka` custom resource to configure your deployment of Kafka in KRaft mode.
 
-As well as configuring Kafka, you can add configuration for ZooKeeper and the Strimzi Operators.
-Common configuration properties, such as logging and healthchecks, are configured independently for each component.
+As well as configuring Kafka, you can add configuration for Strimzi operators.
 
-Configuration options that are particularly important include the following:
-
-* Resource requests (CPU / Memory)
-* JVM options for maximum and minimum memory allocation
-* Listeners for connecting clients to Kafka brokers (and authentication of clients)
-* Authentication
-* Storage
-* Rack awareness
-* Metrics
-* Cruise Control for cluster rebalancing
-* Metadata version for KRaft-based Kafka clusters
-* Inter-broker protocol version for ZooKeeper-based Kafka clusters
-
-The `.spec.kafka.metadataVersion` property or the `inter.broker.protocol.version` property in `config` must be a version supported by the specified Kafka version (`spec.kafka.version`).
-The property represents the Kafka metadata or inter-broker protocol version used in a Kafka cluster.
-If either of these properties is not set in the configuration, the Cluster Operator updates the version to the default for the Kafka version used.  
+The KRaft metadata version (`.spec.kafka.metadataVersion`) must be a version supported by the Kafka version (`spec.kafka.version`).
+If the metadata version is not set in the configuration, the Cluster Operator updates the version to the default for the Kafka version used.  
 
 NOTE: The oldest supported metadata version is 3.3. 
 Using a metadata version that is older than the Kafka version might cause some features to be disabled.
 
-For a deeper understanding of the Kafka cluster configuration options, refer to the link:{BookURLConfiguring}[Strimzi Custom Resource API Reference^].
+Kafka clusters operating in KRaft mode also use node pools.
+The following must be specified in the xref:config-node-pools-{context}[node pool configuration]:
 
-.Managing TLS certificates
-When deploying Kafka, the Cluster Operator automatically sets up and renews TLS certificates to enable encryption and authentication within your cluster.
-If required, you can manually renew the cluster and clients CA certificates before their renewal period starts.
-You can also replace the keys used by the cluster and clients CA certificates.
-For more information, see xref:proc-renewing-ca-certs-manually-{context}[Renewing CA certificates manually] and xref:proc-replacing-private-keys-{context}[Replacing private keys].
+* Roles assigned to each node within the Kafka cluster 
+* Number of replica nodes used 
+* Storage specification for the nodes 
+
+Other optional properties may also be set in node pools.
+
+For a deeper understanding of the Kafka cluster configuration options, refer to the link:{BookURLConfiguring}[Strimzi Custom Resource API Reference^].
 
 .Example `Kafka` custom resource configuration
 [source,yaml,subs="+attributes"]
@@ -48,8 +36,8 @@ metadata:
   name: my-cluster
 spec:
   kafka:
-    replicas: 3 # <1>
-    version: {DefaultKafkaVersion} # <2>
+    version: {DefaultKafkaVersion} # <1>
+    metadataVersion: {DefaultKafkaMetadataVersion} # <2>
     logging: # <3>
       type: inline
       loggers:
@@ -102,45 +90,19 @@ spec:
       transaction.state.log.min.isr: 2
       default.replication.factor: 3
       min.insync.replicas: 2
-      inter.broker.protocol.version: "{DefaultInterBrokerVersion}"
-    storage: # <19>
-      type: persistent-claim # <20>
-      size: 10000Gi
-    rack: # <21>
+    rack: # <19>
       topologyKey: topology.kubernetes.io/zone
-    metricsConfig: # <22>
+    metricsConfig: # <20>
       type: jmxPrometheusExporter
       valueFrom:
-        configMapKeyRef: # <23>
+        configMapKeyRef: # <21>
           name: my-config-map
           key: my-key
-    # ...
-  zookeeper: # <24>
-    replicas: 3 # <25>
-    logging: # <26>
-      type: inline
-      loggers:
-        zookeeper.root.logger: INFO
-    resources:
-      requests:
-        memory: 8Gi
-        cpu: "2"
-      limits:
-        memory: 8Gi
-        cpu: "2"
-    jvmOptions:
-      -Xms: 4096m
-      -Xmx: 4096m
-    storage:
-      type: persistent-claim
-      size: 1000Gi
-    metricsConfig:
-      # ...
-  entityOperator: # <27>
+  entityOperator: # <22>
     topicOperator:
       watchedNamespace: my-topic-namespace
       reconciliationIntervalSeconds: 60
-      logging: # <28>
+      logging: # <23>
         type: inline
         loggers:
           rootLogger.level: INFO
@@ -154,7 +116,7 @@ spec:
     userOperator:
       watchedNamespace: my-topic-namespace
       reconciliationIntervalSeconds: 60
-      logging: # <29>
+      logging: # <24>
         type: inline
         loggers:
           rootLogger.level: INFO
@@ -165,13 +127,13 @@ spec:
         limits:
           memory: 512Mi
           cpu: "1"
-  kafkaExporter: # <30>
+  kafkaExporter: # <25>
     # ...
-  cruiseControl: # <31>
+  cruiseControl: # <26>
     # ...
 ----
-<1> The number of replica nodes.
-<2> Kafka version, which can be changed to a supported version by following the upgrade procedure.
+<1> Kafka version, which can be changed to a supported version by following the upgrade procedure.
+<2> Kafka metadata version,  which can be changed to a supported version by following the upgrade procedure.  
 <3> Kafka loggers and log levels added directly (`inline`) or indirectly (`external`) through a ConfigMap. A custom Log4j configuration must be placed under the `log4j.properties` key in the ConfigMap. For the Kafka `kafka.root.logger.level` logger, you can set the log level to INFO, ERROR, WARN, TRACE, DEBUG, FATAL or OFF.
 <4> Requests for reservation of supported resources, currently `cpu` and `memory`, and limits to specify the maximum resources that can be consumed.
 <5> Healthchecks to know when to restart a container (liveness) and when a container can accept traffic (readiness).
@@ -188,18 +150,11 @@ spec:
 <16> Optional configuration for a Kafka listener certificate managed by an external CA (certificate authority). The `brokerCertChainAndKey` specifies a `Secret` that contains a server certificate and a private key. You can configure Kafka listener certificates on any listener with enabled TLS encryption.
 <17> Authorization enables simple, OAUTH 2.0, or OPA authorization on the Kafka broker. Simple authorization uses the `AclAuthorizer` and `StandardAuthorizer` Kafka plugins.
 <18> Broker configuration. Standard Apache Kafka configuration may be provided, restricted to those properties not managed directly by Strimzi.
-<19> Storage size for persistent volumes may be increased and additional volumes may be added to JBOD storage.
-<20> Persistent storage has additional configuration options, such as a storage `id` and `class` for dynamic volume provisioning.
-<21> Rack awareness configuration to spread replicas across different racks, data centers, or availability zones. The `topologyKey` must match a node label containing the rack ID. The example used in this configuration specifies a zone using the standard `{K8sZoneLabel}` label.
-<22> Prometheus metrics enabled. In this example, metrics are configured for the Prometheus JMX Exporter (the default metrics exporter).
-<23> Rules for exporting metrics in Prometheus format to a Grafana dashboard through the Prometheus JMX Exporter, which are enabled by referencing a ConfigMap containing configuration for the Prometheus JMX exporter. You can enable metrics without further configuration using a reference to a ConfigMap containing an empty file under `metricsConfig.valueFrom.configMapKeyRef.key`.
-<24> ZooKeeper-specific configuration, which contains properties similar to the Kafka configuration.
-<25> The number of ZooKeeper nodes. ZooKeeper clusters or ensembles usually run with an odd number of nodes, typically three, five, or seven. The majority of nodes must be available in order to maintain an effective quorum.
-If the ZooKeeper cluster loses its quorum, it will stop responding to clients and the Kafka brokers will stop working.
-Having a stable and highly available ZooKeeper cluster is crucial for Strimzi.
-<26> ZooKeeper loggers and log levels.
-<27> Entity Operator configuration, which specifies the configuration for the Topic Operator and User Operator.
-<28> Specified Topic Operator loggers and log levels. This example uses `inline` logging.
-<29> Specified User Operator loggers and log levels.
-<30> Kafka Exporter configuration. Kafka Exporter is an optional component for extracting metrics data from Kafka brokers, in particular consumer lag data. For Kafka Exporter to be able to work properly, consumer groups need to be in use.
-<31> Optional configuration for Cruise Control, which is used to rebalance the Kafka cluster.
+<19> Rack awareness configuration to spread replicas across different racks, data centers, or availability zones. The `topologyKey` must match a node label containing the rack ID. The example used in this configuration specifies a zone using the standard `{K8sZoneLabel}` label.
+<20> Prometheus metrics enabled. In this example, metrics are configured for the Prometheus JMX Exporter (the default metrics exporter).
+<21> Rules for exporting metrics in Prometheus format to a Grafana dashboard through the Prometheus JMX Exporter, which are enabled by referencing a ConfigMap containing configuration for the Prometheus JMX exporter. You can enable metrics without further configuration using a reference to a ConfigMap containing an empty file under `metricsConfig.valueFrom.configMapKeyRef.key`.
+<22> Entity Operator configuration, which specifies the configuration for the Topic Operator and User Operator.
+<23> Specified Topic Operator loggers and log levels. This example uses `inline` logging.
+<24> Specified User Operator loggers and log levels.
+<25> Kafka Exporter configuration. Kafka Exporter is an optional component for extracting metrics data from Kafka brokers, in particular consumer lag data. For Kafka Exporter to be able to work properly, consumer groups need to be in use.
+<26> Optional configuration for Cruise Control, which is used to rebalance the Kafka cluster.

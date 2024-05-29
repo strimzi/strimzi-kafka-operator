@@ -1,0 +1,174 @@
+// Module included in the following assemblies:
+//
+// assembly-config.adoc
+
+[id='con-config-kafka-{context}']
+= Configuring Kafka with ZooKeeper
+
+[role="_abstract"]
+Update the `spec` properties of the `Kafka` custom resource to configure your deployment of Kafka with ZooKeeper.
+
+As well as configuring Kafka, you can add configuration for ZooKeeper and the Strimzi operators.
+The configuration options for Kafka and the Strimzi operators are the same as when using Kafka in KRaft mode. 
+For descriptions of the properties, see xref:con-config-kafka-kraft-{context}[].
+
+The inter-broker protocol version (`inter.broker.protocol.version`) must be a version supported by the Kafka version (`spec.kafka.version`).
+If the inter-broker protocol version is not set in the configuration, the Cluster Operator updates the version to the default for the Kafka version used.  
+
+If you are also using node pools, the following must be specified in the xref:config-node-pools-{context}[node pool configuration]:
+
+* Roles assigned to each node within the Kafka cluster 
+* Number of replica nodes used 
+* Storage specification for the nodes 
+
+If set in the node pool configuration, the equivalent configuration in the `Kafka` resource, such as `spec.kafka.replicas`, is not required.
+Other optional properties may also be set in node pools.
+
+For a deeper understanding of the ZooKeeper cluster configuration options, refer to the link:{BookURLConfiguring}[Strimzi Custom Resource API Reference^].
+
+.Example `Kafka` custom resource configuration when using ZooKeeper
+[source,yaml,subs="+attributes"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    replicas: 3
+    version: {DefaultKafkaVersion}
+    logging:
+      type: inline
+      loggers:
+        kafka.root.logger.level: INFO
+    resources:
+      requests:
+        memory: 64Gi
+        cpu: "8"
+      limits:
+        memory: 64Gi
+        cpu: "12"
+    readinessProbe:
+      initialDelaySeconds: 15
+      timeoutSeconds: 5
+    livenessProbe:
+      initialDelaySeconds: 15
+      timeoutSeconds: 5
+    jvmOptions:
+      -Xms: 8192m
+      -Xmx: 8192m
+    image: my-org/my-image:latest
+    listeners:
+      - name: plain
+        port: 9092
+        type: internal
+        tls: false
+        configuration:
+          useServiceDnsDomain: true
+      - name: tls
+        port: 9093
+        type: internal
+        tls: true
+        authentication:
+          type: tls
+      - name: external1
+        port: 9094
+        type: route
+        tls: true
+        configuration:
+          brokerCertChainAndKey:
+            secretName: my-secret
+            certificate: my-certificate.crt
+            key: my-key.key
+    authorization:
+      type: simple
+    config:
+      auto.create.topics.enable: "false"
+      offsets.topic.replication.factor: 3
+      transaction.state.log.replication.factor: 3
+      transaction.state.log.min.isr: 2
+      default.replication.factor: 3
+      min.insync.replicas: 2
+      inter.broker.protocol.version: "{DefaultInterBrokerVersion}"
+    storage:
+      type: persistent-claim
+      size: 10000Gi
+    rack:
+      topologyKey: topology.kubernetes.io/zone
+    metricsConfig:
+      type: jmxPrometheusExporter
+      valueFrom:
+        configMapKeyRef:
+          name: my-config-map
+          key: my-key
+    # ...
+  zookeeper: # <1>
+    replicas: 3 # <2>
+    logging: # <3>
+      type: inline
+      loggers:
+        zookeeper.root.logger: INFO
+    resources: # <4>
+      requests:
+        memory: 8Gi
+        cpu: "2"
+      limits:
+        memory: 8Gi
+        cpu: "2"
+    jvmOptions: # <5>
+      -Xms: 4096m
+      -Xmx: 4096m
+    storage: # <6>
+      type: persistent-claim
+      size: 1000Gi
+    metricsConfig: # <7>
+      type: jmxPrometheusExporter
+      valueFrom:
+        configMapKeyRef: # <8>
+          name: my-config-map
+          key: my-key
+      # ...
+  entityOperator:
+    topicOperator:
+      watchedNamespace: my-topic-namespace
+      reconciliationIntervalSeconds: 60
+      logging:
+        type: inline
+        loggers:
+          rootLogger.level: INFO
+      resources:
+        requests:
+          memory: 512Mi
+          cpu: "1"
+        limits:
+          memory: 512Mi
+          cpu: "1"
+    userOperator:
+      watchedNamespace: my-topic-namespace
+      reconciliationIntervalSeconds: 60
+      logging:
+        type: inline
+        loggers:
+          rootLogger.level: INFO
+      resources:
+        requests:
+          memory: 512Mi
+          cpu: "1"
+        limits:
+          memory: 512Mi
+          cpu: "1"
+  kafkaExporter:
+    # ...
+  cruiseControl:
+    # ...
+----
+<1> ZooKeeper-specific configuration contains properties similar to the Kafka configuration.
+<2> The number of ZooKeeper nodes. ZooKeeper clusters or ensembles usually run with an odd number of nodes, typically three, five, or seven. The majority of nodes must be available in order to maintain an effective quorum.
+If the ZooKeeper cluster loses its quorum, it will stop responding to clients and the Kafka brokers will stop working.
+Having a stable and highly available ZooKeeper cluster is crucial for Strimzi.
+<3> ZooKeeper loggers and log levels.
+<4> Requests for reservation of supported resources, currently `cpu` and `memory`, and limits to specify the maximum resources that can be consumed.
+<5> JVM configuration options to optimize performance for the Virtual Machine (VM) running ZooKeeper.
+<6> Storage size for persistent volumes may be increased and additional volumes may be added to JBOD storage.
+<7> Prometheus metrics enabled. In this example, metrics are configured for the Prometheus JMX Exporter (the default metrics exporter).
+<8> Rules for exporting metrics in Prometheus format to a Grafana dashboard through the Prometheus JMX Exporter, which are enabled by referencing a ConfigMap containing configuration for the Prometheus JMX exporter. You can enable metrics without further configuration using a reference to a ConfigMap containing an empty file under `metricsConfig.valueFrom.configMapKeyRef.key`.
