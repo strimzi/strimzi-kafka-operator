@@ -20,6 +20,7 @@ import io.strimzi.systemtest.performance.gather.collectors.TopicOperatorMetricsC
 import io.strimzi.systemtest.performance.gather.schedulers.TopicOperatorMetricsCollectionScheduler;
 import io.strimzi.systemtest.performance.report.TopicOperatorPerformanceReporter;
 import io.strimzi.systemtest.performance.report.parser.TopicOperatorMetricsParser;
+import io.strimzi.systemtest.performance.utils.TopicOperatorPerformanceUtils;
 import io.strimzi.systemtest.resources.ComponentType;
 import io.strimzi.systemtest.resources.NodePoolsConverter;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -742,7 +743,7 @@ public class TopicOperatorPerformance extends AbstractST {
 
     private static Stream<Arguments> provideConfigurationsFortestPerformanceInFixedSizeOfEvents() {
         final int seed = 50;
-        final int limit = 1000;
+        final int limit = 20; // up to 1000 topics to create
 
         // this means we would invoke create/update/delete operations x times in one iteration
         int[] batchEventSizes = IntStream.iterate(seed, n -> n + seed).limit(limit).toArray();
@@ -764,13 +765,10 @@ public class TopicOperatorPerformance extends AbstractST {
     @Tag(PERFORMANCE)
     @ParameterizedTest
     @MethodSource("provideConfigurationsFortestPerformanceInFixedSizeOfEvents")
-    void testPerformanceInFixedSizeOfEvents(String maxBatchSize, String maxBatchLingerMs, int batchEventsSize) throws IOException {
+    void testPerformanceInFixedSizeOfEvents(String maxBatchSize, String maxBatchLingerMs, int numberOfTopics) throws IOException {
         final int brokerReplicas = 3;
         final int controllerReplicas = 3;
         final String maxQueueSize = String.valueOf(Integer.MAX_VALUE);
-        long timeTakenForBatchCreation = 0;
-        long timeTakenForBatchModification = 0;
-        long timeTakeForBatchDeletion = 0;
         long allTasksTimeMs = 0;
 
         try {
@@ -840,41 +838,15 @@ public class TopicOperatorPerformance extends AbstractST {
 
             this.topicOperatorMetricsGatherer = new TopicOperatorMetricsCollectionScheduler(this.topicOperatorCollector, "strimzi.io/cluster=" + this.testStorage.getClusterName());
             this.topicOperatorMetricsGatherer.startCollecting();
-            final Map<String, Object> kafkaTopicConfigToModify = Map.of(
-                "compression.type", "gzip", "cleanup.policy", "delete", "min.insync.replicas", 2,
-                "max.compaction.lag.ms", 54321L, "min.compaction.lag.ms", 54L, "retention.ms", 3690L,
-                "segment.ms", 123456L, "retention.bytes", 9876543L, "segment.bytes", 321654L, "flush.messages", 456123L);
 
             long startTime = System.currentTimeMillis();
-            int start = 0;
-            int end = start + batchEventsSize;
 
-            timeTakenForBatchCreation = OperationTimer.measureTimeInMillis(() -> {
-                KafkaTopicScalabilityUtils.createTopicsViaK8s(testStorage.getNamespaceName(), testStorage.getClusterName(),
-                    testStorage.getTopicName(), start, end, 12, 3, 2);
-                KafkaTopicScalabilityUtils.waitForTopicStatus(testStorage.getNamespaceName(), testStorage.getTopicName(),
-                    start, end, CustomResourceStatus.Ready, ConditionStatus.True);
-            });
-
-            timeTakenForBatchModification = OperationTimer.measureTimeInMillis(() -> {
-                KafkaTopicScalabilityUtils.modifyBigAmountOfTopics(
-                    testStorage.getNamespaceName(), testStorage.getTopicName(), start, end,
-                    new KafkaTopicSpecBuilder().withConfig(kafkaTopicConfigToModify).build()
-                );
-                KafkaTopicScalabilityUtils.waitForTopicsContainConfig(
-                    testStorage.getNamespaceName(), testStorage.getTopicName(), start, end, kafkaTopicConfigToModify
-                );
-            });
-
-            timeTakeForBatchDeletion = OperationTimer.measureTimeInMillis(() -> {
-                resourceManager.deleteResourcesOfTypeWithoutWait(KafkaTopic.RESOURCE_KIND);
-                KafkaTopicUtils.waitForTopicWithPrefixDeletion(testStorage.getNamespaceName(), testStorage.getTopicName());
-            });
+            TopicOperatorPerformanceUtils.processKafkaTopicBatchesAsync(testStorage, numberOfTopics);
 
             // Calculate total execution time
             allTasksTimeMs = System.currentTimeMillis() - startTime;
 
-            LOGGER.info("Total time taken for all tasks (i.e., {} for each operation; creation, modification and deletion) {} ms", batchEventsSize, allTasksTimeMs);
+            LOGGER.info("Total time taken for all tasks (i.e., {} for each operation; creation, modification and deletion) {} ms", numberOfTopics, allTasksTimeMs);
         } finally {
             // to enchantment a process of deleting we should delete all resources at once
             // I saw a behaviour where deleting one by one might lead to 10s delay for deleting each KafkaTopic
@@ -888,13 +860,10 @@ public class TopicOperatorPerformance extends AbstractST {
 
                 performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_IN_MAX_QUEUE_SIZE, maxQueueSize);
                 performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_IN_MAX_BATCH_SIZE, maxBatchSize);
-                performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_IN_BATCH_EVENTS_SIZE, batchEventsSize);
+                performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_IN_NUMBER_OF_TOPICS, numberOfTopics);
                 performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_IN_MAX_BATCH_LINGER_MS, maxBatchLingerMs);
 
                 performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_OUT_SUCCESSFUL_KAFKA_TOPICS_CREATED_AND_MODIFIED_AND_DELETED, allTasksTimeMs);
-                performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_OUT_CREATION_TIME, timeTakenForBatchCreation);
-                performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_OUT_UPDATE_TIME, timeTakenForBatchModification);
-                performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_OUT_DELETION_TIME, timeTakeForBatchDeletion);
                 performanceAttributes.put(PerformanceConstants.METRICS_HISTORY, this.topicOperatorMetricsGatherer.getMetricsStore()); // Map of metrics history
                 this.topicOperatorPerformanceReporter.logPerformanceData(this.testStorage, performanceAttributes, REPORT_DIRECTORY + "/" + PerformanceConstants.TOPIC_OPERATOR_FIXED_SIZE_OF_EVENTS_USE_CASE, ACTUAL_TIME, Environment.PERFORMANCE_DIR);
             }

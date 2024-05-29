@@ -25,14 +25,23 @@ public class TopicOperatorPerformanceReporter extends BasePerformanceReporter {
     protected Path resolveComponentUseCasePathDir(Path performanceLogDir, String useCaseName, Map<String, Object> performanceAttributes) {
         final String maxBatchSize = performanceAttributes.getOrDefault(PerformanceConstants.TOPIC_OPERATOR_IN_MAX_BATCH_SIZE, "").toString();
         final String maxBatchLingerMs = performanceAttributes.getOrDefault(PerformanceConstants.TOPIC_OPERATOR_IN_MAX_BATCH_LINGER_MS, "").toString();
-        final String batchEventsSize = performanceAttributes.getOrDefault(PerformanceConstants.TOPIC_OPERATOR_IN_BATCH_EVENTS_SIZE, 0).toString();
-        final boolean clientsEnabled = !performanceAttributes.getOrDefault(PerformanceConstants.TOPIC_OPERATOR_IN_NUMBER_OF_CLIENT_INSTANCES, "0").equals(0);
+        final String numberOfTopics = performanceAttributes.getOrDefault(PerformanceConstants.TOPIC_OPERATOR_IN_NUMBER_OF_TOPICS, 0).toString();
+        final boolean clientsEnabled = !performanceAttributes.getOrDefault(PerformanceConstants.TOPIC_OPERATOR_IN_NUMBER_OF_CLIENT_INSTANCES, "0").equals("0");
 
-        // Use the useCaseName to create a directory specific to the current test case (Alice or Bob)
-        final Path topicOperatorUseCasePathDir = performanceLogDir.resolve(useCaseName + "/max-batch-size-" + maxBatchSize + "-max-linger-time-" + maxBatchLingerMs + "-with-clients-" + clientsEnabled + "-batch-events-size-" + batchEventsSize);
+        final StringBuilder dirPathBuilder = new StringBuilder();
+        dirPathBuilder.append(useCaseName)
+            .append("/max-batch-size-").append(maxBatchSize)
+            .append("-max-linger-time-").append(maxBatchLingerMs)
+            .append("-with-clients-").append(clientsEnabled);
 
-        LOGGER.info("Resolved performance log directory: {} for use case '{}'. Max batch size: {}, Max linger time: {}, Clients enabled: {}, Batch events size: {}",
-            topicOperatorUseCasePathDir, useCaseName, maxBatchSize, maxBatchLingerMs, clientsEnabled, batchEventsSize);
+        if (!numberOfTopics.equals("0")) {
+            dirPathBuilder.append("-number-of-topics-").append(numberOfTopics);
+        }
+
+        final Path topicOperatorUseCasePathDir = performanceLogDir.resolve(dirPathBuilder.toString());
+
+        LOGGER.info("Resolved performance log directory: {} for use case '{}'. Max batch size: {}, Max linger time: {}, Clients enabled: {}, Number of topics: {}",
+            topicOperatorUseCasePathDir, useCaseName, maxBatchSize, maxBatchLingerMs, clientsEnabled, numberOfTopics.equals("0") ? "not included" : numberOfTopics);
 
         return topicOperatorUseCasePathDir;
     }
