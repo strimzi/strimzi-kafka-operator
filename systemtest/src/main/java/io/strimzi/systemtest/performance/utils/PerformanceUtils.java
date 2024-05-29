@@ -4,9 +4,14 @@
  */
 package io.strimzi.systemtest.performance.utils;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.util.List;
 
 public class PerformanceUtils {
+
+    private static final Logger LOGGER = LogManager.getLogger(PerformanceUtils.class);
 
     // ensuring that object can not be created outside of class
     private PerformanceUtils() {}
