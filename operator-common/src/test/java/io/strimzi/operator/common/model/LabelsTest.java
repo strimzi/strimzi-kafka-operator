@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.kafka.Kafka;
@@ -331,5 +332,19 @@ public class LabelsTest {
         assertThat(Labels.getOrValidInstanceLabelValue("too-long-012345678901234567890123456789012345678901234567890123456789"), is("too-long-012345678901234567890123456789012345678901234567890123"));
         assertThat(Labels.getOrValidInstanceLabelValue("too-long-01234567890123456789012345678901234567890123456789012-456789"), is("too-long-01234567890123456789012345678901234567890123456789012"));
         assertThat(Labels.getOrValidInstanceLabelValue("too-long-01234567890123456789012345678901234567890123456789.---456789"), is("too-long-01234567890123456789012345678901234567890123456789"));
+    }
+
+    @Test
+    public void testBooleanLabel()  {
+        final String label = "my-label";
+
+        assertThat(Labels.booleanLabel(null, label, true), is(true));
+        assertThat(Labels.booleanLabel(new PodBuilder().build(), label, true), is(true));
+        assertThat(Labels.booleanLabel(new PodBuilder().withNewMetadata().withName("my-pod").endMetadata().build(), label, true), is(true));
+        assertThat(Labels.booleanLabel(new PodBuilder().withNewMetadata().withName("my-pod").addToLabels("not-my-label", "false").endMetadata().build(), label, true), is(true));
+        assertThat(Labels.booleanLabel(new PodBuilder().withNewMetadata().withName("my-pod").addToLabels(label, null).endMetadata().build(), label, true), is(true));
+        assertThat(Labels.booleanLabel(new PodBuilder().withNewMetadata().withName("my-pod").addToLabels(label, "true").endMetadata().build(), label, true), is(true));
+        assertThat(Labels.booleanLabel(new PodBuilder().withNewMetadata().withName("my-pod").addToLabels(label, "potato").endMetadata().build(), label, true), is(false));
+        assertThat(Labels.booleanLabel(new PodBuilder().withNewMetadata().withName("my-pod").addToLabels(label, "false").endMetadata().build(), label, true), is(false));
     }
 }

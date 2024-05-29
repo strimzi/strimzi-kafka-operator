@@ -989,7 +989,9 @@ public class KafkaReconciler {
                                 String hostIP = broker.getStatus().getHostIP();
                                 allNodes.stream()
                                         .filter(node -> {
-                                            if (node.getStatus() != null && node.getStatus().getAddresses() != null) {
+                                            if (Labels.booleanLabel(broker, Labels.STRIMZI_BROKER_ROLE_LABEL, false)
+                                                    && node.getStatus() != null
+                                                    && node.getStatus().getAddresses() != null) {
                                                 return node.getStatus().getAddresses().stream().anyMatch(address -> hostIP.equals(address.getAddress()));
                                             } else {
                                                 return false;

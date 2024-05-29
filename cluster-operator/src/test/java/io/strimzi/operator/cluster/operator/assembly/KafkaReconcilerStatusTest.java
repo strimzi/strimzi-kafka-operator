@@ -328,6 +328,7 @@ public class KafkaReconcilerStatusTest {
         Pod pod0 = new PodBuilder()
                 .withNewMetadata()
                     .withName(CLUSTER_NAME + "-kafka-" + 0)
+                    .withLabels(Map.of(Labels.STRIMZI_BROKER_ROLE_LABEL, "true"))
                 .endMetadata()
                 .withNewStatus()
                     .withHostIP("10.0.0.1")
@@ -337,6 +338,7 @@ public class KafkaReconcilerStatusTest {
         Pod pod1 = new PodBuilder()
                 .withNewMetadata()
                     .withName(CLUSTER_NAME + "-kafka-" + 1)
+                    .withLabels(Map.of(Labels.STRIMZI_BROKER_ROLE_LABEL, "true"))
                 .endMetadata()
                 .withNewStatus()
                     .withHostIP("10.0.0.25")
@@ -346,6 +348,7 @@ public class KafkaReconcilerStatusTest {
         Pod pod2 = new PodBuilder()
                 .withNewMetadata()
                     .withName(CLUSTER_NAME + "-kafka-" + 2)
+                    .withLabels(Map.of(Labels.STRIMZI_BROKER_ROLE_LABEL, "true"))
                 .endMetadata()
                 .withNewStatus()
                     .withHostIP("10.0.0.13")
@@ -356,6 +359,127 @@ public class KafkaReconcilerStatusTest {
         pods.add(pod0);
         pods.add(pod1);
         pods.add(pod2);
+
+        PodOperator mockPodOps = supplier.podOperations;
+        when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(pods));
+
+        // Mock Kubernetes worker nodes
+        NodeOperator mockNodeOps = supplier.nodeOperator;
+        when(mockNodeOps.listAsync(any(Labels.class))).thenReturn(Future.succeededFuture(kubernetesWorkerNodes()));
+
+        // Run the test
+        KafkaReconciler reconciler = new MockKafkaReconcilerStatusTasks(
+                new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
+                supplier,
+                kafka
+        );
+
+        KafkaStatus status = new KafkaStatus();
+
+        Checkpoint async = context.checkpoint();
+        reconciler.reconcile(status, Clock.systemUTC()).onComplete(res -> context.verify(() -> {
+            assertThat(res.succeeded(), is(true));
+
+            // Check listener status
+            assertThat(status.getListeners().size(), is(1));
+            assertThat(status.getListeners().get(0).getName(), is("external"));
+            assertThat(status.getListeners().get(0).getBootstrapServers(), is("5.124.16.8:31234,50.35.18.119:31234,55.36.78.115:31234"));
+            assertThat(status.getListeners().get(0).getAddresses().size(), is(3));
+
+            // Assert the listener addresses independently on their order
+            assertThat(status.getListeners().get(0).getAddresses().stream().anyMatch(a -> a.getPort() == 31234 && "5.124.16.8".equals(a.getHost())), is(true));
+            assertThat(status.getListeners().get(0).getAddresses().stream().anyMatch(a -> a.getPort() == 31234 && "55.36.78.115".equals(a.getHost())), is(true));
+            assertThat(status.getListeners().get(0).getAddresses().stream().anyMatch(a -> a.getPort() == 31234 && "50.35.18.119".equals(a.getHost())), is(true));
+
+            async.flag();
+        }));
+    }
+
+    @Test
+    public void testKafkaReconcilerStatusWithNodePortsAndKRaftControllers(VertxTestContext context) {
+        Kafka kafka = new KafkaBuilder(KAFKA)
+                .editOrNewSpec()
+                    .editOrNewKafka()
+                        .withListeners(new GenericKafkaListenerBuilder()
+                                .withName("external")
+                                .withPort(9094)
+                                .withType(KafkaListenerType.NODEPORT)
+                                .withTls(true)
+                                .build())
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+
+        // Mock Kafka broker pods
+        Pod pod0 = new PodBuilder()
+                .withNewMetadata()
+                    .withName(CLUSTER_NAME + "-broker-" + 0)
+                    .withLabels(Map.of(Labels.STRIMZI_BROKER_ROLE_LABEL, "true"))
+                .endMetadata()
+                .withNewStatus()
+                    .withHostIP("10.0.0.1")
+                .endStatus()
+                .build();
+
+        Pod pod1 = new PodBuilder()
+                .withNewMetadata()
+                    .withName(CLUSTER_NAME + "-broker-" + 1)
+                    .withLabels(Map.of(Labels.STRIMZI_BROKER_ROLE_LABEL, "true"))
+                .endMetadata()
+                .withNewStatus()
+                    .withHostIP("10.0.0.25")
+                .endStatus()
+                .build();
+
+        Pod pod2 = new PodBuilder()
+                .withNewMetadata()
+                    .withName(CLUSTER_NAME + "-broker-" + 2)
+                    .withLabels(Map.of(Labels.STRIMZI_BROKER_ROLE_LABEL, "true"))
+                .endMetadata()
+                .withNewStatus()
+                    .withHostIP("10.0.0.13")
+                .endStatus()
+                .build();
+
+        Pod pod3 = new PodBuilder()
+                .withNewMetadata()
+                    .withName(CLUSTER_NAME + "-controller-" + 3)
+                    .withLabels(Map.of(Labels.STRIMZI_BROKER_ROLE_LABEL, "false", Labels.STRIMZI_CONTROLLER_ROLE_LABEL, "true"))
+                .endMetadata()
+                .withNewStatus()
+                    .withHostIP("10.0.0.1")
+                .endStatus()
+                .build();
+
+        Pod pod4 = new PodBuilder()
+                .withNewMetadata()
+                    .withName(CLUSTER_NAME + "-controller-" + 4)
+                    .withLabels(Map.of(Labels.STRIMZI_BROKER_ROLE_LABEL, "false", Labels.STRIMZI_CONTROLLER_ROLE_LABEL, "true"))
+                .endMetadata()
+                .withNewStatus()
+                    .withHostIP("10.0.0.16") // Make sure this host is not used for any of the brokers => we test that it is not included in the status!
+                .endStatus()
+                .build();
+
+        Pod pod5 = new PodBuilder()
+                .withNewMetadata()
+                    .withName(CLUSTER_NAME + "-controller-" + 5)
+                    .withLabels(Map.of(Labels.STRIMZI_BROKER_ROLE_LABEL, "tfalserue", Labels.STRIMZI_CONTROLLER_ROLE_LABEL, "true"))
+                .endMetadata()
+                .withNewStatus()
+                    .withHostIP("10.0.0.13")
+                .endStatus()
+                .build();
+
+        List<Pod> pods = new ArrayList<>();
+        pods.add(pod0);
+        pods.add(pod1);
+        pods.add(pod2);
+        pods.add(pod3);
+        pods.add(pod4);
+        pods.add(pod5);
 
         PodOperator mockPodOps = supplier.podOperations;
         when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(pods));
@@ -426,6 +550,7 @@ public class KafkaReconcilerStatusTest {
         Pod pod0 = new PodBuilder()
                 .withNewMetadata()
                     .withName(CLUSTER_NAME + "-kafka-" + 0)
+                    .withLabels(Map.of(Labels.STRIMZI_BROKER_ROLE_LABEL, "true"))
                 .endMetadata()
                 .withNewStatus()
                     .withHostIP("10.0.0.1")
@@ -435,6 +560,7 @@ public class KafkaReconcilerStatusTest {
         Pod pod1 = new PodBuilder()
                 .withNewMetadata()
                     .withName(CLUSTER_NAME + "-kafka-" + 1)
+                    .withLabels(Map.of(Labels.STRIMZI_BROKER_ROLE_LABEL, "true"))
                 .endMetadata()
                 .withNewStatus()
                     .withHostIP("10.0.0.25")
@@ -444,6 +570,7 @@ public class KafkaReconcilerStatusTest {
         Pod pod2 = new PodBuilder()
                 .withNewMetadata()
                     .withName(CLUSTER_NAME + "-kafka-" + 2)
+                    .withLabels(Map.of(Labels.STRIMZI_BROKER_ROLE_LABEL, "true"))
                 .endMetadata()
                 .withNewStatus()
                     .withHostIP("10.0.0.13")
@@ -514,6 +641,7 @@ public class KafkaReconcilerStatusTest {
         Pod pod0 = new PodBuilder()
                 .withNewMetadata()
                     .withName(CLUSTER_NAME + "-kafka-" + 0)
+                    .withLabels(Map.of(Labels.STRIMZI_BROKER_ROLE_LABEL, "true"))
                 .endMetadata()
                 .withNewStatus()
                     .withHostIP("10.0.0.1")
@@ -523,6 +651,7 @@ public class KafkaReconcilerStatusTest {
         Pod pod1 = new PodBuilder()
                 .withNewMetadata()
                     .withName(CLUSTER_NAME + "-kafka-" + 1)
+                    .withLabels(Map.of(Labels.STRIMZI_BROKER_ROLE_LABEL, "true"))
                 .endMetadata()
                 .withNewStatus()
                     .withHostIP("10.0.0.25")
@@ -532,6 +661,7 @@ public class KafkaReconcilerStatusTest {
         Pod pod2 = new PodBuilder()
                 .withNewMetadata()
                     .withName(CLUSTER_NAME + "-kafka-" + 2)
+                    .withLabels(Map.of(Labels.STRIMZI_BROKER_ROLE_LABEL, "true"))
                 .endMetadata()
                 .withNewStatus()
                     .withHostIP("10.0.0.13")
@@ -599,6 +729,7 @@ public class KafkaReconcilerStatusTest {
         Pod pod0 = new PodBuilder()
                 .withNewMetadata()
                     .withName(CLUSTER_NAME + "-kafka-" + 0)
+                    .withLabels(Map.of(Labels.STRIMZI_BROKER_ROLE_LABEL, "true"))
                 .endMetadata()
                 .withNewStatus()
                     .withHostIP("10.0.0.1")
@@ -608,6 +739,7 @@ public class KafkaReconcilerStatusTest {
         Pod pod1 = new PodBuilder()
                 .withNewMetadata()
                     .withName(CLUSTER_NAME + "-kafka-" + 1)
+                    .withLabels(Map.of(Labels.STRIMZI_BROKER_ROLE_LABEL, "true"))
                 .endMetadata()
                 .withNewStatus()
                     .withHostIP("10.0.0.1")
@@ -617,6 +749,7 @@ public class KafkaReconcilerStatusTest {
         Pod pod2 = new PodBuilder()
                 .withNewMetadata()
                     .withName(CLUSTER_NAME + "-kafka-" + 2)
+                    .withLabels(Map.of(Labels.STRIMZI_BROKER_ROLE_LABEL, "true"))
                 .endMetadata()
                 .withNewStatus()
                     .withHostIP("10.0.0.1")
