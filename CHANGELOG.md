@@ -11,7 +11,7 @@
 
 ### Changes, deprecations and removals
 
-* The `reconciliationIntervalSeconds` configuration for the Topic and User Operators is deprecated, and will be removed when upgrading schemas to V1. Use `reconciliationIntervalMs` converting the value to milliseconds.
+* The `reconciliationIntervalSeconds` configuration for the Topic and User Operators is deprecated, and will be removed when upgrading schemas to v1. Use `reconciliationIntervalMs` converting the value to milliseconds.
 
 ## 0.41.0
 
