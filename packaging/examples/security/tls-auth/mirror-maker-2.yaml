@@ -218,7 +218,7 @@ spec:
       tls:
         trustedCertificates:
           - secretName: cluster-a-cluster-ca-cert
-            certificate: ca.crt
+            pattern: "*.crt"
       authentication:
         type: tls
         certificateAndKey:
@@ -230,7 +230,7 @@ spec:
       tls:
         trustedCertificates:
           - secretName: cluster-b-cluster-ca-cert
-            certificate: ca.crt
+            pattern: "*.crt"
       authentication:
         type: tls
         certificateAndKey:
