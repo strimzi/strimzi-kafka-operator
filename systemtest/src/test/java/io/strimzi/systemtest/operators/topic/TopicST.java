@@ -444,7 +444,7 @@ public class TopicST extends AbstractST {
     @ParallelNamespaceTest
     void testTopicWithoutLabels() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
-        final int topicOperatorReconciliationSeconds = 10;
+        final long topicOperatorReconciliationMs = 10_000;
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
@@ -459,7 +459,7 @@ public class TopicST extends AbstractST {
                 .editSpec()
                     .editEntityOperator()
                         .editTopicOperator()
-                            .withReconciliationIntervalSeconds(topicOperatorReconciliationSeconds)
+                            .withReconciliationIntervalMs(topicOperatorReconciliationMs)
                         .endTopicOperator()
                     .endEntityOperator()
                 .endSpec().build()
@@ -479,7 +479,7 @@ public class TopicST extends AbstractST {
         assertThat(cmdKubeClient(testStorage.getNamespaceName()).list("kafkatopic"), hasItems(testStorage.getTargetTopicName()));
 
         // Checking that TO didn't handle new topic and zk pods don't contain new topic
-        KafkaTopicUtils.verifyUnchangedTopicAbsence(testStorage.getNamespaceName(), scraperPodName, testStorage.getClusterName(), testStorage.getTargetTopicName(), topicOperatorReconciliationSeconds);
+        KafkaTopicUtils.verifyUnchangedTopicAbsence(testStorage.getNamespaceName(), scraperPodName, testStorage.getClusterName(), testStorage.getTargetTopicName(), topicOperatorReconciliationMs);
 
         // Checking TO logs
         String tOPodName = cmdKubeClient(testStorage.getNamespaceName()).listResourcesByLabel("pod", Labels.STRIMZI_NAME_LABEL + "=" + testStorage.getClusterName() + "-entity-operator").get(0);
@@ -539,7 +539,7 @@ public class TopicST extends AbstractST {
             .editSpec()
                 .editEntityOperator()
                     .editOrNewTopicOperator()
-                        .withReconciliationIntervalSeconds((int) TestConstants.RECONCILIATION_INTERVAL / 1000)
+                        .withReconciliationIntervalMs(TestConstants.RECONCILIATION_INTERVAL)
                     .endTopicOperator()
                 .endEntityOperator()
             .endSpec()
@@ -559,6 +559,6 @@ public class TopicST extends AbstractST {
 
         scraperPodName = ScraperUtils.getScraperPod(Environment.TEST_SUITE_NAMESPACE).getMetadata().getName();
         topicOperatorReconciliationIntervalMs = KafkaResource.kafkaClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(sharedTestStorage.getClusterName()).get()
-                .getSpec().getEntityOperator().getTopicOperator().getReconciliationIntervalSeconds() * 1_000L + 5_000L;
+                .getSpec().getEntityOperator().getTopicOperator().getReconciliationIntervalMs() + 5_000L;
     }
 }

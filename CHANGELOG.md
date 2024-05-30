@@ -9,6 +9,10 @@
 * Enhance `KafkaBridge` resource with consumer inactivity timeout and HTTP consumer/producer enablement.
 * Add support for feature gates to User and Topic Operators
 
+### Changes, deprecations and removals
+
+* The `reconciliationIntervalSeconds` configuration for the Topic and User Operators is deprecated, and will be removed when upgrading schemas to V1. Use `reconciliationIntervalMs` converting the value to milliseconds.
+
 ## 0.41.0
 
 * Add support for Apache Kafka 3.6.2

@@ -139,7 +139,7 @@ spec:
   entityOperator: # <27>
     topicOperator:
       watchedNamespace: my-topic-namespace
-      reconciliationIntervalSeconds: 60
+      reconciliationIntervalMs: 60000
       logging: # <28>
         type: inline
         loggers:
@@ -153,7 +153,7 @@ spec:
           cpu: "1"
     userOperator:
       watchedNamespace: my-topic-namespace
-      reconciliationIntervalSeconds: 60
+      reconciliationIntervalMs: 60000
       logging: # <29>
         type: inline
         loggers:

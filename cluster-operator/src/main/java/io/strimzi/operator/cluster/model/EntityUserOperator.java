@@ -31,6 +31,7 @@ import io.strimzi.operator.common.Reconciliation;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Represents the User Operator deployment
@@ -93,7 +94,7 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
 
         // create a default configuration
         this.kafkaBootstrapServers = KafkaResources.bootstrapServiceName(cluster) + ":" + EntityUserOperatorSpec.DEFAULT_BOOTSTRAP_SERVERS_PORT;
-        this.reconciliationIntervalMs = EntityUserOperatorSpec.DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS * 1_000;
+        this.reconciliationIntervalMs = EntityUserOperatorSpec.DEFAULT_FULL_RECONCILIATION_INTERVAL_MS;
         this.secretPrefix = EntityUserOperatorSpec.DEFAULT_SECRET_PREFIX;
         this.resourceLabels = ModelUtils.defaultResourceLabels(cluster);
 
@@ -128,7 +129,7 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
             result.image = image;
 
             result.watchedNamespace = userOperatorSpec.getWatchedNamespace() != null ? userOperatorSpec.getWatchedNamespace() : kafkaAssembly.getMetadata().getNamespace();
-            result.reconciliationIntervalMs = userOperatorSpec.getReconciliationIntervalSeconds() * 1_000;
+            result.reconciliationIntervalMs = getReconciliationIntervalMs(userOperatorSpec);
             result.secretPrefix = userOperatorSpec.getSecretPrefix() == null ? EntityUserOperatorSpec.DEFAULT_SECRET_PREFIX : userOperatorSpec.getSecretPrefix();
             result.logging = new LoggingModel(userOperatorSpec, result.getClass().getSimpleName(), true, false);
             result.gcLoggingEnabled = userOperatorSpec.getJvmOptions() == null ? JvmOptions.DEFAULT_GC_LOGGING_ENABLED : userOperatorSpec.getJvmOptions().isGcLoggingEnabled();
@@ -166,6 +167,15 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
         } else {
             return null;
         }
+    }
+
+    @SuppressWarnings("deprecation")
+    private static long getReconciliationIntervalMs(EntityUserOperatorSpec spec) {
+        long defaultIntervalMs = spec.DEFAULT_FULL_RECONCILIATION_INTERVAL_MS;
+        // if they are both set reconciliationIntervalMs takes precedence
+        return (spec.getReconciliationIntervalMs() != defaultIntervalMs) ? spec.getReconciliationIntervalMs()
+            : (spec.getReconciliationIntervalSeconds() != defaultIntervalMs) ? TimeUnit.SECONDS.toMillis(spec.getReconciliationIntervalSeconds())
+            : spec.getReconciliationIntervalMs();
     }
 
     protected Container createContainer(ImagePullPolicy imagePullPolicy) {

@@ -39,7 +39,7 @@ import static io.strimzi.operator.common.config.ConfigParameterParser.strictlyPo
  * @param labelSelector                 The label selector that KafkaTopics must match
  * @param bootstrapServers              The Kafka bootstrap servers
  * @param clientId                      The client Id to use for the Admin client
- * @param fullReconciliationIntervalMs  The resync interval, in ms
+ * @param fullReconciliationIntervalMs  The periodic reconciliation interval in milliseconds
  * @param tlsEnabled                    Whether the Admin client should be configured to use TLS
  * @param truststoreLocation            The location (path) of the Admin client's truststore.
  * @param truststorePassword            The password for the truststore at {@code truststoreLocation}.

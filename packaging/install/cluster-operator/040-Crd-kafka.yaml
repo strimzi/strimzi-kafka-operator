@@ -2989,7 +2989,11 @@ spec:
                       reconciliationIntervalSeconds:
                         type: integer
                         minimum: 0
-                        description: Interval between periodic reconciliations.
+                        description: Interval between periodic reconciliations in seconds.
+                      reconciliationIntervalMs:
+                        type: integer
+                        minimum: 0
+                        description: Interval between periodic reconciliations in milliseconds.
                       zookeeperSessionTimeoutSeconds:
                         type: integer
                         minimum: 0
@@ -3173,7 +3177,11 @@ spec:
                       reconciliationIntervalSeconds:
                         type: integer
                         minimum: 0
-                        description: Interval between periodic reconciliations.
+                        description: Interval between periodic reconciliations in seconds.
+                      reconciliationIntervalMs:
+                        type: integer
+                        minimum: 0
+                        description: Interval between periodic reconciliations in milliseconds.
                       zookeeperSessionTimeoutSeconds:
                         type: integer
                         minimum: 0

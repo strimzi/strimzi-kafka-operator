@@ -1491,7 +1491,10 @@ include::../api/io.strimzi.api.kafka.model.kafka.entityoperator.EntityTopicOpera
 |The image to use for the Topic Operator.
 |reconciliationIntervalSeconds
 |integer
-|Interval between periodic reconciliations.
+|**The `reconciliationIntervalSeconds` property has been deprecated.** Use reconciliationIntervalMs converting the value to milliseconds. Interval between periodic reconciliations in seconds.
+|reconciliationIntervalMs
+|integer
+|Interval between periodic reconciliations in milliseconds.
 |zookeeperSessionTimeoutSeconds
 |integer
 |**The `zookeeperSessionTimeoutSeconds` property has been deprecated.** This property is not used anymore in Strimzi 0.41.0 and it is ignored. Timeout for the ZooKeeper session.
@@ -1542,7 +1545,10 @@ include::../api/io.strimzi.api.kafka.model.kafka.entityoperator.EntityUserOperat
 |The image to use for the User Operator.
 |reconciliationIntervalSeconds
 |integer
-|Interval between periodic reconciliations.
+|**The `reconciliationIntervalSeconds` property has been deprecated.** Use reconciliationIntervalMs converting the value to milliseconds. Interval between periodic reconciliations in seconds.
+|reconciliationIntervalMs
+|integer
+|Interval between periodic reconciliations in milliseconds.
 |zookeeperSessionTimeoutSeconds
 |integer
 |**The `zookeeperSessionTimeoutSeconds` property has been deprecated.** This property has been deprecated because ZooKeeper is not used anymore by the User Operator. Timeout for the ZooKeeper session.

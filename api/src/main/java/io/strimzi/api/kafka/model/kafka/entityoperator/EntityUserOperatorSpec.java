@@ -27,6 +27,7 @@ import lombok.ToString;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Representation of the User Operator.
@@ -38,20 +39,21 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @JsonPropertyOrder({"watchedNamespace", "image",
-    "reconciliationIntervalSeconds", "zookeeperSessionTimeoutSeconds",
+    "reconciliationIntervalSeconds", "reconciliationIntervalMs", "zookeeperSessionTimeoutSeconds",
     "secretPrefix", "livenessProbe", "readinessProbe",
     "resources", "logging", "jvmOptions"})
 @EqualsAndHashCode
 @ToString
 public class EntityUserOperatorSpec implements HasConfigurableLogging, HasLivenessProbe, HasReadinessProbe, UnknownPropertyPreserving {
     public static final int DEFAULT_BOOTSTRAP_SERVERS_PORT = 9091;
-    public static final long DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS = 120;
+    public static final long DEFAULT_FULL_RECONCILIATION_INTERVAL_MS = 120_000;
     public static final String DEFAULT_SECRET_PREFIX = "";
 
     private String watchedNamespace;
     private String image;
     private String secretPrefix;
-    private long reconciliationIntervalSeconds = DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS;
+    private long reconciliationIntervalSeconds = TimeUnit.MILLISECONDS.toSeconds(DEFAULT_FULL_RECONCILIATION_INTERVAL_MS);
+    protected long reconciliationIntervalMs = DEFAULT_FULL_RECONCILIATION_INTERVAL_MS;
     private Long zookeeperSessionTimeoutSeconds;
     private Probe livenessProbe;
     private Probe readinessProbe;
@@ -78,15 +80,29 @@ public class EntityUserOperatorSpec implements HasConfigurableLogging, HasLivene
         this.image = image;
     }
 
-    @Description("Interval between periodic reconciliations.")
+    @Description("Interval between periodic reconciliations in seconds.")
     @Minimum(0)
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    @DeprecatedProperty(description = "Use reconciliationIntervalMs converting the value to milliseconds.")
+    @PresentInVersions("v1alpha1-v1beta2")
+    @Deprecated
     public long getReconciliationIntervalSeconds() {
         return reconciliationIntervalSeconds;
     }
 
     public void setReconciliationIntervalSeconds(long reconciliationIntervalSeconds) {
         this.reconciliationIntervalSeconds = reconciliationIntervalSeconds;
+    }
+
+    @Description("Interval between periodic reconciliations in milliseconds.")
+    @Minimum(0)
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    public long getReconciliationIntervalMs() {
+        return reconciliationIntervalMs;
+    }
+
+    public void setReconciliationIntervalMs(long reconciliationIntervalMs) {
+        this.reconciliationIntervalMs = reconciliationIntervalMs;
     }
 
     @Description("Timeout for the ZooKeeper session")
