@@ -384,7 +384,8 @@ public class KafkaTopicUtils {
                     }
                     successCounter[0] = 0; // reset counter if condition not met
                     return false;
-                }, TestConstants.GLOBAL_CRUISE_CONTROL_TIMEOUT);
+                    // The timeout change to 10 minutes is needed due to time that CC needs to compute local cluster model before doing changes in Kafka
+                }, TestConstants.GLOBAL_CRUISE_CONTROL_TIMEOUT_LONG);
     }
 
     /**
@@ -401,7 +402,8 @@ public class KafkaTopicUtils {
                     return "ongoing".equals(kafkaTopic.getStatus().getReplicasChange().getState().toValue());
                 }
                 return false;
-            }, TestConstants.GLOBAL_CRUISE_CONTROL_TIMEOUT);
+                // The timeout change to 10 minutes is needed due to time that CC needs to compute local cluster model before doing changes in Kafka
+            }, TestConstants.GLOBAL_CRUISE_CONTROL_TIMEOUT_LONG);
     }
 
     /**
