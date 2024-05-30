@@ -466,7 +466,7 @@ public class KafkaReconcilerStatusTest {
         Pod pod5 = new PodBuilder()
                 .withNewMetadata()
                     .withName(CLUSTER_NAME + "-controller-" + 5)
-                    .withLabels(Map.of(Labels.STRIMZI_BROKER_ROLE_LABEL, "tfalserue", Labels.STRIMZI_CONTROLLER_ROLE_LABEL, "true"))
+                    .withLabels(Map.of(Labels.STRIMZI_BROKER_ROLE_LABEL, "false", Labels.STRIMZI_CONTROLLER_ROLE_LABEL, "true"))
                 .endMetadata()
                 .withNewStatus()
                     .withHostIP("10.0.0.13")
