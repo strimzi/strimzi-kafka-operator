@@ -59,62 +59,53 @@ public class TopicOperatorUtil {
 
     /**
      * Start the reconciliation timer.
-     * 
-     * @param reconcilableTopic Reconcilable topic.
+     *
      * @param metrics Metrics holder.
+     * @return Timer sample.
      */
-    public static void startReconciliationTimer(ReconcilableTopic reconcilableTopic,
-                                                TopicOperatorMetricsHolder metrics) {
-        if (reconcilableTopic.reconciliationTimerSample() == null) {
-            reconcilableTopic.reconciliationTimerSample(Timer.start(metrics.metricsProvider().meterRegistry()));
-        }
+    public static Timer.Sample startReconciliationTimer(TopicOperatorMetricsHolder metrics) {
+        return Timer.start(metrics.metricsProvider().meterRegistry());
     }
 
     /**
      * Stop the reconciliation timer.
-     * 
-     * @param reconcilableTopic Reconcilable topic.
-     * @param metrics Metrics holder.
-     * @param namespace Namespace.
-     */
-    public static void stopReconciliationTimer(ReconcilableTopic reconcilableTopic,
-                                               TopicOperatorMetricsHolder metrics,
-                                               String namespace) {
-        if (reconcilableTopic.reconciliationTimerSample() != null) {
-            reconcilableTopic.reconciliationTimerSample().stop(metrics.reconciliationsTimer(namespace));
-        }
-    }
-
-    /**
-     * Start the operation timer.
-     * 
-     * @param enableAdditionalMetrics Whether to enable additional metrics.
-     * @param metrics Metrics holder.
-     * @return The timer sample.
-     */
-    public static Timer.Sample startOperationTimer(boolean enableAdditionalMetrics,
-                                                   TopicOperatorMetricsHolder metrics) {
-        if (enableAdditionalMetrics) {
-            return Timer.start(metrics.metricsProvider().meterRegistry());
-        } else {
-            return null;
-        }
-    }
-
-    /**
-     * Stop the operation timer.
      *
-     * @param timerSample The timer sample.
-     * @param opTimer Operation timer.
-     * @param enableAdditionalMetrics Whether to enable additional metrics.
+     * @param metrics Metrics holder.
+     * @param timerSample Timer sample.
      * @param namespace Namespace.
      */
-    public static void stopOperationTimer(Timer.Sample timerSample, 
-                                          Function<String, Timer> opTimer,
-                                          boolean enableAdditionalMetrics,
-                                          String namespace) {
-        if (timerSample != null && enableAdditionalMetrics) {
-            timerSample.stop(opTimer.apply(namespace));
+    public static void stopReconciliationTimer(TopicOperatorMetricsHolder metrics,
+                                               Timer.Sample timerSample,
+                                               String namespace) {
+        timerSample.stop(metrics.reconciliationsTimer(namespace));
+    }
+
+    /**
+     * Start the external request timer.
+     *
+     * @param metrics Metrics holder.
+     * @param enabled Whether additional metrics are enabled.
+     * @return Timer sample.
+     */
+    public static Timer.Sample startExternalRequestTimer(TopicOperatorMetricsHolder metrics,
+                                                         boolean enabled) {
+        return enabled ? Timer.start(metrics.metricsProvider().meterRegistry()) : null;
+    }
+
+    /**
+     * Stop the external request timer.
+     *
+     * @param timerSample Timer sample.
+     * @param requestTimer Request timer.
+     * @param enabled Whether additional metrics are enabled.
+     * @param namespace Namespace.
+     */
+    public static void stopExternalRequestTimer(Timer.Sample timerSample,
+                                                Function<String, Timer> requestTimer,
+                                                boolean enabled,
+                                                String namespace) {
+        if (enabled) {
+            timerSample.stop(requestTimer.apply(namespace));
         }
     }
 
