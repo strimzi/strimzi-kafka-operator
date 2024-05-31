@@ -8,6 +8,7 @@
 * Add support for filename patterns when configuring trusted certificates
 * Enhance `KafkaBridge` resource with consumer inactivity timeout and HTTP consumer/producer enablement.
 * Add support for feature gates to User and Topic Operators
+* Add support for setting `publishNotReadyAddresses` on services for listener types other than internal.
 
 ## 0.41.0
 
