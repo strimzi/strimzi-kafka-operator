@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.Map;
 
 import static io.strimzi.operator.cluster.model.EntityTopicOperator.CRUISE_CONTROL_API_PORT;
+import static io.strimzi.operator.cluster.model.EntityTopicOperator.THROTTLED_REPLICAS_TOPIC_CONFIGS;
 import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.API_TO_ADMIN_NAME;
 import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.API_TO_ADMIN_NAME_KEY;
 import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.API_TO_ADMIN_PASSWORD_KEY;
@@ -337,6 +338,7 @@ public class EntityTopicOperatorTest {
         expectedEnvVars.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_CRUISE_CONTROL_PORT).withValue(String.valueOf(CRUISE_CONTROL_API_PORT)).build());
         expectedEnvVars.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_CRUISE_CONTROL_SSL_ENABLED).withValue(Boolean.toString(true)).build());
         expectedEnvVars.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_CRUISE_CONTROL_AUTH_ENABLED).withValue(Boolean.toString(true)).build());
+        expectedEnvVars.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_TOPIC_OPERATOR_UNALTERABLE_TOPIC_CONFIG).withValue(THROTTLED_REPLICAS_TOPIC_CONFIGS).build());
         assertThat(entityTopicOperator.getEnvVars(), is(expectedEnvVars));
 
         Container container = entityTopicOperator.createContainer(null);

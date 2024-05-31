@@ -63,6 +63,8 @@ import java.util.stream.Stream;
 
 import static io.strimzi.api.kafka.model.topic.ReplicasChangeState.ONGOING;
 import static io.strimzi.api.kafka.model.topic.ReplicasChangeState.PENDING;
+import static io.strimzi.operator.topic.TopicOperatorConfig.ALTERABLE_TOPIC_CONFIG;
+import static io.strimzi.operator.topic.TopicOperatorConfig.UNALTERABLE_TOPIC_CONFIG;
 import static io.strimzi.operator.topic.TopicOperatorUtil.startReconciliationTimer;
 import static io.strimzi.operator.topic.TopicOperatorUtil.stopReconciliationTimer;
 import static io.strimzi.operator.topic.TopicOperatorUtil.topicNames;
@@ -1169,6 +1171,15 @@ public class BatchingTopicController {
                 alterConfigOps.removeIf(op -> !alterablePropertySet.contains(op.configEntry().name()));
             }
         }
+
+        var unalterableConfigs = config.unalterableTopicConfig();
+        if (unalterableConfigs != null && alterConfigOps != null && !unalterableConfigs.isEmpty()) {
+            if (!unalterableConfigs.equalsIgnoreCase("NONE")) {
+                var unalterablePropertySet = Arrays.stream(unalterableConfigs.replaceAll("\\s", "").split(","))
+                        .collect(Collectors.toSet());
+                alterConfigOps.removeIf(op -> unalterablePropertySet.contains(op.configEntry().name()));
+            }
+        }
     }
 
     private static boolean hasConfig(KafkaTopic kt) {
@@ -1198,20 +1209,41 @@ public class BatchingTopicController {
                                                List<Condition> conditions) {
         var readOnlyConfigs = new ArrayList<>();
         var alterableConfigs = config.alterableTopicConfig();
+        var unalterableConfigs = config.unalterableTopicConfig();
 
-        if (reconcilableTopic != null && reconcilableTopic.kt() != null
-              && hasConfig(reconcilableTopic.kt()) && alterableConfigs != null) {
-            if (alterableConfigs.equalsIgnoreCase("NONE")) {
-                reconcilableTopic.kt().getSpec().getConfig().forEach((key, value) -> readOnlyConfigs.add(key));
-            } else if (!alterableConfigs.equalsIgnoreCase("ALL") && !alterableConfigs.isBlank()) {
-                var alterablePropertySet = Arrays.stream(alterableConfigs.replaceAll("\\s", "").split(","))
-                      .collect(Collectors.toSet());
-                reconcilableTopic.kt().getSpec().getConfig().forEach((key, value) -> {
-                    if (!alterablePropertySet.contains(key)) {
-                        readOnlyConfigs.add(key);
-                    }
-                });
+        if (reconcilableTopic != null && reconcilableTopic.kt() != null && hasConfig(reconcilableTopic.kt())) {
+            if (alterableConfigs != null) {
+                if (alterableConfigs.equalsIgnoreCase("NONE")) {
+                    reconcilableTopic.kt().getSpec().getConfig().forEach((key, value) -> readOnlyConfigs.add(key));
+                } else if (!alterableConfigs.equalsIgnoreCase("ALL") && !alterableConfigs.isBlank()) {
+                    var alterablePropertySet = Arrays.stream(alterableConfigs.replaceAll("\\s", "").split(","))
+                            .collect(Collectors.toSet());
+                    reconcilableTopic.kt().getSpec().getConfig().forEach((key, value) -> {
+                        if (!alterablePropertySet.contains(key)) {
+                            readOnlyConfigs.add(key);
+                        }
+                    });
+                }
             }
+
+            if (unalterableConfigs != null) {
+                if (!unalterableConfigs.equalsIgnoreCase("NONE")) {
+                    var unalterablePropertySet = Arrays.stream(unalterableConfigs.replaceAll("\\s", "").split(","))
+                            .collect(Collectors.toSet());
+                    reconcilableTopic.kt().getSpec().getConfig().forEach((key, value) -> {
+                        if (unalterablePropertySet.contains(key)) {
+                            readOnlyConfigs.add(key);
+                        }
+                    });
+                }
+            }
+        }
+
+        if (!ALTERABLE_TOPIC_CONFIG.defaultValue().equals(alterableConfigs) && !UNALTERABLE_TOPIC_CONFIG.defaultValue().equals(unalterableConfigs)) {
+            LOGGER.warnOp("{} and {} have non-default values. {}}: {}; {}} {}",
+                    ALTERABLE_TOPIC_CONFIG.key(), UNALTERABLE_TOPIC_CONFIG.key(),
+                    ALTERABLE_TOPIC_CONFIG.key(), alterableConfigs,
+                    UNALTERABLE_TOPIC_CONFIG.key(), unalterableConfigs);
         }
 
         if (!readOnlyConfigs.isEmpty()) {

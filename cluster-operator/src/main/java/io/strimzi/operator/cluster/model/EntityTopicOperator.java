@@ -78,6 +78,9 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
     /* test */ static final String ENV_VAR_CRUISE_CONTROL_PORT = "STRIMZI_CRUISE_CONTROL_PORT";
     /* test */ static final String ENV_VAR_CRUISE_CONTROL_SSL_ENABLED = "STRIMZI_CRUISE_CONTROL_SSL_ENABLED";
     /* test */ static final String ENV_VAR_CRUISE_CONTROL_AUTH_ENABLED = "STRIMZI_CRUISE_CONTROL_AUTH_ENABLED";
+    /* test */ static final String ENV_VAR_TOPIC_OPERATOR_UNALTERABLE_TOPIC_CONFIG = "STRIMZI_UNALTERABLE_TOPIC_CONFIG";
+
+    /* test */ static final String THROTTLED_REPLICAS_TOPIC_CONFIGS = "follower.replication.throttled.replicas,leader.replication.throttled.replicas";
 
     // Kafka bootstrap servers can't be specified in the JSON
     /* test */ final String kafkaBootstrapServers;
@@ -199,6 +202,7 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
             varList.add(ContainerUtils.createEnvVar(ENV_VAR_CRUISE_CONTROL_PORT, String.valueOf(CRUISE_CONTROL_API_PORT)));
             varList.add(ContainerUtils.createEnvVar(ENV_VAR_CRUISE_CONTROL_SSL_ENABLED, "true"));
             varList.add(ContainerUtils.createEnvVar(ENV_VAR_CRUISE_CONTROL_AUTH_ENABLED, "true"));
+            varList.add(ContainerUtils.createEnvVar(ENV_VAR_TOPIC_OPERATOR_UNALTERABLE_TOPIC_CONFIG, THROTTLED_REPLICAS_TOPIC_CONFIGS));
             // Truststore and API credentials are mounted in the container
         }
         
