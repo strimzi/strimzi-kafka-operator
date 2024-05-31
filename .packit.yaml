@@ -64,7 +64,7 @@ jobs:
 
   - job: tests
     trigger: pull_request
-    identifier: "regression-components"
+    identifier: "regression-components-1"
     targets:
       - centos-stream-9-x86_64
       - centos-stream-9-aarch64
@@ -79,7 +79,26 @@ jobs:
     tf_extra_params:
       test:
         tmt:
-          name: regression-components
+          name: regression-components-1
+
+  - job: tests
+    trigger: pull_request
+    identifier: "regression-components-2"
+    targets:
+      - centos-stream-9-x86_64
+      - centos-stream-9-aarch64
+    skip_build: true
+    manual_trigger: true
+    env: { IP_FAMILY: ipv4 }
+    labels:
+      - regression
+      - components
+      - regression-components
+      - rc
+    tf_extra_params:
+      test:
+        tmt:
+          name: regression-components-2
   ###############################################################################################
 
   - job: tests

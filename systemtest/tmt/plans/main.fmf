@@ -161,7 +161,8 @@ finish:
   summary: Run regression strimzi test suite with kraft
   discover+:
     test:
-      - regression-components
+      - regression-components-1
+      - regression-components-2
 
 /acceptance:
   summary: Run acceptance strimzi test suite with kraft
