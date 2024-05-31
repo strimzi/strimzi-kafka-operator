@@ -451,7 +451,7 @@ public class ListenersST extends AbstractST {
             externalKafkaClient.receiveMessagesPlain()
         );
 
-        StUtils.waitUntilSupplierIsSatisfied("Kafka status contains proper data about listeners", () -> {
+        StUtils.waitUntilSupplierIsSatisfied("Kafka status contains proper data about listeners (check test log for more info)", () -> {
             // Check that Kafka status has correct addresses in NodePort external listener part
             for (ListenerStatus listenerStatus : KafkaResource.getKafkaStatus(testStorage.getClusterName(), testStorage.getNamespaceName()).getListeners()) {
                 if (listenerStatus.getName().equals(TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME)) {

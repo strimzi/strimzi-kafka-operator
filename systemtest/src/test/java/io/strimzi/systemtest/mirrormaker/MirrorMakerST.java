@@ -629,7 +629,7 @@ public class MirrorMakerST extends AbstractST {
 
         // Needed for using it in lambda
         long finalMmObsGen = mmObsGen;
-        StUtils.waitUntilSupplierIsSatisfied("ObservedGeneration of MM is higher than" + finalMmObsGen,
+        StUtils.waitUntilSupplierIsSatisfied("ObservedGeneration of MM is higher than (check test log for more info)" + finalMmObsGen,
             () -> {
                 long observedGeneration = KafkaMirrorMakerResource.kafkaMirrorMakerClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus().getObservedGeneration();
                 boolean isHigherThan = observedGeneration > finalMmObsGen;
