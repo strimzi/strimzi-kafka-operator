@@ -242,7 +242,8 @@ public class GenericKafkaListenerConfiguration implements UnknownPropertyPreserv
     }
     
     @Description("Configures whether the service endpoints are considered \"ready\" even if the Pods themselves are not. " +
-            "Defaults to `false`.")
+            "Defaults to `false`. " +
+            "This field can not be used with `internal` type listeners.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public Boolean getPublishNotReadyAddresses() {
         return publishNotReadyAddresses;

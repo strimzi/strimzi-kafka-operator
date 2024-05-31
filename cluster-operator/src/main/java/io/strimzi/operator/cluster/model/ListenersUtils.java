@@ -583,11 +583,7 @@ public class ListenersUtils {
      * @return          publish not ready addresses value or null if not specified
      */
     public static Boolean publishNotReadyAddresses(GenericKafkaListener listener)    {
-        if (listener.getConfiguration() != null) {
-            return listener.getConfiguration().getPublishNotReadyAddresses();
-        } else {
-            return null;
-        }
+        return listener.getConfiguration() == null ? null : listener.getConfiguration().getPublishNotReadyAddresses();
     }
 
     /**
