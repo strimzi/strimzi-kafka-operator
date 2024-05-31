@@ -84,46 +84,6 @@ jobs:
 
   - job: tests
     trigger: pull_request
-    identifier: "kraft-operators"
-    targets:
-      - centos-stream-9-x86_64
-      - centos-stream-9-aarch64
-    skip_build: true
-    manual_trigger: true
-    env: { IP_FAMILY: ipv4 }
-    labels:
-      - kraft
-      - operators
-      - kraft-operators
-      - ko
-    tf_extra_params:
-      test:
-        tmt:
-          name: kraft-operators
-  ###############################################################################################
-
-  - job: tests
-    trigger: pull_request
-    identifier: "kraft-components"
-    targets:
-      - centos-stream-9-x86_64
-      - centos-stream-9-aarch64
-    skip_build: true
-    manual_trigger: true
-    env: { IP_FAMILY: ipv4 }
-    labels:
-      - kraft
-      - components
-      - kraft-components
-      - kc
-    tf_extra_params:
-      test:
-        tmt:
-          name: kraft-components
-  ###############################################################################################
-
-  - job: tests
-    trigger: pull_request
     identifier: "acceptance"
     targets:
       - centos-stream-9-x86_64
