@@ -160,11 +160,12 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
 
     @SuppressWarnings("deprecation")
     private static long getReconciliationIntervalMs(EntityTopicOperatorSpec spec) {
-        long defaultIntervalMs = spec.DEFAULT_FULL_RECONCILIATION_INTERVAL_MS;
         // if they are both set reconciliationIntervalMs takes precedence
-        return (spec.getReconciliationIntervalMs() != defaultIntervalMs) ? spec.getReconciliationIntervalMs() 
-            : (spec.getReconciliationIntervalSeconds() != defaultIntervalMs) ? TimeUnit.SECONDS.toMillis(spec.getReconciliationIntervalSeconds()) 
-                : spec.getReconciliationIntervalMs();
+        return (spec.getReconciliationIntervalMs() != null) 
+            ? spec.getReconciliationIntervalMs() 
+            : (spec.getReconciliationIntervalSeconds() != null)
+                ? TimeUnit.SECONDS.toMillis(spec.getReconciliationIntervalSeconds()) 
+                : spec.DEFAULT_FULL_RECONCILIATION_INTERVAL_MS;
     }
 
     protected Container createContainer(ImagePullPolicy imagePullPolicy) {

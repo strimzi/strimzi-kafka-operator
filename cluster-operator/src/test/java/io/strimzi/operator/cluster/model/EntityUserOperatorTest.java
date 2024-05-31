@@ -184,6 +184,38 @@ public class EntityUserOperatorTest {
     }
 
     @ParallelTest
+    public void testPeriodicReconciliationIntervalConfig() {
+        // default value
+        EntityUserOperatorSpec entityUserOperatorSpec0 = new EntityUserOperatorSpecBuilder().build();
+        EntityUserOperator entityUserOperator0 = buildEntityUserOperatorWithReconciliationInterval(entityUserOperatorSpec0);
+        assertThat(entityUserOperator0.reconciliationIntervalMs, is(EntityUserOperatorSpec.DEFAULT_FULL_RECONCILIATION_INTERVAL_MS));
+
+        // new config (ms)
+        EntityUserOperatorSpec entityUserOperatorSpec1 = new EntityUserOperatorSpecBuilder().withReconciliationIntervalMs(10_000L).build();
+        EntityUserOperator entityUserOperator1 = buildEntityUserOperatorWithReconciliationInterval(entityUserOperatorSpec1);
+        assertThat(entityUserOperator1.reconciliationIntervalMs, is(10_000L));
+
+        // legacy config (seconds)
+        EntityUserOperatorSpec entityUserOperatorSpec2 = new EntityUserOperatorSpecBuilder().withReconciliationIntervalSeconds(15L).build();
+        EntityUserOperator entityUserOperator2 = buildEntityUserOperatorWithReconciliationInterval(entityUserOperatorSpec2);
+        assertThat(entityUserOperator2.reconciliationIntervalMs, is(15_000L));
+
+        // both (new config should prevail)
+        EntityUserOperatorSpec entityUserOperatorSpec3 = new EntityUserOperatorSpecBuilder()
+            .withReconciliationIntervalMs(10_000L).withReconciliationIntervalSeconds(15L).build();
+        EntityUserOperator entityUserOperator3 = buildEntityUserOperatorWithReconciliationInterval(entityUserOperatorSpec3);
+        assertThat(entityUserOperator3.reconciliationIntervalMs, is(10_000L));
+    }
+
+    private EntityUserOperator buildEntityUserOperatorWithReconciliationInterval(EntityUserOperatorSpec userOperatorSpec) {
+        EntityOperatorSpec eoSpec = new EntityOperatorSpecBuilder().withUserOperator(userOperatorSpec).build();
+        Kafka kafka = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+            .editSpec().withEntityOperator(eoSpec).endSpec().build();
+        return EntityUserOperator.fromCrd(new Reconciliation("test", kafka.getKind(), kafka.getMetadata().getNamespace(), 
+            kafka.getMetadata().getName()), kafka, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig());
+    }
+
+    @ParallelTest
     public void testFromCrdDefault() {
         EntityUserOperatorSpec entityUserOperatorSpec = new EntityUserOperatorSpecBuilder()
                 .build();

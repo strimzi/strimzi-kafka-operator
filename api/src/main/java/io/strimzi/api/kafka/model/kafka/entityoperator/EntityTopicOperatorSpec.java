@@ -47,12 +47,14 @@ import java.util.concurrent.TimeUnit;
 @ToString
 public class EntityTopicOperatorSpec implements HasConfigurableLogging, HasLivenessProbe, HasReadinessProbe, HasStartupProbe, UnknownPropertyPreserving {
     public static final long DEFAULT_FULL_RECONCILIATION_INTERVAL_MS = 120_000;
+    @Deprecated
+    public static final int DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS = (int) TimeUnit.MILLISECONDS.toSeconds(DEFAULT_FULL_RECONCILIATION_INTERVAL_MS);
     public static final String DEFAULT_SECURITY_PROTOCOL = "SSL";
 
     protected String watchedNamespace;
     protected String image;
-    protected long reconciliationIntervalSeconds = TimeUnit.MILLISECONDS.toSeconds(DEFAULT_FULL_RECONCILIATION_INTERVAL_MS);
-    protected long reconciliationIntervalMs = DEFAULT_FULL_RECONCILIATION_INTERVAL_MS;
+    private Integer reconciliationIntervalSeconds;
+    private Long reconciliationIntervalMs;
     protected Integer zookeeperSessionTimeoutSeconds;
     protected Integer topicMetadataMaxAttempts;
     private Probe startupProbe;
@@ -87,22 +89,22 @@ public class EntityTopicOperatorSpec implements HasConfigurableLogging, HasLiven
     @DeprecatedProperty(description = "Use reconciliationIntervalMs converting the value to milliseconds.")
     @PresentInVersions("v1alpha1-v1beta2")
     @Deprecated
-    public long getReconciliationIntervalSeconds() {
+    public Integer getReconciliationIntervalSeconds() {
         return reconciliationIntervalSeconds;
     }
 
-    public void setReconciliationIntervalSeconds(int reconciliationIntervalSeconds) {
+    public void setReconciliationIntervalSeconds(Integer reconciliationIntervalSeconds) {
         this.reconciliationIntervalSeconds = reconciliationIntervalSeconds;
     }
 
     @Description("Interval between periodic reconciliations in milliseconds.")
     @Minimum(0)
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-    public long getReconciliationIntervalMs() {
+    public Long getReconciliationIntervalMs() {
         return reconciliationIntervalMs;
     }
 
-    public void setReconciliationIntervalMs(long reconciliationIntervalMs) {
+    public void setReconciliationIntervalMs(Long reconciliationIntervalMs) {
         this.reconciliationIntervalMs = reconciliationIntervalMs;
     }
     

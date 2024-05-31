@@ -455,7 +455,7 @@ public class TopicReplicasChangeST extends AbstractST {
                         .endKafka()
                         .editEntityOperator()
                             .editOrNewTopicOperator()
-                                .withReconciliationIntervalMs(10_000)
+                                .withReconciliationIntervalMs(10_000L)
                             .endTopicOperator()
                         .endEntityOperator()
                         .editCruiseControl()

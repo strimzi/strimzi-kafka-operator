@@ -164,6 +164,38 @@ public class EntityTopicOperatorTest {
     }
 
     @ParallelTest
+    public void testPeriodicReconciliationIntervalConfig() {
+        // default value
+        EntityTopicOperatorSpec entityTopicOperatorSpec0 = new EntityTopicOperatorSpecBuilder().build();
+        EntityTopicOperator entityTopicOperator0 = buildEntityTopicOperatorWithReconciliationInterval(entityTopicOperatorSpec0);
+        assertThat(entityTopicOperator0.reconciliationIntervalMs, is(EntityTopicOperatorSpec.DEFAULT_FULL_RECONCILIATION_INTERVAL_MS));
+        
+        // new config (ms)
+        EntityTopicOperatorSpec entityTopicOperatorSpec1 = new EntityTopicOperatorSpecBuilder().withReconciliationIntervalMs(10_000L).build();
+        EntityTopicOperator entityTopicOperator1 = buildEntityTopicOperatorWithReconciliationInterval(entityTopicOperatorSpec1);
+        assertThat(entityTopicOperator1.reconciliationIntervalMs, is(10_000L));
+        
+        // legacy config (seconds)
+        EntityTopicOperatorSpec entityTopicOperatorSpec2 = new EntityTopicOperatorSpecBuilder().withReconciliationIntervalSeconds(15).build();
+        EntityTopicOperator entityTopicOperator2 = buildEntityTopicOperatorWithReconciliationInterval(entityTopicOperatorSpec2);
+        assertThat(entityTopicOperator2.reconciliationIntervalMs, is(15_000L));
+        
+        // both (new config should prevail)
+        EntityTopicOperatorSpec entityTopicOperatorSpec3 = new EntityTopicOperatorSpecBuilder()
+            .withReconciliationIntervalMs(10_000L).withReconciliationIntervalSeconds(15).build();
+        EntityTopicOperator entityTopicOperator3 = buildEntityTopicOperatorWithReconciliationInterval(entityTopicOperatorSpec3);
+        assertThat(entityTopicOperator3.reconciliationIntervalMs, is(10_000L));
+    }
+    
+    private EntityTopicOperator buildEntityTopicOperatorWithReconciliationInterval(EntityTopicOperatorSpec topicOperatorSpec) {
+        EntityOperatorSpec eoSpec = new EntityOperatorSpecBuilder().withTopicOperator(topicOperatorSpec).build();
+        Kafka kafka = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+            .editSpec().withEntityOperator(eoSpec).endSpec().build();
+        return EntityTopicOperator.fromCrd(new Reconciliation("test", kafka.getKind(), kafka.getMetadata().getNamespace(), 
+                kafka.getMetadata().getName()), kafka, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig());
+    }
+
+    @ParallelTest
     public void testFromCrdDefault() {
         EntityTopicOperatorSpec entityTopicOperatorSpec = new EntityTopicOperatorSpecBuilder()
                 .build();
