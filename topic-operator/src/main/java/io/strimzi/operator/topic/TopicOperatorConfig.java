@@ -67,7 +67,7 @@ import static io.strimzi.operator.common.config.ConfigParameterParser.strictlyPo
  * @param cruiseControlApiUserPath           Api admin username file path
  * @param cruiseControlApiPassPath           Api admin password file path
  * @param alterableTopicConfig               Comma separated list of the alterable Kafka topic properties
- * @param unalterableTopicConfig             Comma separated list of the unalterable Kafka topic properties
+ * @param unalterableTopicConfig             Comma separated list of Kafka topic configurations that are ignored
  * @param skipClusterConfigReview            For some managed Kafka services the Cluster config is not callable, so this skips those calls.
  */
 public record TopicOperatorConfig(
