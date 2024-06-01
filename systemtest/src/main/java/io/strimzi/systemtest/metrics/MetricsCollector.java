@@ -60,7 +60,7 @@ public class MetricsCollector {
         private ComponentType componentType;
         private String componentName;
         private int metricsPort;
-        private String metricsPath;
+        private String metricsPath = "/metrics";
 
         public Builder withNamespaceName(String namespaceName) {
             this.namespaceName = namespaceName;
