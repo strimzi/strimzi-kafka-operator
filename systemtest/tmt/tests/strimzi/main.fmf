@@ -59,7 +59,7 @@ adjust:
   tier: 2
   environment+:
     TEST_PROFILE: components
-    TESTS: "!kafka/**/*ST,!security/**/*ST,!operators/**/*ST"
+    TESTS: "!kafka/**/*ST,!security/**/*ST,!operators/**/*ST,!log/**/*ST,!metrics/**/*ST,!specific/**/*ST"
 
 /acceptance:
   summary: Run acceptance strimzi test suite
