@@ -200,7 +200,7 @@ finish:
         processors: ">= 4"
   discover+:
     test:
-      - kraft_upgrade
+      - upgrade
 
 /performance:
   summary: Run performance test suite with kraft
