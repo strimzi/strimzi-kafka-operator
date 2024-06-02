@@ -9,6 +9,7 @@
 * Enhance `KafkaBridge` resource with consumer inactivity timeout and HTTP consumer/producer enablement.
 * Add support for feature gates to User and Topic Operators
 * Add support for setting `publishNotReadyAddresses` on services for listener types other than internal.
+* Update HTTP bridge to latest 0.29.0 release
 
 ## 0.41.0
 
