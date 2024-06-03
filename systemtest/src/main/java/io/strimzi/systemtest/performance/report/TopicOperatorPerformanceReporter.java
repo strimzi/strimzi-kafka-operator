@@ -9,6 +9,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.nio.file.Path;
+import java.util.Locale;
 import java.util.Map;
 
 
@@ -38,10 +39,21 @@ public class TopicOperatorPerformanceReporter extends BasePerformanceReporter {
             dirPathBuilder.append("-number-of-topics-").append(numberOfTopics);
         }
 
+        String processType = null;
+
+        if (useCaseName.equals(PerformanceConstants.TOPIC_OPERATOR_FIXED_SIZE_OF_EVENTS_USE_CASE)) {
+            processType = performanceAttributes.get(PerformanceConstants.TOPIC_OPERATOR_IN_PROCESS_TYPE).toString().toLowerCase(Locale.ROOT);
+
+            // it would be either "topic-concurrent" or "batch-concurrent"
+            dirPathBuilder.append("-process-type-").append(processType);
+        }
+
         final Path topicOperatorUseCasePathDir = performanceLogDir.resolve(dirPathBuilder.toString());
 
-        LOGGER.info("Resolved performance log directory: {} for use case '{}'. Max batch size: {}, Max linger time: {}, Clients enabled: {}, Number of topics: {}",
-            topicOperatorUseCasePathDir, useCaseName, maxBatchSize, maxBatchLingerMs, clientsEnabled, numberOfTopics.equals("0") ? "not included" : numberOfTopics);
+        LOGGER.info("Resolved performance log directory: {} for use case '{}'. Max batch size: {}, Max linger time: {}, " +
+                "Clients enabled: {}, Number of topics: {}, Process type: {}",
+            topicOperatorUseCasePathDir, useCaseName, maxBatchSize, maxBatchLingerMs, clientsEnabled,
+            numberOfTopics.equals("0") ? "not included" : numberOfTopics, processType == null ? "not included" : processType);
 
         return topicOperatorUseCasePathDir;
     }
