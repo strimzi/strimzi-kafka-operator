@@ -154,7 +154,6 @@ public class MetricsCollector {
         componentType = builder.componentType;
 
         if (builder.metricsPort <= 0) builder.metricsPort = getDefaultMetricsPortForComponent();
-        if (builder.metricsPath == null || builder.metricsPath.isEmpty()) builder.metricsPath = getDefaultMetricsPathForComponent();
 
         namespaceName = builder.namespaceName;
         scraperPodName = builder.scraperPodName;
@@ -185,19 +184,6 @@ public class MetricsCollector {
                 return kubeClient().getDeploymentSelectors(namespaceName, KafkaBridgeResources.componentName(componentName));
             default:
                 return new LabelSelector();
-        }
-    }
-
-    private String getDefaultMetricsPathForComponent() {
-        switch (this.componentType) {
-            case KafkaExporter:
-            case UserOperator:
-            case TopicOperator:
-            case ClusterOperator:
-            case KafkaBridge:
-                return "/metrics";
-            default:
-                return "";
         }
     }
 
