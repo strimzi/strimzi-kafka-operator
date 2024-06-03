@@ -767,14 +767,14 @@ public class TopicOperatorPerformance extends AbstractST {
                 }
             )
             .flatMap(config -> Arrays.stream(batchEventSizes)
-                .mapToObj(batchSize ->
-                    Arguments.of(config[0], config[1], batchSize)));
+                .mapToObj(numberOfTopics ->
+                    Arguments.of(config[0], config[1], config[2], numberOfTopics)));
     }
 
     @Tag(PERFORMANCE)
     @ParameterizedTest
     @MethodSource("provideConfigurationsFortestPerformanceInFixedSizeOfEvents")
-    void testPerformanceInFixedSizeOfEvents(String maxBatchSize, String maxBatchLingerMs, int numberOfTopics, boolean processEachTopicSeparately) throws IOException {
+    void testPerformanceInFixedSizeOfEvents(String maxBatchSize, String maxBatchLingerMs, boolean processEachTopicSeparately, int numberOfTopics) throws IOException {
         final int brokerReplicas = 3;
         final int controllerReplicas = 3;
         final String maxQueueSize = String.valueOf(Integer.MAX_VALUE);
