@@ -749,12 +749,21 @@ public class TopicOperatorPerformance extends AbstractST {
         int[] batchEventSizes = IntStream.iterate(seed, n -> n + seed).limit(limit).toArray();
         return Stream.of(
             new Object[][]{
-                    {"100", "100"},     // Default configuration
-                    {"10", "1"},        // Minimal batching for high responsiveness
-                    {"50", "100"},      // Moderate batching for balanced performance
-                    {"100", "500"},     // Heavier batching for throughput focus
-                    {"500", "1000"},    // Extreme batching to test upper limits of performance
-                    {"1000", "2000"}    // Maximum possible batching for stress testing
+                    {"100", "100", true},     // Default configuration
+                    {"100", "10", true},      // Default batch size, with lower linger time
+                    {"10", "1", true},        // Minimal batching for high responsiveness
+                    {"50", "100", true},      // Moderate batching for balanced performance
+                    {"100", "500", true},     // Heavier batching for throughput focus
+                    {"500", "1000", true},    // Extreme batching to test upper limits of performance
+                    {"1000", "2000", true},   // Maximum possible batching for stress testing
+                    // -------------
+                    {"100", "100", false},     // Default configuration
+                    {"100", "10", false},      // Default batch size, with lower linger time
+                    {"10", "1", false},        // Minimal batching for high responsiveness
+                    {"50", "100", false},      // Moderate batching for balanced performance
+                    {"100", "500", false},     // Heavier batching for throughput focus
+                    {"500", "1000", false},    // Extreme batching to test upper limits of performance
+                    {"1000", "2000", false}    // Maximum possible batching for stress testing
                 }
             )
             .flatMap(config -> Arrays.stream(batchEventSizes)
@@ -765,7 +774,7 @@ public class TopicOperatorPerformance extends AbstractST {
     @Tag(PERFORMANCE)
     @ParameterizedTest
     @MethodSource("provideConfigurationsFortestPerformanceInFixedSizeOfEvents")
-    void testPerformanceInFixedSizeOfEvents(String maxBatchSize, String maxBatchLingerMs, int numberOfTopics) throws IOException {
+    void testPerformanceInFixedSizeOfEvents(String maxBatchSize, String maxBatchLingerMs, int numberOfTopics, boolean processEachTopicSeparately) throws IOException {
         final int brokerReplicas = 3;
         final int controllerReplicas = 3;
         final String maxQueueSize = String.valueOf(Integer.MAX_VALUE);
@@ -794,12 +803,6 @@ public class TopicOperatorPerformance extends AbstractST {
                             .endTopicOperator()
                             .editOrNewTemplate()
                                 .editOrNewTopicOperatorContainer()
-                                    // Finalizers ensure orderly and controlled deletion of KafkaTopic resources.
-                                    // In this case we would delete them automatically via ResourceManager
-                                    .addNewEnv()
-                                        .withName("STRIMZI_USE_FINALIZERS")
-                                        .withValue("false")
-                                    .endEnv()
                                     .addNewEnv()
                                         .withName("STRIMZI_ENABLE_ADDITIONAL_METRICS")
                                         .withValue("true")
@@ -839,20 +842,19 @@ public class TopicOperatorPerformance extends AbstractST {
             this.topicOperatorMetricsGatherer = new TopicOperatorMetricsCollectionScheduler(this.topicOperatorCollector, "strimzi.io/cluster=" + this.testStorage.getClusterName());
             this.topicOperatorMetricsGatherer.startCollecting();
 
-            long startTime = System.currentTimeMillis();
+            long startTime = System.nanoTime();
 
-            TopicOperatorPerformanceUtils.processKafkaTopicBatchesAsync(testStorage, numberOfTopics);
+            if (processEachTopicSeparately) {
+                TopicOperatorPerformanceUtils.processAllTopicsConcurrently(testStorage, numberOfTopics);
+            } else {
+                TopicOperatorPerformanceUtils.processKafkaTopicBatchesAsync(testStorage, numberOfTopics);
+            }
 
-            // Calculate total execution time
-            allTasksTimeMs = System.currentTimeMillis() - startTime;
+            // Calculate total execution time in nanoseconds and then convert to ms
+            allTasksTimeMs = (System.nanoTime() - startTime) / 1_000_000;
 
             LOGGER.info("Total time taken for all tasks (i.e., {} for each operation; creation, modification and deletion) {} ms", numberOfTopics, allTasksTimeMs);
         } finally {
-            // to enchantment a process of deleting we should delete all resources at once
-            // I saw a behaviour where deleting one by one might lead to 10s delay for deleting each KafkaTopic
-            LOGGER.info("Start deletion KafkaTopics in namespace:{}", testStorage.getNamespaceName());
-            resourceManager.deleteResourcesOfTypeWithoutWait(KafkaTopic.RESOURCE_KIND);
-            KafkaTopicUtils.waitForTopicWithPrefixDeletion(testStorage.getNamespaceName(), testStorage.getTopicName());
             if (this.topicOperatorMetricsGatherer != null) {
                 this.topicOperatorMetricsGatherer.stopCollecting();
 
@@ -861,12 +863,19 @@ public class TopicOperatorPerformance extends AbstractST {
                 performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_IN_MAX_QUEUE_SIZE, maxQueueSize);
                 performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_IN_MAX_BATCH_SIZE, maxBatchSize);
                 performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_IN_NUMBER_OF_TOPICS, numberOfTopics);
+                performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_IN_NUMBER_OF_EVENTS, numberOfTopics * 3);
                 performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_IN_MAX_BATCH_LINGER_MS, maxBatchLingerMs);
+                performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_IN_PROCESS_TYPE, processEachTopicSeparately ? "TOPIC CONCURRENT" : "BATCH CONCURRENT");
 
                 performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_OUT_SUCCESSFUL_KAFKA_TOPICS_CREATED_AND_MODIFIED_AND_DELETED, allTasksTimeMs);
                 performanceAttributes.put(PerformanceConstants.METRICS_HISTORY, this.topicOperatorMetricsGatherer.getMetricsStore()); // Map of metrics history
                 this.topicOperatorPerformanceReporter.logPerformanceData(this.testStorage, performanceAttributes, REPORT_DIRECTORY + "/" + PerformanceConstants.TOPIC_OPERATOR_FIXED_SIZE_OF_EVENTS_USE_CASE, ACTUAL_TIME, Environment.PERFORMANCE_DIR);
             }
+
+            // safe net if something went wrong during test case and KafkaTopic is not properly deleted
+            LOGGER.info("Start deletion KafkaTopics in namespace:{}", testStorage.getNamespaceName());
+            resourceManager.deleteResourcesOfTypeWithoutWait(KafkaTopic.RESOURCE_KIND);
+            KafkaTopicUtils.waitForTopicWithPrefixDeletion(testStorage.getNamespaceName(), testStorage.getTopicName());
         }
     }
 

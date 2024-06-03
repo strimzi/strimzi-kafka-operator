@@ -18,6 +18,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -210,5 +211,62 @@ public class TopicOperatorPerformanceUtils {
                     return e.getMessage().contains("Not Found") || e.getMessage().contains("the server doesn't have a resource type");
                 }
             });
+    }
+
+    /**
+     * Manages the full lifecycle of Kafka topics concurrently using a fixed thread pool.
+     * This method processes creation, modification, and deletion for each topic in separate threads,
+     * ensuring all topics are handled simultaneously across available CPU resources.
+     *
+     * +-----------------------------------------------------------------------------+
+     * |                            processAllTopicsConcurrently                     |
+     * +-----------------------------------------------------------------------------+
+     * | +-------------+       +-------------+             +-------------+           |
+     * | | Topic 1     |       | Topic 2     |     ...     | Topic N     |           |
+     * | | +---------+ |       | +---------+ |             | +---------+ |           |
+     * | | | Thread  | |       | | Thread  | |             | | Thread  | |           |
+     * | | |         | |       | |         | |             | |         | |           |
+     * | | | Creation| |       | | Creation| |             | | Creation| |           |
+     * | | | Update  | |       | | Update  | |             | | Update  | |           |
+     * | | | Deletion| |       | | Deletion| |             | | Deletion| |           |
+     * | | +---------+ |       | +---------+ |             | +---------+ |           |
+     * | +-------------+       +-------------+             +-------------+           |
+     * +-----------------------------------------------------------------------------+
+     *
+     * @param testStorage       An instance of TestStorage containing configuration and state needed for topic operations.
+     * @param numberOfTopics    The number of Kafka topics to be processed.
+     */
+    public static void processAllTopicsConcurrently(TestStorage testStorage, int numberOfTopics) {
+        final int availableCPUs = Math.max(1, Runtime.getRuntime().availableProcessors());
+        final ExecutorService executor = Executors.newFixedThreadPool(availableCPUs);
+
+        List<CompletableFuture<Void>> futures = new ArrayList<>();
+
+        for (int topicIndex = 0; topicIndex < numberOfTopics; topicIndex++) {
+            final int finalTopicIndex = topicIndex;
+            CompletableFuture<Void> future = CompletableFuture.runAsync(() -> performFullLifecycle(finalTopicIndex, testStorage), executor);
+            futures.add(future);
+        }
+
+        // Wait for all topics to complete their lifecycle
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+        LOGGER.info("All topic lifecycles completed.");
+
+        executor.shutdown();
+    }
+
+    /**
+     * Executes the full lifecycle of Topic Operator tasks which includes creation, modification,
+     * and deletion operations. These operations are encapsulated as a single task that is suitable
+     * for parallel processing.
+     *
+     * @param topicIndex    the index of the topic which identifies the specific topic to be managed.
+     * @param testStorage   an object representing the storage where test data or states are maintained.
+     */
+    private static void performFullLifecycle(int topicIndex, TestStorage testStorage) {
+        final ExtensionContext extensionContext = ResourceManager.getTestContext();
+        performCreationWithWait(topicIndex, topicIndex + 1, extensionContext, testStorage);
+        performModificationWithWait(topicIndex, topicIndex + 1, extensionContext, testStorage, KAFKA_TOPIC_CONFIG_TO_MODIFY);
+        performDeletionWithWait(topicIndex, topicIndex + 1, extensionContext, testStorage);
     }
 }
