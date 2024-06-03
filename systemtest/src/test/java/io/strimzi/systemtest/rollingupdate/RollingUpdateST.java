@@ -608,7 +608,7 @@ class RollingUpdateST extends AbstractST {
      *  4. - Delete cluster operator Pod again, this time in the middle of Kafka Pods being rolled
      *     - Cluster operator Pod is restarted and Rolling Update finish successfully
      *
-         * @usecase
+     * @usecase
      *  - rolling-update
      *  - cluster-operator
      */
