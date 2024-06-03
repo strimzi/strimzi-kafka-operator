@@ -263,3 +263,17 @@ finish:
   discover+:
     test:
       - performance-topic-operator-capacity
+
+/performance-topic-operator-user-workload:
+  summary: Run topic operator performance user workload strimzi test suite
+  provision:
+    hardware:
+      memory: ">= 30 GiB"
+      cpu:
+        processors: ">= 8"
+      # it seems that default disk size (i.e., 50GB) is not enough for capacity tests
+      disk:
+       - size: ">= 60 GB"
+  discover+:
+    test:
+      - performance-topic-operator-user-workload

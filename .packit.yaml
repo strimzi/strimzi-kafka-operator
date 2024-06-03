@@ -312,3 +312,22 @@ jobs:
       test:
         tmt:
           name: regression-operands
+
+  - job: tests
+    trigger: pull_request
+    identifier: "performance-topic-operator-user-workload"
+    targets:
+      - centos-stream-9-x86_64
+      - centos-stream-9-aarch64
+    skip_build: true
+    manual_trigger: true
+    env: { IP_FAMILY: ipv4 }
+    labels:
+      - performance-topic-operator-user-workload
+    tf_extra_params:
+      settings:
+        pipeline:
+          timeout: 1440
+      test:
+        tmt:
+          name: performance-topic-operator-user-workload
