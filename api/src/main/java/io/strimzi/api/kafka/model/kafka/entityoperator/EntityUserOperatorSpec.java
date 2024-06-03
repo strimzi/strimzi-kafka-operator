@@ -27,7 +27,6 @@ import lombok.ToString;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Representation of the User Operator.
@@ -46,9 +45,6 @@ import java.util.concurrent.TimeUnit;
 @ToString
 public class EntityUserOperatorSpec implements HasConfigurableLogging, HasLivenessProbe, HasReadinessProbe, UnknownPropertyPreserving {
     public static final int DEFAULT_BOOTSTRAP_SERVERS_PORT = 9091;
-    public static final long DEFAULT_FULL_RECONCILIATION_INTERVAL_MS = 120_000;
-    @Deprecated
-    public static final long DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS = TimeUnit.MILLISECONDS.toSeconds(DEFAULT_FULL_RECONCILIATION_INTERVAL_MS);
     public static final String DEFAULT_SECRET_PREFIX = "";
 
     private String watchedNamespace;
@@ -82,10 +78,10 @@ public class EntityUserOperatorSpec implements HasConfigurableLogging, HasLivene
         this.image = image;
     }
 
-    @Description("Interval between periodic reconciliations in seconds.")
+    @Description("Interval between periodic reconciliations in seconds. Ignored if reconciliationIntervalMs is set.")
     @Minimum(0)
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-    @DeprecatedProperty(description = "Use reconciliationIntervalMs converting the value to milliseconds.")
+    @DeprecatedProperty(movedToPath = ".spec.entityOperator.userOperator.reconciliationIntervalMs")
     @PresentInVersions("v1alpha1-v1beta2")
     @Deprecated
     public Long getReconciliationIntervalSeconds() {

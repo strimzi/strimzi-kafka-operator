@@ -1491,7 +1491,7 @@ include::../api/io.strimzi.api.kafka.model.kafka.entityoperator.EntityTopicOpera
 |The image to use for the Topic Operator.
 |reconciliationIntervalSeconds
 |integer
-|**The `reconciliationIntervalSeconds` property has been deprecated.** Use reconciliationIntervalMs converting the value to milliseconds. Interval between periodic reconciliations in seconds.
+|**The `reconciliationIntervalSeconds` property has been deprecated, and should now be configured using `.spec.entityOperator.topicOperator.reconciliationIntervalMs`.** Interval between periodic reconciliations in seconds. Ignored if reconciliationIntervalMs is set.
 |reconciliationIntervalMs
 |integer
 |Interval between periodic reconciliations in milliseconds.
@@ -1545,7 +1545,7 @@ include::../api/io.strimzi.api.kafka.model.kafka.entityoperator.EntityUserOperat
 |The image to use for the User Operator.
 |reconciliationIntervalSeconds
 |integer
-|**The `reconciliationIntervalSeconds` property has been deprecated.** Use reconciliationIntervalMs converting the value to milliseconds. Interval between periodic reconciliations in seconds.
+|**The `reconciliationIntervalSeconds` property has been deprecated, and should now be configured using `.spec.entityOperator.userOperator.reconciliationIntervalMs`.** Interval between periodic reconciliations in seconds. Ignored if reconciliationIntervalMs is set.
 |reconciliationIntervalMs
 |integer
 |Interval between periodic reconciliations in milliseconds.

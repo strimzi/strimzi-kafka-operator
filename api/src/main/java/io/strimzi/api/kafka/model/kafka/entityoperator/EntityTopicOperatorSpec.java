@@ -28,7 +28,6 @@ import lombok.ToString;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Representation of a Strimzi-managed Topic Operator deployment.
@@ -46,9 +45,6 @@ import java.util.concurrent.TimeUnit;
 @EqualsAndHashCode
 @ToString
 public class EntityTopicOperatorSpec implements HasConfigurableLogging, HasLivenessProbe, HasReadinessProbe, HasStartupProbe, UnknownPropertyPreserving {
-    public static final long DEFAULT_FULL_RECONCILIATION_INTERVAL_MS = 120_000;
-    @Deprecated
-    public static final int DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS = (int) TimeUnit.MILLISECONDS.toSeconds(DEFAULT_FULL_RECONCILIATION_INTERVAL_MS);
     public static final String DEFAULT_SECURITY_PROTOCOL = "SSL";
 
     protected String watchedNamespace;
@@ -83,10 +79,10 @@ public class EntityTopicOperatorSpec implements HasConfigurableLogging, HasLiven
         this.image = image;
     }
 
-    @Description("Interval between periodic reconciliations in seconds.")
+    @Description("Interval between periodic reconciliations in seconds. Ignored if reconciliationIntervalMs is set.")
     @Minimum(0)
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-    @DeprecatedProperty(description = "Use reconciliationIntervalMs converting the value to milliseconds.")
+    @DeprecatedProperty(movedToPath = ".spec.entityOperator.topicOperator.reconciliationIntervalMs")
     @PresentInVersions("v1alpha1-v1beta2")
     @Deprecated
     public Integer getReconciliationIntervalSeconds() {

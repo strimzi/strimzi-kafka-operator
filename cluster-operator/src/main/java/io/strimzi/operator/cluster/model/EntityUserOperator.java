@@ -31,6 +31,7 @@ import io.strimzi.operator.common.Reconciliation;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -74,7 +75,7 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
     private String watchedNamespace;
     private String resourceLabels;
     /* test */ String secretPrefix;
-    /* test */ long reconciliationIntervalMs;
+    /* test */ Optional<Long> reconciliationIntervalMs;
     /* test */ int clientsCaValidityDays;
     /* test */ int clientsCaRenewalDays;
     private ResourceTemplate templateRoleBinding;
@@ -94,7 +95,6 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
 
         // create a default configuration
         this.kafkaBootstrapServers = KafkaResources.bootstrapServiceName(cluster) + ":" + EntityUserOperatorSpec.DEFAULT_BOOTSTRAP_SERVERS_PORT;
-        this.reconciliationIntervalMs = EntityUserOperatorSpec.DEFAULT_FULL_RECONCILIATION_INTERVAL_MS;
         this.secretPrefix = EntityUserOperatorSpec.DEFAULT_SECRET_PREFIX;
         this.resourceLabels = ModelUtils.defaultResourceLabels(cluster);
 
@@ -129,7 +129,7 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
             result.image = image;
 
             result.watchedNamespace = userOperatorSpec.getWatchedNamespace() != null ? userOperatorSpec.getWatchedNamespace() : kafkaAssembly.getMetadata().getNamespace();
-            result.reconciliationIntervalMs = getReconciliationIntervalMs(userOperatorSpec);
+            result.reconciliationIntervalMs = configuredReconciliationIntervalMs(userOperatorSpec);
             result.secretPrefix = userOperatorSpec.getSecretPrefix() == null ? EntityUserOperatorSpec.DEFAULT_SECRET_PREFIX : userOperatorSpec.getSecretPrefix();
             result.logging = new LoggingModel(userOperatorSpec, result.getClass().getSimpleName(), true, false);
             result.gcLoggingEnabled = userOperatorSpec.getJvmOptions() == null ? JvmOptions.DEFAULT_GC_LOGGING_ENABLED : userOperatorSpec.getJvmOptions().isGcLoggingEnabled();
@@ -170,13 +170,10 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
     }
 
     @SuppressWarnings("deprecation")
-    private static long getReconciliationIntervalMs(EntityUserOperatorSpec spec) {
+    private static Optional<Long> configuredReconciliationIntervalMs(EntityUserOperatorSpec spec) {
         // if they are both set reconciliationIntervalMs takes precedence
-        return (spec.getReconciliationIntervalMs() != null)
-            ? spec.getReconciliationIntervalMs()
-            : (spec.getReconciliationIntervalSeconds() != null)
-            ? TimeUnit.SECONDS.toMillis(spec.getReconciliationIntervalSeconds())
-            : spec.DEFAULT_FULL_RECONCILIATION_INTERVAL_MS;
+        return (spec.getReconciliationIntervalMs() != null) ? Optional.of(spec.getReconciliationIntervalMs())
+            : (spec.getReconciliationIntervalSeconds() != null) ? Optional.of(TimeUnit.SECONDS.toMillis(spec.getReconciliationIntervalSeconds())) : Optional.empty();
     }
 
     protected Container createContainer(ImagePullPolicy imagePullPolicy) {
@@ -200,7 +197,9 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BOOTSTRAP_SERVERS, kafkaBootstrapServers));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_WATCHED_NAMESPACE, watchedNamespace));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_RESOURCE_LABELS, resourceLabels));
-        varList.add(ContainerUtils.createEnvVar(ENV_VAR_FULL_RECONCILIATION_INTERVAL_MS, Long.toString(reconciliationIntervalMs)));
+        if (reconciliationIntervalMs.isPresent()) {
+            varList.add(ContainerUtils.createEnvVar(ENV_VAR_FULL_RECONCILIATION_INTERVAL_MS, Long.toString(reconciliationIntervalMs.get())));
+        }
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_CLIENTS_CA_KEY_SECRET_NAME, KafkaResources.clientsCaKeySecretName(cluster)));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_CLIENTS_CA_CERT_SECRET_NAME, KafkaResources.clientsCaCertificateSecretName(cluster)));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_CLIENTS_CA_NAMESPACE, namespace));

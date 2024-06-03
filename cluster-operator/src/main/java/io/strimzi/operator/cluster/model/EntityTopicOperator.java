@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.API_TO_ADMIN_NAME;
@@ -87,7 +88,7 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
     private String featureGatesEnvVarValue;
 
     private String watchedNamespace;
-    /* test */ long reconciliationIntervalMs;
+    /* test */ Optional<Long> reconciliationIntervalMs;
     /* test */ final String resourceLabels;
     private ResourceTemplate templateRoleBinding;
 
@@ -105,7 +106,6 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
 
         // create a default configuration
         this.kafkaBootstrapServers = KafkaResources.bootstrapServiceName(cluster) + ":" + KafkaCluster.REPLICATION_PORT;
-        this.reconciliationIntervalMs = EntityTopicOperatorSpec.DEFAULT_FULL_RECONCILIATION_INTERVAL_MS;
         this.resourceLabels = ModelUtils.defaultResourceLabels(cluster);
     }
 
@@ -135,7 +135,7 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
             }
             result.image = image;
             result.watchedNamespace = topicOperatorSpec.getWatchedNamespace() != null ? topicOperatorSpec.getWatchedNamespace() : kafkaAssembly.getMetadata().getNamespace();
-            result.reconciliationIntervalMs = getReconciliationIntervalMs(topicOperatorSpec);
+            result.reconciliationIntervalMs = configuredReconciliationIntervalMs(topicOperatorSpec);
             result.logging = new LoggingModel(topicOperatorSpec, result.getClass().getSimpleName(), true, false);
             result.gcLoggingEnabled = topicOperatorSpec.getJvmOptions() == null ? JvmOptions.DEFAULT_GC_LOGGING_ENABLED : topicOperatorSpec.getJvmOptions().isGcLoggingEnabled();
             result.jvmOptions = topicOperatorSpec.getJvmOptions();
@@ -159,17 +159,13 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
     }
 
     @SuppressWarnings("deprecation")
-    private static long getReconciliationIntervalMs(EntityTopicOperatorSpec spec) {
+    private static Optional<Long> configuredReconciliationIntervalMs(EntityTopicOperatorSpec spec) {
         // if they are both set reconciliationIntervalMs takes precedence
-        return (spec.getReconciliationIntervalMs() != null) 
-            ? spec.getReconciliationIntervalMs() 
-            : (spec.getReconciliationIntervalSeconds() != null)
-                ? TimeUnit.SECONDS.toMillis(spec.getReconciliationIntervalSeconds()) 
-                : spec.DEFAULT_FULL_RECONCILIATION_INTERVAL_MS;
+        return (spec.getReconciliationIntervalMs() != null) ? Optional.of(spec.getReconciliationIntervalMs())
+            : (spec.getReconciliationIntervalSeconds() != null) ? Optional.of(TimeUnit.SECONDS.toMillis(spec.getReconciliationIntervalSeconds())) : Optional.empty();
     }
 
     protected Container createContainer(ImagePullPolicy imagePullPolicy) {
-
         return ContainerUtils.createContainer(
                 TOPIC_OPERATOR_CONTAINER_NAME,
                 image,
@@ -192,7 +188,9 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_RESOURCE_LABELS, resourceLabels));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BOOTSTRAP_SERVERS, kafkaBootstrapServers));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_WATCHED_NAMESPACE, watchedNamespace));
-        varList.add(ContainerUtils.createEnvVar(ENV_VAR_FULL_RECONCILIATION_INTERVAL_MS, Long.toString(reconciliationIntervalMs)));
+        if (reconciliationIntervalMs.isPresent()) {
+            varList.add(ContainerUtils.createEnvVar(ENV_VAR_FULL_RECONCILIATION_INTERVAL_MS, Long.toString(reconciliationIntervalMs.get())));
+        }
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_SECURITY_PROTOCOL, EntityTopicOperatorSpec.DEFAULT_SECURITY_PROTOCOL));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_TLS_ENABLED, Boolean.toString(true)));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_GC_LOG_ENABLED, Boolean.toString(gcLoggingEnabled)));
