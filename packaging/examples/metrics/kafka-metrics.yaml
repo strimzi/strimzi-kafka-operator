@@ -95,9 +95,21 @@ data:
         clientSoftwareVersion: "$3"
         listener: "$4"
         networkProcessor: "$5"
+    - pattern: "kafka.server<type=(.+), listener=(.+), networkProcessor=(.+)><>(.+-total):"
+      name: kafka_server_$1_$4
+      type: COUNTER
+      labels:
+        listener: "$2"
+        networkProcessor: "$3"
     - pattern: "kafka.server<type=(.+), listener=(.+), networkProcessor=(.+)><>(.+):"
       name: kafka_server_$1_$4
       type: GAUGE
+      labels:
+        listener: "$2"
+        networkProcessor: "$3"
+    - pattern: kafka.server<type=(.+), listener=(.+), networkProcessor=(.+)><>(.+-total)
+      name: kafka_server_$1_$4
+      type: COUNTER
       labels:
         listener: "$2"
         networkProcessor: "$3"
