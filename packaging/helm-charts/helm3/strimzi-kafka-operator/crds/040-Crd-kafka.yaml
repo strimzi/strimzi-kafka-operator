@@ -446,6 +446,9 @@ spec:
                                   * `Hostname`
 
                                   This field is used to select the preferred address type, which is checked first. If no address is found for this address type, the other types are checked in the default order. This field can only be used with `nodeport` type listener.
+                              publishNotReadyAddresses:
+                                type: boolean
+                                description: Configures whether the service endpoints are considered "ready" even if the Pods themselves are not. Defaults to `false`. This field can not be used with `internal` type listeners.
                             description: Additional listener configuration.
                           networkPolicyPeers:
                             type: array

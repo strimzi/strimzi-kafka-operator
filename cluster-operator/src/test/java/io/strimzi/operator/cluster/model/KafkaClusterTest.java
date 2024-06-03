@@ -386,6 +386,7 @@ public class KafkaClusterTest {
         assertThat(headful.getSpec().getPorts().get(2).getProtocol(), is("TCP"));
         assertThat(headful.getSpec().getIpFamilyPolicy(), is(nullValue()));
         assertThat(headful.getSpec().getIpFamilies(), is(nullValue()));
+        assertThat(headful.getSpec().getPublishNotReadyAddresses(), is(nullValue()));
 
         assertThat(headful.getMetadata().getAnnotations(), is(Util.mergeLabelsOrAnnotations(KC.getInternalDiscoveryAnnotation())));
 
@@ -4152,5 +4153,37 @@ public class KafkaClusterTest {
 
         // Environment variable
         assertThat(cont.getEnv().stream().filter(e -> "STRIMZI_OPA_AUTHZ_TRUSTED_CERTS".equals(e.getName())).findFirst().orElseThrow().getValue(), is("first-certificate/ca.crt;second-certificate/tls.crt"));
+    }
+    
+    @ParallelTest
+    public void testPublishNotReadyAddressesFromListener() {
+        Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .editKafka()
+                        .withListeners(new GenericKafkaListenerBuilder()
+                                .withName("nodeport")
+                                .withPort(9094)
+                                .withType(KafkaListenerType.NODEPORT)
+                                .withNewConfiguration()
+                                    .withPublishNotReadyAddresses(true)
+                                .endConfiguration()
+                                .build())
+                    .endKafka()
+                .endSpec()
+                .build();
+        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, null, Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, false, SHARED_ENV_PROVIDER);
+        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, KafkaMetadataConfigurationState.ZK, null, SHARED_ENV_PROVIDER);
+
+        // Check external bootstrap service
+        Service ext = kc.generateExternalBootstrapServices().get(0);
+        assertThat(ext.getSpec().getPublishNotReadyAddresses(), is(true));
+
+        // Check per pod services
+        List<Service> services = kc.generatePerPodServices();
+
+        for (int i = 0; i < REPLICAS; i++)  {
+            Service srv = services.get(i);
+            assertThat(srv.getSpec().getPublishNotReadyAddresses(), is(true));
+        }
     }
 }

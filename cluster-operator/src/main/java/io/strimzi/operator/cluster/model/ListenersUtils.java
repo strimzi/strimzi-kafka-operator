@@ -575,6 +575,16 @@ public class ListenersUtils {
             return null;
         }
     }
+    
+    /**
+     * Finds publish not ready addresses configuration
+     *
+     * @param listener  Listener for which the publish not ready addresses value should be found
+     * @return          publish not ready addresses value or null if not specified
+     */
+    public static Boolean publishNotReadyAddresses(GenericKafkaListener listener)    {
+        return listener.getConfiguration() == null ? null : listener.getConfiguration().getPublishNotReadyAddresses();
+    }
 
     /**
      * Finds IP family policy

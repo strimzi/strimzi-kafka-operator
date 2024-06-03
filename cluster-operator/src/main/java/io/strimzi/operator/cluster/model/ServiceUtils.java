@@ -56,7 +56,8 @@ public class ServiceUtils {
                 null,
                 null,
                 ipFamilyPolicy(template),
-                ipFamilies(template)
+                ipFamilies(template),
+                null
         );
     }
 
@@ -99,25 +100,27 @@ public class ServiceUtils {
                 discoveryLabels,
                 discoveryAnnotations,
                 ipFamilyPolicy(template),
-                ipFamilies(template)
+                ipFamilies(template),
+                null
         );
     }
 
     /**
      * Creates a service
      *
-     * @param name                  Name of the Service
-     * @param namespace             Namespace of the Service
-     * @param labels                Labels of the Service
-     * @param ownerReference        OwnerReference of the Service
-     * @param template              Template with user's custom metadata for this service
-     * @param ports                 List of service ports
-     * @param selector              Selector for selecting the Pods to route the traffic to
-     * @param type                  Type of the service
-     * @param additionalLabels      Additional labels
-     * @param additionalAnnotations Additional annotations
-     * @param ipFamilyPolicy        IP Family Policy configuration
-     * @param ipFamilies            List of IP families
+     * @param name                      Name of the Service
+     * @param namespace                 Namespace of the Service
+     * @param labels                    Labels of the Service
+     * @param ownerReference            OwnerReference of the Service
+     * @param template                  Template with user's custom metadata for this service
+     * @param ports                     List of service ports
+     * @param selector                  Selector for selecting the Pods to route the traffic to
+     * @param type                      Type of the service
+     * @param additionalLabels          Additional labels
+     * @param additionalAnnotations     Additional annotations
+     * @param ipFamilyPolicy            IP Family Policy configuration
+     * @param ipFamilies                List of IP families
+     * @param publishNotReadyAddresses  Publish Not Ready Addresses configuration
      *
      * @return  New Service
      */
@@ -133,7 +136,8 @@ public class ServiceUtils {
             Map<String, String> additionalLabels,
             Map<String, String> additionalAnnotations,
             IpFamilyPolicy ipFamilyPolicy,
-            List<IpFamily> ipFamilies
+            List<IpFamily> ipFamilies,
+            Boolean publishNotReadyAddresses
     )   {
         return new ServiceBuilder()
                 .withNewMetadata()
@@ -149,6 +153,7 @@ public class ServiceUtils {
                     .withPorts(ports)
                     .withIpFamilyPolicy(ipFamilyPolicyToString(ipFamilyPolicy))
                     .withIpFamilies(ipFamiliesToListOfStrings(ipFamilies))
+                    .withPublishNotReadyAddresses(publishNotReadyAddresses)
                 .endSpec()
                 .build();
     }

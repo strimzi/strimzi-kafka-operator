@@ -151,6 +151,7 @@ public class ListenersUtilsTest {
                 .withIpFamilyPolicy(IpFamilyPolicy.REQUIRE_DUAL_STACK)
                 .withIpFamilies(IpFamily.IPV6, IpFamily.IPV4)
                 .withPreferredNodePortAddressType(NodeAddressType.INTERNAL_DNS)
+                .withPublishNotReadyAddresses(true)
                 .withNewBootstrap()
                     .withAlternativeNames(asList("my-np-1", "my-np-2"))
                     .withNodePort(32189)
@@ -201,6 +202,7 @@ public class ListenersUtilsTest {
                 .withIpFamilies(IpFamily.IPV6, IpFamily.IPV4)
                 .withLoadBalancerSourceRanges(asList("10.0.0.0/8", "130.211.204.1/32"))
                 .withFinalizers(List.of("service.kubernetes.io/load-balancer-cleanup"))
+                .withPublishNotReadyAddresses(false)
                 .withNewBootstrap()
                     .withAlternativeNames(asList("my-lb-1", "my-lb-2"))
                     .withLoadBalancerIP("130.211.204.1")
@@ -640,6 +642,19 @@ public class ListenersUtilsTest {
         assertThat(ListenersUtils.preferredNodeAddressType(newNodePort), is(nullValue()));
         assertThat(ListenersUtils.preferredNodeAddressType(newNodePort2), is(NodeAddressType.INTERNAL_DNS));
         assertThat(ListenersUtils.preferredNodeAddressType(newNodePort3), is(nullValue()));
+    }
+    
+    @ParallelTest
+    public void testPublishNotReadyAddresses() {
+        assertThat(ListenersUtils.publishNotReadyAddresses(newLoadBalancer), is(nullValue()));
+        assertThat(ListenersUtils.publishNotReadyAddresses(oldExternal), is(nullValue()));
+        assertThat(ListenersUtils.publishNotReadyAddresses(newLoadBalancer), is(nullValue()));
+        assertThat(ListenersUtils.publishNotReadyAddresses(newLoadBalancer2), is(false));
+        assertThat(ListenersUtils.publishNotReadyAddresses(oldPlain), is(nullValue()));
+        assertThat(ListenersUtils.publishNotReadyAddresses(newTls), is(nullValue()));
+        assertThat(ListenersUtils.publishNotReadyAddresses(newNodePort), is(nullValue()));
+        assertThat(ListenersUtils.publishNotReadyAddresses(newNodePort2), is(true));
+        assertThat(ListenersUtils.publishNotReadyAddresses(newNodePort3), is(nullValue()));
     }
 
     @ParallelTest

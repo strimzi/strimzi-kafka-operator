@@ -32,7 +32,7 @@ import static java.util.Collections.emptyMap;
 @DescriptionFile
 @JsonPropertyOrder({"brokerCertChainAndKey", "class", "preferredAddressType", "externalTrafficPolicy",
     "loadBalancerSourceRanges", "bootstrap", "brokers", "ipFamilyPolicy", "ipFamilies", "createBootstrapService",
-    "finalizers", "useServiceDnsDomain", "maxConnections", "maxConnectionCreationRate", "preferredNodePortAddressType"})
+    "finalizers", "useServiceDnsDomain", "maxConnections", "maxConnectionCreationRate", "preferredNodePortAddressType", "publishNotReadyAddresses"})
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Buildable(
     editableEnabled = false,
@@ -55,6 +55,7 @@ public class GenericKafkaListenerConfiguration implements UnknownPropertyPreserv
     private IpFamilyPolicy ipFamilyPolicy;
     private List<IpFamily> ipFamilies;
     private Boolean createBootstrapService = true;
+    private Boolean publishNotReadyAddresses;
 
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
@@ -238,6 +239,18 @@ public class GenericKafkaListenerConfiguration implements UnknownPropertyPreserv
 
     public void setCreateBootstrapService(Boolean createBootstrapService) {
         this.createBootstrapService = createBootstrapService;
+    }
+    
+    @Description("Configures whether the service endpoints are considered \"ready\" even if the Pods themselves are not. " +
+            "Defaults to `false`. " +
+            "This field can not be used with `internal` type listeners.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Boolean getPublishNotReadyAddresses() {
+        return publishNotReadyAddresses;
+    }
+
+    public void setPublishNotReadyAddresses(Boolean publishNotReadyAddresses) {
+        this.publishNotReadyAddresses = publishNotReadyAddresses;
     }
 
     @Override
