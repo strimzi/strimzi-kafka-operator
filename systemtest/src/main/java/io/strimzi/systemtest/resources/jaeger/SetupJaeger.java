@@ -119,7 +119,7 @@ public class SetupJaeger {
      * Loop is needed because of issue with Cert Manager, that can have problem injecting CA for Jaeger operator
      */
     private static void deployJaegerContent() {
-        TestUtils.waitFor("Jaeger deploy", JAEGER_DEPLOYMENT_POLL, JAEGER_DEPLOYMENT_TIMEOUT, () -> {
+        TestUtils.waitFor("Jaeger Operator deploy", JAEGER_DEPLOYMENT_POLL, JAEGER_DEPLOYMENT_TIMEOUT, () -> {
             try {
                 String jaegerOperator = Files.readString(Paths.get(JAEGER_OPERATOR_PATH)).replace("observability", Environment.TEST_SUITE_NAMESPACE);
 
@@ -173,11 +173,21 @@ public class SetupJaeger {
         LOGGER.info("=== Applying jaeger instance install file ===");
 
         String instanceYamlContent = TestUtils.getContent(new File(JAEGER_INSTANCE_PATH), TestUtils::toYamlString);
-        cmdKubeClient(namespaceName).applyContent(instanceYamlContent);
 
-        ResourceManager.STORED_RESOURCES.computeIfAbsent(ResourceManager.getTestContext().getDisplayName(), k -> new Stack<>());
-        ResourceManager.STORED_RESOURCES.get(ResourceManager.getTestContext().getDisplayName()).push(new ResourceItem<>(() -> cmdKubeClient(namespaceName).deleteContent(instanceYamlContent)));
+        TestUtils.waitFor("Jaeger Instance deploy", JAEGER_DEPLOYMENT_POLL, JAEGER_DEPLOYMENT_TIMEOUT, () -> {
+            try {
 
+                LOGGER.info("Creating Jaeger Instance from {}", JAEGER_OPERATOR_PATH);
+                cmdKubeClient(namespaceName).applyContent(instanceYamlContent);
+                ResourceManager.STORED_RESOURCES.computeIfAbsent(ResourceManager.getTestContext().getDisplayName(), k -> new Stack<>());
+                ResourceManager.STORED_RESOURCES.get(ResourceManager.getTestContext().getDisplayName()).push(new ResourceItem<>(() -> cmdKubeClient(namespaceName).deleteContent(instanceYamlContent)));
+
+                return true;
+            } catch (Exception e) {
+                LOGGER.error("Following exception has been thrown during Jaeger Instance Deployment: {}", e.getMessage());
+                return false;
+            }
+        });
         DeploymentUtils.waitForDeploymentAndPodsReady(namespaceName, JAEGER_INSTANCE_NAME, 1);
 
         NetworkPolicyResource.allowNetworkPolicyBetweenScraperPodAndMatchingLabel(namespaceName, JAEGER_INSTANCE_NAME + "-allow", Map.of(TestConstants.APP_POD_LABEL, JAEGER));
