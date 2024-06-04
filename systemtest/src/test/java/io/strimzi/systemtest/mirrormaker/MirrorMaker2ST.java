@@ -51,6 +51,7 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaMirrorMaker2Utils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StrimziPodSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
@@ -1219,7 +1220,8 @@ class MirrorMaker2ST extends AbstractST {
 
         LOGGER.info("Producing messages in source cluster: {}/{}", testStorage.getNamespaceName(), testStorage.getSourceClusterName());
         resourceManager.createResourceWithWait(sourceClients.producerTlsStrimzi(testStorage.getSourceClusterName()), sourceClients.consumerTlsStrimzi(testStorage.getSourceClusterName()));
-        ClientUtils.waitForInstantClientSuccess(testStorage);
+        // Extend the timeout for clients to be sure that all messages are synced by MM2
+        JobUtils.waitForJobSuccess(testStorage.getConsumerName(), testStorage.getNamespaceName(), TestConstants.GLOBAL_TIMEOUT_LONG);
 
         LOGGER.info("Consuming messages in target cluster: {}/{}", testStorage.getNamespaceName(), testStorage.getTargetClusterName());
         resourceManager.createResourceWithWait(targetClients.consumerTlsStrimzi(testStorage.getTargetClusterName()));
@@ -1253,8 +1255,8 @@ class MirrorMaker2ST extends AbstractST {
 
         LOGGER.info("Consuming messages in target cluster: {}/{}", testStorage.getNamespaceName(), testStorage.getTargetClusterName());
         resourceManager.createResourceWithWait(targetClients.consumerTlsStrimzi(testStorage.getTargetClusterName()));
-        ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
-
+        // Extend the timeout for clients to be sure that all messages are synced by MM2
+        JobUtils.waitForJobSuccess(testStorage.getConsumerName(), testStorage.getNamespaceName(), TestConstants.GLOBAL_TIMEOUT_LONG);
     }
 
     @BeforeAll
