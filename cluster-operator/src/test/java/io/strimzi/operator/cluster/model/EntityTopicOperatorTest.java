@@ -44,7 +44,6 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ParallelSuite
 public class EntityTopicOperatorTest {
@@ -157,7 +156,7 @@ public class EntityTopicOperatorTest {
         assertThat(entityTopicOperator.livenessProbeOptions.getFailureThreshold(), is(livenessProbe.getFailureThreshold()));
         assertThat(entityTopicOperator.livenessProbeOptions.getPeriodSeconds(), is(livenessProbe.getPeriodSeconds()));
         assertThat(entityTopicOperator.watchedNamespace(), is(toWatchedNamespace));
-        assertThat(entityTopicOperator.reconciliationIntervalMs.get(), is(reconciliationIntervalMs));
+        assertThat(entityTopicOperator.reconciliationIntervalMs, is(reconciliationIntervalMs));
         assertThat(entityTopicOperator.kafkaBootstrapServers, is(KafkaResources.bootstrapServiceName(cluster) + ":" + KafkaCluster.REPLICATION_PORT));
         assertThat(entityTopicOperator.resourceLabels, is(ModelUtils.defaultResourceLabels(cluster)));
         assertThat(entityTopicOperator.logging().getLogging().getType(), is(topicOperatorLogging.getType()));
@@ -169,23 +168,23 @@ public class EntityTopicOperatorTest {
         // default value
         EntityTopicOperatorSpec entityTopicOperatorSpec0 = new EntityTopicOperatorSpecBuilder().build();
         EntityTopicOperator entityTopicOperator0 = buildEntityTopicOperatorWithReconciliationInterval(entityTopicOperatorSpec0);
-        assertTrue(entityTopicOperator0.reconciliationIntervalMs.isEmpty());
+        assertThat(entityTopicOperator0.reconciliationIntervalMs, nullValue());
         
         // new config (ms)
         EntityTopicOperatorSpec entityTopicOperatorSpec1 = new EntityTopicOperatorSpecBuilder().withReconciliationIntervalMs(10_000L).build();
         EntityTopicOperator entityTopicOperator1 = buildEntityTopicOperatorWithReconciliationInterval(entityTopicOperatorSpec1);
-        assertThat(entityTopicOperator1.reconciliationIntervalMs.get(), is(10_000L));
+        assertThat(entityTopicOperator1.reconciliationIntervalMs, is(10_000L));
         
         // legacy config (seconds)
         EntityTopicOperatorSpec entityTopicOperatorSpec2 = new EntityTopicOperatorSpecBuilder().withReconciliationIntervalSeconds(15).build();
         EntityTopicOperator entityTopicOperator2 = buildEntityTopicOperatorWithReconciliationInterval(entityTopicOperatorSpec2);
-        assertThat(entityTopicOperator2.reconciliationIntervalMs.get(), is(15_000L));
+        assertThat(entityTopicOperator2.reconciliationIntervalMs, is(15_000L));
         
         // both (new config should prevail)
         EntityTopicOperatorSpec entityTopicOperatorSpec3 = new EntityTopicOperatorSpecBuilder()
             .withReconciliationIntervalMs(10_000L).withReconciliationIntervalSeconds(15).build();
         EntityTopicOperator entityTopicOperator3 = buildEntityTopicOperatorWithReconciliationInterval(entityTopicOperatorSpec3);
-        assertThat(entityTopicOperator3.reconciliationIntervalMs.get(), is(10_000L));
+        assertThat(entityTopicOperator3.reconciliationIntervalMs, is(10_000L));
     }
     
     private EntityTopicOperator buildEntityTopicOperatorWithReconciliationInterval(EntityTopicOperatorSpec topicOperatorSpec) {
@@ -214,7 +213,7 @@ public class EntityTopicOperatorTest {
 
         assertThat(entityTopicOperator.watchedNamespace(), is(namespace));
         assertThat(entityTopicOperator.getImage(), is("quay.io/strimzi/operator:latest"));
-        assertTrue(entityTopicOperator.reconciliationIntervalMs.isEmpty());
+        assertThat(entityTopicOperator.reconciliationIntervalMs, nullValue());
         assertThat(entityTopicOperator.kafkaBootstrapServers, is(KafkaResources.bootstrapServiceName(cluster) + ":" + KafkaCluster.REPLICATION_PORT));
         assertThat(entityTopicOperator.resourceLabels, is(ModelUtils.defaultResourceLabels(cluster)));
         assertThat(entityTopicOperator.readinessProbeOptions.getInitialDelaySeconds(), is(10));

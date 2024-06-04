@@ -31,7 +31,6 @@ import io.strimzi.operator.common.Reconciliation;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -75,7 +74,7 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
     private String watchedNamespace;
     private String resourceLabels;
     /* test */ String secretPrefix;
-    /* test */ Optional<Long> reconciliationIntervalMs;
+    /* test */ Long reconciliationIntervalMs;
     /* test */ int clientsCaValidityDays;
     /* test */ int clientsCaRenewalDays;
     private ResourceTemplate templateRoleBinding;
@@ -170,10 +169,10 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
     }
 
     @SuppressWarnings("deprecation")
-    private static Optional<Long> configuredReconciliationIntervalMs(EntityUserOperatorSpec spec) {
+    private static Long configuredReconciliationIntervalMs(EntityUserOperatorSpec spec) {
         // if they are both set reconciliationIntervalMs takes precedence
-        return (spec.getReconciliationIntervalMs() != null) ? Optional.of(spec.getReconciliationIntervalMs())
-            : (spec.getReconciliationIntervalSeconds() != null) ? Optional.of(TimeUnit.SECONDS.toMillis(spec.getReconciliationIntervalSeconds())) : Optional.empty();
+        return (spec.getReconciliationIntervalMs() != null) ? spec.getReconciliationIntervalMs()
+            : (spec.getReconciliationIntervalSeconds() != null) ? TimeUnit.SECONDS.toMillis(spec.getReconciliationIntervalSeconds()) : null;
     }
 
     protected Container createContainer(ImagePullPolicy imagePullPolicy) {
@@ -197,8 +196,8 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BOOTSTRAP_SERVERS, kafkaBootstrapServers));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_WATCHED_NAMESPACE, watchedNamespace));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_RESOURCE_LABELS, resourceLabels));
-        if (reconciliationIntervalMs.isPresent()) {
-            varList.add(ContainerUtils.createEnvVar(ENV_VAR_FULL_RECONCILIATION_INTERVAL_MS, Long.toString(reconciliationIntervalMs.get())));
+        if (reconciliationIntervalMs != null) {
+            varList.add(ContainerUtils.createEnvVar(ENV_VAR_FULL_RECONCILIATION_INTERVAL_MS, Long.toString(reconciliationIntervalMs)));
         }
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_CLIENTS_CA_KEY_SECRET_NAME, KafkaResources.clientsCaKeySecretName(cluster)));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_CLIENTS_CA_CERT_SECRET_NAME, KafkaResources.clientsCaCertificateSecretName(cluster)));

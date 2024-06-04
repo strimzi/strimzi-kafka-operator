@@ -45,7 +45,6 @@ import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ParallelSuite
 public class EntityUserOperatorTest {
@@ -177,7 +176,7 @@ public class EntityUserOperatorTest {
         assertThat(entityUserOperator.livenessProbeOptions.getFailureThreshold(), is(livenessProbe.getFailureThreshold()));
         assertThat(entityUserOperator.livenessProbeOptions.getPeriodSeconds(), is(livenessProbe.getPeriodSeconds()));
         assertThat(entityUserOperator.watchedNamespace(), is(uoWatchedNamespace));
-        assertThat(entityUserOperator.reconciliationIntervalMs.get(), is(reconciliationIntervalMs));
+        assertThat(entityUserOperator.reconciliationIntervalMs, is(reconciliationIntervalMs));
         assertThat(entityUserOperator.kafkaBootstrapServers, is(String.format("%s:%d", KafkaResources.bootstrapServiceName(cluster), EntityUserOperatorSpec.DEFAULT_BOOTSTRAP_SERVERS_PORT)));
         assertThat(entityUserOperator.logging().getLogging().getType(), is(userOperatorLogging.getType()));
         assertThat(((InlineLogging) entityUserOperator.logging().getLogging()).getLoggers(), is(userOperatorLogging.getLoggers()));
@@ -189,23 +188,23 @@ public class EntityUserOperatorTest {
         // default value
         EntityUserOperatorSpec entityUserOperatorSpec0 = new EntityUserOperatorSpecBuilder().build();
         EntityUserOperator entityUserOperator0 = buildEntityUserOperatorWithReconciliationInterval(entityUserOperatorSpec0);
-        assertTrue(entityUserOperator0.reconciliationIntervalMs.isEmpty());
+        assertThat(entityUserOperator0.reconciliationIntervalMs, nullValue());
 
         // new config (ms)
         EntityUserOperatorSpec entityUserOperatorSpec1 = new EntityUserOperatorSpecBuilder().withReconciliationIntervalMs(10_000L).build();
         EntityUserOperator entityUserOperator1 = buildEntityUserOperatorWithReconciliationInterval(entityUserOperatorSpec1);
-        assertThat(entityUserOperator1.reconciliationIntervalMs.get(), is(10_000L));
+        assertThat(entityUserOperator1.reconciliationIntervalMs, is(10_000L));
 
         // legacy config (seconds)
         EntityUserOperatorSpec entityUserOperatorSpec2 = new EntityUserOperatorSpecBuilder().withReconciliationIntervalSeconds(15L).build();
         EntityUserOperator entityUserOperator2 = buildEntityUserOperatorWithReconciliationInterval(entityUserOperatorSpec2);
-        assertThat(entityUserOperator2.reconciliationIntervalMs.get(), is(15_000L));
+        assertThat(entityUserOperator2.reconciliationIntervalMs, is(15_000L));
 
         // both (new config should prevail)
         EntityUserOperatorSpec entityUserOperatorSpec3 = new EntityUserOperatorSpecBuilder()
             .withReconciliationIntervalMs(10_000L).withReconciliationIntervalSeconds(15L).build();
         EntityUserOperator entityUserOperator3 = buildEntityUserOperatorWithReconciliationInterval(entityUserOperatorSpec3);
-        assertThat(entityUserOperator3.reconciliationIntervalMs.get(), is(10_000L));
+        assertThat(entityUserOperator3.reconciliationIntervalMs, is(10_000L));
     }
 
     private EntityUserOperator buildEntityUserOperatorWithReconciliationInterval(EntityUserOperatorSpec userOperatorSpec) {
@@ -234,7 +233,7 @@ public class EntityUserOperatorTest {
 
         assertThat(entityUserOperator.watchedNamespace(), is(namespace));
         assertThat(entityUserOperator.getImage(), is("quay.io/strimzi/operator:latest"));
-        assertTrue(entityUserOperator.reconciliationIntervalMs.isEmpty());
+        assertThat(entityUserOperator.reconciliationIntervalMs, nullValue());
         assertThat(entityUserOperator.readinessProbeOptions.getInitialDelaySeconds(), is(10));
         assertThat(entityUserOperator.readinessProbeOptions.getTimeoutSeconds(), is(5));
         assertThat(entityUserOperator.livenessProbeOptions.getInitialDelaySeconds(), is(10));

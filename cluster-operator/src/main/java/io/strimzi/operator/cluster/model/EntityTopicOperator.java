@@ -35,7 +35,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.API_TO_ADMIN_NAME;
@@ -88,7 +87,7 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
     private String featureGatesEnvVarValue;
 
     private String watchedNamespace;
-    /* test */ Optional<Long> reconciliationIntervalMs;
+    /* test */ Long reconciliationIntervalMs;
     /* test */ final String resourceLabels;
     private ResourceTemplate templateRoleBinding;
 
@@ -159,10 +158,10 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
     }
 
     @SuppressWarnings("deprecation")
-    private static Optional<Long> configuredReconciliationIntervalMs(EntityTopicOperatorSpec spec) {
+    private static Long configuredReconciliationIntervalMs(EntityTopicOperatorSpec spec) {
         // if they are both set reconciliationIntervalMs takes precedence
-        return (spec.getReconciliationIntervalMs() != null) ? Optional.of(spec.getReconciliationIntervalMs())
-            : (spec.getReconciliationIntervalSeconds() != null) ? Optional.of(TimeUnit.SECONDS.toMillis(spec.getReconciliationIntervalSeconds())) : Optional.empty();
+        return (spec.getReconciliationIntervalMs() != null) ? spec.getReconciliationIntervalMs()
+            : (spec.getReconciliationIntervalSeconds() != null) ? TimeUnit.SECONDS.toMillis(spec.getReconciliationIntervalSeconds()) : null;
     }
 
     protected Container createContainer(ImagePullPolicy imagePullPolicy) {
@@ -188,8 +187,8 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_RESOURCE_LABELS, resourceLabels));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BOOTSTRAP_SERVERS, kafkaBootstrapServers));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_WATCHED_NAMESPACE, watchedNamespace));
-        if (reconciliationIntervalMs.isPresent()) {
-            varList.add(ContainerUtils.createEnvVar(ENV_VAR_FULL_RECONCILIATION_INTERVAL_MS, Long.toString(reconciliationIntervalMs.get())));
+        if (reconciliationIntervalMs != null) {
+            varList.add(ContainerUtils.createEnvVar(ENV_VAR_FULL_RECONCILIATION_INTERVAL_MS, Long.toString(reconciliationIntervalMs)));
         }
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_SECURITY_PROTOCOL, EntityTopicOperatorSpec.DEFAULT_SECURITY_PROTOCOL));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_TLS_ENABLED, Boolean.toString(true)));
