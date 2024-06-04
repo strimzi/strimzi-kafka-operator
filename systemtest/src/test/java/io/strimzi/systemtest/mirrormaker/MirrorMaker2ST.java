@@ -1222,6 +1222,7 @@ class MirrorMaker2ST extends AbstractST {
         resourceManager.createResourceWithWait(sourceClients.producerTlsStrimzi(testStorage.getSourceClusterName()), sourceClients.consumerTlsStrimzi(testStorage.getSourceClusterName()));
         // Extend the timeout for clients to be sure that all messages are synced by MM2
         JobUtils.waitForJobSuccess(testStorage.getConsumerName(), testStorage.getNamespaceName(), TestConstants.GLOBAL_TIMEOUT_LONG);
+        JobUtils.deleteJobsWithWait(testStorage.getNamespaceName(), testStorage.getConsumerName());
 
         LOGGER.info("Consuming messages in target cluster: {}/{}", testStorage.getNamespaceName(), testStorage.getTargetClusterName());
         resourceManager.createResourceWithWait(targetClients.consumerTlsStrimzi(testStorage.getTargetClusterName()));
@@ -1257,6 +1258,7 @@ class MirrorMaker2ST extends AbstractST {
         resourceManager.createResourceWithWait(targetClients.consumerTlsStrimzi(testStorage.getTargetClusterName()));
         // Extend the timeout for clients to be sure that all messages are synced by MM2
         JobUtils.waitForJobSuccess(testStorage.getConsumerName(), testStorage.getNamespaceName(), TestConstants.GLOBAL_TIMEOUT_LONG);
+        JobUtils.deleteJobsWithWait(testStorage.getNamespaceName(), testStorage.getConsumerName());
     }
 
     @BeforeAll

@@ -13,8 +13,6 @@ provision:
     memory: ">= 24 GiB"
     cpu:
       processors: ">= 8"
-    disk:
-     - size: ">= 50 GB"
 
 # Install required packages and scripts for running strimzi suite
 prepare:
