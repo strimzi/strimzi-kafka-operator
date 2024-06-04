@@ -14,9 +14,9 @@ The following properties are supported:
 The Kubernetes namespace in which the Topic Operator watches for `KafkaTopic` resources.
 Default is the namespace where the Kafka cluster is deployed.
 
-`reconciliationIntervalSeconds`::
-The interval between periodic reconciliations in seconds.
-Default `120`.
+`reconciliationIntervalMs`::
+The interval between periodic reconciliations in milliseconds.
+Default `120000`.
 
 `image`::
 The `image` property can be used to configure the container image which is used.
@@ -47,7 +47,7 @@ spec:
     # ...
     topicOperator:
       watchedNamespace: my-topic-namespace
-      reconciliationIntervalSeconds: 60
+      reconciliationIntervalMs: 60000
       resources:
         requests:
           cpu: "1"

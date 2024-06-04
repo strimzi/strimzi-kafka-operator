@@ -11,6 +11,11 @@
 * Add support for setting `publishNotReadyAddresses` on services for listener types other than internal.
 * Update HTTP bridge to latest 0.29.0 release
 
+### Changes, deprecations and removals
+
+* The `reconciliationIntervalSeconds` configuration for the Topic and User Operators is deprecated, and will be removed when upgrading schemas to v1.
+  Use `reconciliationIntervalMs` converting the value to milliseconds.
+
 ## 0.41.0
 
 * Add support for Apache Kafka 3.6.2

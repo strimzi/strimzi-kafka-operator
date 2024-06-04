@@ -39,18 +39,18 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @JsonPropertyOrder({"watchedNamespace", "image",
-    "reconciliationIntervalSeconds", "zookeeperSessionTimeoutSeconds",
+    "reconciliationIntervalSeconds", "reconciliationIntervalMs", "zookeeperSessionTimeoutSeconds",
     "startupProbe", "livenessProbe", "readinessProbe",
     "resources", "topicMetadataMaxAttempts", "logging", "jvmOptions"})
 @EqualsAndHashCode
 @ToString
 public class EntityTopicOperatorSpec implements HasConfigurableLogging, HasLivenessProbe, HasReadinessProbe, HasStartupProbe, UnknownPropertyPreserving {
-    public static final int DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS = 120;
     public static final String DEFAULT_SECURITY_PROTOCOL = "SSL";
 
     protected String watchedNamespace;
     protected String image;
-    protected int reconciliationIntervalSeconds = DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS;
+    private Integer reconciliationIntervalSeconds;
+    private Long reconciliationIntervalMs;
     protected Integer zookeeperSessionTimeoutSeconds;
     protected Integer topicMetadataMaxAttempts;
     private Probe startupProbe;
@@ -79,15 +79,29 @@ public class EntityTopicOperatorSpec implements HasConfigurableLogging, HasLiven
         this.image = image;
     }
 
-    @Description("Interval between periodic reconciliations.")
+    @Description("Interval between periodic reconciliations in seconds. Ignored if reconciliationIntervalMs is set.")
     @Minimum(0)
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-    public int getReconciliationIntervalSeconds() {
+    @DeprecatedProperty(movedToPath = ".spec.entityOperator.topicOperator.reconciliationIntervalMs")
+    @PresentInVersions("v1alpha1-v1beta2")
+    @Deprecated
+    public Integer getReconciliationIntervalSeconds() {
         return reconciliationIntervalSeconds;
     }
 
-    public void setReconciliationIntervalSeconds(int reconciliationIntervalSeconds) {
+    public void setReconciliationIntervalSeconds(Integer reconciliationIntervalSeconds) {
         this.reconciliationIntervalSeconds = reconciliationIntervalSeconds;
+    }
+
+    @Description("Interval between periodic reconciliations in milliseconds.")
+    @Minimum(0)
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    public Long getReconciliationIntervalMs() {
+        return reconciliationIntervalMs;
+    }
+
+    public void setReconciliationIntervalMs(Long reconciliationIntervalMs) {
+        this.reconciliationIntervalMs = reconciliationIntervalMs;
     }
     
     @Description("Timeout for the ZooKeeper session")
