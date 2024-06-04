@@ -17,7 +17,7 @@ When a Kafka client performs an action on a broker, the broker uses the configur
 Each resource type has a set of available permissions.
 For example, the `Topic` resource type has `Create` and `Write` permissions among others.
 
-Refer to the https://kafka.apache.org/documentation/#security_authz_primitives[Kafka authorization model] in the Kafka documentation for the full list or resources and permissions. 
+Refer to the https://kafka.apache.org/documentation/#security_authz_primitives[Kafka authorization model] in the Kafka documentation for the full list of resources and permissions. 
 
 .Keycloak Authorization Services model
 
