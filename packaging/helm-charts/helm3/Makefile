@@ -20,6 +20,10 @@ helm_lint:
 	# Linting Helm Chart
 	$(HELM_CLI) lint --debug $(CHART_PATH)
 
+helm_unittest:
+	# Running Helm Chart unit tests
+	$(HELM_CLI) unittest $(CHART_PATH)
+
 helm_template:
 	../kafka-version-tpl.sh strimzi-kafka-operator/templates/_kafka_image_map.tpl
 	# Generating rendered template files to: $(CHART_RENDERED_TEMPLATES_TMP)
@@ -49,7 +53,7 @@ helm_install: helm_clean helm_template
 	| $(SED) -E 's/([^ ]*) ([a-zA-Z0-9]*)$$/\1/' \
 	| xargs -IFILE $(CP) FILE $(CHART_RENDERED_TEMPLATES_CLUSTERROLES)
 
-helm_pkg: helm_lint helm_install
+helm_pkg: helm_lint helm_unittest helm_install
 	# Copying unarchived Helm Chart to release directory
 	mkdir -p strimzi-$(RELEASE_VERSION)/charts/
 	$(CP) -r $(CHART_PATH) strimzi-$(RELEASE_VERSION)/charts/$(CHART_NAME)
