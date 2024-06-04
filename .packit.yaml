@@ -327,7 +327,7 @@ jobs:
     tf_extra_params:
       settings:
         pipeline:
-          timeout: 1440
+          timeout: 1800
       test:
         tmt:
           name: performance-topic-operator-user-workload

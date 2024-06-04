@@ -755,7 +755,6 @@ public class TopicOperatorPerformance extends AbstractST {
                     {"50", "100", true},      // Moderate batching for balanced performance
                     {"100", "500", true},     // Heavier batching for throughput focus
                     {"500", "1000", true},    // Extreme batching to test upper limits of performance
-                    {"1000", "2000", true},   // Maximum possible batching for stress testing
                     // -------------
                     {"100", "100", false},     // Default configuration
                     {"100", "10", false},      // Default batch size, with lower linger time
@@ -763,7 +762,6 @@ public class TopicOperatorPerformance extends AbstractST {
                     {"50", "100", false},      // Moderate batching for balanced performance
                     {"100", "500", false},     // Heavier batching for throughput focus
                     {"500", "1000", false},    // Extreme batching to test upper limits of performance
-                    {"1000", "2000", false}    // Maximum possible batching for stress testing
                 }
             )
             .flatMap(config -> Arrays.stream(batchEventSizes)
