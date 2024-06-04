@@ -18,7 +18,7 @@ jobs:
       with:
         filters: |
             helm-chart:
-            - "${{ env.CHART_PATH }}"
+            - "${{ env.CHART_PATH }}/**"
   helm-chart-pr-checks:
     needs: check-pr-type
     if: ${{ needs.check-pr-type.outputs.helm-chart == 'true' }}
