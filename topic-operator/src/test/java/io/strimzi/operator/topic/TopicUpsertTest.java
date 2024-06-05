@@ -4,13 +4,13 @@
  */
 package io.strimzi.operator.topic;
 
+import io.strimzi.operator.topic.model.TopicEvent.TopicUpsert;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 class TopicUpsertTest {
-
     @Test
     void testEquals() {
         // We don't want the nanosStartOffset parameter to be considered for equality
@@ -25,5 +25,4 @@ class TopicUpsertTest {
         assertNotEquals(up1.hashCode(), up3.hashCode());
         assertNotEquals(up2.hashCode(), up3.hashCode());
     }
-
 }

@@ -14,6 +14,7 @@ import io.strimzi.operator.topic.cruisecontrol.CruiseControlClient;
 import io.strimzi.operator.topic.cruisecontrol.CruiseControlClient.TaskState;
 import io.strimzi.operator.topic.cruisecontrol.CruiseControlClient.UserTasksResponse;
 import io.strimzi.operator.topic.metrics.TopicOperatorMetricsHolder;
+import io.strimzi.operator.topic.model.ReconcilableTopic;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -36,7 +37,7 @@ import static org.apache.logging.log4j.core.util.Throwables.getRootCause;
 /**
  * Replicas change handler that interacts with Cruise Control REST API.
  * <br/><br/>
- * At any given time, a KafkaTopic.spec.replicas change can be in one of the following states:
+ * At any given time, a {@code .spec.replicas} change can be in one of the following states:
  * <ul><li>Pending: Not in Cruise Control's task queue (not yet sent or request error).</li>
  * <li>Ongoing: In Cruise Control's task queue, but execution not started, or not completed.</li>
  * <li>Completed: Cruise Control's task execution completed (target replication factor reconciled).</li></ul>

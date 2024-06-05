@@ -19,6 +19,8 @@ import io.strimzi.operator.common.metrics.MetricsHolder;
 import io.strimzi.operator.topic.cruisecontrol.CruiseControlClient;
 import io.strimzi.operator.topic.metrics.TopicOperatorMetricsHolder;
 import io.strimzi.operator.topic.metrics.TopicOperatorMetricsProvider;
+import io.strimzi.operator.topic.model.ReconcilableTopic;
+import io.strimzi.operator.topic.model.TopicEvent.TopicUpsert;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.logging.log4j.LogManager;
