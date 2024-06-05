@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.resources.ResourceManager.cmdKubeClient;
@@ -241,10 +242,11 @@ public class TopicOperatorPerformanceUtils {
         final ExecutorService executor = Executors.newFixedThreadPool(availableCPUs);
 
         List<CompletableFuture<Void>> futures = new ArrayList<>();
+        ExtensionContext extensionContext = ResourceManager.getTestContext();
 
         for (int topicIndex = 0; topicIndex < numberOfTopics; topicIndex++) {
             final int finalTopicIndex = topicIndex;
-            CompletableFuture<Void> future = CompletableFuture.runAsync(() -> performFullLifecycle(finalTopicIndex, testStorage), executor);
+            CompletableFuture<Void> future = CompletableFuture.runAsync(() -> performFullLifecycle(finalTopicIndex, testStorage, extensionContext), executor);
             futures.add(future);
         }
 
@@ -252,7 +254,14 @@ public class TopicOperatorPerformanceUtils {
         CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
         LOGGER.info("All topic lifecycles completed.");
 
-        executor.shutdown();
+        try {
+            executor.shutdown();
+            executor.awaitTermination(5, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            if (!executor.isTerminated()) {
+                executor.shutdownNow();
+            }
+        }
     }
 
     /**
@@ -260,11 +269,11 @@ public class TopicOperatorPerformanceUtils {
      * and deletion operations. These operations are encapsulated as a single task that is suitable
      * for parallel processing.
      *
-     * @param topicIndex    the index of the topic which identifies the specific topic to be managed.
-     * @param testStorage   an object representing the storage where test data or states are maintained.
+     * @param topicIndex        the index of the topic which identifies the specific topic to be managed.
+     * @param testStorage       an object representing the storage where test data or states are maintained.
+     * @param extensionContext  an object representing current context of the test case
      */
-    private static void performFullLifecycle(int topicIndex, TestStorage testStorage) {
-        final ExtensionContext extensionContext = ResourceManager.getTestContext();
+    private static void performFullLifecycle(int topicIndex, TestStorage testStorage, ExtensionContext extensionContext) {
         performCreationWithWait(topicIndex, topicIndex + 1, extensionContext, testStorage);
         performModificationWithWait(topicIndex, topicIndex + 1, extensionContext, testStorage, KAFKA_TOPIC_CONFIG_TO_MODIFY);
         performDeletionWithWait(topicIndex, topicIndex + 1, extensionContext, testStorage);
