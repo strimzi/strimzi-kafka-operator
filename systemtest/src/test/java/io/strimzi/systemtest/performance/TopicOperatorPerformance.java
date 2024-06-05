@@ -56,6 +56,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static io.strimzi.systemtest.TestConstants.PERFORMANCE;
+import static io.strimzi.systemtest.TestConstants.SCALABILITY;
 import static io.strimzi.systemtest.performance.PerformanceConstants.PERFORMANCE_CAPACITY;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
@@ -741,7 +742,7 @@ public class TopicOperatorPerformance extends AbstractST {
         }
     }
 
-    private static Stream<Arguments> provideConfigurationsFortestPerformanceInFixedSizeOfEvents() {
+    private static Stream<Arguments> provideConfigurationsForTestSystemScalability() {
         final int seed = 50;
         final int limit = 20; // up to 1000 topics to create
 
@@ -769,10 +770,10 @@ public class TopicOperatorPerformance extends AbstractST {
                     Arguments.of(config[0], config[1], config[2], numberOfTopics)));
     }
 
-    @Tag(PERFORMANCE)
+    @Tag(SCALABILITY)
     @ParameterizedTest
-    @MethodSource("provideConfigurationsFortestPerformanceInFixedSizeOfEvents")
-    void testPerformanceInFixedSizeOfEvents(String maxBatchSize, String maxBatchLingerMs, boolean processEachTopicSeparately, int numberOfTopics) throws IOException {
+    @MethodSource("provideConfigurationsForTestSystemScalability")
+    void testSystemScalability(String maxBatchSize, String maxBatchLingerMs, boolean processEachTopicSeparately, int numberOfTopics) throws IOException {
         final int brokerReplicas = 3;
         final int controllerReplicas = 3;
         final String maxQueueSize = String.valueOf(Integer.MAX_VALUE);
