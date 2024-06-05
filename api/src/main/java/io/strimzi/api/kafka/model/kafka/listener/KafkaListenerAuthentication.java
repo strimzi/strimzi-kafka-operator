@@ -42,7 +42,7 @@ public abstract class KafkaListenerAuthentication implements UnknownPropertyPres
 
     @Description("Authentication type. " +
             "`oauth` type uses SASL OAUTHBEARER Authentication. " +
-            "`serviceaccount-oauth` type uses SASL OAUTHBEARER Authentication. " +
+            "`serviceaccount-oauth` type uses SASL OAUTHBEARER Authentication in combination with Kubernetes ServiceAccounts and pre-configured to use the Kubernetes API server's JWKS endpoint. " +
             "`scram-sha-512` type uses SASL SCRAM-SHA-512 Authentication. " +
             "`tls` type uses TLS Client Authentication. " +
             "`tls` type is supported only on TLS listeners." +
