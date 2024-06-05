@@ -797,8 +797,8 @@ class RollingUpdateST extends AbstractST {
             .build();
 
         LOGGER.info("Check if metrics are present in Pod of Kafka and ZooKeeper");
-        kafkaCollector.collectMetricsFromPods();
-        zkCollector.collectMetricsFromPods();
+        kafkaCollector.collectMetricsFromPods(TestConstants.GLOBAL_TIMEOUT);
+        zkCollector.collectMetricsFromPods(TestConstants.GLOBAL_TIMEOUT);
 
         assertThat(kafkaCollector.getCollectedData().values().toString().contains("kafka_"), is(true));
         assertThat(zkCollector.getCollectedData().values().toString().contains("replicaId"), is(true));
@@ -860,8 +860,8 @@ class RollingUpdateST extends AbstractST {
 
         LOGGER.info("Check if metrics are present in Pod of Kafka and ZooKeeper");
 
-        kafkaCollector.collectMetricsFromPods();
-        zkCollector.collectMetricsFromPods();
+        kafkaCollector.collectMetricsFromPods(TestConstants.GLOBAL_TIMEOUT);
+        zkCollector.collectMetricsFromPods(TestConstants.GLOBAL_TIMEOUT);
 
         assertThat(kafkaCollector.getCollectedData().values().toString().contains("kafka_"), is(true));
         assertThat(zkCollector.getCollectedData().values().toString().contains("replicaId"), is(true));

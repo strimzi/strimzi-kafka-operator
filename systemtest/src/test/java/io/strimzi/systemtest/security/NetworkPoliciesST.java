@@ -228,7 +228,7 @@ public class NetworkPoliciesST extends AbstractST {
             .withComponent(KafkaExporterMetricsComponent.create(testStorage.getNamespaceName(), testStorage.getClusterName()))
             .build();
 
-        metricsCollector.collectMetricsFromPods();
+        metricsCollector.collectMetricsFromPods(TestConstants.GLOBAL_TIMEOUT);
         assertThat("KafkaExporter metrics should be non-empty", metricsCollector.getCollectedData().size() > 0);
         for (Map.Entry<String, String> entry : metricsCollector.getCollectedData().entrySet()) {
             assertThat("Value from collected metric should be non-empty", !entry.getValue().isEmpty());

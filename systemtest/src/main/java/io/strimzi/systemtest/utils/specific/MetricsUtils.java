@@ -129,7 +129,7 @@ public class MetricsUtils {
     public static void assertMetricResourcesIs(MetricsCollector collector, String kind, Predicate<Double> predicate, String message) {
         String metric = "strimzi_resources\\{kind=\"" + kind + "\",.*}";
         TestUtils.waitFor("metric " + metric + "is " + message, TestConstants.POLL_INTERVAL_FOR_RESOURCE_READINESS, TestConstants.GLOBAL_TIMEOUT_SHORT, () -> {
-            collector.collectMetricsFromPods();
+            collector.collectMetricsFromPods(TestConstants.GLOBAL_TIMEOUT);
             ArrayList<Double> values = createPatternAndCollect(collector, metric);
             double actualValue = values.stream().mapToDouble(i -> i).sum();
             return predicate.test(actualValue);
