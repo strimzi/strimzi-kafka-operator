@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -x
 
-TEST_HELM3_VERSION=${TEST_HELM3_VERSION:-'v3.13.3'}
+TEST_HELM3_VERSION=${TEST_HELM3_VERSION:-'v3.15.1'}
+TEST_HELM_UNITTEST_VERSION=${TEST_HELM_UNITTEST_VERSION:-'v0.5.1'}
 
 function install_helm3 {
     export HELM_INSTALL_DIR=/usr/bin
@@ -24,4 +25,20 @@ function install_helm3 {
     fi
 }
 
+function install_helm_unittest {
+    echo "Installing helm unittest plugin ..."
+    helm plugin install --version $TEST_HELM_UNITTEST_VERSION https://github.com/helm-unittest/helm-unittest.git
+
+    echo "Verifying the installation of helm unittest plugin ..."
+    # run a proper helm command instead of, for example, "which helm", to verify that we can call the binary
+    helm unittest --help
+    helmCommandOutput=$?
+
+    if [ $helmCommandOutput != 0 ]; then
+        echo "helm unittest plugin hasn't been installed properly - exiting..."
+        exit 1
+    fi
+}
+
 install_helm3
+install_helm_unittest
