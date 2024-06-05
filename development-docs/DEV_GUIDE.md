@@ -350,9 +350,9 @@ The `strimzi-kafka-operator` Helm Chart can be installed directly from its sourc
 
 To run unit tests for helm charts, [`helm-unittest`](https://github.com/helm-unittest/helm-unittest) plugin is used. To install the plugin, run:
 
-```bash
-    helm plugin install https://github.com/helm-unittest/helm-unittest.git
-```
+    ```bash
+        helm plugin install https://github.com/helm-unittest/helm-unittest.git
+    ```
 
 To run the tests, use the following command:
 
