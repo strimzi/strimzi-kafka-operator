@@ -170,6 +170,9 @@ docu_pdfclean:
 helm_install:
 	$(MAKE) -C packaging/helm-charts/helm3 helm_install
 
+helm_unittest:
+	$(MAKE) -C packaging/helm-charts/helm3 helm_unittest
+
 crd_install:
 	$(MAKE) -C packaging/install crd_install
 
