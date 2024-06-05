@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.metrics;
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.strimzi.systemtest.TestConstants;
 
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
@@ -19,7 +20,7 @@ public class ClusterOperatorMetricsComponent extends BaseMetricsComponent {
      * @param componentName     the name of the component
      * @return                  a new instance of ClusterOperatorMetricsComponent
      */
-    public static ClusterOperatorMetricsComponent create(final String namespaceName, final String componentName) {
+    public static ClusterOperatorMetricsComponent   create(final String namespaceName, final String componentName) {
         return new ClusterOperatorMetricsComponent(namespaceName, componentName);
     }
 
@@ -37,5 +38,10 @@ public class ClusterOperatorMetricsComponent extends BaseMetricsComponent {
     @Override
     public LabelSelector getLabelSelector() {
         return kubeClient().getDeploymentSelectors(namespaceName, componentName);
+    }
+
+    @Override
+    public int getDefaultMetricsPort() {
+        return TestConstants.CLUSTER_OPERATOR_METRICS_PORT;
     }
 }
