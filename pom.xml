@@ -170,9 +170,7 @@
         <rest-assured-json-path.version>4.4.0</rest-assured-json-path.version>
         <bouncycastle.version>1.76</bouncycastle.version>
         <kroxylicious-testing.version>0.8.1</kroxylicious-testing.version>
-        <kindcontainer.version>1.4.5</kindcontainer.version>
-        <testcontainer.version>1.19.5</testcontainer.version>
-        <docker-java.version>3.3.4</docker-java.version>
+        <kindcontainer.version>1.4.6</kindcontainer.version>
         <junit4.version>4.13.2</junit4.version>
 
         <!-- properties to skip surefire tests during failsafe execution -->
@@ -877,24 +875,6 @@
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
                 <version>${junit4.version}</version>
-            </dependency>
-            <!-- TestContainer dependency is needed at compile time by MockKube -->
-            <dependency>
-                <groupId>org.testcontainers</groupId>
-                <artifactId>testcontainers</artifactId>
-                <version>${testcontainer.version}</version>
-            </dependency>
-            <!-- Needed to align TestContainer version between different TestContainer implementations -->
-            <dependency>
-                <groupId>org.testcontainers</groupId>
-                <artifactId>toxiproxy</artifactId>
-                <version>${testcontainer.version}</version>
-            </dependency>
-            <!-- Needed to align Java Docker API version between different TestContainer implementations -->
-            <dependency>
-                <groupId> com.github.docker-java</groupId>
-                <artifactId>docker-java-api</artifactId>
-                <version>${docker-java.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
