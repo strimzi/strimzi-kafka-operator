@@ -750,30 +750,35 @@ public class TopicOperatorPerformance extends AbstractST {
         int[] batchEventSizes = IntStream.iterate(seed, n -> n + seed).limit(limit).toArray();
         return Stream.of(
             new Object[][]{
-                    {"100", "100", true},     // Default configuration
-                    {"100", "10", true},      // Default batch size, with lower linger time
-                    {"10", "1", true},        // Minimal batching for high responsiveness
-                    {"50", "100", true},      // Moderate batching for balanced performance
-                    {"100", "500", true},     // Heavier batching for throughput focus
-                    {"500", "1000", true},    // Extreme batching to test upper limits of performance
+                    {"100", "100"},     // Default configuration
+                    {"100", "10"},      // Default batch size, with lower linger time
+                    {"10", "1"},        // Minimal batching for high responsiveness
+                    {"50", "100"},      // Moderate batching for balanced performance
+                    {"100", "500"},     // Heavier batching for throughput focus
+                    {"500", "1000"},    // Extreme batching to test upper limits of performance
                     // -------------
-                    {"100", "100", false},     // Default configuration
-                    {"100", "10", false},      // Default batch size, with lower linger time
-                    {"10", "1", false},        // Minimal batching for high responsiveness
-                    {"50", "100", false},      // Moderate batching for balanced performance
-                    {"100", "500", false},     // Heavier batching for throughput focus
-                    {"500", "1000", false},    // Extreme batching to test upper limits of performance
+                    {"100", "100"},     // Default configuration
+                    {"100", "10"},      // Default batch size, with lower linger time
+                    {"10", "1"},        // Minimal batching for high responsiveness
+                    {"50", "100"},      // Moderate batching for balanced performance
+                    {"100", "500"},     // Heavier batching for throughput focus
+                    {"500", "1000"},    // Extreme batching to test upper limits of performance
                 }
             )
             .flatMap(config -> Arrays.stream(batchEventSizes)
-                .mapToObj(numberOfTopics ->
-                    Arguments.of(config[0], config[1], config[2], numberOfTopics)));
+                .mapToObj(numberOfTopics -> {
+                    int eventPerTask = 3;
+                    int numberOfTasks = numberOfTopics / eventPerTask;
+                    int spareEvents = numberOfTopics % eventPerTask;
+
+                    return Arguments.of(config[0], config[1], numberOfTasks, spareEvents);
+                }));
     }
 
     @Tag(SCALABILITY)
     @ParameterizedTest
     @MethodSource("provideConfigurationsForTestSystemScalability")
-    void testSystemScalability(String maxBatchSize, String maxBatchLingerMs, boolean processEachTopicSeparately, int numberOfTopics) throws IOException {
+    void testSystemScalability(String maxBatchSize, String maxBatchLingerMs, int numberOfTasks, int spareEvents) throws IOException {
         final int brokerReplicas = 3;
         final int controllerReplicas = 3;
         final String maxQueueSize = String.valueOf(Integer.MAX_VALUE);
@@ -843,16 +848,12 @@ public class TopicOperatorPerformance extends AbstractST {
 
             long startTime = System.nanoTime();
 
-            if (processEachTopicSeparately) {
-                TopicOperatorPerformanceUtils.processAllTopicsConcurrently(testStorage, numberOfTopics);
-            } else {
-                TopicOperatorPerformanceUtils.processKafkaTopicBatchesAsync(testStorage, numberOfTopics);
-            }
+            TopicOperatorPerformanceUtils.processAllTopicsConcurrently(testStorage, numberOfTasks, spareEvents);
 
             // Calculate total execution time in nanoseconds and then convert to ms
             allTasksTimeMs = (System.nanoTime() - startTime) / 1_000_000;
 
-            LOGGER.info("Total time taken for all tasks (i.e., {} for each operation; creation, modification and deletion) {} ms", numberOfTopics, allTasksTimeMs);
+            LOGGER.info("Total time taken for all tasks (i.e., {} for each operation; creation, modification and deletion) {} ms", numberOfTasks, allTasksTimeMs);
         } finally {
             if (this.topicOperatorMetricsGatherer != null) {
                 this.topicOperatorMetricsGatherer.stopCollecting();
@@ -861,10 +862,10 @@ public class TopicOperatorPerformance extends AbstractST {
 
                 performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_IN_MAX_QUEUE_SIZE, maxQueueSize);
                 performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_IN_MAX_BATCH_SIZE, maxBatchSize);
-                performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_IN_NUMBER_OF_TOPICS, numberOfTopics);
-                performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_IN_NUMBER_OF_EVENTS, numberOfTopics * 3);
+                performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_IN_NUMBER_OF_TOPICS, numberOfTasks);
+                performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_IN_NUMBER_OF_EVENTS, (numberOfTasks * 3) + spareEvents);
                 performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_IN_MAX_BATCH_LINGER_MS, maxBatchLingerMs);
-                performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_IN_PROCESS_TYPE, processEachTopicSeparately ? "TOPIC-CONCURRENT" : "BATCH-CONCURRENT");
+                performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_IN_PROCESS_TYPE, "TOPIC-CONCURRENT");
 
                 performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_OUT_SUCCESSFUL_KAFKA_TOPICS_CREATED_AND_MODIFIED_AND_DELETED, allTasksTimeMs);
                 performanceAttributes.put(PerformanceConstants.METRICS_HISTORY, this.topicOperatorMetricsGatherer.getMetricsStore()); // Map of metrics history
