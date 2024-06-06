@@ -3,18 +3,12 @@
 // assembly-oauth-authentication.adoc
 
 [id='con-oauth-strimzi-config-{context}']
-= Configuring OAuth 2.0 authentication
+= Example: Enabling OAuth 2.0 authentication
 
-OAuth 2.0 is used for interaction between Kafka clients and Strimzi components.
+[role="_abstract"]
+This example shows how to configure client access to a Kafka cluster using OAUth 2.0 authentication.
+The procedures describe the configuration required to set up OAuth 2.0 authentication on Kafka listeners, Kafka Java clients, and Kafka components.
 
-In order to use OAuth 2.0 for Strimzi, you must:
-
-. xref:proc-oauth-server-config-{context}[Configure an OAuth 2.0 authorization server for the Strimzi cluster and Kafka clients]
-. xref:proc-oauth-authentication-broker-config-{context}[Deploy or update the Kafka cluster with Kafka broker listeners configured to use OAuth 2.0]
-. xref:proc-oauth-client-config-{context}[Update your Java-based Kafka clients to use OAuth 2.0]
-. xref:proc-oauth-kafka-config-{context}[Update Kafka component clients to use OAuth 2.0]
-
-include::proc-oauth-server-config.adoc[leveloffset=+1]
-include::proc-oauth-authentication-broker-config.adoc[leveloffset=+1]
-include::proc-oauth-client-config.adoc[leveloffset=+1]
-include::proc-oauth-kafka-config.adoc[leveloffset=+1]
+include::../../modules/oauth/proc-oauth-authentication-broker-config.adoc[leveloffset=+1]
+include::../../modules/oauth/proc-oauth-client-config.adoc[leveloffset=+1]
+include::../../modules/oauth/proc-oauth-kafka-config.adoc[leveloffset=+1]

@@ -1,12 +1,21 @@
 // This assembly is included in the following assemblies:
 //
-// assembly-deployment-configuration.adoc
+// assembly-oauth-security.adoc
 
 [id='assembly-oauth-authorization_{context}']
 = Using OAuth 2.0 token-based authorization
 
-include::../../modules/oauth/con-oauth-authorization-intro.adoc[leveloffset=+1]
-include::../../modules/oauth/con-oauth-authorization-mechanism.adoc[leveloffset=+1]
+[role="_abstract"]
+Strimzi supports the use of OAuth 2.0 token-based authorization through {keycloak-authorization-services},
+which lets you manage security policies and permissions centrally.
+
+Security policies and permissions defined in Keycloak grant access to Kafka resources.
+Users and clients are matched against policies that permit access to perform specific actions on Kafka brokers.
+
+Kafka allows all users full access to brokers by default, but also provides the `AclAuthorizer` and `StandardAuthorizer` plugins to configure authorization based on Access Control Lists (ACLs).
+The ACL rules managed by these plugins are used to grant or deny access to resources based on _username_, and these rules are stored within the Kafka cluster itself.
+
+However, OAuth 2.0 token-based authorization with Keycloak offers far greater flexibility on how you wish to implement access control to Kafka brokers.
+In addition, you can configure your Kafka brokers to use OAuth 2.0 authorization and ACLs.
+
 include::../../modules/oauth/proc-oauth-authorization-broker-config.adoc[leveloffset=+1]
-include::assembly-managing-policies-permissions-keycloak.adoc[leveloffset=+1]
-include::../../modules/oauth/proc-oauth-authorization-keycloak-example.adoc[leveloffset=+1]
