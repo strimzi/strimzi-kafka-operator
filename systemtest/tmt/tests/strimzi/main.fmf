@@ -33,7 +33,7 @@ adjust:
   duration: 5h
   tier: 2
   environment+:
-    TEST_PROFILE: upgrade
+    TEST_PROFILE: kraft_upgrade
 
 /regression-operators:
   summary: Run regression strimzi test suite
