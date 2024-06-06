@@ -56,7 +56,7 @@ Currently, the KRaft mode in Strimzi has the following major limitations:
 * JBOD storage is supported only with Apache Kafka 3.7.0 and higher.
 It is considered early-access in Apache Kafka 3.7.x.
 (Storage with `type: jbod` configuration can be used also with older Kafka versions, but the JBOD array can contain only one disk.)
-* Scaling of KRaft controller-only nodes up or down is not supported.
+* Scaling of KRaft controller nodes up or down is not supported.
 
 NOTE: If you are using JBOD storage, you can xref:ref-jbod-storage-str[change the volume that stores the metadata log]. 
 
