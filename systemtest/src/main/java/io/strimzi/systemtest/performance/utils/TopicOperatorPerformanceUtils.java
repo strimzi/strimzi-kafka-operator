@@ -237,7 +237,7 @@ public class TopicOperatorPerformanceUtils {
      * @param testStorage       An instance of TestStorage containing configuration and state needed for topic operations.
      * @param numberOfTopics    The number of Kafka topics to be processed.
      */
-    public static void processAllTopicsConcurrently(TestStorage testStorage, int numberOfTopics) {
+    public static void processAllTopicsConcurrently(TestStorage testStorage, int numberOfTopics, int spareEvents) {
         final int availableCPUs = Math.max(1, Runtime.getRuntime().availableProcessors());
         final ExecutorService executor = Executors.newFixedThreadPool(availableCPUs);
 
@@ -248,6 +248,11 @@ public class TopicOperatorPerformanceUtils {
             final int finalTopicIndex = topicIndex;
             CompletableFuture<Void> future = CompletableFuture.runAsync(() -> performFullLifecycle(finalTopicIndex, testStorage, extensionContext), executor);
             futures.add(future);
+        }
+
+        // consume spare events
+        for (int j = 0; j < spareEvents; j++) {
+            futures.add(j, CompletableFuture.completedFuture(null));
         }
 
         // Wait for all topics to complete their lifecycle
