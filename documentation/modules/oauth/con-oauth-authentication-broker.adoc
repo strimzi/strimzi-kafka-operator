@@ -44,11 +44,11 @@ spec:
 Use one or both of the following SASL mechanisms for clients to exchange credentials and establish authenticated sessions with Kafka.
 
 `OAUTHBEARER`:: Using the `OAUTHBEARER` authentication mechanism, credentials exchange uses a bearer token provided by an OAuth callback handler. 
-Token provision can be configured to use the following:
+Token provision can be configured to use the following methods:
 +
 --
 * Client ID and secret (using the the OAuth 2.0 _client credentials mechanism_)
-* Long-lived access token obtained manually
+* Long-lived access token
 * Long-lived refresh token obtained manually
 --
 +
@@ -57,11 +57,11 @@ Client credentials are never shared with Kafka.
 
 `PLAIN`:: `PLAIN` is a simple authentication mechanism used by all Kafka client tools.
 Consider using `PLAIN` only with Kafka clients that do not support `OAUTHBEARER`.
-Using the `PLAIN` authentication mechanism, credentials exchange can be configured to use the following: 
+Using the `PLAIN` authentication mechanism, credentials exchange can be configured to use the following methods: 
 +
 --
 * Client ID and secret (using the the OAuth 2.0 _client credentials mechanism_)
-* Long-lived access token obtained manually+
+* Long-lived access token +
 Regardless of the method used, the client must provide `username` and `password` properties to Kafka. 
 --
 +
@@ -106,7 +106,7 @@ When you have defined the type of authentication as OAuth 2.0, you add configura
 
 Fast local JWT token validation involves checking a JWT token signature locally to ensure that the token meets the following criteria:
 
-* Contains a `typ` (type) header claim value of `Bearer` to indicate it is an access token
+* Contains a `typ` (type) or `token_type` header claim value of `Bearer` to indicate it is an access token
 * Is currently valid and not expired
 * Has an issuer that matches a `validIssuerURI`
 
@@ -134,8 +134,8 @@ If you want to use Kafka ACL authorization, identify the user by their username 
   tls: true
   authentication:
     type: oauth # <1>
-    validIssuerUri: https://<auth_server_address>/auth/realms/external # <2>
-    jwksEndpointUri: https://<auth_server_address>/auth/realms/external/protocol/openid-connect/certs # <3>
+    validIssuerUri: https://<auth_server_address>/<issuer-context> # <2>
+    jwksEndpointUri: https://<auth_server_address>/<path_to_jwks_endpoint> # <3>
     userNameClaim: preferred_username # <4>
     maxSecondsWithoutReauthentication: 3600 # <5>
     tlsTrustedCertificates: # <6>
@@ -176,8 +176,8 @@ Depending on the authorization server, you typically have to specify a `clientId
   tls: true
   authentication:
     type: oauth
-    validIssuerUri: https://<auth_server_address>/auth/realms/external
-    introspectionEndpointUri: https://<auth_server_address>/auth/realms/external/protocol/openid-connect/token/introspect # <1>
+    validIssuerUri: https://<auth_server_address>/<issuer-context>
+    introspectionEndpointUri: https://<auth_server_address>/<path_to_introspection_endpoint> # <1>
     clientId: kafka-broker # <2>
     clientSecret: # <3>
       secretName: my-cluster-oauth
@@ -225,10 +225,10 @@ Use either client credentials (client ID + secret) or an access token for authen
     fallbackUserNameClaim: client_id # <3>
     fallbackUserNamePrefix: client-account- # <4>
     validTokenType: bearer # <5>
-    userInfoEndpointUri: https://<auth_server_address>/auth/realms/external/protocol/openid-connect/userinfo # <6>
+    userInfoEndpointUri: https://<auth_server_address>/<path_to_userinfo_endpoint> # <6>
     enableOauthBearer: false # <7>
     enablePlain: true # <8>
-    tokenEndpointUri: https://<auth_server_address>/auth/realms/external/protocol/openid-connect/token # <9>
+    tokenEndpointUri: https://<auth_server_address>/<path_to_token_endpoint> # <9>
     customClaimCheck: "@.custom == 'custom-value'" # <10>
     clientAudience: audience # <11>
     clientScope: scope # <12>

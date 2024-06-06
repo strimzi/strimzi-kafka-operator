@@ -21,7 +21,7 @@ The `kafka` client definition must have the *Authorization Enabled* option enabl
 All permissions exist within the scope of the `kafka` client. If you have different Kafka clusters configured with different OAuth client IDs, they each need a separate set of permissions even though they're part of the same Keycloak realm.
 
 When the Kafka client uses OAUTHBEARER authentication, the Keycloak authorizer (`KeycloakAuthorizer`) uses the access token of the current session to retrieve a list of grants from the Keycloak server.
-To retrieve the grants, the authorizer evaluates the Keycloak Authorization Services policies and permissions.
+To grant permissions, the authorizer evaluates the grants list (received and cached) from Keycloak Authorization Services based on the access token owner's policies and permissions.
 
 .Uploading authorization scopes for Kafka permissions
 
@@ -29,7 +29,7 @@ An initial Keycloak configuration usually involves uploading authorization scope
 This step is performed once only, before defining any permissions.
 You can add authorization scopes manually instead of uploading them.
 
-Authorization scopes must contain all the possible Kafka permissions regardless of the resource type:
+Authorization scopes should contain the following Kafka permissions regardless of the resource type:
 
 * `Create`
 * `Write`
@@ -41,9 +41,6 @@ Authorization scopes must contain all the possible Kafka permissions regardless 
 * `AlterConfigs`
 * `ClusterAction`
 * `IdempotentWrite`
-* `CreateTokens`
-* `DescribeTokens`
-* `All`
 
 [NOTE]
 ====

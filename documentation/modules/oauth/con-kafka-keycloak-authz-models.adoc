@@ -4,7 +4,7 @@
 [role="_abstract"]
 Kafka and Keycloak Authorization Services use different authorization models.
 
-* Kafka's authorization model uses _resource types_
+* Kafka's authorization model uses _resource types_ and _operations_ to describe ACLs for the _user_
 * The Keycloak Authorization Services model has four concepts for defining and granting permissions: 
 ** _resources_ 
 ** _authorization scopes_
@@ -14,7 +14,7 @@ Kafka and Keycloak Authorization Services use different authorization models.
 .Kafka authorization model
 When a Kafka client performs an action on a broker, the broker uses the configured `KeycloakAuthorizer` to check the client's permissions, based on the action and resource type.
 
-Each resource type has a set of available permissions.
+Each resource type has a set of available permissions for operations.
 For example, the `Topic` resource type has `Create` and `Write` permissions among others.
 
 Refer to the https://kafka.apache.org/documentation/#security_authz_primitives[Kafka authorization model] in the Kafka documentation for the full list of resources and permissions. 
