@@ -97,6 +97,7 @@ import java.util.stream.Collectors;
 
 import static io.strimzi.operator.cluster.model.ListenersUtils.isListenerWithCustomAuth;
 import static io.strimzi.operator.cluster.model.ListenersUtils.isListenerWithOAuth;
+import static io.strimzi.operator.cluster.model.TemplateUtils.getAdditionalVolumes;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
 
@@ -1277,43 +1278,9 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         volumeList.add(VolumeUtils.createSecretVolume(CLIENT_CA_CERTS_VOLUME, KafkaResources.clientsCaCertificateSecretName(cluster), isOpenShift));
         volumeList.add(VolumeUtils.createConfigMapVolume(LOG_AND_METRICS_CONFIG_VOLUME_NAME, podName));
         volumeList.add(VolumeUtils.createEmptyDirVolume("ready-files", "1Ki", "Memory"));
-        for (int i = 0; i < templatePod.getAdditionalVolumes().size(); i++) {
-            AdditionalVolume volumeConfig = templatePod.getAdditionalVolumes().get(i);
 
-            if (volumeConfig.getConfigMap() != null) {
-                volumeList.add(new VolumeBuilder()
-                    .withName(volumeConfig.getName())
-                    .withNewConfigMap()
-                    .withName(volumeConfig.getConfigMap().getName())
-                    .endConfigMap()
-                    .build());
-            }
-
-            if (volumeConfig.getSecret() != null) {
-                volumeList.add(new VolumeBuilder()
-                    .withName(volumeConfig.getName())
-                    .withNewSecret()
-                    .withSecretName(volumeConfig.getSecret().getSecretName())
-                    .endSecret()
-                    .build());
-            }
-
-            if (volumeConfig.getEmptyDir() != null) {
-                volumeList.add(new VolumeBuilder()
-                    .withName(volumeConfig.getName())
-                    .withNewEmptyDir()
-                    .withMedium(volumeConfig.getEmptyDir().getMedium())
-                    .endEmptyDir()
-                    .build());
-            }
-
-            if (volumeConfig.getCsi() != null) {
-                volumeList.add(new VolumeBuilder()
-                    .withName(volumeConfig.getName())
-                    .withCsi(volumeConfig.getCsi())
-                    .build());
-            }
-        }
+        List<Volume> additionalVolumes = getAdditionalVolumes(templatePod, volumeList);
+        volumeList.addAll(additionalVolumes);
 
         for (GenericKafkaListener listener : listeners) {
             if (listener.isTls()
@@ -1395,6 +1362,8 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         volumeMountList.add(VolumeUtils.createVolumeMount(CLIENT_CA_CERTS_VOLUME, CLIENT_CA_CERTS_VOLUME_MOUNT));
         volumeMountList.add(VolumeUtils.createVolumeMount(LOG_AND_METRICS_CONFIG_VOLUME_NAME, LOG_AND_METRICS_CONFIG_VOLUME_MOUNT));
         volumeMountList.add(VolumeUtils.createVolumeMount("ready-files", "/var/opt/kafka"));
+
+
 
         for (int i = 0; i < templatePod.getAdditionalVolumes().size(); i++) {
             AdditionalVolume volumeConfig = templatePod.getAdditionalVolumes().get(i);
