@@ -24,9 +24,12 @@ plan defines selectors for [tests](./tests) which should be executed.
 * smoke
 * upgrade
 * regression-operators
-* regression-components
-* kraft-operators
-* kraft-components
+* regression-components-1
+* regression-components-2
+* sanity
+* performance
+* performance-capacity
+* performance-topic-operator-capacity
 
 ## Usage
 
@@ -76,3 +79,14 @@ Run selected jobs by label
 ```
 /packit test --labels upgrade,kraft-operators
 ```
+
+#### Available labels
+* regression
+* acceptance
+* sanity
+* smoke
+* operators
+* components
+* performance
+* performance-capacity
+* kraft (all tests are actually in KRaft mode currently)
