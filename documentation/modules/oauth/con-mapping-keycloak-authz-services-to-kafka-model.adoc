@@ -18,7 +18,8 @@ However, you can also use different OAuth client ids (for example, `my-cluster-k
 
 The `kafka` client definition must have the *Authorization Enabled* option enabled in the Keycloak Admin Console.
 
-All permissions exist within the scope of the `kafka` client. If you have different Kafka clusters configured with different OAuth client IDs, they each need a separate set of permissions even though they're part of the same Keycloak realm.
+All permissions exist within the scope of the `kafka` client. 
+If you have different Kafka clusters configured with different OAuth client IDs, they each need a separate set of permissions even though they're part of the same Keycloak realm.
 
 When the Kafka client uses OAUTHBEARER authentication, the Keycloak authorizer (`KeycloakAuthorizer`) uses the access token of the current session to retrieve a list of grants from the Keycloak server.
 To grant permissions, the authorizer evaluates the grants list (received and cached) from Keycloak Authorization Services based on the access token owner's policies and permissions.
@@ -42,16 +43,18 @@ Authorization scopes should contain the following Kafka permissions regardless o
 * `ClusterAction`
 * `IdempotentWrite`
 
-[NOTE]
-====
 If you're certain you won't need a permission (for example, `IdempotentWrite`), you can omit it from the list of authorization scopes.
 However, that permission won't be available to target on Kafka resources.
+
+[NOTE]
+====
+The `All` permission is not supported.
 ====
 
 .Resource patterns for permissions checks
 
 Resource patterns are used for pattern matching against the targeted resources when performing permission checks.
-The general pattern format is `__RESOURCE-TYPE:PATTERN-NAME__`.
+The general pattern format is `<resource_type>:<pattern_name>`.
 
 The resource types mirror the Kafka authorization model.
 The pattern allows for two matching options:
@@ -68,7 +71,7 @@ Group:orders-*
 Cluster:*
 ----
 
-Additionally, the general pattern format can be prefixed by `kafka-cluster:__CLUSTER-NAME__` followed by a comma, where _CLUSTER-NAME_ refers to the `metadata.name` in the Kafka custom resource.
+Additionally, the general pattern format can be prefixed by `kafka-cluster:<cluster_name>` followed by a comma, where `<cluster_name>` refers to the `metadata.name` in the Kafka custom resource.
 
 .Example patterns for resources with cluster prefix
 [source]
