@@ -6,7 +6,7 @@
 = Exposing the Kafka Bridge service to your local machine
 
 [role="_abstract"]
-Use port forwarding to expose the Strimzi Kafka Bridge service to your local machine on http://localhost:8080.
+Use port forwarding to expose the Kafka Bridge service to your local machine on http://localhost:8080.
 
 NOTE: Port forwarding is only suitable for development and testing purposes.
 

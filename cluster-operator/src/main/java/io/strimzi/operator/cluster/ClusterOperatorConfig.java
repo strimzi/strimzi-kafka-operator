@@ -14,6 +14,7 @@ import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.config.ConfigParameter;
 import io.strimzi.operator.common.config.ConfigParameterParser;
+import io.strimzi.operator.common.featuregates.FeatureGates;
 import io.strimzi.operator.common.model.Labels;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -32,6 +33,7 @@ import static io.strimzi.operator.common.config.ConfigParameterParser.LOCAL_OBJE
 import static io.strimzi.operator.common.config.ConfigParameterParser.LONG;
 import static io.strimzi.operator.common.config.ConfigParameterParser.NAMESPACE_SET;
 import static io.strimzi.operator.common.config.ConfigParameterParser.STRING;
+import static io.strimzi.operator.common.config.ConfigParameterParser.parseFeatureGates;
 
 /**
  * Cluster Operator configuration
@@ -389,10 +391,6 @@ public class ClusterOperatorConfig {
         } else {
             return value;
         }
-    }
-
-    static ConfigParameterParser<FeatureGates> parseFeatureGates() {
-        return FeatureGates::new;
     }
 
     static ConfigParameterParser<ImagePullPolicy> parseImagePullPolicy() {

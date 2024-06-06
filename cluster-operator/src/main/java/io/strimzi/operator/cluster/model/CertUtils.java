@@ -14,6 +14,7 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Ca;
+import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
 
 import java.io.IOException;
@@ -302,6 +303,10 @@ public class CertUtils {
             for (CertSecretSource certSecretSource : trustedCertificates) {
                 if (certSecretSource.getCertificate() != null)  {
                     paths.add(certSecretSource.getSecretName() + "/" + certSecretSource.getCertificate());
+                } else if (certSecretSource.getPattern() != null)   {
+                    paths.add(certSecretSource.getSecretName() + "/" + certSecretSource.getPattern());
+                } else {
+                    throw new InvalidResourceException("Certificate source does not contain the certificate or the pattern.");
                 }
             }
 

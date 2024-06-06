@@ -35,7 +35,7 @@ spec:
     # ...
     userOperator:
       watchedNamespace: my-topic-namespace
-      reconciliationIntervalSeconds: 60
+      reconciliationIntervalMs: 60000
       logging:
         type: inline
         loggers:
@@ -73,7 +73,7 @@ spec:
     # ...
     userOperator:
       watchedNamespace: my-topic-namespace
-      reconciliationIntervalSeconds: 60
+      reconciliationIntervalMs: 60000
       logging:
         type: external
         valueFrom:

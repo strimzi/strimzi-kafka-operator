@@ -3,9 +3,18 @@
 ## 0.42.0
 
 * The `UseKRaft` feature gate moves to GA stage and is permanently enabled without the possibility to disable it.
-  To use KRaft (ZooKeeper-less Apache Kafka), you still need to use the `strimzi.io/kraft: enabled` annotation on the `Kafka` custom resources or migrate from an existing ZooKeeper-based cluster using the `strimzi.io/kraft: migration` annotation.
+  To use KRaft (ZooKeeper-less Apache Kafka), you still need to use the `strimzi.io/kraft: enabled` annotation on the `Kafka` custom resources or migrate from an existing ZooKeeper-based cluster.
 * Update the base image used by Strimzi containers from UBI8 to UBI9
+* Add support for filename patterns when configuring trusted certificates
 * Enhance `KafkaBridge` resource with consumer inactivity timeout and HTTP consumer/producer enablement.
+* Add support for feature gates to User and Topic Operators
+* Add support for setting `publishNotReadyAddresses` on services for listener types other than internal.
+* Update HTTP bridge to latest 0.29.0 release
+
+### Changes, deprecations and removals
+
+* The `reconciliationIntervalSeconds` configuration for the Topic and User Operators is deprecated, and will be removed when upgrading schemas to v1.
+  Use `reconciliationIntervalMs` converting the value to milliseconds.
 
 ## 0.41.0
 

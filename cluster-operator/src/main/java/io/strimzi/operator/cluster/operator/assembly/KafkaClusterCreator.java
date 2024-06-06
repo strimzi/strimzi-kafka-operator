@@ -227,9 +227,9 @@ public class KafkaClusterCreator {
 
                 Kafka newKafkaCr = new KafkaBuilder(kafkaCr)
                         .editSpec()
-                        .editKafka()
-                        .withReplicas(newReplicasCount)
-                        .endKafka()
+                            .editKafka()
+                                .withReplicas(newReplicasCount)
+                            .endKafka()
                         .endSpec()
                         .build();
 

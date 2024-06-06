@@ -236,6 +236,7 @@ public class ListenersValidatorTest {
                     .withPreferredNodePortAddressType(NodeAddressType.INTERNAL_DNS)
                     .withLoadBalancerSourceRanges(List.of("10.0.0.0/8", "130.211.204.1/32"))
                     .withFinalizers(List.of("service.kubernetes.io/load-balancer-cleanup"))
+                    .withPublishNotReadyAddresses(true)
                     .withNewBootstrap()
                         .withAlternativeNames(List.of("my-name-1", "my-name-2"))
                         .withLoadBalancerIP("130.211.204.1")
@@ -286,7 +287,8 @@ public class ListenersValidatorTest {
                 "listener " + name + " cannot configure brokers[].annotations because it is not LoadBalancer, NodePort, Route, Ingress or ClusterIP based listener",
                 "listener " + name + " cannot configure brokers[].labels because it is not LoadBalancer, NodePort, Route, Ingress or ClusterIP based listener",
                 "listener " + name + " cannot configure ipFamilyPolicy because it is internal listener",
-                "listener " + name + " cannot configure ipFamilies because it is internal listener"
+                "listener " + name + " cannot configure ipFamilies because it is internal listener",
+                "listener " + name + " cannot configure publishNotReadyAddresses because it is internal listener"
         );
 
         assertThat(ListenersValidator.validateAndGetErrorMessages(THREE_NODES, listeners), containsInAnyOrder(expectedErrors.toArray()));
@@ -309,6 +311,7 @@ public class ListenersValidatorTest {
                     .withPreferredNodePortAddressType(NodeAddressType.INTERNAL_DNS)
                     .withLoadBalancerSourceRanges(List.of("10.0.0.0/8", "130.211.204.1/32"))
                     .withFinalizers(List.of("service.kubernetes.io/load-balancer-cleanup"))
+                    .withPublishNotReadyAddresses(true)
                     .withNewBootstrap()
                         .withAlternativeNames(List.of("my-name-1", "my-name-2"))
                         .withLoadBalancerIP("130.211.204.1")
@@ -386,6 +389,7 @@ public class ListenersValidatorTest {
                     .withPreferredNodePortAddressType(NodeAddressType.INTERNAL_DNS)
                     .withLoadBalancerSourceRanges(List.of("10.0.0.0/8", "130.211.204.1/32"))
                     .withFinalizers(List.of("service.kubernetes.io/load-balancer-cleanup"))
+                    .withPublishNotReadyAddresses(true)
                     .withNewBootstrap()
                         .withAlternativeNames(List.of("my-name-1", "my-name-2"))
                         .withLoadBalancerIP("130.211.204.1")
@@ -468,6 +472,7 @@ public class ListenersValidatorTest {
                     .withPreferredNodePortAddressType(NodeAddressType.INTERNAL_DNS)
                     .withLoadBalancerSourceRanges(List.of("10.0.0.0/8", "130.211.204.1/32"))
                     .withFinalizers(List.of("service.kubernetes.io/load-balancer-cleanup"))
+                    .withPublishNotReadyAddresses(true)
                     .withNewBootstrap()
                         .withAlternativeNames(List.of("my-name-1", "my-name-2"))
                         .withLoadBalancerIP("130.211.204.1")
@@ -568,6 +573,7 @@ public class ListenersValidatorTest {
                     .withPreferredNodePortAddressType(NodeAddressType.INTERNAL_DNS)
                     .withLoadBalancerSourceRanges(List.of("10.0.0.0/8", "130.211.204.1/32"))
                     .withFinalizers(List.of("service.kubernetes.io/load-balancer-cleanup"))
+                    .withPublishNotReadyAddresses(true)
                     .withNewBootstrap()
                         .withAlternativeNames(List.of("my-name-1", "my-name-2"))
                         .withLoadBalancerIP("130.211.204.1")
@@ -795,6 +801,7 @@ public class ListenersValidatorTest {
                 .withPreferredNodePortAddressType(NodeAddressType.INTERNAL_DNS)
                 .withLoadBalancerSourceRanges(List.of("10.0.0.0/8", "130.211.204.1/32"))
                 .withFinalizers(List.of("service.kubernetes.io/load-balancer-cleanup"))
+                .withPublishNotReadyAddresses(true)
                 .withNewBootstrap()
                 .withAlternativeNames(List.of("my-name-1", "my-name-2"))
                 .withLoadBalancerIP("130.211.204.1")

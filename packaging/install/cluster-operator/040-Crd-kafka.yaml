@@ -245,10 +245,21 @@ spec:
                                     description: The name of the Secret containing the certificate.
                                   certificate:
                                     type: string
-                                    description: The name of the file certificate in the Secret.
+                                    description: The name of the file certificate in the secret.
+                                  pattern:
+                                    type: string
+                                    description: "Pattern for the certificate files in the secret. Use the link:https://en.wikipedia.org/wiki/Glob_(programming)[_glob syntax_] for the pattern. All files in the secret that match the pattern are used."
+                                oneOf:
+                                - properties:
+                                    certificate: {}
+                                  required:
+                                  - certificate
+                                - properties:
+                                    pattern: {}
+                                  required:
+                                  - pattern
                                 required:
                                 - secretName
-                                - certificate
                               description: Trusted certificates for TLS connection to the OAuth server.
                             tokenEndpointUri:
                               type: string
@@ -282,19 +293,19 @@ spec:
                             brokerCertChainAndKey:
                               type: object
                               properties:
-                                key:
-                                  type: string
-                                  description: The name of the private key in the Secret.
                                 secretName:
                                   type: string
                                   description: The name of the Secret containing the certificate.
                                 certificate:
                                   type: string
                                   description: The name of the file certificate in the Secret.
+                                key:
+                                  type: string
+                                  description: The name of the private key in the Secret.
                               required:
-                              - key
                               - secretName
                               - certificate
+                              - key
                               description: Reference to the `Secret` which holds the certificate and private key pair which will be used for this listener. The certificate can optionally contain the whole chain. This field can be used only with listeners with enabled TLS encryption.
                             class:
                               type: string
@@ -434,6 +445,9 @@ spec:
                                 * `Hostname`
 
                                 This field is used to select the preferred address type, which is checked first. If no address is found for this address type, the other types are checked in the default order. This field can only be used with `nodeport` type listener.
+                            publishNotReadyAddresses:
+                              type: boolean
+                              description: Configures whether the service endpoints are considered "ready" even if the Pods themselves are not. Defaults to `false`. This field can not be used with `internal` type listeners.
                           description: Additional listener configuration.
                         networkPolicyPeers:
                           type: array
@@ -687,10 +701,21 @@ spec:
                               description: The name of the Secret containing the certificate.
                             certificate:
                               type: string
-                              description: The name of the file certificate in the Secret.
+                              description: The name of the file certificate in the secret.
+                            pattern:
+                              type: string
+                              description: "Pattern for the certificate files in the secret. Use the link:https://en.wikipedia.org/wiki/Glob_(programming)[_glob syntax_] for the pattern. All files in the secret that match the pattern are used."
+                          oneOf:
+                          - properties:
+                              certificate: {}
+                            required:
+                            - certificate
+                          - properties:
+                              pattern: {}
+                            required:
+                            - pattern
                           required:
                           - secretName
-                          - certificate
                         description: Trusted certificates for TLS connection to the OAuth server.
                       tokenEndpointUri:
                         type: string
@@ -957,6 +982,13 @@ spec:
                           securityContext:
                             type: object
                             properties:
+                              appArmorProfile:
+                                type: object
+                                properties:
+                                  localhostProfile:
+                                    type: string
+                                  type:
+                                    type: string
                               fsGroup:
                                 type: integer
                               fsGroupChangePolicy:
@@ -1661,6 +1693,13 @@ spec:
                             properties:
                               allowPrivilegeEscalation:
                                 type: boolean
+                              appArmorProfile:
+                                type: object
+                                properties:
+                                  localhostProfile:
+                                    type: string
+                                  type:
+                                    type: string
                               capabilities:
                                 type: object
                                 properties:
@@ -1735,6 +1774,13 @@ spec:
                             properties:
                               allowPrivilegeEscalation:
                                 type: boolean
+                              appArmorProfile:
+                                type: object
+                                properties:
+                                  localhostProfile:
+                                    type: string
+                                  type:
+                                    type: string
                               capabilities:
                                 type: object
                                 properties:
@@ -2226,6 +2272,13 @@ spec:
                           securityContext:
                             type: object
                             properties:
+                              appArmorProfile:
+                                type: object
+                                properties:
+                                  localhostProfile:
+                                    type: string
+                                  type:
+                                    type: string
                               fsGroup:
                                 type: integer
                               fsGroupChangePolicy:
@@ -2822,6 +2875,13 @@ spec:
                             properties:
                               allowPrivilegeEscalation:
                                 type: boolean
+                              appArmorProfile:
+                                type: object
+                                properties:
+                                  localhostProfile:
+                                    type: string
+                                  type:
+                                    type: string
                               capabilities:
                                 type: object
                                 properties:
@@ -2932,7 +2992,11 @@ spec:
                       reconciliationIntervalSeconds:
                         type: integer
                         minimum: 0
-                        description: Interval between periodic reconciliations.
+                        description: Interval between periodic reconciliations in seconds. Ignored if reconciliationIntervalMs is set.
+                      reconciliationIntervalMs:
+                        type: integer
+                        minimum: 0
+                        description: Interval between periodic reconciliations in milliseconds.
                       zookeeperSessionTimeoutSeconds:
                         type: integer
                         minimum: 0
@@ -3116,7 +3180,11 @@ spec:
                       reconciliationIntervalSeconds:
                         type: integer
                         minimum: 0
-                        description: Interval between periodic reconciliations.
+                        description: Interval between periodic reconciliations in seconds. Ignored if reconciliationIntervalMs is set.
+                      reconciliationIntervalMs:
+                        type: integer
+                        minimum: 0
+                        description: Interval between periodic reconciliations in milliseconds.
                       zookeeperSessionTimeoutSeconds:
                         type: integer
                         minimum: 0
@@ -3412,6 +3480,13 @@ spec:
                           securityContext:
                             type: object
                             properties:
+                              appArmorProfile:
+                                type: object
+                                properties:
+                                  localhostProfile:
+                                    type: string
+                                  type:
+                                    type: string
                               fsGroup:
                                 type: integer
                               fsGroupChangePolicy:
@@ -3902,6 +3977,13 @@ spec:
                             properties:
                               allowPrivilegeEscalation:
                                 type: boolean
+                              appArmorProfile:
+                                type: object
+                                properties:
+                                  localhostProfile:
+                                    type: string
+                                  type:
+                                    type: string
                               capabilities:
                                 type: object
                                 properties:
@@ -3976,6 +4058,13 @@ spec:
                             properties:
                               allowPrivilegeEscalation:
                                 type: boolean
+                              appArmorProfile:
+                                type: object
+                                properties:
+                                  localhostProfile:
+                                    type: string
+                                  type:
+                                    type: string
                               capabilities:
                                 type: object
                                 properties:
@@ -4050,6 +4139,13 @@ spec:
                             properties:
                               allowPrivilegeEscalation:
                                 type: boolean
+                              appArmorProfile:
+                                type: object
+                                properties:
+                                  localhostProfile:
+                                    type: string
+                                  type:
+                                    type: string
                               capabilities:
                                 type: object
                                 properties:
@@ -4519,6 +4615,13 @@ spec:
                           securityContext:
                             type: object
                             properties:
+                              appArmorProfile:
+                                type: object
+                                properties:
+                                  localhostProfile:
+                                    type: string
+                                  type:
+                                    type: string
                               fsGroup:
                                 type: integer
                               fsGroupChangePolicy:
@@ -5064,6 +5167,13 @@ spec:
                             properties:
                               allowPrivilegeEscalation:
                                 type: boolean
+                              appArmorProfile:
+                                type: object
+                                properties:
+                                  localhostProfile:
+                                    type: string
+                                  type:
+                                    type: string
                               capabilities:
                                 type: object
                                 properties:
@@ -5138,6 +5248,13 @@ spec:
                             properties:
                               allowPrivilegeEscalation:
                                 type: boolean
+                              appArmorProfile:
+                                type: object
+                                properties:
+                                  localhostProfile:
+                                    type: string
+                                  type:
+                                    type: string
                               capabilities:
                                 type: object
                                 properties:
@@ -5435,6 +5552,13 @@ spec:
                           securityContext:
                             type: object
                             properties:
+                              appArmorProfile:
+                                type: object
+                                properties:
+                                  localhostProfile:
+                                    type: string
+                                  type:
+                                    type: string
                               fsGroup:
                                 type: integer
                               fsGroupChangePolicy:
@@ -5925,6 +6049,13 @@ spec:
                             properties:
                               allowPrivilegeEscalation:
                                 type: boolean
+                              appArmorProfile:
+                                type: object
+                                properties:
+                                  localhostProfile:
+                                    type: string
+                                  type:
+                                    type: string
                               capabilities:
                                 type: object
                                 properties:
@@ -6159,6 +6290,13 @@ spec:
                           securityContext:
                             type: object
                             properties:
+                              appArmorProfile:
+                                type: object
+                                properties:
+                                  localhostProfile:
+                                    type: string
+                                  type:
+                                    type: string
                               fsGroup:
                                 type: integer
                               fsGroupChangePolicy:
@@ -6667,6 +6805,13 @@ spec:
                             properties:
                               allowPrivilegeEscalation:
                                 type: boolean
+                              appArmorProfile:
+                                type: object
+                                properties:
+                                  localhostProfile:
+                                    type: string
+                                  type:
+                                    type: string
                               capabilities:
                                 type: object
                                 properties:

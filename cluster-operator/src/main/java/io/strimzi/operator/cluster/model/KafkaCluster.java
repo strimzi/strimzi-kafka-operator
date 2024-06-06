@@ -687,7 +687,8 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                     ListenersUtils.bootstrapLabels(listener),
                     ListenersUtils.bootstrapAnnotations(listener),
                     ListenersUtils.ipFamilyPolicy(listener),
-                    ListenersUtils.ipFamilies(listener)
+                    ListenersUtils.ipFamilies(listener),
+                    ListenersUtils.publishNotReadyAddresses(listener)
             );
 
             if (KafkaListenerType.LOADBALANCER == listener.getType()) {
@@ -772,7 +773,8 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                                 ListenersUtils.brokerLabels(listener, node.nodeId()),
                                 ListenersUtils.brokerAnnotations(listener, node.nodeId()),
                                 ListenersUtils.ipFamilyPolicy(listener),
-                                ListenersUtils.ipFamilies(listener)
+                                ListenersUtils.ipFamilies(listener),
+                                ListenersUtils.publishNotReadyAddresses(listener)
                         );
 
                         if (KafkaListenerType.LOADBALANCER == listener.getType()) {

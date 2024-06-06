@@ -40,4 +40,4 @@ include::../../shared/ref-document-conventions.adoc[leveloffset=+1]
 
 * link:{BookURLOverview}[Strimzi Overview^]
 * link:{BookURLConfiguring}[Strimzi Custom Resource API Reference^]
-* link:{BookURLBridge}[Using the Strimzi Kafka Bridge^]
+* link:{BookURLBridge}[Using the Kafka Bridge^]

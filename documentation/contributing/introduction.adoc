@@ -30,7 +30,7 @@ Strimzi uses public GitHub repositories to host files.
 The following repositories contain source documentation files.
 
 https://github.com/strimzi/strimzi-kafka-operator[`strimzi-kafka-operator`^] (GitHub):: Strimzi operators code and related documentation.
-https://github.com/strimzi/strimzi-kafka-bridge[`strimzi-kafka-bridge`^] (GitHub):: Strimzi Kafka Bridge code and related documentation.
+https://github.com/strimzi/strimzi-kafka-bridge[`strimzi-kafka-bridge`^] (GitHub):: Kafka Bridge code and related documentation.
 https://github.com/strimzi/strimzi.github.io[`strimzi.github.io`^] (GitHub):: Strimzi web site code and quick start documentation.
 
 == Strimzi operators documentation
@@ -125,8 +125,8 @@ If you change anything in the `api` module of the Java code, you must rebuild th
 
 The Kafka Bridge documentation shows how to get started using the Kafka Bridge to make HTTP requests to a Kafka cluster.
 
-The Kafka Bridge documentation is maintained in the https://github.com/strimzi/strimzi-kafka-bridge[Strimzi Kafka Bridge project in GitHub].
-For information on contributing to the Kafka Bridge documentation, see the https://github.com/strimzi/strimzi-kafka-bridge/blob/main/README.md[`readme`]  in the Strimzi Kafka Bridge project.
+The Kafka Bridge documentation is maintained in the https://github.com/strimzi/strimzi-kafka-bridge[Kafka Bridge project in GitHub].
+For information on contributing to the Kafka Bridge documentation, see the https://github.com/strimzi/strimzi-kafka-bridge/blob/main/README.md[`readme`]  in the Kafka Bridge project.
 
 == Quick start documentation
 

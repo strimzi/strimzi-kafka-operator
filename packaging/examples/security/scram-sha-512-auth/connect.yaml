@@ -72,7 +72,7 @@ spec:
   tls:
     trustedCertificates:
       - secretName: my-cluster-cluster-ca-cert
-        certificate: ca.crt
+        pattern: "*.crt"
   authentication:
     type: scram-sha-512
     username: my-connect

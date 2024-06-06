@@ -366,7 +366,10 @@ Used in: xref:type-ClientTls-{context}[`ClientTls`], xref:type-KafkaAuthorizatio
 |The name of the Secret containing the certificate.
 |certificate
 |string
-|The name of the file certificate in the Secret.
+|The name of the file certificate in the secret.
+|pattern
+|string
+|Pattern for the certificate files in the secret. Use the link:https://en.wikipedia.org/wiki/Glob_(programming)[_glob syntax_] for the pattern. All files in the secret that match the pattern are used.
 |====
 
 [id='type-KafkaListenerAuthenticationCustom-{context}']
@@ -467,6 +470,9 @@ include::../api/io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerCo
 * `Hostname`
 
 This field is used to select the preferred address type, which is checked first. If no address is found for this address type, the other types are checked in the default order. This field can only be used with `nodeport` type listener.
+|publishNotReadyAddresses
+|boolean
+|Configures whether the service endpoints are considered "ready" even if the Pods themselves are not. Defaults to `false`. This field can not be used with `internal` type listeners.
 |====
 
 [id='type-CertAndKeySecretSource-{context}']
@@ -478,15 +484,15 @@ Used in: xref:type-GenericKafkaListenerConfiguration-{context}[`GenericKafkaList
 [cols="2,2,3a",options="header"]
 |====
 |Property |Property type |Description
-|key
-|string
-|The name of the private key in the Secret.
 |secretName
 |string
 |The name of the Secret containing the certificate.
 |certificate
 |string
 |The name of the file certificate in the Secret.
+|key
+|string
+|The name of the private key in the Secret.
 |====
 
 [id='type-GenericKafkaListenerConfigurationBootstrap-{context}']
@@ -1488,7 +1494,10 @@ include::../api/io.strimzi.api.kafka.model.kafka.entityoperator.EntityTopicOpera
 |The image to use for the Topic Operator.
 |reconciliationIntervalSeconds
 |integer
-|Interval between periodic reconciliations.
+|**The `reconciliationIntervalSeconds` property has been deprecated, and should now be configured using `.spec.entityOperator.topicOperator.reconciliationIntervalMs`.** Interval between periodic reconciliations in seconds. Ignored if reconciliationIntervalMs is set.
+|reconciliationIntervalMs
+|integer
+|Interval between periodic reconciliations in milliseconds.
 |zookeeperSessionTimeoutSeconds
 |integer
 |**The `zookeeperSessionTimeoutSeconds` property has been deprecated.** This property is not used anymore in Strimzi 0.41.0 and it is ignored. Timeout for the ZooKeeper session.
@@ -1539,7 +1548,10 @@ include::../api/io.strimzi.api.kafka.model.kafka.entityoperator.EntityUserOperat
 |The image to use for the User Operator.
 |reconciliationIntervalSeconds
 |integer
-|Interval between periodic reconciliations.
+|**The `reconciliationIntervalSeconds` property has been deprecated, and should now be configured using `.spec.entityOperator.userOperator.reconciliationIntervalMs`.** Interval between periodic reconciliations in seconds. Ignored if reconciliationIntervalMs is set.
+|reconciliationIntervalMs
+|integer
+|Interval between periodic reconciliations in milliseconds.
 |zookeeperSessionTimeoutSeconds
 |integer
 |**The `zookeeperSessionTimeoutSeconds` property has been deprecated.** This property has been deprecated because ZooKeeper is not used anymore by the User Operator. Timeout for the ZooKeeper session.

@@ -227,7 +227,7 @@ In the Keycloak Admin Console, check the roles assigned to the clients are displ
 
 .Procedure
 
-. Run a new interactive pod container using the Strimzi Kafka image to connect to a running Kafka broker.
+. Run a new interactive pod container using the Kafka image to connect to a running Kafka broker.
 +
 [source,shell,subs="attributes"]
 ----
@@ -320,7 +320,7 @@ Apply the checks using Kafka's example producer and consumer clients to create t
 Use the `team-a-client` and `team-b-client` clients to check the authorization rules.
 Use the `alice` admin user to perform additional administrative tasks on Kafka.
 
-The Strimzi Kafka image used in this example contains Kafka producer and consumer binaries.
+The Kafka image used in this example contains Kafka producer and consumer binaries.
 
 .Prerequisites
 

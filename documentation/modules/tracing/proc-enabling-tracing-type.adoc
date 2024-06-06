@@ -15,7 +15,7 @@ This procedure shows how to implement Zipkin tracing.
 
 .Procedure
 
-. Add the tracing artifacts to the `/opt/kafka/libs/` directory of the Strimzi Kafka image.
+. Add the tracing artifacts to the `/opt/kafka/libs/` directory of the Kafka image.
 +
 You can use the Kafka container image on the {DockerRepository} as a base image for creating a new custom image.
 +

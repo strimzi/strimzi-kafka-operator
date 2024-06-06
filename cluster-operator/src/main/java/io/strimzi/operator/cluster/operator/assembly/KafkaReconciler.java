@@ -808,8 +808,10 @@ public class KafkaReconciler {
     }
 
     /**
-     * Create or update the StrimziPodSet for the Kafka cluster. If set, it uses the old replica count since scaling-up
-     * happens only later in a separate step.
+     * Create or update the StrimziPodSet for the Kafka cluster.
+     * If the StrimziPodSet is updated with additional pods (Kafka cluster scaled up), it's the StrimziPodSet controller
+     * taking care of reconciling within this method and starting up the new nodes.
+     * The opposite (Kafka cluster scaled down) is handled by a dedicated scaleDown() method instead.
      *
      * @return  Future which completes when the PodSet is created, updated or deleted
      */
@@ -987,7 +989,9 @@ public class KafkaReconciler {
                                 String hostIP = broker.getStatus().getHostIP();
                                 allNodes.stream()
                                         .filter(node -> {
-                                            if (node.getStatus() != null && node.getStatus().getAddresses() != null) {
+                                            if (Labels.booleanLabel(broker, Labels.STRIMZI_BROKER_ROLE_LABEL, false)
+                                                    && node.getStatus() != null
+                                                    && node.getStatus().getAddresses() != null) {
                                                 return node.getStatus().getAddresses().stream().anyMatch(address -> hostIP.equals(address.getAddress()));
                                             } else {
                                                 return false;

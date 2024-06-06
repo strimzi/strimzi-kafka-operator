@@ -262,9 +262,9 @@ public class MetricsST extends AbstractST {
 
         kafkaConnectCollector.collectMetricsFromPods();
 
-        assertMetricValueHigherThan(kafkaConnectCollector, "kafka_connect_node_request_total\\{clientid=\".*\",}", 0);
-        assertMetricValueHigherThan(kafkaConnectCollector, "kafka_connect_node_response_total\\{clientid=\".*\",.*}", 0);
-        assertMetricValueHigherThan(kafkaConnectCollector, "kafka_connect_network_io_total\\{clientid=\".*\",.*}", 0);
+        assertMetricValueHigherThan(kafkaConnectCollector, "kafka_connect_node_request_total\\{clientid=\".*\"}", 0);
+        assertMetricValueHigherThan(kafkaConnectCollector, "kafka_connect_node_response_total\\{clientid=\".*\".*}", 0);
+        assertMetricValueHigherThan(kafkaConnectCollector, "kafka_connect_network_io_total\\{clientid=\".*\".*}", 0);
 
         // Check CO metrics and look for KafkaConnect and KafkaConnector
         clusterOperatorCollector.collectMetricsFromPods();
@@ -576,8 +576,8 @@ public class MetricsST extends AbstractST {
         resourceManager.createResourceWithWait(kafkaBridgeClientJob.producerStrimziBridge(), kafkaBridgeClientJob.consumerStrimziBridge());
 
         bridgeCollector.collectMetricsFromPods();
-        assertMetricValueNotNull(bridgeCollector, "strimzi_bridge_kafka_producer_count\\{.*,}");
-        assertMetricValueNotNull(bridgeCollector, "strimzi_bridge_kafka_consumer_connection_count\\{.*,}");
+        assertMetricValueNotNull(bridgeCollector, "strimzi_bridge_kafka_producer_count\\{.*}");
+        assertMetricValueNotNull(bridgeCollector, "strimzi_bridge_kafka_consumer_connection_count\\{.*}");
         assertThat("bridge collected data don't contain strimzi_bridge_http_server", bridgeCollector.getCollectedData().values().toString().contains("strimzi_bridge_http_server"));
 
         // Check CO metrics and look for KafkaBridge
@@ -737,10 +737,10 @@ public class MetricsST extends AbstractST {
                 .editOrNewSpec()
                     .editEntityOperator()
                         .editTopicOperator()
-                            .withReconciliationIntervalSeconds(30)
+                            .withReconciliationIntervalMs(30_000L)
                         .endTopicOperator()
                         .editUserOperator()
-                            .withReconciliationIntervalSeconds(30)
+                            .withReconciliationIntervalMs(30_000L)
                         .endUserOperator()
                     .endEntityOperator()
                 .endSpec()

@@ -40,36 +40,38 @@ public class TopicOperatorMain implements Liveness, Readiness {
     private final static ReconciliationLogger LOGGER = ReconciliationLogger.create(TopicOperatorMain.class);
     private final static long INFORMER_PERIOD_MS = 2_000;
     
-    private final ResourceEventHandler<KafkaTopic> handler;
     private final String namespace;
-    private final KubernetesClient client;
+    private final KubernetesClient kubeClient;
     /* test */ final BatchingLoop queue;
     private final long resyncIntervalMs;
     private final BasicItemStore<KafkaTopic> itemStore;
+    private final ReplicasChangeHandler replicasChangeHandler;
     /* test */ final BatchingTopicController controller;
     private final Admin admin;
     private SharedIndexInformer<KafkaTopic> informer; // guarded by this
     Thread shutdownHook; // guarded by this
 
+    private final ResourceEventHandler<KafkaTopic> resourceEventHandler;
     private final HealthCheckAndMetricsServer healthAndMetricsServer;
 
     TopicOperatorMain(String namespace,
                       Map<String, String> selector,
                       Admin admin,
-                      KubernetesClient client,
+                      KubernetesClient kubeClient,
                       TopicOperatorConfig config) {
         Objects.requireNonNull(namespace);
         Objects.requireNonNull(selector);
         this.namespace = namespace;
-        this.client = client;
+        this.kubeClient = kubeClient;
         this.resyncIntervalMs = config.fullReconciliationIntervalMs();
         this.admin = admin;
         TopicOperatorMetricsProvider metricsProvider = createMetricsProvider();
         TopicOperatorMetricsHolder metrics = new TopicOperatorMetricsHolder(KafkaTopic.RESOURCE_KIND, Labels.fromMap(selector), metricsProvider);
-        this.controller = new BatchingTopicController(config, selector, admin, client, metrics, new ReplicasChangeHandler(config));
+        this.replicasChangeHandler = new ReplicasChangeHandler(config, metrics);
+        this.controller = new BatchingTopicController(config, selector, admin, kubeClient, metrics, replicasChangeHandler);
         this.itemStore = new BasicItemStore<>(Cache::metaNamespaceKeyFunc);
         this.queue = new BatchingLoop(config.maxQueueSize(), controller, 1, config.maxBatchSize(), config.maxBatchLingerMs(), itemStore, this::stop, metrics, namespace);
-        this.handler = new TopicOperatorEventHandler(config, queue, metrics);
+        this.resourceEventHandler = new TopicOperatorEventHandler(config, queue, metrics);
         this.healthAndMetricsServer = new HealthCheckAndMetricsServer(8080, this, this, metricsProvider);
     }
 
@@ -86,7 +88,7 @@ public class TopicOperatorMain implements Liveness, Readiness {
         healthAndMetricsServer.start();
         LOGGER.infoOp("Starting queue");
         queue.start();
-        informer = Crds.topicOperation(client)
+        informer = Crds.topicOperation(kubeClient)
                 .inNamespace(namespace)
                 // Do NOT use withLabels to filter the informer, since the controller is stateful
                 // (topics need to be added to removed from TopicController.topics if KafkaTopics transition between
@@ -97,7 +99,7 @@ public class TopicOperatorMain implements Liveness, Readiness {
                 // is that the handler skips one informer intervals. Setting both intervals to the same value generates 
                 // just enough skew that when the informer checks if the handler is ready for resync it sees that 
                 // it still needs another couple of micro-seconds and skips to the next informer level resync.
-                .addEventHandlerWithResyncPeriod(handler, resyncIntervalMs + INFORMER_PERIOD_MS)
+                .addEventHandlerWithResyncPeriod(resourceEventHandler, resyncIntervalMs + INFORMER_PERIOD_MS)
                 .itemStore(itemStore);
         LOGGER.infoOp("Starting informer");
         informer.run();
@@ -130,6 +132,9 @@ public class TopicOperatorMain implements Liveness, Readiness {
             if (informer != null) {
                 informer.stop();
                 informer = null;
+            }
+            if (replicasChangeHandler != null) {
+                replicasChangeHandler.stop();
             }
             this.queue.stop();
             this.admin.close();

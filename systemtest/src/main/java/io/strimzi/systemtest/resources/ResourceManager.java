@@ -55,6 +55,8 @@ import io.strimzi.systemtest.resources.kubernetes.SecretResource;
 import io.strimzi.systemtest.resources.kubernetes.ServiceAccountResource;
 import io.strimzi.systemtest.resources.kubernetes.ServiceResource;
 import io.strimzi.systemtest.resources.kubernetes.ValidatingWebhookConfigurationResource;
+import io.strimzi.systemtest.resources.openshift.BuildConfigResource;
+import io.strimzi.systemtest.resources.openshift.ImageStreamResource;
 import io.strimzi.systemtest.resources.openshift.OperatorGroupResource;
 import io.strimzi.systemtest.resources.openshift.SubscriptionResource;
 import io.strimzi.systemtest.resources.operator.BundleResource;
@@ -157,7 +159,9 @@ public class ResourceManager {
         new ValidatingWebhookConfigurationResource(),
         new SubscriptionResource(),
         new OperatorGroupResource(),
-        new KafkaNodePoolResource()
+        new KafkaNodePoolResource(),
+        new BuildConfigResource(),
+        new ImageStreamResource()
     };
     @SafeVarargs
     public final <T extends HasMetadata> void createResourceWithoutWait(T... resources) {

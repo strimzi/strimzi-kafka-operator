@@ -82,6 +82,7 @@ public class ListenersValidator {
                 validateLoadBalancerSourceRanges(errors, listener);
                 validateFinalizers(errors, listener);
                 validatePreferredAddressType(errors, listener);
+                validatePublishNotReadyAddresses(errors, listener);
                 validateCreateBootstrapService(errors, listener);
 
 
@@ -264,6 +265,19 @@ public class ListenersValidator {
         if (!KafkaListenerType.NODEPORT.equals(listener.getType())
                 && listener.getConfiguration().getPreferredNodePortAddressType() != null)    {
             errors.add("listener " + listener.getName() + " cannot configure preferredAddressType because it is not NodePort based listener");
+        }
+    }
+    
+    /**
+     * Validates that publishNotReadyAddresses is not used with internal type listener
+     *
+     * @param errors    List where any found errors will be added
+     * @param listener  Listener which needs to be validated
+     */
+    private static void validatePublishNotReadyAddresses(Set<String> errors, GenericKafkaListener listener) {
+        if (KafkaListenerType.INTERNAL.equals(listener.getType())
+                && listener.getConfiguration().getPublishNotReadyAddresses() != null)    {
+            errors.add("listener " + listener.getName() + " cannot configure publishNotReadyAddresses because it is internal listener");
         }
     }
 

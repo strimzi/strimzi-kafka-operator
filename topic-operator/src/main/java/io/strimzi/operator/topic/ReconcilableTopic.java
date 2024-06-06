@@ -4,23 +4,23 @@
  */
 package io.strimzi.operator.topic;
 
-import io.micrometer.core.instrument.Timer;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.operator.common.Reconciliation;
 
+import java.util.Objects;
+
 /**
- * A topic to be reconciled
+ * A topic to be reconciled.
  */
 public class ReconcilableTopic {
     private Reconciliation reconciliation;
     private KafkaTopic kt;
     private String topicName;
-    private Timer.Sample sample;
 
     /**
-     * @param reconciliation The reconciliation
-     * @param kt The topic
-     * @param topicName The name of the topic in Kafka (spec.topicName, or metadata.name)
+     * @param reconciliation The reconciliation.
+     * @param kt The topic.
+     * @param topicName The name of the topic in Kafka (spec.topicName, or metadata.name).
      */
     public ReconcilableTopic(Reconciliation reconciliation, KafkaTopic kt, String topicName) {
         this.reconciliation = reconciliation;
@@ -29,7 +29,6 @@ public class ReconcilableTopic {
     }
 
     /**
-     * Returns the reconciliation.
      * @return Reconciliation.
      */
     public Reconciliation reconciliation() {
@@ -37,7 +36,6 @@ public class ReconcilableTopic {
     }
 
     /**
-     * Returns the Kafka topic.
      * @return Kafka topic.
      */
     public KafkaTopic kt() {
@@ -45,26 +43,23 @@ public class ReconcilableTopic {
     }
 
     /**
-     * Returns the topic name.
-     * @return Topic name
+     * @return Topic name.
      */
     public String topicName() {
         return topicName;
     }
 
-    /**
-     * @return The timer sample
-     */
-    public Timer.Sample reconciliationTimerSample() {
-        return sample;
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ReconcilableTopic that = (ReconcilableTopic) o;
+        return Objects.equals(reconciliation, that.reconciliation) && Objects.equals(topicName, that.topicName);
     }
 
-    /**
-     * Store the timer sample
-     * @param sample The timer sample
-     */
-    public void reconciliationTimerSample(Timer.Sample sample) {
-        this.sample = sample;
+    @Override
+    public int hashCode() {
+        return Objects.hash(reconciliation, topicName);
     }
 
     @Override

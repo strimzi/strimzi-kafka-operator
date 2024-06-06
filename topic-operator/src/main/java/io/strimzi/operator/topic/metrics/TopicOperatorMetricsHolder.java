@@ -66,6 +66,14 @@ public class TopicOperatorMetricsHolder extends MetricsHolder {
      * Metric name for Kafka delete topics duration.
      */
     public static final String METRICS_DELETE_TOPICS_DURATION = METRICS_PREFIX + "delete.topics.duration";
+    /**
+     * Metric name for Cruise Control topic_configuration duration.
+     */
+    public static final String METRICS_CC_TOPIC_CONFIG_DURATION = METRICS_PREFIX + "cruisecontrol.topic.config.duration";
+    /**
+     * Metric name for Cruise Control user_tasks duration.
+     */
+    public static final String METRICS_CC_USER_TASKS_DURATION = METRICS_PREFIX + "cruisecontrol.user.tasks.duration";
 
     private final Map<MetricKey, AtomicInteger> reconciliationsMaxQueueMap = new ConcurrentHashMap<>(1);
     private final Map<MetricKey, AtomicInteger> reconciliationsMaxBatchMap = new ConcurrentHashMap<>(1);
@@ -81,6 +89,8 @@ public class TopicOperatorMetricsHolder extends MetricsHolder {
     private final Map<MetricKey, Timer> describeTopicsTimerMap = new ConcurrentHashMap<>(1);
     private final Map<MetricKey, Timer> describeConfigsTimerMap = new ConcurrentHashMap<>(1);
     private final Map<MetricKey, Timer> deleteTopicsTimerMap = new ConcurrentHashMap<>(1);
+    private final Map<MetricKey, Timer> ccTopicConfigTimerMap = new ConcurrentHashMap<>(1);
+    private final Map<MetricKey, Timer> ccUserTasksTimerMap = new ConcurrentHashMap<>(1);
 
     /**
      * Constructs the operator metrics holder.
@@ -106,7 +116,10 @@ public class TopicOperatorMetricsHolder extends MetricsHolder {
      * @param timerMap          Map with timers.
      * @return  Timer metric.
      */
-    private Timer getFineGrainedTimer(String namespace, String metricName, String metricHelp, Optional<String> selectorLabels,
+    private Timer getFineGrainedTimer(String namespace, 
+                                      String metricName, 
+                                      String metricHelp, 
+                                      Optional<String> selectorLabels,
                                       Map<MetricKey, Timer> timerMap) {
         return metric(new MetricKey(kind, namespace), selectorLabels, timerMap,
                 tags -> ((TopicOperatorMetricsProvider) metricsProvider).fineGrainedTimer(metricName, metricHelp, tags));
@@ -254,5 +267,29 @@ public class TopicOperatorMetricsHolder extends MetricsHolder {
         return getFineGrainedTimer(namespace, METRICS_DELETE_TOPICS_DURATION,
             "The time Kafka deleteTopics request takes to complete",
                 Optional.of(getLabelSelectorValues()), deleteTopicsTimerMap);
+    }
+    
+    /**
+     * Timer which measures how long the Cruise Control topic_configuration request takes to complete.
+     *
+     * @param namespace Namespace of the resources being reconciled.
+     * @return Metrics timer.
+     */
+    public Timer cruiseControlTopicConfig(String namespace) {
+        return getFineGrainedTimer(namespace, METRICS_CC_TOPIC_CONFIG_DURATION,
+            "The time Cruise Control topic_configuration request takes to complete",
+                Optional.of(getLabelSelectorValues()), ccTopicConfigTimerMap);
+    }
+
+    /**
+     * Timer which measures how long the Cruise Control user_tasks request takes to complete.
+     *
+     * @param namespace Namespace of the resources being reconciled.
+     * @return Metrics timer.
+     */
+    public Timer cruiseControlUserTasks(String namespace) {
+        return getFineGrainedTimer(namespace, METRICS_CC_USER_TASKS_DURATION,
+            "The time Cruise Control user_tasks request takes to complete",
+                Optional.of(getLabelSelectorValues()), ccUserTasksTimerMap);
     }
 }

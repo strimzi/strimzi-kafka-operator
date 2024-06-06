@@ -18,7 +18,6 @@ import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -261,22 +260,20 @@ public class KafkaTopicUtils {
 
     /**
      * Verifies that {@code absentTopicName} topic remains absent in {@code clusterName} Kafka cluster residing in {@code namespaceName},
-     * for two times {@code topicOperatorReconciliationSeconds} duration (in seconds) of Topic Operator reconciliation time,
+     * for two times {@code topicOperatorReconciliationMs} duration of Topic Operator reconciliation time,
      * by querying the cluster using kafka scripts from {@code queryingPodName} Pod.
      *
      * @param namespaceName Namespace name
      * @param queryingPodName  the name of the pod to query KafkaTopic from
      * @param clusterName name of Kafka cluster
      * @param absentTopicName name of Kafka topic which should not be created
-     * @param topicOperatorReconciliationSeconds interval in seconds for Topic Operator to reconcile
+     * @param topicOperatorReconciliationMs interval for Topic Operator to reconcile
      * @throws AssertionError in case topic is created
      */
-    public static void verifyUnchangedTopicAbsence(String namespaceName, String queryingPodName, String clusterName, String absentTopicName, int topicOperatorReconciliationSeconds) {
+    public static void verifyUnchangedTopicAbsence(String namespaceName, String queryingPodName, String clusterName, String absentTopicName, long topicOperatorReconciliationMs) {
+        long endTime = System.currentTimeMillis() + 2 * topicOperatorReconciliationMs;
 
-        long reconciliationDuration = Duration.ofSeconds(topicOperatorReconciliationSeconds).toMillis();
-        long endTime = System.currentTimeMillis() + 2 * reconciliationDuration;
-
-        LOGGER.info("Verifying absence of Topic: {}/{} in listed KafkaTopic(s) for next {} second(s)", namespaceName, absentTopicName, reconciliationDuration / 1000, namespaceName);
+        LOGGER.info("Verifying absence of Topic: {}/{} in listed KafkaTopic(s) for next {} second(s)", namespaceName, absentTopicName, topicOperatorReconciliationMs / 1000, namespaceName);
 
         while (System.currentTimeMillis() < endTime) {
             assertThat(KafkaCmdClient.listTopicsUsingPodCli(namespaceName, queryingPodName, KafkaResources.plainBootstrapAddress(clusterName)), not(hasItems(absentTopicName)));
@@ -349,7 +346,6 @@ public class KafkaTopicUtils {
         if (kafkaTopic != null && kafkaTopic.getStatus() != null && kafkaTopic.getStatus().getReplicasChange() != null) {
             String message = kafkaTopic.getStatus().getReplicasChange().getMessage();
             return message != null &&
-                    message.contains("Replicas change failed (500), Error processing POST request") &&
                     message.contains("Requested RF cannot be more than number of alive brokers") &&
                     kafkaTopic.getStatus().getReplicasChange().getState().toValue().equals("pending") &&
                     kafkaTopic.getStatus().getReplicasChange().getTargetReplicas() == targetReplicas;
