@@ -9,6 +9,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.CSIVolumeSource;
 import io.fabric8.kubernetes.api.model.ConfigMapVolumeSource;
 import io.fabric8.kubernetes.api.model.EmptyDirVolumeSource;
+//import io.fabric8.kubernetes.api.model.EmptyDirVolumeSource;
 import io.fabric8.kubernetes.api.model.SecretVolumeSource;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
@@ -29,10 +30,8 @@ import java.util.Map;
 @JsonPropertyOrder({ "name", "path", "subPath", "secret", "configMap", "emptyDir", "csi" })
 @EqualsAndHashCode
 @ToString
-public class AdditionalVolume implements UnknownPropertyPreserving {
+public class Volume implements UnknownPropertyPreserving {
     private String name;
-    private String path;
-    private String subPath;
     private SecretVolumeSource secret;
     private ConfigMapVolumeSource configMap;
     private EmptyDirVolumeSource emptyDir;
@@ -47,26 +46,6 @@ public class AdditionalVolume implements UnknownPropertyPreserving {
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    @Description("Path in the container to mount the volume at. Required.")
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public String getPath() {
-        return path;
-    }
-
-    public void setPath(String path) {
-        this.path = path;
-    }
-
-    @Description("SubPath of the referenced volume to mount.")
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public String getSubPath() {
-        return subPath;
-    }
-
-    public void setSubPath(String subPath) {
-        this.subPath = subPath;
     }
 
     @Description("Secret to use populate the volume.")

@@ -1199,6 +1199,35 @@ include::../api/io.strimzi.api.kafka.model.common.template.PodTemplate.adoc[leve
 |tmpDirSizeLimit
 |string
 |Defines the total amount (for example `1Gi`) of local storage required for temporary EmptyDir volume (`/tmp`). Default value is `5Mi`.
+|additionalVolumes
+|xref:type-Volume-{context}[`Volume`] array
+|Additional volumes that can be mounted to the pod.
+|====
+
+[id='type-Volume-{context}']
+= `Volume` schema reference
+
+Used in: xref:type-PodTemplate-{context}[`PodTemplate`]
+
+
+[cols="2,2,3a",options="header"]
+|====
+|Property |Property type |Description
+|name
+|string
+|Name to use for the volume. Required.
+|secret
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#secretvolumesource-v1-core[SecretVolumeSource]
+|Secret to use populate the volume.
+|configMap
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#configmapvolumesource-v1-core[ConfigMapVolumeSource]
+|ConfigMap to use to populate the volume.
+|emptyDir
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#emptydirvolumesource-v1-core[EmptyDirVolumeSource]
+|EmptyDir to use to populate the volume.
+|csi
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#csivolumesource-v1-core[CSIVolumeSource]
+|CSI object to use to populate the volume.
 |====
 
 [id='type-InternalServiceTemplate-{context}']
@@ -1281,6 +1310,9 @@ include::../api/io.strimzi.api.kafka.model.common.template.ContainerTemplate.ado
 |securityContext
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#securitycontext-v1-core[SecurityContext]
 |Security context for the container.
+|volumeMounts
+|xref:type-VolumeMount-{context}[`VolumeMount`] array
+|Volume mounts which should be applied to the container.
 |====
 
 [id='type-ContainerEnvVar-{context}']
@@ -1298,6 +1330,35 @@ Used in: xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |value
 |string
 |The environment variable value.
+|====
+
+[id='type-VolumeMount-{context}']
+= `VolumeMount` schema reference
+
+Used in: xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
+
+
+[cols="2,2,3a",options="header"]
+|====
+|Property |Property type |Description
+|mountPath
+|string
+|
+|mountPropagation
+|string
+|
+|name
+|string
+|
+|readOnly
+|boolean
+|
+|subPath
+|string
+|
+|subPathExpr
+|string
+|
 |====
 
 [id='type-TieredStorageCustom-{context}']

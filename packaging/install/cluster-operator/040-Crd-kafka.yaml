@@ -1434,12 +1434,6 @@ spec:
                                 name:
                                   type: string
                                   description: Name to use for the volume. Required.
-                                path:
-                                  type: string
-                                  description: Path in the container to mount the volume at. Required.
-                                subPath:
-                                  type: string
-                                  description: SubPath of the referenced volume to mount.
                                 secret:
                                   type: object
                                   properties:
@@ -1803,6 +1797,24 @@ spec:
                                   runAsUserName:
                                     type: string
                             description: Security context for the container.
+                          volumeMounts:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                mountPath:
+                                  type: string
+                                mountPropagation:
+                                  type: string
+                                name:
+                                  type: string
+                                readOnly:
+                                  type: boolean
+                                subPath:
+                                  type: string
+                                subPathExpr:
+                                  type: string
+                            description: Volume mounts which should be applied to the container.
                         description: Template for the Kafka broker container.
                       initContainer:
                         type: object
@@ -1877,6 +1889,24 @@ spec:
                                   runAsUserName:
                                     type: string
                             description: Security context for the container.
+                          volumeMounts:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                mountPath:
+                                  type: string
+                                mountPropagation:
+                                  type: string
+                                name:
+                                  type: string
+                                readOnly:
+                                  type: boolean
+                                subPath:
+                                  type: string
+                                subPathExpr:
+                                  type: string
+                            description: Volume mounts which should be applied to the container.
                         description: Template for the Kafka init container.
                       clusterCaCert:
                         type: object
@@ -2792,12 +2822,6 @@ spec:
                                 name:
                                   type: string
                                   description: Name to use for the volume. Required.
-                                path:
-                                  type: string
-                                  description: Path in the container to mount the volume at. Required.
-                                subPath:
-                                  type: string
-                                  description: SubPath of the referenced volume to mount.
                                 secret:
                                   type: object
                                   properties:
@@ -3053,6 +3077,24 @@ spec:
                                   runAsUserName:
                                     type: string
                             description: Security context for the container.
+                          volumeMounts:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                mountPath:
+                                  type: string
+                                mountPropagation:
+                                  type: string
+                                name:
+                                  type: string
+                                readOnly:
+                                  type: boolean
+                                subPath:
+                                  type: string
+                                subPathExpr:
+                                  type: string
+                            description: Volume mounts which should be applied to the container.
                         description: Template for the ZooKeeper container.
                       serviceAccount:
                         type: object
@@ -4067,12 +4109,6 @@ spec:
                                 name:
                                   type: string
                                   description: Name to use for the volume. Required.
-                                path:
-                                  type: string
-                                  description: Path in the container to mount the volume at. Required.
-                                subPath:
-                                  type: string
-                                  description: SubPath of the referenced volume to mount.
                                 secret:
                                   type: object
                                   properties:
@@ -4222,6 +4258,24 @@ spec:
                                   runAsUserName:
                                     type: string
                             description: Security context for the container.
+                          volumeMounts:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                mountPath:
+                                  type: string
+                                mountPropagation:
+                                  type: string
+                                name:
+                                  type: string
+                                readOnly:
+                                  type: boolean
+                                subPath:
+                                  type: string
+                                subPathExpr:
+                                  type: string
+                            description: Volume mounts which should be applied to the container.
                         description: Template for the Entity Topic Operator container.
                       userOperatorContainer:
                         type: object
@@ -4296,6 +4350,24 @@ spec:
                                   runAsUserName:
                                     type: string
                             description: Security context for the container.
+                          volumeMounts:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                mountPath:
+                                  type: string
+                                mountPropagation:
+                                  type: string
+                                name:
+                                  type: string
+                                readOnly:
+                                  type: boolean
+                                subPath:
+                                  type: string
+                                subPathExpr:
+                                  type: string
+                            description: Volume mounts which should be applied to the container.
                         description: Template for the Entity User Operator container.
                       tlsSidecarContainer:
                         type: object
@@ -4370,6 +4442,24 @@ spec:
                                   runAsUserName:
                                     type: string
                             description: Security context for the container.
+                          volumeMounts:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                mountPath:
+                                  type: string
+                                mountPropagation:
+                                  type: string
+                                name:
+                                  type: string
+                                readOnly:
+                                  type: boolean
+                                subPath:
+                                  type: string
+                                subPathExpr:
+                                  type: string
+                            description: Volume mounts which should be applied to the container.
                         description: Template for the Entity Operator TLS sidecar container.
                       serviceAccount:
                         type: object
@@ -5263,12 +5353,6 @@ spec:
                                 name:
                                   type: string
                                   description: Name to use for the volume. Required.
-                                path:
-                                  type: string
-                                  description: Path in the container to mount the volume at. Required.
-                                subPath:
-                                  type: string
-                                  description: SubPath of the referenced volume to mount.
                                 secret:
                                   type: object
                                   properties:
@@ -5473,6 +5557,24 @@ spec:
                                   runAsUserName:
                                     type: string
                             description: Security context for the container.
+                          volumeMounts:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                mountPath:
+                                  type: string
+                                mountPropagation:
+                                  type: string
+                                name:
+                                  type: string
+                                readOnly:
+                                  type: boolean
+                                subPath:
+                                  type: string
+                                subPathExpr:
+                                  type: string
+                            description: Volume mounts which should be applied to the container.
                         description: Template for the Cruise Control container.
                       tlsSidecarContainer:
                         type: object
@@ -5547,6 +5649,24 @@ spec:
                                   runAsUserName:
                                     type: string
                             description: Security context for the container.
+                          volumeMounts:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                mountPath:
+                                  type: string
+                                mountPropagation:
+                                  type: string
+                                name:
+                                  type: string
+                                readOnly:
+                                  type: boolean
+                                subPath:
+                                  type: string
+                                subPathExpr:
+                                  type: string
+                            description: Volume mounts which should be applied to the container.
                         description: Template for the Cruise Control TLS sidecar container.
                       serviceAccount:
                         type: object
@@ -6268,12 +6388,6 @@ spec:
                                 name:
                                   type: string
                                   description: Name to use for the volume. Required.
-                                path:
-                                  type: string
-                                  description: Path in the container to mount the volume at. Required.
-                                subPath:
-                                  type: string
-                                  description: SubPath of the referenced volume to mount.
                                 secret:
                                   type: object
                                   properties:
@@ -6423,6 +6537,24 @@ spec:
                                   runAsUserName:
                                     type: string
                             description: Security context for the container.
+                          volumeMounts:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                mountPath:
+                                  type: string
+                                mountPropagation:
+                                  type: string
+                                name:
+                                  type: string
+                                readOnly:
+                                  type: boolean
+                                subPath:
+                                  type: string
+                                subPathExpr:
+                                  type: string
+                            description: Volume mounts which should be applied to the container.
                         description: Template for JmxTrans container.
                       serviceAccount:
                         type: object
@@ -7081,12 +7213,6 @@ spec:
                                 name:
                                   type: string
                                   description: Name to use for the volume. Required.
-                                path:
-                                  type: string
-                                  description: Path in the container to mount the volume at. Required.
-                                subPath:
-                                  type: string
-                                  description: SubPath of the referenced volume to mount.
                                 secret:
                                   type: object
                                   properties:
@@ -7254,6 +7380,24 @@ spec:
                                   runAsUserName:
                                     type: string
                             description: Security context for the container.
+                          volumeMounts:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                mountPath:
+                                  type: string
+                                mountPropagation:
+                                  type: string
+                                name:
+                                  type: string
+                                readOnly:
+                                  type: boolean
+                                subPath:
+                                  type: string
+                                subPathExpr:
+                                  type: string
+                            description: Volume mounts which should be applied to the container.
                         description: Template for the Kafka Exporter container.
                       serviceAccount:
                         type: object
@@ -7374,4 +7518,3 @@ spec:
                 - KRaft
                 description: "Defines where cluster metadata are stored. Possible values are: ZooKeeper if the metadata are stored in ZooKeeper; KRaftMigration if the controllers are connected to ZooKeeper, brokers are being rolled with Zookeeper migration enabled and connection information to controllers, and the metadata migration process is running; KRaftDualWriting if the metadata migration process finished and the cluster is in dual-write mode; KRaftPostMigration if the brokers are fully KRaft-based but controllers being rolled to disconnect from ZooKeeper; PreKRaft if brokers and controller are fully KRaft-based, metadata are stored in KRaft, but ZooKeeper must be deleted; KRaft if the metadata are stored in KRaft."
             description: "The status of the Kafka and ZooKeeper clusters, and Topic Operator."
-P

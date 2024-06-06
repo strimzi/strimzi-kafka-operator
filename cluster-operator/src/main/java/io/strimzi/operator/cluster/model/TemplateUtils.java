@@ -6,10 +6,12 @@ package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeBuilder;
-import io.strimzi.api.kafka.model.common.template.*;
+import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.strimzi.api.kafka.model.common.template.DeploymentStrategy;
 import io.strimzi.api.kafka.model.common.template.DeploymentTemplate;
 import io.strimzi.api.kafka.model.common.template.HasMetadataTemplate;
+import io.strimzi.api.kafka.model.common.template.PodTemplate;
+
 import java.util.List;
 import java.util.Map;
 
@@ -40,54 +42,68 @@ public class TemplateUtils {
         }
     }
 
-/**
- * This method is used to get additional volumes for a given pod template and a list of existing volumes.
- * It validates the additional volumes for duplicate volume names, conflicting mount paths, and sensitive paths.
- * If the validation passes, it adds the additional volume to the existing volumes list.
- *
- * @param templatePod The pod template that contains the additional volumes.
- * @param existingVolumes The list of existing volumes to which the additional volumes will be added.
- * @return The list of volumes including the additional volumes.
- * @throws RuntimeException If there is a duplicate volume name, conflicting mount path, or a sensitive path.
- */
-public static List<Volume> getAdditionalVolumes(PodTemplate templatePod, List<Volume> existingVolumes) {
-    // Extract the names and paths of the existing volumes
-    List<String> existingVolumeNames = existingVolumes.stream().map(Volume::getName).toList();
-    List<String> existingVolumePaths = existingVolumes.stream().map(v -> v.getHostPath().getPath()).toList();
+    /**
+     * This method is used to get additional volumes for a given pod template and a list of existing volumes. It validates
+     * the additional volumes for duplicate volume names, conflicting mount paths, and sensitive paths. If the validation
+     * passes, it adds the additional volume to the existing volumes list.
+     *
+     * @param templatePod     The pod template that contains the additional volumes.
+     * @param existingVolumes The list of existing volumes to which the additional volumes will be added.
+     * @return The list of volumes including the additional volumes.
+     * @throws RuntimeException If there is a duplicate volume name.
+     */
+    public static List<Volume> getAdditionalVolumes(PodTemplate templatePod, List<Volume> existingVolumes) {
+        // Extract the names of the existing volumes
+        List<String> existingVolumeNames = existingVolumes.stream().map(Volume::getName).toList();
 
-    // Check if there are any duplicates in the additional volumes' names or paths
-    boolean hasDuplicate = templatePod.getAdditionalVolumes().stream()
-            .anyMatch(additionalVolume ->
-                    existingVolumeNames.contains(additionalVolume.getName()) ||
-                    existingVolumePaths.contains(additionalVolume.getPath())
-            );
+        // Check if there are any duplicates in the additional volumes' names or paths
+        boolean hasDuplicate = templatePod.getAdditionalVolumes().stream().anyMatch(additionalVolume -> existingVolumeNames.contains(additionalVolume.getName()));
 
-    // Check if any of the additional volumes' paths are sensitive
-    boolean isSensitivePath = templatePod.getAdditionalVolumes().stream()
-            .anyMatch(additionalVolume -> additionalVolume.getPath().startsWith(SENSITIVE_PATH));
+        // Throw an exception if there are any duplicates or sensitive paths
+        if (hasDuplicate) {
+            throw new RuntimeException("Duplicate volume name found in additional volumes");
+        }
 
-    // Throw an exception if there are any duplicates or sensitive paths
-    if (hasDuplicate) {
-        throw new RuntimeException("Duplicate volume name or path found in additional volumes");
+        // Add the additional volumes to the existing volumes list
+        templatePod.getAdditionalVolumes().forEach(volumeConfig -> existingVolumes.add(createVolumeFromConfig(volumeConfig)));
+
+        // Return the updated list of volumes
+        return existingVolumes;
     }
-    if (isSensitivePath) {
-        throw new RuntimeException("Sensitive path found in additional volumes");
-    }
-
-    // Add the additional volumes to the existing volumes list
-    templatePod.getAdditionalVolumes().forEach(volumeConfig -> existingVolumes.add(createVolumeFromConfig(volumeConfig)));
-
-    // Return the updated list of volumes
-    return existingVolumes;
-}
 
     /**
-     * Creates a Volume object from the provided AdditionalVolume configuration
+     * Add additional volume mounts to the given list of volume mounts. Validation is performed on the additional volume
+     * mounts to ensure the mount paths do not conflict with with the volume mounts in the list to be added to. Validation
+     * is also performed that none of the additional volume mount paths are forbidden.
+     * 
+     * @param volumeMounts           The list of volume mounts to be added to
+     * @param additionalVolumeMounts The list of volume mounts to add
+     * @return The combined list of volume mounts
+     * @throws RuntimeException If there is a conflicting mount path, or a forbidden path.
+     */
+    public static List<VolumeMount> addAdditionalVolumeMounts(List<VolumeMount> volumeMounts, List<VolumeMount> additionalVolumeMounts) {
+        List<String> volumeMountPaths = volumeMounts.stream().map(volumeMount -> volumeMount.getMountPath()).toList();
+
+        boolean hasDuplicate = additionalVolumeMounts.stream().anyMatch(additionalVolume -> volumeMountPaths.contains(additionalVolume.getMountPath()));
+        boolean isSensitivePath = additionalVolumeMounts.stream().anyMatch(additionalVolume -> additionalVolume.getMountPath().startsWith(SENSITIVE_PATH));
+
+        if (hasDuplicate) {
+            throw new RuntimeException("Duplicate volume path found in additional volumes");
+        }
+        if (isSensitivePath) {
+            throw new RuntimeException("Sensitive path found in additional volumes");
+        }
+
+        return volumeMounts;
+    }
+
+    /**
+     * Creates a kubernetes Volume object from the provided Volume configuration
      *
      * @param volumeConfig The configuration for the additional volume
      * @return A Volume object
      */
-    private static Volume createVolumeFromConfig(AdditionalVolume volumeConfig) {
+    private static Volume createVolumeFromConfig(io.strimzi.api.kafka.model.common.template.Volume volumeConfig) {
         VolumeBuilder volumeBuilder = new VolumeBuilder().withName(volumeConfig.getName());
         if (volumeConfig.getConfigMap() != null) {
             volumeBuilder.withNewConfigMap().withName(volumeConfig.getConfigMap().getName()).endConfigMap();

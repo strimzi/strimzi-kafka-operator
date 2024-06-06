@@ -97,6 +97,7 @@ import java.util.stream.Collectors;
 
 import static io.strimzi.operator.cluster.model.ListenersUtils.isListenerWithCustomAuth;
 import static io.strimzi.operator.cluster.model.ListenersUtils.isListenerWithOAuth;
+import static io.strimzi.operator.cluster.model.TemplateUtils.addAdditionalVolumeMounts;
 import static io.strimzi.operator.cluster.model.TemplateUtils.getAdditionalVolumes;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
@@ -1350,11 +1351,11 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      * Generates the volume mounts for a Kafka container
      *
      * @param storage   Storage configuration for which the volume mounts should be generated
+     * @param volumeMounts Additional volume mounts to include in the returned list
      *
      * @return  List of volume mounts
      */
-    private List<VolumeMount> getVolumeMounts(Storage storage) {
-        //todo additionalVolumes
+    private List<VolumeMount> getVolumeMounts(Storage storage, List<VolumeMount> additionalVolumeMounts) {
         List<VolumeMount> volumeMountList = new ArrayList<>(VolumeUtils.createVolumeMounts(storage, false));
         volumeMountList.add(VolumeUtils.createTempDirVolumeMount());
         volumeMountList.add(VolumeUtils.createVolumeMount(CLUSTER_CA_CERTS_VOLUME, CLUSTER_CA_CERTS_VOLUME_MOUNT));
@@ -1362,30 +1363,6 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         volumeMountList.add(VolumeUtils.createVolumeMount(CLIENT_CA_CERTS_VOLUME, CLIENT_CA_CERTS_VOLUME_MOUNT));
         volumeMountList.add(VolumeUtils.createVolumeMount(LOG_AND_METRICS_CONFIG_VOLUME_NAME, LOG_AND_METRICS_CONFIG_VOLUME_MOUNT));
         volumeMountList.add(VolumeUtils.createVolumeMount("ready-files", "/var/opt/kafka"));
-
-
-
-        for (int i = 0; i < templatePod.getAdditionalVolumes().size(); i++) {
-            AdditionalVolume volumeConfig = templatePod.getAdditionalVolumes().get(i);
-            boolean readOnly = true;
-            String subPath = "";
-
-            if (volumeConfig.getEmptyDir() != null) {
-                readOnly = false;
-            }
-
-            // SubPaths are only supported for ConfigMaps, Secrets and CSI volumes
-            if (volumeConfig.getConfigMap() != null || volumeConfig.getSecret() != null || volumeConfig.getCsi() != null) {
-                subPath = volumeConfig.getSubPath().trim();
-            }
-
-            volumeMountList.add(new VolumeMountBuilder()
-                .withName(volumeConfig.getName())
-                .withReadOnly(readOnly)
-                .withMountPath(volumeConfig.getPath())
-                .withSubPath(subPath)
-                .build());
-        }
 
         if (rack != null || isExposedWithNodePort()) {
             volumeMountList.add(VolumeUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT));
@@ -1418,6 +1395,8 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         if (authorization instanceof KafkaAuthorizationKeycloak keycloakAuthz) {
             volumeMountList.addAll(AuthenticationUtils.configureOauthCertificateVolumeMounts("authz-keycloak", keycloakAuthz.getTlsTrustedCertificates(), TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/authz-keycloak-certs"));
         }
+        
+        addAdditionalVolumeMounts(volumeMountList, additionalVolumeMounts);       
 
         return volumeMountList;
     }
@@ -1511,7 +1490,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                 pool.resources,
                 getEnvVars(pool),
                 getContainerPortList(pool),
-                getVolumeMounts(pool.storage),
+                getVolumeMounts(pool.storage, pool.templateContainer.getVolumeMounts()),
                 ProbeUtils.defaultBuilder(livenessProbeOptions).withNewExec().withCommand("/opt/kafka/kafka_liveness.sh").endExec().build(),
                 ProbeUtils.defaultBuilder(readinessProbeOptions).withNewExec().withCommand("/opt/kafka/kafka_readiness.sh").endExec().build(),
                 imagePullPolicy

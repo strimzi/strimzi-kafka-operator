@@ -1128,12 +1128,6 @@ spec:
                             name:
                               type: string
                               description: Name to use for the volume. Required.
-                            path:
-                              type: string
-                              description: Path in the container to mount the volume at. Required.
-                            subPath:
-                              type: string
-                              description: SubPath of the referenced volume to mount.
                             secret:
                               type: object
                               properties:
@@ -1349,6 +1343,24 @@ spec:
                               runAsUserName:
                                 type: string
                         description: Security context for the container.
+                      volumeMounts:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            mountPath:
+                              type: string
+                            mountPropagation:
+                              type: string
+                            name:
+                              type: string
+                            readOnly:
+                              type: boolean
+                            subPath:
+                              type: string
+                            subPathExpr:
+                              type: string
+                        description: Volume mounts which should be applied to the container.
                     description: Template for the Kafka Connect container.
                   initContainer:
                     type: object
@@ -1423,6 +1435,24 @@ spec:
                               runAsUserName:
                                 type: string
                         description: Security context for the container.
+                      volumeMounts:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            mountPath:
+                              type: string
+                            mountPropagation:
+                              type: string
+                            name:
+                              type: string
+                            readOnly:
+                              type: boolean
+                            subPath:
+                              type: string
+                            subPathExpr:
+                              type: string
+                        description: Volume mounts which should be applied to the container.
                     description: Template for the Kafka init container.
                   podDisruptionBudget:
                     type: object
@@ -1987,12 +2017,6 @@ spec:
                             name:
                               type: string
                               description: Name to use for the volume. Required.
-                            path:
-                              type: string
-                              description: Path in the container to mount the volume at. Required.
-                            subPath:
-                              type: string
-                              description: SubPath of the referenced volume to mount.
                             secret:
                               type: object
                               properties:
@@ -2142,6 +2166,24 @@ spec:
                               runAsUserName:
                                 type: string
                         description: Security context for the container.
+                      volumeMounts:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            mountPath:
+                              type: string
+                            mountPropagation:
+                              type: string
+                            name:
+                              type: string
+                            readOnly:
+                              type: boolean
+                            subPath:
+                              type: string
+                            subPathExpr:
+                              type: string
+                        description: Volume mounts which should be applied to the container.
                     description: Template for the Kafka Connect Build container. The build container is used only on Kubernetes.
                   buildConfig:
                     type: object

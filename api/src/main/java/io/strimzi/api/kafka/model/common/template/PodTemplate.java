@@ -56,7 +56,7 @@ public class PodTemplate implements HasMetadataTemplate, UnknownPropertyPreservi
     private List<HostAlias> hostAliases;
     private Boolean enableServiceLinks;
     private String tmpDirSizeLimit;
-    private List<AdditionalVolume> additionalVolumes;
+    private List<Volume> additionalVolumes;
 
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
@@ -201,11 +201,11 @@ public class PodTemplate implements HasMetadataTemplate, UnknownPropertyPreservi
     @Description("Additional volumes that can be mounted to the pod.")
     @JsonProperty("additionalVolumes")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public List<AdditionalVolume> getAdditionalVolumes() {
+    public List<Volume> getAdditionalVolumes() {
         return additionalVolumes;
     }
 
-    public void setAdditionalVolumes(List<AdditionalVolume> additionalVolumes) {
+    public void setAdditionalVolumes(List<Volume> additionalVolumes) {
         this.additionalVolumes = additionalVolumes;
     }
 
