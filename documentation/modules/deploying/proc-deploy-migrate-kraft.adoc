@@ -33,6 +33,10 @@ If not, you can xref:proc-migrating-clusters-node-pools-str[migrate the cluster 
 To migrate when the cluster is not using node pools, brokers must be contained in a `KafkaNodePool` resource configuration that is assigned a `broker` role and has the name `kafka`.
 Support for node pools is enabled in the `Kafka` resource configuration using the `strimzi.io/node-pools: enabled` annotation.
 
+IMPORTANT: Using a single controller with ephemeral storage for migrating to KRaft will not work.
+During the migration, controller restart will cause loss of metadata synced from ZooKeeper (such as topics and ACLs).
+In general, migrating an ephemeral-based ZooKeeper cluster to KRaft is not recommended.
+
 In this procedure, the Kafka cluster name is `my-cluster`, which is located in the `my-project` namespace. 
 The name of the controller node pool created is `controller`.
 The node pool for the brokers is called `kafka`.
