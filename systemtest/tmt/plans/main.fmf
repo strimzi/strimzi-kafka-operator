@@ -209,7 +209,7 @@ finish:
         processors: ">= 8"
       # it seems that default disk size (i.e., 50GB) is not enough for capacity tests
       disk:
-        size: ">= 60 GB"
+        - size: ">= 60 GB"
   discover+:
     test:
       - performance
@@ -223,7 +223,7 @@ finish:
         processors: ">= 8"
       # it seems that default disk size (i.e., 50GB) is not enough for capacity tests
       disk:
-       - size: ">= 60 GB"
+        - size: ">= 60 GB"
   discover+:
     test:
       - performance-capacity
@@ -237,7 +237,7 @@ finish:
         processors: ">= 8"
       # it seems that default disk size (i.e., 50GB) is not enough for capacity tests
       disk:
-       - size: ">= 60 GB"
+        - size: ">= 60 GB"
   discover+:
     test:
       - performance-topic-operator-capacity
