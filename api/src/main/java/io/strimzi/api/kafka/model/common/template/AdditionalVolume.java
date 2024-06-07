@@ -30,7 +30,7 @@ import java.util.Map;
 @JsonPropertyOrder({ "name", "path", "subPath", "secret", "configMap", "emptyDir", "csi" })
 @EqualsAndHashCode
 @ToString
-public class Volume implements UnknownPropertyPreserving {
+public class AdditionalVolume implements UnknownPropertyPreserving {
     private String name;
     private SecretVolumeSource secret;
     private ConfigMapVolumeSource configMap;

@@ -98,7 +98,7 @@ import java.util.stream.Collectors;
 import static io.strimzi.operator.cluster.model.ListenersUtils.isListenerWithCustomAuth;
 import static io.strimzi.operator.cluster.model.ListenersUtils.isListenerWithOAuth;
 import static io.strimzi.operator.cluster.model.TemplateUtils.addAdditionalVolumeMounts;
-import static io.strimzi.operator.cluster.model.TemplateUtils.getAdditionalVolumes;
+import static io.strimzi.operator.cluster.model.TemplateUtils.addAdditionalVolumes;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
 
@@ -1280,8 +1280,9 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         volumeList.add(VolumeUtils.createConfigMapVolume(LOG_AND_METRICS_CONFIG_VOLUME_NAME, podName));
         volumeList.add(VolumeUtils.createEmptyDirVolume("ready-files", "1Ki", "Memory"));
 
-        List<Volume> additionalVolumes = getAdditionalVolumes(templatePod, volumeList);
-        volumeList.addAll(additionalVolumes);
+        if (templatePod != null) {
+            addAdditionalVolumes(templatePod, volumeList);
+        }
 
         for (GenericKafkaListener listener : listeners) {
             if (listener.isTls()
@@ -1490,7 +1491,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                 pool.resources,
                 getEnvVars(pool),
                 getContainerPortList(pool),
-                getVolumeMounts(pool.storage, pool.templateContainer.getVolumeMounts()),
+                getVolumeMounts(pool.storage, pool.templateContainer == null ? Collections.emptyList() : pool.templateContainer.getVolumeMounts()),
                 ProbeUtils.defaultBuilder(livenessProbeOptions).withNewExec().withCommand("/opt/kafka/kafka_liveness.sh").endExec().build(),
                 ProbeUtils.defaultBuilder(readinessProbeOptions).withNewExec().withCommand("/opt/kafka/kafka_readiness.sh").endExec().build(),
                 imagePullPolicy

@@ -61,7 +61,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static io.strimzi.operator.cluster.model.TemplateUtils.addAdditionalVolumeMounts;
-import static io.strimzi.operator.cluster.model.TemplateUtils.getAdditionalVolumes;
+import static io.strimzi.operator.cluster.model.TemplateUtils.addAdditionalVolumes;
 import static java.util.Collections.emptyMap;
 
 /**
@@ -539,7 +539,10 @@ public class ZookeeperCluster extends AbstractModel implements SupportsMetrics, 
         volumeList.add(VolumeUtils.createSecretVolume(ZOOKEEPER_NODE_CERTIFICATES_VOLUME_NAME, KafkaResources.zookeeperSecretName(cluster), isOpenShift));
         volumeList.add(VolumeUtils.createSecretVolume(ZOOKEEPER_CLUSTER_CA_VOLUME_NAME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift));
         volumeList.addAll(VolumeUtils.createPodSetVolumes(podName, storage, false));
-        volumeList.addAll(getAdditionalVolumes(templatePod, volumeList));
+        
+        if (templatePod !=  null) {
+            addAdditionalVolumes(templatePod, volumeList);
+        }
 
         return volumeList;
     }
@@ -571,7 +574,9 @@ public class ZookeeperCluster extends AbstractModel implements SupportsMetrics, 
         volumeMountList.add(VolumeUtils.createVolumeMount(ZOOKEEPER_NODE_CERTIFICATES_VOLUME_NAME, ZOOKEEPER_NODE_CERTIFICATES_VOLUME_MOUNT));
         volumeMountList.add(VolumeUtils.createVolumeMount(ZOOKEEPER_CLUSTER_CA_VOLUME_NAME, ZOOKEEPER_CLUSTER_CA_VOLUME_MOUNT));
         
-        addAdditionalVolumeMounts(volumeMountList, templateContainer.getVolumeMounts()); 
+        if (templateContainer != null) {
+            addAdditionalVolumeMounts(volumeMountList, templateContainer.getVolumeMounts());
+        }
 
         return volumeMountList;
     }

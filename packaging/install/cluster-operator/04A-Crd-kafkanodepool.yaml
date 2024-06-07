@@ -747,7 +747,7 @@ spec:
                         type: string
                         pattern: "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"
                         description: Defines the total amount (for example `1Gi`) of local storage required for temporary EmptyDir volume (`/tmp`). Default value is `5Mi`.
-                      additionalVolumes:
+                      volumes:
                         type: array
                         items:
                           type: object

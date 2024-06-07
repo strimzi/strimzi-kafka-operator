@@ -1199,13 +1199,13 @@ include::../api/io.strimzi.api.kafka.model.common.template.PodTemplate.adoc[leve
 |tmpDirSizeLimit
 |string
 |Defines the total amount (for example `1Gi`) of local storage required for temporary EmptyDir volume (`/tmp`). Default value is `5Mi`.
-|additionalVolumes
-|xref:type-Volume-{context}[`Volume`] array
+|volumes
+|xref:type-AdditionalVolume-{context}[`AdditionalVolume`] array
 |Additional volumes that can be mounted to the pod.
 |====
 
-[id='type-Volume-{context}']
-= `Volume` schema reference
+[id='type-AdditionalVolume-{context}']
+= `AdditionalVolume` schema reference
 
 Used in: xref:type-PodTemplate-{context}[`PodTemplate`]
 
