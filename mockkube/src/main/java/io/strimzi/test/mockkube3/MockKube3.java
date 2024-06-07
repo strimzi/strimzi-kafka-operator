@@ -25,7 +25,6 @@ import io.strimzi.test.mockkube3.controllers.MockDeletionController;
 import io.strimzi.test.mockkube3.controllers.MockDeploymentController;
 import io.strimzi.test.mockkube3.controllers.MockPodController;
 import io.strimzi.test.mockkube3.controllers.MockServiceController;
-import org.testcontainers.utility.DockerImageName;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -40,8 +39,6 @@ import java.util.concurrent.TimeUnit;
  * running controllers.
  */
 public class MockKube3 {
-    private final static String ETCD_IMAGE = "registry.k8s.io/etcd:3.5.12-0";
-
     private final ApiServerContainer<?> apiServer;
     private final List<AbstractMockController> controllers = new ArrayList<>();
     private final List<String> crds = new ArrayList<>();
@@ -56,8 +53,7 @@ public class MockKube3 {
      * Constructs the Kubernetes Mock Kube Server
      */
     public MockKube3() {
-        // Override the Etcd version to get multiplatform support
-        this.apiServer = new ApiServerContainer<>().withEtcdImage(DockerImageName.parse(ETCD_IMAGE));
+        this.apiServer = new ApiServerContainer<>();
     }
 
     /**
