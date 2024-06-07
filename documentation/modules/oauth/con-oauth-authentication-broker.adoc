@@ -117,7 +117,7 @@ You activate fast local JWT token validation by specifying a `jwksEndpointUri` a
 The endpoint contains the public keys used to validate signed JWT tokens, which are sent as credentials by Kafka clients.
 
 All communication with the authorization server should be performed using TLS encryption.
-You can configure a certificate truststore as a Kubernetes `Secret` in your Strimzi project namespace, and use a `tlsTrustedCertificates` attribute to point to the Kubernetes Secret containing the truststore file.
+You can configure a certificate truststore as a Kubernetes `Secret` in your Strimzi project namespace, and use the `tlsTrustedCertificates` property to point to the Kubernetes secret containing the truststore file.
 
 You might want to configure a `userNameClaim` to properly extract a username from the JWT token. 
 If required, you can use a JsonPath expression like `"['user.info'].['user.id']"` to retrieve the username from nested JSON attributes within a token.
@@ -139,8 +139,8 @@ If you want to use Kafka ACL authorization, identify the user by their username 
     userNameClaim: preferred_username # <4>
     maxSecondsWithoutReauthentication: 3600 # <5>
     tlsTrustedCertificates: # <6>
-    - secretName: oauth-server-cert
-      certificate: ca.crt
+      - secretName: oauth-server-cert
+        pattern: "*.crt"
     disableTlsHostnameVerification: true # <7>
     jwksExpirySeconds: 360 # <8>
     jwksRefreshSeconds: 300 # <9>
@@ -151,7 +151,7 @@ If you want to use Kafka ACL authorization, identify the user by their username 
 <3> URI of the JWKS certificate endpoint used for local JWT validation.
 <4> The token claim (or key) that contains the actual username used to identify the user. Its value depends on the authorization server. If necessary, a JsonPath expression like `"['user.info'].['user.id']"` can be used to retrieve the username from nested JSON attributes within a token. 
 <5> (Optional) Activates the Kafka re-authentication mechanism that enforces session expiry to the same length of time as the access token. If the specified value is less than the time left for the access token to expire, then the client will have to re-authenticate before the actual token expiry. By default, the session does not expire when the access token expires, and the client does not attempt re-authentication.
-<6> (Optional) Trusted certificates for TLS connection to the authorization server.
+<6> (Optional) Certificates stored in X.509 format within the specified secrets for TLS connection to the authorization server.
 <7> (Optional) Disable TLS hostname verification. Default is `false`.
 <8> The duration the JWKS certificates are considered valid before they expire. Default is `360` seconds. If you specify a longer time, consider the risk of allowing access to revoked certificates.
 <9> The period between refreshes of JWKS certificates. The interval must be at least 60 seconds shorter than the expiry interval. Default is `300` seconds.
@@ -185,8 +185,8 @@ Depending on the authorization server, you typically have to specify a `clientId
     userNameClaim: preferred_username # <4>
     maxSecondsWithoutReauthentication: 3600 # <5>
     tlsTrustedCertificates:
-          - secretName: oauth-server-cert
-            certificate: ca.crt
+      - secretName: oauth-server-cert
+        pattern: "*.crt"
 ----
 <1> URI of the token introspection endpoint.
 <2> Client ID to identify the client.

@@ -35,7 +35,7 @@ spec:
     tls: # <6>
       trustedCertificates:
       - secretName: my-source-cluster-ca-cert
-        certificate: ca.crt
+        pattern: "*.crt"
     authentication: # <7>
       type: tls
       certificateAndKey:
@@ -51,7 +51,7 @@ spec:
     tls:
       trustedCertificates:
       - secretName: my-target-cluster-ca-cert
-        certificate: ca.crt
+        pattern: "*.crt"
     authentication:
       type: tls
       certificateAndKey:
@@ -116,7 +116,7 @@ spec:
 <3> Group ID for the consumer.
 <4> The number of consumer streams.
 <5> The offset auto-commit interval in milliseconds.
-<6> TLS encryption with key names under which TLS certificates are stored in X.509 format for consumer or producer. If certificates are stored in the same secret, it can be listed multiple times.
+<6> TLS configuration for encrypted connections to the Kafka cluster, with trusted certificates stored in X.509 format within the specified secrets.
 <7> Authentication for consumer or producer, specified as mTLS, token-based OAuth, SASL-based SCRAM-SHA-256/SCRAM-SHA-512, or PLAIN.
 <8> Kafka configuration options for consumer and producer.
 <9> If the `abortOnSendFailure` property is set to `true`, Kafka MirrorMaker will exit and the container will restart following a send failure for a message.

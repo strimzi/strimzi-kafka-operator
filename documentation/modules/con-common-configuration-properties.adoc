@@ -76,27 +76,34 @@ config:
 [id='con-common-configuration-trusted-certificates-{context}']
 == `trustedCertificates`
 
-Having set `tls` to configure TLS encryption, use the `trustedCertificates` property to provide a list of secrets with key names under which the certificates are stored in X.509 format.
+Use the `tls` and `trustedCertificates` properties to enable TLS encryption and specify secrets under which TLS certificates are stored in X.509 format.
+You can add this configuration to the Kafka Connect, Kafka MirrorMaker, and Kafka Bridge components for TLS connections to the Kafka cluster.
 
 You can use the secrets created by the Cluster Operator for the Kafka cluster,
 or you can create your own TLS certificate file, then create a `Secret` from the file:
 
+.Creating a secret
 [source,shell,subs=+quotes]
-kubectl create secret generic _MY-SECRET_ \
---from-file=_MY-TLS-CERTIFICATE-FILE.crt_
+kubectl create secret generic <my_secret> \
+--from-file=<my_tls_certificate_file.crt>
 
-.Example TLS encryption configuration
+* Replace `<my_secret>` with your secret name.
+* Replace `<my_tls_certificate_file.crt>` with the path to your TLS certificate file.
+
+Use the `pattern` property to include all files in the secret that match the pattern.
+Using the `pattern` property means that the custom resource does not need to be updated if certificate file names change.
+However, you can specify a specific file using the `certificate` property instead of the `pattern` property. 
+
+.Example TLS encryption configuration for components
 [source,yaml,subs=attributes+]
 ----
 tls:
   trustedCertificates:
     - secretName: my-cluster-cluster-cert
-      certificate: ca.crt
+      pattern: "*.crt"
     - secretName: my-cluster-cluster-cert
       certificate: ca2.crt
 ----
-
-If certificates are stored in the same secret, it can be listed multiple times.
 
 If you want to enable TLS encryption, but use the default set of public certification authorities shipped with Java,
 you can specify `trustedCertificates` as an empty array:
@@ -106,6 +113,17 @@ you can specify `trustedCertificates` as an empty array:
 ----
 tls:
   trustedCertificates: []
+----
+
+Similarly, you can use the `tlstrustedCertificates` property in the configuration for `oauth`, `keycloak`, and `opa` authentication and authorization types that integrate with authorization servers.
+The configuration sets up encrypted TLS connections to the authorization server.
+
+.Example TLS encryption configuration for authentication types
+[source,yaml,subs=attributes+]
+----
+tlsTrustedCertificates:
+  - secretName: oauth-server-ca
+    pattern: "*.crt"
 ----
 
 For information on configuring mTLS authentication, see the xref:type-KafkaClientAuthenticationTls-reference[`KafkaClientAuthenticationTls` schema reference].
