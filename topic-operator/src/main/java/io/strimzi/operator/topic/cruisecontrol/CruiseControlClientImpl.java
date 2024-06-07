@@ -130,7 +130,9 @@ public class CruiseControlClientImpl implements CruiseControlClient {
         
         // send request and handle response
         return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(response -> {
-            LOGGER.traceOp("Response: {}", response);
+            if (response.body() != null) {
+                LOGGER.traceOp("Response body: {}", response.body());
+            }
             if (response.statusCode() != 200) {
                 Optional<String> error = errorMessage(response);
                 throw new RuntimeException(error.isPresent() 
@@ -169,7 +171,9 @@ public class CruiseControlClientImpl implements CruiseControlClient {
         
         // send request and handle response
         return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(response -> {
-            LOGGER.traceOp("Response: {}", response);
+            if (response.body() != null) {
+                LOGGER.traceOp("Response body: {}", response.body());
+            }
             if (response.statusCode() != 200) {
                 Optional<String> error = errorMessage(response);
                 throw new RuntimeException(error.isPresent()
@@ -191,23 +195,28 @@ public class CruiseControlClientImpl implements CruiseControlClient {
             }
         }).join();
     }
-    
+
     public Optional<String> errorMessage(HttpResponse<String> response) {
         if (response != null && response.body() != null && !response.body().isBlank()) {
-            try {
-                ErrorResponse errorResponse = objectMapper.readValue(response.body(), ErrorResponse.class);
-                if (errorResponse.errorMessage() != null) {
-                    if (errorResponse.errorMessage().contains("NotEnoughValidWindowsException")) {
-                        return Optional.of("Cluster model not ready");
-                    } else if (errorResponse.errorMessage().contains("OngoingExecutionException")
+            // for some reason CC returns an HTML page on authorization failures
+            if (response.body().contains("Unauthorized")) {
+                return Optional.of("Authorization error");
+            } else {
+                try {
+                    ErrorResponse errorResponse = objectMapper.readValue(response.body(), ErrorResponse.class);
+                    if (errorResponse.errorMessage() != null) {
+                        if (errorResponse.errorMessage().contains("NotEnoughValidWindowsException")) {
+                            return Optional.of("Cluster model not ready");
+                        } else if (errorResponse.errorMessage().contains("OngoingExecutionException")
                             || errorResponse.errorMessage().contains("stop_ongoing_execution")) {
-                        return Optional.of("Another task is executing");
-                    } else {
-                        return Optional.of(errorResponse.errorMessage());
+                            return Optional.of("Another task is executing");
+                        } else {
+                            return Optional.of(errorResponse.errorMessage());
+                        }
                     }
+                } catch (Throwable t) {
+                    throw new RuntimeException(format("Error deserialization failed: %s", t.getMessage()));
                 }
-            } catch (Throwable t) {
-                throw new RuntimeException(format("Error message parsing failed: %s", t.getMessage()));
             }
         }
         return Optional.empty();
