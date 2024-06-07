@@ -85,7 +85,7 @@ public class TieredStorageST extends AbstractST {
             )
         );
 
-        resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 1)
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3)
             .editMetadata()
                 .withNamespace(testStorage.getNamespaceName())
             .endMetadata()
