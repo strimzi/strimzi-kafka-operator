@@ -102,7 +102,7 @@ The jobs are grouped based on specific use-case.
 |                 | regression-operators                |                                                                         |
 |                 | ro                                  |                                                                         |
 | performance     | performance                         | Performance tests (all performance related labels)                      |
-|                 | performance-classic                 | Common performance tests                                                |
+|                 | performance-common                  | Common performance tests                                                |
 |                 | performance-capacity                | Capacity tests for operators                                            |
 |                 | performance-topic-operator-capacity | Capacity tests for Topic Operator only                                  |
 

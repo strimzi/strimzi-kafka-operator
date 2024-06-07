@@ -184,7 +184,7 @@ jobs:
     env: { IP_FAMILY: ipv4 }
     labels:
       - performance
-      - performance-classic
+      - performance-common
     tf_extra_params:
       settings:
         pipeline:
