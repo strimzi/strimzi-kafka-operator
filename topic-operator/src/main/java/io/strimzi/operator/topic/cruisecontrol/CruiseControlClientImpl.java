@@ -107,7 +107,7 @@ public class CruiseControlClientImpl implements CruiseControlClient {
             jsonPayload = objectMapper.writeValueAsString(
                 new ReplicationFactorChanges(new ReplicationFactor(requestPayload)));
         } catch (JsonProcessingException e) {
-            throw new RuntimeException("Failed to serialize request");
+            throw new RuntimeException(format("Request serialization failed: %s", e.getMessage()));
         }
         
         // build request
@@ -116,7 +116,6 @@ public class CruiseControlClientImpl implements CruiseControlClient {
             .withParameter(CruiseControlParameters.DRY_RUN, "false")
             .withParameter(CruiseControlParameters.JSON, "true")
             .build();
-        LOGGER.traceOp("Request URI: {}", requestUri.toString());
         
         HttpRequest.Builder builder = HttpRequest.newBuilder()
             .uri(requestUri)
@@ -127,12 +126,11 @@ public class CruiseControlClientImpl implements CruiseControlClient {
             builder.header("Authorization", buildBasicAuthValue(authUsername, authPassword));
         }
         HttpRequest request = builder.build();
+        LOGGER.traceOp("Request: {}", request);
         
         // send request and handle response
         return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(response -> {
-            if (response.body() != null) {
-                LOGGER.traceOp("Response body: {}", response.body());
-            }
+            LOGGER.traceOp("Response: {}{}", response, hasBody(response) ? ", body: " + response.body() : "");
             if (response.statusCode() != 200) {
                 Optional<String> error = errorMessage(response);
                 throw new RuntimeException(error.isPresent() 
@@ -158,7 +156,6 @@ public class CruiseControlClientImpl implements CruiseControlClient {
             .withParameter(CruiseControlParameters.FETCH_COMPLETE, "false")
             .withParameter(CruiseControlParameters.JSON, "true")
             .build();
-        LOGGER.traceOp("Request URL: {}", requestUrl.toString());
         
         HttpRequest.Builder builder = HttpRequest.newBuilder()
             .uri(requestUrl)
@@ -168,12 +165,11 @@ public class CruiseControlClientImpl implements CruiseControlClient {
             builder.header("Authorization", buildBasicAuthValue(authUsername, authPassword));
         }
         HttpRequest request = builder.build();
+        LOGGER.traceOp("Request: {}", request);
         
         // send request and handle response
         return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(response -> {
-            if (response.body() != null) {
-                LOGGER.traceOp("Response body: {}", response.body());
-            }
+            LOGGER.traceOp("Response: {}{}", response, hasBody(response) ? ", body: " + response.body() : "");
             if (response.statusCode() != 200) {
                 Optional<String> error = errorMessage(response);
                 throw new RuntimeException(error.isPresent()
@@ -191,17 +187,17 @@ public class CruiseControlClientImpl implements CruiseControlClient {
             if (t.getCause() instanceof ConnectException) {
                 throw new RuntimeException("Connection failed");
             } else {
-                throw new RuntimeException(getRootCause(t).getMessage());
+                throw new RuntimeException(getRootCause(t).getMessage());   
             }
         }).join();
     }
 
     public Optional<String> errorMessage(HttpResponse<String> response) {
-        if (response != null && response.body() != null && !response.body().isBlank()) {
-            // for some reason CC returns an HTML page on authorization failures
-            if (response.body().contains("Unauthorized")) {
+        if (response != null) {
+            if (response.statusCode() == 401) {
                 return Optional.of("Authorization error");
-            } else {
+            }
+            if (hasBody(response)) {
                 try {
                     ErrorResponse errorResponse = objectMapper.readValue(response.body(), ErrorResponse.class);
                     if (errorResponse.errorMessage() != null) {
@@ -214,14 +210,18 @@ public class CruiseControlClientImpl implements CruiseControlClient {
                             return Optional.of(errorResponse.errorMessage());
                         }
                     }
-                } catch (Throwable t) {
-                    throw new RuntimeException(format("Error deserialization failed: %s", t.getMessage()));
+                } catch (JsonProcessingException e) {
+                    throw new RuntimeException(format("Error deserialization failed: %s", e.getMessage()));
                 }
             }
         }
         return Optional.empty();
     }
-
+    
+    private static boolean hasBody(HttpResponse<String> response) {
+        return response.body() != null && !response.body().isEmpty();
+    }
+    
     @SuppressFBWarnings("SIC_INNER_SHOULD_BE_STATIC_ANON")
     private HttpClient buildHttpClient() {
         try {
