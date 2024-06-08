@@ -336,7 +336,7 @@ spec:
       tls: # <1>
         trustedCertificates:
           - secretName: my-source-cluster-cluster-ca-cert
-            certificate: ca.crt
+            pattern: "*.crt"
       authentication: # <2>
         type: tls
         certificateAndKey:
@@ -348,7 +348,7 @@ spec:
       tls: # <3>
         trustedCertificates:
           - secretName: my-target-cluster-cluster-ca-cert
-            certificate: ca.crt
+            pattern: "*.crt"
       authentication: # <4>
         type: tls
         certificateAndKey:

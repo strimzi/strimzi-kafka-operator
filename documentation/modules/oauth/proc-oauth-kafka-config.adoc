@@ -71,18 +71,18 @@ spec:
   # ...
   authentication:
     type: oauth # <1>
-    tokenEndpointUri: https://<auth-server-address>/auth/realms/master/protocol/openid-connect/token # <2>
+    tokenEndpointUri: https://<auth_server_address>/<path_to_token_endpoint> # <2>
     clientId: kafka-bridge
     clientSecret:
       secretName: my-bridge-oauth
       key: clientSecret
     tlsTrustedCertificates: # <3>
-    - secretName: oauth-server-cert
-      certificate: tls.crt
+      - secretName: oauth-server-cert
+        pattern: "*.crt"
 ----
 <1> Authentication type set to `oauth`.
 <2> URI of the token endpoint for authentication.
-<3> Trusted certificates for TLS connection to the authorization server.
+<3> Certificates stored in X.509 format within the specified secrets for TLS connection to the authorization server.
 --
 +
 Depending on how you apply OAuth 2.0 authentication, and the type of authorization server, there are additional configuration options you can use:

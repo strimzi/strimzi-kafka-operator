@@ -60,12 +60,12 @@ spec:
       delegateToKafkaAcls: false <4>
       disableTlsHostnameVerification: false <5>
       superUsers: <6>
-      - CN=fred
-      - sam
-      - CN=edward
+        - CN=client_1
+        - user_2
+        - CN=client_3
       tlsTrustedCertificates: <7>
-      - secretName: oauth-server-cert
-        certificate: ca.crt
+        - secretName: oauth-server-cert
+          pattern: "*.crt"
       grantsRefreshPeriodSeconds: 60 <8>
       grantsRefreshPoolSize: 5 <9>
       grantsMaxIdleSeconds: 300 <10>
@@ -87,7 +87,7 @@ The hostname for the `tokenEndpointUri` URI must be the same.
 Default is `false`.
 <5> (Optional) Disable TLS hostname verification. Default is `false`.
 <6> (Optional) Designated super users.
-<7> (Optional) Trusted certificates for TLS connection to the authorization server.
+<7> (Optional) Certificates stored in X.509 format within the specified secrets for TLS connection to the authorization server.
 <8> (Optional) The time between two consecutive grants refresh runs. That is the maximum time for active sessions to detect any permissions changes for the user on Keycloak. The default value is 60.
 <9> (Optional) The number of threads to use to refresh (in parallel) the grants for the active sessions. The default value is 5.
 <10> (Optional) The time, in seconds, after which an idle grant in the cache can be evicted. The default value is 300.
