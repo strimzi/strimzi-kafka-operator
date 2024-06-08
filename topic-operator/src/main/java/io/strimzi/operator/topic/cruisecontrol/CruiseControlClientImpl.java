@@ -130,7 +130,7 @@ public class CruiseControlClientImpl implements CruiseControlClient {
         
         // send request and handle response
         return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(response -> {
-            LOGGER.traceOp("Response: {}{}", response, hasBody(response) ? ", body: " + response.body() : "");
+            LOGGER.traceOp("Response: {}, body: {}", response, response.body());
             if (response.statusCode() != 200) {
                 Optional<String> error = errorMessage(response);
                 throw new RuntimeException(error.isPresent() 
@@ -169,7 +169,7 @@ public class CruiseControlClientImpl implements CruiseControlClient {
         
         // send request and handle response
         return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(response -> {
-            LOGGER.traceOp("Response: {}{}", response, hasBody(response) ? ", body: " + response.body() : "");
+            LOGGER.traceOp("Response: {}, body: {}", response, response.body());
             if (response.statusCode() != 200) {
                 Optional<String> error = errorMessage(response);
                 throw new RuntimeException(error.isPresent()
@@ -197,7 +197,7 @@ public class CruiseControlClientImpl implements CruiseControlClient {
             if (response.statusCode() == 401) {
                 return Optional.of("Authorization error");
             }
-            if (hasBody(response)) {
+            if (response.body() != null && !response.body().isEmpty()) {
                 try {
                     ErrorResponse errorResponse = objectMapper.readValue(response.body(), ErrorResponse.class);
                     if (errorResponse.errorMessage() != null) {
@@ -216,10 +216,6 @@ public class CruiseControlClientImpl implements CruiseControlClient {
             }
         }
         return Optional.empty();
-    }
-    
-    private static boolean hasBody(HttpResponse<String> response) {
-        return response.body() != null && !response.body().isEmpty();
     }
     
     @SuppressFBWarnings("SIC_INNER_SHOULD_BE_STATIC_ANON")
