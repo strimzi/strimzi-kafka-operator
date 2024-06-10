@@ -744,7 +744,7 @@ public class TopicOperatorPerformance extends AbstractST {
 
     private static Stream<Arguments> provideConfigurationsForTestSystemScalability() {
         final int seed = 50;
-        final int limit = 2; // up to 1000 topics to create
+        final int limit = 20; // up to 1000 topics to create
 
         // this means we would invoke create/update/delete operations x times in one iteration
         int[] batchEventSizes = IntStream.iterate(seed, n -> n + seed).limit(limit).toArray();
@@ -840,10 +840,10 @@ public class TopicOperatorPerformance extends AbstractST {
             this.topicOperatorMetricsGatherer.startCollecting();
 
             // warm-up phase processes 100 topics/tasks
-            final int warmUpTopicsToProcess = 100;
-            TopicOperatorPerformanceUtils.processAllTopicsConcurrently(testStorage, warmUpTopicsToProcess, 0, 0);
+            final int warmUpTasksToProcess = 100;
+            TopicOperatorPerformanceUtils.processAllTopicsConcurrently(testStorage, warmUpTasksToProcess, 0, 0);
 
-            allTasksTimeMs = TopicOperatorPerformanceUtils.processAllTopicsConcurrently(testStorage, numberOfTasks, spareEvents, warmUpTopicsToProcess);
+            allTasksTimeMs = TopicOperatorPerformanceUtils.processAllTopicsConcurrently(testStorage, numberOfTasks, spareEvents, warmUpTasksToProcess);
 
             // Calculate total execution time in nanoseconds and then convert to ms
 
