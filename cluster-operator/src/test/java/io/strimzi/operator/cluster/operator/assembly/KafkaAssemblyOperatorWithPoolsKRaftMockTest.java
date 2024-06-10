@@ -315,7 +315,7 @@ public class KafkaAssemblyOperatorWithPoolsKRaftMockTest {
                         loggingConfigurationAnnos.put(pod.getMetadata().getName(), pod.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_LOGGING_APPENDERS_HASH));
                     });
 
-                    // Update Kafka with dynamically changeable option that is not controller relevant => controller pod annotations should not change
+                    // Update Kafka and change the log level => only controller pod annotations should change
                     Crds.kafkaOperation(client).inNamespace(namespace).withName(CLUSTER_NAME)
                             .edit(k -> new KafkaBuilder(k).editSpec().editKafka().withNewInlineLogging().withLoggers(Map.of("kafka.root.logger.level", "DEBUG")).endInlineLogging().endKafka().endSpec().build());
                 })))
@@ -337,7 +337,7 @@ public class KafkaAssemblyOperatorWithPoolsKRaftMockTest {
                         assertThat(pod.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_LOGGING_APPENDERS_HASH), is(loggingConfigurationAnnos.get(pod.getMetadata().getName())));
                     });
 
-                    // Update Kafka with dynamically changeable controller relevant option => controller pod annotations should change
+                    // Update Kafka and change appender => both controller and broker pod annotations should change
                     Crds.kafkaOperation(client).inNamespace(namespace).withName(CLUSTER_NAME)
                             .edit(k -> new KafkaBuilder(k).editSpec().editKafka().withNewInlineLogging().withLoggers(Map.of("log4j.appender.CONSOLE", "my.tls.MyAppender")).endInlineLogging().endKafka().endSpec().build());
                 })))
