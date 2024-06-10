@@ -234,17 +234,23 @@ public class TopicOperatorPerformanceUtils {
      * | +-------------+       +-------------+             +-------------+           |
      * +-----------------------------------------------------------------------------+
      *
-     * @param testStorage       An instance of TestStorage containing configuration and state needed for topic operations.
-     * @param numberOfTopics    The number of Kafka topics to be processed.
+     * @param testStorage           An instance of TestStorage containing configuration and state needed for topic operations.
+     * @param numberOfTopics        The number of Kafka topics to be processed.
+     * @param spareEvents           The number of spare events to be consumed during the process.
+     * @param warmUpTopicsToProcess The number of topics to warm-up performance and optimize JIT. This number is used just for offsetting.
+     *
+     * @return                      The total time taken to complete all topic lifecycles in milliseconds.
      */
-    public static void processAllTopicsConcurrently(TestStorage testStorage, int numberOfTopics, int spareEvents) {
+    public static long processAllTopicsConcurrently(TestStorage testStorage, int numberOfTopics, int spareEvents, int warmUpTopicsToProcess) {
         final int availableCPUs = Math.max(1, Runtime.getRuntime().availableProcessors());
         final ExecutorService executor = Executors.newFixedThreadPool(availableCPUs);
 
         List<CompletableFuture<Void>> futures = new ArrayList<>();
         ExtensionContext extensionContext = ResourceManager.getTestContext();
 
-        for (int topicIndex = 0; topicIndex < numberOfTopics; topicIndex++) {
+        long startTime = System.nanoTime();
+
+        for (int topicIndex = warmUpTopicsToProcess; topicIndex < numberOfTopics + warmUpTopicsToProcess; topicIndex++) {
             final int finalTopicIndex = topicIndex;
             CompletableFuture<Void> future = CompletableFuture.runAsync(() -> performFullLifecycle(finalTopicIndex, testStorage, extensionContext), executor);
             futures.add(future);
@@ -259,6 +265,8 @@ public class TopicOperatorPerformanceUtils {
         CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
         LOGGER.info("All topic lifecycles completed.");
 
+        long allTasksTimeMs = (System.nanoTime() - startTime) / 1_000_000;
+
         try {
             executor.shutdown();
             executor.awaitTermination(5, TimeUnit.SECONDS);
@@ -267,6 +275,7 @@ public class TopicOperatorPerformanceUtils {
                 executor.shutdownNow();
             }
         }
+        return allTasksTimeMs;
     }
 
     /**
