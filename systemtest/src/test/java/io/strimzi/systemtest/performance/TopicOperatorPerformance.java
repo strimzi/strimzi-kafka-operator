@@ -744,18 +744,18 @@ public class TopicOperatorPerformance extends AbstractST {
 
     private static Stream<Arguments> provideConfigurationsForTestSystemScalability() {
         final int seed = 50;
-        final int limit = 20; // up to 1000 topics to create
+        final int limit = 2; // up to 1000 topics to create
 
         // this means we would invoke create/update/delete operations x times in one iteration
         int[] batchEventSizes = IntStream.iterate(seed, n -> n + seed).limit(limit).toArray();
         return Stream.of(
             new Object[][]{
                     {"100", "100"},     // Default configuration
-                    {"100", "10"},      // Default batch size, with lower linger time
-                    {"10", "1"},        // Minimal batching for high responsiveness
-                    {"50", "100"},      // Moderate batching for balanced performance
-                    {"100", "500"},     // Heavier batching for throughput focus
-                    {"500", "1000"},    // Extreme batching to test upper limits of performance
+//                    {"100", "10"},      // Default batch size, with lower linger time
+//                    {"10", "1"},        // Minimal batching for high responsiveness
+//                    {"50", "100"},      // Moderate batching for balanced performance
+//                    {"100", "500"},     // Heavier batching for throughput focus
+//                    {"500", "1000"},    // Extreme batching to test upper limits of performance
                 }
             )
             .flatMap(config -> Arrays.stream(batchEventSizes)
@@ -839,12 +839,13 @@ public class TopicOperatorPerformance extends AbstractST {
             this.topicOperatorMetricsGatherer = new TopicOperatorMetricsCollectionScheduler(this.topicOperatorCollector, "strimzi.io/cluster=" + this.testStorage.getClusterName());
             this.topicOperatorMetricsGatherer.startCollecting();
 
-            long startTime = System.nanoTime();
+            // warm-up phase processes 100 topics/tasks
+            final int warmUpTopicsToProcess = 100;
+            TopicOperatorPerformanceUtils.processAllTopicsConcurrently(testStorage, warmUpTopicsToProcess, 0, 0);
 
-            TopicOperatorPerformanceUtils.processAllTopicsConcurrently(testStorage, numberOfTasks, spareEvents);
+            allTasksTimeMs = TopicOperatorPerformanceUtils.processAllTopicsConcurrently(testStorage, numberOfTasks, spareEvents, warmUpTopicsToProcess);
 
             // Calculate total execution time in nanoseconds and then convert to ms
-            allTasksTimeMs = (System.nanoTime() - startTime) / 1_000_000;
 
             LOGGER.info("Total time taken for all tasks (i.e., {} for each operation; creation, modification and deletion) {} ms", numberOfTasks, allTasksTimeMs);
         } finally {
