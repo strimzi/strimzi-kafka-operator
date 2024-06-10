@@ -127,6 +127,13 @@ prepare:
       make docker_build
       make docker_tag
       make docker_push
+      
+      export BASE_IMAGE="${DOCKER_REGISTRY}/${DOCKER_ORG}/kafka:${DOCKER_TAG}-kafka-3.7.0"
+      export KAFKA_VERSION="3.7.0"
+      eval $(./systemtest/src/test/resources/connect-build/build-connect-image.sh "$KAFKA_VERSION" "$BASE_IMAGE")
+      
+      echo $CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN
+
 
 # Discover tmt defined tests in tests/ folder
 execute:

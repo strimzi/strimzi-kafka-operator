@@ -372,7 +372,7 @@ public class Environment {
         } else if (KubeClusterResource.getInstance().isKind()) {
             // we will need a hostname of machine
             String hostname = getHostname();
-            LOGGER.info("Using container registry :{}", hostname);
+            LOGGER.info("Using container registry '{}'", hostname);
             return hostname;
         } else {
             LOGGER.warn("For running these tests on K8s you have to have internal registry deployed using `minikube start --insecure-registry '10.0.0.0/24'` and `minikube addons enable registry`");
