@@ -174,7 +174,7 @@
         <testcontainer.version>1.19.5</testcontainer.version>
         <docker-java.version>3.3.4</docker-java.version>
         <junit4.version>4.13.2</junit4.version>
-        <skodjob.version>0.1.0</skodjob.version>
+        <skodjob.version>0.1.1</skodjob.version>
 
         <!-- properties to skip surefire tests during failsafe execution -->
         <skipTests>false</skipTests>
