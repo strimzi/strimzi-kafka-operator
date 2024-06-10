@@ -243,7 +243,7 @@ EOF
     for node in $(kind get nodes --name kind-cluster); do
         echo "Executing command in node:${node}"
         cat <<EOF | docker exec -i "${node}" cp /dev/stdin "/etc/hosts"
-    "${ula_fixed_ipv6}::1    ${registry_dns}"
+${ula_fixed_ipv6}::1    ${registry_dns}
 EOF
     done
 fi
