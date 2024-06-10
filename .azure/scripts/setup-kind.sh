@@ -240,10 +240,11 @@ EOF
 
     # note: kind get nodes (default name `kind` and with specifying new name we have to use --name <cluster-name>
 	# See https://kind.sigs.k8s.io/docs/user/local-registry/
-
     for node in $(kind get nodes --name kind-cluster); do
         echo "Executing command in node:${node}"
-        docker exec "${node}" "echo \"${ula_fixed_ipv6}::1 ${registry_dns}\" >> /etc/hosts"
+        cat <<EOF | docker exec -i "${node}" cp /dev/stdin "/etc/hosts"
+    "${ula_fixed_ipv6}::1    ${registry_dns}"
+EOF
     done
 fi
 
