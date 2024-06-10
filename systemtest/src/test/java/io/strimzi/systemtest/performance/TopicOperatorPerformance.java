@@ -751,11 +751,11 @@ public class TopicOperatorPerformance extends AbstractST {
         return Stream.of(
             new Object[][]{
                     {"100", "100"},     // Default configuration
-//                    {"100", "10"},      // Default batch size, with lower linger time
-//                    {"10", "1"},        // Minimal batching for high responsiveness
-//                    {"50", "100"},      // Moderate batching for balanced performance
-//                    {"100", "500"},     // Heavier batching for throughput focus
-//                    {"500", "1000"},    // Extreme batching to test upper limits of performance
+                    {"100", "10"},      // Default batch size, with lower linger time
+                    {"10", "1"},        // Minimal batching for high responsiveness
+                    {"50", "100"},      // Moderate batching for balanced performance
+                    {"100", "500"},     // Heavier batching for throughput focus
+                    {"500", "1000"},    // Extreme batching to test upper limits of performance
                 }
             )
             .flatMap(config -> Arrays.stream(batchEventSizes)
