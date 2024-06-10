@@ -237,11 +237,11 @@ public class TopicOperatorPerformanceUtils {
      * @param testStorage           An instance of TestStorage containing configuration and state needed for topic operations.
      * @param numberOfTopics        The number of Kafka topics to be processed.
      * @param spareEvents           The number of spare events to be consumed during the process.
-     * @param warmUpTopicsToProcess The number of topics to warm-up performance and optimize JIT. This number is used just for offsetting.
+     * @param warmUpTasksToProcess  The number of tasks to warm-up performance and optimize JIT. This number is used just for offsetting.
      *
      * @return                      The total time taken to complete all topic lifecycles in milliseconds.
      */
-    public static long processAllTopicsConcurrently(TestStorage testStorage, int numberOfTopics, int spareEvents, int warmUpTopicsToProcess) {
+    public static long processAllTopicsConcurrently(TestStorage testStorage, int numberOfTopics, int spareEvents, int warmUpTasksToProcess) {
         final int availableCPUs = Math.max(1, Runtime.getRuntime().availableProcessors());
         final ExecutorService executor = Executors.newFixedThreadPool(availableCPUs);
 
@@ -250,7 +250,7 @@ public class TopicOperatorPerformanceUtils {
 
         long startTime = System.nanoTime();
 
-        for (int topicIndex = warmUpTopicsToProcess; topicIndex < numberOfTopics + warmUpTopicsToProcess; topicIndex++) {
+        for (int topicIndex = warmUpTasksToProcess; topicIndex < numberOfTopics + warmUpTasksToProcess; topicIndex++) {
             final int finalTopicIndex = topicIndex;
             CompletableFuture<Void> future = CompletableFuture.runAsync(() -> performFullLifecycle(finalTopicIndex, testStorage, extensionContext), executor);
             futures.add(future);
