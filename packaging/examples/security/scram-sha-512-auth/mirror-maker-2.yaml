@@ -4,7 +4,7 @@ metadata:
   name: cluster-a
 spec:
   kafka:
-    version: 3.7.0
+    version: 3.7.1
     replicas: 1
     listeners:
       - name: tls
@@ -46,7 +46,7 @@ metadata:
   name: cluster-b
 spec:
   kafka:
-    version: 3.7.0
+    version: 3.7.1
     replicas: 1
     listeners:
       - name: tls
@@ -218,7 +218,7 @@ kind: KafkaMirrorMaker2
 metadata:
   name: my-mirror-maker-2
 spec:
-  version: 3.7.0
+  version: 3.7.1
   replicas: 1
   connectCluster: "cluster-b" # Must be the target custer
   clusters:

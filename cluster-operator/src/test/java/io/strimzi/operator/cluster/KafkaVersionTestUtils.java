@@ -21,11 +21,11 @@ public class KafkaVersionTestUtils {
 
     private static final Set<String> SUPPORTED_VERSIONS = new KafkaVersion.Lookup(Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap()).supportedVersions();
 
-    public static final String LATEST_KAFKA_VERSION = "3.7.0";
+    public static final String LATEST_KAFKA_VERSION = "3.7.1";
     public static final String LATEST_FORMAT_VERSION = "3.7";
     public static final String LATEST_PROTOCOL_VERSION = "3.7";
     public static final String LATEST_METADATA_VERSION = "3.7-IV4";
-    public static final String LATEST_ZOOKEEPER_VERSION = "3.8.3";
+    public static final String LATEST_ZOOKEEPER_VERSION = "3.8.4";
     public static final String LATEST_CHECKSUM = "ABCD1234";
     public static final String LATEST_THIRD_PARTY_VERSION = "3.7.x";
     public static final String LATEST_KAFKA_IMAGE = KAFKA_IMAGE_STR + LATEST_KAFKA_VERSION;
