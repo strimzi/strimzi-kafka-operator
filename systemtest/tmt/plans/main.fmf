@@ -128,10 +128,15 @@ prepare:
       make docker_tag
       make docker_push
       
+      # Get latest Kafka version from kafka-versions.yaml      
+      export KAFKA_VERSION=$(cat kafka-versions.yaml | yq eval '.[] | select(.default) | .version' -)
+      # Set env var for KafkaConnect build image to avoid building images
       export CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN="${DOCKER_REGISTRY}/${DOCKER_ORG}/connect-file-sink:latest"
-      export BASE_IMAGE="${DOCKER_REGISTRY}/${DOCKER_ORG}/kafka:${DOCKER_TAG}-kafka-3.7.0"
-      export KAFKA_VERSION="3.7.0"
+      # Build base image from previous data
+      export BASE_IMAGE="${DOCKER_REGISTRY}/${DOCKER_ORG}/kafka:${DOCKER_TAG}-kafka-${KAFKA_VERSION}"
+      # Build the connect image
       eval $(./systemtest/src/test/resources/connect-build/build-connect-image.sh "$KAFKA_VERSION" "$BASE_IMAGE" "$CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN")
+      docker push $CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN
 
 # Discover tmt defined tests in tests/ folder
 execute:
