@@ -152,8 +152,7 @@ jobs:
     tf_extra_params:
       test:
         tmt:
-          # TODO: REVERT THIS
-          name: smoke
+          name: acceptance
   ###############################################################################################
   - job: tests
     trigger: pull_request
