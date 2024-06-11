@@ -265,7 +265,6 @@ public class CruiseControlReconciler {
             Future<Secret> topicOperatorManagedApiSecretFuture = isTopicOperatorEnabled
                     ? secretOperator.getAsync(reconciliation.namespace(), KafkaResources.entityTopicOperatorCcApiSecretName(reconciliation.name()))
                     : Future.succeededFuture(null);
-
             return Future.join(centralizedApiSecretFuture, userManagedApiSecretFuture, topicOperatorManagedApiSecretFuture)
                 .compose(
                     compositeFuture -> {
