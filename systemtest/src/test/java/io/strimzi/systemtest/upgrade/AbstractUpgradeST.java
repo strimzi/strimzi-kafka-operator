@@ -378,7 +378,8 @@ public class AbstractUpgradeST extends AbstractST {
                 ResourceManager.waitForResourceReadiness(getResourceApiVersion(KafkaTopic.RESOURCE_PLURAL), testStorage.getTopicName());
             }
 
-            String producerAdditionConfiguration = "delivery.timeout.ms=20000\nrequest.timeout.ms=20000";
+            // 40s is used within TF environment to make upgrade/downgrade more stable on slow env
+            String producerAdditionConfiguration = "delivery.timeout.ms=40000\nrequest.timeout.ms=40000";
 
             KafkaClients kafkaBasicClientJob = ClientUtils.getContinuousPlainClientBuilder(testStorage)
                 .withBootstrapAddress(KafkaResources.plainBootstrapAddress(clusterName))
@@ -619,8 +620,12 @@ public class AbstractUpgradeST extends AbstractST {
 
         // Verify that Kafka cluster RU
         waitForKafkaClusterRollingUpdate();
-        // Verify that KafkaConnect pods are rolling and KafkaConnector is ready
-        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), connectLabelSelector, 1, connectPods);
+
+        // Check KafkaConnect RU only if we don't use pre-built image
+        if (!Environment.CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN.isEmpty()) {
+            // Verify that KafkaConnect pods are rolling and KafkaConnector is ready
+            RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), connectLabelSelector, 1, connectPods);
+        }
         KafkaConnectorUtils.waitForConnectorReady(testStorage.getNamespaceName(), clusterName);
 
         // send again new messages
