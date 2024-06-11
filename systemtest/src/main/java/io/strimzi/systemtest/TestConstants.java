@@ -32,6 +32,7 @@ public interface TestConstants {
     long GLOBAL_POLL_INTERVAL = Duration.ofSeconds(1).toMillis();
     long GLOBAL_POLL_INTERVAL_MEDIUM = Duration.ofSeconds(10).toMillis();
     long PRODUCER_TIMEOUT = Duration.ofSeconds(25).toMillis();
+    long METRICS_COLLECT_TIMEOUT = Duration.ofMinutes(1).toMillis();
 
     long GLOBAL_TRACING_POLL = Duration.ofSeconds(30).toMillis();
 

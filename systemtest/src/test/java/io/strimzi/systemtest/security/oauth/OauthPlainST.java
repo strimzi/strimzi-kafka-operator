@@ -807,7 +807,7 @@ public class OauthPlainST extends OauthAbstractST {
 
     private void assertOauthMetricsForComponent(MetricsCollector collector) {
         LOGGER.info("Checking OAuth metrics for component: {}", collector.toString());
-        collector.collectMetricsFromPods(TestConstants.GLOBAL_TIMEOUT);
+        collector.collectMetricsFromPods(TestConstants.METRICS_COLLECT_TIMEOUT);
 
         for (final String podName : collector.getCollectedData().keySet()) {
             for (final String expectedMetric : expectedOauthMetrics) {

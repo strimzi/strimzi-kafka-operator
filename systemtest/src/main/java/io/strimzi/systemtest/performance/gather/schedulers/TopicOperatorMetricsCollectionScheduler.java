@@ -43,7 +43,7 @@ public class TopicOperatorMetricsCollectionScheduler extends BaseMetricsCollecti
     @Override
     protected void collectMetrics() {
         LOGGER.debug("Collecting metrics with selector: {}", this.selector);
-        this.topicOperatorMetricsCollector.collectMetricsFromPods(TestConstants.GLOBAL_TIMEOUT);
+        this.topicOperatorMetricsCollector.collectMetricsFromPods(TestConstants.METRICS_COLLECT_TIMEOUT);
         LOGGER.debug("Metrics collected.");
     }
 

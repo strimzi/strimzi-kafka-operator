@@ -260,14 +260,14 @@ public class MetricsST extends AbstractST {
                 .withComponent(KafkaConnectMetricsComponent.create(kafkaClusterFirstName))
                 .build();
 
-        kafkaConnectCollector.collectMetricsFromPods(TestConstants.GLOBAL_TIMEOUT);
+        kafkaConnectCollector.collectMetricsFromPods(TestConstants.METRICS_COLLECT_TIMEOUT);
 
         assertMetricValueHigherThan(kafkaConnectCollector, "kafka_connect_node_request_total\\{clientid=\".*\"}", 0);
         assertMetricValueHigherThan(kafkaConnectCollector, "kafka_connect_node_response_total\\{clientid=\".*\".*}", 0);
         assertMetricValueHigherThan(kafkaConnectCollector, "kafka_connect_network_io_total\\{clientid=\".*\".*}", 0);
 
         // Check CO metrics and look for KafkaConnect and KafkaConnector
-        clusterOperatorCollector.collectMetricsFromPods(TestConstants.GLOBAL_TIMEOUT);
+        clusterOperatorCollector.collectMetricsFromPods(TestConstants.METRICS_COLLECT_TIMEOUT);
         assertCoMetricResources(clusterOperatorCollector, KafkaConnect.RESOURCE_KIND, namespaceFirst, 1);
         assertCoMetricResourcesNullOrZero(clusterOperatorCollector, KafkaConnect.RESOURCE_KIND, namespaceSecond);
         assertCoMetricResourceState(clusterOperatorCollector, KafkaConnect.RESOURCE_KIND, kafkaClusterFirstName, namespaceFirst, 1, "none");
@@ -457,7 +457,7 @@ public class MetricsST extends AbstractST {
             .withComponent(UserOperatorMetricsComponent.create(namespaceFirst, kafkaClusterFirstName))
             .build();
 
-        userOperatorCollector.collectMetricsFromPods(TestConstants.GLOBAL_TIMEOUT);
+        userOperatorCollector.collectMetricsFromPods(TestConstants.METRICS_COLLECT_TIMEOUT);
 
         assertMetricResourceNotNull(userOperatorCollector, "strimzi_reconciliations_successful_total", KafkaUser.RESOURCE_KIND);
         assertMetricResourceNotNull(userOperatorCollector, "strimzi_reconciliations_duration_seconds_count", KafkaUser.RESOURCE_KIND);
@@ -508,7 +508,7 @@ public class MetricsST extends AbstractST {
         assertMetricValue(kmm2Collector, "kafka_connect_worker_task_count", 1);
 
         // Check CO metrics and look for KafkaBridge
-        clusterOperatorCollector.collectMetricsFromPods(TestConstants.GLOBAL_TIMEOUT);
+        clusterOperatorCollector.collectMetricsFromPods(TestConstants.METRICS_COLLECT_TIMEOUT);
         assertCoMetricResources(clusterOperatorCollector, KafkaMirrorMaker2.RESOURCE_KIND, namespaceFirst, 1);
         assertCoMetricResourcesNullOrZero(clusterOperatorCollector, KafkaMirrorMaker2.RESOURCE_KIND, namespaceSecond);
         assertCoMetricResourceState(clusterOperatorCollector, KafkaMirrorMaker2.RESOURCE_KIND, mm2ClusterName, namespaceFirst, 1, "none");
@@ -573,13 +573,13 @@ public class MetricsST extends AbstractST {
         // we cannot wait for producer and consumer to complete to see all needed metrics - especially `strimzi_bridge_kafka_producer_count`
         resourceManager.createResourceWithWait(kafkaBridgeClientJob.producerStrimziBridge(), kafkaBridgeClientJob.consumerStrimziBridge());
 
-        bridgeCollector.collectMetricsFromPods(TestConstants.GLOBAL_TIMEOUT);
+        bridgeCollector.collectMetricsFromPods(TestConstants.METRICS_COLLECT_TIMEOUT);
         assertMetricValueNotNull(bridgeCollector, "strimzi_bridge_kafka_producer_count\\{.*}");
         assertMetricValueNotNull(bridgeCollector, "strimzi_bridge_kafka_consumer_connection_count\\{.*}");
         assertThat("bridge collected data don't contain strimzi_bridge_http_server", bridgeCollector.getCollectedData().values().toString().contains("strimzi_bridge_http_server"));
 
         // Check CO metrics and look for KafkaBridge
-        clusterOperatorCollector.collectMetricsFromPods(TestConstants.GLOBAL_TIMEOUT);
+        clusterOperatorCollector.collectMetricsFromPods(TestConstants.METRICS_COLLECT_TIMEOUT);
         assertCoMetricResources(clusterOperatorCollector, KafkaBridge.RESOURCE_KIND, namespaceFirst, 1);
         assertCoMetricResourcesNullOrZero(clusterOperatorCollector, KafkaBridge.RESOURCE_KIND, namespaceSecond);
         assertCoMetricResourceState(clusterOperatorCollector, KafkaBridge.RESOURCE_KIND, bridgeClusterName, namespaceFirst, 1, "none");
@@ -783,7 +783,7 @@ public class MetricsST extends AbstractST {
             zookeeperCollector = kafkaCollector.toBuilder()
                 .withComponent(ZookeeperMetricsComponent.create(kafkaClusterFirstName))
                 .build();
-            zookeeperCollector.collectMetricsFromPods(TestConstants.GLOBAL_TIMEOUT);
+            zookeeperCollector.collectMetricsFromPods(TestConstants.METRICS_COLLECT_TIMEOUT);
         }
 
         kafkaExporterCollector = kafkaCollector.toBuilder()
@@ -796,8 +796,8 @@ public class MetricsST extends AbstractST {
             .withComponent(ClusterOperatorMetricsComponent.create(TestConstants.CO_NAMESPACE, clusterOperator.getClusterOperatorName()))
             .build();
 
-        kafkaCollector.collectMetricsFromPods(TestConstants.GLOBAL_TIMEOUT);
-        kafkaExporterCollector.collectMetricsFromPods(TestConstants.GLOBAL_TIMEOUT);
-        clusterOperatorCollector.collectMetricsFromPods(TestConstants.GLOBAL_TIMEOUT);
+        kafkaCollector.collectMetricsFromPods(TestConstants.METRICS_COLLECT_TIMEOUT);
+        kafkaExporterCollector.collectMetricsFromPods(TestConstants.METRICS_COLLECT_TIMEOUT);
+        clusterOperatorCollector.collectMetricsFromPods(TestConstants.METRICS_COLLECT_TIMEOUT);
     }
 }
