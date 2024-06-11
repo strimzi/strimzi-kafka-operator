@@ -242,7 +242,7 @@ public class KafkaAssemblyOperatorWithPoolsKRaftMockTest {
                     assertThat(spsControllers, is(notNullValue()));
 
                     spsControllers.getSpec().getPods().stream().map(PodSetUtils::mapToPod).forEach(pod -> {
-                        // Controller annotations should differ
+                        // Controller annotations be the same
                         assertThat(pod.getMetadata().getAnnotations().get(KafkaCluster.ANNO_STRIMZI_BROKER_CONFIGURATION_HASH), is(brokerConfigurationAnnos.get(pod.getMetadata().getName())));
                     });
 
@@ -274,6 +274,89 @@ public class KafkaAssemblyOperatorWithPoolsKRaftMockTest {
                     spsBrokers.getSpec().getPods().stream().map(PodSetUtils::mapToPod).forEach(pod -> {
                         // Broker annotations should be the same
                         assertThat(pod.getMetadata().getAnnotations().get(KafkaCluster.ANNO_STRIMZI_BROKER_CONFIGURATION_HASH), is(brokerConfigurationAnnos.get(pod.getMetadata().getName())));
+                    });
+
+                    async.flag();
+                })));
+    }
+
+    /**
+     * Tests how the KRaft controller-only nodes have their logging config changes tracked using a Pod annotations. The
+     * annotation on controller-only pods should have a hash based on a complete logging configuration. On broker pods
+     * it should have only the options not dynamically configurable. To test this, the test does 3 reconciliations:
+     *     - First initial one to establish the pods and collects the annotations
+     *     - Second with change that is not relevant to brokers => annotations should change for controllers but not for
+     *       broker
+     *     - Third with change to a logging appender => annotations for controller nodes should change, and so should
+     *       the annotation for brokers as appenders are not dynamically configurable
+     *
+     * @param context   Test context
+     */
+    @Test
+    public void testReconcileWithControllerRelevantLoggingChange(VertxTestContext context) {
+        Checkpoint async = context.checkpoint();
+
+        Map<String, String> loggingConfigurationAnnos = new HashMap<>();
+
+        operator.reconcile(new Reconciliation("initial-trigger", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME))
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    // Collect the configuration annotations
+                    StrimziPodSet spsControllers = supplier.strimziPodSetOperator.client().inNamespace(namespace).withName(CLUSTER_NAME + "-controllers").get();
+                    assertThat(spsControllers, is(notNullValue()));
+
+                    spsControllers.getSpec().getPods().stream().map(PodSetUtils::mapToPod).forEach(pod -> {
+                        loggingConfigurationAnnos.put(pod.getMetadata().getName(), pod.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_LOGGING_APPENDERS_HASH));
+                    });
+
+                    StrimziPodSet spsBrokers = supplier.strimziPodSetOperator.client().inNamespace(namespace).withName(CLUSTER_NAME + "-brokers").get();
+                    assertThat(spsBrokers, is(notNullValue()));
+
+                    spsBrokers.getSpec().getPods().stream().map(PodSetUtils::mapToPod).forEach(pod -> {
+                        loggingConfigurationAnnos.put(pod.getMetadata().getName(), pod.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_LOGGING_APPENDERS_HASH));
+                    });
+
+                    // Update Kafka and change the log level => only controller pod annotations should change
+                    Crds.kafkaOperation(client).inNamespace(namespace).withName(CLUSTER_NAME)
+                            .edit(k -> new KafkaBuilder(k).editSpec().editKafka().withNewInlineLogging().withLoggers(Map.of("kafka.root.logger.level", "DEBUG")).endInlineLogging().endKafka().endSpec().build());
+                })))
+                .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME)))
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    StrimziPodSet spsControllers = supplier.strimziPodSetOperator.client().inNamespace(namespace).withName(CLUSTER_NAME + "-controllers").get();
+                    assertThat(spsControllers, is(notNullValue()));
+
+                    spsControllers.getSpec().getPods().stream().map(PodSetUtils::mapToPod).forEach(pod -> {
+                        // Controller annotations should differ
+                        assertThat(pod.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_LOGGING_APPENDERS_HASH), is(not(loggingConfigurationAnnos.get(pod.getMetadata().getName()))));
+                    });
+
+                    StrimziPodSet spsBrokers = supplier.strimziPodSetOperator.client().inNamespace(namespace).withName(CLUSTER_NAME + "-brokers").get();
+                    assertThat(spsBrokers, is(notNullValue()));
+
+                    spsBrokers.getSpec().getPods().stream().map(PodSetUtils::mapToPod).forEach(pod -> {
+                        // Broker annotations should be the same
+                        assertThat(pod.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_LOGGING_APPENDERS_HASH), is(loggingConfigurationAnnos.get(pod.getMetadata().getName())));
+                    });
+
+                    // Update Kafka and change appender => both controller and broker pod annotations should change
+                    Crds.kafkaOperation(client).inNamespace(namespace).withName(CLUSTER_NAME)
+                            .edit(k -> new KafkaBuilder(k).editSpec().editKafka().withNewInlineLogging().withLoggers(Map.of("log4j.appender.CONSOLE", "my.tls.MyAppender")).endInlineLogging().endKafka().endSpec().build());
+                })))
+                .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME)))
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    StrimziPodSet spsControllers = supplier.strimziPodSetOperator.client().inNamespace(namespace).withName(CLUSTER_NAME + "-controllers").get();
+                    assertThat(spsControllers, is(notNullValue()));
+
+                    spsControllers.getSpec().getPods().stream().map(PodSetUtils::mapToPod).forEach(pod -> {
+                        // Controller annotations should differ
+                        assertThat(pod.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_LOGGING_APPENDERS_HASH), is(not(loggingConfigurationAnnos.get(pod.getMetadata().getName()))));
+                    });
+
+                    StrimziPodSet spsBrokers = supplier.strimziPodSetOperator.client().inNamespace(namespace).withName(CLUSTER_NAME + "-brokers").get();
+                    assertThat(spsBrokers, is(notNullValue()));
+
+                    spsBrokers.getSpec().getPods().stream().map(PodSetUtils::mapToPod).forEach(pod -> {
+                        // Broker annotations should differ
+                        assertThat(pod.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_LOGGING_APPENDERS_HASH), is(not(loggingConfigurationAnnos.get(pod.getMetadata().getName()))));
                     });
 
                     async.flag();
