@@ -120,7 +120,7 @@
         <!-- Build tools -->
         <checkstyle.version>10.12.2</checkstyle.version>
         <spotbugs.version>4.7.3</spotbugs.version>
-        <sundrio.version>0.100.3</sundrio.version>
+        <sundrio.version>0.200.0</sundrio.version>
         <lombok.version>1.18.32</lombok.version>
 
         <!-- Runtime dependencies -->
