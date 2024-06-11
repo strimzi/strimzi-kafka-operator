@@ -40,6 +40,8 @@ public class TopicOperatorPerformanceUtils {
         "compression.type", "gzip", "cleanup.policy", "delete", "min.insync.replicas", 2,
         "max.compaction.lag.ms", 54321L, "min.compaction.lag.ms", 54L, "retention.ms", 3690L,
         "segment.ms", 123456L, "retention.bytes", 9876543L, "segment.bytes", 321654L, "flush.messages", 456123L);
+    private static final int AVAILABLE_CPUS = Runtime.getRuntime().availableProcessors();
+    private static final ExecutorService EXECUTOR = Executors.newFixedThreadPool(AVAILABLE_CPUS);
 
     private TopicOperatorPerformanceUtils() {}  // Prevent instantiation
 
@@ -76,26 +78,19 @@ public class TopicOperatorPerformanceUtils {
      * @param numberOfTopics The total number of Kafka topics to process.
      */
     public static void processKafkaTopicBatchesAsync(TestStorage testStorage, int numberOfTopics) {
-        final int availableCPUs = Runtime.getRuntime().availableProcessors();
-        final int optimalBatchCount = Math.max(1, availableCPUs);
-        final int topicsPerBatch = (numberOfTopics + optimalBatchCount - 1) / optimalBatchCount; // Ensures all topics are covered
+        final int topicsPerBatch = (numberOfTopics + AVAILABLE_CPUS - 1) / AVAILABLE_CPUS; // Ensures all topics are covered
 
-        final ExecutorService executor = Executors.newFixedThreadPool(optimalBatchCount);
         final ExtensionContext currentContext = ResourceManager.getTestContext();
-        final CompletableFuture<?>[] futures = new CompletableFuture[optimalBatchCount];
+        final CompletableFuture<?>[] futures = new CompletableFuture[AVAILABLE_CPUS];
 
-        try {
-            for (int batch = 0; batch < optimalBatchCount; batch++) {
-                int start = batch * topicsPerBatch;
-                int end = Math.min(start + topicsPerBatch, numberOfTopics); // Ensure we do not go out of bounds
-                // Delegate batch processing to a separate method
-                futures[batch] = processBatch(start, end, currentContext, testStorage, executor);
-            }
-            CompletableFuture.allOf(futures).join(); // Wait for all batches to complete
-            LOGGER.info("All batches completed.");
-        } finally {
-            executor.shutdown();
+        for (int batch = 0; batch < AVAILABLE_CPUS; batch++) {
+            int start = batch * topicsPerBatch;
+            int end = Math.min(start + topicsPerBatch, numberOfTopics); // Ensure we do not go out of bounds
+            // Delegate batch processing to a separate method
+            futures[batch] = processBatch(start, end, currentContext, testStorage);
         }
+        CompletableFuture.allOf(futures).join(); // Wait for all batches to complete
+        LOGGER.info("All batches completed.");
     }
 
     /**
@@ -109,14 +104,13 @@ public class TopicOperatorPerformanceUtils {
      * @param end             Ending index of the batch.
      * @param currentContext  The current JUnit extension context.
      * @param testStorage     Storage instance with namespace and configuration details.
-     * @param executor        The executor service managing concurrent tasks.
      * @return                CompletableFuture representing the completion of all operations in the batch.
      */
     private static CompletableFuture<Void> processBatch(int start, int end, ExtensionContext currentContext,
-                                                        TestStorage testStorage, ExecutorService executor) {
-        return CompletableFuture.runAsync(() -> performCreationWithWait(start, end, currentContext, testStorage), executor)
-            .thenRunAsync(() -> performModificationWithWait(start, end, currentContext, testStorage, KAFKA_TOPIC_CONFIG_TO_MODIFY), executor)
-            .thenRunAsync(() -> performDeletionWithWait(start, end, currentContext, testStorage), executor)
+                                                        TestStorage testStorage) {
+        return CompletableFuture.runAsync(() -> performCreationWithWait(start, end, currentContext, testStorage), EXECUTOR)
+            .thenRunAsync(() -> performModificationWithWait(start, end, currentContext, testStorage, KAFKA_TOPIC_CONFIG_TO_MODIFY), EXECUTOR)
+            .thenRunAsync(() -> performDeletionWithWait(start, end, currentContext, testStorage), EXECUTOR)
             .exceptionally(ex -> {
                 LOGGER.error("Error processing batch from {} to {}: {}", start, end, ex.getMessage(), ex);
                 return null;
@@ -242,9 +236,6 @@ public class TopicOperatorPerformanceUtils {
      * @return                      The total time taken to complete all topic lifecycles in milliseconds.
      */
     public static long processAllTopicsConcurrently(TestStorage testStorage, int numberOfTopics, int spareEvents, int warmUpTasksToProcess) {
-        final int availableCPUs = Math.max(1, Runtime.getRuntime().availableProcessors());
-        final ExecutorService executor = Executors.newFixedThreadPool(availableCPUs);
-
         List<CompletableFuture<Void>> futures = new ArrayList<>();
         ExtensionContext extensionContext = ResourceManager.getTestContext();
 
@@ -252,7 +243,7 @@ public class TopicOperatorPerformanceUtils {
 
         for (int topicIndex = warmUpTasksToProcess; topicIndex < numberOfTopics + warmUpTasksToProcess; topicIndex++) {
             final int finalTopicIndex = topicIndex;
-            CompletableFuture<Void> future = CompletableFuture.runAsync(() -> performFullLifecycle(finalTopicIndex, testStorage, extensionContext), executor);
+            CompletableFuture<Void> future = CompletableFuture.runAsync(() -> performFullLifecycle(finalTopicIndex, testStorage, extensionContext), EXECUTOR);
             futures.add(future);
         }
 
@@ -267,15 +258,28 @@ public class TopicOperatorPerformanceUtils {
 
         long allTasksTimeMs = (System.nanoTime() - startTime) / 1_000_000;
 
-        try {
-            executor.shutdown();
-            executor.awaitTermination(5, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            if (!executor.isTerminated()) {
-                executor.shutdownNow();
+        if (warmUpTasksToProcess != 0) {
+            // boundary between tests => less likelihood that tests would influence each other
+            LOGGER.info("Cooling down");
+            try {
+                Thread.sleep(30_000);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
             }
         }
+
         return allTasksTimeMs;
+    }
+
+    public static void stopExecutor() {
+        try {
+            EXECUTOR.shutdown();
+            EXECUTOR.awaitTermination(5, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            if (!EXECUTOR.isTerminated()) {
+                EXECUTOR.shutdownNow();
+            }
+        }
     }
 
     /**
