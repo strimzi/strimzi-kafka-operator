@@ -622,7 +622,7 @@ public class AbstractUpgradeST extends AbstractST {
         waitForKafkaClusterRollingUpdate();
 
         // Check KafkaConnect RU only if we don't use pre-built image
-        if (!Environment.CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN.isEmpty()) {
+        if (Environment.CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN.isEmpty()) {
             // Verify that KafkaConnect pods are rolling and KafkaConnector is ready
             RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), connectLabelSelector, 1, connectPods);
         }
