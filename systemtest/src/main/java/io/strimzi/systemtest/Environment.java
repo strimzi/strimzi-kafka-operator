@@ -275,7 +275,6 @@ public class Environment {
 
     public static final String KAFKA_TIERED_STORAGE_BASE_IMAGE = getOrDefault(KAFKA_TIERED_STORAGE_BASE_IMAGE_ENV, KAFKA_TIERED_STORAGE_BASE_IMAGE_DEFAULT);
 
-
     private Environment() { }
 
     static {
