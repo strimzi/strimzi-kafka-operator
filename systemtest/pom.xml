@@ -229,6 +229,10 @@
             <groupId>io.fabric8</groupId>
             <artifactId>openshift-model-operatorhub</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.skodjob</groupId>
+            <artifactId>test-frame-metrics-collector</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

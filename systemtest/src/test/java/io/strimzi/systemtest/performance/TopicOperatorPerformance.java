@@ -15,11 +15,11 @@ import io.strimzi.systemtest.enums.CustomResourceStatus;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.logs.LogCollector;
+import io.strimzi.systemtest.metrics.TopicOperatorMetricsComponent;
 import io.strimzi.systemtest.performance.gather.collectors.TopicOperatorMetricsCollector;
 import io.strimzi.systemtest.performance.gather.schedulers.TopicOperatorMetricsCollectionScheduler;
 import io.strimzi.systemtest.performance.report.TopicOperatorPerformanceReporter;
 import io.strimzi.systemtest.performance.report.parser.TopicOperatorMetricsParser;
-import io.strimzi.systemtest.resources.ComponentType;
 import io.strimzi.systemtest.resources.NodePoolsConverter;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
@@ -216,8 +216,7 @@ public class TopicOperatorPerformance extends AbstractST {
             this.topicOperatorCollector = new TopicOperatorMetricsCollector.Builder()
                     .withScraperPodName(this.testStorage.getScraperPodName())
                     .withNamespaceName(this.testStorage.getNamespaceName())
-                    .withComponentType(ComponentType.TopicOperator)
-                    .withComponentName(this.testStorage.getClusterName())
+                    .withComponent(TopicOperatorMetricsComponent.create(this.testStorage.getNamespaceName(), this.testStorage.getClusterName()))
                     .build();
 
             this.topicOperatorMetricsGatherer = new TopicOperatorMetricsCollectionScheduler(this.topicOperatorCollector, "strimzi.io/cluster=" + this.testStorage.getClusterName());
@@ -411,8 +410,7 @@ public class TopicOperatorPerformance extends AbstractST {
             this.topicOperatorCollector = new TopicOperatorMetricsCollector.Builder()
                 .withScraperPodName(this.testStorage.getScraperPodName())
                 .withNamespaceName(this.testStorage.getNamespaceName())
-                .withComponentType(ComponentType.TopicOperator)
-                .withComponentName(this.testStorage.getClusterName())
+                .withComponent(TopicOperatorMetricsComponent.create(this.testStorage.getNamespaceName(), this.testStorage.getClusterName()))
                 .build();
 
             this.topicOperatorMetricsGatherer = new TopicOperatorMetricsCollectionScheduler(this.topicOperatorCollector, "strimzi.io/cluster=" + this.testStorage.getClusterName());
@@ -681,8 +679,7 @@ public class TopicOperatorPerformance extends AbstractST {
             this.topicOperatorCollector = new TopicOperatorMetricsCollector.Builder()
                 .withScraperPodName(this.testStorage.getScraperPodName())
                 .withNamespaceName(this.testStorage.getNamespaceName())
-                .withComponentType(ComponentType.TopicOperator)
-                .withComponentName(this.testStorage.getClusterName())
+                .withComponent(TopicOperatorMetricsComponent.create(this.testStorage.getNamespaceName(), this.testStorage.getClusterName()))
                 .build();
 
             this.topicOperatorMetricsGatherer = new TopicOperatorMetricsCollectionScheduler(this.topicOperatorCollector, "strimzi.io/cluster=" + this.testStorage.getClusterName());

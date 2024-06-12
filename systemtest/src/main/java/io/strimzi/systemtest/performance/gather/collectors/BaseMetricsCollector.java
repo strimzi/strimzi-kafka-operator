@@ -4,8 +4,8 @@
  */
 package io.strimzi.systemtest.performance.gather.collectors;
 
+import io.skodjob.testframe.MetricsCollector;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
-import io.strimzi.systemtest.metrics.MetricsCollector;
 import io.strimzi.systemtest.performance.PerformanceConstants;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

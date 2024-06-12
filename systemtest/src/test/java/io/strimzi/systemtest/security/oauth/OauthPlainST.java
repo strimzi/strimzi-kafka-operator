@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.security.oauth;
 
+import io.skodjob.testframe.MetricsCollector;
 import io.strimzi.api.kafka.model.bridge.KafkaBridge;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.common.InlineLogging;
@@ -28,8 +29,10 @@ import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClientsBuilder;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaOauthClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaOauthClientsBuilder;
-import io.strimzi.systemtest.metrics.MetricsCollector;
-import io.strimzi.systemtest.resources.ComponentType;
+import io.strimzi.systemtest.metrics.KafkaBridgeMetricsComponent;
+import io.strimzi.systemtest.metrics.KafkaConnectMetricsComponent;
+import io.strimzi.systemtest.metrics.KafkaMetricsComponent;
+import io.strimzi.systemtest.metrics.KafkaMirrorMaker2MetricsComponent;
 import io.strimzi.systemtest.resources.NodePoolsConverter;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
@@ -146,7 +149,7 @@ public class OauthPlainST extends OauthAbstractST {
 
         assertOauthMetricsForComponent(
             metricsCollector.toBuilder()
-                .withComponentType(ComponentType.Kafka)
+                .withComponent(KafkaMetricsComponent.create(oauthClusterName))
                 .build()
         );
     }
@@ -374,7 +377,7 @@ public class OauthPlainST extends OauthAbstractST {
 
         assertOauthMetricsForComponent(
             metricsCollector.toBuilder()
-                .withComponentType(ComponentType.KafkaConnect)
+                .withComponent(KafkaConnectMetricsComponent.create(oauthClusterName))
                 .build()
         );
     }
@@ -686,7 +689,7 @@ public class OauthPlainST extends OauthAbstractST {
 
         assertOauthMetricsForComponent(
             metricsCollector.toBuilder()
-                .withComponentType(ComponentType.KafkaMirrorMaker2)
+                .withComponent(KafkaMirrorMaker2MetricsComponent.create(oauthClusterName))
                 .build()
         );
     }
@@ -769,7 +772,7 @@ public class OauthPlainST extends OauthAbstractST {
 
         assertOauthMetricsForComponent(
             metricsCollector.toBuilder()
-                .withComponentType(ComponentType.KafkaBridge)
+                .withComponent(KafkaBridgeMetricsComponent.create(Environment.TEST_SUITE_NAMESPACE, oauthClusterName))
                 .build()
         );
     }
@@ -803,8 +806,8 @@ public class OauthPlainST extends OauthAbstractST {
     }
 
     private void assertOauthMetricsForComponent(MetricsCollector collector) {
-        LOGGER.info("Checking OAuth metrics for component: {} with name: {}", collector.getComponentType(), collector.getComponentName());
-        collector.collectMetricsFromPods();
+        LOGGER.info("Checking OAuth metrics for component: {}", collector.toString());
+        collector.collectMetricsFromPods(TestConstants.METRICS_COLLECT_TIMEOUT);
 
         for (final String podName : collector.getCollectedData().keySet()) {
             for (final String expectedMetric : expectedOauthMetrics) {
@@ -900,8 +903,7 @@ public class OauthPlainST extends OauthAbstractST {
         metricsCollector = new MetricsCollector.Builder()
             .withNamespaceName(Environment.TEST_SUITE_NAMESPACE)
             .withScraperPodName(scraperPodName)
-            .withComponentName(oauthClusterName)
-            .withComponentType(ComponentType.Kafka)
+            .withComponent(KafkaMetricsComponent.create(oauthClusterName))
             .build();
 
         String brokerPodName = kubeClient().listPods(Environment.TEST_SUITE_NAMESPACE,

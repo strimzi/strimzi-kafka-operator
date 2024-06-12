@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.operators.topic;
 
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
+import io.skodjob.testframe.MetricsCollector;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.api.kafka.model.topic.KafkaTopicStatus;
@@ -20,8 +21,7 @@ import io.strimzi.systemtest.enums.ConditionStatus;
 import io.strimzi.systemtest.enums.CustomResourceStatus;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.admin.AdminClient;
-import io.strimzi.systemtest.metrics.MetricsCollector;
-import io.strimzi.systemtest.resources.ComponentType;
+import io.strimzi.systemtest.metrics.TopicOperatorMetricsComponent;
 import io.strimzi.systemtest.resources.NodePoolsConverter;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -327,8 +327,7 @@ public class TopicST extends AbstractST {
         MetricsCollector toMetricsCollector = new MetricsCollector.Builder()
             .withNamespaceName(Environment.TEST_SUITE_NAMESPACE)
             .withScraperPodName(scraperPodName)
-            .withComponentName(sharedTestStorage.getClusterName())
-            .withComponentType(ComponentType.TopicOperator)
+            .withComponent(TopicOperatorMetricsComponent.create(Environment.TEST_SUITE_NAMESPACE, sharedTestStorage.getClusterName()))
             .build();
 
         assertMetricResourceNotNull(toMetricsCollector, "strimzi_reconciliations_successful_total", KafkaTopic.RESOURCE_KIND);

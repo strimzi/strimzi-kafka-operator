@@ -15,6 +15,7 @@ import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
+import io.skodjob.testframe.MetricsCollector;
 import io.strimzi.api.kafka.model.common.ProbeBuilder;
 import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetricsBuilder;
@@ -29,8 +30,8 @@ import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
-import io.strimzi.systemtest.metrics.MetricsCollector;
-import io.strimzi.systemtest.resources.ComponentType;
+import io.strimzi.systemtest.metrics.KafkaMetricsComponent;
+import io.strimzi.systemtest.metrics.ZookeeperMetricsComponent;
 import io.strimzi.systemtest.resources.NodePoolsConverter;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
@@ -788,17 +789,16 @@ class RollingUpdateST extends AbstractST {
         MetricsCollector kafkaCollector = new MetricsCollector.Builder()
             .withNamespaceName(testStorage.getNamespaceName())
             .withScraperPodName(metricsScraperPodName)
-            .withComponentName(testStorage.getClusterName())
-            .withComponentType(ComponentType.Kafka)
+            .withComponent(KafkaMetricsComponent.create(testStorage.getClusterName()))
             .build();
 
         MetricsCollector zkCollector = kafkaCollector.toBuilder()
-            .withComponentType(ComponentType.Zookeeper)
+            .withComponent(ZookeeperMetricsComponent.create(testStorage.getClusterName()))
             .build();
 
         LOGGER.info("Check if metrics are present in Pod of Kafka and ZooKeeper");
-        kafkaCollector.collectMetricsFromPods();
-        zkCollector.collectMetricsFromPods();
+        kafkaCollector.collectMetricsFromPods(TestConstants.METRICS_COLLECT_TIMEOUT);
+        zkCollector.collectMetricsFromPods(TestConstants.METRICS_COLLECT_TIMEOUT);
 
         assertThat(kafkaCollector.getCollectedData().values().toString().contains("kafka_"), is(true));
         assertThat(zkCollector.getCollectedData().values().toString().contains("replicaId"), is(true));
@@ -860,8 +860,8 @@ class RollingUpdateST extends AbstractST {
 
         LOGGER.info("Check if metrics are present in Pod of Kafka and ZooKeeper");
 
-        kafkaCollector.collectMetricsFromPods();
-        zkCollector.collectMetricsFromPods();
+        kafkaCollector.collectMetricsFromPods(TestConstants.METRICS_COLLECT_TIMEOUT);
+        zkCollector.collectMetricsFromPods(TestConstants.METRICS_COLLECT_TIMEOUT);
 
         assertThat(kafkaCollector.getCollectedData().values().toString().contains("kafka_"), is(true));
         assertThat(zkCollector.getCollectedData().values().toString().contains("replicaId"), is(true));

@@ -4,8 +4,8 @@
  */
 package io.strimzi.systemtest.performance.gather.collectors;
 
+import io.skodjob.testframe.MetricsComponent;
 import io.strimzi.systemtest.performance.PerformanceConstants;
-import io.strimzi.systemtest.resources.ComponentType;
 
 import java.util.List;
 
@@ -63,26 +63,8 @@ public class UserOperatorMetricsCollector extends BaseMetricsCollector {
         }
 
         @Override
-        public UserOperatorMetricsCollector.Builder withComponentType(ComponentType componentType) {
-            super.withComponentType(componentType);
-            return this;
-        }
-
-        @Override
-        public UserOperatorMetricsCollector.Builder withComponentName(String componentName) {
-            super.withComponentName(componentName);
-            return this;
-        }
-
-        @Override
-        public UserOperatorMetricsCollector.Builder withMetricsPort(int metricsPort) {
-            super.withMetricsPort(metricsPort);
-            return this;
-        }
-
-        @Override
-        public UserOperatorMetricsCollector.Builder withMetricsPath(String metricsPath) {
-            super.withMetricsPath(metricsPath);
+        public UserOperatorMetricsCollector.Builder withComponent(MetricsComponent component) {
+            super.withComponent(component);
             return this;
         }
     }
