@@ -182,8 +182,8 @@ EOF
     # We want a consistent name that works from both ends, so we tell containerd to
     # alias localhost:${reg_port} to the registry container when pulling images
     # note: kind get nodes (default name `kind` and with specifying new name we have to use --name <cluster-name>
-	# See https://kind.sigs.k8s.io/docs/user/local-registry/
-	REGISTRY_DIR="/etc/containerd/certs.d/${hostname}:${reg_port}"
+    # See https://kind.sigs.k8s.io/docs/user/local-registry/
+    REGISTRY_DIR="/etc/containerd/certs.d/${hostname}:${reg_port}"
 
     for node in $(kind get nodes --name kind-cluster); do
         echo "Executing command in node:${node}"
@@ -239,7 +239,7 @@ EOF
     echo "${ula_fixed_ipv6}::1    ${registry_dns}" >> /etc/hosts
 
     # note: kind get nodes (default name `kind` and with specifying new name we have to use --name <cluster-name>
-	# See https://kind.sigs.k8s.io/docs/user/local-registry/
+    # See https://kind.sigs.k8s.io/docs/user/local-registry/
     for node in $(kind get nodes --name kind-cluster); do
         echo "Executing command in node:${node}"
         cat <<EOF | docker exec -i "${node}" cp /dev/stdin "/etc/hosts"
