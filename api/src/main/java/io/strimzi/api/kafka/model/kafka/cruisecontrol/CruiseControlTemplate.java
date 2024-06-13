@@ -44,7 +44,7 @@ public class CruiseControlTemplate implements UnknownPropertyPreserving {
     private ContainerTemplate cruiseControlContainer;
     private ContainerTemplate tlsSidecarContainer;
     private ResourceTemplate serviceAccount;
-    private Map<String, Object> additionalProperties = new HashMap<>(0);
+    private final Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Template for Cruise Control `Deployment`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

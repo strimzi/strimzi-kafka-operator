@@ -55,8 +55,8 @@ public class CruiseControlUtils {
     }
 
     public static class ApiResult {
-        private String responseText;
-        private int responseCode;
+        private final String responseText;
+        private final int responseCode;
 
         public ApiResult(ExecResult execResult) {
             this.responseText = execResult.out();

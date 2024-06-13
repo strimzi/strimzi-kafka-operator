@@ -50,18 +50,18 @@ import static org.apache.logging.log4j.core.util.Throwables.getRootCause;
 public class CruiseControlClientImpl implements CruiseControlClient {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(CruiseControlClientImpl.class);
     
-    private String serverHostname;
-    private int serverPort;
-    private boolean rackEnabled;
-    private boolean sslEnabled;
-    private byte[] sslCertificate;
-    private boolean authEnabled;
-    private String authUsername;
-    private String authPassword;
+    private final String serverHostname;
+    private final int serverPort;
+    private final boolean rackEnabled;
+    private final boolean sslEnabled;
+    private final byte[] sslCertificate;
+    private final boolean authEnabled;
+    private final String authUsername;
+    private final String authPassword;
     
-    private ExecutorService httpClientExecutor;
+    private final ExecutorService httpClientExecutor;
     private HttpClient httpClient;
-    private ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper;
     
     CruiseControlClientImpl(String serverHostname,
                             int serverPort,
