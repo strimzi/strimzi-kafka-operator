@@ -13,8 +13,9 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.util.HashMap;
 import java.util.Map;
+
+import static java.util.Collections.emptyMap;
 
 /**
  * Represents a status of the Kafka Rebalance resource
@@ -30,12 +31,12 @@ import java.util.Map;
 @ToString(callSuper = true)
 public class KafkaRebalanceStatus extends Status {
     private String sessionId;
-    private Map<String, Object> optimizationResult = new HashMap<>(0);
+    private Map<String, Object> optimizationResult;
 
     @Description("A JSON object describing the optimization result")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<String, Object> getOptimizationResult() {
-        return optimizationResult;
+        return optimizationResult != null ? optimizationResult : emptyMap();
     }
 
     public void setOptimizationResult(Map<String, Object> optimizationResult) {

@@ -17,6 +17,8 @@ import lombok.ToString;
 import java.util.HashMap;
 import java.util.Map;
 
+import static java.util.Collections.emptyMap;
+
 /**
  * Representation of a Metadata template for Kubernetes resources
  */
@@ -30,14 +32,14 @@ import java.util.Map;
 @EqualsAndHashCode
 @ToString
 public class MetadataTemplate implements UnknownPropertyPreserving {
-    private Map<String, String> labels = new HashMap<>(0);
-    private Map<String, String> annotations = new HashMap<>(0);
-    private Map<String, Object> additionalProperties = new HashMap<>(0);
+    private Map<String, String> labels;
+    private Map<String, String> annotations;
+    private Map<String, Object> additionalProperties;
 
     @Description("Labels added to the Kubernetes resource.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<String, String> getLabels() {
-        return labels;
+        return labels != null ? labels : emptyMap();
     }
 
     public void setLabels(Map<String, String> labels) {
@@ -47,7 +49,7 @@ public class MetadataTemplate implements UnknownPropertyPreserving {
     @Description("Annotations added to the Kubernetes resource.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<String, String> getAnnotations() {
-        return annotations;
+        return annotations != null ? annotations : emptyMap();
     }
 
     public void setAnnotations(Map<String, String> annotations) {
@@ -56,11 +58,14 @@ public class MetadataTemplate implements UnknownPropertyPreserving {
 
     @Override
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties;
+        return this.additionalProperties != null ? this.additionalProperties : emptyMap();
     }
 
     @Override
     public void setAdditionalProperty(String name, Object value) {
+        if (this.additionalProperties == null) {
+            this.additionalProperties = new HashMap<>(1);
+        }
         this.additionalProperties.put(name, value);
     }
 }

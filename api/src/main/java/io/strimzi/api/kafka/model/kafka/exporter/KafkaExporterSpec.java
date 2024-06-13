@@ -21,6 +21,8 @@ import lombok.ToString;
 import java.util.HashMap;
 import java.util.Map;
 
+import static java.util.Collections.emptyMap;
+
 /**
  * Representation of the Kafka Exporter deployment.
  */
@@ -51,7 +53,7 @@ public class KafkaExporterSpec implements HasLivenessProbe, HasReadinessProbe, U
     private boolean showAllOffsets = true;
     private KafkaExporterTemplate template;
 
-    private Map<String, Object> additionalProperties = new HashMap<>(0);
+    private Map<String, Object> additionalProperties;
 
     @Description("The container image used for the Kafka Exporter pods. "
         + "If no image name is explicitly specified, the image name corresponds to the version specified in the Cluster Operator configuration. "
@@ -182,11 +184,14 @@ public class KafkaExporterSpec implements HasLivenessProbe, HasReadinessProbe, U
 
     @Override
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties;
+        return this.additionalProperties != null ? this.additionalProperties : emptyMap();
     }
 
     @Override
     public void setAdditionalProperty(String name, Object value) {
+        if (this.additionalProperties == null) {
+            this.additionalProperties = new HashMap<>(1);
+        }
         this.additionalProperties.put(name, value);
     }
 }

@@ -29,6 +29,8 @@ import lombok.ToString;
 import java.util.HashMap;
 import java.util.Map;
 
+import static java.util.Collections.emptyMap;
+
 @DescriptionFile
 @Buildable(
         editableEnabled = false,
@@ -58,9 +60,9 @@ public class CruiseControlSpec implements HasConfigurableMetrics, HasConfigurabl
     private Logging logging;
     private CruiseControlTemplate template;
     private BrokerCapacity brokerCapacity;
-    private Map<String, Object> config = new HashMap<>(0);
+    private Map<String, Object> config;
     private MetricsConfig metricsConfig;
-    private final Map<String, Object> additionalProperties = new HashMap<>(0);
+    private Map<String, Object> additionalProperties;
 
     @Description("The container image used for Cruise Control pods. "
         + "If no image name is explicitly specified, the image name corresponds to the name specified in the Cluster Operator configuration. "
@@ -102,7 +104,7 @@ public class CruiseControlSpec implements HasConfigurableMetrics, HasConfigurabl
             " (with the exception of: " + FORBIDDEN_PREFIX_EXCEPTIONS + ").")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<String, Object> getConfig() {
-        return config;
+        return this.config != null ? this.config : emptyMap();
     }
 
     public void setConfig(Map<String, Object> config) {
@@ -186,11 +188,14 @@ public class CruiseControlSpec implements HasConfigurableMetrics, HasConfigurabl
 
     @Override
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties;
+        return this.additionalProperties != null ? this.additionalProperties : emptyMap();
     }
 
     @Override
     public void setAdditionalProperty(String name, Object value) {
+        if (this.additionalProperties == null) {
+            this.additionalProperties = new HashMap<>(1);
+        }
         this.additionalProperties.put(name, value);
     }
 }

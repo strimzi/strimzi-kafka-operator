@@ -19,6 +19,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static java.util.Collections.emptyMap;
+
 /**
  * Representation a connector within a Kafka Connect build
  */
@@ -34,7 +36,7 @@ public class Plugin implements UnknownPropertyPreserving {
     private String name;
     private List<Artifact> artifacts;
 
-    private Map<String, Object> additionalProperties = new HashMap<>(0);
+    private Map<String, Object> additionalProperties;
 
     @Description("The unique name of the connector plugin. " +
             "Will be used to generate the path where the connector artifacts will be stored. " +
@@ -64,11 +66,14 @@ public class Plugin implements UnknownPropertyPreserving {
 
     @Override
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties;
+        return this.additionalProperties != null ? this.additionalProperties : emptyMap();
     }
 
     @Override
     public void setAdditionalProperty(String name, Object value) {
+        if (this.additionalProperties == null) {
+            this.additionalProperties = new HashMap<>(1);
+        }
         this.additionalProperties.put(name, value);
     }
 }

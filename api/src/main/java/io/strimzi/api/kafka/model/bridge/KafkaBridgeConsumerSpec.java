@@ -15,6 +15,8 @@ import lombok.ToString;
 
 import java.util.Map;
 
+import static java.util.Collections.emptyMap;
+
 @DescriptionFile
 @Buildable(
         editableEnabled = false,
@@ -36,7 +38,7 @@ public class KafkaBridgeConsumerSpec extends KafkaBridgeClientSpec {
     @Override
     @Description("The Kafka consumer configuration used for consumer instances created by the bridge. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES + " (with the exception of: " + FORBIDDEN_PREFIX_EXCEPTIONS + ").")
     public Map<String, Object> getConfig() {
-        return config;
+        return this.config != null ? this.config : emptyMap();
     }
 
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)

@@ -14,9 +14,6 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.util.HashMap;
-import java.util.Map;
-
 /**
  * JMX Prometheus Exporter metrics config
  */
@@ -32,7 +29,6 @@ public class JmxPrometheusExporterMetrics extends MetricsConfig {
     public static final String TYPE_JMX_EXPORTER = "jmxPrometheusExporter";
 
     private ExternalConfigurationReference valueFrom;
-    private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("ConfigMap entry where the Prometheus JMX Exporter configuration is stored. ")
     @JsonProperty(required = true)
@@ -50,5 +46,4 @@ public class JmxPrometheusExporterMetrics extends MetricsConfig {
     public String getType() {
         return TYPE_JMX_EXPORTER;
     }
-
 }

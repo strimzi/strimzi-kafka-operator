@@ -16,6 +16,8 @@ import lombok.ToString;
 import java.util.HashMap;
 import java.util.Map;
 
+import static java.util.Collections.emptyMap;
+
 /**
  * Selects a source of a password field
  */
@@ -30,7 +32,7 @@ import java.util.Map;
 public class PasswordSource implements UnknownPropertyPreserving {
     private SecretKeySelector secretKeyRef;
 
-    private final Map<String, Object> additionalProperties = new HashMap<>(0);
+    private Map<String, Object> additionalProperties;
 
     @Description("Selects a key of a Secret in the resource's namespace.")
     @KubeLink(group = "core", version = "v1", kind = "secretkeyselector")
@@ -45,11 +47,14 @@ public class PasswordSource implements UnknownPropertyPreserving {
 
     @Override
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties;
+        return this.additionalProperties != null ? this.additionalProperties : emptyMap();
     }
 
     @Override
     public void setAdditionalProperty(String name, Object value) {
+        if (this.additionalProperties == null) {
+            this.additionalProperties = new HashMap<>(1);
+        }
         this.additionalProperties.put(name, value);
     }
 }

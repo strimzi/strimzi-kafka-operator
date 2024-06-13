@@ -23,6 +23,8 @@ import lombok.ToString;
 import java.util.HashMap;
 import java.util.Map;
 
+import static java.util.Collections.emptyMap;
+
 /**
  * Representation of a template for Kafka MirrorMaker 2 resources.
  */
@@ -42,7 +44,7 @@ public class KafkaMirrorMaker2Template implements HasJmxSecretTemplate, UnknownP
     private ContainerTemplate mirrorMaker2Container;
     private ResourceTemplate serviceAccount;
     private ResourceTemplate jmxSecret;
-    private Map<String, Object> additionalProperties = new HashMap<>(0);
+    private Map<String, Object> additionalProperties;
 
     @Description("Template for Kafka MirrorMaker 2 `Deployment`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -115,11 +117,14 @@ public class KafkaMirrorMaker2Template implements HasJmxSecretTemplate, UnknownP
 
     @Override
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties;
+        return this.additionalProperties != null ? this.additionalProperties : emptyMap();
     }
 
     @Override
     public void setAdditionalProperty(String name, Object value) {
+        if (this.additionalProperties == null) {
+            this.additionalProperties = new HashMap<>(1);
+        }
         this.additionalProperties.put(name, value);
     }
 }

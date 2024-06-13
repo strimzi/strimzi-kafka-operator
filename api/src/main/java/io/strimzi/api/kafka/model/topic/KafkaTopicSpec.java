@@ -17,6 +17,8 @@ import lombok.ToString;
 
 import java.util.Map;
 
+import static java.util.Collections.emptyMap;
+
 @Buildable(
         editableEnabled = false,
         builderPackage = Constants.FABRIC8_KUBERNETES_API
@@ -27,11 +29,8 @@ import java.util.Map;
 @ToString(callSuper = true)
 public class KafkaTopicSpec extends Spec {
     private String topicName;
-
     private Integer partitions;
-
     private Integer replicas;
-
     private Map<String, Object> config;
 
     @Description("The name of the topic. " +
@@ -75,7 +74,7 @@ public class KafkaTopicSpec extends Spec {
 
     @Description("The topic configuration.")
     public Map<String, Object> getConfig() {
-        return config;
+        return this.config != null ? this.config : emptyMap();
     }
 
     public void setConfig(Map<String, Object> config) {

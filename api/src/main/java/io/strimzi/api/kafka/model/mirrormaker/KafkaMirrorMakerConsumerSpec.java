@@ -18,6 +18,8 @@ import lombok.ToString;
 
 import java.util.Map;
 
+import static java.util.Collections.emptyMap;
+
 @DescriptionFile
 @Buildable(
         editableEnabled = false,
@@ -33,15 +35,13 @@ public class KafkaMirrorMakerConsumerSpec extends KafkaMirrorMakerClientSpec {
     public static final String FORBIDDEN_PREFIX_EXCEPTIONS = "ssl.endpoint.identification.algorithm, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols";
 
     private Integer numStreams;
-
     private String groupId;
-
     private Integer offsetCommitInterval;
 
     @Override
     @Description("The MirrorMaker consumer config. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES + " (with the exception of: " + FORBIDDEN_PREFIX_EXCEPTIONS + ").")
     public Map<String, Object> getConfig() {
-        return config;
+        return this.config != null ? this.config : emptyMap();
     }
 
     @Description("Specifies the number of consumer stream threads to create.")

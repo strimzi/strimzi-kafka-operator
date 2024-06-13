@@ -15,6 +15,8 @@ import lombok.ToString;
 import java.util.HashMap;
 import java.util.Map;
 
+import static java.util.Collections.emptyMap;
+
 /**
  * Abstract baseclass for different representations of storage, discriminated by {@link #getType() type}.
  */
@@ -36,18 +38,21 @@ public abstract class Storage implements UnknownPropertyPreserving {
     public static final String TYPE_PERSISTENT_CLAIM = "persistent-claim";
     public static final String TYPE_JBOD = "jbod";
 
-    private Map<String, Object> additionalProperties = new HashMap<>(0);
+    private Map<String, Object> additionalProperties;
 
     @Description("Storage type, must be either 'ephemeral', 'persistent-claim', or 'jbod'.")
     public abstract String getType();
 
     @Override
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties;
+        return this.additionalProperties != null ? this.additionalProperties : emptyMap();
     }
 
     @Override
     public void setAdditionalProperty(String name, Object value) {
+        if (this.additionalProperties == null) {
+            this.additionalProperties = new HashMap<>(1);
+        }
         this.additionalProperties.put(name, value);
     }
 

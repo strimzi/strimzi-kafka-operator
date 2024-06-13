@@ -16,8 +16,9 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.util.HashMap;
 import java.util.Map;
+
+import static java.util.Collections.emptyMap;
 
 /**
  * Abstracts connector config. Connectors for MM2 do not have the {@code className} property
@@ -39,7 +40,7 @@ public abstract class AbstractConnectorSpec extends Spec {
 
     private Integer tasksMax;
     private Boolean pause;
-    private Map<String, Object> config = new HashMap<>(0);
+    private Map<String, Object> config;
     private ConnectorState state;
 
     private AutoRestart autoRestart;
@@ -68,7 +69,7 @@ public abstract class AbstractConnectorSpec extends Spec {
     @Description("The Kafka Connector configuration. The following properties cannot be set: " + FORBIDDEN_PARAMETERS)
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<String, Object> getConfig() {
-        return config;
+        return this.config != null ? this.config : emptyMap();
     }
 
     /**
@@ -134,5 +135,4 @@ public abstract class AbstractConnectorSpec extends Spec {
     public void setState(ConnectorState state) {
         this.state = state;
     }
-
 }

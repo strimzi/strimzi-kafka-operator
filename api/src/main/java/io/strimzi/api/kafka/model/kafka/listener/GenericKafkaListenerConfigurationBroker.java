@@ -39,13 +39,13 @@ public class GenericKafkaListenerConfigurationBroker implements UnknownPropertyP
     private String advertisedHost;
     private Integer advertisedPort;
     private String host;
-    private Map<String, String> annotations = new HashMap<>(0);
-    private Map<String, String> labels = new HashMap<>(0);
+    private Map<String, String> annotations;
+    private Map<String, String> labels;
     private Integer nodePort;
     private String loadBalancerIP;
     private List<String> externalIPs;
 
-    private Map<String, Object> additionalProperties = new HashMap<>(0);
+    private Map<String, Object> additionalProperties;
 
     @Description("ID of the kafka broker (broker identifier). " +
             "Broker IDs start from 0 and correspond to the number of broker replicas.")
@@ -95,7 +95,7 @@ public class GenericKafkaListenerConfigurationBroker implements UnknownPropertyP
             "This field can be used only with `loadbalancer`, `nodeport`, or `ingress` type listeners.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<String, String> getAnnotations() {
-        return annotations;
+        return annotations != null ? annotations : emptyMap();
     }
 
     public void setAnnotations(Map<String, String> annotations) {
@@ -106,7 +106,7 @@ public class GenericKafkaListenerConfigurationBroker implements UnknownPropertyP
             "This field can be used only with `loadbalancer`, `nodeport`, `route`, or `ingress` type listeners.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<String, String> getLabels() {
-        return labels;
+        return labels != null ? labels : emptyMap();
     }
 
     public void setLabels(Map<String, String> labels) {

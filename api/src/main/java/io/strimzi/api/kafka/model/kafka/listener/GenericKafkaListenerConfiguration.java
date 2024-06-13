@@ -57,7 +57,7 @@ public class GenericKafkaListenerConfiguration implements UnknownPropertyPreserv
     private Boolean createBootstrapService = true;
     private Boolean publishNotReadyAddresses;
 
-    private Map<String, Object> additionalProperties = new HashMap<>(0);
+    private Map<String, Object> additionalProperties;
 
     @Description("Reference to the `Secret` which holds the certificate and private key pair which will be used for this listener. " +
             "The certificate can optionally contain the whole chain. " +

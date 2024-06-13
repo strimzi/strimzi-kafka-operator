@@ -18,6 +18,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static java.util.Collections.emptyMap;
+
 /**
  * A representation of the HTTP CORS configuration.
  */
@@ -32,7 +34,7 @@ import java.util.Map;
 public class KafkaBridgeHttpCors implements UnknownPropertyPreserving {
     private List<String> allowedOrigins = null;
     private List<String> allowedMethods = null;
-    private Map<String, Object> additionalProperties = new HashMap<>(0);
+    private Map<String, Object> additionalProperties;
 
     @Description("List of allowed origins. " +
             "Java regular expressions can be used.")
@@ -59,11 +61,14 @@ public class KafkaBridgeHttpCors implements UnknownPropertyPreserving {
 
     @Override
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties;
+        return this.additionalProperties != null ? this.additionalProperties : emptyMap();
     }
 
     @Override
     public void setAdditionalProperty(String name, Object value) {
+        if (this.additionalProperties == null) {
+            this.additionalProperties = new HashMap<>(1);
+        }
         this.additionalProperties.put(name, value);
     }
 }

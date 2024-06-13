@@ -33,7 +33,7 @@ import static java.util.Collections.emptyMap;
 public class PersistentClaimStorageOverride  implements UnknownPropertyPreserving {
     private Integer broker;
     private String storageClass;
-    private Map<String, Object> additionalProperties = new HashMap<>(0);
+    private Map<String, Object> additionalProperties;
 
     @Description("Id of the kafka broker (broker identifier)")
     @JsonInclude(JsonInclude.Include.NON_NULL)

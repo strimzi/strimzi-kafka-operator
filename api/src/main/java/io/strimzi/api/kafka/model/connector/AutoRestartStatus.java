@@ -76,5 +76,4 @@ public class AutoRestartStatus implements UnknownPropertyPreserving {
         }
         this.additionalProperties.put(name, value);
     }
-
 }

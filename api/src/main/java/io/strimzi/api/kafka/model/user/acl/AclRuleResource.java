@@ -15,6 +15,8 @@ import lombok.ToString;
 import java.util.HashMap;
 import java.util.Map;
 
+import static java.util.Collections.emptyMap;
+
 /**
  * A representation of a single ACL rule for the Kafka's built-in authorizer
  */
@@ -31,7 +33,7 @@ import java.util.Map;
 @EqualsAndHashCode
 @ToString
 public abstract class AclRuleResource implements UnknownPropertyPreserving {
-    private Map<String, Object> additionalProperties = new HashMap<>(0);
+    private Map<String, Object> additionalProperties;
 
     @Description("Resource type. " +
             "The available resource types are `topic`, `group`, `cluster`, and `transactionalId`.")
@@ -39,11 +41,14 @@ public abstract class AclRuleResource implements UnknownPropertyPreserving {
 
     @Override
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties;
+        return this.additionalProperties != null ? this.additionalProperties : emptyMap();
     }
 
     @Override
     public void setAdditionalProperty(String name, Object value) {
+        if (this.additionalProperties == null) {
+            this.additionalProperties = new HashMap<>(1);
+        }
         this.additionalProperties.put(name, value);
     }
 }

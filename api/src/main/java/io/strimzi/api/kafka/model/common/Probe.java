@@ -16,6 +16,8 @@ import lombok.ToString;
 import java.util.HashMap;
 import java.util.Map;
 
+import static java.util.Collections.emptyMap;
+
 /**
  * A representation of the configurable aspect of a probe (used for health checks).
  */
@@ -33,7 +35,7 @@ public class Probe implements UnknownPropertyPreserving {
     private Integer periodSeconds;
     private Integer successThreshold;
     private Integer failureThreshold;
-    private Map<String, Object> additionalProperties = new HashMap<>(0);
+    private Map<String, Object> additionalProperties;
 
     public Probe() {
     }
@@ -102,11 +104,14 @@ public class Probe implements UnknownPropertyPreserving {
 
     @Override
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties;
+        return this.additionalProperties != null ? this.additionalProperties : emptyMap();
     }
 
     @Override
     public void setAdditionalProperty(String name, Object value) {
+        if (this.additionalProperties == null) {
+            this.additionalProperties = new HashMap<>(1);
+        }
         this.additionalProperties.put(name, value);
     }
 }

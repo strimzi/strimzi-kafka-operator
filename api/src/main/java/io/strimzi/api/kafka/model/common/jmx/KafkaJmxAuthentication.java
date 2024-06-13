@@ -15,6 +15,8 @@ import lombok.ToString;
 import java.util.HashMap;
 import java.util.Map;
 
+import static java.util.Collections.emptyMap;
+
 /*
  * Configure the authentication protocol on the Kafka Broker's JMX port.
  */
@@ -28,7 +30,7 @@ import java.util.Map;
 })
 @ToString
 public abstract class KafkaJmxAuthentication implements UnknownPropertyPreserving {
-    private Map<String, Object> additionalProperties = new HashMap<>(0);
+    private Map<String, Object> additionalProperties;
 
     @Description("Authentication type. " +
             "Currently the only supported types are `password`." +
@@ -37,11 +39,14 @@ public abstract class KafkaJmxAuthentication implements UnknownPropertyPreservin
 
     @Override
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties;
+        return this.additionalProperties != null ? this.additionalProperties : emptyMap();
     }
 
     @Override
     public void setAdditionalProperty(String name, Object value) {
+        if (this.additionalProperties == null) {
+            this.additionalProperties = new HashMap<>(1);
+        }
         this.additionalProperties.put(name, value);
     }
 }

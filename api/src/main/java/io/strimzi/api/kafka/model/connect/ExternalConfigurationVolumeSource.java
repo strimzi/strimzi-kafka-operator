@@ -20,6 +20,8 @@ import lombok.ToString;
 import java.util.HashMap;
 import java.util.Map;
 
+import static java.util.Collections.emptyMap;
+
 /**
  * Representation for environment variables which will be passed to Kafka Connect
  */
@@ -36,7 +38,7 @@ public class ExternalConfigurationVolumeSource implements UnknownPropertyPreserv
     private SecretVolumeSource secret;
     private ConfigMapVolumeSource configMap;
 
-    private Map<String, Object> additionalProperties = new HashMap<>(0);
+    private Map<String, Object> additionalProperties;
 
     @Description("Name of the volume which will be added to the Kafka Connect pods.")
     @JsonProperty(required = true)
@@ -76,13 +78,14 @@ public class ExternalConfigurationVolumeSource implements UnknownPropertyPreserv
 
     @Override
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties;
+        return this.additionalProperties != null ? this.additionalProperties : emptyMap();
     }
 
     @Override
     public void setAdditionalProperty(String name, Object value) {
+        if (this.additionalProperties == null) {
+            this.additionalProperties = new HashMap<>(1);
+        }
         this.additionalProperties.put(name, value);
     }
-
 }
-

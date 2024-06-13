@@ -112,7 +112,7 @@ public class KafkaMirrorMaker extends CustomResource<KafkaMirrorMakerSpec, Kafka
     public static final String STATUS_REPLICAS_PATH = ".status.replicas";
     public static final String LABEL_SELECTOR_PATH = ".status.labelSelector";
 
-    private final Map<String, Object> additionalProperties = new HashMap<>(0);
+    private Map<String, Object> additionalProperties;
 
     // Added to avoid duplication during Json serialization
     private String apiVersion;
@@ -139,7 +139,7 @@ public class KafkaMirrorMaker extends CustomResource<KafkaMirrorMakerSpec, Kafka
     public KafkaMirrorMakerStatus getStatus() {
         return super.getStatus();
     }
-    
+
     @Override
     public Map<String, Object> getAdditionalProperties() {
         return this.additionalProperties != null ? this.additionalProperties : emptyMap();
@@ -147,6 +147,9 @@ public class KafkaMirrorMaker extends CustomResource<KafkaMirrorMakerSpec, Kafka
 
     @Override
     public void setAdditionalProperty(String name, Object value) {
+        if (this.additionalProperties == null) {
+            this.additionalProperties = new HashMap<>(1);
+        }
         this.additionalProperties.put(name, value);
     }
 }

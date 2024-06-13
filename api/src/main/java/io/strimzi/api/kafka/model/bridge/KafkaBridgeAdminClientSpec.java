@@ -14,6 +14,8 @@ import lombok.ToString;
 
 import java.util.Map;
 
+import static java.util.Collections.emptyMap;
+
 @Buildable(
         editableEnabled = false,
         builderPackage = Constants.FABRIC8_KUBERNETES_API
@@ -29,6 +31,6 @@ public class KafkaBridgeAdminClientSpec extends KafkaBridgeClientSpec {
     @Override
     @Description("The Kafka AdminClient configuration used for AdminClient instances created by the bridge.")
     public Map<String, Object> getConfig() {
-        return config;
+        return this.config != null ? this.config : emptyMap();
     }
 }

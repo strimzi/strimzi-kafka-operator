@@ -106,7 +106,7 @@ public class KafkaBridge extends CustomResource<KafkaBridgeSpec, KafkaBridgeStat
     private String apiVersion;
     private String kind;
 
-    private final Map<String, Object> additionalProperties = new HashMap<>(0);
+    private Map<String, Object> additionalProperties;
 
     public KafkaBridge() {
         super();
@@ -137,6 +137,9 @@ public class KafkaBridge extends CustomResource<KafkaBridgeSpec, KafkaBridgeStat
 
     @Override
     public void setAdditionalProperty(String name, Object value) {
+        if (this.additionalProperties == null) {
+            this.additionalProperties = new HashMap<>(1);
+        }
         this.additionalProperties.put(name, value);
     }
 
@@ -152,5 +155,4 @@ public class KafkaBridge extends CustomResource<KafkaBridgeSpec, KafkaBridgeStat
     public static Predicate<KafkaBridge> isReady() {
         return CustomResourceConditions.isReady();
     }
-
 }

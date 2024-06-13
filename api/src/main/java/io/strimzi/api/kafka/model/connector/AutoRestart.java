@@ -17,6 +17,8 @@ import lombok.ToString;
 import java.util.HashMap;
 import java.util.Map;
 
+import static java.util.Collections.emptyMap;
+
 /**
  * Representation of the AutoRestart configuration.
  */
@@ -33,7 +35,7 @@ public class AutoRestart implements UnknownPropertyPreserving {
     private boolean enabled = true;
     private Integer maxRestarts;
 
-    private final Map<String, Object> additionalProperties = new HashMap<>(0);
+    private Map<String, Object> additionalProperties;
 
     @Description("Whether automatic restart for failed connectors and tasks should be enabled or disabled")
     public boolean isEnabled() {
@@ -57,11 +59,14 @@ public class AutoRestart implements UnknownPropertyPreserving {
 
     @Override
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties;
+        return this.additionalProperties != null ? this.additionalProperties : emptyMap();
     }
 
     @Override
     public void setAdditionalProperty(String name, Object value) {
+        if (this.additionalProperties == null) {
+            this.additionalProperties = new HashMap<>(1);
+        }
         this.additionalProperties.put(name, value);
     }
 }

@@ -320,7 +320,7 @@ public class Crds {
 
             List<String> versions;
             try {
-                versions = singletonList(group + "/" + (String) cls.getField("VERSION").get(null));
+                versions = singletonList(group + "/" + cls.getField("VERSION").get(null));
             } catch (NoSuchFieldException e) {
                 versions = ((List<String>) cls.getField("VERSIONS").get(null)).stream().map(v ->
                         group + "/" + v).collect(Collectors.toList());

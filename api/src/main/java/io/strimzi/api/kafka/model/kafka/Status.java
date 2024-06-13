@@ -48,8 +48,7 @@ public abstract class Status implements UnknownPropertyPreserving {
 
     private List<Condition> prepareConditionsUpdate() {
         List<Condition> oldConditions = getConditions();
-        List<Condition> newConditions = oldConditions != null ? new ArrayList<>(oldConditions) : new ArrayList<>(0);
-        return newConditions;
+        return oldConditions != null ? new ArrayList<>(oldConditions) : new ArrayList<>(0);
     }
 
     public void addCondition(Condition condition) {

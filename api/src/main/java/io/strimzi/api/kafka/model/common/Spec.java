@@ -25,7 +25,7 @@ import static java.util.Collections.emptyMap;
 @EqualsAndHashCode
 @ToString
 public abstract class Spec implements UnknownPropertyPreserving {
-    private Map<String, Object> additionalProperties = new HashMap<>(0);
+    private Map<String, Object> additionalProperties;
 
     @Override
     public Map<String, Object> getAdditionalProperties() {

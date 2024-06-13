@@ -16,6 +16,8 @@ import lombok.ToString;
 import java.util.HashMap;
 import java.util.Map;
 
+import static java.util.Collections.emptyMap;
+
 /**
  * Abstract baseclass for different representations of tieredStorage, discriminated by {@link #getType() type}.
  */
@@ -33,19 +35,21 @@ import java.util.Map;
 public abstract class TieredStorage implements UnknownPropertyPreserving {
     public static final String TYPE_CUSTOM = "custom";
 
-    private final Map<String, Object> additionalProperties = new HashMap<>(0);
+    private Map<String, Object> additionalProperties;
 
     @Description("Storage type, only 'custom' is supported at the moment.")
     public abstract String getType();
 
     @Override
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties;
+        return this.additionalProperties != null ? this.additionalProperties : emptyMap();
     }
 
     @Override
     public void setAdditionalProperty(String name, Object value) {
+        if (this.additionalProperties == null) {
+            this.additionalProperties = new HashMap<>(1);
+        }
         this.additionalProperties.put(name, value);
     }
 }
-

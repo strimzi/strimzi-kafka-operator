@@ -18,6 +18,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static java.util.Collections.emptyMap;
+
 /**
  * Representation for options to define where and how information will be pushed to remote sources of information
  */
@@ -37,7 +39,7 @@ public class JmxTransOutputDefinitionTemplate implements UnknownPropertyPreservi
     private String name;
     private List<String> typeNames;
 
-    private Map<String, Object> additionalProperties = new HashMap<>(0);
+    private Map<String, Object> additionalProperties;
 
     @JsonProperty(value = "outputType", required = true)
     @Description("Template for setting the format of the data that will be pushed." +
@@ -106,11 +108,14 @@ public class JmxTransOutputDefinitionTemplate implements UnknownPropertyPreservi
 
     @Override
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties;
+        return this.additionalProperties != null ? this.additionalProperties : emptyMap();
     }
 
     @Override
     public void setAdditionalProperty(String name, Object value) {
+        if (this.additionalProperties == null) {
+            this.additionalProperties = new HashMap<>(1);
+        }
         this.additionalProperties.put(name, value);
     }
 }

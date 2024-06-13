@@ -98,7 +98,7 @@ public class StrimziPodSet extends CustomResource<StrimziPodSetSpec, StrimziPodS
     public static final String CRD_NAME = RESOURCE_PLURAL + "." + RESOURCE_GROUP;
     public static final String SHORT_NAME = "sps";
 
-    private final Map<String, Object> additionalProperties = new HashMap<>(0);
+    private Map<String, Object> additionalProperties;
 
     // Added to avoid duplication during Json serialization
     private String apiVersion;
@@ -125,7 +125,7 @@ public class StrimziPodSet extends CustomResource<StrimziPodSetSpec, StrimziPodS
     public StrimziPodSetStatus getStatus() {
         return super.getStatus();
     }
- 
+
     @Override
     public Map<String, Object> getAdditionalProperties() {
         return this.additionalProperties != null ? this.additionalProperties : emptyMap();
@@ -133,6 +133,9 @@ public class StrimziPodSet extends CustomResource<StrimziPodSetSpec, StrimziPodS
 
     @Override
     public void setAdditionalProperty(String name, Object value) {
+        if (this.additionalProperties == null) {
+            this.additionalProperties = new HashMap<>(1);
+        }
         this.additionalProperties.put(name, value);
     }
 }

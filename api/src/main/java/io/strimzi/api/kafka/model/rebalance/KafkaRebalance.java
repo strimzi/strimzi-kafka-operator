@@ -26,6 +26,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
 
+import static java.util.Collections.emptyMap;
+
 @JsonDeserialize
 @Crd(
     spec = @Crd.Spec(
@@ -112,7 +114,7 @@ public class KafkaRebalance extends CustomResource<KafkaRebalanceSpec, KafkaReba
     public static final String SHORT_NAME = "kr";
     public static final List<String> RESOURCE_SHORTNAMES = List.of(SHORT_NAME);
 
-    private final Map<String, Object> additionalProperties = new HashMap<>(0);
+    private Map<String, Object> additionalProperties;
 
     // Added to avoid duplication during Json serialization
     private String apiVersion;
@@ -142,11 +144,14 @@ public class KafkaRebalance extends CustomResource<KafkaRebalanceSpec, KafkaReba
 
     @Override
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties;
+        return this.additionalProperties != null ? this.additionalProperties : emptyMap();
     }
 
     @Override
     public void setAdditionalProperty(String name, Object value) {
+        if (this.additionalProperties == null) {
+            this.additionalProperties = new HashMap<>(1);
+        }
         this.additionalProperties.put(name, value);
     }
 

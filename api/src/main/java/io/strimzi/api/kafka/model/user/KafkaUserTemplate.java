@@ -18,6 +18,8 @@ import lombok.ToString;
 import java.util.HashMap;
 import java.util.Map;
 
+import static java.util.Collections.emptyMap;
+
 /**
  * Representation of a template for a KafkaUser resource.
  */
@@ -32,7 +34,7 @@ import java.util.Map;
 @ToString
 public class KafkaUserTemplate implements UnknownPropertyPreserving {
     private ResourceTemplate secret;
-    private Map<String, Object> additionalProperties = new HashMap<>(0);
+    private Map<String, Object> additionalProperties;
 
     @Description("Template for KafkaUser resources. " +
             "The template allows users to specify how the `Secret` with password or TLS certificates is generated.")
@@ -47,11 +49,14 @@ public class KafkaUserTemplate implements UnknownPropertyPreserving {
 
     @Override
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties;
+        return this.additionalProperties != null ? this.additionalProperties : emptyMap();
     }
 
     @Override
     public void setAdditionalProperty(String name, Object value) {
+        if (this.additionalProperties == null) {
+            this.additionalProperties = new HashMap<>(1);
+        }
         this.additionalProperties.put(name, value);
     }
 }
