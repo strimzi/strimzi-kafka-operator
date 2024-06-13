@@ -34,6 +34,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Supplier;
 
+import static io.strimzi.operator.cluster.model.TemplateUtils.addAdditionalVolumeMounts;
+import static io.strimzi.operator.cluster.model.TemplateUtils.addAdditionalVolumes;
+
 /**
  * Kafka Mirror Maker 2 model
  */
@@ -174,6 +177,9 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
             }
             AuthenticationUtils.configureClientAuthenticationVolumes(mirrorMaker2Cluster.getAuthentication(), volumeList, mirrorMaker2Cluster.getAlias() + "-oauth-certs", isOpenShift, mirrorMaker2Cluster.getAlias() + '-',  true);
         }
+        if (templatePod != null) {
+            addAdditionalVolumes(templatePod, volumeList);
+        }
         return volumeList;
     }
 
@@ -194,6 +200,9 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
             String oauthVolumeMountPath =  buildClusterVolumeMountPath(MIRRORMAKER_2_OAUTH_SECRETS_BASE_VOLUME_MOUNT, alias);
             AuthenticationUtils.configureClientAuthenticationVolumeMounts(mirrorMaker2Cluster.getAuthentication(), volumeMountList, tlsVolumeMountPath, passwordVolumeMountPath, oauthTlsVolumeMountPath, mirrorMaker2Cluster.getAlias() + "-oauth-certs", mirrorMaker2Cluster.getAlias() + '-', true, oauthVolumeMountPath);
 
+        }
+        if (templateContainer != null) {
+            addAdditionalVolumeMounts(volumeMountList, templateContainer.getAdditionalVolumeMounts());
         }
         return volumeMountList;
     }

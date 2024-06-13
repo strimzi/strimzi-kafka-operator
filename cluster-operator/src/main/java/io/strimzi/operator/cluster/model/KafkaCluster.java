@@ -1401,6 +1401,15 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
 
         return volumeMountList;
     }
+    
+    private List<VolumeMount> getInitContainerVolumeMounts(KafkaPool pool) {
+        List<VolumeMount> volumeMountList = new ArrayList<>();
+        volumeMountList.add(VolumeUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT));
+        if (pool.templateInitContainer != null) {
+            addAdditionalVolumeMounts(volumeMountList, pool.templateInitContainer.getAdditionalVolumeMounts());
+        }
+        return volumeMountList;
+    }
 
     /**
      * Returns a combined affinity: Adding the affinity needed for the "kafka-rack" to the user-provided affinity.
@@ -1464,7 +1473,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                     pool.resources,
                     getInitContainerEnvVars(pool),
                     null,
-                    List.of(VolumeUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT)),
+                    getInitContainerVolumeMounts(pool),
                     null,
                     null,
                     imagePullPolicy
@@ -1491,7 +1500,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                 pool.resources,
                 getEnvVars(pool),
                 getContainerPortList(pool),
-                getVolumeMounts(pool.storage, pool.templateContainer == null ? Collections.emptyList() : pool.templateContainer.getVolumeMounts()),
+                getVolumeMounts(pool.storage, pool.templateContainer == null ? Collections.emptyList() : pool.templateContainer.getAdditionalVolumeMounts()),
                 ProbeUtils.defaultBuilder(livenessProbeOptions).withNewExec().withCommand("/opt/kafka/kafka_liveness.sh").endExec().build(),
                 ProbeUtils.defaultBuilder(readinessProbeOptions).withNewExec().withCommand("/opt/kafka/kafka_readiness.sh").endExec().build(),
                 imagePullPolicy

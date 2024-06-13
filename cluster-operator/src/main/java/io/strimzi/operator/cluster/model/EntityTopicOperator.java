@@ -36,6 +36,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import static io.strimzi.operator.cluster.model.TemplateUtils.addAdditionalVolumeMounts;
 import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.API_TO_ADMIN_NAME;
 import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.API_TO_ADMIN_NAME_KEY;
 import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.API_TO_ADMIN_PASSWORD_KEY;
@@ -214,6 +215,9 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
         result.add(VolumeUtils.createVolumeMount(EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_NAME, EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT));
         if (this.cruiseControlEnabled) {
             result.add(VolumeUtils.createVolumeMount(EntityOperator.ETO_CC_API_VOLUME_NAME, EntityOperator.ETO_CC_API_VOLUME_MOUNT));
+        }
+        if (templateContainer != null) {
+            addAdditionalVolumeMounts(result, templateContainer.getAdditionalVolumeMounts());
         }
         return Collections.unmodifiableList(result);
     }

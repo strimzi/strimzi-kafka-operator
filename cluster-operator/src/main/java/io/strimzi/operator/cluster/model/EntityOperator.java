@@ -42,6 +42,7 @@ import java.util.stream.Collectors;
 import static io.strimzi.api.kafka.model.common.template.DeploymentStrategy.RECREATE;
 import static io.strimzi.operator.cluster.model.EntityTopicOperator.TOPIC_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME;
 import static io.strimzi.operator.cluster.model.EntityUserOperator.USER_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME;
+import static io.strimzi.operator.cluster.model.TemplateUtils.addAdditionalVolumes;
 
 /**
  * Represents the Entity Operator deployment
@@ -225,6 +226,9 @@ public class EntityOperator extends AbstractModel {
             volumeList.addAll(userOperator.getVolumes());
             volumeList.add(VolumeUtils.createTempDirVolume(USER_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME, templatePod));
             volumeList.add(VolumeUtils.createSecretVolume(EUO_CERTS_VOLUME_NAME, KafkaResources.entityUserOperatorSecretName(cluster), isOpenShift));
+        }
+        if (templatePod != null) {
+            addAdditionalVolumes(templatePod, volumeList);
         }
         
         volumeList.add(VolumeUtils.createSecretVolume(TLS_SIDECAR_CA_CERTS_VOLUME_NAME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift));

@@ -1814,7 +1814,7 @@ spec:
                                   type: string
                                 subPathExpr:
                                   type: string
-                            description: Volume mounts which should be applied to the container.
+                            description: Additional volume mounts which should be applied to the container.
                         description: Template for the Kafka broker container.
                       initContainer:
                         type: object
@@ -1906,7 +1906,7 @@ spec:
                                   type: string
                                 subPathExpr:
                                   type: string
-                            description: Volume mounts which should be applied to the container.
+                            description: Additional volume mounts which should be applied to the container.
                         description: Template for the Kafka init container.
                       clusterCaCert:
                         type: object
@@ -3094,7 +3094,7 @@ spec:
                                   type: string
                                 subPathExpr:
                                   type: string
-                            description: Volume mounts which should be applied to the container.
+                            description: Additional volume mounts which should be applied to the container.
                         description: Template for the ZooKeeper container.
                       serviceAccount:
                         type: object
@@ -4275,7 +4275,7 @@ spec:
                                   type: string
                                 subPathExpr:
                                   type: string
-                            description: Volume mounts which should be applied to the container.
+                            description: Additional volume mounts which should be applied to the container.
                         description: Template for the Entity Topic Operator container.
                       userOperatorContainer:
                         type: object
@@ -4367,7 +4367,7 @@ spec:
                                   type: string
                                 subPathExpr:
                                   type: string
-                            description: Volume mounts which should be applied to the container.
+                            description: Additional volume mounts which should be applied to the container.
                         description: Template for the Entity User Operator container.
                       tlsSidecarContainer:
                         type: object
@@ -4459,7 +4459,7 @@ spec:
                                   type: string
                                 subPathExpr:
                                   type: string
-                            description: Volume mounts which should be applied to the container.
+                            description: Additional volume mounts which should be applied to the container.
                         description: Template for the Entity Operator TLS sidecar container.
                       serviceAccount:
                         type: object
@@ -5574,7 +5574,7 @@ spec:
                                   type: string
                                 subPathExpr:
                                   type: string
-                            description: Volume mounts which should be applied to the container.
+                            description: Additional volume mounts which should be applied to the container.
                         description: Template for the Cruise Control container.
                       tlsSidecarContainer:
                         type: object
@@ -5666,7 +5666,7 @@ spec:
                                   type: string
                                 subPathExpr:
                                   type: string
-                            description: Volume mounts which should be applied to the container.
+                            description: Additional volume mounts which should be applied to the container.
                         description: Template for the Cruise Control TLS sidecar container.
                       serviceAccount:
                         type: object
@@ -6554,7 +6554,7 @@ spec:
                                   type: string
                                 subPathExpr:
                                   type: string
-                            description: Volume mounts which should be applied to the container.
+                            description: Additional volume mounts which should be applied to the container.
                         description: Template for JmxTrans container.
                       serviceAccount:
                         type: object
@@ -7397,7 +7397,7 @@ spec:
                                   type: string
                                 subPathExpr:
                                   type: string
-                            description: Volume mounts which should be applied to the container.
+                            description: Additional volume mounts which should be applied to the container.
                         description: Template for the Kafka Exporter container.
                       serviceAccount:
                         type: object

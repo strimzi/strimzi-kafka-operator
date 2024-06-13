@@ -5,6 +5,7 @@
 package io.strimzi.api.kafka.model.common.template;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.fabric8.kubernetes.api.model.VolumeMount;
@@ -38,15 +39,16 @@ public class ContainerTemplate implements UnknownPropertyPreserving {
     private List<ContainerEnvVar> env;
     private SecurityContext securityContext;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
-    private List<VolumeMount> volumeMounts;
+    private List<VolumeMount> additionalVolumeMounts;
     
-    @Description("Volume mounts which should be applied to the container")
-    public List<VolumeMount> getVolumeMounts() {
-        return volumeMounts;
+    @Description("Additional volume mounts which should be applied to the container")
+    @JsonProperty("volumeMounts")
+    public List<VolumeMount> getAdditionalVolumeMounts() {
+        return additionalVolumeMounts;
     }
 
     public void setVolumeMounts(List<VolumeMount> volumeMounts) {
-        this.volumeMounts = volumeMounts;
+        this.additionalVolumeMounts = volumeMounts;
     }
 
     @Description("Environment variables which should be applied to the container.")

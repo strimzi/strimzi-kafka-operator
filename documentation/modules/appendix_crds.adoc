@@ -1312,7 +1312,7 @@ include::../api/io.strimzi.api.kafka.model.common.template.ContainerTemplate.ado
 |Security context for the container.
 |volumeMounts
 |xref:type-VolumeMount-{context}[`VolumeMount`] array
-|Volume mounts which should be applied to the container.
+|Additional volume mounts which should be applied to the container.
 |====
 
 [id='type-ContainerEnvVar-{context}']

@@ -1184,7 +1184,7 @@ spec:
                               type: string
                             subPathExpr:
                               type: string
-                        description: Volume mounts which should be applied to the container.
+                        description: Additional volume mounts which should be applied to the container.
                     description: Template for the Kafka Bridge container.
                   clusterRoleBinding:
                     type: object
@@ -1312,7 +1312,7 @@ spec:
                               type: string
                             subPathExpr:
                               type: string
-                        description: Volume mounts which should be applied to the container.
+                        description: Additional volume mounts which should be applied to the container.
                     description: Template for the Kafka Bridge init container.
                 description: Template for Kafka Bridge resources. The template allows users to specify how a `Deployment` and `Pod` is generated.
               tracing:

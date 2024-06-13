@@ -26,7 +26,10 @@ class CrdGeneratorTest {
 
     private final CrdGenerator.Reporter crdGeneratorReporter = new CrdGenerator.Reporter() {
         @Override
-        public void warn(String s) {
+        public void warn(String warning) {
+            if (warning.contains("@JsonInclude") || warning.contains("@JsonPropertyOrder")) {
+                warnings.add(warning);
+            }
         }
 
         @Override
@@ -39,6 +42,7 @@ class CrdGeneratorTest {
         }
     };
     private final Set<String> errors = new HashSet<>();
+    private final Set<String> warnings = new HashSet<>();
 
     @BeforeEach
     public void beforeEachTest() {
@@ -126,10 +130,10 @@ class CrdGeneratorTest {
         StringWriter w = new StringWriter();
         crdGenerator.generate(ExampleCrdWithErrors.class, w);
 
-        assertTrue(errors.contains("class io.strimzi.crdgenerator.ExampleCrdWithErrors is missing @JsonInclude"), errors.toString());
-        assertFalse(errors.contains("class io.strimzi.crdgenerator.ExampleCrdWithErrors$ObjectProperty is missing @JsonInclude"), errors.toString());
-        assertTrue(errors.contains("class io.strimzi.crdgenerator.ExampleCrdWithErrors is missing @JsonPropertyOrder"), errors.toString());
-        assertFalse(errors.contains("class io.strimzi.crdgenerator.ExampleCrdWithErrors$ObjectProperty is missing @JsonPropertyOrder"), errors.toString());
-        assertTrue(errors.contains("class io.strimzi.crdgenerator.ExampleCrdWithErrors$ObjectProperty has a property bar which is not in the @JsonPropertyOrder"), errors.toString());
+        assertTrue(warnings.contains("class io.strimzi.crdgenerator.ExampleCrdWithErrors is missing @JsonInclude"), warnings.toString());
+        assertFalse(warnings.contains("class io.strimzi.crdgenerator.ExampleCrdWithErrors$ObjectProperty is missing @JsonInclude"), warnings.toString());
+        assertTrue(warnings.contains("class io.strimzi.crdgenerator.ExampleCrdWithErrors is missing @JsonPropertyOrder"), warnings.toString());
+        assertFalse(warnings.contains("class io.strimzi.crdgenerator.ExampleCrdWithErrors$ObjectProperty is missing @JsonPropertyOrder"), warnings.toString());
+        assertTrue(warnings.contains("class io.strimzi.crdgenerator.ExampleCrdWithErrors$ObjectProperty has a property bar which is not in the @JsonPropertyOrder"), errors.toString());
     }
 }

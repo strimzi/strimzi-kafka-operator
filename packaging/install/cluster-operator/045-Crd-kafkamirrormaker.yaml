@@ -1287,7 +1287,7 @@ spec:
                               type: string
                             subPathExpr:
                               type: string
-                        description: Volume mounts which should be applied to the container.
+                        description: Additional volume mounts which should be applied to the container.
                     description: Template for Kafka MirrorMaker container.
                   serviceAccount:
                     type: object

@@ -62,6 +62,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static io.strimzi.operator.cluster.model.TemplateUtils.addAdditionalVolumeMounts;
+import static io.strimzi.operator.cluster.model.TemplateUtils.addAdditionalVolumes;
+
 /**
  * Kafka Bridge model class
  */
@@ -303,6 +306,9 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
             volumeList.add(VolumeUtils.createEmptyDirVolume(INIT_VOLUME_NAME, "1Mi", "Memory"));
         }
         AuthenticationUtils.configureClientAuthenticationVolumes(authentication, volumeList, "oauth-certs", isOpenShift);
+        if (templatePod != null) {
+            addAdditionalVolumes(templatePod, volumeList);
+        }
         return volumeList;
     }
 
@@ -318,6 +324,18 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
             volumeMountList.add(VolumeUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT));
         }
         AuthenticationUtils.configureClientAuthenticationVolumeMounts(authentication, volumeMountList, TLS_CERTS_BASE_VOLUME_MOUNT, PASSWORD_VOLUME_MOUNT, OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT, "oauth-certs");
+        if (templateContainer != null) {
+            addAdditionalVolumeMounts(volumeMountList, templateContainer.getAdditionalVolumeMounts());
+        }
+        return volumeMountList;
+    }
+    
+    private List<VolumeMount> getInitContainerVolumeMounts() {
+        List<VolumeMount> volumeMountList = new ArrayList<>();
+        volumeMountList.add(VolumeUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT));
+        if (templateInitContainer != null) {
+            addAdditionalVolumeMounts(volumeMountList, templateInitContainer.getAdditionalVolumeMounts());
+        }
         return volumeMountList;
     }
 
@@ -367,7 +385,7 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
                     resources,
                     getInitContainerEnvVars(),
                     null,
-                    List.of(VolumeUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT)),
+                    getInitContainerVolumeMounts(),
                     null,
                     null,
                     imagePullPolicy

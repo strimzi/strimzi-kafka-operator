@@ -32,6 +32,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static io.strimzi.operator.cluster.model.TemplateUtils.addAdditionalVolumeMounts;
+
+
 /**
  * Represents the User Operator deployment
  */
@@ -215,10 +218,16 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
     }
 
     private List<VolumeMount> getVolumeMounts() {
-        return List.of(VolumeUtils.createTempDirVolumeMount(USER_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME),
-                VolumeUtils.createVolumeMount(LOG_AND_METRICS_CONFIG_VOLUME_NAME, LOG_AND_METRICS_CONFIG_VOLUME_MOUNT),
-                VolumeUtils.createVolumeMount(EntityOperator.EUO_CERTS_VOLUME_NAME, EntityOperator.EUO_CERTS_VOLUME_MOUNT),
-                VolumeUtils.createVolumeMount(EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_NAME, EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT));
+        List<VolumeMount> volumeMounts = new ArrayList<>();
+        volumeMounts.add(VolumeUtils.createTempDirVolumeMount(USER_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
+        volumeMounts.add(VolumeUtils.createVolumeMount(LOG_AND_METRICS_CONFIG_VOLUME_NAME, LOG_AND_METRICS_CONFIG_VOLUME_MOUNT));
+        volumeMounts.add(VolumeUtils.createVolumeMount(EntityOperator.EUO_CERTS_VOLUME_NAME, EntityOperator.EUO_CERTS_VOLUME_MOUNT));
+        volumeMounts.add(VolumeUtils.createVolumeMount(EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_NAME, EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT));
+        
+        if (templateContainer != null) {
+            addAdditionalVolumeMounts(volumeMounts, templateContainer.getAdditionalVolumeMounts());
+        }
+        return volumeMounts;
     }
 
     /**

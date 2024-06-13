@@ -993,7 +993,7 @@ spec:
                               type: string
                             subPathExpr:
                               type: string
-                        description: Volume mounts which should be applied to the container.
+                        description: Additional volume mounts which should be applied to the container.
                     description: Template for the Kafka broker container.
                   initContainer:
                     type: object
@@ -1085,7 +1085,7 @@ spec:
                               type: string
                             subPathExpr:
                               type: string
-                        description: Volume mounts which should be applied to the container.
+                        description: Additional volume mounts which should be applied to the container.
                     description: Template for the Kafka init container.
                 description: Template for pool resources. The template allows users to specify how the resources belonging to this pool are generated.
             required:

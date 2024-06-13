@@ -1215,7 +1215,7 @@ spec:
                               type: string
                             subPathExpr:
                               type: string
-                        description: Volume mounts which should be applied to the container.
+                        description: Additional volume mounts which should be applied to the container.
                     description: Template for the Kafka Connect container.
                   initContainer:
                     type: object
@@ -1307,7 +1307,7 @@ spec:
                               type: string
                             subPathExpr:
                               type: string
-                        description: Volume mounts which should be applied to the container.
+                        description: Additional volume mounts which should be applied to the container.
                     description: Template for the Kafka init container.
                   podDisruptionBudget:
                     type: object
@@ -2038,7 +2038,7 @@ spec:
                               type: string
                             subPathExpr:
                               type: string
-                        description: Volume mounts which should be applied to the container.
+                        description: Additional volume mounts which should be applied to the container.
                     description: Template for the Kafka Connect Build container. The build container is used only on Kubernetes.
                   buildConfig:
                     type: object

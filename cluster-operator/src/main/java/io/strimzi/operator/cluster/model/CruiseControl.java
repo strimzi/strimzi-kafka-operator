@@ -59,6 +59,8 @@ import java.util.Map;
 import java.util.Set;
 
 import static io.strimzi.api.kafka.model.common.template.DeploymentStrategy.ROLLING_UPDATE;
+import static io.strimzi.operator.cluster.model.TemplateUtils.addAdditionalVolumeMounts;
+import static io.strimzi.operator.cluster.model.TemplateUtils.addAdditionalVolumes;
 import static io.strimzi.operator.cluster.model.VolumeUtils.createConfigMapVolume;
 import static io.strimzi.operator.cluster.model.VolumeUtils.createSecretVolume;
 import static io.strimzi.operator.cluster.model.VolumeUtils.createVolumeMount;
@@ -318,19 +320,29 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     }
 
     protected List<Volume> getVolumes(boolean isOpenShift) {
-        return List.of(VolumeUtils.createTempDirVolume(templatePod),
-                createSecretVolume(TLS_CC_CERTS_VOLUME_NAME, CruiseControlResources.secretName(cluster), isOpenShift),
-                createSecretVolume(TLS_CA_CERTS_VOLUME_NAME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift),
-                createSecretVolume(API_AUTH_CONFIG_VOLUME_NAME, CruiseControlResources.apiSecretName(cluster), isOpenShift),
-                createConfigMapVolume(CONFIG_VOLUME_NAME, CruiseControlResources.configMapName(cluster)));
+        List<Volume> volumes = new ArrayList<>();
+        volumes.add(VolumeUtils.createTempDirVolume(templatePod));
+        volumes.add(createSecretVolume(TLS_CC_CERTS_VOLUME_NAME, CruiseControlResources.secretName(cluster), isOpenShift));
+        volumes.add(createSecretVolume(TLS_CA_CERTS_VOLUME_NAME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift));
+        volumes.add(createSecretVolume(API_AUTH_CONFIG_VOLUME_NAME, CruiseControlResources.apiSecretName(cluster), isOpenShift));
+        volumes.add(createConfigMapVolume(CONFIG_VOLUME_NAME, CruiseControlResources.configMapName(cluster)));
+        if (templatePod != null) {
+            addAdditionalVolumes(templatePod, volumes);
+        }
+        return volumes;
     }
 
     protected List<VolumeMount> getVolumeMounts() {
-        return List.of(VolumeUtils.createTempDirVolumeMount(),
-                createVolumeMount(CruiseControl.TLS_CC_CERTS_VOLUME_NAME, CruiseControl.TLS_CC_CERTS_VOLUME_MOUNT),
-                createVolumeMount(CruiseControl.TLS_CA_CERTS_VOLUME_NAME, CruiseControl.TLS_CA_CERTS_VOLUME_MOUNT),
-                createVolumeMount(CruiseControl.API_AUTH_CONFIG_VOLUME_NAME, CruiseControl.API_AUTH_CONFIG_VOLUME_MOUNT),
-                createVolumeMount(CONFIG_VOLUME_NAME, CONFIG_VOLUME_MOUNT));
+        List<VolumeMount> volumeMounts = new ArrayList<>();
+        volumeMounts.add(VolumeUtils.createTempDirVolumeMount());
+        volumeMounts.add(createVolumeMount(CruiseControl.TLS_CC_CERTS_VOLUME_NAME, CruiseControl.TLS_CC_CERTS_VOLUME_MOUNT));
+        volumeMounts.add(createVolumeMount(CruiseControl.TLS_CA_CERTS_VOLUME_NAME, CruiseControl.TLS_CA_CERTS_VOLUME_MOUNT));
+        volumeMounts.add(createVolumeMount(CruiseControl.API_AUTH_CONFIG_VOLUME_NAME, CruiseControl.API_AUTH_CONFIG_VOLUME_MOUNT));
+        volumeMounts.add(createVolumeMount(CONFIG_VOLUME_NAME, CONFIG_VOLUME_MOUNT));
+        if (templateContainer != null) {
+            addAdditionalVolumeMounts(volumeMounts, templateContainer.getAdditionalVolumeMounts());
+        }
+        return volumeMounts;
     }
 
     /**

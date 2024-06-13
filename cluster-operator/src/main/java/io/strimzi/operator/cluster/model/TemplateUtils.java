@@ -50,7 +50,9 @@ public class TemplateUtils {
      * @param existingVolumes The list of existing volumes to which the additional volumes will be added.
      */
     public static void addAdditionalVolumes(PodTemplate templatePod, List<Volume> existingVolumes) {
-        templatePod.getAdditionalVolumes().forEach(volumeConfig -> existingVolumes.add(createVolumeFromConfig(volumeConfig)));
+        if (templatePod.getAdditionalVolumes() != null) {
+            templatePod.getAdditionalVolumes().forEach(volumeConfig -> existingVolumes.add(createVolumeFromConfig(volumeConfig)));
+        }
     }
 
     /**
@@ -62,6 +64,9 @@ public class TemplateUtils {
      * @throws RuntimeException If a forbidden mount path is used.
      */
     public static void addAdditionalVolumeMounts(List<VolumeMount> volumeMounts, List<VolumeMount> additionalVolumeMounts) {
+        if (additionalVolumeMounts == null) {
+            return;
+        }
         boolean isSensitivePath = additionalVolumeMounts.stream().anyMatch(additionalVolume -> additionalVolume.getMountPath().startsWith(SENSITIVE_PATH));
 
         if (isSensitivePath) {
