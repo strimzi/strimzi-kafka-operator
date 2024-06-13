@@ -4,6 +4,13 @@
  */
 package io.strimzi.systemtest.bridge;
 
+import io.skodjob.annotations.Contact;
+import io.skodjob.annotations.Desc;
+import io.skodjob.annotations.Step;
+import io.skodjob.annotations.SuiteDoc;
+import io.skodjob.annotations.TestDoc;
+import io.skodjob.annotations.TestTag;
+import io.skodjob.annotations.UseCase;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeSpec;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeSpecBuilder;
@@ -45,12 +52,56 @@ import static io.strimzi.systemtest.TestConstants.REGRESSION;
 @Tag(REGRESSION)
 @Tag(BRIDGE)
 @Tag(ACCEPTANCE)
+@SuiteDoc(
+    description = @Desc("Test suite for verifying TLS functionalities in the HTTP Bridge."),
+    contact = @Contact(name = "Jakub Stejskal", email = "xstejs24@gmail.com"),
+    beforeTestSteps = {
+        @Step(value = "Initialize test storage and context", expected = "Test storage and context are initialized successfully"),
+        @Step(value = "Deploy Kafka and KafkaBridge", expected = "Kafka and KafkaBridge are deployed and running"),
+        @Step(value = "Create Kafka user with TLS configuration", expected = "Kafka user with TLS configuration is created"),
+        @Step(value = "Deploy HTTP bridge with TLS configuration", expected = "HTTP bridge is deployed with TLS configuration")
+    },
+    useCases = {
+        @UseCase(id = "message-sending"),
+        @UseCase(id = "tls-verification"),
+        @UseCase(id = "parallel-message-consumption"),
+        @UseCase(id = "tls-message-transfer")
+    },
+    tags = {
+        @TestTag(value = REGRESSION),
+        @TestTag(value = BRIDGE),
+        @TestTag(value = ACCEPTANCE),
+        @TestTag(value = INTERNAL_CLIENTS_USED)
+    }
+)
 class HttpBridgeTlsST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(HttpBridgeTlsST.class);
     private BridgeClients kafkaBridgeClientJob;
     private TestStorage suiteTestStorage;
 
     @ParallelTest
+    @TestDoc(
+        description = @Desc("Test to verify that sending a simple message using TLS works correctly."),
+        contact = @Contact(name = "Lukas Kral", email = "lukywill16@gmail.com"),
+        steps = {
+            @Step(value = "Initialize TestStorage and BridgeClients with TLS configuration", expected = "TestStorage and BridgeClients are initialized with TLS configuration"),
+            @Step(value = "Create Kafka topic using resource manager", expected = "Kafka topic is successfully created"),
+            @Step(value = "Create Kafka Bridge Client job for producing messages", expected = "Kafka Bridge Client job is created and produces messages successfully"),
+            @Step(value = "Verify that the producer successfully sends messages", expected = "Producer successfully sends the expected number of messages"),
+            @Step(value = "Create Kafka client consumer with TLS configuration", expected = "Kafka client consumer is created with TLS configuration"),
+            @Step(value = "Verify that the consumer successfully receives messages", expected = "Consumer successfully receives the expected number of messages")
+        },
+        useCases = {
+            @UseCase(id = "message-sending"),
+            @UseCase(id = "tls-verification")
+        },
+        tags = {
+            @TestTag(value = REGRESSION),
+            @TestTag(value = BRIDGE),
+            @TestTag(value = ACCEPTANCE),
+            @TestTag(value = INTERNAL_CLIENTS_USED)
+        }
+    )
     void testSendSimpleMessageTls() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -73,6 +124,29 @@ class HttpBridgeTlsST extends AbstractST {
     }
 
     @ParallelTest
+    @TestDoc(
+        description = @Desc("Test to verify that a simple message can be received using TLS in a parallel environment."),
+        contact = @Contact(name = "Lukas Kral", email = "lukywill16@gmail.com"),
+        steps = {
+            @Step(value = "Initialize the test storage instance", expected = "TestStorage object is instantiated with the test context."),
+            @Step(value = "Configure Kafka Bridge client for consumption", expected = "Kafka Bridge client is configured with topic and consumer names."),
+            @Step(value = "Create Kafka topic with provided configurations", expected = "Kafka topic resource is created and available."),
+            @Step(value = "Deploy the Kafka Bridge consumer", expected = "Kafka Bridge consumer starts successfully and is ready to consume messages."),
+            @Step(value = "Initialize TLS Kafka client for message production", expected = "TLS Kafka client is configured and initialized."),
+            @Step(value = "Deploy the Kafka producer TLS client", expected = "TLS Kafka producer client starts successfully and begins sending messages."),
+            @Step(value = "Verify message consumption", expected = "Messages are successfully consumed by the Kafka Bridge consumer.")
+        },
+        useCases = {
+            @UseCase(id = "parallel-message-consumption"),
+            @UseCase(id = "tls-message-transfer")
+        },
+        tags = {
+            @TestTag(value = REGRESSION),
+            @TestTag(value = BRIDGE),
+            @TestTag(value = ACCEPTANCE),
+            @TestTag(value = INTERNAL_CLIENTS_USED)
+        }
+    )
     void testReceiveSimpleMessageTls() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 

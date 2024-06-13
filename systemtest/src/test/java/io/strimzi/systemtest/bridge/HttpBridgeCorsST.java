@@ -4,6 +4,13 @@
  */
 package io.strimzi.systemtest.bridge;
 
+import io.skodjob.annotations.Contact;
+import io.skodjob.annotations.Desc;
+import io.skodjob.annotations.Step;
+import io.skodjob.annotations.SuiteDoc;
+import io.skodjob.annotations.TestDoc;
+import io.skodjob.annotations.TestTag;
+import io.skodjob.annotations.UseCase;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeHttpCors;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
@@ -43,6 +50,22 @@ import static org.hamcrest.Matchers.containsString;
 
 @Tag(BRIDGE)
 @Tag(REGRESSION)
+@SuiteDoc(
+    description = @Desc("Test suite for HTTP Bridge CORS functionality, focusing on verifying correct handling of allowed and forbidden origins."),
+    contact = @Contact(name = "Lukas Kral", email = "lukywill16@gmail.com"),
+    beforeTestSteps = {
+        @Step(value = "Set up Kafka Bridge and its configuration including CORS settings", expected = "Kafka Bridge is set up with the correct configuration"),
+        @Step(value = "Deploy required Kafka resources and scraper pod", expected = "Kafka resources and scraper pod are deployed and running")
+    },
+    useCases = {
+        @UseCase(id = "handle-cors-requests"),
+        @UseCase(id = "security-validation")
+    },
+    tags = {
+        @TestTag(value = BRIDGE),
+        @TestTag(value = REGRESSION)
+    }
+)
 public class HttpBridgeCorsST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(HttpBridgeCorsST.class);
@@ -53,6 +76,25 @@ public class HttpBridgeCorsST extends AbstractST {
     private TestStorage suiteTestStorage;
 
     @ParallelTest
+    @TestDoc(
+        description = @Desc("This test checks if CORS handling for allowed origin works correctly in the Kafka Bridge."),
+        contact = @Contact(name = "Lukas Kral", email = "lukywill16@gmail.com"),
+        steps = {
+            @Step(value = "Set up the Kafka Bridge user and configuration", expected = "Kafka Bridge user and configuration are set up"),
+            @Step(value = "Construct the request URL and headers", expected = "URL and headers are constructed properly"),
+            @Step(value = "Send OPTIONS request to Kafka Bridge and capture the response", expected = "Response is captured from Bridge"),
+            @Step(value = "Validate the response contains expected status codes and headers", expected = "Response has correct status codes and headers for allowed origin"),
+            @Step(value = "Send GET request to Kafka Bridge and capture the response", expected = "Response is captured from Bridge for GET request"),
+            @Step(value = "Check if the GET request response is '404 Not Found'", expected = "Response for GET request is 404 Not Found")
+        },
+        useCases = {
+            @UseCase(id = "validate_cors_handling_allowed_origin")
+        },
+        tags = {
+            @TestTag(value = BRIDGE),
+            @TestTag(value = REGRESSION)
+        }
+    )
     void testCorsOriginAllowed() {
         final String kafkaBridgeUser = "bridge-user-example";
         final String groupId = ClientUtils.generateRandomConsumerGroup();
@@ -93,6 +135,27 @@ public class HttpBridgeCorsST extends AbstractST {
     }
 
     @ParallelTest
+    @TestDoc(
+        description = @Desc("Test ensuring that CORS (Cross-Origin Resource Sharing) requests with forbidden origins are correctly rejected by the Bridge."),
+        contact = @Contact(name = "Lukas Kral", email = "lukywill16@gmail.com"),
+        steps = {
+            @Step(value = "Create Kafka Bridge user and consumer group", expected = "Kafka Bridge user and consumer group are created successfully"),
+            @Step(value = "Set up headers with forbidden origin and pre-flight HTTP OPTIONS method", expected = "Headers and method are set correctly"),
+            @Step(value = "Send HTTP OPTIONS request to the Bridge", expected = "HTTP OPTIONS request is sent to the Bridge and a response is received"),
+            @Step(value = "Verify the response contains '403' and 'CORS Rejected - Invalid origin'", expected = "Response indicates the CORS request is rejected"),
+            @Step(value = "Remove 'Access-Control-Request-Method' from headers and set HTTP POST method", expected = "Headers are updated and HTTP method is set correctly"),
+            @Step(value = "Send HTTP POST request to the Bridge", expected = "HTTP POST request is sent to the Bridge and a response is received"),
+            @Step(value = "Verify the response contains '403' and 'CORS Rejected - Invalid origin'", expected = "Response indicates the CORS request is rejected")
+        },
+        useCases = {
+            @UseCase(id = "handle-cors-requests"),
+            @UseCase(id = "security-validation")
+        },
+        tags = {
+            @TestTag(value = BRIDGE),
+            @TestTag(value = REGRESSION)
+        }
+    )
     void testCorsForbidden() {
         final String kafkaBridgeUser = "bridge-user-example";
         final String groupId = ClientUtils.generateRandomConsumerGroup();

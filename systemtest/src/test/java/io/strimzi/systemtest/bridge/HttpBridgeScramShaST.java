@@ -4,6 +4,13 @@
  */
 package io.strimzi.systemtest.bridge;
 
+import io.skodjob.annotations.Contact;
+import io.skodjob.annotations.Desc;
+import io.skodjob.annotations.Step;
+import io.skodjob.annotations.SuiteDoc;
+import io.skodjob.annotations.TestDoc;
+import io.skodjob.annotations.TestTag;
+import io.skodjob.annotations.UseCase;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.common.CertSecretSource;
 import io.strimzi.api.kafka.model.common.PasswordSecretSource;
@@ -38,12 +45,60 @@ import static io.strimzi.systemtest.TestConstants.REGRESSION;
 
 @Tag(BRIDGE)
 @Tag(REGRESSION)
+@SuiteDoc(
+    description = @Desc("Test suite for validating Kafka Bridge functionality with TLS and SCRAM-SHA authentication"),
+    contact = @Contact(name = "Jakub Stejskal", email = "xstejs24@gmail.com"),
+    beforeTestSteps = {
+        @Step(value = "Create TestStorage instance", expected = "TestStorage instance is created"),
+        @Step(value = "Create BridgeClients instance", expected = "BridgeClients instance is created"),
+        @Step(value = "Deploy Kafka and KafkaBridge", expected = "Kafka and KafkaBridge are deployed successfully"),
+        @Step(value = "Create Kafka topic", expected = "Kafka topic is created with the given configuration"),
+        @Step(value = "Create Kafka user with SCRAM-SHA authentication", expected = "Kafka user is created and configured with SCRAM-SHA authentication"),
+        @Step(value = "Deploy HTTP bridge", expected = "HTTP bridge is deployed")
+    },
+    afterTestSteps = {
+        
+    },
+    useCases = {
+        @UseCase(id = "tls-scram-authentication"),
+        @UseCase(id = "message-production"),
+        @UseCase(id = "message-consumption"),
+    },
+    tags = {
+        @TestTag(value = INTERNAL_CLIENTS_USED),
+        @TestTag(value = BRIDGE),
+        @TestTag(value = REGRESSION)
+    }
+)
 class HttpBridgeScramShaST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(HttpBridgeScramShaST.class);
     private BridgeClients kafkaBridgeClientJob;
     private TestStorage suiteTestStorage;
     
     @ParallelTest
+    @TestDoc(
+        description = @Desc("Test ensuring that sending a simple message using TLS and SCRAM-SHA authentication via Kafka Bridge works as expected."),
+        contact = @Contact(name = "Lukas Kral", email = "lukywill16@gmail.com"),
+        steps = {
+            @Step(value = "Create TestStorage and BridgeClients objects", expected = "Instances of TestStorage and BridgeClients are created"),
+            @Step(value = "Create topic using the resource manager", expected = "Topic is created successfully with the specified configuration"),
+            @Step(value = "Start producing messages via Kafka Bridge", expected = "Messages are produced successfully to the topic"),
+            @Step(value = "Wait for producer success", expected = "Producer finishes sending messages without errors"),
+            @Step(value = "Create KafkaClients and configure with TLS and SCRAM-SHA", expected = "Kafka client is configured with appropriate security settings"),
+            @Step(value = "Start consuming messages via Kafka client", expected = "Messages are consumed successfully from the topic"),
+            @Step(value = "Wait for consumer success", expected = "Consumer finishes receiving messages without errors")
+        },
+        useCases = {
+            @UseCase(id = "tls-scram-authentication"),
+            @UseCase(id = "message-production"),
+            @UseCase(id = "message-consumption")
+        },
+        tags = {
+            @TestTag(value = INTERNAL_CLIENTS_USED),
+            @TestTag(value = BRIDGE),
+            @TestTag(value = REGRESSION)
+        }
+    )
     void testSendSimpleMessageTlsScramSha() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -67,6 +122,25 @@ class HttpBridgeScramShaST extends AbstractST {
     }
 
     @ParallelTest
+    @TestDoc(
+        description = @Desc("Test to check the reception of a simple message via Kafka Bridge using TLS and SCRAM-SHA encryption."),
+        contact = @Contact(name = "Lukas Kral", email = "lukywill16@gmail.com"),
+        steps = {
+            @Step(value = "Initialize TestStorage and BridgeClientsBuilder instances", expected = "Instances are successfully initialized"),
+            @Step(value = "Create Kafka topic using ResourceManager", expected = "Kafka topic is created and available"),
+            @Step(value = "Create Bridge consumer using ResourceManager", expected = "Bridge consumer is successfully created"),
+            @Step(value = "Send messages to Kafka using KafkaClients", expected = "Messages are successfully sent to the Kafka topic"),
+            @Step(value = "Wait for clients' success validation", expected = "Messages are successfully consumed from the Kafka topic")
+        },
+        useCases = {
+            @UseCase(id = "tls-scram-authentication")
+        },
+        tags = {
+            @TestTag(value = INTERNAL_CLIENTS_USED),
+            @TestTag(value = BRIDGE),
+            @TestTag(value = REGRESSION)
+        }
+    )
     void testReceiveSimpleMessageTlsScramSha() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 

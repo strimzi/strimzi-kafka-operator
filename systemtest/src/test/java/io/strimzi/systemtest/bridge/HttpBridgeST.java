@@ -6,6 +6,13 @@ package io.strimzi.systemtest.bridge;
 
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.Service;
+import io.skodjob.annotations.Contact;
+import io.skodjob.annotations.Desc;
+import io.skodjob.annotations.Step;
+import io.skodjob.annotations.SuiteDoc;
+import io.skodjob.annotations.TestDoc;
+import io.skodjob.annotations.TestTag;
+import io.skodjob.annotations.UseCase;
 import io.strimzi.api.kafka.model.bridge.KafkaBridge;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeStatus;
@@ -61,12 +68,63 @@ import static org.hamcrest.Matchers.containsString;
 
 @Tag(REGRESSION)
 @Tag(BRIDGE)
+@SuiteDoc(
+    description = @Desc("Test suite for various Kafka Bridge operations."),
+    contact = @Contact(name = "Lukas Kral", email = "lukywill16@gmail.com"),
+    beforeTestSteps = {
+        @Step(value = "Initialize Test Storage and deploy Kafka and Kafka Bridge", expected = "Kafka and Kafka Bridge are deployed with necessary configuration")
+    },
+    useCases = {
+        @UseCase(id = "send-simple-message"),
+        @UseCase(id = "label-verification"),
+        @UseCase(id = "simple-message-receive"),
+        @UseCase(id = "kafka-bridge-consumer"),
+        @UseCase(id = "update-configuration"),
+        @UseCase(id = "service_discovery_verification"),
+        @UseCase(id = "annotation-validation"),
+        @UseCase(id = "automated_test"),
+        @UseCase(id = "bridge-scaling"),
+        @UseCase(id = "bridge-stability"),
+        @UseCase(id = "scaling"),
+        @UseCase(id = "verify-custom-labels"),
+        @UseCase(id = "verify-custom-annotations")
+    },
+    tags = {
+        @TestTag(value = REGRESSION),
+        @TestTag(value = BRIDGE),
+        @TestTag(value = INTERNAL_CLIENTS_USED)
+    }
+)
 class HttpBridgeST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(HttpBridgeST.class);
 
     private TestStorage suiteTestStorage;
 
     @ParallelTest
+    @TestDoc(
+        description = @Desc("Test validating that sending a simple message through Kafka Bridge works correctly and checks labels."),
+        contact = @Contact(name = "Lukas Kral", email = "lukywill16@gmail.com"),
+        steps = {
+            @Step(value = "Initialize test storage", expected = "Test storage is initialized with necessary context"),
+            @Step(value = "Create a Kafka Bridge client job", expected = "Kafka Bridge client job is configured and instantiated"),
+            @Step(value = "Create Kafka topic", expected = "Kafka topic is successfully created"),
+            @Step(value = "Start Kafka Bridge producer", expected = "Kafka Bridge producer successfully begins sending messages"),
+            @Step(value = "Wait for producer success", expected = "All messages are sent successfully"),
+            @Step(value = "Start Kafka consumer", expected = "Kafka consumer is instantiated and starts consuming messages"),
+            @Step(value = "Wait for consumer success", expected = "All messages are consumed successfully"),
+            @Step(value = "Verify Kafka Bridge pod labels", expected = "Labels for Kafka Bridge pods are correctly set and verified"),
+            @Step(value = "Verify Kafka Bridge service labels", expected = "Labels for Kafka Bridge service are correctly set and verified")
+        },
+        useCases = {
+            @UseCase(id = "send-simple-message"),
+            @UseCase(id = "label-verification")
+        },
+        tags = {
+            @TestTag(value = REGRESSION),
+            @TestTag(value = BRIDGE),
+            @TestTag(value = INTERNAL_CLIENTS_USED)
+        }
+    )
     void testSendSimpleMessage() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -98,6 +156,26 @@ class HttpBridgeST extends AbstractST {
     }
 
     @ParallelTest
+    @TestDoc(
+        description = @Desc("Test verifying that a simple message can be received using Kafka Bridge."),
+        contact = @Contact(name = "Lukas Kral", email = "lukywill16@gmail.com"),
+        steps = {
+            @Step(value = "Initialize the test storage", expected = "TestStorage instance is initialized"),
+            @Step(value = "Create Kafka topic resource", expected = "Kafka topic resource is created with specified configurations"),
+            @Step(value = "Setup and deploy Kafka Bridge consumer client", expected = "Kafka Bridge consumer client is set up and started receiving messages"),
+            @Step(value = "Send messages using Kafka producer", expected = "Messages are sent to Kafka successfully"),
+            @Step(value = "Verify message reception", expected = "All messages are received by Kafka Bridge consumer client")
+        },
+        useCases = {
+            @UseCase(id = "simple-message-receive"),
+            @UseCase(id = "kafka-bridge-consumer")
+        },
+        tags = {
+            @TestTag(value = REGRESSION),
+            @TestTag(value = BRIDGE),
+            @TestTag(value = INTERNAL_CLIENTS_USED)
+        }
+    )
     void testReceiveSimpleMessage() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -126,6 +204,26 @@ class HttpBridgeST extends AbstractST {
     }
 
     @ParallelTest
+    @TestDoc(
+        description = @Desc("Test that validates the creation, update, and verification of a Kafka Bridge with specific initial and updated configurations."),
+        contact = @Contact(name = "Jakub Stejskal", email = "xstejs24@gmail.com"),
+        steps = {
+            @Step(value = "Create a Kafka Bridge resource with initial configuration", expected = "Kafka Bridge is created and deployed with the specified initial configuration"),
+            @Step(value = "Remove an environment variable that is in use", expected = "Environment variable TEST_ENV_1 is removed from the initial configuration"),
+            @Step(value = "Verify initial probe values and environment variables", expected = "The probe values and environment variables match the initial configuration"),
+            @Step(value = "Update Kafka Bridge resource with new configuration", expected = "Kafka Bridge is updated and redeployed with the new configuration"),
+            @Step(value = "Verify updated probe values and environment variables", expected = "The probe values and environment variables match the updated configuration"),
+            @Step(value = "Verify Kafka Bridge configurations for producer and consumer", expected = "Producer and consumer configurations match the updated settings")
+        },
+        useCases = {
+            @UseCase(id = "update_configuration")
+        },
+        tags = {
+            @TestTag(value = REGRESSION),
+            @TestTag(value = BRIDGE),
+            @TestTag(value = INTERNAL_CLIENTS_USED)
+        }
+    )
     void testCustomAndUpdatedValues() {
 
         String bridgeName = "custom-bridge";
@@ -224,6 +322,25 @@ class HttpBridgeST extends AbstractST {
     }
 
     @ParallelTest
+    @TestDoc(
+        description = @Desc("Test verifying the presence and correctness of the discovery annotation in the Kafka Bridge service."),
+        contact = @Contact(name = "Jakub Stejskal", email = "xstejs24@gmail.com"),
+        steps = {
+            @Step(value = "Retrieve the Kafka Bridge service using kubeClient", expected = "Kafka Bridge service instance is obtained"),
+            @Step(value = "Extract the discovery annotation from the service metadata", expected = "The discovery annotation is retrieved as a string"),
+            @Step(value = "Convert the discovery annotation to a JsonArray", expected = "JsonArray representation of the discovery annotation is created"),
+            @Step(value = "Validate the content of the JsonArray against expected values", expected = "The JsonArray matches the expected service discovery information")
+        },
+        useCases = {
+            @UseCase(id = "service_discovery_verification"),
+            @UseCase(id = "annotation_validation")
+        },
+        tags = {
+            @TestTag(value = REGRESSION),
+            @TestTag(value = BRIDGE),
+            @TestTag(value = INTERNAL_CLIENTS_USED)
+        }
+    )
     void testDiscoveryAnnotation() {
         Service bridgeService = kubeClient().getService(Environment.TEST_SUITE_NAMESPACE, KafkaBridgeResources.serviceName(suiteTestStorage.getClusterName()));
         String bridgeServiceDiscoveryAnnotation = bridgeService.getMetadata().getAnnotations().get("strimzi.io/discovery");
@@ -232,6 +349,27 @@ class HttpBridgeST extends AbstractST {
     }
 
     @ParallelTest
+    @TestDoc(
+        description = @Desc("Test that scales a KafkaBridge instance to zero replicas and verifies that it is properly handled."),
+        contact = @Contact(name = "Lukas Kral", email = "lukywill16@gmail.com"),
+        steps = {
+            @Step(value = "Create a KafkaBridge resource and wait for it to be ready", expected = "KafkaBridge resource is created and ready with 1 replica"),
+            @Step(value = "Fetch the current number of KafkaBridge pods", expected = "There should be exactly 1 KafkaBridge pod initially"),
+            @Step(value = "Scale KafkaBridge to zero replicas", expected = "Scaling action is acknowledged"),
+            @Step(value = "Wait for KafkaBridge to scale down to zero replicas", expected = "KafkaBridge scales down to zero replicas correctly"),
+            @Step(value = "Check the number of KafkaBridge pods after scaling", expected = "No KafkaBridge pods should be running"),
+            @Step(value = "Verify the status of KafkaBridge", expected = "KafkaBridge status should indicate it is ready with zero replicas")
+        },
+        useCases = {
+            @UseCase(id = "bridge-scaling"),
+            @UseCase(id = "bridge-stability")
+        },
+        tags = {
+            @TestTag(value = REGRESSION),
+            @TestTag(value = BRIDGE),
+            @TestTag(value = INTERNAL_CLIENTS_USED)
+        }
+    )
     void testScaleBridgeToZero() {
 
         String bridgeName = "scaling-bridge-down";
@@ -257,6 +395,24 @@ class HttpBridgeST extends AbstractST {
     }
 
     @ParallelTest
+    @TestDoc(
+        description = @Desc("Test checks the scaling of a KafkaBridge subresource and verifies the scaling operation."),
+        contact = @Contact(name = "Lukas Kral", email = "lukywill16@gmail.com"),
+        steps = {
+            @Step(value = "Initialize the KafkaBridge resource.", expected = "KafkaBridge resource is created in the specified namespace."),
+            @Step(value = "Scale the KafkaBridge resource to the desired replicas.", expected = "KafkaBridge resource is scaled to the expected number of replicas."),
+            @Step(value = "Verify the number of replicas.", expected = "The number of replicas is as expected and the observed generation is correct."),
+            @Step(value = "Check pod naming conventions.", expected = "Pod names should match the naming convention and be consistent.")
+        },
+        useCases = {
+            @UseCase(id = "scaling")
+        },
+        tags = {
+            @TestTag(value = REGRESSION),
+            @TestTag(value = BRIDGE),
+            @TestTag(value = INTERNAL_CLIENTS_USED)
+        }
+    )
     void testScaleBridgeSubresource() {
         String bridgeName = "scaling-bridge-up";
 
@@ -292,6 +448,26 @@ class HttpBridgeST extends AbstractST {
     }
 
     @ParallelTest
+    @TestDoc(
+        description = @Desc("Test verifies KafkaBridge deployment strategy configuration and label updates with RECREATE and ROLLING_UPDATE strategies."),
+        contact = @Contact(name = "Jakub Stejskal", email = "xstejs24@gmail.com"),
+        steps = {
+            @Step(value = "Create KafkaBridge resource with deployment strategy RECREATE", expected = "KafkaBridge resource is created in RECREATE strategy"),
+            @Step(value = "Add a label to KafkaBridge resource", expected = "KafkaBridge resource is recreated with new label"),
+            @Step(value = "Check that observed generation is 1 and the label is present", expected = "Observed generation is 1 and label 'some=label' is present"),
+            @Step(value = "Change deployment strategy to ROLLING_UPDATE", expected = "Deployment strategy is changed to ROLLING_UPDATE"),
+            @Step(value = "Add another label to KafkaBridge resource", expected = "Pods are rolled with new label"),
+            @Step(value = "Check that observed generation is 2 and the new label is present", expected = "Observed generation is 2 and label 'another=label' is present")
+        },
+        useCases = {
+            @UseCase(id = "configure-deployment-strategy")
+        },
+        tags = {
+            @TestTag(value = REGRESSION),
+            @TestTag(value = BRIDGE),
+            @TestTag(value = INTERNAL_CLIENTS_USED)
+        }
+    )
     void testConfigureDeploymentStrategy() {
         String bridgeName = "example-bridge";
 
@@ -340,6 +516,25 @@ class HttpBridgeST extends AbstractST {
     }
 
     @ParallelTest
+    @TestDoc(
+        description = @Desc("Test verifying if custom labels and annotations for Kafka Bridge services are properly set and validated."),
+        contact = @Contact(name = "jkalinic", email = "jkalinic@redhat.com"),
+        steps = {
+            @Step(value = "Initialize TestStorage", expected = "TestStorage instance is created with the current test context"),
+            @Step(value = "Create Kafka Bridge resource with custom labels and annotations", expected = "Kafka Bridge resource is successfully created and available"),
+            @Step(value = "Retrieve Kafka Bridge service with custom labels", expected = "Kafka Bridge service is retrieved with specified custom labels"),
+            @Step(value = "Filter and validate custom labels and annotations", expected = "Custom labels and annotations match the expected values")
+        },
+        useCases = {
+            @UseCase(id = "verify-custom-labels"),
+            @UseCase(id = "verify-custom-annotations")
+        },
+        tags = {
+            @TestTag(value = REGRESSION),
+            @TestTag(value = BRIDGE),
+            @TestTag(value = INTERNAL_CLIENTS_USED)
+        }
+    )
     void testCustomBridgeLabelsAreProperlySet() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final String bridgeName = "bridge-" + testStorage.getClusterName();
