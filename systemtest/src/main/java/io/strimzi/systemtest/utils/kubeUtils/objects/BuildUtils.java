@@ -33,13 +33,15 @@ public class BuildUtils {
      * @param namespace namespace where the resources are deployed
      */
     public static void waitForBuildComplete(String buildConfigName, String namespace) {
-        TestUtils.waitFor("build " + buildConfigName + " complete", TestConstants.POLL_INTERVAL_FOR_RESOURCE_READINESS, TestConstants.GLOBAL_TIMEOUT_SHORT, () -> {
+        LOGGER.info("Waiting for build of {} to be completed", buildConfigName);
+
+        TestUtils.waitFor("build " + buildConfigName + " complete", TestConstants.GLOBAL_POLL_INTERVAL_5_SECS, TestConstants.GLOBAL_TIMEOUT_SHORT, () -> {
             Long buildLatestVersion = BuildConfigResource.buildConfigClient().inNamespace(namespace).withName(buildConfigName).get().getStatus().getLastVersion();
             String buildName = getBuildName(buildConfigName, buildLatestVersion);
 
             BuildStatus buildStatus = BuildConfigResource.buildsClient().inNamespace(namespace).withName(buildName).get().getStatus();
 
-            LOGGER.info("Build status of {} is '{}'", buildName, buildStatus.getPhase());
+            LOGGER.debug("Build status of {} is '{}'", buildName, buildStatus.getPhase());
 
             return buildStatus.getPhase().equals("Complete");
         });

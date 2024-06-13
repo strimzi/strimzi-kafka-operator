@@ -30,6 +30,7 @@ public interface TestConstants {
     long GLOBAL_CMD_CLIENT_TIMEOUT = Duration.ofMinutes(5).toMillis();
     long GLOBAL_STATUS_TIMEOUT = Duration.ofMinutes(3).toMillis();
     long GLOBAL_POLL_INTERVAL = Duration.ofSeconds(1).toMillis();
+    long GLOBAL_POLL_INTERVAL_5_SECS = Duration.ofSeconds(5).toMillis();
     long GLOBAL_POLL_INTERVAL_MEDIUM = Duration.ofSeconds(10).toMillis();
     long PRODUCER_TIMEOUT = Duration.ofSeconds(25).toMillis();
     long METRICS_COLLECT_TIMEOUT = Duration.ofMinutes(1).toMillis();
