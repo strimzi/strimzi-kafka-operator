@@ -55,7 +55,7 @@ spec:
     # ...
     authorization:
       type: *keycloak* <1>
-      tokenEndpointUri: <__https://<auth-server-address>/auth/realms/external/protocol/openid-connect/token__> <2>
+      tokenEndpointUri: <__https://<auth-server-address>/realms/external/protocol/openid-connect/token__> <2>
       clientId: kafka <3>
       delegateToKafkaAcls: false <4>
       disableTlsHostnameVerification: false <5>
