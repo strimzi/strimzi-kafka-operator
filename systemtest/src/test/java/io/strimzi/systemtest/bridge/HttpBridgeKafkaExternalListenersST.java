@@ -5,6 +5,13 @@
 package io.strimzi.systemtest.bridge;
 
 import io.fabric8.kubernetes.api.model.Service;
+import io.skodjob.annotations.Contact;
+import io.skodjob.annotations.Desc;
+import io.skodjob.annotations.Step;
+import io.skodjob.annotations.SuiteDoc;
+import io.skodjob.annotations.TestDoc;
+import io.skodjob.annotations.TestTag;
+import io.skodjob.annotations.UseCase;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeSpec;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeSpecBuilder;
@@ -52,12 +59,55 @@ import static io.strimzi.systemtest.TestConstants.REGRESSION;
 @Tag(BRIDGE)
 @Tag(NODEPORT_SUPPORTED)
 @Tag(EXTERNAL_CLIENTS_USED)
+@SuiteDoc(
+    description = @Desc("Test suite ensures secure SCRAM-SHA and TLS authentication for Kafka HTTP Bridge with unusual usernames."),
+    contact = @Contact(name = "Lukas Kral", email = "lukywill16@gmail.com"),
+    beforeTestSteps = {
+        @Step(value = "Deploy default cluster operator installation", expected = "Cluster operator is deployed")
+    },
+    afterTestSteps = {
+        
+    },
+    useCases = {
+        @UseCase(id = "auth-weird-username"),
+        @UseCase(id = "scram-sha-auth"),
+        @UseCase(id = "Avoiding 409 error")
+    },
+    tags = {
+        @TestTag(value = REGRESSION),
+        @TestTag(value = BRIDGE),
+        @TestTag(value = NODEPORT_SUPPORTED),
+        @TestTag(value = EXTERNAL_CLIENTS_USED)
+    }
+)
 public class HttpBridgeKafkaExternalListenersST extends AbstractST {
     private static final String BRIDGE_EXTERNAL_SERVICE =  "shared-http-bridge-external-service";
     private final String producerName = "producer-" + new Random().nextInt(Integer.MAX_VALUE);
     private final String consumerName = "consumer-" + new Random().nextInt(Integer.MAX_VALUE);
 
     @ParallelNamespaceTest("Creating a node port service and thus avoiding 409 error (service already exists)")
+    @TestDoc(
+        description = @Desc("Test verifies SCRAM-SHA authentication with a username containing special characters and length constraints."),
+        contact = @Contact(name = "Lukas Kral", email = "lukywill16@gmail.com"),
+        steps = {
+            @Step(value = "Create object instance", expected = "Instance of an object is created"),
+            @Step(value = "Create a weird named user with special characters", expected = "User with a specified name is created"),
+            @Step(value = "Initialize PasswordSecret for authentication", expected = "PasswordSecret is initialized with the predefined username and password"),
+            @Step(value = "Initialize CertSecretSource for TLS configuration", expected = "CertSecretSource is set up with the proper certificate and secret names"),
+            @Step(value = "Configure KafkaBridgeSpec with SCRAM-SHA authentication and TLS settings", expected = "KafkaBridgeSpec is built with the provided authentication and TLS settings"),
+            @Step(value = "Invoke test method with weird username and bridge specification", expected = "Test runs successfully with no 409 error")
+        },
+        useCases = {
+            @UseCase(id = "auth-weird-username"),
+            @UseCase(id = "scram-sha-auth")
+        },
+        tags = {
+            @TestTag(value = REGRESSION),
+            @TestTag(value = BRIDGE),
+            @TestTag(value = NODEPORT_SUPPORTED),
+            @TestTag(value = EXTERNAL_CLIENTS_USED)
+        }
+    )
     void testScramShaAuthWithWeirdUsername() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         // Create weird named user with . and more than 64 chars -> SCRAM-SHA
@@ -87,6 +137,26 @@ public class HttpBridgeKafkaExternalListenersST extends AbstractST {
     }
 
     @ParallelNamespaceTest("Creating a node port service and thus avoiding 409 error")
+    @TestDoc(
+        description = @Desc("Test ensuring that a node port service is created and 409 error is avoided when using a TLS authentication with a username that has unusual characters."),
+        contact = @Contact(name = "Lukas Kral", email = "lukywill16@gmail.com"),
+        steps = {
+            @Step(value = "Initialize test storage and generate a weird username with dots and 64 characters", expected = "Weird username is generated successfully"),
+            @Step(value = "Create and configure CertSecretSource with certificate and secret names for the consumer", expected = "CertSecretSource is configured with proper certificate and secret name"),
+            @Step(value = "Build KafkaBridgeSpec with the TLS authentication using the weird username", expected = "KafkaBridgeSpec is created with the given username and TLS configuration"),
+            @Step(value = "Invoke testWeirdUsername method with created configurations", expected = "The method runs without any 409 error")
+        },
+        useCases = {
+            @UseCase(id = "Creating a node port service"),
+            @UseCase(id = "Avoiding 409 error")
+        },
+        tags = {
+            @TestTag(value = REGRESSION),
+            @TestTag(value = BRIDGE),
+            @TestTag(value = NODEPORT_SUPPORTED),
+            @TestTag(value = EXTERNAL_CLIENTS_USED)
+        }
+    )
     void testTlsAuthWithWeirdUsername() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         // Create weird named user with . and maximum of 64 chars -> TLS
