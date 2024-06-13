@@ -336,8 +336,8 @@ public class CruiseControlST extends AbstractST {
         LOGGER.info("Check for default CruiseControl replicaMovementStrategy in Pod configuration file");
         Map<String, Object> actualStrategies = KafkaResource.kafkaClient().inNamespace(testStorage.getNamespaceName())
             .withName(testStorage.getClusterName()).get().getSpec().getCruiseControl().getConfig();
-        // Check that config contains only configurations for max.active.user.tasks
-        assertThat(actualStrategies.size(), is(1));
+        // Check that config contains only configurations for max.active.user.tasks, metric.sampling.interval.ms, cruise.control.metrics.reporter.metrics.reporting.interval.ms, metadata.max.age.ms
+        assertThat(actualStrategies.size(), is(4));
 
         String ccConfFileContent = cmdKubeClient(testStorage.getNamespaceName()).execInPodContainer(ccPodName, TestConstants.CRUISE_CONTROL_CONTAINER_NAME, "cat", TestConstants.CRUISE_CONTROL_CONFIGURATION_FILE_PATH).out();
         assertThat(ccConfFileContent, not(containsString(replicaMovementStrategies)));
