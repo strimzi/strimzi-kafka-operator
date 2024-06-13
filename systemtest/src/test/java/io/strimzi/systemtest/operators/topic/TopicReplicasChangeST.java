@@ -464,10 +464,6 @@ public class TopicReplicasChangeST extends AbstractST {
                                 .addToLimits("memory", new Quantity("1Gi"))
                                 .addToRequests("memory", new Quantity("1Gi"))
                                 .build())
-                            // faster cluster model generation tuning: reduce sampling and metadata refresh intervals
-                            .addToConfig("metric.sampling.interval.ms", 5_000)
-                            .addToConfig("cruise.control.metrics.reporter.metrics.reporting.interval.ms", 5_000)
-                            .addToConfig("metadata.max.age.ms", 4_000)
                         .endCruiseControl()
                         .endSpec()
                     .build(),

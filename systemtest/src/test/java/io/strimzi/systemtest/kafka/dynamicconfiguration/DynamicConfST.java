@@ -113,7 +113,7 @@ public class DynamicConfST extends AbstractST {
         updateAndVerifyDynConf(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), deepCopyOfShardKafkaConfig);
 
         // Wait until the configuration is properly set and returned by Kafka Admin API
-        StUtils.waitUntilSupplierIsSatisfied(() ->
+        StUtils.waitUntilSupplierIsSatisfied("unclean.leader.election.enable=true is available in Broker config", () ->
             KafkaCmdClient.describeKafkaBrokerUsingPodCli(Environment.TEST_SUITE_NAMESPACE, scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), podNum).contains("unclean.leader.election.enable=" + true));
 
         LOGGER.info("Verifying values after update");
@@ -186,7 +186,7 @@ public class DynamicConfST extends AbstractST {
         updateAndVerifyDynConf(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), deepCopyOfShardKafkaConfig);
 
         // Wait until the configuration is properly set and returned by Kafka Admin API
-        StUtils.waitUntilSupplierIsSatisfied(() ->
+        StUtils.waitUntilSupplierIsSatisfied("unclean.leader.election.enable=true is available in Broker config", () ->
             KafkaCmdClient.describeKafkaBrokerUsingPodCli(Environment.TEST_SUITE_NAMESPACE, scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), podNum).contains("unclean.leader.election.enable=" + true));
 
         // Edit listeners - this should cause RU (because of new crts)
@@ -238,7 +238,7 @@ public class DynamicConfST extends AbstractST {
         updateAndVerifyDynConf(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), deepCopyOfShardKafkaConfig);
 
         // Wait until the configuration is properly set and returned by Kafka Admin API
-        StUtils.waitUntilSupplierIsSatisfied(() ->
+        StUtils.waitUntilSupplierIsSatisfied("unclean.leader.election.enable=true is available in Broker config", () ->
                 KafkaCmdClient.describeKafkaBrokerUsingPodCli(Environment.TEST_SUITE_NAMESPACE, scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), podNum).contains("unclean.leader.election.enable=" + true));
 
         // Remove external listeners (node port) - this should cause RU (we need to update advertised.listeners)

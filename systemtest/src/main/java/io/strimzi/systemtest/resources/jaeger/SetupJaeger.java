@@ -52,7 +52,7 @@ public class SetupJaeger {
      * Delete Jaeger instance
      */
     private static void deleteJaeger(String yamlContent) {
-        cmdKubeClient().namespace(JAEGER).deleteContent(yamlContent);
+        cmdKubeClient().namespace(JAEGER_NAMESPACE).deleteContent(yamlContent);
     }
 
     /**
@@ -142,7 +142,7 @@ public class SetupJaeger {
     private static void deployJaegerOperator() {
         LOGGER.info("=== Applying Jaeger Operator install files ===");
 
-        // create namespace `cert-manager` and add it to stack, to collect logs from it
+        // create namespace `jaeger` and add it to stack, to collect logs from it
         NamespaceManager.getInstance().createNamespaceAndPrepare(JAEGER_NAMESPACE, CollectorElement.createCollectorElement(ResourceManager.getTestContext().getRequiredTestClass().getName()));
         deployJaegerContent();
 
@@ -181,13 +181,14 @@ public class SetupJaeger {
 
                 LOGGER.info("Creating Jaeger Instance from {}", JAEGER_OPERATOR_PATH);
                 cmdKubeClient(namespaceName).applyContent(instanceYamlContent);
-                ResourceManager.STORED_RESOURCES.computeIfAbsent(ResourceManager.getTestContext().getDisplayName(), k -> new Stack<>());
-                ResourceManager.STORED_RESOURCES.get(ResourceManager.getTestContext().getDisplayName()).push(new ResourceItem<>(() -> cmdKubeClient(namespaceName).deleteContent(instanceYamlContent)));
 
                 return true;
             } catch (Exception e) {
                 LOGGER.error("Following exception has been thrown during Jaeger Instance Deployment: {}", e.getMessage());
                 return false;
+            } finally {
+                ResourceManager.STORED_RESOURCES.computeIfAbsent(ResourceManager.getTestContext().getDisplayName(), k -> new Stack<>());
+                ResourceManager.STORED_RESOURCES.get(ResourceManager.getTestContext().getDisplayName()).push(new ResourceItem<>(() -> cmdKubeClient(namespaceName).deleteContent(instanceYamlContent)));
             }
         });
         DeploymentUtils.waitForDeploymentAndPodsReady(namespaceName, JAEGER_INSTANCE_NAME, 1);
