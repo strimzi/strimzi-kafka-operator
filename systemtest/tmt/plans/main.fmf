@@ -128,8 +128,8 @@ prepare:
       make docker_tag
       make docker_push
       
-      # Use latest version of Kafka. Builder script will load it from kafka-versions.yaml      
-      export KAFKA_VERSION="latest"
+      # Get latest Kafka version from kafka-versions.yaml      
+      export KAFKA_VERSION=$(cat kafka-versions.yaml | yq eval '.[] | select(.default) | .version' -)
       # Set env var for KafkaConnect build image to avoid building images
       export CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN="${DOCKER_REGISTRY}/${DOCKER_ORG}/connect-file-sink:latest"
       # Build base image from previous data
