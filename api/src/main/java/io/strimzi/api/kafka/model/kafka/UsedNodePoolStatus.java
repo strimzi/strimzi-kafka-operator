@@ -16,8 +16,6 @@ import lombok.ToString;
 import java.util.HashMap;
 import java.util.Map;
 
-import static java.util.Collections.emptyMap;
-
 /**
  * Represents a single used KafkaNodePool. This class is used in the status section of the Kafka custom resource to
  * indicate which KafkaNodePools are used by this Kafka cluster.
@@ -45,7 +43,7 @@ public class UsedNodePoolStatus implements UnknownPropertyPreserving {
 
     @Override
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties != null ? this.additionalProperties : emptyMap();
+        return this.additionalProperties != null ? this.additionalProperties : Map.of();
     }
 
     @Override

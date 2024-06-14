@@ -17,8 +17,6 @@ import lombok.ToString;
 import java.util.HashMap;
 import java.util.Map;
 
-import static java.util.Collections.emptyMap;
-
 /**
  * Representation for environment variables which will be passed to Kafka Connect
  */
@@ -60,7 +58,7 @@ public class ExternalConfigurationEnv implements UnknownPropertyPreserving {
 
     @Override
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties != null ? this.additionalProperties : emptyMap();
+        return this.additionalProperties != null ? this.additionalProperties : Map.of();
     }
 
     @Override

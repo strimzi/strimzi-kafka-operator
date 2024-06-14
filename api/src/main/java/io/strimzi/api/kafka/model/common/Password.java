@@ -15,8 +15,6 @@ import lombok.ToString;
 import java.util.HashMap;
 import java.util.Map;
 
-import static java.util.Collections.emptyMap;
-
 /**
  * Allows to reference a password from another
  */
@@ -30,7 +28,6 @@ import static java.util.Collections.emptyMap;
 @ToString
 public class Password implements UnknownPropertyPreserving {
     private PasswordSource valueFrom;
-
     private Map<String, Object> additionalProperties;
 
     @Description("Secret from which the password should be read.")
@@ -45,7 +42,7 @@ public class Password implements UnknownPropertyPreserving {
 
     @Override
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties != null ? this.additionalProperties : emptyMap();
+        return this.additionalProperties != null ? this.additionalProperties : Map.of();
     }
 
     @Override

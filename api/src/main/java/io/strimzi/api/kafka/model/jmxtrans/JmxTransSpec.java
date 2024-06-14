@@ -22,8 +22,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static java.util.Collections.emptyMap;
-
 /**
  * Representation for options to be passed into setting up the JmxTrans.
  */
@@ -47,7 +45,6 @@ public class JmxTransSpec implements UnknownPropertyPreserving {
     private List<JmxTransQueryTemplate> kafkaQueries = null;
     private ResourceRequirements resources;
     private JmxTransTemplate template;
-
     private Map<String, Object> additionalProperties;
 
     @Description("The image to use for the JmxTrans")
@@ -116,7 +113,7 @@ public class JmxTransSpec implements UnknownPropertyPreserving {
 
     @Override
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties != null ? this.additionalProperties : emptyMap();
+        return this.additionalProperties != null ? this.additionalProperties : Map.of();
     }
 
     @Override

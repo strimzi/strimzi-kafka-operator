@@ -19,8 +19,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static java.util.Collections.emptyMap;
-
 /**
  * Configures listener per-broker configuration
  */
@@ -44,7 +42,6 @@ public class GenericKafkaListenerConfigurationBroker implements UnknownPropertyP
     private Integer nodePort;
     private String loadBalancerIP;
     private List<String> externalIPs;
-
     private Map<String, Object> additionalProperties;
 
     @Description("ID of the kafka broker (broker identifier). " +
@@ -95,7 +92,7 @@ public class GenericKafkaListenerConfigurationBroker implements UnknownPropertyP
             "This field can be used only with `loadbalancer`, `nodeport`, or `ingress` type listeners.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<String, String> getAnnotations() {
-        return annotations != null ? annotations : emptyMap();
+        return annotations != null ? annotations : Map.of();
     }
 
     public void setAnnotations(Map<String, String> annotations) {
@@ -106,7 +103,7 @@ public class GenericKafkaListenerConfigurationBroker implements UnknownPropertyP
             "This field can be used only with `loadbalancer`, `nodeport`, `route`, or `ingress` type listeners.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<String, String> getLabels() {
-        return labels != null ? labels : emptyMap();
+        return labels != null ? labels : Map.of();
     }
 
     public void setLabels(Map<String, String> labels) {
@@ -152,7 +149,7 @@ public class GenericKafkaListenerConfigurationBroker implements UnknownPropertyP
 
     @Override
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties != null ? this.additionalProperties : emptyMap();
+        return this.additionalProperties != null ? this.additionalProperties : Map.of();
     }
 
     @Override

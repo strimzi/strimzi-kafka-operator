@@ -15,8 +15,6 @@ import lombok.ToString;
 import java.util.HashMap;
 import java.util.Map;
 
-import static java.util.Collections.emptyMap;
-
 @Description("Configuration of how TLS certificates are used within the cluster. " +
         "This applies to certificates used for both internal communication within the cluster and to certificates " +
         "used for client access via `Kafka.spec.kafka.listeners.tls`.")
@@ -30,16 +28,15 @@ import static java.util.Collections.emptyMap;
 @EqualsAndHashCode
 @ToString
 public class CertificateAuthority implements UnknownPropertyPreserving {
+    public static final int DEFAULT_CERTS_VALIDITY_DAYS = 365;
+    public static final int DEFAULT_CERTS_RENEWAL_DAYS = 30;
+    
     private int validityDays;
     private boolean generateCertificateAuthority = true;
     private boolean generateSecretOwnerReference = true;
     private int renewalDays;
     private CertificateExpirationPolicy certificateExpirationPolicy;
-
     private Map<String, Object> additionalProperties;
-
-    public static final int DEFAULT_CERTS_VALIDITY_DAYS = 365;
-    public static final int DEFAULT_CERTS_RENEWAL_DAYS = 30;
 
     @Description("The number of days generated certificates should be valid for. The default is 365.")
     @Minimum(1)
@@ -105,7 +102,7 @@ public class CertificateAuthority implements UnknownPropertyPreserving {
 
     @Override
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties != null ? this.additionalProperties : emptyMap();
+        return this.additionalProperties != null ? this.additionalProperties : Map.of();
     }
 
     @Override

@@ -4,7 +4,6 @@
  */
 package io.strimzi.api.kafka.model.mirrormaker;
 
-
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
@@ -17,8 +16,6 @@ import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
 import java.util.Map;
-
-import static java.util.Collections.emptyMap;
 
 @DescriptionFile
 @Buildable(
@@ -41,7 +38,7 @@ public class KafkaMirrorMakerConsumerSpec extends KafkaMirrorMakerClientSpec {
     @Override
     @Description("The MirrorMaker consumer config. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES + " (with the exception of: " + FORBIDDEN_PREFIX_EXCEPTIONS + ").")
     public Map<String, Object> getConfig() {
-        return this.config != null ? this.config : emptyMap();
+        return this.config != null ? this.config : Map.of();
     }
 
     @Description("Specifies the number of consumer stream threads to create.")

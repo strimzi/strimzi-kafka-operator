@@ -16,8 +16,6 @@ import lombok.ToString;
 import java.util.HashMap;
 import java.util.Map;
 
-import static java.util.Collections.emptyMap;
-
 /**
  * Represents a certificate inside a Secret
  */
@@ -34,7 +32,6 @@ public class CertSecretSource implements UnknownPropertyPreserving {
     private String secretName;
     private String certificate;
     private String pattern;
-
     private Map<String, Object> additionalProperties;
 
     @Description("The name of the Secret containing the certificate.")
@@ -69,7 +66,7 @@ public class CertSecretSource implements UnknownPropertyPreserving {
 
     @Override
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties != null ? this.additionalProperties : emptyMap();
+        return this.additionalProperties != null ? this.additionalProperties : Map.of();
     }
 
     @Override

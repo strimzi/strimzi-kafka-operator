@@ -26,8 +26,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
 
-import static java.util.Collections.emptyMap;
-
 @JsonDeserialize
 @Crd(
     spec = @Crd.Spec(
@@ -130,7 +128,7 @@ public class KafkaUser extends CustomResource<KafkaUserSpec, KafkaUserStatus> im
 
     @Override
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties != null ? this.additionalProperties : emptyMap();
+        return this.additionalProperties != null ? this.additionalProperties : Map.of();
     }
 
     @Override

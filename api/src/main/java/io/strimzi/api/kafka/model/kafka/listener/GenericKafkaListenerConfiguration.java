@@ -24,8 +24,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static java.util.Collections.emptyMap;
-
 /**
  * Configures Kafka listeners
  */
@@ -56,7 +54,6 @@ public class GenericKafkaListenerConfiguration implements UnknownPropertyPreserv
     private List<IpFamily> ipFamilies;
     private Boolean createBootstrapService = true;
     private Boolean publishNotReadyAddresses;
-
     private Map<String, Object> additionalProperties;
 
     @Description("Reference to the `Secret` which holds the certificate and private key pair which will be used for this listener. " +
@@ -255,7 +252,7 @@ public class GenericKafkaListenerConfiguration implements UnknownPropertyPreserv
 
     @Override
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties != null ? this.additionalProperties : emptyMap();
+        return this.additionalProperties != null ? this.additionalProperties : Map.of();
     }
 
     @Override

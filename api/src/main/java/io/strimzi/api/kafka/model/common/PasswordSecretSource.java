@@ -15,8 +15,6 @@ import lombok.ToString;
 import java.util.HashMap;
 import java.util.Map;
 
-import static java.util.Collections.emptyMap;
-
 /**
  * Represents a password inside a Secret
  */
@@ -31,7 +29,6 @@ import static java.util.Collections.emptyMap;
 public class PasswordSecretSource implements UnknownPropertyPreserving {
     protected String secretName;
     protected String password;
-
     protected Map<String, Object> additionalProperties;
 
     @Description("The name of the Secret containing the password.")
@@ -56,7 +53,7 @@ public class PasswordSecretSource implements UnknownPropertyPreserving {
 
     @Override
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties != null ? this.additionalProperties : emptyMap();
+        return this.additionalProperties != null ? this.additionalProperties : Map.of();
     }
 
     @Override

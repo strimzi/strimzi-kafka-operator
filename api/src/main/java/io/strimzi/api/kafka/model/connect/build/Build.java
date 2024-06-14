@@ -21,8 +21,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static java.util.Collections.emptyMap;
-
 /**
  * Representation a Kafka Connect build to add additional connectors
  */
@@ -39,7 +37,6 @@ public class Build implements UnknownPropertyPreserving {
     private Output output;
     private List<Plugin> plugins;
     private ResourceRequirements resources;
-
     private Map<String, Object> additionalProperties;
 
     @Description("Configures where should the newly built image be stored. " +
@@ -77,7 +74,7 @@ public class Build implements UnknownPropertyPreserving {
 
     @Override
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties != null ? this.additionalProperties : emptyMap();
+        return this.additionalProperties != null ? this.additionalProperties : Map.of();
     }
 
     @Override

@@ -18,8 +18,6 @@ import lombok.ToString;
 
 import java.util.Map;
 
-import static java.util.Collections.emptyMap;
-
 /**
  * Abstracts connector config. Connectors for MM2 do not have the {@code className} property
  * while {@code KafkaConnectors} must have it.
@@ -69,7 +67,7 @@ public abstract class AbstractConnectorSpec extends Spec {
     @Description("The Kafka Connector configuration. The following properties cannot be set: " + FORBIDDEN_PARAMETERS)
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<String, Object> getConfig() {
-        return this.config != null ? this.config : emptyMap();
+        return this.config != null ? this.config : Map.of();
     }
 
     /**

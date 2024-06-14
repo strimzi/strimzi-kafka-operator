@@ -17,8 +17,6 @@ import lombok.ToString;
 import java.util.HashMap;
 import java.util.Map;
 
-import static java.util.Collections.emptyMap;
-
 /**
  * Representation of the rack configuration.
  */
@@ -33,7 +31,6 @@ import static java.util.Collections.emptyMap;
 @ToString
 public class Rack implements UnknownPropertyPreserving {
     private String topologyKey;
-
     private Map<String, Object> additionalProperties;
 
     public Rack() {
@@ -53,7 +50,7 @@ public class Rack implements UnknownPropertyPreserving {
 
     @Override
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties != null ? this.additionalProperties : emptyMap();
+        return this.additionalProperties != null ? this.additionalProperties : Map.of();
     }
 
     @Override

@@ -18,8 +18,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static java.util.Collections.emptyMap;
-
 @Buildable(
         editableEnabled = false,
         builderPackage = Constants.FABRIC8_KUBERNETES_API
@@ -32,7 +30,6 @@ public class JmxTransQueryTemplate implements UnknownPropertyPreserving {
     private String targetMBean;
     private List<String> attributes;
     private List<String> outputs;
-
     private Map<String, Object> additionalProperties;
 
     @JsonProperty(required = true)
@@ -71,7 +68,7 @@ public class JmxTransQueryTemplate implements UnknownPropertyPreserving {
 
     @Override
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties != null ? this.additionalProperties : emptyMap();
+        return this.additionalProperties != null ? this.additionalProperties : Map.of();
     }
 
     @Override

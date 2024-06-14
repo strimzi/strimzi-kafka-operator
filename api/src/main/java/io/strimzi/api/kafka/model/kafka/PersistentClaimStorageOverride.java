@@ -17,8 +17,6 @@ import lombok.ToString;
 import java.util.HashMap;
 import java.util.Map;
 
-import static java.util.Collections.emptyMap;
-
 /**
  * Configures persistent claim overrides for storage - allows to override storage class with per broker configuration
  */
@@ -57,7 +55,7 @@ public class PersistentClaimStorageOverride  implements UnknownPropertyPreservin
 
     @Override
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties != null ? this.additionalProperties : emptyMap();
+        return this.additionalProperties != null ? this.additionalProperties : Map.of();
     }
 
     @Override

@@ -19,8 +19,6 @@ import lombok.ToString;
 import java.util.HashMap;
 import java.util.Map;
 
-import static java.util.Collections.emptyMap;
-
 /**
  * Represent the Quotas configuration for Kafka User.
  * Kafka documentation for Kafka User quotas can be found <a href="http://kafka.apache.org/documentation/#design_quotas">here</a>
@@ -84,7 +82,7 @@ public class KafkaUserQuotas implements UnknownPropertyPreserving {
 
     @Override
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties != null ? this.additionalProperties : emptyMap();
+        return this.additionalProperties != null ? this.additionalProperties : Map.of();
     }
 
     @Override

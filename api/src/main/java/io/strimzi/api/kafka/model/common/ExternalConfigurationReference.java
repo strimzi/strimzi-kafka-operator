@@ -16,8 +16,6 @@ import lombok.ToString;
 import java.util.HashMap;
 import java.util.Map;
 
-import static java.util.Collections.emptyMap;
-
 /**
  * Representation for a value read from a given key of a config map in the same namespace as the referrer.
  */
@@ -46,7 +44,7 @@ public class ExternalConfigurationReference implements UnknownPropertyPreserving
 
     @Override
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties != null ? this.additionalProperties : emptyMap();
+        return this.additionalProperties != null ? this.additionalProperties : Map.of();
     }
 
     @Override

@@ -18,8 +18,6 @@ import lombok.ToString;
 import java.util.HashMap;
 import java.util.Map;
 
-import static java.util.Collections.emptyMap;
-
 @Buildable(
         editableEnabled = false,
         builderPackage = Constants.FABRIC8_KUBERNETES_API
@@ -46,7 +44,7 @@ public class KafkaMirrorMakerClientSpec implements UnknownPropertyPreserving {
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<String, Object> getConfig() {
-        return this.config != null ? this.config : emptyMap();
+        return this.config != null ? this.config : Map.of();
     }
 
     public void setConfig(Map<String, Object> config) {
@@ -75,7 +73,7 @@ public class KafkaMirrorMakerClientSpec implements UnknownPropertyPreserving {
 
     @Override
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties != null ? this.additionalProperties : emptyMap();
+        return this.additionalProperties != null ? this.additionalProperties : Map.of();
     }
 
     @Override

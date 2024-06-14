@@ -18,8 +18,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static java.util.Collections.emptyMap;
-
 /**
  * Representation for options to define where and how information will be pushed to remote sources of information
  */
@@ -38,7 +36,6 @@ public class JmxTransOutputDefinitionTemplate implements UnknownPropertyPreservi
     private Integer flushDelayInSeconds;
     private String name;
     private List<String> typeNames;
-
     private Map<String, Object> additionalProperties;
 
     @JsonProperty(value = "outputType", required = true)
@@ -108,7 +105,7 @@ public class JmxTransOutputDefinitionTemplate implements UnknownPropertyPreservi
 
     @Override
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties != null ? this.additionalProperties : emptyMap();
+        return this.additionalProperties != null ? this.additionalProperties : Map.of();
     }
 
     @Override

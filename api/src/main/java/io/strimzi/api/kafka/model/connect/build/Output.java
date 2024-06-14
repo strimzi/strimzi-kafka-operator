@@ -16,8 +16,6 @@ import lombok.ToString;
 import java.util.HashMap;
 import java.util.Map;
 
-import static java.util.Collections.emptyMap;
-
 /**
  * Abstract baseclass for different representations of connect build outputs, discriminated by {@link #getType() type}.
  */
@@ -40,7 +38,6 @@ public abstract class Output implements UnknownPropertyPreserving {
     public static final String TYPE_IMAGESTREAM = "imagestream";
 
     private String image;
-
     private Map<String, Object> additionalProperties;
 
     @Description("Output type. " +
@@ -61,7 +58,7 @@ public abstract class Output implements UnknownPropertyPreserving {
 
     @Override
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties != null ? this.additionalProperties : emptyMap();
+        return this.additionalProperties != null ? this.additionalProperties : Map.of();
     }
 
     @Override

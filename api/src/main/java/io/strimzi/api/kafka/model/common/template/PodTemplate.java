@@ -28,8 +28,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static java.util.Collections.emptyMap;
-
 /**
  * Representation of a pod template for Strimzi resources.
  */
@@ -57,7 +55,6 @@ public class PodTemplate implements HasMetadataTemplate, UnknownPropertyPreservi
     private List<HostAlias> hostAliases;
     private Boolean enableServiceLinks;
     private String tmpDirSizeLimit;
-
     private Map<String, Object> additionalProperties;
 
     @Description("Metadata applied to the resource.")
@@ -200,7 +197,7 @@ public class PodTemplate implements HasMetadataTemplate, UnknownPropertyPreservi
 
     @Override
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties != null ? this.additionalProperties : emptyMap();
+        return this.additionalProperties != null ? this.additionalProperties : Map.of();
     }
 
     @Override

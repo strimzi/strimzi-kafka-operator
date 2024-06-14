@@ -17,8 +17,6 @@ import lombok.ToString;
 import java.util.HashMap;
 import java.util.Map;
 
-import static java.util.Collections.emptyMap;
-
 /**
  * Configures a RemoteStorageManager in the tiered storage setup.
  */
@@ -34,7 +32,6 @@ public class RemoteStorageManager implements UnknownPropertyPreserving {
     private String className;
     private String classPath;
     private Map<String, String> config;
-
     protected Map<String, Object> additionalProperties;
 
     @Description("The class name for the `RemoteStorageManager` implementation.")
@@ -61,7 +58,7 @@ public class RemoteStorageManager implements UnknownPropertyPreserving {
         "Keys will be automatically prefixed with `rsm.config.`, and added to Kafka broker configuration.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public Map<String, String> getConfig() {
-        return this.config != null ? this.config : emptyMap();
+        return this.config != null ? this.config : Map.of();
     }
 
     public void setConfig(Map<String, String> config) {
@@ -70,7 +67,7 @@ public class RemoteStorageManager implements UnknownPropertyPreserving {
 
     @Override
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties != null ? this.additionalProperties : emptyMap();
+        return this.additionalProperties != null ? this.additionalProperties : Map.of();
     }
 
     @Override

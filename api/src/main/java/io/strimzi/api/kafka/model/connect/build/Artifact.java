@@ -15,8 +15,6 @@ import lombok.ToString;
 import java.util.HashMap;
 import java.util.Map;
 
-import static java.util.Collections.emptyMap;
-
 /**
  * Abstract baseclass for different representations of connector artifacts, discriminated by {@link #getType() type}.
  */
@@ -43,7 +41,7 @@ public abstract class Artifact implements UnknownPropertyPreserving {
     public static final String TYPE_ZIP = "zip";
     public static final String TYPE_MVN = "maven";
     public static final String TYPE_OTHER = "other";
-
+    
     private Map<String, Object> additionalProperties;
 
     @Description("Artifact type. " +
@@ -52,7 +50,7 @@ public abstract class Artifact implements UnknownPropertyPreserving {
 
     @Override
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties != null ? this.additionalProperties : emptyMap();
+        return this.additionalProperties != null ? this.additionalProperties : Map.of();
     }
 
     @Override
