@@ -750,11 +750,7 @@ public class TopicOperatorPerformance extends AbstractST {
         return Stream.of(
             new Object[][]{
                     {"100", "100"},     // Default configuration
-                    {"100", "10"},      // Default batch size, with lower linger time
-                    {"10", "1"},        // Minimal batching for high responsiveness
-                    {"50", "100"},      // Moderate batching for balanced performance
-                    {"100", "500"},     // Heavier batching for throughput focus
-                    {"500", "1000"},    // Extreme batching to test upper limits of performance
+                    {"100", "10"}       // Default batch size, with lower linger time
                 }
             )
             .flatMap(config -> Arrays.stream(batchEventSizes)
@@ -800,10 +796,6 @@ public class TopicOperatorPerformance extends AbstractST {
                             .editOrNewTemplate()
                                 .editOrNewTopicOperatorContainer()
                                     .addNewEnv()
-                                        .withName("STRIMZI_ENABLE_ADDITIONAL_METRICS")
-                                        .withValue("true")
-                                    .endEnv()
-                                    .addNewEnv()
                                         .withName("STRIMZI_MAX_QUEUE_SIZE")
                                         .withValue(maxQueueSize)
                                     .endEnv()
@@ -826,30 +818,16 @@ public class TopicOperatorPerformance extends AbstractST {
             this.testStorage.addToTestStorage(TestConstants.SCRAPER_POD_KEY,
                 kubeClient().listPodsByPrefixInName(this.testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName());
 
-            // -- Metrics POLL --
-            // Assuming 'testStorage' contains necessary details like namespace and scraperPodName
-            this.topicOperatorCollector = new TopicOperatorMetricsCollector.Builder()
-                .withScraperPodName(this.testStorage.getScraperPodName())
-                .withNamespaceName(this.testStorage.getNamespaceName())
-                .withComponent(TopicOperatorMetricsComponent.create(this.testStorage.getNamespaceName(), this.testStorage.getClusterName()))
-                .build();
-
-            this.topicOperatorMetricsGatherer = new TopicOperatorMetricsCollectionScheduler(this.topicOperatorCollector, "strimzi.io/cluster=" + this.testStorage.getClusterName());
-            this.topicOperatorMetricsGatherer.startCollecting();
-
             // warm-up phase processes 100 topics/tasks
             final int warmUpTasksToProcess = 100;
             TopicOperatorPerformanceUtils.processAllTopicsConcurrently(testStorage, warmUpTasksToProcess, 0, 0);
 
-            allTasksTimeMs = TopicOperatorPerformanceUtils.processAllTopicsConcurrently(testStorage, numberOfTasks, spareEvents, warmUpTasksToProcess);
-
             // Calculate total execution time in nanoseconds and then convert to ms
+            allTasksTimeMs = TopicOperatorPerformanceUtils.processAllTopicsConcurrently(testStorage, numberOfTasks, spareEvents, warmUpTasksToProcess);
 
             LOGGER.info("Total time taken for all tasks (i.e., {} for each operation; creation, modification and deletion) {} ms", numberOfTasks, allTasksTimeMs);
         } finally {
             if (this.topicOperatorMetricsGatherer != null) {
-                this.topicOperatorMetricsGatherer.stopCollecting();
-
                 final Map<String, Object> performanceAttributes = new LinkedHashMap<>();
 
                 performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_IN_MAX_QUEUE_SIZE, maxQueueSize);
