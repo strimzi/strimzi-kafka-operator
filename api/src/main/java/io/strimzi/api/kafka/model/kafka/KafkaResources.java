@@ -289,6 +289,7 @@ public class KafkaResources {
      * Returns the name of the Entity Operator {@code Secret} for a {@code Kafka} cluster of the given name.
      * This {@code Secret} will only exist if {@code Kafka.spec.entityOperator} is configured in the
      * {@code Kafka} resource with the given name.
+     * 
      * This secret is not used anymore and is deprecated. This method will be removed in the future.
      *
      * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
