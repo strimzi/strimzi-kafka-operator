@@ -7,6 +7,7 @@ package io.strimzi.systemtest.upgrade.kraft;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
+import io.strimzi.systemtest.annotations.KindIPv6NotSupported;
 import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -174,6 +175,7 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
         verifyProcedure(acrossUpgradeData, testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), TestConstants.CO_NAMESPACE, wasUTOUsedBefore);
     }
 
+    @KindIPv6NotSupported("Our current CI setup doesn't allow pushing into internal registries that is needed in this test")
     @IsolatedTest
     void testUpgradeOfKafkaConnectAndKafkaConnector(final ExtensionContext extensionContext) throws IOException {
         final TestStorage testStorage = new TestStorage(extensionContext, TestConstants.CO_NAMESPACE);

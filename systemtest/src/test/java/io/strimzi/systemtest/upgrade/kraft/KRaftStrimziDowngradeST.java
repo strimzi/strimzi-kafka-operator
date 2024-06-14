@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.upgrade.kraft;
 
 import io.strimzi.systemtest.TestConstants;
+import io.strimzi.systemtest.annotations.KindIPv6NotSupported;
 import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -50,6 +51,7 @@ public class KRaftStrimziDowngradeST extends AbstractKRaftUpgradeST {
         performDowngrade(parameters);
     }
 
+    @KindIPv6NotSupported("Our current CI setup doesn't allow pushing into internal registries that is needed in this test")
     @Test
     void testDowngradeOfKafkaConnectAndKafkaConnector() throws IOException {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext(), TestConstants.CO_NAMESPACE);

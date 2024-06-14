@@ -160,7 +160,7 @@ public class KRaftKafkaUpgradeDowngradeST extends AbstractKRaftUpgradeST {
             // Setup topic, which has 3 replicas and 2 min.isr to see if producer will be able to work during rolling update
             resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(clusterName, testStorage.getContinuousTopicName(), 3, 3, 2, TestConstants.CO_NAMESPACE).build());
             // 40s is used within TF environment to make upgrade/downgrade more stable on slow env
-            String producerAdditionConfiguration = "delivery.timeout.ms=40000\nrequest.timeout.ms=5000";
+            String producerAdditionConfiguration = "delivery.timeout.ms=80000\nrequest.timeout.ms=10000";
 
             KafkaClients kafkaBasicClientJob = ClientUtils.getContinuousPlainClientBuilder(testStorage)
                 .withBootstrapAddress(KafkaResources.plainBootstrapAddress(clusterName))
