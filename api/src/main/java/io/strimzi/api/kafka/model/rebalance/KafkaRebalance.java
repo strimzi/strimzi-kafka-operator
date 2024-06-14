@@ -150,7 +150,7 @@ public class KafkaRebalance extends CustomResource<KafkaRebalanceSpec, KafkaReba
     @Override
     public void setAdditionalProperty(String name, Object value) {
         if (this.additionalProperties == null) {
-            this.additionalProperties = new HashMap<>(1);
+            this.additionalProperties = new HashMap<>(2);
         }
         this.additionalProperties.put(name, value);
     }
