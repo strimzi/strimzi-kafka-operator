@@ -15,8 +15,6 @@ import lombok.ToString;
 
 import java.util.Map;
 
-import static java.util.Collections.emptyMap;
-
 /**
  * Represents a status of the Kafka Rebalance resource
  */
@@ -36,7 +34,7 @@ public class KafkaRebalanceStatus extends Status {
     @Description("A JSON object describing the optimization result")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<String, Object> getOptimizationResult() {
-        return optimizationResult != null ? optimizationResult : emptyMap();
+        return optimizationResult != null ? optimizationResult : Map.of();
     }
 
     public void setOptimizationResult(Map<String, Object> optimizationResult) {
