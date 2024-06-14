@@ -379,7 +379,7 @@ public class AbstractUpgradeST extends AbstractST {
             }
 
             // 40s is used within TF environment to make upgrade/downgrade more stable on slow env
-            String producerAdditionConfiguration = "delivery.timeout.ms=30000\nrequest.timeout.ms=5000";
+            String producerAdditionConfiguration = "delivery.timeout.ms=40000\nrequest.timeout.ms=5000";
 
             KafkaClients kafkaBasicClientJob = ClientUtils.getContinuousPlainClientBuilder(testStorage)
                 .withBootstrapAddress(KafkaResources.plainBootstrapAddress(clusterName))
