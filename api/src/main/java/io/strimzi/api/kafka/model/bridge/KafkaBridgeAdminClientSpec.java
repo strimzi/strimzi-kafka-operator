@@ -29,6 +29,6 @@ public class KafkaBridgeAdminClientSpec extends KafkaBridgeClientSpec {
     @Override
     @Description("The Kafka AdminClient configuration used for AdminClient instances created by the bridge.")
     public Map<String, Object> getConfig() {
-        return config;
+        return this.config != null ? this.config : Map.of();
     }
 }

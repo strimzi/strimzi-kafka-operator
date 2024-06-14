@@ -31,7 +31,7 @@ import java.util.Map;
 @EqualsAndHashCode
 @ToString
 public abstract class AclRuleResource implements UnknownPropertyPreserving {
-    private Map<String, Object> additionalProperties = new HashMap<>(0);
+    private Map<String, Object> additionalProperties;
 
     @Description("Resource type. " +
             "The available resource types are `topic`, `group`, `cluster`, and `transactionalId`.")
@@ -39,11 +39,14 @@ public abstract class AclRuleResource implements UnknownPropertyPreserving {
 
     @Override
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties;
+        return this.additionalProperties != null ? this.additionalProperties : Map.of();
     }
 
     @Override
     public void setAdditionalProperty(String name, Object value) {
+        if (this.additionalProperties == null) {
+            this.additionalProperties = new HashMap<>(2);
+        }
         this.additionalProperties.put(name, value);
     }
 }

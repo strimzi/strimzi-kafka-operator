@@ -30,7 +30,7 @@ import java.util.Map;
 public class KafkaJmxOptions implements UnknownPropertyPreserving {
     private KafkaJmxAuthentication authentication;
 
-    private Map<String, Object> additionalProperties = new HashMap<>(0);
+    private Map<String, Object> additionalProperties;
 
     @Description("Authentication configuration for connecting to the JMX port")
     @JsonProperty("authentication")
@@ -45,11 +45,14 @@ public class KafkaJmxOptions implements UnknownPropertyPreserving {
 
     @Override
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties;
+        return this.additionalProperties != null ? this.additionalProperties : Map.of();
     }
 
     @Override
     public void setAdditionalProperty(String name, Object value) {
+        if (this.additionalProperties == null) {
+            this.additionalProperties = new HashMap<>(2);
+        }
         this.additionalProperties.put(name, value);
     }
 }

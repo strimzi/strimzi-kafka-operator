@@ -34,7 +34,7 @@ import java.util.Map;
 public class PodDisruptionBudgetTemplate implements HasMetadataTemplate, UnknownPropertyPreserving {
     private MetadataTemplate metadata;
     private int maxUnavailable = 1;
-    private Map<String, Object> additionalProperties = new HashMap<>(0);
+    private Map<String, Object> additionalProperties;
 
     @Description("Metadata to apply to the `PodDisruptionBudgetTemplate` resource.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -63,11 +63,14 @@ public class PodDisruptionBudgetTemplate implements HasMetadataTemplate, Unknown
 
     @Override
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties;
+        return this.additionalProperties != null ? this.additionalProperties : Map.of();
     }
 
     @Override
     public void setAdditionalProperty(String name, Object value) {
+        if (this.additionalProperties == null) {
+            this.additionalProperties = new HashMap<>(2);
+        }
         this.additionalProperties.put(name, value);
     }
 }

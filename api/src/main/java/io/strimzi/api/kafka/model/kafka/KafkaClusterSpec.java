@@ -69,7 +69,7 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, HasConfigurable
     protected Storage storage;
     private String version;
     private String metadataVersion;
-    private Map<String, Object> config = new HashMap<>(0);
+    private Map<String, Object> config;
     private String brokerRackInitImage;
     private Rack rack;
     private Logging logging;
@@ -85,7 +85,7 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, HasConfigurable
     private KafkaAuthorization authorization;
     private KafkaClusterTemplate template;
     private TieredStorage tieredStorage;
-    private Map<String, Object> additionalProperties = new HashMap<>(0);
+    private Map<String, Object> additionalProperties;
 
     @Description("The Kafka broker version. Defaults to the latest version. " +
             "Consult the user documentation to understand the process required to upgrade or downgrade the version.")
@@ -112,7 +112,7 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, HasConfigurable
     @Description("Kafka broker config properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES + " (with the exception of: " + FORBIDDEN_PREFIX_EXCEPTIONS + ").")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<String, Object> getConfig() {
-        return config;
+        return this.config != null ? this.config : Map.of();
     }
 
     public void setConfig(Map<String, Object> config) {
@@ -294,11 +294,14 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, HasConfigurable
 
     @Override
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties;
+        return this.additionalProperties != null ? this.additionalProperties : Map.of();
     }
 
     @Override
     public void setAdditionalProperty(String name, Object value) {
+        if (this.additionalProperties == null) {
+            this.additionalProperties = new HashMap<>(2);
+        }
         this.additionalProperties.put(name, value);
     }
 }

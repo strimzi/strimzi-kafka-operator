@@ -25,8 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
 
-import static java.util.Collections.emptyMap;
-
 @Crd(
     spec = @Crd.Spec(
         names = @Crd.Spec.Names(
@@ -101,7 +99,7 @@ public class KafkaConnector extends CustomResource<KafkaConnectorSpec, KafkaConn
     public static final String SPEC_REPLICAS_PATH = ".spec.tasksMax";
     public static final String STATUS_REPLICAS_PATH = ".status.tasksMax";
 
-    private final Map<String, Object> additionalProperties = new HashMap<>(0);
+    private Map<String, Object> additionalProperties;
 
     // Added to avoid duplication during Json serialization
     private String apiVersion;
@@ -131,11 +129,14 @@ public class KafkaConnector extends CustomResource<KafkaConnectorSpec, KafkaConn
 
     @Override
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties != null ? this.additionalProperties : emptyMap();
+        return this.additionalProperties != null ? this.additionalProperties : Map.of();
     }
 
     @Override
     public void setAdditionalProperty(String name, Object value) {
+        if (this.additionalProperties == null) {
+            this.additionalProperties = new HashMap<>(2);
+        }
         this.additionalProperties.put(name, value);
     }
 
@@ -152,4 +153,3 @@ public class KafkaConnector extends CustomResource<KafkaConnectorSpec, KafkaConn
         return CustomResourceConditions.isReady();
     }
 }
-

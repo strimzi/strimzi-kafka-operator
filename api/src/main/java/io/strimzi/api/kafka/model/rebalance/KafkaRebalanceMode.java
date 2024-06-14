@@ -12,7 +12,7 @@ public enum KafkaRebalanceMode {
     ADD_BROKERS("add-brokers"),
     REMOVE_BROKERS("remove-brokers");
 
-    private String name;
+    private final String name;
 
     KafkaRebalanceMode(String name) {
         this.name = name;

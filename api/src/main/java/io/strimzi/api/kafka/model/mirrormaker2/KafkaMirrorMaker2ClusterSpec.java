@@ -21,8 +21,6 @@ import lombok.ToString;
 import java.util.HashMap;
 import java.util.Map;
 
-import static java.util.Collections.emptyMap;
-
 @DescriptionFile
 @Buildable(
         editableEnabled = false,
@@ -38,7 +36,7 @@ public class KafkaMirrorMaker2ClusterSpec implements UnknownPropertyPreserving {
 
     private String alias;
     private String bootstrapServers;
-    protected Map<String, Object> config = new HashMap<>(0);
+    protected Map<String, Object> config;
     private ClientTls tls;
     private KafkaClientAuthentication authentication;
     private Map<String, Object> additionalProperties;
@@ -67,7 +65,7 @@ public class KafkaMirrorMaker2ClusterSpec implements UnknownPropertyPreserving {
     @Description("The MirrorMaker 2 cluster config. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES + " (with the exception of: " + FORBIDDEN_PREFIX_EXCEPTIONS + ").")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<String, Object> getConfig() {
-        return config;
+        return this.config != null ? this.config : Map.of();
     }
 
     public void setConfig(Map<String, Object> config) {
@@ -96,13 +94,13 @@ public class KafkaMirrorMaker2ClusterSpec implements UnknownPropertyPreserving {
 
     @Override
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties != null ? this.additionalProperties : emptyMap();
+        return this.additionalProperties != null ? this.additionalProperties : Map.of();
     }
 
     @Override
     public void setAdditionalProperty(String name, Object value) {
         if (this.additionalProperties == null) {
-            this.additionalProperties = new HashMap<>(1);
+            this.additionalProperties = new HashMap<>(2);
         }
         this.additionalProperties.put(name, value);
     }

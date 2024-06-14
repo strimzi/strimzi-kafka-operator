@@ -18,8 +18,6 @@ import lombok.ToString;
 import java.util.HashMap;
 import java.util.Map;
 
-import static java.util.Collections.emptyMap;
-
 @Buildable(
         editableEnabled = false,
         builderPackage = Constants.FABRIC8_KUBERNETES_API
@@ -29,7 +27,7 @@ import static java.util.Collections.emptyMap;
 @ToString
 public class KafkaMirrorMakerClientSpec implements UnknownPropertyPreserving {
     private String bootstrapServers;
-    protected Map<String, Object> config = new HashMap<>(0);
+    protected Map<String, Object> config;
     private ClientTls tls;
     private KafkaClientAuthentication authentication;
     private Map<String, Object> additionalProperties;
@@ -46,7 +44,7 @@ public class KafkaMirrorMakerClientSpec implements UnknownPropertyPreserving {
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<String, Object> getConfig() {
-        return config;
+        return this.config != null ? this.config : Map.of();
     }
 
     public void setConfig(Map<String, Object> config) {
@@ -75,13 +73,13 @@ public class KafkaMirrorMakerClientSpec implements UnknownPropertyPreserving {
 
     @Override
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties != null ? this.additionalProperties : emptyMap();
+        return this.additionalProperties != null ? this.additionalProperties : Map.of();
     }
 
     @Override
     public void setAdditionalProperty(String name, Object value) {
         if (this.additionalProperties == null) {
-            this.additionalProperties = new HashMap<>(1);
+            this.additionalProperties = new HashMap<>(2);
         }
         this.additionalProperties.put(name, value);
     }

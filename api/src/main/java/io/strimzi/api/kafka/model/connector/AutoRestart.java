@@ -33,7 +33,7 @@ public class AutoRestart implements UnknownPropertyPreserving {
     private boolean enabled = true;
     private Integer maxRestarts;
 
-    private final Map<String, Object> additionalProperties = new HashMap<>(0);
+    private Map<String, Object> additionalProperties;
 
     @Description("Whether automatic restart for failed connectors and tasks should be enabled or disabled")
     public boolean isEnabled() {
@@ -57,11 +57,14 @@ public class AutoRestart implements UnknownPropertyPreserving {
 
     @Override
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties;
+        return this.additionalProperties != null ? this.additionalProperties : Map.of();
     }
 
     @Override
     public void setAdditionalProperty(String name, Object value) {
+        if (this.additionalProperties == null) {
+            this.additionalProperties = new HashMap<>(2);
+        }
         this.additionalProperties.put(name, value);
     }
 }

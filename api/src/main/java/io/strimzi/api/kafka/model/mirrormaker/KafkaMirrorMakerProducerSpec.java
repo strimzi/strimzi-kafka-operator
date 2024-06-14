@@ -43,7 +43,6 @@ public class KafkaMirrorMakerProducerSpec extends KafkaMirrorMakerClientSpec {
     @Override
     @Description("The MirrorMaker producer config. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES + " (with the exception of: " + FORBIDDEN_PREFIX_EXCEPTIONS + ").")
     public Map<String, Object> getConfig() {
-        return config;
+        return this.config != null ? this.config : Map.of();
     }
-
 }

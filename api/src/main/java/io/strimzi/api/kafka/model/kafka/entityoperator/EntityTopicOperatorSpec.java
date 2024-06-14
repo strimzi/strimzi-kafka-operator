@@ -59,7 +59,7 @@ public class EntityTopicOperatorSpec implements HasConfigurableLogging, HasLiven
     protected ResourceRequirements resources;
     protected Logging logging;
     private JvmOptions jvmOptions;
-    protected Map<String, Object> additionalProperties = new HashMap<>(0);
+    protected Map<String, Object> additionalProperties;
 
     @Description("The namespace the Topic Operator should watch.")
     public String getWatchedNamespace() {
@@ -187,11 +187,14 @@ public class EntityTopicOperatorSpec implements HasConfigurableLogging, HasLiven
 
     @Override
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties;
+        return this.additionalProperties != null ? this.additionalProperties : Map.of();
     }
 
     @Override
     public void setAdditionalProperty(String name, Object value) {
+        if (this.additionalProperties == null) {
+            this.additionalProperties = new HashMap<>(2);
+        }
         this.additionalProperties.put(name, value);
     }
 

@@ -20,8 +20,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static java.util.Collections.emptyMap;
-
 /**
  * Represents a generic status which can be used across different resources
  */
@@ -48,8 +46,7 @@ public abstract class Status implements UnknownPropertyPreserving {
 
     private List<Condition> prepareConditionsUpdate() {
         List<Condition> oldConditions = getConditions();
-        List<Condition> newConditions = oldConditions != null ? new ArrayList<>(oldConditions) : new ArrayList<>(0);
-        return newConditions;
+        return oldConditions != null ? new ArrayList<>(oldConditions) : new ArrayList<>(0);
     }
 
     public void addCondition(Condition condition) {
@@ -76,13 +73,13 @@ public abstract class Status implements UnknownPropertyPreserving {
 
     @Override
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties != null ? this.additionalProperties : emptyMap();
+        return this.additionalProperties != null ? this.additionalProperties : Map.of();
     }
 
     @Override
     public void setAdditionalProperty(String name, Object value) {
         if (this.additionalProperties == null) {
-            this.additionalProperties = new HashMap<>(1);
+            this.additionalProperties = new HashMap<>(2);
         }
         this.additionalProperties.put(name, value);
     }

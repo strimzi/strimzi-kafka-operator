@@ -4,7 +4,6 @@
  */
 package io.strimzi.api.kafka.model.mirrormaker;
 
-
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
@@ -33,15 +32,13 @@ public class KafkaMirrorMakerConsumerSpec extends KafkaMirrorMakerClientSpec {
     public static final String FORBIDDEN_PREFIX_EXCEPTIONS = "ssl.endpoint.identification.algorithm, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols";
 
     private Integer numStreams;
-
     private String groupId;
-
     private Integer offsetCommitInterval;
 
     @Override
     @Description("The MirrorMaker consumer config. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES + " (with the exception of: " + FORBIDDEN_PREFIX_EXCEPTIONS + ").")
     public Map<String, Object> getConfig() {
-        return config;
+        return this.config != null ? this.config : Map.of();
     }
 
     @Description("Specifies the number of consumer stream threads to create.")

@@ -32,7 +32,7 @@ import java.util.Map;
 @ToString
 public class KafkaUserTemplate implements UnknownPropertyPreserving {
     private ResourceTemplate secret;
-    private Map<String, Object> additionalProperties = new HashMap<>(0);
+    private Map<String, Object> additionalProperties;
 
     @Description("Template for KafkaUser resources. " +
             "The template allows users to specify how the `Secret` with password or TLS certificates is generated.")
@@ -47,11 +47,14 @@ public class KafkaUserTemplate implements UnknownPropertyPreserving {
 
     @Override
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties;
+        return this.additionalProperties != null ? this.additionalProperties : Map.of();
     }
 
     @Override
     public void setAdditionalProperty(String name, Object value) {
+        if (this.additionalProperties == null) {
+            this.additionalProperties = new HashMap<>(2);
+        }
         this.additionalProperties.put(name, value);
     }
 }

@@ -30,7 +30,6 @@ import java.util.function.Predicate;
  * </pre>
  */
 public class CustomResourceConditions {
-
     private CustomResourceConditions() {
     }
 

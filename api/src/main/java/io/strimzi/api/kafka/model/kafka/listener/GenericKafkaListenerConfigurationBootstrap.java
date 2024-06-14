@@ -34,13 +34,12 @@ import java.util.Map;
 public class GenericKafkaListenerConfigurationBootstrap implements UnknownPropertyPreserving {
     private List<String> alternativeNames;
     private String host;
-    private Map<String, String> annotations = new HashMap<>(0);
-    private Map<String, String> labels = new HashMap<>(0);
+    private Map<String, String> annotations;
+    private Map<String, String> labels;
     private Integer nodePort;
     private String loadBalancerIP;
     private List<String> externalIPs;
-
-    private Map<String, Object> additionalProperties = new HashMap<>(0);
+    private Map<String, Object> additionalProperties;
 
     @Description("Additional alternative names for the bootstrap service. " +
             "The alternative names will be added to the list of subject alternative names of the TLS certificates.")
@@ -70,7 +69,7 @@ public class GenericKafkaListenerConfigurationBootstrap implements UnknownProper
             "This field can be used only with `loadbalancer`, `nodeport`, `route`, or `ingress` type listeners.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<String, String> getAnnotations() {
-        return annotations;
+        return annotations != null ? annotations : Map.of();
     }
 
     public void setAnnotations(Map<String, String> annotations) {
@@ -81,7 +80,7 @@ public class GenericKafkaListenerConfigurationBootstrap implements UnknownProper
             "This field can be used only with `loadbalancer`, `nodeport`, `route`, or `ingress` type listeners.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<String, String> getLabels() {
-        return labels;
+        return labels != null ? labels : Map.of();
     }
 
     public void setLabels(Map<String, String> labels) {
@@ -127,11 +126,14 @@ public class GenericKafkaListenerConfigurationBootstrap implements UnknownProper
 
     @Override
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties;
+        return this.additionalProperties != null ? this.additionalProperties : Map.of();
     }
 
     @Override
     public void setAdditionalProperty(String name, Object value) {
+        if (this.additionalProperties == null) {
+            this.additionalProperties = new HashMap<>(2);
+        }
         this.additionalProperties.put(name, value);
     }
 }

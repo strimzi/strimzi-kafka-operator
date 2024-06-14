@@ -39,7 +39,7 @@ public class AclRule implements UnknownPropertyPreserving {
     private String host = "*";
     private AclOperation operation;
     private List<AclOperation> operations;
-    private Map<String, Object> additionalProperties = new HashMap<>(0);
+    private Map<String, Object> additionalProperties;
 
     public AclRule() {
     }
@@ -112,11 +112,14 @@ public class AclRule implements UnknownPropertyPreserving {
 
     @Override
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties;
+        return this.additionalProperties != null ? this.additionalProperties : Map.of();
     }
 
     @Override
     public void setAdditionalProperty(String name, Object value) {
+        if (this.additionalProperties == null) {
+            this.additionalProperties = new HashMap<>(2);
+        }
         this.additionalProperties.put(name, value);
     }
 }

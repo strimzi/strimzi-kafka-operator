@@ -28,16 +28,15 @@ import java.util.Map;
 @EqualsAndHashCode
 @ToString
 public class CertificateAuthority implements UnknownPropertyPreserving {
+    public static final int DEFAULT_CERTS_VALIDITY_DAYS = 365;
+    public static final int DEFAULT_CERTS_RENEWAL_DAYS = 30;
+    
     private int validityDays;
     private boolean generateCertificateAuthority = true;
     private boolean generateSecretOwnerReference = true;
     private int renewalDays;
     private CertificateExpirationPolicy certificateExpirationPolicy;
-
-    private Map<String, Object> additionalProperties = new HashMap<>(0);
-
-    public static final int DEFAULT_CERTS_VALIDITY_DAYS = 365;
-    public static final int DEFAULT_CERTS_RENEWAL_DAYS = 30;
+    private Map<String, Object> additionalProperties;
 
     @Description("The number of days generated certificates should be valid for. The default is 365.")
     @Minimum(1)
@@ -100,14 +99,17 @@ public class CertificateAuthority implements UnknownPropertyPreserving {
     public void setCertificateExpirationPolicy(CertificateExpirationPolicy certificateExpirationPolicy) {
         this.certificateExpirationPolicy = certificateExpirationPolicy;
     }
-    
+
     @Override
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties;
+        return this.additionalProperties != null ? this.additionalProperties : Map.of();
     }
 
     @Override
     public void setAdditionalProperty(String name, Object value) {
+        if (this.additionalProperties == null) {
+            this.additionalProperties = new HashMap<>(2);
+        }
         this.additionalProperties.put(name, value);
     }
 }

@@ -33,7 +33,7 @@ public class KafkaBridgeProducerSpec extends KafkaBridgeClientSpec {
     @Override
     @Description("The Kafka producer configuration used for producer instances created by the bridge. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES + " (with the exception of: " + FORBIDDEN_PREFIX_EXCEPTIONS + ").")
     public Map<String, Object> getConfig() {
-        return config;
+        return this.config != null ? this.config : Map.of();
     }
 
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
