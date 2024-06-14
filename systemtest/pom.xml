@@ -224,8 +224,6 @@
         <dependency>
             <groupId>io.skodjob</groupId>
             <artifactId>test-docs-generator-maven-plugin</artifactId>
-            <version>${skodjob-doc.version}</version>
-            <scope>test</scope>
         </dependency>
     </dependencies>
 
