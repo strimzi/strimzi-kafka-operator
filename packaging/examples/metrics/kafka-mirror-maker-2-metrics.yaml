@@ -215,10 +215,13 @@ data:
       type: GAUGE
 
     #kafka.connect:type=MirrorCheckpointConnector
-    - pattern: kafka.connect.mirror<type=MirrorCheckpointConnector, source=(.+), target=(.+)><>([a-z-_]+)
-      name: kafka_connect_mirror_mirrorcheckpointconnector_$3
+    - pattern: kafka.connect.mirror<type=MirrorCheckpointConnector, source=(.+), target=(.+), group=(.+), topic=(.+), partition=(.+)><>([a-z-_]+)
+      name: kafka_connect_mirror_mirrorcheckpointconnector_$6
       labels:
         source: "$1"
         target: "$2"
+        group: "$3"
+        topic: "$4"
+        partition: "$5"
       help: "Kafka Mirror Maker 2 Checkpoint Connector metrics"
       type: GAUGE
