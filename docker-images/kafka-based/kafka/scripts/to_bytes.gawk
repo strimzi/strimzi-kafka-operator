@@ -4,8 +4,9 @@ BEGIN {
   suffixes["K"]=1024
   suffixes["M"]=1024**2
   suffixes["G"]=1024**3
+  suffixes["T"]=1024**4
 }
 
-match($0, /([0-9.]*)([kKmMgG]?)/, a) {
+match($0, /([0-9.]*)([kKmMgGtT]?)/, a) {
   printf("%d", a[1] * suffixes[toupper(a[2])])
 }
