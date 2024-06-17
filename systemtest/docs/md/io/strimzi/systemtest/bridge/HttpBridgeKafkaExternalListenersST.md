@@ -2,8 +2,6 @@
 
 **Description:** Test suite ensures secure SCRAM-SHA and TLS authentication for Kafka HTTP Bridge with unusual usernames.
 
-**Contact:** `Lukas Kral <lukywill16@gmail.com>`
-
 **Before tests execution steps:**
 
 | Step | Action | Result |
@@ -28,8 +26,6 @@
 ## testScramShaAuthWithWeirdUsername
 
 **Description:** Test verifies SCRAM-SHA authentication with a username containing special characters and length constraints.
-
-**Contact:** `Lukas Kral <lukywill16@gmail.com>`
 
 **Steps:**
 
@@ -58,8 +54,6 @@
 ## testTlsAuthWithWeirdUsername
 
 **Description:** Test ensuring that a node port service is created and 409 error is avoided when using a TLS authentication with a username that has unusual characters.
-
-**Contact:** `Lukas Kral <lukywill16@gmail.com>`
 
 **Steps:**
 

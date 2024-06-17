@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest.bridge;
 
-import io.skodjob.annotations.Contact;
 import io.skodjob.annotations.Desc;
 import io.skodjob.annotations.Step;
 import io.skodjob.annotations.SuiteDoc;
@@ -47,7 +46,6 @@ import static io.strimzi.systemtest.TestConstants.REGRESSION;
 @Tag(REGRESSION)
 @SuiteDoc(
     description = @Desc("Test suite for validating Kafka Bridge functionality with TLS and SCRAM-SHA authentication"),
-    contact = @Contact(name = "Jakub Stejskal", email = "xstejs24@gmail.com"),
     beforeTestSteps = {
         @Step(value = "Create TestStorage instance", expected = "TestStorage instance is created"),
         @Step(value = "Create BridgeClients instance", expected = "BridgeClients instance is created"),
@@ -78,7 +76,6 @@ class HttpBridgeScramShaST extends AbstractST {
     @ParallelTest
     @TestDoc(
         description = @Desc("Test ensuring that sending a simple message using TLS and SCRAM-SHA authentication via Kafka Bridge works as expected."),
-        contact = @Contact(name = "Lukas Kral", email = "lukywill16@gmail.com"),
         steps = {
             @Step(value = "Create TestStorage and BridgeClients objects", expected = "Instances of TestStorage and BridgeClients are created"),
             @Step(value = "Create topic using the resource manager", expected = "Topic is created successfully with the specified configuration"),
@@ -124,7 +121,6 @@ class HttpBridgeScramShaST extends AbstractST {
     @ParallelTest
     @TestDoc(
         description = @Desc("Test to check the reception of a simple message via Kafka Bridge using TLS and SCRAM-SHA encryption."),
-        contact = @Contact(name = "Lukas Kral", email = "lukywill16@gmail.com"),
         steps = {
             @Step(value = "Initialize TestStorage and BridgeClientsBuilder instances", expected = "Instances are successfully initialized"),
             @Step(value = "Create Kafka topic using ResourceManager", expected = "Kafka topic is created and available"),

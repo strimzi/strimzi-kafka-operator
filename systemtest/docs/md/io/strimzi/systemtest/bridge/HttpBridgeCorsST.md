@@ -2,8 +2,6 @@
 
 **Description:** Test suite for HTTP Bridge CORS functionality, focusing on verifying correct handling of allowed and forbidden origins.
 
-**Contact:** `Lukas Kral <lukywill16@gmail.com>`
-
 **Before tests execution steps:**
 
 | Step | Action | Result |
@@ -26,8 +24,6 @@
 ## testCorsForbidden
 
 **Description:** Test ensuring that CORS (Cross-Origin Resource Sharing) requests with forbidden origins are correctly rejected by the Bridge.
-
-**Contact:** `Lukas Kral <lukywill16@gmail.com>`
 
 **Steps:**
 
@@ -55,8 +51,6 @@
 ## testCorsOriginAllowed
 
 **Description:** This test checks if CORS handling for allowed origin works correctly in the Kafka Bridge.
-
-**Contact:** `Lukas Kral <lukywill16@gmail.com>`
 
 **Steps:**
 

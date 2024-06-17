@@ -6,7 +6,6 @@ package io.strimzi.systemtest.bridge;
 
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.Service;
-import io.skodjob.annotations.Contact;
 import io.skodjob.annotations.Desc;
 import io.skodjob.annotations.Step;
 import io.skodjob.annotations.SuiteDoc;
@@ -70,7 +69,6 @@ import static org.hamcrest.Matchers.containsString;
 @Tag(BRIDGE)
 @SuiteDoc(
     description = @Desc("Test suite for various Kafka Bridge operations."),
-    contact = @Contact(name = "Lukas Kral", email = "lukywill16@gmail.com"),
     beforeTestSteps = {
         @Step(value = "Initialize Test Storage and deploy Kafka and Kafka Bridge", expected = "Kafka and Kafka Bridge are deployed with necessary configuration")
     },
@@ -103,7 +101,6 @@ class HttpBridgeST extends AbstractST {
     @ParallelTest
     @TestDoc(
         description = @Desc("Test validating that sending a simple message through Kafka Bridge works correctly and checks labels."),
-        contact = @Contact(name = "Lukas Kral", email = "lukywill16@gmail.com"),
         steps = {
             @Step(value = "Initialize test storage", expected = "Test storage is initialized with necessary context"),
             @Step(value = "Create a Kafka Bridge client job", expected = "Kafka Bridge client job is configured and instantiated"),
@@ -158,7 +155,6 @@ class HttpBridgeST extends AbstractST {
     @ParallelTest
     @TestDoc(
         description = @Desc("Test verifying that a simple message can be received using Kafka Bridge."),
-        contact = @Contact(name = "Lukas Kral", email = "lukywill16@gmail.com"),
         steps = {
             @Step(value = "Initialize the test storage", expected = "TestStorage instance is initialized"),
             @Step(value = "Create Kafka topic resource", expected = "Kafka topic resource is created with specified configurations"),
@@ -206,7 +202,6 @@ class HttpBridgeST extends AbstractST {
     @ParallelTest
     @TestDoc(
         description = @Desc("Test that validates the creation, update, and verification of a Kafka Bridge with specific initial and updated configurations."),
-        contact = @Contact(name = "Jakub Stejskal", email = "xstejs24@gmail.com"),
         steps = {
             @Step(value = "Create a Kafka Bridge resource with initial configuration", expected = "Kafka Bridge is created and deployed with the specified initial configuration"),
             @Step(value = "Remove an environment variable that is in use", expected = "Environment variable TEST_ENV_1 is removed from the initial configuration"),
@@ -324,7 +319,6 @@ class HttpBridgeST extends AbstractST {
     @ParallelTest
     @TestDoc(
         description = @Desc("Test verifying the presence and correctness of the discovery annotation in the Kafka Bridge service."),
-        contact = @Contact(name = "Jakub Stejskal", email = "xstejs24@gmail.com"),
         steps = {
             @Step(value = "Retrieve the Kafka Bridge service using kubeClient", expected = "Kafka Bridge service instance is obtained"),
             @Step(value = "Extract the discovery annotation from the service metadata", expected = "The discovery annotation is retrieved as a string"),
@@ -351,7 +345,6 @@ class HttpBridgeST extends AbstractST {
     @ParallelTest
     @TestDoc(
         description = @Desc("Test that scales a KafkaBridge instance to zero replicas and verifies that it is properly handled."),
-        contact = @Contact(name = "Lukas Kral", email = "lukywill16@gmail.com"),
         steps = {
             @Step(value = "Create a KafkaBridge resource and wait for it to be ready", expected = "KafkaBridge resource is created and ready with 1 replica"),
             @Step(value = "Fetch the current number of KafkaBridge pods", expected = "There should be exactly 1 KafkaBridge pod initially"),
@@ -397,7 +390,6 @@ class HttpBridgeST extends AbstractST {
     @ParallelTest
     @TestDoc(
         description = @Desc("Test checks the scaling of a KafkaBridge subresource and verifies the scaling operation."),
-        contact = @Contact(name = "Lukas Kral", email = "lukywill16@gmail.com"),
         steps = {
             @Step(value = "Initialize the KafkaBridge resource.", expected = "KafkaBridge resource is created in the specified namespace."),
             @Step(value = "Scale the KafkaBridge resource to the desired replicas.", expected = "KafkaBridge resource is scaled to the expected number of replicas."),
@@ -450,7 +442,6 @@ class HttpBridgeST extends AbstractST {
     @ParallelTest
     @TestDoc(
         description = @Desc("Test verifies KafkaBridge deployment strategy configuration and label updates with RECREATE and ROLLING_UPDATE strategies."),
-        contact = @Contact(name = "Jakub Stejskal", email = "xstejs24@gmail.com"),
         steps = {
             @Step(value = "Create KafkaBridge resource with deployment strategy RECREATE", expected = "KafkaBridge resource is created in RECREATE strategy"),
             @Step(value = "Add a label to KafkaBridge resource", expected = "KafkaBridge resource is recreated with new label"),
@@ -518,7 +509,6 @@ class HttpBridgeST extends AbstractST {
     @ParallelTest
     @TestDoc(
         description = @Desc("Test verifying if custom labels and annotations for Kafka Bridge services are properly set and validated."),
-        contact = @Contact(name = "jkalinic", email = "jkalinic@redhat.com"),
         steps = {
             @Step(value = "Initialize TestStorage", expected = "TestStorage instance is created with the current test context"),
             @Step(value = "Create Kafka Bridge resource with custom labels and annotations", expected = "Kafka Bridge resource is successfully created and available"),

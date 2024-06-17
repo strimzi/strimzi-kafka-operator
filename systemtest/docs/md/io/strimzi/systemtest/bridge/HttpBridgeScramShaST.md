@@ -2,8 +2,6 @@
 
 **Description:** Test suite for validating Kafka Bridge functionality with TLS and SCRAM-SHA authentication
 
-**Contact:** `Jakub Stejskal <xstejs24@gmail.com>`
-
 **Before tests execution steps:**
 
 | Step | Action | Result |
@@ -33,8 +31,6 @@
 
 **Description:** Test to check the reception of a simple message via Kafka Bridge using TLS and SCRAM-SHA encryption.
 
-**Contact:** `Lukas Kral <lukywill16@gmail.com>`
-
 **Steps:**
 
 | Step | Action | Result |
@@ -59,8 +55,6 @@
 ## testSendSimpleMessageTlsScramSha
 
 **Description:** Test ensuring that sending a simple message using TLS and SCRAM-SHA authentication via Kafka Bridge works as expected.
-
-**Contact:** `Lukas Kral <lukywill16@gmail.com>`
 
 **Steps:**
 
