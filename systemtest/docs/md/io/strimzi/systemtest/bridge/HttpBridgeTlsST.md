@@ -2,8 +2,6 @@
 
 **Description:** Test suite for verifying TLS functionalities in the HTTP Bridge.
 
-**Contact:** `Jakub Stejskal <xstejs24@gmail.com>`
-
 **Before tests execution steps:**
 
 | Step | Action | Result |
@@ -33,8 +31,6 @@
 
 **Description:** Test to verify that a simple message can be received using TLS in a parallel environment.
 
-**Contact:** `Lukas Kral <lukywill16@gmail.com>`
-
 **Steps:**
 
 | Step | Action | Result |
@@ -63,8 +59,6 @@
 ## testSendSimpleMessageTls
 
 **Description:** Test to verify that sending a simple message using TLS works correctly.
-
-**Contact:** `Lukas Kral <lukywill16@gmail.com>`
 
 **Steps:**
 

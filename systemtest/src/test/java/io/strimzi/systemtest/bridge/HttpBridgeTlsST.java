@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest.bridge;
 
-import io.skodjob.annotations.Contact;
 import io.skodjob.annotations.Desc;
 import io.skodjob.annotations.Step;
 import io.skodjob.annotations.SuiteDoc;
@@ -50,7 +49,6 @@ import static io.strimzi.systemtest.TestConstants.REGRESSION;
 @Tag(INTERNAL_CLIENTS_USED)
 @SuiteDoc(
     description = @Desc("Test suite for verifying TLS functionalities in the HTTP Bridge."),
-    contact = @Contact(name = "Jakub Stejskal", email = "xstejs24@gmail.com"),
     beforeTestSteps = {
         @Step(value = "Initialize test storage and context", expected = "Test storage and context are initialized successfully"),
         @Step(value = "Deploy Kafka and KafkaBridge", expected = "Kafka and KafkaBridge are deployed and running"),
@@ -78,7 +76,6 @@ class HttpBridgeTlsST extends AbstractST {
     @ParallelTest
     @TestDoc(
         description = @Desc("Test to verify that sending a simple message using TLS works correctly."),
-        contact = @Contact(name = "Lukas Kral", email = "lukywill16@gmail.com"),
         steps = {
             @Step(value = "Initialize TestStorage and BridgeClients with TLS configuration", expected = "TestStorage and BridgeClients are initialized with TLS configuration"),
             @Step(value = "Create Kafka topic using resource manager", expected = "Kafka topic is successfully created"),
@@ -122,7 +119,6 @@ class HttpBridgeTlsST extends AbstractST {
     @ParallelTest
     @TestDoc(
         description = @Desc("Test to verify that a simple message can be received using TLS in a parallel environment."),
-        contact = @Contact(name = "Lukas Kral", email = "lukywill16@gmail.com"),
         steps = {
             @Step(value = "Initialize the test storage instance", expected = "TestStorage object is instantiated with the test context."),
             @Step(value = "Configure Kafka Bridge client for consumption", expected = "Kafka Bridge client is configured with topic and consumer names."),

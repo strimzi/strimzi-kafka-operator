@@ -2,8 +2,6 @@
 
 **Description:** Test suite for various Kafka Bridge operations.
 
-**Contact:** `Lukas Kral <lukywill16@gmail.com>`
-
 **Before tests execution steps:**
 
 | Step | Action | Result |
@@ -38,8 +36,6 @@
 
 **Description:** Test verifies KafkaBridge deployment strategy configuration and label updates with RECREATE and ROLLING_UPDATE strategies.
 
-**Contact:** `Jakub Stejskal <xstejs24@gmail.com>`
-
 **Steps:**
 
 | Step | Action | Result |
@@ -65,8 +61,6 @@
 ## testCustomAndUpdatedValues
 
 **Description:** Test that validates the creation, update, and verification of a Kafka Bridge with specific initial and updated configurations.
-
-**Contact:** `Jakub Stejskal <xstejs24@gmail.com>`
 
 **Steps:**
 
@@ -94,8 +88,6 @@
 
 **Description:** Test verifying if custom labels and annotations for Kafka Bridge services are properly set and validated.
 
-**Contact:** `jkalinic <jkalinic@redhat.com>`
-
 **Steps:**
 
 | Step | Action | Result |
@@ -121,8 +113,6 @@
 
 **Description:** Test verifying the presence and correctness of the discovery annotation in the Kafka Bridge service.
 
-**Contact:** `Jakub Stejskal <xstejs24@gmail.com>`
-
 **Steps:**
 
 | Step | Action | Result |
@@ -147,8 +137,6 @@
 ## testReceiveSimpleMessage
 
 **Description:** Test verifying that a simple message can be received using Kafka Bridge.
-
-**Contact:** `Lukas Kral <lukywill16@gmail.com>`
 
 **Steps:**
 
@@ -176,8 +164,6 @@
 
 **Description:** Test checks the scaling of a KafkaBridge subresource and verifies the scaling operation.
 
-**Contact:** `Lukas Kral <lukywill16@gmail.com>`
-
 **Steps:**
 
 | Step | Action | Result |
@@ -201,8 +187,6 @@
 ## testScaleBridgeToZero
 
 **Description:** Test that scales a KafkaBridge instance to zero replicas and verifies that it is properly handled.
-
-**Contact:** `Lukas Kral <lukywill16@gmail.com>`
 
 **Steps:**
 
@@ -230,8 +214,6 @@
 ## testSendSimpleMessage
 
 **Description:** Test validating that sending a simple message through Kafka Bridge works correctly and checks labels.
-
-**Contact:** `Lukas Kral <lukywill16@gmail.com>`
 
 **Steps:**
 

@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest.bridge;
 
-import io.skodjob.annotations.Contact;
 import io.skodjob.annotations.Desc;
 import io.skodjob.annotations.Step;
 import io.skodjob.annotations.SuiteDoc;
@@ -52,7 +51,6 @@ import static org.hamcrest.Matchers.containsString;
 @Tag(REGRESSION)
 @SuiteDoc(
     description = @Desc("Test suite for HTTP Bridge CORS functionality, focusing on verifying correct handling of allowed and forbidden origins."),
-    contact = @Contact(name = "Lukas Kral", email = "lukywill16@gmail.com"),
     beforeTestSteps = {
         @Step(value = "Set up Kafka Bridge and its configuration including CORS settings", expected = "Kafka Bridge is set up with the correct configuration"),
         @Step(value = "Deploy required Kafka resources and scraper pod", expected = "Kafka resources and scraper pod are deployed and running")
@@ -78,7 +76,6 @@ public class HttpBridgeCorsST extends AbstractST {
     @ParallelTest
     @TestDoc(
         description = @Desc("This test checks if CORS handling for allowed origin works correctly in the Kafka Bridge."),
-        contact = @Contact(name = "Lukas Kral", email = "lukywill16@gmail.com"),
         steps = {
             @Step(value = "Set up the Kafka Bridge user and configuration", expected = "Kafka Bridge user and configuration are set up"),
             @Step(value = "Construct the request URL and headers", expected = "URL and headers are constructed properly"),
@@ -137,7 +134,6 @@ public class HttpBridgeCorsST extends AbstractST {
     @ParallelTest
     @TestDoc(
         description = @Desc("Test ensuring that CORS (Cross-Origin Resource Sharing) requests with forbidden origins are correctly rejected by the Bridge."),
-        contact = @Contact(name = "Lukas Kral", email = "lukywill16@gmail.com"),
         steps = {
             @Step(value = "Create Kafka Bridge user and consumer group", expected = "Kafka Bridge user and consumer group are created successfully"),
             @Step(value = "Set up headers with forbidden origin and pre-flight HTTP OPTIONS method", expected = "Headers and method are set correctly"),

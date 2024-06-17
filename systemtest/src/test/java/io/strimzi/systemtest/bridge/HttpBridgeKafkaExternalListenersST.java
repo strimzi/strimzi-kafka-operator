@@ -5,7 +5,6 @@
 package io.strimzi.systemtest.bridge;
 
 import io.fabric8.kubernetes.api.model.Service;
-import io.skodjob.annotations.Contact;
 import io.skodjob.annotations.Desc;
 import io.skodjob.annotations.Step;
 import io.skodjob.annotations.SuiteDoc;
@@ -61,7 +60,6 @@ import static io.strimzi.systemtest.TestConstants.REGRESSION;
 @Tag(EXTERNAL_CLIENTS_USED)
 @SuiteDoc(
     description = @Desc("Test suite ensures secure SCRAM-SHA and TLS authentication for Kafka HTTP Bridge with unusual usernames."),
-    contact = @Contact(name = "Lukas Kral", email = "lukywill16@gmail.com"),
     beforeTestSteps = {
         @Step(value = "Deploy default cluster operator installation", expected = "Cluster operator is deployed")
     },
@@ -88,7 +86,6 @@ public class HttpBridgeKafkaExternalListenersST extends AbstractST {
     @ParallelNamespaceTest("Creating a node port service and thus avoiding 409 error (service already exists)")
     @TestDoc(
         description = @Desc("Test verifies SCRAM-SHA authentication with a username containing special characters and length constraints."),
-        contact = @Contact(name = "Lukas Kral", email = "lukywill16@gmail.com"),
         steps = {
             @Step(value = "Create object instance", expected = "Instance of an object is created"),
             @Step(value = "Create a weird named user with special characters", expected = "User with a specified name is created"),
@@ -139,7 +136,6 @@ public class HttpBridgeKafkaExternalListenersST extends AbstractST {
     @ParallelNamespaceTest("Creating a node port service and thus avoiding 409 error")
     @TestDoc(
         description = @Desc("Test ensuring that a node port service is created and 409 error is avoided when using a TLS authentication with a username that has unusual characters."),
-        contact = @Contact(name = "Lukas Kral", email = "lukywill16@gmail.com"),
         steps = {
             @Step(value = "Initialize test storage and generate a weird username with dots and 64 characters", expected = "Weird username is generated successfully"),
             @Step(value = "Create and configure CertSecretSource with certificate and secret names for the consumer", expected = "CertSecretSource is configured with proper certificate and secret name"),
