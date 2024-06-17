@@ -258,7 +258,7 @@ public class CruiseControlReconciler {
     protected Future<Void> apiSecret() {
         if (cruiseControl != null) {
             Future<Secret> ccApiSecretFuture = secretOperator.getAsync(reconciliation.namespace(), CruiseControlResources.apiSecretName(reconciliation.name()));
-            Future<Secret> userManagedApiSecretFuture = secretOperator.getAsync(reconciliation.namespace(), cruiseControl.getUserManagedApiSecretName());
+            Future<Secret> userManagedApiSecretFuture = secretOperator.getAsync(reconciliation.namespace(), cruiseControl.apiCredentials().getUserManagedApiSecretName());
             Future<Secret> topicOperatorManagedApiSecretFuture = isTopicOperatorEnabled
                     ? secretOperator.getAsync(reconciliation.namespace(), KafkaResources.entityTopicOperatorCcApiSecretName(reconciliation.name()))
                     : Future.succeededFuture(null);
@@ -269,7 +269,7 @@ public class CruiseControlReconciler {
                         Secret userManagedApiSecret = compositeFuture.resultAt(1);
                         Secret topicOperatorManagedApiSecret = compositeFuture.resultAt(2);
 
-                        Secret newCcApiUsersSecret = cruiseControl.generateApiSecret(passwordGenerator,
+                        Secret newCcApiUsersSecret = cruiseControl.apiCredentials().generateApiSecret(passwordGenerator,
                                 oldCcApiSecret, userManagedApiSecret, topicOperatorManagedApiSecret);
 
                         this.apiSecretHash = ReconcilerUtils.hashSecretContent(newCcApiUsersSecret);

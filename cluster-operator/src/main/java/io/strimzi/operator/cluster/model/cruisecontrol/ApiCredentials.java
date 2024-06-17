@@ -4,12 +4,20 @@
  */
 package io.strimzi.operator.cluster.model.cruisecontrol;
 
+import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
+import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlSpec;
+import io.strimzi.api.kafka.model.kafka.cruisecontrol.HashLoginServiceApiUsers;
+import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.model.InvalidResourceException;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.PasswordGenerator;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,6 +45,35 @@ public class ApiCredentials {
             REBALANCE_OPERATOR_USERNAME,
             TOPIC_OPERATOR_USERNAME
     );
+
+    private String userManagedApiSecretName;
+    private String userManagedApiSecretKey;
+    private final String namespace;
+    private final String cluster;
+    private final Labels labels;
+    private final OwnerReference ownerReference;
+
+    /**
+     * Constructs the Api Credentials Model for managing API users for Cruise Control API.
+     *
+     * @param namespace         Namespace of the cluster
+     * @param cluster           Name of the cluster to which this component belongs
+     * @param labels            Labels for Cruise Control instance
+     * @param ownerReference    Owner reference for Cruise Control instance
+     * @param specSection       Custom resource section configuring Cruise Control API users
+     */
+    public ApiCredentials(String namespace, String cluster, Labels labels, OwnerReference ownerReference, CruiseControlSpec specSection) {
+        this.namespace = namespace;
+        this.cluster = cluster;
+        this.labels = labels;
+        this.ownerReference = ownerReference;
+
+        if (validateApiUsersConfig(specSection)) {
+            HashLoginServiceApiUsers apiUsers = specSection.getApiUsers();
+            userManagedApiSecretName = apiUsers.getValueFrom().getSecretKeyRef().getName();
+            userManagedApiSecretKey = apiUsers.getValueFrom().getSecretKeyRef().getKey();
+        }
+    }
 
     /**
      * By default Cruise Control defines three roles: VIEWER, USER and ADMIN.
@@ -71,6 +108,34 @@ public class ApiCredentials {
      * Represents a single API user entry including name, password, and role.
      */
     public record UserEntry(String username, String password, Role role) { }
+
+    /**
+     * @return  Returns user-managed API credentials secret name
+     */
+    public String getUserManagedApiSecretName() {
+        return userManagedApiSecretName;
+    }
+
+    /**
+     * Checks if Cruise Control spec has valid ApiUsers config.
+     *
+     * @param ccSpec The Cruise Control spec to check.
+     */
+    private static boolean validateApiUsersConfig(CruiseControlSpec ccSpec)  {
+        HashLoginServiceApiUsers apiUsers = ccSpec.getApiUsers();
+        if (apiUsers != null)    {
+            if (apiUsers.getValueFrom() == null
+                    || apiUsers.getValueFrom().getSecretKeyRef() == null
+                    || apiUsers.getValueFrom().getSecretKeyRef().getName() == null
+                    || apiUsers.getValueFrom().getSecretKeyRef().getKey() == null) {
+                throw new InvalidResourceException("The configuration of the Cruise Control REST API users " +
+                        "referenced in spec.cruiseControl.apiUsers is invalid.");
+            } else {
+                return true;
+            }
+        }
+        return false;
+    }
 
     /**
      * Parse String containing API credential config into map of API user entries.
@@ -208,5 +273,35 @@ public class ApiCredentials {
             sb.append(e.username).append(": ").append(e.password).append(", ").append(e.role).append("\n");
         }
         return sb.toString();
+    }
+
+    /**
+     * Generates a new API secret for Cruise Control by aggregating credentials from various sources.
+     * This method collects API credentials from three potential sources:
+     *   (1) Old Cruise Control API secret
+     *   (2) User-managed API secret
+     *   (3) Topic operator-managed API secret.
+     * It uses these credentials to create a comprehensive map of API credentials, which is then used to generate a new API secret
+     * for Cruise Control.
+     *
+     * @param passwordGenerator the password generator used for creating new credentials.
+     * @param oldCruiseControlApiSecret the existing centralized API secret, containing previously stored credentials.
+     * @param userManagedApiSecret the secret managed by the user, containing user-defined API credentials.
+     * @param topicOperatorManagedApiSecret the secret managed by the topic operator, containing credentials for the topic operator.
+     * @return a new Secret object containing the aggregated API credentials for Cruise Control.
+     */
+    public Secret generateApiSecret(PasswordGenerator passwordGenerator,
+                                    Secret oldCruiseControlApiSecret,
+                                    Secret userManagedApiSecret,
+                                    Secret topicOperatorManagedApiSecret) {
+
+        Map<String, ApiCredentials.UserEntry> apiCredentials = new HashMap<>();
+        apiCredentials.putAll(generateCoManagedApiCredentials(passwordGenerator, oldCruiseControlApiSecret));
+        apiCredentials.putAll(generateUserManagedApiCredentials(userManagedApiSecret, userManagedApiSecretKey));
+        apiCredentials.putAll(generateToManagedApiCredentials(topicOperatorManagedApiSecret));
+
+        Map<String, String> mapWithApiCredentials = generateMapWithApiCredentials(apiCredentials);
+        return ModelUtils.createSecret(CruiseControlResources.apiSecretName(cluster), namespace, labels, ownerReference,
+                mapWithApiCredentials, Collections.emptyMap(), Collections.emptyMap());
     }
 }
