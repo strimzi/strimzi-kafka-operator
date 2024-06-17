@@ -9,7 +9,6 @@ import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.kafka.JbodStorage;
@@ -30,7 +29,6 @@ import io.strimzi.operator.cluster.model.CruiseControl;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.model.NoSuchResourceException;
 import io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlConfiguration;
-import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.AbstractRebalanceOptions;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.AddBrokerOptions;
@@ -213,40 +211,6 @@ public class KafkaRebalanceAssemblyOperator
      */
     protected String cruiseControlHost(String clusterName, String clusterNamespace) {
         return CruiseControlResources.qualifiedServiceName(clusterName, clusterNamespace);
-    }
-
-    /**
-     * Create Kubernetes watch for KafkaRebalance resources. KafkaRebalance resources have special event handler, so
-     * this method overrides the createWatch method from AbstractOperator class which is used by all other assembly
-     * operators.
-     *
-     * @param namespace     Namespace where to watch for KafkaRebalance resources
-     *
-     * @return  A future which completes when the watcher has been created.
-     */
-    @Override
-    public Future<ReconnectingWatcher<KafkaRebalance>> createWatch(String namespace) {
-        return VertxUtil.async(vertx, () -> new ReconnectingWatcher<>(resourceOperator, KafkaRebalance.RESOURCE_KIND, namespace, selector(), this::eventHandler));
-    }
-
-    /**
-     * Event handler called when the KafkaRebalance watch receives an event.
-     *
-     * @param action    An Action describing the type of the event
-     * @param resource  The resource for which the event was triggered
-     */
-    private void eventHandler(Watcher.Action action, KafkaRebalance resource) {
-        Reconciliation reconciliation = new Reconciliation("kafkarebalance-watch", resource.getKind(),
-                resource.getMetadata().getNamespace(), resource.getMetadata().getName());
-
-        LOGGER.debugCr(reconciliation, "EventReceived {} on {} with status [{}] and {}={}",
-                action,
-                resource.getMetadata().getName(),
-                resource.getStatus() != null ? rebalanceStateConditionType(resource.getStatus()) : null,
-                ANNO_STRIMZI_IO_REBALANCE, rawRebalanceAnnotation(resource));
-
-        withLock(reconciliation, LOCK_TIMEOUT_MS,
-                () -> reconcileRebalance(reconciliation, action == Watcher.Action.DELETED ? null : resource));
     }
 
     /**
@@ -1078,6 +1042,11 @@ public class KafkaRebalanceAssemblyOperator
             LOGGER.infoCr(reconciliation, "Rebalance resource deleted");
             return Future.succeededFuture();
         }
+
+        LOGGER.debugCr(reconciliation, "{} with status [{}] and {}={}",
+                kafkaRebalance.getMetadata().getName(),
+                kafkaRebalance.getStatus() != null ? rebalanceStateConditionType(kafkaRebalance.getStatus()) : null,
+                ANNO_STRIMZI_IO_REBALANCE, rawRebalanceAnnotation(kafkaRebalance));
 
         if (kafkaRebalance.getStatus() != null
                 && kafkaRebalance.getStatus().getObservedGeneration() != kafkaRebalance.getMetadata().getGeneration()) {
