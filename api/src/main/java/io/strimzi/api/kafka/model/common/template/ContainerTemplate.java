@@ -47,8 +47,8 @@ public class ContainerTemplate implements UnknownPropertyPreserving {
         return additionalVolumeMounts;
     }
 
-    public void setVolumeMounts(List<VolumeMount> volumeMounts) {
-        this.additionalVolumeMounts = volumeMounts;
+    public void setAdditionalVolumeMounts(List<VolumeMount> additionalVolumeMounts) {
+        this.additionalVolumeMounts = additionalVolumeMounts;
     }
 
     @Description("Environment variables which should be applied to the container.")

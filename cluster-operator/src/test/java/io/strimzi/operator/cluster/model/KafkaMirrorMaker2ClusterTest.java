@@ -4,8 +4,11 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import io.fabric8.kubernetes.api.model.CSIVolumeSource;
+import io.fabric8.kubernetes.api.model.CSIVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapKeySelectorBuilder;
+import io.fabric8.kubernetes.api.model.ConfigMapVolumeSource;
 import io.fabric8.kubernetes.api.model.ConfigMapVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
@@ -25,6 +28,7 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
+import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
@@ -40,6 +44,8 @@ import io.strimzi.api.kafka.model.common.jmx.KafkaJmxOptionsBuilder;
 import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetricsBuilder;
 import io.strimzi.api.kafka.model.common.metrics.MetricsConfig;
+import io.strimzi.api.kafka.model.common.template.AdditionalVolume;
+import io.strimzi.api.kafka.model.common.template.AdditionalVolumeBuilder;
 import io.strimzi.api.kafka.model.common.template.ContainerTemplate;
 import io.strimzi.api.kafka.model.common.template.IpFamily;
 import io.strimzi.api.kafka.model.common.template.IpFamilyPolicy;
@@ -885,6 +891,7 @@ public class KafkaMirrorMaker2ClusterTest {
     }
 
     @ParallelTest
+    @SuppressWarnings({"checkstyle:methodlength"})
     public void testTemplate() {
         Map<String, String> podSetLabels = TestUtils.map("l1", "v1", "l2", "v2",
                 Labels.KUBERNETES_PART_OF_LABEL, "custom-part",
@@ -916,6 +923,37 @@ public class KafkaMirrorMaker2ClusterTest {
                 .withHostnames("my-host-3")
                 .withIp("192.168.1.87")
                 .build();
+        
+        ConfigMapVolumeSource configMap = new ConfigMapVolumeSourceBuilder()
+                .withName("configMap1")
+                .build();
+        
+        CSIVolumeSource csi = new CSIVolumeSourceBuilder()
+                .withDriver("csi-driver-name")
+                .withReadOnly(true)
+                .withNewNodePublishSecretRef("example-secret-provider-class")
+                .build();
+        
+        AdditionalVolume additionalVolumeConfigMap = new AdditionalVolumeBuilder()
+                .withName("config-map-volume-name")
+                .withConfigMap(configMap)
+                .build();
+        
+        AdditionalVolume additionalVolumeCsi = new AdditionalVolumeBuilder()
+                .withName("csi-volume-name")
+                .withCsi(csi)
+                .build();
+        
+        VolumeMount additionalVolumeMountConfigMap = new VolumeMountBuilder()
+                .withName("config-map-volume-name")
+                .withMountPath("/abc")
+                .withSubPath("def")
+                .build();
+        
+        VolumeMount additionalVolumeMountCsi = new VolumeMountBuilder()
+                .withName("csi-volume-name")
+                .withMountPath("/lmn")
+                .build();
 
         KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(this.resource)
                 .editSpec()
@@ -937,7 +975,14 @@ public class KafkaMirrorMaker2ClusterTest {
                             .withHostAliases(hostAlias1, hostAlias2)
                             .withEnableServiceLinks(false)
                             .withTmpDirSizeLimit("10Mi")
+                            .withAdditionalVolumes(additionalVolumeConfigMap, additionalVolumeCsi)
                         .endPod()
+                        .withNewInitContainer()
+                            .withAdditionalVolumeMounts(additionalVolumeMountCsi)
+                        .endInitContainer()
+                        .withNewConnectContainer()
+                            .withAdditionalVolumeMounts(additionalVolumeMountConfigMap)
+                        .endConnectContainer()
                         .withNewApiService()
                             .withNewMetadata()
                                 .withLabels(svcLabels)
@@ -981,9 +1026,12 @@ public class KafkaMirrorMaker2ClusterTest {
             assertThat(pod.getSpec().getSchedulerName(), is("my-scheduler"));
             assertThat(pod.getSpec().getHostAliases(), containsInAnyOrder(hostAlias1, hostAlias2));
             assertThat(pod.getSpec().getEnableServiceLinks(), is(false));
-            assertThat(pod.getSpec().getVolumes().stream()
-                    .filter(volume -> volume.getName().equalsIgnoreCase("strimzi-tmp"))
-                    .findFirst().get().getEmptyDir().getSizeLimit(), is(new Quantity("10Mi")));
+            assertThat(getVolume(pod, "strimzi-tmp").getEmptyDir().getSizeLimit(), is(new Quantity("10Mi")));
+            assertThat(getVolume(pod, additionalVolumeMountConfigMap.getName()).getConfigMap(), is(configMap));
+            assertThat(getVolume(pod, additionalVolumeMountCsi.getName()).getCsi(), is(csi));
+            assertThat(getVolumeMount(pod.getSpec().getContainers().get(0), additionalVolumeMountConfigMap.getName()), is(additionalVolumeMountConfigMap));
+            assertThat(getVolumeMount(pod.getSpec().getInitContainers().get(0), additionalVolumeMountCsi.getName()), is(additionalVolumeMountCsi));
+
         });
 
         // Check Service
@@ -1007,6 +1055,14 @@ public class KafkaMirrorMaker2ClusterTest {
         ServiceAccount sa = kmm2.generateServiceAccount();
         assertThat(sa.getMetadata().getLabels().entrySet().containsAll(saLabels.entrySet()), is(true));
         assertThat(sa.getMetadata().getAnnotations().entrySet().containsAll(saAnots.entrySet()), is(true));
+    }
+    
+    private static Volume getVolume(Pod pod, String volumeName) {
+        return pod.getSpec().getVolumes().stream().filter(volume -> volumeName.equals(volume.getName())).iterator().next();
+    }
+    
+    private static VolumeMount getVolumeMount(Container container, String volumeName) {
+        return container.getVolumeMounts().stream().filter(volumeMount -> volumeName.equals(volumeMount.getName())).iterator().next();
     }
 
     @ParallelTest

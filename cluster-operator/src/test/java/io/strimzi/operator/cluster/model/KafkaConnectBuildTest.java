@@ -8,9 +8,15 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
+import io.fabric8.kubernetes.api.model.SecretVolumeSource;
+import io.fabric8.kubernetes.api.model.SecretVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
+import io.fabric8.kubernetes.api.model.VolumeMount;
+import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.fabric8.openshift.api.model.BuildConfig;
 import io.strimzi.api.kafka.model.common.ContainerEnvVarBuilder;
+import io.strimzi.api.kafka.model.common.template.AdditionalVolume;
+import io.strimzi.api.kafka.model.common.template.AdditionalVolumeBuilder;
 import io.strimzi.api.kafka.model.connect.KafkaConnect;
 import io.strimzi.api.kafka.model.connect.KafkaConnectBuilder;
 import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
@@ -428,6 +434,21 @@ public class KafkaConnectBuildTest {
         Map<String, String> saLabels = TestUtils.map("l5", "v5", "l6", "v6");
         Map<String, String> saAnots = TestUtils.map("a5", "v5", "a6", "v6");
 
+        SecretVolumeSource secret = new SecretVolumeSourceBuilder()
+                .withSecretName("secret1")
+                .build();
+        
+        AdditionalVolume additionalVolume  = new AdditionalVolumeBuilder()
+                .withName("secret-volume-name")
+                .withSecret(secret)
+                .build();
+        
+        VolumeMount additionalVolumeMount = new VolumeMountBuilder()
+                .withName("secret-volume-name")
+                .withMountPath("/abc")
+                .withSubPath("def")
+                .build();
+
         KafkaConnect kc = new KafkaConnectBuilder()
                 .withNewMetadata()
                     .withName(cluster)
@@ -452,9 +473,11 @@ public class KafkaConnectBuildTest {
                             .withPriorityClassName("top-priority")
                             .withSchedulerName("my-scheduler")
                             .withEnableServiceLinks(false)
+                            .withAdditionalVolumes(additionalVolume)
                         .endBuildPod()
                         .withNewBuildContainer()
                             .withEnv(new ContainerEnvVarBuilder().withName("TEST_ENV_VAR").withValue("testValue").build())
+                            .withAdditionalVolumeMounts(additionalVolumeMount)
                         .endBuildContainer()
                         .withNewBuildConfig()
                             .withNewMetadata()
@@ -482,6 +505,8 @@ public class KafkaConnectBuildTest {
         assertThat(pod.getSpec().getSchedulerName(), is("my-scheduler"));
         assertThat(pod.getSpec().getEnableServiceLinks(), is(false));
         assertThat(pod.getSpec().getContainers().get(0).getEnv().stream().filter(env -> "TEST_ENV_VAR".equals(env.getName())).findFirst().orElseThrow().getValue(), is("testValue"));
+        assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().stream().filter(volumeMount -> "secret-volume-name".equals(volumeMount.getName())).iterator().next(), is(additionalVolumeMount));
+        assertThat(pod.getSpec().getVolumes().stream().filter(volume -> "secret-volume-name".equals(volume.getName())).iterator().next().getSecret(), is(secret));
 
         KafkaConnectDockerfile dockerfile = new KafkaConnectDockerfile("my-image:latest", kc.getSpec().getBuild(), SHARED_ENV_PROVIDER);
         BuildConfig bc = build.generateBuildConfig(dockerfile);

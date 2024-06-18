@@ -20,6 +20,8 @@ import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
+import io.fabric8.kubernetes.api.model.SecretVolumeSource;
+import io.fabric8.kubernetes.api.model.SecretVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.fabric8.kubernetes.api.model.SecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.Service;
@@ -28,6 +30,7 @@ import io.fabric8.kubernetes.api.model.Toleration;
 import io.fabric8.kubernetes.api.model.TolerationBuilder;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
+import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
@@ -39,6 +42,8 @@ import io.strimzi.api.kafka.model.common.JvmOptions;
 import io.strimzi.api.kafka.model.common.SystemPropertyBuilder;
 import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetricsBuilder;
 import io.strimzi.api.kafka.model.common.metrics.MetricsConfig;
+import io.strimzi.api.kafka.model.common.template.AdditionalVolume;
+import io.strimzi.api.kafka.model.common.template.AdditionalVolumeBuilder;
 import io.strimzi.api.kafka.model.common.template.IpFamily;
 import io.strimzi.api.kafka.model.common.template.IpFamilyPolicy;
 import io.strimzi.api.kafka.model.kafka.EphemeralStorage;
@@ -108,7 +113,6 @@ import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-
 @SuppressWarnings({
     "checkstyle:ClassDataAbstractionCoupling",
     "checkstyle:ClassFanOutComplexity"
@@ -692,6 +696,21 @@ public class CruiseControlTest {
                 .withHostnames("my-host-3")
                 .withIp("192.168.1.87")
                 .build();
+        
+        SecretVolumeSource secret = new SecretVolumeSourceBuilder()
+                .withSecretName("secret1")
+                .build();
+        
+        List<AdditionalVolume> additionalVolumes  = singletonList(new AdditionalVolumeBuilder()
+                .withName("secret-volume-name")
+                .withSecret(secret)
+                .build());
+        
+        List<VolumeMount> additionalVolumeMounts = singletonList(new VolumeMountBuilder()
+                .withName("secret-volume-name")
+                .withMountPath("/abc")
+                .withSubPath("def")
+                .build());
 
         CruiseControlSpec cruiseControlSpec = new CruiseControlSpecBuilder()
                 .withImage(ccImage)
@@ -702,31 +721,35 @@ public class CruiseControlTest {
                             .withAnnotations(depAnots)
                         .endMetadata()
                     .endDeployment()
-                .withNewPod()
-                    .withNewMetadata()
-                        .withLabels(podLabels)
-                        .withAnnotations(podAnots)
-                    .endMetadata()
-                    .withPriorityClassName("top-priority")
-                    .withSchedulerName("my-scheduler")
-                    .withHostAliases(hostAlias1, hostAlias2)
-                    .withAffinity(affinity)
-                    .withTolerations(tolerations)
-                .endPod()
-                .withNewApiService()
-                    .withNewMetadata()
-                        .withLabels(svcLabels)
-                        .withAnnotations(svcAnots)
-                    .endMetadata()
-                    .withIpFamilyPolicy(IpFamilyPolicy.PREFER_DUAL_STACK)
-                    .withIpFamilies(IpFamily.IPV6, IpFamily.IPV4)
-                .endApiService()
-                .withNewServiceAccount()
-                    .withNewMetadata()
-                        .withLabels(saLabels)
-                        .withAnnotations(saAnots)
-                    .endMetadata()
-                .endServiceAccount()
+                    .withNewPod()
+                        .withNewMetadata()
+                            .withLabels(podLabels)
+                            .withAnnotations(podAnots)
+                        .endMetadata()
+                        .withPriorityClassName("top-priority")
+                        .withSchedulerName("my-scheduler")
+                        .withHostAliases(hostAlias1, hostAlias2)
+                        .withAffinity(affinity)
+                        .withTolerations(tolerations)
+                        .withAdditionalVolumes(additionalVolumes)
+                    .endPod()
+                    .withNewCruiseControlContainer()
+                        .withAdditionalVolumeMounts(additionalVolumeMounts)
+                    .endCruiseControlContainer()
+                    .withNewApiService()
+                        .withNewMetadata()
+                            .withLabels(svcLabels)
+                            .withAnnotations(svcAnots)
+                        .endMetadata()
+                        .withIpFamilyPolicy(IpFamilyPolicy.PREFER_DUAL_STACK)
+                        .withIpFamilies(IpFamily.IPV6, IpFamily.IPV4)
+                    .endApiService()
+                    .withNewServiceAccount()
+                        .withNewMetadata()
+                            .withLabels(saLabels)
+                            .withAnnotations(saAnots)
+                        .endMetadata()
+                    .endServiceAccount()
                 .endTemplate()
                 .build();
 
@@ -748,7 +771,9 @@ public class CruiseControlTest {
         assertThat(dep.getSpec().getTemplate().getSpec().getAffinity(), is(affinity));
         assertThat(dep.getSpec().getTemplate().getSpec().getTolerations(), is(tolerations));
         assertThat(dep.getSpec().getTemplate().getSpec().getHostAliases(), containsInAnyOrder(hostAlias1, hostAlias2));
-
+        assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().stream().filter(volume -> "secret-volume-name".equals(volume.getName())).iterator().next().getSecret(), is(secret));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getVolumeMounts().stream().filter(volumeMount -> "secret-volume-name".equals(volumeMount.getName())).iterator().next(), is(additionalVolumeMounts.get(0)));
+        
         // Check Service
         svcLabels.putAll(expectedLabels());
         Service svc = cc.generateService();
