@@ -173,7 +173,7 @@ public class OperatorMetricsTest {
                             .tag("kind", "TestResource")
                             .tag("name", "my-resource")
                             .tag("resource-namespace", "my-namespace")
-                            .tag("reason", "Test error")
+                            .tag("error-reason", "Test error")
                             .gauge().value(), is(0.0));
 
                     async.flag();
