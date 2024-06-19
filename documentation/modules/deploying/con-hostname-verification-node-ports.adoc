@@ -1,0 +1,32 @@
+// Module included in the following assemblies:
+//
+// deploying/assembly-securing-access.adoc
+
+[id='con-hostname-varification-node-ports-{context}']
+= Troubleshooting TLS hostname verification with node ports
+
+[role="_abstract"]
+Off-cluster access using node ports with TLS encryption enabled does not support TLS hostname verification. 
+Consequently, clients that perform hostname verification will fail to connect.
+
+For example, a Java client will fail with the following exception:
+
+.Exception for TLS hostname verification
+[source,java]
+----
+Caused by: java.security.cert.CertificateException: No subject alternative names matching IP address 168.72.15.231 found
+ ...
+----
+
+To connect, you must disable hostname verification.
+In the Java client, set the `ssl.endpoint.identification.algorithm` configuration option to an empty string.
+
+When configuring the client using a properties file, you can do it this way:
+
+[source,properties]
+ssl.endpoint.identification.algorithm=
+
+When configuring the client directly in Java, set the configuration option to an empty string:
+
+[source,java]
+props.put("ssl.endpoint.identification.algorithm", "");

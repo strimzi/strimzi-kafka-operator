@@ -1,0 +1,70 @@
+// Module included in the following assembly:
+//
+// assembly-cluster-recovery-volume.adoc
+
+[id="con-cluster-recovery-scenarios-{context}"]
+= Cluster recovery scenarios
+
+[role="_abstract"]
+Recovering from PVs is possible in the following scenarios:
+
+* Unintentional deletion of a namespace
+* Loss of an entire Kubernetes cluster while PVs remain in the infrastructure
+
+The recovery procedure for both scenarios is to recreate the original `PersistentVolumeClaim` (PVC) resources.
+
+== Recovering from namespace deletion
+
+When you delete a namespace, all resources within that namespace—including PVCs, pods, and services—are deleted.
+If the `reclaimPolicy` for the PV resource specification is set to `Retain`, the PV retains its data and is not deleted.
+This configuration allows you to recover from namespace deletion.
+
+.PV configuration to retain data
+[source,shell]
+----
+apiVersion: v1
+kind: PersistentVolume
+# ...
+spec:
+  # ...
+  persistentVolumeReclaimPolicy: Retain
+----
+
+Alternatively, PVs can inherit the reclaim policy from an associated storage class.
+Storage classes are used for dynamic volume allocation.
+
+By configuring the `reclaimPolicy` property for the storage class, PVs created with this class use the specified reclaim policy.
+The storage class is assigned to the PV using the `storageClassName` property.
+
+.Storage class configuration to retain data
+[source,shell]
+----
+apiVersion: v1
+kind: StorageClass
+metadata:
+  name: gp2-retain
+parameters:
+  # ...
+# ...
+reclaimPolicy: Retain
+----
+
+.Storage class specified for PV
+[source,shell]
+----
+apiVersion: v1
+kind: PersistentVolume
+# ...
+spec:
+  # ...
+  storageClassName: gp2-retain
+----
+
+NOTE: When using `Retain` as the reclaim policy, you must manually delete PVs if you intend to delete the entire cluster.
+
+== Recovering from cluster loss
+
+If you lose the entire Kubernetes cluster, all resources—including PVs, PVCs, and namespaces—are lost.
+However, it's possible to recover if the physical storage backing the PVs remains intact.
+
+To recover, you need to set up a new Kubernetes cluster and manually reconfigure the PVs to use the existing storage.
