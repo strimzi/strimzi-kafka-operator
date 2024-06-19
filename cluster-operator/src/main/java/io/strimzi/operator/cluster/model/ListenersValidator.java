@@ -41,7 +41,7 @@ public class ListenersValidator {
      * @param listeners         Listeners which should be validated
      */
     public static void validate(Reconciliation reconciliation, Set<NodeRef> brokerNodes, List<GenericKafkaListener> listeners) throws InvalidResourceException {
-        Set<String> errors = validateAndGetErrorMessages(brokerNodes, listeners);
+        Set<String> errors = validateAndGetErrorMessages(reconciliation, brokerNodes, listeners);
 
         if (!errors.isEmpty())  {
             LOGGER.errorCr(reconciliation, "Listener configuration is not valid: {}", errors);
@@ -49,7 +49,7 @@ public class ListenersValidator {
         }
     }
 
-    /*test*/ static Set<String> validateAndGetErrorMessages(Set<NodeRef> brokerNodes, List<GenericKafkaListener> listeners)    {
+    /*test*/ static Set<String> validateAndGetErrorMessages(Reconciliation reconciliation, Set<NodeRef> brokerNodes, List<GenericKafkaListener> listeners)    {
         Set<String> errors = new HashSet<>(0);
         List<Integer> ports = getPorts(listeners);
         List<String> names = getNames(listeners);
@@ -102,6 +102,8 @@ public class ListenersValidator {
                         validateBrokerLabelsAndAnnotations(errors, listener, broker);
                         validateBrokerExternalIPs(errors, listener, broker);
                     }
+
+                    validateBrokerIDs(reconciliation, listener, brokerNodes);
                 }
 
                 if (listener.getConfiguration().getBrokerCertChainAndKey() != null) {
@@ -514,6 +516,38 @@ public class ListenersValidator {
                 errors.add("listener " + listener.getName() + " cannot configure custom TLS certificate with disabled TLS encryption");
             }
         }
+    }
+
+    /**
+     * Validates that the broker IDs used in the per-broker configuration are used by actual brokers. This is not
+     * considered as an error, so only warning will be logged for non-matching configurations. This method is called
+     * only for listeners with non-null per-broker configuration.
+     *
+     * @param reconciliation    Reconciliation marker
+     * @param listener          Listener which needs to be validated
+     * @param brokerNodes       Broker nodes that are part of this cluster
+     */
+    private static void validateBrokerIDs(Reconciliation reconciliation, GenericKafkaListener listener, Set<NodeRef> brokerNodes) {
+        Set<Integer> unusedBrokerIds = unusedBrokerIds(listener, brokerNodes);
+
+        if (!unusedBrokerIds.isEmpty())   {
+            LOGGER.warnCr(reconciliation, "Listener {} contains configuration for brokers with IDs {} that are currently not used", listener.getName(), unusedBrokerIds);
+        }
+    }
+
+    /**
+     * Finds the broker IDs that are used in the listener configuration but are not used in the Kafka cluster. This is
+     * done by a separate method from validateBrokerIDs to make it easier to test it.
+     *
+     * @param listener      Listener which needs to be validated
+     * @param brokerNodes   Broker nodes that are part of this cluster
+     *
+     * @return  Set with the IDs that are in the listener configuration but are not part of the Kafka cluster
+     */
+    /* test */ static Set<Integer> unusedBrokerIds(GenericKafkaListener listener, Set<NodeRef> brokerNodes) {
+        Set<Integer> configuredIds = listener.getConfiguration().getBrokers().stream().map(GenericKafkaListenerConfigurationBroker::getBroker).collect(Collectors.toSet());
+        configuredIds.removeAll(brokerNodes.stream().map(NodeRef::nodeId).collect(Collectors.toSet()));
+        return configuredIds;
     }
 
     /**
