@@ -10,6 +10,7 @@
 * Add support for feature gates to User and Topic Operators
 * Add support for setting `publishNotReadyAddresses` on services for listener types other than internal.
 * Update HTTP bridge to latest 0.29.0 release
+* Uncommented and enabled (by default) KRaft-related metrics in the `kafka-metrics.yaml` example file.
 
 ### Changes, deprecations and removals
 
