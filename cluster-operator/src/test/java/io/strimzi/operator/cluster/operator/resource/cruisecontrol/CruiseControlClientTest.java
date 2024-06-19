@@ -5,6 +5,7 @@
 package io.strimzi.operator.cluster.operator.resource.cruisecontrol;
 
 import io.strimzi.certs.Subject;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlEndpoints;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlRebalanceKeys;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlUserTaskStatus;
@@ -84,7 +85,7 @@ public class CruiseControlClientTest {
         CruiseControlApi client = cruiseControlClientProvider(vertx);
 
         Checkpoint checkpoint = context.checkpoint();
-        client.getCruiseControlState(HOST, cruiseControlPort, false)
+        client.getCruiseControlState(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, false)
             .onComplete(context.succeeding(result -> context.verify(() -> {
                 assertThat(result.getJson().getJsonObject("ExecutorState"),
                         hasEntry("state", "NO_TASK_IN_PROGRESS"));
@@ -137,7 +138,7 @@ public class CruiseControlClientTest {
         String userTaskID = MockCruiseControl.REBALANCE_NO_GOALS_RESPONSE_UTID;
 
         Checkpoint checkpoint = context.checkpoint();
-        client.getUserTaskStatus(HOST, cruiseControlPort, userTaskID).onComplete(context.succeeding(result -> {
+        client.getUserTaskStatus(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, userTaskID).onComplete(context.succeeding(result -> {
             context.verify(() -> assertThat(result.getUserTaskId(), is(MockCruiseControl.USER_TASK_REBALANCE_NO_GOALS_RESPONSE_UTID)));
             context.verify(() -> assertThat(result.getJson().getJsonObject(CruiseControlRebalanceKeys.SUMMARY.getKey()), is(notNullValue())));
             checkpoint.flag();
@@ -266,21 +267,21 @@ public class CruiseControlClientTest {
         Checkpoint checkpoint = context.checkpoint();
         switch (endpoint) {
             case REBALANCE:
-                client.rebalance(HOST, cruiseControlPort, (RebalanceOptions) options, null)
+                client.rebalance(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (RebalanceOptions) options, null)
                         .onComplete(context.succeeding(result -> context.verify(() -> {
                             assertion.accept(result);
                             checkpoint.flag();
                         })));
                 break;
             case ADD_BROKER:
-                client.addBroker(HOST, cruiseControlPort, (AddBrokerOptions) options, null)
+                client.addBroker(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (AddBrokerOptions) options, null)
                         .onComplete(context.succeeding(result -> context.verify(() -> {
                             assertion.accept(result);
                             checkpoint.flag();
                         })));
                 break;
             case REMOVE_BROKER:
-                client.removeBroker(HOST, cruiseControlPort, (RemoveBrokerOptions) options, null)
+                client.removeBroker(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (RemoveBrokerOptions) options, null)
                         .onComplete(context.succeeding(result -> context.verify(() -> {
                             assertion.accept(result);
                             checkpoint.flag();
@@ -297,21 +298,21 @@ public class CruiseControlClientTest {
         Checkpoint checkpoint = context.checkpoint();
         switch (endpoint) {
             case REBALANCE:
-                client.rebalance(HOST, cruiseControlPort, (RebalanceOptions) options, null)
+                client.rebalance(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (RebalanceOptions) options, null)
                         .onComplete(context.succeeding(result -> context.verify(() -> {
                             assertion.accept(result);
                             checkpoint.flag();
                         })));
                 break;
             case ADD_BROKER:
-                client.addBroker(HOST, cruiseControlPort, (AddBrokerOptions) options, null)
+                client.addBroker(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (AddBrokerOptions) options, null)
                         .onComplete(context.succeeding(result -> context.verify(() -> {
                             assertion.accept(result);
                             checkpoint.flag();
                         })));
                 break;
             case REMOVE_BROKER:
-                client.removeBroker(HOST, cruiseControlPort, (RemoveBrokerOptions) options, null)
+                client.removeBroker(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (RemoveBrokerOptions) options, null)
                         .onComplete(context.succeeding(result -> context.verify(() -> {
                             assertion.accept(result);
                             checkpoint.flag();
@@ -328,21 +329,21 @@ public class CruiseControlClientTest {
         Checkpoint checkpoint = context.checkpoint();
         switch (endpoint) {
             case REBALANCE:
-                client.rebalance(HOST, cruiseControlPort, (RebalanceOptions) options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
+                client.rebalance(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (RebalanceOptions) options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
                         .onComplete(context.succeeding(result -> context.verify(() -> {
                             assertion.accept(result);
                             checkpoint.flag();
                         })));
                 break;
             case ADD_BROKER:
-                client.addBroker(HOST, cruiseControlPort, (AddBrokerOptions) options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
+                client.addBroker(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (AddBrokerOptions) options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
                         .onComplete(context.succeeding(result -> context.verify(() -> {
                             assertion.accept(result);
                             checkpoint.flag();
                         })));
                 break;
             case REMOVE_BROKER:
-                client.removeBroker(HOST, cruiseControlPort, (RemoveBrokerOptions) options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
+                client.removeBroker(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (RemoveBrokerOptions) options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
                         .onComplete(context.succeeding(result -> context.verify(() -> {
                             assertion.accept(result);
                             checkpoint.flag();
@@ -359,21 +360,21 @@ public class CruiseControlClientTest {
         Checkpoint checkpoint = context.checkpoint();
         switch (endpoint) {
             case REBALANCE:
-                client.rebalance(HOST, cruiseControlPort, (RebalanceOptions) options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
+                client.rebalance(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (RebalanceOptions) options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
                         .onComplete(context.succeeding(result -> context.verify(() -> {
                             assertion.accept(result);
                             checkpoint.flag();
                         })));
                 break;
             case ADD_BROKER:
-                client.addBroker(HOST, cruiseControlPort, (AddBrokerOptions) options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
+                client.addBroker(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (AddBrokerOptions) options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
                         .onComplete(context.succeeding(result -> context.verify(() -> {
                             assertion.accept(result);
                             checkpoint.flag();
                         })));
                 break;
             case REMOVE_BROKER:
-                client.removeBroker(HOST, cruiseControlPort, (RemoveBrokerOptions) options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
+                client.removeBroker(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (RemoveBrokerOptions) options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
                         .onComplete(context.succeeding(result -> context.verify(() -> {
                             assertion.accept(result);
                             checkpoint.flag();
@@ -390,14 +391,14 @@ public class CruiseControlClientTest {
         Checkpoint checkpoint = context.checkpoint();
         switch (endpoint) {
             case ADD_BROKER:
-                client.addBroker(HOST, cruiseControlPort, (AddBrokerOptions) options, MockCruiseControl.BROKERS_NOT_EXIST_ERROR)
+                client.addBroker(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (AddBrokerOptions) options, MockCruiseControl.BROKERS_NOT_EXIST_ERROR)
                         .onComplete(context.failing(result -> context.verify(() -> {
                             assertion.accept(result);
                             checkpoint.flag();
                         })));
                 break;
             case REMOVE_BROKER:
-                client.removeBroker(HOST, cruiseControlPort, (RemoveBrokerOptions) options, MockCruiseControl.BROKERS_NOT_EXIST_ERROR)
+                client.removeBroker(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (RemoveBrokerOptions) options, MockCruiseControl.BROKERS_NOT_EXIST_ERROR)
                         .onComplete(context.failing(result -> context.verify(() -> {
                             assertion.accept(result);
                             checkpoint.flag();
@@ -444,7 +445,7 @@ public class CruiseControlClientTest {
 
         cruiseControlServer.setupCCUserTasksResponseNoGoals(0, pendingCalls1);
 
-        Future<CruiseControlResponse> statusFuture = client.getUserTaskStatus(HOST, cruiseControlPort, userTaskID);
+        Future<CruiseControlResponse> statusFuture = client.getUserTaskStatus(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, userTaskID);
 
         for (int i = 1; i <= pendingCalls1; i++) {
             statusFuture = statusFuture.compose(response -> {
@@ -453,7 +454,7 @@ public class CruiseControlClientTest {
                     is(CruiseControlUserTaskStatus.IN_EXECUTION.toString()))
                 );
                 firstPending.flag();
-                return client.getUserTaskStatus(HOST, cruiseControlPort, userTaskID);
+                return client.getUserTaskStatus(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, userTaskID);
             });
         }
 
@@ -475,7 +476,7 @@ public class CruiseControlClientTest {
             return Future.succeededFuture();
         });
 
-        statusFuture = statusFuture.compose(ignore -> client.getUserTaskStatus(HOST, cruiseControlPort, userTaskID));
+        statusFuture = statusFuture.compose(ignore -> client.getUserTaskStatus(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, userTaskID));
 
         for (int i = 1; i <= pendingCalls2; i++) {
             statusFuture = statusFuture.compose(response -> {
@@ -484,7 +485,7 @@ public class CruiseControlClientTest {
                     is(CruiseControlUserTaskStatus.IN_EXECUTION.toString()))
                 );
                 secondPending.flag();
-                return client.getUserTaskStatus(HOST, cruiseControlPort, userTaskID);
+                return client.getUserTaskStatus(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, userTaskID);
             });
         }
 
@@ -502,7 +503,7 @@ public class CruiseControlClientTest {
 
         CruiseControlApi client = cruiseControlClientProvider(vertx);
 
-        Future<CruiseControlResponse> statusFuture = client.getUserTaskStatus(HOST, cruiseControlPort, userTaskID);
+        Future<CruiseControlResponse> statusFuture = client.getUserTaskStatus(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, userTaskID);
 
         // One interaction is always expected at the end of the test, hence the +1
         Checkpoint expectedInteractions = context.checkpoint(pendingCalls + 1);
@@ -514,7 +515,7 @@ public class CruiseControlClientTest {
                     is(CruiseControlUserTaskStatus.IN_EXECUTION.toString()))
                 );
                 expectedInteractions.flag();
-                return client.getUserTaskStatus(HOST, cruiseControlPort, userTaskID);
+                return client.getUserTaskStatus(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, userTaskID);
             });
         }
 
