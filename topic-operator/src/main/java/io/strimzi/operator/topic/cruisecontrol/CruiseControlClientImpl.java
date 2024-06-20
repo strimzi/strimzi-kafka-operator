@@ -107,7 +107,7 @@ public class CruiseControlClientImpl implements CruiseControlClient {
             jsonPayload = objectMapper.writeValueAsString(
                 new ReplicationFactorChanges(new ReplicationFactor(requestPayload)));
         } catch (JsonProcessingException e) {
-            throw new RuntimeException("Failed to serialize request");
+            throw new RuntimeException(format("Request serialization failed: %s", e.getMessage()));
         }
         
         // build request
@@ -116,7 +116,6 @@ public class CruiseControlClientImpl implements CruiseControlClient {
             .withParameter(CruiseControlParameters.DRY_RUN, "false")
             .withParameter(CruiseControlParameters.JSON, "true")
             .build();
-        LOGGER.traceOp("Request URI: {}", requestUri.toString());
         
         HttpRequest.Builder builder = HttpRequest.newBuilder()
             .uri(requestUri)
@@ -127,10 +126,11 @@ public class CruiseControlClientImpl implements CruiseControlClient {
             builder.header("Authorization", buildBasicAuthValue(authUsername, authPassword));
         }
         HttpRequest request = builder.build();
+        LOGGER.traceOp("Request: {}", request);
         
         // send request and handle response
         return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(response -> {
-            LOGGER.traceOp("Response: {}", response);
+            LOGGER.traceOp("Response: {}, body: {}", response, response.body());
             if (response.statusCode() != 200) {
                 Optional<String> error = errorMessage(response);
                 throw new RuntimeException(error.isPresent() 
@@ -156,7 +156,6 @@ public class CruiseControlClientImpl implements CruiseControlClient {
             .withParameter(CruiseControlParameters.FETCH_COMPLETE, "false")
             .withParameter(CruiseControlParameters.JSON, "true")
             .build();
-        LOGGER.traceOp("Request URL: {}", requestUrl.toString());
         
         HttpRequest.Builder builder = HttpRequest.newBuilder()
             .uri(requestUrl)
@@ -166,10 +165,11 @@ public class CruiseControlClientImpl implements CruiseControlClient {
             builder.header("Authorization", buildBasicAuthValue(authUsername, authPassword));
         }
         HttpRequest request = builder.build();
+        LOGGER.traceOp("Request: {}", request);
         
         // send request and handle response
         return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(response -> {
-            LOGGER.traceOp("Response: {}", response);
+            LOGGER.traceOp("Response: {}, body: {}", response, response.body());
             if (response.statusCode() != 200) {
                 Optional<String> error = errorMessage(response);
                 throw new RuntimeException(error.isPresent()
@@ -187,32 +187,37 @@ public class CruiseControlClientImpl implements CruiseControlClient {
             if (t.getCause() instanceof ConnectException) {
                 throw new RuntimeException("Connection failed");
             } else {
-                throw new RuntimeException(getRootCause(t).getMessage());
+                throw new RuntimeException(getRootCause(t).getMessage());   
             }
         }).join();
     }
-    
+
     public Optional<String> errorMessage(HttpResponse<String> response) {
-        if (response != null && response.body() != null && !response.body().isBlank()) {
-            try {
-                ErrorResponse errorResponse = objectMapper.readValue(response.body(), ErrorResponse.class);
-                if (errorResponse.errorMessage() != null) {
-                    if (errorResponse.errorMessage().contains("NotEnoughValidWindowsException")) {
-                        return Optional.of("Cluster model not ready");
-                    } else if (errorResponse.errorMessage().contains("OngoingExecutionException")
+        if (response != null) {
+            if (response.statusCode() == 401) {
+                return Optional.of("Authorization error");
+            }
+            if (response.body() != null && !response.body().isEmpty()) {
+                try {
+                    ErrorResponse errorResponse = objectMapper.readValue(response.body(), ErrorResponse.class);
+                    if (errorResponse.errorMessage() != null) {
+                        if (errorResponse.errorMessage().contains("NotEnoughValidWindowsException")) {
+                            return Optional.of("Cluster model not ready");
+                        } else if (errorResponse.errorMessage().contains("OngoingExecutionException")
                             || errorResponse.errorMessage().contains("stop_ongoing_execution")) {
-                        return Optional.of("Another task is executing");
-                    } else {
-                        return Optional.of(errorResponse.errorMessage());
+                            return Optional.of("Another task is executing");
+                        } else {
+                            return Optional.of(errorResponse.errorMessage());
+                        }
                     }
+                } catch (JsonProcessingException e) {
+                    throw new RuntimeException(format("Error deserialization failed: %s", e.getMessage()));
                 }
-            } catch (Throwable t) {
-                throw new RuntimeException(format("Error message parsing failed: %s", t.getMessage()));
             }
         }
         return Optional.empty();
     }
-
+    
     @SuppressFBWarnings("SIC_INNER_SHOULD_BE_STATIC_ANON")
     private HttpClient buildHttpClient() {
         try {

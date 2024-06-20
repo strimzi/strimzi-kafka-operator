@@ -205,6 +205,7 @@ public class MockCruiseControl {
             .respond(
                 HttpResponse.response()
                     .withStatusCode(HttpStatusCode.UNAUTHORIZED_401.code())
+                    .withBody("<html>Unauthorized</html>")
                     .withDelay(TimeUnit.SECONDS, 0));
     }
 
@@ -321,6 +322,7 @@ public class MockCruiseControl {
             .respond(
                 HttpResponse.response()
                     .withStatusCode(HttpStatusCode.UNAUTHORIZED_401.code())
+                    .withBody("<html>Unauthorized</html>")
                     .withDelay(TimeUnit.SECONDS, 0));
     }
 }
