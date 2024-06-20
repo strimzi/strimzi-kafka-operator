@@ -584,7 +584,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                 warnings.add(StatusUtils.buildWarningCondition("QuotasPluginConflict",
                     String.format("Quotas plugin class cannot be configured in .spec.kafka.config, " +
                         "when .spec.kafka.quotas contains configuration of `%s` plugin. " +
-                        "The plugin from .spec.kafka.quotas will be used", QuotasPluginStrimzi.TYPE_STRIMZI)));
+                        "The plugin from .spec.kafka.quotas will be used", quotasPlugin.getType())));
 
                 configuration.removeConfigOption(CLIENT_CALLBACK_CLASS_OPTION);
             }
