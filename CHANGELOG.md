@@ -11,6 +11,7 @@
 * Add support for setting `publishNotReadyAddresses` on services for listener types other than internal.
 * Update HTTP bridge to latest 0.29.0 release
 * Uncommented and enabled (by default) KRaft-related metrics in the `kafka-metrics.yaml` example file.
+* Added 'serviceaccount-oauth' authentication type which is an extension of 'oauth' that automatically configures the necessary configuration parameters to use the local Kubernetes API server as an OAuth authorization server.
 
 ### Changes, deprecations and removals
 
