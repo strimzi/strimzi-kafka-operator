@@ -448,11 +448,6 @@ public class TopicReplicasChangeST extends AbstractST {
                         .withNamespace(sharedTestStorage.getNamespaceName())
                     .endMetadata()
                     .editSpec()
-                        .editKafka()
-                            // faster cluster model generation tuning: reduce reporting and metadata refresh intervals
-                            .addToConfig("cruise.control.metrics.reporter.metrics.reporting.interval.ms", 5_000)
-                            .addToConfig("cruise.control.metrics.reporter.metadata.max.age.ms", 4_000)
-                        .endKafka()
                         .editEntityOperator()
                             .editOrNewTopicOperator()
                                 .withReconciliationIntervalMs(10_000L)
