@@ -75,7 +75,7 @@ public class MockCruiseControl {
             .addToData("cruise-control.crt", MockCertManager.clusterCaCert())
             .build();
 
-    private static Map<String, String> apiSecretData = Map.of(CruiseControlApiProperties.REBALANCE_OPERATOR_USERNAME, "password");
+    private static Map<String, String> apiSecretData = Map.of(CruiseControlApiProperties.REBALANCE_OPERATOR_PASSWORD_KEY, "password");
     public static final Secret CC_API_SECRET = ModelUtils.createSecret(CruiseControlResources.apiSecretName(CLUSTER), NAMESPACE, Labels.EMPTY, null,
            apiSecretData, Collections.emptyMap(), Collections.emptyMap());
     private static final Header AUTH_HEADER = convertToHeader(CruiseControlApiImpl.getAuthHttpHeader(true, CC_API_SECRET));
