@@ -78,17 +78,13 @@ public class CruiseControlReconcilerTest {
             new NodeRef(NAME + "kafka-0", 0, "kafka", false, true),
             new NodeRef(NAME + "kafka-1", 1, "kafka", false, true),
             new NodeRef(NAME + "kafka-2", 2, "kafka", false, true));
+    private static final String USER_MANAGED_API_SECRET_NAME = "cc-api-user-secret";
+    private static final String USER_MANAGED_API_SECRET_KEY = "key";
     private final CruiseControlSpec cruiseControlSpec = new CruiseControlSpecBuilder()
             .withBrokerCapacity(new BrokerCapacityBuilder().withInboundNetwork("10000KB/s").withOutboundNetwork("10000KB/s").build())
-            .withApiUsers(new HashLoginServiceApiUsersBuilder()
-                    .withNewValueFrom()
-                            .withSecretKeyRef(new SecretKeySelectorBuilder().withKey("key").withName("cc-api-user-secret").build())
-                    .endValueFrom()
-            .build())
             .withConfig(Map.of("hard.goals", "com.linkedin.kafka.cruisecontrol.analyzer.goals.NetworkInboundCapacityGoal,com.linkedin.kafka.cruisecontrol.analyzer.goals.NetworkOutboundCapacityGoal",
                     CruiseControlConfigurationParameters.SAMPLE_STORE_TOPIC_REPLICATION_FACTOR.getValue(), "3"))
             .build();
-
 
     /**
      * This parameterized test uses '@CsvSource' to provide combinations of boolean values for the
@@ -127,10 +123,8 @@ public class CruiseControlReconcilerTest {
 
         if (apiUsersEnabled) {
             Secret userManagedApiSecret = mock(Secret.class);
-            String userManagedApiSecretName = cruiseControlSpec.getApiUsers().getValueFrom().getSecretKeyRef().getName();
-            String userManagedApiSecretKey = cruiseControlSpec.getApiUsers().getValueFrom().getSecretKeyRef().getKey();
-            doReturn(Map.of(userManagedApiSecretKey, Util.encodeToBase64("username0: password0,USER\nusername1: password1,VIEWER"))).when(userManagedApiSecret).getData();
-            when(mockSecretOps.getAsync(eq(NAMESPACE), eq(userManagedApiSecretName))).thenReturn(Future.succeededFuture(userManagedApiSecret));
+            doReturn(Map.of(USER_MANAGED_API_SECRET_KEY, Util.encodeToBase64("username0: password0,USER\nusername1: password1,VIEWER"))).when(userManagedApiSecret).getData();
+            when(mockSecretOps.getAsync(eq(NAMESPACE), eq(USER_MANAGED_API_SECRET_NAME))).thenReturn(Future.succeededFuture(userManagedApiSecret));
         }
 
         if (topicOperatorEnabled) {
@@ -158,7 +152,22 @@ public class CruiseControlReconcilerTest {
                     .withCruiseControl(cruiseControlSpec)
                 .endSpec()
                 .build();
-        
+
+        if (apiUsersEnabled) {
+            kafka.getSpec().getCruiseControl().setApiUsers(
+                new HashLoginServiceApiUsersBuilder()
+                    .withNewValueFrom()
+                        .withSecretKeyRef(
+                            new SecretKeySelectorBuilder()
+                                .withKey(USER_MANAGED_API_SECRET_KEY)
+                                .withName(USER_MANAGED_API_SECRET_NAME)
+                            .build()
+                        )
+                    .endValueFrom()
+                    .build()
+            );
+        }
+
         if (topicOperatorEnabled) {
             kafka.getSpec().setEntityOperator(
                 new EntityOperatorSpecBuilder()
