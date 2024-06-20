@@ -894,7 +894,7 @@ public class KafkaRebalanceAssemblyOperator
         String sessionId = kafkaRebalance.getStatus().getSessionId();
         if (rebalanceAnnotation(kafkaRebalance) == KafkaRebalanceAnnotation.stop) {
             LOGGER.infoCr(reconciliation, "Stopping current Cruise Control rebalance user task");
-            apiClient.stopExecution(host, cruiseControlPort)
+            apiClient.stopExecution(reconciliation, host, cruiseControlPort)
                 .onSuccess(r -> p.complete(buildRebalanceStatus(null, KafkaRebalanceState.Stopped, StatusUtils.validate(reconciliation, kafkaRebalance))))
                 .onFailure(e -> {
                     LOGGER.errorCr(reconciliation, "Cruise Control stopping execution failed", e.getCause());
@@ -902,7 +902,7 @@ public class KafkaRebalanceAssemblyOperator
                 });
         } else if (rebalanceAnnotation(kafkaRebalance) == KafkaRebalanceAnnotation.refresh) {
             LOGGER.infoCr(reconciliation, "Stopping current Cruise Control rebalance user task since refresh annotation is applied on the KafkaRebalance resource and requesting a new proposal");
-            apiClient.stopExecution(host, cruiseControlPort)
+            apiClient.stopExecution(reconciliation, host, cruiseControlPort)
                     .onSuccess(r -> {
                         requestRebalance(reconciliation, host, apiClient, kafkaRebalance, true, rebalanceOptionsBuilder).onSuccess(p::complete);
                     })
@@ -914,7 +914,7 @@ public class KafkaRebalanceAssemblyOperator
             LOGGER.infoCr(reconciliation, "Getting Cruise Control rebalance user task status");
             Set<Condition> conditions = StatusUtils.validate(reconciliation, kafkaRebalance);
             validateAnnotation(reconciliation, conditions, KafkaRebalanceState.Rebalancing, rebalanceAnnotation(kafkaRebalance), kafkaRebalance);
-            apiClient.getUserTaskStatus(host, cruiseControlPort, sessionId)
+            apiClient.getUserTaskStatus(reconciliation, host, cruiseControlPort, sessionId)
                 .onSuccess(cruiseControlResponse -> {
                     JsonObject taskStatusJson = cruiseControlResponse.getJson();
                     CruiseControlUserTaskStatus taskStatus = CruiseControlUserTaskStatus.lookup(taskStatusJson.getString("Status"));
@@ -1176,13 +1176,13 @@ public class KafkaRebalanceAssemblyOperator
         Future<CruiseControlRebalanceResponse> future;
         switch (mode) {
             case ADD_BROKERS:
-                future = apiClient.addBroker(host, cruiseControlPort, ((AddBrokerOptions.AddBrokerOptionsBuilder) rebalanceOptionsBuilder).build(), userTaskID);
+                future = apiClient.addBroker(reconciliation, host, cruiseControlPort, ((AddBrokerOptions.AddBrokerOptionsBuilder) rebalanceOptionsBuilder).build(), userTaskID);
                 break;
             case REMOVE_BROKERS:
-                future = apiClient.removeBroker(host, cruiseControlPort, ((RemoveBrokerOptions.RemoveBrokerOptionsBuilder) rebalanceOptionsBuilder).build(), userTaskID);
+                future = apiClient.removeBroker(reconciliation, host, cruiseControlPort, ((RemoveBrokerOptions.RemoveBrokerOptionsBuilder) rebalanceOptionsBuilder).build(), userTaskID);
                 break;
             default:
-                future = apiClient.rebalance(host, cruiseControlPort, ((RebalanceOptions.RebalanceOptionsBuilder) rebalanceOptionsBuilder).build(), userTaskID);
+                future = apiClient.rebalance(reconciliation, host, cruiseControlPort, ((RebalanceOptions.RebalanceOptionsBuilder) rebalanceOptionsBuilder).build(), userTaskID);
                 break;
         }
         return future.map(response -> handleRebalanceResponse(reconciliation, kafkaRebalance, dryrun, response));
