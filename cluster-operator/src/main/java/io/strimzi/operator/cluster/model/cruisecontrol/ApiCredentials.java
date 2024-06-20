@@ -46,11 +46,12 @@ public class ApiCredentials {
             TOPIC_OPERATOR_USERNAME
     );
 
-    private String userManagedApiSecretName;
-    private String userManagedApiSecretKey;
+    private final String userManagedApiSecretName;
+    private final String userManagedApiSecretKey;
     private final String namespace;
     private final String cluster;
     private final Labels labels;
+    private final CruiseControlSpec specSection;
     private final OwnerReference ownerReference;
 
     /**
@@ -67,53 +68,29 @@ public class ApiCredentials {
         this.cluster = cluster;
         this.labels = labels;
         this.ownerReference = ownerReference;
+        this.specSection = specSection;
 
         if (validateApiUsersConfig(specSection)) {
-            HashLoginServiceApiUsers apiUsers = specSection.getApiUsers();
-            userManagedApiSecretName = apiUsers.getValueFrom().getSecretKeyRef().getName();
-            userManagedApiSecretKey = apiUsers.getValueFrom().getSecretKeyRef().getKey();
+            userManagedApiSecretName = specSection.getApiUsers().getValueFrom().getSecretKeyRef().getName();
+            userManagedApiSecretKey = specSection.getApiUsers().getValueFrom().getSecretKeyRef().getKey();
+        } else {
+            userManagedApiSecretName = null;
+            userManagedApiSecretKey = null;
         }
     }
-
-    /**
-     * By default Cruise Control defines three roles: VIEWER, USER and ADMIN.
-     * For more information checkout the upstream Cruise Control Wiki here:
-     * <a href="https://github.com/linkedin/cruise-control/wiki/Security#authorization">Cruise Control Security</a>
-     */
-    public enum Role {
-        /**
-         * VIEWER: has access to the most lightweight kafka_cluster_state, user_tasks, and review_board endpoints.
-         */
-        VIEWER,
-        /**
-         * USER: has access to all the GET endpoints except bootstrap and train.
-         */
-        USER,
-        /**
-         * ADMIN: has access to all endpoints.
-         */
-        ADMIN;
-
-        private static Role fromString(String s) {
-            return switch (s) {
-                case "VIEWER" -> VIEWER;
-                case "USER" -> USER;
-                case "ADMIN" -> ADMIN;
-                default -> throw new InvalidConfigurationException("Unknown role: " + s);
-            };
-        }
-    }
-
-    /**
-     * Represents a single API user entry including name, password, and role.
-     */
-    public record UserEntry(String username, String password, Role role) { }
 
     /**
      * @return  Returns user-managed API credentials secret name
      */
     public String getUserManagedApiSecretName() {
         return userManagedApiSecretName;
+    }
+
+    /**
+     * @return  Returns user-managed API credentials secret key
+     */
+    /* test */ public String getUserManagedApiSecretKey() {
+        return userManagedApiSecretKey;
     }
 
     /**
@@ -144,7 +121,7 @@ public class ApiCredentials {
      *
      * @return map of API credential entries containing username, password, and role.
      */
-    public static Map<String, UserEntry> parseEntriesFromString(String config) {
+    /* test */ public static Map<String, UserEntry> parseEntriesFromString(String config) {
         Map<String, UserEntry> entries = new HashMap<>();
         for (String line : config.split("\n")) {
             Matcher matcher = HASH_LOGIN_SERVICE_PATTERN.matcher(line);
@@ -174,7 +151,7 @@ public class ApiCredentials {
      *
      * @return Map of API user entries containing user-managed API user credentials
      */
-    public static Map<String, UserEntry> generateToManagedApiCredentials(Secret secret) {
+    /* test */ public static Map<String, UserEntry> generateToManagedApiCredentials(Secret secret) {
         Map<String, UserEntry> entries = new HashMap<>();
         if (secret != null) {
             if (secret.getData().containsKey(TOPIC_OPERATOR_USERNAME_KEY) && secret.getData().containsKey(TOPIC_OPERATOR_PASSWORD_KEY)) {
@@ -194,7 +171,7 @@ public class ApiCredentials {
      *
      * @return Map of API user entries containing user-managed API user credentials
      */
-    public static Map<String, UserEntry> generateUserManagedApiCredentials(Secret secret, String secretKey) {
+    /* test */ public static Map<String, UserEntry> generateUserManagedApiCredentials(Secret secret, String secretKey) {
         Map<String, UserEntry> entries = new HashMap<>();
         if (secret != null) {
             if (secretKey != null && secret.getData().containsKey(secretKey)) {
@@ -250,7 +227,7 @@ public class ApiCredentials {
      *
      * @return Map containing Cruise Control API auth credentials
      */
-    public static Map<String, String> generateMapWithApiCredentials(Map<String, UserEntry> entries) {
+    /* test */ public static Map<String, String> generateMapWithApiCredentials(Map<String, UserEntry> entries) {
         Map<String, String> data = new HashMap<>(3);
         data.put(REBALANCE_OPERATOR_PASSWORD_KEY, Util.encodeToBase64(entries.get(REBALANCE_OPERATOR_USERNAME).password()));
         data.put(HEALTHCHECK_PASSWORD_KEY, Util.encodeToBase64(entries.get(HEALTHCHECK_USERNAME).password()));
@@ -295,6 +272,11 @@ public class ApiCredentials {
                                     Secret userManagedApiSecret,
                                     Secret topicOperatorManagedApiSecret) {
 
+        if (specSection.getApiUsers() != null && userManagedApiSecret == null) {
+            throw new InvalidResourceException("The configuration of the Cruise Control REST API users " +
+                    "references a secret: " +  "\"" + getUserManagedApiSecretName() + "\" that does not exist.");
+        }
+
         Map<String, ApiCredentials.UserEntry> apiCredentials = new HashMap<>();
         apiCredentials.putAll(generateCoManagedApiCredentials(passwordGenerator, oldCruiseControlApiSecret));
         apiCredentials.putAll(generateUserManagedApiCredentials(userManagedApiSecret, userManagedApiSecretKey));
@@ -304,4 +286,38 @@ public class ApiCredentials {
         return ModelUtils.createSecret(CruiseControlResources.apiSecretName(cluster), namespace, labels, ownerReference,
                 mapWithApiCredentials, Collections.emptyMap(), Collections.emptyMap());
     }
+
+    /**
+     * By default Cruise Control defines three roles: VIEWER, USER and ADMIN.
+     * For more information checkout the upstream Cruise Control Wiki here:
+     * <a href="https://github.com/linkedin/cruise-control/wiki/Security#authorization">Cruise Control Security</a>
+     */
+    public enum Role {
+        /**
+         * VIEWER: has access to the most lightweight kafka_cluster_state, user_tasks, and review_board endpoints.
+         */
+        VIEWER,
+        /**
+         * USER: has access to all the GET endpoints except bootstrap and train.
+         */
+        USER,
+        /**
+         * ADMIN: has access to all endpoints.
+         */
+        ADMIN;
+
+        private static Role fromString(String s) {
+            return switch (s) {
+                case "VIEWER" -> VIEWER;
+                case "USER" -> USER;
+                case "ADMIN" -> ADMIN;
+                default -> throw new InvalidConfigurationException("Unknown role: " + s);
+            };
+        }
+    }
+
+    /**
+     * Represents a single API user entry including name, password, and role.
+     */
+    public record UserEntry(String username, String password, Role role) { }
 }
