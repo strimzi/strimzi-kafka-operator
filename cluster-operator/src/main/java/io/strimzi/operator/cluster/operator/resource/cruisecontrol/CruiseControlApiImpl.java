@@ -130,7 +130,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                                 String userTaskID = response.result().getHeader(USER_TASK_ID_HEADER);
                                 response.result().bodyHandler(buffer -> {
                                     JsonObject json = buffer.toJsonObject();
-                                    LOGGER.debugCr(reconciliation, "Got {} response to GET request to {} : userTaskID = {}, json = {}", response.result().statusCode(), path, userTaskID, json);
+                                    LOGGER.debugCr(reconciliation, "Got {} response to GET request to {} : userTaskID = {}", response.result().statusCode(), path, userTaskID);
                                     if (json.containsKey(CC_REST_API_ERROR_KEY)) {
                                         result.fail(new CruiseControlRestException(
                                                 "Error for request: " + host + ":" + port + path + ". Server returned: " +
@@ -185,7 +185,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                         response.result().bodyHandler(buffer -> {
                             String userTaskID = response.result().getHeader(USER_TASK_ID_HEADER);
                             JsonObject json = buffer.toJsonObject();
-                            LOGGER.debugCr(reconciliation, "Got {} response to POST request to {} : userTaskID = {}, json = {}", response.result().statusCode(), path, userTaskID, json);
+                            LOGGER.debugCr(reconciliation, "Got {} response to POST request to {} : userTaskID = {}, summary = {}", response.result().statusCode(), path, userTaskID, json.getString("summary"));
                             CruiseControlRebalanceResponse ccResponse = new CruiseControlRebalanceResponse(userTaskID, json);
                             result.complete(ccResponse);
                         });
@@ -193,7 +193,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                         response.result().bodyHandler(buffer -> {
                             String userTaskID = response.result().getHeader(USER_TASK_ID_HEADER);
                             JsonObject json = buffer.toJsonObject();
-                            LOGGER.debugCr(reconciliation, "Got {} response to POST request to {} : userTaskID = {}, json = {}", response.result().statusCode(), path, userTaskID, json);
+                            LOGGER.debugCr(reconciliation, "Got {} response to POST request to {} : userTaskID = {}, in progress = {}", response.result().statusCode(), path, userTaskID, json.containsKey(CC_REST_API_PROGRESS_KEY));
                             CruiseControlRebalanceResponse ccResponse = new CruiseControlRebalanceResponse(userTaskID, json);
                             if (json.containsKey(CC_REST_API_PROGRESS_KEY)) {
                                 // If the response contains a "progress" key then the rebalance proposal has not yet completed processing
@@ -210,7 +210,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                         response.result().bodyHandler(buffer -> {
                             String userTaskID = response.result().getHeader(USER_TASK_ID_HEADER);
                             JsonObject json = buffer.toJsonObject();
-                            LOGGER.debugCr(reconciliation, "Got {} response to POST request to {} : userTaskID = {}, json = {}", response.result().statusCode(), path, userTaskID, json);
+                            LOGGER.debugCr(reconciliation, "Got {} response to POST request to {} : userTaskID = {}", response.result().statusCode(), path, userTaskID);
                             if (json.containsKey(CC_REST_API_ERROR_KEY)) {
                                 // If there was a client side error, check whether it was due to not enough data being available ...
                                 if (json.getString(CC_REST_API_ERROR_KEY).contains("NotEnoughValidWindowsException")) {
@@ -338,8 +338,9 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                                 String userTaskID = response.result().getHeader(USER_TASK_ID_HEADER);
                                 response.result().bodyHandler(buffer -> {
                                     JsonObject json = buffer.toJsonObject();
-                                    LOGGER.debugCr(reconciliation, "Got {} response to GET request to {} : userTaskID = {}, json = {}", response.result().statusCode(), path, userTaskID, json);
                                     JsonObject jsonUserTask = json.getJsonArray("userTasks").getJsonObject(0);
+                                    String taskStatusStr = jsonUserTask.getString(STATUS_KEY);
+                                    LOGGER.debugCr(reconciliation, "Got {} response to GET request to {} : userTaskID = {}, status = {}", response.result().statusCode(), path, userTaskID, taskStatusStr);
                                     // This should not be an error with a 200 status but we play it safe
                                     if (jsonUserTask.containsKey(CC_REST_API_ERROR_KEY)) {
                                         result.fail(new CruiseControlRestException(
@@ -347,7 +348,6 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                                                         json.getString(CC_REST_API_ERROR_KEY)));
                                     }
                                     JsonObject statusJson = new JsonObject();
-                                    String taskStatusStr = jsonUserTask.getString(STATUS_KEY);
                                     statusJson.put(STATUS_KEY, taskStatusStr);
                                     CruiseControlUserTaskStatus taskStatus = CruiseControlUserTaskStatus.lookup(taskStatusStr);
                                     switch (taskStatus) {
@@ -384,7 +384,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                                 response.result().bodyHandler(buffer -> {
                                     String userTaskID = response.result().getHeader(USER_TASK_ID_HEADER);
                                     JsonObject json = buffer.toJsonObject();
-                                    LOGGER.debugCr(reconciliation, "Got {} response to GET request to {} : userTaskID = {}, json = {}", response.result().statusCode(), path, userTaskID, json);
+                                    LOGGER.debugCr(reconciliation, "Got {} response to GET request to {} : userTaskID = {}", response.result().statusCode(), path, userTaskID);
                                     String errorString;
                                     if (json.containsKey(CC_REST_API_ERROR_KEY)) {
                                         errorString = json.getString(CC_REST_API_ERROR_KEY);
@@ -439,7 +439,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                                 String userTaskID = response.result().getHeader(USER_TASK_ID_HEADER);
                                 response.result().bodyHandler(buffer -> {
                                     JsonObject json = buffer.toJsonObject();
-                                    LOGGER.debugCr(reconciliation, "Got {} response to POST request to {} : userTaskID = {}, json = {}", response.result().statusCode(), path, userTaskID, json);
+                                    LOGGER.debugCr(reconciliation, "Got {} response to POST request to {} : userTaskID = {}", response.result().statusCode(), path, userTaskID);
                                     if (json.containsKey(CC_REST_API_ERROR_KEY)) {
                                         result.fail(json.getString(CC_REST_API_ERROR_KEY));
                                     } else {
@@ -447,7 +447,6 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                                         result.complete(ccResponse);
                                     }
                                 });
-
                             } else {
                                 result.fail(new CruiseControlRestException(
                                         "Unexpected status code " + response.result().statusCode() + " for GET request to " +
