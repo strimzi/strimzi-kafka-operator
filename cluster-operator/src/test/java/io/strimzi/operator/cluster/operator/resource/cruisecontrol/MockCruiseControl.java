@@ -9,9 +9,8 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
 import io.strimzi.operator.cluster.model.ModelUtils;
-import io.strimzi.operator.cluster.model.cruisecontrol.ApiCredentials;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.operator.common.model.PasswordGenerator;
+import io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlEndpoints;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlParameters;
 import io.strimzi.operator.common.operator.MockCertManager;
@@ -76,7 +75,7 @@ public class MockCruiseControl {
             .addToData("cruise-control.crt", MockCertManager.clusterCaCert())
             .build();
 
-    private static Map<String, String> apiSecretData = ApiCredentials.generateMapWithApiCredentials(ApiCredentials.generateCoManagedApiCredentials(new PasswordGenerator(16), null));
+    private static Map<String, String> apiSecretData = Map.of(CruiseControlApiProperties.REBALANCE_OPERATOR_USERNAME, "password");
     public static final Secret CC_API_SECRET = ModelUtils.createSecret(CruiseControlResources.apiSecretName(CLUSTER), NAMESPACE, Labels.EMPTY, null,
            apiSecretData, Collections.emptyMap(), Collections.emptyMap());
     private static final Header AUTH_HEADER = convertToHeader(CruiseControlApiImpl.getAuthHttpHeader(true, CC_API_SECRET));

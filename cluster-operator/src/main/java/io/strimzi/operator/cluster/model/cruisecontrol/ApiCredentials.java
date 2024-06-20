@@ -89,7 +89,7 @@ public class ApiCredentials {
     /**
      * @return  Returns user-managed API credentials secret key
      */
-    /* test */ public String getUserManagedApiSecretKey() {
+    /* test */ String getUserManagedApiSecretKey() {
         return userManagedApiSecretKey;
     }
 
@@ -121,7 +121,7 @@ public class ApiCredentials {
      *
      * @return map of API credential entries containing username, password, and role.
      */
-    /* test */ public static Map<String, UserEntry> parseEntriesFromString(String config) {
+    /* test */ static Map<String, UserEntry> parseEntriesFromString(String config) {
         Map<String, UserEntry> entries = new HashMap<>();
         for (String line : config.split("\n")) {
             Matcher matcher = HASH_LOGIN_SERVICE_PATTERN.matcher(line);
@@ -151,7 +151,7 @@ public class ApiCredentials {
      *
      * @return Map of API user entries containing user-managed API user credentials
      */
-    /* test */ public static Map<String, UserEntry> generateToManagedApiCredentials(Secret secret) {
+    /* test */ static Map<String, UserEntry> generateToManagedApiCredentials(Secret secret) {
         Map<String, UserEntry> entries = new HashMap<>();
         if (secret != null) {
             if (secret.getData().containsKey(TOPIC_OPERATOR_USERNAME_KEY) && secret.getData().containsKey(TOPIC_OPERATOR_PASSWORD_KEY)) {
@@ -171,7 +171,7 @@ public class ApiCredentials {
      *
      * @return Map of API user entries containing user-managed API user credentials
      */
-    /* test */ public static Map<String, UserEntry> generateUserManagedApiCredentials(Secret secret, String secretKey) {
+    /* test */ static Map<String, UserEntry> generateUserManagedApiCredentials(Secret secret, String secretKey) {
         Map<String, UserEntry> entries = new HashMap<>();
         if (secret != null) {
             if (secretKey != null && secret.getData().containsKey(secretKey)) {
@@ -199,7 +199,7 @@ public class ApiCredentials {
      *
      * @return Map of API user entries containing Strimzi-managed API user credentials
      */
-    public static Map<String, UserEntry> generateCoManagedApiCredentials(PasswordGenerator passwordGenerator, Secret secret) {
+    /* test */ static Map<String, UserEntry> generateCoManagedApiCredentials(PasswordGenerator passwordGenerator, Secret secret) {
         Map<String, UserEntry> entries = new HashMap<>();
 
         if (secret != null) {
@@ -223,15 +223,26 @@ public class ApiCredentials {
     /**
      * Creates map with API usernames, passwords, and credentials file for Strimzi-managed API users secret.
      *
-     * @param entries List of API user entries containing API user credentials
+     * @param passwordGenerator the password generator used for creating new credentials.
+     * @param oldCruiseControlApiSecret the existing Cruise Control API secret, containing previously stored credentials.
+     * @param userManagedApiSecret the secret managed by the user, containing user-defined API credentials.
+     * @param topicOperatorManagedApiSecret the secret managed by the topic operator, containing credentials for the topic operator.
      *
-     * @return Map containing Cruise Control API auth credentials
+     * @return Map with API usernames, passwords, and credentials file for Strimzi-managed CC API secret.
      */
-    /* test */ public static Map<String, String> generateMapWithApiCredentials(Map<String, UserEntry> entries) {
+    private Map<String, String> generateMapWithApiCredentials(PasswordGenerator passwordGenerator,
+                                                              Secret oldCruiseControlApiSecret,
+                                                              Secret userManagedApiSecret,
+                                                              Secret topicOperatorManagedApiSecret) {
+        Map<String, ApiCredentials.UserEntry> apiCredentials = new HashMap<>();
+        apiCredentials.putAll(generateCoManagedApiCredentials(passwordGenerator, oldCruiseControlApiSecret));
+        apiCredentials.putAll(generateUserManagedApiCredentials(userManagedApiSecret, userManagedApiSecretKey));
+        apiCredentials.putAll(generateToManagedApiCredentials(topicOperatorManagedApiSecret));
+
         Map<String, String> data = new HashMap<>(3);
-        data.put(REBALANCE_OPERATOR_PASSWORD_KEY, Util.encodeToBase64(entries.get(REBALANCE_OPERATOR_USERNAME).password()));
-        data.put(HEALTHCHECK_PASSWORD_KEY, Util.encodeToBase64(entries.get(HEALTHCHECK_USERNAME).password()));
-        data.put(AUTH_FILE_KEY, Util.encodeToBase64(generateApiAuthFileAsString(entries)));
+        data.put(REBALANCE_OPERATOR_PASSWORD_KEY, Util.encodeToBase64(apiCredentials.get(REBALANCE_OPERATOR_USERNAME).password()));
+        data.put(HEALTHCHECK_PASSWORD_KEY, Util.encodeToBase64(apiCredentials.get(HEALTHCHECK_USERNAME).password()));
+        data.put(AUTH_FILE_KEY, Util.encodeToBase64(generateApiAuthFileAsString(apiCredentials)));
         return data;
     }
 
@@ -262,7 +273,7 @@ public class ApiCredentials {
      * for Cruise Control.
      *
      * @param passwordGenerator the password generator used for creating new credentials.
-     * @param oldCruiseControlApiSecret the existing centralized API secret, containing previously stored credentials.
+     * @param oldCruiseControlApiSecret the existing Cruise Control API secret, containing previously stored credentials.
      * @param userManagedApiSecret the secret managed by the user, containing user-defined API credentials.
      * @param topicOperatorManagedApiSecret the secret managed by the topic operator, containing credentials for the topic operator.
      * @return a new Secret object containing the aggregated API credentials for Cruise Control.
@@ -271,18 +282,12 @@ public class ApiCredentials {
                                     Secret oldCruiseControlApiSecret,
                                     Secret userManagedApiSecret,
                                     Secret topicOperatorManagedApiSecret) {
-
         if (specSection.getApiUsers() != null && userManagedApiSecret == null) {
             throw new InvalidResourceException("The configuration of the Cruise Control REST API users " +
                     "references a secret: " +  "\"" + getUserManagedApiSecretName() + "\" that does not exist.");
         }
-
-        Map<String, ApiCredentials.UserEntry> apiCredentials = new HashMap<>();
-        apiCredentials.putAll(generateCoManagedApiCredentials(passwordGenerator, oldCruiseControlApiSecret));
-        apiCredentials.putAll(generateUserManagedApiCredentials(userManagedApiSecret, userManagedApiSecretKey));
-        apiCredentials.putAll(generateToManagedApiCredentials(topicOperatorManagedApiSecret));
-
-        Map<String, String> mapWithApiCredentials = generateMapWithApiCredentials(apiCredentials);
+        Map<String, String> mapWithApiCredentials = generateMapWithApiCredentials(passwordGenerator,
+                oldCruiseControlApiSecret, userManagedApiSecret, topicOperatorManagedApiSecret);
         return ModelUtils.createSecret(CruiseControlResources.apiSecretName(cluster), namespace, labels, ownerReference,
                 mapWithApiCredentials, Collections.emptyMap(), Collections.emptyMap());
     }
@@ -292,7 +297,7 @@ public class ApiCredentials {
      * For more information checkout the upstream Cruise Control Wiki here:
      * <a href="https://github.com/linkedin/cruise-control/wiki/Security#authorization">Cruise Control Security</a>
      */
-    public enum Role {
+    /* test */ enum Role {
         /**
          * VIEWER: has access to the most lightweight kafka_cluster_state, user_tasks, and review_board endpoints.
          */
@@ -319,5 +324,5 @@ public class ApiCredentials {
     /**
      * Represents a single API user entry including name, password, and role.
      */
-    public record UserEntry(String username, String password, Role role) { }
+    /* test */ record UserEntry(String username, String password, Role role) { }
 }

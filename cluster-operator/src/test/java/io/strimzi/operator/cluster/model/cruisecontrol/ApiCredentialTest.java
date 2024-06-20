@@ -105,7 +105,7 @@ public class ApiCredentialTest {
     private static Secret createSecret(Map<String, String> data) {
         return new SecretBuilder()
                 .withNewMetadata()
-                .withName(SECRET_NAME)
+                    .withName(SECRET_NAME)
                 .endMetadata()
                 .addToData(data)
                 .build();
