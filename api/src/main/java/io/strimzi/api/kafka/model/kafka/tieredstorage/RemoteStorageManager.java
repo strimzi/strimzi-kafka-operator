@@ -31,7 +31,7 @@ import java.util.Map;
 public class RemoteStorageManager implements UnknownPropertyPreserving {
     private String className;
     private String classPath;
-    private Map<String, String> config;
+    private Map<String, String> config = new HashMap<>(0);
     protected Map<String, Object> additionalProperties;
 
     @Description("The class name for the `RemoteStorageManager` implementation.")
@@ -56,9 +56,9 @@ public class RemoteStorageManager implements UnknownPropertyPreserving {
 
     @Description("The additional configuration map for the `RemoteStorageManager` implementation. " +
         "Keys will be automatically prefixed with `rsm.config.`, and added to Kafka broker configuration.")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<String, String> getConfig() {
-        return this.config != null ? this.config : Map.of();
+        return config;
     }
 
     public void setConfig(Map<String, String> config) {

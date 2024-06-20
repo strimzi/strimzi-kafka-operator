@@ -30,14 +30,14 @@ import java.util.Map;
 @EqualsAndHashCode
 @ToString
 public class MetadataTemplate implements UnknownPropertyPreserving {
-    private Map<String, String> labels;
-    private Map<String, String> annotations;
+    private Map<String, String> labels = new HashMap<>(0);
+    private Map<String, String> annotations = new HashMap<>(0);
     private Map<String, Object> additionalProperties;
 
     @Description("Labels added to the Kubernetes resource.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<String, String> getLabels() {
-        return labels != null ? labels : Map.of();
+        return labels;
     }
 
     public void setLabels(Map<String, String> labels) {
@@ -47,7 +47,7 @@ public class MetadataTemplate implements UnknownPropertyPreserving {
     @Description("Annotations added to the Kubernetes resource.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<String, String> getAnnotations() {
-        return annotations != null ? annotations : Map.of();
+        return annotations;
     }
 
     public void setAnnotations(Map<String, String> annotations) {
