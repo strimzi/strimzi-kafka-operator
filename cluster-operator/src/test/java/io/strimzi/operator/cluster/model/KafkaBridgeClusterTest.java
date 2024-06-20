@@ -951,6 +951,7 @@ public class KafkaBridgeClusterTest {
                 .editSpec()
                 .withAuthentication(
                         new KafkaClientAuthenticationServiceAccountOAuthBuilder()
+                                .withConnectTimeoutSeconds(30)
                                 .build())
                 .endSpec()
                 .build();
@@ -961,7 +962,7 @@ public class KafkaBridgeClusterTest {
 
         assertThat(cont.getEnv().stream().filter(var -> KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_SASL_MECHANISM.equals(var.getName())).findFirst().orElseThrow().getValue(), is("oauth"));
         assertThat(cont.getEnv().stream().filter(var -> KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_OAUTH_CONFIG.equals(var.getName())).findFirst().orElseThrow().getValue().trim(),
-                is(String.format("%s=\"%s\"", ClientConfig.OAUTH_ACCESS_TOKEN_LOCATION, "/var/run/secrets/kubernetes.io/serviceaccount/token")));
+                is(String.format("%s=\"%s\" %s=\"%s\"", ClientConfig.OAUTH_CONNECT_TIMEOUT_SECONDS, "30", ClientConfig.OAUTH_ACCESS_TOKEN_LOCATION, "/var/run/secrets/kubernetes.io/serviceaccount/token")));
     }
 
     @ParallelTest

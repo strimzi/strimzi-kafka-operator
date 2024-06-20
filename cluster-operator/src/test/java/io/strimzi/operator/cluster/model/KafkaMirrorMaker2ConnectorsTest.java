@@ -718,6 +718,32 @@ public class KafkaMirrorMaker2ConnectorsTest {
     }
 
     @Test
+    public void testAddClusterToMirrorMaker2ConnectorConfigWithServiceAccountOauth() {
+        Map<String, Object> config = new HashMap<>();
+        KafkaMirrorMaker2ClusterSpec cluster = new KafkaMirrorMaker2ClusterSpecBuilder()
+                .withAlias("sourceClusterAlias")
+                .withBootstrapServers("sourceClusterAlias.sourceNamespace.svc:9092")
+                .withNewKafkaClientAuthenticationServiceAccountOAuth()
+                .endKafkaClientAuthenticationServiceAccountOAuth()
+                .build();
+
+        KafkaMirrorMaker2Connectors.addClusterToMirrorMaker2ConnectorConfig(config, cluster, PREFIX);
+
+        String jaasConfig = (String) config.remove("prefix.sasl.jaas.config");
+        AppConfigurationEntry configEntry = AuthenticationUtilsTest.parseJaasConfig(jaasConfig);
+        assertThat(configEntry.getLoginModuleName(), is("org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule"));
+        assertThat(configEntry.getOptions(),
+                is(Map.of("oauth.access.token.location", "/var/run/secrets/kubernetes.io/serviceaccount/token")));
+
+        assertThat(config,
+                is(Map.of("prefix.alias", "sourceClusterAlias",
+                        "prefix.bootstrap.servers", "sourceClusterAlias.sourceNamespace.svc:9092",
+                        "prefix.sasl.login.callback.handler.class", "io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler",
+                        "prefix.sasl.mechanism", "OAUTHBEARER",
+                        "prefix.security.protocol", "SASL_PLAINTEXT")));
+    }
+
+    @Test
     public void testAddClusterToMirrorMaker2ConnectorConfigWithScramAndTlsEncryption() {
         Map<String, Object> config = new HashMap<>();
         KafkaMirrorMaker2ClusterSpec cluster = new KafkaMirrorMaker2ClusterSpecBuilder()

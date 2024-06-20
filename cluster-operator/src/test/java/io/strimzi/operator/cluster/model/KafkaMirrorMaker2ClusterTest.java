@@ -1633,6 +1633,7 @@ public class KafkaMirrorMaker2ClusterTest {
             assertThat(cont.getEnv().stream().filter(var -> KafkaMirrorMaker2Cluster.ENV_VAR_KAFKA_CONNECT_OAUTH_ACCESS_TOKEN.equals(var.getName())).findFirst().orElseThrow().getValueFrom().getSecretKeyRef().getName(), is("my-token-secret"));
             assertThat(cont.getEnv().stream().filter(var -> KafkaMirrorMaker2Cluster.ENV_VAR_KAFKA_CONNECT_OAUTH_ACCESS_TOKEN.equals(var.getName())).findFirst().orElseThrow().getValueFrom().getSecretKeyRef().getKey(), is("my-token-key"));
             assertThat(cont.getEnv().stream().filter(var -> KafkaMirrorMaker2Cluster.ENV_VAR_KAFKA_CONNECT_OAUTH_CONFIG.equals(var.getName())).findFirst().orElseThrow().getValue().isEmpty(), is(true));
+            assertThat(cont.getVolumeMounts().stream().filter(var -> "target-my-token-secret".equals(var.getName())).count(), is(1L));
         });
     }
 
@@ -1643,9 +1644,26 @@ public class KafkaMirrorMaker2ClusterTest {
                         new KafkaClientAuthenticationServiceAccountOAuthBuilder()
                                 .build())
                 .build();
+
+        KafkaMirrorMaker2ClusterSpec sourceClusterWithServiceAccountOAuth = new KafkaMirrorMaker2ClusterSpecBuilder()
+                .withAlias("source-cluster-1")
+                .withBootstrapServers("source-bootstrap-kafka:9092")
+                .withAuthentication(
+                        new KafkaClientAuthenticationServiceAccountOAuthBuilder()
+                                .build())
+                .build();
+
+        KafkaMirrorMaker2ClusterSpec sourceCluster2WithServiceAccountOAuth = new KafkaMirrorMaker2ClusterSpecBuilder()
+                .withAlias("source-cluster-2")
+                .withBootstrapServers("source2-bootstrap-kafka:9092")
+                .withAuthentication(
+                        new KafkaClientAuthenticationServiceAccountOAuthBuilder()
+                                .build())
+                .build();
+
         KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(this.resource)
                 .editSpec()
-                .withClusters(targetClusterWithServiceAccountOAuth)
+                .withClusters(targetClusterWithServiceAccountOAuth, sourceClusterWithServiceAccountOAuth, sourceCluster2WithServiceAccountOAuth)
                 .endSpec()
                 .build();
 
@@ -1658,6 +1676,8 @@ public class KafkaMirrorMaker2ClusterTest {
             assertThat(cont.getEnv().stream().filter(var -> KafkaMirrorMaker2Cluster.ENV_VAR_KAFKA_CONNECT_SASL_MECHANISM.equals(var.getName())).findFirst().orElseThrow().getValue(), is("oauth"));
             assertThat(cont.getEnv().stream().filter(var -> KafkaMirrorMaker2Cluster.ENV_VAR_KAFKA_CONNECT_OAUTH_CONFIG.equals(var.getName())).findFirst().orElseThrow().getValue().trim(),
                     is(String.format("%s=\"%s\"", ClientConfig.OAUTH_ACCESS_TOKEN_LOCATION, "/var/run/secrets/kubernetes.io/serviceaccount/token")));
+
+            assertThat(cont.getVolumeMounts().stream().filter(var -> var.getName().endsWith("token-secret")).count(), is(0L));
         });
     }
 
@@ -1698,6 +1718,8 @@ public class KafkaMirrorMaker2ClusterTest {
             assertThat(cont.getEnv().stream().filter(var -> KafkaMirrorMaker2Cluster.ENV_VAR_KAFKA_CONNECT_OAUTH_CONFIG.equals(var.getName())).findFirst().orElseThrow().getValue().trim(),
                     is(String.format("%s=\"%s\" %s=\"%s\" %s=\"%s\" %s=\"%s\" %s=\"%s\" %s=\"%s\" %s=\"%s\" %s=\"%s\"", ClientConfig.OAUTH_CLIENT_ID, "my-client-id", ClientConfig.OAUTH_TOKEN_ENDPOINT_URI, "http://my-oauth-server",
                             ClientConfig.OAUTH_CONNECT_TIMEOUT_SECONDS, "15", ClientConfig.OAUTH_READ_TIMEOUT_SECONDS, "15", ClientConfig.OAUTH_HTTP_RETRIES, "2", ClientConfig.OAUTH_HTTP_RETRY_PAUSE_MILLIS, "500", ClientConfig.OAUTH_ENABLE_METRICS, "true", ClientConfig.OAUTH_INCLUDE_ACCEPT_HEADER, "false")));
+
+            assertThat(cont.getVolumeMounts().stream().filter(var -> "target-my-token-secret".equals(var.getName())).count(), is(1L));
         });
     }
 
@@ -1731,6 +1753,8 @@ public class KafkaMirrorMaker2ClusterTest {
             assertThat(cont.getEnv().stream().filter(var -> KafkaMirrorMaker2Cluster.ENV_VAR_KAFKA_CONNECT_OAUTH_CLIENT_SECRET.equals(var.getName())).findFirst().orElseThrow().getValueFrom().getSecretKeyRef().getKey(), is("my-secret-key"));
             assertThat(cont.getEnv().stream().filter(var -> KafkaMirrorMaker2Cluster.ENV_VAR_KAFKA_CONNECT_OAUTH_CONFIG.equals(var.getName())).findFirst().orElseThrow().getValue().trim(),
                     is(String.format("%s=\"%s\" %s=\"%s\"", ClientConfig.OAUTH_CLIENT_ID, "my-client-id", ClientConfig.OAUTH_TOKEN_ENDPOINT_URI, "http://my-oauth-server")));
+
+            assertThat(cont.getVolumeMounts().stream().filter(var -> "target-my-secret-secret".equals(var.getName())).count(), is(1L));
         });
     }
 
@@ -1771,6 +1795,9 @@ public class KafkaMirrorMaker2ClusterTest {
             assertThat(cont.getEnv().stream().filter(var -> KafkaMirrorMaker2Cluster.ENV_VAR_KAFKA_CONNECT_OAUTH_CLIENT_SECRET.equals(var.getName())).findFirst().orElseThrow().getValueFrom().getSecretKeyRef().getKey(), is("my-secret-key"));
             assertThat(cont.getEnv().stream().filter(var -> KafkaMirrorMaker2Cluster.ENV_VAR_KAFKA_CONNECT_OAUTH_CONFIG.equals(var.getName())).findFirst().orElseThrow().getValue().trim(),
                     is(String.format("%s=\"%s\" %s=\"%s\" %s=\"%s\"", ClientConfig.OAUTH_CLIENT_ID, "my-client-id", ClientConfig.OAUTH_PASSWORD_GRANT_USERNAME, "user1", ClientConfig.OAUTH_TOKEN_ENDPOINT_URI, "http://my-oauth-server")));
+
+            assertThat(cont.getVolumeMounts().stream().filter(var -> "target-my-password-secret".equals(var.getName())).count(), is(1L));
+            assertThat(cont.getVolumeMounts().stream().filter(var -> "target-my-secret-secret".equals(var.getName())).count(), is(1L));
         });
     }
 

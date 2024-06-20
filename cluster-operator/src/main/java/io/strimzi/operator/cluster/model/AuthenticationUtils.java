@@ -85,14 +85,19 @@ public class AuthenticationUtils {
     }
 
     private static void validateClientAuthenticationOAuth(KafkaClientAuthenticationOAuth auth) {
+        if (auth instanceof KafkaClientAuthenticationServiceAccountOAuth) {
+            autofillClientAuthenticationServiceAccountOAuth((KafkaClientAuthenticationServiceAccountOAuth) auth);
+        }
+
         boolean accessTokenCase = auth.getAccessToken() != null;
+        boolean accessTokenLocationCase = auth.getAccessTokenLocation() != null;
         boolean refreshTokenCase = auth.getTokenEndpointUri() != null && auth.getClientId() != null && auth.getRefreshToken() != null;
         boolean clientSecretCase = auth.getTokenEndpointUri() != null && auth.getClientId() != null && auth.getClientSecret() != null;
         boolean passwordGrantCase = auth.getTokenEndpointUri() != null && auth.getClientId() != null && auth.getUsername() != null && auth.getPasswordSecret() != null;
 
         // If not one of valid cases throw exception
-        if (!(accessTokenCase || refreshTokenCase || clientSecretCase || passwordGrantCase) && !(auth instanceof KafkaClientAuthenticationServiceAccountOAuth)) {
-            throw new InvalidResourceException("OAUTH authentication selected, but some options are missing. You have to specify one of the following combinations: [accessToken], [tokenEndpointUri, clientId, refreshToken], [tokenEndpointUri, clientId, clientSecret], [tokenEndpointUri, username, password, clientId].");
+        if (!(accessTokenCase || accessTokenLocationCase || refreshTokenCase || clientSecretCase || passwordGrantCase)) {
+            throw new InvalidResourceException("'" + auth.getType() + "' authentication selected, but some options are missing. You have to specify one of the following combinations: [accessToken], [accessTokenLocation], [tokenEndpointUri, clientId, refreshToken], [tokenEndpointUri, clientId, clientSecret], [tokenEndpointUri, username, password, clientId].");
         }
 
         // Additional validation
@@ -103,7 +108,13 @@ public class AuthenticationUtils {
         checkValueGreaterOrEqualZero(errors, "httpRetryPauseMs", auth.getHttpRetryPauseMs());
 
         if (errors.size() > 0) {
-            throw new InvalidResourceException("OAUTH authentication selected, but some options are invalid. " + errors);
+            throw new InvalidResourceException("'" + auth.getType() + "' authentication selected, but some options are invalid. " + errors);
+        }
+    }
+
+    private static void autofillClientAuthenticationServiceAccountOAuth(KafkaClientAuthenticationServiceAccountOAuth auth) {
+        if (auth.getAccessTokenLocation() == null) {
+            auth.setAccessTokenLocation("/var/run/secrets/kubernetes.io/serviceaccount/token");
         }
     }
 
@@ -313,10 +324,8 @@ public class AuthenticationUtils {
         if (!oauth.isIncludeAcceptHeader()) {
             options.put(ServerConfig.OAUTH_INCLUDE_ACCEPT_HEADER, "false");
         }
-        if (oauth instanceof KafkaClientAuthenticationServiceAccountOAuth) {
-            String tokenPath = oauth.getAccessTokenLocation();
-            addOption(options, ClientConfig.OAUTH_ACCESS_TOKEN_LOCATION, tokenPath != null ? tokenPath : "/var/run/secrets/kubernetes.io/serviceaccount/token");
-        }
+
+        addOption(options, ClientConfig.OAUTH_ACCESS_TOKEN_LOCATION, oauth.getAccessTokenLocation());
         return options;
     }
 

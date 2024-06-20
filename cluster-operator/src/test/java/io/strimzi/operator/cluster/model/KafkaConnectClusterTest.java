@@ -1548,6 +1548,7 @@ public class KafkaConnectClusterTest {
                 .editSpec()
                 .withAuthentication(
                         new KafkaClientAuthenticationServiceAccountOAuthBuilder()
+                                .withReadTimeoutSeconds(30)
                                 .build())
                 .endSpec()
                 .build();
@@ -1560,7 +1561,7 @@ public class KafkaConnectClusterTest {
             Container cont = pod.getSpec().getContainers().get(0);
             assertThat(cont.getEnv().stream().filter(var -> KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_SASL_MECHANISM.equals(var.getName())).findFirst().orElseThrow().getValue(), is("oauth"));
             assertThat(cont.getEnv().stream().filter(var -> KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_OAUTH_CONFIG.equals(var.getName())).findFirst().orElseThrow().getValue().trim(),
-                    is(String.format("%s=\"%s\"", ClientConfig.OAUTH_ACCESS_TOKEN_LOCATION, "/var/run/secrets/kubernetes.io/serviceaccount/token")));
+                    is(String.format("%s=\"%s\" %s=\"%s\"", ClientConfig.OAUTH_READ_TIMEOUT_SECONDS, "30", ClientConfig.OAUTH_ACCESS_TOKEN_LOCATION, "/var/run/secrets/kubernetes.io/serviceaccount/token")));
         });
     }
 

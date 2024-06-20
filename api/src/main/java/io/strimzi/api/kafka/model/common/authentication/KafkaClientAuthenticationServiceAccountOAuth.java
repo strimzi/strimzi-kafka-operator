@@ -11,6 +11,7 @@ import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 /**
  * Configures the Kafka client authentication using SASL OAUTHBEARER mechanism configured to authenticate with the Kubernetes provided token
@@ -27,6 +28,7 @@ import lombok.EqualsAndHashCode;
     "refreshToken", "tlsTrustedCertificates", "disableTlsHostnameVerification", "maxTokenExpirySeconds",
     "accessTokenIsJwt", "enableMetrics", "includeAcceptHeader", "accessTokenLocation"})
 @EqualsAndHashCode(callSuper = true)
+@ToString(callSuper = true)
 public class KafkaClientAuthenticationServiceAccountOAuth extends KafkaClientAuthenticationOAuth {
     private static final long serialVersionUID = 1L;
 
