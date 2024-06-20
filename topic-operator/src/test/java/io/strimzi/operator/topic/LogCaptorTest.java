@@ -15,7 +15,6 @@ import java.util.concurrent.TimeoutException;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class LogCaptorTest {
-
     private static final Logger LOGGER = LogManager.getLogger(LogCaptorTest.class);
 
     @Test
@@ -47,6 +46,5 @@ class LogCaptorTest {
                 LOGGER.info("Hello, world 3");
             }
         });
-
     }
 }

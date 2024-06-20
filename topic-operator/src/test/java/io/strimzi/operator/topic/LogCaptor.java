@@ -39,7 +39,6 @@ import java.util.regex.Pattern;
  * </pre>
  */
 public class LogCaptor implements AutoCloseable {
-
     private static final Logger LOGGER = LogManager.getLogger(LogCaptor.class);
 
     private final CaptorAppender appender;
@@ -67,13 +66,14 @@ public class LogCaptor implements AutoCloseable {
     }
 
     /**
-     * Create a captor
+     * Create a log captor.
+     * 
      * @param logger The logger though which the log message should (or should not) be omitted.
-     * @param level The level of the required message
-     * @param predicate A predicate (e.g. on the message text)
-     * @param timeout A timeout
-     * @param unit A timeout unit
-     * @return
+     * @param level The level of the required message.
+     * @param predicate A predicate (e.g. on the message text).
+     * @param timeout A timeout.
+     * @param unit A timeout unit.
+     * @return Log captor.
      */
     public static LogCaptor logEventMatches(Logger logger,
                                             Level level,
@@ -111,13 +111,14 @@ public class LogCaptor implements AutoCloseable {
     }
 
     /**
-     * Create a captor
+     * Create a log captor.
+     * 
      * @param logger The logger though which the log message should (or should not) be omitted.
-     * @param level The level of the required message
-     * @param predicate A predicate (e.g. on the message text)
-     * @param timeout A timeout
-     * @param unit A timeout unit
-     * @return
+     * @param level The level of the required message.
+     * @param predicate A predicate (e.g. on the message text).
+     * @param timeout A timeout.
+     * @param unit A timeout unit.
+     * @return Log captor.
      */
     public static LogCaptor logEventMatches(ReconciliationLogger logger,
                               Level level,
@@ -138,13 +139,14 @@ public class LogCaptor implements AutoCloseable {
     }
 
     /**
-     * Create a captor
+     * Create a log captor.
+     * 
      * @param logger The logger though which the log message should (or should not) be omitted.
-     * @param level The level of the required message
-     * @param messageRegex A regex that the log message much match
-     * @param timeout A timeout
-     * @param unit A timeout unit
-     * @return
+     * @param level The level of the required message.
+     * @param messageRegex A regex that the log message much match.
+     * @param timeout A timeout.
+     * @param unit A timeout unit.
+     * @return Log captor.
      */
     public static LogCaptor logMessageMatches(ReconciliationLogger logger,
                                               Level level,
@@ -169,23 +171,6 @@ public class LogCaptor implements AutoCloseable {
                 return "with a message containing a substring matching '" + messageRegex + "'";
             }
         };
-    }
-
-    /**
-     * Create a captor
-     * @param logger The logger though which the log message should (or should not) be omitted.
-     * @param level The level of the required message
-     * @param format The required message template text
-     * @param timeout A timeout
-     * @param unit A timeout unit
-     * @return
-     */
-    public static LogCaptor logFormatEquals(Logger logger,
-                                            Level level,
-                                            String format,
-                                            long timeout,
-                                            TimeUnit unit) {
-        return logEventMatches(logger, level, le -> format.equals(le.getMessage().getFormat()), timeout, unit);
     }
 
     /**

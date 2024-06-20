@@ -17,6 +17,7 @@ import io.strimzi.api.kafka.model.topic.KafkaTopicBuilder;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.metrics.MetricsHolder;
 import io.strimzi.operator.topic.cruisecontrol.CruiseControlClient;
+import io.strimzi.operator.topic.cruisecontrol.CruiseControlHandler;
 import io.strimzi.operator.topic.metrics.TopicOperatorMetricsHolder;
 import io.strimzi.operator.topic.metrics.TopicOperatorMetricsProvider;
 import io.strimzi.operator.topic.model.ReconcilableTopic;
@@ -55,7 +56,6 @@ public class TopicOperatorMetricsTest {
     private static final String NAMESPACE = "topic-operator-test";
     private static final int MAX_QUEUE_SIZE = 200;
     private static final int MAX_BATCH_SIZE = 10;
-    private static final int MAX_THREADS = 2;
     private static final long MAX_BATCH_LINGER_MS = 10_000;
 
     private static KubernetesClient kubeClient;
@@ -65,7 +65,7 @@ public class TopicOperatorMetricsTest {
     public static void beforeAll(TestInfo testInfo) {
         TopicOperatorTestUtil.setupKubeCluster(testInfo, NAMESPACE);
         kubeClient = new KubernetesClientBuilder().build();
-        metricsHolder = new TopicOperatorMetricsHolder(RESOURCE_KIND, null, 
+        metricsHolder = new TopicOperatorMetricsHolder(RESOURCE_KIND, null,
             new TopicOperatorMetricsProvider(new SimpleMeterRegistry()));
     }
 
@@ -82,8 +82,8 @@ public class TopicOperatorMetricsTest {
             TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:9092",
             TopicOperatorConfig.NAMESPACE.key(), NAMESPACE));
         BatchingLoop mockQueue = mock(BatchingLoop.class);
-        TopicOperatorEventHandler eventHandler = new TopicOperatorEventHandler(config, mockQueue, metricsHolder);
-        
+        TopicEventHandler eventHandler = new TopicEventHandler(config, mockQueue, metricsHolder);
+
         int numOfTestResources = 100;
         for (int i = 0; i < numOfTestResources; i++) {
             KafkaTopic kt = buildTopicWithVersion("t" + i);
@@ -140,26 +140,24 @@ public class TopicOperatorMetricsTest {
     }
     
     private BatchingLoop createAndStartBatchingLoop() {
-        BatchingTopicController controller = mock(BatchingTopicController.class);
-        ItemStore<KafkaTopic> itemStore = mock(ItemStore.class);
-        Runnable stop = mock(Runnable.class);
-        BatchingLoop batchingLoop = new BatchingLoop(
-            MAX_QUEUE_SIZE,
-            controller,
-            MAX_THREADS,
-            MAX_BATCH_SIZE,
-            MAX_BATCH_LINGER_MS,
-            itemStore,
-            stop,
-            metricsHolder,
-            NAMESPACE);
+        var controller = mock(BatchingTopicController.class);
+        var itemStore = mock(ItemStore.class);
+        var stopRunnable = mock(Runnable.class);
+        var config = TopicOperatorConfig.buildFromMap(Map.of(
+            TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:9092",
+            TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
+            TopicOperatorConfig.MAX_QUEUE_SIZE.key(), String.valueOf(MAX_QUEUE_SIZE),
+            TopicOperatorConfig.MAX_BATCH_SIZE.key(), String.valueOf(MAX_BATCH_SIZE),
+            TopicOperatorConfig.MAX_BATCH_LINGER_MS.key(), String.valueOf(MAX_BATCH_LINGER_MS)
+        ));
+        var batchingLoop = new BatchingLoop(config, controller, 1, itemStore, stopRunnable, metricsHolder);
         batchingLoop.start();
         return batchingLoop;
     }
-    
+
     @Test
     public void batchingTopicControllerMetrics(KafkaCluster cluster) throws InterruptedException {
-        var admin = Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, cluster.getBootstrapServers()));
+        var kafkaAdmin = Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, cluster.getBootstrapServers()));
         var config = Mockito.mock(TopicOperatorConfig.class);
         Mockito.doReturn(NAMESPACE).when(config).namespace();
         Mockito.doReturn(true).when(config).useFinalizer();
@@ -171,9 +169,9 @@ public class TopicOperatorMetricsTest {
         Mockito.doReturn(userTaskId).when(cruiseControlClient).topicConfiguration(anyList());
         var userTaskResponse = new CruiseControlClient.UserTasksResponse(List.of(new CruiseControlClient.UserTask("Active", null, null, userTaskId, System.currentTimeMillis())), 1);
         Mockito.doReturn(userTaskResponse).when(cruiseControlClient).userTasks(Set.of(userTaskId));
-        
-        var replicasChangeHandler = new ReplicasChangeHandler(config, metricsHolder, cruiseControlClient);
-        var controller = new BatchingTopicController(config, Map.of("key", "VALUE"), admin, kubeClient, metricsHolder, replicasChangeHandler);
+
+        var replicasChangeHandler = new CruiseControlHandler(config, metricsHolder, cruiseControlClient);
+        var controller = new BatchingTopicController(config, Map.of("key", "VALUE"), kubeClient, kafkaAdmin, metricsHolder, replicasChangeHandler);
 
         // create topics, 3 reconciliations, success
         var t1 = createTopic("t1", 2, 1);
@@ -251,7 +249,7 @@ public class TopicOperatorMetricsTest {
 
         // unmanage topic, 1 reconciliation, success
         var t1Unmanaged = updateTopic("t1", kt -> {
-            kt.getMetadata().setAnnotations(Map.of(TopicOperatorUtil.MANAGED, "false"));
+            kt.getMetadata().setAnnotations(Map.of(KubernetesHandler.ANNO_STRIMZI_IO_MANAGED, "false"));
             return kt;
         });
         controller.onUpdate(List.of(reconcilableTopic(t1Unmanaged)));
@@ -276,7 +274,7 @@ public class TopicOperatorMetricsTest {
 
         // delete unmanaged topic, 1 reconciliation, success
         var t3Unmanaged = updateTopic("t3", kt -> {
-            kt.getMetadata().setAnnotations(Map.of(TopicOperatorUtil.MANAGED, "false"));
+            kt.getMetadata().setAnnotations(Map.of(KubernetesHandler.ANNO_STRIMZI_IO_MANAGED, "false"));
             return kt;
         });
         controller.onDelete(List.of(reconcilableTopic(t3Unmanaged)));

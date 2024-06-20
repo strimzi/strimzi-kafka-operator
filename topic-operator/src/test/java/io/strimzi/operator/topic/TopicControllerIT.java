@@ -10,6 +10,7 @@ import io.kroxylicious.testing.kafka.api.KafkaCluster;
 import io.kroxylicious.testing.kafka.common.BrokerCluster;
 import io.kroxylicious.testing.kafka.common.BrokerConfig;
 import io.kroxylicious.testing.kafka.junit5ext.KafkaClusterExtension;
+import io.strimzi.api.ResourceAnnotations;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
@@ -85,7 +86,6 @@ import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
-import static io.strimzi.api.ResourceAnnotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION;
 import static java.lang.String.format;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -103,7 +103,7 @@ import static org.mockito.Mockito.mock;
 class TopicControllerIT {
     private static final Logger LOGGER = LogManager.getLogger(TopicControllerIT.class);
     private static final String NAMESPACE = "topic-operator-test";
-    public static final Map<String, String> SELECTOR = Map.of("foo", "FOO", "bar", "BAR");
+    private static final Map<String, String> SELECTOR = Map.of("foo", "FOO", "bar", "BAR");
 
     KubernetesClient client;
     Admin[] admin;
@@ -125,7 +125,7 @@ class TopicControllerIT {
 
     @BeforeEach
     public void before(TestInfo testInfo) {
-        client = TopicOperatorMain.kubeClient();
+        client = TopicOperatorUtil.createKubeClient();
         LOGGER.debug("Starting test {}", testName(testInfo));
     }
 
@@ -134,7 +134,7 @@ class TopicControllerIT {
     }
 
     @AfterEach
-    public void after(TestInfo testInfo) throws InterruptedException, TimeoutException {
+    public void after(TestInfo testInfo) {
         LOGGER.debug("Cleaning up after test {}", testName(testInfo));
         if (operator != null) {
             assertTrue(operator.queue.isAlive());
@@ -317,13 +317,12 @@ class TopicControllerIT {
                 }
             }
         } while (topicConfig == null);
-        var topicConfigMap = topicConfig.entries().stream()
+        return topicConfig.entries().stream()
                 .filter(ce -> ce.source() == ConfigEntry.ConfigSource.DYNAMIC_TOPIC_CONFIG)
                 .collect(Collectors.toMap(
                         ConfigEntry::name,
                         ConfigEntry::value
         ));
-        return topicConfigMap;
     }
 
     private static KafkaTopic kafkaTopic(String ns,
@@ -352,26 +351,25 @@ class TopicControllerIT {
                 .withLabels(labels)
                 .withAnnotations(annotations);
         if (managed != null) {
-            metadataBuilder = metadataBuilder.addToAnnotations(TopicOperatorUtil.MANAGED, managed.toString());
+            metadataBuilder = metadataBuilder.addToAnnotations(KubernetesHandler.ANNO_STRIMZI_IO_MANAGED, managed.toString());
         }
-        var kt = metadataBuilder.endMetadata()
+        return metadataBuilder.endMetadata()
                 .withNewSpec()
-                .withTopicName(topicName)
-                .withPartitions(partitions)
-                .withReplicas(replicas)
-                .withConfig(configs)
+                    .withTopicName(topicName)
+                    .withPartitions(partitions)
+                    .withReplicas(replicas)
+                    .withConfig(configs)
                 .endSpec()
                 .build();
-        return kt;
     }
 
-    private static KafkaTopic kafkaTopicWithNoSpec(String ns, String metadataName, boolean spec) {
+    private static KafkaTopic kafkaTopicWithNoSpec(String metadataName, boolean spec) {
         var builder = new KafkaTopicBuilder()
             .withNewMetadata()
             .withName(metadataName)
-            .withNamespace(ns)
+            .withNamespace(NAMESPACE)
             .withLabels(SELECTOR)
-            .addToAnnotations(TopicOperatorUtil.MANAGED, "true")
+            .addToAnnotations(KubernetesHandler.ANNO_STRIMZI_IO_MANAGED, "true")
             .endMetadata();
         if (spec) {
             builder = builder.editOrNewSpec().endSpec();
@@ -457,7 +455,7 @@ class TopicControllerIT {
 
         // Check updates to the KafkaTopic
         assertNotNull(reconciled.getMetadata().getFinalizers());
-        assertEquals(operatorConfig.useFinalizer(), reconciled.getMetadata().getFinalizers().contains(BatchingTopicController.FINALIZER));
+        assertEquals(operatorConfig.useFinalizer(), reconciled.getMetadata().getFinalizers().contains(KubernetesHandler.FINALIZER_STRIMZI_IO_TO));
         assertEquals(expectedTopicName, reconciled.getStatus().getTopicName());
         assertNotNull(reconciled.getStatus().getTopicId());
 
@@ -479,7 +477,7 @@ class TopicControllerIT {
         // Create resource and await readiness
         var created = Crds.topicOperation(client).resource(kt).create();
         LOGGER.info("Test created KafkaTopic {} with resourceVersion {}",
-                created.getMetadata().getName(), BatchingTopicController.resourceVersion(created));
+                created.getMetadata().getName(), TopicOperatorUtil.resourceVersion(created));
         return waitUntil(created, condition);
     }
 
@@ -523,11 +521,11 @@ class TopicControllerIT {
         var current = Crds.topicOperation(client).inNamespace(namespace).withName(topicName).get();
         var paused = Crds.topicOperation(client).resource(new KafkaTopicBuilder(current)
             .editMetadata()
-                .withAnnotations(Map.of(ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true"))
+                .withAnnotations(Map.of(ResourceAnnotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true"))
             .endMetadata()
             .build()).update();
         LOGGER.info("Test paused KafkaTopic {} with resourceVersion {}",
-            paused.getMetadata().getName(), BatchingTopicController.resourceVersion(paused));
+            paused.getMetadata().getName(), TopicOperatorUtil.resourceVersion(paused));
         return waitUntil(paused, pausedIsTrue());
     }
 
@@ -655,7 +653,7 @@ class TopicControllerIT {
         // then
         assertNull(reconciled.getStatus().getTopicName());
         assertNotExistsInKafka(expectedTopicName(kt));
-        assertEquals(operatorConfig.useFinalizer(), reconciled.getMetadata().getFinalizers().contains(BatchingTopicController.FINALIZER));
+        assertEquals(operatorConfig.useFinalizer(), reconciled.getMetadata().getFinalizers().contains(KubernetesHandler.FINALIZER_STRIMZI_IO_TO));
     }
 
     @ParameterizedTest
@@ -681,7 +679,7 @@ class TopicControllerIT {
                 TimeUnit.SECONDS)) {
             var created = Crds.topicOperation(client).resource(kt).create();
             LOGGER.info("Test created KafkaTopic {} with resourceVersion {}",
-                    created.getMetadata().getName(), BatchingTopicController.resourceVersion(created));
+                    created.getMetadata().getName(), TopicOperatorUtil.resourceVersion(created));
         }
         KafkaTopic kafkaTopic = Crds.topicOperation(client).inNamespace(ns).withName(kt.getMetadata().getName()).get();
         assertNull(kafkaTopic.getStatus());
@@ -721,7 +719,7 @@ class TopicControllerIT {
             LOGGER.debug("##Checking");
         }
         assertNotNull(unmanaged.getMetadata().getFinalizers());
-        assertTrue(unmanaged.getMetadata().getFinalizers().contains(BatchingTopicController.FINALIZER));
+        assertTrue(unmanaged.getMetadata().getFinalizers().contains(KubernetesHandler.FINALIZER_STRIMZI_IO_TO));
         assertNotNull(unmanaged.getStatus().getTopicName(), "Expect status.topicName to be unchanged from post-creation state");
 
         TopicDescription topicDescription = awaitTopicDescription(expectedTopicName);
@@ -757,7 +755,7 @@ class TopicControllerIT {
                 TimeUnit.SECONDS)) {
             created = Crds.topicOperation(client).resource(kt).create();
             LOGGER.info("Test created KafkaTopic {} with resourceVersion {}",
-                    created.getMetadata().getName(), BatchingTopicController.resourceVersion(created));
+                    created.getMetadata().getName(), TopicOperatorUtil.resourceVersion(created));
         }
         assertUnknownTopic(expectedTopicName);
         assertNull(created.getStatus(), "Expect status not to be set");
@@ -781,7 +779,7 @@ class TopicControllerIT {
                 "Expect selected resource to be present in topics map");
 
         assertNotNull(managed.getMetadata().getFinalizers());
-        assertTrue(managed.getMetadata().getFinalizers().contains(BatchingTopicController.FINALIZER));
+        assertTrue(managed.getMetadata().getFinalizers().contains(KubernetesHandler.FINALIZER_STRIMZI_IO_TO));
         assertNotNull(managed.getStatus().getTopicName(), "Expect status.topicName to be unchanged from post-creation state");
         TopicDescription topicDescription = awaitTopicDescription(expectedTopicName);
         assertEquals(3, numPartitions(topicDescription));
@@ -803,8 +801,6 @@ class TopicControllerIT {
                                                                  UnaryOperator<KafkaTopic> changer,
                                                                  UnaryOperator<Map<String, String>> expectedChangedConfigs) throws ExecutionException, InterruptedException, TimeoutException {
         // given
-        var ns = kt.getMetadata().getNamespace();
-        var metadataName = kt.getMetadata().getName();
         var expectedTopicName = expectedTopicName(kt);
         var expectedCreateConfigs = Map.of(
                 TopicConfig.CLEANUP_POLICY_CONFIG, "compact", // list typed
@@ -1095,18 +1091,21 @@ class TopicControllerIT {
         createTopicAndAssertSuccess(kafkaCluster, kt);
 
         // when
-        var unmanaged = modifyTopicAndAwait(kt, theKt -> {
-            return new KafkaTopicBuilder(theKt)
-                    .editOrNewMetadata().addToAnnotations(TopicOperatorUtil.MANAGED, "false").endMetadata()
-                    .editOrNewSpec().withPartitions(3).endSpec()
-                    .build();
-        },
-                new Predicate<KafkaTopic>() {
+        var unmanaged = modifyTopicAndAwait(kt, theKt -> 
+                new KafkaTopicBuilder(theKt)
+                    .editOrNewMetadata()
+                        .addToAnnotations(KubernetesHandler.ANNO_STRIMZI_IO_MANAGED, "false")
+                    .endMetadata()
+                    .editOrNewSpec()
+                        .withPartitions(3)
+                    .endSpec()
+                .build(),
+                new Predicate<>() {
                     @Override
                     public boolean test(KafkaTopic theKt) {
                         return theKt.getStatus().getTopicName() == null;
                     }
-
+    
                     @Override
                     public String toString() {
                         return "status.topicName == null";
@@ -1115,7 +1114,7 @@ class TopicControllerIT {
 
         // then
         assertNotNull(unmanaged.getMetadata().getFinalizers());
-        assertTrue(unmanaged.getMetadata().getFinalizers().contains(BatchingTopicController.FINALIZER));
+        assertTrue(unmanaged.getMetadata().getFinalizers().contains(KubernetesHandler.FINALIZER_STRIMZI_IO_TO));
         assertNull(unmanaged.getStatus().getTopicName());
 
         TopicDescription topicDescription = awaitTopicDescription(expectedTopicName);
@@ -1139,7 +1138,7 @@ class TopicControllerIT {
         // when: The finalizer is removed
         LOGGER.debug("Removing finalizer");
         var postUpdate = TopicOperatorTestUtil.modifyTopic(client, created, theKt1 -> {
-            theKt1.getMetadata().getFinalizers().remove(BatchingTopicController.FINALIZER);
+            theKt1.getMetadata().getFinalizers().remove(KubernetesHandler.FINALIZER_STRIMZI_IO_TO);
             return theKt1;
         });
         var postUpdateGeneration = postUpdate.getMetadata().getGeneration();
@@ -1148,7 +1147,7 @@ class TopicControllerIT {
         // then: We expect the operator to revert the finalizer
         waitUntil(postUpdate, theKt ->
                 theKt.getStatus().getObservedGeneration() >= postUpdateGeneration
-                    && theKt.getMetadata().getFinalizers().contains(BatchingTopicController.FINALIZER));
+                    && theKt.getMetadata().getFinalizers().contains(KubernetesHandler.FINALIZER_STRIMZI_IO_TO));
     }
 
     @ParameterizedTest
@@ -1163,7 +1162,7 @@ class TopicControllerIT {
         // when
         Crds.topicOperation(client).resource(kt).delete();
         LOGGER.info("Test deleted KafkaTopic {} with resourceVersion {}",
-                kt.getMetadata().getName(), BatchingTopicController.resourceVersion(kt));
+                kt.getMetadata().getName(), TopicOperatorUtil.resourceVersion(kt));
         Resource<KafkaTopic> resource = Crds.topicOperation(client).resource(kt);
         TopicOperatorTestUtil.waitUntilCondition(resource, Objects::isNull);
 
@@ -1186,7 +1185,7 @@ class TopicControllerIT {
         // when
         Crds.topicOperation(client).resource(kt).delete();
         LOGGER.info("Test delete KafkaTopic {} with resourceVersion {}",
-                kt.getMetadata().getName(), BatchingTopicController.resourceVersion(kt));
+                kt.getMetadata().getName(), TopicOperatorUtil.resourceVersion(kt));
         Resource<KafkaTopic> resource = Crds.topicOperation(client).resource(kt);
         var unready = TopicOperatorTestUtil.waitUntilCondition(resource, readyIsFalse());
 
@@ -1211,7 +1210,7 @@ class TopicControllerIT {
         // when
         Crds.topicOperation(client).resource(kt).delete();
         LOGGER.info("Test deleted KafkaTopic {} with resourceVersion {}",
-                kt.getMetadata().getName(), BatchingTopicController.resourceVersion(kt));
+                kt.getMetadata().getName(), TopicOperatorUtil.resourceVersion(kt));
         Resource<KafkaTopic> resource = Crds.topicOperation(client).resource(kt);
         TopicOperatorTestUtil.waitUntilCondition(resource, Objects::isNull);
 
@@ -1269,7 +1268,7 @@ class TopicControllerIT {
 
                 Crds.topicOperation(client).resource(kt).delete();
                 LOGGER.info("Test deleted KafkaTopic {} with resourceVersion {}",
-                        kt.getMetadata().getName(), BatchingTopicController.resourceVersion(kt));
+                        kt.getMetadata().getName(), TopicOperatorUtil.resourceVersion(kt));
                 Resource<KafkaTopic> resource = Crds.topicOperation(client).resource(kt);
                 TopicOperatorTestUtil.waitUntilCondition(resource, Objects::isNull);
             }
@@ -1292,13 +1291,13 @@ class TopicControllerIT {
 
         createTopicAndAssertSuccess(kafkaCluster, kt);
         TopicOperatorTestUtil.modifyTopic(client, kt, theKt -> {
-            return new KafkaTopicBuilder(theKt).editOrNewMetadata().addToAnnotations(TopicOperatorUtil.MANAGED, "false").endMetadata().build();
+            return new KafkaTopicBuilder(theKt).editOrNewMetadata().addToAnnotations(KubernetesHandler.ANNO_STRIMZI_IO_MANAGED, "false").endMetadata().build();
         });
 
         // when
         Crds.topicOperation(client).resource(kt).delete();
         LOGGER.info("Test created KafkaTopic {} with resourceVersion {}",
-                kt.getMetadata().getName(), BatchingTopicController.resourceVersion(kt));
+                kt.getMetadata().getName(), TopicOperatorUtil.resourceVersion(kt));
         Resource<KafkaTopic> resource = Crds.topicOperation(client).resource(kt);
         TopicOperatorTestUtil.waitUntilCondition(resource, Objects::isNull);
 
@@ -1322,13 +1321,11 @@ class TopicControllerIT {
         int specReplicas = kt.getSpec().getReplicas();
 
         createTopicAndAssertSuccess(kafkaCluster, kt);
-        TopicOperatorTestUtil.modifyTopic(client, kt, theKt -> {
-            return new KafkaTopicBuilder(theKt).editOrNewMetadata().addToAnnotations(TopicOperatorUtil.MANAGED, "false").endMetadata().build();
-        });
+        TopicOperatorTestUtil.modifyTopic(client, kt, theKt -> 
+            new KafkaTopicBuilder(theKt).editOrNewMetadata().addToAnnotations(KubernetesHandler.ANNO_STRIMZI_IO_MANAGED, "false").endMetadata().build());
 
         Crds.topicOperation(client).resource(kt).delete();
-        LOGGER.info("Test deleted KafkaTopic {} with resourceVersion {}",
-                kt.getMetadata().getName(), BatchingTopicController.resourceVersion(kt));
+        LOGGER.info("Test deleted KafkaTopic {} with resourceVersion {}", kt.getMetadata().getName(), TopicOperatorUtil.resourceVersion(kt));
         Resource<KafkaTopic> resource = Crds.topicOperation(client).resource(kt);
         TopicOperatorTestUtil.waitUntilCondition(resource, Objects::isNull);
 
@@ -1383,12 +1380,7 @@ class TopicControllerIT {
         assertEquals(format("Managed by Ref{namespace='%s', name='%s'}", NAMESPACE, "kt1"),
                 st2.getConditions().get(0).getMessage());
     }
-
-    static KafkaTopic[][] collidingManagedTopics_differentNamespaces() {
-        return collidingManagedTopics("ns1", "ns2");
-    }
-
-
+    
     @Test
     public void shouldFailCreationIfMoreReplicasThanBrokers(
             @BrokerConfig(name = "auto.create.topics.enable", value = "false")
@@ -1628,9 +1620,9 @@ class TopicControllerIT {
         var newReplicas = newReplicasFn.apply(initialReplicas);
         var initialLeader = pi.leader().id();
         var addedReplicas = new HashSet<>(newReplicas);
-        addedReplicas.removeAll(initialReplicas);
+        initialReplicas.forEach(addedReplicas::remove);
         var removingReplicas = new HashSet<>(initialReplicas);
-        removingReplicas.removeAll(newReplicas);
+        newReplicas.forEach(removingReplicas::remove);
 
         var throttledRate = "1";
         Map<ConfigResource, Collection<AlterConfigOp>> throttles = buildThrottles(initialLeader, addedReplicas, throttledRate, tp, AlterConfigOp.OpType.SET);
@@ -1672,22 +1664,17 @@ class TopicControllerIT {
         admin[0].incrementalAlterConfigs(removeThrottles).all().get();
 
         long deadline = System.currentTimeMillis() + 30_000;
-        while (true) {
-            if (admin[0].listPartitionReassignments(Set.of(tp)).reassignments().get().isEmpty()) {
-                break;
-            }
+        while (!admin[0].listPartitionReassignments(Set.of(tp)).reassignments().get().isEmpty()) {
             if (System.currentTimeMillis() > deadline) {
                 throw new TimeoutException("Expecting reassignment to complete after removing throttles");
             }
-            Thread.sleep(1_000);
+            TimeUnit.MILLISECONDS.sleep(1_000);
         }
 
         // trigger reconciliation by changing a config again
-        modified = modifyTopicAndAwait(modified,
-                TopicControllerIT::setGzipCompression,
-                postReassignmentPredicate);
-
-        //Thread.sleep(30_000);
+        modifyTopicAndAwait(modified,
+            TopicControllerIT::setGzipCompression,
+            postReassignmentPredicate);
     }
 
     private static HashMap<ConfigResource, Collection<AlterConfigOp>> buildThrottles(
@@ -1697,27 +1684,15 @@ class TopicControllerIT {
             TopicPartition tp,
             AlterConfigOp.OpType set) {
         var throttles = new LinkedHashMap<ConfigResource, Collection<AlterConfigOp>>();
-        throttles.put(new ConfigResource(ConfigResource.Type.BROKER, Integer.toString(initialLeader)),
-                        List.of(
-                                new AlterConfigOp(new ConfigEntry("leader.replication.throttled.rate", throttledRate), set)
-                    ));
-        addedReplicas.forEach(addedReplica -> {
+        throttles.put(new ConfigResource(ConfigResource.Type.BROKER, Integer.toString(initialLeader)), 
+            List.of(new AlterConfigOp(new ConfigEntry("leader.replication.throttled.rate", throttledRate), set)));
+        addedReplicas.forEach(addedReplica -> 
             throttles.put(new ConfigResource(ConfigResource.Type.BROKER, Integer.toString(addedReplica)),
-                    List.of(
-                            new AlterConfigOp(new ConfigEntry("follower.replication.throttled.rate", throttledRate), set)
-                    ));
-        });
-
-        throttles.put(new ConfigResource(ConfigResource.Type.TOPIC, tp.topic()),
-                List.of(
-                        new AlterConfigOp(new ConfigEntry("leader.replication.throttled.replicas", "%d:%d".formatted(tp.partition(), initialLeader)), set)
-                ));
-        addedReplicas.forEach(addedReplica -> {
-            throttles.put(new ConfigResource(ConfigResource.Type.TOPIC, tp.topic()),
-                    List.of(
-                            new AlterConfigOp(new ConfigEntry("follower.replication.throttled.replicas", "%d:%d".formatted(tp.partition(), addedReplica)), set)
-                    ));
-        });
+                List.of(new AlterConfigOp(new ConfigEntry("follower.replication.throttled.rate", throttledRate), set))));
+        throttles.put(new ConfigResource(ConfigResource.Type.TOPIC, tp.topic()), 
+            List.of(new AlterConfigOp(new ConfigEntry("leader.replication.throttled.replicas", "%d:%d".formatted(tp.partition(), initialLeader)), set)));
+        addedReplicas.forEach(addedReplica -> throttles.put(new ConfigResource(ConfigResource.Type.TOPIC, tp.topic()), 
+            List.of(new AlterConfigOp(new ConfigEntry("follower.replication.throttled.replicas", "%d:%d".formatted(tp.partition(), addedReplica)), set))));
         return throttles;
     }
 
@@ -1849,7 +1824,7 @@ class TopicControllerIT {
         // when
         Crds.topicOperation(client).resource(kt).delete();
         LOGGER.info("Test deleted KafkaTopic {} with resourceVersion {}",
-                kt.getMetadata().getName(), BatchingTopicController.resourceVersion(kt));
+                kt.getMetadata().getName(), TopicOperatorUtil.resourceVersion(kt));
         Resource<KafkaTopic> resource = Crds.topicOperation(client).resource(kt);
         var deleted = TopicOperatorTestUtil.waitUntilCondition(resource, readyIsFalse());
 
@@ -1890,14 +1865,13 @@ class TopicControllerIT {
         // unmanage topic
         LOGGER.info("Unmanage {}", firstTopicName);
         var unmanagedFoo = modifyTopicAndAwait(editedFoo, theKt -> 
-                new KafkaTopicBuilder(theKt).editMetadata().addToAnnotations(TopicOperatorUtil.MANAGED, "false").endMetadata().build(), 
+                new KafkaTopicBuilder(theKt).editMetadata().addToAnnotations(KubernetesHandler.ANNO_STRIMZI_IO_MANAGED, "false").endMetadata().build(), 
             readyIsTrue());
 
         // when: delete topic
         LOGGER.info("Delete {}", firstTopicName);
         Crds.topicOperation(client).resource(unmanagedFoo).delete();
-        LOGGER.info("Test deleted KafkaTopic {} with resourceVersion {}",
-            unmanagedFoo.getMetadata().getName(), BatchingTopicController.resourceVersion(unmanagedFoo));
+        LOGGER.info("Test deleted KafkaTopic {} with resourceVersion {}", unmanagedFoo.getMetadata().getName(), TopicOperatorUtil.resourceVersion(unmanagedFoo));
         Resource<KafkaTopic> resource = Crds.topicOperation(client).resource(unmanagedFoo);
         TopicOperatorTestUtil.waitUntilCondition(resource, Objects::isNull);
 
@@ -1941,8 +1915,8 @@ class TopicControllerIT {
 
         // the failed resource should become ready after we unmanage and delete the other
         LOGGER.info("Unmanage {}", ready.getMetadata().getName());
-        var unmanagedBar = modifyTopicAndAwait(ready, theKt -> new KafkaTopicBuilder(theKt)
-                .editMetadata().addToAnnotations(TopicOperatorUtil.MANAGED, "false").endMetadata().build(),
+        var unmanagedBar = modifyTopicAndAwait(ready, theKt -> 
+                new KafkaTopicBuilder(theKt).editMetadata().addToAnnotations(KubernetesHandler.ANNO_STRIMZI_IO_MANAGED, "false").endMetadata().build(),
             readyIsTrue());
 
         LOGGER.info("Delete {}", ready.getMetadata().getName());
@@ -1961,12 +1935,12 @@ class TopicControllerIT {
 
     @Test
     public void shouldLogWarningIfAutoCreateTopicsIsEnabled(
-                @BrokerConfig(name = BatchingTopicController.AUTO_CREATE_TOPICS_ENABLE, value = "true")
+                @BrokerConfig(name = KafkaHandler.AUTO_CREATE_TOPICS_ENABLE, value = "true")
                 KafkaCluster kafkaCluster)
             throws Exception {
         try (var logCaptor = LogCaptor.logMessageMatches(BatchingTopicController.LOGGER,
                 Level.WARN,
-                "It is recommended that " + BatchingTopicController.AUTO_CREATE_TOPICS_ENABLE + " is set to 'false' " +
+                "It is recommended that " + KafkaHandler.AUTO_CREATE_TOPICS_ENABLE + " is set to 'false' " +
                         "to avoid races between the operator and Kafka applications auto-creating topics",
                 5L,
                 TimeUnit.SECONDS)) {
@@ -2043,7 +2017,7 @@ class TopicControllerIT {
         KafkaTopic kt = createTopic(
             kafkaCluster,
             kafkaTopic(NAMESPACE, topicName, SELECTOR,
-                Map.of(ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true"),
+                Map.of(ResourceAnnotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true"),
                 true, topicName, 1, 1, Map.of()),
             pausedIsTrue()
         );
@@ -2090,7 +2064,7 @@ class TopicControllerIT {
 
         Crds.topicOperation(client).resource(kt).delete();
         LOGGER.info("Test deleted KafkaTopic {} with resourceVersion {}",
-            kt.getMetadata().getName(), BatchingTopicController.resourceVersion(kt));
+            kt.getMetadata().getName(), TopicOperatorUtil.resourceVersion(kt));
         Resource<KafkaTopic> resource = Crds.topicOperation(client).resource(kt);
         TopicOperatorTestUtil.waitUntilCondition(resource, Objects::isNull);
 
@@ -2132,7 +2106,7 @@ class TopicControllerIT {
         @BrokerConfig(name = "default.replication.factor", value = "1")
         KafkaCluster kafkaCluster) throws ExecutionException, InterruptedException, TimeoutException {
         String topicName = randomTopicName();
-        createTopic(kafkaCluster, kafkaTopicWithNoSpec(NAMESPACE, topicName, true));
+        createTopic(kafkaCluster, kafkaTopicWithNoSpec(topicName, true));
         TopicDescription topicDescription = awaitTopicDescription(topicName);
         assertEquals(3, numPartitions(topicDescription));
         assertEquals(Set.of(1), replicationFactors(topicDescription));
@@ -2147,7 +2121,7 @@ class TopicControllerIT {
         maybeStartOperator(topicOperatorConfig(NAMESPACE, kafkaCluster));
 
         var created = Crds.topicOperation(client)
-            .resource(kafkaTopicWithNoSpec(NAMESPACE, randomTopicName(), false))
+            .resource(kafkaTopicWithNoSpec(randomTopicName(), false))
             .create();
 
         assertNotExistsInKafka(expectedTopicName(created));

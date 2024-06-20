@@ -30,12 +30,20 @@ import java.util.concurrent.TimeUnit;
  * the reconciliation of those events using a {@link BatchingTopicController}.
  * Any given {@link KafkaTopic} is only being reconciled by a single thread at any one time.
  */
-class BatchingLoop {
-
+public class BatchingLoop {
     static final ReconciliationLogger LOGGER = ReconciliationLogger.create(BatchingLoop.class);
 
     private final BatchingTopicController controller;
     private final BlockingDeque<TopicEvent> queue;
+
+    private final int maxQueueSize;
+    private final int maxBatchSize;
+    private final long maxBatchLingerMs;
+    private final String namespace;
+
+    private final ItemStore<KafkaTopic> itemStore;
+    private final Runnable stopRunnable;
+    private final TopicOperatorMetricsHolder metrics;
 
     /**
      * The set of topics currently being reconciled by a controller.
@@ -44,41 +52,42 @@ class BatchingLoop {
      */
     private final Set<KubeRef> inFlight = new HashSet<>(); // guarded by this
     private final LoopRunnable[] threads;
-    private final int maxBatchSize;
-    private final long maxBatchLingerMs;
-    private final ItemStore<KafkaTopic> itemStore;
-    private final Runnable stop;
-    private final int maxQueueSize;
-    private final TopicOperatorMetricsHolder metrics;
-    private final String namespace;
 
-    public BatchingLoop(
-            int maxQueueSize,
-            BatchingTopicController controller,
-            int maxThreads,
-            int maxBatchSize,
-            long maxBatchLingerMs,
-            ItemStore<KafkaTopic> itemStore,
-            Runnable stop,
-            TopicOperatorMetricsHolder metrics,
-            String namespace) {
-        this.maxQueueSize = maxQueueSize;
-        this.queue = new LinkedBlockingDeque<>(maxQueueSize);
+    /**
+     * Create a new instance.
+     *
+     * @param config Topic Operator configuration.
+     * @param controller KafkaTopic controller.
+     * @param maxThreads Max number of LoopRunnable threads.
+     * @param itemStore Item store.
+     * @param stopRunnable Stop runnable.
+     * @param metrics Metrics holder.
+     */
+    public BatchingLoop(TopicOperatorConfig config,
+                        BatchingTopicController controller,
+                        int maxThreads,
+                        ItemStore<KafkaTopic> itemStore,
+                        Runnable stopRunnable,
+                        TopicOperatorMetricsHolder metrics) {
+        this.maxQueueSize = config.maxQueueSize();
+        this.maxBatchSize = config.maxBatchSize();
+        this.maxBatchLingerMs = config.maxBatchLingerMs();
+        this.namespace = config.namespace();
+
         this.controller = controller;
+        this.itemStore = itemStore;
+        this.stopRunnable = stopRunnable;
+        this.metrics = metrics;
+
+        this.queue = new LinkedBlockingDeque<>(maxQueueSize);
         this.threads = new LoopRunnable[maxThreads];
         for (int i = 0; i < maxThreads; i++) {
             threads[i] = new LoopRunnable("LoopRunnable-" + i);
         }
-        this.maxBatchSize = maxBatchSize;
-        this.maxBatchLingerMs = maxBatchLingerMs;
-        this.itemStore = itemStore;
-        this.stop = stop;
-        this.metrics = metrics;
-        this.namespace = namespace;
     }
 
     /**
-     * Starts the threads
+     * Starts the threads.
      */
     public void start() {
         for (var thread : threads) {
@@ -87,7 +96,7 @@ class BatchingLoop {
     }
 
     /**
-     * Stops the threads
+     * Stops the threads.
      * @throws InterruptedException If interrupted while waiting for the threads to stop.
      */
     public void stop() throws InterruptedException {
@@ -101,7 +110,7 @@ class BatchingLoop {
 
     /**
      * Add an event to be reconciled to the tail of the {@link #queue}.
-     * @param event The event
+     * @param event The event.
      */
     public void offer(TopicEvent event) {
         if (queue.offerFirst(event)) {
@@ -111,14 +120,14 @@ class BatchingLoop {
             LOGGER.errorOp("Queue length {} exceeded, stopping operator. Please increase {} environment variable.",
                     maxQueueSize,
                     TopicOperatorConfig.MAX_QUEUE_SIZE.key());
-            this.stop.run();
+            this.stopRunnable.run();
         }
     }
 
     /**
      * The loop is alive if none of the threads have been blocked for more than 2 minutes.
      * "Blocked" means they're not returned to their outermost loop.
-     * @return True if the loop is alive..
+     * @return True if the loop is alive.
      */
     boolean isAlive() {
         for (var thread : threads) {
@@ -232,7 +241,7 @@ class BatchingLoop {
             var kt = itemStore.get(key);
             if (kt != null) {
                 LOGGER.traceOp("[Batch #{}] Lookup from item store for {} yielded KafkaTopic with resourceVersion {}",
-                        batchId, topicUpsert, BatchingTopicController.resourceVersion(kt));
+                    batchId, topicUpsert, TopicOperatorUtil.resourceVersion(kt));
                 var r = new Reconciliation("upsert", "KafkaTopic", topicUpsert.namespace(), topicUpsert.name());
                 LOGGER.debugOp("[Batch #{}] Contains {}", batchId, r);
                 return new ReconcilableTopic(r, kt, TopicOperatorUtil.topicName(kt));

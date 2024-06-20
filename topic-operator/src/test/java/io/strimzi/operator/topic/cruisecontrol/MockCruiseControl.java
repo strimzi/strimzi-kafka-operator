@@ -30,7 +30,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * Cruise Control mock.
  */
 public class MockCruiseControl {
-    private ClientAndServer server;
+    private final ClientAndServer server;
     
     /**
      * Sets up and returns a Cruise Control mock server.
@@ -38,8 +38,6 @@ public class MockCruiseControl {
      * @param serverPort   The port number the server should listen on.
      * @param tlsKeyFile   File containing the CA key.
      * @param tlsCrtFile   File containing the CA crt.
-     * 
-     * @return             The mock CruiseControl instance.
      */
     public MockCruiseControl(int serverPort, File tlsKeyFile, File tlsCrtFile) {
         try {

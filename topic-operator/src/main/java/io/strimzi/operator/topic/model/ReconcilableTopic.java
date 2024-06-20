@@ -12,25 +12,19 @@ import java.util.Objects;
 /**
  * A topic to be reconciled.
  */
-public class ReconcilableTopic {
-    private Reconciliation reconciliation;
-    private KafkaTopic kt;
-    private String topicName;
-
+public record ReconcilableTopic(Reconciliation reconciliation, KafkaTopic kt, String topicName) {
     /**
      * @param reconciliation The reconciliation.
-     * @param kt The topic.
-     * @param topicName The name of the topic in Kafka (spec.topicName, or metadata.name).
+     * @param kt             The topic.
+     * @param topicName      The name of the topic in Kafka (spec.topicName, or metadata.name).
      */
-    public ReconcilableTopic(Reconciliation reconciliation, KafkaTopic kt, String topicName) {
-        this.reconciliation = reconciliation;
-        this.kt = kt;
-        this.topicName = topicName;
+    public ReconcilableTopic {
     }
 
     /**
      * @return Reconciliation.
      */
+    @Override
     public Reconciliation reconciliation() {
         return reconciliation;
     }
@@ -38,6 +32,7 @@ public class ReconcilableTopic {
     /**
      * @return Kafka topic.
      */
+    @Override
     public KafkaTopic kt() {
         return kt;
     }
@@ -45,6 +40,7 @@ public class ReconcilableTopic {
     /**
      * @return Topic name.
      */
+    @Override
     public String topicName() {
         return topicName;
     }
@@ -65,7 +61,7 @@ public class ReconcilableTopic {
     @Override
     public String toString() {
         return "ReconcilableTopic{" +
-                "reconciliation=" + reconciliation +
-                '}';
+            "reconciliation=" + reconciliation +
+            '}';
     }
 }

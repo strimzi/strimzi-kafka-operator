@@ -2,7 +2,7 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.operator.topic;
+package io.strimzi.operator.topic.cruisecontrol;
 
 import io.micrometer.core.instrument.Timer;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
@@ -10,7 +10,8 @@ import io.strimzi.api.kafka.model.topic.KafkaTopicStatusBuilder;
 import io.strimzi.api.kafka.model.topic.ReplicasChangeStatusBuilder;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
-import io.strimzi.operator.topic.cruisecontrol.CruiseControlClient;
+import io.strimzi.operator.topic.TopicOperatorConfig;
+import io.strimzi.operator.topic.TopicOperatorUtil;
 import io.strimzi.operator.topic.cruisecontrol.CruiseControlClient.TaskState;
 import io.strimzi.operator.topic.cruisecontrol.CruiseControlClient.UserTasksResponse;
 import io.strimzi.operator.topic.metrics.TopicOperatorMetricsHolder;
@@ -35,22 +36,23 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.logging.log4j.core.util.Throwables.getRootCause;
 
 /**
- * Replicas change handler that interacts with Cruise Control REST API.
- * <br/><br/>
- * At any given time, a {@code .spec.replicas} change can be in one of the following states:
- * <ul><li>Pending: Not in Cruise Control's task queue (not yet sent or request error).</li>
- * <li>Ongoing: In Cruise Control's task queue, but execution not started, or not completed.</li>
- * <li>Completed: Cruise Control's task execution completed (target replication factor reconciled).</li></ul>
+ * Handler for Cruise Control requests.
  */
-public class ReplicasChangeHandler {
-    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(ReplicasChangeHandler.class);
+public class CruiseControlHandler {
+    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(CruiseControlHandler.class);
     
     private final TopicOperatorConfig config;
     private final TopicOperatorMetricsHolder metrics;
     private final CruiseControlClient cruiseControlClient;
-    
-    ReplicasChangeHandler(TopicOperatorConfig config,
-                          TopicOperatorMetricsHolder metrics) {
+
+    /**
+     * Create a new instance.
+     *
+     * @param config Topic Operator configuration.
+     * @param metrics Metrics holder.
+     */
+    public CruiseControlHandler(TopicOperatorConfig config,
+                                TopicOperatorMetricsHolder metrics) {
         this(config, metrics, CruiseControlClient.create(
             config.cruiseControlHostname(),
             config.cruiseControlPort(),
@@ -62,10 +64,17 @@ public class ReplicasChangeHandler {
             config.cruiseControlAuthEnabled() ? new String(getFileContent(config.cruiseControlApiPassPath()), UTF_8) : null
         ));
     }
-    
-    ReplicasChangeHandler(TopicOperatorConfig config,
-                          TopicOperatorMetricsHolder metrics, 
-                          CruiseControlClient cruiseControlClient) {
+
+    /**
+     * Create a new instance.
+     *
+     * @param config Topic Operator configuration.
+     * @param metrics Metrics holder.
+     * @param cruiseControlClient Cruise Control client.
+     */
+    public CruiseControlHandler(TopicOperatorConfig config,
+                                TopicOperatorMetricsHolder metrics,
+                                CruiseControlClient cruiseControlClient) {
         this.config = config;
         this.metrics = metrics;
         this.cruiseControlClient = cruiseControlClient;
@@ -101,7 +110,7 @@ public class ReplicasChangeHandler {
         Timer.Sample timerSample = TopicOperatorUtil.startExternalRequestTimer(metrics, config.enableAdditionalMetrics());
         try {
             LOGGER.debugOp("Sending topic configuration request, topics {}", topicNames(reconcilableTopics));
-            List<KafkaTopic> kafkaTopics = reconcilableTopics.stream().map(rt -> rt.kt()).collect(Collectors.toList());
+            List<KafkaTopic> kafkaTopics = reconcilableTopics.stream().map(ReconcilableTopic::kt).collect(Collectors.toList());
             String userTaskId = cruiseControlClient.topicConfiguration(kafkaTopics);
             updateToOngoing(result, "Replicas change ongoing", userTaskId);
         } catch (Throwable t) {

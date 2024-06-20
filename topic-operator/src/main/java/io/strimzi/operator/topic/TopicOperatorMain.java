@@ -19,17 +19,16 @@ import io.micrometer.prometheus.PrometheusConfig;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
-import io.strimzi.operator.common.OperatorKubernetesClientBuilder;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.http.HealthCheckAndMetricsServer;
 import io.strimzi.operator.common.http.Liveness;
 import io.strimzi.operator.common.http.Readiness;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.topic.cruisecontrol.CruiseControlHandler;
 import io.strimzi.operator.topic.metrics.TopicOperatorMetricsHolder;
 import io.strimzi.operator.topic.metrics.TopicOperatorMetricsProvider;
 import org.apache.kafka.clients.admin.Admin;
 
-import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 
@@ -37,41 +36,37 @@ import java.util.concurrent.ExecutionException;
  * The Topic Operator.
  */
 public class TopicOperatorMain implements Liveness, Readiness {
-    private final static ReconciliationLogger LOGGER = ReconciliationLogger.create(TopicOperatorMain.class);
-    private final static long INFORMER_PERIOD_MS = 2_000;
-    
-    private final String namespace;
-    private final KubernetesClient kubeClient;
-    /* test */ final BatchingLoop queue;
-    private final long resyncIntervalMs;
-    private final BasicItemStore<KafkaTopic> itemStore;
-    private final ReplicasChangeHandler replicasChangeHandler;
-    /* test */ final BatchingTopicController controller;
-    private final Admin admin;
-    private SharedIndexInformer<KafkaTopic> informer; // guarded by this
-    Thread shutdownHook; // guarded by this
+    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(TopicOperatorMain.class);
+    private static final long INFORMER_PERIOD_MS = 2_000;
 
+    private final TopicOperatorConfig config;
+    private final KubernetesClient kubeClient;
+    private final Admin kafkaAdmin;
+
+    private final CruiseControlHandler cruiseControlHandler;
+    /* test */ final BatchingTopicController controller;
+    private final BasicItemStore<KafkaTopic> itemStore;
+    /* test */ final BatchingLoop queue;
     private final ResourceEventHandler<KafkaTopic> resourceEventHandler;
     private final HealthCheckAndMetricsServer healthAndMetricsServer;
 
-    TopicOperatorMain(String namespace,
-                      Map<String, String> selector,
-                      Admin admin,
-                      KubernetesClient kubeClient,
-                      TopicOperatorConfig config) {
-        Objects.requireNonNull(namespace);
-        Objects.requireNonNull(selector);
-        this.namespace = namespace;
+    private SharedIndexInformer<KafkaTopic> informer; // guarded by this
+    Thread shutdownHook; // guarded by this
+
+    TopicOperatorMain(TopicOperatorConfig config, KubernetesClient kubeClient, Admin kafkaAdmin) {
+        Objects.requireNonNull(config.namespace());
+        Objects.requireNonNull(config.labelSelector());
+        this.config = config;
         this.kubeClient = kubeClient;
-        this.resyncIntervalMs = config.fullReconciliationIntervalMs();
-        this.admin = admin;
-        TopicOperatorMetricsProvider metricsProvider = createMetricsProvider();
-        TopicOperatorMetricsHolder metrics = new TopicOperatorMetricsHolder(KafkaTopic.RESOURCE_KIND, Labels.fromMap(selector), metricsProvider);
-        this.replicasChangeHandler = new ReplicasChangeHandler(config, metrics);
-        this.controller = new BatchingTopicController(config, selector, admin, kubeClient, metrics, replicasChangeHandler);
+        this.kafkaAdmin = kafkaAdmin;
+        var selector = config.labelSelector().toMap();
+        var metricsProvider = createMetricsProvider();
+        var metrics = new TopicOperatorMetricsHolder(KafkaTopic.RESOURCE_KIND, Labels.fromMap(selector), metricsProvider);
+        this.cruiseControlHandler = new CruiseControlHandler(config, metrics);
+        this.controller = new BatchingTopicController(config, selector, kubeClient, kafkaAdmin, metrics, cruiseControlHandler);
         this.itemStore = new BasicItemStore<>(Cache::metaNamespaceKeyFunc);
-        this.queue = new BatchingLoop(config.maxQueueSize(), controller, 1, config.maxBatchSize(), config.maxBatchLingerMs(), itemStore, this::stop, metrics, namespace);
-        this.resourceEventHandler = new TopicOperatorEventHandler(config, queue, metrics);
+        this.queue = new BatchingLoop(config, controller, 1, itemStore, this::stop, metrics);
+        this.resourceEventHandler = new TopicEventHandler(config, queue, metrics);
         this.healthAndMetricsServer = new HealthCheckAndMetricsServer(8080, this, this, metricsProvider);
     }
 
@@ -89,7 +84,7 @@ public class TopicOperatorMain implements Liveness, Readiness {
         LOGGER.infoOp("Starting queue");
         queue.start();
         informer = Crds.topicOperation(kubeClient)
-                .inNamespace(namespace)
+                .inNamespace(config.namespace())
                 // Do NOT use withLabels to filter the informer, since the controller is stateful
                 // (topics need to be added to removed from TopicController.topics if KafkaTopics transition between
                 // selected and unselected).
@@ -99,7 +94,7 @@ public class TopicOperatorMain implements Liveness, Readiness {
                 // is that the handler skips one informer intervals. Setting both intervals to the same value generates 
                 // just enough skew that when the informer checks if the handler is ready for resync it sees that 
                 // it still needs another couple of micro-seconds and skips to the next informer level resync.
-                .addEventHandlerWithResyncPeriod(resourceEventHandler, resyncIntervalMs + INFORMER_PERIOD_MS)
+                .addEventHandlerWithResyncPeriod(resourceEventHandler, config.fullReconciliationIntervalMs() + INFORMER_PERIOD_MS)
                 .itemStore(itemStore);
         LOGGER.infoOp("Starting informer");
         informer.run();
@@ -133,11 +128,11 @@ public class TopicOperatorMain implements Liveness, Readiness {
                 informer.stop();
                 informer = null;
             }
-            if (replicasChangeHandler != null) {
-                replicasChangeHandler.stop();
+            if (cruiseControlHandler != null) {
+                cruiseControlHandler.stop();
             }
             this.queue.stop();
-            this.admin.close();
+            this.kafkaAdmin.close();
             this.healthAndMetricsServer.stop();
             LOGGER.infoOp("Shutdown completed normally");
         } catch (InterruptedException e) {
@@ -153,20 +148,13 @@ public class TopicOperatorMain implements Liveness, Readiness {
      * @throws Exception If bad things happen.
      */
     public static void main(String[] args) throws Exception {
-        TopicOperatorConfig topicOperatorConfig = TopicOperatorConfig.buildFromMap(System.getenv());
-        TopicOperatorMain operator = operator(topicOperatorConfig, kubeClient(), Admin.create(topicOperatorConfig.adminClientConfig()));
+        var config = TopicOperatorConfig.buildFromMap(System.getenv());
+        var operator = operator(config, TopicOperatorUtil.createKubeClient(), Admin.create(config.adminClientConfig()));
         operator.start();
     }
 
-    static TopicOperatorMain operator(TopicOperatorConfig topicOperatorConfig, KubernetesClient client, Admin admin) throws ExecutionException, InterruptedException {
-        return new TopicOperatorMain(topicOperatorConfig.namespace(), topicOperatorConfig.labelSelector().toMap(), admin, client, topicOperatorConfig);
-    }
-
-    static KubernetesClient kubeClient() {
-        return new OperatorKubernetesClientBuilder(
-                    "strimzi-topic-operator",
-                    TopicOperatorMain.class.getPackage().getImplementationVersion())
-                .build();
+    static TopicOperatorMain operator(TopicOperatorConfig config, KubernetesClient client, Admin admin) throws ExecutionException, InterruptedException {
+        return new TopicOperatorMain(config, client, admin);
     }
 
     @Override
@@ -198,10 +186,10 @@ public class TopicOperatorMain implements Liveness, Readiness {
     }
 
     /**
-     * Creates the MetricsProvider instance based on a PrometheusMeterRegistry
+     * Creates the metrics provider instance based on a PrometheusMeterRegistry
      * and binds the JVM metrics to it.
      *
-     * @return MetricsProvider instance
+     * @return Metrics provider instance.
      */
     private static TopicOperatorMetricsProvider createMetricsProvider()  {
         MeterRegistry registry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);

@@ -38,14 +38,14 @@ public class TopicOperatorTestUtil {
     private static final Logger LOGGER = LogManager.getLogger(TopicOperatorTestUtil.class);
     private TopicOperatorTestUtil() { }
 
-    public static String namespace(KubernetesClient client, String ns) {
-        Resource<Namespace> resource = client.namespaces().withName(ns);
+    public static String namespace(KubernetesClient client, String name) {
+        Resource<Namespace> resource = client.namespaces().withName(name);
         if (resource.get() == null) {
-            LOGGER.debug("Creating namespace {}", ns);
-            client.namespaces().resource(new NamespaceBuilder().withNewMetadata().withName(ns).endMetadata().build()).create();
-            waitUntilCondition(client.namespaces().withName(ns), Objects::nonNull);
+            LOGGER.debug("Creating namespace {}", name);
+            client.namespaces().resource(new NamespaceBuilder().withNewMetadata().withName(name).endMetadata().build()).create();
+            waitUntilCondition(client.namespaces().withName(name), Objects::nonNull);
         }
-        return ns;
+        return name;
     }
 
     public static String testName(TestInfo testInfo) {
@@ -58,7 +58,7 @@ public class TopicOperatorTestUtil {
             cmdKubeClient().createNamespace(namespace);
         } catch (KubeClusterException.AlreadyExists e) {
             LOGGER.info("Namespace {} already exists, recreating", namespace);
-            try (var tmpClient = TopicOperatorMain.kubeClient()) {
+            try (var tmpClient = TopicOperatorUtil.createKubeClient()) {
                 cleanupNamespace(tmpClient, testInfo, namespace);
             }
             cmdKubeClient().deleteNamespace(namespace);
@@ -106,8 +106,7 @@ public class TopicOperatorTestUtil {
         int i = 2;
         while (true) {
             try {
-                KafkaTopic edited = Crds.topicOperation(client).inNamespace(ns).withName(metadataName).edit(changer);
-                return edited;
+                return Crds.topicOperation(client).inNamespace(ns).withName(metadataName).edit(changer);
             } catch (KubernetesClientException e) {
                 if (i == 0 || e.getCode() != 409 /* conflict */) {
                     throw e;

@@ -25,7 +25,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(KafkaClusterExtension.class)
 class TopicOperatorConfigTest {
-
     @Test
     void shouldConnectWithPlaintextAndNotAuthn(KafkaCluster kc) throws ExecutionException, InterruptedException {
         // given
@@ -38,7 +37,7 @@ class TopicOperatorConfigTest {
 
         var adminConfig = config.adminClientConfig();
         // client.id is random, so check it's there then remove for an easier assertion on the rest of the map
-        assertTrue(!adminConfig.get("client.id").toString().isEmpty());
+        assertFalse(adminConfig.get("client.id").toString().isEmpty());
         adminConfig.remove("client.id");
         assertEquals(Map.of(
                 "security.protocol", "PLAINTEXT",
@@ -177,7 +176,7 @@ class TopicOperatorConfigTest {
 
         var adminConfig = config.adminClientConfig();
         // client.id is random, so check it's there then remove for an easier assertion on the rest of the map
-        assertTrue(!adminConfig.get("client.id").toString().isEmpty());
+        assertFalse(adminConfig.get("client.id").toString().isEmpty());
         adminConfig.remove("client.id");
         assertEquals(Map.of(
                 "security.protocol", "PLAINTEXT",
