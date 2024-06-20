@@ -33,41 +33,41 @@ import static io.strimzi.operator.common.config.ConfigParameterParser.parseFeatu
 import static io.strimzi.operator.common.config.ConfigParameterParser.strictlyPositive;
 
 /**
- * Config
+ * Topic Operator configuration.
  *
- * @param namespace                     The namespace that the operator will watch for KafkaTopics
- * @param labelSelector                 The label selector that KafkaTopics must match
- * @param bootstrapServers              The Kafka bootstrap servers
- * @param clientId                      The client Id to use for the Admin client
- * @param fullReconciliationIntervalMs  The periodic reconciliation interval in milliseconds
- * @param tlsEnabled                    Whether the Admin client should be configured to use TLS
- * @param truststoreLocation            The location (path) of the Admin client's truststore.
- * @param truststorePassword            The password for the truststore at {@code truststoreLocation}.
- * @param keystoreLocation              The location (path) of the Admin client's keystore.
- * @param keystorePassword              The password for the keystore at {@code keystoreLocation}.
- * @param sslEndpointIdentificationAlgorithm The SSL endpoint identification algorithm
- * @param saslEnabled                   Whether the Admin client should be configured to use SASL
- * @param saslMechanism                 The SASL mechanism for the Admin client
- * @param saslCustomConfigJson          The SASL custom values for the Admin client when using alternate auth mechanisms.
- * @param saslUsername,                 The SASL username for the Admin client
- * @param saslPassword,                 The SASL password for the Admin client
- * @param securityProtocol              The security protocol for the Admin client
- * @param useFinalizer                  Whether to use finalizers
- * @param maxQueueSize                  The capacity of the queue
- * @param maxBatchSize                  The maximum size of a reconciliation batch
- * @param maxBatchLingerMs              The maximum time to wait for a reconciliation batch to contain {@code maxBatchSize} items.
- * @param enableAdditionalMetrics       Whether to enable additional metrics
- * @param cruiseControlEnabled          Whether Cruise Control integration is enabled
- * @param cruiseControlRackEnabled      Whether the target Kafka cluster has rack awareness
- * @param cruiseControlHostname         Cruise Control hostname
- * @param cruiseControlPort             Cruise Control port
- * @param cruiseControlSslEnabled       Whether Cruise Control SSL encryption is enabled
- * @param cruiseControlAuthEnabled      Whether Cruise Control Basic authentication is enabled
- * @param cruiseControlCrtFilePath      Certificate chain to be trusted
- * @param cruiseControlApiUserPath      Api admin username file path
- * @param cruiseControlApiPassPath      Api admin password file path
- * @param alterableTopicConfig          Comma separated list of the alterable Kafka topic properties
- * @param skipClusterConfigReview       For some managed Kafka services the Cluster config is not callable, so this skips those calls.
+ * @param namespace                             The namespace that the operator will watch for KafkaTopics.
+ * @param labelSelector                         The label selector that KafkaTopics must match.
+ * @param bootstrapServers                      The Kafka bootstrap servers.
+ * @param clientId                              The client Id to use for the Admin client.
+ * @param fullReconciliationIntervalMs          The periodic reconciliation interval in milliseconds.
+ * @param tlsEnabled                            Whether the Admin client should be configured to use TLS.
+ * @param truststoreLocation                    The location (path) of the Admin client's truststore.
+ * @param truststorePassword                    The password for the truststore at {@code truststoreLocation}.
+ * @param keystoreLocation                      The location (path) of the Admin client's keystore.
+ * @param keystorePassword                      The password for the keystore at {@code keystoreLocation}.
+ * @param sslEndpointIdentificationAlgorithm    The SSL endpoint identification algorithm.
+ * @param saslEnabled                           Whether the Admin client should be configured to use SASL.
+ * @param saslMechanism                         The SASL mechanism for the Admin client.
+ * @param saslCustomConfigJson                  The SASL custom values for the Admin client when using alternate auth mechanisms.
+ * @param saslUsername,                         The SASL username for the Admin client.
+ * @param saslPassword,                         The SASL password for the Admin client.
+ * @param securityProtocol                      The security protocol for the Admin client.
+ * @param useFinalizer                          Whether to use finalizers.
+ * @param maxQueueSize                          The capacity of the queue.
+ * @param maxBatchSize                          The maximum size of a reconciliation batch.
+ * @param maxBatchLingerMs                      The maximum time to wait for a reconciliation batch to contain {@code maxBatchSize} items.
+ * @param enableAdditionalMetrics               Whether to enable additional metrics.
+ * @param cruiseControlEnabled                  Whether Cruise Control integration is enabled.
+ * @param cruiseControlRackEnabled              Whether the target Kafka cluster has rack awareness.
+ * @param cruiseControlHostname                 Cruise Control hostname.
+ * @param cruiseControlPort                     Cruise Control port.
+ * @param cruiseControlSslEnabled               Whether Cruise Control SSL encryption is enabled.
+ * @param cruiseControlAuthEnabled              Whether Cruise Control Basic authentication is enabled.
+ * @param cruiseControlCrtFilePath              Certificate chain to be trusted.
+ * @param cruiseControlApiUserPath              Api admin username file path.
+ * @param cruiseControlApiPassPath              Api admin password file path.
+ * @param alterableTopicConfig                  Comma separated list of the alterable Kafka topic properties.
+ * @param skipClusterConfigReview               For some managed Kafka services the Cluster config is not callable, so this skips those calls.
  */
 public record TopicOperatorConfig(
         String namespace,
@@ -136,8 +136,6 @@ public record TopicOperatorConfig(
     static final ConfigParameter<String> ALTERABLE_TOPIC_CONFIG = new ConfigParameter<>("STRIMZI_ALTERABLE_TOPIC_CONFIG", STRING, "ALL", CONFIG_VALUES);
     static final ConfigParameter<Boolean> SKIP_CLUSTER_CONFIG_REVIEW = new ConfigParameter<>("STRIMZI_SKIP_CLUSTER_CONFIG_REVIEW", BOOLEAN, "false", CONFIG_VALUES);
     static final ConfigParameter<FeatureGates> FEATURE_GATES = new ConfigParameter<>("STRIMZI_FEATURE_GATES", parseFeatureGates(), "", CONFIG_VALUES);
-
-    // Cruise Control integration
     static final ConfigParameter<Boolean> CRUISE_CONTROL_ENABLED = new ConfigParameter<>("STRIMZI_CRUISE_CONTROL_ENABLED", BOOLEAN, "false", CONFIG_VALUES);
     static final ConfigParameter<Boolean> CRUISE_CONTROL_RACK_ENABLED = new ConfigParameter<>("STRIMZI_CRUISE_CONTROL_RACK_ENABLED", BOOLEAN, "false", CONFIG_VALUES);
     static final ConfigParameter<String> CRUISE_CONTROL_HOSTNAME = new ConfigParameter<>("STRIMZI_CRUISE_CONTROL_HOSTNAME", STRING, "127.0.0.1", CONFIG_VALUES);
@@ -159,6 +157,7 @@ public record TopicOperatorConfig(
 
     /**
      * Creates the TopicOperator configuration from a map.
+     * 
      * @param map Configuration map.
      * @return TopicOperator config.
      */
@@ -175,6 +174,7 @@ public record TopicOperatorConfig(
 
     /**
      * Creates the TopicOperator configuration.
+     * 
      * @param map Configuration map.
      */
     public TopicOperatorConfig(Map<String, Object> map) {

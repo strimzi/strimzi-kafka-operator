@@ -34,7 +34,7 @@ import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 
 /**
- * Entrypoint for unidirectional TO.
+ * The Topic Operator.
  */
 public class TopicOperatorMain implements Liveness, Readiness {
     private final static ReconciliationLogger LOGGER = ReconciliationLogger.create(TopicOperatorMain.class);
@@ -147,9 +147,10 @@ public class TopicOperatorMain implements Liveness, Readiness {
     }
 
     /**
-     * Entrypoint for unidirectional TO.
-     * @param args Command line args
-     * @throws Exception If bad things happen
+     * Entrypoint.
+     *
+     * @param args Command line args.
+     * @throws Exception If bad things happen.
      */
     public static void main(String[] args) throws Exception {
         TopicOperatorConfig topicOperatorConfig = TopicOperatorConfig.buildFromMap(System.getenv());

@@ -34,11 +34,11 @@ import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.fail;
 
-class TopicOperatorTestUtil {
+public class TopicOperatorTestUtil {
     private static final Logger LOGGER = LogManager.getLogger(TopicOperatorTestUtil.class);
     private TopicOperatorTestUtil() { }
 
-    static String namespace(KubernetesClient client, String ns) {
+    public static String namespace(KubernetesClient client, String ns) {
         Resource<Namespace> resource = client.namespaces().withName(ns);
         if (resource.get() == null) {
             LOGGER.debug("Creating namespace {}", ns);
@@ -48,11 +48,11 @@ class TopicOperatorTestUtil {
         return ns;
     }
 
-    static String testName(TestInfo testInfo) {
+    public static String testName(TestInfo testInfo) {
         return testInfo.getTestMethod().map(m -> m.getName() + "() " + testInfo.getDisplayName().replaceAll("[\r\n]+", " ")).orElse("");
     }
 
-    static void setupKubeCluster(TestInfo testInfo, String namespace) {
+    public static void setupKubeCluster(TestInfo testInfo, String namespace) {
         KubeClusterResource.getInstance();
         try {
             cmdKubeClient().createNamespace(namespace);
@@ -72,7 +72,7 @@ class TopicOperatorTestUtil {
         cmdKubeClient().create(TestUtils.USER_PATH + "/src/test/resources/TopicOperatorIT-rbac.yaml");
     }
 
-    static void teardownKubeCluster(String namespace) {
+    public static void teardownKubeCluster(String namespace) {
         cmdKubeClient()
                 .delete(TestUtils.USER_PATH + "/src/test/resources/TopicOperatorIT-rbac.yaml")
                 .delete(TestUtils.CRD_TOPIC)
@@ -80,7 +80,7 @@ class TopicOperatorTestUtil {
                 .deleteNamespace(namespace);
     }
 
-    static void cleanupNamespace(KubernetesClient client, TestInfo testInfo, String pop) {
+    public static void cleanupNamespace(KubernetesClient client, TestInfo testInfo, String pop) {
         LOGGER.debug("Cleaning up namespace {} after test {}", pop, testName(testInfo));
         for (var kt : Crds.topicOperation(client).inNamespace(pop).list().getItems()) {
             LOGGER.debug("Removing finalizer on {} after test {}", kt.getMetadata().getName(), testName(testInfo));
@@ -98,7 +98,7 @@ class TopicOperatorTestUtil {
         }
     }
 
-    static KafkaTopic modifyTopic(KubernetesClient client, KafkaTopic kt, UnaryOperator<KafkaTopic> changer) {
+    public static KafkaTopic modifyTopic(KubernetesClient client, KafkaTopic kt, UnaryOperator<KafkaTopic> changer) {
         String ns = kt.getMetadata().getNamespace();
         String metadataName = kt.getMetadata().getName();
         // Occasionally a single call to edit() will throw with a HTTP 409 (Conflict)
@@ -117,7 +117,7 @@ class TopicOperatorTestUtil {
         }
     }
 
-    static <T> T waitUntilCondition(Resource<T> resource, Predicate<T> condition) {
+    public static <T> T waitUntilCondition(Resource<T> resource, Predicate<T> condition) {
         long timeoutMs = 30000L;
         long deadline = System.currentTimeMillis() + timeoutMs;
         while (true) {
@@ -133,11 +133,11 @@ class TopicOperatorTestUtil {
         }
     }
 
-    static KafkaTopic findKafkaTopicByName(List<KafkaTopic> topics, String name) {
+    public static KafkaTopic findKafkaTopicByName(List<KafkaTopic> topics, String name) {
         return topics.stream().filter(kt -> kt.getMetadata().getName().equals(name)).findFirst().orElse(null);
     }
     
-    static String contentFromTextFile(File filePath) {
+    public static String contentFromTextFile(File filePath) {
         try {
             var resourceURI = Objects.requireNonNull(filePath).toURI();
             try (var lines = Files.lines(Paths.get(resourceURI), UTF_8)) {

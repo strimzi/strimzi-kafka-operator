@@ -8,12 +8,17 @@ import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.metrics.MetricsHolder;
+import io.strimzi.operator.topic.model.TopicEvent.TopicDelete;
+import io.strimzi.operator.topic.model.TopicEvent.TopicUpsert;
 
 import java.util.Objects;
 
 import static io.strimzi.operator.common.Annotations.isReconciliationPausedWithAnnotation;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
+/**
+ * Handler for {@link KafkaTopic} events.
+ */
 class TopicOperatorEventHandler implements ResourceEventHandler<KafkaTopic> {
     private final static ReconciliationLogger LOGGER = ReconciliationLogger.create(TopicOperatorEventHandler.class);
 

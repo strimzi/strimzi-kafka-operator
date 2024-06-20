@@ -18,6 +18,12 @@ import io.strimzi.api.kafka.model.topic.ReplicasChangeStatusBuilder;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.topic.metrics.TopicOperatorMetricsHolder;
 import io.strimzi.operator.topic.metrics.TopicOperatorMetricsProvider;
+import io.strimzi.operator.topic.model.Either;
+import io.strimzi.operator.topic.model.Pair;
+import io.strimzi.operator.topic.model.PartitionedByError;
+import io.strimzi.operator.topic.model.ReconcilableTopic;
+import io.strimzi.operator.topic.model.TopicOperatorException;
+import io.strimzi.operator.topic.model.TopicState;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.AlterConfigsResult;
@@ -295,9 +301,9 @@ class BatchingTopicControllerTest {
         var topicPartitionInfo = Mockito.mock(TopicPartitionInfo.class);
         Mockito.doReturn(List.of(topicPartitionInfo)).when(topicDescription).partitions();
         
-        var currentState = Mockito.mock(BatchingTopicController.CurrentState.class);
+        var currentState = Mockito.mock(TopicState.class);
         Mockito.doReturn(replicationFactor).when(currentState).uniqueReplicationFactor();
-        Mockito.doReturn(topicDescription).when(currentState).topicDescription();
+        Mockito.doReturn(topicDescription).when(currentState).description();
         
         var inputKt = new KafkaTopicBuilder()
             .withNewMetadata()
@@ -314,8 +320,8 @@ class BatchingTopicControllerTest {
             new Reconciliation("test", RESOURCE_KIND, NAMESPACE, "my-topic"), inputKt, topicName(inputKt));
 
         var reconcilableTopics = List.of(inputRt);
-        var currentStatesOrError = new BatchingTopicController.PartitionedByError<>(
-            List.of(new BatchingTopicController.Pair<>(inputRt, Either.ofRight(currentState))), List.of());
+        var currentStatesOrError = new PartitionedByError<>(
+            List.of(new Pair<>(inputRt, Either.ofRight(currentState))), List.of());
         
         var outputKt = new KafkaTopicBuilder(inputKt)
             .withStatus(new KafkaTopicStatusBuilder()
@@ -372,9 +378,9 @@ class BatchingTopicControllerTest {
         var topicPartitionInfo = Mockito.mock(TopicPartitionInfo.class);
         Mockito.doReturn(List.of(topicPartitionInfo)).when(topicDescription).partitions();
 
-        var currentState = Mockito.mock(BatchingTopicController.CurrentState.class);
+        var currentState = Mockito.mock(TopicState.class);
         Mockito.doReturn(replicationFactor).when(currentState).uniqueReplicationFactor();
-        Mockito.doReturn(topicDescription).when(currentState).topicDescription();
+        Mockito.doReturn(topicDescription).when(currentState).description();
         
         var kafkaTopic = new KafkaTopicBuilder()
             .withNewMetadata()
@@ -403,8 +409,8 @@ class BatchingTopicControllerTest {
         Mockito.doReturn(List.of()).when(replicasChangeHandler).requestOngoingChanges(anyList());
         
         var reconcilableTopics = List.of(reconcilableTopic);
-        BatchingTopicController.PartitionedByError<ReconcilableTopic, BatchingTopicController.CurrentState> currentStatesOrError
-            = new BatchingTopicController.PartitionedByError<>(List.of(), List.of());
+        PartitionedByError<ReconcilableTopic, TopicState> currentStatesOrError
+            = new PartitionedByError<>(List.of(), List.of());
         
         // run test
         var results = new BatchingTopicController(config, Map.of("key", "VALUE"), admin, client, metrics, replicasChangeHandler)
@@ -441,9 +447,9 @@ class BatchingTopicControllerTest {
         var topicPartitionInfo = Mockito.mock(TopicPartitionInfo.class);
         Mockito.doReturn(List.of(topicPartitionInfo)).when(topicDescription).partitions();
 
-        var currentState = Mockito.mock(BatchingTopicController.CurrentState.class);
+        var currentState = Mockito.mock(TopicState.class);
         Mockito.doReturn(replicationFactor).when(currentState).uniqueReplicationFactor();
-        Mockito.doReturn(topicDescription).when(currentState).topicDescription();
+        Mockito.doReturn(topicDescription).when(currentState).description();
 
         var kafkaTopic = new KafkaTopicBuilder()
             .withNewMetadata()
@@ -471,8 +477,7 @@ class BatchingTopicControllerTest {
         Mockito.doReturn(List.of()).when(replicasChangeHandler).requestOngoingChanges(anyList());
 
         var reconcilableTopics = List.of(reconcilableTopic);
-        BatchingTopicController.PartitionedByError<ReconcilableTopic, BatchingTopicController.CurrentState> currentStatesOrError 
-            = new BatchingTopicController.PartitionedByError<>(List.of(), List.of());
+        PartitionedByError<ReconcilableTopic, TopicState> currentStatesOrError = new PartitionedByError<>(List.of(), List.of());
 
         // run test
         var results = new BatchingTopicController(config, Map.of("key", "VALUE"), admin, client, metrics, replicasChangeHandler)

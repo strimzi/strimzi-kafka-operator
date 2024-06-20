@@ -10,6 +10,11 @@ import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.topic.metrics.TopicOperatorMetricsHolder;
+import io.strimzi.operator.topic.model.KubeRef;
+import io.strimzi.operator.topic.model.ReconcilableTopic;
+import io.strimzi.operator.topic.model.TopicEvent;
+import io.strimzi.operator.topic.model.TopicEvent.TopicDelete;
+import io.strimzi.operator.topic.model.TopicEvent.TopicUpsert;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -23,7 +28,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Encapsulates a queue (actually a deque) of {@link TopicEvent}s and a pool of threads (see {@link LoopRunnable}) servicing
  * the reconciliation of those events using a {@link BatchingTopicController}.
- * Any given KafkaTopic is only being reconciled by a single thread at any one time.
+ * Any given {@link KafkaTopic} is only being reconciled by a single thread at any one time.
  */
 class BatchingLoop {
 

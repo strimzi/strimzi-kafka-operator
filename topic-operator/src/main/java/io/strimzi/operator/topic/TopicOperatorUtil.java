@@ -9,23 +9,26 @@ import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.api.kafka.model.topic.KafkaTopicStatus;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.topic.metrics.TopicOperatorMetricsHolder;
+import io.strimzi.operator.topic.model.Either;
+import io.strimzi.operator.topic.model.Pair;
+import io.strimzi.operator.topic.model.PartitionedByError;
+import io.strimzi.operator.topic.model.ReconcilableTopic;
+import io.strimzi.operator.topic.model.TopicOperatorException;
 
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
- * Provides utility methods for managing and interacting with KafkaTopic resources within a Topic Operator context. 
- * This class includes functionalities such as extracting topic names from KafkaTopic resources, managing reconciliation 
- * and operation timers, determining if a KafkaTopic is managed or paused, and handling common operations like reading 
- * file content and building HTTP authentication headers. It serves as a central point for operations that are frequently 
- * performed across different parts of the Topic Operator's codebase, ensuring consistency and reducing code duplication.
+ * Provides utility methods for managing and interacting 
+ * with KafkaTopic resources within a Topic Operator context.
  */
 public class TopicOperatorUtil {
     static final String MANAGED = "strimzi.io/managed";
+    static final int BROKER_DEFAULT = -1;
 
-    private TopicOperatorUtil() {
-    }
+    private TopicOperatorUtil() { }
 
     /**
      * Get the topic name from a {@link KafkaTopic} resource.
@@ -140,5 +143,38 @@ public class TopicOperatorUtil {
      */
     public static boolean hasReplicasChange(KafkaTopicStatus status) {
         return status != null && status.getReplicasChange() != null;
+    }
+
+    /**
+     * Partition the input stream {@link Pair}s into success and error lists.
+     *
+     * @param stream Input stream of pairs.
+     * @return Pairs partitioned by error.
+     * @param <K> Type of pair key.
+     * @param <V> Type of pair value.
+     */
+    public static <K, V> PartitionedByError<K, V> partitionedByError(Stream<Pair<K, Either<TopicOperatorException, V>>> stream) {
+        var collect = stream.collect(Collectors.partitioningBy(x -> x.getValue().isRight()));
+        return new PartitionedByError<>(collect.get(true), collect.get(false));
+    }
+
+    /**
+     * Get number of partitions from {@link KafkaTopic} spec.
+     *
+     * @param kt KafkaTopic resource.
+     * @return Partitions value.
+     */
+    public static int partitions(KafkaTopic kt) {
+        return kt.getSpec().getPartitions() != null ? kt.getSpec().getPartitions() : BROKER_DEFAULT;
+    }
+
+    /**
+     * Get number of replicas from {@link KafkaTopic} spec.
+     *
+     * @param kt KafkaTopic resource.
+     * @return Replicas value.
+     */
+    public static short replicas(KafkaTopic kt) {
+        return kt.getSpec().getReplicas() != null ? kt.getSpec().getReplicas().shortValue() : BROKER_DEFAULT;
     }
 }
