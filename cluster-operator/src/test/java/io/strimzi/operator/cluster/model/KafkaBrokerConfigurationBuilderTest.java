@@ -45,7 +45,6 @@ import java.io.StringWriter;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -2177,7 +2176,8 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         // It is the validation phase that sets some of the default values, and overrides some of the incompatibly set values
-        Set<String> errors = ListenersValidator.validateAndGetErrorMessages(new HashSet(singletonList(NODE_REF)), singletonList(listener));
+
+        Set<String> errors = ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, Collections.singleton(NODE_REF), singletonList(listener));
         assertThat("No listener validation errors", errors.isEmpty());
 
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.ZK)
@@ -2228,7 +2228,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         // It is the validation phase that sets some of the default values, and overrides some of the incompatibly set values
-        Set<String> errors = ListenersValidator.validateAndGetErrorMessages(new HashSet(singletonList(NODE_REF)), singletonList(listener));
+        Set<String> errors = ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, Collections.singleton(NODE_REF), singletonList(listener));
         assertThat("No listener validation errors", errors.isEmpty());
 
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.ZK)
