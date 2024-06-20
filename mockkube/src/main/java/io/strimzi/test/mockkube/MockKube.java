@@ -31,8 +31,8 @@ import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
 import io.fabric8.kubernetes.api.model.networking.v1.IngressList;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyList;
-import io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget;
-import io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudgetList;
+import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
+import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudgetList;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBindingList;
 import io.fabric8.kubernetes.api.model.rbac.Role;
@@ -339,7 +339,7 @@ public class MockKube {
         V1beta1PolicyAPIGroupDSL v1beta1policy = mock(V1beta1PolicyAPIGroupDSL.class);
         when(mockClient.policy()).thenReturn(policy);
         when(policy.v1beta1()).thenReturn(v1beta1policy);
-        podDisruptionBudgedMockBuilder.build2(mockClient.policy().v1beta1()::podDisruptionBudget);
+        podDisruptionBudgedMockBuilder.build2(mockClient.policy().v1()::podDisruptionBudget);
 
         // RBAC group
         RbacAPIGroupDSL rbac = mock(RbacAPIGroupDSL.class);
