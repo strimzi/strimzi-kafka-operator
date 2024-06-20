@@ -16,7 +16,7 @@
 * Update HTTP bridge to latest 0.29.0 release
 * Uncommented and enabled (by default) KRaft-related metrics in the `kafka-metrics.yaml` example file.
 * Added support for configuring the quotas plugin with type `strimzi` or `kafka` in the `Kafka` custom resource.
-  The Strimzi Quotas plugin version was updated to 0.3.1.
+* The Strimzi Quotas plugin version was updated to 0.3.1.
 
 ### Changes, deprecations and removals
 
