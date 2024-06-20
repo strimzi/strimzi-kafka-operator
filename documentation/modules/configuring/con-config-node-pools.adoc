@@ -17,8 +17,11 @@ Optionally, you can also specify values for the following properties:
 * `template` to specify custom configuration for pods and other Kubernetes resources
 * `jvmOptions` to specify custom JVM configuration for heap size, runtime and other options 
 
-The `Kafka` resource represents the configuration for all nodes in the Kafka cluster.
-The `KafkaNodePool` resource represents the configuration for nodes only in the node pool.
+The relationship between `Kafka` and `KafkaNodePool` resources is as follows:
+
+* `Kafka` resources represent the configuration for all nodes in a Kafka cluster.
+* `KafkaNodePool` resources represent the configuration for nodes only in the node pool.
+
 If a configuration property is not specified in `KafkaNodePool`, it is inherited from the `Kafka` resource.
 Configuration specified in the `KafkaNodePool` resource takes precedence if set in both resources.
 For example, if both the node pool and Kafka configuration includes `jvmOptions`, the values specified in the node pool configuration are used.
@@ -65,7 +68,7 @@ spec:
 <5> Storage specification for the nodes. 
 <6> Requests for reservation of supported resources, currently `cpu` and `memory`, and limits to specify the maximum resources that can be consumed.
 
-NOTE: The configuration for the `Kafka` resource must be suitable for KRaft mode. Currently, KRaft mode has xref:ref-operator-use-kraft-feature-gate-str[a number of limitations]. 
+NOTE: The configuration for the `Kafka` resource must be suitable for KRaft mode. Currently, KRaft mode has xref:assembly-kraft-mode-{context}[a number of limitations]. 
 
 .Example configuration for a node pool in a cluster using ZooKeeper
 [source,yaml,subs="+attributes"]

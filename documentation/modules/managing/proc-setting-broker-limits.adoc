@@ -4,7 +4,7 @@
 
 [id='proc-setting-broker-limits-{context}']
 
-= Setting limits on brokers using the Kafka Static Quota plugin
+= Setting throughput and storage limits on brokers
 
 [role="_abstract"]
 Use the _Kafka Static Quota_ plugin to set throughput and storage limits on brokers in your Kafka cluster.

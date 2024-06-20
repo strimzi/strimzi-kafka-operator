@@ -2,29 +2,28 @@
 //
 // deploying/assembly_deploy-kafka-cluster.adoc
 
-[id='deploying-kafka-node-pools-{context}']
-= Deploying a Kafka cluster with node pools
+[id='deploying-kafka-cluster-kraft-{context}']
+= Deploying a Kafka cluster in KRaft mode
 
 [role="_abstract"]
-This procedure shows how to deploy Kafka with node pools to your Kubernetes cluster using the Cluster Operator.
-Node pools represent a distinct group of Kafka nodes within a Kafka cluster that share the same configuration.
-For each Kafka node in the node pool, any configuration not defined in node pool is inherited from the cluster configuration in the `kafka` resource.
+This procedure shows how to deploy a Kafka cluster in KRaft mode and associated node pools using the Cluster Operator.
 
-The deployment uses a YAML file to provide the specification to create a `KafkaNodePool` resource.
-You can use node pools with Kafka clusters that use KRaft (Kafka Raft metadata) mode or ZooKeeper for cluster management.
-To deploy a Kafka cluster in KRaft mode, you must use the `KafkaNodePool` resources.
+The deployment uses a YAML file to provide the specification to create a `Kafka` resource and `KafkaNodePool` resources.
 
-Strimzi provides the following xref:config-examples-{context}[example files] that you can use to create a Kafka cluster that uses node pools:
+Strimzi provides the following xref:config-examples-{context}[example deployment files] that you can use to create a Kafka cluster that uses node pools:
 
-`kafka/kafka-with-node-pools.yaml`:: Deploys ZooKeeper with 3 nodes, and 2 different pools of Kafka brokers. Each of the pools has 3 brokers. The pools in the example use different storage configuration.
-`kafka/kraft/kafka-with-dual-role-nodes.yaml`:: Deploys a KRaft-based Kafka cluster with one pool of KRaft nodes that share the broker and controller roles.
-`kafka/kraft/kafka.yaml`:: Deploys a persistent KRaft-based Kafka cluster with one pool of controller nodes and one pool of broker nodes.
-`kafka/kraft/kafka-ephemeral.yaml`:: Deploys an ephemeral KRaft-based Kafka cluster with one pool of controller nodes and one pool of broker nodes.
-`kafka/kraft/kafka-single-node.yaml`:: Deploys a KRaft-based Kafka cluster with a single node.
-`kafka/kraft/kafka-jbod.yaml`:: Deploys a KRaft-based Kafka cluster with multiple volumes in each broker node.
+`kafka/kraft/kafka-with-dual-role-nodes.yaml`:: Deploys a Kafka cluster with one pool of nodes that share the broker and controller roles.
+`kafka/kraft/kafka.yaml`:: Deploys a persistent Kafka cluster with one pool of controller nodes and one pool of broker nodes.
+`kafka/kraft/kafka-ephemeral.yaml`:: Deploys an ephemeral Kafka cluster with one pool of controller nodes and one pool of broker nodes.
+`kafka/kraft/kafka-single-node.yaml`:: Deploys a Kafka cluster with a single node.
+`kafka/kraft/kafka-jbod.yaml`:: Deploys a Kafka cluster with multiple volumes in each broker node.
+
+In this procedure, we use the example deployment file that deploys a Kafka cluster with one pool of nodes that share the broker and controller roles.
 
 The `Kafka` resource configuration for each example includes the `strimzi.io/node-pools: enabled` annotation, which is required when using node pools.
 `Kafka` resources using KRaft mode must also have the annotation `strimzi.io/kraft: enabled`.
+
+The example YAML files specify the latest supported Kafka version and KRaft metadata version used by the Kafka cluster.
 
 NOTE: You can perform the steps outlined here to deploy a new Kafka cluster with `KafkaNodePool` resources or xref:proc-migrating-clusters-node-pools-{context}[migrate your existing Kafka cluster].  
 
@@ -32,24 +31,30 @@ NOTE: You can perform the steps outlined here to deploy a new Kafka cluster with
 
 * xref:deploying-cluster-operator-str[The Cluster Operator must be deployed.]  
 
+.Before you begin
+
+By default, the example deployment files specify `my-cluster` as the Kafka cluster name.
+The name cannot be changed after the cluster has been deployed.
+To change the cluster name before you deploy the cluster, edit the `Kafka.metadata.name` property of the `Kafka` resource in the relevant YAML file.
+
 .Procedure
 
 . Deploy a KRaft-based Kafka cluster.
 +
-* For example, to deploy a Kafka cluster in KRaft mode with a single node pool that uses dual-role nodes:
+To deploy a Kafka cluster with a single node pool that uses dual-role nodes:
 +
-[source,shell,subs="attributes+"]
+[source,shell]
 kubectl apply -f examples/kafka/kraft/kafka-with-dual-role-nodes.yaml
 
 . Check the status of the deployment:
 +
-[source,shell,subs="+quotes"]
+[source,shell]
 ----
-kubectl get pods -n _<my_cluster_operator_namespace>_
+kubectl get pods -n <my_cluster_operator_namespace>
 ----
 +
 .Output shows the node pool names and readiness
-[source,shell,subs="+quotes"]
+[source,shell]
 ----
 NAME                        READY  STATUS   RESTARTS
 my-cluster-entity-operator  3/3    Running  0
@@ -74,4 +79,5 @@ NOTE: Node IDs are assigned sequentially starting at 0 (zero) across all node po
 [role="_additional-resources"]
 .Additional resources
 
-xref:config-node-pools-{context}[Node pool configuration]
+* xref:con-config-kafka-str[Kafka cluster configuration]
+* xref:config-node-pools-{context}[Node pool configuration]

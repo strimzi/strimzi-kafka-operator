@@ -7,13 +7,12 @@
 
 [role="_abstract"]
 If you are using ZooKeeper for metadata management in your Kafka cluster, you can migrate to using Kafka in KRaft mode. 
-KRaft mode replaces ZooKeeper for distributed coordination, offering enhanced reliability, scalability, and throughput.
 
 During the migration, you install a quorum of controller nodes as a node pool, which replaces ZooKeeper for management of your cluster. 
 You enable KRaft migration in the cluster configuration by applying the `strimzi.io/kraft="migration"` annotation.  
 After the migration is complete, you switch the brokers to using KRaft and the controllers out of migration mode using the `strimzi.io/kraft="enabled"` annotation.
 
-Before starting the migration, verify that your environment can support Kafka in KRaft mode, as there are a number of xref:ref-operator-use-kraft-feature-gate-str[limitations].
+Before starting the migration, verify that your environment can support Kafka in KRaft mode, as there are xref:assembly-kraft-mode-{context}[a number of limitations].
 Note also, the following:
 
 * Migration is only supported on dedicated controller nodes, not on nodes with dual roles as brokers and controllers.

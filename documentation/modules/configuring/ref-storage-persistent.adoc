@@ -10,6 +10,13 @@ Persistent data storage retains data in the event of system disruption.
 For pods that use persistent data storage, data is persisted across pod failures and restarts.
 Because of its permanent nature, persistent storage is recommended for production environments.
 
+The following examples show common types of persistent volumes supported by Kubernetes:
+
+* If your Kubernetes cluster runs on Amazon AWS, Kubernetes can provision Amazon EBS volumes
+* If your Kubernetes cluster runs on Microsoft Azure, Kubernetes can provision Azure Disk Storage volumes
+* If your Kubernetes cluster runs on Google Cloud, Kubernetes can provision Persistent Disk volumes
+* If your Kubernetes cluster runs on bare metal, Kubernetes can provision local persistent volumes
+
 To use persistent storage in Strimzi, you specify `persistent-claim` in the storage configuration of the `Kafka` or `ZooKeeper` resources.
 If you are using node pools, you can also specify `persistent-claim` in the storage configuration of individual node pools.
 

@@ -23,7 +23,6 @@ To do this, xref:con-config-kafka-connect-multiple-instances-{context}[configure
 .Prerequisites
 
 * xref:deploying-cluster-operator-str[The Cluster Operator must be deployed.]
-* xref:deploying-kafka-cluster-str[Running Kafka cluster.]
 
 .Procedure
 
