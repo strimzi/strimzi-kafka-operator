@@ -11,16 +11,22 @@ If another operation attempts to start while a lock is held, it waits until the 
 
 Operations such as cluster creation, rolling updates, scaling down, and scaling up are managed by the Cluster Operator.
 
-If acquiring a lock takes longer than the configured timeout (`STRIMZI_OPERATION_TIMEOUT_MS`), a warning message is logged:
+If acquiring a lock takes longer than the configured timeout (`STRIMZI_OPERATION_TIMEOUT_MS`), a DEBUG message is logged:
 
-.Example warning message for lock acquisition
+.Example DEBUG message for lock acquisition
 [source,shell]
 ----
-WARNING AbstractClusterOperations:290 - Failed to acquire lock for kafka cluster lock::kafka::myproject::my-cluster
+DEBUG AbstractOperator:406 - Reconciliation #55(timer) Kafka(myproject/my-cluster): Failed to acquire lock lock::myproject::Kafka::my-cluster within 10000ms.
 ----
 
-In configurations where `STRIMZI_FULL_RECONCILIATION_INTERVAL_MS` and `STRIMZI_OPERATION_TIMEOUT_MS` are set, occasional warnings may occur without underlying issues. 
-Timed-out operations are retried during the next periodic reconciliation.
+Timed-out operations are retried during the next periodic reconciliation in intervals defined by `STRIMZI_FULL_RECONCILIATION_INTERVAL_MS` (by default 120 seconds).
 
-Persistent appearance of this warning, especially when no other operations should be running, might indicate a lock release error. 
+If an INFO message continues to appear with the same same reconciliation number, it might indicate a lock release error:
+
+.Example INFO message for reconciliation
+[source,shell]
+----
+INFO  AbstractOperator:399 - Reconciliation #1(watch) Kafka(myproject/my-cluster): Reconciliation is in progress
+----
+
 Restarting the Cluster Operator can resolve such issues.
