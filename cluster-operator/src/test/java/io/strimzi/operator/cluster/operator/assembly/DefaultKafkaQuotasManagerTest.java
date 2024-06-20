@@ -136,7 +136,7 @@ public class DefaultKafkaQuotasManagerTest {
 
         DefaultKafkaQuotasManager.shouldAlterDefaultQuotasConfig(Reconciliation.DUMMY_RECONCILIATION, vertx, mockAdminClient, noneQuotas, true)
             .onComplete(context.succeeding(result -> {
-                context.verify(() -> assertThat(result, is(false)));
+                assertThat(result, is(false));
 
                 checkpoint.flag();
             }));
@@ -167,7 +167,7 @@ public class DefaultKafkaQuotasManagerTest {
 
         DefaultKafkaQuotasManager.shouldAlterDefaultQuotasConfig(Reconciliation.DUMMY_RECONCILIATION, vertx, mockAdminClient, desiredQuotas, false)
             .onComplete(context.succeeding(result -> {
-                context.verify(() -> assertThat(result, is(true)));
+                assertThat(result, is(true));
 
                 checkpoint.flag();
             }));
@@ -194,7 +194,7 @@ public class DefaultKafkaQuotasManagerTest {
 
         DefaultKafkaQuotasManager.shouldAlterDefaultQuotasConfig(Reconciliation.DUMMY_RECONCILIATION, vertx, mockAdminClient, noneQuotas, true)
             .onComplete(context.succeeding(result -> {
-                context.verify(() -> assertThat(result, is(true)));
+                assertThat(result, is(true));
 
                 checkpoint.flag();
             }));
@@ -225,7 +225,7 @@ public class DefaultKafkaQuotasManagerTest {
 
         DefaultKafkaQuotasManager.shouldAlterDefaultQuotasConfig(Reconciliation.DUMMY_RECONCILIATION, vertx, mockAdminClient, desiredQuotas, false)
             .onComplete(context.succeeding(result -> {
-                context.verify(() -> assertThat(result, is(true)));
+                assertThat(result, is(true));
 
                 checkpoint.flag();
             }));
@@ -259,7 +259,7 @@ public class DefaultKafkaQuotasManagerTest {
 
         DefaultKafkaQuotasManager.shouldAlterDefaultQuotasConfig(Reconciliation.DUMMY_RECONCILIATION, vertx, mockAdminClient, desiredQuotas, false)
             .onComplete(context.succeeding(result -> {
-                context.verify(() -> assertThat(result, is(false)));
+                assertThat(result, is(false));
 
                 checkpoint.flag();
             }));

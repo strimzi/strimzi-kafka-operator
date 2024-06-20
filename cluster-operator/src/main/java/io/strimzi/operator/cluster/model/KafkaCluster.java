@@ -580,6 +580,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                     throw new InvalidResourceException("You cannot configure both `minAvailableBytesPerVolume` and `minAvailableRatioPerVolume`, they are mutually exclusive.");
                 }
             }
+
             if (configuration.getConfigOption(CLIENT_CALLBACK_CLASS_OPTION) != null) {
                 warnings.add(StatusUtils.buildWarningCondition("QuotasPluginConflict",
                     String.format("Quotas plugin class cannot be configured in .spec.kafka.config, " +

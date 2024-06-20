@@ -139,8 +139,6 @@ public class DefaultKafkaQuotasManager {
 
                     return promise.future();
                 } else {
-                    LOGGER.debugCr(reconciliation, "No need to update default user quotas");
-
                     kafkaAdmin.close();
                     return Future.succeededFuture();
                 }
@@ -173,7 +171,7 @@ public class DefaultKafkaQuotasManager {
                         return Future.succeededFuture(false);
                     } else if (ops.stream().allMatch(op -> Objects.isNull(op.value()))) {
                         // 2. if the current quotas set in Kafka are null and quotas configuration in Kafka CR is type of `QuotasPluginKafka`, but there is no fields configured, skip alteration
-                        LOGGER.debugCr(reconciliation, "There are no default user quotas set in Kafka and no quotas are configured , skipping the alteration");
+                        LOGGER.debugCr(reconciliation, "There are no default user quotas set in Kafka and no quotas are configured, skipping the alteration");
                         return Future.succeededFuture(false);
                     } else {
                         // 3. in case that the current quotas are null, but desired quotas contains some non-null values, we should alter the quotas
