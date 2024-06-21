@@ -16,6 +16,7 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -38,7 +39,7 @@ public abstract class AbstractConnectorSpec extends Spec {
 
     private Integer tasksMax;
     private Boolean pause;
-    private Map<String, Object> config;
+    private Map<String, Object> config = new HashMap<>(0);
     private ConnectorState state;
 
     private AutoRestart autoRestart;
@@ -67,7 +68,7 @@ public abstract class AbstractConnectorSpec extends Spec {
     @Description("The Kafka Connector configuration. The following properties cannot be set: " + FORBIDDEN_PARAMETERS)
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<String, Object> getConfig() {
-        return this.config != null ? this.config : Map.of();
+        return config;
     }
 
     /**

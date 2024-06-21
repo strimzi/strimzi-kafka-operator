@@ -22,11 +22,12 @@ import java.util.Map;
 @EqualsAndHashCode
 @ToString
 public abstract class KafkaBridgeClientSpec implements UnknownPropertyPreserving {
-    protected Map<String, Object> config;
+    protected Map<String, Object> config = new HashMap<>(0);
     private Map<String, Object> additionalProperties;
 
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<String, Object> getConfig() {
-        return this.config != null ? this.config : Map.of();
+        return config;
     }
 
     public void setConfig(Map<String, Object> config) {

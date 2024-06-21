@@ -15,6 +15,7 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
+import java.util.HashMap;
 import java.util.Map;
 
 @Buildable(
@@ -29,7 +30,7 @@ public class KafkaTopicSpec extends Spec {
     private String topicName;
     private Integer partitions;
     private Integer replicas;
-    private Map<String, Object> config;
+    private Map<String, Object> config = new HashMap<>(0);
 
     @Description("The name of the topic. " +
             "When absent this will default to the metadata.name of the topic. " +
@@ -70,9 +71,10 @@ public class KafkaTopicSpec extends Spec {
         this.replicas = replicas;
     }
 
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @Description("The topic configuration.")
     public Map<String, Object> getConfig() {
-        return this.config != null ? this.config : Map.of();
+        return config;
     }
 
     public void setConfig(Map<String, Object> config) {

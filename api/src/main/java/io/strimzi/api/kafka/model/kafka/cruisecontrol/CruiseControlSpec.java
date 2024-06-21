@@ -58,7 +58,7 @@ public class CruiseControlSpec implements HasConfigurableMetrics, HasConfigurabl
     private Logging logging;
     private CruiseControlTemplate template;
     private BrokerCapacity brokerCapacity;
-    private Map<String, Object> config;
+    private Map<String, Object> config = new HashMap<>(0);
     private MetricsConfig metricsConfig;
     private Map<String, Object> additionalProperties;
 
@@ -102,7 +102,7 @@ public class CruiseControlSpec implements HasConfigurableMetrics, HasConfigurabl
             " (with the exception of: " + FORBIDDEN_PREFIX_EXCEPTIONS + ").")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<String, Object> getConfig() {
-        return this.config != null ? this.config : Map.of();
+        return config;
     }
 
     public void setConfig(Map<String, Object> config) {

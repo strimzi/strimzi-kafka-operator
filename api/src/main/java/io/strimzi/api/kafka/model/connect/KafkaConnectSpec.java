@@ -17,6 +17,7 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
+import java.util.HashMap;
 import java.util.Map;
 
 @DescriptionFile
@@ -36,15 +37,16 @@ public class KafkaConnectSpec extends AbstractKafkaConnectSpec {
     public static final String FORBIDDEN_PREFIXES = "ssl., sasl., security., listeners, plugin.path, rest., bootstrap.servers, consumer.interceptor.classes, producer.interceptor.classes";
     public static final String FORBIDDEN_PREFIX_EXCEPTIONS = "ssl.endpoint.identification.algorithm, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols";
 
-    private Map<String, Object> config;
+    private Map<String, Object> config = new HashMap<>(0);
     private String bootstrapServers;
     private ClientTls tls;
     private KafkaClientAuthentication authentication;
     private Build build;
 
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @Description("The Kafka Connect configuration. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES + " (with the exception of: " + FORBIDDEN_PREFIX_EXCEPTIONS + ").")
     public Map<String, Object> getConfig() {
-        return this.config != null ? this.config : Map.of();
+        return config;
     }
 
     public void setConfig(Map<String, Object> config) {

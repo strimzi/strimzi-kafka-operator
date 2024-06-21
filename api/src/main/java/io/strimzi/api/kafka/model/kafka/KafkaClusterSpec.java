@@ -69,7 +69,7 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, HasConfigurable
     protected Storage storage;
     private String version;
     private String metadataVersion;
-    private Map<String, Object> config;
+    private Map<String, Object> config = new HashMap<>(0);
     private String brokerRackInitImage;
     private Rack rack;
     private Logging logging;
@@ -112,7 +112,7 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, HasConfigurable
     @Description("Kafka broker config properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES + " (with the exception of: " + FORBIDDEN_PREFIX_EXCEPTIONS + ").")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<String, Object> getConfig() {
-        return this.config != null ? this.config : Map.of();
+        return config;
     }
 
     public void setConfig(Map<String, Object> config) {

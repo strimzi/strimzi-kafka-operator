@@ -36,7 +36,7 @@ public class KafkaMirrorMaker2ClusterSpec implements UnknownPropertyPreserving {
 
     private String alias;
     private String bootstrapServers;
-    protected Map<String, Object> config;
+    protected Map<String, Object> config = new HashMap<>(0);
     private ClientTls tls;
     private KafkaClientAuthentication authentication;
     private Map<String, Object> additionalProperties;
@@ -65,9 +65,10 @@ public class KafkaMirrorMaker2ClusterSpec implements UnknownPropertyPreserving {
     @Description("The MirrorMaker 2 cluster config. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES + " (with the exception of: " + FORBIDDEN_PREFIX_EXCEPTIONS + ").")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<String, Object> getConfig() {
-        return this.config != null ? this.config : Map.of();
+        return config;
     }
 
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public void setConfig(Map<String, Object> config) {
         this.config = config;
     }

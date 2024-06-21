@@ -27,7 +27,7 @@ import java.util.Map;
 @ToString
 public class KafkaMirrorMakerClientSpec implements UnknownPropertyPreserving {
     private String bootstrapServers;
-    protected Map<String, Object> config;
+    protected Map<String, Object> config = new HashMap<>(0);
     private ClientTls tls;
     private KafkaClientAuthentication authentication;
     private Map<String, Object> additionalProperties;
@@ -44,7 +44,7 @@ public class KafkaMirrorMakerClientSpec implements UnknownPropertyPreserving {
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<String, Object> getConfig() {
-        return this.config != null ? this.config : Map.of();
+        return config;
     }
 
     public void setConfig(Map<String, Object> config) {

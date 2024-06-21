@@ -27,8 +27,9 @@ public class KafkaBridgeAdminClientSpec extends KafkaBridgeClientSpec {
     public static final String FORBIDDEN_PREFIX_EXCEPTIONS = "ssl.endpoint.identification.algorithm, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols";
 
     @Override
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @Description("The Kafka AdminClient configuration used for AdminClient instances created by the bridge.")
     public Map<String, Object> getConfig() {
-        return this.config != null ? this.config : Map.of();
+        return config;
     }
 }

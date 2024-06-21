@@ -37,8 +37,8 @@ public class GenericKafkaListenerConfigurationBroker implements UnknownPropertyP
     private String advertisedHost;
     private Integer advertisedPort;
     private String host;
-    private Map<String, String> annotations;
-    private Map<String, String> labels;
+    private Map<String, String> annotations = new HashMap<>(0);
+    private Map<String, String> labels = new HashMap<>(0);
     private Integer nodePort;
     private String loadBalancerIP;
     private List<String> externalIPs;
@@ -92,7 +92,7 @@ public class GenericKafkaListenerConfigurationBroker implements UnknownPropertyP
             "This field can be used only with `loadbalancer`, `nodeport`, or `ingress` type listeners.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<String, String> getAnnotations() {
-        return annotations != null ? annotations : Map.of();
+        return annotations;
     }
 
     public void setAnnotations(Map<String, String> annotations) {
@@ -103,7 +103,7 @@ public class GenericKafkaListenerConfigurationBroker implements UnknownPropertyP
             "This field can be used only with `loadbalancer`, `nodeport`, `route`, or `ingress` type listeners.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<String, String> getLabels() {
-        return labels != null ? labels : Map.of();
+        return labels;
     }
 
     public void setLabels(Map<String, String> labels) {
