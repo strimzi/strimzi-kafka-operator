@@ -178,7 +178,7 @@ public class CruiseControlST extends AbstractST {
                 KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
             )
         );
-        resourceManager.createResourceWithWait(KafkaTemplates.kafkaWithCruiseControl(testStorage.getClusterName(), 3, 3)
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3, 3)
                 .editMetadata()
                     .withNamespace(Environment.TEST_SUITE_NAMESPACE)
                 .endMetadata()
@@ -194,7 +194,11 @@ public class CruiseControlST extends AbstractST {
         Map<String, String> brokerPods = PodUtils.podSnapshot(Environment.TEST_SUITE_NAMESPACE, testStorage.getBrokerSelector());
 
         // CruiseControl spec is now enabled
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> kafka.getSpec().setCruiseControl(new CruiseControlSpec()), Environment.TEST_SUITE_NAMESPACE);
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> {
+            // Get default CC spec with tune options and set it to existing Kafka
+            CruiseControlSpec cruiseControlSpec = KafkaTemplates.kafkaWithCruiseControl(testStorage.getClusterName(), 3, 3).build().getSpec().getCruiseControl();
+            kafka.getSpec().setCruiseControl(cruiseControlSpec);
+        }, Environment.TEST_SUITE_NAMESPACE);
 
         RollingUpdateUtils.waitTillComponentHasRolled(Environment.TEST_SUITE_NAMESPACE, testStorage.getBrokerSelector(), 3, brokerPods);
 
