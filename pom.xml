@@ -113,7 +113,7 @@
         <maven.jar.version>3.1.0</maven.jar.version>
         <sonatype.nexus.staging.version>1.6.13</sonatype.nexus.staging.version>
         <maven.spotbugs.version>4.7.3.4</maven.spotbugs.version>
-        <maven.jacoco.version>0.8.8</maven.jacoco.version>
+        <maven.jacoco.version>0.8.12</maven.jacoco.version>
         <maven.exec.version>3.1.0</maven.exec.version>
         <maven.resources.version>3.1.0</maven.resources.version>
 
@@ -1010,19 +1010,22 @@
                 <version>${maven.jacoco.version}</version>
                 <executions>
                     <execution>
+                        <id>default-prepare-agent</id>
                         <goals>
                             <goal>prepare-agent</goal>
                         </goals>
-                        <configuration>
-                            <propertyName>surefireArgLine</propertyName>
-                        </configuration>
                     </execution>
                     <execution>
-                        <id>report</id>
-                        <phase>package</phase>
+                        <id>default-report</id>
                         <goals>
                             <goal>report</goal>
                         </goals>
+                        <configuration>
+                            <excludes>
+                                <exclude>io/strimzi/api/**/*Fluent*.class</exclude>
+                                <exclude>io/strimzi/api/**/*Builder*.class</exclude>
+                            </excludes>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
