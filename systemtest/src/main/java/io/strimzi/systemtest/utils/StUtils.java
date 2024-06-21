@@ -554,11 +554,6 @@ public class StUtils {
                 TestConstants.GLOBAL_STATUS_TIMEOUT, () -> sup.get().equals(anotherSup.get()));
     }
 
-    public static void waitUntilSupplierIsSatisfied(final BooleanSupplier sup) {
-        TestUtils.waitFor(sup.getAsBoolean() + " is satisfied", TestConstants.GLOBAL_POLL_INTERVAL,
-                TestConstants.GLOBAL_STATUS_TIMEOUT, sup);
-    }
-
     public static void waitUntilSupplierIsSatisfied(String message, final BooleanSupplier sup) {
         TestUtils.waitFor(message, TestConstants.GLOBAL_POLL_INTERVAL,
                 TestConstants.GLOBAL_STATUS_TIMEOUT, sup);

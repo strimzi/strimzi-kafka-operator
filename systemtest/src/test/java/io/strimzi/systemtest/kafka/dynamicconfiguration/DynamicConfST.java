@@ -227,7 +227,7 @@ public class DynamicConfST extends AbstractST {
         updateAndVerifyDynConf(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), deepCopyOfShardKafkaConfig);
 
         // Wait until the configuration is properly set and returned by Kafka Admin API
-        StUtils.waitUntilSupplierIsSatisfied(() ->
+        StUtils.waitUntilSupplierIsSatisfied("compression.type=snappy is set in Kafka", () ->
             KafkaCmdClient.describeKafkaBrokerUsingPodCli(Environment.TEST_SUITE_NAMESPACE, scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), podNum).contains("compression.type=snappy"));
 
         kafkaConfigurationFromPod = KafkaCmdClient.describeKafkaBrokerUsingPodCli(Environment.TEST_SUITE_NAMESPACE, scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), podNum);
@@ -274,7 +274,7 @@ public class DynamicConfST extends AbstractST {
         updateAndVerifyDynConf(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), deepCopyOfShardKafkaConfig);
 
         // Wait until the configuration is properly set and returned by Kafka Admin API
-        StUtils.waitUntilSupplierIsSatisfied(() ->
+        StUtils.waitUntilSupplierIsSatisfied("unclean.leader.election.enable=false is set in Kafka", () ->
             KafkaCmdClient.describeKafkaBrokerUsingPodCli(Environment.TEST_SUITE_NAMESPACE, scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), podNum).contains("unclean.leader.election.enable=" + false));
     }
 
