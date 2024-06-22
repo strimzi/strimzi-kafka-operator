@@ -285,7 +285,7 @@ class HttpBridgeST extends AbstractST {
         DeploymentUtils.waitForDeploymentAndPodsReady(Environment.TEST_SUITE_NAMESPACE, KafkaBridgeResources.componentName(bridgeName), scaleTo);
 
         LOGGER.info("Check if replicas is set to {}, naming prefix should be same and observed generation higher", scaleTo);
-        StUtils.waitUntilSupplierIsSatisfied(
+        StUtils.waitUntilSupplierIsSatisfied("KafkaBridge replica is 4 and observedGeneration is lower than 4",
             () -> {
                 List<String> bridgePods = kubeClient(Environment.TEST_SUITE_NAMESPACE).listPodNames(Labels.STRIMZI_CLUSTER_LABEL, bridgeName);
 
@@ -346,7 +346,7 @@ class HttpBridgeST extends AbstractST {
 
         LOGGER.info("Checking that observed gen. higher (rolling update) and label is changed");
 
-        StUtils.waitUntilSupplierIsSatisfied(() -> {
+        StUtils.waitUntilSupplierIsSatisfied("KafkaBridge observed generation and labels", () -> {
             final KafkaBridge kB = KafkaBridgeResource.kafkaBridgeClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(bridgeName).get();
 
             return kB.getStatus().getObservedGeneration() == 2L &&

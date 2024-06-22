@@ -64,7 +64,7 @@ jobs:
 
   - job: tests
     trigger: pull_request
-    identifier: "regression-components"
+    identifier: "regression-components-1"
     targets:
       - centos-stream-9-x86_64
       - centos-stream-9-aarch64
@@ -79,7 +79,26 @@ jobs:
     tf_extra_params:
       test:
         tmt:
-          name: regression-components
+          name: regression-components-1
+
+  - job: tests
+    trigger: pull_request
+    identifier: "regression-components-2"
+    targets:
+      - centos-stream-9-x86_64
+      - centos-stream-9-aarch64
+    skip_build: true
+    manual_trigger: true
+    env: { IP_FAMILY: ipv4 }
+    labels:
+      - regression
+      - components
+      - regression-components
+      - rc
+    tf_extra_params:
+      test:
+        tmt:
+          name: regression-components-2
   ###############################################################################################
 
   - job: tests
@@ -129,6 +148,7 @@ jobs:
     env: { IP_FAMILY: ipv6 }
     labels:
       - acceptance_ipv6
+      - ipv6
     tf_extra_params:
       test:
         tmt:
@@ -145,6 +165,7 @@ jobs:
     env: { IP_FAMILY: dual }
     labels:
       - acceptance_dual
+      - dual
     tf_extra_params:
       test:
         tmt:
@@ -163,6 +184,7 @@ jobs:
     env: { IP_FAMILY: ipv4 }
     labels:
       - performance
+      - performance-common
     tf_extra_params:
       settings:
         pipeline:
@@ -180,6 +202,7 @@ jobs:
     manual_trigger: true
     env: { IP_FAMILY: ipv4 }
     labels:
+      - performance
       - performance-capacity
     tf_extra_params:
       settings:
@@ -198,6 +221,7 @@ jobs:
     manual_trigger: true
     env: { IP_FAMILY: ipv4 }
     labels:
+      - performance
       - performance-topic-operator-capacity
     tf_extra_params:
       settings:

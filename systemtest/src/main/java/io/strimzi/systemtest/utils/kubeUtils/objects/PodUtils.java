@@ -303,7 +303,7 @@ public class PodUtils {
                 stabilityCounter[0]++;
 
                 if (stabilityCounter[0] == TestConstants.GLOBAL_RECONCILIATION_COUNT) {
-                    LOGGER.info("All Pods are stable {}", actualPods.stream().map(p -> p.getMetadata().getName()).collect(Collectors.joining(" ,")));
+                    LOGGER.info("All Pods are stable {}", actualPods.stream().map(p -> p.getMetadata().getName()).collect(Collectors.joining(", ")));
                     return true;
                 }
                 return false;

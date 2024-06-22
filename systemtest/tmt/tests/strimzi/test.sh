@@ -11,7 +11,11 @@ elif [[ ${IP_FAMILY} == "ipv6" ]]; then
 fi
 
 export DOCKER_REGISTRY="$DOCKER_REGISTRY:5001"
-echo "Using container registry:$DOCKER_REGISTRY"
+echo "Using container registry '$DOCKER_REGISTRY'"
+
+# Name of the image used within KafkaConnect build
+export CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN="${DOCKER_REGISTRY}/${DOCKER_ORG}/connect-file-sink:latest"
+echo "Using CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN=$CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN"
 
 mvn compile -pl config-model-generator -DskipTests -Dmaven.javadoc.skip=true --no-transfer-progress
 mvn verify -pl systemtest -P ${TEST_PROFILE} \

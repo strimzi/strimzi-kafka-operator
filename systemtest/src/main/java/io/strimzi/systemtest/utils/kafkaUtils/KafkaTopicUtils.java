@@ -21,6 +21,7 @@ import org.apache.logging.log4j.Logger;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Random;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -394,12 +395,19 @@ public class KafkaTopicUtils {
      * @param topicName         The name of the KafkaTopic.
      */
     public static void waitUntilReplicaChangeOngoing(String namespaceName, String topicName) {
-        waitForCondition("replicaChange ongoing",
+        waitForCondition("replicaChange of %s in 'ongoing' state".formatted(topicName),
             namespaceName, topicName,
             kafkaTopic -> {
                 if (kafkaTopic != null && kafkaTopic.getStatus() != null && kafkaTopic.getStatus().getReplicasChange() != null) {
-                    return "ongoing".equals(kafkaTopic.getStatus().getReplicasChange().getState().toValue());
+                    String replicasChangeState = kafkaTopic.getStatus().getReplicasChange().getState().toValue();
+                    String expectedState = "ongoing";
+
+                    LOGGER.debug("ReplicaChange state of KafkaTopic {} is {}. Expected value is {}", topicName, replicasChangeState, expectedState);
+
+                    return Objects.equals(replicasChangeState, expectedState);
                 }
+                LOGGER.debug("KafkaTopic {} replicasChange status is missing, retrying.");
+
                 return false;
             }, TestConstants.GLOBAL_CRUISE_CONTROL_TIMEOUT);
     }

@@ -598,7 +598,8 @@ public class MirrorMakerST extends AbstractST {
 
         LOGGER.info("Check if replicas is set to {}, naming prefix should be same and observed generation higher", scaleTo);
 
-        StUtils.waitUntilSupplierIsSatisfied(() -> kubeClient().listPodNames(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker.RESOURCE_KIND).size() == scaleTo &&
+        StUtils.waitUntilSupplierIsSatisfied("KafkaMirrorMaker expected size (status, replicas, pod count)",
+            () -> kubeClient().listPodNames(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker.RESOURCE_KIND).size() == scaleTo &&
             KafkaMirrorMakerResource.kafkaMirrorMakerClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getSpec().getReplicas() == scaleTo &&
             KafkaMirrorMakerResource.kafkaMirrorMakerClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus().getReplicas() == scaleTo);
 
@@ -625,13 +626,22 @@ public class MirrorMakerST extends AbstractST {
         PodUtils.waitForPodsReady(testStorage.getNamespaceName(), kubeClient().getDeploymentSelectors(testStorage.getNamespaceName(), mmDepName), 0, true);
 
         mmPods = kubeClient().listPodNames(testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker.RESOURCE_KIND);
-        KafkaMirrorMakerStatus mmStatus = KafkaMirrorMakerResource.kafkaMirrorMakerClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus();
-        actualObsGen = KafkaMirrorMakerResource.kafkaMirrorMakerClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus().getObservedGeneration();
-
         assertThat(mmPods.size(), is(0));
-        assertThat(mmStatus.getConditions().get(0).getType(), is(Ready.toString()));
-        assertThat(actualObsGen, is(not(mmObsGen)));
 
+        // Needed for using it in lambda
+        long finalMmObsGen = mmObsGen;
+        StUtils.waitUntilSupplierIsSatisfied("ObservedGeneration of MM is higher than (check test log for more info)" + finalMmObsGen,
+            () -> {
+                long observedGeneration = KafkaMirrorMakerResource.kafkaMirrorMakerClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus().getObservedGeneration();
+                boolean isHigherThan = observedGeneration > finalMmObsGen;
+                if (!isHigherThan) {
+                    LOGGER.info("Expected ObservedGeneration: {}, actual ObservedGeneration: {}. Waiting for next round of validation", finalMmObsGen, observedGeneration);
+                }
+                return isHigherThan;
+            });
+
+        KafkaMirrorMakerStatus mmStatus = KafkaMirrorMakerResource.kafkaMirrorMakerClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus();
+        assertThat(mmStatus.getConditions().get(0).getType(), is(Ready.toString()));
     }
 
     @ParallelNamespaceTest
@@ -688,7 +698,7 @@ public class MirrorMakerST extends AbstractST {
         DeploymentUtils.waitForDeploymentAndPodsReady(testStorage.getNamespaceName(), mmDepName, 1);
 
         LOGGER.info("Checking that observed gen. higher (rolling update) and label is changed");
-        StUtils.waitUntilSupplierIsSatisfied(
+        StUtils.waitUntilSupplierIsSatisfied("KafkaMirrorMaker observed generation and labels",
             () -> {
                 final KafkaMirrorMaker kMM = KafkaMirrorMakerResource.kafkaMirrorMakerClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get();
 

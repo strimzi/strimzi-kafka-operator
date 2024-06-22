@@ -15,12 +15,13 @@ import io.fabric8.kubernetes.api.model.NodeSelectorTermBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodAffinity;
 import io.fabric8.kubernetes.api.model.PodAffinityBuilder;
+import io.fabric8.kubernetes.api.model.Quantity;
+import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.strimzi.api.kafka.model.common.template.PodTemplate;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaClusterTemplate;
 import io.strimzi.api.kafka.model.kafka.KafkaClusterTemplateBuilder;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolSpecBuilder;
-import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
@@ -36,7 +37,6 @@ import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
-import io.strimzi.systemtest.resources.crd.StrimziPodSetResource;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
@@ -181,6 +181,24 @@ public class KafkaRollerST extends AbstractST {
         //assertNoCoErrorsLogged(testStorage.getNamespaceName(), duration);
     }
 
+    /**
+     * @description This test case verifies that KafkaRoller is able to continue in reconciliations of Kafka if there is invalid KafkaTopic resource.
+     *
+     * @steps
+     *  1. - Deploy Kafka
+     *     - Kafka is up and running
+     *  2. - Create KafkaTopic with 1 replica and 1 partition
+     *     - KafkaTopic is in Ready state
+     *  3. - Change KafkaTopic configuration to invalid value - change min.insync.replicas to 2 (higher than available replicas)
+     *     - KafkaTopic config changed
+     *  4. - Init Kafka rolling-update
+     *     - Wait until rolling update is finished
+     *  5. - Check that all pods of Kafka were rolled out
+     *     - All Kafka pods were rolled out
+     *
+     * @usecase
+     *  - KafkaRoller
+     */
     @ParallelNamespaceTest
     void testKafkaTopicRFLowerThanMinInSyncReplicas() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
@@ -199,11 +217,23 @@ public class KafkaRollerST extends AbstractST {
         LOGGER.info("Setting KafkaTopic's min.insync.replicas to be higher than replication factor");
         KafkaTopicResource.replaceTopicResourceInSpecificNamespace(testStorage.getTopicName(), kafkaTopic -> kafkaTopic.getSpec().getConfig().replace("min.insync.replicas", 2), testStorage.getNamespaceName());
 
-        // rolling update for kafka
-        LOGGER.info("Annotate Kafka {} {} with manual rolling update annotation", StrimziPodSet.RESOURCE_KIND, StrimziPodSetResource.getBrokerComponentName(testStorage.getClusterName()));
-
-        // set annotation to trigger Kafka rolling update
-        StrimziPodSetUtils.annotateStrimziPodSet(testStorage.getNamespaceName(), testStorage.getBrokerComponentName(), Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true"));
+        // Init Kafka rolling update (Do not use ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE due to race caused by STs)
+        if (Environment.isKafkaNodePoolsEnabled()) {
+            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getBrokerPoolName(), kn -> {
+                kn.getSpec()
+                    .setResources(new ResourceRequirementsBuilder()
+                        .addToRequests("cpu", new Quantity("20m"))
+                        .build());
+            }, testStorage.getNamespaceName());
+        } else {
+            KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> {
+                k.getSpec()
+                    .getKafka()
+                    .setResources(new ResourceRequirementsBuilder()
+                        .addToRequests("cpu", new Quantity("20m"))
+                        .build());
+            }, testStorage.getNamespaceName());
+        }
 
         RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, brokerPods);
         assertThat(PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector()), is(not(brokerPods)));

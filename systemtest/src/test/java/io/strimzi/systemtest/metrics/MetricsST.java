@@ -32,7 +32,6 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.KRaftNotSupported;
-import io.strimzi.systemtest.annotations.KindIPv6NotSupported;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClientsBuilder;
@@ -239,12 +238,6 @@ public class MetricsST extends AbstractST {
      *  - cluster-operator-metrics
      */
     @ParallelTest
-    @KindIPv6NotSupported("error checking push permissions -- make sure you entered the correct tag name, and that " +
-            "you are authenticated correctly, and try again: checking push permission for " +
-            "\"myregistry.local:5001/metrics-test-0/strimzi-sts-connect-build:1904341592\": creating push check " +
-            "transport for myregistry.local:5001 failed: Get \"https://myregistry.local:5001/v2/\": dial tcp: lookup " +
-            "myregistry.local on [fd00:10:96::a]:53: server misbehaving; Get \"http://myregistry.local:5001/v2/\": dial " +
-            "tcp: lookup myregistry.local on [fd00:10:96::a]:53: server misbehaving")
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
     void testKafkaConnectAndConnectorMetrics() {

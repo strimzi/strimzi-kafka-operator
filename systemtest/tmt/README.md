@@ -24,9 +24,12 @@ plan defines selectors for [tests](./tests) which should be executed.
 * smoke
 * upgrade
 * regression-operators
-* regression-components
-* kraft-operators
-* kraft-components
+* regression-components-1
+* regression-components-2
+* sanity
+* performance
+* performance-capacity
+* performance-topic-operator-capacity
 
 ## Usage
 
@@ -76,3 +79,30 @@ Run selected jobs by label
 ```
 /packit test --labels upgrade,kraft-operators
 ```
+
+#### Available labels
+Packit jobs has plenty of available labels that you can use in trigger command.
+The jobs are grouped based on specific use-case.
+
+| Group           | Labels                              | Description                                                             |
+|-----------------|-------------------------------------|-------------------------------------------------------------------------|
+| acceptance      | acceptance                          | Acceptance tests                                                        |
+| acceptance_ipv6 | acceptance_ipv6                     | Acceptance tests with IPv6 configuration for Kube cluster               |
+|                 | ipv6                                |                                                                         |
+| acceptance_dual | acceptance_dual                     | Acceptance tests with dual (IPv4 + IPv6) configuration for Kube cluster |
+|                 | dual                                |                                                                         |
+| upgrade         | upgrade                             | Upgrade tests                                                           |
+| sanity          | sanity                              | Sanity tests (plan with 1h execution time)                              |
+| smoke           | smoke                               | Smoke tests (just one test)                                             |
+| regression      | regression                          | Regression tests (all regression related labels)                        |
+|                 | components                          | Tests related to components (operands)                                  |
+|                 | regression-components               |                                                                         |
+|                 | rc                                  |                                                                         |
+|                 | operators                           | Tests more related to operators                                         |
+|                 | regression-operators                |                                                                         |
+|                 | ro                                  |                                                                         |
+| performance     | performance                         | Performance tests (all performance related labels)                      |
+|                 | performance-common                  | Common performance tests                                                |
+|                 | performance-capacity                | Capacity tests for operators                                            |
+|                 | performance-topic-operator-capacity | Capacity tests for Topic Operator only                                  |
+

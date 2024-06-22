@@ -20,6 +20,7 @@ public interface TracingConstants {
 
     String JAEGER_INSTANCE_NAME = "my-jaeger";
     String JAEGER_OPERATOR_DEPLOYMENT_NAME = "jaeger-operator";
+    String JAEGER_NAMESPACE = "jaeger";
     String JAEGER_QUERY_SERVICE = JAEGER_INSTANCE_NAME + "-query";
     String JAEGER_COLLECTOR_NAME = JAEGER_INSTANCE_NAME + "-collector";
     String JAEGER_COLLECTOR_OTLP_URL = "http://" + JAEGER_COLLECTOR_NAME + ":4317";

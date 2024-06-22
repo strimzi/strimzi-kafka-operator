@@ -173,8 +173,6 @@ EOF
           registry:2
     fi
 
-    REGISTRY_DIR="/etc/containerd/certs.d/${hostname}:${reg_port}"
-
     # Add the registry config to the nodes
     #
     # This is necessary because localhost resolves to loopback addresses that are
@@ -184,6 +182,9 @@ EOF
     # We want a consistent name that works from both ends, so we tell containerd to
     # alias localhost:${reg_port} to the registry container when pulling images
     # note: kind get nodes (default name `kind` and with specifying new name we have to use --name <cluster-name>
+    # See https://kind.sigs.k8s.io/docs/user/local-registry/
+    REGISTRY_DIR="/etc/containerd/certs.d/${hostname}:${reg_port}"
+
     for node in $(kind get nodes --name kind-cluster); do
         echo "Executing command in node:${node}"
         docker exec "${node}" mkdir -p "${REGISTRY_DIR}"
@@ -191,6 +192,7 @@ EOF
     [host."http://${reg_name}:5000"]
 EOF
     done
+
 elif [[ "$IP_FAMILY" = "ipv6" ]]; then
     # for ipv6 configuration
     ula_fixed_ipv6="fd01:2345:6789"
@@ -237,10 +239,12 @@ EOF
     echo "${ula_fixed_ipv6}::1    ${registry_dns}" >> /etc/hosts
 
     # note: kind get nodes (default name `kind` and with specifying new name we have to use --name <cluster-name>
+    # See https://kind.sigs.k8s.io/docs/user/local-registry/
     for node in $(kind get nodes --name kind-cluster); do
         echo "Executing command in node:${node}"
-        # add myregistry.local to each node to resolve our IPv6 address
-        docker exec "${node}" /bin/sh -c "echo \"${ula_fixed_ipv6}::1    ${registry_dns}\" >> /etc/hosts"
+        cat <<EOF | docker exec -i "${node}" cp /dev/stdin "/etc/hosts"
+${ula_fixed_ipv6}::1    ${registry_dns}
+EOF
     done
 fi
 

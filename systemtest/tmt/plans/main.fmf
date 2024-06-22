@@ -13,8 +13,6 @@ provision:
     memory: ">= 24 GiB"
     cpu:
       processors: ">= 8"
-    disk:
-     - size: ">= 50 GB"
 
 # Install required packages and scripts for running strimzi suite
 prepare:
@@ -129,6 +127,16 @@ prepare:
       make docker_build
       make docker_tag
       make docker_push
+      
+      # Get latest Kafka version from kafka-versions.yaml      
+      export KAFKA_VERSION=$(cat kafka-versions.yaml | yq eval '.[] | select(.default) | .version' -)
+      # Set env var for KafkaConnect build image to avoid building images
+      export CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN="${DOCKER_REGISTRY}/${DOCKER_ORG}/connect-file-sink:latest"
+      # Build base image from previous data
+      export BASE_IMAGE="${DOCKER_REGISTRY}/${DOCKER_ORG}/kafka:${DOCKER_TAG}-kafka-KAFKA_VERSION"
+      # Build the connect image
+      eval $(./systemtest/src/test/resources/connect-build/build-connect-image.sh "$KAFKA_VERSION" "$BASE_IMAGE" "$CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN")
+      docker push $CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN
 
 # Discover tmt defined tests in tests/ folder
 execute:
@@ -157,11 +165,17 @@ finish:
     test:
       - regression-operators
 
-/regression-components:
+/regression-components-1:
   summary: Run regression strimzi test suite with kraft
   discover+:
     test:
-      - regression-components
+      - regression-components-1
+
+/regression-components-2:
+  summary: Run regression strimzi test suite with kraft
+  discover+:
+    test:
+      - regression-components-2
 
 /acceptance:
   summary: Run acceptance strimzi test suite with kraft
@@ -194,7 +208,7 @@ finish:
         processors: ">= 4"
   discover+:
     test:
-      - kraft_upgrade
+      - upgrade
 
 /performance:
   summary: Run performance test suite with kraft
@@ -205,7 +219,7 @@ finish:
         processors: ">= 8"
       # it seems that default disk size (i.e., 50GB) is not enough for capacity tests
       disk:
-        size: ">= 60 GB"
+        - size: ">= 60 GB"
   discover+:
     test:
       - performance
@@ -219,7 +233,7 @@ finish:
         processors: ">= 8"
       # it seems that default disk size (i.e., 50GB) is not enough for capacity tests
       disk:
-       - size: ">= 60 GB"
+        - size: ">= 60 GB"
   discover+:
     test:
       - performance-capacity
@@ -233,7 +247,7 @@ finish:
         processors: ">= 8"
       # it seems that default disk size (i.e., 50GB) is not enough for capacity tests
       disk:
-       - size: ">= 60 GB"
+        - size: ">= 60 GB"
   discover+:
     test:
       - performance-topic-operator-capacity

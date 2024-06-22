@@ -208,7 +208,7 @@ public class Environment {
 
     private static final String ST_KAFKA_VERSION_DEFAULT = TestKafkaVersion.getDefaultSupportedKafkaVersion();
     private static final String ST_CLIENTS_KAFKA_VERSION_DEFAULT = "3.7.0";
-    public static final String TEST_CLIENTS_VERSION_DEFAULT = "0.8.0";
+    public static final String TEST_CLIENTS_VERSION_DEFAULT = "0.8.1";
     public static final String ST_FILE_PLUGIN_URL_DEFAULT = "https://repo1.maven.org/maven2/org/apache/kafka/connect-file/" + ST_KAFKA_VERSION_DEFAULT + "/connect-file-" + ST_KAFKA_VERSION_DEFAULT + ".jar";
     public static final String OLM_OPERATOR_VERSION_DEFAULT = "0.41.0";
 
@@ -372,7 +372,7 @@ public class Environment {
         } else if (KubeClusterResource.getInstance().isKind()) {
             // we will need a hostname of machine
             String hostname = getHostname();
-            LOGGER.info("Using container registry :{}", hostname);
+            LOGGER.info("Using container registry '{}'", hostname);
             return hostname;
         } else {
             LOGGER.warn("For running these tests on K8s you have to have internal registry deployed using `minikube start --insecure-registry '10.0.0.0/24'` and `minikube addons enable registry`");

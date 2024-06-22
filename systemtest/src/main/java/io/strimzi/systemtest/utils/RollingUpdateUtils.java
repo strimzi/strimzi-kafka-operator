@@ -186,7 +186,7 @@ public class RollingUpdateUtils {
         PodUtils.waitForPodsReady(namespaceName, selector, expectedPods, true, componentLogAfterTimeout);
 
         // 2. wait for readiness of the status
-        StUtils.waitUntilSupplierIsSatisfied(componentReadinessStatus);
+        StUtils.waitUntilSupplierIsSatisfied("component %s/%s readiness".formatted(namespaceName, componentName), componentReadinessStatus);
     }
 
     public static void waitForNoRollingUpdate(String namespaceName, LabelSelector selector, Map<String, String> pods) {
