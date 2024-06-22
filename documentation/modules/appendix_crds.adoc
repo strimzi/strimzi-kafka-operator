@@ -87,7 +87,7 @@ include::../api/io.strimzi.api.kafka.model.kafka.KafkaClusterSpec.adoc[leveloffs
 |Configures listeners of Kafka brokers.
 |config
 |map
-|Kafka broker config properties with the following prefixes cannot be set: listeners, advertised., broker., listener., host.name, port, inter.broker.listener.name, sasl., ssl., security., password., log.dir, zookeeper.connect, zookeeper.set.acl, zookeeper.ssl, zookeeper.clientCnxnSocket, authorizer., super.user, cruise.control.metrics.topic, cruise.control.metrics.reporter.bootstrap.servers, node.id, process.roles, controller., metadata.log.dir, zookeeper.metadata.migration.enable (with the exception of: zookeeper.connection.timeout.ms, sasl.server.max.receive.size, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols, ssl.secure.random.implementation, cruise.control.metrics.topic.num.partitions, cruise.control.metrics.topic.replication.factor, cruise.control.metrics.topic.retention.ms, cruise.control.metrics.topic.auto.create.retries, cruise.control.metrics.topic.auto.create.timeout.ms, cruise.control.metrics.topic.min.insync.replicas, controller.quorum.election.backoff.max.ms, controller.quorum.election.timeout.ms, controller.quorum.fetch.timeout.ms).
+|Kafka broker config properties with the following prefixes cannot be set: listeners, advertised., broker., listener., host.name, port, inter.broker.listener.name, sasl., ssl., security., password., log.dir, zookeeper.connect, zookeeper.set.acl, zookeeper.ssl, zookeeper.clientCnxnSocket, authorizer., super.user, cruise.control.metrics.topic, cruise.control.metrics.reporter.bootstrap.servers, node.id, process.roles, controller., metadata.log.dir, zookeeper.metadata.migration.enable, client.quota.callback.static.kafka.admin., client.quota.callback.static.produce, client.quota.callback.static.fetch, client.quota.callback.static.storage.per.volume.limit.min.available., client.quota.callback.static.excluded.principal.name.list (with the exception of: zookeeper.connection.timeout.ms, sasl.server.max.receive.size, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols, ssl.secure.random.implementation, cruise.control.metrics.topic.num.partitions, cruise.control.metrics.topic.replication.factor, cruise.control.metrics.topic.retention.ms, cruise.control.metrics.topic.auto.create.retries, cruise.control.metrics.topic.auto.create.timeout.ms, cruise.control.metrics.topic.min.insync.replicas, controller.quorum.election.backoff.max.ms, controller.quorum.election.timeout.ms, controller.quorum.fetch.timeout.ms).
 |storage
 |xref:type-EphemeralStorage-{context}[`EphemeralStorage`], xref:type-PersistentClaimStorage-{context}[`PersistentClaimStorage`], xref:type-JbodStorage-{context}[`JbodStorage`]
 |Storage configuration (disk). Cannot be updated. This property is required when node pools are not used.
@@ -127,6 +127,9 @@ include::../api/io.strimzi.api.kafka.model.kafka.KafkaClusterSpec.adoc[leveloffs
 |tieredStorage
 |xref:type-TieredStorageCustom-{context}[`TieredStorageCustom`]
 |Configure the tiered storage feature for Kafka brokers.
+|quotas
+|xref:type-QuotasPluginKafka-{context}[`QuotasPluginKafka`], xref:type-QuotasPluginStrimzi-{context}[`QuotasPluginStrimzi`]
+|Quotas plugin configuration for Kafka brokers allows setting quotas for disk usage, produce/fetch rates, and more. Supported plugin types include `kafka` (default) and `strimzi`. If not specified, the default `kafka` quotas plugin is used.
 |====
 
 [id='type-GenericKafkaListener-{context}']
@@ -1350,6 +1353,65 @@ Used in: xref:type-TieredStorageCustom-{context}[`TieredStorageCustom`]
 |config
 |map
 |The additional configuration map for the `RemoteStorageManager` implementation. Keys will be automatically prefixed with `rsm.config.`, and added to Kafka broker configuration.
+|====
+
+[id='type-QuotasPluginKafka-{context}']
+= `QuotasPluginKafka` schema reference
+
+Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
+
+
+The `type` property is a discriminator that distinguishes use of the `QuotasPluginKafka` type from xref:type-QuotasPluginStrimzi-{context}[`QuotasPluginStrimzi`].
+It must have the value `kafka` for the type `QuotasPluginKafka`.
+[cols="2,2,3a",options="header"]
+|====
+|Property |Property type |Description
+|type
+|string
+|Must be `kafka`.
+|producerByteRate
+|integer
+|The default client quota on the maximum bytes per-second that each client can publish to each broker before it is throttled. Applied on a per-broker basis.
+|consumerByteRate
+|integer
+|The default client quota on the maximum bytes per-second that each client can fetch from each broker before it is throttled. Applied on a per-broker basis.
+|requestPercentage
+|integer
+|The default client quota limits the maximum CPU utilization of each client as a percentage of the network and I/O threads of each broker. Applied on a per-broker basis.
+|controllerMutationRate
+|number
+|The default client quota on the rate at which mutations are accepted per second for create topic requests, create partition requests, and delete topic requests, defined for each broker. The mutations rate is measured by the number of partitions created or deleted. Applied on a per-broker basis.
+|====
+
+[id='type-QuotasPluginStrimzi-{context}']
+= `QuotasPluginStrimzi` schema reference
+
+Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
+
+
+The `type` property is a discriminator that distinguishes use of the `QuotasPluginStrimzi` type from xref:type-QuotasPluginKafka-{context}[`QuotasPluginKafka`].
+It must have the value `strimzi` for the type `QuotasPluginStrimzi`.
+[cols="2,2,3a",options="header"]
+|====
+|Property |Property type |Description
+|type
+|string
+|Must be `strimzi`.
+|producerByteRate
+|integer
+|A per-broker byte-rate quota for clients producing to a broker, independent of their number. If clients produce at maximum speed, the quota is shared equally between all non-excluded producers. Otherwise, the quota is divided based on each client's production rate.
+|consumerByteRate
+|integer
+|A per-broker byte-rate quota for clients consuming from a broker, independent of their number. If clients consume at maximum speed, the quota is shared equally between all non-excluded consumers. Otherwise, the quota is divided based on each client's consumption rate.
+|minAvailableBytesPerVolume
+|integer
+|Stop message production if the available size (in bytes) of the storage is lower than or equal to this specified value. This condition is mutually exclusive with `minAvailableRatioPerVolume`.
+|minAvailableRatioPerVolume
+|number
+|Stop message production if the percentage of available storage space falls below or equals the specified ratio (set as a decimal representing a percentage). This condition is mutually exclusive with `minAvailableBytesPerVolume`.
+|excludedPrincipals
+|string array
+|List of principals that are excluded from the quota. The principals have to be prefixed with `User:`, for example `User:my-user;User:CN=my-other-user`.
 |====
 
 [id='type-ZookeeperClusterSpec-{context}']

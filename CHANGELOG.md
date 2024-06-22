@@ -11,11 +11,15 @@
 * Add support for setting `publishNotReadyAddresses` on services for listener types other than internal.
 * Update HTTP bridge to latest 0.29.0 release
 * Uncommented and enabled (by default) KRaft-related metrics in the `kafka-metrics.yaml` example file.
+* Added support for configuring the quotas plugin with type `strimzi` or `kafka` in the `Kafka` custom resource.
+  The Strimzi Quotas plugin version was updated to 0.3.1.
 
 ### Changes, deprecations and removals
 
 * The `reconciliationIntervalSeconds` configuration for the Topic and User Operators is deprecated, and will be removed when upgrading schemas to v1.
   Use `reconciliationIntervalMs` converting the value to milliseconds.
+* Usage of Strimzi Quotas plugin version 0.2.0 is not supported, the plugin was updated to 0.3.1 and changed significantly.
+  Additionally, from Strimzi 0.42.0 the plugin should be configured in `.spec.kafka.quotas` section - the configuration of the plugin inside `.spec.kafka.config` is ignored and should be removed.
 
 ## 0.41.0
 

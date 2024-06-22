@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.model.kafka.KafkaAuthorizationKeycloak;
 import io.strimzi.api.kafka.model.kafka.KafkaAuthorizationOpa;
 import io.strimzi.api.kafka.model.kafka.KafkaAuthorizationSimple;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerConfiguration;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthentication;
@@ -20,6 +21,9 @@ import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationCust
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationOAuth;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationScramSha512;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationTls;
+import io.strimzi.api.kafka.model.kafka.quotas.QuotasPlugin;
+import io.strimzi.api.kafka.model.kafka.quotas.QuotasPluginKafka;
+import io.strimzi.api.kafka.model.kafka.quotas.QuotasPluginStrimzi;
 import io.strimzi.api.kafka.model.kafka.tieredstorage.RemoteStorageManager;
 import io.strimzi.api.kafka.model.kafka.tieredstorage.TieredStorage;
 import io.strimzi.api.kafka.model.kafka.tieredstorage.TieredStorageCustom;
@@ -921,6 +925,64 @@ public class KafkaBrokerConfigurationBuilder {
         writer.println();
 
         return this;
+    }
+
+    /**
+     * Configures the quotas based on the type of the plugin - {@link QuotasPluginKafka}, {@link QuotasPluginStrimzi}
+     *
+     * @param clusterName    Name of the cluster
+     * @param quotasPlugin   Configuration of the quotas plugin
+     * @return  Returns the builder instance
+     */
+    public KafkaBrokerConfigurationBuilder withQuotas(String clusterName, QuotasPlugin quotasPlugin) {
+        if (quotasPlugin != null) {
+            // for the built-in Kafka quotas plugin we don't need to configure anything
+            if (quotasPlugin instanceof QuotasPluginStrimzi quotasPluginStrimzi) {
+                printSectionHeader("Quotas configuration");
+                configureQuotasPluginStrimzi(clusterName, quotasPluginStrimzi);
+                writer.println();
+            }
+        }
+
+        return this;
+    }
+
+    /**
+     * Configures Strimzi quotas plugin
+     *
+     * @param clusterName           Name of the cluster
+     * @param quotasPluginStrimzi   Strimzi quotas plugin configuration
+     */
+    private void configureQuotasPluginStrimzi(String clusterName, QuotasPluginStrimzi quotasPluginStrimzi) {
+        // add Kafka broker's and CruiseControl's user to the excluded principals
+        List<String> excludedPrincipals = new ArrayList<>(List.of(
+            String.format("User:CN=%s,O=io.strimzi", KafkaResources.kafkaComponentName(clusterName)),
+            String.format("User:CN=%s,O=io.strimzi", CruiseControlResources.componentName(clusterName))
+        ));
+
+        writer.println("client.quota.callback.class=io.strimzi.kafka.quotas.StaticQuotaCallback");
+
+        // configuration of Admin client that will check the cluster
+        writer.println("client.quota.callback.static.kafka.admin.bootstrap.servers=" + KafkaResources.brokersServiceName(clusterName) + ":9091");
+        writer.println("client.quota.callback.static.kafka.admin.security.protocol=SSL");
+        writer.println("client.quota.callback.static.kafka.admin.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12");
+        writer.println("client.quota.callback.static.kafka.admin.ssl.keystore.password=" + PLACEHOLDER_CERT_STORE_PASSWORD);
+        writer.println("client.quota.callback.static.kafka.admin.ssl.keystore.type=PKCS12");
+        writer.println("client.quota.callback.static.kafka.admin.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12");
+        writer.println("client.quota.callback.static.kafka.admin.ssl.truststore.password=" + PLACEHOLDER_CERT_STORE_PASSWORD);
+        writer.println("client.quota.callback.static.kafka.admin.ssl.truststore.type=PKCS12");
+
+        // configuration of user specified settings
+        addOptionIfNotNull(writer, "client.quota.callback.static.produce", quotasPluginStrimzi.getProducerByteRate());
+        addOptionIfNotNull(writer, "client.quota.callback.static.fetch", quotasPluginStrimzi.getConsumerByteRate());
+        addOptionIfNotNull(writer, "client.quota.callback.static.storage.per.volume.limit.min.available.bytes", quotasPluginStrimzi.getMinAvailableBytesPerVolume());
+        addOptionIfNotNull(writer, "client.quota.callback.static.storage.per.volume.limit.min.available.ratio", quotasPluginStrimzi.getMinAvailableRatioPerVolume());
+
+        if (quotasPluginStrimzi.getExcludedPrincipals() != null) {
+            excludedPrincipals.addAll(quotasPluginStrimzi.getExcludedPrincipals());
+        }
+
+        writer.println(String.format("client.quota.callback.static.excluded.principal.name.list=%s", String.join(";", excludedPrincipals)));
     }
 
     /**
