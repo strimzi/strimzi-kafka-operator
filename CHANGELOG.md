@@ -19,7 +19,7 @@
 * The `reconciliationIntervalSeconds` configuration for the Topic and User Operators is deprecated, and will be removed when upgrading schemas to v1.
   Use `reconciliationIntervalMs` converting the value to milliseconds.
 * Usage of Strimzi Quotas plugin version 0.2.0 is not supported, the plugin was updated to 0.3.1 and changed significantly.
-  Additionally, from Strimzi 0.42.0 the plugin should be configured in `.spec.kafka.quotas` section - the configuration of the plugin inside `.spec.kafka.config` should be removed.
+  Additionally, from Strimzi 0.42.0 the plugin should be configured in `.spec.kafka.quotas` section - the configuration of the plugin inside `.spec.kafka.config` is ignored and should be removed.
 
 ## 0.41.0
 

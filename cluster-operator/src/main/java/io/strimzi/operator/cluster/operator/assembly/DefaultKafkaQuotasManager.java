@@ -130,7 +130,7 @@ public class DefaultKafkaQuotasManager {
                                 LOGGER.debugCr(reconciliation, "Successfully altered default user quotas");
                                 promise.complete();
                             } else {
-                                LOGGER.warnCr(reconciliation, "Failed to alter default user quotas", result.cause());
+                                LOGGER.errorCr(reconciliation, "Failed to alter default user quotas", result.cause());
                                 promise.fail(result.cause());
                             }
 
