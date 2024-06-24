@@ -64,7 +64,7 @@ jobs:
 
   - job: tests
     trigger: pull_request
-    identifier: "regression-components-1"
+    identifier: "regression-brokers-and-operands"
     targets:
       - centos-stream-9-x86_64
       - centos-stream-9-aarch64
@@ -79,11 +79,11 @@ jobs:
     tf_extra_params:
       test:
         tmt:
-          name: regression-components-1
+          name: regression-brokers-and-operands
 
   - job: tests
     trigger: pull_request
-    identifier: "regression-components-2"
+    identifier: "regression-brokers-and-operands"
     targets:
       - centos-stream-9-x86_64
       - centos-stream-9-aarch64
@@ -98,7 +98,7 @@ jobs:
     tf_extra_params:
       test:
         tmt:
-          name: regression-components-2
+          name: regression-operands
   ###############################################################################################
 
   - job: tests

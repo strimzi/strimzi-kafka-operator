@@ -40,19 +40,19 @@ adjust:
   environment+:
     TEST_PROFILE: operators
 
-/regression-components-1:
+/regression-brokers-and-operands:
   summary: Run regression strimzi test suite
   duration: 12h
   tier: 2
   environment+:
-    TEST_PROFILE: components-1
+    TEST_PROFILE: brokers-and-operands
 
-/regression-components-2:
+/regression-operands:
   summary: Run regression strimzi test suite
   duration: 12h
   tier: 2
   environment+:
-    TEST_PROFILE: components-2
+    TEST_PROFILE: operands
 
 /acceptance:
   summary: Run acceptance strimzi test suite

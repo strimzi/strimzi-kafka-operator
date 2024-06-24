@@ -385,7 +385,7 @@
         </profile>
 
         <profile>
-            <id>components-1</id>
+            <id>brokers-and-security</id>
             <properties>
                 <skipTests>false</skipTests>
                 <groups>regression</groups>
@@ -397,7 +397,7 @@
         </profile>
 
         <profile>
-            <id>components-2</id>
+            <id>operands</id>
             <properties>
                 <skipTests>false</skipTests>
                 <groups>regression</groups>
