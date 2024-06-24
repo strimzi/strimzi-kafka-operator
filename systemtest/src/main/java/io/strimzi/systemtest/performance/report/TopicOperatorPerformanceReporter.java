@@ -39,10 +39,12 @@ public class TopicOperatorPerformanceReporter extends BasePerformanceReporter {
             dirPathBuilder.append("-number-of-topics-").append(numberOfTopics);
         }
 
+        // Defines the strategy for Kafka topic processing, either concurrently by topic or by batch.
         String processType = null;
 
         if (useCaseName.equals(PerformanceConstants.TOPIC_OPERATOR_FIXED_SIZE_OF_EVENTS_USE_CASE)) {
             processType = performanceAttributes.get(PerformanceConstants.TOPIC_OPERATOR_IN_PROCESS_TYPE).toString().toLowerCase(Locale.ROOT);
+
 
             // it would be either "topic-concurrent" or "batch-concurrent"
             dirPathBuilder.append("-process-type-").append(processType);

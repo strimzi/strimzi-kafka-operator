@@ -96,9 +96,9 @@ adjust:
 /performance-topic-operator-user-workload:
   summary: Run topic operator performance user workload strimzi test suite
   tags: [strimzi, kafka, kraft, performance]
-  duration: 30h
+  duration: 12h
   tier: 1
   environment+:
     TEST_PROFILE: performance
     PARALLELISM_ENABLED: false
-    TESTS: TopicOperatorPerformance#testPerformanceInFixedSizeOfEvents
+    TESTS: TopicOperatorPerformance#testSystemScalability
