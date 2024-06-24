@@ -385,21 +385,29 @@
         </profile>
 
         <profile>
-            <id>components</id>
+            <id>components-1</id>
             <properties>
                 <skipTests>false</skipTests>
                 <groups>regression</groups>
                 <it.test>
                     kafka/**/*ST,
-                    bridge/**/*ST,
-                    cruisecontrol/**/*ST,
-                    mirrormaker/**/*ST,
-                    connect/**/*ST,
-                    security/**/*ST,
-                    rollingupdate/**/*ST,
-                    watcher/**/*ST,
-                    rollingupdate/**/*ST,
-                    tracing/**/*ST
+                    security/**/*ST
+                </it.test>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>components-2</id>
+            <properties>
+                <skipTests>false</skipTests>
+                <groups>regression</groups>
+                <it.test>
+                    !kafka/**/*ST,
+                    !security/**/*ST,
+                    !operators/**/*ST,
+                    !log/**/*ST,
+                    !metrics/**/*ST,
+                    !specific/**/*ST
                 </it.test>
             </properties>
         </profile>
