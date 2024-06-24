@@ -165,11 +165,11 @@ finish:
     test:
       - regression-operators
 
-/regression-brokers-and-operands:
+/regression-brokers-and-security:
   summary: Run regression strimzi test suite with kraft
   discover+:
     test:
-      - regression-brokers-and-operands
+      - regression-brokers-and-security
 
 /regression-operands:
   summary: Run regression strimzi test suite with kraft

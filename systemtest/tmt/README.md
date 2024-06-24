@@ -24,7 +24,7 @@ plan defines selectors for [tests](./tests) which should be executed.
 * smoke
 * upgrade
 * regression-operators
-* regression-brokers-and-operands
+* regression-brokers-and-security
 * regression-operands
 * sanity
 * performance
