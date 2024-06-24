@@ -723,8 +723,9 @@ public class KafkaMirrorMaker2ConnectorsTest {
         KafkaMirrorMaker2ClusterSpec cluster = new KafkaMirrorMaker2ClusterSpecBuilder()
                 .withAlias("sourceClusterAlias")
                 .withBootstrapServers("sourceClusterAlias.sourceNamespace.svc:9092")
-                .withNewKafkaClientAuthenticationServiceAccountOAuth()
-                .endKafkaClientAuthenticationServiceAccountOAuth()
+                .withNewKafkaClientAuthenticationOAuth()
+                    .withConfigureServiceAccountAuth(true)
+                .endKafkaClientAuthenticationOAuth()
                 .build();
 
         KafkaMirrorMaker2Connectors.addClusterToMirrorMaker2ConnectorConfig(config, cluster, PREFIX);

@@ -28,7 +28,6 @@ import java.util.List;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-// Make sure this is in sync with KafkaListenerAuthenticationServiceAccountOAuth
 @JsonPropertyOrder({"type", "clientId", "clientSecret", "validIssuerUri", "checkIssuer", "checkAudience",
     "jwksEndpointUri", "jwksRefreshSeconds", "jwksMinRefreshPauseSeconds", "jwksExpirySeconds", "jwksIgnoreKeyUse",
     "introspectionEndpointUri", "userNameClaim", "fallbackUserNameClaim", "fallbackUserNamePrefix",
@@ -36,7 +35,7 @@ import java.util.List;
     "accessTokenIsJwt", "tlsTrustedCertificates", "disableTlsHostnameVerification", "enableECDSA",
     "maxSecondsWithoutReauthentication", "enablePlain", "tokenEndpointUri", "enableOauthBearer", "customClaimCheck",
     "connectTimeoutSeconds", "readTimeoutSeconds", "httpRetries", "httpRetryPauseMs", "clientScope", "clientAudience",
-    "enableMetrics", "failFast", "includeAcceptHeader", "serverBearerTokenLocation"})
+    "enableMetrics", "failFast", "includeAcceptHeader", "serverBearerTokenLocation", "configureServiceAccountAuth"})
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthentication {
@@ -84,6 +83,7 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
     private boolean enableMetrics = false;
     private boolean failFast = true;
     private Boolean includeAcceptHeader;
+    private boolean configureServiceAccountAuth = false;
 
     @Description("Must be `" + TYPE_OAUTH + "`")
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -501,5 +501,15 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
 
     public void setIncludeAcceptHeader(Boolean includeAcceptHeader) {
         this.includeAcceptHeader = includeAcceptHeader;
+    }
+
+    @Description("Whether to automatically configure the listener to use fast local token validation using Kubernetes API server as the authorization server.")
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    public boolean isConfigureServiceAccountAuth() {
+        return configureServiceAccountAuth;
+    }
+
+    public void setConfigureServiceAccountAuth(boolean configureServiceAccountAuth) {
+        this.configureServiceAccountAuth = configureServiceAccountAuth;
     }
 }

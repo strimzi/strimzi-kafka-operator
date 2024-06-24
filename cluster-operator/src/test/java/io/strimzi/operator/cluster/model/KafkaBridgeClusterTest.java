@@ -41,7 +41,6 @@ import io.strimzi.api.kafka.model.common.JvmOptions;
 import io.strimzi.api.kafka.model.common.JvmOptionsBuilder;
 import io.strimzi.api.kafka.model.common.SystemPropertyBuilder;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationOAuthBuilder;
-import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationServiceAccountOAuthBuilder;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationTlsBuilder;
 import io.strimzi.api.kafka.model.common.template.ContainerTemplate;
 import io.strimzi.api.kafka.model.common.template.DeploymentStrategy;
@@ -950,7 +949,8 @@ public class KafkaBridgeClusterTest {
         KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
                 .editSpec()
                 .withAuthentication(
-                        new KafkaClientAuthenticationServiceAccountOAuthBuilder()
+                        new KafkaClientAuthenticationOAuthBuilder()
+                                .withConfigureServiceAccountAuth(true)
                                 .withConnectTimeoutSeconds(30)
                                 .build())
                 .endSpec()

@@ -5,6 +5,7 @@ OAuth authentication can be configured using one of the following options:
 * Client ID and secret
 * Client ID and refresh token
 * Access token
+* ServiceAccount
 * Username and password
 * TLS
 
@@ -66,6 +67,28 @@ authentication:
 authentication:
   type: oauth
   accessTokenLocation: `/path/to/token/file`
+----
+
+.ServiceAccount
+
+To autoconfigure the access token to point to the default serviceaccount token location, simply set set the `useServiceAccount` property to `true`.
+
+The listener also has to be configured to use the Kubernetes API server as its authorization server.
+
+.An example of ServiceAccount OAuth client authentication using the service account token provided to the pod by Kubernetes
+[source,yaml,subs=attributes+]
+----
+authentication:
+  type: oauth
+  useServiceAccount: true
+----
+
+This is equivalent to:
+[source,yaml,subs=attributes+]
+----
+authentication:
+  type: oauth
+  accessTokenLocation: `/var/run/secrets/kubernetes.io/serviceaccount/token`
 ----
 
 .Username and password

@@ -663,10 +663,10 @@ public class ListenersValidator {
 
     private static void validateAndOverrideServiceAccountOAuth(KafkaListenerAuthenticationOAuth oAuth) {
         if (oAuth.getValidIssuerUri() == null) {
-            oAuth.setValidIssuerUri("https://kubernetes.default.svc.cluster.local");
+            oAuth.setValidIssuerUri("https://kubernetes.default.svc");
         }
         if (oAuth.getJwksEndpointUri() == null) {
-            oAuth.setJwksEndpointUri("https://kubernetes.default.svc.cluster.local/openid/v1/jwks");
+            oAuth.setJwksEndpointUri("https://kubernetes.default.svc/openid/v1/jwks");
         }
         if (oAuth.getServerBearerTokenLocation() == null) {
             oAuth.setServerBearerTokenLocation("/var/run/secrets/kubernetes.io/serviceaccount/token");

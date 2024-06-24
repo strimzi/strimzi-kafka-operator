@@ -27,7 +27,6 @@ import java.util.Map;
     @JsonSubTypes.Type(name = KafkaClientAuthenticationScramSha512.TYPE_SCRAM_SHA_512, value = KafkaClientAuthenticationScramSha512.class),
     @JsonSubTypes.Type(name = KafkaClientAuthenticationPlain.TYPE_PLAIN, value = KafkaClientAuthenticationPlain.class),
     @JsonSubTypes.Type(name = KafkaClientAuthenticationOAuth.TYPE_OAUTH, value = KafkaClientAuthenticationOAuth.class),
-    @JsonSubTypes.Type(name = KafkaClientAuthenticationServiceAccountOAuth.TYPE_SERVICEACCOUNT_OAUTH, value = KafkaClientAuthenticationServiceAccountOAuth.class),
 })
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @EqualsAndHashCode

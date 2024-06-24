@@ -40,7 +40,6 @@ import io.strimzi.api.kafka.model.common.ContainerEnvVar;
 import io.strimzi.api.kafka.model.common.JvmOptions;
 import io.strimzi.api.kafka.model.common.Probe;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationOAuthBuilder;
-import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationServiceAccountOAuthBuilder;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationTlsBuilder;
 import io.strimzi.api.kafka.model.common.jmx.KafkaJmxAuthenticationPasswordBuilder;
 import io.strimzi.api.kafka.model.common.jmx.KafkaJmxOptionsBuilder;
@@ -1547,7 +1546,8 @@ public class KafkaConnectClusterTest {
         KafkaConnect resource = new KafkaConnectBuilder(this.resource)
                 .editSpec()
                 .withAuthentication(
-                        new KafkaClientAuthenticationServiceAccountOAuthBuilder()
+                        new KafkaClientAuthenticationOAuthBuilder()
+                                .withConfigureServiceAccountAuth(true)
                                 .withReadTimeoutSeconds(30)
                                 .build())
                 .endSpec()

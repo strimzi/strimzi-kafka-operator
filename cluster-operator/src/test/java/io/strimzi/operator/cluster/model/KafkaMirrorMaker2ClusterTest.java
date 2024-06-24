@@ -34,7 +34,6 @@ import io.strimzi.api.kafka.model.common.ContainerEnvVar;
 import io.strimzi.api.kafka.model.common.JvmOptions;
 import io.strimzi.api.kafka.model.common.Probe;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationOAuthBuilder;
-import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationServiceAccountOAuthBuilder;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationTlsBuilder;
 import io.strimzi.api.kafka.model.common.jmx.KafkaJmxAuthenticationPasswordBuilder;
 import io.strimzi.api.kafka.model.common.jmx.KafkaJmxOptionsBuilder;
@@ -1641,7 +1640,8 @@ public class KafkaMirrorMaker2ClusterTest {
     public void testPodSetWithServiceAccountOAuth() {
         KafkaMirrorMaker2ClusterSpec targetClusterWithServiceAccountOAuth = new KafkaMirrorMaker2ClusterSpecBuilder(this.targetCluster)
                 .withAuthentication(
-                        new KafkaClientAuthenticationServiceAccountOAuthBuilder()
+                        new KafkaClientAuthenticationOAuthBuilder()
+                                .withConfigureServiceAccountAuth(true)
                                 .build())
                 .build();
 
@@ -1649,7 +1649,8 @@ public class KafkaMirrorMaker2ClusterTest {
                 .withAlias("source-cluster-1")
                 .withBootstrapServers("source-bootstrap-kafka:9092")
                 .withAuthentication(
-                        new KafkaClientAuthenticationServiceAccountOAuthBuilder()
+                        new KafkaClientAuthenticationOAuthBuilder()
+                                .withConfigureServiceAccountAuth(true)
                                 .build())
                 .build();
 
@@ -1657,7 +1658,8 @@ public class KafkaMirrorMaker2ClusterTest {
                 .withAlias("source-cluster-2")
                 .withBootstrapServers("source2-bootstrap-kafka:9092")
                 .withAuthentication(
-                        new KafkaClientAuthenticationServiceAccountOAuthBuilder()
+                        new KafkaClientAuthenticationOAuthBuilder()
+                                .withConfigureServiceAccountAuth(true)
                                 .build())
                 .build();
 

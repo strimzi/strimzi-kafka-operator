@@ -153,6 +153,9 @@ spec:
                     - key
                     - secretName
                     description: Link to Kubernetes Secret containing the OAuth client secret which the Kafka client can use to authenticate against the OAuth server and use the token endpoint URI.
+                  configureServiceAccountAuth:
+                    type: boolean
+                    description: Whether the access token location will be automatically configured to the service account token default location (`/var/run/secrets/kubernetes.io/serviceaccount/token`). Default value is `false`.
                   connectTimeoutSeconds:
                     type: integer
                     description: "The connect timeout in seconds when connecting to authorization server. If not set, the effective connect timeout is 60 seconds."
@@ -243,7 +246,6 @@ spec:
                     - scram-sha-512
                     - plain
                     - oauth
-                    - serviceaccount-oauth
                     description: "Authentication type. Currently the supported types are `tls`, `scram-sha-256`, `scram-sha-512`, `plain`, 'oauth', and 'serviceaccount-oauth'. `scram-sha-256` and `scram-sha-512` types use SASL SCRAM-SHA-256 and SASL SCRAM-SHA-512 Authentication, respectively. `plain` type uses SASL PLAIN Authentication. `oauth` type uses SASL OAUTHBEARER Authentication. `serviceaccount-oauth` type uses SASL OAUTHBEARER Authentication uses SASL OAUTHBEARER Authentication pre-configured with Kubernetes ServiceAccount token file location. The `tls` type uses TLS Client Authentication. The `tls` type is supported only over TLS connections."
                   username:
                     type: string

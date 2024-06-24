@@ -142,6 +142,9 @@ spec:
                                   - key
                                   - secretName
                                 description: Link to Kubernetes Secret containing the OAuth client secret which the Kafka broker can use to authenticate against the authorization server and use the introspect endpoint URI.
+                              configureServiceAccountAuth:
+                                type: boolean
+                                description: Whether to automatically configure the listener to use fast local token validation using Kubernetes API server as the authorization server.
                               connectTimeoutSeconds:
                                 type: integer
                                 description: "The connect timeout in seconds when connecting to authorization server. If not set, the effective connect timeout is 60 seconds."
@@ -274,9 +277,8 @@ spec:
                                   - tls
                                   - scram-sha-512
                                   - oauth
-                                  - serviceaccount-oauth
                                   - custom
-                                description: Authentication type. `oauth` type uses SASL OAUTHBEARER Authentication. `serviceaccount-oauth` type uses SASL OAUTHBEARER Authentication in combination with Kubernetes ServiceAccounts and pre-configured to use the Kubernetes API server's JWKS endpoint. `scram-sha-512` type uses SASL SCRAM-SHA-512 Authentication. `tls` type uses TLS Client Authentication. `tls` type is supported only on TLS listeners.`custom` type allows for any authentication type to be used.
+                                description: Authentication type. `oauth` type uses SASL OAUTHBEARER Authentication. `scram-sha-512` type uses SASL SCRAM-SHA-512 Authentication. `tls` type uses TLS Client Authentication. `tls` type is supported only on TLS listeners.`custom` type allows for any authentication type to be used.
                               userInfoEndpointUri:
                                 type: string
                                 description: 'URI of the User Info Endpoint to use as a fallback to obtaining the user id when the Introspection Endpoint does not return information that can be used for the user id. '

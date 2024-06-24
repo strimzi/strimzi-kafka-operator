@@ -12,7 +12,6 @@ import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticatio
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationOAuth;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationPlain;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationScram;
-import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationServiceAccountOAuth;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationTls;
 import io.strimzi.kafka.oauth.client.ClientConfig;
 import io.strimzi.kafka.oauth.server.ServerConfig;
@@ -85,8 +84,8 @@ public class AuthenticationUtils {
     }
 
     private static void validateClientAuthenticationOAuth(KafkaClientAuthenticationOAuth auth) {
-        if (auth instanceof KafkaClientAuthenticationServiceAccountOAuth) {
-            autofillClientAuthenticationServiceAccountOAuth((KafkaClientAuthenticationServiceAccountOAuth) auth);
+        if (auth.isConfigureServiceAccountAuth()) {
+            autofillClientAuthenticationServiceAccountOAuth(auth);
         }
 
         boolean accessTokenCase = auth.getAccessToken() != null;
@@ -112,7 +111,7 @@ public class AuthenticationUtils {
         }
     }
 
-    private static void autofillClientAuthenticationServiceAccountOAuth(KafkaClientAuthenticationServiceAccountOAuth auth) {
+    private static void autofillClientAuthenticationServiceAccountOAuth(KafkaClientAuthenticationOAuth auth) {
         if (auth.getAccessTokenLocation() == null) {
             auth.setAccessTokenLocation("/var/run/secrets/kubernetes.io/serviceaccount/token");
         }

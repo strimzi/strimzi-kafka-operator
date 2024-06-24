@@ -11,7 +11,6 @@ import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerConfigurationBroker;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationCustom;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationOAuth;
-import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationServiceAccountOAuth;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.kafka.listener.NodeAddressType;
 
@@ -66,7 +65,10 @@ public class ListenersUtils {
         if (listener.getAuth() == null || listener.getAuth().getType() == null)
             return false;
 
-        return KafkaListenerAuthenticationServiceAccountOAuth.TYPE_SERVICEACCOUNT_OAUTH.equals(listener.getAuth().getType());
+        if (listener.getAuth() instanceof KafkaListenerAuthenticationOAuth oauth) {
+            return oauth.isConfigureServiceAccountAuth();
+        }
+        return false;
     }
 
     /**

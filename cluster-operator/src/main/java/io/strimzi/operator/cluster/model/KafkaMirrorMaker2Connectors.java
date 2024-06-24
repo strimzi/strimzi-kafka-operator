@@ -8,7 +8,6 @@ import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticatio
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationPlain;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationScram;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationScramSha256;
-import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationServiceAccountOAuth;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationTls;
 import io.strimzi.api.kafka.model.common.tracing.JaegerTracing;
 import io.strimzi.api.kafka.model.common.tracing.OpenTelemetryTracing;
@@ -253,7 +252,7 @@ public class KafkaMirrorMaker2Connectors {
                                 Map.of("username", scramAuthentication.getUsername(),
                                         "password", "${file:" + CONNECTORS_CONFIG_FILE + ":" + cluster.getAlias() + ".sasl.password}")));
             } else if (cluster.getAuthentication() instanceof KafkaClientAuthenticationOAuth oauthAuthentication) {
-                if (KafkaClientAuthenticationServiceAccountOAuth.TYPE_SERVICEACCOUNT_OAUTH.equals(oauthAuthentication.getType())) {
+                if (oauthAuthentication.isConfigureServiceAccountAuth()) {
                     // validate the configuration again in order to autofill any fields not yet filled (e.g. serviceaccount-oauth may need to autofill 'accessTokenLocation')
                     AuthenticationUtils.validateClientAuthentication(oauthAuthentication, false);
                 }

@@ -25,7 +25,6 @@ import io.strimzi.api.kafka.model.common.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.common.ContainerEnvVar;
 import io.strimzi.api.kafka.model.common.JvmOptions;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationOAuthBuilder;
-import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationServiceAccountOAuthBuilder;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationTlsBuilder;
 import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetricsBuilder;
@@ -1069,7 +1068,8 @@ public class KafkaMirrorMakerClusterTest {
                 .editSpec()
                 .editConsumer()
                 .withAuthentication(
-                        new KafkaClientAuthenticationServiceAccountOAuthBuilder()
+                        new KafkaClientAuthenticationOAuthBuilder()
+                                .withConfigureServiceAccountAuth(true)
                                 .build())
                 .endConsumer()
                 .endSpec()
@@ -1315,7 +1315,8 @@ public class KafkaMirrorMakerClusterTest {
                 .editSpec()
                 .editProducer()
                 .withAuthentication(
-                        new KafkaClientAuthenticationServiceAccountOAuthBuilder()
+                        new KafkaClientAuthenticationOAuthBuilder()
+                                .withConfigureServiceAccountAuth(true)
                                 .build())
                 .endProducer()
                 .endSpec()

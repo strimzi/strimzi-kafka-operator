@@ -27,11 +27,10 @@ import java.util.List;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-// Make sure this is in sync with KafkaClientAuthenticationServiceAccountOAuth
 @JsonPropertyOrder({"type", "clientId", "username", "scope", "audience", "tokenEndpointUri", "connectTimeoutSeconds",
     "readTimeoutSeconds", "httpRetries", "httpRetryPauseMs", "clientSecret", "passwordSecret", "accessToken",
     "refreshToken", "tlsTrustedCertificates", "disableTlsHostnameVerification", "maxTokenExpirySeconds",
-    "accessTokenIsJwt", "enableMetrics", "includeAcceptHeader", "accessTokenLocation"})
+    "accessTokenIsJwt", "enableMetrics", "includeAcceptHeader", "accessTokenLocation", "configureServiceAccountAuth"})
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaClientAuthenticationOAuth extends KafkaClientAuthentication {
@@ -57,6 +56,7 @@ public class KafkaClientAuthenticationOAuth extends KafkaClientAuthentication {
     private boolean accessTokenIsJwt = true;
     private boolean enableMetrics = false;
     private boolean includeAcceptHeader = true;
+    private boolean configureServiceAccountAuth = false;
 
     @Description("Must be `" + TYPE_OAUTH + "`")
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -267,5 +267,15 @@ public class KafkaClientAuthenticationOAuth extends KafkaClientAuthentication {
 
     public void setIncludeAcceptHeader(boolean includeAcceptHeader) {
         this.includeAcceptHeader = includeAcceptHeader;
+    }
+
+    @Description("Whether the access token location will be automatically configured to the service account token default location (`/var/run/secrets/kubernetes.io/serviceaccount/token`). Default value is `false`.")
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    public boolean isConfigureServiceAccountAuth() {
+        return configureServiceAccountAuth;
+    }
+
+    public void setConfigureServiceAccountAuth(boolean configureServiceAccountAuth) {
+        this.configureServiceAccountAuth = configureServiceAccountAuth;
     }
 }
