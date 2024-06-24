@@ -850,6 +850,10 @@ public class KafkaRoller {
         LOGGER.debugCr(reconciliation, "Rolling pod {}", podName);
         await(restart(pod, restartContext), timeout, unit, e -> new UnforceableProblem("Error while trying to restart pod " + podName + " to become ready", e));
         awaitReadiness(pod, timeout, unit);
+        // if need updated dynamically, we should run again
+        if (restartContext.brokerConfigDiff != null && restartContext.brokerConfigDiff.shouldBeUpdatedDynamically()) {
+            throw new UnforceableProblem("pod should be updated dynamically again!");
+        }
     }
 
     private void awaitReadiness(Pod pod, long timeout, TimeUnit unit) throws FatalProblem, InterruptedException {
