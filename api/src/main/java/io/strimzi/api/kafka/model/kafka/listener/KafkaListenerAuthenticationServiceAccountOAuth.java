@@ -10,6 +10,7 @@ import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 @Buildable(
         editableEnabled = false,
@@ -26,6 +27,7 @@ import lombok.EqualsAndHashCode;
     "connectTimeoutSeconds", "readTimeoutSeconds", "httpRetries", "httpRetryPauseMs", "clientScope", "clientAudience",
     "enableMetrics", "failFast", "includeAcceptHeader", "serverBearerTokenLocation"})
 @EqualsAndHashCode(callSuper = true)
+@ToString(callSuper = true)
 public class KafkaListenerAuthenticationServiceAccountOAuth extends KafkaListenerAuthenticationOAuth {
     private static final long serialVersionUID = 1L;
 
