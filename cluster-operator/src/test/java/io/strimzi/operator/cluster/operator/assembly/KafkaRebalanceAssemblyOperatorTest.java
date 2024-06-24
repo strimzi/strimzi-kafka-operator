@@ -1451,6 +1451,60 @@ public class KafkaRebalanceAssemblyOperatorTest {
                 }));
     }
 
+    @Test
+    public void testKrWhenCCUserTaskIsEmpty(VertxTestContext context) throws IOException, URISyntaxException {
+
+        cruiseControlServer.setupCCRebalanceResponse(0, CruiseControlEndpoints.REBALANCE);
+
+        KafkaRebalance kr = new KafkaRebalanceBuilder(createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, EMPTY_KAFKA_REBALANCE_SPEC, false))
+                .withNewStatus()
+                .withObservedGeneration(1L)
+                .withConditions(new ConditionBuilder()
+                        .withType("ProposalReady")
+                        .withStatus("True")
+                        .build())
+                .endStatus()
+                .build();
+
+        Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kr).create();
+        Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kr).updateStatus();
+
+        crdCreateKafka();
+        crdCreateCruiseControlSecrets();
+
+        Checkpoint checkpoint = context.checkpoint();
+        krao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, RESOURCE_NAME))
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    // the resource moved to ProposalReady
+                    assertState(context, client, namespace, RESOURCE_NAME, KafkaRebalanceState.ProposalReady);
+                })))
+                .compose(v -> {
+                    if (!Annotations.booleanAnnotation(kr, Annotations.ANNO_STRIMZI_IO_REBALANCE_AUTOAPPROVAL, false)) {
+                        annotate(client, namespace, kr.getMetadata().getName(), KafkaRebalanceAnnotation.approve);
+                    }
+                    return krao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()));
+                })
+                .onComplete(context.succeeding(v -> {
+                    // the resource moved to Rebalancing
+                    assertState(context, client, namespace, RESOURCE_NAME, KafkaRebalanceState.Rebalancing);
+                }))
+                .compose(v -> {
+                    // Sets the user task to empty
+                    try {
+                        cruiseControlServer.setupUserTasktoEmpty();
+                    } catch (IOException | URISyntaxException e) {
+                        throw new RuntimeException(e);
+                    }
+
+                    return krao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()));
+                })
+                .onComplete(context.succeeding(v -> {
+                    // the resource transitioned from 'Rebalancing' to 'ProposalReady'
+                    assertState(context, client, namespace, RESOURCE_NAME, KafkaRebalanceState.ProposalReady);
+                    checkpoint.flag();
+                }));
+    }
+
     /**
      * Tests the transition from 'New' to 'NotReady' due to missing Kafka cluster label in the resource
      *
