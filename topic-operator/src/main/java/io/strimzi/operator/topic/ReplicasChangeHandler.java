@@ -137,6 +137,7 @@ public class ReplicasChangeHandler {
             UserTasksResponse utr = cruiseControlClient.userTasks(groupByUserTaskId.keySet());
             if (utr.userTasks().isEmpty()) {
                 // Cruise Control restarted: reset the state because the tasks queue is not persisted
+                // this may also happen when the tasks' retention time expires, or the cache becomes full
                 updateToPending(result, "Task not found, Resetting the state");
             } else {
                 for (var userTask : utr.userTasks()) {
