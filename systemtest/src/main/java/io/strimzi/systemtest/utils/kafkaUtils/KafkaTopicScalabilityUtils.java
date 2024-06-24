@@ -24,7 +24,7 @@ import java.util.concurrent.CompletableFuture;
 public class KafkaTopicScalabilityUtils {
 
 
-    private static final Logger LOGGER = LogManager.getLogger(KafkaTopicUtils.class);
+    private static final Logger LOGGER = LogManager.getLogger(KafkaTopicScalabilityUtils.class);
     private KafkaTopicScalabilityUtils() {}
 
     /**
