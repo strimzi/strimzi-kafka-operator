@@ -217,7 +217,7 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
                     assertThat(podSet.getMetadata().getName(), is(COMPONENT_NAME));
                     assertThat(podSet.getSpec().getPods().size(), is(3));
                     PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
-                        assertThat(pod.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_LOGGING_APPENDERS_HASH), is("6e428c4f"));
+                        assertThat(pod.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_LOGGING_HASH), is("6e428c4f"));
                     });
 
                     // Verify services => one regular and one headless
@@ -354,7 +354,7 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
                     assertThat(podSet.getMetadata().getName(), is(COMPONENT_NAME));
                     assertThat(podSet.getSpec().getPods().size(), is(3));
                     PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
-                        assertThat(pod.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_LOGGING_APPENDERS_HASH), is("06ee78c4"));
+                        assertThat(pod.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_LOGGING_HASH), is("06ee78c4"));
                     });
 
                     // Verify services => one regular and one headless
@@ -1099,7 +1099,7 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
                     assertThat(podSet.getMetadata().getName(), is(COMPONENT_NAME));
                     assertThat(podSet.getSpec().getPods().size(), is(3));
                     PodSetUtils.podSetToPods(podSet).forEach(pod -> {
-                        assertThat(pod.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_LOGGING_APPENDERS_HASH), is("8a7507b8"));
+                        assertThat(pod.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_LOGGING_HASH), is("8a7507b8"));
                     });
 
                     // NetworkPolicies => No Connector Operator, no policy is created
@@ -1224,7 +1224,7 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
                     assertThat(podSet.getMetadata().getName(), is(COMPONENT_NAME));
                     assertThat(podSet.getSpec().getPods().size(), is(3));
                     PodSetUtils.podSetToPods(podSet).forEach(pod -> {
-                        assertThat(pod.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_LOGGING_APPENDERS_HASH), is("06ee78c4"));
+                        assertThat(pod.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_LOGGING_HASH), is("06ee78c4"));
                     });
 
                     // NetworkPolicies => No Connector Operator, no policy is created

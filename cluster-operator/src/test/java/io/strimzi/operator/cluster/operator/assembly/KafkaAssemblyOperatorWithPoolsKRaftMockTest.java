@@ -305,14 +305,14 @@ public class KafkaAssemblyOperatorWithPoolsKRaftMockTest {
                     assertThat(spsControllers, is(notNullValue()));
 
                     spsControllers.getSpec().getPods().stream().map(PodSetUtils::mapToPod).forEach(pod -> {
-                        loggingConfigurationAnnos.put(pod.getMetadata().getName(), pod.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_LOGGING_APPENDERS_HASH));
+                        loggingConfigurationAnnos.put(pod.getMetadata().getName(), pod.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_LOGGING_HASH));
                     });
 
                     StrimziPodSet spsBrokers = supplier.strimziPodSetOperator.client().inNamespace(namespace).withName(CLUSTER_NAME + "-brokers").get();
                     assertThat(spsBrokers, is(notNullValue()));
 
                     spsBrokers.getSpec().getPods().stream().map(PodSetUtils::mapToPod).forEach(pod -> {
-                        loggingConfigurationAnnos.put(pod.getMetadata().getName(), pod.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_LOGGING_APPENDERS_HASH));
+                        loggingConfigurationAnnos.put(pod.getMetadata().getName(), pod.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_LOGGING_HASH));
                     });
 
                     // Update Kafka and change the log level => only controller pod annotations should change
@@ -326,7 +326,7 @@ public class KafkaAssemblyOperatorWithPoolsKRaftMockTest {
 
                     spsControllers.getSpec().getPods().stream().map(PodSetUtils::mapToPod).forEach(pod -> {
                         // Controller annotations should differ
-                        assertThat(pod.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_LOGGING_APPENDERS_HASH), is(not(loggingConfigurationAnnos.get(pod.getMetadata().getName()))));
+                        assertThat(pod.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_LOGGING_HASH), is(not(loggingConfigurationAnnos.get(pod.getMetadata().getName()))));
                     });
 
                     StrimziPodSet spsBrokers = supplier.strimziPodSetOperator.client().inNamespace(namespace).withName(CLUSTER_NAME + "-brokers").get();
@@ -334,7 +334,7 @@ public class KafkaAssemblyOperatorWithPoolsKRaftMockTest {
 
                     spsBrokers.getSpec().getPods().stream().map(PodSetUtils::mapToPod).forEach(pod -> {
                         // Broker annotations should be the same
-                        assertThat(pod.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_LOGGING_APPENDERS_HASH), is(loggingConfigurationAnnos.get(pod.getMetadata().getName())));
+                        assertThat(pod.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_LOGGING_HASH), is(loggingConfigurationAnnos.get(pod.getMetadata().getName())));
                     });
 
                     // Update Kafka and change appender => both controller and broker pod annotations should change
@@ -348,7 +348,7 @@ public class KafkaAssemblyOperatorWithPoolsKRaftMockTest {
 
                     spsControllers.getSpec().getPods().stream().map(PodSetUtils::mapToPod).forEach(pod -> {
                         // Controller annotations should differ
-                        assertThat(pod.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_LOGGING_APPENDERS_HASH), is(not(loggingConfigurationAnnos.get(pod.getMetadata().getName()))));
+                        assertThat(pod.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_LOGGING_HASH), is(not(loggingConfigurationAnnos.get(pod.getMetadata().getName()))));
                     });
 
                     StrimziPodSet spsBrokers = supplier.strimziPodSetOperator.client().inNamespace(namespace).withName(CLUSTER_NAME + "-brokers").get();
@@ -356,7 +356,7 @@ public class KafkaAssemblyOperatorWithPoolsKRaftMockTest {
 
                     spsBrokers.getSpec().getPods().stream().map(PodSetUtils::mapToPod).forEach(pod -> {
                         // Broker annotations should differ
-                        assertThat(pod.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_LOGGING_APPENDERS_HASH), is(not(loggingConfigurationAnnos.get(pod.getMetadata().getName()))));
+                        assertThat(pod.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_LOGGING_HASH), is(not(loggingConfigurationAnnos.get(pod.getMetadata().getName()))));
                     });
 
                     async.flag();
