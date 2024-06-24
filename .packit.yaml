@@ -55,7 +55,6 @@ jobs:
       - regression
       - operators
       - regression-operators
-      - ro
     tf_extra_params:
       test:
         tmt:
@@ -73,9 +72,9 @@ jobs:
     env: { IP_FAMILY: ipv4 }
     labels:
       - regression
-      - components
-      - regression-components
-      - rc
+      - brokers-and-security
+      - regression-brokers-and-security
+      - bas
     tf_extra_params:
       test:
         tmt:
@@ -83,7 +82,7 @@ jobs:
 
   - job: tests
     trigger: pull_request
-    identifier: "regression-brokers-and-security"
+    identifier: "regression-operands"
     targets:
       - centos-stream-9-x86_64
       - centos-stream-9-aarch64
@@ -92,9 +91,8 @@ jobs:
     env: { IP_FAMILY: ipv4 }
     labels:
       - regression
-      - components
-      - regression-components
-      - rc
+      - operands
+      - regression-operands
     tf_extra_params:
       test:
         tmt:
