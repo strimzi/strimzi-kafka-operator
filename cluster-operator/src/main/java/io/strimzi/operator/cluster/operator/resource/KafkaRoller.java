@@ -558,7 +558,7 @@ public class KafkaRoller {
      * Dynamically update the broker config if the plan says we can.
      * Return true if the broker was successfully updated dynamically.
      */
-    private boolean maybeDynamicUpdateBrokerConfig(NodeRef nodeRef, RestartContext restartContext) throws InterruptedException {
+    private boolean maybeDynamicUpdateBrokerConfig(NodeRef nodeRef, RestartContext restartContext) throws InterruptedException, FatalProblem {
         boolean updatedDynamically;
 
         if (restartContext.needsReconfig) {
@@ -566,6 +566,11 @@ public class KafkaRoller {
                 dynamicUpdateBrokerConfig(nodeRef, brokerAdminClient, restartContext.brokerConfigDiff, restartContext.brokerLoggingDiff);
                 updatedDynamically = true;
             } catch (ForceableProblem e) {
+                //  invalid request(invalid config) should not restart
+                if (e.getCause() instanceof org.apache.kafka.common.errors.InvalidRequestException) {
+                    LOGGER.debugCr(reconciliation, "Pod {} could not be updated dynamically ({}), ignore", nodeRef, e);
+                    throw new FatalProblem(e.getMessage(), e.getCause());
+                }
                 LOGGER.debugCr(reconciliation, "Pod {} could not be updated dynamically ({}), will restart", nodeRef, e);
                 updatedDynamically = false;
             }
