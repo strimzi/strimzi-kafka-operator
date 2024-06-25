@@ -133,7 +133,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                 .compose(i -> generateMetricsAndLoggingConfigMap(reconciliation, mirrorMaker2Cluster))
                 .compose(logAndMetricsConfigMap -> {
                     String logging = logAndMetricsConfigMap.getData().get(mirrorMaker2Cluster.logging().configMapKey());
-                    podAnnotations.put(Annotations.ANNO_STRIMZI_LOGGING_APPENDERS_HASH, Util.hashStub(Util.getLoggingDynamicallyUnmodifiableEntries(logging)));
+                    podAnnotations.put(Annotations.ANNO_STRIMZI_LOGGING_HASH, Util.hashStub(Util.getLoggingDynamicallyUnmodifiableEntries(logging)));
                     desiredLogging.set(logging);
                     return configMapOperations.reconcile(reconciliation, namespace, logAndMetricsConfigMap.getMetadata().getName(), logAndMetricsConfigMap);
                 })

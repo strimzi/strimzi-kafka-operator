@@ -191,11 +191,11 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                     if (useConnectorResources) {
                         // When connector resources are used, we do dynamic configuration update, and we need the hash to
                         // contain only settings that cannot be updated dynamically
-                        podAnnotations.put(Annotations.ANNO_STRIMZI_LOGGING_APPENDERS_HASH, Util.hashStub(Util.getLoggingDynamicallyUnmodifiableEntries(logging)));
+                        podAnnotations.put(Annotations.ANNO_STRIMZI_LOGGING_HASH, Util.hashStub(Util.getLoggingDynamicallyUnmodifiableEntries(logging)));
                     } else {
                         // When connector resources are not used, we do not do dynamic logging updates, and we need the
                         // hash to cover complete logging configuration
-                        podAnnotations.put(Annotations.ANNO_STRIMZI_LOGGING_APPENDERS_HASH, Util.hashStub(logging));
+                        podAnnotations.put(Annotations.ANNO_STRIMZI_LOGGING_HASH, Util.hashStub(logging));
                     }
 
                     desiredLogging.set(logging);

@@ -28,6 +28,7 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationException;
 import io.strimzi.operator.common.ReconciliationLogger;
+import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.model.StatusUtils;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
@@ -105,7 +106,7 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
                 .compose(i -> MetricsAndLoggingUtils.metricsAndLogging(reconciliation, configMapOperations, mirror.logging(), mirror.metrics()))
                 .compose(metricsAndLoggingCm -> {
                     ConfigMap logAndMetricsConfigMap = mirror.generateMetricsAndLogConfigMap(metricsAndLoggingCm);
-                    annotations.put(Annotations.STRIMZI_LOGGING_ANNOTATION, logAndMetricsConfigMap.getData().get(mirror.logging().configMapKey()));
+                    annotations.put(Annotations.ANNO_STRIMZI_LOGGING_HASH, Util.hashStub(logAndMetricsConfigMap.getData().get(mirror.logging().configMapKey())));
                     return configMapOperations.reconcile(reconciliation, namespace, KafkaMirrorMakerResources.metricsAndLogConfigMapName(reconciliation.name()), logAndMetricsConfigMap);
                 })
                 .compose(i -> podDisruptionBudgetOperator.reconcile(reconciliation, namespace, mirror.getComponentName(), mirror.generatePodDisruptionBudget()))
