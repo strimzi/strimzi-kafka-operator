@@ -1,0 +1,56 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: strimzi-entity-operator
+  labels:
+    app: strimzi
+rules:
+  - apiGroups:
+      - "kafka.strimzi.io"
+    resources:
+      # The Entity Operator contains the Topic Operator which needs to access and manage KafkaTopic resources
+      - kafkatopics
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - patch
+      - update
+      - delete
+  - apiGroups:
+      - "kafka.strimzi.io"
+    resources:
+      # The Entity Operator contains the User Operator which needs to access and manage KafkaUser resources
+      - kafkausers
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - patch
+      - update
+  - apiGroups:
+      - "kafka.strimzi.io"
+    resources:
+      # The Entity Operator contains the Topic Operator which needs to access and manage KafkaTopic resources
+      - kafkatopics/status
+      # The Entity Operator contains the User Operator which needs to access and manage KafkaUser resources
+      - kafkausers/status
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
+      - ""
+    resources:
+      # The entity operator user-operator needs to access and manage secrets to store generated credentials
+      - secrets
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - delete
+      - patch
+      - update
