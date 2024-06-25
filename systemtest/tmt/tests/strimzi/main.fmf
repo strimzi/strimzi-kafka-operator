@@ -40,21 +40,19 @@ adjust:
   environment+:
     TEST_PROFILE: operators
 
-/regression-components-1:
+/regression-brokers-and-security:
   summary: Run regression strimzi test suite
   duration: 12h
   tier: 2
   environment+:
-    TEST_PROFILE: components
-    TESTS: "kafka/**/*ST,security/**/*ST"
+    TEST_PROFILE: brokers-and-security
 
-/regression-components-2:
+/regression-operands:
   summary: Run regression strimzi test suite
   duration: 12h
   tier: 2
   environment+:
-    TEST_PROFILE: components
-    TESTS: "!kafka/**/*ST,!security/**/*ST,!operators/**/*ST,!log/**/*ST,!metrics/**/*ST,!specific/**/*ST"
+    TEST_PROFILE: operands
 
 /acceptance:
   summary: Run acceptance strimzi test suite
