@@ -6,6 +6,7 @@ package io.strimzi.systemtest.kafka;
 
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.annotations.MicroShiftNotSupported;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.resources.NamespaceManager;
@@ -43,6 +44,7 @@ import static io.strimzi.systemtest.TestConstants.TIERED_STORAGE;
  * @usecase
  *  - tiered-storage-integration
  */
+@MicroShiftNotSupported("We are using Kaniko and OpenShift builds to build Kafka image with TS. To make it working on Microshift we will invest much time with not much additional value.")
 @Tag(REGRESSION)
 @Tag(TIERED_STORAGE)
 public class TieredStorageST extends AbstractST {

@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.rollingupdate;
 
+import io.fabric8.kubernetes.api.model.PersistentVolume;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.strimzi.api.kafka.model.kafka.JbodStorage;
@@ -34,6 +35,7 @@ import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
+import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
@@ -52,8 +54,8 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.TestConstants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.TestConstants.REGRESSION;
@@ -414,11 +416,13 @@ class AlternativeReconcileTriggersST extends AbstractST {
         // Wait util it rolls
         brokerPods = RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, brokerPods);
 
-        // ensure there are 6 Kafka Volumes (2 per each of 3 broker)
-        var kafkaPvcs = kubeClient().listClaimedPersistentVolumes(testStorage.getNamespaceName(), testStorage.getClusterName()).stream()
-            .filter(pv -> pv.getSpec().getClaimRef().getName().contains(testStorage.getBrokerComponentName())).collect(Collectors.toList());
-        LOGGER.debug("Obtained Volumes total '{}' claimed by claims Belonging to Kafka {}", kafkaPvcs.size(), testStorage.getClusterName());
-        assertThat("There are not 6 volumes used by Kafka Cluster", kafkaPvcs.size() == 6);
+        StUtils.waitUntilSupplierIsSatisfied("there are 6 Kafka volumes", () -> {
+            // ensure there are 6 Kafka Volumes (2 per each of 3 broker)
+            List<PersistentVolume> kafkaPvcs = kubeClient().listClaimedPersistentVolumes(testStorage.getNamespaceName(), testStorage.getClusterName()).stream()
+                    .filter(pv -> pv.getSpec().getClaimRef().getName().contains(testStorage.getBrokerComponentName())).toList();
+            LOGGER.debug("Obtained Volumes total '{}' claimed by claims Belonging to Kafka {}", kafkaPvcs.size(), testStorage.getClusterName());
+            return kafkaPvcs.size() == 6;
+        });
 
         // Remove Jbod volume to Kafka => triggers RU
         LOGGER.info("Remove JBOD volume to the Kafka cluster {}", testStorage.getBrokerComponentName());
@@ -440,10 +444,13 @@ class AlternativeReconcileTriggersST extends AbstractST {
 
         // ensure there are 3 Kafka Volumes (1 per each of 3 broker)
         PersistentVolumeClaimUtils.waitForPvcCount(testStorage, 3);
-        kafkaPvcs = kubeClient().listClaimedPersistentVolumes(testStorage.getNamespaceName(), testStorage.getClusterName()).stream()
-            .filter(pv -> pv.getSpec().getClaimRef().getName().contains(testStorage.getBrokerComponentName()) && pv.getStatus().getPhase().equals("Bound")).collect(Collectors.toList());
-        LOGGER.debug("Obtained Volumes total '{}' claimed by claims Belonging to Kafka {}", kafkaPvcs.size(), testStorage.getClusterName());
-        assertThat("There are not 3 volumes used by Kafka Cluster", kafkaPvcs.size() == 3);
+        StUtils.waitUntilSupplierIsSatisfied("there are 3 Kafka volumes", () -> {
+            List<PersistentVolume> kafkaPvcs = kubeClient().listClaimedPersistentVolumes(testStorage.getNamespaceName(), testStorage.getClusterName()).stream()
+                    .filter(pv -> pv.getSpec().getClaimRef().getName().contains(testStorage.getBrokerComponentName()) && pv.getStatus().getPhase().equals("Bound")).toList();
+            LOGGER.debug("Obtained Volumes total '{}' claimed by claims Belonging to Kafka {}", kafkaPvcs.size(), testStorage.getClusterName());
+            return kafkaPvcs.size() == 3;
+        });
+
 
         resourceManager.createResourceWithWait(clients.consumerStrimzi());
         ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
