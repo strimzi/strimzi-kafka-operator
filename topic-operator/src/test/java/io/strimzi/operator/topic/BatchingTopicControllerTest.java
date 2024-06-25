@@ -64,8 +64,8 @@ import java.util.concurrent.ExecutionException;
 
 import static io.strimzi.api.kafka.model.topic.KafkaTopic.RESOURCE_KIND;
 import static io.strimzi.api.kafka.model.topic.ReplicasChangeState.PENDING;
-import static io.strimzi.operator.topic.TopicOperatorException.Reason.INVALID_CONFIG;
 import static io.strimzi.operator.topic.TopicOperatorUtil.topicName;
+import static io.strimzi.operator.topic.model.TopicOperatorException.Reason.INVALID_CONFIG;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
@@ -86,7 +86,6 @@ import static org.mockito.Mockito.verifyNoInteractions;
 class BatchingTopicControllerTest {
     private static final Logger LOGGER = LogManager.getLogger(BatchingTopicControllerTest.class);
     private static final String NAMESPACE = "topic-operator-test";
-    private static final String TOPIC_NAME = "my-topic";
 
     private BatchingTopicController controller;
     private KubernetesClient client;
@@ -163,7 +162,7 @@ class BatchingTopicControllerTest {
         var replicasChangeHandler = Mockito.mock(ReplicasChangeHandler.class);
         
         controller = new BatchingTopicController(config, Map.of("key", "VALUE"), admin, client, metrics, replicasChangeHandler);
-        List<ReconcilableTopic> batch = List.of(new ReconcilableTopic(new Reconciliation("test", "KafkaTopic", NAMESPACE, "my-topic"), kt, topicName(kt)));
+        List<ReconcilableTopic> batch = List.of(new ReconcilableTopic(new Reconciliation("test", "KafkaTopic", NAMESPACE, "my-topic"), kt, "my-topic"));
         assertThrows(InterruptedException.class, () -> controller.onUpdate(batch));
     }
 
@@ -339,7 +338,7 @@ class BatchingTopicControllerTest {
 
         // test
         var results = new BatchingTopicController(config, Map.of("key", "VALUE"), admin, client, metrics, replicasChangeHandler)
-            .checkReplicasChanges(reconcilableTopics, currentStatesOrError);
+            .handleReplicasChanges(reconcilableTopics, currentStatesOrError);
 
         if (cruiseControlEnabled) {
             assertThat(results.ok().count(), is(1L));
@@ -413,7 +412,7 @@ class BatchingTopicControllerTest {
         
         // run test
         var results = new BatchingTopicController(config, Map.of("key", "VALUE"), admin, client, metrics, replicasChangeHandler)
-            .checkReplicasChanges(reconcilableTopics, currentStatesOrError);
+            .handleReplicasChanges(reconcilableTopics, currentStatesOrError);
 
         assertThat(results.ok().count(), is(1L));
         assertThat(results.ok().findFirst().get().getKey().kt().getStatus().getReplicasChange(), is(nullValue()));
@@ -480,7 +479,7 @@ class BatchingTopicControllerTest {
 
         // run test
         var results = new BatchingTopicController(config, Map.of("key", "VALUE"), admin, client, metrics, replicasChangeHandler)
-            .checkReplicasChanges(reconcilableTopics, currentStatesOrError);
+            .handleReplicasChanges(reconcilableTopics, currentStatesOrError);
         
         assertThat(results.ok().count(), is(1L));
         assertThat(results.ok().findFirst().get().getKey().kt().getStatus().getReplicasChange(), is(nullValue()));
@@ -511,7 +510,7 @@ class BatchingTopicControllerTest {
         Mockito.doReturn(true).when(config).cruiseControlEnabled();
 
         // setup topic in Kafka
-        admin[0].createTopics(List.of(new NewTopic(TOPIC_NAME, 2, (short) 1).configs(Map.of(
+        admin[0].createTopics(List.of(new NewTopic("my-topic", 2, (short) 1).configs(Map.of(
             "leader.replication.throttled.replicas", "13:0,13:1,45:0,45:1",
             "follower.replication.throttled.replicas", "13:0,13:1,45:0,45:1"
         )))).all().get();
@@ -520,7 +519,7 @@ class BatchingTopicControllerTest {
         var testTopic = Crds.topicOperation(client).resource(
             new KafkaTopicBuilder()
                 .withNewMetadata()
-                    .withName(TOPIC_NAME)
+                    .withName("my-topic")
                     .withNamespace(NAMESPACE)
                     .addToLabels("key", "VALUE")
                 .endMetadata()
@@ -532,11 +531,11 @@ class BatchingTopicControllerTest {
 
         // run test
         controller = new BatchingTopicController(config, Map.of("key", "VALUE"), adminSpy, client, metrics, new ReplicasChangeHandler(config, metrics));
-        controller.onUpdate(List.of(new ReconcilableTopic(new Reconciliation("test", RESOURCE_KIND, NAMESPACE, TOPIC_NAME), testTopic, TOPIC_NAME)));
+        controller.onUpdate(List.of(new ReconcilableTopic(new Reconciliation("test", RESOURCE_KIND, NAMESPACE, "my-topic"), testTopic, "my-topic")));
 
         Mockito.verify(adminSpy, Mockito.never()).incrementalAlterConfigs(any());
 
-        testTopic = Crds.topicOperation(client).inNamespace(NAMESPACE).withName(TOPIC_NAME).get();
+        testTopic = Crds.topicOperation(client).inNamespace(NAMESPACE).withName("my-topic").get();
         assertEquals(1, testTopic.getStatus().getConditions().size());
         assertEquals("True", testTopic.getStatus().getConditions().get(0).getStatus());
     }
@@ -550,7 +549,7 @@ class BatchingTopicControllerTest {
         Mockito.doReturn(true).when(config).cruiseControlEnabled();
 
         // setup topic in Kafka
-        admin[0].createTopics(List.of(new NewTopic(TOPIC_NAME, 2, (short) 1).configs(Map.of(
+        admin[0].createTopics(List.of(new NewTopic("my-topic", 2, (short) 1).configs(Map.of(
             "leader.replication.throttled.replicas", "13:0,13:1,45:0,45:1",
             "follower.replication.throttled.replicas", "13:0,13:1,45:0,45:1"
         )))).all().get();
@@ -559,7 +558,7 @@ class BatchingTopicControllerTest {
         var testTopic = Crds.topicOperation(client).resource(
             new KafkaTopicBuilder()
                 .withNewMetadata()
-                    .withName(TOPIC_NAME)
+                    .withName("my-topic")
                     .withNamespace(NAMESPACE)
                     .addToLabels("key", "VALUE")
                 .endMetadata()
@@ -574,11 +573,11 @@ class BatchingTopicControllerTest {
 
         // run test
         controller = new BatchingTopicController(config, Map.of("key", "VALUE"), adminSpy, client, metrics, new ReplicasChangeHandler(config, metrics));
-        controller.onUpdate(List.of(new ReconcilableTopic(new Reconciliation("test", RESOURCE_KIND, NAMESPACE, TOPIC_NAME), testTopic, TOPIC_NAME)));
+        controller.onUpdate(List.of(new ReconcilableTopic(new Reconciliation("test", RESOURCE_KIND, NAMESPACE, "my-topic"), testTopic, "my-topic")));
 
         Mockito.verify(adminSpy, Mockito.times(1)).incrementalAlterConfigs(any());
 
-        testTopic = Crds.topicOperation(client).inNamespace(NAMESPACE).withName(TOPIC_NAME).get();
+        testTopic = Crds.topicOperation(client).inNamespace(NAMESPACE).withName("my-topic").get();
         assertEquals(3, testTopic.getStatus().getConditions().size());
         assertEquals("True", testTopic.getStatus().getConditions().get(0).getStatus());
 
@@ -596,7 +595,7 @@ class BatchingTopicControllerTest {
         testTopic = Crds.topicOperation(client).resource(
             new KafkaTopicBuilder()
                 .withNewMetadata()
-                    .withName(TOPIC_NAME)
+                    .withName("my-topic")
                     .withNamespace(NAMESPACE)
                     .addToLabels("key", "VALUE")
                 .endMetadata()
@@ -607,16 +606,16 @@ class BatchingTopicControllerTest {
                     .withReplicas(1)
                 .endSpec()
                 .build()).update();
-        controller.onUpdate(List.of(new ReconcilableTopic(new Reconciliation("test", RESOURCE_KIND, NAMESPACE, TOPIC_NAME), testTopic, TOPIC_NAME)));
+        controller.onUpdate(List.of(new ReconcilableTopic(new Reconciliation("test", RESOURCE_KIND, NAMESPACE, "my-topic"), testTopic, "my-topic")));
 
-        testTopic = Crds.topicOperation(client).inNamespace(NAMESPACE).withName(TOPIC_NAME).get();
+        testTopic = Crds.topicOperation(client).inNamespace(NAMESPACE).withName("my-topic").get();
         assertEquals(1, testTopic.getStatus().getConditions().size());
         assertEquals("True", testTopic.getStatus().getConditions().get(0).getStatus());
     }
 
     @ParameterizedTest
     @ValueSource(strings = { "min.insync.replicas, compression.type" })
-    public void shouldIgnoreAndWarnWithAlterableConfigOnCreation(String alterableConfig, KafkaCluster cluster) throws InterruptedException, ExecutionException {
+    public void shouldIgnoreAndWarnWithAlterableConfigOnCreation(String alterableConfig, KafkaCluster cluster) throws InterruptedException {
         admin[0] = Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, cluster.getBootstrapServers()));
         var adminSpy = Mockito.spy(admin[0]);
         var config = Mockito.mock(TopicOperatorConfig.class);
@@ -627,7 +626,7 @@ class BatchingTopicControllerTest {
         var testTopic = Crds.topicOperation(client).resource(
             new KafkaTopicBuilder()
                 .withNewMetadata()
-                    .withName(TOPIC_NAME)
+                    .withName("my-topic")
                     .withNamespace(NAMESPACE)
                     .addToLabels("key", "VALUE")
                 .endMetadata()
@@ -643,11 +642,11 @@ class BatchingTopicControllerTest {
 
         // run test
         controller = new BatchingTopicController(config, Map.of("key", "VALUE"), adminSpy, client, metrics, new ReplicasChangeHandler(config, metrics));
-        controller.onUpdate(List.of(new ReconcilableTopic(new Reconciliation("test", RESOURCE_KIND, NAMESPACE, TOPIC_NAME), testTopic, TOPIC_NAME)));
+        controller.onUpdate(List.of(new ReconcilableTopic(new Reconciliation("test", RESOURCE_KIND, NAMESPACE, "my-topic"), testTopic, "my-topic")));
 
         Mockito.verify(adminSpy, Mockito.never()).incrementalAlterConfigs(any());
 
-        testTopic = Crds.topicOperation(client).inNamespace(NAMESPACE).withName(TOPIC_NAME).get();
+        testTopic = Crds.topicOperation(client).inNamespace(NAMESPACE).withName("my-topic").get();
         assertEquals(3, testTopic.getStatus().getConditions().size());
         assertEquals("True", testTopic.getStatus().getConditions().get(0).getStatus());
 
@@ -672,7 +671,7 @@ class BatchingTopicControllerTest {
         Mockito.doReturn(alterableConfig).when(config).alterableTopicConfig();
 
         // setup topic in Kafka
-        admin[0].createTopics(List.of(new NewTopic(TOPIC_NAME, 2, (short) 1).configs(Map.of(
+        admin[0].createTopics(List.of(new NewTopic("my-topic", 2, (short) 1).configs(Map.of(
             TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "2"
         )))).all().get();
 
@@ -680,7 +679,7 @@ class BatchingTopicControllerTest {
         var testTopic = Crds.topicOperation(client).resource(
             new KafkaTopicBuilder()
                 .withNewMetadata()
-                    .withName(TOPIC_NAME)
+                    .withName("my-topic")
                     .withNamespace(NAMESPACE)
                     .addToLabels("key", "VALUE")
                 .endMetadata()
@@ -696,11 +695,11 @@ class BatchingTopicControllerTest {
 
         // run test
         controller = new BatchingTopicController(config, Map.of("key", "VALUE"), adminSpy, client, metrics, new ReplicasChangeHandler(config, metrics));
-        controller.onUpdate(List.of(new ReconcilableTopic(new Reconciliation("test", RESOURCE_KIND, NAMESPACE, TOPIC_NAME), testTopic, TOPIC_NAME)));
+        controller.onUpdate(List.of(new ReconcilableTopic(new Reconciliation("test", RESOURCE_KIND, NAMESPACE, "my-topic"), testTopic, "my-topic")));
 
         Mockito.verify(adminSpy, Mockito.times(1)).incrementalAlterConfigs(any());
 
-        testTopic = Crds.topicOperation(client).inNamespace(NAMESPACE).withName(TOPIC_NAME).get();
+        testTopic = Crds.topicOperation(client).inNamespace(NAMESPACE).withName("my-topic").get();
         assertEquals(3, testTopic.getStatus().getConditions().size());
         assertEquals("True", testTopic.getStatus().getConditions().get(0).getStatus());
 
@@ -718,7 +717,7 @@ class BatchingTopicControllerTest {
         testTopic = Crds.topicOperation(client).resource(
             new KafkaTopicBuilder()
                 .withNewMetadata()
-                    .withName(TOPIC_NAME)
+                    .withName("my-topic")
                     .withNamespace(NAMESPACE)
                     .addToLabels("key", "VALUE")
                 .endMetadata()
@@ -729,9 +728,9 @@ class BatchingTopicControllerTest {
                     .withReplicas(1)
                 .endSpec()
                 .build()).update();
-        controller.onUpdate(List.of(new ReconcilableTopic(new Reconciliation("test", RESOURCE_KIND, NAMESPACE, TOPIC_NAME), testTopic, TOPIC_NAME)));
+        controller.onUpdate(List.of(new ReconcilableTopic(new Reconciliation("test", RESOURCE_KIND, NAMESPACE, "my-topic"), testTopic, "my-topic")));
 
-        testTopic = Crds.topicOperation(client).inNamespace(NAMESPACE).withName(TOPIC_NAME).get();
+        testTopic = Crds.topicOperation(client).inNamespace(NAMESPACE).withName("my-topic").get();
         assertEquals(1, testTopic.getStatus().getConditions().size());
         assertEquals("True", testTopic.getStatus().getConditions().get(0).getStatus());
     }
@@ -746,7 +745,7 @@ class BatchingTopicControllerTest {
         Mockito.doReturn(alterableConfig).when(config).alterableTopicConfig();
 
         // setup topic in Kafka
-        admin[0].createTopics(List.of(new NewTopic(TOPIC_NAME, 2, (short) 1).configs(Map.of(
+        admin[0].createTopics(List.of(new NewTopic("my-topic", 2, (short) 1).configs(Map.of(
             TopicConfig.COMPRESSION_TYPE_CONFIG, "snappy"
         )))).all().get();
 
@@ -754,7 +753,7 @@ class BatchingTopicControllerTest {
         var testTopic = Crds.topicOperation(client).resource(
             new KafkaTopicBuilder()
                 .withNewMetadata()
-                    .withName(TOPIC_NAME)
+                    .withName("my-topic")
                     .withNamespace(NAMESPACE)
                     .addToLabels("key", "VALUE")
                 .endMetadata()
@@ -769,11 +768,11 @@ class BatchingTopicControllerTest {
 
         // run test
         controller = new BatchingTopicController(config, Map.of("key", "VALUE"), adminSpy, client, metrics, new ReplicasChangeHandler(config, metrics));
-        controller.onUpdate(List.of(new ReconcilableTopic(new Reconciliation("test", RESOURCE_KIND, NAMESPACE, TOPIC_NAME), testTopic, TOPIC_NAME)));
+        controller.onUpdate(List.of(new ReconcilableTopic(new Reconciliation("test", RESOURCE_KIND, NAMESPACE, "my-topic"), testTopic, "my-topic")));
 
         Mockito.verify(adminSpy, Mockito.times(1)).incrementalAlterConfigs(any());
 
-        testTopic = Crds.topicOperation(client).inNamespace(NAMESPACE).withName(TOPIC_NAME).get();
+        testTopic = Crds.topicOperation(client).inNamespace(NAMESPACE).withName("my-topic").get();
         assertEquals(1, testTopic.getStatus().getConditions().size());
         assertEquals("True", testTopic.getStatus().getConditions().get(0).getStatus());
     }
@@ -788,7 +787,7 @@ class BatchingTopicControllerTest {
         Mockito.doReturn(alterableConfig).when(config).alterableTopicConfig();
 
         // setup topic in Kafka
-        admin[0].createTopics(List.of(new NewTopic(TOPIC_NAME, 2, (short) 1).configs(Map.of(
+        admin[0].createTopics(List.of(new NewTopic("my-topic", 2, (short) 1).configs(Map.of(
             TopicConfig.COMPRESSION_TYPE_CONFIG, "snappy"
         )))).all().get();
 
@@ -796,7 +795,7 @@ class BatchingTopicControllerTest {
         var testTopic = Crds.topicOperation(client).resource(
             new KafkaTopicBuilder()
                 .withNewMetadata()
-                    .withName(TOPIC_NAME)
+                    .withName("my-topic")
                     .withNamespace(NAMESPACE)
                     .addToLabels("key", "VALUE")
                 .endMetadata()
@@ -811,11 +810,11 @@ class BatchingTopicControllerTest {
 
         // run test
         controller = new BatchingTopicController(config, Map.of("key", "VALUE"), adminSpy, client, metrics, new ReplicasChangeHandler(config, metrics));
-        controller.onUpdate(List.of(new ReconcilableTopic(new Reconciliation("test", RESOURCE_KIND, NAMESPACE, TOPIC_NAME), testTopic, TOPIC_NAME)));
+        controller.onUpdate(List.of(new ReconcilableTopic(new Reconciliation("test", RESOURCE_KIND, NAMESPACE, "my-topic"), testTopic, "my-topic")));
 
         Mockito.verify(adminSpy, Mockito.never()).incrementalAlterConfigs(any());
 
-        testTopic = Crds.topicOperation(client).inNamespace(NAMESPACE).withName(TOPIC_NAME).get();
+        testTopic = Crds.topicOperation(client).inNamespace(NAMESPACE).withName("my-topic").get();
         assertEquals(2, testTopic.getStatus().getConditions().size());
         assertEquals("True", testTopic.getStatus().getConditions().get(0).getStatus());
 
@@ -835,7 +834,7 @@ class BatchingTopicControllerTest {
         Mockito.doReturn(alterableConfig).when(config).alterableTopicConfig();
 
         // setup topic in Kafka
-        admin[0].createTopics(List.of(new NewTopic(TOPIC_NAME, 2, (short) 1).configs(Map.of(
+        admin[0].createTopics(List.of(new NewTopic("my-topic", 2, (short) 1).configs(Map.of(
             TopicConfig.COMPRESSION_TYPE_CONFIG, "snappy"
         )))).all().get();
 
@@ -843,7 +842,7 @@ class BatchingTopicControllerTest {
         var testTopic = Crds.topicOperation(client).resource(
             new KafkaTopicBuilder()
                 .withNewMetadata()
-                    .withName(TOPIC_NAME)
+                    .withName("my-topic")
                     .withNamespace(NAMESPACE)
                     .addToLabels("key", "VALUE")
                 .endMetadata()
@@ -858,11 +857,11 @@ class BatchingTopicControllerTest {
 
         // run test
         controller = new BatchingTopicController(config, Map.of("key", "VALUE"), adminSpy, client, metrics, new ReplicasChangeHandler(config, metrics));
-        controller.onUpdate(List.of(new ReconcilableTopic(new Reconciliation("test", RESOURCE_KIND, NAMESPACE, TOPIC_NAME), testTopic, TOPIC_NAME)));
+        controller.onUpdate(List.of(new ReconcilableTopic(new Reconciliation("test", RESOURCE_KIND, NAMESPACE, "my-topic"), testTopic, "my-topic")));
 
         Mockito.verify(adminSpy, Mockito.never()).incrementalAlterConfigs(any());
 
-        testTopic = Crds.topicOperation(client).inNamespace(NAMESPACE).withName(TOPIC_NAME).get();
+        testTopic = Crds.topicOperation(client).inNamespace(NAMESPACE).withName("my-topic").get();
         assertEquals(3, testTopic.getStatus().getConditions().size());
         assertEquals("True", testTopic.getStatus().getConditions().get(0).getStatus());
 
