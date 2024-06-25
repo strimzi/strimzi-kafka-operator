@@ -16,7 +16,7 @@ The command sets up everything you need to be able to create and manage a Kafka 
 * RBAC resources (`ClusterRole`, `ClusterRoleBinding`, `RoleBinding`)
 * Service account (`ServiceAccount`) 
 
-Cluster-scoped resources like `CRDs`, `ClusterRole`, and `ClusterRoleBinding` require administrator privileges for installation.
+Cluster-scoped resources like `CustomResourceDefinition`, `ClusterRole`, and `ClusterRoleBinding` require administrator privileges for installation.
 Prior to installation, it's advisable to review the `ClusterRole` specifications to ensure they do not grant unnecessary privileges.
 
 After installation, the Cluster Operator runs as a regular `Deployment` to watch for updates of Kafka resources.
