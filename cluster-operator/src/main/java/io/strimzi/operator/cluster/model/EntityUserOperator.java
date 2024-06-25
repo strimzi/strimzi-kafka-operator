@@ -41,7 +41,6 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
     
     protected static final String USER_OPERATOR_CONTAINER_NAME = "user-operator";
     private static final String NAME_SUFFIX = "-entity-user-operator";
-    private static final String CERT_SECRET_KEY_NAME = "entity-operator";
 
     private static final String LOG_AND_METRICS_CONFIG_VOLUME_NAME = "entity-user-operator-metrics-and-logging";
     private static final String LOG_AND_METRICS_CONFIG_VOLUME_MOUNT = "/opt/user-operator/custom-config/";
@@ -72,7 +71,7 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
 
     /* test */ final String kafkaBootstrapServers;
     private String watchedNamespace;
-    private String resourceLabels;
+    private final String resourceLabels;
     /* test */ String secretPrefix;
     /* test */ Long reconciliationIntervalMs;
     /* test */ int clientsCaValidityDays;
@@ -286,7 +285,7 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
      */
     public Secret generateCertificatesSecret(ClusterCa clusterCa, Secret existingSecret, boolean isMaintenanceTimeWindowsSatisfied) {
         return CertUtils.buildTrustedCertificateSecret(reconciliation, clusterCa, existingSecret, namespace, KafkaResources.entityUserOperatorSecretName(cluster), componentName,
-            CERT_SECRET_KEY_NAME, labels, ownerReference, isMaintenanceTimeWindowsSatisfied);
+            EntityOperator.COMPONENT_TYPE, labels, ownerReference, isMaintenanceTimeWindowsSatisfied);
     }
 
     /**

@@ -48,7 +48,11 @@ import static io.strimzi.operator.cluster.model.EntityUserOperator.USER_OPERATOR
  * Represents the Entity Operator deployment
  */
 public class EntityOperator extends AbstractModel {
-    protected static final String COMPONENT_TYPE = "entity-operator";
+    /**
+     * Type of the component which this model class represents. It is used for labeling and naming purposes.
+     */
+    public static final String COMPONENT_TYPE = "entity-operator";
+
     // Certificates for the Entity Topic Operator
     protected static final String ETO_CERTS_VOLUME_NAME = "eto-certs";
     protected static final String ETO_CERTS_VOLUME_MOUNT = "/etc/eto-certs/";
@@ -163,13 +167,14 @@ public class EntityOperator extends AbstractModel {
     /**
      * Generates the Entity Operator deployment
      *
+     * @param podAnnotations    Map with the annotations that will be used for the Pod metadata
      * @param isOpenShift       Flag which identifies if we are running on OpenShift
      * @param imagePullPolicy   Image pull policy
      * @param imagePullSecrets  Image pull secrets
      *
      * @return  Kubernetes Deployment with the Entity Operator
      */
-    public Deployment generateDeployment(boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
+    public Deployment generateDeployment(Map<String, String> podAnnotations, boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
         return WorkloadUtils.createDeployment(
                 componentName,
                 namespace,
@@ -184,7 +189,7 @@ public class EntityOperator extends AbstractModel {
                         labels,
                         templatePod,
                         DEFAULT_POD_LABELS,
-                        Map.of(),
+                        podAnnotations,
                         templatePod != null ? templatePod.getAffinity() : null,
                         null,
                         createContainers(imagePullPolicy),
