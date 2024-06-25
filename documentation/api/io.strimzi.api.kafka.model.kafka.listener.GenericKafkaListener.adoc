@@ -263,7 +263,7 @@ spec:
 = `tls`
 
 The TLS property is required.
-To enable it, set the `tls` property to `true`.
+To enable TLS encryption, set the `tls` property to `true`.
 For `route` and `ingress` type listeners, TLS encryption must be always enabled.
 
 = `authentication`

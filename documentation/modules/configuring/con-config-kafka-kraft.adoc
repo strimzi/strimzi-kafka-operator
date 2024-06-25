@@ -143,7 +143,7 @@ spec:
 <9> Name to identify the listener. Must be unique within the Kafka cluster.
 <10> Port number used by the listener inside Kafka. The port number has to be unique within a given Kafka cluster. Allowed port numbers are 9092 and higher with the exception of ports 9404 and 9999, which are already used for Prometheus and JMX. Depending on the listener type, the port number might not be the same as the port number that connects Kafka clients.
 <11> Listener type specified as `internal` or `cluster-ip` (to expose Kafka using per-broker `ClusterIP` services), or for external listeners, as `route` (OpenShift only), `loadbalancer`, `nodeport` or `ingress` (Kubernetes only).
-<12> Enables or disables TLS encryption for each listener. For `route` and `ingress` type listeners, TLS encryption must be always enabled.
+<12> Enables or disables TLS encryption for each listener. For `route` and `ingress` type listeners, TLS encryption must always be enabled by setting it to `true`.
 <13> Defines whether the fully-qualified DNS names including the cluster service suffix (usually `.cluster.local`) are assigned.
 <14> Listener authentication mechanism specified as mTLS, SCRAM-SHA-512, or token-based OAuth 2.0.
 <15> External listener configuration specifies how the Kafka cluster is exposed outside Kubernetes, such as through a `route`, `loadbalancer` or `nodeport`.
