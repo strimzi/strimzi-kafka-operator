@@ -56,3 +56,6 @@ include::assembly-securing-kafka-clients.adoc[leveloffset=+1]
 //client set up example with kafka and user config
 include::../../modules/deploying/proc-deploy-setup-external-clients.adoc[leveloffset=+1]
 
+//hostname verification with node ports
+include::../../modules/deploying/con-hostname-verification-node-ports.adoc[leveloffset=+1]
+

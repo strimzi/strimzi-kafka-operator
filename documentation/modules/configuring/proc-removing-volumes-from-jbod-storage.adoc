@@ -5,7 +5,7 @@
 [id='proc-removing-volumes-from-jbod-storage-{context}']
 = Removing volumes from JBOD storage
 
-This procedure describes how to remove volumes from Kafka cluster configured to use JBOD storage.
+This procedure describes how to remove volumes from a Kafka cluster configured to use JBOD storage.
 It cannot be applied to Kafka clusters configured to use any other storage type.
 The JBOD storage always has to contain at least one volume.
 

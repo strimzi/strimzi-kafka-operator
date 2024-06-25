@@ -1,0 +1,14 @@
+// This assembly is included in:
+//
+// deploying/deploying.adoc
+
+[id="assembly-cluster-recovery-volume-{context}"]
+= Cluster recovery from persistent volumes
+
+[role="_abstract"]
+You can recover a Kafka cluster from persistent volumes (PVs) if they are still present.
+
+//scenarios to recover from
+include::../../modules/managing/con-cluster-recovery-scenarios.adoc[leveloffset=+1]
+//procedure to recover a cluster from a PV
+include::../../modules/managing/proc-cluster-recovery-volume.adoc[leveloffset=+1]

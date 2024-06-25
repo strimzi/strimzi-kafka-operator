@@ -65,6 +65,11 @@ For more information on configuring logging for specific Kafka components or ope
 * link:{BookURLConfiguring}#property-topic-operator-logging-reference[Topic Operator logging^]
 * link:{BookURLConfiguring}#property-user-operator-logging-reference[User Operator logging^]
 
+//creating a configmap for logging
 include::../../modules/configuring/proc-creating-configmap.adoc[leveloffset=+1]
+//cluster operator logging config
 include::../../modules/operators/ref-operator-cluster-logging-configmap.adoc[leveloffset=+1]
+//adding logging filters to operators
 include::../../modules/configuring/proc-creating-logging-filters.adoc[leveloffset=+1]
+//warnings on locks for cluster operations
+include::../../modules/configuring/con-failed-lock-warnings.adoc[leveloffset=+1]
