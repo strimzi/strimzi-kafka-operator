@@ -41,8 +41,8 @@ authentication:
   type: oauth
   maxSecondsWithoutReauthentication: 3600
   customClaimCheck: "@.['kubernetes.io'] && @.['kubernetes.io'].['namespace'] in ['example']"
-  jwksEnpointUri: https://kubernetes.default.svc/openid/v1/jwks
-  validIssuerUri: https://kubernetes.default.svc
+  jwksEnpointUri: https://kubernetes.default.svc.cluster.local/openid/v1/jwks
+  validIssuerUri: https://kubernetes.default.svc.cluster.local
   serverBearerTokenLocation: /var/run/secrets/kubernetes.io/serviceaccount/token
   checkAccessTokenType: false
   includeAcceptHeader: false
@@ -50,6 +50,7 @@ authentication:
     - secretName: oauth-server-cert
       certificate: ca.crt
 ----
+The FQDN of the Kubernetes API server would not end in `.cluster.local` if environment variable `KUBERNETES_SERVICE_DNS_DOMAIN` is set to some other value.
 
 Note that the `tlsTrustedCertificates` is configured to point to a manually created Secret that contains the Kubernetes API server public certificate, which is mounted to the running pods under `/var/run/secrets/kubernetes.io/serviceaccount/ca.crt`.
 The secret can be mounted using the following command:

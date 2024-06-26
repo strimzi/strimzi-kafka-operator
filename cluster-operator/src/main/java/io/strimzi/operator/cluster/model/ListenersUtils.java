@@ -751,11 +751,12 @@ public class ListenersUtils {
     static KafkaListenerAuthenticationOAuth normalizeListenerAuthenticationOAuthForValidation(KafkaListenerAuthenticationOAuth oauth) {
         if (oauth.isConfigureServiceAccountAuth()) {
             KafkaListenerAuthenticationOAuthBuilder builder = new KafkaListenerAuthenticationOAuthBuilder(oauth);
+            String apiServerRootUrl = "https://" + DnsNameGenerator.serviceDnsNameWithClusterDomain("default", "kubernetes");
             if (oauth.getValidIssuerUri() == null) {
-                builder.withValidIssuerUri("https://kubernetes.default.svc");
+                builder.withValidIssuerUri(apiServerRootUrl);
             }
             if (oauth.getJwksEndpointUri() == null) {
-                builder.withJwksEndpointUri("https://kubernetes.default.svc/openid/v1/jwks");
+                builder.withJwksEndpointUri(apiServerRootUrl + "/openid/v1/jwks");
             }
             if (oauth.getServerBearerTokenLocation() == null) {
                 builder.withServerBearerTokenLocation("/var/run/secrets/kubernetes.io/serviceaccount/token");
