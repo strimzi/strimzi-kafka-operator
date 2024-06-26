@@ -29,12 +29,10 @@ import io.strimzi.operator.cluster.operator.resource.kubernetes.ServiceAccountOp
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ServiceOperator;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.PasswordGenerator;
-import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.vertx.core.Future;
 
 import java.time.Clock;
@@ -52,8 +50,6 @@ import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiPro
  * reconciliation pipeline and is also used to store the state between them.
  */
 public class CruiseControlReconciler {
-    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(CruiseControlReconciler.class.getName());
-
     private final Reconciliation reconciliation;
     private final CruiseControl cruiseControl;
     private final ClusterCa clusterCa;
@@ -72,8 +68,7 @@ public class CruiseControlReconciler {
     private final ConfigMapOperator configMapOperator;
     private final PasswordGenerator passwordGenerator;
 
-    private boolean existingCertsChanged = false;
-
+    private String certificateHash = "";
     private String serverConfigurationHash = "";
     private String capacityConfigurationHash = "";
     private String apiSecretHash = "";
@@ -226,16 +221,12 @@ public class CruiseControlReconciler {
         if (cruiseControl != null) {
             return secretOperator.getAsync(reconciliation.namespace(), CruiseControlResources.secretName(reconciliation.name()))
                     .compose(oldSecret -> {
+                        Secret newSecret = cruiseControl.generateCertificatesSecret(reconciliation.namespace(), reconciliation.name(), clusterCa, oldSecret, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant()));
+
                         return secretOperator
-                                .reconcile(reconciliation, reconciliation.namespace(), CruiseControlResources.secretName(reconciliation.name()),
-                                        cruiseControl.generateCertificatesSecret(reconciliation.namespace(), reconciliation.name(), clusterCa, oldSecret, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant())))
-                                .compose(patchResult -> {
-                                    if (patchResult instanceof ReconcileResult.Patched) {
-                                        // The secret is patched and some changes to the existing certificates actually occurred
-                                        existingCertsChanged = CertUtils.doExistingCertificatesDiffer(oldSecret, patchResult.resource());
-                                    } else {
-                                        existingCertsChanged = false;
-                                    }
+                                .reconcile(reconciliation, reconciliation.namespace(), CruiseControlResources.secretName(reconciliation.name()), newSecret)
+                                .compose(i -> {
+                                    certificateHash = CertUtils.getCertificateShortThumbprint(newSecret, Ca.SecretEntry.CRT.asKey(CruiseControl.COMPONENT_TYPE));
 
                                     return Future.succeededFuture();
                                 });
@@ -327,36 +318,17 @@ public class CruiseControlReconciler {
             podAnnotations.put(CruiseControl.ANNO_STRIMZI_SERVER_CONFIGURATION_HASH, serverConfigurationHash);
             podAnnotations.put(CruiseControl.ANNO_STRIMZI_CAPACITY_CONFIGURATION_HASH, capacityConfigurationHash);
             podAnnotations.put(Annotations.ANNO_STRIMZI_AUTH_HASH, apiSecretHash);
+            podAnnotations.put(Annotations.ANNO_STRIMZI_SERVER_CERT_HASH, certificateHash);
             
             Deployment deployment = cruiseControl.generateDeployment(podAnnotations, isOpenShift, imagePullPolicy, imagePullSecrets);
 
             return deploymentOperator
                     .reconcile(reconciliation, reconciliation.namespace(), CruiseControlResources.componentName(reconciliation.name()), deployment)
-                    .compose(patchResult -> {
-                        if (patchResult instanceof ReconcileResult.Noop)   {
-                            // Deployment needs ot be rolled because the certificate secret changed or older/expired cluster CA removed
-                            if (existingCertsChanged || clusterCa.certsRemoved()) {
-                                LOGGER.infoCr(reconciliation, "Rolling Cruise Control to update or remove certificates");
-                                return cruiseControlRollingUpdate();
-                            }
-                        }
-
-                        // No need to roll, we patched the deployment (and it will roll itself) or we created a new one
-                        return Future.succeededFuture();
-                    });
+                    .map((Void) null);
         } else {
             return deploymentOperator.reconcile(reconciliation, reconciliation.namespace(), CruiseControlResources.componentName(reconciliation.name()), null)
                     .map((Void) null);
         }
-    }
-
-    /**
-     * Triggers the rolling update of the Cruise Control. This is used to trigger the roll when the certificates change.
-     *
-     * @return  Future which completes when the reconciliation is done
-     */
-    protected Future<Void> cruiseControlRollingUpdate() {
-        return deploymentOperator.rollingUpdate(reconciliation, reconciliation.namespace(), CruiseControlResources.componentName(reconciliation.name()), operationTimeoutMs);
     }
 
     /**

@@ -131,7 +131,7 @@ public class ClusterCa extends Ca {
         LOGGER.debugCr(reconciliation, "{}: Reconciling Cruise Control certificates", this);
         return maybeCopyOrGenerateCerts(
             reconciliation,
-            Set.of(new NodeRef("cruise-control", 0, null, false, false)),
+            Set.of(new NodeRef(CruiseControl.COMPONENT_TYPE, 0, null, false, false)),
             subjectFn,
             existingSecret,
             isMaintenanceTimeWindowsSatisfied);

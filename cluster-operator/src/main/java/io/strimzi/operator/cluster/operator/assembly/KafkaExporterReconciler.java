@@ -5,6 +5,7 @@
 package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
+import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.exporter.KafkaExporterResources;
@@ -21,22 +22,20 @@ import io.strimzi.operator.cluster.operator.resource.kubernetes.SecretOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ServiceAccountOperator;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Ca;
-import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.vertx.core.Future;
 
 import java.time.Clock;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Class used for reconciliation of Kafka Exporter. This class contains both the steps of the Kafka Exporter
  * reconciliation pipeline and is also used to store the state between them.
  */
 public class KafkaExporterReconciler {
-    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaExporterReconciler.class.getName());
-
     private final Reconciliation reconciliation;
     private final long operationTimeoutMs;
     private final KafkaExporter kafkaExporter;
@@ -48,7 +47,7 @@ public class KafkaExporterReconciler {
     private final ServiceAccountOperator serviceAccountOperator;
     private final NetworkPolicyOperator networkPolicyOperator;
 
-    private boolean existingKafkaExporterCertsChanged = false;
+    private String certificateHash = "";
 
     /**
      * Constructs the Kafka Exporter reconciler
@@ -128,16 +127,12 @@ public class KafkaExporterReconciler {
         if (kafkaExporter != null) {
             return secretOperator.getAsync(reconciliation.namespace(), KafkaExporterResources.secretName(reconciliation.name()))
                     .compose(oldSecret -> {
+                        Secret newSecret = kafkaExporter.generateCertificatesSecret(clusterCa, oldSecret, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant()));
+
                         return secretOperator
-                                .reconcile(reconciliation, reconciliation.namespace(), KafkaExporterResources.secretName(reconciliation.name()),
-                                        kafkaExporter.generateCertificatesSecret(clusterCa, oldSecret, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant())))
-                                .compose(patchResult -> {
-                                    if (patchResult instanceof ReconcileResult.Patched) {
-                                        // The secret is patched and some changes to the existing certificates actually occurred
-                                        existingKafkaExporterCertsChanged = CertUtils.doExistingCertificatesDiffer(oldSecret, patchResult.resource());
-                                    } else {
-                                        existingKafkaExporterCertsChanged = false;
-                                    }
+                                .reconcile(reconciliation, reconciliation.namespace(), KafkaExporterResources.secretName(reconciliation.name()), newSecret)
+                                .compose(i -> {
+                                    certificateHash = CertUtils.getCertificateShortThumbprint(newSecret, Ca.SecretEntry.CRT.asKey(KafkaExporter.COMPONENT_TYPE));
 
                                     return Future.succeededFuture();
                                 });
@@ -179,42 +174,21 @@ public class KafkaExporterReconciler {
      */
     private Future<Void> deployment(boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
         if (kafkaExporter != null) {
-            Deployment deployment = kafkaExporter.generateDeployment(isOpenShift, imagePullPolicy, imagePullSecrets);
-            int caCertGeneration = clusterCa.caCertGeneration();
-            Annotations.annotations(deployment.getSpec().getTemplate()).put(
-                    Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(caCertGeneration));
-            int caKeyGeneration = clusterCa.caKeyGeneration();
-            Annotations.annotations(deployment.getSpec().getTemplate()).put(
-                    Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, String.valueOf(caKeyGeneration));
+            Map<String, String> podAnnotations = new LinkedHashMap<>();
+            podAnnotations.put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(clusterCa.caCertGeneration()));
+            podAnnotations.put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, String.valueOf(clusterCa.caKeyGeneration()));
+            podAnnotations.put(Annotations.ANNO_STRIMZI_SERVER_CERT_HASH, certificateHash);
+
+            Deployment deployment = kafkaExporter.generateDeployment(podAnnotations, isOpenShift, imagePullPolicy, imagePullSecrets);
 
             return deploymentOperator
                     .reconcile(reconciliation, reconciliation.namespace(), KafkaExporterResources.componentName(reconciliation.name()), deployment)
-                    .compose(patchResult -> {
-                        if (patchResult instanceof ReconcileResult.Noop)   {
-                            // Deployment needs ot be rolled because the certificate secret changed or older/expired cluster CA removed
-                            if (existingKafkaExporterCertsChanged || clusterCa.certsRemoved()) {
-                                LOGGER.infoCr(reconciliation, "Rolling Kafka Exporter to update or remove certificates");
-                                return kafkaExporterRollingUpdate();
-                            }
-                        }
-
-                        // No need to roll, we patched the deployment (and it will roll itself) or we created a new one
-                        return Future.succeededFuture();
-                    });
+                    .map((Void) null);
         } else  {
             return deploymentOperator
                     .reconcile(reconciliation, reconciliation.namespace(), KafkaExporterResources.componentName(reconciliation.name()), null)
                     .map((Void) null);
         }
-    }
-
-    /**
-     * Triggers the rolling update of the Kafka Exporter. This is used to trigger the roll when the certificates change.
-     *
-     * @return  Future which completes when the reconciliation is done
-     */
-    private Future<Void> kafkaExporterRollingUpdate() {
-        return deploymentOperator.rollingUpdate(reconciliation, reconciliation.namespace(), KafkaExporterResources.componentName(reconciliation.name()), operationTimeoutMs);
     }
 
     /**
