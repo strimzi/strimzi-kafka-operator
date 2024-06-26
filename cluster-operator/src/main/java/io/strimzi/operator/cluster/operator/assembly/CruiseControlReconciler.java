@@ -258,7 +258,7 @@ public class CruiseControlReconciler {
     protected Future<Void> apiSecret() {
         if (cruiseControl != null) {
             Future<Secret> ccApiSecretFuture = secretOperator.getAsync(reconciliation.namespace(), CruiseControlResources.apiSecretName(reconciliation.name()));
-            Future<Secret> userManagedApiSecretFuture = cruiseControl.apiCredentials().userManagedApiUsersEnabled()
+            Future<Secret> userManagedApiSecretFuture = cruiseControl.apiCredentials().getUserManagedApiSecretName() != null
                     ? secretOperator.getAsync(reconciliation.namespace(), cruiseControl.apiCredentials().getUserManagedApiSecretName())
                     : Future.succeededFuture(null);
             Future<Secret> topicOperatorManagedApiSecretFuture = isTopicOperatorEnabled

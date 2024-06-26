@@ -48,7 +48,6 @@ public class ApiCredentials {
 
     private final String userManagedApiSecretName;
     private final String userManagedApiSecretKey;
-    private final boolean userManagedApiUsersEnabled;
     private final String namespace;
     private final String cluster;
     private final Labels labels;
@@ -71,21 +70,13 @@ public class ApiCredentials {
         this.ownerReference = ownerReference;
         this.specSection = specSection;
 
-        userManagedApiUsersEnabled = validateApiUsersConfig(specSection);
-        if (userManagedApiUsersEnabled) {
+        if (validateApiUsersConfig(specSection)) {
             userManagedApiSecretName = specSection.getApiUsers().getValueFrom().getSecretKeyRef().getName();
             userManagedApiSecretKey = specSection.getApiUsers().getValueFrom().getSecretKeyRef().getKey();
         } else {
             userManagedApiSecretName = null;
             userManagedApiSecretKey = null;
         }
-    }
-
-    /**
-     * @return  Returns true if user-managed API user config is enabled
-     */
-    public boolean userManagedApiUsersEnabled() {
-        return userManagedApiUsersEnabled;
     }
 
     /**
