@@ -27,14 +27,16 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"type", "valueFrom"})
 @EqualsAndHashCode
-public class ApiUsers implements UnknownPropertyPreserving {
+public class HashLoginServiceApiUsers implements UnknownPropertyPreserving {
     public static final String TYPE_HASH_LOGIN_SERVICE = "hashLoginService";
 
     private PasswordSource valueFrom;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
-    @Description("Must be `" + TYPE_HASH_LOGIN_SERVICE + "`")
+    @Description("Type of the Cruise Control API Users configuration. " +
+            "Supported values are: " + "`" + TYPE_HASH_LOGIN_SERVICE + "`")
     @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonProperty(required = true)
     public String getType() {
         return TYPE_HASH_LOGIN_SERVICE;
     }

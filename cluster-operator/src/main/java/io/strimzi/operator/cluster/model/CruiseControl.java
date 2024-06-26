@@ -28,10 +28,10 @@ import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.Storage;
-import io.strimzi.api.kafka.model.kafka.cruisecontrol.ApiUsers;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlSpec;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlTemplate;
+import io.strimzi.api.kafka.model.kafka.cruisecontrol.HashLoginServiceApiUsers;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.cruisecontrol.Capacity;
@@ -116,7 +116,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     
     private boolean sslEnabled;
     private boolean authEnabled;
-    private boolean apiUsersEnabled;
+    private boolean userManagedApiUsersEnabled;
     private String userManagedApiSecretName;
     private String userManagedApiSecretKey;
     @SuppressFBWarnings({"UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"}) // This field is initialized in the fromCrd method
@@ -212,9 +212,9 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
             result.sslEnabled = ccConfiguration.isApiSslEnabled();
             result.authEnabled = ccConfiguration.isApiAuthEnabled();
 
-            result.apiUsersEnabled = isApiUsersConfigEnabled(ccSpec);
-            if (result.apiUsersEnabled()) {
-                ApiUsers apiUsers = ccSpec.getApiUsers();
+            result.userManagedApiUsersEnabled = isUserManagedApiUsersConfigEnabled(ccSpec);
+            if (result.userManagedApiUsersEnabled()) {
+                HashLoginServiceApiUsers apiUsers = ccSpec.getApiUsers();
                 result.userManagedApiSecretName = apiUsers.getValueFrom().getSecretKeyRef().getName();
                 result.userManagedApiSecretKey = apiUsers.getValueFrom().getSecretKeyRef().getKey();
             }
@@ -297,10 +297,10 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     }
 
     /**
-     * @return  True if API users are enabled. False otherwise.
+     * @return  True if user-managed API users are enabled. False otherwise.
      */
-    public boolean apiUsersEnabled() {
-        return apiUsersEnabled;
+    public boolean userManagedApiUsersEnabled() {
+        return userManagedApiUsersEnabled;
     }
 
     /**
@@ -308,14 +308,15 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
      *
      * @param ccSpec The Cruise Control spec to check.
      */
-    private static boolean isApiUsersConfigEnabled(CruiseControlSpec ccSpec)  {
-        ApiUsers apiUsers = ccSpec.getApiUsers();
+    private static boolean isUserManagedApiUsersConfigEnabled(CruiseControlSpec ccSpec)  {
+        HashLoginServiceApiUsers apiUsers = ccSpec.getApiUsers();
         if (apiUsers != null)    {
             if (apiUsers.getValueFrom() == null
                     || apiUsers.getValueFrom().getSecretKeyRef() == null
                     || apiUsers.getValueFrom().getSecretKeyRef().getName() == null
                     || apiUsers.getValueFrom().getSecretKeyRef().getKey() == null) {
-                throw new InvalidResourceException("Resource requests custom ApiUsers config but doesn't specify the secret name and key");
+                throw new InvalidResourceException("The configuration of the Cruise Control REST API users " +
+                        "referenced in spec.cruiseControl.apiUsers is invalid.");
             } else {
                 return true;
             }

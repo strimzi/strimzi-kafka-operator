@@ -1902,8 +1902,8 @@ include::../api/io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlSpec
 |xref:type-JmxPrometheusExporterMetrics-{context}[`JmxPrometheusExporterMetrics`]
 |Metrics configuration.
 |apiUsers
-|xref:type-ApiUsers-{context}[`ApiUsers`]
-|The Cruise Control `ApiUsers` configuration.
+|xref:type-HashLoginServiceApiUsers-{context}[`HashLoginServiceApiUsers`]
+|Configuration of the Cruise Control REST API users.
 |====
 
 [id='type-CruiseControlTemplate-{context}']
@@ -1990,8 +1990,8 @@ Used in: xref:type-BrokerCapacity-{context}[`BrokerCapacity`]
 |Broker capacity for outbound network throughput in bytes per second. Use an integer value with standard Kubernetes byte units (K, M, G) or their bibyte (power of two) equivalents (Ki, Mi, Gi) per second. For example, 10000KiB/s.
 |====
 
-[id='type-ApiUsers-{context}']
-= `ApiUsers` schema reference
+[id='type-HashLoginServiceApiUsers-{context}']
+= `HashLoginServiceApiUsers` schema reference
 
 Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`]
 
@@ -2001,7 +2001,7 @@ Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`]
 |Property |Property type |Description
 |type
 |string
-|Must be `hashLoginService`.
+|Type of the Cruise Control API Users configuration. Supported values are: `hashLoginService`.
 |valueFrom
 |xref:type-PasswordSource-{context}[`PasswordSource`]
 |Secret from which the custom Cruise Control API authentication credentials should be read. 
@@ -2010,7 +2010,7 @@ Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`]
 [id='type-PasswordSource-{context}']
 = `PasswordSource` schema reference
 
-Used in: xref:type-ApiUsers-{context}[`ApiUsers`], xref:type-Password-{context}[`Password`]
+Used in: xref:type-HashLoginServiceApiUsers-{context}[`HashLoginServiceApiUsers`], xref:type-Password-{context}[`Password`]
 
 
 [cols="2,2,3a",options="header"]

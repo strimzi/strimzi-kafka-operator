@@ -14,11 +14,11 @@ import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
-import io.strimzi.api.kafka.model.kafka.cruisecontrol.ApiUsersBuilder;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.BrokerCapacityBuilder;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlSpec;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlSpecBuilder;
+import io.strimzi.api.kafka.model.kafka.cruisecontrol.HashLoginServiceApiUsersBuilder;
 import io.strimzi.api.kafka.model.kafka.entityoperator.EntityOperatorSpecBuilder;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
@@ -80,7 +80,7 @@ public class CruiseControlReconcilerTest {
             new NodeRef(NAME + "kafka-2", 2, "kafka", false, true));
     private final CruiseControlSpec cruiseControlSpec = new CruiseControlSpecBuilder()
             .withBrokerCapacity(new BrokerCapacityBuilder().withInboundNetwork("10000KB/s").withOutboundNetwork("10000KB/s").build())
-            .withApiUsers(new ApiUsersBuilder()
+            .withApiUsers(new HashLoginServiceApiUsersBuilder()
                     .withNewValueFrom()
                             .withSecretKeyRef(new SecretKeySelectorBuilder().withKey("key").withName("cc-api-user-secret").build())
                     .endValueFrom()
@@ -90,6 +90,17 @@ public class CruiseControlReconcilerTest {
             .build();
 
 
+    /**
+     * This parameterized test uses '@CsvSource' to provide combinations of boolean values for the
+     * topicOperatorEnabled and apiUsersEnabled parameters.
+     * The provided combinations are:
+     *   (a) true, true
+     *   (b) true, false
+     *   (c) false, true
+     *   (d) false, false
+     * This test verifies the behavior of the Cruise Control reconciler based on these different combinations of
+     * parameter values.
+     */
     @ParameterizedTest
     @CsvSource({
         "true, true",

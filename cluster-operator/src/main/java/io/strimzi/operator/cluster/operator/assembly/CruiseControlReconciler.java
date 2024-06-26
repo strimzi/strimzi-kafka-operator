@@ -37,8 +37,6 @@ import io.strimzi.operator.common.model.PasswordGenerator;
 import io.vertx.core.Future;
 
 import java.time.Clock;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -136,7 +134,7 @@ public class CruiseControlReconciler {
                 .compose(i -> serviceAccount())
                 .compose(i -> configMap())
                 .compose(i -> certificatesSecret(clock))
-                .compose(i -> apiSecrets())
+                .compose(i -> apiSecret())
                 .compose(i -> service())
                 .compose(i -> deployment(isOpenShift, imagePullPolicy, imagePullSecrets))
                 .compose(i -> waitForDeploymentReadiness());
@@ -258,47 +256,25 @@ public class CruiseControlReconciler {
      *
      * @return Future which completes when the reconciliation is done.
      */
-    protected Future<Void> apiSecrets() {
+    protected Future<Void> apiSecret() {
         if (cruiseControl != null) {
+            Future<Secret> centralizedApiSecretFuture = secretOperator.getAsync(reconciliation.namespace(), CruiseControlResources.apiSecretName(reconciliation.name()));
+            Future<Secret> userManagedApiSecretFuture = cruiseControl.userManagedApiUsersEnabled()
+                    ? secretOperator.getAsync(reconciliation.namespace(), cruiseControl.getUserManagedApiSecretName())
+                    : Future.succeededFuture(null);
+            Future<Secret> topicOperatorManagedApiSecretFuture = isTopicOperatorEnabled
+                    ? secretOperator.getAsync(reconciliation.namespace(), KafkaResources.entityTopicOperatorCcApiSecretName(reconciliation.name()))
+                    : Future.succeededFuture(null);
 
-            Integer centralizedApiSecretIndex = 0;:
-            Integer userManagedApiSecretIndex;
-            Integer topicOperatorManagedApiSecretIndex;
-
-            List<Future<Secret>> futures = new ArrayList<>();
-            // Centralized API secret
-            futures.add(secretOperator.getAsync(reconciliation.namespace(), CruiseControlResources.apiSecretName(reconciliation.name())));
-
-            if (cruiseControl.apiUsersEnabled()) {
-                // User-managed API secret
-                futures.add(secretOperator.getAsync(reconciliation.namespace(), cruiseControl.getUserManagedApiSecretName()));
-                userManagedApiSecretIndex = futures.size() - 1;
-            } else {
-                userManagedApiSecretIndex = null;
-            }
-
-            if (isTopicOperatorEnabled) {
-                // Topic operator-managed API secret
-                futures.add(secretOperator.getAsync(reconciliation.namespace(), KafkaResources.entityTopicOperatorCcApiSecretName(reconciliation.name())));
-                topicOperatorManagedApiSecretIndex = futures.size() - 1;
-            } else {
-                topicOperatorManagedApiSecretIndex = null;
-            }
-
-            return Future.join(futures)
+            return Future.join(centralizedApiSecretFuture, userManagedApiSecretFuture, topicOperatorManagedApiSecretFuture)
                 .compose(
                     compositeFuture -> {
-                        Secret oldCentralizedApiSecret = compositeFuture.resultAt(centralizedApiSecretIndex);
-                        Secret userManagedApiSecret = userManagedApiSecretIndex != null ? compositeFuture.resultAt(userManagedApiSecretIndex) : null;
-                        Secret topicOperatorManagedApiSecret = topicOperatorManagedApiSecretIndex != null ? compositeFuture.resultAt(topicOperatorManagedApiSecretIndex) : null;
+                        Secret oldCentralizedApiSecret = compositeFuture.resultAt(0);
+                        Secret userManagedApiSecret = compositeFuture.resultAt(1);
+                        Secret topicOperatorManagedApiSecret = compositeFuture.resultAt(2);
 
-                        Map<String, ApiCredentials.Entry> apiCredentials = new HashMap<>();
-                        apiCredentials.putAll(ApiCredentials.generateCoManagedApiCredentials(passwordGenerator, oldCentralizedApiSecret));
-                        apiCredentials.putAll(ApiCredentials.generateUserManagedApiCredentials(userManagedApiSecret, cruiseControl.getUserManagedApiSecretKey()));
-                        apiCredentials.putAll(ApiCredentials.generateToManagedApiCredentials(topicOperatorManagedApiSecret));
-
-                        Map<String, String> mapWithApiCredentials = ApiCredentials.generateMapWithApiCredentials(apiCredentials);
-                        Secret newCentralizedApiUsersSecret = cruiseControl.generateApiSecret(mapWithApiCredentials);
+                        Secret newCentralizedApiUsersSecret = ApiCredentials.generateApiSecret(cruiseControl, passwordGenerator,
+                                oldCentralizedApiSecret, userManagedApiSecret, topicOperatorManagedApiSecret);
 
                         this.apiSecretHash = ReconcilerUtils.hashSecretContent(newCentralizedApiUsersSecret);
                         return secretOperator.reconcile(reconciliation, reconciliation.namespace(), CruiseControlResources.apiSecretName(reconciliation.name()), newCentralizedApiUsersSecret)

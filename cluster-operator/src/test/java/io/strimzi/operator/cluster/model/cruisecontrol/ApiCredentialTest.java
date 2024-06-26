@@ -46,7 +46,7 @@ public class ApiCredentialTest {
                         username1: password1,VIEWER
                         username2: password2,USER
                         """;
-        Map<String, ApiCredentials.Entry> entries =  ApiCredentials.parseEntriesFromString(config);
+        Map<String, ApiCredentials.UserEntry> entries =  ApiCredentials.parseEntriesFromString(config);
         assertThat(entries.get("username0").username(), is("username0"));
         assertThat(entries.get("username0").password(), is("password0"));
         assertThat(entries.get("username0").role(), is(ApiCredentials.Role.USER));
@@ -72,7 +72,7 @@ public class ApiCredentialTest {
     public void testGenerateToManagedApiCredentials() {
         Secret secret = createSecret(Map.of("topic-operator.username",  encodeToBase64("topic-operator"),
                 "topic-operator.password",  encodeToBase64("password")));
-        Map<String, ApiCredentials.Entry> entries =  ApiCredentials.generateToManagedApiCredentials(secret);
+        Map<String, ApiCredentials.UserEntry> entries =  ApiCredentials.generateToManagedApiCredentials(secret);
         assertThat(entries.get("topic-operator").username(), is("topic-operator"));
         assertThat(entries.get("topic-operator").password(), is("password"));
         assertThat(entries.get("topic-operator").role(), is(ApiCredentials.Role.ADMIN));
@@ -95,7 +95,7 @@ public class ApiCredentialTest {
                         username2: password2,USER
                         """);
         Secret secret = createSecret(Map.of(SECRET_KEY, config));
-        Map<String, ApiCredentials.Entry> entries =  ApiCredentials.generateUserManagedApiCredentials(secret, SECRET_KEY);
+        Map<String, ApiCredentials.UserEntry> entries =  ApiCredentials.generateUserManagedApiCredentials(secret, SECRET_KEY);
 
         assertThat(entries.get("username0").username(), is("username0"));
         assertThat(entries.get("username0").password(), is("password0"));
@@ -147,7 +147,7 @@ public class ApiCredentialTest {
         Map<String, String> map1 = Map.of("cruise-control.authFile",
                 encodeToBase64("rebalance-operator: password,ADMIN\n" +
                                      "healthcheck: password,USER"));
-        Map<String, ApiCredentials.Entry> entries =  ApiCredentials.generateCoManagedApiCredentials(mockPasswordGenerator, createSecret(map1));
+        Map<String, ApiCredentials.UserEntry> entries =  ApiCredentials.generateCoManagedApiCredentials(mockPasswordGenerator, createSecret(map1));
         assertThat(entries.get("rebalance-operator").username(), is("rebalance-operator"));
         assertThat(entries.get("rebalance-operator").password(), is("password"));
         assertThat(entries.get("rebalance-operator").role(), is(ApiCredentials.Role.ADMIN));

@@ -12,6 +12,7 @@ import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.config.ConfigParameter;
 import io.strimzi.operator.common.featuregates.FeatureGates;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.common.config.SaslConfigs;
 import org.apache.kafka.common.config.SslConfigs;
@@ -143,8 +144,8 @@ public record TopicOperatorConfig(
     static final ConfigParameter<Boolean> CRUISE_CONTROL_SSL_ENABLED = new ConfigParameter<>("STRIMZI_CRUISE_CONTROL_SSL_ENABLED", BOOLEAN, "false", CONFIG_VALUES);
     static final ConfigParameter<Boolean> CRUISE_CONTROL_AUTH_ENABLED = new ConfigParameter<>("STRIMZI_CRUISE_CONTROL_AUTH_ENABLED", BOOLEAN, "false", CONFIG_VALUES);
     static final ConfigParameter<String> CRUISE_CONTROL_CRT_FILE_PATH = new ConfigParameter<>("STRIMZI_CRUISE_CONTROL_CRT_FILE_PATH", STRING, "/etc/tls-sidecar/cluster-ca-certs/ca.crt", CONFIG_VALUES);
-    static final ConfigParameter<String> CRUISE_CONTROL_API_USER_PATH = new ConfigParameter<>("STRIMZI_CRUISE_CONTROL_API_USER_PATH", STRING, "/etc/eto-cc-api/topic-operator.apiAdminName", CONFIG_VALUES);
-    static final ConfigParameter<String> CRUISE_CONTROL_API_PASS_PATH = new ConfigParameter<>("STRIMZI_CRUISE_CONTROL_API_PASS_PATH", STRING, "/etc/eto-cc-api/topic-operator.apiAdminPassword", CONFIG_VALUES);
+    static final ConfigParameter<String> CRUISE_CONTROL_API_USER_PATH = new ConfigParameter<>("STRIMZI_CRUISE_CONTROL_API_USER_PATH", STRING, "/etc/eto-cc-api/" + CruiseControlApiProperties.TOPIC_OPERATOR_USERNAME_KEY, CONFIG_VALUES);
+    static final ConfigParameter<String> CRUISE_CONTROL_API_PASS_PATH = new ConfigParameter<>("STRIMZI_CRUISE_CONTROL_API_PASS_PATH", STRING, "/etc/eto-cc-api/" + CruiseControlApiProperties.TOPIC_OPERATOR_PASSWORD_KEY, CONFIG_VALUES);
 
     @SuppressWarnings("unchecked")
     private static <T> T get(Map<String, Object> map, ConfigParameter<T> value) {
