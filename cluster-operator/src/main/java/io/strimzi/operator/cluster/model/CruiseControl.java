@@ -34,6 +34,7 @@ import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlTemplate;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.HashLoginServiceApiUsers;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
+import io.strimzi.operator.cluster.model.cruisecontrol.ApiCredentials;
 import io.strimzi.operator.cluster.model.cruisecontrol.Capacity;
 import io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlConfiguration;
 import io.strimzi.operator.cluster.model.logging.LoggingModel;
@@ -47,6 +48,7 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters;
 
@@ -116,7 +118,6 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     
     private boolean sslEnabled;
     private boolean authEnabled;
-    private boolean userManagedApiUsersEnabled;
     private String userManagedApiSecretName;
     private String userManagedApiSecretKey;
     @SuppressFBWarnings({"UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"}) // This field is initialized in the fromCrd method
@@ -212,8 +213,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
             result.sslEnabled = ccConfiguration.isApiSslEnabled();
             result.authEnabled = ccConfiguration.isApiAuthEnabled();
 
-            result.userManagedApiUsersEnabled = isUserManagedApiUsersConfigEnabled(ccSpec);
-            if (result.userManagedApiUsersEnabled()) {
+            if (validateApiUsersConfig(ccSpec)) {
                 HashLoginServiceApiUsers apiUsers = ccSpec.getApiUsers();
                 result.userManagedApiSecretName = apiUsers.getValueFrom().getSecretKeyRef().getName();
                 result.userManagedApiSecretKey = apiUsers.getValueFrom().getSecretKeyRef().getKey();
@@ -297,18 +297,11 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     }
 
     /**
-     * @return  True if user-managed API users are enabled. False otherwise.
-     */
-    public boolean userManagedApiUsersEnabled() {
-        return userManagedApiUsersEnabled;
-    }
-
-    /**
      * Checks if Cruise Control spec has valid ApiUsers config.
      *
      * @param ccSpec The Cruise Control spec to check.
      */
-    private static boolean isUserManagedApiUsersConfigEnabled(CruiseControlSpec ccSpec)  {
+    private static boolean validateApiUsersConfig(CruiseControlSpec ccSpec)  {
         HashLoginServiceApiUsers apiUsers = ccSpec.getApiUsers();
         if (apiUsers != null)    {
             if (apiUsers.getValueFrom() == null
@@ -484,15 +477,35 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
         }
     }
 
+
     /**
-     * Generate the Secret containing the Cruise Control API auth credentials.
+     * Generates a new API secret for Cruise Control by aggregating credentials from various sources.
+     * This method collects API credentials from three potential sources:
+     *   (1) Old Cruise Control API secret
+     *   (2) User-managed API secret
+     *   (3) Topic operator-managed API secret.
+     * It uses these credentials to create a comprehensive map of API credentials, which is then used to generate a new API secret
+     * for Cruise Control.
      *
-     * @param data Map containing API credential data
-     * @return The generated Secret.
+     * @param passwordGenerator the password generator used for creating new credentials.
+     * @param oldCentralizedApiSecret the existing centralized API secret, containing previously stored credentials.
+     * @param userManagedApiSecret the secret managed by the user, containing user-defined API credentials.
+     * @param topicOperatorManagedApiSecret the secret managed by the topic operator, containing credentials for the topic operator.
+     * @return a new Secret object containing the aggregated API credentials for Cruise Control.
      */
-    public Secret generateApiSecret(Map<String, String> data) {
+    public Secret generateApiSecret(PasswordGenerator passwordGenerator,
+                                           Secret oldCentralizedApiSecret,
+                                           Secret userManagedApiSecret,
+                                           Secret topicOperatorManagedApiSecret) {
+
+        Map<String, ApiCredentials.UserEntry> apiCredentials = new HashMap<>();
+        apiCredentials.putAll(ApiCredentials.generateCoManagedApiCredentials(passwordGenerator, oldCentralizedApiSecret));
+        apiCredentials.putAll(ApiCredentials.generateUserManagedApiCredentials(userManagedApiSecret, getUserManagedApiSecretKey()));
+        apiCredentials.putAll(ApiCredentials.generateToManagedApiCredentials(topicOperatorManagedApiSecret));
+
+        Map<String, String> mapWithApiCredentials = ApiCredentials.generateMapWithApiCredentials(apiCredentials);
         return ModelUtils.createSecret(CruiseControlResources.apiSecretName(cluster), namespace, labels, ownerReference,
-            data, Collections.emptyMap(), Collections.emptyMap());
+                mapWithApiCredentials, Collections.emptyMap(), Collections.emptyMap());
     }
 
     /**

@@ -45,10 +45,10 @@ public class CruiseControlApiProperties {
     /**
      * The key, within the data section of a Kubernetes Secret, for the Topic Operator username.
      */
-    public static final String TOPIC_OPERATOR_USERNAME_KEY = "topic-operator.username";
+    public static final String TOPIC_OPERATOR_USERNAME_KEY = "topic-operator.apiAdminName";
     
     /**
      * The key, within the data section of a Kubernetes Secret, for the Topic Operator password.
      */
-    public static final String TOPIC_OPERATOR_PASSWORD_KEY = "topic-operator.password";
+    public static final String TOPIC_OPERATOR_PASSWORD_KEY = "topic-operator.apiAdminPassword";
 }

@@ -70,8 +70,8 @@ public class ApiCredentialTest {
 
     @ParallelTest
     public void testGenerateToManagedApiCredentials() {
-        Secret secret = createSecret(Map.of("topic-operator.username",  encodeToBase64("topic-operator"),
-                "topic-operator.password",  encodeToBase64("password")));
+        Secret secret = createSecret(Map.of("topic-operator.apiAdminName",  encodeToBase64("topic-operator"),
+                "topic-operator.apiAdminPassword",  encodeToBase64("password")));
         Map<String, ApiCredentials.UserEntry> entries =  ApiCredentials.generateToManagedApiCredentials(secret);
         assertThat(entries.get("topic-operator").username(), is("topic-operator"));
         assertThat(entries.get("topic-operator").password(), is("password"));

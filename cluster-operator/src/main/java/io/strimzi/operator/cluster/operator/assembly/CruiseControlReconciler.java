@@ -20,7 +20,6 @@ import io.strimzi.operator.cluster.model.CruiseControl;
 import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.NodeRef;
-import io.strimzi.operator.cluster.model.cruisecontrol.ApiCredentials;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ConfigMapOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.DeploymentOperator;
@@ -238,7 +237,7 @@ public class CruiseControlReconciler {
      * Generates a new centralized Cruise Control API secret containing an authentication file comprising of all
      * REST API credentials, it is generated using the following API secrets:
      *
-     *  (1) Previous Centralized API secret
+     *  (1) Previous Cruise Control API secret
      *      The centralized API secret contains passwords for the healthcheck and rebalance operator users as well
      *      the authentication file comprising of all REST API credentials.
      *
@@ -258,25 +257,23 @@ public class CruiseControlReconciler {
      */
     protected Future<Void> apiSecret() {
         if (cruiseControl != null) {
-            Future<Secret> centralizedApiSecretFuture = secretOperator.getAsync(reconciliation.namespace(), CruiseControlResources.apiSecretName(reconciliation.name()));
-            Future<Secret> userManagedApiSecretFuture = cruiseControl.userManagedApiUsersEnabled()
-                    ? secretOperator.getAsync(reconciliation.namespace(), cruiseControl.getUserManagedApiSecretName())
-                    : Future.succeededFuture(null);
+            Future<Secret> ccApiSecretFuture = secretOperator.getAsync(reconciliation.namespace(), CruiseControlResources.apiSecretName(reconciliation.name()));
+            Future<Secret> userManagedApiSecretFuture = secretOperator.getAsync(reconciliation.namespace(), cruiseControl.getUserManagedApiSecretName());
             Future<Secret> topicOperatorManagedApiSecretFuture = isTopicOperatorEnabled
                     ? secretOperator.getAsync(reconciliation.namespace(), KafkaResources.entityTopicOperatorCcApiSecretName(reconciliation.name()))
                     : Future.succeededFuture(null);
-            return Future.join(centralizedApiSecretFuture, userManagedApiSecretFuture, topicOperatorManagedApiSecretFuture)
+            return Future.join(ccApiSecretFuture, userManagedApiSecretFuture, topicOperatorManagedApiSecretFuture)
                 .compose(
                     compositeFuture -> {
-                        Secret oldCentralizedApiSecret = compositeFuture.resultAt(0);
+                        Secret oldCcApiSecret = compositeFuture.resultAt(0);
                         Secret userManagedApiSecret = compositeFuture.resultAt(1);
                         Secret topicOperatorManagedApiSecret = compositeFuture.resultAt(2);
 
-                        Secret newCentralizedApiUsersSecret = ApiCredentials.generateApiSecret(cruiseControl, passwordGenerator,
-                                oldCentralizedApiSecret, userManagedApiSecret, topicOperatorManagedApiSecret);
+                        Secret newCcApiUsersSecret = cruiseControl.generateApiSecret(passwordGenerator,
+                                oldCcApiSecret, userManagedApiSecret, topicOperatorManagedApiSecret);
 
-                        this.apiSecretHash = ReconcilerUtils.hashSecretContent(newCentralizedApiUsersSecret);
-                        return secretOperator.reconcile(reconciliation, reconciliation.namespace(), CruiseControlResources.apiSecretName(reconciliation.name()), newCentralizedApiUsersSecret)
+                        this.apiSecretHash = ReconcilerUtils.hashSecretContent(newCcApiUsersSecret);
+                        return secretOperator.reconcile(reconciliation, reconciliation.namespace(), CruiseControlResources.apiSecretName(reconciliation.name()), newCcApiUsersSecret)
                             .map((Void) null);
                     }
                 );

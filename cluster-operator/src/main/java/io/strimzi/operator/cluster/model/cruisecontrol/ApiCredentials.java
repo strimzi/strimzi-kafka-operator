@@ -5,7 +5,6 @@
 package io.strimzi.operator.cluster.model.cruisecontrol;
 
 import io.fabric8.kubernetes.api.model.Secret;
-import io.strimzi.operator.cluster.model.CruiseControl;
 import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.PasswordGenerator;
@@ -209,37 +208,5 @@ public class ApiCredentials {
             sb.append(e.username).append(": ").append(e.password).append(", ").append(e.role).append("\n");
         }
         return sb.toString();
-    }
-
-
-    /**
-     * Generates a new API secret for Cruise Control by aggregating credentials from various sources.
-     * This method collects API credentials from three potential sources:
-     *   (1) Old centralized API secret,
-     *   (2) User-managed API secret
-     *   (3) Topic operator-managed API secret.
-     * It uses these credentials to create a comprehensive map of API credentials, which is then used to generate a new API secret
-     * for Cruise Control.
-     *
-     * @param cruiseControl the Cruise Control instance that provides the context and methods for generating the API secret.
-     * @param passwordGenerator the password generator used for creating new credentials.
-     * @param oldCentralizedApiSecret the existing centralized API secret, containing previously stored credentials.
-     * @param userManagedApiSecret the secret managed by the user, containing user-defined API credentials.
-     * @param topicOperatorManagedApiSecret the secret managed by the topic operator, containing credentials for the topic operator.
-     * @return a new Secret object containing the aggregated API credentials for Cruise Control.
-     */
-    public static Secret generateApiSecret(CruiseControl cruiseControl,
-                                           PasswordGenerator passwordGenerator,
-                                           Secret oldCentralizedApiSecret,
-                                           Secret userManagedApiSecret,
-                                           Secret topicOperatorManagedApiSecret) {
-
-        Map<String, ApiCredentials.UserEntry> apiCredentials = new HashMap<>();
-        apiCredentials.putAll(ApiCredentials.generateCoManagedApiCredentials(passwordGenerator, oldCentralizedApiSecret));
-        apiCredentials.putAll(ApiCredentials.generateUserManagedApiCredentials(userManagedApiSecret, cruiseControl.getUserManagedApiSecretKey()));
-        apiCredentials.putAll(ApiCredentials.generateToManagedApiCredentials(topicOperatorManagedApiSecret));
-
-        Map<String, String> mapWithApiCredentials = ApiCredentials.generateMapWithApiCredentials(apiCredentials);
-        return cruiseControl.generateApiSecret(mapWithApiCredentials);
     }
 }
