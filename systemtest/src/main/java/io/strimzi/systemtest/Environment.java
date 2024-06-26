@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import io.fabric8.kubernetes.api.model.Service;
@@ -429,7 +430,7 @@ public class Environment {
                 Paths.get(System.getProperty("user.dir"), "config.yaml").toAbsolutePath().toString());
         ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
         try {
-            return mapper.readValue(new File(config), Map.class);
+            return mapper.readValue(new File(config), new TypeReference<>() { });
         } catch (IOException ex) {
             LOGGER.info("Yaml configuration not provider or not exists");
             return Collections.emptyMap();

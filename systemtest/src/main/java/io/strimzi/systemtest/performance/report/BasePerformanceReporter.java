@@ -101,6 +101,7 @@ public abstract class BasePerformanceReporter {
         writePerformanceMetricsToFile(testPerformanceData, performanceLogFilePath);
 
         // Assuming serializeMetricsHistory handles serialization of the metrics history within the map
+        @SuppressWarnings("unchecked")
         Map<Long, Map<String, List<Double>>> metricsHistory = (Map<Long, Map<String, List<Double>>>) performanceAttributes.get(PerformanceConstants.METRICS_HISTORY);
         if (metricsHistory != null) {
             serializeMetricsHistory(metricsHistory, performanceLogFilePath);

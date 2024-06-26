@@ -121,6 +121,7 @@ public class KafkaConnectorUtils {
 
     public static String getConnectorTaskState(String namespaceName, String connectorName, int taskId) {
         KafkaConnectorStatus connectorState = KafkaConnectorResource.kafkaConnectorClient().inNamespace(namespaceName).withName(connectorName).get().getStatus();
+        @SuppressWarnings("unchecked")
         Map<String, Object> connectorTask = ((ArrayList<Map<String, Object>>) connectorState.getConnectorStatus().get("tasks")).stream().filter(conn -> conn.get("id").equals(taskId)).collect(Collectors.toList()).get(0);
         return  (String) connectorTask.get("state");
     }
