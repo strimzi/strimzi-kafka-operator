@@ -763,13 +763,13 @@ public class ListenersUtils {
 
             if (oauth.getIncludeAcceptHeader() == null || oauth.getIncludeAcceptHeader()) {
                 if (oauth.getIncludeAcceptHeader() != null && oauth.getIncludeAcceptHeader()) {
-                    ListenersValidator.LOGGER.warnOp("'includeAcceptHeader' force-set to 'false' for compatibility with 'serviceaccount-oauth'");
+                    ListenersValidator.LOGGER.warnOp("'includeAcceptHeader' force-set to 'false' for compatibility with Kubernetes API authorization server");
                 }
                 builder.withIncludeAcceptHeader(false);
             }
             if (oauth.getCheckAccessTokenType() == null || oauth.getCheckAccessTokenType()) {
                 if (oauth.getCheckAccessTokenType() != null && oauth.getCheckAccessTokenType()) {
-                    ListenersValidator.LOGGER.warnOp("'checkAccessTokenType' force-set to 'false' for compatibility with 'serviceaccount-oauth'");
+                    ListenersValidator.LOGGER.warnOp("'checkAccessTokenType' force-set to 'false' for compatibility with service account tokens");
                 }
                 builder.withCheckAccessTokenType(false);
             }

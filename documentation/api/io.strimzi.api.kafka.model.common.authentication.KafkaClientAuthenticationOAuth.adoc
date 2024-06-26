@@ -71,7 +71,7 @@ authentication:
 
 .ServiceAccount
 
-To autoconfigure the access token to point to the default serviceaccount token location, simply set set the `useServiceAccount` property to `true`.
+To autoconfigure the access token to point to the default serviceaccount token location, simply set the `configureServiceAccountAuth` property to `true`.
 
 The listener also has to be configured to use the Kubernetes API server as its authorization server.
 
@@ -80,7 +80,7 @@ The listener also has to be configured to use the Kubernetes API server as its a
 ----
 authentication:
   type: oauth
-  useServiceAccount: true
+  configureServiceAccountAuth: true
 ----
 
 This is equivalent to:

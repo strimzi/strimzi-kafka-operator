@@ -216,6 +216,13 @@ It must have the value `scram-sha-512` for the type `KafkaListenerAuthentication
 
 Used in: xref:type-GenericKafkaListener-{context}[`GenericKafkaListener`]
 
+xref:type-KafkaListenerAuthenticationOAuth-schema-{context}[Full list of `KafkaListenerAuthenticationOAuth` schema properties]
+
+include::../api/io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationOAuth.adoc[leveloffset=+1]
+
+[id='type-KafkaListenerAuthenticationOAuth-schema-{context}']
+== `KafkaListenerAuthenticationOAuth` schema properties
+
 
 The `type` property is a discriminator that distinguishes use of the `KafkaListenerAuthenticationOAuth` type from xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`], xref:type-KafkaListenerAuthenticationCustom-{context}[`KafkaListenerAuthenticationCustom`].
 It must have the value `oauth` for the type `KafkaListenerAuthenticationOAuth`.
