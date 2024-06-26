@@ -23,7 +23,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static io.strimzi.operator.cluster.model.ListenersUtils.isListenerWithOAuth;
-import static io.strimzi.operator.cluster.model.ListenersUtils.isListenerWithServiceAccountOAuth;
 
 /**
  * Util methods for validating Kafka listeners
@@ -559,14 +558,11 @@ public class ListenersValidator {
      */
     @SuppressWarnings({"checkstyle:BooleanExpressionComplexity", "checkstyle:NPathComplexity", "checkstyle:CyclomaticComplexity"})
     private static void validateOauth(Set<String> errors, GenericKafkaListener listener) {
-        if (isListenerWithOAuth(listener) || isListenerWithServiceAccountOAuth(listener)) {
+        if (isListenerWithOAuth(listener)) {
             KafkaListenerAuthenticationOAuth oAuth = (KafkaListenerAuthenticationOAuth) listener.getAuth();
             String listenerName = listener.getName();
 
-            if (isListenerWithServiceAccountOAuth(listener)) {
-                validateAndOverrideServiceAccountOAuth(oAuth);
-            }
-
+            oAuth = ListenersUtils.normalizeListenerAuthenticationOAuthForValidation(oAuth);
             if (!oAuth.isEnablePlain() && !oAuth.isEnableOauthBearer()) {
                 errors.add("listener " + listenerName + ": At least one of 'enablePlain', 'enableOauthBearer' has to be set to 'true'");
             }
@@ -658,31 +654,6 @@ public class ListenersValidator {
                     errors.add("listener " + listenerName + ": 'groupsClaim' value not a valid JsonPath query - " + e.getMessage());
                 }
             }
-        }
-    }
-
-    private static void validateAndOverrideServiceAccountOAuth(KafkaListenerAuthenticationOAuth oAuth) {
-        if (oAuth.getValidIssuerUri() == null) {
-            oAuth.setValidIssuerUri("https://kubernetes.default.svc");
-        }
-        if (oAuth.getJwksEndpointUri() == null) {
-            oAuth.setJwksEndpointUri("https://kubernetes.default.svc/openid/v1/jwks");
-        }
-        if (oAuth.getServerBearerTokenLocation() == null) {
-            oAuth.setServerBearerTokenLocation("/var/run/secrets/kubernetes.io/serviceaccount/token");
-        }
-
-        if (oAuth.getIncludeAcceptHeader() == null || oAuth.getIncludeAcceptHeader()) {
-            if (oAuth.getIncludeAcceptHeader() != null && oAuth.getIncludeAcceptHeader()) {
-                LOGGER.warnOp("'includeAcceptHeader' force-set to 'false' for compatibility with 'serviceaccount-oauth'");
-            }
-            oAuth.setIncludeAcceptHeader(false);
-        }
-        if (oAuth.getCheckAccessTokenType() == null || oAuth.getCheckAccessTokenType()) {
-            if (oAuth.getCheckAccessTokenType() != null && oAuth.getCheckAccessTokenType()) {
-                LOGGER.warnOp("'checkAccessTokenType' force-set to 'false' for compatibility with 'serviceaccount-oauth'");
-            }
-            oAuth.setCheckAccessTokenType(false);
         }
     }
 

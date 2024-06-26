@@ -10,11 +10,11 @@ import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.strimzi.api.kafka.model.common.GenericSecretSource;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthentication;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationOAuth;
+import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationOAuthBuilder;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationPlain;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationScram;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationTls;
 import io.strimzi.kafka.oauth.client.ClientConfig;
-import io.strimzi.kafka.oauth.server.ServerConfig;
 import io.strimzi.operator.common.model.InvalidResourceException;
 
 import java.util.ArrayList;
@@ -83,38 +83,50 @@ public class AuthenticationUtils {
         return warnMsg;
     }
 
-    private static void validateClientAuthenticationOAuth(KafkaClientAuthenticationOAuth auth) {
-        if (auth.isConfigureServiceAccountAuth()) {
-            autofillClientAuthenticationServiceAccountOAuth(auth);
+    private static void validateClientAuthenticationOAuth(KafkaClientAuthenticationOAuth oauth) {
+        if (oauth.isConfigureServiceAccountAuth()) {
+            oauth = normalizeClientAuthenticationOAuthForValidation(oauth);
         }
 
-        boolean accessTokenCase = auth.getAccessToken() != null;
-        boolean accessTokenLocationCase = auth.getAccessTokenLocation() != null;
-        boolean refreshTokenCase = auth.getTokenEndpointUri() != null && auth.getClientId() != null && auth.getRefreshToken() != null;
-        boolean clientSecretCase = auth.getTokenEndpointUri() != null && auth.getClientId() != null && auth.getClientSecret() != null;
-        boolean passwordGrantCase = auth.getTokenEndpointUri() != null && auth.getClientId() != null && auth.getUsername() != null && auth.getPasswordSecret() != null;
+        boolean accessTokenCase = oauth.getAccessToken() != null;
+        boolean accessTokenLocationCase = oauth.getAccessTokenLocation() != null;
+        boolean refreshTokenCase = oauth.getTokenEndpointUri() != null && oauth.getClientId() != null && oauth.getRefreshToken() != null;
+        boolean clientSecretCase = oauth.getTokenEndpointUri() != null && oauth.getClientId() != null && oauth.getClientSecret() != null;
+        boolean passwordGrantCase = oauth.getTokenEndpointUri() != null && oauth.getClientId() != null && oauth.getUsername() != null && oauth.getPasswordSecret() != null;
 
         // If not one of valid cases throw exception
         if (!(accessTokenCase || accessTokenLocationCase || refreshTokenCase || clientSecretCase || passwordGrantCase)) {
-            throw new InvalidResourceException("'" + auth.getType() + "' authentication selected, but some options are missing. You have to specify one of the following combinations: [accessToken], [accessTokenLocation], [tokenEndpointUri, clientId, refreshToken], [tokenEndpointUri, clientId, clientSecret], [tokenEndpointUri, username, password, clientId].");
+            throw new InvalidResourceException("'" + oauth.getType() + "' authentication selected, but some options are missing. You have to specify one of the following combinations: [accessToken], [accessTokenLocation], [tokenEndpointUri, clientId, refreshToken], [tokenEndpointUri, clientId, clientSecret], [tokenEndpointUri, username, password, clientId].");
         }
 
         // Additional validation
         ArrayList<String> errors = new ArrayList<>();
-        checkValueGreaterThanZero(errors, "connectTimeoutSeconds", auth.getConnectTimeoutSeconds());
-        checkValueGreaterThanZero(errors, "readTimeoutSeconds", auth.getReadTimeoutSeconds());
-        checkValueGreaterOrEqualZero(errors, "httpRetries", auth.getHttpRetries());
-        checkValueGreaterOrEqualZero(errors, "httpRetryPauseMs", auth.getHttpRetryPauseMs());
+        checkValueGreaterThanZero(errors, "connectTimeoutSeconds", oauth.getConnectTimeoutSeconds());
+        checkValueGreaterThanZero(errors, "readTimeoutSeconds", oauth.getReadTimeoutSeconds());
+        checkValueGreaterOrEqualZero(errors, "httpRetries", oauth.getHttpRetries());
+        checkValueGreaterOrEqualZero(errors, "httpRetryPauseMs", oauth.getHttpRetryPauseMs());
 
         if (errors.size() > 0) {
-            throw new InvalidResourceException("'" + auth.getType() + "' authentication selected, but some options are invalid. " + errors);
+            throw new InvalidResourceException("'" + oauth.getType() + "' authentication selected, but some options are invalid. " + errors);
         }
     }
 
-    private static void autofillClientAuthenticationServiceAccountOAuth(KafkaClientAuthenticationOAuth auth) {
-        if (auth.getAccessTokenLocation() == null) {
-            auth.setAccessTokenLocation("/var/run/secrets/kubernetes.io/serviceaccount/token");
+    /**
+     * This method checks if `configureServiceAccountAuth` is set, and autoconfigures the necessary config options
+     * as a copy of the passed KafkaClientAuthenticationOAuth object.
+     *
+     * @param oauth The KafkaClientAuthenticationOAuth object
+     * @return The copy of 'oauth' object with changes or the original 'oauth' if no changes were needed
+     */
+    private static KafkaClientAuthenticationOAuth normalizeClientAuthenticationOAuthForValidation(KafkaClientAuthenticationOAuth oauth) {
+        if (oauth.isConfigureServiceAccountAuth()) {
+            KafkaClientAuthenticationOAuthBuilder builder = new KafkaClientAuthenticationOAuthBuilder(oauth);
+            if (oauth.getAccessTokenLocation() == null) {
+                builder.withAccessTokenLocation("/var/run/secrets/kubernetes.io/serviceaccount/token");
+            }
+            return builder.build();
         }
+        return oauth;
     }
 
     private static void checkValueGreaterThanZero(ArrayList<String> errors, String name, Integer value) {
@@ -301,16 +313,19 @@ public class AuthenticationUtils {
      */
     public static Map<String, String> oauthJaasOptions(KafkaClientAuthenticationOAuth oauth) {
         Map<String, String> options = new LinkedHashMap<>(15);
+
+        oauth = normalizeClientAuthenticationOAuthForValidation(oauth);
+
         addOption(options, ClientConfig.OAUTH_CLIENT_ID, oauth.getClientId());
         addOption(options, ClientConfig.OAUTH_PASSWORD_GRANT_USERNAME, oauth.getUsername());
         addOption(options, ClientConfig.OAUTH_TOKEN_ENDPOINT_URI, oauth.getTokenEndpointUri());
         addOption(options, ClientConfig.OAUTH_SCOPE, oauth.getScope());
         addOption(options, ClientConfig.OAUTH_AUDIENCE, oauth.getAudience());
         if (oauth.isDisableTlsHostnameVerification()) {
-            options.put(ServerConfig.OAUTH_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM, "");
+            options.put(ClientConfig.OAUTH_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM, "");
         }
         if (!oauth.isAccessTokenIsJwt()) {
-            options.put(ServerConfig.OAUTH_ACCESS_TOKEN_IS_JWT, "false");
+            options.put(ClientConfig.OAUTH_ACCESS_TOKEN_IS_JWT, "false");
         }
         addOptionIfGreaterThanZero(options, ClientConfig.OAUTH_MAX_TOKEN_EXPIRY_SECONDS, oauth.getMaxTokenExpirySeconds());
         addOptionIfGreaterThanZero(options, ClientConfig.OAUTH_CONNECT_TIMEOUT_SECONDS, oauth.getConnectTimeoutSeconds());
@@ -318,10 +333,10 @@ public class AuthenticationUtils {
         addOptionIfGreaterThanZero(options, ClientConfig.OAUTH_HTTP_RETRIES, oauth.getHttpRetries());
         addOptionIfGreaterThanZero(options, ClientConfig.OAUTH_HTTP_RETRY_PAUSE_MILLIS, oauth.getHttpRetryPauseMs());
         if (oauth.isEnableMetrics()) {
-            options.put(ServerConfig.OAUTH_ENABLE_METRICS, "true");
+            options.put(ClientConfig.OAUTH_ENABLE_METRICS, "true");
         }
         if (!oauth.isIncludeAcceptHeader()) {
-            options.put(ServerConfig.OAUTH_INCLUDE_ACCEPT_HEADER, "false");
+            options.put(ClientConfig.OAUTH_INCLUDE_ACCEPT_HEADER, "false");
         }
 
         addOption(options, ClientConfig.OAUTH_ACCESS_TOKEN_LOCATION, oauth.getAccessTokenLocation());

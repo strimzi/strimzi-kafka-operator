@@ -572,6 +572,8 @@ public class KafkaBrokerConfigurationBuilder {
     /*test*/ static Map<String, String> getOAuthOptions(KafkaListenerAuthenticationOAuth oauth)  {
         Map<String, String> options = new LinkedHashMap<>();
 
+        oauth = ListenersUtils.normalizeListenerAuthenticationOAuthForValidation(oauth);
+
         addOptionIfNotNull(options, ServerConfig.OAUTH_CLIENT_ID, oauth.getClientId());
         addOptionIfNotNull(options, ServerConfig.OAUTH_VALID_ISSUER_URI, oauth.getValidIssuerUri());
         addBooleanOptionIfFalse(options, ServerConfig.OAUTH_CHECK_ISSUER, oauth.isCheckIssuer());

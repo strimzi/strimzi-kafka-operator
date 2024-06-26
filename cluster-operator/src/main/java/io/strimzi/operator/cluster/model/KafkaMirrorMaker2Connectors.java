@@ -252,10 +252,6 @@ public class KafkaMirrorMaker2Connectors {
                                 Map.of("username", scramAuthentication.getUsername(),
                                         "password", "${file:" + CONNECTORS_CONFIG_FILE + ":" + cluster.getAlias() + ".sasl.password}")));
             } else if (cluster.getAuthentication() instanceof KafkaClientAuthenticationOAuth oauthAuthentication) {
-                if (oauthAuthentication.isConfigureServiceAccountAuth()) {
-                    // validate the configuration again in order to autofill any fields not yet filled (e.g. serviceaccount-oauth may need to autofill 'accessTokenLocation')
-                    AuthenticationUtils.validateClientAuthentication(oauthAuthentication, false);
-                }
                 securityProtocol = cluster.getTls() != null ? "SASL_SSL" : "SASL_PLAINTEXT";
                 config.put(configPrefix + SaslConfigs.SASL_MECHANISM, "OAUTHBEARER");
                 config.put(configPrefix + SaslConfigs.SASL_JAAS_CONFIG,

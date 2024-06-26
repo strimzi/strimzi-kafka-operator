@@ -11,6 +11,7 @@ import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerConfigurationBroker;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationCustom;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationOAuth;
+import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationOAuthBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.kafka.listener.NodeAddressType;
 
@@ -52,23 +53,6 @@ public class ListenersUtils {
             return false;
 
         return KafkaListenerAuthenticationOAuth.TYPE_OAUTH.equals(listener.getAuth().getType());
-    }
-
-    /**
-     * Checks whether the listener is using OAuth authentication with Kubernetes OIDC JWKS endpoint
-     *
-     * @param listener Listener to check
-     *
-     * @return  True if the listener is configured to use OAuth authentication with Kubernetes OIDC JWKS endpoint. False otherwise.
-     */
-    public static boolean isListenerWithServiceAccountOAuth(GenericKafkaListener listener) {
-        if (listener.getAuth() == null || listener.getAuth().getType() == null)
-            return false;
-
-        if (listener.getAuth() instanceof KafkaListenerAuthenticationOAuth oauth) {
-            return oauth.isConfigureServiceAccountAuth();
-        }
-        return false;
     }
 
     /**
@@ -755,5 +739,42 @@ public class ListenersUtils {
                     .map(GenericKafkaListenerConfigurationBroker::getExternalIPs)
                     .findAny()
                     .orElse(null) : null;
+    }
+
+    /**
+     * This method checks if `configureServiceAccountAuth` is set, and autoconfigures the necessary config options
+     * as a copy of the passed KafkaListenerAuthenticationOAuth object.
+     *
+     * @param oauth The KafkaListenerAuthenticationOAuth object
+     * @return The copy of 'oauth' object with changes or the original 'oauth' if no changes were needed
+     */
+    static KafkaListenerAuthenticationOAuth normalizeListenerAuthenticationOAuthForValidation(KafkaListenerAuthenticationOAuth oauth) {
+        if (oauth.isConfigureServiceAccountAuth()) {
+            KafkaListenerAuthenticationOAuthBuilder builder = new KafkaListenerAuthenticationOAuthBuilder(oauth);
+            if (oauth.getValidIssuerUri() == null) {
+                builder.withValidIssuerUri("https://kubernetes.default.svc");
+            }
+            if (oauth.getJwksEndpointUri() == null) {
+                builder.withJwksEndpointUri("https://kubernetes.default.svc/openid/v1/jwks");
+            }
+            if (oauth.getServerBearerTokenLocation() == null) {
+                builder.withServerBearerTokenLocation("/var/run/secrets/kubernetes.io/serviceaccount/token");
+            }
+
+            if (oauth.getIncludeAcceptHeader() == null || oauth.getIncludeAcceptHeader()) {
+                if (oauth.getIncludeAcceptHeader() != null && oauth.getIncludeAcceptHeader()) {
+                    ListenersValidator.LOGGER.warnOp("'includeAcceptHeader' force-set to 'false' for compatibility with 'serviceaccount-oauth'");
+                }
+                builder.withIncludeAcceptHeader(false);
+            }
+            if (oauth.getCheckAccessTokenType() == null || oauth.getCheckAccessTokenType()) {
+                if (oauth.getCheckAccessTokenType() != null && oauth.getCheckAccessTokenType()) {
+                    ListenersValidator.LOGGER.warnOp("'checkAccessTokenType' force-set to 'false' for compatibility with 'serviceaccount-oauth'");
+                }
+                builder.withCheckAccessTokenType(false);
+            }
+            return builder.build();
+        }
+        return oauth;
     }
 }
