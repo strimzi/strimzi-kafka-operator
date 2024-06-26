@@ -156,11 +156,6 @@ public class ClusterOperatorConfig {
     public static final ConfigParameter<Long> CONNECT_BUILD_TIMEOUT_MS = new ConfigParameter<>("STRIMZI_CONNECT_BUILD_TIMEOUT_MS", LONG, "300000", CONFIG_VALUES);
 
     /**
-     * Set true to create the ClusterRoles
-     */
-    public static final ConfigParameter<Boolean> CREATE_CLUSTER_ROLES = new ConfigParameter<>("STRIMZI_CREATE_CLUSTER_ROLES", BOOLEAN, "false", CONFIG_VALUES);
-
-    /**
      * Set true to generate Network Policies
      */
     public static final ConfigParameter<Boolean> NETWORK_POLICY_GENERATION = new ConfigParameter<>("STRIMZI_NETWORK_POLICY_GENERATION", BOOLEAN, "true", CONFIG_VALUES);
@@ -495,13 +490,6 @@ public class ClusterOperatorConfig {
     }
 
     /**
-     * @return  Indicates whether Cluster Roles should be created
-     */
-    public boolean isCreateClusterRoles() {
-        return get(CREATE_CLUSTER_ROLES);
-    }
-
-    /**
      * @return  Indicates whether Network policies should be generated
      */
     public boolean isNetworkPolicyGeneration() {
@@ -617,7 +605,6 @@ public class ClusterOperatorConfig {
                 "\n\treconciliationIntervalMs=" + getReconciliationIntervalMs() +
                 "\n\toperationTimeoutMs=" + getOperationTimeoutMs() +
                 "\n\tconnectBuildTimeoutMs=" + getConnectBuildTimeoutMs() +
-                "\n\tcreateClusterRoles=" + isCreateClusterRoles() +
                 "\n\tnetworkPolicyGeneration=" + isNetworkPolicyGeneration() +
                 "\n\tversions='" + versions() + '\'' +
                 "\n\timagePullPolicy='" + getImagePullPolicy() + '\'' +

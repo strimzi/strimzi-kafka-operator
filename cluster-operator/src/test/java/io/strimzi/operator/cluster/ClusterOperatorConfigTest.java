@@ -67,7 +67,6 @@ public class ClusterOperatorConfigTest {
         assertThat(config.getOperatorNamespace(), is("operator-namespace"));
         assertThat(config.getOperatorNamespaceLabels(), is(nullValue()));
         assertThat(config.featureGates(), is(new FeatureGates("")));
-        assertThat(config.isCreateClusterRoles(), is(false));
         assertThat(config.isNetworkPolicyGeneration(), is(true));
         assertThat(config.isPodSetReconciliationOnly(), is(false));
         assertThat(config.getPodSecurityProviderClass(), is(ClusterOperatorConfig.POD_SECURITY_PROVIDER_CLASS.defaultValue()));
