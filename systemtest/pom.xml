@@ -289,7 +289,7 @@
                 </executions>
                 <configuration>
                     <testsPath>${project.basedir}/src/test/java/io/strimzi/systemtest</testsPath>
-                    <docsPath>${project.basedir}/../development-docs/systemtest-docs/</docsPath>
+                    <docsPath>${project.basedir}/../development-docs/systemtests/</docsPath>
                     <generateFmf>false</generateFmf>
                 </configuration>
             </plugin>
