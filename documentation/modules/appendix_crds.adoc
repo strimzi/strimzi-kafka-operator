@@ -1362,6 +1362,9 @@ Used in: xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |readOnly
 |boolean
 |
+|recursiveReadOnly
+|string
+|
 |subPath
 |string
 |

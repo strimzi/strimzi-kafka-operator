@@ -51,22 +51,19 @@ spec:
               name: config-map-name
           - name: temp
             emptyDir: {}
-          - name: example-csi-volume
-            csi:
-              driver: csi-driver-name
-              readOnly: true
-              volumeAttributes:
-                secretProviderClass: example-secret-provider-class
+          - name: example-pvc-volume
+            persistentVolumeClaim:
+              claimName: myclaim
       kafkaContainer:
         volumeMounts:
           - name: example-secret
-            mountPath: /path/to/mount/secret-volume
+            mountPath: /mnt/secret-volume
           - name: example-configmap
-            mountPath: /path/to/mount/cm-volume
+            mountPath: /mnt/cm-volume
           - name: temp
             mountPath: /tmp/logs
-          - name: example-csi-volume
-            mountPath: /path/to/mount/csi-volume
+          - name: example-pvc-volume
+            mountPath: "/mnt/data"
       bootstrapService:
         metadata:
           labels:
@@ -154,23 +151,20 @@ spec:
               name: config-map-name
           - name: temp
             emptyDir: {}
-          - name: example-csi-volume
-            csi:
-              driver: csi-driver-name
-              readOnly: true
-              volumeAttributes:
-                secretProviderClass: example-secret-provider-class
+          - name: example-pvc-volume
+            persistentVolumeClaim:
+              claimName: example-pvc-volume
       zookeeperContainer:
         volumeMounts:
           - name: example-secret
-            mountPath: /path/to/mount/secret-volume
+            mountPath: /mnt/secret-volume
             subPath: subPath1
           - name: example-configmap
-            mountPath: /path/to/mount/cm-volume
+            mountPath: /mnt/cm-volume
           - name: temp
             mountPath: /tmp/logs
-          - name: example-csi-volume
-            mountPath: /path/to/mount/csi-volume
+          - name: example-pvc-volume
+            mountPath: "/mnt/data"
       clientService:
         metadata:
           labels:
@@ -216,10 +210,7 @@ spec:
               name: config-map-name
           - name: temp
             emptyDir: {}
-          - name: example-csi-volume
-            csi:
-              driver: csi-driver-name
-              readOnly: true
-              volumeAttributes:
-                secretProviderClass: example-secret-provider-class
+          - name: example-pvc-volume
+            persistentVolumeClaim:
+              claimName: example-pvc-volume
 

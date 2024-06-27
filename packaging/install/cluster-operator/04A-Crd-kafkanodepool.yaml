@@ -992,6 +992,8 @@ spec:
                               type: string
                             readOnly:
                               type: boolean
+                            recursiveReadOnly:
+                              type: string
                             subPath:
                               type: string
                             subPathExpr:
@@ -1091,6 +1093,8 @@ spec:
                               type: string
                             readOnly:
                               type: boolean
+                            recursiveReadOnly:
+                              type: string
                             subPath:
                               type: string
                             subPathExpr:
