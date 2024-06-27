@@ -24,15 +24,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static java.util.Collections.emptyMap;
-
 /**
  * Configures Kafka listeners
  */
 @DescriptionFile
 @JsonPropertyOrder({"brokerCertChainAndKey", "class", "preferredAddressType", "externalTrafficPolicy",
     "loadBalancerSourceRanges", "bootstrap", "brokers", "ipFamilyPolicy", "ipFamilies", "createBootstrapService",
-    "finalizers", "useServiceDnsDomain", "maxConnections", "maxConnectionCreationRate", "preferredNodePortAddressType"})
+    "finalizers", "useServiceDnsDomain", "maxConnections", "maxConnectionCreationRate", "preferredNodePortAddressType", "publishNotReadyAddresses"})
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Buildable(
     editableEnabled = false,
@@ -55,8 +53,8 @@ public class GenericKafkaListenerConfiguration implements UnknownPropertyPreserv
     private IpFamilyPolicy ipFamilyPolicy;
     private List<IpFamily> ipFamilies;
     private Boolean createBootstrapService = true;
-
-    private Map<String, Object> additionalProperties = new HashMap<>(0);
+    private Boolean publishNotReadyAddresses;
+    private Map<String, Object> additionalProperties;
 
     @Description("Reference to the `Secret` which holds the certificate and private key pair which will be used for this listener. " +
             "The certificate can optionally contain the whole chain. " +
@@ -239,16 +237,28 @@ public class GenericKafkaListenerConfiguration implements UnknownPropertyPreserv
     public void setCreateBootstrapService(Boolean createBootstrapService) {
         this.createBootstrapService = createBootstrapService;
     }
+    
+    @Description("Configures whether the service endpoints are considered \"ready\" even if the Pods themselves are not. " +
+            "Defaults to `false`. " +
+            "This field can not be used with `internal` type listeners.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Boolean getPublishNotReadyAddresses() {
+        return publishNotReadyAddresses;
+    }
+
+    public void setPublishNotReadyAddresses(Boolean publishNotReadyAddresses) {
+        this.publishNotReadyAddresses = publishNotReadyAddresses;
+    }
 
     @Override
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties != null ? this.additionalProperties : emptyMap();
+        return this.additionalProperties != null ? this.additionalProperties : Map.of();
     }
 
     @Override
     public void setAdditionalProperty(String name, Object value) {
         if (this.additionalProperties == null) {
-            this.additionalProperties = new HashMap<>(1);
+            this.additionalProperties = new HashMap<>(2);
         }
         this.additionalProperties.put(name, value);
     }

@@ -1,28 +1,22 @@
-// Module included in the following module:
+// This assembly is included in the following assemblies:
 //
-// con-oauth-config.adoc
+// assembly-oauth-security.adoc
 
 [id='proc-oauth-server-config-{context}']
 = Configuring an OAuth 2.0 authorization server
 
-This procedure describes in general what you need to do to configure an authorization server for integration with Strimzi.
-
-These instructions are not product specific.
-
+[role="_abstract"]
+Before you can use OAuth 2.0 token-based access, you must configure an authorization server for integration with Strimzi.
 The steps are dependent on the chosen authorization server.
 Consult the product documentation for the authorization server for information on how to set up OAuth 2.0 access.
 
-NOTE: If you already have an authorization server deployed, you can skip the deployment step and use your current deployment.
+Prepare the authorization server to work with Strimzi by defining _OAUth 2.0 clients_ for Kafka and each Kafka client component of your application.
+In relation to the authorization server, the Kafka cluster and Kafka clients are both regarded as OAuth 2.0 clients.
 
-.Procedure
+In general, configure OAuth 2.0 clients in the authorization server with the following client credentials enabled:
 
-. Deploy the authorization server to your cluster.
-. Access the CLI or admin console for the authorization server to configure OAuth 2.0 for Strimzi.
-+
-Now prepare the authorization server to work with Strimzi.
+* Client ID (for example, `kafka` for the Kafka cluster)
+* Client ID and secret as the authentication mechanism
 
-. Configure a `kafka-broker` client.
-. Configure clients for each Kafka client component of your application.
-
-.What to do next
-After deploying and configuring the authorization server, xref:proc-oauth-authentication-broker-config-{context}[configure the Kafka brokers to use OAuth 2.0].
+NOTE: You only need to use a client ID and secret when using a non-public introspection endpoint of the authorization server.
+The credentials are not typically required when using public authorization server endpoints, as with fast local JWT token validation.

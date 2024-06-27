@@ -3,11 +3,12 @@
 // con-oauth-config.adoc
 
 [id='proc-oauth-kafka-config-{context}']
-= Configuring OAuth 2.0 for Kafka components
+= Setting up OAuth 2.0 on Kafka components
 
-This procedure describes how to configure Kafka components to use OAuth 2.0 authentication using an authorization server.
+[role="_abstract"]
+This procedure describes how to set up Kafka components to use OAuth 2.0 authentication using an authorization server.
 
-You can configure authentication for:
+You can configure OAuth 2.0 authentication for the following components:
 
 * Kafka Connect
 * Kafka MirrorMaker
@@ -40,7 +41,7 @@ metadata:
  name: my-bridge-oauth
 type: Opaque
 data:
- clientSecret: MGQ1OTRmMzYtZTllZS00MDY2LWI5OGEtMTM5MzM2NjdlZjQw <1>
+ clientSecret: MGQ1OTRmMzYtZTllZS00MDY2LWI5OGEtMTM5MzM2NjdlZjQw # <1>
 ----
 <1> The `clientSecret` key must be in base64 format.
 
@@ -59,6 +60,7 @@ For OAuth 2.0 authentication, you can use the following options:
 For example, here OAuth 2.0 is assigned to the Kafka Bridge client using a client ID and secret, and TLS:
 +
 --
+.Example OAuth 2.0 authentication configuration
 [source,yaml,subs="+quotes,attributes"]
 ----
 apiVersion: {KafkaApiVersion}
@@ -68,24 +70,25 @@ metadata:
 spec:
   # ...
   authentication:
-    type: oauth <1>
-    tokenEndpointUri: https://<auth-server-address>/auth/realms/master/protocol/openid-connect/token <2>
+    type: oauth # <1>
+    tokenEndpointUri: https://<auth_server_address>/<path_to_token_endpoint> # <2>
     clientId: kafka-bridge
     clientSecret:
       secretName: my-bridge-oauth
       key: clientSecret
-    tlsTrustedCertificates: <3>
-    - secretName: oauth-server-cert
-      certificate: tls.crt
+    tlsTrustedCertificates: # <3>
+      - secretName: oauth-server-cert
+        pattern: "*.crt"
 ----
 <1> Authentication type set to `oauth`.
 <2> URI of the token endpoint for authentication.
-<3> Trusted certificates for TLS connection to the authorization server.
+<3> Certificates stored in X.509 format within the specified secrets for TLS connection to the authorization server.
 --
 +
 Depending on how you apply OAuth 2.0 authentication, and the type of authorization server, there are additional configuration options you can use:
 +
 --
+.Additional configuration options
 [source,yaml,subs="+quotes,attributes"]
 ----
 # ...
@@ -93,16 +96,16 @@ spec:
   # ...
   authentication:
     # ...
-    disableTlsHostnameVerification: true <1>
-    checkAccessTokenType: false <2>
-    accessTokenIsJwt: false <3>
-    scope: any <4>
-    audience: kafka <5>
-    connectTimeoutSeconds: 60 <6>
-    readTimeoutSeconds: 60 <7>
-    httpRetries: 2 <8>
-    httpRetryPauseMs: 300 <9>
-    includeAcceptHeader: false <10>
+    disableTlsHostnameVerification: true # <1>
+    checkAccessTokenType: false # <2>
+    accessTokenIsJwt: false # <3>
+    scope: any # <4>
+    audience: kafka # <5>
+    connectTimeoutSeconds: 60 # <6>
+    readTimeoutSeconds: 60 # <7>
+    httpRetries: 2 # <8>
+    httpRetryPauseMs: 300 # <9>
+    includeAcceptHeader: false # <10>
 ----
 <1> (Optional) Disable TLS hostname verification. Default is `false`.
 <2> If the authorization server does not return a `typ` (type) claim inside the JWT token, you can apply `checkAccessTokenType: false` to skip the token type check. Default is `true`.
@@ -120,12 +123,7 @@ In this case it is `kafka`.
 <10> (Optional) Some authorization servers have issues with client sending `Accept: application/json` header. By setting `includeAcceptHeader: false` the header will not be sent. Default is `true`.
 --
 
-. Apply the changes to the deployment of your Kafka resource.
-+
-[source,yaml,subs="+quotes,attributes"]
-----
-kubectl apply -f your-file
-----
+. Apply the changes to the resource configuration of the component.
 
 . Check the update in the logs or by watching the pod state transitions:
 +

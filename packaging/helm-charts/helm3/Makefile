@@ -20,6 +20,10 @@ helm_lint:
 	# Linting Helm Chart
 	$(HELM_CLI) lint --debug $(CHART_PATH)
 
+helm_unittest:
+	# Running Helm Chart unit tests
+	$(HELM_CLI) unittest $(CHART_PATH)
+
 helm_template:
 	../kafka-version-tpl.sh strimzi-kafka-operator/templates/_kafka_image_map.tpl
 	# Generating rendered template files to: $(CHART_RENDERED_TEMPLATES_TMP)
@@ -45,7 +49,7 @@ helm_install: helm_clean helm_template
 	# Copying rendered template files to: $(CHART_RENDERED_TEMPLATES_CLUSTERROLES)
 	mkdir -p $(CHART_RENDERED_TEMPLATES_CLUSTERROLES)
 	# Find rendered resources which are not CustomResourceDefinition and move them
-	$(FIND) $(CHART_RENDERED_TEMPLATES_TMP) -type f -name '*ClusterRole-*.yaml' -printf "%p " -exec yq eval '.kind' {} \; \
+	$(FIND) $(CHART_RENDERED_TEMPLATES_TMP) -type f -name '*ClusterRole-strimzi-entity-operator.yaml' -printf "%p " -exec yq eval '.kind' {} \; \
 	| $(SED) -E 's/([^ ]*) ([a-zA-Z0-9]*)$$/\1/' \
 	| xargs -IFILE $(CP) FILE $(CHART_RENDERED_TEMPLATES_CLUSTERROLES)
 

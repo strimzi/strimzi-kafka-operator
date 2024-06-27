@@ -45,8 +45,7 @@ public class JmxTransSpec implements UnknownPropertyPreserving {
     private List<JmxTransQueryTemplate> kafkaQueries = null;
     private ResourceRequirements resources;
     private JmxTransTemplate template;
-
-    private Map<String, Object> additionalProperties = new HashMap<>(0);
+    private Map<String, Object> additionalProperties;
 
     @Description("The image to use for the JmxTrans")
     public String getImage() {
@@ -114,12 +113,14 @@ public class JmxTransSpec implements UnknownPropertyPreserving {
 
     @Override
     public Map<String, Object> getAdditionalProperties() {
-        return additionalProperties;
+        return this.additionalProperties != null ? this.additionalProperties : Map.of();
     }
 
     @Override
     public void setAdditionalProperty(String name, Object value) {
+        if (this.additionalProperties == null) {
+            this.additionalProperties = new HashMap<>(2);
+        }
         this.additionalProperties.put(name, value);
     }
-
 }

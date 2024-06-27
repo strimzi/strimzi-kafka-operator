@@ -39,22 +39,18 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @JsonPropertyOrder({"watchedNamespace", "image",
-    "reconciliationIntervalSeconds", "zookeeperSessionTimeoutSeconds",
+    "reconciliationIntervalSeconds", "reconciliationIntervalMs", "zookeeperSessionTimeoutSeconds",
     "startupProbe", "livenessProbe", "readinessProbe",
     "resources", "topicMetadataMaxAttempts", "logging", "jvmOptions"})
 @EqualsAndHashCode
 @ToString
 public class EntityTopicOperatorSpec implements HasConfigurableLogging, HasLivenessProbe, HasReadinessProbe, HasStartupProbe, UnknownPropertyPreserving {
-    public static final int DEFAULT_REPLICAS = 1;
-    public static final int DEFAULT_ZOOKEEPER_PORT = 2181;
-    public static final int DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS = 120;
-    public static final int DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_SECONDS = 18;
-    public static final int DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS = 6;
     public static final String DEFAULT_SECURITY_PROTOCOL = "SSL";
 
     protected String watchedNamespace;
     protected String image;
-    protected int reconciliationIntervalSeconds = DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS;
+    private Integer reconciliationIntervalSeconds;
+    private Long reconciliationIntervalMs;
     protected Integer zookeeperSessionTimeoutSeconds;
     protected Integer topicMetadataMaxAttempts;
     private Probe startupProbe;
@@ -63,7 +59,7 @@ public class EntityTopicOperatorSpec implements HasConfigurableLogging, HasLiven
     protected ResourceRequirements resources;
     protected Logging logging;
     private JvmOptions jvmOptions;
-    protected Map<String, Object> additionalProperties = new HashMap<>(0);
+    protected Map<String, Object> additionalProperties;
 
     @Description("The namespace the Topic Operator should watch.")
     public String getWatchedNamespace() {
@@ -83,15 +79,29 @@ public class EntityTopicOperatorSpec implements HasConfigurableLogging, HasLiven
         this.image = image;
     }
 
-    @Description("Interval between periodic reconciliations.")
+    @Description("Interval between periodic reconciliations in seconds. Ignored if reconciliationIntervalMs is set.")
     @Minimum(0)
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-    public int getReconciliationIntervalSeconds() {
+    @DeprecatedProperty(movedToPath = ".spec.entityOperator.topicOperator.reconciliationIntervalMs")
+    @PresentInVersions("v1alpha1-v1beta2")
+    @Deprecated
+    public Integer getReconciliationIntervalSeconds() {
         return reconciliationIntervalSeconds;
     }
 
-    public void setReconciliationIntervalSeconds(int reconciliationIntervalSeconds) {
+    public void setReconciliationIntervalSeconds(Integer reconciliationIntervalSeconds) {
         this.reconciliationIntervalSeconds = reconciliationIntervalSeconds;
+    }
+
+    @Description("Interval between periodic reconciliations in milliseconds.")
+    @Minimum(0)
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    public Long getReconciliationIntervalMs() {
+        return reconciliationIntervalMs;
+    }
+
+    public void setReconciliationIntervalMs(Long reconciliationIntervalMs) {
+        this.reconciliationIntervalMs = reconciliationIntervalMs;
     }
     
     @Description("Timeout for the ZooKeeper session")
@@ -177,11 +187,14 @@ public class EntityTopicOperatorSpec implements HasConfigurableLogging, HasLiven
 
     @Override
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties;
+        return this.additionalProperties != null ? this.additionalProperties : Map.of();
     }
 
     @Override
     public void setAdditionalProperty(String name, Object value) {
+        if (this.additionalProperties == null) {
+            this.additionalProperties = new HashMap<>(2);
+        }
         this.additionalProperties.put(name, value);
     }
 

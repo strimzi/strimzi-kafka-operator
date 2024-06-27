@@ -2,8 +2,8 @@
 //
 // assembly-cluster-recovery-volume.adoc
 
-[id="cluster-recovery-volume_{context}"]
-= Recovering a deleted cluster from persistent volumes
+[id="proc-cluster-recovery-volume-{context}"]
+= Recovering a deleted Kafka cluster
 
 [role="_abstract"]
 This procedure describes how to recover a deleted cluster from persistent volumes (PVs) by recreating the original `PersistentVolumeClaim` (PVC) resources.

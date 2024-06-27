@@ -66,11 +66,6 @@ public class RestrictedPodSecurityProvider extends BaselinePodSecurityProvider {
     }
 
     @Override
-    public SecurityContext entityOperatorTlsSidecarContainerSecurityContext(ContainerSecurityProviderContext context) {
-        return createRestrictedContainerSecurityContext(context);
-    }
-
-    @Override
     public SecurityContext kafkaExporterContainerSecurityContext(ContainerSecurityProviderContext context) {
         return createRestrictedContainerSecurityContext(context);
     }

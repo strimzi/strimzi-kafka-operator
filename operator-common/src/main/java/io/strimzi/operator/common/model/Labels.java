@@ -15,6 +15,7 @@ import java.util.Objects;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static java.lang.Boolean.parseBoolean;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
 import static java.util.Collections.unmodifiableMap;
@@ -500,5 +501,29 @@ public class Labels extends ResourceLabels {
                 .withKubernetesInstance(customResourceName)
                 .withKubernetesPartOf(customResourceName)
                 .withKubernetesManagedBy(managedBy);
+    }
+
+    /*
+     * Static methods for working with Labels
+     */
+
+    /**
+     * Gets a boolean value of an label from a Kubernetes resource
+     *
+     * @param resource      Resource from which the label should be extracted
+     * @param label         Label key for which we want the value
+     * @param defaultValue  Default value if the label is not present or the resource doesn't exist / doesn't have labels
+     *
+     * @return  Boolean value form the labels or the default value
+     */
+    public static boolean booleanLabel(HasMetadata resource, String label, boolean defaultValue) {
+        if (resource != null
+                && resource.getMetadata() != null
+                && resource.getMetadata().getLabels() != null)  {
+            String value = resource.getMetadata().getLabels().get(label);
+            return value != null ? parseBoolean(value) : defaultValue;
+        } else {
+            return defaultValue;
+        }
     }
 }

@@ -50,6 +50,7 @@ public class CruiseControlSpec implements HasConfigurableMetrics, HasConfigurabl
         + "webserver.http.cors.origin, webserver.http.cors.exposeheaders, webserver.security.enable, webserver.ssl.enable";
 
     private String image;
+    @SuppressWarnings("deprecation")  // TLS Sidecar is not used anymore and is deprecated
     private TlsSidecar tlsSidecar;
     private ResourceRequirements resources;
     private Probe livenessProbe;
@@ -60,7 +61,7 @@ public class CruiseControlSpec implements HasConfigurableMetrics, HasConfigurabl
     private BrokerCapacity brokerCapacity;
     private Map<String, Object> config = new HashMap<>(0);
     private MetricsConfig metricsConfig;
-    private Map<String, Object> additionalProperties = new HashMap<>(0);
+    private Map<String, Object> additionalProperties;
 
     @Description("The container image used for Cruise Control pods. "
         + "If no image name is explicitly specified, the image name corresponds to the name specified in the Cluster Operator configuration. "
@@ -82,6 +83,7 @@ public class CruiseControlSpec implements HasConfigurableMetrics, HasConfigurabl
         return tlsSidecar;
     }
 
+    @Deprecated
     public void setTlsSidecar(TlsSidecar tlsSidecar) {
         this.tlsSidecar = tlsSidecar;
     }
@@ -186,11 +188,14 @@ public class CruiseControlSpec implements HasConfigurableMetrics, HasConfigurabl
 
     @Override
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties;
+        return this.additionalProperties != null ? this.additionalProperties : Map.of();
     }
 
     @Override
     public void setAdditionalProperty(String name, Object value) {
+        if (this.additionalProperties == null) {
+            this.additionalProperties = new HashMap<>(2);
+        }
         this.additionalProperties.put(name, value);
     }
 }

@@ -19,12 +19,20 @@ Permission is specified through the following Kubernetes RBAC resources:
 [id='delegated-privileges-{context}']
 == Delegating privileges to Strimzi components
 
-The Cluster Operator runs under a service account called `strimzi-cluster-operator`.
-It is assigned cluster roles that give it permission to create the RBAC resources for Strimzi components.
+The Cluster Operator runs under a service account called `strimzi-cluster-operator`, which is assigned cluster roles that give it permission to create the necessary RBAC resources for Strimzi components.
 Role bindings associate the cluster roles with the service account.
 
-Kubernetes prevents components operating under one `ServiceAccount` from granting another `ServiceAccount` privileges that the granting `ServiceAccount` does not have.
-Because the Cluster Operator creates the `RoleBinding` and `ClusterRoleBinding` RBAC resources needed by the resources it manages, it requires a role that gives it the same privileges.
+Kubernetes enforces link:https://kubernetes.io/docs/reference/access-authn-authz/rbac/#privilege-escalation-prevention-and-bootstrapping[privilege escalation prevention], meaning the Cluster Operator cannot grant privileges it does not possess, nor can it grant such privileges in a namespace it cannot access. 
+Consequently, the Cluster Operator must have the necessary privileges for all the components it orchestrates.
+
+The Cluster Operator must be able to do the following:
+
+* Enable the Topic Operator to manage `KafkaTopic` resources by creating `Role` and `RoleBinding` resources in the relevant namespace.
+* Enable the User Operator to manage `KafkaUser` resources by creating `Role` and `RoleBinding` resources in the relevant namespace.
+* Allow Strimzi to discover the failure domain of a `Node` by creating a `ClusterRoleBinding`.
+
+When using rack-aware partition assignment, broker pods need to access information about the `Node` they are running on, such as the Availability Zone in Amazon AWS. 
+Since a `Node` is a cluster-scoped resource, this access must be granted through a `ClusterRoleBinding`, not a namespace-scoped `RoleBinding`.
 
 The following sections describe the RBAC resources required by the Cluster Operator.
 

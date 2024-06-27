@@ -1,4 +1,4 @@
-FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
+FROM registry.access.redhat.com/ubi9/ubi-minimal:latest
 
 LABEL org.opencontainers.image.source='https://github.com/strimzi/strimzi-kafka-operator'
 
@@ -8,10 +8,10 @@ ARG TARGETARCH
 
 USER root
 
-RUN microdnf update \
-    && microdnf --setopt=install_weak_deps=0 --setopt=tsflags=nodocs install java-${JAVA_VERSION}-openjdk-headless openssl shadow-utils \
+RUN microdnf update -y \
+    && microdnf --setopt=install_weak_deps=0 --setopt=tsflags=nodocs install -y java-${JAVA_VERSION}-openjdk-headless openssl shadow-utils \
     && microdnf reinstall -y tzdata \
-    && microdnf clean all
+    && microdnf clean all -y
 
 ENV JAVA_HOME /usr/lib/jvm/jre-17
 

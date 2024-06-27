@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import io.fabric8.kubernetes.api.model.Service;
@@ -180,6 +181,11 @@ public class Environment {
     public static final String CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN = getOrDefault(CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN_ENV, "");
 
     /**
+     * Env var for specify base image for building Kafka with tiered storage in system tests
+     */
+    public static final String KAFKA_TIERED_STORAGE_BASE_IMAGE_ENV = "KAFKA_TIERED_STORAGE_BASE_IMAGE";
+
+    /**
      * Defaults
      */
     public static final String STRIMZI_ORG_DEFAULT = "strimzi";
@@ -203,13 +209,15 @@ public class Environment {
 
     private static final String ST_KAFKA_VERSION_DEFAULT = TestKafkaVersion.getDefaultSupportedKafkaVersion();
     private static final String ST_CLIENTS_KAFKA_VERSION_DEFAULT = "3.7.0";
-    public static final String TEST_CLIENTS_VERSION_DEFAULT = "0.8.0";
+    public static final String TEST_CLIENTS_VERSION_DEFAULT = "0.8.1";
     public static final String ST_FILE_PLUGIN_URL_DEFAULT = "https://repo1.maven.org/maven2/org/apache/kafka/connect-file/" + ST_KAFKA_VERSION_DEFAULT + "/connect-file-" + ST_KAFKA_VERSION_DEFAULT + ".jar";
-    public static final String OLM_OPERATOR_VERSION_DEFAULT = "0.40.0";
+    public static final String OLM_OPERATOR_VERSION_DEFAULT = "0.41.0";
 
     public static final String IP_FAMILY_DEFAULT = "ipv4";
     public static final String IP_FAMILY_VERSION_6 = "ipv6";
     public static final String IP_FAMILY_DUAL_STACK = "dual";
+
+    public static final String KAFKA_TIERED_STORAGE_BASE_IMAGE_DEFAULT = STRIMZI_REGISTRY_DEFAULT + "/" + STRIMZI_ORG_DEFAULT + "/kafka:latest-kafka-" + ST_KAFKA_VERSION_DEFAULT;
 
     /**
      * Set values
@@ -266,6 +274,7 @@ public class Environment {
 
     public static final String IP_FAMILY = getOrDefault(IP_FAMILY_ENV, IP_FAMILY_DEFAULT);
 
+    public static final String KAFKA_TIERED_STORAGE_BASE_IMAGE = getOrDefault(KAFKA_TIERED_STORAGE_BASE_IMAGE_ENV, KAFKA_TIERED_STORAGE_BASE_IMAGE_DEFAULT);
 
     private Environment() { }
 
@@ -299,11 +308,7 @@ public class Environment {
      * @return true if KRaft mode is enabled, otherwise false
      */
     public static boolean isKRaftModeEnabled() {
-        return isKRaftForCOEnabled() && STRIMZI_USE_KRAFT_IN_TESTS;
-    }
-
-    public static boolean isKRaftForCOEnabled() {
-        return !STRIMZI_FEATURE_GATES.contains(TestConstants.DONT_USE_KRAFT_MODE);
+        return STRIMZI_USE_KRAFT_IN_TESTS;
     }
 
     public static boolean isKafkaNodePoolsEnabled() {
@@ -368,7 +373,7 @@ public class Environment {
         } else if (KubeClusterResource.getInstance().isKind()) {
             // we will need a hostname of machine
             String hostname = getHostname();
-            LOGGER.info("Using container registry :{}", hostname);
+            LOGGER.info("Using container registry '{}'", hostname);
             return hostname;
         } else {
             LOGGER.warn("For running these tests on K8s you have to have internal registry deployed using `minikube start --insecure-registry '10.0.0.0/24'` and `minikube addons enable registry`");
@@ -425,7 +430,7 @@ public class Environment {
                 Paths.get(System.getProperty("user.dir"), "config.yaml").toAbsolutePath().toString());
         ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
         try {
-            return mapper.readValue(new File(config), Map.class);
+            return mapper.readValue(new File(config), new TypeReference<>() { });
         } catch (IOException ex) {
             LOGGER.info("Yaml configuration not provider or not exists");
             return Collections.emptyMap();

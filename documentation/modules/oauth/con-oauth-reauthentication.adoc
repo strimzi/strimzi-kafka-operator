@@ -3,16 +3,16 @@
 // assembly-oauth-authentication.adoc
 
 [id='{context}']
-= Session re-authentication for Kafka brokers
+= Re-authenticating sessions
 
-You can configure `oauth` listeners to use Kafka _session re-authentication_ for OAuth 2.0 sessions between Kafka clients and Kafka brokers.
+Configure `oauth` listeners to use Kafka _session re-authentication_ for OAuth 2.0 sessions between Kafka clients and Kafka.
 This mechanism enforces the expiry of an authenticated session between the client and the broker after a defined period of time.
 When a session expires, the client immediately starts a new session by reusing the existing connection rather than dropping it.
 
 Session re-authentication is disabled by default.
 To enable it, you set a time value for `maxSecondsWithoutReauthentication` in the `oauth` listener configuration.
-The same property is used to configure session re-authentication for OAUTHBEARER and PLAIN authentication.
-For an example configuration, see xref:proc-oauth-authentication-broker-config-{context}[].
+The same property is used to configure session re-authentication for `OAUTHBEARER` and `PLAIN` authentication.
+For an example configuration, see xref:con-oauth-authentication-broker-{context}[].
 
 Session re-authentication must be supported by the Kafka client libraries used by the client.
 
@@ -30,31 +30,23 @@ Session re-authentication also applies to refresh tokens, if used.
 When the session expires, the client refreshes the access token by using its refresh token.
 The client then uses the new access token to re-authenticate to the existing session.
 
-.Session expiry for OAUTHBEARER and PLAIN
+.Session expiry
 
-When session re-authentication is configured, session expiry works differently for OAUTHBEARER and PLAIN authentication.
+When session re-authentication is configured, session expiry works differently for `OAUTHBEARER` and `PLAIN` authentication.
 
-For OAUTHBEARER and PLAIN, using the client ID and secret method:
+For `OAUTHBEARER` and `PLAIN`, using the client ID and secret method:
 
 * The broker's authenticated session will expire at the configured `maxSecondsWithoutReauthentication`.
 
 * The session will expire earlier if the access token expires before the configured time.
 
-For PLAIN using the long-lived access token method:
+For `PLAIN` using the long-lived access token method:
 
 * The broker's authenticated session will expire at the configured `maxSecondsWithoutReauthentication`.
 
 * Re-authentication will fail if the access token expires before the configured time.
-Although session re-authentication is attempted, PLAIN has no mechanism for refreshing tokens.
+Although session re-authentication is attempted, `PLAIN` has no mechanism for refreshing tokens.
 
-If `maxSecondsWithoutReauthentication` is _not_ configured, OAUTHBEARER and PLAIN clients can remain connected to brokers indefinitely, without needing to re-authenticate.
+If `maxSecondsWithoutReauthentication` is _not_ configured, `OAUTHBEARER` and `PLAIN` clients can remain connected to brokers indefinitely, without needing to re-authenticate.
 Authenticated sessions do not end with access token expiry.
 However, this can be considered when configuring authorization, for example, by using `keycloak` authorization or installing a custom authorizer.
-
-[role="_additional-resources"]
-.Additional resources
-
-* xref:con-oauth-authentication-broker-{context}[]
-* xref:proc-oauth-authentication-broker-config-{context}[]
-* link:{BookURLConfiguring}#type-KafkaListenerAuthenticationOAuth-reference[`KafkaListenerAuthenticationOAuth` schema reference^]
-* link:https://cwiki.apache.org/confluence/display/KAFKA/KIP-368%3A+Allow+SASL+Connections+to+Periodically+Re-Authenticate[KIP-368^]

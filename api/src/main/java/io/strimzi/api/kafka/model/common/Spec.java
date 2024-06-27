@@ -12,8 +12,6 @@ import lombok.ToString;
 import java.util.HashMap;
 import java.util.Map;
 
-import static java.util.Collections.emptyMap;
-
 /**
  * Represents a generic spec which can be used across different resources
  */
@@ -25,17 +23,17 @@ import static java.util.Collections.emptyMap;
 @EqualsAndHashCode
 @ToString
 public abstract class Spec implements UnknownPropertyPreserving {
-    private Map<String, Object> additionalProperties = new HashMap<>(0);
+    private Map<String, Object> additionalProperties;
 
     @Override
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties != null ? this.additionalProperties : emptyMap();
+        return this.additionalProperties != null ? this.additionalProperties : Map.of();
     }
 
     @Override
     public void setAdditionalProperty(String name, Object value) {
         if (this.additionalProperties == null) {
-            this.additionalProperties = new HashMap<>(1);
+            this.additionalProperties = new HashMap<>(2);
         }
         this.additionalProperties.put(name, value);
     }

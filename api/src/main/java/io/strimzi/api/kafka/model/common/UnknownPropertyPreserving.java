@@ -10,7 +10,6 @@ import com.fasterxml.jackson.annotation.JsonAnySetter;
 import java.util.Map;
 
 public interface UnknownPropertyPreserving {
-
     @JsonAnyGetter
     Map<String, Object> getAdditionalProperties();
 

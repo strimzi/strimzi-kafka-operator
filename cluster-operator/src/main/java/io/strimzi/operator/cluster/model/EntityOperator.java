@@ -24,6 +24,7 @@ import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.entityoperator.EntityOperatorSpec;
 import io.strimzi.api.kafka.model.kafka.entityoperator.EntityOperatorTemplate;
+import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderContextImpl;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
@@ -47,9 +48,12 @@ import static io.strimzi.operator.cluster.model.TemplateUtils.addAdditionalVolum
 /**
  * Represents the Entity Operator deployment
  */
-@SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
 public class EntityOperator extends AbstractModel {
-    protected static final String COMPONENT_TYPE = "entity-operator";
+    /**
+     * Type of the component which this model class represents. It is used for labeling and naming purposes.
+     */
+    public static final String COMPONENT_TYPE = "entity-operator";
+
     // Certificates for the Entity Topic Operator
     protected static final String ETO_CERTS_VOLUME_NAME = "eto-certs";
     protected static final String ETO_CERTS_VOLUME_MOUNT = "/etc/eto-certs/";
@@ -70,7 +74,6 @@ public class EntityOperator extends AbstractModel {
      */
     protected static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new io.strimzi.api.kafka.model.common.ProbeBuilder().withTimeoutSeconds(5).withInitialDelaySeconds(10).build();
 
-    /* test */ String zookeeperConnect;
     private EntityTopicOperator topicOperator;
     private EntityUserOperator userOperator;
     /* test */ boolean cruiseControlEnabled;
@@ -96,8 +99,6 @@ public class EntityOperator extends AbstractModel {
      */
     protected EntityOperator(Reconciliation reconciliation, HasMetadata resource, SharedEnvironmentProvider sharedEnvironmentProvider) {
         super(reconciliation, resource, KafkaResources.entityOperatorDeploymentName(resource.getMetadata().getName()), COMPONENT_TYPE, sharedEnvironmentProvider);
-
-        this.zookeeperConnect = KafkaResources.zookeeperServiceName(cluster) + ":" + ZookeeperCluster.CLIENT_TLS_PORT;
     }
 
     /**
@@ -106,20 +107,22 @@ public class EntityOperator extends AbstractModel {
      * @param reconciliation                The reconciliation marker
      * @param kafkaAssembly                 Desired resource with cluster configuration containing the Entity Operator one
      * @param sharedEnvironmentProvider     Shared environment provider
+     * @param config                        Cluster Operator configuration
      *
      * @return Entity Operator instance, null if not configured in the ConfigMap
      */
     public static EntityOperator fromCrd(Reconciliation reconciliation,
                                          Kafka kafkaAssembly,
-                                         SharedEnvironmentProvider sharedEnvironmentProvider) {
+                                         SharedEnvironmentProvider sharedEnvironmentProvider,
+                                         ClusterOperatorConfig config) {
         EntityOperatorSpec entityOperatorSpec = kafkaAssembly.getSpec().getEntityOperator();
 
         if (entityOperatorSpec != null
                 && (entityOperatorSpec.getUserOperator() != null || entityOperatorSpec.getTopicOperator() != null)) {
             EntityOperator result = new EntityOperator(reconciliation, kafkaAssembly, sharedEnvironmentProvider);
 
-            EntityTopicOperator topicOperator = EntityTopicOperator.fromCrd(reconciliation, kafkaAssembly, sharedEnvironmentProvider);
-            EntityUserOperator userOperator = EntityUserOperator.fromCrd(reconciliation, kafkaAssembly, sharedEnvironmentProvider);
+            EntityTopicOperator topicOperator = EntityTopicOperator.fromCrd(reconciliation, kafkaAssembly, sharedEnvironmentProvider, config);
+            EntityUserOperator userOperator = EntityUserOperator.fromCrd(reconciliation, kafkaAssembly, sharedEnvironmentProvider, config);
             
             result.topicOperator = topicOperator;
             result.cruiseControlEnabled = kafkaAssembly.getSpec().getCruiseControl() != null;
@@ -165,13 +168,14 @@ public class EntityOperator extends AbstractModel {
     /**
      * Generates the Entity Operator deployment
      *
+     * @param podAnnotations    Map with the annotations that will be used for the Pod metadata
      * @param isOpenShift       Flag which identifies if we are running on OpenShift
      * @param imagePullPolicy   Image pull policy
      * @param imagePullSecrets  Image pull secrets
      *
      * @return  Kubernetes Deployment with the Entity Operator
      */
-    public Deployment generateDeployment(boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
+    public Deployment generateDeployment(Map<String, String> podAnnotations, boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
         return WorkloadUtils.createDeployment(
                 componentName,
                 namespace,
@@ -186,7 +190,7 @@ public class EntityOperator extends AbstractModel {
                         labels,
                         templatePod,
                         DEFAULT_POD_LABELS,
-                        Map.of(),
+                        podAnnotations,
                         templatePod != null ? templatePod.getAffinity() : null,
                         null,
                         createContainers(imagePullPolicy),

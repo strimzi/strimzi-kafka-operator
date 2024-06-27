@@ -38,7 +38,7 @@ import java.util.Map;
 public class ContainerTemplate implements UnknownPropertyPreserving {
     private List<ContainerEnvVar> env;
     private SecurityContext securityContext;
-    private Map<String, Object> additionalProperties = new HashMap<>(0);
+    private Map<String, Object> additionalProperties;
     private List<VolumeMount> additionalVolumeMounts;
     
     @Description("Additional volume mounts which should be applied to the container")
@@ -73,11 +73,14 @@ public class ContainerTemplate implements UnknownPropertyPreserving {
 
     @Override
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties;
+        return this.additionalProperties != null ? this.additionalProperties : Map.of();
     }
 
     @Override
     public void setAdditionalProperty(String name, Object value) {
+        if (this.additionalProperties == null) {
+            this.additionalProperties = new HashMap<>(2);
+        }
         this.additionalProperties.put(name, value);
     }
 }

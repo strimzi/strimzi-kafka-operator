@@ -7,7 +7,6 @@ package io.strimzi.operator.cluster.operator.resource;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.ContainerStateWaiting;
 import io.fabric8.kubernetes.api.model.ContainerStatus;
-import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
@@ -380,8 +379,8 @@ public class KafkaRoller {
                 // Let the executor deal with interruption.
                 Thread.currentThread().interrupt();
             } catch (FatalProblem e) {
-                LOGGER.infoCr(reconciliation, "Could not verify pod {} is up-to-date, giving up after {} attempts. Total delay between attempts {}ms",
-                        nodeRef, ctx.backOff.maxAttempts(), ctx.backOff.totalDelayMs(), e);
+                LOGGER.infoCr(reconciliation, "Could not reconcile {}, giving up without retrying because we encountered a fatal error",
+                        nodeRef, e);
                 ctx.promise.fail(e);
                 singleExecutor.shutdownNow();
                 podToContext.forEachValue(Integer.MAX_VALUE, f -> f.promise.tryFail(e));
@@ -461,8 +460,8 @@ public class KafkaRoller {
 
         // We try to detect the current roles. If we fail to do so, we optimistically assume the roles did not
         // change and the desired roles still apply.
-        boolean isBroker = isCurrentlyBroker(pod).orElse(nodeRef.broker());
-        boolean isController = isCurrentlyController(pod).orElse(nodeRef.controller());
+        boolean isBroker = Labels.booleanLabel(pod, Labels.STRIMZI_BROKER_ROLE_LABEL, nodeRef.broker());
+        boolean isController = Labels.booleanLabel(pod, Labels.STRIMZI_CONTROLLER_ROLE_LABEL, nodeRef.controller());
 
         try {
             checkIfRestartOrReconfigureRequired(nodeRef, isController, isBroker, restartContext);
@@ -1051,50 +1050,6 @@ public class KafkaRoller {
                 LOGGER.warnCr(reconciliation, "Error waiting for pod {}/{} to become ready: {}", namespace, podName, error);
                 return Future.failedFuture(error);
             });
-    }
-
-    /**
-     * Checks from the Pod labels if the Kafka node is currently a broker or not.
-     *
-     * @param pod   Current Pod
-     *
-     * @return  Optional with true if the pod is currently a broker, false if it is not broker or empty optional
-     * if the label is not present.
-     */
-    /* test */ static Optional<Boolean> isCurrentlyBroker(Pod pod)    {
-        return checkBooleanLabel(pod, Labels.STRIMZI_BROKER_ROLE_LABEL);
-    }
-
-    /**
-     * Checks from the Pod labels if the Kafka node is currently a controller or not.
-     *
-     * @param pod   Current Pod
-     *
-     * @return  Optional with true if the pod is currently a controller, false if it is not controller or empty optional
-     * if the label is not present.
-     */
-    /* test */ static Optional<Boolean> isCurrentlyController(Pod pod)    {
-        return checkBooleanLabel(pod, Labels.STRIMZI_CONTROLLER_ROLE_LABEL);
-    }
-
-    /**
-     * Generic method to extract a boolean value from Kubernetes resource labels
-     *
-     * @param pod       Kube resource with metadata
-     * @param label     Name of the label for which we want to extract the boolean value
-     *
-     * @return  Optional with true if the label is present and is set to `true`, false if it is present and not set to
-     * `true` or empty optional if the label is not present.
-     */
-    private static Optional<Boolean> checkBooleanLabel(HasMetadata pod, String label)    {
-        if (pod != null
-                && pod.getMetadata() != null
-                && pod.getMetadata().getLabels() != null
-                && pod.getMetadata().getLabels().containsKey(label))  {
-            return Optional.of("true".equalsIgnoreCase(pod.getMetadata().getLabels().get(label)));
-        } else {
-            return Optional.empty();
-        }
     }
 }
 

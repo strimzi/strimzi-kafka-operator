@@ -6,7 +6,6 @@ package io.strimzi.systemtest.resources.jaeger;
 
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyBuilder;
-import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.systemtest.resources.ResourceItem;
@@ -31,6 +30,7 @@ import static io.strimzi.systemtest.tracing.TracingConstants.CERT_MANAGER_DEPLOY
 import static io.strimzi.systemtest.tracing.TracingConstants.CERT_MANAGER_NAMESPACE;
 import static io.strimzi.systemtest.tracing.TracingConstants.CERT_MANAGER_WEBHOOK_DEPLOYMENT;
 import static io.strimzi.systemtest.tracing.TracingConstants.JAEGER_INSTANCE_NAME;
+import static io.strimzi.systemtest.tracing.TracingConstants.JAEGER_NAMESPACE;
 import static io.strimzi.systemtest.tracing.TracingConstants.JAEGER_OPERATOR_DEPLOYMENT_NAME;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 
@@ -52,7 +52,7 @@ public class SetupJaeger {
      * Delete Jaeger instance
      */
     private static void deleteJaeger(String yamlContent) {
-        cmdKubeClient().namespace(Environment.TEST_SUITE_NAMESPACE).deleteContent(yamlContent);
+        cmdKubeClient().namespace(JAEGER_NAMESPACE).deleteContent(yamlContent);
     }
 
     /**
@@ -66,7 +66,7 @@ public class SetupJaeger {
     }
 
     public static void allowNetworkPolicySettingsForJaegerOperator() {
-        NetworkPolicyResource.allowNetworkPolicySettingsForWebhook(Environment.TEST_SUITE_NAMESPACE, JAEGER_OPERATOR_DEPLOYMENT_NAME, Map.of("name", JAEGER_OPERATOR_DEPLOYMENT_NAME));
+        NetworkPolicyResource.allowNetworkPolicySettingsForWebhook(JAEGER_NAMESPACE, JAEGER_OPERATOR_DEPLOYMENT_NAME, Map.of("name", JAEGER_OPERATOR_DEPLOYMENT_NAME));
     }
 
     public static void allowNetworkPolicySettingsForCertManagerWebhook() {
@@ -119,12 +119,12 @@ public class SetupJaeger {
      * Loop is needed because of issue with Cert Manager, that can have problem injecting CA for Jaeger operator
      */
     private static void deployJaegerContent() {
-        TestUtils.waitFor("Jaeger deploy", JAEGER_DEPLOYMENT_POLL, JAEGER_DEPLOYMENT_TIMEOUT, () -> {
+        TestUtils.waitFor("Jaeger Operator deploy", JAEGER_DEPLOYMENT_POLL, JAEGER_DEPLOYMENT_TIMEOUT, () -> {
             try {
-                String jaegerOperator = Files.readString(Paths.get(JAEGER_OPERATOR_PATH)).replace("observability", Environment.TEST_SUITE_NAMESPACE);
+                String jaegerOperator = Files.readString(Paths.get(JAEGER_OPERATOR_PATH)).replace("observability", JAEGER_NAMESPACE);
 
                 LOGGER.info("Creating Jaeger Operator (and needed resources) from {}", JAEGER_OPERATOR_PATH);
-                cmdKubeClient(Environment.TEST_SUITE_NAMESPACE).applyContent(jaegerOperator);
+                cmdKubeClient(JAEGER_NAMESPACE).applyContent(jaegerOperator);
                 ResourceManager.STORED_RESOURCES.get(ResourceManager.getTestContext().getDisplayName()).push(new ResourceItem<>(() -> deleteJaeger(jaegerOperator)));
 
                 return true;
@@ -133,7 +133,7 @@ public class SetupJaeger {
                 return false;
             }
         });
-        DeploymentUtils.waitForDeploymentAndPodsReady(Environment.TEST_SUITE_NAMESPACE, JAEGER_OPERATOR_DEPLOYMENT_NAME, 1);
+        DeploymentUtils.waitForDeploymentAndPodsReady(JAEGER_NAMESPACE, JAEGER_OPERATOR_DEPLOYMENT_NAME, 1);
     }
 
     /**
@@ -142,6 +142,8 @@ public class SetupJaeger {
     private static void deployJaegerOperator() {
         LOGGER.info("=== Applying Jaeger Operator install files ===");
 
+        // create namespace `jaeger` and add it to stack, to collect logs from it
+        NamespaceManager.getInstance().createNamespaceAndPrepare(JAEGER_NAMESPACE, CollectorElement.createCollectorElement(ResourceManager.getTestContext().getRequiredTestClass().getName()));
         deployJaegerContent();
 
         NetworkPolicy networkPolicy = new NetworkPolicyBuilder()
@@ -149,7 +151,7 @@ public class SetupJaeger {
             .withKind(TestConstants.NETWORK_POLICY)
             .withNewMetadata()
                 .withName("jaeger-allow")
-                .withNamespace(Environment.TEST_SUITE_NAMESPACE)
+                .withNamespace(JAEGER_NAMESPACE)
             .endMetadata()
             .withNewSpec()
                 .addNewIngress()
@@ -173,11 +175,22 @@ public class SetupJaeger {
         LOGGER.info("=== Applying jaeger instance install file ===");
 
         String instanceYamlContent = TestUtils.getContent(new File(JAEGER_INSTANCE_PATH), TestUtils::toYamlString);
-        cmdKubeClient(namespaceName).applyContent(instanceYamlContent);
 
-        ResourceManager.STORED_RESOURCES.computeIfAbsent(ResourceManager.getTestContext().getDisplayName(), k -> new Stack<>());
-        ResourceManager.STORED_RESOURCES.get(ResourceManager.getTestContext().getDisplayName()).push(new ResourceItem<>(() -> cmdKubeClient(namespaceName).deleteContent(instanceYamlContent)));
+        TestUtils.waitFor("Jaeger Instance deploy", JAEGER_DEPLOYMENT_POLL, JAEGER_DEPLOYMENT_TIMEOUT, () -> {
+            try {
 
+                LOGGER.info("Creating Jaeger Instance from {}", JAEGER_OPERATOR_PATH);
+                cmdKubeClient(namespaceName).applyContent(instanceYamlContent);
+
+                return true;
+            } catch (Exception e) {
+                LOGGER.error("Following exception has been thrown during Jaeger Instance Deployment: {}", e.getMessage());
+                return false;
+            } finally {
+                ResourceManager.STORED_RESOURCES.computeIfAbsent(ResourceManager.getTestContext().getDisplayName(), k -> new Stack<>());
+                ResourceManager.STORED_RESOURCES.get(ResourceManager.getTestContext().getDisplayName()).push(new ResourceItem<>(() -> cmdKubeClient(namespaceName).deleteContent(instanceYamlContent)));
+            }
+        });
         DeploymentUtils.waitForDeploymentAndPodsReady(namespaceName, JAEGER_INSTANCE_NAME, 1);
 
         NetworkPolicyResource.allowNetworkPolicyBetweenScraperPodAndMatchingLabel(namespaceName, JAEGER_INSTANCE_NAME + "-allow", Map.of(TestConstants.APP_POD_LABEL, JAEGER));

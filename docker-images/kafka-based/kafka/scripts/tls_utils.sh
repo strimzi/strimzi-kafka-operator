@@ -56,3 +56,29 @@ function find_ca {
         fi
     done
 }
+
+# Parameters:
+# $1: Path to the new truststore
+# $2: Truststore password
+# $3: Base path where the certificates are mounted
+# $4: Environment variable defining the certs that should be loaded
+function prepare_truststore {
+    TRUSTSTORE=$1
+    PASSWORD=$2
+    BASEPATH=$3
+    TRUSTED_CERTS=$4
+
+    rm -f "$TRUSTSTORE"
+
+    IFS=';' read -ra CERTS <<< "${TRUSTED_CERTS}"
+    for cert in "${CERTS[@]}"
+    do
+        for file in $BASEPATH/$cert
+        do
+            if [ -f "$file" ]; then
+                echo "Adding $file to truststore $TRUSTSTORE with alias $file"
+                create_truststore "$TRUSTSTORE" "$PASSWORD" "$file" "$file"
+            fi
+        done
+    done
+}

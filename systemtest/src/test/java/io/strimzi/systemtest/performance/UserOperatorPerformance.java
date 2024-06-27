@@ -10,12 +10,12 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.enums.UserAuthType;
 import io.strimzi.systemtest.logs.LogCollector;
+import io.strimzi.systemtest.metrics.UserOperatorMetricsComponent;
 import io.strimzi.systemtest.performance.gather.collectors.UserOperatorMetricsCollector;
 import io.strimzi.systemtest.performance.gather.schedulers.UserOperatorMetricsCollectionScheduler;
 import io.strimzi.systemtest.performance.report.UserOperatorPerformanceReporter;
 import io.strimzi.systemtest.performance.report.parser.TopicOperatorMetricsParser;
 import io.strimzi.systemtest.performance.utils.UserOperatorPerformanceUtils;
-import io.strimzi.systemtest.resources.ComponentType;
 import io.strimzi.systemtest.resources.NodePoolsConverter;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
@@ -139,7 +139,7 @@ public class UserOperatorPerformance extends AbstractST {
                     .editSpec()
                         .editEntityOperator()
                             .editUserOperator()
-                                .withReconciliationIntervalSeconds(10)
+                                .withReconciliationIntervalMs(10_000L)
                             .endUserOperator()
                             .editOrNewTemplate()
                                 .editOrNewUserOperatorContainer()
@@ -195,8 +195,7 @@ public class UserOperatorPerformance extends AbstractST {
             this.userOperatorCollector = new UserOperatorMetricsCollector.Builder()
                 .withScraperPodName(this.testStorage.getScraperPodName())
                 .withNamespaceName(this.testStorage.getNamespaceName())
-                .withComponentType(ComponentType.UserOperator)
-                .withComponentName(this.testStorage.getClusterName())
+                .withComponent(UserOperatorMetricsComponent.create(this.testStorage.getNamespaceName(), this.testStorage.getClusterName()))
                 .build();
 
             this.userOperatorMetricsGatherer = new UserOperatorMetricsCollectionScheduler(this.userOperatorCollector, "strimzi.io/cluster=" + this.testStorage.getClusterName());
@@ -313,7 +312,7 @@ public class UserOperatorPerformance extends AbstractST {
                     .editSpec()
                         .editEntityOperator()
                             .editUserOperator()
-                                .withReconciliationIntervalSeconds(10)
+                                .withReconciliationIntervalMs(10_000L)
                             .endUserOperator()
                             .editOrNewTemplate()
                                 .editOrNewUserOperatorContainer()
@@ -365,8 +364,7 @@ public class UserOperatorPerformance extends AbstractST {
             this.userOperatorCollector = new UserOperatorMetricsCollector.Builder()
                 .withScraperPodName(this.testStorage.getScraperPodName())
                 .withNamespaceName(this.testStorage.getNamespaceName())
-                .withComponentType(ComponentType.UserOperator)
-                .withComponentName(this.testStorage.getClusterName())
+                .withComponent(UserOperatorMetricsComponent.create(this.testStorage.getNamespaceName(), this.testStorage.getClusterName()))
                 .build();
 
             this.userOperatorMetricsGatherer = new UserOperatorMetricsCollectionScheduler(this.userOperatorCollector, "strimzi.io/cluster=" + this.testStorage.getClusterName());
@@ -418,7 +416,7 @@ public class UserOperatorPerformance extends AbstractST {
 
                 performanceAttributes.put(PerformanceConstants.METRICS_HISTORY, this.userOperatorMetricsGatherer.getMetricsStore()); // Map of metrics history
 
-                this.userOperatorPerformanceReporter.logPerformanceData(this.testStorage, performanceAttributes, REPORT_DIRECTORY + "/" + PerformanceConstants.USER_OPERATOR_CAPACITY_USE_CASE, ACTUAL_TIME, Environment.PERFORMANCE_DIR);
+                this.userOperatorPerformanceReporter.logPerformanceData(this.testStorage, performanceAttributes, REPORT_DIRECTORY + "/" + PerformanceConstants.GENERAL_CAPACITY_USE_CASE, ACTUAL_TIME, Environment.PERFORMANCE_DIR);
             }
         }
     }

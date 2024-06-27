@@ -6,7 +6,7 @@
 = Enabling tracing in MirrorMaker, Kafka Connect, and Kafka Bridge resources
 
 [role="_abstract"]
-Distributed tracing is supported for MirrorMaker, MirrorMaker 2, Kafka Connect, and the Strimzi Kafka Bridge.
+Distributed tracing is supported for MirrorMaker, MirrorMaker 2, Kafka Connect, and the Kafka Bridge.
 Configure the custom resource of the component to specify and enable a tracer service. 
 
 Enabling tracing in a resource triggers the following events:

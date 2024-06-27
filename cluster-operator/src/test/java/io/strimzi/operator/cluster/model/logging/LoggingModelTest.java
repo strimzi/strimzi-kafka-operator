@@ -37,7 +37,6 @@ public class LoggingModelTest {
                 log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %X{connector.context}%m (%c) [%t]%n
                 connect.root.logger.level=INFO
                 log4j.rootLogger=${connect.root.logger.level}, CONSOLE
-                log4j.logger.org.apache.zookeeper=ERROR
                 log4j.logger.org.reflections=DEBUG
                 logger.myclass.level=TRACE
                 """));
@@ -63,7 +62,6 @@ public class LoggingModelTest {
                 log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %X{connector.context}%m (%c) [%t]%n
                 connect.root.logger.level=INFO
                 log4j.rootLogger=${connect.root.logger.level}, CONSOLE
-                log4j.logger.org.apache.zookeeper=ERROR
                 log4j.logger.org.reflections=ERROR
                                 
                 monitorInterval=30

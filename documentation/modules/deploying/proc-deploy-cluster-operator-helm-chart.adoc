@@ -40,4 +40,4 @@ helm install strimzi-cluster-operator --set replicas=2 --version 0.35.0 oci://qu
 [source,shell]
 helm ls
 
-. xref:deploying-kafka-cluster-{context}[Deploy Kafka] and other Kafka components using custom resources.
+. xref:deploy-tasks_str[Deploy Kafka and other Kafka components] using custom resources.

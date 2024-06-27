@@ -4,12 +4,10 @@
  */
 package io.strimzi.systemtest.upgrade.kraft;
 
-import io.fabric8.kubernetes.api.model.EnvVar;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.operator.common.Annotations;
-import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
@@ -29,7 +27,6 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -112,13 +109,8 @@ public class KRaftKafkaUpgradeDowngradeST extends AbstractKRaftUpgradeST {
 
     @BeforeAll
     void setupEnvironment() {
-        List<EnvVar> coEnvVars = new ArrayList<>();
-        coEnvVars.add(new EnvVar(Environment.STRIMZI_FEATURE_GATES_ENV, String.join(",",
-            TestConstants.USE_KRAFT_MODE), null));
-
         clusterOperator
             .defaultInstallation()
-            .withExtraEnvVars(coEnvVars)
             .createInstallation()
             .runInstallation();
     }
@@ -167,7 +159,8 @@ public class KRaftKafkaUpgradeDowngradeST extends AbstractKRaftUpgradeST {
             // ##############################
             // Setup topic, which has 3 replicas and 2 min.isr to see if producer will be able to work during rolling update
             resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(clusterName, testStorage.getContinuousTopicName(), 3, 3, 2, TestConstants.CO_NAMESPACE).build());
-            String producerAdditionConfiguration = "delivery.timeout.ms=20000\nrequest.timeout.ms=20000";
+            // 40s is used within TF environment to make upgrade/downgrade more stable on slow env
+            String producerAdditionConfiguration = "delivery.timeout.ms=300000\nrequest.timeout.ms=20000";
 
             KafkaClients kafkaBasicClientJob = ClientUtils.getContinuousPlainClientBuilder(testStorage)
                 .withBootstrapAddress(KafkaResources.plainBootstrapAddress(clusterName))

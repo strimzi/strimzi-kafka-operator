@@ -79,9 +79,12 @@ import static java.lang.String.format;
  * Cruise Control model
  */
 public class CruiseControl extends AbstractModel implements SupportsMetrics, SupportsLogging {
-    protected static final String COMPONENT_TYPE = "cruise-control";
-    protected static final String CRUISE_CONTROL_CONTAINER_NAME = "cruise-control";
+    /**
+     * Type of the component which this model class represents. It is used for labeling and naming purposes.
+     */
+    public static final String COMPONENT_TYPE = "cruise-control";
 
+    protected static final String CRUISE_CONTROL_CONTAINER_NAME = "cruise-control";
     protected static final String API_HEALTHCHECK_PATH = "/kafkacruisecontrol/state";
     protected static final String TLS_CC_CERTS_VOLUME_NAME = "cc-certs";
     protected static final String TLS_CC_CERTS_VOLUME_MOUNT = "/etc/cruise-control/cc-certs/";

@@ -7,7 +7,6 @@ package io.strimzi.operator.cluster.model;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
-import io.strimzi.api.kafka.model.common.CertSecretSource;
 import io.strimzi.api.kafka.model.common.GenericSecretSource;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthentication;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationOAuth;
@@ -149,7 +148,7 @@ public class AuthenticationUtils {
             } else if (authentication instanceof KafkaClientAuthenticationScram scramAuth) {
                 addNewVolume(volumeList, volumeNamePrefix, scramAuth.getPasswordSecret().getSecretName(), isOpenShift);
             } else if (authentication instanceof KafkaClientAuthenticationOAuth oauth) {
-                volumeList.addAll(configureOauthCertificateVolumes(oauthVolumeNamePrefix, oauth.getTlsTrustedCertificates(), isOpenShift));
+                CertUtils.createTrustedCertificatesVolumes(volumeList, oauth.getTlsTrustedCertificates(), isOpenShift, oauthVolumeNamePrefix);
 
                 if (createOAuthSecretVolumes) {
                     if (oauth.getClientSecret() != null) {
@@ -219,7 +218,7 @@ public class AuthenticationUtils {
             } else if (authentication instanceof KafkaClientAuthenticationScram scramAuth) {
                 volumeMountList.add(VolumeUtils.createVolumeMount(volumeNamePrefix + scramAuth.getPasswordSecret().getSecretName(), passwordVolumeMount + scramAuth.getPasswordSecret().getSecretName()));
             } else if (authentication instanceof KafkaClientAuthenticationOAuth oauth) {
-                volumeMountList.addAll(configureOauthCertificateVolumeMounts(oauthVolumeNamePrefix, oauth.getTlsTrustedCertificates(), oauthCertsVolumeMount));
+                CertUtils.createTrustedCertificatesVolumeMounts(volumeMountList, oauth.getTlsTrustedCertificates(), oauthCertsVolumeMount, oauthVolumeNamePrefix);
             
                 if (mountOAuthSecretVolumes) {
                     if (oauth.getClientSecret() != null) {
@@ -277,6 +276,10 @@ public class AuthenticationUtils {
                 if (oauth.getPasswordSecret() != null) {
                     varList.add(ContainerUtils.createEnvVarFromSecret(envVarNamer.apply("OAUTH_PASSWORD_GRANT_PASSWORD"), oauth.getPasswordSecret().getSecretName(), oauth.getPasswordSecret().getPassword()));
                 }
+
+                if (oauth.getTlsTrustedCertificates() != null && !oauth.getTlsTrustedCertificates().isEmpty()) {
+                    varList.add(ContainerUtils.createEnvVar(envVarNamer.apply("OAUTH_TRUSTED_CERTS"), CertUtils.trustedCertsEnvVar(oauth.getTlsTrustedCertificates())));
+                }
             }
         }
     }
@@ -325,34 +328,6 @@ public class AuthenticationUtils {
     }
 
     /**
-     * Generates volumes needed for certificates needed to connect to OAuth server.
-     * This is used in both OAuth servers and clients.
-     *
-     * @param volumeNamePrefix    Prefix for naming the secret volumes
-     * @param trustedCertificates   List of certificates which should be mounted
-     * @param isOpenShift   Flag whether we are on OpenShift or not
-     *
-     * @return List of new Volumes
-     */
-    public static List<Volume> configureOauthCertificateVolumes(String volumeNamePrefix, List<CertSecretSource> trustedCertificates, boolean isOpenShift)   {
-        List<Volume> newVolumes = new ArrayList<>();
-
-        if (trustedCertificates != null && trustedCertificates.size() > 0) {
-            int i = 0;
-
-            for (CertSecretSource certSecretSource : trustedCertificates) {
-                Map<String, String> items = Collections.singletonMap(certSecretSource.getCertificate(), "tls.crt");
-                String volumeName = String.format("%s-%d", volumeNamePrefix, i);
-                Volume vol = VolumeUtils.createSecretVolume(volumeName, certSecretSource.getSecretName(), items, isOpenShift);
-                newVolumes.add(vol);
-                i++;
-            }
-        }
-
-        return newVolumes;
-    }
-
-    /**
      * Generates volumes needed for generic secrets needed for custom authentication.
      *
      * @param volumeNamePrefix    Prefix for naming the secret volumes
@@ -377,32 +352,6 @@ public class AuthenticationUtils {
         }
 
         return newVolumes;
-    }
-
-    /**
-     * Generates volume mounts needed for certificates needed to connect to OAuth server.
-     * This is used in both OAuth servers and clients.
-     *
-     * @param volumeNamePrefix   Prefix which was used to name the secret volumes
-     * @param trustedCertificates   List of certificates which should be mounted
-     * @param baseVolumeMount   The Base volume into which the certificates should be mounted
-     *
-     * @return List of new VolumeMounts
-     */
-    public static List<VolumeMount> configureOauthCertificateVolumeMounts(String volumeNamePrefix, List<CertSecretSource> trustedCertificates, String baseVolumeMount)   {
-        List<VolumeMount> newVolumeMounts = new ArrayList<>();
-
-        if (trustedCertificates != null && trustedCertificates.size() > 0) {
-            int i = 0;
-
-            for (CertSecretSource certSecretSource : trustedCertificates) {
-                String volumeName = String.format("%s-%d", volumeNamePrefix, i);
-                newVolumeMounts.add(VolumeUtils.createVolumeMount(volumeName, String.format("%s/%s-%d", baseVolumeMount, certSecretSource.getSecretName(), i)));
-                i++;
-            }
-        }
-
-        return newVolumeMounts;
     }
 
     /**

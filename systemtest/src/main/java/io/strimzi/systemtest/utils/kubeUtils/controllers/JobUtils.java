@@ -29,6 +29,19 @@ public class JobUtils {
     private JobUtils() { }
 
     /**
+     * Wait until the Pod of Job with {@param jobName} contains specified {@param logMessage}
+     * @param namespaceName name of Namespace where the Pod is running
+     * @param jobName name of Job with which the Pod name obtained
+     * @param logMessage desired log message
+     */
+    public static void waitForJobContainingLogMessage(String namespaceName, String jobName, String logMessage) {
+        String jobPodName = kubeClient().listPodsByPrefixInName(namespaceName, jobName).get(0).getMetadata().getName();
+
+        TestUtils.waitFor("Job contains log message: " + logMessage, TestConstants.GLOBAL_POLL_INTERVAL_LONG, TestConstants.GLOBAL_TIMEOUT,
+            () -> kubeClient().logsInSpecificNamespace(namespaceName, jobPodName).contains(logMessage));
+    }
+
+    /**
      * Wait until all Jobs are deleted in given namespace.
      * @param namespace Delete all jobs in this namespace
      */
@@ -67,6 +80,17 @@ public class JobUtils {
         for (String jobName : names) {
             deleteJobWithWait(namespace, jobName);
         }
+    }
+
+    /**
+     * Wait for specific Job success
+     * @param jobName job name
+     * @param timeout timeout in ms after which we assume that job failed
+     */
+    public static void waitForJobSuccess(String jobName, String namespace, long timeout) {
+        LOGGER.info("Waiting for Job: {}/{} to success", namespace, jobName);
+        TestUtils.waitFor("success of Job: " + namespace + "/" + jobName, TestConstants.GLOBAL_POLL_INTERVAL, timeout,
+                () -> kubeClient().checkSucceededJobStatus(namespace, jobName, 1));
     }
 
     /**

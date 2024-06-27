@@ -55,6 +55,8 @@ import io.strimzi.systemtest.resources.kubernetes.SecretResource;
 import io.strimzi.systemtest.resources.kubernetes.ServiceAccountResource;
 import io.strimzi.systemtest.resources.kubernetes.ServiceResource;
 import io.strimzi.systemtest.resources.kubernetes.ValidatingWebhookConfigurationResource;
+import io.strimzi.systemtest.resources.openshift.BuildConfigResource;
+import io.strimzi.systemtest.resources.openshift.ImageStreamResource;
 import io.strimzi.systemtest.resources.openshift.OperatorGroupResource;
 import io.strimzi.systemtest.resources.openshift.SubscriptionResource;
 import io.strimzi.systemtest.resources.operator.BundleResource;
@@ -157,7 +159,9 @@ public class ResourceManager {
         new ValidatingWebhookConfigurationResource(),
         new SubscriptionResource(),
         new OperatorGroupResource(),
-        new KafkaNodePoolResource()
+        new KafkaNodePoolResource(),
+        new BuildConfigResource(),
+        new ImageStreamResource()
     };
     @SafeVarargs
     public final <T extends HasMetadata> void createResourceWithoutWait(T... resources) {
@@ -485,7 +489,7 @@ public class ResourceManager {
     }
 
     public static <T extends CustomResource<? extends Spec, ? extends Status>> boolean waitForResourceStatus(MixedOperation<T, ?, ?> operation, String kind, String namespace, String name, Enum<?> statusType, ConditionStatus conditionStatus, long resourceTimeoutMs) {
-        LOGGER.info("Waiting for {}: {}/{} will have desired state: {}", kind, namespace, name, statusType);
+        LOGGER.log(ResourceManager.getInstance().determineLogLevel(), "Waiting for {}: {}/{} will have desired state: {}", kind, namespace, name, statusType);
 
         TestUtils.waitFor(String.format("%s: %s#%s will have desired state: %s", kind, namespace, name, statusType),
             TestConstants.POLL_INTERVAL_FOR_RESOURCE_READINESS, resourceTimeoutMs,
@@ -496,7 +500,7 @@ public class ResourceManager {
                 .withName(name)
                 .get()));
 
-        LOGGER.info("{}: {}/{} is in desired state: {}", kind, namespace, name, statusType);
+        LOGGER.log(ResourceManager.getInstance().determineLogLevel(), "{}: {}/{} is in desired state: {}", kind, namespace, name, statusType);
         return true;
     }
 

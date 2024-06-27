@@ -6,9 +6,22 @@
 = Deploying the Cluster Operator
 
 [role="_abstract"]
-The Cluster Operator is responsible for deploying and managing Kafka clusters within a Kubernetes cluster.
+The first step for any deployment of Strimzi is to install the Cluster Operator, which is responsible for deploying and managing Kafka clusters within a Kubernetes cluster.
+A single command applies all the installation files in the `install/cluster-operator` folder: `kubectl apply -f ./install/cluster-operator`.
 
-When the Cluster Operator is running, it starts to watch for updates of Kafka resources.
+The command sets up everything you need to be able to create and manage a Kafka deployment, including the following resources:
+
+* Cluster Operator (`Deployment`, `ConfigMap`)
+* Strimzi CRDs (`CustomResourceDefinition`)
+* RBAC resources (`ClusterRole`, `ClusterRoleBinding`, `RoleBinding`)
+* Service account (`ServiceAccount`) 
+
+Cluster-scoped resources like `CustomResourceDefinition`, `ClusterRole`, and `ClusterRoleBinding` require administrator privileges for installation.
+Prior to installation, it's advisable to review the `ClusterRole` specifications to ensure they do not grant unnecessary privileges.
+
+After installation, the Cluster Operator runs as a regular `Deployment` to watch for updates of Kafka resources.
+Any standard (non-admin) Kubernetes user with privileges to access the `Deployment` can configure it.
+A cluster administrator can also grant standard users the xref:adding-users-the-strimzi-admin-role-str[privileges necessary to manage Strimzi custom resources].
 
 By default, a single replica of the Cluster Operator is deployed. 
 You can add replicas with leader election so that additional Cluster Operators are on standby in case of disruption. 

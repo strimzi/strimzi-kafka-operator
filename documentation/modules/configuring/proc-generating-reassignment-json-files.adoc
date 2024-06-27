@@ -127,7 +127,7 @@ Replace _<cluster_name>_ with the name of the Kafka cluster.
 When you deploy Kafka using the `Kafka` resource, a secret with the cluster CA certificate is created with the Kafka cluster name (`_<cluster_name>_-cluster-ca-cert`).
 For example, `my-cluster-cluster-ca-cert`.
 
-. Run a new interactive pod container using the Strimzi Kafka image to connect to a running Kafka broker.
+. Run a new interactive pod container using the Kafka image to connect to a running Kafka broker.
 +
 [source,shell,subs="+quotes,attributes"]
 ----

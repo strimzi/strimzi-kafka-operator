@@ -72,8 +72,7 @@ public class FeatureGatesST extends AbstractST {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final int kafkaReplicas = 3;
 
-        // as kraft is included in CO Feature gates, kafka broker can take both roles (Controller and Broker)
-        setupClusterOperatorWithFeatureGate("+UseKRaft");
+        setupClusterOperatorWithFeatureGate("");
 
         final Kafka kafkaCr = KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), kafkaReplicas)
             .editOrNewMetadata()
@@ -82,8 +81,6 @@ public class FeatureGatesST extends AbstractST {
                 .withNamespace(testStorage.getNamespaceName())
             .endMetadata()
             .build();
-
-        kafkaCr.getSpec().getEntityOperator().setTopicOperator(null); // The builder cannot disable the EO. It has to be done this way.
 
         resourceManager.createResourceWithWait(
             KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), kafkaReplicas).build(),

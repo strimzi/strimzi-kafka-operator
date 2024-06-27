@@ -13,7 +13,12 @@ The purpose of feature gates is to facilitate the trial and testing of a feature
 The state (enabled or disabled) of a feature gate may vary by default, depending on its maturity level.
 
 As a feature gate graduates and reaches General Availability (GA), it transitions to an enabled state by default and becomes a permanent part of the Strimzi deployment.
-A feature gate at the GA stage cannot be disabled. 
+A feature gate at the GA stage cannot be disabled.
+
+The supported feature gates are applicable to all Strimzi operators.
+While a particular feature gate might be used by one operator and ignored by the others, it can still be configured in all operators.
+When deploying the User Operator and Topic Operator within the context of the`Kafka` custom resource, the Cluster Operator automatically propagates the feature gates configuration to them.
+When the User Operator and Topic Operator are deployed standalone, without a Cluster Operator available to configure the feature gates, they must be directly configured within their deployments.
 
 == Graduated feature gates (GA)
 
@@ -60,7 +65,7 @@ A node pool refers to a distinct group of Kafka nodes within a Kafka cluster.
 Each pool has its own unique configuration, which includes mandatory settings such as the number of replicas, storage configuration, and a list of assigned roles.
 You can assign the _controller_ role, _broker_ role, or both roles to all nodes in the pool using the `.spec.roles` property.
 When used with a ZooKeeper-based Apache Kafka cluster, it must be set to the `broker` role.
-When used with the `UseKRaft` feature gate, it can be set to `broker`, `controller`, or both.
+When used with a KRaft-based Apache Kafka cluster, it can be set to `broker`, `controller`, or both.
 
 In addition, a node pool can have its own configuration of resource requests and limits, Java JVM options, and resource templates.
 Configuration options not set in the `KafkaNodePool` resource are inherited from the `Kafka` custom resource.
@@ -84,36 +89,22 @@ With unidirectional mode, you create Kafka topics using the `KafkaTopic` resourc
 Any configuration changes to a topic outside the `KafkaTopic` resource are reverted.
 For more information on topic management, see xref:ref-operator-topic-str[].
 
+[id='ref-operator-use-kraft-feature-gate-{context}']
+=== UseKRaft feature gate
+
+The `UseKRaft` feature gate introduced the KRaft (Kafka Raft metadata) mode for running Apache Kafka clusters without ZooKeeper.
+ZooKeeper and KRaft are mechanisms used to manage metadata and coordinate operations in Kafka clusters.
+KRaft mode eliminates the need for an external coordination service like ZooKeeper.
+In KRaft mode, Kafka nodes take on the roles of brokers, controllers, or both.
+They collectively manage the metadata, which is replicated across partitions.
+Controllers are responsible for coordinating operations and maintaining the cluster's state.
+For more information on using KRraft, see xref:assembly-kraft-mode-{context}[].
+
 == Stable feature gates (Beta)
 
 Stable feature gates have reached a beta level of maturity, and are generally enabled by default for all users.
 Stable feature gates are production-ready, but they can still be disabled.
-
-[id='ref-operator-use-kraft-feature-gate-{context}']
-=== UseKRaft feature gate
-
-The `UseKRaft` feature gate has a default state of _enabled_.
-
-The `UseKRaft` feature gate deploys a Kafka cluster in KRaft (Kafka Raft metadata) mode without ZooKeeper.
-ZooKeeper and KRaft are mechanisms used to manage metadata and coordinate operations in Kafka clusters. 
-KRaft mode eliminates the need for an external coordination service like ZooKeeper. 
-In KRaft mode, Kafka nodes take on the roles of brokers, controllers, or both. 
-They collectively manage the metadata, which is replicated across partitions. 
-Controllers are responsible for coordinating operations and maintaining the cluster's state.
-
-To deploy a Kafka cluster in KRaft mode, you must use the `KafkaNodePool` resources.
-For more details and examples, see xref:deploying-kafka-node-pools-{context}[].
-The `Kafka` custom resource using KRaft mode must also have the annotation `strimzi.io/kraft: enabled`.
-
-Currently, the KRaft mode in Strimzi has the following major limitations:
-
-* JBOD storage is supported only with Apache Kafka 3.7.0 and higher.
-  It is considered early-access in Apache Kafka 3.7.x.
-  (Storage with `type: jbod` configuration can be used also with older Kafka versions, but the JBOD array can contain only one disk.)
-* Scaling of KRaft controller-only nodes up or down is not supported.
-
-.Disabling the UseKRaft feature gate
-To disable the `UseKRaft` feature gate, specify `-UseKRaft` in the `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.
+Currently, there are no beta level feature gates.
 
 == Early access feature gates (Alpha)
 
@@ -127,15 +118,19 @@ The `ContinueReconciliationOnManualRollingUpdateFailure` feature gate has a defa
 
 The `ContinueReconciliationOnManualRollingUpdateFailure` feature gate allows the Cluster Operator to continue a reconciliation if the manual rolling update of the operands fails.
 It applies to the following operands that support manual rolling updates using the `strimzi.io/manual-rolling-update` annotation:
+
 * ZooKeeper
 * Kafka
 * Kafka Connect
 * Kafka MirrorMaker 2
 
-Continuing the reconciliation after the manual rolling update failure allows the operator to recover from various situations that might prevent the manual rolling update from succeeding.
+Continuing the reconciliation after a manual rolling update failure allows the operator to recover from various situations that might prevent the update from succeeding.
 For example, a missing Persistent Volume Claim (PVC) or Persistent Volume (PV) might cause the manual rolling update to fail.
-But the PVCs and PVs are created only in a later stage of the reconciliation.
-Continuing the reconciliation after the failure would allow to recreate the missing PVC or PV and recover from the failure.
+However, the PVCs and PVs are created only in a later stage of the reconciliation.
+By continuing the reconciliation after this failure, the process can recreate the missing PVC or PV and recover.
+
+The `ContinueReconciliationOnManualRollingUpdateFailure` feature gate is used by the Cluster Operator.
+It is ignored by the User and Topic Operators.
 
 .Enabling the ContinueReconciliationOnManualRollingUpdateFailure feature gate
 To enable the `ContinueReconciliationOnManualRollingUpdateFailure` feature gate, specify `+ContinueReconciliationOnManualRollingUpdateFailure` in the `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.

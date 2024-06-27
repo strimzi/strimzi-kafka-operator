@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static io.strimzi.operator.cluster.model.TemplateUtils.addAdditionalVolumeMounts;
 import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.API_TO_ADMIN_NAME;
@@ -50,7 +51,6 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
 
     protected static final String TOPIC_OPERATOR_CONTAINER_NAME = "topic-operator";
     private static final String NAME_SUFFIX = "-entity-topic-operator";
-    private static final String CERT_SECRET_KEY_NAME = "entity-operator";
 
     private static final String LOG_AND_METRICS_CONFIG_VOLUME_NAME = "entity-topic-operator-metrics-and-logging";
     private static final String LOG_AND_METRICS_CONFIG_VOLUME_MOUNT = "/opt/topic-operator/custom-config/";
@@ -81,13 +81,14 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
     /* test */ static final String ENV_VAR_CRUISE_CONTROL_AUTH_ENABLED = "STRIMZI_CRUISE_CONTROL_AUTH_ENABLED";
 
     // Kafka bootstrap servers can't be specified in the JSON
-    /* test */ String kafkaBootstrapServers;
+    /* test */ final String kafkaBootstrapServers;
     private boolean cruiseControlEnabled;
     private boolean rackAwarenessEnabled;
+    private String featureGatesEnvVarValue;
 
     private String watchedNamespace;
-    /* test */ int reconciliationIntervalMs;
-    /* test */ String resourceLabels;
+    /* test */ Long reconciliationIntervalMs;
+    /* test */ final String resourceLabels;
     private ResourceTemplate templateRoleBinding;
 
     private LoggingModel logging;
@@ -104,22 +105,24 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
 
         // create a default configuration
         this.kafkaBootstrapServers = KafkaResources.bootstrapServiceName(cluster) + ":" + KafkaCluster.REPLICATION_PORT;
-        this.reconciliationIntervalMs = EntityTopicOperatorSpec.DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS * 1_000;
         this.resourceLabels = ModelUtils.defaultResourceLabels(cluster);
     }
 
     /**
      * Create an Entity Topic Operator from given desired resource. When Topic Operator (Or Entity Operator) are not
      * enabled, it returns null.
-     * @param reconciliation The reconciliation
-     * @param kafkaAssembly desired resource with cluster configuration containing the Entity Topic Operator one
-     *                      @param sharedEnvironmentProvider Shared environment provider
+     *
+     * @param reconciliation                The reconciliation marker
+     * @param kafkaAssembly                 Desired resource with cluster configuration containing the Entity Topic Operator one
+     * @param sharedEnvironmentProvider     Shared environment provider
+     * @param config                        Cluster Operator configuration
      *
      * @return Entity Topic Operator instance, null if not configured
      */
     public static EntityTopicOperator fromCrd(Reconciliation reconciliation,
                                               Kafka kafkaAssembly,
-                                              SharedEnvironmentProvider sharedEnvironmentProvider) {
+                                              SharedEnvironmentProvider sharedEnvironmentProvider,
+                                              ClusterOperatorConfig config) {
         if (kafkaAssembly.getSpec().getEntityOperator() != null
                 && kafkaAssembly.getSpec().getEntityOperator().getTopicOperator() != null) {
             EntityTopicOperatorSpec topicOperatorSpec = kafkaAssembly.getSpec().getEntityOperator().getTopicOperator();
@@ -131,7 +134,7 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
             }
             result.image = image;
             result.watchedNamespace = topicOperatorSpec.getWatchedNamespace() != null ? topicOperatorSpec.getWatchedNamespace() : kafkaAssembly.getMetadata().getNamespace();
-            result.reconciliationIntervalMs = topicOperatorSpec.getReconciliationIntervalSeconds() * 1_000;
+            result.reconciliationIntervalMs = configuredReconciliationIntervalMs(topicOperatorSpec);
             result.logging = new LoggingModel(topicOperatorSpec, result.getClass().getSimpleName(), true, false);
             result.gcLoggingEnabled = topicOperatorSpec.getJvmOptions() == null ? JvmOptions.DEFAULT_GC_LOGGING_ENABLED : topicOperatorSpec.getJvmOptions().isGcLoggingEnabled();
             result.jvmOptions = topicOperatorSpec.getJvmOptions();
@@ -146,6 +149,7 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
             
             result.cruiseControlEnabled = kafkaAssembly.getSpec().getCruiseControl() != null;
             result.rackAwarenessEnabled = result.cruiseControlEnabled && kafkaAssembly.getSpec().getKafka().getRack() != null;
+            result.featureGatesEnvVarValue = config.featureGates().toEnvironmentVariable();
 
             return result;
         } else {
@@ -153,8 +157,14 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
         }
     }
 
-    protected Container createContainer(ImagePullPolicy imagePullPolicy) {
+    @SuppressWarnings("deprecation")
+    private static Long configuredReconciliationIntervalMs(EntityTopicOperatorSpec spec) {
+        // if they are both set reconciliationIntervalMs takes precedence
+        return (spec.getReconciliationIntervalMs() != null) ? spec.getReconciliationIntervalMs()
+            : (spec.getReconciliationIntervalSeconds() != null) ? TimeUnit.SECONDS.toMillis(spec.getReconciliationIntervalSeconds()) : null;
+    }
 
+    protected Container createContainer(ImagePullPolicy imagePullPolicy) {
         return ContainerUtils.createContainer(
                 TOPIC_OPERATOR_CONTAINER_NAME,
                 image,
@@ -177,11 +187,18 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_RESOURCE_LABELS, resourceLabels));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BOOTSTRAP_SERVERS, kafkaBootstrapServers));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_WATCHED_NAMESPACE, watchedNamespace));
-        varList.add(ContainerUtils.createEnvVar(ENV_VAR_FULL_RECONCILIATION_INTERVAL_MS, Integer.toString(reconciliationIntervalMs)));
+        if (reconciliationIntervalMs != null) {
+            varList.add(ContainerUtils.createEnvVar(ENV_VAR_FULL_RECONCILIATION_INTERVAL_MS, Long.toString(reconciliationIntervalMs)));
+        }
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_SECURITY_PROTOCOL, EntityTopicOperatorSpec.DEFAULT_SECURITY_PROTOCOL));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_TLS_ENABLED, Boolean.toString(true)));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_GC_LOG_ENABLED, Boolean.toString(gcLoggingEnabled)));
-        
+
+        // Add feature gates configuration if not empty
+        if (featureGatesEnvVarValue != null && !featureGatesEnvVarValue.isEmpty()) {
+            varList.add(ContainerUtils.createEnvVar(ClusterOperatorConfig.FEATURE_GATES.key(), featureGatesEnvVarValue));
+        }
+
         // Add environment variables required for Cruise Control integration
         if (this.cruiseControlEnabled) {
             varList.add(ContainerUtils.createEnvVar(ENV_VAR_CRUISE_CONTROL_ENABLED, Boolean.toString(cruiseControlEnabled)));
@@ -267,7 +284,7 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
      */
     public Secret generateCertificatesSecret(ClusterCa clusterCa, Secret existingSecret, boolean isMaintenanceTimeWindowsSatisfied) {
         return CertUtils.buildTrustedCertificateSecret(reconciliation, clusterCa, existingSecret, namespace, KafkaResources.entityTopicOperatorSecretName(cluster), componentName,
-            CERT_SECRET_KEY_NAME, labels, ownerReference, isMaintenanceTimeWindowsSatisfied);
+            EntityOperator.COMPONENT_TYPE, labels, ownerReference, isMaintenanceTimeWindowsSatisfied);
     }
 
     /**

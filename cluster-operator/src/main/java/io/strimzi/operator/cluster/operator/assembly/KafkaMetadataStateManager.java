@@ -55,13 +55,11 @@ public class KafkaMetadataStateManager {
      * Constructor
      *
      * @param reconciliation Reconciliation information
-     * @param kafkaCr instance of the Kafka CR
-     * @param useKRaftFeatureGateEnabled if the UseKRaft feature gate is enabled on the operator
+     * @param kafkaCr        instance of the Kafka CR
      */
     public KafkaMetadataStateManager(
             Reconciliation reconciliation,
-            Kafka kafkaCr,
-            boolean useKRaftFeatureGateEnabled) {
+            Kafka kafkaCr) {
         this.reconciliation = reconciliation;
         this.kraftAnno = kraftAnnotation(kafkaCr);
         KafkaMetadataState metadataStateFromKafkaCr = kafkaCr.getStatus() != null ? kafkaCr.getStatus().getKafkaMetadataState() : null;
@@ -71,10 +69,7 @@ public class KafkaMetadataStateManager {
         } else {
             this.metadataState = metadataStateFromKafkaCr;
         }
-        if (!useKRaftFeatureGateEnabled && (isKRaftAnnoEnabled() || isKRaftAnnoMigration())) {
-            LOGGER.errorCr(reconciliation, "Trying to reconcile a KRaft enabled cluster or migrating to KRaft without the useKRaft feature gate enabled");
-            throw new IllegalArgumentException("Failed to reconcile a KRaft enabled cluster or migration to KRaft because useKRaft feature gate is disabled");
-        }
+
         LOGGER.debugCr(reconciliation, "Loaded metadata state from the Kafka CR [{}] and strimzi.io/kraft annotation [{}]", this.metadataState, this.kraftAnno);
     }
 

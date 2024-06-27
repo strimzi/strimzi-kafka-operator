@@ -21,7 +21,6 @@ adjust:
 
 /smoke:
   summary: Run smoke strimzi test suite
-  tags: [strimzi, kafka, kraft, smoke]
   duration: 40m
   tier: 1
   environment+:
@@ -29,31 +28,34 @@ adjust:
 
 /upgrade:
   summary: Run upgrade strimzi test suite
-  tags: [strimzi, kafka, kraft, upgrade]
   duration: 5h
   tier: 2
   environment+:
-    TEST_PROFILE: upgrade
+    TEST_PROFILE: kraft_upgrade
 
 /regression-operators:
   summary: Run regression strimzi test suite
-  tags: [strimzi, kafka, kraft, regression, operators]
   duration: 10h
   tier: 2
   environment+:
     TEST_PROFILE: operators
 
-/regression-components:
+/regression-brokers-and-security:
   summary: Run regression strimzi test suite
-  tags: [strimzi, kafka, kraft, regression, components]
   duration: 12h
   tier: 2
   environment+:
-    TEST_PROFILE: components
+    TEST_PROFILE: brokers-and-security
+
+/regression-operands:
+  summary: Run regression strimzi test suite
+  duration: 12h
+  tier: 2
+  environment+:
+    TEST_PROFILE: operands
 
 /acceptance:
   summary: Run acceptance strimzi test suite
-  tags: [strimzi, kafka, kraft, acceptance]
   duration: 5h
   tier: 2
   environment+:
@@ -61,7 +63,6 @@ adjust:
 
 /sanity:
   summary: Run sanity strimzi test suite
-  tags: [strimzi, kafka, kraft, sanity]
   duration: 5h
   tier: 2
   environment+:
@@ -69,7 +70,6 @@ adjust:
 
 /performance:
   summary: Run performance strimzi test suite
-  tags: [strimzi, kafka, kraft, performance]
   duration: 24h
   tier: 1
   environment+:
@@ -78,9 +78,17 @@ adjust:
 
 /performance-capacity:
   summary: Run performance capacity strimzi test suite
-  tags: [strimzi, kafka, kraft, performance, performance-capacity]
   duration: 24h
   tier: 1
   environment+:
     TEST_PROFILE: performance-capacity
     PARALLELISM_ENABLED: false
+
+/performance-topic-operator-capacity:
+  summary: Run topic operator performance capacity strimzi test suite
+  duration: 24h
+  tier: 1
+  environment+:
+    TEST_PROFILE: performance-capacity
+    PARALLELISM_ENABLED: false
+    TESTS: TopicOperatorPerformance#testCapacity

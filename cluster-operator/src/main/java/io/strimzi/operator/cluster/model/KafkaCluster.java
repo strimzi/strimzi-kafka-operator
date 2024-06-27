@@ -61,6 +61,8 @@ import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationCustom;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationOAuth;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
+import io.strimzi.api.kafka.model.kafka.quotas.QuotasPlugin;
+import io.strimzi.api.kafka.model.kafka.quotas.QuotasPluginStrimzi;
 import io.strimzi.api.kafka.model.kafka.tieredstorage.TieredStorage;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolStatus;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
@@ -81,6 +83,7 @@ import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.ClientsCa;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.model.StatusUtils;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
@@ -111,6 +114,8 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
 
     protected static final String ENV_VAR_KAFKA_INIT_EXTERNAL_ADDRESS = "EXTERNAL_ADDRESS";
     private static final String ENV_VAR_KAFKA_METRICS_ENABLED = "KAFKA_METRICS_ENABLED";
+    private static final String ENV_VAR_STRIMZI_OPA_AUTHZ_TRUSTED_CERTS = "STRIMZI_OPA_AUTHZ_TRUSTED_CERTS";
+    private static final String ENV_VAR_STRIMZI_KEYCLOAK_AUTHZ_TRUSTED_CERTS = "STRIMZI_KEYCLOAK_AUTHZ_TRUSTED_CERTS";
 
     // For port names in services, a 'tcp-' prefix is added to support Istio protocol selection
     // This helps Istio to avoid using a wildcard listener and instead present IP:PORT pairs which effects
@@ -204,6 +209,11 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      */
     public static final String BROKER_METADATA_STATE_FILENAME = "metadata.state";
 
+    /**
+     * Key under which the class of the quota plugin can be configured
+     */
+    private static final String CLIENT_CALLBACK_CLASS_OPTION = "client.quota.callback.class";
+
     // Kafka configuration
     private Rack rack;
     private String initImage;
@@ -216,6 +226,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     private CruiseControlMetricsReporter ccMetricsReporter;
     private MetricsModel metrics;
     private LoggingModel logging;
+    private QuotasPlugin quotas;
     /* test */ KafkaConfiguration configuration;
     private KafkaMetadataConfigurationState kafkaMetadataConfigState;
 
@@ -336,6 +347,12 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         // Handle Kafka broker configuration
         KafkaConfiguration configuration = new KafkaConfiguration(reconciliation, kafkaClusterSpec.getConfig().entrySet());
         validateConfiguration(reconciliation, kafka, result.kafkaVersion, configuration);
+
+        if (kafkaClusterSpec.getQuotas() != null) {
+            validateConfigurationOfQuotasPlugin(configuration, kafkaClusterSpec.getQuotas(), result.warningConditions);
+            result.quotas = kafkaClusterSpec.getQuotas();
+        }
+
         result.configuration = configuration;
 
         // We set the user-configured inter.broker.protocol.version if needed (when not set by the user)
@@ -400,6 +417,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         if (kafkaClusterSpec.getTieredStorage() != null) {
             result.tieredStorage = kafkaClusterSpec.getTieredStorage();
         }
+
         // Should run at the end when everything is set
         KafkaSpecChecker specChecker = new KafkaSpecChecker(kafkaSpec, versions, result);
         result.warningConditions.addAll(specChecker.run(kafkaMetadataConfigState.isKRaft()));
@@ -548,6 +566,34 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         }
     }
 
+    /**
+     * Validates the user configuration with the configuration of quotas plugin
+     * In case that user configured the client.quota.callback.class option and the {@link QuotasPluginStrimzi} is configured as well,
+     * the warning is raised and the option is removed
+     *
+     * @param configuration     {@link KafkaConfiguration} with user specified config
+     * @param quotasPlugin      configuration of the quotas plugin
+     * @param warnings          list of warnings
+     */
+    private static void validateConfigurationOfQuotasPlugin(KafkaConfiguration configuration, QuotasPlugin quotasPlugin, List<Condition> warnings) {
+        if (quotasPlugin != null) {
+            if (quotasPlugin instanceof QuotasPluginStrimzi quotasPluginStrimzi) {
+                if (quotasPluginStrimzi.getMinAvailableBytesPerVolume() != null && quotasPluginStrimzi.getMinAvailableRatioPerVolume() != null) {
+                    throw new InvalidResourceException("You cannot configure both `minAvailableBytesPerVolume` and `minAvailableRatioPerVolume`, they are mutually exclusive.");
+                }
+            }
+
+            if (configuration.getConfigOption(CLIENT_CALLBACK_CLASS_OPTION) != null) {
+                warnings.add(StatusUtils.buildWarningCondition("QuotasPluginConflict",
+                    String.format("Quotas plugin class cannot be configured in .spec.kafka.config, " +
+                        "when .spec.kafka.quotas contains configuration of `%s` plugin. " +
+                        "The plugin from .spec.kafka.quotas will be used", quotasPlugin.getType())));
+
+                configuration.removeConfigOption(CLIENT_CALLBACK_CLASS_OPTION);
+            }
+        }
+    }
+
     protected static void validateIntConfigProperty(String propertyName, KafkaClusterSpec kafkaClusterSpec, long numberOfBrokers) {
         String orLess = numberOfBrokers > 1 ? " or less" : "";
         if (kafkaClusterSpec.getConfig() != null && kafkaClusterSpec.getConfig().get(propertyName) != null) {
@@ -687,7 +733,8 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                     ListenersUtils.bootstrapLabels(listener),
                     ListenersUtils.bootstrapAnnotations(listener),
                     ListenersUtils.ipFamilyPolicy(listener),
-                    ListenersUtils.ipFamilies(listener)
+                    ListenersUtils.ipFamilies(listener),
+                    ListenersUtils.publishNotReadyAddresses(listener)
             );
 
             if (KafkaListenerType.LOADBALANCER == listener.getType()) {
@@ -772,7 +819,8 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                                 ListenersUtils.brokerLabels(listener, node.nodeId()),
                                 ListenersUtils.brokerAnnotations(listener, node.nodeId()),
                                 ListenersUtils.ipFamilyPolicy(listener),
-                                ListenersUtils.ipFamilies(listener)
+                                ListenersUtils.ipFamilies(listener),
+                                ListenersUtils.publishNotReadyAddresses(listener)
                         );
 
                         if (KafkaListenerType.LOADBALANCER == listener.getType()) {
@@ -1306,7 +1354,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
 
             if (isListenerWithOAuth(listener))   {
                 KafkaListenerAuthenticationOAuth oauth = (KafkaListenerAuthenticationOAuth) listener.getAuth();
-                volumeList.addAll(AuthenticationUtils.configureOauthCertificateVolumes("oauth-" + ListenersUtils.identifier(listener), oauth.getTlsTrustedCertificates(), isOpenShift));
+                CertUtils.createTrustedCertificatesVolumes(volumeList, oauth.getTlsTrustedCertificates(), isOpenShift, "oauth-" + ListenersUtils.identifier(listener));
             }
 
             if (isListenerWithCustomAuth(listener)) {
@@ -1316,11 +1364,11 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         }
 
         if (authorization instanceof KafkaAuthorizationOpa opaAuthz) {
-            volumeList.addAll(AuthenticationUtils.configureOauthCertificateVolumes("authz-opa", opaAuthz.getTlsTrustedCertificates(), isOpenShift));
+            CertUtils.createTrustedCertificatesVolumes(volumeList, opaAuthz.getTlsTrustedCertificates(), isOpenShift, "authz-opa");
         }
 
         if (authorization instanceof KafkaAuthorizationKeycloak keycloakAuthz) {
-            volumeList.addAll(AuthenticationUtils.configureOauthCertificateVolumes("authz-keycloak", keycloakAuthz.getTlsTrustedCertificates(), isOpenShift));
+            CertUtils.createTrustedCertificatesVolumes(volumeList, keycloakAuthz.getTlsTrustedCertificates(), isOpenShift, "authz-keycloak");
         }
 
         return volumeList;
@@ -1380,7 +1428,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
 
             if (isListenerWithOAuth(listener))   {
                 KafkaListenerAuthenticationOAuth oauth = (KafkaListenerAuthenticationOAuth) listener.getAuth();
-                volumeMountList.addAll(AuthenticationUtils.configureOauthCertificateVolumeMounts("oauth-" + identifier, oauth.getTlsTrustedCertificates(), TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/oauth-" + identifier + "-certs"));
+                CertUtils.createTrustedCertificatesVolumeMounts(volumeMountList, oauth.getTlsTrustedCertificates(), TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/oauth-" + identifier + "-certs/", "oauth-" + identifier);
             }
 
             if (isListenerWithCustomAuth(listener)) {
@@ -1390,11 +1438,11 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         }
 
         if (authorization instanceof KafkaAuthorizationOpa opaAuthz) {
-            volumeMountList.addAll(AuthenticationUtils.configureOauthCertificateVolumeMounts("authz-opa", opaAuthz.getTlsTrustedCertificates(), TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/authz-opa-certs"));
+            CertUtils.createTrustedCertificatesVolumeMounts(volumeMountList, opaAuthz.getTlsTrustedCertificates(), TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/authz-opa-certs/", "authz-opa");
         }
 
         if (authorization instanceof KafkaAuthorizationKeycloak keycloakAuthz) {
-            volumeMountList.addAll(AuthenticationUtils.configureOauthCertificateVolumeMounts("authz-keycloak", keycloakAuthz.getTlsTrustedCertificates(), TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/authz-keycloak-certs"));
+            CertUtils.createTrustedCertificatesVolumeMounts(volumeMountList, keycloakAuthz.getTlsTrustedCertificates(), TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/authz-keycloak-certs/", "authz-keycloak");
         }
         
         addAdditionalVolumeMounts(volumeMountList, additionalVolumeMounts);       
@@ -1527,10 +1575,26 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
             if (isListenerWithOAuth(listener))   {
                 KafkaListenerAuthenticationOAuth oauth = (KafkaListenerAuthenticationOAuth) listener.getAuth();
 
+                if (oauth.getTlsTrustedCertificates() != null && !oauth.getTlsTrustedCertificates().isEmpty()) {
+                    varList.add(ContainerUtils.createEnvVar("STRIMZI_" + ListenersUtils.envVarIdentifier(listener) + "_OAUTH_TRUSTED_CERTS", CertUtils.trustedCertsEnvVar(oauth.getTlsTrustedCertificates())));
+                }
+
                 if (oauth.getClientSecret() != null)    {
                     varList.add(ContainerUtils.createEnvVarFromSecret("STRIMZI_" + ListenersUtils.envVarIdentifier(listener) + "_OAUTH_CLIENT_SECRET", oauth.getClientSecret().getSecretName(), oauth.getClientSecret().getKey()));
                 }
             }
+        }
+
+        if (authorization instanceof KafkaAuthorizationOpa opaAuthz
+                && opaAuthz.getTlsTrustedCertificates() != null
+                && !opaAuthz.getTlsTrustedCertificates().isEmpty()) {
+            varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_OPA_AUTHZ_TRUSTED_CERTS, CertUtils.trustedCertsEnvVar(opaAuthz.getTlsTrustedCertificates())));
+        }
+
+        if (authorization instanceof KafkaAuthorizationKeycloak keycloakAuthz
+                && keycloakAuthz.getTlsTrustedCertificates() != null
+                && !keycloakAuthz.getTlsTrustedCertificates().isEmpty()) {
+            varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_KEYCLOAK_AUTHZ_TRUSTED_CERTS, CertUtils.trustedCertsEnvVar(keycloakAuthz.getTlsTrustedCertificates())));
         }
 
         varList.addAll(jmx.envVars());
@@ -1726,6 +1790,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                         .withAuthorization(cluster, authorization)
                         .withCruiseControl(cluster, ccMetricsReporter, node.broker())
                         .withTieredStorage(cluster, tieredStorage)
+                        .withQuotas(cluster, quotas)
                         .withUserConfiguration(configuration, node.broker() && ccMetricsReporter != null);
         withZooKeeperOrKRaftConfiguration(pool, node, builder);
         return builder.build().trim();
@@ -1879,6 +1944,13 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      */
     public LoggingModel logging()   {
         return logging;
+    }
+
+    /**
+     * @return  QuotasPlugin instance for configuring quotas
+     */
+    public QuotasPlugin quotas() {
+        return quotas;
     }
 
     /**

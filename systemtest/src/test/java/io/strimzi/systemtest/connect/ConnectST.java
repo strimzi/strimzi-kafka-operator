@@ -38,7 +38,6 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
-import io.strimzi.systemtest.annotations.KindIPv6NotSupported;
 import io.strimzi.systemtest.annotations.MicroShiftNotSupported;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.kafkaclients.externalClients.ExternalKafkaClient;
@@ -776,11 +775,6 @@ class ConnectST extends AbstractST {
     }
 
     @ParallelNamespaceTest
-    @KindIPv6NotSupported("error checking push permissions -- make sure you entered the correct tag name, and that you are " +
-        "authenticated correctly, and try again: checking push permission for \"/namespace-0/strimzi-sts-connect-build:2020576698\": " +
-        "creating push check transport for index.docker.io failed: Get \"https://index.docker.io/v2/\": dial tcp: lookup index.docker.io on " +
-        "[fd00:10:96::a]:53: server misbehaving; Get \"http://index.docker.io/v2/\": dial tcp: lookup index.docker.io on [fd00:10:96::a]:53: " +
-        "server misbehaving")
     @Tag(CONNECTOR_OPERATOR)
     @Tag(INTERNAL_CLIENTS_USED)
     @Tag(ACCEPTANCE)
@@ -1121,7 +1115,8 @@ class ConnectST extends AbstractST {
 
         LOGGER.info("Check if replicas is set to {}, observed generation is higher - for spec and status - naming prefix should be same", scaleTo);
 
-        StUtils.waitUntilSupplierIsSatisfied(() -> kubeClient(testStorage.getNamespaceName()).listPods(Labels.STRIMZI_NAME_LABEL, KafkaConnectResources.componentName(testStorage.getClusterName())).size() == scaleTo &&
+        StUtils.waitUntilSupplierIsSatisfied("KafkaConnect expected size (status, replicas, pod count)",
+            () -> kubeClient(testStorage.getNamespaceName()).listPods(Labels.STRIMZI_NAME_LABEL, KafkaConnectResources.componentName(testStorage.getClusterName())).size() == scaleTo &&
                 KafkaConnectResource.kafkaConnectClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getSpec().getReplicas() == scaleTo &&
                 KafkaConnectResource.kafkaConnectClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus().getReplicas() == scaleTo);
 

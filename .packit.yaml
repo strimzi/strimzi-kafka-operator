@@ -55,7 +55,6 @@ jobs:
       - regression
       - operators
       - regression-operators
-      - ro
     tf_extra_params:
       test:
         tmt:
@@ -64,7 +63,7 @@ jobs:
 
   - job: tests
     trigger: pull_request
-    identifier: "regression-components"
+    identifier: "regression-brokers-and-security"
     targets:
       - centos-stream-9-x86_64
       - centos-stream-9-aarch64
@@ -73,18 +72,17 @@ jobs:
     env: { IP_FAMILY: ipv4 }
     labels:
       - regression
-      - components
-      - regression-components
-      - rc
+      - brokers-and-security
+      - regression-brokers-and-security
+      - bas
     tf_extra_params:
       test:
         tmt:
-          name: regression-components
-  ###############################################################################################
+          name: regression-brokers-and-security
 
   - job: tests
     trigger: pull_request
-    identifier: "kraft-operators"
+    identifier: "regression-operands"
     targets:
       - centos-stream-9-x86_64
       - centos-stream-9-aarch64
@@ -92,34 +90,13 @@ jobs:
     manual_trigger: true
     env: { IP_FAMILY: ipv4 }
     labels:
-      - kraft
-      - operators
-      - kraft-operators
-      - ko
+      - regression
+      - operands
+      - regression-operands
     tf_extra_params:
       test:
         tmt:
-          name: kraft-operators
-  ###############################################################################################
-
-  - job: tests
-    trigger: pull_request
-    identifier: "kraft-components"
-    targets:
-      - centos-stream-9-x86_64
-      - centos-stream-9-aarch64
-    skip_build: true
-    manual_trigger: true
-    env: { IP_FAMILY: ipv4 }
-    labels:
-      - kraft
-      - components
-      - kraft-components
-      - kc
-    tf_extra_params:
-      test:
-        tmt:
-          name: kraft-components
+          name: regression-operands
   ###############################################################################################
 
   - job: tests
@@ -169,6 +146,7 @@ jobs:
     env: { IP_FAMILY: ipv6 }
     labels:
       - acceptance_ipv6
+      - ipv6
     tf_extra_params:
       test:
         tmt:
@@ -185,6 +163,7 @@ jobs:
     env: { IP_FAMILY: dual }
     labels:
       - acceptance_dual
+      - dual
     tf_extra_params:
       test:
         tmt:
@@ -203,6 +182,7 @@ jobs:
     env: { IP_FAMILY: ipv4 }
     labels:
       - performance
+      - performance-common
     tf_extra_params:
       settings:
         pipeline:
@@ -220,6 +200,7 @@ jobs:
     manual_trigger: true
     env: { IP_FAMILY: ipv4 }
     labels:
+      - performance
       - performance-capacity
     tf_extra_params:
       settings:
@@ -228,3 +209,22 @@ jobs:
       test:
         tmt:
           name: performance-capacity
+  - job: tests
+    trigger: pull_request
+    identifier: "performance-topic-operator-capacity"
+    targets:
+      - centos-stream-9-x86_64
+      - centos-stream-9-aarch64
+    skip_build: true
+    manual_trigger: true
+    env: { IP_FAMILY: ipv4 }
+    labels:
+      - performance
+      - performance-topic-operator-capacity
+    tf_extra_params:
+      settings:
+        pipeline:
+          timeout: 1440
+      test:
+        tmt:
+          name: performance-topic-operator-capacity

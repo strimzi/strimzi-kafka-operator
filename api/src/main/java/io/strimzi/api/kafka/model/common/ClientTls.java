@@ -16,8 +16,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static java.util.Collections.emptyMap;
-
 /**
  * Represent the TLS configuration for all the Clients(KafkaConnect, KafkaBridge, KafkaMirrorMaker, KafkaMirrorMaker2).
  */
@@ -45,13 +43,13 @@ public class ClientTls implements UnknownPropertyPreserving {
 
     @Override
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties != null ? this.additionalProperties : emptyMap();
+        return this.additionalProperties != null ? this.additionalProperties : Map.of();
     }
 
     @Override
     public void setAdditionalProperty(String name, Object value) {
         if (this.additionalProperties == null) {
-            this.additionalProperties = new HashMap<>(1);
+            this.additionalProperties = new HashMap<>(2);
         }
         this.additionalProperties.put(name, value);
     }

@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.performance.gather.schedulers;
 
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.performance.PerformanceConstants;
 import io.strimzi.systemtest.performance.gather.collectors.TopicOperatorMetricsCollector;
 import org.apache.logging.log4j.LogManager;
@@ -42,7 +43,7 @@ public class TopicOperatorMetricsCollectionScheduler extends BaseMetricsCollecti
     @Override
     protected void collectMetrics() {
         LOGGER.debug("Collecting metrics with selector: {}", this.selector);
-        this.topicOperatorMetricsCollector.collectMetricsFromPods();
+        this.topicOperatorMetricsCollector.collectMetricsFromPods(TestConstants.METRICS_COLLECT_TIMEOUT);
         LOGGER.debug("Metrics collected.");
     }
 

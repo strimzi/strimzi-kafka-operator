@@ -36,7 +36,7 @@ public class KafkaBridgeHttpConfig implements UnknownPropertyPreserving {
     public static final String HTTP_DEFAULT_HOST = "0.0.0.0";
     private int port = HTTP_DEFAULT_PORT;
     private KafkaBridgeHttpCors cors;
-    private Map<String, Object> additionalProperties = new HashMap<>(0);
+    private Map<String, Object> additionalProperties;
 
     public KafkaBridgeHttpConfig() {
     }
@@ -68,11 +68,14 @@ public class KafkaBridgeHttpConfig implements UnknownPropertyPreserving {
 
     @Override
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties;
+        return this.additionalProperties != null ? this.additionalProperties : Map.of();
     }
 
     @Override
     public void setAdditionalProperty(String name, Object value) {
+        if (this.additionalProperties == null) {
+            this.additionalProperties = new HashMap<>(2);
+        }
         this.additionalProperties.put(name, value);
     }
 }

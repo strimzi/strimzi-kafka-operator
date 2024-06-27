@@ -6,6 +6,5 @@ The examples in this directory demonstrate how you can use Kraft (ZooKeeper-less
 * The [`kafka-with-dual-role-nodes.yaml`](kafka-with-dual-role-nodes.yaml) deploys a Kafka cluster with one pool of KRaft nodes that share the _broker_ and _controller_ roles.
 * The [`kafka-single-node.yaml`](kafka-single-node.yaml) deploys a Kafka cluster with a single Kafka node that has both _broker_ and _controller_ roles.
 
-To use KRaft, ensure that the `UseKRaft` feature gate is not disabled.
 Please note that ZooKeeper-less Apache Kafka is still under development and has some limitations.
 For instance, scaling of controller node or JBOD storage (you can specify `type: jbod` storage in Strimzi custom resources, but it should contain only a single volume) are not supported.

@@ -95,7 +95,7 @@ spec:
     bootstrapServers: my-cluster-source-kafka-bootstrap:9092 # <7>
     tls: # <8>
       trustedCertificates:
-      - certificate: ca.crt
+      - pattern: "*.crt"
         secretName: my-cluster-source-cluster-ca-cert
   - alias: "my-cluster-target" # <9>
     authentication: # <10>
@@ -111,7 +111,7 @@ spec:
       status.storage.replication.factor: 1
     tls: # <13>
       trustedCertificates:
-      - certificate: ca.crt
+      - pattern: "*.crt"
         secretName: my-cluster-target-cluster-ca-cert
   mirrors: # <14>
   - sourceCluster: "my-cluster-source" # <15>
@@ -208,7 +208,7 @@ spec:
 <5> Cluster alias for the source Kafka cluster.
 <6> Authentication for the source cluster, specified as mTLS, token-based OAuth, SASL-based SCRAM-SHA-256/SCRAM-SHA-512, or PLAIN.
 <7> Bootstrap server for connection to the source Kafka cluster.
-<8> TLS encryption with key names under which TLS certificates are stored in X.509 format for the source Kafka cluster. If certificates are stored in the same secret, it can be listed multiple times.
+<8> TLS configuration for encrypted connections to the Kafka cluster, with trusted certificates stored in X.509 format within the specified secrets.
 <9> Cluster alias for the target Kafka cluster.
 <10> Authentication for the target Kafka cluster is configured in the same way as for the source Kafka cluster.
 <11> Bootstrap server for connection to the target Kafka cluster.

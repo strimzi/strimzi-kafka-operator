@@ -1,5 +1,5 @@
 [id="ref-example-permissions-for-kafka-operations_{context}"]
-= Example permissions required for Kafka operations
+= Permissions for common Kafka operations
 
 [role="_abstract"]
 

@@ -14,6 +14,7 @@ import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.config.ConfigParameter;
 import io.strimzi.operator.common.config.ConfigParameterParser;
+import io.strimzi.operator.common.featuregates.FeatureGates;
 import io.strimzi.operator.common.model.Labels;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -32,6 +33,7 @@ import static io.strimzi.operator.common.config.ConfigParameterParser.LOCAL_OBJE
 import static io.strimzi.operator.common.config.ConfigParameterParser.LONG;
 import static io.strimzi.operator.common.config.ConfigParameterParser.NAMESPACE_SET;
 import static io.strimzi.operator.common.config.ConfigParameterParser.STRING;
+import static io.strimzi.operator.common.config.ConfigParameterParser.parseFeatureGates;
 
 /**
  * Cluster Operator configuration
@@ -152,11 +154,6 @@ public class ClusterOperatorConfig {
      * Timeout used to wait for a Kafka Connect builds to finish
      */
     public static final ConfigParameter<Long> CONNECT_BUILD_TIMEOUT_MS = new ConfigParameter<>("STRIMZI_CONNECT_BUILD_TIMEOUT_MS", LONG, "300000", CONFIG_VALUES);
-
-    /**
-     * Set true to create the ClusterRoles
-     */
-    public static final ConfigParameter<Boolean> CREATE_CLUSTER_ROLES = new ConfigParameter<>("STRIMZI_CREATE_CLUSTER_ROLES", BOOLEAN, "false", CONFIG_VALUES);
 
     /**
      * Set true to generate Network Policies
@@ -391,10 +388,6 @@ public class ClusterOperatorConfig {
         }
     }
 
-    static ConfigParameterParser<FeatureGates> parseFeatureGates() {
-        return FeatureGates::new;
-    }
-
     static ConfigParameterParser<ImagePullPolicy> parseImagePullPolicy() {
         return imagePullPolicyEnvVar -> {
             ImagePullPolicy imagePullPolicy = null;
@@ -494,13 +487,6 @@ public class ClusterOperatorConfig {
      */
     public long getConnectBuildTimeoutMs() {
         return get(CONNECT_BUILD_TIMEOUT_MS);
-    }
-
-    /**
-     * @return  Indicates whether Cluster Roles should be created
-     */
-    public boolean isCreateClusterRoles() {
-        return get(CREATE_CLUSTER_ROLES);
     }
 
     /**
@@ -619,7 +605,6 @@ public class ClusterOperatorConfig {
                 "\n\treconciliationIntervalMs=" + getReconciliationIntervalMs() +
                 "\n\toperationTimeoutMs=" + getOperationTimeoutMs() +
                 "\n\tconnectBuildTimeoutMs=" + getConnectBuildTimeoutMs() +
-                "\n\tcreateClusterRoles=" + isCreateClusterRoles() +
                 "\n\tnetworkPolicyGeneration=" + isNetworkPolicyGeneration() +
                 "\n\tversions='" + versions() + '\'' +
                 "\n\timagePullPolicy='" + getImagePullPolicy() + '\'' +

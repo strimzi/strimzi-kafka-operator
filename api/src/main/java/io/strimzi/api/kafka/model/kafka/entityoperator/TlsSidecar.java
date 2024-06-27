@@ -19,9 +19,6 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.util.HashMap;
-import java.util.Map;
-
 /**
  * Representation of a TLS sidecar container configuration
  */
@@ -40,7 +37,6 @@ public class TlsSidecar extends Sidecar implements HasLivenessProbe, HasReadines
     private TlsSidecarLogLevel logLevel = TlsSidecarLogLevel.NOTICE;
     private Probe livenessProbe;
     private Probe readinessProbe;
-    private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("The log level for the TLS sidecar. " +
             "Default value is `notice`.")

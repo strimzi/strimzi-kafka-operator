@@ -53,4 +53,4 @@ Client applications must reload the cluster and clients CA certificates that wer
 .Additional resources
 
 * xref:certificates-and-secrets-str[]
-* xref:assembly-maintenance-time-windows-str[]
+* xref:con-maintenance-time-window-definition-str[]

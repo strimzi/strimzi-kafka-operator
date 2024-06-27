@@ -408,7 +408,7 @@ class KafkaST extends AbstractST {
         // JBOD storage in KRaft is supported only from Kafka 3.7.0 and higher.
         // So we want to run this test when KRaft is disabled or when it is with KRaft and Kafka 3.7.0+
         // TODO: remove once support for 3.6.x is removed - https://github.com/strimzi/strimzi-kafka-operator/issues/9921
-        assumeTrue(!Environment.isKRaftForCOEnabled() || TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "3.7.0") >= 0);
+        assumeTrue(!Environment.isKRaftModeEnabled() || TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "3.7.0") >= 0);
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final int kafkaReplicas = 2;
         final String diskSizeGi = "10";
@@ -564,7 +564,7 @@ class KafkaST extends AbstractST {
         // JBOD storage in KRaft is supported only from Kafka 3.7.0 and higher.
         // So we want to run this test when KRaft is disabled or when it is with KRaft and Kafka 3.7.0+
         // TODO: remove once support for 3.6.x is removed - https://github.com/strimzi/strimzi-kafka-operator/issues/9921
-        assumeTrue(!Environment.isKRaftForCOEnabled() || TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "3.7.0") >= 0);
+        assumeTrue(!Environment.isKRaftModeEnabled() || TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "3.7.0") >= 0);
 
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -1012,9 +1012,6 @@ class KafkaST extends AbstractST {
                     .endZookeeper()
                     .editEntityOperator()
                         .withNewTemplate()
-                            .withNewTlsSidecarContainer()
-                                .withSecurityContext(new SecurityContextBuilder().withReadOnlyRootFilesystem(true).build())
-                            .endTlsSidecarContainer()
                             .withNewTopicOperatorContainer()
                                 .withSecurityContext(new SecurityContextBuilder().withReadOnlyRootFilesystem(true).build())
                             .endTopicOperatorContainer()
@@ -1032,9 +1029,6 @@ class KafkaST extends AbstractST {
                     .endKafkaExporter()
                     .editOrNewCruiseControl()
                         .withNewTemplate()
-                            .withNewTlsSidecarContainer()
-                                .withSecurityContext(new SecurityContextBuilder().withReadOnlyRootFilesystem(true).build())
-                            .endTlsSidecarContainer()
                             .withNewCruiseControlContainer()
                                 .withSecurityContext(new SecurityContextBuilder().withReadOnlyRootFilesystem(true).build())
                             .endCruiseControlContainer()
@@ -1133,7 +1127,7 @@ class KafkaST extends AbstractST {
         // JBOD storage in KRaft is supported only from Kafka 3.7.0 and higher.
         // So we want to run this test when KRaft is disabled or when it is with KRaft and Kafka 3.7.0+
         // TODO: remove once support for 3.6.x is removed - https://github.com/strimzi/strimzi-kafka-operator/issues/9921
-        assumeTrue(!Environment.isKRaftForCOEnabled() || TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "3.7.0") >= 0);
+        assumeTrue(!Environment.isKRaftModeEnabled() || TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "3.7.0") >= 0);
 
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final int numberOfKafkaReplicas = 3;
@@ -1180,7 +1174,7 @@ class KafkaST extends AbstractST {
 
         resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getContinuousTopicName(), 3, 3, 2, testStorage.getNamespaceName()).build());
 
-        String producerAdditionConfiguration = "delivery.timeout.ms=20000\nrequest.timeout.ms=20000";
+        String producerAdditionConfiguration = "delivery.timeout.ms=40000\nrequest.timeout.ms=5000";
         // Add transactional id to make producer transactional
         producerAdditionConfiguration = producerAdditionConfiguration.concat("\ntransactional.id=" + testStorage.getContinuousTopicName() + ".1");
         producerAdditionConfiguration = producerAdditionConfiguration.concat("\nenable.idempotence=true");

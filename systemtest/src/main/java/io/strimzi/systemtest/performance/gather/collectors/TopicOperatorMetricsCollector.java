@@ -4,10 +4,10 @@
  */
 package io.strimzi.systemtest.performance.gather.collectors;
 
+import io.skodjob.testframe.MetricsCollector;
+import io.skodjob.testframe.MetricsComponent;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
-import io.strimzi.systemtest.metrics.MetricsCollector;
 import io.strimzi.systemtest.performance.PerformanceConstants;
-import io.strimzi.systemtest.resources.ComponentType;
 
 import java.util.HashMap;
 import java.util.List;
@@ -206,26 +206,8 @@ public class TopicOperatorMetricsCollector extends BaseMetricsCollector {
         }
 
         @Override
-        public Builder withComponentType(ComponentType componentType) {
-            super.withComponentType(componentType);
-            return this;
-        }
-
-        @Override
-        public Builder withComponentName(String componentName) {
-            super.withComponentName(componentName);
-            return this;
-        }
-
-        @Override
-        public Builder withMetricsPort(int metricsPort) {
-            super.withMetricsPort(metricsPort);
-            return this;
-        }
-
-        @Override
-        public Builder withMetricsPath(String metricsPath) {
-            super.withMetricsPath(metricsPath);
+        public Builder withComponent(MetricsComponent component) {
+            super.withComponent(component);
             return this;
         }
     }

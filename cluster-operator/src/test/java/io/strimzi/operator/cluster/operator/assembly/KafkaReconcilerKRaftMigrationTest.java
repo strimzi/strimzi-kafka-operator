@@ -174,7 +174,7 @@ public class KafkaReconcilerKRaftMigrationTest {
         when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
         when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.secretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
 
-        KafkaMetadataStateManager kafkaMetadataStateManager = new KafkaMetadataStateManager(RECONCILIATION, kafka, CO_CONFIG.featureGates().useKRaftEnabled());
+        KafkaMetadataStateManager kafkaMetadataStateManager = new KafkaMetadataStateManager(RECONCILIATION, kafka);
 
         KafkaVersionChange versionChange = new KafkaVersionChange(VERSIONS.defaultVersion(), VERSIONS.defaultVersion(), VERSIONS.defaultVersion().protocolVersion(), VERSIONS.defaultVersion().messageVersion(), VERSIONS.defaultVersion().metadataVersion());
 
@@ -221,7 +221,7 @@ public class KafkaReconcilerKRaftMigrationTest {
         when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
         when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.secretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
 
-        KafkaMetadataStateManager kafkaMetadataStateManager = new KafkaMetadataStateManager(RECONCILIATION, kafka, CO_CONFIG.featureGates().useKRaftEnabled());
+        KafkaMetadataStateManager kafkaMetadataStateManager = new KafkaMetadataStateManager(RECONCILIATION, kafka);
 
         KafkaVersionChange versionChange = new KafkaVersionChange(VERSIONS.defaultVersion(), VERSIONS.defaultVersion(), VERSIONS.defaultVersion().protocolVersion(), VERSIONS.defaultVersion().messageVersion(), VERSIONS.defaultVersion().metadataVersion());
 
@@ -263,7 +263,7 @@ public class KafkaReconcilerKRaftMigrationTest {
         when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
         when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.secretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
 
-        KafkaMetadataStateManager kafkaMetadataStateManager = new KafkaMetadataStateManager(RECONCILIATION, kafka, CO_CONFIG.featureGates().useKRaftEnabled());
+        KafkaMetadataStateManager kafkaMetadataStateManager = new KafkaMetadataStateManager(RECONCILIATION, kafka);
 
         KafkaVersionChange versionChange = new KafkaVersionChange(VERSIONS.defaultVersion(), VERSIONS.defaultVersion(), VERSIONS.defaultVersion().protocolVersion(), VERSIONS.defaultVersion().messageVersion(), VERSIONS.defaultVersion().metadataVersion());
 
@@ -302,7 +302,7 @@ public class KafkaReconcilerKRaftMigrationTest {
         when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
         when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.secretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
 
-        KafkaMetadataStateManager kafkaMetadataStateManager = new KafkaMetadataStateManager(RECONCILIATION, kafka, CO_CONFIG.featureGates().useKRaftEnabled());
+        KafkaMetadataStateManager kafkaMetadataStateManager = new KafkaMetadataStateManager(RECONCILIATION, kafka);
 
         KafkaVersionChange versionChange = new KafkaVersionChange(VERSIONS.defaultVersion(), VERSIONS.defaultVersion(), VERSIONS.defaultVersion().protocolVersion(), VERSIONS.defaultVersion().messageVersion(), VERSIONS.defaultVersion().metadataVersion());
 

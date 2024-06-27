@@ -3,32 +3,20 @@
 // assembly-oauth-authentication.adoc
 
 [id='con-oauth-authentication-broker-{context}']
-= OAuth 2.0 Kafka broker configuration
+= Configuring OAuth 2.0 authentication on listeners
 
-Kafka broker configuration for OAuth 2.0 involves:
+[role="_abstract"]
+To secure Kafka brokers with OAuth 2.0 authentication, configure a listener in the `Kafka` resource to use OAUth 2.0 authentication and a client authentication mechanism, and add further configuration depending on the authentication mechanism and type of token validation used in the authentication.
 
-* Creating the OAuth 2.0 client in the authorization server
-* Configuring OAuth 2.0 authentication in the Kafka custom resource
+.Configuring listeners to use `oauth` authentication
 
-NOTE: In relation to the authorization server, Kafka brokers and Kafka clients are both regarded as OAuth 2.0 clients.
+Specify a listener in the `Kafka` resource with an `oauth` authentication type. 
+You can configure internal and external listeners. 
+We recommend using OAuth 2.0 authentication together with TLS encryption (`tls: true`). 
+Without encryption, the connection is vulnerable to network eavesdropping and unauthorized access through token theft.
 
-== OAuth 2.0 client configuration on an authorization server
-
-To configure a Kafka broker to validate the token received during session initiation,
-the recommended approach is to create an OAuth 2.0 _client_ definition in an authorization server, configured as _confidential_, with the following client credentials enabled:
-
-* Client ID of `kafka` (for example)
-* Client ID and Secret as the authentication mechanism
-
-NOTE: You only need to use a client ID and secret when using a non-public introspection endpoint of the authorization server.
-The credentials are not typically required when using public authorization server endpoints, as with fast local JWT token validation.
-
-== OAuth 2.0 authentication configuration in the Kafka cluster
-
-To use OAuth 2.0 authentication in the Kafka cluster, you specify, for example, a `tls` listener configuration for your Kafka cluster custom resource with the authentication method `oauth`:
-
-.Assigining the authentication method type for OAuth 2.0
-[source,yaml,subs="+quotes, attributes"]
+.Example listener configuration with OAuth 2.0 authentication
+[source,yaml,subs="+attributes"]
 ----
 apiVersion: {KafkaApiVersion}
 kind: Kafka
@@ -41,121 +29,234 @@ spec:
         type: internal
         tls: true
         authentication:
-          type: *oauth*
+          type: oauth
+      - name: external3
+        port: 9094
+        type: loadbalancer
+        tls: true
+        authentication:
+          type: oauth    
       #...
 ----
 
-You can configure OAuth 2.0 authentication in your listeners.
-We recommend using OAuth 2.0 authentication together with TLS encryption (`tls: true`).
-Without encryption, the connection is vulnerable to network eavesdropping and unauthorized access through token theft.
+.Enabling SASL authentication mechanisms
 
-You configure an `external` listener with `type: oauth` for a secure transport layer to communicate with the client.
+Use one or both of the following SASL mechanisms for clients to exchange credentials and establish authenticated sessions with Kafka.
 
-.Using OAuth 2.0 with an external listener
-[source,yaml,subs="+quotes"]
+`OAUTHBEARER`:: Using the `OAUTHBEARER` authentication mechanism, credentials exchange uses a bearer token provided by an OAuth callback handler. 
+Token provision can be configured to use the following methods:
++
+--
+* Client ID and secret (using the the OAuth 2.0 _client credentials mechanism_)
+* Long-lived access token
+* Long-lived refresh token obtained manually
+--
++
+`OAUTHBEARER` is recommended as it provides a higher level of security than `PLAIN`, though it can only be used by Kafka clients that support the `OAUTHBEARER` mechanism at the protocol level.
+Client credentials are never shared with Kafka.
+
+`PLAIN`:: `PLAIN` is a simple authentication mechanism used by all Kafka client tools.
+Consider using `PLAIN` only with Kafka clients that do not support `OAUTHBEARER`.
+Using the `PLAIN` authentication mechanism, credentials exchange can be configured to use the following methods: 
++
+--
+* Client ID and secret (using the the OAuth 2.0 _client credentials mechanism_)
+* Long-lived access token +
+Regardless of the method used, the client must provide `username` and `password` properties to Kafka. 
+--
++
+Credentials are handled centrally behind a compliant authorization server, similar to how `OAUTHBEARER` authentication is used.
+The username extraction process depends on the authorization server configuration.
+
+`OAUTHBEARER` is automatically enabled in the `oauth` listener configuration for the Kafka broker. 
+To use the `PLAIN` mechanism, you must set the `enablePlain` property to `true`.
+
+In the following example, the `PLAIN` mechanism is enabled, and the `OAUTHBEARER` mechanism is disabled on a listener using the `enableOauthBearer` property.
+
+.Example listener configuration for the `PLAIN` mechanism
+[source,yaml,subs="+attributes"]
 ----
-# ...
-listeners:
-  - name: external3
-    port: 9094
-    type: loadbalancer
-    tls: true
-    authentication:
-      type: *oauth*
-    #...
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+spec:
+  kafka:
+    # ...
+    listeners:
+      - name: tls
+        port: 9093
+        type: internal
+        tls: true
+        authentication:
+          type: oauth
+      - name: external3
+        port: 9094
+        type: loadbalancer
+        tls: true
+        authentication:
+          type: oauth
+          enablePlain: true
+          enableOauthBearer: false    
+      #...
 ----
 
-The `tls` property is _false_ by default, so it must be enabled.
+When you have defined the type of authentication as OAuth 2.0, you add configuration based on the type of validation, either as fast local JWT validation or token validation using an introspection endpoint.
 
-When you have defined the type of authentication as OAuth 2.0, you add configuration based on the type of validation, either as xref:con-oauth-authentication-broker-fast-local[fast local JWT validation] or xref:con-oauth-authentication-broker-intro-local[token validation using an introspection endpoint].
+[id='con-oauth-authentication-broker-jwt-{context}']
+.Configuring fast local JWT token validation
 
-The procedure to configure OAuth 2.0 for listeners, with descriptions and examples, is described in xref:proc-oauth-authentication-broker-config-{context}[Configuring OAuth 2.0 support for Kafka brokers].
+Fast local JWT token validation involves checking a JWT token signature locally to ensure that the token meets the following criteria:
 
-[[con-oauth-authentication-broker-fast-local]]
-== Fast local JWT token validation configuration
-
-Fast local JWT token validation checks a JWT token signature locally.
-
-The local check ensures that a token:
-
-* Conforms to type by containing a (_typ_) claim value of `Bearer` for an access token
-* Is valid (not expired)
+* Contains a `typ` (type) or `token_type` header claim value of `Bearer` to indicate it is an access token
+* Is currently valid and not expired
 * Has an issuer that matches a `validIssuerURI`
 
 You specify a `validIssuerURI` attribute when you configure the listener, so that any tokens not issued by the authorization server are rejected.
 
-The authorization server does not need to be contacted during fast local JWT token validation.
-You activate fast local JWT token validation by specifying a `jwksEndpointUri` attribute, the endpoint exposed by the OAuth 2.0 authorization server.
+The authorization server does not need to be contacted during fast local JWT token validation. 
+You activate fast local JWT token validation by specifying a `jwksEndpointUri` attribute, the endpoint exposed by the OAuth 2.0 authorization server. 
 The endpoint contains the public keys used to validate signed JWT tokens, which are sent as credentials by Kafka clients.
 
-NOTE: All communication with the authorization server should be performed using TLS encryption.
+All communication with the authorization server should be performed using TLS encryption.
+You can configure a certificate truststore as a Kubernetes `Secret` in your Strimzi project namespace, and use the `tlsTrustedCertificates` property to point to the Kubernetes secret containing the truststore file.
 
-You can configure a certificate truststore as a Kubernetes Secret in your Strimzi project namespace, and use a `tlsTrustedCertificates` attribute to point to the Kubernetes Secret containing the truststore file.
+You might want to configure a `userNameClaim` to properly extract a username from the JWT token. 
+If required, you can use a JsonPath expression like `"['user.info'].['user.id']"` to retrieve the username from nested JSON attributes within a token.
 
-You might want to configure a `userNameClaim` to properly extract a username from the JWT token.
-If required, you can use a JsonPath expression like `"['user.info'].['user.id']"` to retrieve the username from nested JSON attributes within a token.   
-
-If you want to use Kafka ACL authorization, you need to identify the user by their username during authentication.
-(The `sub` claim in JWT tokens is typically a unique ID, not a username.)
+If you want to use Kafka ACL authorization, identify the user by their username during authentication. (The `sub` claim in JWT tokens is typically a unique ID, not a username.)
 
 .Example configuration for fast local JWT token validation
-[source,yaml,subs="+quotes, attributes"]
+[source,yaml,subs="+quotes,attributes"]
 ----
-apiVersion: {KafkaApiVersion}
-kind: Kafka
-spec:
-  kafka:
-    #...
-    listeners:
-      - name: tls
-        port: 9093
-        type: internal
-        tls: true
-        authentication:
-          type: *oauth*
-          validIssuerUri: <https://<auth_server_address>/auth/realms/tls>
-          jwksEndpointUri: <https://<auth_server_address>/auth/realms/tls/protocol/openid-connect/certs>
-          userNameClaim: preferred_username
-          maxSecondsWithoutReauthentication: 3600
-          tlsTrustedCertificates:
-          - secretName: oauth-server-cert
-            certificate: ca.crt
-    #...
+#...
+- name: external3
+  port: 9094
+  type: loadbalancer
+  tls: true
+  authentication:
+    type: oauth # <1>
+    validIssuerUri: https://<auth_server_address>/<issuer-context> # <2>
+    jwksEndpointUri: https://<auth_server_address>/<path_to_jwks_endpoint> # <3>
+    userNameClaim: preferred_username # <4>
+    maxSecondsWithoutReauthentication: 3600 # <5>
+    tlsTrustedCertificates: # <6>
+      - secretName: oauth-server-cert
+        pattern: "*.crt"
+    disableTlsHostnameVerification: true # <7>
+    jwksExpirySeconds: 360 # <8>
+    jwksRefreshSeconds: 300 # <9>
+    jwksMinRefreshPauseSeconds: 1 # <10>
 ----
+<1> Listener type set to `oauth`.
+<2> URI of the token issuer used for authentication.
+<3> URI of the JWKS certificate endpoint used for local JWT validation.
+<4> The token claim (or key) that contains the actual username used to identify the user. Its value depends on the authorization server. If necessary, a JsonPath expression like `"['user.info'].['user.id']"` can be used to retrieve the username from nested JSON attributes within a token. 
+<5> (Optional) Activates the Kafka re-authentication mechanism that enforces session expiry to the same length of time as the access token. If the specified value is less than the time left for the access token to expire, then the client will have to re-authenticate before the actual token expiry. By default, the session does not expire when the access token expires, and the client does not attempt re-authentication.
+<6> (Optional) Certificates stored in X.509 format within the specified secrets for TLS connection to the authorization server.
+<7> (Optional) Disable TLS hostname verification. Default is `false`.
+<8> The duration the JWKS certificates are considered valid before they expire. Default is `360` seconds. If you specify a longer time, consider the risk of allowing access to revoked certificates.
+<9> The period between refreshes of JWKS certificates. The interval must be at least 60 seconds shorter than the expiry interval. Default is `300` seconds.
+<10> The minimum pause in seconds between consecutive attempts to refresh JWKS public keys. When an unknown signing key is encountered, the JWKS keys refresh is scheduled outside the regular periodic schedule with at least the specified pause since the last refresh attempt. The refreshing of keys follows the rule of exponential backoff, retrying on unsuccessful refreshes with ever increasing pause, until it reaches `jwksRefreshSeconds`. The default value is 1.
 
-[[con-oauth-authentication-broker-intro-local]]
-== OAuth 2.0 introspection endpoint configuration
 
-Token validation using an OAuth 2.0 introspection endpoint treats a received access token as opaque.
-The Kafka broker sends an access token to the introspection endpoint, which responds with the token information necessary for validation.
+[id='con-oauth-authentication-broker-intro-{context}']
+.Configuring token validation using an introspection endpoint
+
+Token validation using an OAuth 2.0 introspection endpoint treats a received access token as opaque. The Kafka broker sends an access token to the introspection endpoint, which responds with the token information necessary for validation. 
 Importantly, it returns up-to-date information if the specific access token is valid, and also information about when the token expires.
 
-To configure OAuth 2.0 introspection-based validation, you specify an `introspectionEndpointUri` attribute rather than the `jwksEndpointUri` attribute specified for fast local JWT token validation.
+To configure OAuth 2.0 introspection-based validation, you specify an introspectionEndpointUri attribute rather than the `jwksEndpointUri` attribute specified for fast local JWT token validation. 
 Depending on the authorization server, you typically have to specify a `clientId` and `clientSecret`, because the introspection endpoint is usually protected.
 
-.Example configuration for an introspection endpoint
-[source,yaml,subs="+quotes, attributes"]
+.Example token validation configuration using an introspection endpoint
+[source,yaml,subs="+quotes,attributes"]
 ----
-apiVersion: {KafkaApiVersion}
-kind: Kafka
-spec:
-  kafka:
-    listeners:
-      - name: tls
-        port: 9093
-        type: internal
-        tls: true
-        authentication:
-          type: *oauth*
-          clientId: kafka-broker
-          clientSecret:
-            secretName: my-cluster-oauth
-            key: clientSecret
-          validIssuerUri: <https://<auth_server_-_address>/auth/realms/tls>
-          introspectionEndpointUri: <https://<auth_server_address>/auth/realms/tls/protocol/openid-connect/token/introspect>
-          userNameClaim: preferred_username
-          maxSecondsWithoutReauthentication: 3600
-          tlsTrustedCertificates:
-          - secretName: oauth-server-cert
-            certificate: ca.crt
+- name: external3
+  port: 9094
+  type: loadbalancer
+  tls: true
+  authentication:
+    type: oauth
+    validIssuerUri: https://<auth_server_address>/<issuer-context>
+    introspectionEndpointUri: https://<auth_server_address>/<path_to_introspection_endpoint> # <1>
+    clientId: kafka-broker # <2>
+    clientSecret: # <3>
+      secretName: my-cluster-oauth
+      key: clientSecret
+    userNameClaim: preferred_username # <4>
+    maxSecondsWithoutReauthentication: 3600 # <5>
+    tlsTrustedCertificates:
+      - secretName: oauth-server-cert
+        pattern: "*.crt"
 ----
+<1> URI of the token introspection endpoint.
+<2> Client ID to identify the client.
+<3> Client Secret and client ID is used for authentication.
+<4> The token claim (or key) that contains the actual username used to identify the user. Its value depends on the authorization server. If necessary, a JsonPath expression like `"['user.info'].['user.id']"` can be used to retrieve the username from nested JSON attributes within a token. 
+<5> (Optional) Activates the Kafka re-authentication mechanism that enforces session expiry to the same length of time as the access token. If the specified value is less than the time left for the access token to expire, then the client will have to re-authenticate before the actual token expiry. By default, the session does not expire when the access token expires, and the client does not attempt re-authentication.
+
+[id='con-oauth-authentication-broker-additional-{context}']
+.Including additional configuration options
+
+Specify additional settings depending on the authentication requirements and the authorization server you are using.
+Some of these properties apply only to certain authentication mechanisms or when used in combination with other properties.
+
+For example, when using OAUth over `PLAIN`, access tokens are passed as `password` property values with or without an `$accessToken:` prefix.
+
+* If you configure a token endpoint (`tokenEndpointUri`) in the listener configuration, you need the prefix.
+* If you don't configure a token endpoint in the listener configuration, you don't need the prefix.
+The Kafka broker interprets the password as a raw access token.
+
+If the `password` is set as the access token, the `username` must be set to the same principal name that the Kafka broker obtains from the access token.
+You can specify username extraction options in your listener using the `userNameClaim`, `fallbackUserNameClaim`, `fallbackUsernamePrefix`, and `userInfoEndpointUri` properties.
+The username extraction process also depends on your authorization server; in particular, how it maps client IDs to account names.
+
+NOTE: The `PLAIN` mechanism does not support password grant authentication. 
+Use either client credentials (client ID + secret) or an access token for authentication.
+
+.Example additional configuration settings
+[source,yaml,subs="+quotes,attributes"]
+----
+  # ...
+  authentication:
+    type: oauth
+    # ...
+    checkIssuer: false # <1>
+    checkAudience: true # <2>
+    fallbackUserNameClaim: client_id # <3>
+    fallbackUserNamePrefix: client-account- # <4>
+    validTokenType: bearer # <5>
+    userInfoEndpointUri: https://<auth_server_address>/<path_to_userinfo_endpoint> # <6>
+    enableOauthBearer: false # <7>
+    enablePlain: true # <8>
+    tokenEndpointUri: https://<auth_server_address>/<path_to_token_endpoint> # <9>
+    customClaimCheck: "@.custom == 'custom-value'" # <10>
+    clientAudience: audience # <11>
+    clientScope: scope # <12>
+    connectTimeoutSeconds: 60 # <13>
+    readTimeoutSeconds: 60 # <14>
+    httpRetries: 2 # <15>
+    httpRetryPauseMs: 300 # <16>
+    groupsClaim: "$.groups" # <17>
+    groupsClaimDelimiter: "," # <18>
+    includeAcceptHeader: false # <19>
+----
+<1> If your authorization server does not provide an `iss` claim, it is not possible to perform an issuer check. In this situation, set `checkIssuer` to `false` and do not specify a `validIssuerUri`. Default is `true`.
+<2> If your authorization server provides an `aud` (audience) claim, and you want to enforce an audience check, set `checkAudience` to `true`. Audience checks identify the intended recipients of tokens. As a result, the Kafka broker will reject tokens that do not have its `clientId` in their `aud` claim. Default is `false`.
+<3> An authorization server may not provide a single attribute to identify both regular users and clients. When a client authenticates in its own name, the server might provide a _client ID_. When a user authenticates using a username and password to obtain a refresh token or an access token, the server might provide a _username_ attribute in addition to a client ID. Use this fallback option to specify the username claim (attribute) to use if a primary user ID attribute is not available. If necessary, a JsonPath expression like `"['client.info'].['client.id']"` can be used to retrieve the fallback username  to retrieve the username from nested JSON attributes within a token.
+<4> In situations where `fallbackUserNameClaim` is applicable, it may also be necessary to prevent name collisions between the values of the username claim, and those of the fallback username claim. Consider a situation where a client called `producer` exists, but also a regular user called `producer` exists. In order to differentiate between the two, you can use this property to add a prefix to the user ID of the client.
+<5> (Only applicable when using `introspectionEndpointUri`) Depending on the authorization server you are using, the introspection endpoint may or may not return the _token type_ attribute, or it may contain different values. You can specify a valid token type value that the response from the introspection endpoint has to contain.
+<6> (Only applicable when using `introspectionEndpointUri`) The authorization server may be configured or implemented in such a way to not provide any identifiable information in an introspection endpoint response. In order to obtain the user ID, you can configure the URI of the `userinfo` endpoint as a fallback. The `userNameClaim`, `fallbackUserNameClaim`, and `fallbackUserNamePrefix` settings are applied to the response of `userinfo` endpoint.
+<7> Set this to `false` to disable the `OAUTHBEARER` mechanism on the listener. At least one of `PLAIN` or `OAUTHBEARER` has to be enabled. Default is `true`.
+<8> Set to `true` to enable `PLAIN` authentication on the listener, which is supported for clients on all platforms.
+<9> Additional configuration for the `PLAIN` mechanism. If specified, clients can authenticate over `PLAIN` by passing an access token as the `password` using an `$accessToken:` prefix.
+For production, always use `https://` urls.
+<10> Additional custom rules can be imposed on the JWT access token during validation by setting this to a JsonPath filter query. If the access token does not contain the necessary data, it is rejected. When using the `introspectionEndpointUri`, the custom check is applied to the introspection endpoint response JSON.
+<11> An `audience` parameter passed to the token endpoint. An _audience_ is used  when obtaining an access token for inter-broker authentication. It is also used in the name of a client for OAuth 2.0 over `PLAIN` client authentication using a `clientId` and `secret`. This only affects the ability to obtain the token, and the content of the token, depending on the authorization server. It does not affect token validation rules by the listener.
+<12> A `scope` parameter passed to the token endpoint. A _scope_ is used when obtaining an access token for inter-broker authentication. It is also used in the name of a client for OAuth 2.0 over `PLAIN` client authentication using a `clientId` and `secret`. This only affects the ability to obtain the token, and the content of the token, depending on the authorization server. It does not affect token validation rules by the listener.
+<13> The connect timeout in seconds when connecting to the authorization server. The default value is 60.
+<14> The read timeout in seconds when connecting to the authorization server. The default value is 60.
+<15> The maximum number of times to retry a failed HTTP request to the authorization server. The default value is `0`, meaning that no retries are performed. To use this option effectively, consider reducing the timeout times for the `connectTimeoutSeconds` and `readTimeoutSeconds` options. However, note that retries may prevent the current worker thread from being available to other requests, and if too many requests stall, it could make the Kafka broker unresponsive.
+<16> The time to wait before attempting another retry of a failed HTTP request to the authorization server. By default, this time is set to zero, meaning that no pause is applied. This is because many issues that cause failed requests are per-request network glitches or proxy issues that can be resolved quickly. However, if your authorization server is under stress or experiencing high traffic, you may want to set this option to a value of 100 ms or more to reduce the load on the server and increase the likelihood of successful retries.
+<17> A JsonPath query that is used to extract groups information from either the JWT token or the introspection endpoint response. This option is not set by default. By configuring this option, a custom authorizer can make authorization decisions based on user groups.
+<18> A delimiter used to parse groups information when it is returned as a single delimited string. The default value is ',' (comma).
+<19> Some authorization servers have issues with client sending `Accept: application/json` header. By setting `includeAcceptHeader: false` the header will not be sent. Default is `true`.

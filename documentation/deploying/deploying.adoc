@@ -14,6 +14,8 @@ include::modules/deploying/con-strimzi-installation-methods.adoc[leveloffset=+1]
 include::assemblies/deploying/assembly-deploy-options.adoc[leveloffset=+1]
 //Prep for the deployment
 include::assemblies/deploying/assembly-deploy-tasks-prep.adoc[leveloffset=+1]
+//Using Kafka in Kraft mode
+include::assemblies/deploying/assembly-kraft-mode.adoc[leveloffset=+1]
 //Deployment steps using installation artifacts
 include::assemblies/deploying/assembly-deploy-tasks.adoc[leveloffset=+1]
 //Deployment using operatorhub.io
@@ -24,8 +26,6 @@ include::modules/deploying/proc-deploy-cluster-operator-helm-chart.adoc[leveloff
 include::modules/operators/ref-operator-cluster-feature-gates.adoc[leveloffset=+1]
 //feature gate release lifecycle
 include::modules/operators/ref-operator-cluster-feature-gate-releases.adoc[leveloffset=+2]
-//migrating to KRaft
-include::modules/deploying/proc-deploy-migrate-kraft.adoc[leveloffset=+1]
 //configuration of components
 include::assemblies/configuring/assembly-config.adoc[leveloffset=+1]
 //creating topics
@@ -37,7 +37,7 @@ include::assemblies/deploying/assembly-deploy-client-access.adoc[leveloffset=+1]
 //Securing the deployment
 include::assemblies/security/assembly-securing-access.adoc[leveloffset=+1]
 //using OAuth
-include::assemblies/security/assembly-oauth-security.adoc[leveloffset=+1]
+include::assemblies/oauth/assembly-oauth-security.adoc[leveloffset=+1]
 //managing tls certificates
 include::assemblies/security/assembly-security.adoc[leveloffset=+1]
 //security context for all pods
@@ -56,15 +56,17 @@ include::assemblies/metrics/assembly-metrics.adoc[leveloffset=+1]
 include::assemblies/tracing/assembly-distributed-tracing.adoc[leveloffset=+1]
 //using drain cleaner to drain pods
 include::assemblies/deploying/assembly-drain-cleaner.adoc[leveloffset=+1]
+//Managing rolling updates
+include::assemblies/deploying/assembly-rolling-updates.adoc[leveloffset=+1]
+//How to monitor restart events
+include::assemblies/deploying/assembly-deploy-restart-events.adoc[leveloffset=+1]
 //Upgrading the deployment
 include::assemblies/upgrading/assembly-upgrade.adoc[leveloffset=+1]
 //Downgrading the deployment
 include::assemblies/upgrading/assembly-downgrade.adoc[leveloffset=+1]
 //uninstalling the product
 include::assemblies/deploying/assembly-uninstalling.adoc[leveloffset=+1]
-//How to monitor restart events
-include::assemblies/deploying/assembly-deploy-restart-events.adoc[leveloffset=+1]
+//recovering from PVs
+include::assemblies/deploying/assembly-cluster-recovery-volume.adoc[leveloffset=+1]
 //tuning configuration
-include::assemblies/managing/assembly-tuning-config.adoc[leveloffset=+1]
-//admin -- managing an installation
-include::assemblies/managing/assembly-management-tasks.adoc[leveloffset=+1]
+include::assemblies/tuning/assembly-tuning-config.adoc[leveloffset=+1]

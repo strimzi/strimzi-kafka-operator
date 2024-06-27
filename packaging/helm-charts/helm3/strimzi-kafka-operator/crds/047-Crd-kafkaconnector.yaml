@@ -81,7 +81,7 @@ spec:
                 config:
                   x-kubernetes-preserve-unknown-fields: true
                   type: object
-                  description: "The Kafka Connector configuration. The following properties cannot be set: connector.class, tasks.max."
+                  description: "The Kafka Connector configuration. The following properties cannot be set: name, connector.class, tasks.max."
                 pause:
                   type: boolean
                   description: Whether the connector should be paused. Defaults to false.

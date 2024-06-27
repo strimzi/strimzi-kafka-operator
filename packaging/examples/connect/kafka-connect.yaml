@@ -14,7 +14,7 @@ spec:
   tls:
     trustedCertificates:
       - secretName: my-cluster-cluster-ca-cert
-        certificate: ca.crt
+        pattern: "*.crt"
   config:
     group.id: connect-cluster
     offset.storage.topic: connect-cluster-offsets

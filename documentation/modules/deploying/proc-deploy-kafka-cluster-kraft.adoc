@@ -1,0 +1,83 @@
+// Module included in the following assemblies:
+//
+// deploying/assembly_deploy-kafka-cluster.adoc
+
+[id='deploying-kafka-cluster-kraft-{context}']
+= Deploying a Kafka cluster in KRaft mode
+
+[role="_abstract"]
+This procedure shows how to deploy a Kafka cluster in KRaft mode and associated node pools using the Cluster Operator.
+
+The deployment uses a YAML file to provide the specification to create a `Kafka` resource and `KafkaNodePool` resources.
+
+Strimzi provides the following xref:config-examples-{context}[example deployment files] that you can use to create a Kafka cluster that uses node pools:
+
+`kafka/kraft/kafka-with-dual-role-nodes.yaml`:: Deploys a Kafka cluster with one pool of nodes that share the broker and controller roles.
+`kafka/kraft/kafka.yaml`:: Deploys a persistent Kafka cluster with one pool of controller nodes and one pool of broker nodes.
+`kafka/kraft/kafka-ephemeral.yaml`:: Deploys an ephemeral Kafka cluster with one pool of controller nodes and one pool of broker nodes.
+`kafka/kraft/kafka-single-node.yaml`:: Deploys a Kafka cluster with a single node.
+`kafka/kraft/kafka-jbod.yaml`:: Deploys a Kafka cluster with multiple volumes in each broker node.
+
+In this procedure, we use the example deployment file that deploys a Kafka cluster with one pool of nodes that share the broker and controller roles.
+
+The `Kafka` resource configuration for each example includes the `strimzi.io/node-pools: enabled` annotation, which is required when using node pools.
+`Kafka` resources using KRaft mode must also have the annotation `strimzi.io/kraft: enabled`.
+
+The example YAML files specify the latest supported Kafka version and KRaft metadata version used by the Kafka cluster.
+
+NOTE: You can perform the steps outlined here to deploy a new Kafka cluster with `KafkaNodePool` resources or xref:proc-migrating-clusters-node-pools-{context}[migrate your existing Kafka cluster].  
+
+.Prerequisites
+
+* xref:deploying-cluster-operator-str[The Cluster Operator must be deployed.]  
+
+.Before you begin
+
+By default, the example deployment files specify `my-cluster` as the Kafka cluster name.
+The name cannot be changed after the cluster has been deployed.
+To change the cluster name before you deploy the cluster, edit the `Kafka.metadata.name` property of the `Kafka` resource in the relevant YAML file.
+
+.Procedure
+
+. Deploy a KRaft-based Kafka cluster.
++
+To deploy a Kafka cluster with a single node pool that uses dual-role nodes:
++
+[source,shell]
+kubectl apply -f examples/kafka/kraft/kafka-with-dual-role-nodes.yaml
+
+. Check the status of the deployment:
++
+[source,shell]
+----
+kubectl get pods -n <my_cluster_operator_namespace>
+----
++
+.Output shows the node pool names and readiness
+[source,shell]
+----
+NAME                        READY  STATUS   RESTARTS
+my-cluster-entity-operator  3/3    Running  0
+my-cluster-pool-a-0         1/1    Running  0
+my-cluster-pool-a-1         1/1    Running  0
+my-cluster-pool-a-4         1/1    Running  0
+----
++
+* `my-cluster` is the name of the Kafka cluster.
+* `pool-a` is the name of the node pool.
++
+A sequential index number starting with `0` identifies each Kafka pod created.
+If you are using ZooKeeper, you'll also see the ZooKeeper pods.
++
+`READY` shows the number of replicas that are ready/expected.
+The deployment is successful when the `STATUS` displays as `Running`.
++
+Information on the deployment is also shown in the status of the `KafkaNodePool` resource, including a list of IDs for nodes in the pool.
++
+NOTE: Node IDs are assigned sequentially starting at 0 (zero) across all node pools within a cluster. This means that node IDs might not run sequentially within a specific node pool. If there are gaps in the sequence of node IDs across the cluster, the next node to be added is assigned an ID that fills the gap. When scaling down, the node with the highest node ID within a pool is removed.
+
+[role="_additional-resources"]
+.Additional resources
+
+* xref:con-config-kafka-str[Kafka cluster configuration]
+* xref:config-node-pools-{context}[Node pool configuration]

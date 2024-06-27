@@ -26,17 +26,22 @@ public interface TestConstants {
     long TIMEOUT_TEARDOWN = Duration.ofSeconds(10).toMillis();
     long GLOBAL_TIMEOUT = Duration.ofMinutes(5).toMillis();
     long GLOBAL_TIMEOUT_SHORT = Duration.ofMinutes(2).toMillis();
+    long GLOBAL_TIMEOUT_LONG = Duration.ofMinutes(10).toMillis();
     long GLOBAL_CMD_CLIENT_TIMEOUT = Duration.ofMinutes(5).toMillis();
     long GLOBAL_STATUS_TIMEOUT = Duration.ofMinutes(3).toMillis();
     long GLOBAL_POLL_INTERVAL = Duration.ofSeconds(1).toMillis();
+    long GLOBAL_POLL_INTERVAL_5_SECS = Duration.ofSeconds(5).toMillis();
     long GLOBAL_POLL_INTERVAL_MEDIUM = Duration.ofSeconds(10).toMillis();
+    long GLOBAL_POLL_INTERVAL_LONG = Duration.ofSeconds(30).toMillis();
     long PRODUCER_TIMEOUT = Duration.ofSeconds(25).toMillis();
+    long METRICS_COLLECT_TIMEOUT = Duration.ofMinutes(1).toMillis();
 
     long GLOBAL_TRACING_POLL = Duration.ofSeconds(30).toMillis();
 
     long API_CRUISE_CONTROL_POLL = Duration.ofSeconds(5).toMillis();
     long API_CRUISE_CONTROL_TIMEOUT = Duration.ofMinutes(10).toMillis();
-    long GLOBAL_CRUISE_CONTROL_TIMEOUT = Duration.ofMinutes(4).toMillis();
+    long GLOBAL_CRUISE_CONTROL_TIMEOUT = Duration.ofMinutes(5).toMillis();
+    long GLOBAL_CRUISE_CONTROL_TIMEOUT_LONG = Duration.ofMinutes(10).toMillis();
     long CRUISE_CONTROL_TRAIN_MODEL_TIMEOUT = Duration.ofMinutes(8).toMillis();
 
     long OLM_UPGRADE_INSTALL_PLAN_TIMEOUT = Duration.ofMinutes(15).toMillis();
@@ -164,6 +169,8 @@ public interface TestConstants {
     String REPLICA_SET = "ReplicaSet";
     String SUBSCRIPTION = "Subscription";
     String OPERATOR_GROUP = "OperatorGroup";
+    String BUILD_CONFIG = "BuildConfig";
+    String IMAGE_STREAM = "ImageStream";
 
     /**
      * KafkaBridge JSON encoding with JSON embedded format
@@ -206,9 +213,7 @@ public interface TestConstants {
     /**
      * Feature gate related constants
      */
-    String DONT_USE_KRAFT_MODE = "-UseKRaft";
-    // kept for upgrade/downgrade tests in KRaft
-    String USE_KRAFT_MODE = "+UseKRaft";
+    // No Feature gates kept for STs at this moment
 
     /**
      * Default value which allows execution of tests with any tags
@@ -404,6 +409,11 @@ public interface TestConstants {
      * Tag for tests that uses Strimzi quotas plugin
      */
     String QUOTAS_PLUGIN = "quotasplugin";
+
+    /**
+     * Tag for tests that covers Tiered Storage integration
+     */
+    String TIERED_STORAGE = "tieredstorage";
 
     /**
      * Tag for tests, without ARM,AARCH64 support

@@ -251,9 +251,18 @@ public class KafkaTemplates {
 
         return defaultKafka(kafka, clusterName, kafkaReplicas, zookeeperReplicas)
             .editSpec()
+                .editKafka()
+                    // faster cluster model generation tuning: reduce reporting and metadata refresh intervals
+                    .addToConfig("cruise.control.metrics.reporter.metrics.reporting.interval.ms", 5_000)
+                    .addToConfig("cruise.control.metrics.reporter.metadata.max.age.ms", 4_000)
+                .endKafka()
                 .editCruiseControl()
                     // Extend active users tasks
                     .addToConfig("max.active.user.tasks", 10)
+                    // faster cluster model generation tuning: reduce sampling and metadata refresh intervals
+                    .addToConfig("metric.sampling.interval.ms", 5_000)
+                    .addToConfig("cruise.control.metrics.reporter.metrics.reporting.interval.ms", 5_000)
+                    .addToConfig("metadata.max.age.ms", 4_000)
                 .endCruiseControl()
             .endSpec();
     }

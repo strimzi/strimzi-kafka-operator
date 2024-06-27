@@ -9,8 +9,8 @@ ARG strimzi_version
 ARG TARGETOS
 ARG TARGETARCH
 
-RUN microdnf --setopt=install_weak_deps=0 --setopt=tsflags=nodocs install gettext nmap-ncat net-tools unzip hostname findutils tar \
-    && microdnf clean all
+RUN microdnf --setopt=install_weak_deps=0 --setopt=tsflags=nodocs install -y gettext nmap-ncat net-tools unzip hostname findutils tar \
+    && microdnf clean all -y
 
 # Add kafka user with UID 1001
 # The user is in the group 0 to have access to the mounted volumes and storage

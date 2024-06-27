@@ -3,9 +3,20 @@
 // con-oauth-config.adoc
 
 [id='proc-oauth-authorization-broker-config-{context}']
-= Configuring OAuth 2.0 authorization support
+= Example: Enabling OAuth 2.0 authorization
 
-This procedure describes how to configure Kafka brokers to use OAuth 2.0 authorization using Keycloak Authorization Services.
+[role="_abstract"]
+This example procedure shows how to configure Kafka to use OAuth 2.0 authorization using Keycloak Authorization Services.
+To enable OAuth 2.0 authorization using Keycloak, configure the `Kafka` resource to use `keycloak` authorization and specify the properties required to access the authorization server and Keycloak Authorization Services.
+
+Keycloak server Authorization Services REST endpoints extend token-based authentication with Keycloak by applying defined security policies on a particular user,
+and providing a list of permissions granted on different resources for that user.
+Policies use roles and groups to match permissions to users.
+OAuth 2.0 authorization enforces permissions locally based on the received list of grants for the user from Keycloak Authorization Services.
+
+A Keycloak _authorizer_ (`KeycloakAuthorizer`) is provided with Strimzi.
+The authorizer fetches a list of granted permissions from the authorization server as needed,
+and enforces authorization locally on Kafka, making rapid authorization decisions for each client request.
 
 .Before you begin
 Consider the access you require or want to limit for certain users.
@@ -17,7 +28,7 @@ And roles are used to match users based on their function.
 With Keycloak, you can store users and groups in LDAP, whereas clients and roles cannot be stored this way.
 Storage and access to user data may be a factor in how you choose to configure authorization policies.
 
-NOTE: link:{BookURLConfiguring}#property-simple-authorization-superusers-reference[Super users^] always have unconstrained access to a Kafka broker regardless of the authorization implemented on the Kafka broker.
+NOTE: link:{BookURLConfiguring}#property-simple-authorization-superusers-reference[Super users^] always have unconstrained access to Kafka regardless of the authorization implemented.
 
 .Prerequisites
 
@@ -27,20 +38,12 @@ You use the same Keycloak server endpoint when you set up authorization.
 
 .Procedure
 
-. Access the Keycloak Admin Console or use the Keycloak Admin CLI to enable Authorization Services for the Kafka broker client you created when setting up OAuth 2.0 authentication.
+. Access the Keycloak Admin Console or use the Keycloak Admin CLI to enable Authorization Services for the OAuth 2.0 client for Kafka you created when setting up OAuth 2.0 authentication.
 . Use Authorization Services to define resources, authorization scopes, policies, and permissions for the client.
 . Bind the permissions to users and clients by assigning them roles and groups.
-. Configure the Kafka brokers to use Keycloak authorization by updating the Kafka broker configuration (`Kafka.spec.kafka`) of your `Kafka` resource in an editor.
+. Configure the `kafka` resource to use `keycloak` authorization, and to be able to access the authorization server and Authorization Services.
 +
-[source,shell]
-----
-kubectl edit kafka my-cluster
-----
-
-. Configure the Kafka broker `kafka` configuration to use `keycloak` authorization, and to be able to access the authorization server and Authorization Services.
-+
-For example:
-+
+.Example OAuth 2.0 authorization configuration
 [source,yaml,subs="+quotes,attributes"]
 ----
 apiVersion: {KafkaApiVersion}
@@ -52,17 +55,17 @@ spec:
     # ...
     authorization:
       type: *keycloak* <1>
-      tokenEndpointUri: <__https://<auth-server-address>/auth/realms/external/protocol/openid-connect/token__> <2>
+      tokenEndpointUri: <__https://<auth-server-address>/realms/external/protocol/openid-connect/token__> <2>
       clientId: kafka <3>
       delegateToKafkaAcls: false <4>
       disableTlsHostnameVerification: false <5>
       superUsers: <6>
-      - CN=fred
-      - sam
-      - CN=edward
+        - CN=client_1
+        - user_2
+        - CN=client_3
       tlsTrustedCertificates: <7>
-      - secretName: oauth-server-cert
-        certificate: ca.crt
+        - secretName: oauth-server-cert
+          pattern: "*.crt"
       grantsRefreshPeriodSeconds: 60 <8>
       grantsRefreshPoolSize: 5 <9>
       grantsMaxIdleSeconds: 300 <10>
@@ -84,7 +87,7 @@ The hostname for the `tokenEndpointUri` URI must be the same.
 Default is `false`.
 <5> (Optional) Disable TLS hostname verification. Default is `false`.
 <6> (Optional) Designated super users.
-<7> (Optional) Trusted certificates for TLS connection to the authorization server.
+<7> (Optional) Certificates stored in X.509 format within the specified secrets for TLS connection to the authorization server.
 <8> (Optional) The time between two consecutive grants refresh runs. That is the maximum time for active sessions to detect any permissions changes for the user on Keycloak. The default value is 60.
 <9> (Optional) The number of threads to use to refresh (in parallel) the grants for the active sessions. The default value is 5.
 <10> (Optional) The time, in seconds, after which an idle grant in the cache can be evicted. The default value is 300.
@@ -92,11 +95,11 @@ Default is `false`.
 <12> (Optional) Controls whether the latest grants are fetched for a new session. When enabled, grants are retrieved from Keycloak and cached for the user. The default value is `false`.
 <13> (Optional) The connect timeout in seconds when connecting to the Keycloak token endpoint. The default value is 60.
 <14> (Optional) The read timeout in seconds when connecting to the Keycloak token endpoint. The default value is 60.
-<15> (Optional) The maximum number of times to retry (without pausing) a failed HTTP request to the authorization server. The default value is `0`, meaning that no retries are performed. To use this option effectively, consider reducing the timeout times for the `connectTimeoutSeconds` and `readTimeoutSeconds` options. However, note that retries may prevent the current worker thread from being available to other requests, and if too many requests stall, it could make the Kafka broker unresponsive.
+<15> (Optional) The maximum number of times to retry (without pausing) a failed HTTP request to the authorization server. The default value is `0`, meaning that no retries are performed. To use this option effectively, consider reducing the timeout times for the `connectTimeoutSeconds` and `readTimeoutSeconds` options. However, note that retries may prevent the current worker thread from being available to other requests, and if too many requests stall, it could make Kafka unresponsive.
 <16> (Optional) Enable or disable OAuth metrics. The default value is `false`.
 <17> (Optional) Some authorization servers have issues with client sending `Accept: application/json` header. By setting `includeAcceptHeader: false` the header will not be sent. Default is `true`.
 
-. Save and exit the editor, then wait for rolling updates to complete.
+. Apply the changes to the `Kafka` configuration.
 
 . Check the update in the logs or by watching the pod state transitions:
 +
@@ -108,4 +111,4 @@ kubectl get pod -w
 +
 The rolling update configures the brokers to use OAuth 2.0 authorization.
 
-. Verify the configured permissions by accessing Kafka brokers as clients or  users with specific roles, making sure they have the necessary access, or do not have the access they are not supposed to have.
+. Verify the configured permissions by accessing Kafka brokers as clients or users with specific roles, ensuring they have the necessary access and do not have unauthorized access.

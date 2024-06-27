@@ -1,0 +1,29 @@
+[id='assembly-oauth-security-{context}']
+= Enabling OAuth 2.0 token-based access
+
+[role="_abstract"]
+Strimzi supports OAuth 2.0 for securing Kafka clusters by integrating with an OAUth 2.0 authorization server. 
+Kafka brokers and clients both need to be configured to use OAuth 2.0.
+
+OAuth 2.0 enables standardized token-based authentication and authorization between applications, using a central authorization server to issue tokens that grant limited access to resources.
+You can define specific scopes for fine-grained access control.
+Scopes correspond to different levels of access to Kafka topics or operations within the cluster.  
+
+OAuth 2.0 also supports single sign-on and integration with identity providers. 
+
+ifdef::Section[]
+For more information on using OAUth 2.0, see the link:https://github.com/strimzi/strimzi-kafka-oauth[Strimzi OAuth 2.0 for Apache Kafka project^].
+endif::Section[]
+
+//setting up oauth server
+include::../../modules/oauth/proc-oauth-server-config.adoc[leveloffset=+1]
+
+//oauth authentication
+include::../oauth/assembly-oauth-authentication.adoc[leveloffset=+1]
+
+//oauth authorization
+include::../oauth/assembly-oauth-authorization.adoc[leveloffset=+1]
+
+//keycloak authorization
+include::../oauth/assembly-managing-policies-permissions-keycloak.adoc[leveloffset=+1]
+

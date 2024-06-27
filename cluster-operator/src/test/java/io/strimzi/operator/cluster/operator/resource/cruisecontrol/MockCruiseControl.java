@@ -31,6 +31,7 @@ import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.LogManager;
 
+import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlHeaders.USER_TASK_ID_HEADER;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.mockserver.model.Header.header;
 import static org.mockserver.model.HttpRequest.request;
@@ -134,8 +135,7 @@ public class MockCruiseControl {
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.JSON.toString(), "true|false"))
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.VERBOSE.toString(), "true|false"))
                                 .withPath(CruiseControlEndpoints.STATE.toString())
-                                .withHeaders(header(CruiseControlApi.CC_REST_API_USER_ID_HEADER, STATE_PROPOSAL_NOT_READY),
-                                        AUTH_HEADER)
+                                .withHeaders(header(USER_TASK_ID_HEADER, STATE_PROPOSAL_NOT_READY), AUTH_HEADER)
                                 .withSecure(true))
                 .respond(
                         response()
@@ -204,7 +204,7 @@ public class MockCruiseControl {
                         response()
                                 .withStatusCode(500)
                                 .withBody(jsonError)
-                                .withHeaders(header(CruiseControlApi.CC_REST_API_USER_ID_HEADER, REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR_RESPONSE_UTID))
+                                .withHeaders(header(USER_TASK_ID_HEADER, REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR_RESPONSE_UTID))
                                 .withDelay(TimeUnit.SECONDS, 0));
     }
 
@@ -231,7 +231,7 @@ public class MockCruiseControl {
                         response()
                                 .withStatusCode(500)
                                 .withBody(jsonError)
-                                .withHeaders(header(CruiseControlApi.CC_REST_API_USER_ID_HEADER, BROKERS_NOT_EXIST_ERROR_RESPONSE_UTID))
+                                .withHeaders(header(USER_TASK_ID_HEADER, BROKERS_NOT_EXIST_ERROR_RESPONSE_UTID))
                                 .withDelay(TimeUnit.SECONDS, 0));
     }
 

@@ -1,0 +1,32 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-config.adoc
+
+[id='con-failed-lock-warnings-{context}']
+= Lock acquisition warnings for cluster operations
+
+[role="_abstract"]
+The Cluster Operator ensures that only one operation runs at a time for each cluster by using locks. 
+If another operation attempts to start while a lock is held, it waits until the current operation completes.
+
+Operations such as cluster creation, rolling updates, scaling down, and scaling up are managed by the Cluster Operator.
+
+If acquiring a lock takes longer than the configured timeout (`STRIMZI_OPERATION_TIMEOUT_MS`), a DEBUG message is logged:
+
+.Example DEBUG message for lock acquisition
+[source,shell]
+----
+DEBUG AbstractOperator:406 - Reconciliation #55(timer) Kafka(myproject/my-cluster): Failed to acquire lock lock::myproject::Kafka::my-cluster within 10000ms.
+----
+
+Timed-out operations are retried during the next periodic reconciliation in intervals defined by `STRIMZI_FULL_RECONCILIATION_INTERVAL_MS` (by default 120 seconds).
+
+If an INFO message continues to appear with the same same reconciliation number, it might indicate a lock release error:
+
+.Example INFO message for reconciliation
+[source,shell]
+----
+INFO  AbstractOperator:399 - Reconciliation #1(watch) Kafka(myproject/my-cluster): Reconciliation is in progress
+----
+
+Restarting the Cluster Operator can resolve such issues.

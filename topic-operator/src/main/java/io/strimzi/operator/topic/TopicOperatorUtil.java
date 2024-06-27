@@ -9,28 +9,26 @@ import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.api.kafka.model.topic.KafkaTopicStatus;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.topic.metrics.TopicOperatorMetricsHolder;
+import io.strimzi.operator.topic.model.Either;
+import io.strimzi.operator.topic.model.Pair;
+import io.strimzi.operator.topic.model.PartitionedByError;
+import io.strimzi.operator.topic.model.ReconcilableTopic;
+import io.strimzi.operator.topic.model.TopicOperatorException;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
-import static java.lang.String.format;
+import java.util.stream.Stream;
 
 /**
- * Provides utility methods for managing and interacting with KafkaTopic resources within a Topic Operator context. 
- * This class includes functionalities such as extracting topic names from KafkaTopic resources, managing reconciliation 
- * and operation timers, determining if a KafkaTopic is managed or paused, and handling common operations like reading 
- * file content and building HTTP authentication headers. It serves as a central point for operations that are frequently 
- * performed across different parts of the Topic Operator's codebase, ensuring consistency and reducing code duplication.
+ * Provides utility methods for managing and interacting 
+ * with KafkaTopic resources within a Topic Operator context.
  */
 public class TopicOperatorUtil {
     static final String MANAGED = "strimzi.io/managed";
+    static final int BROKER_DEFAULT = -1;
 
-    private TopicOperatorUtil() {
-    }
+    private TopicOperatorUtil() { }
 
     /**
      * Get the topic name from a {@link KafkaTopic} resource.
@@ -64,62 +62,53 @@ public class TopicOperatorUtil {
 
     /**
      * Start the reconciliation timer.
-     * 
-     * @param reconcilableTopic Reconcilable topic.
+     *
      * @param metrics Metrics holder.
+     * @return Timer sample.
      */
-    public static void startReconciliationTimer(ReconcilableTopic reconcilableTopic,
-                                                TopicOperatorMetricsHolder metrics) {
-        if (reconcilableTopic.reconciliationTimerSample() == null) {
-            reconcilableTopic.reconciliationTimerSample(Timer.start(metrics.metricsProvider().meterRegistry()));
-        }
+    public static Timer.Sample startReconciliationTimer(TopicOperatorMetricsHolder metrics) {
+        return Timer.start(metrics.metricsProvider().meterRegistry());
     }
 
     /**
      * Stop the reconciliation timer.
-     * 
-     * @param reconcilableTopic Reconcilable topic.
-     * @param metrics Metrics holder.
-     * @param namespace Namespace.
-     */
-    public static void stopReconciliationTimer(ReconcilableTopic reconcilableTopic,
-                                               TopicOperatorMetricsHolder metrics,
-                                               String namespace) {
-        if (reconcilableTopic.reconciliationTimerSample() != null) {
-            reconcilableTopic.reconciliationTimerSample().stop(metrics.reconciliationsTimer(namespace));
-        }
-    }
-
-    /**
-     * Start the operation timer.
-     * 
-     * @param enableAdditionalMetrics Whether to enable additional metrics.
-     * @param metrics Metrics holder.
-     * @return The timer sample.
-     */
-    public static Timer.Sample startOperationTimer(boolean enableAdditionalMetrics,
-                                                   TopicOperatorMetricsHolder metrics) {
-        if (enableAdditionalMetrics) {
-            return Timer.start(metrics.metricsProvider().meterRegistry());
-        } else {
-            return null;
-        }
-    }
-
-    /**
-     * Stop the operation timer.
      *
-     * @param timerSample The timer sample.
-     * @param opTimer Operation timer.
-     * @param enableAdditionalMetrics Whether to enable additional metrics.
+     * @param metrics Metrics holder.
+     * @param timerSample Timer sample.
      * @param namespace Namespace.
      */
-    public static void stopOperationTimer(Timer.Sample timerSample, 
-                                          Function<String, Timer> opTimer,
-                                          boolean enableAdditionalMetrics,
-                                          String namespace) {
-        if (timerSample != null && enableAdditionalMetrics) {
-            timerSample.stop(opTimer.apply(namespace));
+    public static void stopReconciliationTimer(TopicOperatorMetricsHolder metrics,
+                                               Timer.Sample timerSample,
+                                               String namespace) {
+        timerSample.stop(metrics.reconciliationsTimer(namespace));
+    }
+
+    /**
+     * Start the external request timer.
+     *
+     * @param metrics Metrics holder.
+     * @param enabled Whether additional metrics are enabled.
+     * @return Timer sample.
+     */
+    public static Timer.Sample startExternalRequestTimer(TopicOperatorMetricsHolder metrics,
+                                                         boolean enabled) {
+        return enabled ? Timer.start(metrics.metricsProvider().meterRegistry()) : null;
+    }
+
+    /**
+     * Stop the external request timer.
+     *
+     * @param timerSample Timer sample.
+     * @param requestTimer Request timer.
+     * @param enabled Whether additional metrics are enabled.
+     * @param namespace Namespace.
+     */
+    public static void stopExternalRequestTimer(Timer.Sample timerSample,
+                                                Function<String, Timer> requestTimer,
+                                                boolean enabled,
+                                                String namespace) {
+        if (enabled) {
+            timerSample.stop(requestTimer.apply(namespace));
         }
     }
 
@@ -147,20 +136,6 @@ public class TopicOperatorUtil {
     }
 
     /**
-     * Get file content.
-     * 
-     * @param filePath Absolute file path.
-     * @return File content.
-     */
-    public static byte[] getFileContent(String filePath) {
-        try {
-            return Files.readAllBytes(Path.of(filePath));
-        } catch (IOException ioe) {
-            throw new RuntimeException(format("File not found: %s", filePath));
-        }
-    }
-
-    /**
      * Whether the {@link KafkaTopic} status has replicas change.
      * 
      * @param status Topic status.
@@ -168,5 +143,38 @@ public class TopicOperatorUtil {
      */
     public static boolean hasReplicasChange(KafkaTopicStatus status) {
         return status != null && status.getReplicasChange() != null;
+    }
+
+    /**
+     * Partition the input stream {@link Pair}s into success and error lists.
+     *
+     * @param stream Input stream of pairs.
+     * @return Pairs partitioned by error.
+     * @param <K> Type of pair key.
+     * @param <V> Type of pair value.
+     */
+    public static <K, V> PartitionedByError<K, V> partitionedByError(Stream<Pair<K, Either<TopicOperatorException, V>>> stream) {
+        var collect = stream.collect(Collectors.partitioningBy(x -> x.getValue().isRight()));
+        return new PartitionedByError<>(collect.get(true), collect.get(false));
+    }
+
+    /**
+     * Get number of partitions from {@link KafkaTopic} spec.
+     *
+     * @param kt KafkaTopic resource.
+     * @return Partitions value.
+     */
+    public static int partitions(KafkaTopic kt) {
+        return kt.getSpec().getPartitions() != null ? kt.getSpec().getPartitions() : BROKER_DEFAULT;
+    }
+
+    /**
+     * Get number of replicas from {@link KafkaTopic} spec.
+     *
+     * @param kt KafkaTopic resource.
+     * @return Replicas value.
+     */
+    public static short replicas(KafkaTopic kt) {
+        return kt.getSpec().getReplicas() != null ? kt.getSpec().getReplicas().shortValue() : BROKER_DEFAULT;
     }
 }

@@ -1,0 +1,160 @@
+// Module included in the following assemblies:
+//
+// assembly-config.adoc
+
+[id='con-config-kafka-kraft-{context}']
+= Configuring Kafka in KRaft mode
+
+[role="_abstract"]
+Update the `spec` properties of the `Kafka` custom resource to configure your deployment of Kafka in KRaft mode.
+
+As well as configuring Kafka, you can add configuration for Strimzi operators.
+
+The KRaft metadata version (`.spec.kafka.metadataVersion`) must be a version supported by the Kafka version (`spec.kafka.version`).
+If the metadata version is not set in the configuration, the Cluster Operator updates the version to the default for the Kafka version used.  
+
+NOTE: The oldest supported metadata version is 3.3. 
+Using a metadata version that is older than the Kafka version might cause some features to be disabled.
+
+Kafka clusters operating in KRaft mode also use node pools.
+The following must be specified in the xref:config-node-pools-{context}[node pool configuration]:
+
+* Roles assigned to each node within the Kafka cluster 
+* Number of replica nodes used 
+* Storage specification for the nodes 
+
+Other optional properties may also be set in node pools.
+
+For a deeper understanding of the Kafka cluster configuration options, refer to the link:{BookURLConfiguring}[Strimzi Custom Resource API Reference^].
+
+.Example `Kafka` custom resource configuration
+[source,yaml,subs="+attributes"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    version: {DefaultKafkaVersion} # <1>
+    metadataVersion: {DefaultKafkaMetadataVersion} # <2>
+    logging: # <3>
+      type: inline
+      loggers:
+        kafka.root.logger.level: INFO
+    resources: # <4>
+      requests:
+        memory: 64Gi
+        cpu: "8"
+      limits:
+        memory: 64Gi
+        cpu: "12"
+    readinessProbe: # <5>
+      initialDelaySeconds: 15
+      timeoutSeconds: 5
+    livenessProbe:
+      initialDelaySeconds: 15
+      timeoutSeconds: 5
+    jvmOptions: # <6>
+      -Xms: 8192m
+      -Xmx: 8192m
+    image: my-org/my-image:latest # <7>
+    listeners: # <8>
+      - name: plain # <9>
+        port: 9092 # <10>
+        type: internal # <11>
+        tls: false # <12>
+        configuration:
+          useServiceDnsDomain: true # <13>
+      - name: tls
+        port: 9093
+        type: internal
+        tls: true
+        authentication: # <14>
+          type: tls
+      - name: external1 # <15>
+        port: 9094
+        type: route
+        tls: true
+        configuration:
+          brokerCertChainAndKey: # <16>
+            secretName: my-secret
+            certificate: my-certificate.crt
+            key: my-key.key
+    authorization: # <17>
+      type: simple
+    config: # <18>
+      auto.create.topics.enable: "false"
+      offsets.topic.replication.factor: 3
+      transaction.state.log.replication.factor: 3
+      transaction.state.log.min.isr: 2
+      default.replication.factor: 3
+      min.insync.replicas: 2
+    rack: # <19>
+      topologyKey: topology.kubernetes.io/zone
+    metricsConfig: # <20>
+      type: jmxPrometheusExporter
+      valueFrom:
+        configMapKeyRef: # <21>
+          name: my-config-map
+          key: my-key
+  entityOperator: # <22>
+    topicOperator:
+      watchedNamespace: my-topic-namespace
+      reconciliationIntervalMs: 60000
+      logging: # <23>
+        type: inline
+        loggers:
+          rootLogger.level: INFO
+      resources:
+        requests:
+          memory: 512Mi
+          cpu: "1"
+        limits:
+          memory: 512Mi
+          cpu: "1"
+    userOperator:
+      watchedNamespace: my-topic-namespace
+      reconciliationIntervalMs: 60000
+      logging: # <24>
+        type: inline
+        loggers:
+          rootLogger.level: INFO
+      resources:
+        requests:
+          memory: 512Mi
+          cpu: "1"
+        limits:
+          memory: 512Mi
+          cpu: "1"
+  kafkaExporter: # <25>
+    # ...
+  cruiseControl: # <26>
+    # ...
+----
+<1> Kafka version, which can be changed to a supported version by following the upgrade procedure.
+<2> Kafka metadata version,  which can be changed to a supported version by following the upgrade procedure.  
+<3> Kafka loggers and log levels added directly (`inline`) or indirectly (`external`) through a ConfigMap. A custom Log4j configuration must be placed under the `log4j.properties` key in the ConfigMap. For the Kafka `kafka.root.logger.level` logger, you can set the log level to INFO, ERROR, WARN, TRACE, DEBUG, FATAL or OFF.
+<4> Requests for reservation of supported resources, currently `cpu` and `memory`, and limits to specify the maximum resources that can be consumed.
+<5> Healthchecks to know when to restart a container (liveness) and when a container can accept traffic (readiness).
+<6> JVM configuration options to optimize performance for the Virtual Machine (VM) running Kafka.
+<7> ADVANCED OPTION: Container image configuration, which is recommended only in special situations.
+<8> Listeners configure how clients connect to the Kafka cluster via bootstrap addresses. Listeners are configured as _internal_ or _external_ listeners for connection from inside or outside the Kubernetes cluster.
+<9> Name to identify the listener. Must be unique within the Kafka cluster.
+<10> Port number used by the listener inside Kafka. The port number has to be unique within a given Kafka cluster. Allowed port numbers are 9092 and higher with the exception of ports 9404 and 9999, which are already used for Prometheus and JMX. Depending on the listener type, the port number might not be the same as the port number that connects Kafka clients.
+<11> Listener type specified as `internal` or `cluster-ip` (to expose Kafka using per-broker `ClusterIP` services), or for external listeners, as `route` (OpenShift only), `loadbalancer`, `nodeport` or `ingress` (Kubernetes only).
+<12> Enables or disables TLS encryption for each listener. For `route` and `ingress` type listeners, TLS encryption must always be enabled by setting it to `true`.
+<13> Defines whether the fully-qualified DNS names including the cluster service suffix (usually `.cluster.local`) are assigned.
+<14> Listener authentication mechanism specified as mTLS, SCRAM-SHA-512, or token-based OAuth 2.0.
+<15> External listener configuration specifies how the Kafka cluster is exposed outside Kubernetes, such as through a `route`, `loadbalancer` or `nodeport`.
+<16> Optional configuration for a Kafka listener certificate managed by an external CA (certificate authority). The `brokerCertChainAndKey` specifies a `Secret` that contains a server certificate and a private key. You can configure Kafka listener certificates on any listener with enabled TLS encryption.
+<17> Authorization enables simple, OAUTH 2.0, or OPA authorization on the Kafka broker. Simple authorization uses the `AclAuthorizer` and `StandardAuthorizer` Kafka plugins.
+<18> Broker configuration. Standard Apache Kafka configuration may be provided, restricted to those properties not managed directly by Strimzi.
+<19> Rack awareness configuration to spread replicas across different racks, data centers, or availability zones. The `topologyKey` must match a node label containing the rack ID. The example used in this configuration specifies a zone using the standard `{K8sZoneLabel}` label.
+<20> Prometheus metrics enabled. In this example, metrics are configured for the Prometheus JMX Exporter (the default metrics exporter).
+<21> Rules for exporting metrics in Prometheus format to a Grafana dashboard through the Prometheus JMX Exporter, which are enabled by referencing a ConfigMap containing configuration for the Prometheus JMX exporter. You can enable metrics without further configuration using a reference to a ConfigMap containing an empty file under `metricsConfig.valueFrom.configMapKeyRef.key`.
+<22> Entity Operator configuration, which specifies the configuration for the Topic Operator and User Operator.
+<23> Specified Topic Operator loggers and log levels. This example uses `inline` logging.
+<24> Specified User Operator loggers and log levels.
+<25> Kafka Exporter configuration. Kafka Exporter is an optional component for extracting metrics data from Kafka brokers, in particular consumer lag data. For Kafka Exporter to be able to work properly, consumer groups need to be in use.
+<26> Optional configuration for Cruise Control, which is used to rebalance the Kafka cluster.

@@ -31,22 +31,8 @@ import java.util.Map;
 public class RemoteStorageManager implements UnknownPropertyPreserving {
     private String className;
     private String classPath;
-    private Map<String, String> config;
-
+    private Map<String, String> config = new HashMap<>(0);
     protected Map<String, Object> additionalProperties;
-
-    @Override
-    public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties;
-    }
-
-    @Override
-    public void setAdditionalProperty(String name, Object value) {
-        if (this.additionalProperties == null) {
-            this.additionalProperties = new HashMap<>(1);
-        }
-        this.additionalProperties.put(name, value);
-    }
 
     @Description("The class name for the `RemoteStorageManager` implementation.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -70,12 +56,25 @@ public class RemoteStorageManager implements UnknownPropertyPreserving {
 
     @Description("The additional configuration map for the `RemoteStorageManager` implementation. " +
         "Keys will be automatically prefixed with `rsm.config.`, and added to Kafka broker configuration.")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<String, String> getConfig() {
-        return this.config;
+        return config;
     }
 
     public void setConfig(Map<String, String> config) {
         this.config = config;
+    }
+
+    @Override
+    public Map<String, Object> getAdditionalProperties() {
+        return this.additionalProperties != null ? this.additionalProperties : Map.of();
+    }
+
+    @Override
+    public void setAdditionalProperty(String name, Object value) {
+        if (this.additionalProperties == null) {
+            this.additionalProperties = new HashMap<>(2);
+        }
+        this.additionalProperties.put(name, value);
     }
 }

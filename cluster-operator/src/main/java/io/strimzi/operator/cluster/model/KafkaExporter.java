@@ -45,7 +45,10 @@ import static io.strimzi.operator.cluster.model.TemplateUtils.addAdditionalVolum
  * Kafka Exporter model
  */
 public class KafkaExporter extends AbstractModel {
-    protected static final String COMPONENT_TYPE = "kafka-exporter";
+    /**
+     * Type of the component which this model class represents. It is used for labeling and naming purposes.
+     */
+    public static final String COMPONENT_TYPE = "kafka-exporter";
 
     // Configuration for mounting certificates
     protected static final String KAFKA_EXPORTER_CERTS_VOLUME_NAME = "kafka-exporter-certs";
@@ -166,13 +169,14 @@ public class KafkaExporter extends AbstractModel {
     /**
      * Generates Kafka Exporter Deployment
      *
+     * @param podAnnotations    Map with the annotations that will be used for the Pod metadata
      * @param isOpenShift       Flag indicating whether we are on OpenShift or not
      * @param imagePullPolicy   Image pull policy
      * @param imagePullSecrets  List of Image Pull Secrets
      *
      * @return  Generated deployment
      */
-    public Deployment generateDeployment(boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
+    public Deployment generateDeployment(Map<String, String> podAnnotations, boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
         return WorkloadUtils.createDeployment(
                 componentName,
                 namespace,
@@ -187,7 +191,7 @@ public class KafkaExporter extends AbstractModel {
                         labels,
                         templatePod,
                         DEFAULT_POD_LABELS,
-                        Map.of(),
+                        podAnnotations,
                         templatePod != null ? templatePod.getAffinity() : null,
                         null,
                         List.of(createContainer(imagePullPolicy)),
@@ -287,7 +291,7 @@ public class KafkaExporter extends AbstractModel {
      */
     public Secret generateCertificatesSecret(ClusterCa clusterCa, Secret existingSecret, boolean isMaintenanceTimeWindowsSatisfied) {
         return CertUtils.buildTrustedCertificateSecret(reconciliation, clusterCa, existingSecret, namespace, KafkaExporterResources.secretName(cluster), componentName,
-                "kafka-exporter", labels, ownerReference, isMaintenanceTimeWindowsSatisfied);
+                COMPONENT_TYPE, labels, ownerReference, isMaintenanceTimeWindowsSatisfied);
     }
 
     /**

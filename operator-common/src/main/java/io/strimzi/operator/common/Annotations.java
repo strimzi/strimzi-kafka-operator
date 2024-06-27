@@ -30,20 +30,10 @@ public class Annotations extends ResourceAnnotations {
     public static final String ANNO_STRIMZI_SERVER_CERT_HASH = STRIMZI_DOMAIN + "server-cert-hash";
 
     /**
-     * Strimzi logging annotation
-     */
-    public static final String STRIMZI_LOGGING_ANNOTATION = STRIMZI_DOMAIN + "logging";
-
-    /**
-     * Annotations for rolling a cluster whenever the logging (or it's part) has changed.
-     * By changing the annotation we force a restart since the pod will be out of date compared to the StrimziPodSet.
+     * Annotation for tracking changes to logging configurations which cannot be changed dynamically. By changing the
+     * annotation we force a restart of the pods managed by StrimziPodSets or Deployments.
      */
     public static final String ANNO_STRIMZI_LOGGING_HASH = STRIMZI_DOMAIN + "logging-hash";
-
-    /**
-     * Annotation for tracking changes to logging appenders which cannot be changed dynamically
-     */
-    public static final String ANNO_STRIMZI_LOGGING_APPENDERS_HASH = STRIMZI_DOMAIN + "logging-appenders-hash";
 
     /**
      * Annotation for tracking authentication changes

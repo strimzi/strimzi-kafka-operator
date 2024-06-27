@@ -21,6 +21,7 @@ import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.kafka.listener.ListenerAddress;
 import io.strimzi.api.kafka.model.kafka.listener.ListenerAddressBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.ListenerStatus;
+import io.strimzi.api.kafka.model.kafka.quotas.QuotasPluginKafka;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolBuilder;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolList;
@@ -156,7 +157,7 @@ public class KafkaReconciler {
     private final boolean continueOnManualRUFailure;
 
     private String logging = "";
-    private String loggingHash = "";
+    private final Map<Integer, String> brokerLoggingHash = new HashMap<>();
     private final Map<Integer, String> brokerConfigurationHash = new HashMap<>();
     private final Map<Integer, String> kafkaServerCertificateHash = new HashMap<>();
     /* test */ TlsPemIdentity coTlsPemIdentity;
@@ -266,6 +267,7 @@ public class KafkaReconciler {
                 .compose(i -> serviceEndpointsReady())
                 .compose(i -> headlessServiceEndpointsReady())
                 .compose(i -> clusterId(kafkaStatus))
+                .compose(i -> defaultKafkaQuotas())
                 .compose(i -> metadataVersion(kafkaStatus))
                 .compose(i -> deletePersistentClaims())
                 .compose(i -> sharedKafkaConfigurationCleanup())
@@ -615,7 +617,6 @@ public class KafkaReconciler {
                 .compose(existingConfigMaps -> {
                     // This is used during Kafka rolling updates -> we have to store it for later
                     this.logging = kafka.logging().loggingConfiguration(reconciliation, metricsAndLogging.loggingCm());
-                    this.loggingHash = Util.hashStub(Util.getLoggingDynamicallyUnmodifiableEntries(logging));
 
                     List<ConfigMap> desiredConfigMaps = kafka.generatePerBrokerConfigurationConfigMaps(metricsAndLogging, listenerReconciliationResults.advertisedHostnames, listenerReconciliationResults.advertisedPorts);
                     List<Future<?>> ops = new ArrayList<>();
@@ -675,6 +676,10 @@ public class KafkaReconciler {
                         if (pool.isController() && !pool.isBroker())   {
                             // For controllers only, we extract the controller-relevant configurations and use it in the configuration annotations
                             nodeConfiguration = kc.controllerConfigsWithValues().toString();
+                            // For controllers only, we use the full logging configuration in the logging annotation
+                            this.brokerLoggingHash.put(nodeId, Util.hashStub(logging));
+                        } else {
+                            this.brokerLoggingHash.put(nodeId, Util.hashStub(Util.getLoggingDynamicallyUnmodifiableEntries(logging)));
                         }
 
                         // We store hash of the broker configurations for later use in Pod and in rolling updates
@@ -764,7 +769,7 @@ public class KafkaReconciler {
         podAnnotations.put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(this.clusterCa.caCertGeneration()));
         podAnnotations.put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, String.valueOf(this.clusterCa.caKeyGeneration()));
         podAnnotations.put(Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, String.valueOf(this.clientsCa.caCertGeneration()));
-        podAnnotations.put(Annotations.ANNO_STRIMZI_LOGGING_APPENDERS_HASH, loggingHash);
+        podAnnotations.put(Annotations.ANNO_STRIMZI_LOGGING_HASH, brokerLoggingHash.get(nodeId));
         podAnnotations.put(KafkaCluster.ANNO_STRIMZI_BROKER_CONFIGURATION_HASH, brokerConfigurationHash.get(nodeId));
         podAnnotations.put(ANNO_STRIMZI_IO_KAFKA_VERSION, kafka.getKafkaVersion().version());
 
@@ -808,8 +813,10 @@ public class KafkaReconciler {
     }
 
     /**
-     * Create or update the StrimziPodSet for the Kafka cluster. If set, it uses the old replica count since scaling-up
-     * happens only later in a separate step.
+     * Create or update the StrimziPodSet for the Kafka cluster.
+     * If the StrimziPodSet is updated with additional pods (Kafka cluster scaled up), it's the StrimziPodSet controller
+     * taking care of reconciling within this method and starting up the new nodes.
+     * The opposite (Kafka cluster scaled down) is handled by a dedicated scaleDown() method instead.
      *
      * @return  Future which completes when the PodSet is created, updated or deleted
      */
@@ -914,6 +921,15 @@ public class KafkaReconciler {
     }
 
     /**
+     * Configures the default users quota in Kafka in case that the {@link QuotasPluginKafka} is used
+     *
+     * @return  Future which completes when the default quotas are configured
+     */
+    protected Future<Void> defaultKafkaQuotas() {
+        return DefaultKafkaQuotasManager.reconcileDefaultUserQuotas(reconciliation, vertx, adminClientProvider, this.coTlsPemIdentity.pemTrustSet(), this.coTlsPemIdentity.pemAuthIdentity(), kafka.quotas());
+    }
+
+    /**
      * Manages the KRaft metadata version
      *
      * @return  Future which completes when the KRaft metadata version is set to the current version or updated.
@@ -987,7 +1003,9 @@ public class KafkaReconciler {
                                 String hostIP = broker.getStatus().getHostIP();
                                 allNodes.stream()
                                         .filter(node -> {
-                                            if (node.getStatus() != null && node.getStatus().getAddresses() != null) {
+                                            if (Labels.booleanLabel(broker, Labels.STRIMZI_BROKER_ROLE_LABEL, false)
+                                                    && node.getStatus() != null
+                                                    && node.getStatus().getAddresses() != null) {
                                                 return node.getStatus().getAddresses().stream().anyMatch(address -> hostIP.equals(address.getAddress()));
                                             } else {
                                                 return false;

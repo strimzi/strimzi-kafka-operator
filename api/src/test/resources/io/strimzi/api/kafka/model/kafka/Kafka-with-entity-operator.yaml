@@ -24,8 +24,7 @@ spec:
   entityOperator:
     topicOperator:
       watchedNamespace: my-ns
-      reconciliationIntervalSeconds: 60
+      reconciliationIntervalMs: 60000
     userOperator:
       watchedNamespace: my-other-ns
-      reconciliationIntervalSeconds: 60
-
+      reconciliationIntervalMs: 60000

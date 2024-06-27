@@ -33,7 +33,7 @@ import java.util.Map;
 public class ExternalConfiguration implements UnknownPropertyPreserving {
     private List<ExternalConfigurationEnv> env;
     private List<ExternalConfigurationVolumeSource> volumes;
-    private Map<String, Object> additionalProperties = new HashMap<>(0);
+    private Map<String, Object> additionalProperties;
 
     @Description("Makes data from a Secret or ConfigMap available in the Kafka Connect pods as environment variables.")
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
@@ -57,12 +57,14 @@ public class ExternalConfiguration implements UnknownPropertyPreserving {
 
     @Override
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties;
+        return this.additionalProperties != null ? this.additionalProperties : Map.of();
     }
 
     @Override
     public void setAdditionalProperty(String name, Object value) {
+        if (this.additionalProperties == null) {
+            this.additionalProperties = new HashMap<>(2);
+        }
         this.additionalProperties.put(name, value);
     }
-
 }

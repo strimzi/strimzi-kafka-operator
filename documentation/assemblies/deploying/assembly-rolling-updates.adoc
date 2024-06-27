@@ -1,0 +1,19 @@
+// This assembly is included in the following assemblies:
+//
+// using/assembly-management-tasks.adoc
+
+[id='assembly-rolling-updates-{context}']
+= Managing rolling updates 
+Use annotations to manually trigger a rolling update of Kafka and other operands through the Cluster Operator.
+Initiate rolling updates of Kafka, Kafka Connect, MirrorMaker 2, and ZooKeeper clusters.
+
+Manually performing a rolling update on a specific pod or set of pods is usually only required in exceptional circumstances.
+However, rather than deleting the pods directly, if you perform the rolling update through the Cluster Operator you ensure the following:
+
+* The manual deletion of the pod does not conflict with simultaneous Cluster Operator operations, such as deleting other pods in parallel.
+* The Cluster Operator logic handles the Kafka configuration specifications, such as the number of in-sync replicas.
+
+//steps for manual rolling updates with strimzipodset
+include::../../modules/managing/proc-manual-rolling-update-strimzipodset.adoc[leveloffset=+1]
+//steps for manual rolling update with pods
+include::../../modules/managing/proc-manual-rolling-update-pods.adoc[leveloffset=+1]

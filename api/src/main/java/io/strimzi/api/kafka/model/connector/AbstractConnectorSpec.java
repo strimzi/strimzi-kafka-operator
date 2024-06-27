@@ -35,7 +35,7 @@ public abstract class AbstractConnectorSpec extends Spec {
     /**
      * Forbidden options in the connector configuration
      */
-    public static final String FORBIDDEN_PARAMETERS = "connector.class, tasks.max";
+    public static final String FORBIDDEN_PARAMETERS = "name, connector.class, tasks.max";
 
     private Integer tasksMax;
     private Boolean pause;
@@ -134,5 +134,4 @@ public abstract class AbstractConnectorSpec extends Spec {
     public void setState(ConnectorState state) {
         this.state = state;
     }
-
 }

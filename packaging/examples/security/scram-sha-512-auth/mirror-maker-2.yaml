@@ -227,7 +227,7 @@ spec:
       tls:
         trustedCertificates:
           - secretName: cluster-a-cluster-ca-cert
-            certificate: ca.crt
+            pattern: "*.crt"
       authentication:
         type: scram-sha-512
         username: cluster-a-user
@@ -239,7 +239,7 @@ spec:
       tls:
         trustedCertificates:
           - secretName: cluster-b-cluster-ca-cert
-            certificate: ca.crt
+            pattern: "*.crt"
       authentication:
         type: scram-sha-512
         username: cluster-b-user

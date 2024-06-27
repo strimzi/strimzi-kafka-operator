@@ -6,11 +6,15 @@ package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.Volume;
+import io.fabric8.kubernetes.api.model.VolumeMount;
+import io.strimzi.api.kafka.model.common.CertSecretSource;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Ca;
+import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
 
 import java.io.IOException;
@@ -176,5 +180,139 @@ public class CertUtils {
         }
 
         return false;
+    }
+
+    /**
+     * Creates the Secret Volumes for trusted TLS certificates
+     *
+     * @param volumeList            List where the volumes will be added
+     * @param trustedCertificates   List of trusted certificates for TLS connection
+     * @param isOpenShift           Indicates whether we run on OpenShift or not
+     */
+    public static void createTrustedCertificatesVolumes(List<Volume> volumeList, List<CertSecretSource> trustedCertificates, boolean isOpenShift) {
+        createTrustedCertificatesVolumes(volumeList, trustedCertificates, isOpenShift, null);
+    }
+
+    /**
+     * Creates the Secret Volumes for trusted TLS certificates
+     *
+     * @param volumeList            List where the volumes will be added
+     * @param trustedCertificates   List of trusted certificates for TLS connection
+     * @param isOpenShift           Indicates whether we run on OpenShift or not
+     * @param prefix                Prefix used for the volume names to distinguish when the same Secret is mounted for
+     *                              different purposes (e.g. different cluster connections in MM2)
+     */
+    public static void createTrustedCertificatesVolumes(List<Volume> volumeList, List<CertSecretSource> trustedCertificates, boolean isOpenShift, String prefix) {
+        if (trustedCertificates != null && !trustedCertificates.isEmpty()) {
+            for (CertSecretSource certSecretSource : trustedCertificates) {
+                maybeAddTrustedCertificateVolume(volumeList, certSecretSource, isOpenShift, prefix);
+            }
+        }
+    }
+
+    /**
+     * Creates the Volume used for trusted certificates and adds it to the list. It checks if the Secret where the
+     * certificate is stored has been already used or not and makes sure to mount it only once to avoid duplicates and
+     * naming conflicts.
+     *
+     * @param volumeList        List where the volume will be added
+     * @param certSecretSource  Represents a certificate inside a Secret
+     * @param isOpenShift       Indicates whether we run on OpenShift or not
+     * @param prefix            Prefix used to generate the volume name
+     */
+    private static void maybeAddTrustedCertificateVolume(List<Volume> volumeList, CertSecretSource certSecretSource, boolean isOpenShift, String prefix) {
+        String volumeName = trustedCertificateVolumeName(certSecretSource, prefix);
+
+        // skipping if a volume with same name was already added
+        if (volumeList.stream().noneMatch(v -> v.getName().equals(volumeName))) {
+            volumeList.add(VolumeUtils.createSecretVolume(volumeName, certSecretSource.getSecretName(), isOpenShift));
+        }
+    }
+
+    /**
+     * Creates the volume mounts for Secrets with trusted TLS certificates
+     *
+     * @param volumeMountList       List where the volume mounts will be added
+     * @param trustedCertificates   Trusted certificates for TLS connection
+     * @param tlsVolumeMountPath    Path where the TLS certs should be mounted
+     */
+    public static void createTrustedCertificatesVolumeMounts(List<VolumeMount> volumeMountList, List<CertSecretSource> trustedCertificates, String tlsVolumeMountPath) {
+        createTrustedCertificatesVolumeMounts(volumeMountList, trustedCertificates, tlsVolumeMountPath, null);
+    }
+
+    /**
+     * Creates the volume mounts for Secrets with trusted TLS certificates
+     *
+     * @param volumeMountList       List where the volume mounts will be added
+     * @param trustedCertificates   Trusted certificates for TLS connection
+     * @param tlsVolumeMountPath    Path where the TLS certs should be mounted
+     * @param prefix                Prefix used for the volume names to distinguish when the same Secret is mounted for
+     *                              different purposes (e.g. different cluster connections in MM2)
+     */
+    public static void createTrustedCertificatesVolumeMounts(List<VolumeMount> volumeMountList, List<CertSecretSource> trustedCertificates, String tlsVolumeMountPath, String prefix) {
+        if (trustedCertificates != null && !trustedCertificates.isEmpty()) {
+            for (CertSecretSource certSecretSource : trustedCertificates) {
+                maybeAddTrustedCertificateVolumeMount(volumeMountList, certSecretSource, tlsVolumeMountPath, prefix);
+            }
+        }
+    }
+
+    /**
+     * Creates the VolumeMount used for trusted TLS certificates and adds it to the list. It checks if the Secret where
+     * the certificate is stored has been already used or not and makes sure to mount it only once to avoid duplicates
+     * and naming conflicts.
+     *
+     * @param volumeMountList       List where the volume mount will be added
+     * @param certSecretSource      Represents a certificate inside a Secret
+     * @param tlsVolumeMountPath    Path where the TLS certs should be mounted
+     * @param prefix                Prefix used to generate the volume name
+     */
+    private static void maybeAddTrustedCertificateVolumeMount(List<VolumeMount> volumeMountList, CertSecretSource certSecretSource, String tlsVolumeMountPath, String prefix) {
+        String volumeName = trustedCertificateVolumeName(certSecretSource, prefix);
+
+        // skipping if a volume mount with same Secret name was already added
+        if (volumeMountList.stream().noneMatch(vm -> vm.getName().equals(volumeName))) {
+            volumeMountList.add(VolumeUtils.createVolumeMount(volumeName, tlsVolumeMountPath + certSecretSource.getSecretName()));
+        }
+    }
+
+    /**
+     * Generates the volume name that is used in the Volume definition and in the Volume mounts
+     *
+     * @param certSecretSource      Represents a certificate inside a Secret
+     * @param prefix                Prefix used to generate the volume name
+
+     * @return  The generated volume name
+     */
+    private static String trustedCertificateVolumeName(CertSecretSource certSecretSource, String prefix)    {
+        return prefix != null ? prefix + '-' + certSecretSource.getSecretName() : certSecretSource.getSecretName();
+    }
+
+    /**
+     * Process the list of trusted certificates into an environment variable that will be used by the container images.
+     * The environment variable has the format `secretName/filenameOrPattern;secretName/filenameOrPattern;...`.
+     *
+     * @param trustedCertificates   List of trusted certificates
+     *
+     * @return  String to be used in the environment variable
+     */
+    public static String trustedCertsEnvVar(List<CertSecretSource> trustedCertificates)   {
+        if (trustedCertificates != null && !trustedCertificates.isEmpty()) {
+            List<String> paths = new ArrayList<>();
+
+            for (CertSecretSource certSecretSource : trustedCertificates) {
+                if (certSecretSource.getCertificate() != null)  {
+                    paths.add(certSecretSource.getSecretName() + "/" + certSecretSource.getCertificate());
+                } else if (certSecretSource.getPattern() != null)   {
+                    paths.add(certSecretSource.getSecretName() + "/" + certSecretSource.getPattern());
+                } else {
+                    throw new InvalidResourceException("Certificate source does not contain the certificate or the pattern.");
+                }
+            }
+
+            return String.join(";", paths);
+        } else {
+            return null;
+        }
     }
 }

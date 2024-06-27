@@ -30,18 +30,18 @@
 #    kafkaKRaftAfter: path to Kafka and KafkaNodePool resources (KRaft mode), collected in one file, in the version of Strimzi, to which we are doing the downgrade
 # --- Structure ---
 - fromVersion: HEAD
-  toVersion: 0.40.0
+  toVersion: 0.41.0
   fromExamples: HEAD
-  toExamples: strimzi-0.40.0
+  toExamples: strimzi-0.41.0
   fromUrl: HEAD
-  toUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.40.0/strimzi-0.40.0.zip
+  toUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.41.0/strimzi-0.41.0.zip
   fromKafkaVersionsUrl: HEAD
   additionalTopics: 2
   imagesAfterOperations:
-    zookeeper: strimzi/kafka:0.40.0-kafka-3.6.0
-    kafka: strimzi/kafka:0.40.0-kafka-3.6.0
-    topicOperator: strimzi/operator:0.40.0
-    userOperator: strimzi/operator:0.40.0
+    zookeeper: strimzi/kafka:0.41.0-kafka-3.6.0
+    kafka: strimzi/kafka:0.41.0-kafka-3.6.0
+    topicOperator: strimzi/operator:0.41.0
+    userOperator: strimzi/operator:0.41.0
   deployKafkaVersion: 3.7.0
   client:
     continuousClientsMessages: 500
@@ -58,18 +58,18 @@
     kafkaKRaftBefore: "/examples/kafka/kraft/kafka.yaml"
     kafkaKRaftAfter: "/examples/kafka/kraft/kafka.yaml"
 - fromVersion: HEAD
-  toVersion: 0.40.0
+  toVersion: 0.41.0
   fromExamples: HEAD
-  toExamples: strimzi-0.40.0
+  toExamples: strimzi-0.41.0
   fromUrl: HEAD
-  toUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.40.0/strimzi-0.40.0.zip
+  toUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.41.0/strimzi-0.41.0.zip
   fromKafkaVersionsUrl: HEAD
   additionalTopics: 2
   imagesAfterOperations:
-    zookeeper: strimzi/kafka:0.40.0-kafka-3.6.0
-    kafka: strimzi/kafka:0.40.0-kafka-3.6.0
-    topicOperator: strimzi/operator:0.40.0
-    userOperator: strimzi/operator:0.40.0
+    zookeeper: strimzi/kafka:0.41.0-kafka-3.6.0
+    kafka: strimzi/kafka:0.41.0-kafka-3.6.0
+    topicOperator: strimzi/operator:0.41.0
+    userOperator: strimzi/operator:0.41.0
   deployKafkaVersion: 3.7.0
   client:
     continuousClientsMessages: 500
@@ -78,8 +78,8 @@
     status: stable
     flakyEnvVariable: none
     reason: Test is working on all environment used by QE.
-  featureGatesBefore: ""
-  featureGatesAfter: "-UnidirectionalTopicOperator"
+  featureGatesBefore: "+ContinueReconciliationOnManualRollingUpdateFailure"
+  featureGatesAfter: "-ContinueReconciliationOnManualRollingUpdateFailure"
   filePaths:
     kafkaBefore: "/examples/kafka/kafka-persistent.yaml"
     kafkaAfter: "/examples/kafka/kafka-persistent.yaml"

@@ -17,8 +17,6 @@ import lombok.ToString;
 import java.util.HashMap;
 import java.util.Map;
 
-import static java.util.Collections.emptyMap;
-
 /**
  * Configures persistent claim overrides for storage - allows to override storage class with per broker configuration
  */
@@ -33,7 +31,7 @@ import static java.util.Collections.emptyMap;
 public class PersistentClaimStorageOverride  implements UnknownPropertyPreserving {
     private Integer broker;
     private String storageClass;
-    private Map<String, Object> additionalProperties = new HashMap<>(0);
+    private Map<String, Object> additionalProperties;
 
     @Description("Id of the kafka broker (broker identifier)")
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -57,13 +55,13 @@ public class PersistentClaimStorageOverride  implements UnknownPropertyPreservin
 
     @Override
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties != null ? this.additionalProperties : emptyMap();
+        return this.additionalProperties != null ? this.additionalProperties : Map.of();
     }
 
     @Override
     public void setAdditionalProperty(String name, Object value) {
         if (this.additionalProperties == null) {
-            this.additionalProperties = new HashMap<>(1);
+            this.additionalProperties = new HashMap<>(2);
         }
         this.additionalProperties.put(name, value);
     }

@@ -65,7 +65,7 @@ public class ZookeeperClusterSpec implements HasConfigurableMetrics, HasConfigur
     private KafkaJmxOptions jmxOptions;
     private MetricsConfig metricsConfig;
     private ZookeeperClusterTemplate template;
-    private Map<String, Object> additionalProperties = new HashMap<>(0);
+    private Map<String, Object> additionalProperties;
 
     @Description("The ZooKeeper broker config. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES + " (with the exception of: " + FORBIDDEN_PREFIX_EXCEPTIONS + ").")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -199,11 +199,14 @@ public class ZookeeperClusterSpec implements HasConfigurableMetrics, HasConfigur
 
     @Override
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties;
+        return this.additionalProperties != null ? this.additionalProperties : Map.of();
     }
 
     @Override
     public void setAdditionalProperty(String name, Object value) {
+        if (this.additionalProperties == null) {
+            this.additionalProperties = new HashMap<>(2);
+        }
         this.additionalProperties.put(name, value);
     }
 }

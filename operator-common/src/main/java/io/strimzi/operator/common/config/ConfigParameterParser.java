@@ -7,6 +7,7 @@ package io.strimzi.operator.common.config;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.LocalObjectReferenceBuilder;
 import io.strimzi.operator.common.InvalidConfigurationException;
+import io.strimzi.operator.common.featuregates.FeatureGates;
 import io.strimzi.operator.common.model.Labels;
 
 import java.io.IOException;
@@ -188,5 +189,14 @@ public interface ConfigParameterParser<T> {
 
         return namespaces;
     };
+
+    /**
+     * Parses the Feature Gates configuration
+     *
+     * @return  Parser for Feature Gates configuration
+     */
+    static ConfigParameterParser<FeatureGates> parseFeatureGates() {
+        return FeatureGates::new;
+    }
 }
 

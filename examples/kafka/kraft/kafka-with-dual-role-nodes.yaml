@@ -14,8 +14,9 @@ spec:
     volumes:
       - id: 0
         type: persistent-claim
-        size: 20Gi
+        size: 100Gi
         deleteClaim: false
+        kraftMetadata: shared
 ---
 
 apiVersion: kafka.strimzi.io/v1beta2

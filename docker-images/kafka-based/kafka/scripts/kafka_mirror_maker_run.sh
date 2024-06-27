@@ -18,6 +18,7 @@ mkdir -p /tmp/kafka
     "/tmp/kafka/consumer.truststore.p12" \
     "/tmp/kafka/consumer.keystore.p12" \
     "/opt/kafka/consumer-certs" \
+    "$KAFKA_MIRRORMAKER_OAUTH_TRUSTED_CERTS_CONSUMER" \
     "/opt/kafka/consumer-oauth-certs" \
     "/tmp/kafka/consumer-oauth.keystore.p12"
 
@@ -28,6 +29,7 @@ mkdir -p /tmp/kafka
     "/tmp/kafka/producer.truststore.p12" \
     "/tmp/kafka/producer.keystore.p12" \
     "/opt/kafka/producer-certs" \
+    "$KAFKA_MIRRORMAKER_OAUTH_TRUSTED_CERTS_PRODUCER" \
     "/opt/kafka/producer-oauth-certs" \
     "/tmp/kafka/producer-oauth.keystore.p12"
 

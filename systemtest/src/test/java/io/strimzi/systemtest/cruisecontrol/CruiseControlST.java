@@ -194,7 +194,11 @@ public class CruiseControlST extends AbstractST {
         Map<String, String> brokerPods = PodUtils.podSnapshot(Environment.TEST_SUITE_NAMESPACE, testStorage.getBrokerSelector());
 
         // CruiseControl spec is now enabled
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> kafka.getSpec().setCruiseControl(new CruiseControlSpec()), Environment.TEST_SUITE_NAMESPACE);
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> {
+            // Get default CC spec with tune options and set it to existing Kafka
+            CruiseControlSpec cruiseControlSpec = KafkaTemplates.kafkaWithCruiseControl(testStorage.getClusterName(), 3, 3).build().getSpec().getCruiseControl();
+            kafka.getSpec().setCruiseControl(cruiseControlSpec);
+        }, Environment.TEST_SUITE_NAMESPACE);
 
         RollingUpdateUtils.waitTillComponentHasRolled(Environment.TEST_SUITE_NAMESPACE, testStorage.getBrokerSelector(), 3, brokerPods);
 
@@ -336,8 +340,8 @@ public class CruiseControlST extends AbstractST {
         LOGGER.info("Check for default CruiseControl replicaMovementStrategy in Pod configuration file");
         Map<String, Object> actualStrategies = KafkaResource.kafkaClient().inNamespace(testStorage.getNamespaceName())
             .withName(testStorage.getClusterName()).get().getSpec().getCruiseControl().getConfig();
-        // Check that config contains only configurations for max.active.user.tasks
-        assertThat(actualStrategies.size(), is(1));
+        // Check that config contains only configurations for max.active.user.tasks, metric.sampling.interval.ms, cruise.control.metrics.reporter.metrics.reporting.interval.ms, metadata.max.age.ms
+        assertThat(actualStrategies.size(), is(4));
 
         String ccConfFileContent = cmdKubeClient(testStorage.getNamespaceName()).execInPodContainer(ccPodName, TestConstants.CRUISE_CONTROL_CONTAINER_NAME, "cat", TestConstants.CRUISE_CONTROL_CONFIGURATION_FILE_PATH).out();
         assertThat(ccConfFileContent, not(containsString(replicaMovementStrategies)));
@@ -365,7 +369,7 @@ public class CruiseControlST extends AbstractST {
         // JBOD storage in KRaft is supported only from Kafka 3.7.0 and higher.
         // So we want to run this test when KRaft is disabled or when it is with KRaft and Kafka 3.7.0+
         // TODO: remove once support for 3.6.x is removed - https://github.com/strimzi/strimzi-kafka-operator/issues/9921
-        assumeTrue(!Environment.isKRaftForCOEnabled() || TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "3.7.0") >= 0);
+        assumeTrue(!Environment.isKRaftModeEnabled() || TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "3.7.0") >= 0);
 
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         String diskSize = "6Gi";

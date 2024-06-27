@@ -13,12 +13,12 @@ You can configure the address of your authorization server in the `tokenEndpoint
 The OAuth client will connect to the OAuth server, authenticate using the client ID and secret and get an access token which it will use to authenticate with the Kafka broker.
 In the `clientSecret` property, specify a link to a `Secret` containing the client secret.
 
-.An example of OAuth client authentication using client ID and client secret
+.Example client ID and client secret configuration
 [source,yaml,subs=attributes+]
 ----
 authentication:
   type: oauth
-  tokenEndpointUri: https://sso.myproject.svc:8443/auth/realms/internal/protocol/openid-connect/token
+  tokenEndpointUri: https://<auth_server_address>/<path_to_token_endpoint>
   clientId: my-client-id
   clientSecret:
     secretName: my-client-oauth-secret
@@ -32,12 +32,12 @@ You can configure the address of your OAuth server in the `tokenEndpointUri` pro
 The OAuth client will connect to the OAuth server, authenticate using the client ID and refresh token and get an access token which it will use to authenticate with the Kafka broker.
 In the `refreshToken` property, specify a link to a `Secret` containing the refresh token.
 
-.An example of OAuth client authentication using client ID and refresh token
+.Example client ID and refresh token configuration
 [source,yaml,subs=attributes+]
 ----
 authentication:
   type: oauth
-  tokenEndpointUri: https://sso.myproject.svc:8443/auth/realms/internal/protocol/openid-connect/token
+  tokenEndpointUri: https://<auth_server_address>/<path_to_token_endpoint>
   clientId: my-client-id
   refreshToken:
     secretName: my-refresh-token-secret
@@ -49,7 +49,7 @@ You can configure the access token used for authentication with the Kafka broker
 In this case, you do not specify the `tokenEndpointUri`.
 In the `accessToken` property, specify a link to a `Secret` containing the access token.
 
-.An example of OAuth client authentication using only an access token
+.Example access token only configuration
 [source,yaml,subs=attributes+]
 ----
 authentication:
@@ -74,12 +74,12 @@ In the `passwordSecret` property, specify a link to a `Secret` containing the pa
 Normally, you also have to configure a `clientId` using a public OAuth client. 
 If you are using a confidential OAuth client, you also have to configure a `clientSecret`.
 
-.An example of OAuth client authentication using username and a password with a public client
+.Example username and password configuration with a public client
 [source,yaml,subs=attributes+]
 ----
 authentication:
   type: oauth
-  tokenEndpointUri: https://sso.myproject.svc:8443/auth/realms/internal/protocol/openid-connect/token
+  tokenEndpointUri: https://<auth_server_address>/<path_to_token_endpoint>
   username: my-username
   passwordSecret:
     secretName: my-password-secret-name
@@ -87,12 +87,12 @@ authentication:
   clientId: my-public-client-id
 ----
 
-.An example of OAuth client authentication using a username and a password with a confidential client
+.Example username and password configuration with a confidential client
 [source,yaml,subs=attributes+]
 ----
 authentication:
   type: oauth
-  tokenEndpointUri: https://sso.myproject.svc:8443/auth/realms/internal/protocol/openid-connect/token
+  tokenEndpointUri: https://<auth_server_address>/<path_to_token_endpoint>
   username: my-username
   passwordSecret:
     secretName: my-password-secret-name
@@ -108,34 +108,33 @@ Optionally, `scope` and `audience` can be specified if needed.
 .TLS
 Accessing the OAuth server using the HTTPS protocol does not require any additional configuration as long as the TLS certificates used by it are signed by a trusted certification authority and its hostname is listed in the certificate.
 
-If your OAuth server is using certificates which are self-signed or are signed by a certification authority which is not trusted, you can configure a list of trusted certificates in the custom resource.
-The `tlsTrustedCertificates` property contains a list of secrets with key names under which the certificates are stored.
-The certificates must be stored in X509 format.
+If your OAuth server uses self-signed certificates or certificates signed by an untrusted certification authority, use the `tlsTrustedCertificates` property to specify the secrets containing them. 
+The certificates must be in X.509 format.
 
-.An example of TLS certificates provided
+.Example configuration specifying TLS certificates
 [source,yaml,subs=attributes+]
 ----
 authentication:
   type: oauth
-  tokenEndpointUri: https://sso.myproject.svc:8443/auth/realms/internal/protocol/openid-connect/token
+  tokenEndpointUri: https://<auth_server_address>/<path_to_token_endpoint>
   clientId: my-client-id
   refreshToken:
     secretName: my-refresh-token-secret
     key: refresh-token
   tlsTrustedCertificates:
     - secretName: oauth-server-ca
-      certificate: tls.crt
+      pattern: "*.crt"
 ----
 
 The OAuth client will by default verify that the hostname of your OAuth server matches either the certificate subject or one of the alternative DNS names.
 If it is not required, you can disable the hostname verification.
 
-.An example of disabled TLS hostname verification
+.Example configuration to disable TLS hostname verification
 [source,yaml,subs=attributes+]
 ----
 authentication:
   type: oauth
-  tokenEndpointUri: https://sso.myproject.svc:8443/auth/realms/internal/protocol/openid-connect/token
+  tokenEndpointUri: https://<auth_server_address>/<path_to_token_endpoint>
   clientId: my-client-id
   refreshToken:
     secretName: my-refresh-token-secret

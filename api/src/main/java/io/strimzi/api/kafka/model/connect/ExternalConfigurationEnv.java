@@ -31,7 +31,7 @@ import java.util.Map;
 public class ExternalConfigurationEnv implements UnknownPropertyPreserving {
     private String name;
     private ExternalConfigurationEnvVarSource valueFrom;
-    private Map<String, Object> additionalProperties = new HashMap<>(0);
+    private Map<String, Object> additionalProperties;
 
     @Description("Name of the environment variable which will be passed to the Kafka Connect pods. " +
             "The name of the environment variable cannot start with `KAFKA_` or `STRIMZI_`.")
@@ -58,13 +58,14 @@ public class ExternalConfigurationEnv implements UnknownPropertyPreserving {
 
     @Override
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties;
+        return this.additionalProperties != null ? this.additionalProperties : Map.of();
     }
 
     @Override
     public void setAdditionalProperty(String name, Object value) {
+        if (this.additionalProperties == null) {
+            this.additionalProperties = new HashMap<>(2);
+        }
         this.additionalProperties.put(name, value);
     }
-
 }
-

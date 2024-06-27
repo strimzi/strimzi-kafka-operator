@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.OneOf;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -23,14 +24,15 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"secretName", "certificate"})
+@JsonPropertyOrder({"secretName", "certificate", "pattern"})
+@OneOf({@OneOf.Alternative(@OneOf.Alternative.Property("certificate")), @OneOf.Alternative(@OneOf.Alternative.Property("pattern"))})
 @EqualsAndHashCode
 @ToString
 public class CertSecretSource implements UnknownPropertyPreserving {
-    protected String secretName;
-    protected String certificate;
-
-    protected Map<String, Object> additionalProperties;
+    private String secretName;
+    private String certificate;
+    private String pattern;
+    private Map<String, Object> additionalProperties;
 
     @Description("The name of the Secret containing the certificate.")
     @JsonProperty(required = true)
@@ -42,8 +44,7 @@ public class CertSecretSource implements UnknownPropertyPreserving {
         this.secretName = secretName;
     }
 
-    @Description("The name of the file certificate in the Secret.")
-    @JsonProperty(required = true)
+    @Description("The name of the file certificate in the secret.")
     public String getCertificate() {
         return certificate;
     }
@@ -52,15 +53,26 @@ public class CertSecretSource implements UnknownPropertyPreserving {
         this.certificate = certificate;
     }
 
+    @Description("Pattern for the certificate files in the secret. " +
+            "Use the link:https://en.wikipedia.org/wiki/Glob_(programming)[_glob syntax_] for the pattern. " +
+            "All files in the secret that match the pattern are used.")
+    public String getPattern() {
+        return pattern;
+    }
+
+    public void setPattern(String pattern) {
+        this.pattern = pattern;
+    }
+
     @Override
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties;
+        return this.additionalProperties != null ? this.additionalProperties : Map.of();
     }
 
     @Override
     public void setAdditionalProperty(String name, Object value) {
         if (this.additionalProperties == null) {
-            this.additionalProperties = new HashMap<>(1);
+            this.additionalProperties = new HashMap<>(2);
         }
         this.additionalProperties.put(name, value);
     }

@@ -29,7 +29,6 @@ import java.util.Map;
 public class PasswordSecretSource implements UnknownPropertyPreserving {
     protected String secretName;
     protected String password;
-
     protected Map<String, Object> additionalProperties;
 
     @Description("The name of the Secret containing the password.")
@@ -54,13 +53,13 @@ public class PasswordSecretSource implements UnknownPropertyPreserving {
 
     @Override
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties;
+        return this.additionalProperties != null ? this.additionalProperties : Map.of();
     }
 
     @Override
     public void setAdditionalProperty(String name, Object value) {
         if (this.additionalProperties == null) {
-            this.additionalProperties = new HashMap<>(1);
+            this.additionalProperties = new HashMap<>(2);
         }
         this.additionalProperties.put(name, value);
     }

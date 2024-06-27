@@ -15,7 +15,10 @@ import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.api.kafka.model.topic.KafkaTopicBuilder;
 import io.strimzi.api.kafka.model.topic.KafkaTopicStatus;
+import io.strimzi.operator.common.featuregates.FeatureGates;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.topic.model.KubeRef;
+import io.strimzi.operator.topic.model.TopicOperatorException;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.AlterConfigOp;
@@ -1037,7 +1040,7 @@ class TopicControllerIT {
                 },
                 operated -> {
                     assertEquals("Decreasing partitions not supported", assertExactlyOneCondition(operated).getMessage());
-                    assertEquals(TopicOperatorException.Reason.NOT_SUPPORTED.reason, assertExactlyOneCondition(operated).getReason());
+                    assertEquals(TopicOperatorException.Reason.NOT_SUPPORTED.value, assertExactlyOneCondition(operated).getReason());
                 },
                 theKt -> {
                     theKt.getSpec().setPartitions(specPartitions);
@@ -1058,7 +1061,7 @@ class TopicControllerIT {
                         new KafkaTopicBuilder(theKt).editOrNewSpec().withPartitions(1).addToConfig(TopicConfig.COMPRESSION_TYPE_CONFIG, "snappy").endSpec().build(),
                 operated -> {
                     assertEquals("Decreasing partitions not supported", assertExactlyOneCondition(operated).getMessage());
-                    assertEquals(TopicOperatorException.Reason.NOT_SUPPORTED.reason, assertExactlyOneCondition(operated).getReason());
+                    assertEquals(TopicOperatorException.Reason.NOT_SUPPORTED.value, assertExactlyOneCondition(operated).getReason());
                     try {
                         assertEquals("snappy", topicConfigMap(expectedTopicName(kt)).get(TopicConfig.COMPRESSION_TYPE_CONFIG),
                                 "Expect the config to have been changed even if the #partitions couldn't be decreased");
@@ -1189,7 +1192,7 @@ class TopicControllerIT {
 
         // then
         Condition condition = assertExactlyOneCondition(unready);
-        assertEquals(TopicOperatorException.Reason.KAFKA_ERROR.reason, condition.getReason());
+        assertEquals(TopicOperatorException.Reason.KAFKA_ERROR.value, condition.getReason());
         assertEquals("org.apache.kafka.common.errors.TopicDeletionDisabledException: Topic deletion is disabled.",
                 condition.getMessage());
     }
@@ -1233,7 +1236,7 @@ class TopicControllerIT {
                 false, "", "", "", "", "",
                 false, "", "", "", "", "",
                 useFinalizer,
-                100, 100, 10, false,
+                100, 100, 10, false, new FeatureGates(""),
                 false, false, "", 9090, false, false, "", "", "",
                 "all", false);
     }
@@ -1376,7 +1379,7 @@ class TopicControllerIT {
 
         // then
         assertNull(st1.getConditions().get(0).getReason());
-        assertEquals(TopicOperatorException.Reason.RESOURCE_CONFLICT.reason, st2.getConditions().get(0).getReason());
+        assertEquals(TopicOperatorException.Reason.RESOURCE_CONFLICT.value, st2.getConditions().get(0).getReason());
         assertEquals(format("Managed by Ref{namespace='%s', name='%s'}", NAMESPACE, "kt1"),
                 st2.getConditions().get(0).getMessage());
     }
@@ -1402,7 +1405,7 @@ class TopicControllerIT {
         // then
         assertTrue(readyIsFalse().test(created));
         Condition condition = assertExactlyOneCondition(created);
-        assertEquals(TopicOperatorException.Reason.KAFKA_ERROR.reason, condition.getReason());
+        assertEquals(TopicOperatorException.Reason.KAFKA_ERROR.value, condition.getReason());
         assertEquals("org.apache.kafka.common.errors.InvalidReplicationFactorException: Unable to replicate the partition 32767 time(s): The target replication factor of 32767 cannot be reached because only 1 broker(s) are registered.", condition.getMessage());
     }
 
@@ -1429,7 +1432,7 @@ class TopicControllerIT {
         // then
         assertTrue(readyIsFalse().test(created));
         Condition condition = assertExactlyOneCondition(created);
-        assertEquals(TopicOperatorException.Reason.KAFKA_ERROR.reason, condition.getReason());
+        assertEquals(TopicOperatorException.Reason.KAFKA_ERROR.value, condition.getReason());
         assertEquals("org.apache.kafka.common.errors.InvalidConfigurationException: Unknown topic config name: unknown.config.parameter", condition.getMessage());
     }
 
@@ -1447,7 +1450,7 @@ class TopicControllerIT {
         // then
         assertTrue(readyIsFalse().test(created));
         Condition condition = assertExactlyOneCondition(created);
-        assertEquals(TopicOperatorException.Reason.KAFKA_ERROR.reason, condition.getReason());
+        assertEquals(TopicOperatorException.Reason.KAFKA_ERROR.value, condition.getReason());
         assertTrue(condition.getMessage().startsWith("org.apache.kafka.common.errors.InvalidTopicException: Topic name is invalid:"),
                 condition.getMessage());
     }
@@ -1467,7 +1470,7 @@ class TopicControllerIT {
                 },
                 operated -> {
                     assertEquals("Changing spec.topicName is not supported", assertExactlyOneCondition(operated).getMessage());
-                    assertEquals(TopicOperatorException.Reason.NOT_SUPPORTED.reason, assertExactlyOneCondition(operated).getReason());
+                    assertEquals(TopicOperatorException.Reason.NOT_SUPPORTED.value, assertExactlyOneCondition(operated).getReason());
                 },
                 theKt -> {
                     theKt.getSpec().setTopicName(expectedTopicName);
@@ -1530,7 +1533,7 @@ class TopicControllerIT {
                 },
                 operated -> {
                     assertEquals("Replication factor change not supported, but required for partitions [0, 1]", assertExactlyOneCondition(operated).getMessage());
-                    assertEquals(TopicOperatorException.Reason.NOT_SUPPORTED.reason, assertExactlyOneCondition(operated).getReason());
+                    assertEquals(TopicOperatorException.Reason.NOT_SUPPORTED.value, assertExactlyOneCondition(operated).getReason());
                 },
                 theKt -> {
                     theKt.getSpec().setReplicas(specReplicas);
@@ -1875,7 +1878,7 @@ class TopicControllerIT {
         secondTopic = createTopic(kafkaCluster, secondTopic);
         assertTrue(readyIsFalse().test(secondTopic));
         var condition = assertExactlyOneCondition(secondTopic);
-        assertEquals(TopicOperatorException.Reason.RESOURCE_CONFLICT.reason, condition.getReason());
+        assertEquals(TopicOperatorException.Reason.RESOURCE_CONFLICT.value, condition.getReason());
         assertEquals(format("Managed by Ref{namespace='%s', name='%s'}", NAMESPACE, firstTopicName), condition.getMessage());
 
         // increase partitions of topic
@@ -1900,7 +1903,7 @@ class TopicControllerIT {
 
         // then: expect conflicting topic's unreadiness to be due to mismatching #partitions
         waitUntil(secondTopic, readyIsFalseAndReasonIs(
-            TopicOperatorException.Reason.NOT_SUPPORTED.reason,
+            TopicOperatorException.Reason.NOT_SUPPORTED.value,
             "Decreasing partitions not supported"));
     }
     
@@ -1932,7 +1935,7 @@ class TopicControllerIT {
     private void assertKafkaTopicConflict(KafkaTopic failed, KafkaTopic ready) {
         // the error message should refer to the ready resource name
         var condition = assertExactlyOneCondition(failed);
-        assertEquals(TopicOperatorException.Reason.RESOURCE_CONFLICT.reason, condition.getReason());
+        assertEquals(TopicOperatorException.Reason.RESOURCE_CONFLICT.value, condition.getReason());
         assertEquals(format("Managed by Ref{namespace='%s', name='%s'}", 
             ready.getMetadata().getNamespace(), ready.getMetadata().getName()), condition.getMessage());
 
@@ -1987,7 +1990,7 @@ class TopicControllerIT {
                 false, "", "", "", "", "",
                 false, "", "", "", "", "",
                 true,
-                1, 100, 5_0000, false,
+                1, 100, 5_0000, false, new FeatureGates(""),
                 false, false, "", 9090, false, false, "", "", "",
                 "all", false);
 

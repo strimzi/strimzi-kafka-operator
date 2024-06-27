@@ -1,61 +1,29 @@
 [id="con-kafka-keycloak-authz-models_{context}"]
-= Kafka and Keycloak authorization models overview
+= Kafka and Keycloak authorization models
 
 [role="_abstract"]
-
 Kafka and Keycloak Authorization Services use different authorization models.
 
-[discrete]
-== Kafka authorization model
+* Kafka's authorization model uses _resource types_ and _operations_ to describe ACLs for the _user_
+* The Keycloak Authorization Services model has four concepts for defining and granting permissions: 
+** _resources_ 
+** _authorization scopes_
+** _policies_
+** _permissions_
 
-Kafka's authorization model uses _resource types_. 
+.Kafka authorization model
 When a Kafka client performs an action on a broker, the broker uses the configured `KeycloakAuthorizer` to check the client's permissions, based on the action and resource type.
 
-Kafka uses five resource types to control access: `Topic`, `Group`, `Cluster`, `TransactionalId`, and `DelegationToken`.
-Each resource type has a set of available permissions.
+Each resource type has a set of available permissions for operations.
+For example, the `Topic` resource type has `Create` and `Write` permissions among others.
 
-*Topic*
+Refer to the https://kafka.apache.org/documentation/#security_authz_primitives[Kafka authorization model] in the Kafka documentation for the full list of resources and permissions. 
 
-* `Create`
-* `Write`
-* `Read`
-* `Delete`
-* `Describe`
-* `DescribeConfigs`
-* `Alter`
-* `AlterConfigs`
+.Keycloak Authorization Services model
 
-*Group*
+The Keycloak Authorization Services model defines authorized actions. 
 
-* `Read`
-* `Describe`
-* `Delete`
-
-*Cluster*
-
-*  `Create`
-*  `Describe`
-*  `Alter`
-*  `DescribeConfigs`
-*  `AlterConfigs`
-*  `IdempotentWrite`
-*  `ClusterAction`
-
-*TransactionalId*
-
-*  `Describe`
-*  `Write`
-
-*DelegationToken*
-
-* `Describe`
-
-[discrete]
-== Keycloak Authorization Services model
-
-The Keycloak Authorization Services model has four concepts for defining and granting permissions: _resources_, _authorization scopes_, _policies_, and _permissions_.
-
-Resources:: A resource is a set of resource definitions that are used to match resources with permitted actions.
+Resources:: Resources are matched with permitted actions.
 A resource might be an individual topic, for example, or all topics with names starting with the same prefix.
 A resource definition is associated with a set of available authorization scopes, which represent a set of all actions available on the resource.
 Often, only a subset of these actions is actually permitted.
@@ -69,7 +37,3 @@ Policies can match:
 * _User accounts_ based on username, groups, or roles.
 
 Permissions:: A permission grants a subset of authorization scopes on a specific resource definition to a set of users.
-
-[role="_additional-resources"]
-.Additional resources
-* link:https://kafka.apache.org/documentation/#security_authz_primitives[Kafka authorization model]

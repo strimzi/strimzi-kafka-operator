@@ -32,6 +32,7 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -109,7 +110,7 @@ public class ListenersValidatorTest {
                 .build();
 
         List<GenericKafkaListener> listeners = List.of(listener1, listener2, listener3);
-        assertThat(ListenersValidator.validateAndGetErrorMessages(THREE_NODES, listeners), containsInAnyOrder("every listener needs to have a unique port number"));
+        assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, THREE_NODES, listeners), containsInAnyOrder("every listener needs to have a unique port number"));
     }
 
     @ParallelTest
@@ -121,7 +122,7 @@ public class ListenersValidatorTest {
                 .build();
 
         List<GenericKafkaListener> listeners = List.of(listener1);
-        assertThat(ListenersValidator.validateAndGetErrorMessages(THREE_NODES, listeners), containsInAnyOrder("port 9000 is forbidden and cannot be used"));
+        assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, THREE_NODES, listeners), containsInAnyOrder("port 9000 is forbidden and cannot be used"));
     }
 
     @ParallelTest
@@ -133,7 +134,7 @@ public class ListenersValidatorTest {
                 .build();
 
         List<GenericKafkaListener> listeners = List.of(listener1);
-        assertThat(ListenersValidator.validateAndGetErrorMessages(THREE_NODES, listeners), containsInAnyOrder("port 9404 is forbidden and cannot be used"));
+        assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, THREE_NODES, listeners), containsInAnyOrder("port 9404 is forbidden and cannot be used"));
     }
 
     @ParallelTest
@@ -157,7 +158,7 @@ public class ListenersValidatorTest {
                 .build();
 
         List<GenericKafkaListener> listeners = List.of(listener1, listener2, listener3);
-        assertThat(ListenersValidator.validateAndGetErrorMessages(THREE_NODES, listeners), containsInAnyOrder("every listener needs to have a unique name"));
+        assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, THREE_NODES, listeners), containsInAnyOrder("every listener needs to have a unique name"));
     }
 
     @ParallelTest
@@ -181,7 +182,7 @@ public class ListenersValidatorTest {
                 .build();
 
         List<GenericKafkaListener> listeners = List.of(listener1, listener2, listener3);
-        assertThat(ListenersValidator.validateAndGetErrorMessages(THREE_NODES, listeners), containsInAnyOrder("listener names [listener 1, LISTENER2, listener12345678901234567890] are invalid and do not match the pattern ^[a-z0-9]{1,11}$"));
+        assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, THREE_NODES, listeners), containsInAnyOrder("listener names [listener 1, LISTENER2, listener12345678901234567890] are invalid and do not match the pattern ^[a-z0-9]{1,11}$"));
     }
 
     @ParallelTest
@@ -196,7 +197,7 @@ public class ListenersValidatorTest {
                 .build();
 
         List<GenericKafkaListener> listeners = List.of(listener1);
-        assertThat(ListenersValidator.validateAndGetErrorMessages(THREE_NODES, listeners), containsInAnyOrder("listener plain cannot use tls type authentication with disabled TLS encryption"));
+        assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, THREE_NODES, listeners), containsInAnyOrder("listener plain cannot use tls type authentication with disabled TLS encryption"));
     }
 
     @ParallelTest
@@ -216,7 +217,7 @@ public class ListenersValidatorTest {
                 .build();
 
         List<GenericKafkaListener> listeners = List.of(listener1);
-        assertThat(ListenersValidator.validateAndGetErrorMessages(THREE_NODES, listeners), containsInAnyOrder("listener plain cannot configure custom TLS certificate with disabled TLS encryption"));
+        assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, THREE_NODES, listeners), containsInAnyOrder("listener plain cannot configure custom TLS certificate with disabled TLS encryption"));
     }
 
     @ParallelTest
@@ -236,6 +237,7 @@ public class ListenersValidatorTest {
                     .withPreferredNodePortAddressType(NodeAddressType.INTERNAL_DNS)
                     .withLoadBalancerSourceRanges(List.of("10.0.0.0/8", "130.211.204.1/32"))
                     .withFinalizers(List.of("service.kubernetes.io/load-balancer-cleanup"))
+                    .withPublishNotReadyAddresses(true)
                     .withNewBootstrap()
                         .withAlternativeNames(List.of("my-name-1", "my-name-2"))
                         .withLoadBalancerIP("130.211.204.1")
@@ -286,10 +288,11 @@ public class ListenersValidatorTest {
                 "listener " + name + " cannot configure brokers[].annotations because it is not LoadBalancer, NodePort, Route, Ingress or ClusterIP based listener",
                 "listener " + name + " cannot configure brokers[].labels because it is not LoadBalancer, NodePort, Route, Ingress or ClusterIP based listener",
                 "listener " + name + " cannot configure ipFamilyPolicy because it is internal listener",
-                "listener " + name + " cannot configure ipFamilies because it is internal listener"
+                "listener " + name + " cannot configure ipFamilies because it is internal listener",
+                "listener " + name + " cannot configure publishNotReadyAddresses because it is internal listener"
         );
 
-        assertThat(ListenersValidator.validateAndGetErrorMessages(THREE_NODES, listeners), containsInAnyOrder(expectedErrors.toArray()));
+        assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, THREE_NODES, listeners), containsInAnyOrder(expectedErrors.toArray()));
     }
 
     @ParallelTest
@@ -309,6 +312,7 @@ public class ListenersValidatorTest {
                     .withPreferredNodePortAddressType(NodeAddressType.INTERNAL_DNS)
                     .withLoadBalancerSourceRanges(List.of("10.0.0.0/8", "130.211.204.1/32"))
                     .withFinalizers(List.of("service.kubernetes.io/load-balancer-cleanup"))
+                    .withPublishNotReadyAddresses(true)
                     .withNewBootstrap()
                         .withAlternativeNames(List.of("my-name-1", "my-name-2"))
                         .withLoadBalancerIP("130.211.204.1")
@@ -346,7 +350,7 @@ public class ListenersValidatorTest {
                 "listener " + name + " cannot configure brokers[].host because it is not Route or Ingress based listener"
         );
 
-        assertThat(ListenersValidator.validateAndGetErrorMessages(THREE_NODES, listeners), containsInAnyOrder(expectedErrors.toArray()));
+        assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, THREE_NODES, listeners), containsInAnyOrder(expectedErrors.toArray()));
     }
 
     @ParallelTest
@@ -386,6 +390,7 @@ public class ListenersValidatorTest {
                     .withPreferredNodePortAddressType(NodeAddressType.INTERNAL_DNS)
                     .withLoadBalancerSourceRanges(List.of("10.0.0.0/8", "130.211.204.1/32"))
                     .withFinalizers(List.of("service.kubernetes.io/load-balancer-cleanup"))
+                    .withPublishNotReadyAddresses(true)
                     .withNewBootstrap()
                         .withAlternativeNames(List.of("my-name-1", "my-name-2"))
                         .withLoadBalancerIP("130.211.204.1")
@@ -427,7 +432,7 @@ public class ListenersValidatorTest {
                 "listener " + name + " cannot configure brokers[].loadBalancerIP because it is not LoadBalancer based listener"
         );
 
-        assertThat(ListenersValidator.validateAndGetErrorMessages(THREE_NODES, listeners), containsInAnyOrder(expectedErrors.toArray()));
+        assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, THREE_NODES, listeners), containsInAnyOrder(expectedErrors.toArray()));
     }
 
     @ParallelTest
@@ -447,7 +452,7 @@ public class ListenersValidatorTest {
                 "listener " + name + " is Route or Ingress type listener and requires enabled TLS encryption"
         );
 
-        assertThat(ListenersValidator.validateAndGetErrorMessages(THREE_NODES, listeners), containsInAnyOrder(expectedErrors.toArray()));
+        assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, THREE_NODES, listeners), containsInAnyOrder(expectedErrors.toArray()));
     }
 
     @ParallelTest
@@ -468,6 +473,7 @@ public class ListenersValidatorTest {
                     .withPreferredNodePortAddressType(NodeAddressType.INTERNAL_DNS)
                     .withLoadBalancerSourceRanges(List.of("10.0.0.0/8", "130.211.204.1/32"))
                     .withFinalizers(List.of("service.kubernetes.io/load-balancer-cleanup"))
+                    .withPublishNotReadyAddresses(true)
                     .withNewBootstrap()
                         .withAlternativeNames(List.of("my-name-1", "my-name-2"))
                         .withLoadBalancerIP("130.211.204.1")
@@ -514,7 +520,7 @@ public class ListenersValidatorTest {
                 "listener " + name + " cannot configure brokers[].nodePort because it is not NodePort based listener"
         );
 
-        assertThat(ListenersValidator.validateAndGetErrorMessages(THREE_NODES, listeners), containsInAnyOrder(expectedErrors.toArray()));
+        assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, THREE_NODES, listeners), containsInAnyOrder(expectedErrors.toArray()));
     }
 
     @ParallelTest
@@ -547,7 +553,7 @@ public class ListenersValidatorTest {
                 "listener " + name + " is Route or Ingress type listener and requires enabled TLS encryption"
         );
 
-        assertThat(ListenersValidator.validateAndGetErrorMessages(TWO_NODES, listeners), containsInAnyOrder(expectedErrors.toArray()));
+        assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, TWO_NODES, listeners), containsInAnyOrder(expectedErrors.toArray()));
     }
 
     @ParallelTest
@@ -568,6 +574,7 @@ public class ListenersValidatorTest {
                     .withPreferredNodePortAddressType(NodeAddressType.INTERNAL_DNS)
                     .withLoadBalancerSourceRanges(List.of("10.0.0.0/8", "130.211.204.1/32"))
                     .withFinalizers(List.of("service.kubernetes.io/load-balancer-cleanup"))
+                    .withPublishNotReadyAddresses(true)
                     .withNewBootstrap()
                         .withAlternativeNames(List.of("my-name-1", "my-name-2"))
                         .withLoadBalancerIP("130.211.204.1")
@@ -610,7 +617,7 @@ public class ListenersValidatorTest {
                 "listener " + name + " cannot configure brokers[].nodePort because it is not NodePort based listener"
         );
 
-        assertThat(ListenersValidator.validateAndGetErrorMessages(TWO_NODES, listeners), containsInAnyOrder(expectedErrors.toArray()));
+        assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, TWO_NODES, listeners), containsInAnyOrder(expectedErrors.toArray()));
     }
 
     @ParallelTest
@@ -622,13 +629,13 @@ public class ListenersValidatorTest {
                 .withTls(true)
                 .build();
 
-        assertThat(ListenersValidator.validateAndGetErrorMessages(TWO_NODES, List.of(listener)), containsInAnyOrder("listener ingress is missing a configuration with host names which is required for Ingress based listeners"));
+        assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, TWO_NODES, List.of(listener)), containsInAnyOrder("listener ingress is missing a configuration with host names which is required for Ingress based listeners"));
 
         listener.setConfiguration(new GenericKafkaListenerConfigurationBuilder()
                 .withBrokers((List<GenericKafkaListenerConfigurationBroker>) null)
                 .build());
 
-        assertThat(ListenersValidator.validateAndGetErrorMessages(TWO_NODES, List.of(listener)), containsInAnyOrder("listener ingress is missing a bootstrap host name which is required for Ingress based listeners",
+        assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, TWO_NODES, List.of(listener)), containsInAnyOrder("listener ingress is missing a bootstrap host name which is required for Ingress based listeners",
                 "listener ingress is missing a broker configuration with host names which is required for Ingress based listeners"));
 
         listener.setConfiguration(new GenericKafkaListenerConfigurationBuilder()
@@ -642,7 +649,7 @@ public class ListenersValidatorTest {
                                 .build())
                 .build());
 
-        assertThat(ListenersValidator.validateAndGetErrorMessages(TWO_NODES, List.of(listener)), containsInAnyOrder("listener ingress is missing a bootstrap host name which is required for Ingress based listeners",
+        assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, TWO_NODES, List.of(listener)), containsInAnyOrder("listener ingress is missing a bootstrap host name which is required for Ingress based listeners",
                 "listener ingress is missing a broker host name for broker with ID 0 which is required for Ingress based listeners",
                 "listener ingress is missing a broker host name for broker with ID 1 which is required for Ingress based listeners"));
 
@@ -656,7 +663,7 @@ public class ListenersValidatorTest {
                                 .build())
                 .build());
 
-        assertThat(ListenersValidator.validateAndGetErrorMessages(TWO_NODES, List.of(listener)), containsInAnyOrder("listener ingress is missing a broker host name for broker with ID 0 which is required for Ingress based listeners"));
+        assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, TWO_NODES, List.of(listener)), containsInAnyOrder("listener ingress is missing a broker host name for broker with ID 0 which is required for Ingress based listeners"));
 
         listener.setConfiguration(new GenericKafkaListenerConfigurationBuilder()
                 .withBootstrap(new GenericKafkaListenerConfigurationBootstrapBuilder()
@@ -672,7 +679,7 @@ public class ListenersValidatorTest {
                                 .build())
                 .build());
 
-        assertThat(ListenersValidator.validateAndGetErrorMessages(TWO_NODES, List.of(listener)), hasSize(0));
+        assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, TWO_NODES, List.of(listener)), hasSize(0));
     }
 
     @ParallelTest
@@ -684,13 +691,13 @@ public class ListenersValidatorTest {
                 .withTls(true)
                 .build();
 
-        assertThat(ListenersValidator.validateAndGetErrorMessages(NODE_POOL_NODES, List.of(listener)), containsInAnyOrder("listener ingress is missing a configuration with host names which is required for Ingress based listeners"));
+        assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, NODE_POOL_NODES, List.of(listener)), containsInAnyOrder("listener ingress is missing a configuration with host names which is required for Ingress based listeners"));
 
         listener.setConfiguration(new GenericKafkaListenerConfigurationBuilder()
                 .withBrokers((List<GenericKafkaListenerConfigurationBroker>) null)
                 .build());
 
-        assertThat(ListenersValidator.validateAndGetErrorMessages(NODE_POOL_NODES, List.of(listener)), containsInAnyOrder("listener ingress is missing a bootstrap host name which is required for Ingress based listeners",
+        assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, NODE_POOL_NODES, List.of(listener)), containsInAnyOrder("listener ingress is missing a bootstrap host name which is required for Ingress based listeners",
                 "listener ingress is missing a broker configuration with host names which is required for Ingress based listeners"));
 
         listener.setConfiguration(new GenericKafkaListenerConfigurationBuilder()
@@ -707,7 +714,7 @@ public class ListenersValidatorTest {
                                 .build())
                 .build());
 
-        assertThat(ListenersValidator.validateAndGetErrorMessages(NODE_POOL_NODES, List.of(listener)), containsInAnyOrder("listener ingress is missing a bootstrap host name which is required for Ingress based listeners",
+        assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, NODE_POOL_NODES, List.of(listener)), containsInAnyOrder("listener ingress is missing a bootstrap host name which is required for Ingress based listeners",
                 "listener ingress is missing a broker host name for broker with ID 1000 which is required for Ingress based listeners",
                 "listener ingress is missing a broker host name for broker with ID 2000 which is required for Ingress based listeners",
                 "listener ingress is missing a broker host name for broker with ID 2001 which is required for Ingress based listeners"));
@@ -726,7 +733,7 @@ public class ListenersValidatorTest {
                                 .build())
                 .build());
 
-        assertThat(ListenersValidator.validateAndGetErrorMessages(NODE_POOL_NODES, List.of(listener)), containsInAnyOrder("listener ingress is missing a broker host name for broker with ID 2000 which is required for Ingress based listeners"));
+        assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, NODE_POOL_NODES, List.of(listener)), containsInAnyOrder("listener ingress is missing a broker host name for broker with ID 2000 which is required for Ingress based listeners"));
 
         listener.setConfiguration(new GenericKafkaListenerConfigurationBuilder()
                 .withBootstrap(new GenericKafkaListenerConfigurationBootstrapBuilder()
@@ -746,7 +753,7 @@ public class ListenersValidatorTest {
                                 .build())
                 .build());
 
-        assertThat(ListenersValidator.validateAndGetErrorMessages(NODE_POOL_NODES, List.of(listener)), hasSize(0));
+        assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, NODE_POOL_NODES, List.of(listener)), hasSize(0));
     }
 
     @ParallelTest
@@ -774,7 +781,7 @@ public class ListenersValidatorTest {
 
         List<GenericKafkaListener> listeners = List.of(listener1);
 
-        assertThat(ListenersValidator.validateAndGetErrorMessages(TWO_NODES, listeners), hasSize(0));
+        assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, TWO_NODES, listeners), hasSize(0));
     }
 
     @ParallelTest
@@ -795,6 +802,7 @@ public class ListenersValidatorTest {
                 .withPreferredNodePortAddressType(NodeAddressType.INTERNAL_DNS)
                 .withLoadBalancerSourceRanges(List.of("10.0.0.0/8", "130.211.204.1/32"))
                 .withFinalizers(List.of("service.kubernetes.io/load-balancer-cleanup"))
+                .withPublishNotReadyAddresses(true)
                 .withNewBootstrap()
                 .withAlternativeNames(List.of("my-name-1", "my-name-2"))
                 .withLoadBalancerIP("130.211.204.1")
@@ -839,7 +847,7 @@ public class ListenersValidatorTest {
                 "listener " + name + " cannot configure brokers[].host because it is not Route or Ingress based listener"
         );
 
-        assertThat(ListenersValidator.validateAndGetErrorMessages(TWO_NODES, listeners), containsInAnyOrder(expectedErrors.toArray()));
+        assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, TWO_NODES, listeners), containsInAnyOrder(expectedErrors.toArray()));
     }
 
     @ParallelTest
@@ -935,7 +943,7 @@ public class ListenersValidatorTest {
 
         List<GenericKafkaListener> listeners = List.of(internal, route, lb, np, inq);
 
-        assertThat(ListenersValidator.validateAndGetErrorMessages(THREE_NODES, listeners), empty());
+        assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, THREE_NODES, listeners), empty());
     }
 
     @ParallelTest
@@ -1122,7 +1130,7 @@ public class ListenersValidatorTest {
 
         List<GenericKafkaListener> listeners = List.of(listener1, listener2, listener3);
 
-        assertThat(ListenersValidator.validateAndGetErrorMessages(THREE_NODES, listeners), containsInAnyOrder(
+        assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, THREE_NODES, listeners), containsInAnyOrder(
                 "listener listener1 cannot configure createBootstrapService because it is not load balancer listener",
                 "listener listener2 cannot configure createBootstrapService because it is not load balancer listener",
                 "listener listener3 cannot configure createBootstrapService because it is not load balancer listener"));
@@ -1182,10 +1190,53 @@ public class ListenersValidatorTest {
                 .build();
         List<GenericKafkaListener> listeners = List.of(listener1, listener2, listener3);
 
-        assertThat(ListenersValidator.validateAndGetErrorMessages(THREE_NODES, listeners), containsInAnyOrder(
+        assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, THREE_NODES, listeners), containsInAnyOrder(
                 "listener listener1 cannot configure bootstrap.externalIPs because it is not NodePort based listener",
                 "listener listener2 cannot configure bootstrap.externalIPs because it is not NodePort based listener",
                 "listener listener1 cannot configure brokers[].externalIPs because it is not NodePort based listener",
                 "listener listener2 cannot configure brokers[].externalIPs because it is not NodePort based listener"));
+    }
+
+    @ParallelTest
+    public void testUnusedBrokerIds() {
+        GenericKafkaListener listener = new GenericKafkaListenerBuilder()
+                .withName("my-name")
+                .withPort(9094)
+                .withType(KafkaListenerType.LOADBALANCER)
+                .withTls(true)
+                .withNewConfiguration()
+                    .withBrokers(new GenericKafkaListenerConfigurationBrokerBuilder().withBroker(0).withAdvertisedHost("advertised-host").build())
+                .endConfiguration()
+                .build();
+
+        assertThat(ListenersValidator.unusedBrokerIds(listener, THREE_NODES), is(Set.of()));
+
+        listener = new GenericKafkaListenerBuilder()
+                .withName("my-name")
+                .withPort(9094)
+                .withType(KafkaListenerType.LOADBALANCER)
+                .withTls(true)
+                .withNewConfiguration()
+                    .withBrokers(List.of())
+                .endConfiguration()
+                .build();
+
+        assertThat(ListenersValidator.unusedBrokerIds(listener, THREE_NODES), is(Set.of()));
+
+        listener = new GenericKafkaListenerBuilder()
+                .withName("my-name")
+                .withPort(9094)
+                .withType(KafkaListenerType.LOADBALANCER)
+                .withTls(true)
+                .withNewConfiguration()
+                    .withBrokers(
+                            new GenericKafkaListenerConfigurationBrokerBuilder().withBroker(0).withAdvertisedHost("advertised-host").build(),
+                            new GenericKafkaListenerConfigurationBrokerBuilder().withBroker(1874).withAdvertisedHost("advertised-host").build(),
+                            new GenericKafkaListenerConfigurationBrokerBuilder().withBroker(2).withAdvertisedHost("advertised-host").build(),
+                            new GenericKafkaListenerConfigurationBrokerBuilder().withBroker(1919).withAdvertisedHost("advertised-host").build())
+                .endConfiguration()
+                .build();
+
+        assertThat(ListenersValidator.unusedBrokerIds(listener, THREE_NODES), is(Set.of(1874, 1919)));
     }
 }

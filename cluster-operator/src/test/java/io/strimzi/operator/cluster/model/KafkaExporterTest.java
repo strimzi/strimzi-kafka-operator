@@ -180,7 +180,7 @@ public class KafkaExporterTest {
 
     @ParallelTest
     public void testGenerateDeployment() {
-        Deployment dep = ke.generateDeployment(true, null, null);
+        Deployment dep = ke.generateDeployment(Map.of(), true, null, null);
 
         List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
 
@@ -253,10 +253,10 @@ public class KafkaExporterTest {
 
     @ParallelTest
     public void testImagePullPolicy() {
-        Deployment dep = ke.generateDeployment(true, ImagePullPolicy.ALWAYS, null);
+        Deployment dep = ke.generateDeployment(Map.of(), true, ImagePullPolicy.ALWAYS, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy(), is(ImagePullPolicy.ALWAYS.toString()));
 
-        dep = ke.generateDeployment(true, ImagePullPolicy.IFNOTPRESENT, null);
+        dep = ke.generateDeployment(Map.of(), true, ImagePullPolicy.IFNOTPRESENT, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy(), is(ImagePullPolicy.IFNOTPRESENT.toString()));
     }
 
@@ -451,7 +451,7 @@ public class KafkaExporterTest {
             new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS, SHARED_ENV_PROVIDER);
 
         // Check Deployment
-        Deployment dep = ke.generateDeployment(true, null, null);
+        Deployment dep = ke.generateDeployment(Map.of(), true, null, null);
         assertThat(dep.getMetadata().getLabels().entrySet().containsAll(expectedDepLabels.entrySet()), is(true));
         assertThat(dep.getMetadata().getAnnotations().entrySet().containsAll(depAnots.entrySet()), is(true));
 
@@ -497,7 +497,7 @@ public class KafkaExporterTest {
                 .build();
         KafkaExporter ke = KafkaExporter.fromCrd(new Reconciliation("test", resource.getKind(), 
                 resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS, SHARED_ENV_PROVIDER);
-        Deployment dep = ke.generateDeployment(true, null, null);
+        Deployment dep = ke.generateDeployment(Map.of(), true, null, null);
         assertThat(dep.getSpec().getStrategy().getType(), is("Recreate"));
     }
 

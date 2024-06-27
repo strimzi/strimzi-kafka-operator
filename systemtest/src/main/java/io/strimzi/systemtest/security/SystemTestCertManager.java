@@ -78,7 +78,7 @@ public class SystemTestCertManager {
                 "s:O = io.strimzi, CN = " + certificateName + "\n" +
                 "   i:O = io.strimzi, CN = cluster-ca",
                 "Server certificate\n" +
-                "subject=O = io.strimzi, CN = " + certificateName + "\n\n" +
+                "subject=O = io.strimzi, CN = " + certificateName + "\n" +
                 "issuer=O = io.strimzi, CN = cluster-ca"
         ));
     }

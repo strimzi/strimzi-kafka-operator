@@ -97,7 +97,6 @@
         <dependency>
             <groupId>io.fabric8</groupId>
             <artifactId>openshift-model</artifactId>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.fabric8</groupId>
@@ -230,30 +229,14 @@
             <groupId>io.fabric8</groupId>
             <artifactId>openshift-model-operatorhub</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.skodjob</groupId>
+            <artifactId>test-frame-metrics-collector</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
         <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>${maven.compiler.version}</version>
-                <executions>
-                    <execution>
-                        <id>default-compile</id>
-                        <phase>compile</phase>
-                        <goals>
-                            <goal>compile</goal>
-                        </goals>
-                        <configuration>
-                            <useIncrementalCompilation>false</useIncrementalCompilation>
-                            <compilerArgs combine.self="override">
-                                <arg>-Xlint:deprecation</arg>
-                            </compilerArgs>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
@@ -382,21 +365,29 @@
         </profile>
 
         <profile>
-            <id>components</id>
+            <id>brokers-and-security</id>
             <properties>
                 <skipTests>false</skipTests>
                 <groups>regression</groups>
                 <it.test>
                     kafka/**/*ST,
-                    bridge/**/*ST,
-                    cruisecontrol/**/*ST,
-                    mirrormaker/**/*ST,
-                    connect/**/*ST,
-                    security/**/*ST,
-                    rollingupdate/**/*ST,
-                    watcher/**/*ST,
-                    rollingupdate/**/*ST,
-                    tracing/**/*ST
+                    security/**/*ST
+                </it.test>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>operands</id>
+            <properties>
+                <skipTests>false</skipTests>
+                <groups>regression</groups>
+                <it.test>
+                    !kafka/**/*ST,
+                    !security/**/*ST,
+                    !operators/**/*ST,
+                    !log/**/*ST,
+                    !metrics/**/*ST,
+                    !specific/**/*ST
                 </it.test>
             </properties>
         </profile>

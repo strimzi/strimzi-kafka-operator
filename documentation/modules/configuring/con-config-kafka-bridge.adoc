@@ -27,7 +27,7 @@ spec:
   tls: # <3>
     trustedCertificates:
       - secretName: my-cluster-cluster-cert
-        certificate: ca.crt
+        pattern: "*.crt"
       - secretName: my-cluster-cluster-cert
         certificate: ca2.crt
   authentication: # <4>
@@ -94,8 +94,8 @@ spec:
     type: opentelemetry # <16>
 ----
 <1> The number of replica nodes.
-<2> Bootstrap server for connection to the target Kafka cluster. Use the name of the Kafka cluster as the _<cluster_name>_.
-<3> TLS encryption with key names under which TLS certificates are stored in X.509 format for the source Kafka cluster. If certificates are stored in the same secret, it can be listed multiple times.
+<2> Bootstrap server for connection to the target Kafka cluster. Use the name of the Kafka cluster as the <cluster_name>.
+<3> TLS configuration for encrypted connections to the Kafka cluster, with trusted certificates stored in X.509 format within the specified secrets.
 <4> Authentication for the Kafka Bridge cluster, specified as mTLS, token-based OAuth, SASL-based SCRAM-SHA-256/SCRAM-SHA-512, or PLAIN.
 By default, the Kafka Bridge connects to Kafka brokers without authentication.
 <5> HTTP access to Kafka brokers.
@@ -114,4 +114,4 @@ By default, the Kafka Bridge connects to Kafka brokers without authentication.
 [role="_additional-resources"]
 .Additional resources
 
-* link:{BookURLBridge}[Using the Strimzi Kafka Bridge^]
+* link:{BookURLBridge}[Using the Kafka Bridge^]

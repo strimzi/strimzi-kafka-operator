@@ -43,6 +43,7 @@ public class KafkaConnectSpec extends AbstractKafkaConnectSpec {
     private KafkaClientAuthentication authentication;
     private Build build;
 
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @Description("The Kafka Connect configuration. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES + " (with the exception of: " + FORBIDDEN_PREFIX_EXCEPTIONS + ").")
     public Map<String, Object> getConfig() {
         return config;
