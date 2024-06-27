@@ -74,6 +74,7 @@ public class PodOperatorServerSideApplyApiServerTest {
     public static void after() {
         sharedWorkerExecutor.close();
         vertx.close();
+        mockKube.stop();
     }
 
     @Test

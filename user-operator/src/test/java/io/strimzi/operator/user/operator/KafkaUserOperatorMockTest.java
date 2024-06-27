@@ -63,7 +63,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class KafkaUserOperatorMockTest {
+public abstract class KafkaUserOperatorMockTest {
     private final static ExecutorService EXECUTOR = Executors.newSingleThreadExecutor();
 
     private final CertManager mockCertManager = new MockCertManager();
@@ -107,8 +107,8 @@ public class KafkaUserOperatorMockTest {
         namespace = testInfo.getTestMethod().orElseThrow().getName().toLowerCase(Locale.ROOT);
         mockKube.prepareNamespace(namespace);
 
-        secretOps = new SecretOperator(EXECUTOR, client, false);
-        kafkaUserOps = new CrdOperator<>(EXECUTOR, client, KafkaUser.class, KafkaUserList.class, "KafkaUser", false);
+        secretOps = new SecretOperator(EXECUTOR, client, getSSA());
+        kafkaUserOps = new CrdOperator<>(EXECUTOR, client, KafkaUser.class, KafkaUserList.class, "KafkaUser", getSSA());
 
         mockCaSecrets();
         mockKafka();
@@ -118,6 +118,8 @@ public class KafkaUserOperatorMockTest {
     public void afterEach() {
         client.namespaces().withName(namespace).delete();
     }
+
+    protected abstract boolean getSSA();
 
     private void mockCaSecrets() {
         secretOps.resource(namespace, ResourceUtils.createClientsCaCertSecret(namespace)).create();
@@ -169,7 +171,6 @@ public class KafkaUserOperatorMockTest {
         when(quotasOps.getAllUsers()).thenReturn(CompletableFuture.completedStage(Set.of("quotas-user-1", "quotas-user-2")));
     }
 
-    @Test
     public void testCreateTlsUser() throws ExecutionException, InterruptedException {
         KafkaUser user = ResourceUtils.createKafkaUserTls(namespace);
         user = Crds.kafkaUserOperation(client).resource(user).create();
@@ -240,8 +241,8 @@ public class KafkaUserOperatorMockTest {
     public void testCreateExternalTlsUser() throws ExecutionException, InterruptedException {
         KafkaUser user = new KafkaUserBuilder(ResourceUtils.createKafkaUserTls(namespace))
                 .editSpec()
-                    .withNewKafkaUserTlsExternalClientAuthentication()
-                    .endKafkaUserTlsExternalClientAuthentication()
+                .withNewKafkaUserTlsExternalClientAuthentication()
+                .endKafkaUserTlsExternalClientAuthentication()
                 .endSpec()
                 .build();
         user = Crds.kafkaUserOperation(client).resource(user).create();
@@ -300,16 +301,16 @@ public class KafkaUserOperatorMockTest {
     public void testCreateTlsUserWithACLsDisabled() throws ExecutionException, InterruptedException {
         KafkaUser user = new KafkaUserBuilder()
                 .withNewMetadata()
-                    .withName(ResourceUtils.NAME)
-                    .withNamespace(namespace)
+                .withName(ResourceUtils.NAME)
+                .withNamespace(namespace)
                 .endMetadata()
                 .withNewSpec()
-                    .withNewKafkaUserTlsClientAuthentication()
-                    .endKafkaUserTlsClientAuthentication()
-                    .withNewQuotas()
-                        .withConsumerByteRate(1_024 * 1_024)
-                        .withProducerByteRate(1_024 * 1_024)
-                    .endQuotas()
+                .withNewKafkaUserTlsClientAuthentication()
+                .endKafkaUserTlsClientAuthentication()
+                .withNewQuotas()
+                .withConsumerByteRate(1_024 * 1_024)
+                .withProducerByteRate(1_024 * 1_024)
+                .endQuotas()
                 .endSpec()
                 .build();
         user = Crds.kafkaUserOperation(client).resource(user).create();
@@ -511,7 +512,7 @@ public class KafkaUserOperatorMockTest {
         final String desiredPassword = "12345678";
         Secret desiredPasswordSecret = new SecretBuilder()
                 .withNewMetadata()
-                    .withName("my-secret")
+                .withName("my-secret")
                 .withNamespace(namespace)
                 .endMetadata()
                 .addToData("my-password", Base64.getEncoder().encodeToString(desiredPassword.getBytes(StandardCharsets.UTF_8)))
@@ -519,16 +520,16 @@ public class KafkaUserOperatorMockTest {
         secretOps.resource(namespace, desiredPasswordSecret).create();
 
         KafkaUser user = new KafkaUserBuilder(ResourceUtils.createKafkaUserScramSha(namespace))
-            .editSpec()
+                .editSpec()
                 .withNewKafkaUserScramSha512ClientAuthentication()
-                    .withNewPassword()
-                        .withNewValueFrom()
-                            .withNewSecretKeyRef("my-password", "my-secret", false)
-                        .endValueFrom()
-                    .endPassword()
+                .withNewPassword()
+                .withNewValueFrom()
+                .withNewSecretKeyRef("my-password", "my-secret", false)
+                .endValueFrom()
+                .endPassword()
                 .endKafkaUserScramSha512ClientAuthentication()
-            .endSpec()
-            .build();
+                .endSpec()
+                .build();
         user = Crds.kafkaUserOperation(client).resource(user).create();
 
         KafkaUserOperator op = new KafkaUserOperator(ResourceUtils.createUserOperatorConfig(namespace), mockCertManager, secretOps, kafkaUserOps, scramOps, quotasOps, aclOps);
@@ -595,16 +596,16 @@ public class KafkaUserOperatorMockTest {
     @Test
     public void testCreateScramShaUserWithMissingPassword() {
         KafkaUser user = new KafkaUserBuilder(ResourceUtils.createKafkaUserScramSha(namespace))
-            .editSpec()
+                .editSpec()
                 .withNewKafkaUserScramSha512ClientAuthentication()
-                    .withNewPassword()
-                        .withNewValueFrom()
-                            .withNewSecretKeyRef("my-password", "my-secret", false)
-                        .endValueFrom()
-                    .endPassword()
+                .withNewPassword()
+                .withNewValueFrom()
+                .withNewSecretKeyRef("my-password", "my-secret", false)
+                .endValueFrom()
+                .endPassword()
                 .endKafkaUserScramSha512ClientAuthentication()
-            .endSpec()
-            .build();
+                .endSpec()
+                .build();
         user = Crds.kafkaUserOperation(client).resource(user).create();
 
         KafkaUserOperator op = new KafkaUserOperator(ResourceUtils.createUserOperatorConfig(namespace), mockCertManager, secretOps, kafkaUserOps, scramOps, quotasOps, aclOps);
@@ -837,8 +838,8 @@ public class KafkaUserOperatorMockTest {
 
         KafkaUser user = new KafkaUserBuilder(ResourceUtils.createKafkaUserTls(namespace))
                 .editSpec()
-                    .withNewKafkaUserTlsExternalClientAuthentication()
-                    .endKafkaUserTlsExternalClientAuthentication()
+                .withNewKafkaUserTlsExternalClientAuthentication()
+                .endKafkaUserTlsExternalClientAuthentication()
                 .endSpec()
                 .build();
         user = Crds.kafkaUserOperation(client).resource(user).create();
@@ -1314,7 +1315,7 @@ public class KafkaUserOperatorMockTest {
         String secretPrefix = "my-test-";
         Secret existingUserSecret = new SecretBuilder(ResourceUtils.createUserSecretTls(namespace))
                 .editMetadata()
-                    .withName(secretPrefix + ResourceUtils.NAME)
+                .withName(secretPrefix + ResourceUtils.NAME)
                 .endMetadata()
                 .build();
         secretOps.resource(namespace, existingUserSecret).create();
@@ -1479,14 +1480,14 @@ public class KafkaUserOperatorMockTest {
     public void testReconcileAll() throws ExecutionException, InterruptedException {
         KafkaUser user1 = new KafkaUserBuilder(ResourceUtils.createKafkaUserTls(namespace))
                 .editMetadata()
-                    .withName("cr-user-1")
+                .withName("cr-user-1")
                 .endMetadata()
                 .build();
         Crds.kafkaUserOperation(client).inNamespace(namespace).resource(user1).create();
 
         KafkaUser user2 = new KafkaUserBuilder(ResourceUtils.createKafkaUserScramSha(namespace))
                 .editMetadata()
-                    .withName("cr-user-2")
+                .withName("cr-user-2")
                 .endMetadata()
                 .build();
         Crds.kafkaUserOperation(client).inNamespace(namespace).resource(user2).create();
@@ -1507,14 +1508,14 @@ public class KafkaUserOperatorMockTest {
     public void testReconcileAllWithoutACLs() throws ExecutionException, InterruptedException {
         KafkaUser user1 = new KafkaUserBuilder(ResourceUtils.createKafkaUserTls(namespace))
                 .editMetadata()
-                    .withName("cr-user-1")
+                .withName("cr-user-1")
                 .endMetadata()
                 .build();
         Crds.kafkaUserOperation(client).inNamespace(namespace).resource(user1).create();
 
         KafkaUser user2 = new KafkaUserBuilder(ResourceUtils.createKafkaUserScramSha(namespace))
                 .editMetadata()
-                    .withName("cr-user-2")
+                .withName("cr-user-2")
                 .endMetadata()
                 .build();
         Crds.kafkaUserOperation(client).inNamespace(namespace).resource(user2).create();

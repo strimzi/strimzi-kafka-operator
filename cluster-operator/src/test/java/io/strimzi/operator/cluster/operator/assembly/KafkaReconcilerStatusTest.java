@@ -65,10 +65,10 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
-public class KafkaReconcilerStatusTest {
-    private final static String NAMESPACE = "testns";
-    private final static String CLUSTER_NAME = "testkafka";
-    private final static KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
+public abstract class KafkaReconcilerStatusTest {
+    protected final static String NAMESPACE = "testns";
+    protected final static String CLUSTER_NAME = "testkafka";
+    protected final static KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
     private final static PlatformFeaturesAvailability PFA = new PlatformFeaturesAvailability(true, KubernetesVersion.MINIMAL_SUPPORTED_VERSION);
     private final static KafkaVersionChange VERSION_CHANGE = new KafkaVersionChange(
             VERSIONS.defaultVersion(),
@@ -77,7 +77,7 @@ public class KafkaReconcilerStatusTest {
             VERSIONS.defaultVersion().messageVersion(),
             VERSIONS.defaultVersion().metadataVersion()
     );
-    private final static ClusterOperatorConfig CO_CONFIG = ResourceUtils.dummyClusterOperatorConfig();
+    private final ClusterOperatorConfig coConfig = getClusterOperatorConfig();
     private final static ClusterCa CLUSTER_CA = new ClusterCa(
             Reconciliation.DUMMY_RECONCILIATION,
             new OpenSslCertManager(),
@@ -99,30 +99,10 @@ public class KafkaReconcilerStatusTest {
             true,
             null
     );
-    private final static Kafka KAFKA = new KafkaBuilder()
-                .withNewMetadata()
-                    .withName(CLUSTER_NAME)
-                    .withNamespace(NAMESPACE)
-                .endMetadata()
-                .withNewSpec()
-                    .withNewKafka()
-                        .withReplicas(3)
-                        .withListeners(new GenericKafkaListenerBuilder()
-                                .withName("tls")
-                                .withPort(9092)
-                                .withType(KafkaListenerType.INTERNAL)
-                                .withTls(true)
-                                .build())
-                        .withNewEphemeralStorage()
-                        .endEphemeralStorage()
-                    .endKafka()
-                    .withNewZookeeper()
-                        .withReplicas(3)
-                        .withNewEphemeralStorage()
-                        .endEphemeralStorage()
-                    .endZookeeper()
-                .endSpec()
-                .build();
+    private final Kafka kafka = getKafkaCrd();
+    abstract ClusterOperatorConfig getClusterOperatorConfig();
+
+    abstract Kafka getKafkaCrd();
 
     private static Vertx vertx;
     private static WorkerExecutor sharedWorkerExecutor;
@@ -141,7 +121,7 @@ public class KafkaReconcilerStatusTest {
 
     @Test
     public void testKafkaReconcilerStatus(VertxTestContext context) {
-        Kafka kafka = new KafkaBuilder(KAFKA)
+        Kafka kafka = new KafkaBuilder(this.kafka)
                 .editOrNewSpec()
                     .editOrNewKafka()
                         .withReplicas(1)
@@ -158,10 +138,13 @@ public class KafkaReconcilerStatusTest {
         when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.secretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
 
         // Run the test
+        Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME);
         KafkaReconciler reconciler = new MockKafkaReconcilerStatusTasks(
-                new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
+                reconciliation,
                 supplier,
-                kafka
+                kafka,
+                vertx,
+                coConfig
         );
 
         KafkaStatus status = new KafkaStatus();
@@ -187,7 +170,7 @@ public class KafkaReconcilerStatusTest {
 
     @Test
     public void testKafkaReconcilerStatusUpdateVersion(VertxTestContext context) {
-        Kafka kafka = new KafkaBuilder(KAFKA)
+        Kafka kafka = new KafkaBuilder(this.kafka)
                 .editOrNewSpec()
                     .editOrNewKafka()
                         .withReplicas(1)
@@ -207,10 +190,13 @@ public class KafkaReconcilerStatusTest {
         when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.secretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
 
         // Run the test
+        Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME);
         KafkaReconciler reconciler = new MockKafkaReconcilerStatusTasks(
-                new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
+                reconciliation,
                 supplier,
-                kafka
+                kafka,
+                vertx,
+                coConfig
         );
 
         KafkaStatus status = new KafkaStatus();
@@ -227,7 +213,7 @@ public class KafkaReconcilerStatusTest {
 
     @Test
     public void testKafkaReconcilerStatusDoesNotUpdateVersionOnFailure(VertxTestContext context) {
-        Kafka kafka = new KafkaBuilder(KAFKA)
+        Kafka kafka = new KafkaBuilder(this.kafka)
                 .editOrNewSpec()
                     .editOrNewKafka()
                         .withReplicas(1)
@@ -247,10 +233,13 @@ public class KafkaReconcilerStatusTest {
         when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.secretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
 
         // Run the test
+        Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME);
         KafkaReconciler reconciler = new MockKafkaReconcilerStatusTasks(
-                new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
+                reconciliation,
                 supplier,
-                kafka
+                kafka,
+                vertx,
+                coConfig
         );
 
         KafkaStatus status = new KafkaStatus();
@@ -267,7 +256,7 @@ public class KafkaReconcilerStatusTest {
 
     @Test
     public void testKafkaReconcilerStatusCustomKafkaVersion(VertxTestContext context) {
-        Kafka kafka = new KafkaBuilder(KAFKA)
+        Kafka kafka = new KafkaBuilder(this.kafka)
                 .editOrNewSpec()
                     .editOrNewKafka()
                         .withVersion(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION)
@@ -285,10 +274,13 @@ public class KafkaReconcilerStatusTest {
         when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.secretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
 
         // Run the test
+        Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME);
         KafkaReconciler reconciler = new MockKafkaReconcilerStatusTasks(
-                new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
+                reconciliation,
                 supplier,
-                kafka
+                kafka,
+                vertx,
+                coConfig
         );
 
         KafkaStatus status = new KafkaStatus();
@@ -314,10 +306,13 @@ public class KafkaReconcilerStatusTest {
         when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.secretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
 
         // Run the test
+        Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME);
         KafkaReconciler reconciler = new MockKafkaReconcilerStatusTasks(
-                new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
+                reconciliation,
                 supplier,
-                KAFKA
+                kafka,
+                vertx,
+                coConfig
         );
 
         KafkaStatus status = new KafkaStatus();
@@ -339,7 +334,7 @@ public class KafkaReconcilerStatusTest {
 
     @Test
     public void testKafkaReconcilerStatusWithNodePorts(VertxTestContext context) {
-        Kafka kafka = new KafkaBuilder(KAFKA)
+        Kafka kafka = new KafkaBuilder(this.kafka)
                 .editOrNewSpec()
                     .editOrNewKafka()
                         .withListeners(new GenericKafkaListenerBuilder()
@@ -401,10 +396,13 @@ public class KafkaReconcilerStatusTest {
         when(mockNodeOps.listAsync(any(Labels.class))).thenReturn(Future.succeededFuture(kubernetesWorkerNodes()));
 
         // Run the test
+        Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME);
         KafkaReconciler reconciler = new MockKafkaReconcilerStatusTasks(
-                new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
+                reconciliation,
                 supplier,
-                kafka
+                kafka,
+                vertx,
+                coConfig
         );
 
         KafkaStatus status = new KafkaStatus();
@@ -440,7 +438,7 @@ public class KafkaReconcilerStatusTest {
                 .withAdvertisedHost("my-address-1")
                 .build();
 
-        Kafka kafka = new KafkaBuilder(KAFKA)
+        Kafka kafka = new KafkaBuilder(this.kafka)
                 .editOrNewSpec()
                     .editOrNewKafka()
                         .withListeners(new GenericKafkaListenerBuilder()
@@ -505,10 +503,13 @@ public class KafkaReconcilerStatusTest {
         when(mockNodeOps.listAsync(any(Labels.class))).thenReturn(Future.succeededFuture(kubernetesWorkerNodes()));
 
         // Run the test
+        Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME);
         KafkaReconciler reconciler = new MockKafkaReconcilerStatusTasks(
-                new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
+                reconciliation,
                 supplier,
-                kafka
+                kafka,
+                vertx,
+                coConfig
         );
 
         KafkaStatus status = new KafkaStatus();
@@ -534,7 +535,7 @@ public class KafkaReconcilerStatusTest {
 
     @Test
     public void testKafkaReconcilerStatusWithNodePortsWithPreferredAddressType(VertxTestContext context) {
-        Kafka kafka = new KafkaBuilder(KAFKA)
+        Kafka kafka = new KafkaBuilder(this.kafka)
                 .editOrNewSpec()
                     .editOrNewKafka()
                         .withListeners(new GenericKafkaListenerBuilder()
@@ -599,10 +600,13 @@ public class KafkaReconcilerStatusTest {
         when(mockNodeOps.listAsync(any(Labels.class))).thenReturn(Future.succeededFuture(kubernetesWorkerNodes()));
 
         // Run the test
+        Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME);
         KafkaReconciler reconciler = new MockKafkaReconcilerStatusTasks(
-                new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
+                reconciliation,
                 supplier,
-                kafka
+                kafka,
+                vertx,
+                coConfig
         );
 
         KafkaStatus status = new KafkaStatus();
@@ -628,7 +632,7 @@ public class KafkaReconcilerStatusTest {
 
     @Test
     public void testKafkaReconcilerStatusWithNodePortsOnSameNode(VertxTestContext context) {
-        Kafka kafka = new KafkaBuilder(KAFKA)
+        Kafka kafka = new KafkaBuilder(this.kafka)
                 .editOrNewSpec()
                     .editOrNewKafka()
                         .withListeners(new GenericKafkaListenerBuilder()
@@ -690,10 +694,13 @@ public class KafkaReconcilerStatusTest {
         when(mockNodeOps.listAsync(any(Labels.class))).thenReturn(Future.succeededFuture(kubernetesWorkerNodes()));
 
         // Run the test
+        Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME);
         KafkaReconciler reconciler = new MockKafkaReconcilerStatusTasks(
-                new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
+                reconciliation,
                 supplier,
-                kafka
+                kafka,
+                vertx,
+                coConfig
         );
 
         KafkaStatus status = new KafkaStatus();
@@ -716,7 +723,7 @@ public class KafkaReconcilerStatusTest {
 
     @Test
     public void testKafkaReconcilerStatusWithNodePortsAndMissingNode(VertxTestContext context) {
-        Kafka kafka = new KafkaBuilder(KAFKA)
+        Kafka kafka = new KafkaBuilder(this.kafka)
                 .editOrNewSpec()
                     .editOrNewKafka()
                         .withListeners(new GenericKafkaListenerBuilder()
@@ -778,10 +785,13 @@ public class KafkaReconcilerStatusTest {
         when(mockNodeOps.listAsync(any(Labels.class))).thenReturn(Future.succeededFuture(kubernetesWorkerNodes()));
 
         // Run the test
+        Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME);
         KafkaReconciler reconciler = new MockKafkaReconcilerStatusTasks(
-                new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
+                reconciliation,
                 supplier,
-                kafka
+                kafka,
+                vertx,
+                coConfig
         );
 
         KafkaStatus status = new KafkaStatus();
@@ -858,24 +868,24 @@ public class KafkaReconcilerStatusTest {
         return nodes;
     }
 
-    static class MockKafkaReconcilerStatusTasks extends KafkaReconciler {
+    private KafkaCluster createKafkaCluster(Reconciliation reconciliation, ResourceOperatorSupplier supplier, Kafka kafkaCr)   {
+        return  KafkaClusterCreator.createKafkaCluster(
+                reconciliation,
+                kafkaCr,
+                null,
+                Map.of(),
+                Map.of(),
+                VERSION_CHANGE,
+                new KafkaMetadataStateManager(reconciliation, kafkaCr, coConfig.featureGates().useKRaftEnabled()).getMetadataConfigurationState(),
+                VERSIONS,
+                supplier.sharedEnvironmentProvider);
+    }
+
+    class MockKafkaReconcilerStatusTasks extends KafkaReconciler {
         private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(MockKafkaReconcilerStatusTasks.class.getName());
 
-        public MockKafkaReconcilerStatusTasks(Reconciliation reconciliation, ResourceOperatorSupplier supplier, Kafka kafkaCr) {
-            super(reconciliation, kafkaCr, null, createKafkaCluster(reconciliation, supplier, kafkaCr), CLUSTER_CA, CLIENTS_CA, CO_CONFIG, supplier, PFA, vertx, new KafkaMetadataStateManager(reconciliation, kafkaCr, CO_CONFIG.featureGates().useKRaftEnabled()));
-        }
-
-        private static KafkaCluster createKafkaCluster(Reconciliation reconciliation, ResourceOperatorSupplier supplier, Kafka kafkaCr)   {
-            return  KafkaClusterCreator.createKafkaCluster(
-                    reconciliation,
-                    kafkaCr,
-                    null,
-                    Map.of(),
-                    Map.of(),
-                    VERSION_CHANGE,
-                    new KafkaMetadataStateManager(reconciliation, kafkaCr, CO_CONFIG.featureGates().useKRaftEnabled()).getMetadataConfigurationState(),
-                    VERSIONS,
-                    supplier.sharedEnvironmentProvider);
+        public MockKafkaReconcilerStatusTasks(Reconciliation reconciliation, ResourceOperatorSupplier supplier, Kafka kafkaCr, Vertx vertx, ClusterOperatorConfig coConfig) {
+            super(reconciliation, kafkaCr, null, createKafkaCluster(reconciliation, supplier, kafkaCr), CLUSTER_CA, CLIENTS_CA, coConfig, supplier, PFA, vertx, new KafkaMetadataStateManager(reconciliation, kafkaCr, coConfig.featureGates().useKRaftEnabled()));
         }
 
         @Override

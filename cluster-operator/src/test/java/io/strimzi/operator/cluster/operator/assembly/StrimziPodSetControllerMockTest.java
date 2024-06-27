@@ -68,7 +68,7 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.not;
 
 @ExtendWith(VertxExtension.class)
-public class StrimziPodSetControllerMockTest {
+public abstract class StrimziPodSetControllerMockTest {
     private static final String KAFKA_NAME = "foo";
     private static final Map<String, String> MATCHING_LABELS = Map.of("selector", "matching");
     private static final String OTHER_KAFKA_NAME = "bar";
@@ -116,11 +116,11 @@ public class StrimziPodSetControllerMockTest {
 
         vertx = Vertx.vertx();
         sharedWorkerExecutor = vertx.createSharedWorkerExecutor("kubernetes-ops-pool");
-        kafkaOperator = new CrdOperator<>(vertx, client, Kafka.class, KafkaList.class, Kafka.RESOURCE_KIND);
-        kafkaConnectOperator = new CrdOperator<>(vertx, client, KafkaConnect.class, KafkaConnectList.class, KafkaConnect.RESOURCE_KIND);
-        kafkaMirrorMaker2Operator = new CrdOperator<>(vertx, client, KafkaMirrorMaker2.class, KafkaMirrorMaker2List.class, KafkaMirrorMaker2.RESOURCE_KIND);
-        podSetOperator = new StrimziPodSetOperator(vertx, client);
-        podOperator = new PodOperator(vertx, client);
+        kafkaOperator = new CrdOperator<>(vertx, client, Kafka.class, KafkaList.class, Kafka.RESOURCE_KIND, getSSA());
+        kafkaConnectOperator = new CrdOperator<>(vertx, client, KafkaConnect.class, KafkaConnectList.class, KafkaConnect.RESOURCE_KIND, getSSA());
+        kafkaMirrorMaker2Operator = new CrdOperator<>(vertx, client, KafkaMirrorMaker2.class, KafkaMirrorMaker2List.class, KafkaMirrorMaker2.RESOURCE_KIND, getSSA());
+        podSetOperator = new StrimziPodSetOperator(vertx, client, getSSA());
+        podOperator = new PodOperator(vertx, client, getSSA());
         metricsProvider = ResourceUtils.metricsProvider();
 
         kafkaOp().inNamespace(namespace).resource(kafka(namespace, KAFKA_NAME, MATCHING_LABELS)).create();
@@ -138,6 +138,8 @@ public class StrimziPodSetControllerMockTest {
         sharedWorkerExecutor.close();
         vertx.close();
     }
+
+    protected abstract boolean getSSA();
 
     /*
      * Util methods

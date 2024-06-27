@@ -4,9 +4,9 @@
  */
 package io.strimzi.operator.user.operator;
 
-public class KafkaUserOperatorWithSSAMockTest extends KafkaUserOperatorMockTest {
+public class KafkaUserOperatorWithoutSSAMockTest extends KafkaUserOperatorMockTest {
     @Override
     protected boolean getSSA() {
-        return true;
+        return false;
     }
 }

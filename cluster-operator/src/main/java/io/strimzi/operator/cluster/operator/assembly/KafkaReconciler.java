@@ -120,7 +120,7 @@ public class KafkaReconciler {
     private final List<LocalObjectReference> imagePullSecrets;
 
     // Objects used during the reconciliation
-    /* test */ final Reconciliation reconciliation;
+    /* test */ protected Reconciliation reconciliation;
     private final KafkaCluster kafka;
     private final List<KafkaNodePool> kafkaNodePoolCrs;
     private final ClusterCa clusterCa;
@@ -157,7 +157,7 @@ public class KafkaReconciler {
     private final Map<Integer, String> kafkaServerCertificateHash = new HashMap<>();
     /* test */ KafkaListenersReconciler.ReconciliationResult listenerReconciliationResults; // Result of the listener reconciliation with the listener details
 
-    private final KafkaMetadataStateManager kafkaMetadataStateManager;
+    protected KafkaMetadataStateManager kafkaMetadataStateManager;
 
     /**
      * Constructs the Kafka reconciler

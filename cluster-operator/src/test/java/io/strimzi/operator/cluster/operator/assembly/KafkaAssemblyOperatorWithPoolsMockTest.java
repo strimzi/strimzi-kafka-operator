@@ -70,7 +70,7 @@ import static org.hamcrest.Matchers.nullValue;
 
 @ExtendWith(VertxExtension.class)
 @SuppressWarnings("checkstyle:ClassFanOutComplexity")
-public class KafkaAssemblyOperatorWithPoolsMockTest {
+public abstract class KafkaAssemblyOperatorWithPoolsMockTest {
     private static final Logger LOGGER = LogManager.getLogger(KafkaAssemblyOperatorWithPoolsMockTest.class);
 
     private static final String CLUSTER_NAME = "my-cluster";
@@ -204,10 +204,12 @@ public class KafkaAssemblyOperatorWithPoolsMockTest {
         ResourceUtils.cleanUpTemporaryTLSFiles();
     }
 
+    protected abstract boolean getSSA();
+
     private ResourceOperatorSupplier supplierWithMocks() {
         return new ResourceOperatorSupplier(vertx, client, ResourceUtils.zookeeperLeaderFinder(vertx, client),
                 ResourceUtils.adminClientProvider(), ResourceUtils.zookeeperScalerProvider(), ResourceUtils.kafkaAgentClientProvider(),
-                ResourceUtils.metricsProvider(), new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION), 2_000);
+                ResourceUtils.metricsProvider(), new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION), 2_000, getSSA());
     }
 
 

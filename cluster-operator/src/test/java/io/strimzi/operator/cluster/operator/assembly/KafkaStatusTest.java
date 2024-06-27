@@ -5,13 +5,10 @@
 package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.strimzi.api.kafka.model.common.ConditionBuilder;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaList;
 import io.strimzi.api.kafka.model.kafka.KafkaStatus;
-import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
-import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.kafka.listener.ListenerAddressBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.ListenerStatus;
 import io.strimzi.api.kafka.model.kafka.listener.ListenerStatusBuilder;
@@ -24,7 +21,6 @@ import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.PasswordGenerator;
-import io.strimzi.operator.common.model.StatusUtils;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.platform.KubernetesVersion;
@@ -39,7 +35,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -55,14 +50,14 @@ import static org.mockito.Mockito.when;
 
 @SuppressWarnings({"checkstyle:ClassFanOutComplexity", "checkstyle:ClassDataAbstractionCoupling"})
 @ExtendWith(VertxExtension.class)
-public class KafkaStatusTest {
+public abstract class KafkaStatusTest {
     private final KubernetesVersion kubernetesVersion = KubernetesVersion.MINIMAL_SUPPORTED_VERSION;
     private final MockCertManager certManager = new MockCertManager();
     private final PasswordGenerator passwordGenerator = new PasswordGenerator(10, "a", "a");
-    private final ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
-    private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
-    private final String namespace = "testns";
-    private final String clusterName = "testkafka";
+    private final ClusterOperatorConfig config = getClusterOperatorConfig();
+    protected static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
+    protected final String namespace = "testns";
+    protected final String clusterName = "testkafka";
     protected static Vertx vertx;
 
     @BeforeAll
@@ -75,42 +70,9 @@ public class KafkaStatusTest {
         vertx.close();
     }
 
-    public Kafka getKafkaCrd() {
-        return new KafkaBuilder()
-                .withNewMetadata()
-                    .withName(clusterName)
-                    .withNamespace(namespace)
-                    .withGeneration(2L)
-                .endMetadata()
-                .withNewSpec()
-                    .withNewKafka()
-                        .withReplicas(3)
-                        .withListeners(new GenericKafkaListenerBuilder()
-                                .withName("plain")
-                                .withPort(9092)
-                                .withType(KafkaListenerType.INTERNAL)
-                                .withTls(false)
-                                .build())
-                        .withNewEphemeralStorage()
-                        .endEphemeralStorage()
-                    .endKafka()
-                    .withNewZookeeper()
-                        .withReplicas(3)
-                        .withNewEphemeralStorage()
-                        .endEphemeralStorage()
-                    .endZookeeper()
-                .endSpec()
-                .withNewStatus()
-                    .withObservedGeneration(1L)
-                    .withConditions(new ConditionBuilder()
-                            .withLastTransitionTime(StatusUtils.iso8601(Instant.parse("2011-01-01T00:00:00Z")))
-                            .withType("NotReady")
-                            .withStatus("True")
-                            .build())
-                    .withClusterId("my-cluster-id")
-                .endStatus()
-                .build();
-    }
+    abstract ClusterOperatorConfig getClusterOperatorConfig();
+
+    abstract Kafka getKafkaCrd();
 
     @Test
     public void testStatusAfterSuccessfulReconciliationWithPreviousFailure(VertxTestContext context) {

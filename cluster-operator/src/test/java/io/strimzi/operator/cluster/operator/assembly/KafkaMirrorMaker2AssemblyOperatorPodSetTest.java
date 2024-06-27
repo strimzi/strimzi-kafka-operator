@@ -90,27 +90,17 @@ import static org.mockito.Mockito.when;
 
 @SuppressWarnings({"checkstyle:ClassFanOutComplexity"})
 @ExtendWith(VertxExtension.class)
-public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
-    private final static String NAME = "my-mm2";
+public abstract class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
+    protected final static String NAME = "my-mm2";
     private final static String COMPONENT_NAME = NAME + "-mirrormaker2";
-    private final static String NAMESPACE = "my-namespace";
+    protected final static String NAMESPACE = "my-namespace";
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
     private static final KubernetesVersion KUBERNETES_VERSION = KubernetesVersion.MINIMAL_SUPPORTED_VERSION;
     private static final Reconciliation RECONCILIATION = new Reconciliation("test", "KafkaMirrorMaker2", NAMESPACE, NAME);
     private static final SharedEnvironmentProvider SHARED_ENV_PROVIDER = new MockSharedEnvironmentProvider();
 
-    private static final KafkaMirrorMaker2 MM2 = new KafkaMirrorMaker2Builder()
-            .withNewMetadata()
-                .withName(NAME)
-                .withNamespace(NAMESPACE)
-            .endMetadata()
-            .withNewSpec()
-                .withReplicas(3)
-                .withClusters(List.of())
-                .withMirrors(List.of())
-            .endSpec()
-            .build();
-    private static final KafkaMirrorMaker2Cluster CLUSTER = KafkaMirrorMaker2Cluster.fromCrd(RECONCILIATION, MM2, VERSIONS, SHARED_ENV_PROVIDER);
+    private final KafkaMirrorMaker2 mm2 = initKafkaMirrorMaker();
+    private final KafkaMirrorMaker2Cluster cluster = KafkaMirrorMaker2Cluster.fromCrd(RECONCILIATION, mm2, VERSIONS, SHARED_ENV_PROVIDER);
 
     protected static Vertx vertx;
 
@@ -124,9 +114,11 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
         vertx.close();
     }
 
+    abstract KafkaMirrorMaker2 initKafkaMirrorMaker();
+
     @Test
     public void testCreateCluster(VertxTestContext context)  {
-        KafkaMirrorMaker2 mm2 = new KafkaMirrorMaker2Builder(MM2).build();
+        KafkaMirrorMaker2 mm2 = new KafkaMirrorMaker2Builder(this.mm2).build();
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         // Mock deployment
@@ -240,8 +232,8 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
 
     @Test
     public void testScaleUpCluster(VertxTestContext context)  {
-        KafkaMirrorMaker2 mm2 = new KafkaMirrorMaker2Builder(MM2).build();
-        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(1, null, null, false, null, null, null);
+        KafkaMirrorMaker2 mm2 = new KafkaMirrorMaker2Builder(this.mm2).build();
+        StrimziPodSet oldPodSet = cluster.generatePodSet(1, null, null, false, null, null, null);
         List<Pod> oldPods = PodSetUtils.podSetToPods(oldPodSet);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
@@ -337,8 +329,8 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
 
     @Test
     public void testScaleDownCluster(VertxTestContext context)  {
-        KafkaMirrorMaker2 mm2 = new KafkaMirrorMaker2Builder(MM2).build();
-        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(5, null, null, false, null, null, null);
+        KafkaMirrorMaker2 mm2 = new KafkaMirrorMaker2Builder(this.mm2).build();
+        StrimziPodSet oldPodSet = cluster.generatePodSet(5, null, null, false, null, null, null);
         List<Pod> oldPods = PodSetUtils.podSetToPods(oldPodSet);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
@@ -434,13 +426,13 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
 
     @Test
     public void testScaleClusterToZero(VertxTestContext context)  {
-        KafkaMirrorMaker2 mm2 = new KafkaMirrorMaker2Builder(MM2)
+        KafkaMirrorMaker2 mm2 = new KafkaMirrorMaker2Builder(this.mm2)
                 .editSpec()
                     .withReplicas(0)
                 .endSpec()
                 .build();
 
-        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(3, null, null, false, null, null, null);
+        StrimziPodSet oldPodSet = cluster.generatePodSet(3, null, null, false, null, null, null);
         List<Pod> oldPods = PodSetUtils.podSetToPods(oldPodSet);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
@@ -536,8 +528,8 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
 
     @Test
     public void testUpdateClusterNoDiff(VertxTestContext context)  {
-        KafkaMirrorMaker2 mm2 = new KafkaMirrorMaker2Builder(MM2).build();
-        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(3, null, null, false, null, null, null);
+        KafkaMirrorMaker2 mm2 = new KafkaMirrorMaker2Builder(this.mm2).build();
+        StrimziPodSet oldPodSet = cluster.generatePodSet(3, null, null, false, null, null, null);
         List<Pod> oldPods = PodSetUtils.podSetToPods(oldPodSet);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
@@ -650,13 +642,13 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
 
     @Test
     public void testUpdateCluster(VertxTestContext context)  {
-        KafkaMirrorMaker2 mm2 = new KafkaMirrorMaker2Builder(MM2)
+        KafkaMirrorMaker2 mm2 = new KafkaMirrorMaker2Builder(this.mm2)
                 .editSpec()
                     .withImage("some/different:image")
                     .withResources(new ResourceRequirementsBuilder().withRequests(Map.of("Memory", new Quantity("1Gi"))).build())
                 .endSpec()
                 .build();
-        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(3, null, null, false, null, null, null);
+        StrimziPodSet oldPodSet = cluster.generatePodSet(3, null, null, false, null, null, null);
         List<Pod> oldPods = PodSetUtils.podSetToPods(oldPodSet);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
@@ -773,8 +765,8 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
 
     @Test
     public void testUpdateWithFailure(VertxTestContext context)  {
-        KafkaMirrorMaker2 mm2 = new KafkaMirrorMaker2Builder(MM2).build();
-        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(3, null, null, false, null, null, null);
+        KafkaMirrorMaker2 mm2 = new KafkaMirrorMaker2Builder(this.mm2).build();
+        StrimziPodSet oldPodSet = cluster.generatePodSet(3, null, null, false, null, null, null);
         List<Pod> oldPods = PodSetUtils.podSetToPods(oldPodSet);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
@@ -903,7 +895,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
 
     @Test
     public void testClusterMigrationToPodSets(VertxTestContext context)  {
-        KafkaMirrorMaker2 mm2 = new KafkaMirrorMaker2Builder(MM2).build();
+        KafkaMirrorMaker2 mm2 = new KafkaMirrorMaker2Builder(this.mm2).build();
 
         Deployment deployment = new DeploymentBuilder()
                 .withNewMetadata()
@@ -1190,7 +1182,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
 
     @Test
     public void testManualRollingUpdate(VertxTestContext context)  {
-        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(3, null, null, false, null, null, null);
+        StrimziPodSet oldPodSet = cluster.generatePodSet(3, null, null, false, null, null, null);
         oldPodSet.getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true"); // We want the pods to roll manually
         List<Pod> oldPods = PodSetUtils.podSetToPods(oldPodSet);
 
@@ -1242,8 +1234,8 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
 
         // Mock KafkaMirrorMaker2 CRs
         CrdOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List> mockConnectOps = supplier.mirrorMaker2Operator;
-        when(mockConnectOps.get(eq(NAMESPACE), eq(NAME))).thenReturn(new KafkaMirrorMaker2Builder(MM2).build());
-        when(mockConnectOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(Future.succeededFuture(new KafkaMirrorMaker2Builder(MM2).build()));
+        when(mockConnectOps.get(eq(NAMESPACE), eq(NAME))).thenReturn(new KafkaMirrorMaker2Builder(mm2).build());
+        when(mockConnectOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(Future.succeededFuture(new KafkaMirrorMaker2Builder(mm2).build()));
         ArgumentCaptor<KafkaMirrorMaker2> mm2StatusCaptor = ArgumentCaptor.forClass(KafkaMirrorMaker2.class);
         when(mockConnectOps.updateStatusAsync(any(), mm2StatusCaptor.capture())).thenReturn(Future.succeededFuture());
 
@@ -1278,7 +1270,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
 
     @Test
     public void testManualRollingUpdateAtScaleUp(VertxTestContext context)  {
-        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(1, null, null, false, null, null, null);
+        StrimziPodSet oldPodSet = cluster.generatePodSet(1, null, null, false, null, null, null);
         oldPodSet.getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true"); // We want the pods to roll manually
         List<Pod> oldPods = PodSetUtils.podSetToPods(oldPodSet);
 
@@ -1330,8 +1322,8 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
 
         // Mock KafkaMirrorMaker2 CRs
         CrdOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List> mockConnectOps = supplier.mirrorMaker2Operator;
-        when(mockConnectOps.get(eq(NAMESPACE), eq(NAME))).thenReturn(new KafkaMirrorMaker2Builder(MM2).build());
-        when(mockConnectOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(Future.succeededFuture(new KafkaMirrorMaker2Builder(MM2).build()));
+        when(mockConnectOps.get(eq(NAMESPACE), eq(NAME))).thenReturn(new KafkaMirrorMaker2Builder(mm2).build());
+        when(mockConnectOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(Future.succeededFuture(new KafkaMirrorMaker2Builder(mm2).build()));
         ArgumentCaptor<KafkaMirrorMaker2> mm2StatusCaptor = ArgumentCaptor.forClass(KafkaMirrorMaker2.class);
         when(mockConnectOps.updateStatusAsync(any(), mm2StatusCaptor.capture())).thenReturn(Future.succeededFuture());
 
@@ -1367,7 +1359,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
 
     @Test
     public void testManualRollingUpdatePerPod(VertxTestContext context)  {
-        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(3, null, null, false, null, null, null);
+        StrimziPodSet oldPodSet = cluster.generatePodSet(3, null, null, false, null, null, null);
         List<Pod> oldPods = PodSetUtils.podSetToPods(oldPodSet);
         oldPods.get(1).getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true"); // We want the pod to roll manually
 
@@ -1419,8 +1411,8 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
 
         // Mock KafkaMirrorMaker2 CRs
         CrdOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List> mockConnectOps = supplier.mirrorMaker2Operator;
-        when(mockConnectOps.get(eq(NAMESPACE), eq(NAME))).thenReturn(new KafkaMirrorMaker2Builder(MM2).build());
-        when(mockConnectOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(Future.succeededFuture(new KafkaMirrorMaker2Builder(MM2).build()));
+        when(mockConnectOps.get(eq(NAMESPACE), eq(NAME))).thenReturn(new KafkaMirrorMaker2Builder(mm2).build());
+        when(mockConnectOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(Future.succeededFuture(new KafkaMirrorMaker2Builder(mm2).build()));
         ArgumentCaptor<KafkaMirrorMaker2> mm2StatusCaptor = ArgumentCaptor.forClass(KafkaMirrorMaker2.class);
         when(mockConnectOps.updateStatusAsync(any(), mm2StatusCaptor.capture())).thenReturn(Future.succeededFuture());
 

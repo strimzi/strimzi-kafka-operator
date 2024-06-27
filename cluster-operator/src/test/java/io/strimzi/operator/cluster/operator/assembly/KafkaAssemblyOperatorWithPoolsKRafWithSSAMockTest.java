@@ -8,10 +8,11 @@ import io.vertx.junit5.VertxExtension;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 /**
- * Tests in this class mirrors KafkaConnectAssemblyOperatorMockTest with +UserServerSideApply
+ * Tests in this class mirrors KafkaAssemblyOperatorWithPoolsKRaftMockTest with +UserServerSideApply
  */
 @ExtendWith(VertxExtension.class)
-public class KafkaConnectAssemblyOperatorWithSSAMockTest extends KafkaConnectAssemblyOperatorMockTest {
+@SuppressWarnings("checkstyle:ClassFanOutComplexity")
+public class KafkaAssemblyOperatorWithPoolsKRafWithSSAMockTest extends KafkaAssemblyOperatorWithPoolsKRaftMockTest {
     @Override
     protected boolean getSSA() {
         return true;

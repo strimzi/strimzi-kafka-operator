@@ -184,7 +184,8 @@ public class KafkaReconcilerKRaftMigrationTest {
                 List.of(BROKERS, CONTROLLERS),
                 supplier,
                 versionChange,
-                kafkaMetadataStateManager);
+                kafkaMetadataStateManager,
+                vertx);
 
         KafkaStatus status = new KafkaStatus();
 
@@ -231,7 +232,8 @@ public class KafkaReconcilerKRaftMigrationTest {
                 List.of(BROKERS, CONTROLLERS),
                 supplier,
                 versionChange,
-                kafkaMetadataStateManager);
+                kafkaMetadataStateManager,
+                vertx);
 
         KafkaStatus status = new KafkaStatus();
 
@@ -273,7 +275,8 @@ public class KafkaReconcilerKRaftMigrationTest {
                 List.of(BROKERS, CONTROLLERS),
                 supplier,
                 versionChange,
-                kafkaMetadataStateManager);
+                kafkaMetadataStateManager,
+                vertx);
 
         KafkaStatus status = new KafkaStatus();
 
@@ -312,7 +315,8 @@ public class KafkaReconcilerKRaftMigrationTest {
                 List.of(BROKERS),
                 supplier,
                 versionChange,
-                kafkaMetadataStateManager);
+                kafkaMetadataStateManager,
+                vertx);
 
         KafkaStatus status = new KafkaStatus();
 
@@ -326,7 +330,7 @@ public class KafkaReconcilerKRaftMigrationTest {
     static class MockKafkaReconciler extends KafkaReconciler {
         private static int count = 0;
 
-        public MockKafkaReconciler(Reconciliation reconciliation, Kafka kafkaCr, List<KafkaNodePool> nodePools, ResourceOperatorSupplier supplier, KafkaVersionChange versionChange, KafkaMetadataStateManager kafkaMetadataStateManager) {
+        public MockKafkaReconciler(Reconciliation reconciliation, Kafka kafkaCr, List<KafkaNodePool> nodePools, ResourceOperatorSupplier supplier, KafkaVersionChange versionChange, KafkaMetadataStateManager kafkaMetadataStateManager, Vertx vertx) {
             super(reconciliation, kafkaCr, nodePools, createKafkaCluster(reconciliation, supplier, kafkaCr, nodePools, versionChange, kafkaMetadataStateManager), CLUSTER_CA, CLIENTS_CA, CO_CONFIG, supplier, PFA, vertx, kafkaMetadataStateManager);
         }
 

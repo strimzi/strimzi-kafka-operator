@@ -57,7 +57,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
-public class KafkaConnectAssemblyOperatorMockTest {
+public abstract class KafkaConnectAssemblyOperatorMockTest {
     private static final Logger LOGGER = LogManager.getLogger(KafkaConnectAssemblyOperatorMockTest.class);
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
     private static final PlatformFeaturesAvailability PFA = new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION);
@@ -103,7 +103,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
         namespace = testInfo.getTestMethod().orElseThrow().getName().toLowerCase(Locale.ROOT);
         mockKube.prepareNamespace(namespace);
 
-        supplier = new ResourceOperatorSupplier(vertx, client, ResourceUtils.zookeeperLeaderFinder(vertx, client), ResourceUtils.adminClientProvider(), ResourceUtils.zookeeperScalerProvider(), ResourceUtils.kafkaAgentClientProvider(), ResourceUtils.metricsProvider(), PFA, 2_000);
+        supplier = new ResourceOperatorSupplier(vertx, client, ResourceUtils.zookeeperLeaderFinder(vertx, client), ResourceUtils.adminClientProvider(), ResourceUtils.zookeeperScalerProvider(), ResourceUtils.kafkaAgentClientProvider(), ResourceUtils.metricsProvider(), PFA, 2_000, getSSA());
         podSetController = new StrimziPodSetController(namespace, Labels.EMPTY, supplier.kafkaOperator, supplier.connectOperator, supplier.mirrorMaker2Operator, supplier.strimziPodSetOperator, supplier.podOperations, supplier.metricsProvider, Integer.parseInt(ClusterOperatorConfig.POD_SET_CONTROLLER_WORK_QUEUE_SIZE.defaultValue()));
         podSetController.start();
     }
@@ -113,6 +113,8 @@ public class KafkaConnectAssemblyOperatorMockTest {
         podSetController.stop();
         client.namespaces().withName(namespace).delete();
     }
+
+    protected abstract boolean getSSA();
 
     private Future<Void> createConnectCluster(VertxTestContext context, KafkaConnectApi kafkaConnectApi, boolean reconciliationPaused) {
         ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);

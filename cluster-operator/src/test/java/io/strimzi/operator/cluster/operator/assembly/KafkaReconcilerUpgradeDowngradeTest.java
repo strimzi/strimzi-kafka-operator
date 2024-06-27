@@ -148,7 +148,8 @@ public class KafkaReconcilerUpgradeDowngradeTest {
                 new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
                 supplier,
                 kafka,
-                versionChange
+                versionChange,
+                vertx
         );
 
         KafkaStatus status = new KafkaStatus();
@@ -190,7 +191,8 @@ public class KafkaReconcilerUpgradeDowngradeTest {
                 new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
                 supplier,
                 KAFKA,
-                versionChange
+                versionChange,
+                vertx
         );
 
         KafkaStatus status = new KafkaStatus();
@@ -242,7 +244,8 @@ public class KafkaReconcilerUpgradeDowngradeTest {
                 new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
                 supplier,
                 kafka,
-                versionChange
+                versionChange,
+                vertx
         );
 
         KafkaStatus status = new KafkaStatus();
@@ -267,7 +270,7 @@ public class KafkaReconcilerUpgradeDowngradeTest {
     }
 
     static class MockKafkaReconciler extends KafkaReconciler {
-        public MockKafkaReconciler(Reconciliation reconciliation, ResourceOperatorSupplier supplier, Kafka kafkaCr, KafkaVersionChange versionChange) {
+        public MockKafkaReconciler(Reconciliation reconciliation, ResourceOperatorSupplier supplier, Kafka kafkaCr, KafkaVersionChange versionChange, Vertx vertx) {
             super(reconciliation, kafkaCr, null, createKafkaCluster(reconciliation, supplier, kafkaCr, versionChange), CLUSTER_CA, CLIENTS_CA, CO_CONFIG, supplier, PFA, vertx, new KafkaMetadataStateManager(reconciliation, kafkaCr, CO_CONFIG.featureGates().useKRaftEnabled()));
             listenerReconciliationResults = new KafkaListenersReconciler.ReconciliationResult();
         }

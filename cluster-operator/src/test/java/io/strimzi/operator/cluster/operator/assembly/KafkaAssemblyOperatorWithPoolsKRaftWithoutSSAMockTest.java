@@ -7,13 +7,11 @@ package io.strimzi.operator.cluster.operator.assembly;
 import io.vertx.junit5.VertxExtension;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-/**
- * Tests in this class mirrors KafkaConnectAssemblyOperatorMockTest with +UserServerSideApply
- */
 @ExtendWith(VertxExtension.class)
-public class KafkaConnectAssemblyOperatorWithSSAMockTest extends KafkaConnectAssemblyOperatorMockTest {
+@SuppressWarnings("checkstyle:ClassFanOutComplexity")
+public class KafkaAssemblyOperatorWithPoolsKRaftWithoutSSAMockTest extends KafkaAssemblyOperatorWithPoolsKRaftMockTest {
     @Override
     protected boolean getSSA() {
-        return true;
+        return false;
     }
 }

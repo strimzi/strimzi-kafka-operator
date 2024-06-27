@@ -57,7 +57,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @ExtendWith(VertxExtension.class)
 @SuppressWarnings("checkstyle:ClassFanOutComplexity")
-public class KafkaAssemblyOperatorWithPoolsKRaftMockTest {
+public abstract class KafkaAssemblyOperatorWithPoolsKRaftMockTest {
     private static final String CLUSTER_NAME = "my-cluster";
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
 
@@ -70,6 +70,8 @@ public class KafkaAssemblyOperatorWithPoolsKRaftMockTest {
     private ResourceOperatorSupplier supplier;
     private StrimziPodSetController podSetController;
     private KafkaAssemblyOperator operator;
+
+    protected abstract boolean getSSA();
 
     @BeforeAll
     public static void beforeAll() {
@@ -104,60 +106,60 @@ public class KafkaAssemblyOperatorWithPoolsKRaftMockTest {
 
         Kafka cluster = new KafkaBuilder()
                 .withNewMetadata()
-                    .withName(CLUSTER_NAME)
-                    .withNamespace(namespace)
-                    .withAnnotations(Map.of(
-                            Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled",
-                            Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled"
-                    ))
+                .withName(CLUSTER_NAME)
+                .withNamespace(namespace)
+                .withAnnotations(Map.of(
+                        Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled",
+                        Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled"
+                ))
                 .endMetadata()
                 .withNewSpec()
-                    .withNewKafka()
-                        .withConfig(new HashMap<>())
-                        .withListeners(new GenericKafkaListenerBuilder()
-                                .withName("tls")
-                                .withPort(9092)
-                                .withType(KafkaListenerType.INTERNAL)
-                                .withTls(true)
-                                .build())
-                    .endKafka()
+                .withNewKafka()
+                .withConfig(new HashMap<>())
+                .withListeners(new GenericKafkaListenerBuilder()
+                        .withName("tls")
+                        .withPort(9092)
+                        .withType(KafkaListenerType.INTERNAL)
+                        .withTls(true)
+                        .build())
+                .endKafka()
                 .endSpec()
                 .withNewStatus()
-                    .withClusterId("CLUSTERID") // Needed to avoid CLuster ID conflicts => should be the same as used in the Kafka Admin API
+                .withClusterId("CLUSTERID") // Needed to avoid CLuster ID conflicts => should be the same as used in the Kafka Admin API
                 .endStatus()
                 .build();
 
         KafkaNodePool poolA = new KafkaNodePoolBuilder()
                 .withNewMetadata()
-                    .withName("controllers")
-                    .withNamespace(namespace)
-                    .withLabels(Map.of(Labels.STRIMZI_CLUSTER_LABEL, CLUSTER_NAME))
-                    .withGeneration(1L)
+                .withName("controllers")
+                .withNamespace(namespace)
+                .withLabels(Map.of(Labels.STRIMZI_CLUSTER_LABEL, CLUSTER_NAME))
+                .withGeneration(1L)
                 .endMetadata()
                 .withNewSpec()
-                    .withReplicas(3)
-                    .withNewJbodStorage()
-                        .withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").withStorageClass("gp99").build())
-                    .endJbodStorage()
-                    .withRoles(ProcessRoles.CONTROLLER)
-                    .withResources(new ResourceRequirementsBuilder().withRequests(Map.of("cpu", new Quantity("4"))).build())
+                .withReplicas(3)
+                .withNewJbodStorage()
+                .withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").withStorageClass("gp99").build())
+                .endJbodStorage()
+                .withRoles(ProcessRoles.CONTROLLER)
+                .withResources(new ResourceRequirementsBuilder().withRequests(Map.of("cpu", new Quantity("4"))).build())
                 .endSpec()
                 .build();
 
         KafkaNodePool poolB = new KafkaNodePoolBuilder()
                 .withNewMetadata()
-                    .withName("brokers")
-                    .withNamespace(namespace)
-                    .withLabels(Map.of(Labels.STRIMZI_CLUSTER_LABEL, CLUSTER_NAME))
-                    .withGeneration(1L)
+                .withName("brokers")
+                .withNamespace(namespace)
+                .withLabels(Map.of(Labels.STRIMZI_CLUSTER_LABEL, CLUSTER_NAME))
+                .withGeneration(1L)
                 .endMetadata()
                 .withNewSpec()
-                    .withReplicas(3)
-                    .withNewJbodStorage()
-                        .withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("200Gi").withStorageClass("gp99").build())
-                    .endJbodStorage()
-                    .withRoles(ProcessRoles.BROKER)
-                    .withResources(new ResourceRequirementsBuilder().withRequests(Map.of("cpu", new Quantity("6"))).build())
+                .withReplicas(3)
+                .withNewJbodStorage()
+                .withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("200Gi").withStorageClass("gp99").build())
+                .endJbodStorage()
+                .withRoles(ProcessRoles.BROKER)
+                .withResources(new ResourceRequirementsBuilder().withRequests(Map.of("cpu", new Quantity("6"))).build())
                 .endSpec()
                 .build();
 
@@ -185,7 +187,7 @@ public class KafkaAssemblyOperatorWithPoolsKRaftMockTest {
     private ResourceOperatorSupplier supplierWithMocks() {
         return new ResourceOperatorSupplier(vertx, client, ResourceUtils.zookeeperLeaderFinder(vertx, client),
                 ResourceUtils.adminClientProvider(), ResourceUtils.zookeeperScalerProvider(), ResourceUtils.kafkaAgentClientProvider(),
-                ResourceUtils.metricsProvider(), new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION), 2_000);
+                ResourceUtils.metricsProvider(), new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION), 2_000, getSSA());
     }
 
     @AfterEach
