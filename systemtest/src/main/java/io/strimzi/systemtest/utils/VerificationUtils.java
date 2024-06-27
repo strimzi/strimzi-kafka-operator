@@ -260,6 +260,7 @@ public class VerificationUtils {
      * @param clusterName Name of the cluster linked with configmaps
      * @param additionalClusterName Name of the second cluster - used mainly for source + target cluster verification
      */
+    @SuppressWarnings("deprecation") // Kafka Mirror Maker is deprecated
     public static void verifyConfigMapsLabels(String namespaceName, String clusterName, String additionalClusterName) {
         LOGGER.info("Verifying labels for Config maps");
 
@@ -311,6 +312,7 @@ public class VerificationUtils {
      * @param namespaceName Namespace name where service accounts are located
      * @param clusterName Name of the cluster linked with service accounts
      */
+    @SuppressWarnings("deprecation") // Kafka Mirror Maker is deprecated
     public static void verifyServiceAccountsLabels(String namespaceName, String clusterName) {
         LOGGER.info("Verifying labels for Service Accounts");
 

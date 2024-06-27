@@ -50,6 +50,7 @@ public class CruiseControlSpec implements HasConfigurableMetrics, HasConfigurabl
         + "webserver.http.cors.origin, webserver.http.cors.exposeheaders, webserver.security.enable, webserver.ssl.enable";
 
     private String image;
+    @SuppressWarnings("deprecation")  // TLS Sidecar is not used anymore and is deprecated
     private TlsSidecar tlsSidecar;
     private ResourceRequirements resources;
     private Probe livenessProbe;
@@ -82,6 +83,7 @@ public class CruiseControlSpec implements HasConfigurableMetrics, HasConfigurabl
         return tlsSidecar;
     }
 
+    @Deprecated
     public void setTlsSidecar(TlsSidecar tlsSidecar) {
         this.tlsSidecar = tlsSidecar;
     }

@@ -31,6 +31,7 @@ import java.util.Map;
 public class EntityOperatorSpec implements UnknownPropertyPreserving {
     private EntityTopicOperatorSpec topicOperator;
     private EntityUserOperatorSpec userOperator;
+    @SuppressWarnings("deprecation") // TLS Sidecar is not used anymore and is deprecated
     private TlsSidecar tlsSidecar;
     private EntityOperatorTemplate template;
     private Map<String, Object> additionalProperties;
@@ -63,6 +64,7 @@ public class EntityOperatorSpec implements UnknownPropertyPreserving {
         return tlsSidecar;
     }
 
+    @Deprecated
     public void setTlsSidecar(TlsSidecar tlsSidecar) {
         this.tlsSidecar = tlsSidecar;
     }
