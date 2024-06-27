@@ -27,6 +27,12 @@ public class TemplateUtils {
     protected static final String SENSITIVE_PATH = "/tmp";
 
     /**
+     * This is a constant that represents an allowed mountable path in the file system.
+     * It is used to prevent the creation of volumes outside this path.
+     */
+    protected static final String ALLOWED_MOUNT_PATH = "/mnt";
+
+    /**
      * Extracts custom labels configured through the Strimzi API resource templates. This method deals the null checks
      * and makes the code using it more easy to read.
      *
@@ -73,6 +79,13 @@ public class TemplateUtils {
             throw new RuntimeException("Sensitive path found in additional volumes");
         }
         
+
+        boolean isForbiddenPath = additionalVolumeMounts.stream().anyMatch(additionalVolume -> !additionalVolume.getMountPath().startsWith(ALLOWED_MOUNT_PATH));
+
+        if (isForbiddenPath) {
+            throw new RuntimeException(String.format("Forbidden path found in additional volumes. Should start with %s", ALLOWED_MOUNT_PATH));
+        }
+
         volumeMounts.addAll(additionalVolumeMounts);
     }
 
