@@ -916,53 +916,57 @@ public class KafkaRebalanceAssemblyOperator
             validateAnnotation(reconciliation, conditions, KafkaRebalanceState.Rebalancing, rebalanceAnnotation(kafkaRebalance), kafkaRebalance);
             apiClient.getUserTaskStatus(reconciliation, host, cruiseControlPort, sessionId)
                 .onSuccess(cruiseControlResponse -> {
-                    JsonObject taskStatusJson = cruiseControlResponse.getJson();
-                    CruiseControlUserTaskStatus taskStatus = CruiseControlUserTaskStatus.lookup(taskStatusJson.getString("Status"));
-                    switch (taskStatus) {
-                        case COMPLETED:
-                            LOGGER.infoCr(reconciliation, "Rebalance ({}) is now complete", sessionId);
-                            p.complete(buildRebalanceStatus(
-                                    kafkaRebalance, null, KafkaRebalanceState.Ready, taskStatusJson, conditions));
-                            break;
-                        case COMPLETED_WITH_ERROR:
-                            // TODO: There doesn't seem to be a way to retrieve the actual error message from the user tasks endpoint?
-                            //       We may need to propose an upstream PR for this.
-                            // TODO: Once we can get the error details we need to add an error field to the Rebalance Status to hold
-                            //       details of any issues while rebalancing.
-                            LOGGER.errorCr(reconciliation, "Rebalance ({}) optimization proposal has failed to complete", sessionId);
-                            p.complete(buildRebalanceStatus(sessionId, KafkaRebalanceState.NotReady, conditions));
-                            break;
-                        case IN_EXECUTION: // Rebalance is still in progress
-                            LOGGER.infoCr(reconciliation, "Rebalance ({}) optimization proposal in execution", sessionId);
-                            // We need to check that the status has been updated with the ongoing optimisation proposal
-                            // The proposal field can be empty if a rebalance(dryrun=false) was called and the optimisation
-                            // proposal was still being prepared (in progress). In that case the rebalance will start when
-                            // the proposal is complete but the optimisation proposal summary will be missing.
-                            if (kafkaRebalance.getStatus().getOptimizationResult() == null ||
-                                    kafkaRebalance.getStatus().getOptimizationResult().isEmpty()) {
-                                LOGGER.infoCr(reconciliation, "Rebalance ({}) optimization proposal is now ready and has been added to the status", sessionId);
-                                p.complete(buildRebalanceStatus(
-                                        kafkaRebalance, sessionId, KafkaRebalanceState.Rebalancing, taskStatusJson, conditions));
-                            } else {
+                    if (cruiseControlResponse.getJson().isEmpty()) {
+                        LOGGER.infoCr(reconciliation, "Cruise Control restarted, going to generate a new proposal");
+                        requestRebalance(reconciliation, host, apiClient, kafkaRebalance, true, rebalanceOptionsBuilder).onSuccess(p::complete);
+                    } else {
+                        JsonObject taskStatusJson = cruiseControlResponse.getJson();
+                        CruiseControlUserTaskStatus taskStatus = CruiseControlUserTaskStatus.lookup(taskStatusJson.getString("Status"));
+                        switch (taskStatus) {
+                            case COMPLETED:
+                                LOGGER.infoCr(reconciliation, "Rebalance ({}) is now complete", sessionId);
+                                p.complete(buildRebalanceStatus(kafkaRebalance, null, KafkaRebalanceState.Ready, taskStatusJson, conditions));
+                                break;
+                            case COMPLETED_WITH_ERROR:
+                                // TODO: There doesn't seem to be a way to retrieve the actual error message from the user tasks endpoint?
+                                //       We may need to propose an upstream PR for this.
+                                // TODO: Once we can get the error details we need to add an error field to the Rebalance Status to hold
+                                //       details of any issues while rebalancing.
+                                LOGGER.errorCr(reconciliation, "Rebalance ({}) optimization proposal has failed to complete", sessionId);
+                                p.complete(buildRebalanceStatus(sessionId, KafkaRebalanceState.NotReady, conditions));
+                                break;
+                            case IN_EXECUTION: // Rebalance is still in progress
+                                LOGGER.infoCr(reconciliation, "Rebalance ({}) optimization proposal in execution", sessionId);
+                                // We need to check that the status has been updated with the ongoing optimisation proposal
+                                // The proposal field can be empty if a rebalance(dryrun=false) was called and the optimisation
+                                // proposal was still being prepared (in progress). In that case the rebalance will start when
+                                // the proposal is complete but the optimisation proposal summary will be missing.
+                                if (kafkaRebalance.getStatus().getOptimizationResult() == null ||
+                                        kafkaRebalance.getStatus().getOptimizationResult().isEmpty()) {
+                                    LOGGER.infoCr(reconciliation, "Rebalance ({}) optimization proposal is now ready and has been added to the status", sessionId);
+                                    p.complete(buildRebalanceStatus(
+                                            kafkaRebalance, sessionId, KafkaRebalanceState.Rebalancing, taskStatusJson, conditions));
+                                } else {
+                                    configMapOperator.getAsync(kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName())
+                                            .onSuccess(loadmap -> p.complete(new MapAndStatus<>(loadmap, buildRebalanceStatusFromPreviousStatus(kafkaRebalance.getStatus(), conditions))));
+                                }
+                                // TODO: Find out if there is any way to check the progress of a rebalance.
+                                //       We could parse the verbose proposal for total number of reassignments and compare to number completed (if available)?
+                                //       We can then update the status at this point.
+                                break;
+                            case ACTIVE: // Rebalance proposal is still being calculated
+                                // If a rebalance(dryrun=false) was called and the proposal is still being prepared then the task
+                                // will be in an ACTIVE state. When the proposal is ready it will shift to IN_EXECUTION and we will
+                                // check that the optimisation proposal is added to the status on the next reconcile.
+                                LOGGER.infoCr(reconciliation, "Rebalance ({}) optimization proposal is still being prepared", sessionId);
                                 configMapOperator.getAsync(kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName())
                                         .onSuccess(loadmap -> p.complete(new MapAndStatus<>(loadmap, buildRebalanceStatusFromPreviousStatus(kafkaRebalance.getStatus(), conditions))));
-                            }
-                            // TODO: Find out if there is any way to check the progress of a rebalance.
-                            //       We could parse the verbose proposal for total number of reassignments and compare to number completed (if available)?
-                            //       We can then update the status at this point.
-                            break;
-                        case ACTIVE: // Rebalance proposal is still being calculated
-                            // If a rebalance(dryrun=false) was called and the proposal is still being prepared then the task
-                            // will be in an ACTIVE state. When the proposal is ready it will shift to IN_EXECUTION and we will
-                            // check that the optimisation proposal is added to the status on the next reconcile.
-                            LOGGER.infoCr(reconciliation, "Rebalance ({}) optimization proposal is still being prepared", sessionId);
-                            configMapOperator.getAsync(kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName())
-                                    .onSuccess(loadmap -> p.complete(new MapAndStatus<>(loadmap, buildRebalanceStatusFromPreviousStatus(kafkaRebalance.getStatus(), conditions))));
-                            break;
-                        default:
-                            LOGGER.errorCr(reconciliation, "Unexpected state {}", taskStatus);
-                            p.fail("Unexpected state " + taskStatus);
-                            break;
+                                break;
+                            default:
+                                LOGGER.errorCr(reconciliation, "Unexpected state {}", taskStatus);
+                                p.fail("Unexpected state " + taskStatus);
+                                break;
+                        }
                     }
                 })
                 .onFailure(e -> {
