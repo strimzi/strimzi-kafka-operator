@@ -514,7 +514,10 @@ public class MockCruiseControl {
                                 .withDelay(TimeUnit.SECONDS, 0));
     }
 
-    public void setupUserTasktoEmpty() throws IOException, URISyntaxException {
+    /**
+     * Setup response when user task is not found
+     */
+    public void setupUserTasktoEmpty() {
         // This simulates asking for the status with empty user task
         JsonBody jsonEmptyUserTask = new JsonBody(TestUtils.jsonFromResource(CC_JSON_ROOT + "CC-User-task-status-empty.json"));
 

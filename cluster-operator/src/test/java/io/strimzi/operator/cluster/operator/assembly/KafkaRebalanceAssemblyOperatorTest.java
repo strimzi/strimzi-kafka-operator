@@ -1452,11 +1452,11 @@ public class KafkaRebalanceAssemblyOperatorTest {
     }
 
     @Test
-    public void testKrWhenCCUserTaskIsEmpty(VertxTestContext context) throws IOException, URISyntaxException {
+    public void shouldGenerateNewProposalWhenUserTaskNotFound(VertxTestContext context) throws IOException, URISyntaxException {
 
-        cruiseControlServer.setupCCRebalanceResponse(0, CruiseControlEndpoints.REBALANCE);
+        cruiseControlServer.setupCCRebalanceResponse(2, CruiseControlEndpoints.REBALANCE);
 
-        KafkaRebalance kr = new KafkaRebalanceBuilder(createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, EMPTY_KAFKA_REBALANCE_SPEC, false))
+        KafkaRebalance kr = new KafkaRebalanceBuilder(createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, EMPTY_KAFKA_REBALANCE_SPEC, true))
                 .withNewStatus()
                 .withObservedGeneration(1L)
                 .withConditions(new ConditionBuilder()
@@ -1474,33 +1474,19 @@ public class KafkaRebalanceAssemblyOperatorTest {
 
         Checkpoint checkpoint = context.checkpoint();
         krao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, RESOURCE_NAME))
-                .onComplete(context.succeeding(v -> context.verify(() -> {
-                    // the resource moved to ProposalReady
-                    assertState(context, client, namespace, RESOURCE_NAME, KafkaRebalanceState.ProposalReady);
-                })))
-                .compose(v -> {
-                    if (!Annotations.booleanAnnotation(kr, Annotations.ANNO_STRIMZI_IO_REBALANCE_AUTOAPPROVAL, false)) {
-                        annotate(client, namespace, kr.getMetadata().getName(), KafkaRebalanceAnnotation.approve);
-                    }
-                    return krao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()));
-                })
                 .onComplete(context.succeeding(v -> {
-                    // the resource moved to Rebalancing
+                    // the resource moved to `Rebalancing` since auto-approval annotation is set on the resource
                     assertState(context, client, namespace, RESOURCE_NAME, KafkaRebalanceState.Rebalancing);
                 }))
                 .compose(v -> {
                     // Sets the user task to empty
-                    try {
-                        cruiseControlServer.setupUserTasktoEmpty();
-                    } catch (IOException | URISyntaxException e) {
-                        throw new RuntimeException(e);
-                    }
+                    cruiseControlServer.setupUserTasktoEmpty();
 
                     return krao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()));
                 })
                 .onComplete(context.succeeding(v -> {
-                    // the resource transitioned from 'Rebalancing' to 'ProposalReady'
-                    assertState(context, client, namespace, RESOURCE_NAME, KafkaRebalanceState.ProposalReady);
+                    // the resource transitioned from 'Rebalancing' to 'PendingProposal'
+                    assertState(context, client, namespace, RESOURCE_NAME, KafkaRebalanceState.PendingProposal);
                     checkpoint.flag();
                 }));
     }

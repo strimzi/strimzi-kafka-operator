@@ -917,7 +917,9 @@ public class KafkaRebalanceAssemblyOperator
             apiClient.getUserTaskStatus(reconciliation, host, cruiseControlPort, sessionId)
                 .onSuccess(cruiseControlResponse -> {
                     if (cruiseControlResponse.getJson().isEmpty()) {
-                        LOGGER.warnCr(reconciliation, "Json data for response is empty since user task was not found, going to generate a new proposal");
+                        // Cruise Control restarted: reset the state because the tasks queue is not persisted
+                        // this may also happen when the tasks' retention time expires, or the cache becomes full
+                        LOGGER.warnCr(reconciliation, "User task {} not found, going to generate a new proposal", sessionId);
                         requestRebalance(reconciliation, host, apiClient, kafkaRebalance, true, rebalanceOptionsBuilder).onSuccess(p::complete);
                     } else {
                         JsonObject taskStatusJson = cruiseControlResponse.getJson();
