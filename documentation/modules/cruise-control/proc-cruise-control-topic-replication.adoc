@@ -133,4 +133,4 @@ spec:
 If you enable TLS authentication and authorization, mount the required certificates as follows:
 
 * Public certificates of the Cluster CA (certificate authority) in `/etc/tls-sidecar/cluster-ca-certs/ca.crt`
-* Basic authorization credentials (user name and password) in `/etc/eto-cc-api/topic-operator.apiAdminUsername` and `/etc/eto-cc-api/topic-operator.apiAdminPassword`
+* Basic authorization credentials (user name and password) in `/etc/eto-cc-api/topic-operator.apiAdminName` and `/etc/eto-cc-api/topic-operator.apiAdminPassword`
