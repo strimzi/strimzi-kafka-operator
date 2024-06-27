@@ -853,7 +853,7 @@ class LoggingChangeST extends AbstractST {
         StUtils.waitUntilSupplierIsSatisfied("Changing rootLogger level from INFO to DEBUG with inline logging",
             () -> {
                 KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(testStorage.getClusterName(),
-                kC -> kC.getSpec().setLogging(inlineLoggingDebugLevel), testStorage.getNamespaceName());
+                    kC -> kC.getSpec().setLogging(inlineLoggingDebugLevel), testStorage.getNamespaceName());
                 return true;
             });
         // KafkaConnect should roll because of rootLogger level change with STRIMZI_IO_USE_CONNECTOR_RESOURCES set to `false`
