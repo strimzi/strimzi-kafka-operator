@@ -45,6 +45,7 @@ docker-images/operator/tmp/**
 # Connect plugin (tests)
 systemtest/*.tar.gz
 systemtest/bin/
+cluster-operator/bin/
 systemtest/my-plugins/
 systemtest/scripts/results.json
 
