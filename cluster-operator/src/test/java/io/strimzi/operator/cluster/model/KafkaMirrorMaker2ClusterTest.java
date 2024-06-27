@@ -4,8 +4,6 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import io.fabric8.kubernetes.api.model.CSIVolumeSource;
-import io.fabric8.kubernetes.api.model.CSIVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapKeySelectorBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMapVolumeSource;
@@ -75,6 +73,17 @@ import io.strimzi.plugin.security.profiles.impl.RestrictedPodSecurityProvider;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
+import src.main.java.io.strimzi.operator.cluster.model.AbstractModel;
+import src.main.java.io.strimzi.operator.cluster.model.ImagePullPolicy;
+import src.main.java.io.strimzi.operator.cluster.model.JvmOptionUtils;
+import src.main.java.io.strimzi.operator.cluster.model.KafkaConnectCluster;
+import src.main.java.io.strimzi.operator.cluster.model.KafkaMirrorMaker2Cluster;
+import src.main.java.io.strimzi.operator.cluster.model.KafkaVersion;
+import src.main.java.io.strimzi.operator.cluster.model.MetricsAndLogging;
+import src.main.java.io.strimzi.operator.cluster.model.PodRevision;
+import src.main.java.io.strimzi.operator.cluster.model.PodSetUtils;
+import src.main.java.io.strimzi.operator.cluster.model.SharedEnvironmentProvider;
+import src.main.java.io.strimzi.operator.cluster.model.VolumeUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -928,8 +937,8 @@ public class KafkaMirrorMaker2ClusterTest {
                 .withName("configMap1")
                 .build();
         
-        CSIVolumeSource csi = new CSIVolumeSourceBuilder()
-                .withDriver("csi-driver-name")
+        PersistentVolumeClaimVolumeSource pvc = new PersistentVolumeClaimVolumeSourceBuilder()
+                .withClaimName("pvc-name")
                 .withReadOnly(true)
                 .withNewNodePublishSecretRef("example-secret-provider-class")
                 .build();
@@ -939,9 +948,9 @@ public class KafkaMirrorMaker2ClusterTest {
                 .withConfigMap(configMap)
                 .build();
         
-        AdditionalVolume additionalVolumeCsi = new AdditionalVolumeBuilder()
-                .withName("csi-volume-name")
-                .withCsi(csi)
+        AdditionalVolume additionalVolumePvc = new AdditionalVolumeBuilder()
+                .withName("pvc-volume-name")
+                .withPersistentVolumeClaim(pvc)
                 .build();
         
         VolumeMount additionalVolumeMountConfigMap = new VolumeMountBuilder()
@@ -950,9 +959,9 @@ public class KafkaMirrorMaker2ClusterTest {
                 .withSubPath("def")
                 .build();
         
-        VolumeMount additionalVolumeMountCsi = new VolumeMountBuilder()
-                .withName("csi-volume-name")
-                .withMountPath("/lmn")
+        VolumeMount additionalVolumeMountPvc = new VolumeMountBuilder()
+                .withName("pvc-volume-name")
+                .withMountPath("/mnt/mypvc")
                 .build();
 
         KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(this.resource)
@@ -975,10 +984,10 @@ public class KafkaMirrorMaker2ClusterTest {
                             .withHostAliases(hostAlias1, hostAlias2)
                             .withEnableServiceLinks(false)
                             .withTmpDirSizeLimit("10Mi")
-                            .withAdditionalVolumes(additionalVolumeConfigMap, additionalVolumeCsi)
+                            .withAdditionalVolumes(additionalVolumeConfigMap, additionalVolumePvc)
                         .endPod()
                         .withNewInitContainer()
-                            .withAdditionalVolumeMounts(additionalVolumeMountCsi)
+                            .withAdditionalVolumeMounts(additionalVolumeMountPvc)
                         .endInitContainer()
                         .withNewConnectContainer()
                             .withAdditionalVolumeMounts(additionalVolumeMountConfigMap)
@@ -1028,9 +1037,9 @@ public class KafkaMirrorMaker2ClusterTest {
             assertThat(pod.getSpec().getEnableServiceLinks(), is(false));
             assertThat(getVolume(pod, "strimzi-tmp").getEmptyDir().getSizeLimit(), is(new Quantity("10Mi")));
             assertThat(getVolume(pod, additionalVolumeMountConfigMap.getName()).getConfigMap(), is(configMap));
-            assertThat(getVolume(pod, additionalVolumeMountCsi.getName()).getCsi(), is(csi));
+            assertThat(getVolume(pod, additionalVolumeMountPvc.getName()).getPvc(), is(pvc));
             assertThat(getVolumeMount(pod.getSpec().getContainers().get(0), additionalVolumeMountConfigMap.getName()), is(additionalVolumeMountConfigMap));
-            assertThat(getVolumeMount(pod.getSpec().getInitContainers().get(0), additionalVolumeMountCsi.getName()), is(additionalVolumeMountCsi));
+            assertThat(getVolumeMount(pod.getSpec().getInitContainers().get(0), additionalVolumeMountPvc.getName()), is(additionalVolumeMountPvc));
 
         });
 

@@ -6,9 +6,9 @@ package io.strimzi.api.kafka.model.common.template;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import io.fabric8.kubernetes.api.model.CSIVolumeSource;
 import io.fabric8.kubernetes.api.model.ConfigMapVolumeSource;
 import io.fabric8.kubernetes.api.model.EmptyDirVolumeSource;
+import io.fabric8.kubernetes.api.model.PersistentVolumeClaimVolumeSource;
 //import io.fabric8.kubernetes.api.model.EmptyDirVolumeSource;
 import io.fabric8.kubernetes.api.model.SecretVolumeSource;
 import io.strimzi.api.kafka.model.common.Constants;
@@ -27,7 +27,7 @@ import java.util.Map;
  */
 @Buildable(editableEnabled = false, builderPackage = Constants.FABRIC8_KUBERNETES_API)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "name", "path", "subPath", "secret", "configMap", "emptyDir", "csi" })
+@JsonPropertyOrder({ "name", "path", "subPath", "secret", "configMap", "emptyDir", "pvc" })
 @EqualsAndHashCode
 @ToString
 public class AdditionalVolume implements UnknownPropertyPreserving {
@@ -35,7 +35,7 @@ public class AdditionalVolume implements UnknownPropertyPreserving {
     private SecretVolumeSource secret;
     private ConfigMapVolumeSource configMap;
     private EmptyDirVolumeSource emptyDir;
-    private CSIVolumeSource csi;
+    private PersistentVolumeClaimVolumeSource pvc;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Name to use for the volume. Required.")
@@ -81,15 +81,15 @@ public class AdditionalVolume implements UnknownPropertyPreserving {
         this.emptyDir = emptyDir;
     }
 
-    @Description("CSI object to use to populate the volume.")
-    @KubeLink(group = "core", version = "v1", kind = "csivolumesource")
+    @Description("PVC object to use to populate the volume.")
+    @KubeLink(group = "core", version = "v1", kind = "persistentvolumeclaimvolumesource")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public CSIVolumeSource getCsi() {
-        return csi;
+    public PersistentVolumeClaimVolumeSource getPvc() {
+        return pvc;
     }
 
-    public void setCsi(CSIVolumeSource csi) {
-        this.csi = csi;
+    public void setPvc(PersistentVolumeClaimVolumeSource pvc) {
+        this.pvc = pvc;
     }
 
     @Override

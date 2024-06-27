@@ -90,8 +90,8 @@ public class TemplateUtils {
             volumeBuilder.withNewSecret().withSecretName(volumeConfig.getSecret().getSecretName()).endSecret();
         } else if (volumeConfig.getEmptyDir() != null) {
             volumeBuilder.withNewEmptyDir().withMedium(volumeConfig.getEmptyDir().getMedium()).endEmptyDir();
-        } else if (volumeConfig.getCsi() != null) {
-            volumeBuilder.withCsi(volumeConfig.getCsi());
+        } else if (volumeConfig.getPvc() != null) {
+            volumeBuilder.withPersistentVolumeClaim(volumeConfig.getPvc());
         }
 
         return volumeBuilder.build();

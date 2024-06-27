@@ -1489,25 +1489,14 @@ spec:
                                         format:
                                           type: string
                                   description: EmptyDir to use to populate the volume.
-                                csi:
+                                pvc:
                                   type: object
                                   properties:
-                                    driver:
+                                    claimName:
                                       type: string
-                                    fsType:
-                                      type: string
-                                    nodePublishSecretRef:
-                                      type: object
-                                      properties:
-                                        name:
-                                          type: string
                                     readOnly:
                                       type: boolean
-                                    volumeAttributes:
-                                      additionalProperties:
-                                        type: string
-                                      type: object
-                                  description: CSI object to use to populate the volume.
+                                  description: PVC object to use to populate the volume.
                             description: Additional volumes that can be mounted to the pod.
                         description: Template for Kafka `Pods`.
                       bootstrapService:
@@ -2877,25 +2866,14 @@ spec:
                                         format:
                                           type: string
                                   description: EmptyDir to use to populate the volume.
-                                csi:
+                                pvc:
                                   type: object
                                   properties:
-                                    driver:
+                                    claimName:
                                       type: string
-                                    fsType:
-                                      type: string
-                                    nodePublishSecretRef:
-                                      type: object
-                                      properties:
-                                        name:
-                                          type: string
                                     readOnly:
                                       type: boolean
-                                    volumeAttributes:
-                                      additionalProperties:
-                                        type: string
-                                      type: object
-                                  description: CSI object to use to populate the volume.
+                                  description: PVC object to use to populate the volume.
                             description: Additional volumes that can be mounted to the pod.
                         description: Template for ZooKeeper `Pods`.
                       clientService:
@@ -4164,25 +4142,14 @@ spec:
                                         format:
                                           type: string
                                   description: EmptyDir to use to populate the volume.
-                                csi:
+                                pvc:
                                   type: object
                                   properties:
-                                    driver:
+                                    claimName:
                                       type: string
-                                    fsType:
-                                      type: string
-                                    nodePublishSecretRef:
-                                      type: object
-                                      properties:
-                                        name:
-                                          type: string
                                     readOnly:
                                       type: boolean
-                                    volumeAttributes:
-                                      additionalProperties:
-                                        type: string
-                                      type: object
-                                  description: CSI object to use to populate the volume.
+                                  description: PVC object to use to populate the volume.
                             description: Additional volumes that can be mounted to the pod.
                         description: Template for Entity Operator `Pods`.
                       topicOperatorContainer:
@@ -5408,25 +5375,14 @@ spec:
                                         format:
                                           type: string
                                   description: EmptyDir to use to populate the volume.
-                                csi:
+                                pvc:
                                   type: object
                                   properties:
-                                    driver:
+                                    claimName:
                                       type: string
-                                    fsType:
-                                      type: string
-                                    nodePublishSecretRef:
-                                      type: object
-                                      properties:
-                                        name:
-                                          type: string
                                     readOnly:
                                       type: boolean
-                                    volumeAttributes:
-                                      additionalProperties:
-                                        type: string
-                                      type: object
-                                  description: CSI object to use to populate the volume.
+                                  description: PVC object to use to populate the volume.
                             description: Additional volumes that can be mounted to the pod.
                         description: Template for Cruise Control `Pods`.
                       apiService:
@@ -6443,25 +6399,14 @@ spec:
                                         format:
                                           type: string
                                   description: EmptyDir to use to populate the volume.
-                                csi:
+                                pvc:
                                   type: object
                                   properties:
-                                    driver:
+                                    claimName:
                                       type: string
-                                    fsType:
-                                      type: string
-                                    nodePublishSecretRef:
-                                      type: object
-                                      properties:
-                                        name:
-                                          type: string
                                     readOnly:
                                       type: boolean
-                                    volumeAttributes:
-                                      additionalProperties:
-                                        type: string
-                                      type: object
-                                  description: CSI object to use to populate the volume.
+                                  description: PVC object to use to populate the volume.
                             description: Additional volumes that can be mounted to the pod.
                         description: Template for JmxTrans `Pods`.
                       container:
@@ -7268,25 +7213,14 @@ spec:
                                         format:
                                           type: string
                                   description: EmptyDir to use to populate the volume.
-                                csi:
+                                pvc:
                                   type: object
                                   properties:
-                                    driver:
+                                    claimName:
                                       type: string
-                                    fsType:
-                                      type: string
-                                    nodePublishSecretRef:
-                                      type: object
-                                      properties:
-                                        name:
-                                          type: string
                                     readOnly:
                                       type: boolean
-                                    volumeAttributes:
-                                      additionalProperties:
-                                        type: string
-                                      type: object
-                                  description: CSI object to use to populate the volume.
+                                  description: PVC object to use to populate the volume.
                             description: Additional volumes that can be mounted to the pod.
                         description: Template for Kafka Exporter `Pods`.
                       service:
