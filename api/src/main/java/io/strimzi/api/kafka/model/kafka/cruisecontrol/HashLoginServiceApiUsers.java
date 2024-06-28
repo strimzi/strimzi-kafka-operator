@@ -30,8 +30,8 @@ public class HashLoginServiceApiUsers extends ApiUsers {
     // Regex to match an entry in Jetty's HashLoginService's file format: username: password, rolename
     private static final Pattern HASH_LOGIN_SERVICE_PATTERN = Pattern.compile("^[\\w-]+\\s*:\\s*\\w+\\s*,\\s*\\w+\\s*$");
 
-    @Description("Type of the Cruise Control API Users configuration. " +
-            "Supported values are: " + "`" + TYPE_HASH_LOGIN_SERVICE + "`")
+    @Description("Type of the Cruise Control API users configuration. " +
+            "Supported format is: " + "`" + TYPE_HASH_LOGIN_SERVICE + "`")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty(required = true)
     public String getType() {

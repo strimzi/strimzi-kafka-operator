@@ -2001,10 +2001,10 @@ Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`]
 |Property |Property type |Description
 |type
 |string
-|Type of the Cruise Control API Users configuration. Supported values are: `hashLoginService`.
+|Type of the Cruise Control API users configuration. Supported format is: `hashLoginService`.
 |valueFrom
 |xref:type-PasswordSource-{context}[`PasswordSource`]
-|Secret from which the custom Cruise Control API authentication credentials should be read. 
+|Secret from which the custom Cruise Control API authentication credentials are read. 
 |====
 
 [id='type-PasswordSource-{context}']

@@ -147,17 +147,22 @@ spec:
 [id='property-cruise-control-capacity-api-users-{context}']
 = API users
 
-Advanced users can create their own REST API users for safely accessing a secured Cruise Control REST API directly.
+With the necessary permissions, create REST API users to safely access a secured Cruise Control REST API directly.
 
-This allows roles and permissions to be defined to allow advanced users and third-party applications to access the Cruise Control REST API without having to disable HTTP basic authentication.
+This allows roles and permissions to be defined to allow advanced users and third-party applications to access the Cruise Control REST API without having to disable basic HTTP authentication.
 
-There are a couple use cases where advanced users would want to access the Cruise Control API without disabling API security:
+The following use cases would benefit from accessing the Cruise Control API without disabling API security:
 
-* Monitoring a Strimzi-managed Kafka cluster with the Cruise Control UI.
-* Gathering Cruise Control specific statistical information that is not currently available via Strimzi Operator or Cruise Control sensor metrics, for examplem detailed information surrounding cluster and partition load and user tasks.
+* Monitoring a Strimzi-managed Kafka cluster with the Cruise Control user interface.
+* Gathering Cruise Control-specific statistical information not available through Strimzi or Cruise Control sensor metrics, such as detailed information surrounding cluster and partition load and user tasks.
 * Debugging Cruise Control in a secured environment.
 
-For example, advanced users could define their custom API users in a secret by putting their API user credentials in the Jetty's HashLoginService's file format in a text file called `cruise-control-auth.txt` like this:
+Cruise Control reads authentication credentials for API users in Jetty's  `HashLoginService` file format.
+
+Standard Cruise Control `USER` and `VIEWER` roles are supported.
+* `USER` has has access to all the `GET` endpoints except bootstrap and train.
+* `VIEWER` has access to `kafka_cluster_state`, `user_tasks` and `review_board` endpoints.
+In this example, we define two custom API users in the supported format in a text file called `cruise-control-auth.txt`:
 
 [source]
 ----
@@ -165,16 +170,14 @@ userOne: passwordOne, USER
 userTwo: passwordTwo, VIEWER
 ----
 
-Then use this file to create the secret using the following command:
+Then, use this file to create a secret with the following command:
 
 [source]
 ----
 kubectl create secret generic cruise-control-api-users-secret  --from-file=key=cruise-control-auth.txt
 ----
 
-Then reference the secret in the `spec.cruiseControl.apiUsers` section of the Kafka resource.
-
-The schema would look like this:
+Next, we reference the secret in the spec.cruiseControl.apiUsers section of the Kafka resource:
 
 .Example Cruise Control apiUsers configuration
 [source,yaml,subs="attributes+"]
@@ -196,7 +199,7 @@ spec:
      ...
 ----
 
-Strimzi would then decode and uses the contents of this secret to populate the Cruise Control's API auth credentials file.
+Strimzi then decodes and uses the contents of this secret to populate Cruise Control's API authentication credentials file.
 
 >>>>>>> ee9f25276 (Add support for custom CC API users)
 [id='property-cruise-control-broker-capacity-{context}']

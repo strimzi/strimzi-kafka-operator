@@ -5962,7 +5962,7 @@ spec:
                     properties:
                       type:
                         type: string
-                        description: "Type of the Cruise Control API Users configuration. Supported values are: `hashLoginService`."
+                        description: "Type of the Cruise Control API users configuration. Supported format is: `hashLoginService`."
                       valueFrom:
                         type: object
                         properties:
@@ -5976,7 +5976,7 @@ spec:
                               optional:
                                 type: boolean
                             description: Selects a key of a Secret in the resource's namespace.
-                        description: 'Secret from which the custom Cruise Control API authentication credentials should be read. '
+                        description: 'Secret from which the custom Cruise Control API authentication credentials are read. '
                     required:
                     - type
                     - valueFrom

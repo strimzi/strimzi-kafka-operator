@@ -38,7 +38,7 @@ public abstract class ApiUsers implements UnknownPropertyPreserving {
     private PasswordSource valueFrom;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
-    @Description("Type of the Cruise Control API Users configuration. ")
+    @Description("Type of the Cruise Control API users configuration. ")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty(required = true)
     public abstract String getType();
@@ -47,7 +47,7 @@ public abstract class ApiUsers implements UnknownPropertyPreserving {
         this.type = type;
     }
 
-    @Description("Secret from which the custom Cruise Control API authentication credentials should be read. ")
+    @Description("Secret from which the custom Cruise Control API authentication credentials are read. ")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty(required = true)
     public PasswordSource getValueFrom() {

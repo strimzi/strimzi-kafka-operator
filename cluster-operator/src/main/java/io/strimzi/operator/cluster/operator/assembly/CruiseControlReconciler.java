@@ -239,7 +239,7 @@ public class CruiseControlReconciler {
      *
      *  (1) Previous Cruise Control API secret
      *      The centralized API secret contains passwords for the healthcheck and rebalance operator users as well
-     *      the authentication file comprising of all REST API credentials.
+     *      the authentication file comprising all REST API credentials.
      *
      *  (2) User-managed API secret
      *      The user-managed API secret contains a custom authentication file and can specify any number of API users.
